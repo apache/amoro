@@ -19,6 +19,7 @@
 package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
@@ -85,6 +86,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Assume.assumeTrue(isPartitionedTable());
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
     List<DataFile> s1Files = insertChangeDataFiles(testKeyedTable, 1);
+    long l = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
     List<StructLike> partitions =
         new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
     Assert.assertEquals(2, partitions.size());
@@ -99,8 +101,11 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     }
     Assert.assertEquals(4, existedDataFiles.size());
 
+    List<IcebergFileEntry> expiredDataFileEntries =
+        SnapshotsExpiringExecutor.getExpiredDataFileEntries(testKeyedTable.changeTable(), l + 1);
     SnapshotsExpiringExecutor.deleteChangeFile(
-        testKeyedTable, changeTableFiles, testKeyedTable.changeTable().currentSnapshot().sequenceNumber());
+        testKeyedTable, expiredDataFileEntries);
+    Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
     Set<String> currentDataFiles = new HashSet<>();
     try (CloseableIterable<FileScanTask> fileScanTasks = testKeyedTable.changeTable().newScan().planFiles()) {
       fileScanTasks.forEach(fileScanTask -> currentDataFiles.add(fileScanTask.file().path().toString()));
@@ -108,7 +113,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Set<String> expectedDataFiles = existedDataFiles.stream().filter(
         file -> file.partition().equals(partitions.get(1))).map(f -> f.path().toString()).collect(Collectors.toSet());
     Assert.assertEquals(expectedDataFiles, currentDataFiles);
-    changeTableFiles.forEach(file -> Assert.assertTrue(testKeyedTable.io().exists(file.path().toString())));
+    changeTableFiles.forEach(
+        file -> Assert.assertTrue(testKeyedTable.changeTable().io().exists(file.path().toString())));
   }
 
   @Test
@@ -116,6 +122,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Assume.assumeTrue(isKeyedTable());
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
     List<DataFile> s1Files = insertChangeDataFiles(testKeyedTable, 1);
+    long l = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
     List<StructLike> partitions =
         new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
     if (isPartitionedTable()) {
@@ -130,9 +137,11 @@ public class TestSnapshotExpire extends ExecutorTestBase {
       updateProperties.set(partitions.get(1), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "1");
     }
     updateProperties.commit();
-    s1Files.forEach(file -> Assert.assertTrue(testKeyedTable.io().exists(file.path().toString())));
+    s1Files.forEach(file -> Assert.assertTrue(testKeyedTable.changeTable().io().exists(file.path().toString())));
+    List<IcebergFileEntry> expiredDataFileEntries =
+        SnapshotsExpiringExecutor.getExpiredDataFileEntries(testKeyedTable.changeTable(), l + 1);
     SnapshotsExpiringExecutor.deleteChangeFile(
-        testKeyedTable, changeTableFiles, testKeyedTable.changeTable().currentSnapshot().sequenceNumber());
+        testKeyedTable, expiredDataFileEntries);
     Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
     List<DataFile> existedDataFiles = new ArrayList<>();
     try (CloseableIterable<FileScanTask> fileScanTasks = testKeyedTable.changeTable().newScan().planFiles()) {
@@ -146,7 +155,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
         testKeyedTable.changeTable(), System.currentTimeMillis(), new HashSet<>());
     Assert.assertEquals(1, Iterables.size(testKeyedTable.changeTable().snapshots()));
     Assert.assertEquals(expectedSnapshot, testKeyedTable.changeTable().snapshots().iterator().next());
-    s1Files.forEach(file -> Assert.assertFalse(testKeyedTable.io().exists(file.path().toString())));
+    s1Files.forEach(file -> Assert.assertFalse(testKeyedTable.changeTable().io().exists(file.path().toString())));
   }
 
   @Test
@@ -155,6 +164,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Assume.assumeTrue(isPartitionedTable());
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
     List<DataFile> s1Files = insertChangeDataFiles(testKeyedTable, 1);
+    long l = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
     testKeyedTable.baseTable().newAppend().appendFile(s1Files.get(0)).commit();
     List<StructLike> partitions =
         new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
@@ -164,9 +174,11 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     updateProperties.set(partitions.get(0), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "3");
     updateProperties.set(partitions.get(1), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "1");
     updateProperties.commit();
-    Assert.assertTrue(testKeyedTable.io().exists((String) s1Files.get(0).path()));
+    s1Files.forEach(file -> Assert.assertTrue(testKeyedTable.io().exists(file.path().toString())));
+    List<IcebergFileEntry> expiredDataFileEntries =
+        SnapshotsExpiringExecutor.getExpiredDataFileEntries(testKeyedTable.changeTable(), l + 1);
     SnapshotsExpiringExecutor.deleteChangeFile(
-        testKeyedTable, changeTableFiles, testKeyedTable.changeTable().currentSnapshot().sequenceNumber());
+        testKeyedTable, expiredDataFileEntries);
     Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
 
     Set<String> exclude = IcebergTableUtil.getAllContentFilePath(testKeyedTable.baseTable());
@@ -175,7 +187,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     SnapshotsExpiringExecutor.expireSnapshots(testKeyedTable.changeTable(), System.currentTimeMillis(), exclude);
 
     Assert.assertEquals(1, Iterables.size(testKeyedTable.changeTable().snapshots()));
-    Assert.assertEquals(expectedSnapshot, testKeyedTable.changeTable().snapshots().iterator().next());
+    Assert.assertEquals(expectedSnapshot, testKeyedTable.changeTable().currentSnapshot());
     Assert.assertTrue(testKeyedTable.io().exists(s1Files.get(0).path().toString()));
     Assert.assertFalse(testKeyedTable.io().exists(s1Files.get(1).path().toString()));
   }
@@ -188,33 +200,25 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Snapshot firstSnapshot = testKeyedTable.changeTable().currentSnapshot();
     insertChangeDataFiles(testKeyedTable, 2);
     long secondCommitTime = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
+    Snapshot secondSnapshot = testKeyedTable.changeTable().currentSnapshot();
+
     testKeyedTable.changeTable().newAppend().commit();
+    long thirdCommitTime = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
+    Snapshot thirdSnapshot = testKeyedTable.changeTable().currentSnapshot();
 
     Set<DataFile> top8Files = new HashSet<>();
     testKeyedTable.changeTable().newScan().planFiles().forEach(task -> top8Files.add(task.file()));
     Assert.assertEquals(8, top8Files.size());
     Assert.assertEquals(3, Iterables.size(testKeyedTable.changeTable().snapshots()));
 
-    long thirdCommitTime = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
-    Snapshot thirdSnapshot = testKeyedTable.changeTable().currentSnapshot();
-
     insertChangeDataFiles(testKeyedTable, 3);
     Assert.assertEquals(12, Iterables.size(testKeyedTable.changeTable().newScan().planFiles()));
     Assert.assertEquals(4, Iterables.size(testKeyedTable.changeTable().snapshots()));
 
-    Snapshot closestExpireSnapshot = SnapshotsExpiringExecutor.getClosestExpireSnapshot(
-        testKeyedTable.changeTable(), thirdCommitTime);
-    Snapshot closestExpireSnapshot2 = SnapshotsExpiringExecutor.getClosestExpireSnapshot(
+    List<IcebergFileEntry> expiredDataFileEntries = SnapshotsExpiringExecutor.getExpiredDataFileEntries(
         testKeyedTable.changeTable(), thirdCommitTime + 1);
-    Snapshot closestExpireSnapshot3 = SnapshotsExpiringExecutor.getClosestExpireSnapshot(
-        testKeyedTable.changeTable(), secondCommitTime - 1);
-    Assert.assertEquals(thirdSnapshot, closestExpireSnapshot);
-    Assert.assertEquals(thirdSnapshot, closestExpireSnapshot2);
-    Assert.assertEquals(firstSnapshot, closestExpireSnapshot3);
-
-    Set<CharSequence> closestFilesPath = new HashSet<>(SnapshotsExpiringExecutor.getClosestExpireDataFiles(
-        testKeyedTable.changeTable(), closestExpireSnapshot))
-        .stream().map(ContentFile::path).collect(Collectors.toSet());
+    Set<CharSequence> closestFilesPath = expiredDataFileEntries.stream().map(
+        entry -> entry.getFile().path()).collect(Collectors.toSet());
     Set<CharSequence> top8FilesPath = top8Files.stream().map(ContentFile::path).collect(Collectors.toSet());
 
     Assert.assertTrue(top8FilesPath.equals(closestFilesPath));
@@ -248,7 +252,6 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Assert.assertEquals(checkpointTime2Snapshot.timestampMillis(),
         SnapshotsExpiringExecutor.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
 
-    testKeyedTable.updateProperties().set(TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES, "0").commit();
     testKeyedTable.updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
@@ -365,6 +368,68 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     dataFiles.forEach(file -> Assert.assertFalse(table.io().exists(file.path().toString())));
     newDataFiles.forEach(file -> Assert.assertTrue(table.io().exists(file.path().toString())));
+  }
+
+  @Test
+  public void testExpireTableFilesRepeatedly() {
+    Assume.assumeTrue(isKeyedTable());
+    KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
+    List<DataFile> s1Files = insertChangeDataFiles(testKeyedTable, 1);
+    insertChangeDataFiles(testKeyedTable, 2);
+    long secondCommitTime = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
+
+    List<StructLike> partitions =
+        new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
+    if (isPartitionedTable()) {
+      Assert.assertEquals(2, partitions.size());
+    } else {
+      Assert.assertEquals(1, partitions.size());
+    }
+    UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
+    updateProperties.set(partitions.get(0), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "3");
+    if (isPartitionedTable()) {
+      updateProperties.set(partitions.get(1), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "3");
+    }
+    updateProperties.commit();
+
+    Set<DataFile> top8Files = new HashSet<>();
+    testKeyedTable.changeTable().newScan().planFiles().forEach(task -> top8Files.add(task.file()));
+    Assert.assertEquals(8, top8Files.size());
+    Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
+
+    Set<CharSequence> last4File = insertChangeDataFiles(testKeyedTable, 3).stream()
+        .map(DataFile::path).collect(Collectors.toSet());
+    long thirdCommitTime = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
+    Assert.assertEquals(12, Iterables.size(testKeyedTable.changeTable().newScan().planFiles()));
+    Assert.assertEquals(3, Iterables.size(testKeyedTable.changeTable().snapshots()));
+
+    List<IcebergFileEntry> expiredDataFileEntries = SnapshotsExpiringExecutor.getExpiredDataFileEntries(
+        testKeyedTable.changeTable(), secondCommitTime + 1);
+    Set<CharSequence> top8FilesPath = top8Files.stream().map(ContentFile::path).collect(Collectors.toSet());
+    Set<CharSequence> expiredFilesPath = expiredDataFileEntries.stream()
+        .map(entry -> entry.getFile().path()).collect(Collectors.toSet());
+    Assert.assertTrue(top8FilesPath.equals(expiredFilesPath));
+    SnapshotsExpiringExecutor.deleteChangeFile(testKeyedTable, expiredDataFileEntries);
+    SnapshotsExpiringExecutor.expireSnapshots(
+        testKeyedTable.changeTable(), secondCommitTime + 1, new HashSet<>());
+
+    Set<CharSequence> dataFiles = new HashSet<>();
+    testKeyedTable.changeTable().newScan().planFiles().forEach(
+        task -> dataFiles.add(task.file().path())
+    );
+    Assert.assertEquals(last4File, dataFiles);
+
+    List<IcebergFileEntry> expiredDataFileEntries2 = SnapshotsExpiringExecutor.getExpiredDataFileEntries(
+        testKeyedTable.changeTable(), secondCommitTime + 1);
+    Assert.assertTrue(expiredDataFileEntries2.isEmpty());
+
+    List<IcebergFileEntry> expiredDataFileEntries3 = SnapshotsExpiringExecutor.getExpiredDataFileEntries(
+        testKeyedTable.changeTable(), thirdCommitTime + 1);
+    Set<CharSequence> fileEntry3 = expiredDataFileEntries3.stream()
+        .map(entry -> entry.getFile().path()).collect(Collectors.toSet());
+    Assert.assertTrue(last4File.equals(fileEntry3));
+
+    Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
   }
 
   private List<DataFile> insertChangeDataFiles(KeyedTable testKeyedTable, long transactionId) {
