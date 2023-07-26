@@ -28,6 +28,8 @@ import com.netease.arctic.ams.server.model.TableTaskStatus;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.optimizer.Optimizer;
 import com.netease.arctic.optimizer.factory.OptimizerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -111,23 +113,28 @@ public class OptimizeExecuteService implements Closeable {
 
   @Override
   public void close() throws IOException {
-    
+
   }
 
   public static class OptimizerMonitor {
+    private static final Logger LOG = LoggerFactory.getLogger(OptimizerMonitor.class);
 
     private static final long OPTIMIZER_JOB_TIMEOUT = 10 * 60 * 1000;
 
     public void monitorStatus() {
-      long currentTime = System.currentTimeMillis();
-      List<com.netease.arctic.ams.server.model.Optimizer> optimizers =
-          ServiceContainer.getOptimizerService().getOptimizers();
-      optimizers.forEach(optimizer -> {
-        if ((currentTime - optimizer.getUpdateTime().getTime()) > OPTIMIZER_JOB_TIMEOUT) {
-          ServiceContainer.getOptimizerService()
-              .updateOptimizerStatus(optimizer.getJobId(), TableTaskStatus.FAILED);
-        }
-      });
+      try {
+        long currentTime = System.currentTimeMillis();
+        List<com.netease.arctic.ams.server.model.Optimizer> optimizers =
+            ServiceContainer.getOptimizerService().getOptimizers();
+        optimizers.forEach(optimizer -> {
+          if ((currentTime - optimizer.getUpdateTime().getTime()) > OPTIMIZER_JOB_TIMEOUT) {
+            ServiceContainer.getOptimizerService()
+                .updateOptimizerStatus(optimizer.getJobId(), TableTaskStatus.FAILED);
+          }
+        });
+      } catch (Throwable t) {
+        LOG.error("monitor optimizer status failed", t);
+      }
     }
   }
 }
