@@ -33,7 +33,7 @@
 
     <properties>
         <root.dir>${project.basedir}</root.dir>
-        <hive.version>2.1.1</hive.version>
+        <hive.version>2.3.7</hive.version>
         <spark.mysql.version>5.1.40</spark.mysql.version>
         <spark.version>3.1.1</spark.version>
         <scala.version>2.12.15</scala.version>
@@ -196,6 +196,10 @@
                 <exclusion>
                     <groupId>com.google.guava</groupId>
                     <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hive</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
