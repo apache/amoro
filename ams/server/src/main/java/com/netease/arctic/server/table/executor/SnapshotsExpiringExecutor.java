@@ -18,8 +18,10 @@
 
 package com.netease.arctic.server.table.executor;
 
+import com.netease.arctic.IcebergFileEntry;
+import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.hive.utils.TableTypeUtil;
-import com.netease.arctic.server.optimizing.OptimizingStatus;
+import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.HiveLocationUtil;
@@ -36,10 +38,9 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFiles;
-import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +48,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -114,10 +114,6 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
         arcticTable.properties(),
         TableProperties.BASE_SNAPSHOT_KEEP_MINUTES,
         TableProperties.BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT) * 60 * 1000;
-    long changeSnapshotsKeepTime = CompatiblePropertyUtil.propertyAsLong(
-        arcticTable.properties(),
-        TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES,
-        TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES_DEFAULT) * 60 * 1000;
 
     Set<String> hiveLocations = new HashSet<>();
     if (TableTypeUtil.isHive(arcticTable)) {
@@ -147,12 +143,10 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
         long baseCleanedTime = System.currentTimeMillis();
         LOG.info("{} base expire cost {} ms", arcticTable.id(), baseCleanedTime - startTime);
         // delete ttl files
-        Snapshot closestExpireSnapshot = getClosestExpireSnapshot(
+        long changeTTLPoint = startTime - changeDataTTL;
+        List<IcebergFileEntry> expiredDataFileEntries = getExpiredDataFileEntries(
             changeTable, System.currentTimeMillis() - changeDataTTL);
-        if (closestExpireSnapshot != null) {
-          List<DataFile> closestExpireDataFiles = getClosestExpireDataFiles(changeTable, closestExpireSnapshot);
-          deleteChangeFile(keyedArcticTable, closestExpireDataFiles, closestExpireSnapshot.sequenceNumber());
-        }
+        deleteChangeFile(keyedArcticTable, expiredDataFileEntries);
 
         // getRuntime valid files in the base store which shouldn't physically delete when expire the snapshot
         // in the change store
@@ -160,10 +154,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
         changeExclude.addAll(finalHiveLocations);
 
         long latestChangeFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(changeTable);
-        // keep ttl <= snapshot keep time to avoid getting expired snapshots(but can't getRuntime) when deleting files.
-        // if ttl > snapshot keep time, some files will not be deleted correctly.
-        long changeOlderThan = changeDataTTL <= changeSnapshotsKeepTime ?
-            startTime - changeSnapshotsKeepTime : startTime - changeDataTTL;
+        long changeOlderThan = changeTTLPoint;
         LOG.info("{} change table expire with latestFlinkCommitTime={}, olderThan={}", arcticTable.id(),
             latestChangeFlinkCommitTime, changeOlderThan);
         expireSnapshots(
@@ -214,10 +205,10 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
    * @return commit time of snapshot for optimizing
    */
   public static long fetchOptimizingSnapshotTime(UnkeyedTable table, TableRuntime tableRuntime) {
-    if (tableRuntime.getOptimizingStatus() != OptimizingStatus.IDLE) {
-      long currentSnapshotId = tableRuntime.getCurrentSnapshotId();
+    if (tableRuntime.getOptimizingStatus().isProcessing()) {
+      long targetSnapshotId = tableRuntime.getOptimizingProcess().getTargetSnapshotId();
       for (Snapshot snapshot : table.snapshots()) {
-        if (snapshot.snapshotId() == currentSnapshotId) {
+        if (snapshot.snapshotId() == targetSnapshotId) {
           return snapshot.timestampMillis();
         }
       }
@@ -258,31 +249,28 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
     LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
   }
 
-  public static Snapshot getClosestExpireSnapshot(UnkeyedTable changeTable, long ttl) {
-    if (changeTable.snapshots() == null) {
-      return null;
-    }
-    return Streams.stream(changeTable.snapshots())
-        .filter(snapshot -> snapshot.timestampMillis() <= ttl)
-        .min(Comparator.comparingLong(snapshot -> Math.abs(ttl - snapshot.timestampMillis())))
-        .orElse(null);
-  }
 
-  public static List<DataFile> getClosestExpireDataFiles(UnkeyedTable changeTable, Snapshot closestExpireSnapshot) {
-    List<DataFile> changeTTLDataFiles = new ArrayList<>();
-    long recentExpireSnapshotId = closestExpireSnapshot.snapshotId();
-    try (CloseableIterable<FileScanTask> fileScanTasks = changeTable.newScan()
-        .useSnapshot(recentExpireSnapshotId)
-        .planFiles()) {
-      fileScanTasks.forEach(fileScanTask -> changeTTLDataFiles.add(fileScanTask.file()));
+  public static List<IcebergFileEntry> getExpiredDataFileEntries(UnkeyedTable changeTable, long ttlPoint) {
+    TableEntriesScan entriesScan = TableEntriesScan.builder(changeTable)
+        .includeFileContent(FileContent.DATA)
+        .build();
+    List<IcebergFileEntry> changeTTLFileEntries = new ArrayList<>();
+
+    try (CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
+      entries.forEach(entry -> {
+        Snapshot snapshot = changeTable.snapshot(entry.getSnapshotId());
+        if (snapshot == null || snapshot.timestampMillis() < ttlPoint) {
+          changeTTLFileEntries.add(entry);
+        }
+      });
     } catch (IOException e) {
-      throw new UncheckedIOException("Failed to close table scan of " + changeTable.name(), e);
+      throw new UncheckedIOException("Failed to close manifest entry scan of " + changeTable.name(), e);
     }
-    return changeTTLDataFiles;
+    return changeTTLFileEntries;
   }
 
-  public static void deleteChangeFile(KeyedTable keyedTable, List<DataFile> changeDataFiles, long sequenceNumber) {
-    if (CollectionUtils.isEmpty(changeDataFiles)) {
+  public static void deleteChangeFile(KeyedTable keyedTable, List<IcebergFileEntry> expiredDataFileEntries) {
+    if (CollectionUtils.isEmpty(expiredDataFileEntries)) {
       return;
     }
 
@@ -292,29 +280,34 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
       return;
     }
 
-    Map<String, List<DataFile>> partitionDataFileMap = changeDataFiles.stream()
-        .collect(Collectors.groupingBy(changeDataFile ->
-            keyedTable.spec().partitionToPath(changeDataFile.partition()), Collectors.toList()));
+    Map<String, List<IcebergFileEntry>> partitionDataFileMap = expiredDataFileEntries.stream()
+        .collect(Collectors.groupingBy(entry ->
+            keyedTable.spec().partitionToPath(entry.getFile().partition()), Collectors.toList()));
 
     List<DataFile> changeDeleteFiles = new ArrayList<>();
-    if (keyedTable.baseTable().spec().isUnpartitioned()) {
-      List<DataFile> partitionDataFiles =
-          partitionDataFileMap.get(keyedTable.spec().partitionToPath(changeDataFiles.get(0).partition()));
+    if (keyedTable.spec().isUnpartitioned()) {
+      List<IcebergFileEntry> partitionDataFiles =
+          partitionDataFileMap.get(keyedTable.spec().partitionToPath(
+              expiredDataFileEntries.get(0).getFile().partition()));
 
       Long optimizedSequence = partitionMaxTransactionId.get(TablePropertyUtil.EMPTY_STRUCT);
-      if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
+      if (optimizedSequence != null && CollectionUtils.isNotEmpty(partitionDataFiles)) {
         changeDeleteFiles.addAll(partitionDataFiles.stream()
-            .filter(dataFile -> sequenceNumber <= optimizedSequence)
+            .filter(entry -> FileNameRules.parseChangeTransactionId(
+                entry.getFile().path().toString(), entry.getSequenceNumber()) <= optimizedSequence)
+            .map(entry -> (DataFile) entry.getFile())
             .collect(Collectors.toList()));
       }
     } else {
       partitionMaxTransactionId.forEach((key, value) -> {
-        List<DataFile> partitionDataFiles =
-            partitionDataFileMap.get(keyedTable.baseTable().spec().partitionToPath(key));
+        List<IcebergFileEntry> partitionDataFiles =
+            partitionDataFileMap.get(keyedTable.spec().partitionToPath(key));
 
         if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
           changeDeleteFiles.addAll(partitionDataFiles.stream()
-              .filter(dataFile -> sequenceNumber <= value)
+              .filter(entry -> FileNameRules.parseChangeTransactionId(
+                  entry.getFile().path().toString(), entry.getSequenceNumber()) <= value)
+              .map(entry -> (DataFile) entry.getFile())
               .collect(Collectors.toList()));
         }
       });
@@ -323,6 +316,9 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
   }
 
   public static void tryClearChangeFiles(KeyedTable keyedTable, List<DataFile> changeFiles) {
+    if (CollectionUtils.isEmpty(changeFiles)) {
+      return;
+    }
     try {
       if (keyedTable.primaryKeySpec().primaryKeyExisted()) {
         for (int startIndex = 0; startIndex < changeFiles.size(); startIndex += DATA_FILE_LIST_SPLIT) {
