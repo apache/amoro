@@ -84,6 +84,10 @@
                     <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>org.eclipse.jetty.orbit</groupId>
+                    <artifactId>javax.servlet</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>javax.servlet</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
