@@ -262,7 +262,6 @@ public class HMSMockServer {
   public HiveMetaStoreClient getClient() {
     if (client == null) {
       try {
-        // this.client = new HiveMetaStoreClient(hiveConf);
         this.client = HMS_CLIENT_CTOR.newInstance(hiveConf);
       } catch (Exception e) {
         throw new RuntimeException(e);
