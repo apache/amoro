@@ -26,11 +26,13 @@ import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.flink.streaming.api.watermark.Watermark;
+import org.apache.iceberg.UpdateProperties;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.Duration;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
 
 public class TestAutomaticDoubleWriteStatus extends FlinkTestBase {
@@ -44,10 +46,13 @@ public class TestAutomaticDoubleWriteStatus extends FlinkTestBase {
   @Test
   public void testTableProperties() {
     tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
-
+    tableLoader.open();
+    ArcticTable arcticTable = tableLoader.loadArcticTable();
+    UpdateProperties up = arcticTable.updateProperties();
+    up.set(AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key(), "10");
+    up.commit();
     AutomaticDoubleWriteStatus status = new AutomaticDoubleWriteStatus(tableLoader, Duration.ofSeconds(10));
     status.open();
-    ArcticTable arcticTable = tableLoader.loadArcticTable();
 
     Assert.assertFalse(status.isDoubleWrite());
     status.processWatermark(new Watermark(System.currentTimeMillis() - 11 * 1000));
