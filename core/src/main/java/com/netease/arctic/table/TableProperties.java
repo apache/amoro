@@ -155,9 +155,6 @@ public class TableProperties {
   public static final String CHANGE_DATA_TTL = "change.data.ttl.minutes";
   public static final long CHANGE_DATA_TTL_DEFAULT = 10080; // 7 Days
 
-  public static final String CHANGE_SNAPSHOT_KEEP_MINUTES = "snapshot.change.keep.minutes";
-  public static final long CHANGE_SNAPSHOT_KEEP_MINUTES_DEFAULT = 10080; // 7 Days
-
   public static final String BASE_SNAPSHOT_KEEP_MINUTES = "snapshot.base.keep.minutes";
   public static final long BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT = 720; // 12 Hours
 

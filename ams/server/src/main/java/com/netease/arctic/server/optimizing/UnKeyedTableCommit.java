@@ -30,6 +30,7 @@ import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.OptimizingCommitException;
+import com.netease.arctic.server.exception.SnapshotNotFoundException;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
@@ -186,32 +187,8 @@ public class UnKeyedTableCommit {
       Set<DeleteFile> addDeleteFiles) throws OptimizingCommitException {
     try {
       Transaction transaction = icebergTable.newTransaction();
-      if (CollectionUtils.isNotEmpty(removedDataFiles) ||
-          CollectionUtils.isNotEmpty(addedDataFiles)) {
-        RewriteFiles dataFileRewrite = transaction.newRewrite();
-        // original snapshot might be expired
-        Snapshot targetSnapshot = table.asUnkeyedTable().snapshot(targetSnapshotId) == null ?
-            table.asUnkeyedTable().currentSnapshot() :
-            table.asUnkeyedTable().snapshot(targetSnapshotId);
-        if (targetSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
-          dataFileRewrite.validateFromSnapshot(targetSnapshot.snapshotId());
-          long sequenceNumber = targetSnapshot.sequenceNumber();
-          dataFileRewrite.rewriteFiles(removedDataFiles, addedDataFiles, sequenceNumber);
-        } else {
-          dataFileRewrite.rewriteFiles(removedDataFiles, addedDataFiles);
-        }
-        tagSnapshot(dataFileRewrite);
-        if (TableTypeUtil.isHive(table) && !needMoveFile2Hive()) {
-          dataFileRewrite.set(DELETE_UNTRACKED_HIVE_FILE, "true");
-        }
-        dataFileRewrite.commit();
-      }
-      if (CollectionUtils.isNotEmpty(addDeleteFiles)) {
-        RowDelta addDeleteFileRowDelta = transaction.newRowDelta();
-        addDeleteFiles.forEach(addDeleteFileRowDelta::addDeletes);
-        tagSnapshot(addDeleteFileRowDelta);
-        addDeleteFileRowDelta.commit();
-      }
+      rewriteDataFiles(transaction, removedDataFiles, addedDataFiles);
+      rewriteDeleteFiles(transaction, addDeleteFiles);
       transaction.commitTransaction();
     } catch (Exception e) {
       if (needMoveFile2Hive()) {
@@ -220,6 +197,40 @@ public class UnKeyedTableCommit {
       LOG.warn("Optimize commit table {} failed, give up commit.", table.id(), e);
       throw new OptimizingCommitException("unexpected commit error ", e);
     }
+  }
+
+  private void rewriteDataFiles(Transaction transaction, Set<DataFile> removedDataFiles, Set<DataFile> addedDataFiles) {
+    if (CollectionUtils.isEmpty(removedDataFiles) && CollectionUtils.isEmpty(addedDataFiles)) {
+      return;
+    }
+    RewriteFiles dataFileRewrite = transaction.newRewrite();
+    table.refresh();
+    Snapshot targetSnapshot = table.asUnkeyedTable().snapshot(targetSnapshotId);
+    if (targetSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID && targetSnapshot != null) {
+      dataFileRewrite.validateFromSnapshot(targetSnapshotId);
+      long sequenceNumber = targetSnapshot.sequenceNumber();
+      dataFileRewrite.rewriteFiles(removedDataFiles, addedDataFiles, sequenceNumber);
+    } else if (targetSnapshot == null) {
+      // original snapshot might be expired, have to plan files next time
+      throw new SnapshotNotFoundException(targetSnapshotId);
+    } else {
+      dataFileRewrite.rewriteFiles(removedDataFiles, addedDataFiles);
+    }
+    tagSnapshot(dataFileRewrite);
+    if (TableTypeUtil.isHive(table) && !needMoveFile2Hive()) {
+      dataFileRewrite.set(DELETE_UNTRACKED_HIVE_FILE, "true");
+    }
+    dataFileRewrite.commit();
+  }
+
+  private void rewriteDeleteFiles(Transaction transaction, Set<DeleteFile> addDeleteFiles) {
+    if (CollectionUtils.isEmpty(addDeleteFiles)) {
+      return;
+    }
+    RowDelta addDeleteFileRowDelta = transaction.newRowDelta();
+    addDeleteFiles.forEach(addDeleteFileRowDelta::addDeletes);
+    tagSnapshot(addDeleteFileRowDelta);
+    addDeleteFileRowDelta.commit();
   }
 
   protected <T> void tagSnapshot(SnapshotUpdate<T> snapshotUpdate) {

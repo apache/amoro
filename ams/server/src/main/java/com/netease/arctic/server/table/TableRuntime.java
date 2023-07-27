@@ -219,7 +219,7 @@ public class TableRuntime extends StatedPersistentBase {
     });
   }
 
-  public void completeProcess(boolean success) {
+  public void completeProcess(boolean success, boolean stop) {
     invokeConsisitency(() -> {
       OptimizingStatus originalStatus = optimizingStatus;
       currentStatusStartTime = System.currentTimeMillis();
@@ -234,7 +234,7 @@ public class TableRuntime extends StatedPersistentBase {
           lastFullOptimizingTime = optimizingProcess.getPlanTime();
         }
       }
-      if (processIterator != null && processIterator.hasNext()) {
+      if (!stop && processIterator != null && processIterator.hasNext()) {
         this.optimizingProcess = processIterator.next();
         this.processId = optimizingProcess.getProcessId();
         this.currentStatusStartTime = System.currentTimeMillis();

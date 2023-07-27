@@ -6,6 +6,7 @@ import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.OptimizingClosedException;
+import com.netease.arctic.server.exception.SnapshotNotFoundException;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
@@ -236,14 +237,22 @@ public class TableOptimizingProcess extends PersistentBase implements Optimizing
       endTime = System.currentTimeMillis();
       persistProcessCompleted(true);
     } catch (Exception e) {
-      LOG.warn("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
-      status = Status.FAILED;
-      failedReason = ExceptionUtil.getErrorMessage(e, 4000);
-      endTime = System.currentTimeMillis();
-      persistProcessCompleted(false);
+      setProcessFailed(e);
+      if (e.getCause() instanceof SnapshotNotFoundException) {
+        persistProcessCompleted(false, true);
+      } else {
+        persistProcessCompleted(false);
+      }
     } finally {
       lock.unlock();
     }
+  }
+
+  private void setProcessFailed(Exception e) {
+    LOG.warn("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
+    status = Status.FAILED;
+    failedReason = ExceptionUtil.getErrorMessage(e, 4000);
+    endTime = System.currentTimeMillis();
   }
 
   @Override
@@ -287,20 +296,24 @@ public class TableOptimizingProcess extends PersistentBase implements Optimizing
   }
 
   private void persistProcessCompleted(boolean success) {
+    persistProcessCompleted(success, false);
+  }
+
+  private void persistProcessCompleted(boolean success, boolean stop) {
     if (!success) {
       doAsTransaction(
           () -> taskMap.values().forEach(TaskRuntime::tryCanceling),
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.updateOptimizingProcess(tableRuntime.getTableIdentifier().getId(), processId, status, endTime,
                   getSummary(), getFailedReason())),
-          () -> tableRuntime.completeProcess(false)
+          () -> tableRuntime.completeProcess(false, stop)
       );
     } else {
       doAsTransaction(
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.updateOptimizingProcess(tableRuntime.getTableIdentifier().getId(), processId, status, endTime,
                   getSummary(), getFailedReason())),
-          () -> tableRuntime.completeProcess(true)
+          () -> tableRuntime.completeProcess(true, stop)
       );
     }
   }

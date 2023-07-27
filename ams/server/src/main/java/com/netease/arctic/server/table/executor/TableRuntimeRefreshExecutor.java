@@ -52,12 +52,14 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
   }
 
   private void tryEvaluatingPendingInput(TableRuntime tableRuntime, ArcticTable table) {
-    OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, table);
-    if (evaluator.isNecessary()) {
-      OptimizingEvaluator.PendingInput pendingInput = evaluator.getPendingInput();
-      logger.debug("{} optimizing is necessary and get pending input {}", tableRuntime.getTableIdentifier(),
-          pendingInput);
-      tableRuntime.setPendingInput(pendingInput);
+    if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
+      OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, table);
+      if (evaluator.isNecessary()) {
+        OptimizingEvaluator.PendingInput pendingInput = evaluator.getPendingInput();
+        logger.debug("{} optimizing is necessary and get pending input {}", tableRuntime.getTableIdentifier(),
+            pendingInput);
+        tableRuntime.setPendingInput(pendingInput);
+      }
     }
   }
 
@@ -66,18 +68,11 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     try {
       long snapshotBeforeRefresh = tableRuntime.getCurrentSnapshotId();
       long changeSnapshotBeforeRefresh = tableRuntime.getCurrentChangeSnapshotId();
-      boolean optimizingEnabledBeforeRefresh = tableRuntime.getOptimizingConfig().isEnabled();
       ArcticTable table = loadTable(tableRuntime);
       tableRuntime.refresh(table);
-      if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
-        boolean snapshotChanged = snapshotBeforeRefresh != tableRuntime.getCurrentSnapshotId() ||
-            changeSnapshotBeforeRefresh != tableRuntime.getCurrentChangeSnapshotId();
-        if (snapshotChanged || !optimizingEnabledBeforeRefresh) {
-          if (!snapshotChanged) {
-            logger.info("table {} self-optimizing just been enabled", tableRuntime.getTableIdentifier());
-          }
-          tryEvaluatingPendingInput(tableRuntime, table);
-        }
+      if (snapshotBeforeRefresh != tableRuntime.getCurrentSnapshotId() ||
+          changeSnapshotBeforeRefresh != tableRuntime.getCurrentChangeSnapshotId()) {
+        tryEvaluatingPendingInput(tableRuntime, table);
       }
     } catch (Throwable throwable) {
       logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);
