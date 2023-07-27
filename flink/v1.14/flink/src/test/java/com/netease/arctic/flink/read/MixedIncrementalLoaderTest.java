@@ -30,7 +30,7 @@ import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.flink.write.FlinkTaskWriterBaseTest;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.curator.shaded.com.google.common.collect.Lists;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableSchema;
