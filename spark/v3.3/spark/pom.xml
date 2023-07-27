@@ -37,7 +37,6 @@
         <hive.version>2.3.9</hive.version>
         <root.dir>${project.basedir}</root.dir>
         <spark.mysql.version>5.1.40</spark.mysql.version>
-        <guava.version>14.0.1</guava.version>
         <spark.version>3.3.2</spark.version>
         <scala.version>2.12.15</scala.version>
     </properties>
@@ -196,6 +195,10 @@
                     <groupId>javax.servlet</groupId>
                     <artifactId>servlet-api</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -296,6 +299,12 @@
             <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -350,6 +359,10 @@
                 </exclusion>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.codehaus.janino</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
