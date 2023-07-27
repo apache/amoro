@@ -16,6 +16,9 @@
  * limitations under the License.
  */
 
+import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +37,16 @@ public class TestFindDuplicateRecords {
   }
 
   public void test(TableIdentifier tableIdentifier) {
-    
+    ArcticTable arcticTable = loadTable(tableIdentifier);
+    // TODO
+    arcticTable.asUnkeyedTable();
+  }
+
+  private ArcticTable loadTable(TableIdentifier tableIdentifier) {
+    String catalogUrl = thriftUrl + "/" + tableIdentifier.getCatalog();
+
+    // 1.scan files
+    ArcticCatalog load = CatalogLoader.load(catalogUrl);
+    return load.loadTable(tableIdentifier);
   }
 }
