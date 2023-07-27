@@ -47,7 +47,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -84,7 +83,6 @@ public class BasicLookupFunction<T> implements Serializable {
   private final DataIteratorReaderFunction<T> readerFunction;
 
   private transient ScheduledExecutorService executor;
-  private transient ScheduledFuture scheduledFuture;
   private final AtomicReference<Throwable> failureThrowable = new AtomicReference<>();
 
   public BasicLookupFunction(
@@ -131,7 +129,7 @@ public class BasicLookupFunction<T> implements Serializable {
    * @param context
    */
   public void init(FunctionContext context) {
-    LOG.info("lookup function rowDtaPredicate: {}.", predicate);
+    LOG.info("lookup function row data predicate: {}.", predicate);
     MetricGroup metricGroup = context.getMetricGroup().addGroup(GROUP_NAME_LOOKUP);
     if (arcticTable == null) {
       arcticTable = loadArcticTable(loader).asKeyedTable();
@@ -170,20 +168,19 @@ public class BasicLookupFunction<T> implements Serializable {
     this.executor =
         Executors.newScheduledThreadPool(
             1, new ExecutorThreadFactory("Arctic-lookup-scheduled-loader"));
-    this.scheduledFuture =
-        this.executor.scheduleWithFixedDelay(
-            () -> {
-              try {
-                checkAndLoad();
-              } catch (Exception e) {
-                // fail the lookup and skip the rest of the items
-                // if the failure handler decides to throw an exception
-                failureThrowable.compareAndSet(null, e);
-              }
-            },
-            0,
-            reloadIntervalSeconds,
-            TimeUnit.MILLISECONDS);
+    this.executor.scheduleWithFixedDelay(
+        () -> {
+          try {
+            checkAndLoad();
+          } catch (Exception e) {
+            // fail the lookup and skip the rest of the items
+            // if the failure handler decides to throw an exception
+            failureThrowable.compareAndSet(null, e);
+          }
+        },
+        0,
+        reloadIntervalSeconds,
+        TimeUnit.MILLISECONDS);
   }
 
   public List<T> lookup(Object... values) {
@@ -246,12 +243,8 @@ public class BasicLookupFunction<T> implements Serializable {
     if (kvTable != null) {
       kvTable.close();
     }
-    if (scheduledFuture != null) {
-      scheduledFuture.cancel(true);
-      scheduledFuture.isCancelled();
-      if (executor != null) {
-        executor.shutdownNow();
-      }
+    if (executor != null) {
+      executor.shutdownNow();
     }
   }
 

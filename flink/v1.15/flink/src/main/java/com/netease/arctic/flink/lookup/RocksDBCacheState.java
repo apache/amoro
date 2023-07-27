@@ -71,7 +71,6 @@ public abstract class RocksDBCacheState<V> {
   private ExecutorService writeRocksDBService;
   private final AtomicBoolean initialized = new AtomicBoolean(false);
   protected Queue<LookupRecord> lookupRecordsQueue;
-  private final int maxQueueSize = 5000000;
 
   private final int writeRocksDBThreadNum;
   private List<Future<?>> writeRocksDBThreadFutures;
@@ -149,13 +148,7 @@ public abstract class RocksDBCacheState<V> {
 
   protected void putIntoQueue(LookupRecord lookupRecord) {
     Preconditions.checkNotNull(lookupRecord);
-//    try {
-    // Putting the record into the queue, if the queue is full, it will block.
     lookupRecordsQueue.add(lookupRecord);
-//    } catch (InterruptedException e) {
-//      Thread.currentThread().interrupt();
-//      throw new FlinkRuntimeException(e);
-//    }
   }
 
   /**

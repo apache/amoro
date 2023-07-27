@@ -38,13 +38,6 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
   public int size;
 
   /**
-   * Construct a new ByteArrayWrapper with no data.
-   */
-  public ByteArrayWrapper() {
-    // leave bytes null, don't allocate twice
-  }
-
-  /**
    * Construct a new ByteArrayWrapper from a byte array and size.
    *
    * @param bytesToAdopt the byte array to adopt
@@ -82,11 +75,11 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
    */
   public ByteArrayWrapper ensureCapacity(int capacity) {
     if (bytes == null || bytes.length < capacity) {
-      byte[] newbytes = new byte[capacity];
+      byte[] newBytes = new byte[capacity];
       if (bytes != null) {
-        copyBytes(bytes, 0, newbytes, 0, size);
+        copyBytes(bytes, 0, newBytes, 0, size);
       }
-      bytes = newbytes;
+      bytes = newBytes;
     }
     return this;
   }
@@ -240,23 +233,23 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
 
 
   /**
-   * Copies the contents of src byte array from offset srcoff to the
-   * target of tgt byte array at the offset tgtoff.
+   * Copies the contents of src byte array from offset srcOff to the
+   * target of target byte array at the offset targetOff.
    *
-   * @param src    source byte array to copy from
-   * @param srcoff start offset of src to copy from
-   * @param tgt    target byte array to copy to
-   * @param tgtoff start offset of tgt to copy to
-   * @param length size of contents to copy
+   * @param src       source byte array to copy from
+   * @param srcOff    start offset of src to copy from
+   * @param target    target byte array to copy to
+   * @param targetOff start offset of target to copy to
+   * @param length    size of contents to copy
    */
-  private static void copyBytes(byte[] src, int srcoff, byte[] tgt,
-                                int tgtoff, int length) {
+  private static void copyBytes(byte[] src, int srcOff, byte[] target,
+                                int targetOff, int length) {
     if (length < 64) {
-      for (int i = srcoff, n = tgtoff; --length >= 0; ++i, ++n) {
-        tgt[n] = src[i];
+      for (int i = srcOff, n = targetOff; --length >= 0; ++i, ++n) {
+        target[n] = src[i];
       }
     } else {
-      System.arraycopy(src, srcoff, tgt, tgtoff, length);
+      System.arraycopy(src, srcOff, target, targetOff, length);
     }
   }
 }

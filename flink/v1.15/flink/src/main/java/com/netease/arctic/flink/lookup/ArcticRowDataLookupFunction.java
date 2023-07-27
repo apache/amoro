@@ -36,6 +36,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Predicate;
 
+/**
+ * A lookup function for {@link RowData} type.
+ */
 public class ArcticRowDataLookupFunction extends TableFunction<RowData> {
   private static final long serialVersionUID = -7694050999266540499L;
   private final BasicLookupFunction<RowData> basicLookupFunction;

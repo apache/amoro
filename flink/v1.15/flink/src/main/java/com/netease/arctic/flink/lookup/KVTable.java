@@ -54,8 +54,8 @@ public interface KVTable<T> extends Serializable, Closeable {
   /**
    * Initial the {@link  KVTable} by the MoR dataStream.
    *
-   * @param dataStream
-   * @throws IOException
+   * @param dataStream the data stream for loading into the {@link KVTable}.
+   * @throws IOException Serialize the rowData failed.
    */
   void initialize(Iterator<T> dataStream) throws IOException;
 

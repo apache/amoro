@@ -68,7 +68,7 @@ public class RocksDBBackend {
       Preconditions.checkNotNull(BACKEND_BASE_DIR, "The default rocksdb path is null.");
       return getOrCreateInstance(BACKEND_BASE_DIR);
     }
-    return createIfNull(backendBaseDir, null);
+    return createIfAbsent(backendBaseDir, null);
   }
 
   public static RocksDBBackend getOrCreateInstance(@Nullable String backendBaseDir, @Nullable Integer ttlSeconds) {
@@ -76,7 +76,7 @@ public class RocksDBBackend {
       Preconditions.checkNotNull(BACKEND_BASE_DIR, "The default rocksdb path is null.");
       return getOrCreateInstance(BACKEND_BASE_DIR, ttlSeconds);
     }
-    return createIfNull(backendBaseDir, ttlSeconds);
+    return createIfAbsent(backendBaseDir, ttlSeconds);
   }
 
   private final Map<String, ColumnFamilyHandle> handleMap = new HashMap<>();
@@ -86,7 +86,7 @@ public class RocksDBBackend {
   private final String rocksDBBasePath;
   private long totalBytesWritten;
 
-  private static RocksDBBackend createIfNull(@Nullable String backendBaseDir, @Nullable Integer ttlSeconds) {
+  private static RocksDBBackend createIfAbsent(@Nullable String backendBaseDir, @Nullable Integer ttlSeconds) {
     RocksDBBackend backend = instance.get();
     if (backend == null) {
       backend = new RocksDBBackend(backendBaseDir, ttlSeconds);

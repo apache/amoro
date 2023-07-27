@@ -19,10 +19,10 @@
 package com.netease.arctic.flink.lookup;
 
 public class LookupRecord {
-  private byte[] keyBytes;
-  private byte[] valueBytes;
+  private final byte[] keyBytes;
+  private final byte[] valueBytes;
 
-  private OpType opType;
+  private final OpType opType;
 
   private LookupRecord(OpType opType, byte[] keyBytes, byte[] valueBytes) {
     this.keyBytes = keyBytes;

@@ -28,8 +28,8 @@ import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.types.RowKind;
 
 public class KeyRowData implements RowData {
-  private int[] keyIndexMapping;
-  private RowData rowData;
+  private final int[] keyIndexMapping;
+  private final RowData rowData;
 
   public KeyRowData(int[] keyIndexMapping, RowData rowData) {
     this.keyIndexMapping = keyIndexMapping;

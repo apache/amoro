@@ -70,6 +70,13 @@ public class SchemaUtil {
     return new Schema(schemaId, fields, identifierFieldIds);
   }
 
+  /**
+   * Convert an Iceberg Schema {@link Schema} to a {@link Schema} based on the given fieldNames.
+   *
+   * @param baseSchema a Schema on which loading is based
+   * @param fieldNames a list of field names
+   * @return a new Schema on which contain the fieldNames of the base schema.
+   */
   public static Schema convertFieldsToSchema(Schema baseSchema, List<String> fieldNames) {
     Preconditions.checkNotNull(fieldNames);
     Preconditions.checkNotNull(baseSchema);
