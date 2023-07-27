@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.writer;
 
-import org.apache.curator.shaded.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
