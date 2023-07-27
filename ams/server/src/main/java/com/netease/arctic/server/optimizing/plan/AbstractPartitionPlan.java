@@ -399,4 +399,67 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
           partition, input, properties.getProperties());
     }
   }
+
+  /**
+   * util class for bin-pack
+   */
+  protected static class FileTask {
+    private final IcebergDataFile file;
+    private final List<IcebergContentFile<?>> deleteFiles;
+    private final boolean isFragment;
+
+    public FileTask(IcebergDataFile file, List<IcebergContentFile<?>> deleteFiles, boolean isFragment) {
+      this.file = file;
+      this.deleteFiles = deleteFiles;
+      this.isFragment = isFragment;
+    }
+
+    public IcebergDataFile getFile() {
+      return file;
+    }
+
+    public List<IcebergContentFile<?>> getDeleteFiles() {
+      return deleteFiles;
+    }
+
+    public boolean isFragment() {
+      return isFragment;
+    }
+
+    public boolean isSegment() {
+      return !isFragment;
+    }
+  }
+
+  protected class BinPackingTaskSplitter implements TaskSplitter {
+
+    @Override
+    public List<SplitTask> splitTasks(int targetTaskCount) {
+      // bin-packing
+      List<FileTask> allDataFiles = Lists.newArrayList();
+      segmentFiles.forEach((dataFile, deleteFiles) ->
+          allDataFiles.add(new FileTask(dataFile, deleteFiles, false)));
+      fragmentFiles.forEach((dataFile, deleteFiles) ->
+          allDataFiles.add(new FileTask(dataFile, deleteFiles, true)));
+
+      long taskSize = config.getTargetSize();
+      Long sum = allDataFiles.stream().map(f -> f.getFile().fileSizeInBytes()).reduce(0L, Long::sum);
+      int taskCnt = (int) (sum / taskSize) + 1;
+      List<List<FileTask>> packed = new BinPacking.ListPacker<FileTask>(taskSize, taskCnt, true)
+          .pack(allDataFiles, f -> f.getFile().fileSizeInBytes());
+
+      // collect
+      List<SplitTask> results = Lists.newArrayList();
+      for (List<FileTask> fileTasks : packed) {
+        Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
+        Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
+        fileTasks.stream().filter(FileTask::isFragment)
+            .forEach(f -> fragmentFiles.put(f.getFile(), f.getDeleteFiles()));
+        fileTasks.stream().filter(FileTask::isSegment)
+            .forEach(f -> segmentFiles.put(f.getFile(), f.getDeleteFiles()));
+        results.add(new SplitTask(fragmentFiles, segmentFiles));
+      }
+      return results;
+    }
+  }
 }

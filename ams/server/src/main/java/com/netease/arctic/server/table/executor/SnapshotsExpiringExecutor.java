@@ -22,7 +22,6 @@ import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.scan.TableEntriesScan;
-import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.HiveLocationUtil;
@@ -206,10 +205,10 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
    * @return commit time of snapshot for optimizing
    */
   public static long fetchOptimizingSnapshotTime(UnkeyedTable table, TableRuntime tableRuntime) {
-    if (tableRuntime.getOptimizingStatus() != OptimizingStatus.IDLE) {
-      long currentSnapshotId = tableRuntime.getCurrentSnapshotId();
+    if (tableRuntime.getOptimizingStatus().isProcessing()) {
+      long targetSnapshotId = tableRuntime.getOptimizingProcess().getTargetSnapshotId();
       for (Snapshot snapshot : table.snapshots()) {
-        if (snapshot.snapshotId() == currentSnapshotId) {
+        if (snapshot.snapshotId() == targetSnapshotId) {
           return snapshot.timestampMillis();
         }
       }
