@@ -33,7 +33,7 @@
     <url>https://arctic.netease.com</url>
 
     <properties>
-        <rocksdb.version>5.17.2</rocksdb.version>
+        <rocksdb.version>7.10.2</rocksdb.version>
         <kryo.version>2.24.0</kryo.version>
         <jol.version>0.16</jol.version>
     </properties>

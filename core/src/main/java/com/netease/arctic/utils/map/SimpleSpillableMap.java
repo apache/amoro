@@ -111,6 +111,11 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
       this.currentInMemoryMapSize = this.memoryMap.size() * this.estimatedPayloadSize;
     }
 
+    if (memoryMap.containsKey(key)) {
+      memoryMap.put(key, value);
+      return;
+    }
+
     if (this.currentInMemoryMapSize < maxInMemorySizeInBytes) {
       if (memoryMap.put(key, value) == null) {
         currentInMemoryMapSize += this.estimatedPayloadSize;
