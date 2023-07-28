@@ -132,9 +132,8 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
     if (memoryMap.containsKey(key)) {
       currentInMemoryMapSize -= estimatedPayloadSize;
       memoryMap.remove(key);
-    } else {
-      diskBasedMap.ifPresent(map -> map.delete(key));
     }
+    diskBasedMap.ifPresent(map -> map.delete(key));
   }
 
   public void close() {

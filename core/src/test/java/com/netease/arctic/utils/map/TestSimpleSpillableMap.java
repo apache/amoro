@@ -1,7 +1,12 @@
 package com.netease.arctic.utils.map;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import java.util.Comparator;
+import java.util.Set;
+import org.checkerframework.checker.units.qual.K;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -83,6 +88,35 @@ public class TestSimpleSpillableMap {
         });
   }
 
+  @Test
+  public void testSpillableMapRePut() {
+    SimpleSpillableMap<Key, Value> actualMap = new SimpleSpillableMap<>(
+        (keySize + valueSize),
+        null,
+        new DefaultSizeEstimator<>(),
+        new DefaultSizeEstimator<>());
+
+    Key k1 = new Key();
+    Value v1 = new Value();
+    Key k2 = new Key();
+    Value v2 = new Value();
+
+    actualMap.put(k1, v1);
+    actualMap.put(k2, v2);
+
+    // remove k1 from memory
+    actualMap.delete(k1);
+    Assert.assertEquals(v2, actualMap.get(k2));
+    // put a new value for k2
+    Value v3 = new Value();
+    actualMap.put(k2, v3);
+    Assert.assertEquals(v3, actualMap.get(k2));
+
+    actualMap.delete(k2);
+    // should not exist in memory or on disk
+    Assert.assertNull(actualMap.get(k2));
+  }
+
   private SimpleSpillableMap<Key, Value> testMap(long expectMemorySize, int expectKeyCount) {
     SimpleSpillableMap<Key, Value> actualMap = new SimpleSpillableMap<>(expectMemorySize * (keySize + valueSize),
         null, new DefaultSizeEstimator<>(), new DefaultSizeEstimator<>());
@@ -110,8 +144,6 @@ public class TestSimpleSpillableMap {
 
   private static class Key implements Serializable {
     String id = UUID.randomUUID().toString();
-
-    Long num = random.nextLong();
 
     @Override
     public int hashCode() {
