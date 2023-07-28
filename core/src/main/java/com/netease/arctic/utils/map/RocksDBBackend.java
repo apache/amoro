@@ -21,7 +21,6 @@ package com.netease.arctic.utils.map;
 import com.netease.arctic.ArcticIOException;
 import com.netease.arctic.utils.LocalFileUtil;
 import com.netease.arctic.utils.SerializationUtil;
-import org.apache.commons.lang.Validate;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.rocksdb.AbstractImmutableNativeReference;
@@ -135,7 +134,7 @@ public class RocksDBBackend {
         rocksDB = RocksDB.open(dbOptions, rocksDBBasePath, managedColumnFamilies, managedHandles);
       }
 
-      Validate.isTrue(managedHandles.size() == managedColumnFamilies.size(),
+      Preconditions.checkArgument(managedHandles.size() == managedColumnFamilies.size(),
           "Unexpected number of handles are returned");
       for (int index = 0; index < managedHandles.size(); index++) {
         ColumnFamilyHandle handle = managedHandles.get(index);
@@ -143,7 +142,7 @@ public class RocksDBBackend {
         String familyNameFromHandle = new String(handle.getName());
         String familyNameFromDescriptor = new String(descriptor.getName());
 
-        Validate.isTrue(familyNameFromDescriptor.equals(familyNameFromHandle),
+        Preconditions.checkArgument(familyNameFromDescriptor.equals(familyNameFromHandle),
             "Family Handles not in order with descriptors");
         handleMap.put(familyNameFromHandle, handle);
         descriptorMap.put(familyNameFromDescriptor, descriptor);
@@ -200,7 +199,7 @@ public class RocksDBBackend {
   @VisibleForTesting
   public <K extends Serializable, T extends Serializable> void put(String columnFamilyName, K key, T value) {
     try {
-      Validate.isTrue(key != null && value != null,
+      Preconditions.checkArgument(key != null && value != null,
           "values or keys in rocksdb can not be null!");
       byte[] payload = serializePayload(value);
       rocksDB.put(handleMap.get(columnFamilyName), SerializationUtil.kryoSerialize(key), payload);
@@ -218,10 +217,10 @@ public class RocksDBBackend {
    */
   public void put(String columnFamilyName, byte[] key, byte[] value) {
     try {
-      Validate.isTrue(key != null && value != null,
+      Preconditions.checkArgument(key != null && value != null,
           "values or keys in rocksdb can not be null!");
       ColumnFamilyHandle cfHandler = handleMap.get(columnFamilyName);
-      Validate.isTrue(cfHandler != null, "column family " +
+      Preconditions.checkArgument(cfHandler != null, "column family " +
           columnFamilyName + " does not exists in rocksdb");
       rocksDB.put(cfHandler, key, payload(value));
     } catch (Exception e) {
@@ -231,9 +230,9 @@ public class RocksDBBackend {
 
   public void put(ColumnFamilyHandle columnFamilyHandle, byte[] key, byte[] value) {
     try {
-      Validate.isTrue(key != null && value != null,
+      Preconditions.checkArgument(key != null && value != null,
           "values or keys in rocksdb can not be null!");
-      Validate.isTrue(columnFamilyHandle != null, "Column family handler couldn't be null.");
+      Preconditions.checkArgument(columnFamilyHandle != null, "Column family handler couldn't be null.");
       rocksDB.put(columnFamilyHandle, key, payload(value));
     } catch (Exception e) {
       throw new ArcticIOException(e);
@@ -249,7 +248,7 @@ public class RocksDBBackend {
   @VisibleForTesting
   public <K extends Serializable> void delete(String columnFamilyName, K key) {
     try {
-      Validate.isTrue(key != null, "keys in rocksdb can not be null!");
+      Preconditions.checkArgument(key != null, "keys in rocksdb can not be null!");
       rocksDB.delete(handleMap.get(columnFamilyName), SerializationUtil.kryoSerialize(key));
     } catch (Exception e) {
       throw new ArcticIOException(e);
@@ -264,7 +263,7 @@ public class RocksDBBackend {
    */
   public void delete(String columnFamilyName, byte[] key) {
     try {
-      Validate.isTrue(key != null, "keys in rocksdb can not be null!");
+      Preconditions.checkArgument(key != null, "keys in rocksdb can not be null!");
       rocksDB.delete(handleMap.get(columnFamilyName), key);
     } catch (Exception e) {
       throw new ArcticIOException(e);
@@ -279,9 +278,9 @@ public class RocksDBBackend {
    */
   @VisibleForTesting
   public <K extends Serializable, T extends Serializable> T get(String columnFamilyName, K key) {
-    Validate.isTrue(!closed);
+    Preconditions.checkArgument(!closed);
     try {
-      Validate.isTrue(key != null, "keys in rocksdb can not be null!");
+      Preconditions.checkArgument(key != null, "keys in rocksdb can not be null!");
       byte[] val = rocksDB.get(handleMap.get(columnFamilyName), SerializationUtil.kryoSerialize(key));
       return val == null ? null : SerializationUtil.kryoDeserialize(val);
     } catch (Exception e) {
@@ -296,23 +295,21 @@ public class RocksDBBackend {
    * @param key              Key to be retrieved
    */
   public byte[] get(String columnFamilyName, byte[] key) {
-    Validate.isTrue(!closed);
+    Preconditions.checkArgument(!closed);
     try {
-      Validate.isTrue(key != null, "keys in rocksdb can not be null!");
-      byte[] val = rocksDB.get(handleMap.get(columnFamilyName), key);
-      return val;
+      Preconditions.checkArgument(key != null, "keys in rocksdb can not be null!");
+      return rocksDB.get(handleMap.get(columnFamilyName), key);
     } catch (Exception e) {
       throw new ArcticIOException(e);
     }
   }
 
   public byte[] get(ColumnFamilyHandle columnFamilyHandle, byte[] key) {
-    Validate.isTrue(!closed);
+    Preconditions.checkArgument(!closed);
     try {
-      Validate.isTrue(key != null, "keys in rocksdb can not be null!");
-      Validate.notNull(columnFamilyHandle, "Column Family Handle couldn't be null!");
-      byte[] val = rocksDB.get(columnFamilyHandle, key);
-      return val;
+      Preconditions.checkArgument(key != null, "keys in rocksdb can not be null!");
+      Preconditions.checkNotNull(columnFamilyHandle, "Column Family Handle couldn't be null!");
+      return rocksDB.get(columnFamilyHandle, key);
     } catch (Exception e) {
       throw new ArcticIOException(e);
     }
@@ -363,7 +360,7 @@ public class RocksDBBackend {
   }
 
   public void addColumnFamily(String columnFamilyName, ColumnFamilyOptions columnFamilyOptions) {
-    Validate.isTrue(!closed);
+    Preconditions.checkArgument(!closed);
 
     descriptorMap.computeIfAbsent(columnFamilyName, colFamilyName -> {
       try {
@@ -383,7 +380,7 @@ public class RocksDBBackend {
    * @param columnFamilyName Column Family Name
    */
   public void dropColumnFamily(String columnFamilyName) {
-    Validate.isTrue(!closed);
+    Preconditions.checkArgument(!closed);
 
     descriptorMap.computeIfPresent(columnFamilyName, (colFamilyName, descriptor) -> {
       ColumnFamilyHandle handle = handleMap.get(colFamilyName);
@@ -445,8 +442,8 @@ public class RocksDBBackend {
 
   public void setOptions(ColumnFamilyHandle columnFamilyHandle,
                          MutableColumnFamilyOptions mutableColumnFamilyOptions) {
-    Validate.notNull(columnFamilyHandle);
-    Validate.notNull(mutableColumnFamilyOptions);
+    Preconditions.checkNotNull(columnFamilyHandle);
+    Preconditions.checkNotNull(mutableColumnFamilyOptions);
     try {
       rocksDB.setOptions(columnFamilyHandle, mutableColumnFamilyOptions);
     } catch (RocksDBException e) {

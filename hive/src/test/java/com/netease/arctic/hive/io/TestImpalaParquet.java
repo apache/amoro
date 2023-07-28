@@ -18,7 +18,6 @@
 
 package com.netease.arctic.hive.io;
 
-import com.google.common.collect.Iterators;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
@@ -28,6 +27,7 @@ import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.mapping.MappedField;
 import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
 import org.junit.Test;
@@ -48,7 +48,7 @@ public class TestImpalaParquet {
     NameMapping mapping = NameMapping.of(MappedField.of(1, "str"));
     Schema schema = new Schema(Types.NestedField.of(1, true, "str", Types.StringType.get()));
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
-        Files.localInput(loadParquetFilePath()))
+            Files.localInput(loadParquetFilePath()))
         .project(schema)
         .withNameMapping(mapping)
         .createReaderFunc(fileSchema -> AdaptHiveGenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
@@ -64,7 +64,7 @@ public class TestImpalaParquet {
     NameMapping mapping = NameMapping.of(MappedField.of(1, "str"));
     Schema schema = new Schema(Types.NestedField.of(1, true, "str", Types.StringType.get()));
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
-        Files.localInput(loadParquetFilePath()))
+            Files.localInput(loadParquetFilePath()))
         .project(schema)
         .withNameMapping(mapping)
         .filter(Expressions.in("str", "aa"))

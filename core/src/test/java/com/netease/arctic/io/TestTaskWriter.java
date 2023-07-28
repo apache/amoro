@@ -18,7 +18,6 @@
 
 package com.netease.arctic.io;
 
-import com.google.common.collect.Sets;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.DataFileTestHelpers;
 import com.netease.arctic.TableTestHelper;
@@ -42,6 +41,7 @@ import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -189,9 +189,8 @@ public class TestTaskWriter extends TableTestBase {
     Assert.assertEquals(Sets.newHashSet(expectRecord), Sets.newHashSet(readChangeRecords));
   }
 
-
   @Test
-  public void testOrderedWriterThrowException()  {
+  public void testOrderedWriterThrowException() {
     List<Record> insertRecords = Lists.newArrayList();
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(3, "jake", 0, "2022-02-01T23:00:00"));
