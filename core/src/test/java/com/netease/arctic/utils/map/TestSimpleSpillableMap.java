@@ -70,7 +70,7 @@ public class TestSimpleSpillableMap {
     Sets.newHashSet(expectedMap.keySet())
         .forEach(k -> {
           Value newValue = new Value();
-          actualMap.put(k ,newValue);
+          actualMap.put(k, newValue);
           expectedMap.put(k, newValue);
           assertSimpleMaps(actualMap, expectedMap);
         });
