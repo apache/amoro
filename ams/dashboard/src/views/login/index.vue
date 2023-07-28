@@ -1,7 +1,7 @@
 <template>
   <div class="login-wrap">
     <div class="img-logo">
-      <img src="@/assets/images/logo.svg" class="arctic-logo" alt="">
+      <img src="@/assets/images/logo-all1.svg" class="arctic-logo" alt="">
     </div>
     <a-form
       :model="formState"
@@ -37,7 +37,7 @@
         </a-button>
       </a-form-item>
     </a-form>
-    <p class="desc">{{$t('welecomeTip')}}</p>
+    <!-- <p class="desc">{{$t('welecomeTip')}}</p> -->
   </div>
 </template>
 
@@ -107,12 +107,14 @@ export default defineComponent({
 
 <style lang="less" scoped>
 .login-wrap {
-  padding-top: 120px;
   height: 100%;
   width: 400px;
   margin: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   .img-logo {
-    margin: auto;
+    // margin: auto;
     margin-bottom: 32px;
     text-align: center;
     .arctic-logo {

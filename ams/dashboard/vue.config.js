@@ -44,7 +44,7 @@ const devServer = {
       target: ENV_HOST[ENV],
       changeOrigin: true,
       onProxyReq (proxyReq) {
-        proxyReq.setHeader('cookie', 'JSESSIONID=node0ysv873zeac4m9exq89k14xud2.node0')
+        proxyReq.setHeader('cookie', 'JSESSIONID=---node0ysv873zeac4m9exq89k14xud2.node0')
       }
     }
   }
