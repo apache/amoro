@@ -33,7 +33,7 @@
     <url>https://arctic.netease.com</url>
 
     <properties>
-        <rocksdb.version>6.20.3-ververica-1.0</rocksdb.version>
+        <rocksdb.version>7.10.2</rocksdb.version>
         <kryo.version>2.24.0</kryo.version>
         <jol.version>0.16</jol.version>
     </properties>
@@ -46,8 +46,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.ververica</groupId>
-            <artifactId>frocksdbjni</artifactId>
+            <groupId>org.rocksdb</groupId>
+            <artifactId>rocksdbjni</artifactId>
             <version>${rocksdb.version}</version>
         </dependency>
 
