@@ -71,7 +71,6 @@ public class BasicLookupFunction<T> implements Serializable {
   private final Schema projectSchema;
   private final List<Expression> filters;
   private final ArcticTableLoader loader;
-  private boolean loading = false;
   private long nextLoadTime = Long.MIN_VALUE;
   private final long reloadIntervalSeconds;
   private MixedIncrementalLoader<T> incrementalLoader;
@@ -201,13 +200,8 @@ public class BasicLookupFunction<T> implements Serializable {
     if (nextLoadTime > System.currentTimeMillis()) {
       return;
     }
-    if (loading) {
-      LOG.info("Mixed table incremental loader is running.");
-      return;
-    }
     nextLoadTime = System.currentTimeMillis() + 1000 * reloadIntervalSeconds;
 
-    loading = true;
     long batchStart = System.currentTimeMillis();
     while (incrementalLoader.hasNext()) {
       long start = System.currentTimeMillis();
@@ -231,8 +225,6 @@ public class BasicLookupFunction<T> implements Serializable {
 
     LOG.info("{} table lookup loading, these batch tasks completed, cost {}ms.",
         arcticTable.name(), lookupLoadingTimeMs.get());
-
-    loading = false;
   }
 
   public KVTable<T> getKVTable() {

@@ -236,8 +236,8 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
       .key("lookup.reloading.interval")
       .durationType()
       .defaultValue(Duration.ofSeconds(10))
-      .withDescription("Configuration option for specifying the interval in seconds to reload lookup data in RocksDB.\n" +
-          "The default value is 10 seconds.");
+      .withDescription("Configuration option for specifying the interval in seconds to reload lookup data in RocksDB." +
+          "\nThe default value is 10 seconds.");
 
   public static final ConfigOption<Boolean> ROCKSDB_AUTO_COMPACTIONS = ConfigOptions
       .key("rocksdb.auto-compactions")
@@ -264,8 +264,8 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
       .key("rocksdb.block-cache.numShardBits")
       .intType()
       .defaultValue(-1)
-      .withDescription("Use the LRUCache strategy for blocks. The cache is sharded to 2^numShardBits shards, by hash of" +
-          " the key. Default is -1, means it is automatically determined: every shard will be at least 512KB and" +
+      .withDescription("Use the LRUCache strategy for blocks. The cache is sharded to 2^numShardBits shards, by hash " +
+          " of the key. Default is -1, means it is automatically determined: every shard will be at least 512KB and" +
           " number of shard bits will not exceed 6.");
 
 

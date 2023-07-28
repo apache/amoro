@@ -207,14 +207,14 @@ public class FlinkTypeSystem extends RelDataTypeSystemImpl {
    * precision/scale instead.
    */
   private RelDataType adjustType(RelDataTypeFactory typeFactory, RelDataType relDataType) {
-    return RelDataTypeFactoryImpl.isJavaType(relDataType)
-        ? typeFactory.decimalOf(relDataType)
+    return RelDataTypeFactoryImpl.isJavaType(relDataType) ?
+        typeFactory.decimalOf(relDataType)
         : relDataType;
   }
 
   private boolean canDeriveDecimal(RelDataType type1, RelDataType type2) {
-    return SqlTypeUtil.isExactNumeric(type1)
-        && SqlTypeUtil.isExactNumeric(type2)
-        && (SqlTypeUtil.isDecimal(type1) || SqlTypeUtil.isDecimal(type2));
+    return SqlTypeUtil.isExactNumeric(type1) &&
+        SqlTypeUtil.isExactNumeric(type2) &&
+        (SqlTypeUtil.isDecimal(type1) || SqlTypeUtil.isDecimal(type2));
   }
 }

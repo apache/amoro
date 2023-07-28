@@ -249,6 +249,17 @@ public class DateTimeUtils {
     return time + LOCAL_TZ.getOffset(time);
   }
 
+  public static int toInternal(LocalDate date) {
+    return ymdToUnixDate(date.getYear(), date.getMonthValue(), date.getDayOfMonth());
+  }
+
+  public static int toInternal(LocalTime time) {
+    return time.getHour() * (int) MILLIS_PER_HOUR +
+        time.getMinute() * (int) MILLIS_PER_MINUTE +
+        time.getSecond() * (int) MILLIS_PER_SECOND +
+        time.getNano() / 1000_000;
+  }
+
   // --------------------------------------------------------------------------------------------
   // Java 8 time conversion
   // --------------------------------------------------------------------------------------------
@@ -283,10 +294,6 @@ public class DateTimeUtils {
     return LocalDate.of(year, month, day);
   }
 
-  public static int toInternal(LocalDate date) {
-    return ymdToUnixDate(date.getYear(), date.getMonthValue(), date.getDayOfMonth());
-  }
-
   private static int ymdToUnixDate(int year, int month, int day) {
     final int julian = ymdToJulian(year, month, day);
     return julian - EPOCH_JULIAN;
@@ -309,13 +316,6 @@ public class DateTimeUtils {
     return LocalTime.of(h, m, s, ms * 1000_000);
   }
 
-  public static int toInternal(LocalTime time) {
-    return time.getHour() * (int) MILLIS_PER_HOUR
-        + time.getMinute() * (int) MILLIS_PER_MINUTE
-        + time.getSecond() * (int) MILLIS_PER_SECOND
-        + time.getNano() / 1000_000;
-  }
-
   public static LocalDateTime toLocalDateTime(long timestamp) {
     int date = (int) (timestamp / MILLIS_PER_DAY);
     int time = (int) (timestamp % MILLIS_PER_DAY);
@@ -326,27 +326,6 @@ public class DateTimeUtils {
     LocalDate localDate = toLocalDate(date);
     LocalTime localTime = toLocalTime(time);
     return LocalDateTime.of(localDate, localTime);
-  }
-
-  public static long toTimestampMillis(LocalDateTime dateTime) {
-    return unixTimestamp(
-        dateTime.getYear(),
-        dateTime.getMonthValue(),
-        dateTime.getDayOfMonth(),
-        dateTime.getHour(),
-        dateTime.getMinute(),
-        dateTime.getSecond(),
-        dateTime.getNano() / 1000_000);
-  }
-
-  private static long unixTimestamp(
-      int year, int month, int day, int hour, int minute, int second, int mills) {
-    final int date = ymdToUnixDate(year, month, day);
-    return (long) date * MILLIS_PER_DAY
-        + (long) hour * MILLIS_PER_HOUR
-        + (long) minute * MILLIS_PER_MINUTE
-        + (long) second * MILLIS_PER_SECOND
-        + mills;
   }
 
   // --------------------------------------------------------------------------------------------
@@ -365,11 +344,11 @@ public class DateTimeUtils {
         return timestampDataFromEpochMills(v);
       default:
         throw new TableException(
-            "The precision value '"
-                + precision
-                + "' for function "
-                + "TO_TIMESTAMP_LTZ(numeric, precision) is unsupported,"
-                + " the supported value is '0' for second or '3' for millisecond.");
+            "The precision value '" +
+                precision +
+                "' for function " +
+                "TO_TIMESTAMP_LTZ(numeric, precision) is unsupported," +
+                " the supported value is '0' for second or '3' for millisecond.");
     }
   }
 
@@ -385,11 +364,11 @@ public class DateTimeUtils {
         return timestampDataFromEpochMills((long) v);
       default:
         throw new TableException(
-            "The precision value '"
-                + precision
-                + "' for function "
-                + "TO_TIMESTAMP_LTZ(numeric, precision) is unsupported,"
-                + " the supported value is '0' for second or '3' for millisecond.");
+            "The precision value '" +
+                precision +
+                "' for function " +
+                "TO_TIMESTAMP_LTZ(numeric, precision) is unsupported," +
+                " the supported value is '0' for second or '3' for millisecond.");
     }
   }
 
@@ -398,19 +377,19 @@ public class DateTimeUtils {
     switch (precision) {
       case 0:
         epochMills =
-            v.toBigDecimal().setScale(0, RoundingMode.DOWN).longValue()
-                * MILLIS_PER_SECOND;
+            v.toBigDecimal().setScale(0, RoundingMode.DOWN).longValue() *
+                MILLIS_PER_SECOND;
         return timestampDataFromEpochMills(epochMills);
       case 3:
         epochMills = toMillis(v);
         return timestampDataFromEpochMills(epochMills);
       default:
         throw new TableException(
-            "The precision value '"
-                + precision
-                + "' for function "
-                + "TO_TIMESTAMP_LTZ(numeric, precision) is unsupported,"
-                + " the supported value is '0' for second or '3' for millisecond.");
+            "The precision value '" +
+                precision +
+                "' for function " +
+                "TO_TIMESTAMP_LTZ(numeric, precision) is unsupported," +
+                " the supported value is '0' for second or '3' for millisecond.");
     }
   }
 
@@ -677,10 +656,10 @@ public class DateTimeUtils {
     }
     hour += operator * timezoneHour;
     minute += operator * timezoneMinute;
-    return hour * (int) MILLIS_PER_HOUR
-        + minute * (int) MILLIS_PER_MINUTE
-        + second * (int) MILLIS_PER_SECOND
-        + milli;
+    return hour * (int) MILLIS_PER_HOUR +
+        minute * (int) MILLIS_PER_MINUTE +
+        second * (int) MILLIS_PER_SECOND +
+        milli;
   }
 
   /**
@@ -756,13 +735,6 @@ public class DateTimeUtils {
     return LocalDateTime.ofInstant(instant, zoneId).format(formatter);
   }
 
-  public static String formatTimestampMillis(long ts, String format, TimeZone tz) {
-    SimpleDateFormat formatter = FORMATTER_CACHE.get(format);
-    formatter.setTimeZone(tz);
-    Date dateTime = new Date(ts);
-    return formatter.format(dateTime);
-  }
-
   public static String formatTimestampString(
       String dateStr, String fromFormat, String toFormat, TimeZone tz) {
     SimpleDateFormat fromFormatter = FORMATTER_CACHE.get(fromFormat);
@@ -773,13 +745,13 @@ public class DateTimeUtils {
       return toFormatter.format(fromFormatter.parse(dateStr));
     } catch (ParseException e) {
       LOG.error(
-          "Exception when formatting: '"
-              + dateStr
-              + "' from: '"
-              + fromFormat
-              + "' to: '"
-              + toFormat
-              + "'",
+          "Exception when formatting: '" +
+              dateStr +
+              "' from: '" +
+              fromFormat +
+              "' to: '" +
+              toFormat +
+              "'",
           e);
       return null;
     }
@@ -792,6 +764,13 @@ public class DateTimeUtils {
 
   public static String formatTimestampString(String dateStr, String toFormat) {
     return formatTimestampString(dateStr, toFormat, UTC_ZONE);
+  }
+
+  public static String formatTimestampMillis(long ts, String format, TimeZone tz) {
+    SimpleDateFormat formatter = FORMATTER_CACHE.get(format);
+    formatter.setTimeZone(tz);
+    Date dateTime = new Date(ts);
+    return formatter.format(dateTime);
   }
 
   public static String formatTimestampMillis(int time, int precision) {
@@ -1087,14 +1066,14 @@ public class DateTimeUtils {
   private static int getIso8601WeekNumber(int julian, int year, int month, int day) {
     long fmofw = firstMondayOfFirstWeek(year);
     if (month == 12 && day > 28) {
-      return 31 - day + 4 > 7 - ((int) floorMod((long) julian, 7L) + 1)
-          && 31 - day + (int) (floorMod((long) julian, 7L) + 1L) >= 4
-          ? (int) ((long) julian - fmofw) / 7 + 1
+      return 31 - day + 4 > 7 - ((int) floorMod((long) julian, 7L) + 1) &&
+          31 - day + (int) (floorMod((long) julian, 7L) + 1L) >= 4 ?
+          (int) ((long) julian - fmofw) / 7 + 1
           : 1;
     } else if (month == 1 && day < 5) {
-      return 4 - day <= 7 - ((int) floorMod((long) julian, 7L) + 1)
-          && day - (int) (floorMod((long) julian, 7L) + 1L) >= -3
-          ? 1
+      return 4 - day <= 7 - ((int) floorMod((long) julian, 7L) + 1) &&
+          day - (int) (floorMod((long) julian, 7L) + 1L) >= -3 ?
+          1
           : (int) ((long) julian - firstMondayOfFirstWeek(year - 1)) / 7 + 1;
     } else {
       return (int) ((long) julian - fmofw) / 7 + 1;
@@ -1261,16 +1240,16 @@ public class DateTimeUtils {
     int year = b * 100 + d - 4800 + (m / 10);
     switch (range) {
       case MILLENNIUM:
-        return floor
-            ? ymdToUnixDate(1000 * ((year + 999) / 1000) - 999, 1, 1)
+        return floor ?
+            ymdToUnixDate(1000 * ((year + 999) / 1000) - 999, 1, 1)
             : ymdToUnixDate(1000 * ((year + 999) / 1000) + 1, 1, 1);
       case CENTURY:
-        return floor
-            ? ymdToUnixDate(100 * ((year + 99) / 100) - 99, 1, 1)
+        return floor ?
+            ymdToUnixDate(100 * ((year + 99) / 100) - 99, 1, 1)
             : ymdToUnixDate(100 * ((year + 99) / 100) + 1, 1, 1);
       case DECADE:
-        return floor
-            ? ymdToUnixDate(10 * (year / 10), 1, 1)
+        return floor ?
+            ymdToUnixDate(10 * (year / 10), 1, 1)
             : ymdToUnixDate(10 * (1 + year / 10), 1, 1);
       case YEAR:
         if (!floor && (month > 1 || day > 1)) {
@@ -1380,6 +1359,27 @@ public class DateTimeUtils {
       LOG.error("Exception when formatting.", e);
       return null;
     }
+  }
+
+  public static long toTimestampMillis(LocalDateTime dateTime) {
+    return unixTimestamp(
+        dateTime.getYear(),
+        dateTime.getMonthValue(),
+        dateTime.getDayOfMonth(),
+        dateTime.getHour(),
+        dateTime.getMinute(),
+        dateTime.getSecond(),
+        dateTime.getNano() / 1000_000);
+  }
+
+  private static long unixTimestamp(
+      int year, int month, int day, int hour, int minute, int second, int mills) {
+    final int date = ymdToUnixDate(year, month, day);
+    return (long) date * MILLIS_PER_DAY +
+        (long) hour * MILLIS_PER_HOUR +
+        (long) minute * MILLIS_PER_MINUTE +
+        (long) second * MILLIS_PER_SECOND +
+        mills;
   }
 
   /**
@@ -1739,8 +1739,7 @@ public class DateTimeUtils {
      * @return Whether value
      */
     public boolean isValidValue(BigDecimal field) {
-      return field.compareTo(BigDecimal.ZERO) >= 0
-          && (limit == null || field.compareTo(limit) < 0);
+      return field.compareTo(BigDecimal.ZERO) >= 0 && (limit == null || field.compareTo(limit) < 0);
     }
   }
 
@@ -1844,10 +1843,10 @@ public class DateTimeUtils {
 
       @Override
       public boolean equals(Object obj) {
-        return obj == this
-            || obj instanceof Pair
-            && Objects.equals(left, ((Pair) obj).left)
-            && Objects.equals(right, ((Pair) obj).right);
+        return obj == this ||
+            obj instanceof Pair &&
+                Objects.equals(left, ((Pair) obj).left) &&
+                Objects.equals(right, ((Pair) obj).right);
       }
     }
   }

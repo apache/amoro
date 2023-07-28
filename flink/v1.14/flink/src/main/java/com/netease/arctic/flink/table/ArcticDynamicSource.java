@@ -149,7 +149,8 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
   public DynamicTableSource copy() {
     return
         new ArcticDynamicSource(
-            tableName, arcticDynamicSource, arcticTable, properties, tableLoader, projectFields, filters, flinkExpression);
+            tableName, arcticDynamicSource, arcticTable, properties, tableLoader, projectFields, filters,
+            flinkExpression);
   }
 
   @Override
@@ -248,7 +249,8 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
 
     Optional<RowDataPredicate> rowDataPredicate = generatePredicate(projectedSchema, flinkExpression);
 
-    AbstractAdaptHiveArcticDataReader<RowData> flinkArcticMORDataReader = generateMORReader(arcticTable, projectedSchema);
+    AbstractAdaptHiveArcticDataReader<RowData> flinkArcticMORDataReader =
+        generateMORReader(arcticTable, projectedSchema);
     DataIteratorReaderFunction<RowData> readerFunction = generateReaderFunction(arcticTable, projectedSchema);
 
     return
@@ -265,7 +267,8 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
             readerFunction);
   }
 
-  protected DataIteratorReaderFunction<RowData> generateReaderFunction(ArcticTable arcticTable, Schema projectedSchema) {
+  protected DataIteratorReaderFunction<RowData> generateReaderFunction(
+      ArcticTable arcticTable, Schema projectedSchema) {
     return new RowDataReaderFunction(
         new Configuration(),
         arcticTable.schema(),

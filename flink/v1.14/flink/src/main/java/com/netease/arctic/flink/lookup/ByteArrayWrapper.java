@@ -179,20 +179,19 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
     if (other == null) {
       return false;
     }
-    try {
-      ByteArrayWrapper that = (ByteArrayWrapper) other;
-      if (size != that.size) {
+    if (!(other instanceof ByteArrayWrapper)) {
+      return false;
+    }
+    ByteArrayWrapper that = (ByteArrayWrapper) other;
+    if (size != that.size) {
+      return false;
+    }
+    for (int i = 0; i < size; ++i) {
+      if (bytes[i] != that.bytes[i]) {
         return false;
       }
-      for (int i = 0; i < size; ++i) {
-        if (bytes[i] != that.bytes[i]) {
-          return false;
-        }
-      }
-      return true;
-    } catch (ClassCastException ignored) {
     }
-    return false;
+    return true;
   }
 
   /**

@@ -52,7 +52,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * This is an abstract state backed by RocksDB and Guava cache for storing and retrieving key-value pairs of byte arrays.
+ * This is an abstract state backed by RocksDB and Guava cache for storing and retrieving key-value pairs of
+ * byte arrays.
  *
  * @param <V> the type of the cache's values, which are not permitted to be null
  */

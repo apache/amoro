@@ -56,7 +56,8 @@ import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.PLUS;
 import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.TIMES;
 
 /**
- * This class implements the visitor pattern for traversing expressions and building a {@link RowDataPredicate} out of them.
+ * This class implements the visitor pattern for traversing expressions and building a {@link RowDataPredicate}
+ * out of them.
  * <p>It supports a limited set of built-in functions, such as EQUALS, LESS_THAN, GREATER_THAN, NOT_EQUALS, etc.
  */
 public class RowDataPredicateExpressionVisitor extends ExpressionDefaultVisitor<Optional<RowDataPredicate>> {
@@ -136,6 +137,77 @@ public class RowDataPredicateExpressionVisitor extends ExpressionDefaultVisitor<
             "Not supported build-in function: %s, CallExpression: %s, for RowDataPredicateExpressionVisitor",
             call.getFunctionDefinition(),
             call));
+  }
+
+  @Override
+  public Optional<RowDataPredicate> visit(ValueLiteralExpression valueLiteralExpression) {
+    LogicalType tpe = valueLiteralExpression.getOutputDataType().getLogicalType();
+    Serializable[] params = new Serializable[1];
+    switch (tpe.getTypeRoot()) {
+      case CHAR:
+      case VARCHAR:
+        params[0] = valueLiteralExpression.getValueAs(String.class).orElse(null);
+        return Optional.of(new RowDataPredicate(params));
+      case BOOLEAN:
+        params[0] = valueLiteralExpression.getValueAs(Boolean.class).orElse(null);
+        return Optional.of(new RowDataPredicate(params));
+      case DECIMAL:
+        params[0] = valueLiteralExpression.getValueAs(BigDecimal.class).orElse(null);
+        return Optional.of(new RowDataPredicate(params));
+      case TINYINT:
+        params[0] = valueLiteralExpression.getValueAs(Byte.class).orElse(null);
+        return Optional.of(new RowDataPredicate(params));
+      case SMALLINT:
+        params[0] = valueLiteralExpression.getValueAs(Short.class).orElse(null);
+        return Optional.of(new RowDataPredicate(params));
+      case INTEGER:
+        params[0] = valueLiteralExpression.getValueAs(Integer.class).orElse(null);
+        return Optional.of(new RowDataPredicate(params));
+      case BIGINT:
+        params[0] = valueLiteralExpression.getValueAs(Long.class).orElse(null);
+        return Optional.of(new RowDataPredicate(params));
+      case FLOAT:
+        params[0] = valueLiteralExpression.getValueAs(Float.class).orElse(null);
+        return Optional.of(new RowDataPredicate(params));
+      case DOUBLE:
+        params[0] = valueLiteralExpression.getValueAs(Double.class).orElse(null);
+        return Optional.of(new RowDataPredicate(params));
+      case DATE:
+        params[0] = valueLiteralExpression
+            .getValueAs(LocalDate.class)
+            .map(Date::valueOf)
+            .orElse(null);
+        return Optional.of(new RowDataPredicate(params));
+      case TIME_WITHOUT_TIME_ZONE:
+        params[0] = valueLiteralExpression.getValueAs(java.sql.Time.class).orElse(null);
+        return Optional.of(new RowDataPredicate(params));
+      case TIMESTAMP_WITHOUT_TIME_ZONE:
+        params[0] =
+            valueLiteralExpression
+                .getValueAs(LocalDateTime.class)
+                .map(Timestamp::valueOf)
+                .orElse(null);
+        return Optional.of(new RowDataPredicate(params));
+      default:
+        return Optional.empty();
+    }
+  }
+
+  @Override
+  public Optional<RowDataPredicate> visit(FieldReferenceExpression fieldReferenceExpression) {
+    String fieldName = fieldReferenceExpression.getName();
+    int fieldIndex = fieldIndexMap.get(fieldName);
+    DataType dataType = fieldDataTypeMap.get(fieldName);
+    return Optional.of(
+        new RowDataPredicate(
+            fieldName,
+            fieldIndex,
+            dataType));
+  }
+
+  @Override
+  protected Optional<RowDataPredicate> defaultMethod(Expression expression) {
+    return Optional.empty();
   }
 
   protected Optional<RowDataPredicate> arithmeticOperator(
@@ -224,76 +296,5 @@ public class RowDataPredicateExpressionVisitor extends ExpressionDefaultVisitor<
     }
 
     return leftPredicate.flatMap(left -> rightPredicate.map(right -> left.combine(opt, right)));
-  }
-
-  @Override
-  public Optional<RowDataPredicate> visit(FieldReferenceExpression fieldReferenceExpression) {
-    String fieldName = fieldReferenceExpression.getName();
-    int fieldIndex = fieldIndexMap.get(fieldName);
-    DataType dataType = fieldDataTypeMap.get(fieldName);
-    return Optional.of(
-        new RowDataPredicate(
-            fieldName,
-            fieldIndex,
-            dataType));
-  }
-
-  @Override
-  public Optional<RowDataPredicate> visit(ValueLiteralExpression valueLiteralExpression) {
-    LogicalType tpe = valueLiteralExpression.getOutputDataType().getLogicalType();
-    Serializable[] params = new Serializable[1];
-    switch (tpe.getTypeRoot()) {
-      case CHAR:
-      case VARCHAR:
-        params[0] = valueLiteralExpression.getValueAs(String.class).orElse(null);
-        return Optional.of(new RowDataPredicate(params));
-      case BOOLEAN:
-        params[0] = valueLiteralExpression.getValueAs(Boolean.class).orElse(null);
-        return Optional.of(new RowDataPredicate(params));
-      case DECIMAL:
-        params[0] = valueLiteralExpression.getValueAs(BigDecimal.class).orElse(null);
-        return Optional.of(new RowDataPredicate(params));
-      case TINYINT:
-        params[0] = valueLiteralExpression.getValueAs(Byte.class).orElse(null);
-        return Optional.of(new RowDataPredicate(params));
-      case SMALLINT:
-        params[0] = valueLiteralExpression.getValueAs(Short.class).orElse(null);
-        return Optional.of(new RowDataPredicate(params));
-      case INTEGER:
-        params[0] = valueLiteralExpression.getValueAs(Integer.class).orElse(null);
-        return Optional.of(new RowDataPredicate(params));
-      case BIGINT:
-        params[0] = valueLiteralExpression.getValueAs(Long.class).orElse(null);
-        return Optional.of(new RowDataPredicate(params));
-      case FLOAT:
-        params[0] = valueLiteralExpression.getValueAs(Float.class).orElse(null);
-        return Optional.of(new RowDataPredicate(params));
-      case DOUBLE:
-        params[0] = valueLiteralExpression.getValueAs(Double.class).orElse(null);
-        return Optional.of(new RowDataPredicate(params));
-      case DATE:
-        params[0] = valueLiteralExpression
-            .getValueAs(LocalDate.class)
-            .map(Date::valueOf)
-            .orElse(null);
-        return Optional.of(new RowDataPredicate(params));
-      case TIME_WITHOUT_TIME_ZONE:
-        params[0] = valueLiteralExpression.getValueAs(java.sql.Time.class).orElse(null);
-        return Optional.of(new RowDataPredicate(params));
-      case TIMESTAMP_WITHOUT_TIME_ZONE:
-        params[0] =
-            valueLiteralExpression
-                .getValueAs(LocalDateTime.class)
-                .map(Timestamp::valueOf)
-                .orElse(null);
-        return Optional.of(new RowDataPredicate(params));
-      default:
-        return Optional.empty();
-    }
-  }
-
-  @Override
-  protected Optional<RowDataPredicate> defaultMethod(Expression expression) {
-    return Optional.empty();
   }
 }
