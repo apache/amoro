@@ -20,6 +20,7 @@ package org.apache.hadoop.hive.ql.optimizer.ppr;
 
 import org.apache.hadoop.hive.metastore.FileFormatProxy;
 import org.apache.hadoop.hive.metastore.PartitionExpressionProxy;
+import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.FileMetadataExprType;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.ql.io.sarg.SearchArgument;
@@ -32,12 +33,15 @@ import java.util.List;
  */
 public class PartitionExpressionForMetastore implements PartitionExpressionProxy {
 
-  @Override
   public String convertExprToFilter(byte[] expr) throws MetaException {
     return null;
   }
 
-  @Override
+  public boolean filterPartitionsByExpr(
+      List<FieldSchema> list, byte[] bytes, String s, List<String> list1) throws MetaException {
+    return false;
+  }
+
   public boolean filterPartitionsByExpr(
       List<String> partColumnNames,
       List<PrimitiveTypeInfo> partColumnTypeInfos,
@@ -47,17 +51,14 @@ public class PartitionExpressionForMetastore implements PartitionExpressionProxy
     return false;
   }
 
-  @Override
   public FileMetadataExprType getMetadataType(String inputFormat) {
     return null;
   }
 
-  @Override
   public FileFormatProxy getFileFormatProxy(FileMetadataExprType type) {
     return null;
   }
 
-  @Override
   public SearchArgument createSarg(byte[] expr) {
     return null;
   }

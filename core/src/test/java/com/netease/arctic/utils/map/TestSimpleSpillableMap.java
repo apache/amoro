@@ -1,6 +1,6 @@
 package com.netease.arctic.utils.map;
 
-import com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
