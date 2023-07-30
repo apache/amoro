@@ -55,9 +55,10 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   @Override
   public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
-    OptimizingConfig optimizingConfig = originalConfig.getOptimizingConfig();
+    OptimizingConfig originalOptimizingConfig = originalConfig.getOptimizingConfig();
     OptimizingConfig newOptimizingConfig = tableRuntime.getOptimizingConfig();
-    if (!optimizingConfig.equals(newOptimizingConfig) && newOptimizingConfig.isEnabled()) {
+    if (!originalOptimizingConfig.equals(newOptimizingConfig) &&
+        newOptimizingConfig.isEnabled()) {
       tryEvaluatingPendingInput(tableRuntime, loadTable(tableRuntime));
     }
     super.handleConfigChanged(tableRuntime, originalConfig);
