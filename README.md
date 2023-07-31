@@ -1,56 +1,78 @@
-![logo](site/docs/ch/images/arctic_logo_for_git.png)
+![logo](https://amoro.netease.com//img/amoro-logo-icon.png)
 
-Arctic is a LakeHouse management system under open architecture, which on top of data lake open formats provides more
-optimizations for streaming and upsert scenarios, as well as a set of pluggable self-optimizing mechanisms and
-management services. Using Arctic could help various data platforms, tools and products build out-of-the-box, streaming
-and batch unified LakeHouses quickly.
+## What is Amoro?
 
-## What is Arctic
+Amoro is a Lakehouse management system built on open data lake formats.
+Working with compute engines including Flink, Spark, and Trino, Amoro brings pluggable and self-managed features for Lakehouse to provide out-of-the-box data warehouse experience,
+and helps data platforms or products easily build infra-decoupled, stream-and-batch-fused and lake-native architecture.
 
-Currently, Arctic is a LakeHouse management system on top of iceberg format. Benefit from the thriving ecology of Apache
-Iceberg, Arctic could be used on kinds of data lakes on premise or clouds with varities of engines. Several concepts
-should be known before your deeper steps:
+![Introduce](https://amoro.netease.com//img/home-content.png)
 
-![Introduce](site/docs/ch/images/introduce_arctic.png)
+* AMS: Amoro Management Service provides Lakehouse management features, like self-optimizing, data expiration, etc.
+  It also provides a unified catalog service for all computing engines, which can also be combined with existing metadata services.
+* Plugins: Amoro provides a wide selection of external plugins to meet different scenarios.
+    * Optimizers: The self-optimizing execution engine plugin asynchronously performs merging, sorting, deduplication,
+      layout optimization, and other operations on all type table format tables.
+    * Terminal: SQL command-line tools, provide various implementations like local Spark and Kyuubi.
+    * LogStore: Provide millisecond to second level SLAs for real-time data processing based on message queues like Kafka and Pulsar.
 
-- AMS and optimizers - Arctic Management Service provides management features including self-optimizing mechanisms
-  running on optimizers, which could be scaled as demand and scheduled on different platforms.
-- Multiple formats — Arctic use formats analogous to MySQL or ClickHouse using storage engines to meet different
-  scenarios. Two formats were available since Arctic v0.4.
-    * Iceberg format — learn more about iceberg format details and usage with different
-      engines: [Iceberg Docs](https://iceberg.apache.org/docs/latest/)
-    * Mixed streaming format - if you are interested in advanced features like auto-bucket, logstore, hive compatible,
-      strict PK constraints etc. learn
-      Arctic [Mixed Iceberg format](https://arctic.netease.com/ch/concepts/table-formats/#mixed-iceberg-format)
-      and [Mixed Hive format](https://arctic.netease.com/ch/concepts/table-formats/#mixed-hive-format)
+## Supported table formats 
 
-## Arctic features
+Amoro can manage tables of different table formats, similar to how MySQL/ClickHouse can choose different storage engines.
+Amoro meets diverse user needs by using different table formats. Currently, Amoro supports three table formats:
 
-- Defining keys - supports defining primary key with strict constraints, and more types of keys in future
-- Self-optimizing - user-insensitive asynchronous self-optimization mechanisms could keep lakehouse fresh and healthy
-- Management features - dashboard UI to support catalog/table management, SQL terminal and all kinds of metrics
-- Formats compatible - Hive/Iceberg format compatible means writing and reading through native Hive/Iceberg connector
-- Better data pipeline SLA - using LogStore like kafka to accelarate streaming data pipeline to ms/s latency
-- Better OLAP performace - provides auto-bucket feature for better compaction and merge-on-read performance
-- Concurrent conflicts resovling - Flink or Spark could concurrent write data without worring about conflicts
+* Iceberg format: means using the native table format of the Apache Iceberg, which has all the features and characteristics of Iceberg.
+* Mixed Iceberg format: built on top of Iceberg format, which can accelerate data processing using LogStore 
+  and provides more efficient query performance and streaming read capability in CDC scenarios.
+* Mixed Hive format: has the same features as the Mixed Iceberg tables but is compatible with a Hive table.
+  Support upgrading Hive tables to Mixed Hive tables, and allow Hive's native read and write methods after upgrading.
+
+## Supported engines
+
+### Iceberg format
+
+Iceberg format tables use the engine integration method provided by the Iceberg community.
+For details, please refer to: [Iceberg Docs](https://iceberg.apache.org/docs/latest/).
+
+### Mixed format
+
+Amoro support multiple processing engines for Mixed format as below:
+
+| Processing Engine | Version                   | Batch Read  | Batch Write | Batch Overwrite | Streaming Read | Streaming Write | Create Table | Alter Table |
+|-------------------|---------------------------|-------------|-------------|-----------------|----------------|-----------------|--------------|-------------|
+| Flink             | 1.12.x, 1.14.x and 1.15.x |  &#x2714;   |   &#x2714;   |       &#x2716;   |      &#x2714;   |       &#x2714;   |    &#x2714;   |   &#x2716;   |
+| Spark             | 3.1, 3.2, 3.3             |  &#x2714;   |   &#x2714;   |       &#x2714;   |      &#x2716;   |       &#x2716;   |    &#x2714;   |   &#x2714;   |
+| Hive              | 2.x, 3.x                  |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
+| Trino             | 406                       |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
+
+## Features
+
+- Self-managed - Automatically compact small files and change files, regularly delete expired data to ensure the quality of table queries, and reduce system costs.
+- Multiple Formats - Support different table formats to meet different scenario requirements and provide them with unified management capabilities.
+- Catalog Service - Provide a unified metadata management service for all computing engines, which can also be combined with existing metadata services.
+- Rich Plugins - Offers a wide selection of external plugins to meet different scenarios such as automatic data optimizing, data analysis.
+- Management Tools - Visual management tools provide rich monitoring and management capabilities to help users get started easily.
+- Infrastructure Independent - Can be easily deployed and used in private environments, cloud environments, hybrid cloud environments, and multi-cloud environments.
 
 ## Modules
 
-Arctic contains modules as below:
+Amoro contains modules as below:
 
-- `arctic-core` contains core abstractions and common implementation for other modules
-- `arctic-flink` is the module for integrating with Apache Flink (use arctic-flink-runtime for a shaded version)
-- `arctic-spark` is the module for integrating with Apache Spark (use arctic-spark-runtime for a shaded version)
-- `arctic-trino` now provides query integrating with apache trino, built on JDK17
-- `arctic-ams` is arctic meta service module
-    - `ams-api` contains ams thrift api
+- `amoro-core` contains core abstractions and common implementation for other modules
+- `amoro-ams` is amoro management service module
+    - `ams-api` contains ams thrift api and common interfaces
     - `ams-dashboard` is the dashboard frontend for ams
     - `ams-server` is the backend server for ams
     - `ams-optimizer` provides default optimizer implementation
+- `amoro-hive` integrates with Apache Hive and implement Mixed Hive format
+- `amoro-flink` provides Flink connectors for Mixed format tables (use amoro-flink-runtime for a shaded version)
+- `amoro-spark` provides Spark connectors for Mixed format tables (use amoro-spark-runtime for a shaded version)
+- `amoro-trino` provides Trino connectors for Mixed format tables
+
 
 ## Building
 
-Arctic is built using Maven with Java 1.8 and Java 17(only for `trino` module).
+Amoro is built using Maven with Java 1.8 and Java 17(only for `trino` module).
 
 * To build Trino module need config `toolchains.xml` in `${user.home}/.m2/` dir, the content is
 
@@ -77,24 +99,14 @@ Arctic is built using Maven with Java 1.8 and Java 17(only for `trino` module).
 * To indicate flink version for optimizer(the default is 1.14, 1.15 and 1.16 are available)
 `mvn clean package -DskipTests -Doptimizer.flink=1.15`
 
-## Engines supported
-
-Arctic support multiple processing engines as below:
-
-| Processing Engine | Version                   |
-|-------------------|---------------------------|
-| Flink             | 1.12.x, 1.14.x and 1.15.x |
-| Spark             | 3.1, 3.2, 3.3             |
-| Trino             | 406                       |
-
 ## Quickstart
 
-Visit [https://arctic.netease.com/ch/quickstart/setup/](https://arctic.netease.com/ch/quickstart/setup/) to quickly
-explore what arctic can do.
+Visit [https://amoro.netease.com/quick-demo/](https://amoro.netease.com/quick-demo/) to quickly
+explore what amoro can do.
 
 ## Join Community
 
 If you are interested in Lakehouse, Data Lake Format, welcome to join our community, we welcome any organizations, teams
 and individuals to grow together, and sincerely hope to help users better use Data Lake Format through open source.
 
-Join the Arctic WeChat Group: Add " `kllnn999` " as a friend on WeChat and specify "Arctic lover".
+Join the Amoro WeChat Group: Add " `kllnn999` " as a friend on WeChat and specify "Amoro lover".
