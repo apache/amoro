@@ -23,7 +23,6 @@ import com.netease.arctic.flink.lookup.filter.RowDataPredicate;
 import com.netease.arctic.flink.lookup.filter.RowDataPredicateExpressionVisitor;
 import com.netease.arctic.flink.lookup.filter.TestRowDataPredicateBase;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
-import com.netease.arctic.utils.SchemaUtil;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.memory.DataInputDeserializer;
 import org.apache.flink.core.memory.DataOutputSerializer;
@@ -137,7 +136,7 @@ public class TestKVTable extends TestRowDataPredicateBase {
     // test join key rowData
     binaryRowDataSerializer = new BinaryRowDataSerializer(2);
     List<String> keys = Lists.newArrayList("id", "grade");
-    Schema keySchema = SchemaUtil.convertFieldsToSchema(arcticSchema, keys);
+    Schema keySchema = arcticSchema.select(keys);
     rowType = FlinkSchemaUtil.convert(keySchema);
     rowDataSerializer = new RowDataSerializer(rowType);
     KeyRowData keyRowData = new KeyRowData(new int[]{0, 1}, row(2, "3", 4));

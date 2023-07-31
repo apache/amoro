@@ -18,7 +18,6 @@
 
 package com.netease.arctic.flink.lookup;
 
-import com.netease.arctic.utils.SchemaUtil;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 import org.apache.iceberg.Schema;
@@ -134,7 +133,7 @@ public class UniqueIndexTable implements KVTable<RowData> {
 
   protected BinaryRowDataSerializerWrapper createKeySerializer(
       Schema arcticTableSchema, List<String> keys) {
-    Schema keySchema = SchemaUtil.convertFieldsToSchema(arcticTableSchema, keys);
+    Schema keySchema = arcticTableSchema.select(keys);
     return new BinaryRowDataSerializerWrapper(keySchema);
   }
 
