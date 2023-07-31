@@ -34,13 +34,13 @@
   </a>
 </p>
 
-Amoro is a Lakehouse management system built on open data lake formats.
+Amoro(former name was Arctic) is a Lakehouse management system built on open data lake formats.
 Working with compute engines including Flink, Spark, and Trino, Amoro brings pluggable and self-managed features for Lakehouse to provide out-of-the-box data warehouse experience,
 and helps data platforms or products easily build infra-decoupled, stream-and-batch-fused and lake-native architecture.
 
 ## Architecture
 
-![Introduce](https://amoro.netease.com//img/home-content.png)
+<img src="https://amoro.netease.com//img/home-content.png" alt="Amoro architecture" height="300px"/>
 
 * AMS: Amoro Management Service provides Lakehouse management features, like self-optimizing, data expiration, etc.
   It also provides a unified catalog service for all computing engines, which can also be combined with existing metadata services.

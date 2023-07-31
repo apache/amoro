@@ -21,16 +21,16 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.netease.arctic</groupId>
-        <artifactId>arctic-parent</artifactId>
+        <groupId>com.netease.amoro</groupId>
+        <artifactId>amoro-parent</artifactId>
         <version>0.5.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>arctic-core</artifactId>
+    <artifactId>amoro-core</artifactId>
     <packaging>jar</packaging>
-    <name>Arctic Project Core</name>
-    <url>https://arctic.netease.com</url>
+    <name>Amoro Project Core</name>
+    <url>https://amoro.netease.com</url>
 
     <properties>
         <rocksdb.version>5.17.2</rocksdb.version>
@@ -40,8 +40,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-ams-api</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-ams-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -170,8 +170,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-ams-api</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-ams-api</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
