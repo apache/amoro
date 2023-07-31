@@ -63,7 +63,7 @@ deploy.sh
 install.sh
 
 ${sys:LOG_PATH}
-flink-executor/dependency-reduced-pom.xml
+*dependency-reduced-pom.xml
 
 ddb_key/
 
