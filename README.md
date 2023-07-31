@@ -27,7 +27,7 @@
     <img src="https://github.com/NetEase/arctic/actions/workflows/core-hadoop3-ci.yml/badge.svg" />
   </a>
   <a href="https://github.com/NetEase/arctic/actions/workflows/core-hadoop2-ci.yml">
-    <img src="https://github.com/NetEase/arctic/actions/workflows/core-hadoop3-ci.yml/badge.svg" />
+    <img src="https://github.com/NetEase/arctic/actions/workflows/core-hadoop2-ci.yml/badge.svg" />
   </a>
   <a href="https://github.com/NetEase/arctic/actions/workflows/trino-ci.yml">
     <img src="https://github.com/NetEase/arctic/actions/workflows/trino-ci.yml/badge.svg" />
