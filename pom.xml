@@ -26,7 +26,7 @@
     <packaging>pom</packaging>
 
     <name>Amoro Project Parent</name>
-    <description>Arctic is a LakeHouse management service for open architecture</description>
+    <description>Amoro is a Lakehouse management system built on open data formats.</description>
     <url>https://amoro.netease.com</url>
 
     <licenses>

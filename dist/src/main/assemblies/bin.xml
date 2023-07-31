@@ -25,7 +25,7 @@
     </formats>
 
     <includeBaseDirectory>true</includeBaseDirectory>
-    <baseDirectory>arctic-${project.version}</baseDirectory>
+    <baseDirectory>amoro-${project.version}</baseDirectory>
 
     <files>
         <file>
