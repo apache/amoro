@@ -1,10 +1,44 @@
-![logo](https://amoro.netease.com//img/amoro-logo-icon.png)
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ - 
+ -     http://www.apache.org/licenses/LICENSE-2.0
+ - 
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and 
+ - limitations under the License.
+-->
+<p align="center">
+  <img src="https://amoro.netease.com//img/amoro-logo-icon.png" alt="Amoro logo" height="120px"/>
+</p>
 
-## What is Amoro?
+<p align="center">
+  <a href="https://www.apache.org/licenses/LICENSE-2.0.html">
+    <img src="https://img.shields.io/badge/license-Apache%202-4EB1BA.svg" />
+  </a>
+  <a href="https://github.com/NetEase/arctic/actions/workflows/core-hadoop3-ci.yml">
+    <img src="https://github.com/NetEase/arctic/actions/workflows/core-hadoop3-ci.yml/badge.svg" />
+  </a>
+  <a href="https://github.com/NetEase/arctic/actions/workflows/core-hadoop2-ci.yml">
+    <img src="https://github.com/NetEase/arctic/actions/workflows/core-hadoop3-ci.yml/badge.svg" />
+  </a>
+  <a href="https://github.com/NetEase/arctic/actions/workflows/trino-ci.yml">
+    <img src="https://github.com/NetEase/arctic/actions/workflows/trino-ci.yml/badge.svg" />
+  </a>
+</p>
 
 Amoro is a Lakehouse management system built on open data lake formats.
 Working with compute engines including Flink, Spark, and Trino, Amoro brings pluggable and self-managed features for Lakehouse to provide out-of-the-box data warehouse experience,
 and helps data platforms or products easily build infra-decoupled, stream-and-batch-fused and lake-native architecture.
+
+## Architecture
 
 ![Introduce](https://amoro.netease.com//img/home-content.png)
 
