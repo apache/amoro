@@ -235,7 +235,7 @@ public class FlinkTestBase extends TableTestBase {
     ImmutableSet.Builder<Record> b = ImmutableSet.builder();
     rows.forEach(r ->
         b.add(record.copy(ImmutableMap.of("id", r.getField(0), "name", r.getField(1),
-          "ts", r.getField(2), "op_time", r.getField(3)))));
+            "ts", r.getField(2), "op_time", r.getField(3)))));
     return b.build();
   }
 
@@ -257,20 +257,20 @@ public class FlinkTestBase extends TableTestBase {
 
   protected static RowData createRowData(Integer id, String name, String dateTime, RowKind rowKind) {
     return GenericRowData.ofKind(
-      rowKind,
-      id,
-      StringData.fromString(name),
-      LocalDateTime.parse(dateTime).toInstant(ZoneOffset.UTC).toEpochMilli(),
-      TimestampData.fromLocalDateTime(LocalDateTime.parse(dateTime)));
+        rowKind,
+        id,
+        StringData.fromString(name),
+        LocalDateTime.parse(dateTime).toInstant(ZoneOffset.UTC).toEpochMilli(),
+        TimestampData.fromLocalDateTime(LocalDateTime.parse(dateTime)));
   }
 
   protected static RowData createRowData(RowKind rowKind, Object... objects) {
     return GenericRowData.ofKind(
-      rowKind,
-      objects[0],
-      StringData.fromString((String) objects[1]),
-      objects[2],
-      TimestampData.fromLocalDateTime((LocalDateTime) objects[3]));
+        rowKind,
+        objects[0],
+        StringData.fromString((String) objects[1]),
+        objects[2],
+        TimestampData.fromLocalDateTime((LocalDateTime) objects[3]));
   }
 
   protected static RowData createRowData(Integer id, String name, String dateTime) {

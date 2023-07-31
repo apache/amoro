@@ -36,11 +36,16 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * This is a mixed-format table(mixed iceberg, mixed-hive) incremental loader.
+ * <p>This loader is used to load data by the merge on read approach first,
+ * then by the incremental pull approach.
+ * <p>Merge on read approach only contain INSERT rows.
+ * <p>Incremental pull approach contains INSERT, DELETE, UPDATE_BEFORE, and UPDATE_AFTER.
+ * <p>Support projection and filter push-down to speed up the loading process.
  */
 public class MixedIncrementalLoader<T> implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(MixedIncrementalLoader.class);
   private final ContinuousSplitPlanner continuousSplitPlanner;
-  private DataIteratorReaderFunction<T> readerFunction;
+  private final DataIteratorReaderFunction<T> readerFunction;
   private AbstractAdaptHiveArcticDataReader<T> flinkArcticMORDataReader;
   private final List<Expression> filters;
   private final AtomicReference<ArcticEnumeratorOffset> enumeratorPosition;
