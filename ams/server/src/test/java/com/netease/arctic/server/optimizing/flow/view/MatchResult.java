@@ -18,9 +18,9 @@
 
 package com.netease.arctic.server.optimizing.flow.view;
 
-import com.google.common.base.Objects;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.List;
 
@@ -60,7 +60,7 @@ public class MatchResult {
 
   @Override
   public String toString() {
-    return Objects.toStringHelper(this)
+    return MoreObjects.toStringHelper(this)
         .add("notInView", notInView)
         .add("inViewButCountError", inViewButCountError)
         .add("inViewButMiss", inViewButMiss)

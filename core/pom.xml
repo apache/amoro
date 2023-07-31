@@ -33,7 +33,7 @@
     <url>https://arctic.netease.com</url>
 
     <properties>
-        <rocksdb.version>5.17.2</rocksdb.version>
+        <rocksdb.version>7.10.2</rocksdb.version>
         <kryo.version>2.24.0</kryo.version>
         <jol.version>0.16</jol.version>
     </properties>
@@ -107,6 +107,22 @@
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty.orbit</groupId>
+                    <artifactId>javax.servlet</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-servlet</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -114,6 +130,11 @@
             <groupId>org.apache.orc</groupId>
             <artifactId>orc-core</artifactId>
             <classifier>nohive</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
         </dependency>
 
         <!-- test dependencies -->
