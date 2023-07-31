@@ -1,42 +1,58 @@
 <template>
-  <div class="login-wrap">
-    <div class="img-logo">
-      <img src="@/assets/images/logo-all1.svg" class="arctic-logo" alt="">
+  <div class="login-wrap g-flex-jc">
+    <div class="login-content">
+      <div class="img-logo">
+        <img src="@/assets/images/logo-all1.svg" class="arctic-logo" alt="" />
+      </div>
+      <div class="content-title">Lakehouse management system</div>
+      <a-form
+        :model="formState"
+        name="normal_login"
+        class="login-form label-120"
+        @finish="onFinish"
+      >
+        <a-form-item
+          label=""
+          name="username"
+          :rules="[{ required: true, message: placeholder.usernamePh }]"
+        >
+          <a-input
+            v-model:value="formState.username"
+            :placeholder="placeholder.usernamePh"
+            style="height: 48px; background: #fff"
+          >
+            <template #prefix>
+              <UserOutlined class="site-form-item-icon" />
+            </template>
+          </a-input>
+        </a-form-item>
+        <a-form-item
+          label=""
+          name="password"
+          :rules="[{ required: true, message: placeholder.passwordPh }]"
+        >
+          <a-input-password
+            v-model:value="formState.password"
+            :placeholder="placeholder.passwordPh"
+            style="height: 48px"
+          >
+            <template #prefix>
+              <LockOutlined class="site-form-item-icon" />
+            </template>
+          </a-input-password>
+        </a-form-item>
+        <a-form-item>
+          <a-button
+            :disabled="disabled"
+            type="primary"
+            html-type="submit"
+            class="login-form-button"
+          >
+            {{ $t("signin") }}
+          </a-button>
+        </a-form-item>
+      </a-form>
     </div>
-    <a-form
-      :model="formState"
-      name="normal_login"
-      class="login-form label-120"
-      @finish="onFinish"
-    >
-      <a-form-item
-        label=""
-        name="username"
-        :rules="[{ required: true, message: placeholder.usernamePh }]"
-      >
-        <a-input v-model:value="formState.username" :placeholder="placeholder.usernamePh">
-          <template #prefix>
-            <UserOutlined class="site-form-item-icon" />
-          </template>
-        </a-input>
-      </a-form-item>
-      <a-form-item
-        label=""
-        name="password"
-        :rules="[{ required: true, message: placeholder.passwordPh }]"
-      >
-        <a-input-password v-model:value="formState.password" :placeholder="placeholder.passwordPh">
-          <template #prefix>
-            <LockOutlined class="site-form-item-icon" />
-          </template>
-        </a-input-password>
-      </a-form-item>
-      <a-form-item>
-        <a-button :disabled="disabled" type="primary" html-type="submit" class="login-form-button">
-          {{$t('signin')}}
-        </a-button>
-      </a-form-item>
-    </a-form>
     <!-- <p class="desc">{{$t('welecomeTip')}}</p> -->
   </div>
 </template>
@@ -68,7 +84,7 @@ export default defineComponent({
       password: ''
     })
     const placeholder = reactive(usePlaceholder())
-    const onFinish = async(values: FormState) => {
+    const onFinish = async (values: FormState) => {
       try {
         const store = useStore()
         const res = await loginService.login({
@@ -92,8 +108,7 @@ export default defineComponent({
     const disabled = computed(() => {
       return !(formState.username && formState.password)
     })
-    onMounted(() => {
-    })
+    onMounted(() => {})
     return {
       placeholder,
       formState,
@@ -102,30 +117,67 @@ export default defineComponent({
     }
   }
 })
-
 </script>
 
 <style lang="less" scoped>
 .login-wrap {
   height: 100%;
-  width: 400px;
-  margin: auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  margin: 0 auto;
+  padding-top: 100px;
+  background: #f5f6fa;
+  .login-content {
+    width: 640px;
+    height: 496px;
+    border-radius: 16px;
+    padding: 80px;
+    background: #ffffff;
+    box-shadow: 0px 10px 24px 0px rgba(30, 31, 39, 0.08);
+    .content-title {
+      font-size: 20px;
+      font-weight: 900;
+      margin-bottom: 32px;
+      color: #1E1F27;
+    }
+    :deep(.ant-input-prefix) {
+      color: #0036a1;
+      font-size: 20px;
+      margin: 0px 14px 0px 4px;
+    }
+  }
   .img-logo {
     // margin: auto;
     margin-bottom: 32px;
-    text-align: center;
     .arctic-logo {
-      width: 200px;
+      width: 120px;
     }
   }
   .desc {
     margin-top: 20px;
   }
+  .login-form {
+    .ant-form-item {
+      margin-bottom: 16px;
+    }
+    :deep(.ant-input-affix-wrapper) {
+      border-radius: 8px;
+    }
+    :deep(.ant-input) {
+      color: #1E1F27;
+    }
+  }
   .login-form-button {
+    margin-top: 40px;
+    height: 48px;
     width: 100%;
+    border-radius: 8px;
+    color: #fff;
+    border-color: transparent;
+    &.ant-btn-primary {
+      background: #0036a1;
+    }
+    &.ant-btn-primary[disabled] {
+      background: #cdcfd7;
+    }
   }
 }
 </style>
