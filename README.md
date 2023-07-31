@@ -16,7 +16,7 @@
  - limitations under the License.
 -->
 <p align="center">
-  <img src="https://amoro.netease.com//img/amoro-logo-icon.png" alt="Amoro logo" height="120px"/>
+  <img src="https://amoro.netease.com//img/amoro-logo.svg" alt="Amoro logo" height="120px"/>
 </p>
 
 <p align="center">
