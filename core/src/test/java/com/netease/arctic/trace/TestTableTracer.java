@@ -18,7 +18,6 @@
 
 package com.netease.arctic.trace;
 
-import com.google.common.collect.Lists;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.DataFileTestHelpers;
 import com.netease.arctic.ams.api.CommitMetaProducer;
@@ -42,6 +41,7 @@ import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.junit.Assert;
@@ -71,7 +71,8 @@ public class TestTableTracer extends TableTestBase {
       boolean keyedTable,
       boolean onBaseTable,
       boolean partitionedTable) {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(keyedTable, partitionedTable));
     this.onBaseTable = onBaseTable;
   }
@@ -620,7 +621,8 @@ public class TestTableTracer extends TableTestBase {
       Assert.assertEquals(icebergFile.path(), validateFile.getPath());
       Assert.assertEquals(icebergFile.fileSizeInBytes(), validateFile.getFileSize());
       Assert.assertEquals(icebergFile.recordCount(), validateFile.getRecordCount());
-      Assert.assertEquals(onBaseTable ? DataFileType.BASE_FILE.name() : DataFileType.INSERT_FILE.name(),
+      Assert.assertEquals(
+          onBaseTable ? DataFileType.BASE_FILE.name() : DataFileType.INSERT_FILE.name(),
           validateFile.getFileType());
       Assert.assertEquals(0, validateFile.getIndex());
       Assert.assertEquals(0, validateFile.getMask());
