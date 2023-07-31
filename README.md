@@ -98,7 +98,7 @@ Amoro contains modules as below:
     - `ams-dashboard` is the dashboard frontend for ams
     - `ams-server` is the backend server for ams
     - `ams-optimizer` provides default optimizer implementation
-- `amoro-hive` integrates with Apache Hive and implement Mixed Hive format
+- `amoro-hive` integrates with Apache Hive and implements Mixed Hive format
 - `amoro-flink` provides Flink connectors for Mixed format tables (use amoro-flink-runtime for a shaded version)
 - `amoro-spark` provides Spark connectors for Mixed format tables (use amoro-spark-runtime for a shaded version)
 - `amoro-trino` provides Trino connectors for Mixed format tables
