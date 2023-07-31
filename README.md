@@ -41,7 +41,7 @@ and helps data platforms or products easily build infra-decoupled, stream-and-ba
 ## Architecture
 
 <p align="center">
-  <img src="https://amoro.netease.com//img/home-content.png" alt="Amoro architecture" height="300px"/>
+  <img src="https://amoro.netease.com//img/home-content.png" alt="Amoro architecture" height="360px"/>
 </p>
 
 * AMS: Amoro Management Service provides Lakehouse management features, like self-optimizing, data expiration, etc.
