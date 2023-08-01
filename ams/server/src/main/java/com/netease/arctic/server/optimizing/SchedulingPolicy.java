@@ -23,7 +23,7 @@ public class SchedulingPolicy {
   private static final String BALANCED = "balanced";
 
   private final Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap = new HashMap<>();
-  private final Comparator<TableRuntime> tableSorter;
+  private Comparator<TableRuntime> tableSorter;
   private final Lock tableLock = new ReentrantLock();
 
   public SchedulingPolicy(ResourceGroup group) {
@@ -73,6 +73,18 @@ public class SchedulingPolicy {
 
   public boolean containsTable(ServerTableIdentifier tableIdentifier) {
     return tableRuntimeMap.containsKey(tableIdentifier);
+  }
+
+  public void updateTableSorterIfNeeded(ResourceGroup optimizerGroup) {
+    String schedulingPolicy = Optional.ofNullable(optimizerGroup.getProperties())
+        .orElseGet(Maps::newHashMap)
+        .get(SCHEDULING_POLICY_PROPERTY_NAME);
+    if ((StringUtils.isBlank(schedulingPolicy) || schedulingPolicy.equalsIgnoreCase(QUOTA))
+        && tableSorter instanceof BalancedSorter) {
+      tableSorter = new QuotaOccupySorter();
+    } else if (schedulingPolicy.equalsIgnoreCase(BALANCED) && tableSorter instanceof QuotaOccupySorter) {
+      tableSorter = new BalancedSorter();
+    }
   }
 
   @VisibleForTesting
