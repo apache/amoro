@@ -79,8 +79,8 @@ public class SchedulingPolicy {
     String schedulingPolicy = Optional.ofNullable(optimizerGroup.getProperties())
         .orElseGet(Maps::newHashMap)
         .get(SCHEDULING_POLICY_PROPERTY_NAME);
-    if ((StringUtils.isBlank(schedulingPolicy) || schedulingPolicy.equalsIgnoreCase(QUOTA))
-        && tableSorter instanceof BalancedSorter) {
+    if ((StringUtils.isBlank(schedulingPolicy) || schedulingPolicy.equalsIgnoreCase(QUOTA)) &&
+        tableSorter instanceof BalancedSorter) {
       tableSorter = new QuotaOccupySorter();
     } else if (schedulingPolicy.equalsIgnoreCase(BALANCED) && tableSorter instanceof QuotaOccupySorter) {
       tableSorter = new BalancedSorter();
