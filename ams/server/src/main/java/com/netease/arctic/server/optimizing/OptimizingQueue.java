@@ -86,9 +86,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   private void initTableRuntime(TableRuntimeMeta tableRuntimeMeta) {
     TableRuntime tableRuntime = tableRuntimeMeta.getTableRuntime();
+    TableOptimizingProcess process = new TableOptimizingProcess(tableRuntimeMeta);
     if (tableRuntime.getOptimizingStatus().isProcessing() &&
-        tableRuntimeMeta.getOptimizingProcessId() != 0) {
-      tableRuntime.recover(new TableOptimizingProcess(tableRuntimeMeta));
+        tableRuntimeMeta.getOptimizingProcessId() != 0 && !process.isClosed()) {
+      tableRuntime.recover(process);
     }
 
     if (tableRuntime.isOptimizingEnabled()) {
@@ -98,7 +99,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING) {
         schedulingPolicy.addTable(tableRuntime);
       } else if (tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
-        TableOptimizingProcess process = new TableOptimizingProcess(tableRuntimeMeta);
         process.getTaskMap().entrySet().stream().filter(
                 entry -> entry.getValue().getStatus() == TaskRuntime.Status.SCHEDULED ||
                     entry.getValue().getStatus() == TaskRuntime.Status.ACKED)
@@ -108,10 +108,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
             .forEach(taskQueue::offer);
       }
     } else {
-      OptimizingProcess process = tableRuntime.getOptimizingProcess();
-      if (process != null) {
-        process.close();
-      }
+      Optional.ofNullable(tableRuntime.getOptimizingProcess()).ifPresent(OptimizingProcess::close);
     }
   }
 
@@ -342,7 +339,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         toSequence = tableRuntimeMeta.getToSequence();
       }
       loadTaskRuntimes();
-      tableRuntimeMeta.getTableRuntime().recover(this);
     }
 
     @Override
@@ -565,11 +561,15 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           OptimizingMapper.class,
           mapper -> mapper.selectTaskRuntimes(tableRuntime.getTableIdentifier().getId(), processId));
       Map<Integer, RewriteFilesInput> inputs = TaskFilesPersistence.loadTaskInputs(processId);
-      taskRuntimes.forEach(taskRuntime -> {
-        taskRuntime.claimOwnership(this);
-        taskRuntime.setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
-        taskMap.put(taskRuntime.getTaskId(), taskRuntime);
-      });
+      if (taskRuntimes.isEmpty() || inputs.isEmpty()) {
+        this.close();
+      } else {
+        taskRuntimes.forEach(taskRuntime -> {
+          taskRuntime.claimOwnership(this);
+          taskRuntime.setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
+          taskMap.put(taskRuntime.getTaskId(), taskRuntime);
+        });
+      }
     }
 
     private void loadTaskRuntimes(List<TaskDescriptor> taskDescriptors) {
