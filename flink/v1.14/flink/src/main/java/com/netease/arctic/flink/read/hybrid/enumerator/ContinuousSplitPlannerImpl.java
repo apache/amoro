@@ -81,6 +81,12 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
     long fromChangeSnapshotId = lastPosition.changeSnapshotId();
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
     if (changeSnapshot != null && changeSnapshot.snapshotId() != fromChangeSnapshotId) {
+      Long fromSequence = null;
+      if (fromChangeSnapshotId != Long.MIN_VALUE) {
+        Snapshot snapshot = table.changeTable().snapshot(fromChangeSnapshotId);
+        fromSequence = snapshot.sequenceNumber();
+      }
+
       long snapshotId = changeSnapshot.snapshotId();
       TableEntriesScan.Builder tableEntriesScanBuilder =
           TableEntriesScan.builder(table.changeTable())
@@ -90,12 +96,6 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
         filters.forEach(tableEntriesScanBuilder::withDataFilter);
       }
       TableEntriesScan entriesScan = tableEntriesScanBuilder.build();
-
-      Long fromSequence = null;
-      if (fromChangeSnapshotId != Long.MIN_VALUE) {
-        Snapshot snapshot = table.changeTable().snapshot(fromChangeSnapshotId);
-        fromSequence = snapshot.sequenceNumber();
-      }
 
       List<ArcticSplit> arcticChangeSplit =
           planChangeTable(entriesScan, fromSequence, table.changeTable().spec(), splitCount);

@@ -18,7 +18,7 @@
 
 package com.netease.arctic.ams.api.properties;
 
-import org.apache.curator.shaded.com.google.common.base.Strings;
+import org.apache.iceberg.relocated.com.google.common.base.Strings;
 
 public class AmsHAProperties {
   private static final String ROOT_PATH = "/arctic/ams";

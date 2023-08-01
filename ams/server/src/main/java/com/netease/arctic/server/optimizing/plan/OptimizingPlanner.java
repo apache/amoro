@@ -122,12 +122,12 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     double maxInputSize = MAX_INPUT_FILE_SIZE_PER_THREAD * availableCore;
     List<PartitionEvaluator> inputPartitions = Lists.newArrayList();
     long actualInputSize = 0;
-    for (int i = 0; i < evaluators.size() && actualInputSize < maxInputSize; i++) {
-      PartitionEvaluator evaluator = evaluators.get(i);
-      inputPartitions.add(evaluator);
-      if (actualInputSize + evaluator.getCost() < maxInputSize) {
-        actualInputSize += evaluator.getCost();
+    for (PartitionEvaluator evaluator : evaluators) {
+      if (actualInputSize + evaluator.getCost() > maxInputSize) {
+        break;
       }
+      inputPartitions.add(evaluator);
+      actualInputSize += evaluator.getCost();
     }
 
     double avgThreadCost = actualInputSize / availableCore;

@@ -18,9 +18,6 @@
 
 package com.netease.arctic.io;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
@@ -42,7 +39,10 @@ import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.OutputFileFactory;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.Pair;
 import org.junit.Assert;
@@ -68,7 +68,8 @@ public class TestGenericCombinedIcebergDataReader extends TableTestBase {
 
   public TestGenericCombinedIcebergDataReader(
       boolean partitionedTable, FileFormat fileFormat) {
-    super(new BasicCatalogTestHelper(TableFormat.ICEBERG),
+    super(
+        new BasicCatalogTestHelper(TableFormat.ICEBERG),
         new BasicTableTestHelper(false, partitionedTable, buildTableProperties(fileFormat)));
     this.fileFormat = fileFormat;
   }
@@ -123,7 +124,7 @@ public class TestGenericCombinedIcebergDataReader extends TableTestBase {
         new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
         new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
         new IcebergDeleteFile[] {new IcebergDeleteFile(eqDeleteFile, 2L),
-            new IcebergDeleteFile(posDeleteFile, 3L)},
+                                 new IcebergDeleteFile(posDeleteFile, 3L)},
         new IcebergDeleteFile[] {},
         getArcticTable());
 

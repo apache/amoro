@@ -37,7 +37,6 @@
         <powermock.version>2.0.2</powermock.version>
         <fastjson.version>1.2.83</fastjson.version>
         <netty.version>4.1.56.Final</netty.version>
-        <spark.version>3.3.2</spark.version>
         <junit5.version>5.9.1</junit5.version>
         <mybatis.version>3.5.6</mybatis.version>
         <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
@@ -61,6 +60,13 @@
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-hive</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <!-- this can't be excluded in hive -->
+                <exclusion>
+                    <groupId>org.eclipse.jetty.orbit</groupId>
+                    <artifactId>javax.servlet</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -78,7 +84,7 @@
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_2.12</artifactId>
-            <version>${spark.version}</version>
+            <version>${terminal.spark.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.parquet</groupId>
@@ -113,8 +119,8 @@
                     <artifactId>curator-recipes</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>hadoop-client-api</artifactId>
                     <groupId>org.apache.hadoop</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -122,25 +128,29 @@
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_2.12</artifactId>
-            <version>${spark.version}</version>
+            <version>${terminal.spark.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.parquet</groupId>
                     <artifactId>parquet-column</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
 
         <dependency>
             <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-spark-3.3</artifactId>
+            <artifactId>arctic-spark-${terminal.spark.major.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-hive_2.12</artifactId>
-            <version>${spark.version}</version>
+            <version>${terminal.spark.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.hive</groupId>
@@ -165,6 +175,14 @@
                 <exclusion>
                     <groupId>org.apache.velocity</groupId>
                     <artifactId>velocity</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hive</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -463,5 +481,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
