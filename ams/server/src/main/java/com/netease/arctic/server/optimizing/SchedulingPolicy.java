@@ -28,8 +28,8 @@ public class SchedulingPolicy {
 
   public SchedulingPolicy(ResourceGroup group) {
     String schedulingPolicy = Optional.ofNullable(group.getProperties())
-            .orElseGet(Maps::newHashMap)
-            .get(SCHEDULING_POLICY_PROPERTY_NAME);
+        .orElseGet(Maps::newHashMap)
+        .get(SCHEDULING_POLICY_PROPERTY_NAME);
     if (StringUtils.isBlank(schedulingPolicy) || schedulingPolicy.equalsIgnoreCase(QUOTA)) {
       tableSorter = new QuotaOccupySorter();
     } else if (schedulingPolicy.equalsIgnoreCase(BALANCED)) {
