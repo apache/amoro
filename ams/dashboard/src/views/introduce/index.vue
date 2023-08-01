@@ -88,7 +88,7 @@ export default defineComponent({
   .content {
     width: 100%;
     max-width: 1182px;
-    padding: 64px 0px;
+    padding: 64px 30px;
     .img {
       max-width: 100%;
     }
