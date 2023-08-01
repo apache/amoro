@@ -123,11 +123,11 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     List<PartitionEvaluator> inputPartitions = Lists.newArrayList();
     long actualInputSize = 0;
     for (PartitionEvaluator evaluator : evaluators) {
-      if (actualInputSize + evaluator.getCost() > maxInputSize) {
-        break;
-      }
       inputPartitions.add(evaluator);
       actualInputSize += evaluator.getCost();
+      if (actualInputSize > maxInputSize) {
+        break;
+      }
     }
 
     double avgThreadCost = actualInputSize / availableCore;
