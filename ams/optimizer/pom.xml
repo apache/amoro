@@ -35,13 +35,7 @@
         <fastjson.version>1.2.58</fastjson.version>
         <avro.version>1.10.1</avro.version>
         <optimizer-flink.version>1.14.6</optimizer-flink.version>
-        <flink.table-api-java-bridge.id>flink-table-api-java-bridge_${scala.binary.version}
-        </flink.table-api-java-bridge.id>
-        <flink.table-runtime.id>flink-table-runtime_${scala.binary.version}</flink.table-runtime.id>
-        <flink.streaming-java.id>flink-streaming-java_${scala.binary.version}</flink.streaming-java.id>
-        <flink.clients.id>flink-clients_${scala.binary.version}</flink.clients.id>
-        <flink.runtime-web.id>flink-runtime-web_${scala.binary.version}</flink.runtime-web.id>
-        <flink.connector-kafka.id>flink-connector-kafka_${scala.binary.version}</flink.connector-kafka.id>
+        <flink.scala.suffix>_2.12</flink.scala.suffix>
     </properties>
 
     <dependencies>
@@ -58,7 +52,7 @@
         <!-- flink dependencies begin -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>${flink.table-api-java-bridge.id}</artifactId>
+            <artifactId>flink-table-api-java-bridge${flink.scala.suffix}</artifactId>
             <version>${optimizer-flink.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -71,7 +65,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>${flink.table-runtime.id}</artifactId>
+            <artifactId>flink-table-runtime${flink.scala.suffix}</artifactId>
             <version>${optimizer-flink.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -84,7 +78,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>${flink.streaming-java.id}</artifactId>
+            <artifactId>flink-streaming-java${flink.scala.suffix}</artifactId>
             <version>${optimizer-flink.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -97,7 +91,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>${flink.clients.id}</artifactId>
+            <artifactId>flink-clients${flink.scala.suffix}</artifactId>
             <version>${optimizer-flink.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -136,7 +130,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>${flink.runtime-web.id}</artifactId>
+            <artifactId>flink-runtime-web${flink.scala.suffix}</artifactId>
             <version>${optimizer-flink.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -163,7 +157,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>${flink.connector-kafka.id}</artifactId>
+            <artifactId>flink-connector-kafka${flink.scala.suffix}</artifactId>
             <version>${optimizer-flink.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -275,40 +269,39 @@
         <profile>
             <id>optimizer.flink1.14</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
+                <property>
+                    <name>!optimizer.flink</name>
+                </property>
             </activation>
             <properties>
                 <optimizer-flink.version>1.14.6</optimizer-flink.version>
+                <flink.scala.suffix>_2.12</flink.scala.suffix>
             </properties>
         </profile>
         <profile>
             <id>optimizer.flink1.15</id>
             <activation>
-                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>optimizer.flink</name>
+                    <value>1.15</value>
+                </property>
             </activation>
             <properties>
                 <optimizer-flink.version>1.15.4</optimizer-flink.version>
-                <flink.table-api-java-bridge.id>flink-table-api-java-bridge</flink.table-api-java-bridge.id>
-                <flink.table-runtime.id>flink-table-runtime</flink.table-runtime.id>
-                <flink.streaming-java.id>flink-streaming-java</flink.streaming-java.id>
-                <flink.clients.id>flink-clients</flink.clients.id>
-                <flink.runtime-web.id>flink-runtime-web</flink.runtime-web.id>
-                <flink.connector-kafka.id>flink-connector-kafka</flink.connector-kafka.id>
+                <flink.scala.suffix/>
             </properties>
         </profile>
         <profile>
             <id>optimizer.flink1.16</id>
             <activation>
-                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>optimizer.flink</name>
+                    <value>1.16</value>
+                </property>
             </activation>
             <properties>
                 <optimizer-flink.version>1.16.2</optimizer-flink.version>
-                <flink.table-api-java-bridge.id>flink-table-api-java-bridge</flink.table-api-java-bridge.id>
-                <flink.table-runtime.id>flink-table-runtime</flink.table-runtime.id>
-                <flink.streaming-java.id>flink-streaming-java</flink.streaming-java.id>
-                <flink.clients.id>flink-clients</flink.clients.id>
-                <flink.runtime-web.id>flink-runtime-web</flink.runtime-web.id>
-                <flink.connector-kafka.id>flink-connector-kafka</flink.connector-kafka.id>
+                <flink.scala.suffix/>
             </properties>
         </profile>
     </profiles>

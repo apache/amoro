@@ -33,7 +33,6 @@ import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Iterator;
@@ -106,9 +105,6 @@ public class ArcticHadoopFileIO extends HadoopFileIO
       }
     });
   }
-
-
-
 
   @VisibleForTesting
   public List<FileStatus> listWithoutDoAs(String location) {
@@ -212,17 +208,13 @@ public class ArcticHadoopFileIO extends HadoopFileIO
   @Override
   public void deletePrefix(String prefix) {
     tableMetaStore.doAs(() -> {
-      Path toDelete = new Path(prefix);
-      FileSystem fs = getFs(toDelete);
+      Path prefixToDelete = new Path(prefix);
+      FileSystem fs = getFs(prefixToDelete);
       try {
-        if (!fs.delete(toDelete, true)) {
-          throw new IOException("Fail to delete directory:" + prefix + " recursively, " +
-              "file system return false, need to check the hdfs path");
-        }
+        return fs.delete(prefixToDelete, true /* recursive */);
       } catch (IOException e) {
-        throw new UncheckedIOException("Fail to delete directory:" + prefix + " recursively", e);
+        throw new UncheckedIOException(e);
       }
-      return null;
     });
   }
 
