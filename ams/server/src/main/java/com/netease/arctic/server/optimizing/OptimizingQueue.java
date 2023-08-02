@@ -290,7 +290,9 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   }
 
   private double getAvailableCore() {
-    return authOptimizers.values().stream().map(Resource::getThreadCount).reduce(Integer::sum).orElse(0);
+    int totalCore = authOptimizers.values().stream().mapToInt(Resource::getThreadCount).sum();
+    // the available core should be at least 1
+    return Math.max(totalCore, 1);
   }
 
   @VisibleForTesting
