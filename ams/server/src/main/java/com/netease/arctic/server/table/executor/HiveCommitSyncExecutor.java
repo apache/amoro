@@ -6,7 +6,6 @@ import com.netease.arctic.hive.utils.CompatibleHivePropertyUtil;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
