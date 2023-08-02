@@ -60,6 +60,10 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
 
   @Override
   protected boolean partitionNeedPlan(String partitionToPath) {
+    // check should split root node
+    if (needSplitRootNode(partitionToPath)) {
+      return true;
+    }
 
     List<DeleteFile> posDeleteFiles = getPosDeleteFilesFromFileTree(partitionToPath);
     List<DataFile> baseFiles = getBaseFilesFromFileTree(partitionToPath);
@@ -88,8 +92,7 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
     // if partition has no pos-delete file, and there are files in not hive location or
     // small file count greater than 2 in hive location, partition need plan
     // if partition has pos-delete, partition need plan
-    boolean partitionNeedPlan =
-        CollectionUtils.isNotEmpty(posDeleteFiles) || nodeHaveTwoSmallFiles || notInHiveFile;
+    boolean partitionNeedPlan = CollectionUtils.isNotEmpty(posDeleteFiles) || nodeHaveTwoSmallFiles || notInHiveFile;
 
     // check position delete file total size
     if (checkPosDeleteTotalSize(partitionToPath) && partitionNeedPlan) {
@@ -107,7 +110,7 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
   }
 
   @Override
-  protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
+  protected boolean nodeTaskNeedBuild(String partition, List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
     return true;
   }
 }
