@@ -123,7 +123,9 @@ export default defineComponent({
 .login-wrap {
   height: 100%;
   margin: 0 auto;
-  padding-top: 100px;
+  // padding-top: 100px;
+  display: flex;
+  align-items: center;
   background: #f5f6fa;
   .login-content {
     width: 480px;
