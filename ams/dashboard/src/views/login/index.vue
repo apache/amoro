@@ -126,16 +126,16 @@ export default defineComponent({
   padding-top: 100px;
   background: #f5f6fa;
   .login-content {
-    width: 640px;
-    height: 496px;
+    width: 480px;
+    height: 490px;
     border-radius: 16px;
-    padding: 80px;
+    padding: 64px 60px;
     background: #ffffff;
     box-shadow: 0px 10px 24px 0px rgba(30, 31, 39, 0.08);
     .content-title {
-      font-size: 20px;
+      font-size: 16px;
       font-weight: 900;
-      margin-bottom: 32px;
+      margin-bottom: 24px;
       color: #1E1F27;
     }
     :deep(.ant-input-prefix) {
@@ -146,7 +146,7 @@ export default defineComponent({
   }
   .img-logo {
     // margin: auto;
-    margin-bottom: 32px;
+    margin-bottom: 24px;
     .arctic-logo {
       width: 120px;
     }
@@ -166,7 +166,7 @@ export default defineComponent({
     }
   }
   .login-form-button {
-    margin-top: 40px;
+    margin-top: 66px;
     height: 48px;
     width: 100%;
     border-radius: 8px;

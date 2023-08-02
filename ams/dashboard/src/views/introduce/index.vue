@@ -18,7 +18,6 @@
               {{ item.title }}
             </div>
             <div class="item-desc">{{ item.desc }}</div>
-            <img class="fix-icon" src="@/assets/images/item-icon.png" />
           </div>
         </div>
       </div>
@@ -42,32 +41,32 @@ export default defineComponent({
     onMounted(() => {})
     const features = [
       {
-        title: 'Self-managed',
-        desc: 'Automatically compact small files and change files, regularly delete expired data to ensure the quality of table queries, and reduce system costs.',
+        title: 'Self-optimizing',
+        desc: 'Continuously optimizing tables, including compacting small files, change files, regularly delete expired files to keep high query performance and reducing storage costs.',
         icon: SelfManaged
       },
       {
         title: 'Multiple Formats',
-        desc: 'Support different table formats to meet different scenario requirements and provide them with unified management capabilities.',
+        desc: 'Support different table formats such as Iceberg, Mixed-Iceberg and Mixed-Hive to meet different scenario requirements and provide them with unified management capabilities.',
         icon: MultipleFormats
       },
       {
         title: 'Catalog Service',
-        desc: 'Provide a unified metadata management service for all computing engines, which can also be combined with existing metadata services.',
+        desc: 'Provide an unified catalog service for all computing engines, which can also used with existing metadata store service such as Hive Metastore and AWS Glue.',
         icon: CatalogService
       },
       {
         title: 'Rich Plugins',
-        desc: 'Offers a wide selection of external plugins to meet different scenarios such as automatic data optimizing, data analysis.',
+        desc: 'Provide various plugins to integrate with other systems, like continuously optimizing with Flink and data analysis with Spark and Kyuubi.',
         icon: RichPlugins
       },
       {
-        title: 'Management tools',
-        desc: 'Visual management tools provide rich monitoring and management capabilities to help users get started easily.',
+        title: 'Management Tools',
+        desc: 'Provide a variety of management tools, including WEB UI and standard SQL command line, to help you get started faster and integrate with other systems more easily.',
         icon: ManagementTools
       },
       {
-        title: 'Infrastructure Idependent',
+        title: 'Infrastructure Independent',
         desc: 'Can be easily deployed and used in private environments, cloud environments, hybrid cloud environments, and multi-cloud environments.',
         icon: InfrastructureIdependent
       }
