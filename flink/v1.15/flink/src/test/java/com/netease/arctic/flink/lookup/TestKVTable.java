@@ -85,6 +85,7 @@ public class TestKVTable extends TestRowDataPredicateBase {
   public TestName name = new TestName();
   private final Configuration config = new Configuration();
   private final List<String> primaryKeys = Lists.newArrayList("id", "grade");
+  private final List<String> primaryKeysDisorder = Lists.newArrayList("grade", "id");
 
   private boolean guavaCacheEnabled;
 
@@ -207,59 +208,74 @@ public class TestKVTable extends TestRowDataPredicateBase {
   }
 
   @Test
+  public void testSecondaryKeysMapping() throws IOException {
+    // primary keys are id and grade.
+    List<String> joinKeys = Lists.newArrayList("id");
+    try (SecondaryIndexTable secondaryIndexTable = (SecondaryIndexTable) createTableWithDisorderPK(joinKeys)) {
+      writeAndAssert(secondaryIndexTable);
+    } catch (Exception e) {
+      throw e;
+    }
+  }
+
+  @Test
   public void testInitialSecondaryKeyTable() throws IOException {
     config.setInteger(ROCKSDB_WRITING_THREADS, 10);
     config.set(LOOKUP_CACHE_TTL_AFTER_WRITE, Duration.ofMinutes(1000));
     // primary keys are id and grade.
     List<String> joinKeys = Lists.newArrayList("id");
     try (SecondaryIndexTable secondaryIndexTable = (SecondaryIndexTable) createTable(joinKeys)) {
-      secondaryIndexTable.open();
-
-      initTable(
-          secondaryIndexTable,
-          upsertStream(
-              row(RowKind.INSERT, 1, "1", 1),
-              row(RowKind.INSERT, 2, "2", 2),
-              row(RowKind.INSERT, 2, "3", 3),
-              row(RowKind.INSERT, 2, "4", 4),
-              row(RowKind.INSERT, 2, "5", 5)));
-
-      if (!secondaryIndexTable.initialized()) {
-        secondaryIndexTable.waitInitializationCompleted();
-      }
-
-      assertTableSet(
-          secondaryIndexTable,
-          row(1), row(1, "1", 1));
-      assertTableSet(
-          secondaryIndexTable,
-          row(2),
-          row(2, "2", 2),
-          row(2, "3", 3),
-          row(2, "4", 4),
-          row(2, "5", 5));
-
-      upsertTable(
-          secondaryIndexTable,
-          upsertStream(
-              row(RowKind.DELETE, 1, "1", 1),
-              row(RowKind.INSERT, 2, "2", 2),
-              row(RowKind.DELETE, 2, "2", 2),
-              row(RowKind.UPDATE_BEFORE, 3, "3", 4),
-              row(RowKind.UPDATE_AFTER, 3, "3", 5),
-              row(RowKind.INSERT, 3, "4", 4)));
-
-
-      assertTableSet(
-          secondaryIndexTable,
-          row(1), null);
-      assertTableSet(
-          secondaryIndexTable,
-          row(2), row(2, "3", 3), row(2, "4", 4), row(2, "5", 5));
-      assertTableSet(
-          secondaryIndexTable,
-          row(3), row(3, "3", 5), row(3, "4", 4));
+      writeAndAssert(secondaryIndexTable);
     }
+  }
+
+  private void writeAndAssert(SecondaryIndexTable secondaryIndexTable) throws IOException {
+    secondaryIndexTable.open();
+
+    initTable(
+        secondaryIndexTable,
+        upsertStream(
+            row(RowKind.INSERT, 1, "1", 1),
+            row(RowKind.INSERT, 2, "2", 2),
+            row(RowKind.INSERT, 2, "3", 3),
+            row(RowKind.INSERT, 2, "4", 4),
+            row(RowKind.INSERT, 2, "5", 5)));
+
+    if (!secondaryIndexTable.initialized()) {
+      secondaryIndexTable.waitInitializationCompleted();
+    }
+
+    assertTableSet(
+        secondaryIndexTable,
+        row(1), row(1, "1", 1));
+    assertTableSet(
+        secondaryIndexTable,
+        row(2),
+        row(2, "2", 2),
+        row(2, "3", 3),
+        row(2, "4", 4),
+        row(2, "5", 5));
+
+    upsertTable(
+        secondaryIndexTable,
+        upsertStream(
+            row(RowKind.DELETE, 1, "1", 1),
+            row(RowKind.INSERT, 2, "2", 2),
+            row(RowKind.DELETE, 2, "2", 2),
+            row(RowKind.UPDATE_BEFORE, 3, "3", 4),
+            row(RowKind.UPDATE_AFTER, 3, "3", 5),
+            row(RowKind.INSERT, 3, "4", 4)));
+
+
+    assertTableSet(
+        secondaryIndexTable,
+        row(1), null);
+    assertTableSet(
+        secondaryIndexTable,
+        row(2), row(2, "3", 3), row(2, "4", 4), row(2, "5", 5));
+    assertTableSet(
+        secondaryIndexTable,
+        row(3), row(3, "3", 5), row(3, "4", 4));
   }
 
   @Test
@@ -408,10 +424,19 @@ public class TestKVTable extends TestRowDataPredicateBase {
     return expressions.get(0).accept(rowDataPredicateExpressionVisitor);
   }
 
+  private KVTable<RowData> createTableWithDisorderPK(List<String> joinKeys) {
+    return createTable(joinKeys, Optional.empty(), true);
+  }
+
   private KVTable<RowData> createTable(List<String> joinKeys, Optional<RowDataPredicate> rowDataPredicate) {
+    return createTable(joinKeys, rowDataPredicate, false);
+  }
+
+  private KVTable<RowData> createTable(List<String> joinKeys, Optional<RowDataPredicate> rowDataPredicate,
+                                       boolean isDisorderPK) {
     return KVTableFactory.INSTANCE.create(
         new RowDataStateFactory(dbPath, new ConstantFunctionContext(new Configuration()).getMetricGroup()),
-        primaryKeys,
+        isDisorderPK ? primaryKeysDisorder : primaryKeys,
         joinKeys,
         arcticSchema,
         config,
