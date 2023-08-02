@@ -16,21 +16,21 @@
  - limitations under the License.
 -->
 <p align="center">
-  <img src="https://amoro.netease.com//img/amoro-logo.svg" alt="Amoro logo" height="120px"/>
+  <img src="https://amoro.netease.com/img/amoro-logo.svg" alt="Amoro logo" height="120px"/>
 </p>
 
 <p align="center">
   <a href="https://www.apache.org/licenses/LICENSE-2.0.html">
     <img src="https://img.shields.io/badge/license-Apache%202-4EB1BA.svg" />
   </a>
-  <a href="https://github.com/NetEase/arctic/actions/workflows/core-hadoop3-ci.yml">
-    <img src="https://github.com/NetEase/arctic/actions/workflows/core-hadoop3-ci.yml/badge.svg" />
+  <a href="https://github.com/NetEase/amoro/actions/workflows/core-hadoop3-ci.yml">
+    <img src="https://github.com/NetEase/amoro/actions/workflows/core-hadoop3-ci.yml/badge.svg" />
   </a>
-  <a href="https://github.com/NetEase/arctic/actions/workflows/core-hadoop2-ci.yml">
-    <img src="https://github.com/NetEase/arctic/actions/workflows/core-hadoop2-ci.yml/badge.svg" />
+  <a href="https://github.com/NetEase/amoro/actions/workflows/core-hadoop2-ci.yml">
+    <img src="https://github.com/NetEase/amoro/actions/workflows/core-hadoop2-ci.yml/badge.svg" />
   </a>
-  <a href="https://github.com/NetEase/arctic/actions/workflows/trino-ci.yml">
-    <img src="https://github.com/NetEase/arctic/actions/workflows/trino-ci.yml/badge.svg" />
+  <a href="https://github.com/NetEase/amoro/actions/workflows/trino-ci.yml">
+    <img src="https://github.com/NetEase/amoro/actions/workflows/trino-ci.yml/badge.svg" />
   </a>
 </p>
 
@@ -43,7 +43,7 @@ and helps data platforms or products easily build infra-decoupled, stream-and-ba
 Here is the architecture diagram of Amoro:
 
 <p align="center">
-  <img src="https://amoro.netease.com//img/home-content.png" alt="Amoro architecture" height="360px"/>
+  <img src="https://amoro.netease.com/img/home-content.png" alt="Amoro architecture" height="360px"/>
 </p>
 
 * AMS: Amoro Management Service provides Lakehouse management features, like self-optimizing, data expiration, etc.
@@ -85,11 +85,11 @@ Amoro support multiple processing engines for Mixed format as below:
 
 ## Features
 
-- Self-managed - Automatically compact small files and change files, regularly delete expired data to ensure the quality of table queries, and reduce system costs.
-- Multiple Formats - Support different table formats to meet different scenario requirements and provide them with unified management capabilities.
-- Catalog Service - Provide a unified metadata management service for all computing engines, which can also be combined with existing metadata services.
-- Rich Plugins - Offers a wide selection of external plugins to meet different scenarios such as automatic data optimizing, data analysis.
-- Management Tools - Visual management tools provide rich monitoring and management capabilities to help users get started easily.
+- Self-optimizing - Continuously optimizing tables, including compacting small files, change files, regularly delete expired files to keep high query performance and reducing storage costs.
+- Multiple Formats - Support different table formats such as Iceberg, Mixed-Iceberg and Mixed-Hive to meet different scenario requirements and provide them with unified management capabilities.
+- Catalog Service - Provide a unified catalog service for all computing engines, which can also used with existing metadata store service such as Hive Metastore and AWS Glue.
+- Rich Plugins - Provide various plugins to integrate with other systems, like continuously optimizing with Flink and data analysis with Spark and Kyuubi.
+- Management Tools - Provide a variety of management tools, including WEB UI and standard SQL command line, to help you get started faster and integrate with other systems more easily.
 - Infrastructure Independent - Can be easily deployed and used in private environments, cloud environments, hybrid cloud environments, and multi-cloud environments.
 
 ## Modules
