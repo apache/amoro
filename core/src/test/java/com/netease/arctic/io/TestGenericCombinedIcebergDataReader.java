@@ -18,17 +18,14 @@
 
 package com.netease.arctic.io;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.data.file.DataFileWithSequence;
-import com.netease.arctic.data.file.DeleteFileWithSequence;
+import com.netease.arctic.data.IcebergDataFile;
+import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
-import com.netease.arctic.scan.CombinedIcebergScanTask;
+import com.netease.arctic.optimizing.RewriteFilesInput;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
@@ -42,7 +39,10 @@ import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.OutputFileFactory;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.Pair;
 import org.junit.Assert;
@@ -62,13 +62,14 @@ public class TestGenericCombinedIcebergDataReader extends TableTestBase {
 
   private final FileFormat fileFormat;
 
-  private CombinedIcebergScanTask scanTask;
-  private CombinedIcebergScanTask dataScanTask;
-  private GenericCombinedIcebergDataReader dataReader;
+  private RewriteFilesInput scanTask;
+
+  private RewriteFilesInput dataScanTask;
 
   public TestGenericCombinedIcebergDataReader(
       boolean partitionedTable, FileFormat fileFormat) {
-    super(new BasicCatalogTestHelper(TableFormat.ICEBERG),
+    super(
+        new BasicCatalogTestHelper(TableFormat.ICEBERG),
         new BasicTableTestHelper(false, partitionedTable, buildTableProperties(fileFormat)));
     this.fileFormat = fileFormat;
   }
@@ -119,52 +120,73 @@ public class TestGenericCombinedIcebergDataReader extends TableTestBase {
     DeleteFile posDeleteFile = FileHelpers.writeDeleteFile(getArcticTable().asUnkeyedTable(),
         outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData, deletes).first();
 
-    scanTask = new CombinedIcebergScanTask(
-        new DataFileWithSequence[] {new DataFileWithSequence(dataFile, 1L)},
-        new DeleteFileWithSequence[] {new DeleteFileWithSequence(eqDeleteFile, 2L),
-            new DeleteFileWithSequence(posDeleteFile, 3L)},
-        getArcticTable().spec(), partitionData);
+    scanTask = new RewriteFilesInput(
+        new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
+        new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
+        new IcebergDeleteFile[] {new IcebergDeleteFile(eqDeleteFile, 2L),
+                                 new IcebergDeleteFile(posDeleteFile, 3L)},
+        new IcebergDeleteFile[] {},
+        getArcticTable());
 
-    dataScanTask = new CombinedIcebergScanTask(
-        new DataFileWithSequence[] {new DataFileWithSequence(dataFile, 1L)},
-        new DeleteFileWithSequence[] {}, getArcticTable().spec(), partitionData);
-
-    dataReader = new GenericCombinedIcebergDataReader(getArcticTable().io(), getArcticTable().schema(),
-        getArcticTable().schema(), null, false,
-        IdentityPartitionConverters::convertConstant, false);
+    dataScanTask = new RewriteFilesInput(
+        new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
+        new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
+        new IcebergDeleteFile[] {},
+        new IcebergDeleteFile[] {},
+        getArcticTable());
   }
 
   @Test
   public void readAllData() throws IOException {
-    try (CloseableIterable<Record> records = dataReader.readData(scanTask)) {
+    GenericCombinedIcebergDataReader dataReader = new GenericCombinedIcebergDataReader(getArcticTable().io(),
+        getArcticTable().schema(),
+        getArcticTable().spec(), null, false,
+        IdentityPartitionConverters::convertConstant, false, null, scanTask);
+    try (CloseableIterable<Record> records = dataReader.readData()) {
       Assert.assertEquals(1, Iterables.size(records));
       Record record = Iterables.getFirst(records, null);
       Assert.assertEquals(record.get(0), 3);
     }
+    dataReader.close();
   }
 
   @Test
   public void readAllDataNegate() throws IOException {
-    try (CloseableIterable<Record> records = dataReader.readDeleteData(scanTask)) {
+    GenericCombinedIcebergDataReader dataReader = new GenericCombinedIcebergDataReader(getArcticTable().io(),
+        getArcticTable().schema(),
+        getArcticTable().spec(), null, false,
+        IdentityPartitionConverters::convertConstant, false, null, scanTask);
+    try (CloseableIterable<Record> records = dataReader.readDeletedData()) {
       Assert.assertEquals(2, Iterables.size(records));
       Record first = Iterables.getFirst(records, null);
-      Assert.assertEquals(first.get(0), 1);
+      Assert.assertEquals(first.get(1), 0L);
       Record last = Iterables.getLast(records);
-      Assert.assertEquals(last.get(0), 2);
+      Assert.assertEquals(last.get(1), 1L);
     }
+    dataReader.close();
   }
 
   @Test
   public void readOnlyData() throws IOException {
-    try (CloseableIterable<Record> records = dataReader.readData(dataScanTask)) {
+    GenericCombinedIcebergDataReader dataReader = new GenericCombinedIcebergDataReader(getArcticTable().io(),
+        getArcticTable().schema(),
+        getArcticTable().spec(), null, false,
+        IdentityPartitionConverters::convertConstant, false, null, dataScanTask);
+    try (CloseableIterable<Record> records = dataReader.readData()) {
       Assert.assertEquals(3, Iterables.size(records));
     }
+    dataReader.close();
   }
 
   @Test
   public void readOnlyDataNegate() throws IOException {
-    try (CloseableIterable<Record> records = dataReader.readDeleteData(dataScanTask)) {
+    GenericCombinedIcebergDataReader dataReader = new GenericCombinedIcebergDataReader(getArcticTable().io(),
+        getArcticTable().schema(),
+        getArcticTable().spec(), null, false,
+        IdentityPartitionConverters::convertConstant, false, null, dataScanTask);
+    try (CloseableIterable<Record> records = dataReader.readDeletedData()) {
       Assert.assertEquals(0, Iterables.size(records));
     }
+    dataReader.close();
   }
 }

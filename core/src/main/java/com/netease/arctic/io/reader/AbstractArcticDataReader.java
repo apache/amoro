@@ -35,6 +35,8 @@ import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.types.Type;
 import org.apache.parquet.schema.MessageType;
 
+import java.io.Serializable;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -46,7 +48,7 @@ import java.util.function.Function;
  *
  * @param <T> to indicate the record data type.
  */
-public abstract class AbstractArcticDataReader<T> {
+public abstract class AbstractArcticDataReader<T> implements Serializable {
 
   protected final ArcticFileIO fileIO;
   protected final Schema tableSchema;
@@ -104,7 +106,7 @@ public abstract class AbstractArcticDataReader<T> {
     this.nameMapping = nameMapping;
     this.caseSensitive = caseSensitive;
     this.convertConstant = convertConstant;
-    this.sourceNodes = sourceNodes;
+    this.sourceNodes = sourceNodes != null ? Collections.unmodifiableSet(sourceNodes) : null;
     this.reuseContainer = reuseContainer;
   }
 
@@ -114,10 +116,14 @@ public abstract class AbstractArcticDataReader<T> {
             sourceNodes, structLikeCollections);
     Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
 
-    CloseableIterable<T> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
-        CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-        fileScanTask -> arcticDeleteFilter.filter(newParquetIterable(fileScanTask, newProjectedSchema,
-            DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
+    CloseableIterable<T> dataIterable = arcticDeleteFilter.filter(
+        CloseableIterable.concat(
+            CloseableIterable.transform(
+                CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
+                fileScanTask -> newParquetIterable(
+                    fileScanTask,
+                    newProjectedSchema,
+                    DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
     return dataIterable.iterator();
   }
 
@@ -133,11 +139,15 @@ public abstract class AbstractArcticDataReader<T> {
 
       Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
 
-      CloseableIterable<T> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
-          CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-          fileScanTask -> arcticDeleteFilter.filterNegate(
-              newParquetIterable(fileScanTask, newProjectedSchema,
-                  DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
+      CloseableIterable<T> dataIterable = arcticDeleteFilter.filterNegate(
+          CloseableIterable.concat(
+              CloseableIterable.transform(
+                  CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
+                  fileScanTask ->
+                      newParquetIterable(
+                          fileScanTask,
+                          newProjectedSchema,
+                          DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
       return dataIterable.iterator();
     } else {
       return CloseableIterator.empty();

@@ -28,7 +28,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
@@ -49,7 +48,6 @@ import static com.netease.arctic.flink.write.hidden.kafka.TestHiddenLogOperators
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Ignore
 public class TestKafkaConsumer extends TestBaseLog {
   private static final Logger LOG = LoggerFactory.getLogger(TestKafkaConsumer.class);
   private static final KafkaTestBase kafkaTestBase = new KafkaTestBase();

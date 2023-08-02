@@ -19,24 +19,26 @@
 
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 ARCTIC_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
+export ARCTIC_HOME
 
 LIB_PATH=$ARCTIC_HOME/lib
 LOG_DIR=$ARCTIC_HOME/logs
-export CLASSPATH=$ARCTIC_HOME/conf/optimize:$LIB_PATH/:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -)
-
-while getopts "m:a" arg
-do
-  case $arg in
-       m)
-          memory=$OPTARG
-          ;;
-  esac
-done
-
+STDERR_LOG=${LOG_DIR}/localOptimize.log.err
+export CLASSPATH=$CLASSPATH:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -):$ARCTIC_HOME/conf/optimize
+if [ -z $(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -) ]; then
+  echo "Launching the localOptimize task lacks relevant jars, please check" >&2
+  exit -1
+fi
 if [[ -d $JAVA_HOME ]]; then
     JAVA_RUN=$JAVA_HOME/bin/java
 else
     JAVA_RUN=java
 fi
 
-$JAVA_RUN -Dlog.home=${LOG_DIR} -Dlog.subdir=localOptimizer-${6} -Xmx${memory}m com.netease.arctic.optimizer.local.LocalOptimizer $@ >/dev/null
+if [ ! -f $STDERR_LOG ];then
+    touch $STDERR_LOG
+fi
+JAVA_OPTS="-Xmx$2m -Dlog.home=${LOG_DIR} -Dlog.subdir=localOptimizer-$(date +%s)"
+RUN_SERVER="com.netease.arctic.optimizer.local.LocalOptimizer"
+CMDS="$JAVA_RUN $JAVA_OPTS $RUN_SERVER $@"
+nohup ${CMDS} >/dev/null 2>${STDERR_LOG} &

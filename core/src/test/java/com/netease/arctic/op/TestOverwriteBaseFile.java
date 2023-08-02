@@ -46,12 +46,14 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
         DataTestHelpers.createRecord(8, "888", 0, "2022-01-01T12:00:00"),
         DataTestHelpers.createRecord(9, "999", 0, "2022-01-01T12:00:00")
     );
+    long before = System.currentTimeMillis();
     List<DataFile> newFiles = DataTestHelpers.writeBaseStore(getArcticTable().asKeyedTable(), txId, newRecords, false);
     OverwriteBaseFiles overwrite = getArcticTable().asKeyedTable().newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.overwriteByRowFilter(Expressions.alwaysTrue())
         .updateOptimizedSequenceDynamically(txId)
         .commit();
+    long after = System.currentTimeMillis();
     // overwrite all partition and add new data file
 
     StructLikeMap<Long> partitionOptimizedSequence =
@@ -70,6 +72,18 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
         txId,
         partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-04T12:00:00")).longValue());
 
+    StructLikeMap<Long> partitionOptimizedTime =
+        TablePropertyUtil.getPartitionBaseOptimizedTime(getArcticTable().asKeyedTable());
+    // expect result: all partition with new optimized time
+    assertRange(before, after,
+        partitionOptimizedTime.get(DataTestHelpers.recordPartition("2022-01-01T12:00:00")));
+    assertRange(before, after,
+        partitionOptimizedTime.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")));
+    assertRange(before, after,
+        partitionOptimizedTime.get(DataTestHelpers.recordPartition("2022-01-03T12:00:00")));
+    assertRange(before, after,
+        partitionOptimizedTime.get(DataTestHelpers.recordPartition("2022-01-04T12:00:00")));
+
     List<Record> rows = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), Expressions.alwaysTrue());
     // partition1 -> base[7,8,9]
     Assert.assertEquals(3, rows.size());
@@ -81,6 +95,11 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
     Assert.assertTrue(resultIdSet.contains(9));
   }
 
+  private void assertRange(long from, long to, long actual) {
+    Assert.assertTrue(actual >= from);
+    Assert.assertTrue(actual <= to);
+  }
+
   @Test
   public void testOverwritePartitionByExpression() {
     long txId = getArcticTable().asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
@@ -90,6 +109,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
         DataTestHelpers.createRecord(9, "999", 0, "2022-01-01T12:00:00")
     );
     List<DataFile> newFiles = DataTestHelpers.writeBaseStore(getArcticTable().asKeyedTable(), txId, newRecords, false);
+    long before = System.currentTimeMillis();
     OverwriteBaseFiles overwrite = getArcticTable().asKeyedTable().newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.updateOptimizedSequenceDynamically(txId);
@@ -104,6 +124,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
 
     );
     overwrite.commit();
+    long after = System.currentTimeMillis();
 
     StructLikeMap<Long> partitionOptimizedSequence =
         TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable().asKeyedTable());
@@ -118,6 +139,17 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
     Assert.assertEquals(
         txId,
         partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")).longValue());
+
+    StructLikeMap<Long> partitionOptimizedTime =
+        TablePropertyUtil.getPartitionBaseOptimizedTime(getArcticTable().asKeyedTable());
+    // expect result: 1,2,4 partition with new optimized time, 3 partition is null
+    assertRange(before, after,
+        partitionOptimizedTime.get(DataTestHelpers.recordPartition("2022-01-01T12:00:00")));
+    assertRange(before, after,
+        partitionOptimizedTime.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")));
+    Assert.assertNull(partitionOptimizedTime.get(DataTestHelpers.recordPartition("2022-01-03T12:00:00")));
+    assertRange(before, after,
+        partitionOptimizedTime.get(DataTestHelpers.recordPartition("2022-01-04T12:00:00")));
 
     List<Record> rows = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), Expressions.alwaysTrue());
     // partition1 -> base[7,8,9]

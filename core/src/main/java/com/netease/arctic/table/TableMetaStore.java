@@ -19,7 +19,7 @@
 package com.netease.arctic.table;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
@@ -360,12 +360,11 @@ public class TableMetaStore implements Serializable {
     return proxyUgi.doAs((PrivilegedAction<T>) () -> doAsUgi(callable));
   }
 
-  private  <T> T doAsUgi(Callable<T> callable) {
+  private <T> T doAsUgi(Callable<T> callable) {
     try {
       return callable.call();
     } catch (Throwable e) {
       if (e instanceof RuntimeException) {
-        LOG.error("run with ugi request failed.", e);
         throw (RuntimeException) e;
       }
       throw new RuntimeException("run with ugi request failed.", e);

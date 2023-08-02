@@ -70,7 +70,7 @@ import java.util.stream.Collectors;
 public class HiveDataTestHelpers {
 
   public static List<DataFile> writeChangeStore(
-      KeyedTable keyedTable, long txId, ChangeAction action,
+      KeyedTable keyedTable, Long txId, ChangeAction action,
       List<Record> records, boolean orderedWrite) {
     AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder.builderFor(keyedTable)
         .withChangeAction(action)

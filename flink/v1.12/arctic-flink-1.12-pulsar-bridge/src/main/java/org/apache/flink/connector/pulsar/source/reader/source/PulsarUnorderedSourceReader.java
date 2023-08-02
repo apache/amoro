@@ -119,9 +119,7 @@ public class PulsarUnorderedSourceReader<OUT> extends PulsarSourceReaderBase<OUT
     @Override
     protected void onSplitFinished(Map<String, PulsarPartitionSplitState> finishedSplitIds) {
         // We don't require new splits, all the splits are pre-assigned by source enumerator.
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("onSplitFinished event: {}", finishedSplitIds);
-        }
+        LOG.debug("onSplitFinished event: {}", finishedSplitIds);
 
         if (coordinatorClient != null) {
             // Commit the uncommitted transaction

@@ -24,7 +24,7 @@ import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
+import com.netease.arctic.iceberg.InternalRecordWrapper;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
@@ -202,8 +202,8 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
     );
     List<Record> result = Lists.newArrayList();
     try (CloseableIterable<CombinedScanTask> combinedScanTasks = keyedTable.newScan().planTasks()) {
-      combinedScanTasks.forEach( combinedTask -> combinedTask.tasks().forEach( scTask -> {
-        try( CloseableIterator<Record> records = reader.readData(scTask)) {
+      combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
+        try (CloseableIterator<Record> records = reader.readData(scTask)) {
           while (records.hasNext()) {
             result.add(records.next());
           }

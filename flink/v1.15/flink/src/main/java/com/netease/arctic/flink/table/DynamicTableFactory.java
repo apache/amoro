@@ -69,6 +69,13 @@ import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.createKey
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.createValueFormatProjection;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getKafkaProperties;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOOKUP_CACHE_MAX_ROWS;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOOKUP_CACHE_TTL_AFTER_WRITE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOOKUP_RELOADING_INTERVAL;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ROCKSDB_AUTO_COMPACTIONS;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ROCKSDB_BLOCK_CACHE_CAPACITY;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ROCKSDB_BLOCK_CACHE_NUM_SHARD_BITS;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ROCKSDB_WRITING_THREADS;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
 import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
@@ -99,12 +106,10 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
   private String internalCatalogName;
 
   public DynamicTableFactory(
-      ArcticCatalog arcticCatalog,
-      InternalCatalogBuilder internalCatalogBuilder,
-      String internalCatalogName) {
+      ArcticCatalog arcticCatalog) {
     this.arcticCatalog = arcticCatalog;
-    this.internalCatalogBuilder = internalCatalogBuilder;
-    this.internalCatalogName = internalCatalogName;
+    this.internalCatalogBuilder = arcticCatalog.catalogBuilder();
+    this.internalCatalogName = arcticCatalog.amsCatalogName();
   }
 
   public DynamicTableFactory() {
@@ -168,8 +173,17 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         arcticDynamicSource = createLogSource(arcticTable, context, confWithAll);
     }
 
+    return generateDynamicTableSource(
+        identifier.getObjectName(), arcticDynamicSource, arcticTable, tableLoader);
+  }
+
+  protected DynamicTableSource generateDynamicTableSource(
+      String tableName,
+      ScanTableSource arcticDynamicSource,
+      ArcticTable arcticTable,
+      ArcticTableLoader tableLoader) {
     return new ArcticDynamicSource(
-        identifier.getObjectName(), arcticDynamicSource, arcticTable, arcticTable.properties());
+        tableName, arcticDynamicSource, arcticTable, arcticTable.properties(), tableLoader);
   }
 
   @Override
@@ -230,6 +244,16 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     options.add(ArcticValidator.DIM_TABLE_ENABLE);
     options.add(METASTORE_URL);
     options.add(ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE);
+
+    // lookup
+    options.add(LOOKUP_CACHE_MAX_ROWS);
+    options.add(LOOKUP_RELOADING_INTERVAL);
+    options.add(LOOKUP_CACHE_TTL_AFTER_WRITE);
+
+    options.add(ROCKSDB_AUTO_COMPACTIONS);
+    options.add(ROCKSDB_WRITING_THREADS);
+    options.add(ROCKSDB_BLOCK_CACHE_CAPACITY);
+    options.add(ROCKSDB_BLOCK_CACHE_NUM_SHARD_BITS);
     return options;
   }
 

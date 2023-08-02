@@ -27,7 +27,6 @@ import org.apache.flink.connector.base.source.reader.SingleThreadMultiplexSource
 import org.apache.flink.connector.base.source.reader.synchronization.FutureCompletingBlockingQueue;
 import org.apache.flink.connector.kafka.source.KafkaSourceOptions;
 import org.apache.flink.connector.kafka.source.metrics.KafkaSourceReaderMetrics;
-import org.apache.flink.connector.kafka.source.reader.fetcher.KafkaSourceFetcherManager;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplitState;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -184,8 +183,7 @@ public class KafkaSourceReader<T>
 
   // ------------------------
 
-  @VisibleForTesting
-  SortedMap<Long, Map<TopicPartition, OffsetAndMetadata>> getOffsetsToCommit() {
+  public SortedMap<Long, Map<TopicPartition, OffsetAndMetadata>> getOffsetsToCommit() {
     return offsetsToCommit;
   }
 

@@ -18,7 +18,7 @@
 
 package com.netease.arctic.table;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public enum DistributionHashMode {
   NONE("none", false, false),

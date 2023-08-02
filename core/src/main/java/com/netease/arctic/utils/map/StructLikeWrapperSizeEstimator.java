@@ -18,7 +18,7 @@
 
 package com.netease.arctic.utils.map;
 
-import com.netease.arctic.iceberg.optimize.StructLikeWrapper;
+import com.netease.arctic.iceberg.StructLikeWrapper;
 import com.netease.arctic.utils.ObjectSizeCalculator;
 import org.apache.iceberg.StructLike;
 

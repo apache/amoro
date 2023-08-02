@@ -18,7 +18,7 @@
 
 package com.netease.arctic.table;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
@@ -47,6 +47,10 @@ public class PrimaryKeySpec implements Serializable {
 
   public Schema getSchema() {
     return schema;
+  }
+
+  public Schema getPkSchema() {
+    return schema.select(pkFields.stream().map(PrimaryKeyField::fieldName).collect(Collectors.toList()));
   }
 
   public static Builder builderFor(Schema schema) {

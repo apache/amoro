@@ -20,8 +20,8 @@ package com.netease.arctic.utils.map;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.data.ChangedLsn;
-import com.netease.arctic.iceberg.optimize.StructLikeWrapper;
-import com.netease.arctic.iceberg.optimize.StructLikeWrapperFactory;
+import com.netease.arctic.iceberg.StructLikeWrapper;
+import com.netease.arctic.iceberg.StructLikeWrapperFactory;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.utils.ObjectSizeCalculator;
 import org.apache.iceberg.data.Record;

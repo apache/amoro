@@ -18,8 +18,8 @@
 
 package com.netease.arctic.scan;
 
-import com.netease.arctic.data.file.ContentFileWithSequence;
-import com.netease.arctic.data.file.FileNameGenerator;
+import com.netease.arctic.data.FileNameRules;
+import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.io.TableDataTestBase;
 import com.netease.arctic.utils.ArcticDataFiles;
 import org.apache.iceberg.StructLike;
@@ -33,8 +33,8 @@ public class TestChangeTableBasicIncrementalScan extends TableDataTestBase {
   @Test
   public void testIncrementalScan() {
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable().asKeyedTable().changeTable().newChangeScan();
-    CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence();
+        getArcticTable().asKeyedTable().changeTable().newScan();
+    CloseableIterable<IcebergContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
 
     assertFiles(files, 3, 1, 2);
   }
@@ -45,8 +45,8 @@ public class TestChangeTableBasicIncrementalScan extends TableDataTestBase {
     StructLike partitionData = ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
     fromSequence.put(partitionData, 1L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable().asKeyedTable().changeTable().newChangeScan().fromSequence(fromSequence);
-    CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence();
+        getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence);
+    CloseableIterable<IcebergContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
 
     assertFiles(files, 1, 2, 2);
   }
@@ -54,8 +54,8 @@ public class TestChangeTableBasicIncrementalScan extends TableDataTestBase {
   @Test
   public void testIncrementalScanTo() {
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable().asKeyedTable().changeTable().newChangeScan().toSequence(1);
-    CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence();
+        getArcticTable().asKeyedTable().changeTable().newScan().toSequence(1);
+    CloseableIterable<IcebergContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
 
     assertFiles(files, 2, 1, 1);
   }
@@ -66,8 +66,8 @@ public class TestChangeTableBasicIncrementalScan extends TableDataTestBase {
     StructLike partitionData = ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
     fromSequence.put(partitionData, 1L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable().asKeyedTable().changeTable().newChangeScan().fromSequence(fromSequence).toSequence(1);
-    CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence();
+        getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence).toSequence(1);
+    CloseableIterable<IcebergContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
 
     assertFiles(files, 0, 0, 0);
   }
@@ -81,9 +81,9 @@ public class TestChangeTableBasicIncrementalScan extends TableDataTestBase {
     StructLike partitionData1 = ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
     fromLegacyTxId.put(partitionData1, 100L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable().asKeyedTable().changeTable().newChangeScan().fromSequence(fromSequence)
+        getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence)
             .fromLegacyTransaction(fromLegacyTxId);
-    CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence();
+    CloseableIterable<IcebergContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
 
     assertFiles(files, 1, 2, 2);
   }
@@ -94,22 +94,22 @@ public class TestChangeTableBasicIncrementalScan extends TableDataTestBase {
     StructLike partitionData1 = ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
     fromLegacyTxId.put(partitionData1, 2L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable().asKeyedTable().changeTable().newChangeScan()
+        getArcticTable().asKeyedTable().changeTable().newScan()
             .fromLegacyTransaction(fromLegacyTxId);
-    CloseableIterable<ContentFileWithSequence<?>> files = changeTableIncrementalScan.planFilesWithSequence();
+    CloseableIterable<IcebergContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
 
     int cnt = 0;
-    for (ContentFileWithSequence<?> file : files) {
+    for (IcebergContentFile<?> file : files) {
       cnt++;
-      Assert.assertTrue(FileNameGenerator.parseTransactionId(file.path().toString()) > 2L);
+      Assert.assertTrue(FileNameRules.parseTransactionId(file.path().toString()) > 2L);
     }
     Assert.assertEquals(1, cnt);
   }
 
-  private void assertFiles(CloseableIterable<ContentFileWithSequence<?>> files, int fileCnt,
+  private void assertFiles(CloseableIterable<IcebergContentFile<?>> files, int fileCnt,
                            long minSequence, long maxSequence) {
     int cnt = 0;
-    for (ContentFileWithSequence<?> file : files) {
+    for (IcebergContentFile<?> file : files) {
       cnt++;
       Assert.assertTrue(file.getSequenceNumber() >= minSequence);
       Assert.assertTrue(file.getSequenceNumber() <= maxSequence);

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *  *
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,10 +18,13 @@
 
 package com.netease.arctic.spark.test.suites.sql;
 
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
-import com.netease.arctic.spark.test.helper.TestTableHelper;
+import com.netease.arctic.table.ArcticTable;
+import org.apache.iceberg.io.FileInfo;
+import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.junit.jupiter.api.Assertions;
@@ -60,11 +63,25 @@ public class TestTruncateSQL extends SparkTableTestBase {
     sql("insert into " +
         target().database + "." + target().table +
         " values (1, 'a', 'a'), (2, 'b', 'b'), (3, 'c', 'c')");
-    Assertions.assertEquals(3, TestTableHelper.listFiles(loadTable()).size());
+    Assertions.assertEquals(3, tableDeltaFileSize(loadTable()));
     sql("truncate table " + target().database + "." + target().table);
     Dataset<Row> sql = sql("select * from " +
         target().database + "." + target().table);
     Assertions.assertEquals(0, sql.collectAsList().size());
-    Assertions.assertEquals(3, TestTableHelper.listFiles(loadTable()).size());
+    Assertions.assertEquals(3, tableDeltaFileSize(loadTable()));
+  }
+
+  private long tableDeltaFileSize(ArcticTable table) {
+    Stream<FileInfo> datafiles;
+    try (ArcticFileIO io = table.io()) {
+      if (table.isKeyedTable()) {
+        String dataLocation = table.asKeyedTable().changeLocation() + "/data";
+        datafiles = Streams.stream(io.asPrefixFileIO().listPrefix(dataLocation));
+      } else {
+        String dataLocation = table.asUnkeyedTable().location() + "/data";
+        datafiles = Streams.stream(io.asPrefixFileIO().listPrefix(dataLocation));
+      }
+    }
+    return datafiles.count();
   }
 }

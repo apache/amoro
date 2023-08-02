@@ -79,6 +79,11 @@ public class HMSMockServer {
       .impl(RetryingHMSHandler.class, HiveConf.class, IHMSHandler.class, boolean.class)
       .buildStatic();
 
+  private static final DynConstructors.Ctor<HiveMetaStoreClient> HMS_CLIENT_CTOR = DynConstructors.builder()
+      .impl(HiveMetaStoreClient.class, HiveConf.class)
+      .impl(HiveMetaStoreClient.class, Configuration.class)
+      .build();
+
   // Hive3 introduces background metastore tasks (MetastoreTaskThread) for performing various cleanup duties. These
   // threads are scheduled and executed in a static thread pool (org.apache.hadoop.hive.metastore.ThreadPool).
   // This thread pool is shut down normally as part of the JVM shutdown hook, but since we're creating and tearing down
@@ -129,7 +134,7 @@ public class HMSMockServer {
    */
   public void start(int poolSize) {
     try {
-      LOG.info("hive local dir: " + hiveLocalDir.getAbsolutePath());
+      LOG.info("hive local dir: {}", hiveLocalDir.getAbsolutePath());
       FileUtils.deleteQuietly(hiveLocalDir);
 
       File derbyLogFile = new File(hiveLocalDir, "derby.log");
@@ -212,7 +217,7 @@ public class HMSMockServer {
   }
 
   public String getWareHouseLocation() {
-    return hiveLocalDir.getAbsolutePath();
+    return hiveLocalDir.getAbsolutePath().replace("\\", "/");
   }
 
   public String getDatabasePath(String dbName) {
@@ -257,7 +262,7 @@ public class HMSMockServer {
   public HiveMetaStoreClient getClient() {
     if (client == null) {
       try {
-        this.client = new HiveMetaStoreClient(hiveConf);
+        this.client = HMS_CLIENT_CTOR.newInstance(hiveConf);
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
@@ -268,7 +273,7 @@ public class HMSMockServer {
   private TServer newThriftServer(TServerSocket socket, int poolSize, HiveConf conf) throws Exception {
     HiveConf serverConf = new HiveConf(conf);
     String derbyPath = getDerbyPath();
-    LOG.info("DerbyPath: " + derbyPath);
+    LOG.info("DerbyPath: {}", derbyPath);
     String derbyUrl = "jdbc:derby:;databaseName=" + derbyPath + ";create=true";
     // when test iceberg with hive catalog, Exception `java.sql.SQLSyntaxErrorException: Table/View 'HIVE_LOCKS' does
     // not exist.` will throw, this is a bug of hive scheamtools, see https://issues.apache.org/jira/browse/HIVE-21302.
@@ -292,7 +297,7 @@ public class HMSMockServer {
           Thread thread = new Thread(r);
           String threadName = "HMS-pool-" + threadCount.incrementAndGet();
           thread.setName(threadName);
-          LOG.info("HMSMockServer create thread: " + threadName);
+          LOG.info("HMSMockServer create thread: {}", threadName);
           return thread;
         }, new ThreadPoolExecutor.AbortPolicy());
 
@@ -352,7 +357,7 @@ public class HMSMockServer {
         command.append(line.substring(0, line.lastIndexOf(";")));
         command.append(" ");
         Statement statement = connection.createStatement();
-        LOG.debug("Running: " + command);
+        LOG.debug("Running: {}", command);
         statement.execute(command.toString());
         statement.close();
         connection.commit();

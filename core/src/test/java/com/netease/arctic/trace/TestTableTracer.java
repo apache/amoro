@@ -18,7 +18,6 @@
 
 package com.netease.arctic.trace;
 
-import com.google.common.collect.Lists;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.DataFileTestHelpers;
 import com.netease.arctic.ams.api.CommitMetaProducer;
@@ -26,7 +25,7 @@ import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFile;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
-import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.DataFileType;
@@ -42,11 +41,13 @@ import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -55,6 +56,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Table trace is disabled for version 0.5.0
+ */
+@Ignore
 @RunWith(Parameterized.class)
 public class TestTableTracer extends TableTestBase {
 
@@ -66,7 +71,8 @@ public class TestTableTracer extends TableTestBase {
       boolean keyedTable,
       boolean onBaseTable,
       boolean partitionedTable) {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(keyedTable, partitionedTable));
     this.onBaseTable = onBaseTable;
   }
@@ -120,7 +126,7 @@ public class TestTableTracer extends TableTestBase {
 
     List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas().get(
         operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(1, tableCommitMetas.size());
+    Assert.assertEquals(0, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(0);
     validateCommitMeta(commitMeta, DataOperations.APPEND, new org.apache.iceberg.DataFile[] {
         getDataFile(1), getDataFile(2)}, new org.apache.iceberg.DataFile[] {});
@@ -615,7 +621,8 @@ public class TestTableTracer extends TableTestBase {
       Assert.assertEquals(icebergFile.path(), validateFile.getPath());
       Assert.assertEquals(icebergFile.fileSizeInBytes(), validateFile.getFileSize());
       Assert.assertEquals(icebergFile.recordCount(), validateFile.getRecordCount());
-      Assert.assertEquals(onBaseTable ? DataFileType.BASE_FILE.name() : DataFileType.INSERT_FILE.name(),
+      Assert.assertEquals(
+          onBaseTable ? DataFileType.BASE_FILE.name() : DataFileType.INSERT_FILE.name(),
           validateFile.getFileType());
       Assert.assertEquals(0, validateFile.getIndex());
       Assert.assertEquals(0, validateFile.getMask());
