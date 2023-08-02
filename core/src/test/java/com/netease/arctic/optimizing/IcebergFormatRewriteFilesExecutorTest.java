@@ -18,9 +18,6 @@
 
 package com.netease.arctic.optimizing;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
@@ -48,7 +45,10 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.parquet.Parquet;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.Pair;
 import org.junit.Assert;

@@ -33,6 +33,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.NodeFilter;
 import com.netease.arctic.utils.map.StructLikeBaseMap;
 import com.netease.arctic.utils.map.StructLikeCollections;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Schema;
@@ -144,7 +145,7 @@ public abstract class ArcticDeleteFilter<T> {
     deleteIds.add(MetadataColumns.TRANSACTION_ID_FILED.fieldId());
     deleteIds.add(MetadataColumns.FILE_OFFSET_FILED.fieldId());
     this.deleteSchema = TypeUtil.select(requiredSchema, deleteIds);
-    if (sourceNodes != null) {
+    if (CollectionUtils.isNotEmpty(sourceNodes)) {
       this.deleteNodeFilter = new NodeFilter<>(sourceNodes, deleteSchema, primaryKeySpec, record -> record);
     } else {
       this.deleteNodeFilter = null;

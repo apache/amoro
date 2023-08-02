@@ -18,7 +18,6 @@
 
 package com.netease.arctic.hive.utils;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
@@ -39,6 +38,7 @@ import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,9 +118,9 @@ public class UpgradeHiveTableUtil {
 
       try {
         HiveTableUtil.alterTableLocation(arcticHiveCatalog.getHMSClient(), arcticTable.id(), newPath);
-        LOG.info("table{" + arcticTable.name() + "} alter hive table location " + hiveDataLocation + " success");
+        LOG.info("Table {} alter hive table location {}", arcticTable.name(), hiveDataLocation);
       } catch (IOException e) {
-        LOG.warn("table{" + arcticTable.name() + "} alter hive table location failed", e);
+        LOG.warn("Table {} alter hive table location failed", arcticTable.name(), e);
         throw new RuntimeException(e);
       }
     } else {

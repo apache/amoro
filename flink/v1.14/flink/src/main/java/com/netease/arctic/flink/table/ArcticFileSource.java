@@ -19,6 +19,8 @@
 package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
+import com.netease.arctic.flink.util.FilterUtil;
+import com.netease.arctic.flink.util.IcebergAndFlinkFilters;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.configuration.Configuration;
@@ -40,16 +42,13 @@ import org.apache.flink.table.types.DataType;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.expressions.Expression;
-import org.apache.iceberg.flink.FlinkFilters;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.DIM_TABLE_ENABLE;
 
@@ -156,19 +155,9 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
 
   @Override
   public Result applyFilters(List<ResolvedExpression> flinkFilters) {
-    List<ResolvedExpression> acceptedFilters = Lists.newArrayList();
-    List<Expression> expressions = Lists.newArrayList();
-
-    for (ResolvedExpression resolvedExpression : flinkFilters) {
-      Optional<Expression> icebergExpression = FlinkFilters.convert(resolvedExpression);
-      if (icebergExpression.isPresent()) {
-        expressions.add(icebergExpression.get());
-        acceptedFilters.add(resolvedExpression);
-      }
-    }
-
-    this.filters = expressions;
-    return Result.of(acceptedFilters, flinkFilters);
+    IcebergAndFlinkFilters icebergAndFlinkFilters = FilterUtil.convertFlinkExpressToIceberg(flinkFilters);
+    this.filters = icebergAndFlinkFilters.expressions();
+    return Result.of(icebergAndFlinkFilters.acceptedFilters(), flinkFilters);
   }
 
   @Override

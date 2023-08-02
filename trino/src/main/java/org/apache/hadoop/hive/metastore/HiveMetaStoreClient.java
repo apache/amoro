@@ -502,7 +502,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
             }
           }
         } catch (MetaException e) {
-          LOG.error("Unable to connect to metastore with URI " + store + 
+          LOG.error("Unable to connect to metastore with URI " + store +
               " in attempt " + attempt, e);
         }
         if (isConnected) {

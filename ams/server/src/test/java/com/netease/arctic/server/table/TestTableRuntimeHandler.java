@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.table;
 
-import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -30,6 +29,7 @@ import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.Pair;
 import org.junit.Assert;
 import org.junit.Test;

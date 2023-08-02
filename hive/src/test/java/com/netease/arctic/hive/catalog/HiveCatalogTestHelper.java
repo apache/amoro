@@ -18,7 +18,6 @@
 
 package com.netease.arctic.hive.catalog;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
@@ -27,6 +26,7 @@ import com.netease.arctic.catalog.MixedTables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 

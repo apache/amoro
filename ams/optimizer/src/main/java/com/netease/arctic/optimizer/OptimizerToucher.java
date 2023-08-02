@@ -82,9 +82,7 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
         client.touch(getToken());
         return null;
       });
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Optimizer[{}] touch ams", getToken());
-      }
+      LOG.debug("Optimizer[{}] touch ams", getToken());
     } catch (TException e) {
       if (e instanceof ArcticException &&
           ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE == ((ArcticException)e).getErrorCode()) {

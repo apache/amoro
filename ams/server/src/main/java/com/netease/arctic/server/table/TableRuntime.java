@@ -124,6 +124,7 @@ public class TableRuntime extends StatedPersistentBase {
     this.tableConfiguration = tableRuntimeMeta.getTableConfig();
     this.processId = tableRuntimeMeta.getOptimizingProcessId();
     this.optimizingStatus = tableRuntimeMeta.getTableStatus();
+    this.pendingInput = tableRuntimeMeta.getPendingInput();
   }
 
   public void recover(OptimizingProcess optimizingProcess) {

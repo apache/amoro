@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
-import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.OptimizingType;
@@ -27,6 +26,7 @@ import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableTypeUtil;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 public class OptimizingPlanner extends OptimizingEvaluator {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizingPlanner.class);
 
-  private static final long MAX_INPUT_FILE_SIZE_PER_THREAD = 5L * 1024 * 1024 * 1024;
+  private static final long MAX_INPUT_FILE_SIZE_PER_THREAD = 512 * 1024 * 1024; // 512MB
 
   private final TableFileScanHelper.PartitionFilter partitionFilter;
 
@@ -111,9 +111,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       initEvaluator();
     }
     if (!super.isNecessary()) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("{} === skip planning", tableRuntime.getTableIdentifier());
-      }
+      LOG.debug("Table {} skip planning", tableRuntime.getTableIdentifier());
       return cacheAndReturnTasks(Collections.emptyList());
     }
 
@@ -124,11 +122,11 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     double maxInputSize = MAX_INPUT_FILE_SIZE_PER_THREAD * availableCore;
     List<PartitionEvaluator> inputPartitions = Lists.newArrayList();
     long actualInputSize = 0;
-    for (int i = 0; i < evaluators.size() && actualInputSize < maxInputSize; i++) {
-      PartitionEvaluator evaluator = evaluators.get(i);
+    for (PartitionEvaluator evaluator : evaluators) {
       inputPartitions.add(evaluator);
-      if (actualInputSize + evaluator.getCost() < maxInputSize) {
-        actualInputSize += evaluator.getCost();
+      actualInputSize += evaluator.getCost();
+      if (actualInputSize > maxInputSize) {
+        break;
       }
     }
 

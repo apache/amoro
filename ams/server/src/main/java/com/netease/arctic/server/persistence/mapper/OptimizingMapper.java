@@ -7,7 +7,7 @@ import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
 import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.TaskRuntime;
-import com.netease.arctic.server.persistence.converter.JsonSummaryConverter;
+import com.netease.arctic.server.persistence.converter.JsonObjectConverter;
 import com.netease.arctic.server.persistence.converter.Long2TsConverter;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
 import com.netease.arctic.server.persistence.converter.MapLong2StringConverter;
@@ -39,7 +39,7 @@ public interface OptimizingMapper {
       " #{table.database}, #{table.tableName}, #{processId}, #{targetSnapshotId}, #{targetChangeSnapshotId}," +
       " #{status}, #{optimizingType}," +
       " #{planTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
-      " #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}," +
+      " #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}," +
       " #{fromSequence, typeHandler=com.netease.arctic.server.persistence.converter.MapLong2StringConverter}," +
       " #{toSequence, typeHandler=com.netease.arctic.server.persistence.converter.MapLong2StringConverter}" +
       ")")
@@ -57,7 +57,7 @@ public interface OptimizingMapper {
 
   @Update("UPDATE table_optimizing_process SET status = #{optimizingStatus}," +
       " end_time = #{endTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}, " +
-      "summary = #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}, " +
+      "summary = #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}, " +
       "fail_reason = #{failedReason, jdbcType=VARCHAR}" +
       " WHERE table_id = #{tableId} AND process_id = #{processId}")
   void updateOptimizingProcess(
@@ -88,7 +88,7 @@ public interface OptimizingMapper {
       @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),
       @Result(property = "endTime", column = "end_time", typeHandler = Long2TsConverter.class),
       @Result(property = "failReason", column = "fail_reason"),
-      @Result(property = "summary", column = "summary", typeHandler = JsonSummaryConverter.class),
+      @Result(property = "summary", column = "summary", typeHandler = JsonObjectConverter.class),
       @Result(property = "fromSequence", column = "from_sequence",  typeHandler = MapLong2StringConverter.class),
       @Result(property = "toSequence", column = "to_sequence",  typeHandler = MapLong2StringConverter.class)
   })
@@ -112,7 +112,7 @@ public interface OptimizingMapper {
           " #{taskRuntime.optimizingThread.token, jdbcType=VARCHAR}, #{taskRuntime.optimizingThread.threadId, " +
           "jdbcType=INTEGER}, #{taskRuntime.output, jdbcType=BLOB, " +
           " typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert}," +
-          " #{taskRuntime.summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}," +
+          " #{taskRuntime.summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}," +
           "#{taskRuntime.properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter})",
       "</foreach>",
       "</script>"
@@ -135,7 +135,7 @@ public interface OptimizingMapper {
       @Result(property = "optimizingThread.token", column = "optimizer_token"),
       @Result(property = "optimizingThread.threadId", column = "thread_id"),
       @Result(property = "output", column = "rewrite_output", typeHandler = Object2ByteArrayConvert.class),
-      @Result(property = "summary", column = "metrics_summary", typeHandler = JsonSummaryConverter.class),
+      @Result(property = "summary", column = "metrics_summary", typeHandler = JsonObjectConverter.class),
       @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
   })
   List<TaskRuntime> selectTaskRuntimes(@Param("table_id") long tableId, @Param("process_id") long processId);
@@ -162,7 +162,7 @@ public interface OptimizingMapper {
       @Result(property = "failReason", column = "fail_reason"),
       @Result(property = "optimizerToken", column = "optimizer_token"),
       @Result(property = "threadId", column = "thread_id"),
-      @Result(property = "metricsSummary", column = "metrics_summary", typeHandler = JsonSummaryConverter.class),
+      @Result(property = "metricsSummary", column = "metrics_summary", typeHandler = JsonObjectConverter.class),
       @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
   })
   List<OptimizingTaskMeta> selectOptimizeTaskMetas(@Param("processIds") List<Long> processIds);
@@ -179,7 +179,7 @@ public interface OptimizingMapper {
       " rewrite_output = #{taskRuntime.output, jdbcType=BLOB," +
       " typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert}," +
       " metrics_summary = #{taskRuntime.summary," +
-      " typeHandler=com.netease.arctic.server.persistence.converter.JsonSummaryConverter}," +
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}," +
       " properties = #{taskRuntime.properties," +
       " typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}" +
       " WHERE process_id = #{taskRuntime.taskId.processId} AND " +

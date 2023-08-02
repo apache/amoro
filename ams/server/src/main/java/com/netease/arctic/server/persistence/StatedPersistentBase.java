@@ -1,7 +1,7 @@
 package com.netease.arctic.server.persistence;
 
-import com.clearspring.analytics.util.Lists;
-import com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

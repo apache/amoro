@@ -1,7 +1,7 @@
 # This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
 
-name: Core CI with Maven
+name: Core/hadoop2 CI with Maven
 
 on:
   push:
@@ -47,8 +47,11 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Print maven depend tree
+        run: mvn dependency:tree -B -ntp -Dhadoop=v2
+
       - name: Build all module with Maven
-        run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp
+        run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp -Dhadoop=v2
 
       - name: Code coverage
         uses: codecov/codecov-action@v3

@@ -9,6 +9,7 @@ import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.ArcticServiceConstants;
@@ -152,9 +153,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   @Override
   public void touch(String authToken) {
     OptimizerInstance optimizer = getAuthenticatedOptimizer(authToken).touch();
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Optimizer {} touch time: {}", optimizer.getToken(), optimizer.getTouchTime());
-    }
+    LOG.debug("Optimizer {} touch time: {}", optimizer.getToken(), optimizer.getTouchTime());
     doAs(OptimizerMapper.class, mapper -> mapper.updateTouchTime(optimizer.getToken()));
   }
 
@@ -209,9 +208,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   @Override
   public String authenticate(OptimizerRegisterInfo registerInfo) {
     OptimizerInstance optimizer = new OptimizerInstance(registerInfo, optimizerGroup.getContainer());
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Register optimizer: " + optimizer);
-    }
+    LOG.debug("Register optimizer: {}", optimizer);
     doAs(OptimizerMapper.class, mapper -> mapper.insertOptimizer(optimizer));
     authOptimizers.put(optimizer.getToken(), optimizer);
     return optimizer.getToken();
@@ -265,18 +262,14 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   private void planTasks() {
     List<TableRuntime> scheduledTables = schedulingPolicy.scheduleTables();
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Calculating and sorting tables by quota:" + scheduledTables);
-    }
+    LOG.debug("Calculating and sorting tables by quota : {}", scheduledTables);
 
     for (TableRuntime tableRuntime : scheduledTables) {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Planning table " + tableRuntime.getTableIdentifier());
-      }
+      LOG.debug("Planning table {}", tableRuntime.getTableIdentifier());
       try {
         ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
         OptimizingPlanner planner = new OptimizingPlanner(tableRuntime.refresh(table), table,
-            getAvailableCore(tableRuntime));
+            getAvailableCore());
         if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
           LOG.info("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
           continue;
@@ -296,8 +289,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     }
   }
 
-  private double getAvailableCore(TableRuntime tableRuntime) {
-    return tableRuntime.getOptimizingConfig().getTargetQuota();
+  private double getAvailableCore() {
+    int totalCore = authOptimizers.values().stream().mapToInt(Resource::getThreadCount).sum();
+    // the available core should be at least 1
+    return Math.max(totalCore, 1);
   }
 
   @VisibleForTesting
@@ -482,10 +477,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
     @Override
     public void commit() {
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("{} get {} tasks of {} partitions to commit", tableRuntime.getTableIdentifier(),
-            taskMap.size(), taskMap.values());
-      }
+      LOG.debug("{} get {} tasks of {} partitions to commit", tableRuntime.getTableIdentifier(),
+          taskMap.size(), taskMap.values());
 
       lock.lock();
       try {

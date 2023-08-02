@@ -139,7 +139,7 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
                 helper));
     int parallelism = getRuntimeContext().getNumberOfParallelSubtasks();
 
-    if (context.isRestored() && parallelismSame(parallelism)) {
+    if (context.isRestored() && parallelismSame(parallelism) && isValidCheckpointState()) {
       // get last ckp num from state when failover continuously
       ckpComplete = checkpointedState.get().iterator().next();
 
@@ -206,6 +206,16 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
           beforeParallelism, parallelism);
       return false;
 
+    }
+    return true;
+  }
+
+  private boolean isValidCheckpointState() throws Exception {
+    if (checkpointedState == null ||
+        checkpointedState.get() == null ||
+        !checkpointedState.get().iterator().hasNext()) {
+      LOG.info("Can't find out checkpoint state, ignore sending flips.");
+      return false;
     }
     return true;
   }
