@@ -18,10 +18,8 @@
 
 package com.netease.arctic.server.table.executor;
 
-import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
-import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
@@ -53,17 +51,6 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     if (tableRuntime.getOptimizingStatus().equals(OptimizingStatus.IDLE)) {
       tryEvaluatingPendingInput(tableRuntime, loadTable(tableRuntime));
     }
-  }
-
-  @Override
-  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
-    OptimizingConfig originalOptimizingConfig = originalConfig.getOptimizingConfig();
-    OptimizingConfig newOptimizingConfig = tableRuntime.getOptimizingConfig();
-    if (!originalOptimizingConfig.equals(newOptimizingConfig) &&
-        newOptimizingConfig.isEnabled()) {
-      tryEvaluatingPendingInput(tableRuntime, loadTable(tableRuntime));
-    }
-    super.handleConfigChanged(tableRuntime, originalConfig);
   }
 
   private void tryEvaluatingPendingInput(TableRuntime tableRuntime, ArcticTable table) {
