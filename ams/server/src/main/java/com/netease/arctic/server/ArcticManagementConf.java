@@ -96,6 +96,12 @@ public class ArcticManagementConf {
           .defaultValue(10)
           .withDescription("The number of threads used for refreshing tables.");
 
+  public static final ConfigOption<Integer> CHECK_TAGS_THREAD_COUNT =
+      ConfigOptions.key("check-tags.thread-count")
+          .intType()
+          .defaultValue(3)
+          .withDescription("The number of threads used for check tags.");
+
   public static final ConfigOption<Long> REFRESH_TABLES_INTERVAL =
       ConfigOptions.key("refresh-tables.interval")
           .longType()

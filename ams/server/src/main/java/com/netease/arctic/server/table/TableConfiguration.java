@@ -14,6 +14,7 @@ public class TableConfiguration {
   private long changeDataTTLMinutes;
   private boolean cleanOrphanEnabled;
   private long orphanExistingMinutes;
+  private boolean autoCreateTagEnabled;
   private OptimizingConfig optimizingConfig;
 
   public TableConfiguration() {
@@ -45,6 +46,10 @@ public class TableConfiguration {
 
   public OptimizingConfig getOptimizingConfig() {
     return optimizingConfig;
+  }
+
+  public boolean isAutoCreateTagEnabled() {
+    return autoCreateTagEnabled;
   }
 
   public TableConfiguration setOptimizingConfig(OptimizingConfig optimizingConfig) {
@@ -82,19 +87,28 @@ public class TableConfiguration {
     return this;
   }
 
+  public TableConfiguration setAutoCreateTagEnabled(boolean autoCreateTagEnabled) {
+    this.autoCreateTagEnabled = autoCreateTagEnabled;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
     TableConfiguration that = (TableConfiguration) o;
     return expireSnapshotEnabled == that.expireSnapshotEnabled && snapshotTTLMinutes == that.snapshotTTLMinutes &&
         changeSnapshotTTLMinutes == that.changeSnapshotTTLMinutes &&
-        changeDataTTLMinutes == that.changeDataTTLMinutes && cleanOrphanEnabled == that.cleanOrphanEnabled &&
-        orphanExistingMinutes == that.orphanExistingMinutes && Objects.equal(optimizingConfig, that.optimizingConfig);
+        changeDataTTLMinutes == that.changeDataTTLMinutes &&
+        cleanOrphanEnabled == that.cleanOrphanEnabled && orphanExistingMinutes == that.orphanExistingMinutes &&
+        autoCreateTagEnabled == that.autoCreateTagEnabled &&
+        Objects.equal(optimizingConfig, that.optimizingConfig);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(expireSnapshotEnabled, snapshotTTLMinutes, changeSnapshotTTLMinutes, changeDataTTLMinutes,
+        cleanOrphanEnabled, orphanExistingMinutes, autoCreateTagEnabled, optimizingConfig);
   }
 
   public static TableConfiguration parseConfig(Map<String, String> properties) {
@@ -122,6 +136,10 @@ public class TableConfiguration {
             properties,
             TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME,
             TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT))
+        .setAutoCreateTagEnabled(CompatiblePropertyUtil.propertyAsBoolean(
+            properties,
+            TableProperties.ENABLE_AUTO_CREATE_TAG,
+            TableProperties.ENABLE_AUTO_CREATE_TAG_DEFAULT))
         .setOptimizingConfig(OptimizingConfig.parseOptimizingConfig(properties));
   }
 }

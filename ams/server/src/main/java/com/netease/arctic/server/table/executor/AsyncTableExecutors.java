@@ -14,6 +14,7 @@ public class AsyncTableExecutors {
   private OptimizingCommitExecutor optimizingCommitExecutor;
   private OptimizingExpiringExecutor optimizingExpiringExecutor;
   private HiveCommitSyncExecutor hiveCommitSyncExecutor;
+  private TagsCheckingExecutor tagsCheckingExecutor;
 
   public static AsyncTableExecutors getInstance() {
     return instance;
@@ -39,6 +40,8 @@ public class AsyncTableExecutors {
     this.tableRefreshingExecutor = new TableRuntimeRefreshExecutor(tableManager,
         conf.getInteger(ArcticManagementConf.REFRESH_TABLES_THREAD_COUNT),
         conf.getLong(ArcticManagementConf.REFRESH_TABLES_INTERVAL));
+    this.tagsCheckingExecutor = new TagsCheckingExecutor(tableManager,
+        conf.getInteger(ArcticManagementConf.CHECK_TAGS_THREAD_COUNT));
   }
 
   public SnapshotsExpiringExecutor getSnapshotsExpiringExecutor() {
@@ -67,5 +70,9 @@ public class AsyncTableExecutors {
 
   public HiveCommitSyncExecutor getHiveCommitSyncExecutor() {
     return hiveCommitSyncExecutor;
+  }
+
+  public TagsCheckingExecutor getTagsCheckingExecutor() {
+    return tagsCheckingExecutor;
   }
 }
