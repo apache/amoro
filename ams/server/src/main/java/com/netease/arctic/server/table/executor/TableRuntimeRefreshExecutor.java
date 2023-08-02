@@ -48,7 +48,8 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   @Override
   public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
-    if (tableRuntime.getOptimizingStatus().equals(OptimizingStatus.IDLE)) {
+    if (originalStatus != null && originalStatus.equals(OptimizingStatus.COMMITTING) &&
+        tableRuntime.getOptimizingStatus().equals(OptimizingStatus.IDLE)) {
       tryEvaluatingPendingInput(tableRuntime, loadTable(tableRuntime));
     }
   }
