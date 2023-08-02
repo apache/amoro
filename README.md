@@ -43,7 +43,7 @@ and helps data platforms or products easily build infra-decoupled, stream-and-ba
 Here is the architecture diagram of Amoro:
 
 <p align="center">
-  <img src="https://amoro.netease.com/img/home-content.png" alt="Amoro architecture" height="360px"/>
+  <img src="https://amoro.netease.com//img/home-content.png" alt="Amoro architecture" height="360px"/>
 </p>
 
 * AMS: Amoro Management Service provides Lakehouse management features, like self-optimizing, data expiration, etc.
