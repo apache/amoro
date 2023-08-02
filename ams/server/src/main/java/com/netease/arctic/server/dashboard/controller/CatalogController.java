@@ -45,6 +45,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB;
@@ -218,10 +219,14 @@ public class CatalogController {
     if (info.getTableFormatList() == null || info.getTableFormatList().isEmpty()) {
       throw new RuntimeException("Invalid table format list");
     }
-    StringBuilder tableFormats = new StringBuilder();
+    String tableFormats;
     try {
       // validate table format
-      info.getTableFormatList().forEach(item -> tableFormats.append(TableFormat.valueOf(item).name()));
+      List<String> tableFormatList = info.getTableFormatList().stream()
+          .map(TableFormat::valueOf)
+          .map(TableFormat::name)
+          .collect(Collectors.toList());
+      tableFormats = String.join(",", tableFormatList);
     } catch (Exception e) {
       throw new RuntimeException("Invalid table format list, " + String.join(",", info.getTableFormatList()));
     }
@@ -234,7 +239,7 @@ public class CatalogController {
         }
       }
     }
-    catalogMeta.getCatalogProperties().put(CatalogMetaProperties.TABLE_FORMATS, tableFormats.toString());
+    catalogMeta.getCatalogProperties().put(CatalogMetaProperties.TABLE_FORMATS, tableFormats);
     catalogMeta.setAuthConfigs(authConvertFromServerToMeta(info.getAuthConfig(), oldCatalogMeta));
     // change fileId to base64Code
     Map<String, String> metaStorageConfig = new HashMap<>();
