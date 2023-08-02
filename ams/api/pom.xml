@@ -23,15 +23,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.netease.arctic</groupId>
-        <artifactId>arctic-ams</artifactId>
+        <groupId>com.netease.amoro</groupId>
+        <artifactId>amoro-ams</artifactId>
         <version>0.5.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>arctic-ams-api</artifactId>
+    <artifactId>amoro-ams-api</artifactId>
     <packaging>jar</packaging>
-    <name>Arctic Project AMS API</name>
-    <url>https://arctic.netease.com</url>
+    <name>Amoro Project AMS API</name>
+    <url>https://amoro.netease.com</url>
 
     <properties>
         <maven-thrift-plugin.version>0.1.11</maven-thrift-plugin.version>
