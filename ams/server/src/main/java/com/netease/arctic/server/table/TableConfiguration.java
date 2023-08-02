@@ -1,5 +1,6 @@
 package com.netease.arctic.server.table;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Objects;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.table.TableProperties;
@@ -7,10 +8,10 @@ import com.netease.arctic.utils.CompatiblePropertyUtil;
 
 import java.util.Map;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TableConfiguration {
   private boolean expireSnapshotEnabled;
   private long snapshotTTLMinutes;
-  private long changeSnapshotTTLMinutes;
   private long changeDataTTLMinutes;
   private boolean cleanOrphanEnabled;
   private long orphanExistingMinutes;
@@ -26,10 +27,6 @@ public class TableConfiguration {
 
   public long getSnapshotTTLMinutes() {
     return snapshotTTLMinutes;
-  }
-
-  public long getChangeSnapshotTTLMinutes() {
-    return changeSnapshotTTLMinutes;
   }
 
   public long getChangeDataTTLMinutes() {
@@ -67,11 +64,6 @@ public class TableConfiguration {
     return this;
   }
 
-  public TableConfiguration setChangeSnapshotTTLMinutes(long changeSnapshotTTLMinutes) {
-    this.changeSnapshotTTLMinutes = changeSnapshotTTLMinutes;
-    return this;
-  }
-
   public TableConfiguration setChangeDataTTLMinutes(long changeDataTTLMinutes) {
     this.changeDataTTLMinutes = changeDataTTLMinutes;
     return this;
@@ -98,17 +90,15 @@ public class TableConfiguration {
     if (o == null || getClass() != o.getClass()) return false;
     TableConfiguration that = (TableConfiguration) o;
     return expireSnapshotEnabled == that.expireSnapshotEnabled && snapshotTTLMinutes == that.snapshotTTLMinutes &&
-        changeSnapshotTTLMinutes == that.changeSnapshotTTLMinutes &&
-        changeDataTTLMinutes == that.changeDataTTLMinutes &&
-        cleanOrphanEnabled == that.cleanOrphanEnabled && orphanExistingMinutes == that.orphanExistingMinutes &&
-        autoCreateTagEnabled == that.autoCreateTagEnabled &&
+        changeDataTTLMinutes == that.changeDataTTLMinutes && cleanOrphanEnabled == that.cleanOrphanEnabled &&
+        orphanExistingMinutes == that.orphanExistingMinutes && autoCreateTagEnabled == that.autoCreateTagEnabled &&
         Objects.equal(optimizingConfig, that.optimizingConfig);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(expireSnapshotEnabled, snapshotTTLMinutes, changeSnapshotTTLMinutes, changeDataTTLMinutes,
-        cleanOrphanEnabled, orphanExistingMinutes, autoCreateTagEnabled, optimizingConfig);
+    return Objects.hashCode(expireSnapshotEnabled, snapshotTTLMinutes, changeDataTTLMinutes, cleanOrphanEnabled,
+        orphanExistingMinutes, autoCreateTagEnabled, optimizingConfig);
   }
 
   public static TableConfiguration parseConfig(Map<String, String> properties) {
@@ -120,10 +110,6 @@ public class TableConfiguration {
             properties,
             TableProperties.BASE_SNAPSHOT_KEEP_MINUTES,
             TableProperties.BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT))
-        .setChangeSnapshotTTLMinutes(CompatiblePropertyUtil.propertyAsLong(
-            properties,
-            TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES,
-            TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES_DEFAULT))
         .setChangeDataTTLMinutes(CompatiblePropertyUtil.propertyAsLong(
             properties,
             TableProperties.CHANGE_DATA_TTL,

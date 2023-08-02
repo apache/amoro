@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 public class OptimizingPlanner extends OptimizingEvaluator {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizingPlanner.class);
 
-  private static final long MAX_INPUT_FILE_SIZE_PER_THREAD = 5L * 1024 * 1024 * 1024;
+  private static final long MAX_INPUT_FILE_SIZE_PER_THREAD = 512 * 1024 * 1024; // 512MB
 
   private final TableFileScanHelper.PartitionFilter partitionFilter;
 
@@ -122,11 +122,11 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     double maxInputSize = MAX_INPUT_FILE_SIZE_PER_THREAD * availableCore;
     List<PartitionEvaluator> inputPartitions = Lists.newArrayList();
     long actualInputSize = 0;
-    for (int i = 0; i < evaluators.size() && actualInputSize < maxInputSize; i++) {
-      PartitionEvaluator evaluator = evaluators.get(i);
+    for (PartitionEvaluator evaluator : evaluators) {
       inputPartitions.add(evaluator);
-      if (actualInputSize + evaluator.getCost() < maxInputSize) {
-        actualInputSize += evaluator.getCost();
+      actualInputSize += evaluator.getCost();
+      if (actualInputSize > maxInputSize) {
+        break;
       }
     }
 

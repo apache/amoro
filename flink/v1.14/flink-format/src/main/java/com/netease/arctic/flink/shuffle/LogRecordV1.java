@@ -77,6 +77,15 @@ public class LogRecordV1 implements LogData<RowData>, Serializable {
     }
   }
 
+  public LogRecordV1(RowData value) {
+    checkNotNull(value);
+
+    this.formatVersion = FormatVersion.FORMAT_VERSION_V1;
+    this.upstreamId = new byte[0];
+    this.changeAction = ChangeAction.INSERT;
+    this.actualValue = value;
+  }
+
   @Override
   public String getVersion() {
     return formatVersion.asString();
@@ -333,11 +342,11 @@ public class LogRecordV1 implements LogData<RowData>, Serializable {
             default:
               throw new UnsupportedOperationException("not supported type:" + type);
           }
-          return (row,fieldPos) -> {
+          return (row, fieldPos) -> {
             if (row.isNullAt(fieldPos)) {
               return null;
             }
-            return fieldGetter.getFieldOrNull(row,fieldPos);
+            return fieldGetter.getFieldOrNull(row, fieldPos);
           };
         }
       };

@@ -79,6 +79,11 @@ public class HMSMockServer {
       .impl(RetryingHMSHandler.class, HiveConf.class, IHMSHandler.class, boolean.class)
       .buildStatic();
 
+  private static final DynConstructors.Ctor<HiveMetaStoreClient> HMS_CLIENT_CTOR = DynConstructors.builder()
+      .impl(HiveMetaStoreClient.class, HiveConf.class)
+      .impl(HiveMetaStoreClient.class, Configuration.class)
+      .build();
+
   // Hive3 introduces background metastore tasks (MetastoreTaskThread) for performing various cleanup duties. These
   // threads are scheduled and executed in a static thread pool (org.apache.hadoop.hive.metastore.ThreadPool).
   // This thread pool is shut down normally as part of the JVM shutdown hook, but since we're creating and tearing down
@@ -257,7 +262,7 @@ public class HMSMockServer {
   public HiveMetaStoreClient getClient() {
     if (client == null) {
       try {
-        this.client = new HiveMetaStoreClient(hiveConf);
+        this.client = HMS_CLIENT_CTOR.newInstance(hiveConf);
       } catch (Exception e) {
         throw new RuntimeException(e);
       }

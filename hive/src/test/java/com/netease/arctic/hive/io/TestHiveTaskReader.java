@@ -18,7 +18,6 @@
 
 package com.netease.arctic.hive.io;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
@@ -31,6 +30,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.junit.Assert;
 import org.junit.ClassRule;
