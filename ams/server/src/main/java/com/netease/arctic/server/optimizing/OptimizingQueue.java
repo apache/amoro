@@ -241,7 +241,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         this.optimizerGroup.getName().equals(optimizerGroup.getName()),
         "optimizer group name mismatch");
     this.optimizerGroup = optimizerGroup;
-    schedulingPolicy.updateTableSorterIfNeeded(optimizerGroup);
+    schedulingPolicy.setTableSorterIfNeeded(optimizerGroup);
   }
 
   @VisibleForTesting

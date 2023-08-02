@@ -27,12 +27,18 @@ public class SchedulingPolicy {
   private final Lock tableLock = new ReentrantLock();
 
   public SchedulingPolicy(ResourceGroup group) {
-    String schedulingPolicy = Optional.ofNullable(group.getProperties())
+    setTableSorterIfNeeded(group);
+  }
+
+  public void setTableSorterIfNeeded(ResourceGroup optimizerGroup) {
+    String schedulingPolicy = Optional.ofNullable(optimizerGroup.getProperties())
         .orElseGet(Maps::newHashMap)
         .get(SCHEDULING_POLICY_PROPERTY_NAME);
-    if (StringUtils.isBlank(schedulingPolicy) || schedulingPolicy.equalsIgnoreCase(QUOTA)) {
+    if ((StringUtils.isBlank(schedulingPolicy) || schedulingPolicy.equalsIgnoreCase(QUOTA)) &&
+        tableSorter == null || (tableSorter instanceof BalancedSorter)) {
       tableSorter = new QuotaOccupySorter();
-    } else if (schedulingPolicy.equalsIgnoreCase(BALANCED)) {
+    } else if (schedulingPolicy.equalsIgnoreCase(BALANCED) &&
+        tableSorter == null || (tableSorter instanceof QuotaOccupySorter)) {
       tableSorter = new BalancedSorter();
     } else {
       throw new IllegalArgumentException("Illegal scheduling policy: " + schedulingPolicy);
@@ -73,18 +79,6 @@ public class SchedulingPolicy {
 
   public boolean containsTable(ServerTableIdentifier tableIdentifier) {
     return tableRuntimeMap.containsKey(tableIdentifier);
-  }
-
-  public void updateTableSorterIfNeeded(ResourceGroup optimizerGroup) {
-    String schedulingPolicy = Optional.ofNullable(optimizerGroup.getProperties())
-        .orElseGet(Maps::newHashMap)
-        .get(SCHEDULING_POLICY_PROPERTY_NAME);
-    if ((StringUtils.isBlank(schedulingPolicy) || schedulingPolicy.equalsIgnoreCase(QUOTA)) &&
-        tableSorter instanceof BalancedSorter) {
-      tableSorter = new QuotaOccupySorter();
-    } else if (schedulingPolicy.equalsIgnoreCase(BALANCED) && tableSorter instanceof QuotaOccupySorter) {
-      tableSorter = new BalancedSorter();
-    }
   }
 
   @VisibleForTesting
