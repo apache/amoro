@@ -81,7 +81,7 @@ public class ArcticServiceContainer {
 
   public static final Logger LOG = LoggerFactory.getLogger(ArcticServiceContainer.class);
 
-  public static final String SERVER_CONFIG_PATH = "/conf/config.yaml";
+  public static final String SERVER_CONFIG_FILENAME = "config.yaml";
 
   private final HighAvailabilityContainer haContainer;
   private DefaultTableService tableService;
@@ -308,7 +308,7 @@ public class ArcticServiceContainer {
     @SuppressWarnings("unchecked")
     private void initServiceConfig() throws IOException {
       LOG.info("initializing service configuration...");
-      String configPath = Environments.getArcticHome() + SERVER_CONFIG_PATH;
+      String configPath = Environments.getConfigPath() + "/" + SERVER_CONFIG_FILENAME;
       LOG.info("load config from path: {}", configPath);
       yamlConfig = new JSONObject(new Yaml().loadAs(Files.newInputStream(Paths.get(configPath)), Map.class));
       JSONObject systemConfig = yamlConfig.getJSONObject(ArcticManagementConf.SYSTEM_CONFIG);
@@ -392,7 +392,7 @@ public class ArcticServiceContainer {
             containerConfig.getString(ArcticManagementConf.CONTAINER_NAME),
             containerConfig.getString(ArcticManagementConf.CONTAINER_IMPL));
         Map<String, String> containerProperties = new HashMap<>();
-        containerProperties.put(PropertyNames.AMS_HOME, Environments.getArcticHome());
+        containerProperties.put(PropertyNames.AMS_HOME, Environments.getHomePath());
         containerProperties.put(
             PropertyNames.OPTIMIZER_AMS_URL,
             AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
