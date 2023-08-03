@@ -21,6 +21,7 @@ package com.netease.arctic.utils;
 import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.TypeUtil;
@@ -28,6 +29,7 @@ import org.apache.iceberg.types.Types;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class SchemaUtil {
 
@@ -66,5 +68,24 @@ public class SchemaUtil {
     });
 
     return new Schema(schemaId, fields, identifierFieldIds);
+  }
+
+  /**
+   * Create an Iceberg Schema {@link Schema} from a {@link Schema} based on the given order of fieldNames.
+   * <p> {@link Schema#select(String...)} is not used because it returns a new Schema
+   * whose fields are not in the same order as the incoming fields.
+   *
+   * @param baseSchema a Schema on which loading is based
+   * @param fieldNames a list of field names
+   * @return a new Schema on which contain the fieldNames of the base schema.
+   */
+  public static Schema selectInOrder(Schema baseSchema, List<String> fieldNames) {
+    Preconditions.checkNotNull(fieldNames);
+    Preconditions.checkNotNull(baseSchema);
+
+    int schemaId = baseSchema.schemaId();
+    List<Types.NestedField> fields = fieldNames.stream().map(baseSchema::findField).collect(Collectors.toList());
+
+    return new Schema(schemaId, fields);
   }
 }

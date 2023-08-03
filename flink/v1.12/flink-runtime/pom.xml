@@ -20,16 +20,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.netease.arctic</groupId>
-        <artifactId>arctic-flink</artifactId>
+        <groupId>com.netease.amoro</groupId>
+        <artifactId>amoro-flink</artifactId>
         <version>0.5.1-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <!--  a shaded module. For supply a clean jar with shaded dependencies -->
-    <artifactId>arctic-flink-runtime-1.12</artifactId>
-    <name>Arctic Project Flink 1.12 Runtime</name>
-    <url>https://arctic.netease.com</url>
+    <artifactId>amoro-flink-runtime-1.12</artifactId>
+    <name>Amoro Project Flink 1.12 Runtime</name>
+    <url>https://amoro.netease.com</url>
 
     <properties>
         <flink.version>1.12.7</flink.version>
@@ -38,8 +38,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-flink-1.12</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-flink-1.12</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -186,7 +186,7 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.netease.arctic:arctic-hive</artifact>
+                                    <artifact>com.netease.amoro:amoro-hive</artifact>
                                     <excludes>
                                         <exclude>org/apache/hadoop/hive/**</exclude>
                                     </excludes>

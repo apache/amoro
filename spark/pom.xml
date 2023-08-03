@@ -20,15 +20,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.netease.arctic</groupId>
-        <artifactId>arctic-parent</artifactId>
+        <groupId>com.netease.amoro</groupId>
+        <artifactId>amoro-parent</artifactId>
         <version>0.5.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>arctic-spark</artifactId>
+    <artifactId>amoro-spark</artifactId>
     <packaging>pom</packaging>
-    <name>Arctic Project Spark Parent</name>
-    <url>https://arctic.netease.com</url>
+    <name>Amoro Project Spark Parent</name>
+    <url>https://amoro.netease.com</url>
 
     <modules>
         <module>v3.1/spark</module>
