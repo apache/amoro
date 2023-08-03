@@ -84,7 +84,7 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
 
   @Override
   public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
-    scheduleIfNecessary(tableRuntime, getStartDelay());
+    // DO nothing by default
   }
 
   @Override
