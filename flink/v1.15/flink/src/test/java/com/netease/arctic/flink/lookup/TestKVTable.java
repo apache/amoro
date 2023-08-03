@@ -85,9 +85,9 @@ public class TestKVTable extends TestRowDataPredicateBase {
   public TestName name = new TestName();
   private final Configuration config = new Configuration();
   private final List<String> primaryKeys = Lists.newArrayList("id", "grade");
-  private final List<String> primaryKeysDisorder = Lists.newArrayList("grade", "id");
+  private final List<String> primaryKeysDisorder = Lists.newArrayList("grade", "num", "id");
 
-  private boolean guavaCacheEnabled;
+  private final boolean guavaCacheEnabled;
 
   private final Schema arcticSchema = new Schema(
       Types.NestedField.required(1, "id", Types.IntegerType.get()),
@@ -210,11 +210,50 @@ public class TestKVTable extends TestRowDataPredicateBase {
   @Test
   public void testSecondaryKeysMapping() throws IOException {
     // primary keys are id and grade.
-    List<String> joinKeys = Lists.newArrayList("id");
+    List<String> joinKeys = Lists.newArrayList("grade", "id");
     try (SecondaryIndexTable secondaryIndexTable = (SecondaryIndexTable) createTableWithDisorderPK(joinKeys)) {
-      writeAndAssert(secondaryIndexTable);
-    } catch (Exception e) {
-      throw e;
+      secondaryIndexTable.open();
+
+      initTable(
+          secondaryIndexTable,
+          upsertStream(
+              row(RowKind.INSERT, 1, "1", 1),
+              row(RowKind.INSERT, 2, "2", 2),
+              row(RowKind.INSERT, 2, "3", 3),
+              row(RowKind.INSERT, 2, "3", 4),
+              row(RowKind.INSERT, 2, "5", 5)));
+
+      if (!secondaryIndexTable.initialized()) {
+        secondaryIndexTable.waitInitializationCompleted();
+      }
+
+      assertTableSet(
+          secondaryIndexTable,
+          row("1", 1), row(1, "1", 1));
+      assertTableSet(
+          secondaryIndexTable,
+          row("2", 2), row(2, "2", 2));
+
+      upsertTable(
+          secondaryIndexTable,
+          upsertStream(
+              row(RowKind.DELETE, 1, "1", 1),
+              row(RowKind.INSERT, 2, "2", 2),
+              row(RowKind.DELETE, 2, "2", 2),
+              row(RowKind.UPDATE_BEFORE, 3, "3", 4),
+              row(RowKind.UPDATE_AFTER, 3, "3", 5),
+              row(RowKind.INSERT, 3, "4", 4)));
+
+
+      assertTableSet(
+          secondaryIndexTable,
+          row("1", 1), null);
+      assertTableSet(
+          secondaryIndexTable,
+          row("3", 2), row(2, "3", 3), row(2, "3", 4));
+      assertTableSet(
+          secondaryIndexTable,
+          row("4", 3), row(3, "4", 4));
     }
   }
 
