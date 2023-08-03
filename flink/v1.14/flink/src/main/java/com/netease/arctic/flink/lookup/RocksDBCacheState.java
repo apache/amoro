@@ -71,7 +71,7 @@ public abstract class RocksDBCacheState<V> {
   protected BinaryRowDataSerializerWrapper valueSerializer;
   private ExecutorService writeRocksDBService;
   private final AtomicBoolean initialized = new AtomicBoolean(false);
-  private final AtomicBoolean running = new AtomicBoolean(true);
+  private final AtomicBoolean closed = new AtomicBoolean(false);
   protected Queue<LookupRecord> lookupRecordsQueue;
 
   private final int writeRocksDBThreadNum;
@@ -211,7 +211,7 @@ public abstract class RocksDBCacheState<V> {
       writeRocksDBService.shutdown();
       writeRocksDBService = null;
     }
-    running.set(false);
+    closed.set(true);
     if (lookupRecordsQueue != null) {
       lookupRecordsQueue.clear();
       lookupRecordsQueue = null;
@@ -266,7 +266,7 @@ public abstract class RocksDBCacheState<V> {
     public void run() {
       LOG.info("{} starting.", name);
       try {
-        while (running.get() && !initialized.get()) {
+        while (!closed.get() && !initialized.get()) {
           LookupRecord record = lookupRecordsQueue.poll();
           if (record != null) {
             switch (record.opType()) {
