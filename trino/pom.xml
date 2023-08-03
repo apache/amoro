@@ -20,14 +20,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.netease.arctic</groupId>
-        <artifactId>arctic-parent</artifactId>
+        <groupId>com.netease.amoro</groupId>
+        <artifactId>amoro-parent</artifactId>
         <version>0.5.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>arctic-trino</artifactId>
-    <name>Arctic Project Trino</name>
-    <url>https://arctic.netease.com</url>
+    <artifactId>amoro-trino</artifactId>
+    <name>Amoro Project Trino</name>
+    <url>https://amoro.netease.com</url>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -225,8 +225,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-core</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-core</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
@@ -264,8 +264,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-core</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-core</artifactId>
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>
@@ -301,8 +301,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-hive</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-hive</artifactId>
             <version>${project.version}</version>
             <exclusions>
                 <!--                <exclusion>-->
@@ -359,8 +359,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-hive</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-hive</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -577,14 +577,14 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-ams-api</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-ams-api</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
 
-        <!--        for arctic-core-->
+        <!--        for amoro-core-->
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
@@ -618,7 +618,7 @@
                         <phase>package</phase>
                         <configuration>
                             <appendAssemblyId>false</appendAssemblyId>
-                            <finalName>trino-arctic-${project.version}</finalName>
+                            <finalName>trino-amoro-${project.version}</finalName>
                             <descriptor>assembly.xml</descriptor>
                         </configuration>
                     </execution>

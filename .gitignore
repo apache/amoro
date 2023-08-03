@@ -1,6 +1,7 @@
 *.swp
 .DS_Store
 .cache
+*dependency-reduced-pom.xml
 
 # intellij files
 .idea

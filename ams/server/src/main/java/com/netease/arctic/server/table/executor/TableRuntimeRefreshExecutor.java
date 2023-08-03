@@ -48,7 +48,10 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   @Override
   public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
-    tryEvaluatingPendingInput(tableRuntime, loadTable(tableRuntime));
+    if (originalStatus != null && originalStatus.equals(OptimizingStatus.COMMITTING) &&
+        tableRuntime.getOptimizingStatus().equals(OptimizingStatus.IDLE)) {
+      tryEvaluatingPendingInput(tableRuntime, loadTable(tableRuntime));
+    }
   }
 
   private void tryEvaluatingPendingInput(TableRuntime tableRuntime, ArcticTable table) {
@@ -66,12 +69,12 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
   @Override
   public void execute(TableRuntime tableRuntime) {
     try {
-      long snapshotBeforeRefresh = tableRuntime.getCurrentSnapshotId();
-      long changeSnapshotBeforeRefresh = tableRuntime.getCurrentChangeSnapshotId();
+      long lastOptimizedSnapshotId = tableRuntime.getLastOptimizedSnapshotId();
+      long lastOptimizedChangeSnapshotId = tableRuntime.getLastOptimizedChangeSnapshotId();
       ArcticTable table = loadTable(tableRuntime);
       tableRuntime.refresh(table);
-      if (snapshotBeforeRefresh != tableRuntime.getCurrentSnapshotId() ||
-          changeSnapshotBeforeRefresh != tableRuntime.getCurrentChangeSnapshotId()) {
+      if (lastOptimizedSnapshotId != tableRuntime.getCurrentSnapshotId() ||
+          lastOptimizedChangeSnapshotId != tableRuntime.getCurrentChangeSnapshotId()) {
         tryEvaluatingPendingInput(tableRuntime, table);
       }
     } catch (Throwable throwable) {
