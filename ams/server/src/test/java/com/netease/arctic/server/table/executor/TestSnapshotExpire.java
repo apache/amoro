@@ -25,26 +25,29 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.IcebergTableUtil;
+import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.PuffinUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
+import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -92,10 +95,10 @@ public class TestSnapshotExpire extends ExecutorTestBase {
         new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
     Assert.assertEquals(2, partitions.size());
 
-    UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
-    updateProperties.set(partitions.get(0), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "3");
-    updateProperties.set(partitions.get(1), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "0");
-    updateProperties.commit();
+    StructLikeMap<Long> optimizedSequence = StructLikeMap.create(testKeyedTable.spec().partitionType());
+    optimizedSequence.put(partitions.get(0), 3L);
+    optimizedSequence.put(partitions.get(1), 0L);
+    writeOptimizedSequence(testKeyedTable, optimizedSequence);
     List<DataFile> existedDataFiles = new ArrayList<>();
     try (CloseableIterable<FileScanTask> fileScanTasks = testKeyedTable.changeTable().newScan().planFiles()) {
       fileScanTasks.forEach(fileScanTask -> existedDataFiles.add(fileScanTask.file()));
@@ -132,12 +135,12 @@ public class TestSnapshotExpire extends ExecutorTestBase {
       Assert.assertEquals(1, partitions.size());
     }
 
-    UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
-    updateProperties.set(partitions.get(0), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "3");
+    StructLikeMap<Long> optimizedSequence = StructLikeMap.create(testKeyedTable.spec().partitionType());
+    optimizedSequence.put(partitions.get(0), 3L);
     if (isPartitionedTable()) {
-      updateProperties.set(partitions.get(1), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "1");
+      optimizedSequence.put(partitions.get(1), 1L);
     }
-    updateProperties.commit();
+    writeOptimizedSequence(testKeyedTable, optimizedSequence);
     s1Files.forEach(file -> Assert.assertTrue(testKeyedTable.changeTable().io().exists(file.path().toString())));
     List<IcebergFileEntry> expiredDataFileEntries =
         SnapshotsExpiringExecutor.getExpiredDataFileEntries(testKeyedTable.changeTable(), l + 1);
@@ -159,6 +162,16 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     s1Files.forEach(file -> Assert.assertFalse(testKeyedTable.changeTable().io().exists(file.path().toString())));
   }
 
+  private void writeOptimizedSequence(KeyedTable testKeyedTable, StructLikeMap<Long> optimizedSequence) {
+    BaseTable baseTable = testKeyedTable.baseTable();
+    baseTable.newAppend().commit();
+    Snapshot snapshot = baseTable.currentSnapshot();
+    StatisticsFile statisticsFile = PuffinUtil.writer(baseTable, snapshot.snapshotId(), snapshot.sequenceNumber())
+        .addOptimizedSequence(optimizedSequence)
+        .write();
+    baseTable.updateStatistics().setStatistics(snapshot.snapshotId(), statisticsFile).commit();
+  }
+
   @Test
   public void testExpiredChangeTableFilesInBase() {
     Assume.assumeTrue(isKeyedTable());
@@ -171,10 +184,10 @@ public class TestSnapshotExpire extends ExecutorTestBase {
         new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
     Assert.assertEquals(2, partitions.size());
 
-    UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
-    updateProperties.set(partitions.get(0), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "3");
-    updateProperties.set(partitions.get(1), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "1");
-    updateProperties.commit();
+    StructLikeMap<Long> optimizedSequence = StructLikeMap.create(testKeyedTable.spec().partitionType());
+    optimizedSequence.put(partitions.get(0), 3L);
+    optimizedSequence.put(partitions.get(1), 1L);
+    writeOptimizedSequence(testKeyedTable, optimizedSequence);
     s1Files.forEach(file -> Assert.assertTrue(testKeyedTable.io().exists(file.path().toString())));
     List<IcebergFileEntry> expiredDataFileEntries =
         SnapshotsExpiringExecutor.getExpiredDataFileEntries(testKeyedTable.changeTable(), l + 1);
@@ -388,12 +401,13 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     } else {
       Assert.assertEquals(1, partitions.size());
     }
-    UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
-    updateProperties.set(partitions.get(0), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "3");
+
+    StructLikeMap<Long> optimizedSequence = StructLikeMap.create(testKeyedTable.spec().partitionType());
+    optimizedSequence.put(partitions.get(0), 3L);
     if (isPartitionedTable()) {
-      updateProperties.set(partitions.get(1), TableProperties.PARTITION_OPTIMIZED_SEQUENCE, "3");
+      optimizedSequence.put(partitions.get(1), 3L);
     }
-    updateProperties.commit();
+    writeOptimizedSequence(testKeyedTable, optimizedSequence);
 
     Set<DataFile> top8Files = new HashSet<>();
     testKeyedTable.changeTable().newScan().planFiles().forEach(task -> top8Files.add(task.file()));
