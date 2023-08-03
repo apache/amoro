@@ -21,6 +21,7 @@ package com.netease.arctic.flink.lookup;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static com.netease.arctic.flink.util.LookupUtil.convertLookupOptions;
 
@@ -46,6 +48,12 @@ public class KVTableFactory implements TableFactory<RowData>, Serializable {
       Predicate<RowData> rowDataPredicate) {
     Set<String> joinKeySet = new HashSet<>(joinKeys);
     Set<String> primaryKeySet = new HashSet<>(primaryKeys);
+    // keep the primary keys order with projected schema fields.
+    primaryKeys = projectSchema.asStruct().fields().stream()
+        .map(Types.NestedField::name)
+        .filter(primaryKeySet::contains)
+        .collect(Collectors.toList());
+
     if (primaryKeySet.equals(joinKeySet)) {
       LOG.info(
           "create unique index table, unique keys are {}, lookup keys are {}.",
