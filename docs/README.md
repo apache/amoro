@@ -1,4 +1,4 @@
-## Arctic Docs
+## Amoro Docs
 
 This directory contains the documentation content of Amoro.
 
