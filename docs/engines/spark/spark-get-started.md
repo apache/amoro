@@ -21,10 +21,10 @@ for more information.
 To use Amoro in a Spark shell, use the --packages option:
 
 ```bash
-spark-shell --packages com.netease.arctic:arctic-spark-3.3-runtime:0.5.0
+spark-shell --packages com.netease.amoro:amoro-spark-3.3-runtime:0.5.0
 ```
 
-> If you want to include the connector in your Spark installation, add the `arctic-spark-3.3-runtime` Jar to
+> If you want to include the connector in your Spark installation, add the `amoro-spark-3.3-runtime` Jar to
 > Spark's `jars` folder.
 
 ## Adding catalogs

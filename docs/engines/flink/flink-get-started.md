@@ -40,7 +40,7 @@ Version Description:
 
 The Amoro project can be self-compiled to obtain the runtime jar.
 
-`mvn clean package -pl ':arctic-flink-runtime-1.14' -am -DskipTests`
+`mvn clean package -pl ':amoro-flink-runtime-1.14' -am -DskipTests`
 
 The Flink Runtime Jar is located in the `flink/v1.14/flink-runtime/target` directory.
 
@@ -48,26 +48,36 @@ The Flink Runtime Jar is located in the `flink/v1.14/flink-runtime/target` direc
 Download Flink and related dependencies, and download Flink 1.12/1.14/1.15 as needed. Taking Flink 1.12 as an example:
 
 ```shell
-FLINK_VERSION=1.12.7
-SCALA_VERSION=2.12
+# Replace version value with the latest Amoro version if needed
+AMORO_VERSION=0.5.0
+FLINK_VERSION=1.15.3
+FLINK_MAJOR_VERSION=1.15
+FLINK_HADOOP_SHADE_VERSION=2.7.5
 APACHE_FLINK_URL=archive.apache.org/dist/flink
-HADOOP_VERSION=2.7.5
+MAVEN_URL=https://repo1.maven.org/maven2
+FLINK_CONNECTOR_URL=${MAVEN_URL}/org/apache/flink
+AMORO_CONNECTOR_URL=${MAVEN_URL}/com/netease/amoro
 
-## Download Flink 1.12.x package, currently arctic-flink-runtime jar package uses scala 2.12
-wget ${APACHE_FLINK_URL}/flink-${FLINK_VERSION}/flink-${FLINK_VERSION}-bin-scala_${SCALA_VERSION}.tgz
-## Unpack the file
-tar -zxvf flink-1.12.7-bin-scala_2.12.tgz
+# Download FLink binary package
+wget ${APACHE_FLINK_URL}/flink-${FLINK_VERSION}/flink-${FLINK_VERSION}-bin-scala_2.12.tgz
+# Unzip Flink binary package
+tar -zxvf flink-${FLINK_VERSION}-bin-scala_2.12.tgz
 
-# Download hadoop dependency
-wget https://repo1.maven.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/${HADOOP_VERSION}-10.0/flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar
-# Download arctic flink connector
-wget https://github.com/NetEase/arctic/releases/download/v0.4.0-rc2/arctic-flink-runtime-1.12-0.4.0.jar
+cd flink-${FLINK_VERSION}
+# Download Flink Hadoop dependency
+wget ${FLINK_CONNECTOR_URL}/flink-shaded-hadoop-2-uber/${HADOOP_VERSION}-10.0/flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar
+# Download Flink Aoro Connector
+wget ${AMORO_CONNECTOR_URL}/amoro-flink-runtime-${FLINK_MAJOR_VERSION}/${AMORO_VERSION}/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
+
+# Copy the necessary JAR files to the lib directory
+mv flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar lib
+mv amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar lib
 ```
 
 Modify Flink related configuration files:
 
 ```shell
-cd flink-1.12.7
+cd flink-1.15.3
 vim conf/flink-conf.yaml
 ```
 Modify the following settings:
@@ -85,7 +95,7 @@ Move the dependencies to the lib directory of Flink:
 # Used to create a socket connector for inputting CDC data via sockets. Not necessary for non-quickstart examples.
 cp examples/table/ChangelogSocketExample.jar lib
 
-cp ../arctic-flink-runtime-1.12-0.3.0.jar lib
+cp ../amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar lib
 cp ../flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar lib
 ```
 
