@@ -15,7 +15,7 @@ public class Environments {
   }
 
   public static String getConfigPath() {
-    String amoroConfDir = System.getenv("AMORO_CONF_DIR");
+    String amoroConfDir = System.getenv(AMORO_CONF_DIR);
     if (amoroConfDir != null) {
       return amoroConfDir;
     }
