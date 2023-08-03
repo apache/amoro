@@ -302,6 +302,6 @@ export enum upgradeStatusMap {
 
 export enum tableTypeIconMap {
   ICEBERG = 'iceberg',
-  ARCTIC = 'arctic',
+  ARCTIC = 'amoro',
   HIVE = 'hive'
 }
