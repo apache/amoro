@@ -187,10 +187,13 @@ public class TableProperties {
   public static final boolean ENABLE_AUTO_CREATE_TAG_DEFAULT = false;
 
   public static final String AUTO_CREATE_TAG_TRIGGER_DAY_TIME = "auto-create-tag.trigger.day.time";
-  public static final String AUTO_CREATE_TAG_TRIGGER_DAY_TIME_DEFAULT = "00:00";
+  public static final String AUTO_CREATE_TAG_TRIGGER_DAY_TIME_DEFAULT = "00:00"; // "HH:mm"
 
-  public static final String AUTO_CREATE_TAG_FORMAT = "auto-create-tag.format";
-  public static final String AUTO_CREATE_TAG_FORMAT_DEFAULT = "auto-tag-yyyyMMdd";
+  public static final String AUTO_CREATE_TAG_FORMAT = "auto-create-tag.tag-format";
+  public static final String AUTO_CREATE_TAG_FORMAT_DEFAULT = "'auto-tag-'yyyyMMdd";
+ 
+  public static final String AUTO_CREATE_TAG_BRANCH_FORMAT = "auto-create-tag.branch-format";
+  public static final String AUTO_CREATE_TAG_BRANCH_FORMAT_DEFAULT = "'auto-branch-'yyyyMMdd";
 
   public static final String AUTO_CREATE_TAG_KEEP_DAYS = "auto-create-tag.keep.days";
   public static final int AUTO_CREATE_TAG_KEEP_DAYS_DEFAULT = -1;
