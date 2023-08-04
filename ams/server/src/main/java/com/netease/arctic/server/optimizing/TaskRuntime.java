@@ -331,6 +331,7 @@ public class TaskRuntime extends StatedPersistentBase {
 
   private class TaskStatusMachine {
 
+    // TODO: remove next
     private Set<Status> next;
 
     private TaskStatusMachine() {
