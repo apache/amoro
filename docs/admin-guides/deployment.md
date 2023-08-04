@@ -195,7 +195,6 @@ The configuration for kyuubi mode can refer to: [Using Kyuubi with Terminal](../
 ams:
   terminal:
     backend: local
-    local.spark.sql.session.timeZone: UTC
     local.spark.sql.iceberg.handle-timestamp-without-timezone: false
     # When the catalog type is Hive, it automatically uses the Spark session catalog to access Hive tables.
     local.using-session-catalog-for-hive: true
