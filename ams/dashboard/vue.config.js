@@ -25,7 +25,7 @@ const isProduction = ['production'].includes(process.env.NODE_ENV)
 const ENV = 'DEV'
 const ENV_HOST = {
   // DEV: 'http://sloth-commerce-test2.jd.163.org:29050/', // http://10.196.98.23:29099/
-  DEV: 'http://10.196.98.26:29050/', // http://10.196.98.23:29099/
+  DEV: 'http://10.196.98.23:29091/', // http://10.196.98.23:29099/
   TEST: '',
   ONLINE: ''
 }
@@ -44,7 +44,7 @@ const devServer = {
       target: ENV_HOST[ENV],
       changeOrigin: true,
       onProxyReq (proxyReq) {
-        proxyReq.setHeader('cookie', 'JSESSIONID=----node01iatja9t2j2owd9pwfk9tqqce68.node0')
+        proxyReq.setHeader('cookie', 'JSESSIONID=node07rhpm05aujgi1amdr8stpj9xa4.node0')
       }
     }
   }
