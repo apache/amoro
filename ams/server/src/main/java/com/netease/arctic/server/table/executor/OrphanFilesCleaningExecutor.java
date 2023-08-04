@@ -22,6 +22,7 @@ import com.google.common.base.Strings;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
 import com.netease.arctic.io.SupportsFileSystemOperations;
+import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.HiveLocationUtil;
@@ -77,6 +78,11 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
     return tableRuntime.getTableConfiguration().isCleanOrphanEnabled();
+  }
+
+  @Override
+  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
+    scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 
   @Override

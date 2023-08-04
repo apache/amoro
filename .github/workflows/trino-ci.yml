@@ -8,15 +8,6 @@ on:
     branches:
       - "master"
       - "0.**"
-    paths:
-      - "ams/**"
-      - "core/**"
-      - "flink/**"
-      - "hive/**"
-      - "optimizer/**"
-      - "spark/**"
-      - "trino/**"
-      - "pom.xml"
 
   pull_request:
     branches:
@@ -28,11 +19,13 @@ on:
       - "dev/**"
       - "dist/**"
       - "docker/**"
-      - "site/**"
+      - "docs/**"
       - "style/**"
       - ".gitignore"
       - "LICENSE"
       - "README.md"
+      - ".scalafmt.conf"
+      - "CONTRIBUTING.md"
 
 jobs:
   build:
@@ -47,10 +40,10 @@ jobs:
           cache: maven
 
       - name: Install dependency with Maven
-        run: mvn clean install -DskipTests -pl 'ams/api,core,hive' -am -B
+        run: mvn clean install -DskipTests -pl 'ams/api,core,hive' -Dhadoop=v2 -am -B
 
       - name: Build with Maven
-        run: mvn clean test -pl 'trino' -B -ntp
+        run: mvn clean test -pl 'trino' -B -ntp -Dhadoop=v2
 
       - name: Code coverage
         uses: codecov/codecov-action@v3

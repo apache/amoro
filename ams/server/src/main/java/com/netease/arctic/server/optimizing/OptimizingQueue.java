@@ -9,6 +9,7 @@ import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.ArcticServiceConstants;
@@ -240,6 +241,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         this.optimizerGroup.getName().equals(optimizerGroup.getName()),
         "optimizer group name mismatch");
     this.optimizerGroup = optimizerGroup;
+    schedulingPolicy.setTableSorterIfNeeded(optimizerGroup);
   }
 
   @VisibleForTesting
@@ -268,7 +270,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       try {
         ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
         OptimizingPlanner planner = new OptimizingPlanner(tableRuntime.refresh(table), table,
-            getAvailableCore(tableRuntime));
+            getAvailableCore());
         if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
           LOG.info("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
           continue;
@@ -288,8 +290,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     }
   }
 
-  private double getAvailableCore(TableRuntime tableRuntime) {
-    return tableRuntime.getOptimizingConfig().getTargetQuota();
+  private double getAvailableCore() {
+    int totalCore = authOptimizers.values().stream().mapToInt(Resource::getThreadCount).sum();
+    // the available core should be at least 1
+    return Math.max(totalCore, 1);
   }
 
   @VisibleForTesting

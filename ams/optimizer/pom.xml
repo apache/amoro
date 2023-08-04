@@ -21,44 +21,38 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>arctic-ams</artifactId>
-        <groupId>com.netease.arctic</groupId>
+        <artifactId>amoro-ams</artifactId>
+        <groupId>com.netease.amoro</groupId>
         <version>0.5.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>arctic-ams-optimizer</artifactId>
-    <name>Arctic Project Optimizer</name>
-    <url>https://arctic.netease.com</url>
+    <artifactId>amoro-ams-optimizer</artifactId>
+    <name>Amoro Project Optimizer</name>
+    <url>https://amoro.netease.com</url>
 
     <properties>
         <fastjson.version>1.2.58</fastjson.version>
         <avro.version>1.10.1</avro.version>
         <optimizer-flink.version>1.14.6</optimizer-flink.version>
-        <flink.table-api-java-bridge.id>flink-table-api-java-bridge_${scala.binary.version}
-        </flink.table-api-java-bridge.id>
-        <flink.table-runtime.id>flink-table-runtime_${scala.binary.version}</flink.table-runtime.id>
-        <flink.streaming-java.id>flink-streaming-java_${scala.binary.version}</flink.streaming-java.id>
-        <flink.clients.id>flink-clients_${scala.binary.version}</flink.clients.id>
-        <flink.runtime-web.id>flink-runtime-web_${scala.binary.version}</flink.runtime-web.id>
-        <flink.connector-kafka.id>flink-connector-kafka_${scala.binary.version}</flink.connector-kafka.id>
+        <flink.scala.suffix>_2.12</flink.scala.suffix>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-core</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-core</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-hive</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-hive</artifactId>
         </dependency>
 
         <!-- flink dependencies begin -->
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>${flink.table-api-java-bridge.id}</artifactId>
+            <artifactId>flink-table-api-java-bridge${flink.scala.suffix}</artifactId>
             <version>${optimizer-flink.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -71,7 +65,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>${flink.table-runtime.id}</artifactId>
+            <artifactId>flink-table-runtime${flink.scala.suffix}</artifactId>
             <version>${optimizer-flink.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -84,7 +78,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>${flink.streaming-java.id}</artifactId>
+            <artifactId>flink-streaming-java${flink.scala.suffix}</artifactId>
             <version>${optimizer-flink.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -97,7 +91,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>${flink.clients.id}</artifactId>
+            <artifactId>flink-clients${flink.scala.suffix}</artifactId>
             <version>${optimizer-flink.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -136,7 +130,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>${flink.runtime-web.id}</artifactId>
+            <artifactId>flink-runtime-web${flink.scala.suffix}</artifactId>
             <version>${optimizer-flink.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -163,7 +157,7 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>${flink.connector-kafka.id}</artifactId>
+            <artifactId>flink-connector-kafka${flink.scala.suffix}</artifactId>
             <version>${optimizer-flink.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -192,16 +186,16 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-core</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-core</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-ams-api</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-ams-api</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
@@ -275,40 +269,39 @@
         <profile>
             <id>optimizer.flink1.14</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
+                <property>
+                    <name>!optimizer.flink</name>
+                </property>
             </activation>
             <properties>
                 <optimizer-flink.version>1.14.6</optimizer-flink.version>
+                <flink.scala.suffix>_2.12</flink.scala.suffix>
             </properties>
         </profile>
         <profile>
             <id>optimizer.flink1.15</id>
             <activation>
-                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>optimizer.flink</name>
+                    <value>1.15</value>
+                </property>
             </activation>
             <properties>
                 <optimizer-flink.version>1.15.4</optimizer-flink.version>
-                <flink.table-api-java-bridge.id>flink-table-api-java-bridge</flink.table-api-java-bridge.id>
-                <flink.table-runtime.id>flink-table-runtime</flink.table-runtime.id>
-                <flink.streaming-java.id>flink-streaming-java</flink.streaming-java.id>
-                <flink.clients.id>flink-clients</flink.clients.id>
-                <flink.runtime-web.id>flink-runtime-web</flink.runtime-web.id>
-                <flink.connector-kafka.id>flink-connector-kafka</flink.connector-kafka.id>
+                <flink.scala.suffix/>
             </properties>
         </profile>
         <profile>
             <id>optimizer.flink1.16</id>
             <activation>
-                <activeByDefault>false</activeByDefault>
+                <property>
+                    <name>optimizer.flink</name>
+                    <value>1.16</value>
+                </property>
             </activation>
             <properties>
                 <optimizer-flink.version>1.16.2</optimizer-flink.version>
-                <flink.table-api-java-bridge.id>flink-table-api-java-bridge</flink.table-api-java-bridge.id>
-                <flink.table-runtime.id>flink-table-runtime</flink.table-runtime.id>
-                <flink.streaming-java.id>flink-streaming-java</flink.streaming-java.id>
-                <flink.clients.id>flink-clients</flink.clients.id>
-                <flink.runtime-web.id>flink-runtime-web</flink.runtime-web.id>
-                <flink.connector-kafka.id>flink-connector-kafka</flink.connector-kafka.id>
+                <flink.scala.suffix/>
             </properties>
         </profile>
     </profiles>

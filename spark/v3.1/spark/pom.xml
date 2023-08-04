@@ -20,21 +20,21 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.netease.arctic</groupId>
-        <artifactId>arctic-spark</artifactId>
+        <groupId>com.netease.amoro</groupId>
+        <artifactId>amoro-spark</artifactId>
         <version>0.5.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>arctic-spark-3.1</artifactId>
+    <artifactId>amoro-spark-3.1</artifactId>
     <packaging>jar</packaging>
-    <name>Arctic Project Spark 3.1</name>
-    <url>https://arctic.netease.com</url>
+    <name>Amoro Project Spark 3.1</name>
+    <url>https://amoro.netease.com</url>
 
     <properties>
         <root.dir>${project.basedir}</root.dir>
+        <hive.version>2.3.7</hive.version>
         <spark.mysql.version>5.1.40</spark.mysql.version>
-        <guava.version>14.0.1</guava.version>
         <spark.version>3.1.1</spark.version>
         <scala.version>2.12.15</scala.version>
     </properties>
@@ -133,10 +133,6 @@
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
-                    <groupId>org.apache.hive</groupId>
-                    <artifactId>hive-metastore</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>commons-logging</groupId>
                     <artifactId>commons-logging</artifactId>
                 </exclusion>
@@ -164,13 +160,17 @@
                     <groupId>org.apache.arrow</groupId>
                     <artifactId>arrow-vector</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hive</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
-        <!-- arctic dependency -->
+        <!-- amoro dependency -->
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-core</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-core</artifactId>
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>
@@ -189,18 +189,21 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-hive</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-hive</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hive</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
-        <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-hive</artifactId>
-            <version>${project.version}</version>
-            <classifier>tests</classifier>
-            <scope>test</scope>
-        </dependency>
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
@@ -263,23 +266,17 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-ams-api</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-ams-api</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>14.0.1</version>
-            <scope>test</scope>
-        </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-core</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-core</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -295,16 +292,60 @@
                     <groupId>jdk.tools</groupId>
                     <artifactId>jdk.tools</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-hive</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-hive</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.hive</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-exec</artifactId>
+            <version>${hive.version}</version>
+            <scope>test</scope>
+            <classifier>core</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.pentaho</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>

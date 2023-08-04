@@ -81,6 +81,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
@@ -198,6 +199,9 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     up.set(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
     up.set(LOG_STORE_MESSAGE_TOPIC, topic);
     up.set(ENABLE_LOG_STORE, "true");
+    if (!isGapNone){
+      up.set(AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key(), "20");
+    }
     up.commit();
 
     if (isGapNone) {
@@ -212,7 +216,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     Assert.assertFalse(Boolean.parseBoolean(
         testKeyedTable.properties().getOrDefault(LOG_STORE_CATCH_UP.key(), "false")));
     try (TestOneInputStreamOperatorIntern<RowData, WriteResult> harness =
-             createSingleProducer(1, jobId, topic, gap)) {
+        createSingleProducer(1, jobId, topic, gap)) {
       DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
       expects.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-17 10:10:11", dtf).toEpochSecond(ZoneOffset.UTC), LocalDateTime.parse("2022-06-17 10:10:11", dtf)});
       expects.add(new Object[]{1000015, "b", LocalDateTime.parse("2022-06-17 10:18:11", dtf).toEpochSecond(ZoneOffset.UTC), LocalDateTime.parse("2022-06-17 10:18:11", dtf)});
@@ -247,10 +251,12 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     // check expects accuracy.
     Assert.assertEquals(3, results.size());
     results.forEach(result -> Assert.assertEquals(1, result.dataFiles().length));
-    List<Object[]> expected = isGapNone ? expects.subList(1, expects.size()) : expects.subList(2, expects.size());
+    List<Object[]> expected = isGapNone ? expects : expects.subList(2, expects.size());
     checkLogstoreDataAccuracy(topic, expected);
     testKeyedTable.refresh();
-    Assert.assertTrue(Boolean.parseBoolean(testKeyedTable.properties().get(LOG_STORE_CATCH_UP.key())));
+    if (!isGapNone) {
+      Assert.assertTrue(Boolean.parseBoolean(testKeyedTable.properties().get(LOG_STORE_CATCH_UP.key())));
+    }
   }
 
   private void checkLogstoreDataAccuracy(String topic, List<Object[]> expects) {
