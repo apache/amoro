@@ -18,11 +18,11 @@
 #
 
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
-AMORO_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
-export AMORO_HOME
+ARCTIC_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
+export ARCTIC_HOME
 
-AMORO_VERSION=`cat $AMORO_HOME/pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'`
-AMORO_BINARY_PACKAGE=${AMORO_HOME}/dist/target/amoro-${AMORO_VERSION}-bin.zip
+ARCTIC_VERSION=`cat $ARCTIC_HOME/pom.xml | grep 'arctic-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'`
+ARCTIC_BINARY_PACKAGE=${ARCTIC_HOME}/dist/target/arctic-${ARCTIC_VERSION}-bin.zip
 FLINK_VERSION=1.15.3
 HADOOP_VERSION=2.10.2
 DEBIAN_MIRROR=http://deb.debian.org
@@ -32,10 +32,11 @@ APACHE_ARCHIVE=https://archive.apache.org/dist
 function usage() {
     cat <<EOF
 Usage: $0 [options] [image]
-Build for Amoro demo docker images.
+Build for arctic demo docker images.
 
 Images:
-    ams                     Build Amoro management service and a Flink container with Amoro flink connector and Iceberg connector.
+    ams                     Build arctic metastore services.
+    flink                   Build a flink container with arctic flink connector and other jars for quick start demo
     namenode                Build a hadoop namenode container for quick start demo
     datanode                Build a hadoop datanode container for quick start demo
     all                     Build all of image above.
@@ -60,7 +61,7 @@ i=1;
 j=$#;
 while [ $i -le $j ]; do
   case $1 in
-    ams|namenode|datanode|all)
+    ams|flink|namenode|datanode|all)
     ACTION=$1;
     i=$((i+1))
     shift 1
@@ -108,7 +109,7 @@ function print_env() {
   echo "SET HADOOP_VERSION=${HADOOP_VERSION}"
   echo "SET APACHE_ARCHIVE=${APACHE_ARCHIVE}"
   echo "SET DEBIAN_MIRROR=${DEBIAN_MIRROR}"
-  echo "SET AMORO_VERSION=${AMORO_VERSION}"
+  echo "SET ARCTIC_VERSION=${ARCTIC_VERSION}"
 }
 
 
@@ -116,37 +117,56 @@ function build_ams() {
   echo "=============================================="
   echo "               arctic163/ams                "
   echo "=============================================="
-  echo "Start Build arctic163/ams Image, Amoro Version: ${AMORO_VERSION}"
-  FLINK_MAJOR_VERSION=`echo $FLINK_VERSION| grep -oE '[0-9]+.[0-9]+'`
-  FLINK_CONNECTOR_BINARY=${AMORO_HOME}/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
+  echo "Start Build arctic163/ams Image, Arctic Version: ${ARCTIC_VERSION}"
 
-  if [ ! -f "${AMORO_BINARY_PACKAGE}" ]; then
-      echo "Amoro Binary Release ${AMORO_BINARY_PACKAGE} is not exists, run 'mvn clean package -pl !trino' first. "
+  if [ ! -f "${ARCTIC_BINARY_PACKAGE}" ]; then
+      echo "Arctic Binary Release ${ARCTIC_BINARY_PACKAGE} is not exists, run 'mvn clean package -pl !trino' first. "
       exit 1
-  fi
-  if [ ! -f "${FLINK_CONNECTOR_BINARY}" ]; then
-      echo "amoro-flink-connector not exists in ${FLINK_CONNECTOR_BINARY}, run 'mvn clean package -pl !trino' first. "
-      exit  1
   fi
 
   set -x
-  AMS_IMAGE_RELEASE_PACKAGE=${CURRENT_DIR}/ams/amoro-${AMORO_VERSION}-bin.zip
-  FLINK_IMAGE_BINARY=${CURRENT_DIR}/ams/amoro-flink-runtime-${FLINK_VERSION}-${AMORO_VERSION}.jar
-  cp ${AMORO_BINARY_PACKAGE} ${AMS_IMAGE_RELEASE_PACKAGE}
-  cp ${FLINK_CONNECTOR_BINARY}  ${FLINK_IMAGE_BINARY}
+  AMS_IMAGE_RELEASE_PACKAGE=${CURRENT_DIR}/ams/arctic-${ARCTIC_VERSION}-bin.zip
+  cp ${ARCTIC_BINARY_PACKAGE} ${AMS_IMAGE_RELEASE_PACKAGE}
   # dos2unix ${CURRENT_DIR}/ams/config.sh
-  docker build -t arctic163/ams \
-    --build-arg AMORO_VERSION=${AMORO_VERSION} \
+  docker build -t arctic163/ams --build-arg ARCTIC_VERSION=${ARCTIC_VERSION} \
     --build-arg DEBIAN_MIRROR=${DEBIAN_MIRROR} \
-    --build-arg APACHE_ARCHIVE=${APACHE_ARCHIVE} \
-    --build-arg FLINK_VERSION=${FLINK_VERSION} \
     ams/.
   
   if [ $? == 0 ]; then
       IMAGE_ID=`docker images |grep 'arctic163/ams' |grep 'latest' |awk '{print $3}' `
-      docker tag ${IMAGE_ID} arctic163/ams:${AMORO_VERSION}
+      docker tag ${IMAGE_ID} arctic163/ams:${ARCTIC_VERSION}
   fi
 }
+
+
+function build_flink() {
+  echo "=============================================="
+  echo "               arctic163/flink                 "
+  echo "=============================================="
+  FLINK_MAJOR_VERSION=`echo $FLINK_VERSION| grep -oE '[0-9]+.[0-9]+'`
+  FLINK_CONNECTOR_BINARY=${ARCTIC_HOME}/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/arctic-flink-runtime-${FLINK_MAJOR_VERSION}-${ARCTIC_VERSION}.jar
+
+  echo "Start Build arctic163/flink Image, Flink Version: ${FLINK_VERSION}"
+  if [ ! -f ${FLINK_CONNECTOR_BINARY} ]; then
+      echo "arctic-flink-connector not exists in ${FLINK_CONNECTOR_BINARY}, run 'mvn clean package -pl !trino' first. "
+      exit  1
+  fi
+
+  set -x
+  FLINK_IMAGE_BINARY=${CURRENT_DIR}/flink/arctic-flink-runtime-${FLINK_VERSION}-${ARCTIC_VERSION}.jar
+  cp ${FLINK_CONNECTOR_BINARY}  ${FLINK_IMAGE_BINARY}
+  docker build -t arctic163/flink \
+    --build-arg FLINK_VERSION=${FLINK_VERSION} \
+    --build-arg APACHE_ARCHIVE=${APACHE_ARCHIVE} \
+    --build-arg DEBIAN_MIRROR=${DEBIAN_MIRROR} \
+    flink/.
+
+  if [ $? == 0 ]; then
+        IMAGE_ID=`docker images |grep 'arctic163/flink' |grep 'latest' |awk '{print $3}' `
+        docker tag ${IMAGE_ID} arctic163/flink:${ARCTIC_VERSION}
+    fi
+}
+
 
 function build_namenode() {
   echo "=============================================="
@@ -182,10 +202,16 @@ function build_datanode() {
 
 
 
+
+
 case "$ACTION" in
   ams)
     print_env
     build_ams
+    ;;
+  flink)
+    print_env
+    build_flink
     ;;
   namenode)
     print_env
@@ -198,6 +224,7 @@ case "$ACTION" in
   all)
     print_env
     build_ams
+    build_flink
     build_namenode
     build_datanode
     ;;

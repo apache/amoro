@@ -18,17 +18,17 @@
 #
 
 
-PROJECT_VERSION=0.5.0-SNAPSHOT
+PROJECT_VERSION=0.4.0
 
 
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
-AMORO_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
+ARCTIC_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
 
-AMORO_POM=${AMORO_HOME}/pom.xml
+ARCTIC_POM=${ARCTIC_HOME}/pom.xml
 
-if [ -f "${AMORO_POM}" ];then
-  echo "Current dir in Amoro project. parse version from ${AMORO_POM}"
-  PROJECT_VERSION=`cat ${AMORO_POM} | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'`
+if [ -f "${ARCTIC_POM}" ];then
+  echo "Current dir in arctic project. parse version from ${ARCTIC_POM}"
+  PROJECT_VERSION=`cat ${ARCTIC_POM} | grep 'arctic-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'`
 fi
 
 
@@ -36,14 +36,14 @@ fi
 function usage() {
     cat <<EOF
 Usage: $0 [options] [command]
-Build for Amoro demo docker images.
+Build for arctic demo docker images.
 
 Commands:
     start                   Setup demo cluster
     stop                    Stop demo cluster and clean dockers
 
 Options:
-    -v    --version         Setup Amoro image version. default is ${PROJECT_VERSION}
+    -v    --version         Setup Arctic image version. default is ${PROJECT_VERSION}
 
 EOF
 }
@@ -93,13 +93,13 @@ services:
     environment:
       - CLUSTER_NAME=demo-cluster
       - CORE_CONF_hadoop_http_staticuser_user=root
-      - CORE_CONF_hadoop_proxyuser_amoro_hosts=*
-      - CORE_CONF_hadoop_proxyuser_amoro_groups=*
+      - CORE_CONF_hadoop_proxyuser_arctic_hosts=*
+      - CORE_CONF_hadoop_proxyuser_arctic_groups=*
       - HDFS_CONF_dfs_replication=1
       - HDFS_CONF_dfs_permissions_enabled=false
       - HDFS_CONF_dfs_webhdfs_enabled=true
     networks:
-      - amoro_network
+      - arctic_network
     ports:
       - 10070:50070
       - 8020:8020
@@ -115,7 +115,7 @@ services:
     volumes:
       - ./hadoop-config:/etc/hadoop
     networks:
-      - amoro_network
+      - arctic_network
     ports:
       - 10075:50075
       - 10010:50010
@@ -128,23 +128,101 @@ services:
     ports:
       - 1630:1630
       - 1260:1260
+    environment:
+      - XMS_CONFIG=128
+    networks:
+      - arctic_network
+    tty: true
+    stdin_open: true 
+
+  flink:
+    image: arctic163/flink:${PROJECT_VERSION}
+    container_name: flink
+    ports:
       - 8081:8081
     networks:
-        amoro_network:
-          aliases:
-            - amsAlias
+      - arctic_network
+    depends_on:
+      - ams 
+
+  mysql:
+    container_name: mysql
+    hostname: mysql
+    image: mysql:8.0
+    command: mysqld --max-connections=500
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_DATABASE: oltpbench
+    networks:
+      - arctic_network
+    ports:
+      - "3306:3306" 
+
+  lakehouse-benchmark:
+    image: arctic163/lakehouse-benchmark:latest
+    container_name: lakehouse-benchmark
+    hostname: lakehouse-benchmark
+    depends_on:
+      - mysql
+    networks:
+      - arctic_network
     tty: true
-    stdin_open: true
+    stdin_open: true 
+
+  lakehouse-benchmark-ingestion:
+    image: arctic163/lakehouse-benchmark-ingestion:${PROJECT_VERSION}
+    container_name: lakehouse-benchmark-ingestion
+    hostname: lakehouse-benchmark-ingestion
+    privileged: true
+    networks:
+      - arctic_network
+    volumes:
+      - ./ingestion-config/ingestion-conf.yaml:/usr/lib/lakehouse_benchmark_ingestion/conf/ingestion-conf.yaml
+    depends_on:
+      - mysql
+      - ams
+    ports:
+      - 8082:8081
+    tty: true
+    stdin_open: true 
 
 networks:
-  amoro_network:
+  arctic_network:
     driver: bridge
+EOT
+}
+
+function create_ingestion_conf() {
+  INGESTION_CONF_DIR=./ingestion-config
+  INGESTION_CONF=${INGESTION_CONF_DIR}/ingestion-conf.yaml
+
+  mkdir -p ${INGESTION_CONF_DIR}
+
+  if [ -f ${INGESTION_CONF} ]; then
+      echo "clean old file ${INGESTION_CONF}"
+      rm ${INGESTION_CONF}
+  fi
+
+  cat <<EOT >> ${INGESTION_CONF}
+source.type: mysql
+source.database.name: oltpbench
+source.username: root
+source.password: password
+source.hostname: mysql
+source.port: 3306
+source.table.name: *
+source.parallelism: 8
+arctic.metastore.url: thrift://ams:1260/demo_catalog
+arctic.optimize.group.name: default
 EOT
 }
 
 
 function start() {
-  echo "SET AMORO_VERSION=${PROJECT_VERSION}"
+  echo "SET ARCTIC_VERSION=${PROJECT_VERSION}"
+  echo "generate ingestion conf"
+  create_ingestion_conf
 
   echo "generate docker compose"
   create_docker_compose
