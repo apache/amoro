@@ -77,11 +77,11 @@ function handleClick(item: ICatalogItem) {
     selectCatalog(item)
   }
 }
-function selectCatalog(item: ICatalogItem) {
+async function selectCatalog(item: ICatalogItem) {
   const { catalogName, catalogType } = item
-  curCatalog.catalogName = catalogName
-  curCatalog.catalogType = catalogType
-  router.replace({
+  curCatalog.catalogName = catalogName || ''
+  curCatalog.catalogType = catalogType || ''
+  await router.replace({
     path: '/catalogs',
     query: {
       catalogname: encodeURIComponent(curCatalog.catalogName),
@@ -123,13 +123,13 @@ function addCatalog() {
     addNewCatalog()
   }
 }
-function addNewCatalog() {
+async function addNewCatalog() {
   const item: ICatalogItem = {
     catalogName: NEW_CATALOG,
     catalogType: ''
   }
+  await selectCatalog(item)
   catalogs.push(item)
-  selectCatalog(item)
   isEdit.value = true
 }
 onMounted(async() => {

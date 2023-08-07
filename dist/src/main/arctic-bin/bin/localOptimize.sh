@@ -18,13 +18,18 @@
 #
 
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
-ARCTIC_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
-export ARCTIC_HOME
+AMORO_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
+export AMORO_HOME
 
-LIB_PATH=$ARCTIC_HOME/lib
-LOG_DIR=$ARCTIC_HOME/logs
+LIB_PATH=$AMORO_HOME/lib
+LOG_DIR=$AMORO_HOME/logs
 STDERR_LOG=${LOG_DIR}/localOptimize.log.err
-export CLASSPATH=$CLASSPATH:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -):$ARCTIC_HOME/conf/optimize
+
+if [ -z "$AMORO_CONF_DIR" ]; then
+    AMORO_CONF_DIR=$AMORO_HOME/conf
+fi
+
+export CLASSPATH=$CLASSPATH:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -):$AMORO_CONF_DIR/optimize
 if [ -z $(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -) ]; then
   echo "Launching the localOptimize task lacks relevant jars, please check" >&2
   exit -1

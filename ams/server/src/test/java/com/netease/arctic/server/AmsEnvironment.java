@@ -98,7 +98,7 @@ public class AmsEnvironment {
     LOG.info("ams environment root path: " + rootPath);
     String path = Objects.requireNonNull(this.getClass().getClassLoader().getResource("")).getPath();
     FileUtils.writeStringToFile(new File(rootPath + "/conf/config.yaml"), getAmsConfig());
-    System.setProperty(Environments.SYSTEM_ARCTIC_HOME, rootPath);
+    System.setProperty(Environments.AMORO_HOME, rootPath);
     System.setProperty("derby.init.sql.dir", path + "../classes/sql/derby/");
     amsExit = new AtomicBoolean(false);
     arcticService = new ArcticServiceContainer();

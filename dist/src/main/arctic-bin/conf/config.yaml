@@ -62,7 +62,6 @@ ams:
 
   terminal:
     backend: local
-    local.spark.sql.session.timeZone: UTC
     local.spark.sql.iceberg.handle-timestamp-without-timezone: false
 
 #  Kyuubi terminal backend configuration.
