@@ -291,7 +291,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     if (scheduledTables.size() <= 0) {
       return;
     }
-    List<TableIdentifier> planTables = Lists.newArrayList();
+    List<TableIdentifier> plannedTables = Lists.newArrayList();
     for (TableRuntime tableRuntime : scheduledTables) {
       LOG.debug("Planning table {}", tableRuntime.getTableIdentifier());
       try {
@@ -302,7 +302,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           LOG.info("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
           continue;
         }
-        planTables.add(table.id());
+        plannedTables.add(table.id());
         if (planner.isNecessary()) {
           TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
           LOG.info("{} after plan get {} tasks", tableRuntime.getTableIdentifier(),
@@ -317,8 +317,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       }
     }
     long end = System.currentTimeMillis();
-    LOG.info("{} end planning tasks, plan total cost {} ms, tables(plan/pending) = {}/{}, {}",
-        optimizerGroup.getName(), end - startTime, planTables.size(), scheduledTables.size(), planTables);
+    LOG.info("{} completes planning tasks with a total cost of {} ms, which involves {}/{}(planned/pending) tables, {}",
+        optimizerGroup.getName(), end - startTime, plannedTables.size(), scheduledTables.size(), plannedTables);
   }
 
   private double getAvailableCore() {
