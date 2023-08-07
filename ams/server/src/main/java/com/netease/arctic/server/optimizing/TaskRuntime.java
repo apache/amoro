@@ -118,6 +118,9 @@ public class TaskRuntime extends StatedPersistentBase {
 
   void reset(boolean incRetryCount) {
     invokeConsisitency(() -> {
+      if (!incRetryCount && status == Status.PLANNED) {
+        return;
+      }
       if (incRetryCount) {
         retry++;
       }

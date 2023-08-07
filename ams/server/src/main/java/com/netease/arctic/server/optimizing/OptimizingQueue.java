@@ -187,9 +187,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   }
 
   private void retryTask(TaskRuntime taskRuntime, boolean incRetryCount) {
-    if (incRetryCount || taskRuntime.getStatus() != TaskRuntime.Status.PLANNED) {
-      taskRuntime.reset(incRetryCount);
-    }
+    taskRuntime.reset(incRetryCount);
     retryQueue.offer(taskRuntime);
   }
 
