@@ -28,6 +28,7 @@ import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.utils.ArcticDataFiles;
 import com.netease.arctic.utils.ExceptionUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -277,8 +278,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     List<TableRuntime> scheduledTables = schedulingPolicy.scheduleTables();
     LOG.debug("Calculating and sorting tables by quota : {}", scheduledTables);
 
-    int plannedTableCount = 0;
-    int pendingTableCount = scheduledTables.size();
+    if (scheduledTables.size() <= 0) {
+      return;
+    }
+    List<TableIdentifier> planTables = Lists.newArrayList();
     for (TableRuntime tableRuntime : scheduledTables) {
       LOG.debug("Planning table {}", tableRuntime.getTableIdentifier());
       try {
@@ -289,15 +292,12 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           LOG.info("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
           continue;
         }
-        plannedTableCount++;
+        planTables.add(table.id());
         if (planner.isNecessary()) {
           TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
           LOG.info("{} after plan get {} tasks", tableRuntime.getTableIdentifier(),
               optimizingProcess.getTaskMap().size());
           optimizingProcess.taskMap.values().forEach(taskQueue::offer);
-          long endTime = System.currentTimeMillis();
-          LOG.info("{} End planning tasks, plannedTableCount = {}, pendingTableCount = {}, plan cost {} ms, ",
-              optimizerGroup.getName(), plannedTableCount, pendingTableCount, endTime - startTime);
           break;
         } else {
           tableRuntime.cleanPendingInput();
@@ -306,6 +306,9 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         LOG.error(tableRuntime.getTableIdentifier() + " plan failed, continue", e);
       }
     }
+    long end = System.currentTimeMillis();
+    LOG.info("{} End planning tasks, plan total cost {} ms, tables(plan/pending) = {}/{}, {}",
+        optimizerGroup.getName(), end - startTime, planTables.size(), scheduledTables.size(), planTables);
   }
 
   private double getAvailableCore() {
