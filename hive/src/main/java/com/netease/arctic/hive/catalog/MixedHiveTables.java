@@ -247,6 +247,10 @@ public class MixedHiveTables extends MixedTables {
     }
   }
 
+  public void dropTableMetaButNotDropHiveTable(TableMeta tableMeta) {
+    super.dropTableByMeta(tableMeta, false);
+  }
+
   protected void fillTableProperties(TableMeta meta) {
     super.fillTableProperties(meta);
     String tableLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_TABLE);

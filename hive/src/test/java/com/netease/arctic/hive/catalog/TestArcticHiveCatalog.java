@@ -18,11 +18,16 @@
 
 package com.netease.arctic.hive.catalog;
 
+import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TestBasicArcticCatalog;
 import com.netease.arctic.hive.TestHMS;
+import com.netease.arctic.table.TableIdentifier;
+import org.apache.hadoop.hive.metastore.api.MetaException;
+import org.junit.Assert;
 import org.junit.ClassRule;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -40,5 +45,17 @@ public class TestArcticHiveCatalog extends TestBasicArcticCatalog {
   public static Object[] parameters() {
     return new Object[] {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
                          new HiveCatalogTestHelper(TableFormat.ICEBERG, TEST_HMS.getHiveConf())};
+  }
+
+  @Test
+  public void testDropTableButNotDropHiveTable() throws MetaException {
+    if (getCatalog() instanceof ArcticHiveCatalog) {
+      getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
+      createTestTable();
+      ((ArcticHiveCatalog)getCatalog()).dropTableButNotDropHiveTable(TableIdentifier.of(getCatalog().name(),
+          TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME));
+      Assert.assertTrue(TEST_HMS.getHiveClient().getAllTables(TableTestHelper.TEST_DB_NAME)
+          .contains(TableTestHelper.TEST_TABLE_NAME));
+    }
   }
 }
