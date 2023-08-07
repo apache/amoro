@@ -130,11 +130,11 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
 
   @Override
   public OptimizingTask pollTask(String authToken, int threadId) {
-    LOG.debug("Optimizer {} (threadId {}) pooling task", authToken, threadId);
+    LOG.debug("Optimizer {} (threadId {}) try polling task", authToken, threadId);
     OptimizingQueue queue = getQueueByToken(authToken);
     OptimizingTask task = queue.pollTask(authToken, threadId);
     if (task != null) {
-      LOG.info("Optimizer {} (threadId {}) polling task {}", authToken, threadId, task.getTaskId());
+      LOG.info("Optimizer {} (threadId {}) polled task {}", authToken, threadId, task.getTaskId());
     }
     return task;
   }
