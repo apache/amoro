@@ -18,8 +18,8 @@
 #
 
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
-ARCTIC_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
-export ARCTIC_HOME
+AMORO_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
+export AMORO_HOME
 
 PRGDIR=$(dirname $0)
 PRGDIR=$(cd $PRGDIR;pwd)
@@ -39,7 +39,7 @@ XMX=$XMX_CONFIG
 XMS=$XMS_CONFIG
 MAX_PERM=$MAX_PERM_CONFIG
 
-JAVA_OPTS="-server -Xloggc:$ARCTIC_HOME/logs/gc.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=10M \
+JAVA_OPTS="-server -Xloggc:$AMORO_HOME/logs/gc.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=10M \
 -Xms${XMS}m -Xmx${XMX}m -XX:MaxPermSize=${MAX_PERM}m \
 -verbose:gc -XX:+PrintGCDetails \
 -Dcom.sun.management.jmxremote \
@@ -75,10 +75,10 @@ if [ ! -z "$JVM_EXTRA_CONFIG" ];then
 fi
 
 RUN_SERVER="com.netease.arctic.server.ArcticServiceContainer"
-WORKDIR=$ARCTIC_HOME
+WORKDIR=$AMORO_HOME
 RUNSERVER=$RUN_SERVER
-LIB_PATH=$ARCTIC_HOME/lib
-WORKDIR=$ARCTIC_HOME
+LIB_PATH=$AMORO_HOME/lib
+WORKDIR=$AMORO_HOME
 LOG_DIR=${WORKDIR}/logs
 STDERR_LOG=${WORKDIR}/logs/app.log.err
 PID=${WORKDIR}/run/app.pid
@@ -108,8 +108,12 @@ if [ -z "$RUNSERVER" ]; then
     exit 1
 fi
 
-export CLASSPATH=$ARCTIC_HOME/conf/:$LIB_PATH/:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -)
-CMDS="$JAVA_RUN -Dlog.home=${LOG_DIR} -Dlog.dir=${LOG_DIR} -Duser.dir=${ARCTIC_HOME}  $JAVA_OPTS ${RUNSERVER}"
+if [ -z "$AMORO_CONF_DIR" ]; then
+    AMORO_CONF_DIR=$AMORO_HOME/conf/
+fi
+
+export CLASSPATH=$AMORO_CONF_DIR:$LIB_PATH/:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -)
+CMDS="$JAVA_RUN -Dlog.home=${LOG_DIR} -Dlog.dir=${LOG_DIR} -Duser.dir=${AMORO_HOME}  $JAVA_OPTS ${RUNSERVER}"
 #0:pid bad and proc OK;   1:pid ok and proc bad;    2:pid bad
 function status(){
     test -e ${PID} || return 2

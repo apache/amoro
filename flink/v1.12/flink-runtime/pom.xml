@@ -145,7 +145,7 @@
                             <artifactSet>
                                 <includes>
                                     <include>org.apache.iceberg:*</include>
-                                    <include>com.netease.arctic:*</include>
+                                    <include>com.netease.amoro:*</include>
                                     <include>org.apache.parquet:*</include>
                                     <include>org.apache.commons:*</include>
                                     <include>org.apache.zookeeper:*</include>
