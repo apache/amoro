@@ -29,6 +29,7 @@ import com.netease.arctic.flink.util.FilterUtil;
 import com.netease.arctic.flink.util.IcebergAndFlinkFilters;
 import com.netease.arctic.hive.io.reader.AbstractAdaptHiveArcticDataReader;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.utils.SchemaUtil;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.DataTypes;
@@ -328,7 +329,7 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
                   index ->
                       arcticTable.schema().columns().get(index).name())
               .collect(Collectors.toList());
-      projectedSchema = arcticTableSchema.select(projectedFieldNames);
+      projectedSchema = SchemaUtil.selectInOrder(arcticTableSchema, projectedFieldNames);
       LOG.info(
           "projected schema {}.\n table schema {}.",
           projectedSchema,

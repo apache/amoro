@@ -40,7 +40,7 @@
 
 "type:docs":
   - "*.md"
-  - "site/**/*"
+  - "docs/**/*"
 
 "module:core":
   - "core/**/*"
