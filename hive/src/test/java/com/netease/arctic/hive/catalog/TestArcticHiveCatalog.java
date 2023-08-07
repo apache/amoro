@@ -25,6 +25,8 @@ import com.netease.arctic.catalog.TestBasicArcticCatalog;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.hadoop.hive.metastore.api.MetaException;
+import org.apache.thrift.TException;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -56,6 +58,14 @@ public class TestArcticHiveCatalog extends TestBasicArcticCatalog {
           TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME));
       Assert.assertTrue(TEST_HMS.getHiveClient().getAllTables(TableTestHelper.TEST_DB_NAME)
           .contains(TableTestHelper.TEST_TABLE_NAME));
+    }
+  }
+
+  @After
+  public void cleanUp() throws TException {
+    if (getCatalog() instanceof ArcticHiveCatalog) {
+      TEST_HMS.getHiveClient().dropTable(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME,
+          true, true);
     }
   }
 }
