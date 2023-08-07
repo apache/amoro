@@ -203,10 +203,17 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   @Override
   public void completeTask(String authToken, OptimizingTaskResult taskResult) {
     OptimizingThread thread = new OptimizingThread(authToken, taskResult.getThreadId());
-    Optional.ofNullable(executingTaskMap.get(taskResult.getTaskId()))
-        .orElseThrow(() -> new TaskNotFoundException(taskResult.getTaskId()))
-        .complete(thread, taskResult);
-    executingTaskMap.remove(taskResult.getTaskId());
+    TaskRuntime task = executingTaskMap.remove(taskResult.getTaskId());
+    try {
+      Optional.ofNullable(task)
+          .orElseThrow(() -> new TaskNotFoundException(taskResult.getTaskId()))
+          .complete(thread, taskResult);
+    } catch (Throwable t) {
+      if (task != null) {
+        executingTaskMap.put(taskResult.getTaskId(), task);
+      }
+      throw t;
+    }
   }
 
   @Override
@@ -238,9 +245,15 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     suspendingTasks.forEach(task -> {
       LOG.info("Task {} is suspending, since it's optimizer is expired, put it to retry queue, optimizer {}",
           task.getTaskId(), task.getOptimizingThread());
-      //optimizing task of suspending optimizer would not be counted for retrying
-      retryTask(task, false);
       executingTaskMap.remove(task.getTaskId());
+      try {
+        //optimizing task of suspending optimizer would not be counted for retrying
+        retryTask(task, false);
+      } catch (Throwable t) {
+        LOG.error("Retry task {} failed, put it back to executing tasks", task.getTaskId(), t);
+        executingTaskMap.put(task.getTaskId(), task);
+        // retry next task, not throw exception
+      }
     });
     return expiredOptimizers;
   }
