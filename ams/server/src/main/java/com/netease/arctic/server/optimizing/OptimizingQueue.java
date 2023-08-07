@@ -180,7 +180,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     try {
       task.schedule(thread);
     } catch (Throwable throwable) {
-      LOG.error("Schedule task {} failed, put it to retryQueue", task.getTaskId(), throwable);
+      LOG.error("Schedule task {} failed, put it to retry queue", task.getTaskId(), throwable);
       retryQueue.offer(task);
       throw throwable;
     }
@@ -234,7 +234,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
             !authOptimizers.containsKey(task.getOptimizingThread().getToken()))
         .collect(Collectors.toList());
     suspendingTasks.forEach(task -> {
-      LOG.info("Task {} is suspending, since it's optimizer is expired, put it to retryQueue, optimizer {}",
+      LOG.info("Task {} is suspending, since it's optimizer is expired, put it to retry queue, optimizer {}",
           task.getTaskId(), task.getOptimizingThread());
       executingTaskMap.remove(task.getTaskId());
       try {
@@ -307,7 +307,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       }
     }
     long end = System.currentTimeMillis();
-    LOG.info("{} End planning tasks, plan total cost {} ms, tables(plan/pending) = {}/{}, {}",
+    LOG.info("{} end planning tasks, plan total cost {} ms, tables(plan/pending) = {}/{}, {}",
         optimizerGroup.getName(), end - startTime, planTables.size(), scheduledTables.size(), planTables);
   }
 
