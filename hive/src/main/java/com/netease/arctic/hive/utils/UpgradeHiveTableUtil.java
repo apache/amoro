@@ -207,7 +207,7 @@ public class UpgradeHiveTableUtil {
       List<Partition> partitions =
           HivePartitionUtil.getHiveAllPartitions(arcticHiveCatalog.getHMSClient(), table.id());
       partitions.forEach(partition -> {
-        StructLike partitionData = DataFiles.data(table.spec(), String.join("/", partition.getValues()));
+        StructLike partitionData = HivePartitionUtil.buildPartitionData(partition.getValues(), table.spec());
         if (hasPartitionProperties(baseTable, true, partitionData)) {
           return;
         }
