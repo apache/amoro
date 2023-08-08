@@ -91,7 +91,7 @@ public class UpgradeHiveTableUtil {
       UpgradeHiveTableUtil.hiveDataMigration((SupportHive) arcticTable, arcticHiveCatalog, tableIdentifier);
     } catch (Throwable t) {
       if (upgradeHive) {
-        arcticHiveCatalog.dropTableButNotDropHiveTable(tableIdentifier);
+        arcticHiveCatalog.dropTable(tableIdentifier, false);
       }
       throw t;
     }
