@@ -34,7 +34,6 @@ import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
@@ -207,7 +206,7 @@ public class UpgradeHiveTableUtil {
       List<Partition> partitions =
           HivePartitionUtil.getHiveAllPartitions(arcticHiveCatalog.getHMSClient(), table.id());
       partitions.forEach(partition -> {
-        StructLike partitionData = DataFiles.data(table.spec(), String.join("/", partition.getValues()));
+        StructLike partitionData = HivePartitionUtil.buildPartitionData(partition.getValues(), table.spec());
         if (hasPartitionProperties(baseTable, true, partitionData)) {
           return;
         }
