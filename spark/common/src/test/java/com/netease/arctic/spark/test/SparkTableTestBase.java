@@ -20,7 +20,7 @@ package com.netease.arctic.spark.test;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.HiveTableProperties;
-import com.netease.arctic.spark.test.helper.TestTableHelper;
+import com.netease.arctic.spark.test.utils.TestTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
@@ -60,9 +60,9 @@ public class SparkTableTestBase extends SparkTestBase {
   protected static final PrimaryKeySpec noPrimaryKey = PrimaryKeySpec.noPrimaryKey();
 
 
-  private String database = "spark_test_database";
-  private String table = "test_table";
-  private String sourceTable = "test_source_table";
+  private final String database = "spark_test_database";
+  private final String table = "test_table";
+  private final String sourceTable = "test_source_table";
 
   private Identifier source;
 
@@ -179,7 +179,7 @@ public class SparkTableTestBase extends SparkTestBase {
 
   public void createViewSource(Schema schema, List<Record> data) {
     Dataset<Row> ds = spark().createDataFrame(
-        data.stream().map(TestTableHelper::recordToRow).collect(Collectors.toList()),
+        data.stream().map(TestTableUtil::recordToRow).collect(Collectors.toList()),
         SparkSchemaUtil.convert(schema));
 
     ds.createOrReplaceTempView(sourceTable);

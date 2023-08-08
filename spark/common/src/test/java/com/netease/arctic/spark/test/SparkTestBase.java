@@ -20,7 +20,6 @@ package com.netease.arctic.spark.test;
 
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.spark.ArcticSparkSessionCatalog;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -60,7 +59,7 @@ public class SparkTestBase {
 
   protected Map<String, String> sparkSessionConfig() {
     return ImmutableMap.of(
-        "spark.sql.catalog.spark_catalog", ArcticSparkSessionCatalog.class.getName(),
+        "spark.sql.catalog.spark_catalog", "com.netease.arctic.spark.ArcticSparkSessionCatalog",
         "spark.sql.catalog.spark_catalog.url", context.catalogUrl(SparkTestContext.EXTERNAL_HIVE_CATALOG_NAME)
     );
   }

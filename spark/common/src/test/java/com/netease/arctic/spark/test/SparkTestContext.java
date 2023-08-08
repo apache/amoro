@@ -24,9 +24,7 @@ import com.netease.arctic.SingletonResourceUtil;
 import com.netease.arctic.TestAms;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.hive.TestHMS;
-import com.netease.arctic.spark.ArcticSparkCatalog;
-import com.netease.arctic.spark.ArcticSparkExtensions;
-import com.netease.arctic.spark.test.helper.HiveCatalogMetaTestUtil;
+import com.netease.arctic.spark.test.utils.HiveCatalogMetaTestUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
@@ -43,6 +41,9 @@ import java.io.IOException;
 import java.util.Map;
 
 public class SparkTestContext {
+
+  public static final String CATALOG_IMPL = "com.netease.arctic.spark.ArcticSparkCatalog";
+  public static final String SQL_EXTENSIONS_IMPL = "com.netease.arctic.spark.ArcticSparkExtensions";
 
   final TemporaryFolder warehouse = new TemporaryFolder();
   public static final String INTERNAL_CATALOG_NAME = "arctic_catalog";
@@ -148,10 +149,10 @@ public class SparkTestContext {
 
   public SparkSession getSparkSession(Map<String, String> externalConfigs) {
     Map<String, String> configs = Maps.newHashMap();
-    configs.put("spark.sql.catalog." + amsCatalogName("arctic"), ArcticSparkCatalog.class.getName());
+    configs.put("spark.sql.catalog." + amsCatalogName("arctic"), CATALOG_IMPL);
     configs.put("spark.sql.catalog." + amsCatalogName("arctic") + ".url",
         this.ams.getServerUrl() + "/" + amsCatalogName("arctic"));
-    configs.put("spark.sql.catalog." + amsCatalogName("hive"), ArcticSparkCatalog.class.getName());
+    configs.put("spark.sql.catalog." + amsCatalogName("hive"), CATALOG_IMPL);
     configs.put("spark.sql.catalog." + amsCatalogName("hive") + ".url",
         this.ams.getServerUrl() + "/" + amsCatalogName("hive"));
 
@@ -167,7 +168,7 @@ public class SparkTestContext {
     configs.put("spark.default.parallelism", "12");
     configs.put("spark.network.timeout", "600s");
     configs.put("spark.sql.warehouse.dir", this.warehouseDir());
-    configs.put("spark.sql.extensions", ArcticSparkExtensions.class.getName());
+    configs.put("spark.sql.extensions", SQL_EXTENSIONS_IMPL);
     configs.put("spark.testing.memory", "943718400");
 
     if (externalConfigs != null) {

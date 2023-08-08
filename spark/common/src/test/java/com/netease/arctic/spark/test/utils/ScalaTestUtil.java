@@ -16,14 +16,14 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.test.helper;
+package com.netease.arctic.spark.test.utils;
 
 import scala.collection.JavaConverters;
 import scala.collection.Seq;
 
 import java.util.List;
 
-public class ScalaTestHelper {
+public class ScalaTestUtil {
 
 
   public static <T> Seq<T> seq(List<T> values) {

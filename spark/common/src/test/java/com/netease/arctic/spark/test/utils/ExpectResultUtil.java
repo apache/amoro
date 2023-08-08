@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.test.helper;
+package com.netease.arctic.spark.test.utils;
 
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
@@ -38,7 +38,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class ExpectResultHelper {
+public class ExpectResultUtil {
 
   public static List<Record> upsertResult(
       List<Record> target, List<Record> source, Function<Record, Object> keyExtractor) {

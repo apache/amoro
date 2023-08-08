@@ -25,11 +25,11 @@ import com.netease.arctic.spark.SparkSQLProperties;
 import com.netease.arctic.spark.test.Asserts;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
-import com.netease.arctic.spark.test.helper.DataComparator;
-import com.netease.arctic.spark.test.helper.ExpectResultHelper;
-import com.netease.arctic.spark.test.helper.RecordGenerator;
-import com.netease.arctic.spark.test.helper.TableFiles;
-import com.netease.arctic.spark.test.helper.TestTableHelper;
+import com.netease.arctic.spark.test.utils.DataComparator;
+import com.netease.arctic.spark.test.utils.ExpectResultUtil;
+import com.netease.arctic.spark.test.utils.RecordGenerator;
+import com.netease.arctic.spark.test.utils.TableFiles;
+import com.netease.arctic.spark.test.utils.TestTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
@@ -121,11 +121,11 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
     table = createTarget(schema, builder ->
         builder.withPartitionSpec(ptSpec)
             .withPrimaryKeySpec(keySpec));
-    initFiles = TestTableHelper.writeToBase(table, base);
+    initFiles = TestTableUtil.writeToBase(table, base);
     target = Lists.newArrayList(base);
 
     if (keySpec.primaryKeyExisted()) {
-      List<DataFile> changeFiles = TestTableHelper.writeToChange(
+      List<DataFile> changeFiles = TestTableUtil.writeToChange(
           table.asKeyedTable(), change, ChangeAction.INSERT);
       initFiles.addAll(changeFiles);
       target.addAll(change);
@@ -135,7 +135,7 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
   }
 
   private void assertFileLayout(TableFormat format) {
-    TableFiles files = TestTableHelper.files(table);
+    TableFiles files = TestTableUtil.files(table);
     Set<String> initFileSet = initFiles.stream().map(f -> f.path().toString()).collect(Collectors.toSet());
     files = files.removeFiles(initFileSet);
 
@@ -177,8 +177,8 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
 
 
     table.refresh();
-    List<Record> expects = ExpectResultHelper.dynamicOverwriteResult(target, source, r -> r.getField("pt"));
-    List<Record> actual = TestTableHelper.tableRecords(table);
+    List<Record> expects = ExpectResultUtil.dynamicOverwriteResult(target, source, r -> r.getField("pt"));
+    List<Record> actual = TestTableUtil.tableRecords(table);
     DataComparator.build(expects, actual)
         .ignoreOrder("id")
         .assertRecordsEqual();
@@ -242,7 +242,7 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
     source.stream().map(sourceTrans).forEach(expects::add);
 
 
-    List<Record> actual = TestTableHelper.tableRecords(table);
+    List<Record> actual = TestTableUtil.tableRecords(table);
     DataComparator.build(expects, actual)
         .ignoreOrder("pt", "id")
         .assertRecordsEqual();
@@ -281,7 +281,7 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
 
     table.refresh();
     List<Record> expects = Lists.newArrayList(source);
-    List<Record> actual = TestTableHelper.tableRecords(table);
+    List<Record> actual = TestTableUtil.tableRecords(table);
     DataComparator.build(expects, actual)
         .ignoreOrder("pt", "id")
         .assertRecordsEqual();
@@ -408,8 +408,8 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
 
     if (shouldOptimized) {
       table.refresh();
-      TableFiles files = TestTableHelper.files(table);
-      int expectFiles = ExpectResultHelper.expectOptimizeWriteFileCount(source, table, bucket);
+      TableFiles files = TestTableUtil.files(table);
+      int expectFiles = ExpectResultUtil.expectOptimizeWriteFileCount(source, table, bucket);
 
       Assertions.assertEquals(expectFiles, files.baseDataFiles.size());
     }

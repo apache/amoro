@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.test.helper;
+package com.netease.arctic.spark.test.utils;
 
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
@@ -67,7 +67,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class TestTableHelper {
+public class TestTableUtil {
 
   public static Row recordToRow(Record record) {
     Object[] values = new Object[record.size()];

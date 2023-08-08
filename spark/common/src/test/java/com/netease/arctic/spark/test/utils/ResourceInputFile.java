@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.test.helper;
+package com.netease.arctic.spark.test.utils;
 
 import org.apache.iceberg.io.ByteBufferInputStream;
 import org.apache.iceberg.io.InputFile;
