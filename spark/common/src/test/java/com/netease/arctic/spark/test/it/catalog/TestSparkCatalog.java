@@ -1,15 +1,17 @@
-package com.netease.arctic.spark.test.suites.sql;
+package com.netease.arctic.spark.test.it.catalog;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
+@Tag("integration")
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
 public class TestSparkCatalog extends SparkTableTestBase {
