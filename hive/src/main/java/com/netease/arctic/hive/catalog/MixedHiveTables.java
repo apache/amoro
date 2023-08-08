@@ -234,16 +234,35 @@ public class MixedHiveTables extends MixedTables {
     super.dropTableByMeta(tableMeta, purge);
     // drop hive table operation will only delete hive table metadata
     // delete data files operation will use BasicArcticCatalog
-    try {
-      hiveClientPool.run(client -> {
-        client.dropTable(tableMeta.getTableIdentifier().getDatabase(),
-            tableMeta.getTableIdentifier().getTableName(),
-            false /* deleteData */,
-            true /* ignoreUnknownTab */);
-        return null;
-      });
-    } catch (TException | InterruptedException e) {
-      throw new RuntimeException("Failed to drop table:" + tableMeta.getTableIdentifier(), e);
+    if (purge) {
+      try {
+        hiveClientPool.run(client -> {
+          client.dropTable(tableMeta.getTableIdentifier().getDatabase(),
+              tableMeta.getTableIdentifier().getTableName(),
+              false /* deleteData */,
+              true /* ignoreUnknownTab */);
+          return null;
+        });
+      } catch (TException | InterruptedException e) {
+        throw new RuntimeException("Failed to drop table:" + tableMeta.getTableIdentifier(), e);
+      }
+    } else {
+      // if purge is not true, we will not drop the hive table and need to remove the arctic table flag
+      try {
+        hiveClientPool.run(client -> {
+          org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(
+              tableMeta.getTableIdentifier().getDatabase(),
+              tableMeta.getTableIdentifier().getTableName());
+          Map<String, String> hiveParameters = hiveTable.getParameters();
+          hiveParameters.remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
+          client.alterTable(tableMeta.getTableIdentifier().getDatabase(),
+              tableMeta.tableIdentifier.getTableName(), hiveTable);
+          return null;
+        });
+      } catch (TException | InterruptedException e) {
+        throw new RuntimeException("Failed to alter hive table while drop table meta:" +
+            tableMeta.getTableIdentifier(), e);
+      }
     }
   }
 
