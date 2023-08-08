@@ -48,6 +48,7 @@ public class SparkTestContext {
   final TemporaryFolder warehouse = new TemporaryFolder();
   public static final String INTERNAL_CATALOG_NAME = "arctic_catalog";
   public static final String EXTERNAL_HIVE_CATALOG_NAME = "hive_catalog";
+  public static final String EXTERNAL_HADOOP_CATALOG_NAME = "hadoop_catalog";
 
   final TestAms ams = new TestAms();
 
@@ -101,28 +102,16 @@ public class SparkTestContext {
         return;
       }
     }
-    CatalogMeta arcticCatalogMeta = CatalogMetaTestUtil.createArcticCatalog(warehouse.getRoot());
-    arcticCatalogMeta.setCatalogName(amsCatalogName("ARCTIC"));
+    CatalogMeta arcticCatalogMeta = CatalogMetaTestUtil.createHadoopCatalog(warehouse.getRoot());
+    arcticCatalogMeta.setCatalogName(EXTERNAL_HADOOP_CATALOG_NAME);
     ams.getAmsHandler().createCatalog(arcticCatalogMeta);
 
     HiveConf hiveConf = hms.getHiveConf();
     CatalogMeta hiveCatalogMeta = HiveCatalogMetaTestUtil.createArcticCatalog(warehouse.getRoot(), hiveConf);
-    hiveCatalogMeta.setCatalogName(amsCatalogName("HIVE"));
+    hiveCatalogMeta.setCatalogName(EXTERNAL_HIVE_CATALOG_NAME);
     ams.getAmsHandler().createCatalog(hiveCatalogMeta);
     catalogSet = true;
   }
-
-
-  public String amsCatalogName(String catalogType) {
-    if ("Hive".equalsIgnoreCase(catalogType)) {
-      return EXTERNAL_HIVE_CATALOG_NAME;
-    } else if ("Arctic".equalsIgnoreCase(catalogType)) {
-      return INTERNAL_CATALOG_NAME;
-    } else {
-      throw new IllegalArgumentException("unknown type of catalog type:" + catalogType);
-    }
-  }
-
 
   public String catalogUrl(String arcticCatalogName) {
     return this.ams.getServerUrl() + "/" + arcticCatalogName;
@@ -149,12 +138,12 @@ public class SparkTestContext {
 
   public SparkSession getSparkSession(Map<String, String> externalConfigs) {
     Map<String, String> configs = Maps.newHashMap();
-    configs.put("spark.sql.catalog." + amsCatalogName("arctic"), CATALOG_IMPL);
-    configs.put("spark.sql.catalog." + amsCatalogName("arctic") + ".url",
-        this.ams.getServerUrl() + "/" + amsCatalogName("arctic"));
-    configs.put("spark.sql.catalog." + amsCatalogName("hive"), CATALOG_IMPL);
-    configs.put("spark.sql.catalog." + amsCatalogName("hive") + ".url",
-        this.ams.getServerUrl() + "/" + amsCatalogName("hive"));
+    configs.put("spark.sql.catalog." + EXTERNAL_HADOOP_CATALOG_NAME, CATALOG_IMPL);
+    configs.put("spark.sql.catalog." + EXTERNAL_HADOOP_CATALOG_NAME + ".url",
+        this.ams.getServerUrl() + "/" + EXTERNAL_HADOOP_CATALOG_NAME);
+    configs.put("spark.sql.catalog." + EXTERNAL_HIVE_CATALOG_NAME, CATALOG_IMPL);
+    configs.put("spark.sql.catalog." + EXTERNAL_HIVE_CATALOG_NAME + ".url",
+        this.ams.getServerUrl() + "/" + EXTERNAL_HIVE_CATALOG_NAME);
 
     configs.put("hive.metastore.uris", this.hiveMetastoreUri());
     configs.put("spark.sql.catalogImplementation", "hive");

@@ -56,6 +56,7 @@ import java.util.stream.IntStream;
 public class SparkTableTestBase extends SparkTestBase {
   protected static final TableFormat MIXED_HIVE = TableFormat.MIXED_HIVE;
   protected static final TableFormat MIXED_ICEBERG = TableFormat.MIXED_ICEBERG;
+  protected static final TableFormat ICEBERG = TableFormat.ICEBERG;
   protected static final PartitionSpec unpartitioned = PartitionSpec.unpartitioned();
   protected static final PrimaryKeySpec noPrimaryKey = PrimaryKeySpec.noPrimaryKey();
 

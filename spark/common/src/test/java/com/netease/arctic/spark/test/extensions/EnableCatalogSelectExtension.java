@@ -118,8 +118,9 @@ public class EnableCatalogSelectExtension implements BeforeEachMethodAdapter {
     switch (format) {
       case MIXED_HIVE:
         return SparkTestBase.HIVE_CATALOG;
+      case ICEBERG:
       case MIXED_ICEBERG:
-        return SparkTestBase.INTERNAL_CATALOG;
+        return SparkTestBase.HADOOP_CATALOG;
       default:
         throw new IllegalArgumentException("Un-supported table format type for test:" + format);
     }

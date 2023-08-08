@@ -38,8 +38,8 @@ public class SparkTestBase {
   protected static final Logger LOG = LoggerFactory.getLogger(SparkTestBase.class);
   public static final SparkTestContext context = new SparkTestContext();
   public static final String SESSION_CATALOG = "spark_catalog";
-  public static final String INTERNAL_CATALOG = "arctic_catalog";
-  public static final String HIVE_CATALOG = "hive_catalog";
+  public static final String HADOOP_CATALOG = SparkTestContext.EXTERNAL_HADOOP_CATALOG_NAME;
+  public static final String HIVE_CATALOG = SparkTestContext.EXTERNAL_HIVE_CATALOG_NAME;
 
   @BeforeAll
   public static void setupContext() throws Exception {

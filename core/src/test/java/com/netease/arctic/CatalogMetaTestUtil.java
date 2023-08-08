@@ -31,9 +31,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CatalogMetaTestUtil {
-  public static CatalogMeta createArcticCatalog(File arcticBaseDir) throws IOException {
+  public static CatalogMeta createInternalCatalog(File arcticBaseDir) throws IOException {
+    CatalogMeta meta = createHadoopCatalog(arcticBaseDir);
+    meta.setCatalogType(CatalogMetaProperties.CATALOG_TYPE_AMS);
+    meta.setCatalogName("internal_default");
+    return meta;
+  }
+
+  public static CatalogMeta createHadoopCatalog(File warehouse) throws IOException {
     CatalogMeta meta = new CatalogMeta();
-    meta.setCatalogName("arctic_default");
+    meta.setCatalogName("hadoop_default");
     meta.setCatalogType(CatalogMetaProperties.CATALOG_TYPE_HADOOP);
     Map<String, String> storageConfig = new HashMap<>();
     storageConfig.put(
@@ -57,7 +64,7 @@ public class CatalogMetaTestUtil {
 
     meta.putToCatalogProperties(
         CatalogMetaProperties.KEY_WAREHOUSE,
-        arcticBaseDir.getAbsolutePath()
+        warehouse.getAbsolutePath()
     );
     return meta;
   }

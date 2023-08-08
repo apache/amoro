@@ -42,8 +42,8 @@ public class TestArcticCommandSQL extends SparkTableTestBase {
     return Stream.of(
         Arguments.arguments(fields, new String[0], SESSION_CATALOG),
         Arguments.arguments(fields, new String[] {"pt"}, SESSION_CATALOG),
-        Arguments.arguments(fields, new String[0], INTERNAL_CATALOG),
-        Arguments.arguments(fields, new String[] {"pt"}, INTERNAL_CATALOG)
+        Arguments.arguments(fields, new String[0], HADOOP_CATALOG),
+        Arguments.arguments(fields, new String[] {"pt"}, HADOOP_CATALOG)
     );
   }
 
