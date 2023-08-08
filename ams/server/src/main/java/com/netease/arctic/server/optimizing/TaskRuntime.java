@@ -118,6 +118,9 @@ public class TaskRuntime extends StatedPersistentBase {
 
   void reset(boolean incRetryCount) {
     invokeConsisitency(() -> {
+      if (!incRetryCount && status == Status.PLANNED) {
+        return;
+      }
       if (incRetryCount) {
         retry++;
       }
@@ -331,30 +334,25 @@ public class TaskRuntime extends StatedPersistentBase {
 
   private class TaskStatusMachine {
 
-    private Set<Status> next;
-
-    private TaskStatusMachine() {
-      this.next = nextStatusMap.get(status);
-    }
-
     public void accept(Status targetStatus) {
       if (owner.isClosed()) {
         throw new OptimizingClosedException(taskId.getProcessId());
       }
-      next = nextStatusMap.get(status);
-      if (!next.contains(targetStatus)) {
+      if (!getNext().contains(targetStatus)) {
         throw new IllegalTaskStateException(taskId, status, targetStatus);
       }
       status = targetStatus;
-      next = nextStatusMap.get(status);
+    }
+
+    private Set<Status> getNext() {
+      return nextStatusMap.get(status);
     }
 
     public synchronized boolean tryAccepting(Status targetStatus) {
-      if (owner.isClosed() || !next.contains(targetStatus)) {
+      if (owner.isClosed() || !getNext().contains(targetStatus)) {
         return false;
       }
       status = targetStatus;
-      next = nextStatusMap.get(status);
       return true;
     }
   }

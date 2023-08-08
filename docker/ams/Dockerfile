@@ -17,8 +17,14 @@
 
 FROM openjdk:8u332-jdk
 
-ARG ARCTIC_VERSION=0.4.0-SNAPSHOT
-ARG RELEASE=v0.3.2-rc1
+ARG AMORO_VERSION=0.5.0-SNAPSHOT
+ARG FLINK_VERSION=1.15.3
+ARG FLINK_VERSION_PRE=1.15
+ARG FLINK_HADOOP_VERSION=2.8.3-10.0
+ARG HIVE_VERSION=2.1.1
+ARG ICEBERG_VERSION=1.1.0
+ARG APACHE_ARCHIVE=https://archive.apache.org/dist
+ARG MAVEN_URL=https://maven.aliyun.com/repository/central
 ARG DEBIAN_MIRROR=http://deb.debian.org
 
 WORKDIR /usr/local/ams
@@ -27,28 +33,39 @@ RUN sed -i "s#http://deb.debian.org#${DEBIAN_MIRROR}#g" /etc/apt/sources.list
 
 RUN apt update \
     && apt-get install -y vim \
+    && apt-get install -y netcat \
     && apt-get install -y net-tools \
     && apt-get install -y telnet \
     && apt-get install -y dos2unix \
     && apt-get clean
 
-ARG AMS_FILE
+WORKDIR /usr/local
+RUN wget ${APACHE_ARCHIVE}/flink/flink-${FLINK_VERSION}/flink-${FLINK_VERSION}-bin-scala_2.12.tgz \
+    && tar -zxvf flink-${FLINK_VERSION}-bin-scala_2.12.tgz \
+    && rm -f flink-${FLINK_VERSION}-bin-scala_2.12.tgz
+ENV FLINK_HOME=/usr/local/flink-${FLINK_VERSION} \
+    PATH=${PATH}:${FLINK_HOME}/bin
+WORKDIR ${FLINK_HOME}/lib
+RUN cp ../examples/table/ChangelogSocketExample.jar . \
+    && wget ${MAVEN_URL}/org/apache/flink/flink-shaded-hadoop-2-uber/${FLINK_HADOOP_VERSION}/flink-shaded-hadoop-2-uber-${FLINK_HADOOP_VERSION}.jar \
+    && wget ${MAVEN_URL}/org/apache/hive/hive-exec/${HIVE_VERSION}/hive-exec-${HIVE_VERSION}.jar \
+    && wget ${MAVEN_URL}/org/apache/iceberg/iceberg-flink-runtime-${FLINK_VERSION_PRE}/${ICEBERG_VERSION}/iceberg-flink-runtime-${FLINK_VERSION_PRE}-${ICEBERG_VERSION}.jar
+WORKDIR ${FLINK_HOME}
+ADD amoro-flink-runtime-*.jar ${FLINK_HOME}/lib/
+COPY flink-conf.yaml ${FLINK_HOME}/conf/flink-conf.yaml
+RUN ln -s ${FLINK_HOME} /usr/local/flink
+
 WORKDIR /usr/local/ams
-
-ADD arctic-${ARCTIC_VERSION}-bin.zip /usr/local/ams/arctic-${ARCTIC_VERSION}-bin.zip
-RUN unzip arctic-${ARCTIC_VERSION}-bin.zip \
-  && sed -i '/local_catalog/d' /usr/local/ams/arctic-${ARCTIC_VERSION}/conf/derby/ams-init.sql
-
-WORKDIR /usr/local/ams/arctic-${ARCTIC_VERSION}
-
+ADD amoro-${AMORO_VERSION}-bin.zip /usr/local/ams/amoro-${AMORO_VERSION}-bin.zip
+RUN unzip amoro-${AMORO_VERSION}-bin.zip \
+    && rm -f amoro-${AMORO_VERSION}-bin.zip
+WORKDIR /usr/local/ams/amoro-${AMORO_VERSION}
 COPY config.sh  ./bin/config.sh
 RUN find ./bin -name "*.sh" | xargs dos2unix
 RUN mkdir -p ./logs && touch ./logs/ams-info.log
+RUN ln -s /usr/local/ams/amoro-${AMORO_VERSION} /usr/local/amoro
 
-
-EXPOSE 1630/tcp
-EXPOSE 1260/tcp
-
-CMD ["bash","-c","./bin/ams.sh start && tail -f ./logs/ams-info.log"]
+WORKDIR /usr/local
+CMD ["bash","-c","./amoro/bin/ams.sh start && tail -f ./amoro/logs/ams-info.log"]
 
 
