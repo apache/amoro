@@ -45,7 +45,9 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.DistributionMode;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.WriteResult;
@@ -92,6 +94,7 @@ public class FlinkSink {
     private Properties producerConfig;
     private String topic;
     private boolean overwrite = false;
+    private String branch = SnapshotRef.MAIN_BRANCH;
     private DistributionHashMode distributionMode = null;
 
     private Builder() {
@@ -213,7 +216,7 @@ public class FlinkSink {
           rowDataInput,
           logWriter,
           fileWriter,
-          createFileCommitter(table, tableLoader, overwrite, arcticEmitMode),
+          createFileCommitter(table, tableLoader, overwrite, branch, table.spec(), arcticEmitMode),
           writeOperatorParallelism,
           metricsGenerator,
           arcticEmitMode);
@@ -342,20 +345,24 @@ public class FlinkSink {
 
   public static OneInputStreamOperator<WriteResult, Void> createFileCommitter(ArcticTable arcticTable,
                                                                               ArcticTableLoader tableLoader,
-                                                                              boolean overwrite) {
-    return createFileCommitter(arcticTable, tableLoader, overwrite, ARCTIC_EMIT_FILE);
+                                                                              boolean overwrite,
+                                                                              String branch,
+                                                                              PartitionSpec spec) {
+    return createFileCommitter(arcticTable, tableLoader, overwrite, branch, spec, ARCTIC_EMIT_FILE);
   }
 
   public static OneInputStreamOperator<WriteResult, Void> createFileCommitter(ArcticTable arcticTable,
                                                                               ArcticTableLoader tableLoader,
                                                                               boolean overwrite,
+                                                                              String branch,
+                                                                              PartitionSpec spec,
                                                                               String emitMode) {
     if (!ArcticUtils.arcticFileWriterEnable(emitMode)) {
       return null;
     }
     tableLoader.switchLoadInternalTableForKeyedTable(ArcticUtils.isToBase(overwrite));
     return (OneInputStreamOperator) ProxyUtil.getProxy(
-        IcebergClassUtil.newIcebergFilesCommitter(tableLoader, overwrite, arcticTable.io()),
+        IcebergClassUtil.newIcebergFilesCommitter(tableLoader, overwrite, branch, spec, arcticTable.io()),
         arcticTable.io());
   }
 }

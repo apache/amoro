@@ -73,23 +73,34 @@ public class IcebergClassUtil {
   }
 
   public static OneInputStreamOperator<WriteResult, Void> newIcebergFilesCommitter(
-      TableLoader tableLoader, boolean replacePartitions) {
+      TableLoader tableLoader, boolean replacePartitions, String branch, PartitionSpec spec) {
     try {
       Class<?> clazz = forName(ICEBERG_FILE_COMMITTER_CLASS);
-      Constructor<?> c = clazz.getDeclaredConstructor(TableLoader.class, boolean.class, Map.class, Integer.class);
+      Constructor<?> c = clazz.getDeclaredConstructor(
+          TableLoader.class,
+          boolean.class,
+          Map.class,
+          Integer.class,
+          String.class,
+          PartitionSpec.class);
       c.setAccessible(true);
       return (OneInputStreamOperator<WriteResult, Void>) c.newInstance(
-        tableLoader, replacePartitions, new HashMap<>(), ThreadPools.WORKER_THREAD_POOL_SIZE);
+        tableLoader, replacePartitions, new HashMap<>(),
+        ThreadPools.WORKER_THREAD_POOL_SIZE, branch, spec);
     } catch (NoSuchMethodException | IllegalAccessException |
         InvocationTargetException | InstantiationException e) {
       throw new RuntimeException(e);
     }
   }
 
-  public static OneInputStreamOperator<WriteResult, Void> newIcebergFilesCommitter(TableLoader tableLoader,
-                                                                                   boolean replacePartitions,
-                                                                                   ArcticFileIO arcticFileIO) {
-    OneInputStreamOperator<WriteResult, Void> obj = newIcebergFilesCommitter(tableLoader, replacePartitions);
+  public static OneInputStreamOperator<WriteResult, Void> newIcebergFilesCommitter(
+      TableLoader tableLoader,
+      boolean replacePartitions,
+      String branch,
+      PartitionSpec spec,
+      ArcticFileIO arcticFileIO) {
+    OneInputStreamOperator<WriteResult, Void> obj = newIcebergFilesCommitter(
+        tableLoader, replacePartitions, branch, spec);
     return (OneInputStreamOperator) ProxyUtil.getProxy(obj, arcticFileIO);
   }
 

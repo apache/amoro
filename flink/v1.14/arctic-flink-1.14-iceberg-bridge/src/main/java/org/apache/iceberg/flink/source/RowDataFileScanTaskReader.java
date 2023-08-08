@@ -29,7 +29,10 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.data.DeleteFilter;
 import org.apache.iceberg.encryption.InputFilesDecryptor;
+import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
+import org.apache.iceberg.flink.FlinkSourceFilter;
 import org.apache.iceberg.flink.RowDataWrapper;
 import org.apache.iceberg.flink.data.AdaptHiveFlinkParquetReaders;
 import org.apache.iceberg.flink.data.FlinkAvroReader;
@@ -47,6 +50,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.PartitionUtil;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -60,13 +64,27 @@ public class RowDataFileScanTaskReader implements FileScanTaskReader<RowData> {
   private final Schema projectedSchema;
   private final String nameMapping;
   private final boolean caseSensitive;
+  private final FlinkSourceFilter rowFilter;
 
-  public RowDataFileScanTaskReader(Schema tableSchema, Schema projectedSchema,
-                                   String nameMapping, boolean caseSensitive) {
+  public RowDataFileScanTaskReader(
+      Schema tableSchema,
+      Schema projectedSchema,
+      String nameMapping,
+      boolean caseSensitive,
+      List<Expression> filters) {
     this.tableSchema = tableSchema;
     this.projectedSchema = projectedSchema;
     this.nameMapping = nameMapping;
     this.caseSensitive = caseSensitive;
+
+    if (filters != null && !filters.isEmpty()) {
+      Expression combinedExpression =
+          filters.stream().reduce(Expressions.alwaysTrue(), Expressions::and);
+      this.rowFilter =
+          new FlinkSourceFilter(this.projectedSchema, combinedExpression, this.caseSensitive);
+    } else {
+      this.rowFilter = null;
+    }
   }
 
   @Override
@@ -116,6 +134,9 @@ public class RowDataFileScanTaskReader implements FileScanTaskReader<RowData> {
       }
     }
 
+    if (rowFilter != null) {
+      return CloseableIterable.filter(iter, rowFilter::filter);
+    }
     return iter;
   }
 
@@ -137,7 +158,6 @@ public class RowDataFileScanTaskReader implements FileScanTaskReader<RowData> {
   private CloseableIterable<RowData> newParquetIterable(
       FileScanTask task, Schema schema, Map<Integer, ?> idToConstant, InputFilesDecryptor inputFilesDecryptor) {
     Parquet.ReadBuilder builder = Parquet.read(inputFilesDecryptor.getInputFile(task))
-        .reuseContainers()
         .split(task.start(), task.length())
         .project(schema)
         // Change for Arctic

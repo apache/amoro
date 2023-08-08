@@ -4,15 +4,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>arctic-parent</artifactId>
-        <groupId>com.netease.arctic</groupId>
+        <artifactId>amoro-parent</artifactId>
+        <groupId>com.netease.amoro</groupId>
         <version>0.5.0-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>arctic-flink-1.12-iceberg-bridge</artifactId>
-    <name>Arctic Project Flink 1.12 Iceberg Bridge</name>
-    <url>https://arctic.netease.com</url>
+    <artifactId>amoro-flink-1.12-iceberg-bridge</artifactId>
+    <name>Amoro Project Flink 1.12 Iceberg Bridge</name>
+    <url>https://amoro.netease.com</url>
 
     <properties>
         <kafka.version>2.4.1</kafka.version>
@@ -23,10 +23,10 @@
     </properties>
 
     <dependencies>
-        <!--arctic-->
+        <!--amoro-->
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-core</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-core</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.ow2.asm</groupId>
@@ -41,7 +41,7 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-flink-1.14</artifactId>
+            <artifactId>iceberg-flink-1.15</artifactId>
             <version>${iceberg.version}</version>
             <exclusions>
                 <exclusion>
@@ -223,7 +223,7 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-flink-1.14</artifactId>
+            <artifactId>iceberg-flink-1.15</artifactId>
             <version>${iceberg.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
@@ -258,8 +258,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-hive</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-hive</artifactId>
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>
@@ -278,8 +278,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-hive</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-hive</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
@@ -349,8 +349,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-ams-api</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-ams-api</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

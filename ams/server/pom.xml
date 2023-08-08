@@ -23,15 +23,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.netease.arctic</groupId>
-        <artifactId>arctic-ams</artifactId>
+        <groupId>com.netease.amoro</groupId>
+        <artifactId>amoro-ams</artifactId>
         <version>0.5.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>arctic-ams-server</artifactId>
+    <artifactId>amoro-ams-server</artifactId>
     <packaging>jar</packaging>
-    <name>Arctic Project AMS Server</name>
-    <url>https://arctic.netease.com</url>
+    <name>Amoro Project AMS Server</name>
+    <url>https://amoro.netease.com</url>
 
     <properties>
         <powermock.version>2.0.2</powermock.version>
@@ -51,14 +51,14 @@
     <dependencies>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-core</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-core</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-hive</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-hive</artifactId>
             <version>${project.version}</version>
             <exclusions>
                 <!-- this can't be excluded in hive -->
@@ -70,14 +70,14 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-ams-optimizer</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-ams-optimizer</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-ams-dashboard</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-ams-dashboard</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -142,8 +142,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-spark-${terminal.spark.major.version}</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-spark-${terminal.spark.major.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -289,16 +289,16 @@
 
         <!-- test dependencies -->
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-core</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-core</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-ams-api</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-ams-api</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
             <classifier>tests</classifier>
@@ -393,8 +393,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-hive</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-hive</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
@@ -472,7 +472,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>
-                                ${project.build.directory}/arctic-ams-server-dependency/lib
+                                ${project.build.directory}/amoro-ams-server-dependency/lib
                             </outputDirectory>
                         </configuration>
                     </execution>

@@ -9,6 +9,7 @@ import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.ArcticServiceConstants;
@@ -27,6 +28,7 @@ import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.utils.ArcticDataFiles;
 import com.netease.arctic.utils.ExceptionUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -178,6 +180,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     try {
       task.schedule(thread);
     } catch (Throwable throwable) {
+      LOG.error("Schedule task {} failed, put it to retry queue", task.getTaskId(), throwable);
       retryTask(task, false);
       throw throwable;
     }
@@ -198,10 +201,17 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   @Override
   public void completeTask(String authToken, OptimizingTaskResult taskResult) {
     OptimizingThread thread = new OptimizingThread(authToken, taskResult.getThreadId());
-    Optional.ofNullable(executingTaskMap.get(taskResult.getTaskId()))
-        .orElseThrow(() -> new TaskNotFoundException(taskResult.getTaskId()))
-        .complete(thread, taskResult);
-    executingTaskMap.remove(taskResult.getTaskId());
+    TaskRuntime task = executingTaskMap.remove(taskResult.getTaskId());
+    try {
+      Optional.ofNullable(task)
+          .orElseThrow(() -> new TaskNotFoundException(taskResult.getTaskId()))
+          .complete(thread, taskResult);
+    } catch (Throwable t) {
+      if (task != null) {
+        executingTaskMap.put(taskResult.getTaskId(), task);
+      }
+      throw t;
+    }
   }
 
   @Override
@@ -221,6 +231,9 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         .collect(Collectors.toList());
 
     expiredOptimizers.forEach(authOptimizers.keySet()::remove);
+    if (!expiredOptimizers.isEmpty()) {
+      LOG.info("Expired optimizers: {}", expiredOptimizers);
+    }
 
     List<TaskRuntime> suspendingTasks = executingTaskMap.values().stream()
         .filter(task -> task.isSuspending(currentTime, taskAckTimeout) ||
@@ -228,9 +241,17 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
             !authOptimizers.containsKey(task.getOptimizingThread().getToken()))
         .collect(Collectors.toList());
     suspendingTasks.forEach(task -> {
+      LOG.info("Task {} is suspending, since it's optimizer is expired, put it to retry queue, optimizer {}",
+          task.getTaskId(), task.getOptimizingThread());
       executingTaskMap.remove(task.getTaskId());
-      //optimizing task of suspending optimizer would not be counted for retrying
-      retryTask(task, false);
+      try {
+        //optimizing task of suspending optimizer would not be counted for retrying
+        retryTask(task, false);
+      } catch (Throwable t) {
+        LOG.error("Retry task {} failed, put it back to executing tasks", task.getTaskId(), t);
+        executingTaskMap.put(task.getTaskId(), task);
+        // retry next task, not throw exception
+      }
     });
     return expiredOptimizers;
   }
@@ -240,6 +261,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         this.optimizerGroup.getName().equals(optimizerGroup.getName()),
         "optimizer group name mismatch");
     this.optimizerGroup = optimizerGroup;
+    schedulingPolicy.setTableSorterIfNeeded(optimizerGroup);
   }
 
   @VisibleForTesting
@@ -260,19 +282,25 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   }
 
   private void planTasks() {
+    long startTime = System.currentTimeMillis();
     List<TableRuntime> scheduledTables = schedulingPolicy.scheduleTables();
     LOG.debug("Calculating and sorting tables by quota : {}", scheduledTables);
 
+    if (scheduledTables.size() <= 0) {
+      return;
+    }
+    List<TableIdentifier> plannedTables = Lists.newArrayList();
     for (TableRuntime tableRuntime : scheduledTables) {
       LOG.debug("Planning table {}", tableRuntime.getTableIdentifier());
       try {
         ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
         OptimizingPlanner planner = new OptimizingPlanner(tableRuntime.refresh(table), table,
-            getAvailableCore(tableRuntime));
+            getAvailableCore());
         if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
           LOG.info("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
           continue;
         }
+        plannedTables.add(table.id());
         if (planner.isNecessary()) {
           TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
           LOG.info("{} after plan get {} tasks", tableRuntime.getTableIdentifier(),
@@ -286,10 +314,15 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         LOG.error(tableRuntime.getTableIdentifier() + " plan failed, continue", e);
       }
     }
+    long end = System.currentTimeMillis();
+    LOG.info("{} completes planning tasks with a total cost of {} ms, which involves {}/{}(planned/pending) tables, {}",
+        optimizerGroup.getName(), end - startTime, plannedTables.size(), scheduledTables.size(), plannedTables);
   }
 
-  private double getAvailableCore(TableRuntime tableRuntime) {
-    return tableRuntime.getOptimizingConfig().getTargetQuota();
+  private double getAvailableCore() {
+    int totalCore = authOptimizers.values().stream().mapToInt(Resource::getThreadCount).sum();
+    // the available core should be at least 1
+    return Math.max(totalCore, 1);
   }
 
   @VisibleForTesting

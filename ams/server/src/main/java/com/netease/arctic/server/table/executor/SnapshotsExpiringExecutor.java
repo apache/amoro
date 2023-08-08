@@ -22,6 +22,7 @@ import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.scan.TableEntriesScan;
+import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.HiveLocationUtil;
@@ -82,6 +83,11 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
     return tableRuntime.getTableConfiguration().isExpireSnapshotEnabled();
+  }
+
+  @Override
+  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
+    scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 
   @Override
