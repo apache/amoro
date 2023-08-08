@@ -226,18 +226,6 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
         tables.dropTableByMeta(meta, false);
       } else {
         super.doRollbackCreateTable(meta);
-        try {
-          hiveClientPool.run(client -> {
-            client.dropTable(
-                meta.getTableIdentifier().getDatabase(),
-                meta.getTableIdentifier().getTableName(),
-                true,
-                true);
-            return null;
-          });
-        } catch (TException | InterruptedException e) {
-          LOG.warn("Failed to drop hive table while rolling back create table operation", e);
-        }
       }
     }
 
