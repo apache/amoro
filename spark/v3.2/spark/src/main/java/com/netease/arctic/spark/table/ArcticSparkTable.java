@@ -51,7 +51,8 @@ import java.util.Set;
 
 public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
     SupportsRowLevelOperator, SupportsPartitionManagement {
-  private static final Set<String> RESERVED_PROPERTIES = Sets.newHashSet("provider", "format", "current-snapshot-id");
+  private static final Set<String> RESERVED_PROPERTIES = Sets.newHashSet(
+      "provider", "format", "current-snapshot-id");
   private static final Set<TableCapability> CAPABILITIES = ImmutableSet.of(
       TableCapability.BATCH_READ,
       TableCapability.BATCH_WRITE,
@@ -61,31 +62,20 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
 
   private final ArcticTable arcticTable;
   private final StructType requestedSchema;
-  private final boolean refreshEagerly;
   private StructType lazyTableSchema = null;
   private SparkSession lazySpark = null;
   private final ArcticCatalog catalog;
 
-  public static Table ofArcticTable(ArcticTable table, ArcticCatalog catalog) {
-    if (table.isUnkeyedTable()) {
-      if (!(table instanceof SupportHive)) {
-        return new ArcticIcebergSparkTable(table.asUnkeyedTable(), false);
-      }
-    }
-    return new ArcticSparkTable(table, false, catalog);
-  }
 
-  public ArcticSparkTable(ArcticTable arcticTable, boolean refreshEagerly, ArcticCatalog catalog) {
-    this(arcticTable, null, refreshEagerly, catalog);
+  public ArcticSparkTable(ArcticTable arcticTable, ArcticCatalog catalog) {
+    this(arcticTable, null, catalog);
   }
 
   public ArcticSparkTable(ArcticTable arcticTable,
                           StructType requestedSchema,
-                          boolean refreshEagerly,
                           ArcticCatalog catalog) {
     this.arcticTable = arcticTable;
     this.requestedSchema = requestedSchema;
-    this.refreshEagerly = refreshEagerly;
     this.catalog = catalog;
 
     if (requestedSchema != null) {
