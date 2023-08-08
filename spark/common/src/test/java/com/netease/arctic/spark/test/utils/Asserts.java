@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.test;
+package com.netease.arctic.spark.test.utils;
 
-import com.netease.arctic.spark.test.helper.TableFiles;
+import com.netease.arctic.spark.test.utils.TableFiles;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;

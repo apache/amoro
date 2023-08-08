@@ -20,7 +20,7 @@ package com.netease.arctic.spark.test.suites.sql;
 
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
-import com.netease.arctic.spark.test.helper.TestTable;
+import com.netease.arctic.spark.test.utils.TestTable;
 import org.apache.iceberg.types.Types;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;

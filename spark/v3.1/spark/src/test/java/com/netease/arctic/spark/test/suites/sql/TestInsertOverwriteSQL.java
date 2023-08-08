@@ -22,7 +22,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.spark.SparkSQLProperties;
-import com.netease.arctic.spark.test.Asserts;
+import com.netease.arctic.spark.test.utils.Asserts;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import com.netease.arctic.spark.test.utils.DataComparator;
