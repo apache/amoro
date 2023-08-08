@@ -25,7 +25,7 @@ public class TaskFilesPersistence {
   public static Map<Integer, RewriteFilesInput> loadTaskInputs(long processId) {
     List<byte[]> bytes =
         persistence.getAs(OptimizingMapper.class, mapper -> mapper.selectProcessInputFiles(processId));
-    if (bytes == null) {
+    if (bytes == null || bytes.isEmpty()) {
       return Collections.emptyMap();
     } else {
       return SerializationUtil.simpleDeserialize(CompressUtil.unGzip(bytes.get(0)));

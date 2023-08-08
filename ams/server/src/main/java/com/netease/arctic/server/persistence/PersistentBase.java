@@ -42,29 +42,31 @@ public abstract class PersistentBase {
   }
 
   protected final <T> void doAs(Class<T> mapperClz, Consumer<T> consumer) {
-    try (NestedSqlSession session = beginSession()) {
-      try {
-        T mapper = getMapper(session, mapperClz);
-        consumer.accept(mapper);
-        session.commit();
-      } catch (Throwable t) {
-        session.rollback();
-        throw ArcticRuntimeException.wrap(t, PersistenceException::new);
-      }
+    NestedSqlSession session = beginSession();
+    try {
+      T mapper = getMapper(session, mapperClz);
+      consumer.accept(mapper);
+      session.commit();
+    } catch (Throwable t) {
+      session.rollback();
+      throw ArcticRuntimeException.wrap(t, PersistenceException::new);
+    } finally {
+      session.close();
     }
   }
 
   protected final void doAsTransaction(Runnable... operations) {
-    try (NestedSqlSession session = beginSession()) {
-      try {
-        for (Runnable runnable : operations) {
-          runnable.run();
-        }
-        session.commit();
-      } catch (Throwable t) {
-        session.rollback();
-        throw ArcticRuntimeException.wrap(t, PersistenceException::new);
+    NestedSqlSession session = beginSession();
+    try {
+      for (Runnable runnable : operations) {
+        runnable.run();
       }
+      session.commit();
+    } catch (Throwable t) {
+      session.rollback();
+      throw ArcticRuntimeException.wrap(t, PersistenceException::new);
+    } finally {
+      session.close();
     }
   }
 
@@ -72,8 +74,7 @@ public abstract class PersistentBase {
     try (NestedSqlSession session = beginSession()) {
       try {
         T mapper = getMapper(session, mapperClz);
-        R result = func.apply(mapper);
-        return result;
+        return func.apply(mapper);
       } catch (Throwable t) {
         throw ArcticRuntimeException.wrap(t, PersistenceException::new);
       }
@@ -82,17 +83,18 @@ public abstract class PersistentBase {
 
   protected final <T> void doAsExisted(Class<T> mapperClz, Function<T, Integer> func,
       Supplier<? extends ArcticRuntimeException> errorSupplier) {
-    try (NestedSqlSession session = beginSession()) {
-      try {
-        int result = func.apply(getMapper(session, mapperClz));
-        if (result == 0) {
-          throw  errorSupplier.get();
-        }
-        session.commit();
-      } catch (Throwable t) {
-        session.rollback();
-        throw ArcticRuntimeException.wrap(t, PersistenceException::new);
+    NestedSqlSession session = beginSession();
+    try {
+      int result = func.apply(getMapper(session, mapperClz));
+      if (result == 0) {
+        throw  errorSupplier.get();
       }
+      session.commit();
+    } catch (Throwable t) {
+      session.rollback();
+      throw ArcticRuntimeException.wrap(t, PersistenceException::new);
+    } finally {
+      session.close();
     }
   }
 
