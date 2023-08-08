@@ -124,7 +124,7 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
       List<Partition> partitions =
           HivePartitionUtil.getHiveAllPartitions(((ArcticHiveCatalog) getCatalog()).getHMSClient(), table.id());
       for (Partition partition : partitions) {
-        StructLike partitionData = DataFiles.data(table.spec(), String.join("/", partition.getValues()));
+        StructLike partitionData = HivePartitionUtil.buildPartitionData(partition.getValues(), table.spec());
         Map<String, String> partitionProperties = baseTable.partitionProperty().get(partitionData);
         Assert.assertTrue(partitionProperties.containsKey(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
         Assert.assertTrue(partitionProperties.containsKey(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
