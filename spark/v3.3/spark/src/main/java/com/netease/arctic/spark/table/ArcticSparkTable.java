@@ -18,9 +18,7 @@
 
 package com.netease.arctic.spark.table;
 
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.spark.reader.SparkScanBuilder;
 import com.netease.arctic.spark.writer.ArcticSparkWriteBuilder;
 import com.netease.arctic.table.ArcticTable;
@@ -31,7 +29,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.spark.Spark3Util;
 import org.apache.iceberg.spark.SparkSchemaUtil;
-import org.apache.iceberg.spark.source.SparkTable;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.analysis.NoSuchPartitionException;
@@ -63,37 +60,19 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
 
   private final ArcticTable arcticTable;
   private final StructType requestedSchema;
-  private final boolean refreshEagerly;
   private StructType lazyTableSchema = null;
   private SparkSession lazySpark = null;
   private final ArcticCatalog catalog;
 
-  public static Table ofArcticTable(ArcticTable table, ArcticCatalog catalog) {
-    TableFormat format = table.format();
-    if (format == TableFormat.ICEBERG) {
-      return new SparkTable(table.asUnkeyedTable(), true);
-    } else if (format == TableFormat.MIXED_HIVE) {
-
-    }
-    if (table.isUnkeyedTable()) {
-      if (!(table instanceof SupportHive)) {
-        return new ArcticIcebergSparkTable(table.asUnkeyedTable(), false);
-      }
-    }
-    return new ArcticSparkTable(table, false, catalog);
-  }
-
-  public ArcticSparkTable(ArcticTable arcticTable, boolean refreshEagerly, ArcticCatalog catalog) {
-    this(arcticTable, null, refreshEagerly, catalog);
+  public ArcticSparkTable(ArcticTable arcticTable, ArcticCatalog catalog) {
+    this(arcticTable, null, catalog);
   }
 
   public ArcticSparkTable(ArcticTable arcticTable,
                           StructType requestedSchema,
-                          boolean refreshEagerly,
                           ArcticCatalog catalog) {
     this.arcticTable = arcticTable;
     this.requestedSchema = requestedSchema;
-    this.refreshEagerly = refreshEagerly;
     this.catalog = catalog;
 
     if (requestedSchema != null) {
@@ -219,7 +198,7 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
   public boolean appendAsUpsert() {
     return arcticTable.isKeyedTable() &&
         Boolean.parseBoolean(arcticTable.properties().getOrDefault(
-                TableProperties.UPSERT_ENABLED, "false"));
+            TableProperties.UPSERT_ENABLED, "false"));
   }
 
   @Override
