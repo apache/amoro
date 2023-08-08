@@ -6,7 +6,7 @@
     <parent>
         <artifactId>amoro-parent</artifactId>
         <groupId>com.netease.amoro</groupId>
-        <version>0.6.0-SNAPSHOT</version>
+        <version>0.5.1-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
