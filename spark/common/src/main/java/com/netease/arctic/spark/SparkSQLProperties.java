@@ -36,4 +36,9 @@ public class SparkSQLProperties {
 
   public static final String OPTIMIZE_WRITE_ENABLED = "spark.sql.arctic.optimize-write-enabled";
   public static final String OPTIMIZE_WRITE_ENABLED_DEFAULT = "true";
+
+  public static final String PROVIDER_ICEBERG = "iceberg";
+  public static final String PROVIDER_MIXED_HIVE = "mixed-hive";
+  public static final String PROVIDER_MIXED_ICEBERG = "mixed-iceberg";
+  public static final String PROVIDER_ARCTIC = "arctic";
 }

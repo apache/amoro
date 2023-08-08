@@ -18,6 +18,7 @@
 
 package com.netease.arctic.spark.table;
 
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.spark.reader.SparkScanBuilder;
@@ -30,6 +31,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.spark.Spark3Util;
 import org.apache.iceberg.spark.SparkSchemaUtil;
+import org.apache.iceberg.spark.source.SparkTable;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.analysis.NoSuchPartitionException;
@@ -67,6 +69,12 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
   private final ArcticCatalog catalog;
 
   public static Table ofArcticTable(ArcticTable table, ArcticCatalog catalog) {
+    TableFormat format = table.format();
+    if (format == TableFormat.ICEBERG) {
+      return new SparkTable(table.asUnkeyedTable(), true);
+    } else if (format == TableFormat.MIXED_HIVE) {
+
+    }
     if (table.isUnkeyedTable()) {
       if (!(table instanceof SupportHive)) {
         return new ArcticIcebergSparkTable(table.asUnkeyedTable(), false);

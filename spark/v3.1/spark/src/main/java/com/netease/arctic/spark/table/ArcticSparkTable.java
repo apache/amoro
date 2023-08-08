@@ -58,15 +58,6 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, Sup
   private SparkSession lazySpark = null;
   private final ArcticCatalog catalog;
 
-  public static Table ofArcticTable(ArcticTable table, ArcticCatalog catalog) {
-    if (table.isUnkeyedTable()) {
-      if (!(table instanceof SupportHive)) {
-        return new ArcticIcebergSparkTable(table.asUnkeyedTable(), false);
-      }
-    }
-    return new ArcticSparkTable(table, catalog);
-  }
-
   public ArcticSparkTable(ArcticTable arcticTable,
                           ArcticCatalog catalog) {
     this.arcticTable = arcticTable;

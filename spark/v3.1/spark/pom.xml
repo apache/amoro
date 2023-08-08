@@ -204,6 +204,12 @@
             </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-spark-3-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
