@@ -223,6 +223,8 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     @Override
     protected void doRollbackCreateTable(TableMeta meta) {
       if (allowExistedHiveTable) {
+        LOG.info("No need to drop hive table {}.{}", meta.getTableIdentifier().getDatabase(),
+            meta.getTableIdentifier().getTableName());
         tables.dropTableByMeta(meta, false);
       } else {
         super.doRollbackCreateTable(meta);
