@@ -227,7 +227,7 @@ public class BasicKeyedTable implements KeyedTable {
 
     @Override
     public ChangeTableIncrementalScan newScan() {
-      return new ArcticChangeTableScan(operations(), this);
+      return new ArcticChangeTableScan(this, schema());
     }
   }
 }

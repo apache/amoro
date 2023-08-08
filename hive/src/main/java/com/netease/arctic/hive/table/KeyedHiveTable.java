@@ -144,7 +144,7 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
 
     @Override
     public ChangeTableIncrementalScan newScan() {
-      return new ArcticChangeTableScan(operations(), this);
+      return new ArcticChangeTableScan(this, schema());
     }
   }
 
