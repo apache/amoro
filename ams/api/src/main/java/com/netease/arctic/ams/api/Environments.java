@@ -11,7 +11,11 @@ public class Environments {
     if (arcticHome != null) {
       return arcticHome;
     }
-    return System.getenv(AMORO_HOME);
+    arcticHome = System.getenv(AMORO_HOME);
+    if (arcticHome != null) {
+      return arcticHome;
+    }
+    return System.getProperty(AMORO_HOME);
   }
 
   public static String getConfigPath() {
