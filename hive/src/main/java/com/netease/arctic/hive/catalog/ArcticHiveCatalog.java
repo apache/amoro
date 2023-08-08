@@ -121,29 +121,6 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     }
   }
 
-  public void dropTableButNotDropHiveTable(TableIdentifier tableIdentifier) {
-    try {
-      hiveClientPool.run(client -> {
-        org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(
-            tableIdentifier.getDatabase(),
-            tableIdentifier.getTableName());
-        Map<String, String> hiveParameters = hiveTable.getParameters();
-        hiveParameters.remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
-        client.alterTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
-        return null;
-      });
-    } catch (TException | InterruptedException e) {
-      LOG.warn("Failed to alter hive table while rolling back create table operation", e);
-    }
-    TableMeta meta = getArcticTableMeta(tableIdentifier);
-    try {
-      client.removeTable(meta.getTableIdentifier(), false);
-    } catch (TException e) {
-      throw new IllegalStateException("error when delete table metadata from metastore");
-    }
-    ((MixedHiveTables)tables).dropTableMetaButNotDropHiveTable(meta);
-  }
-
   @Override
   public TableBuilder newTableBuilder(
       TableIdentifier identifier, Schema schema) {
@@ -246,22 +223,7 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     @Override
     protected void doRollbackCreateTable(TableMeta meta) {
       if (allowExistedHiveTable) {
-        ((MixedHiveTables)tables).dropTableMetaButNotDropHiveTable(meta);
-        LOG.info("No need to drop hive table");
-        com.netease.arctic.ams.api.TableIdentifier tableIdentifier = meta.getTableIdentifier();
-        try {
-          hiveClientPool.run(client -> {
-            org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(
-                tableIdentifier.getDatabase(),
-                tableIdentifier.getTableName());
-            Map<String, String> hiveParameters = hiveTable.getParameters();
-            hiveParameters.remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
-            client.alterTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
-            return null;
-          });
-        } catch (TException | InterruptedException e) {
-          LOG.warn("Failed to alter hive table while rolling back create table operation", e);
-        }
+        tables.dropTableByMeta(meta, false);
       } else {
         super.doRollbackCreateTable(meta);
         try {

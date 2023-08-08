@@ -54,8 +54,8 @@ public class TestArcticHiveCatalog extends TestBasicArcticCatalog {
     if (getCatalog() instanceof ArcticHiveCatalog) {
       getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
       createTestTable();
-      ((ArcticHiveCatalog)getCatalog()).dropTableButNotDropHiveTable(TableIdentifier.of(getCatalog().name(),
-          TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME));
+      getCatalog().dropTable(TableIdentifier.of(getCatalog().name(),
+          TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME), false);
       Assert.assertTrue(TEST_HMS.getHiveClient().getAllTables(TableTestHelper.TEST_DB_NAME)
           .contains(TableTestHelper.TEST_TABLE_NAME));
     }
