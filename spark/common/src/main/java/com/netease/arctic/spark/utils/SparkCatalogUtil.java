@@ -17,6 +17,7 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.types.StructType;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -119,7 +120,7 @@ public class SparkCatalogUtil {
   }
 
 
-  public static boolean isIdentifierLocation(String catalog, String location, Identifier identifier) {
+  public static boolean isIdentifierLocation(String catalog, @Nullable String location, Identifier identifier) {
     List<String> nameParts = Lists.newArrayList();
     nameParts.add(catalog);
     nameParts.addAll(Arrays.asList(identifier.namespace()));

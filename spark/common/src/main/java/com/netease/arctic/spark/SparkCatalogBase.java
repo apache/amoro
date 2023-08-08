@@ -176,8 +176,8 @@ public abstract class SparkCatalogBase implements TableCatalog, SupportsNamespac
     TableFormat format = SparkCatalogUtil.providerToFormat(catalog, provider);
     TableBuilder builder = catalog.newTableBuilder(identifier, finalSchema, format);
     PartitionSpec spec = Spark3Util.toPartitionSpec(finalSchema, transforms);
-    if (properties.containsKey(TableCatalog.PROP_LOCATION) &&
-        SparkCatalogUtil.isIdentifierLocation(registeredCatalogName(), properties.get(TableCatalog.PROP_LOCATION), ident)) {
+    if (SparkCatalogUtil.isIdentifierLocation(registeredCatalogName(),
+            properties.get(TableCatalog.PROP_LOCATION), ident)) {
       properties.remove(TableCatalog.PROP_LOCATION);
     }
     try {
