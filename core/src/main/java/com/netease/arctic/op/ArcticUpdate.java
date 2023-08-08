@@ -182,6 +182,12 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
     }
   }
 
+  @Override
+  public T toBranch(String branch) {
+    this.delegate.toBranch(branch);
+    return this.self();
+  }
+
   public abstract static class Builder<T extends I, I> {
 
     protected final ArcticTable table;

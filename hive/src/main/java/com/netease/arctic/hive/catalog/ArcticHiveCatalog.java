@@ -121,11 +121,6 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
     }
   }
 
-  public void dropTableButNotDropHiveTable(TableIdentifier tableIdentifier) {
-    TableMeta meta = getArcticTableMeta(tableIdentifier);
-    super.doDropTable(meta, false);
-  }
-
   @Override
   public TableBuilder newTableBuilder(
       TableIdentifier identifier, Schema schema) {
@@ -232,36 +227,12 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
 
     @Override
     protected void doRollbackCreateTable(TableMeta meta) {
-      super.doRollbackCreateTable(meta);
       if (allowExistedHiveTable) {
-        LOG.info("No need to drop hive table");
-        com.netease.arctic.ams.api.TableIdentifier tableIdentifier = meta.getTableIdentifier();
-        try {
-          hiveClientPool.run(client -> {
-            org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(
-                tableIdentifier.getDatabase(),
-                tableIdentifier.getTableName());
-            Map<String, String> hiveParameters = hiveTable.getParameters();
-            hiveParameters.remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
-            client.alterTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
-            return null;
-          });
-        } catch (TException | InterruptedException e) {
-          LOG.warn("Failed to alter hive table while rolling back create table operation", e);
-        }
+        LOG.info("No need to drop hive table {}.{}", meta.getTableIdentifier().getDatabase(),
+            meta.getTableIdentifier().getTableName());
+        tables.dropTableByMeta(meta, false);
       } else {
-        try {
-          hiveClientPool.run(client -> {
-            client.dropTable(
-                meta.getTableIdentifier().getDatabase(),
-                meta.getTableIdentifier().getTableName(),
-                true,
-                true);
-            return null;
-          });
-        } catch (TException | InterruptedException e) {
-          LOG.warn("Failed to drop hive table while rolling back create table operation", e);
-        }
+        super.doRollbackCreateTable(meta);
       }
     }
 

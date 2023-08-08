@@ -119,6 +119,11 @@ public class ArcticTableLoader implements TableLoader {
   }
 
   @Override
+  public TableLoader clone() {
+    return new ArcticTableLoader(tableIdentifier, catalogBuilder, flinkTableProperties, loadBaseForKeyedTable);
+  }
+
+  @Override
   public void close() throws IOException {
   }
 
