@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-import java.util.Objects;
-
+import com.google.common.base.Objects;
+import java.util.Map;
 
 public class AMSTransactionsOfTable {
   private String transactionId;
@@ -27,17 +27,24 @@ public class AMSTransactionsOfTable {
   private String fileSize;
   private long commitTime;
   private String snapshotId;
+  private Map<String, String> summary;
 
 
   public AMSTransactionsOfTable() {
   }
 
-  public AMSTransactionsOfTable(String transactionId, int fileCount, String fileSize, long commitTime) {
+  public AMSTransactionsOfTable(
+      String transactionId,
+      int fileCount,
+      String fileSize,
+      long commitTime,
+      Map<String, String> summary) {
     this.transactionId = transactionId;
     this.fileCount = fileCount;
     this.fileSize = fileSize;
     this.commitTime = commitTime;
     this.snapshotId = this.transactionId;
+    this.summary = summary;
   }
 
   public String getTransactionId() {
@@ -80,20 +87,32 @@ public class AMSTransactionsOfTable {
     this.snapshotId = snapshotId;
   }
 
+  public Map<String, String> getSummary() {
+    return summary;
+  }
+
+  public void setSummary(Map<String, String> summary) {
+    this.summary = summary;
+  }
+
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof AMSTransactionsOfTable)) {
+      return false;
+    }
     AMSTransactionsOfTable that = (AMSTransactionsOfTable) o;
-    return transactionId == that.transactionId &&
-            fileCount == that.fileCount &&
-            fileSize == that.fileSize &&
-            commitTime == that.commitTime &&
-            snapshotId == that.snapshotId;
+    return fileCount == that.fileCount && commitTime == that.commitTime &&
+        Objects.equal(transactionId, that.transactionId) &&
+        Objects.equal(fileSize, that.fileSize) &&
+        Objects.equal(snapshotId, that.snapshotId) &&
+        Objects.equal(summary, that.summary);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(transactionId, fileCount, fileSize, commitTime, snapshotId);
+    return Objects.hashCode(transactionId, fileCount, fileSize, commitTime, snapshotId, summary);
   }
 }

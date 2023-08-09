@@ -68,6 +68,7 @@ public class AmsUtil {
     transactionsOfTable.setFileSize(byteToXB(info.getFileSize()));
     transactionsOfTable.setCommitTime(info.getCommitTime());
     transactionsOfTable.setSnapshotId(info.getTransactionId() + "");
+    transactionsOfTable.setSummary(info.getSummary());
     return transactionsOfTable;
   }
 
