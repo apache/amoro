@@ -138,6 +138,7 @@ public class IcebergRestCatalogService extends PersistentBase {
     if (code.code >= 500) {
       LOG.warn("InternalServer Error", e);
     } else {
+      // those errors happened when the client-side passed arguments with problems.
       LOG.debug("Iceberg Rest Catalog Service exception: ", e);
     }
   }
