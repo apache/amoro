@@ -38,6 +38,7 @@ import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.rest.RESTResponse;
 import org.apache.iceberg.rest.RESTSerializers;
 import org.apache.iceberg.rest.requests.CreateNamespaceRequest;
@@ -121,7 +122,6 @@ public class IcebergRestCatalogService extends PersistentBase {
     };
   }
 
-
   public boolean needHandleException(Context ctx) {
     return ctx.req.getRequestURI().startsWith(ICEBERG_REST_API_PREFIX);
   }
@@ -137,9 +137,11 @@ public class IcebergRestCatalogService extends PersistentBase {
     jsonResponse(ctx, response);
     if (code.code >= 500) {
       LOG.warn("InternalServer Error", e);
+    } else {
+      // those errors happened when the client-side passed arguments with problems.
+      LOG.debug("Iceberg Rest Catalog Service exception: ", e);
     }
   }
-
 
   /**
    * GET PREFIX/v1/config?warehouse={warehouse}
@@ -167,23 +169,25 @@ public class IcebergRestCatalogService extends PersistentBase {
     jsonResponse(ctx, configResponse);
   }
 
-
   /**
    * GET PREFIX/{catalog}/v1/namespaces
    */
   public void listNamespaces(Context ctx) {
     handleCatalog(ctx, catalog -> {
       String ns = ctx.req.getParameter("parent");
-      checkUnsupported(ns == null,
-          "The catalog doesn't support multi-level namespaces");
-      List<Namespace> nsLists = catalog.listDatabases()
-          .stream().map(Namespace::of)
-          .collect(Collectors.toList());
+      List<Namespace> nsLists = Lists.newArrayList();
+      List<String> databases = catalog.listDatabases();
+      if (ns == null) {
+        nsLists = databases.stream().map(Namespace::of)
+            .collect(Collectors.toList());
+      } else {
+        checkUnsupported(!ns.contains("."), "multi-level namespace is not supported, parent: " + ns);
+        checkDatabaseExist(catalog.exist(ns), ns);
+      }
       return ListNamespacesResponse.builder()
           .addAll(nsLists)
           .build();
     });
-
   }
 
   /**
@@ -193,7 +197,8 @@ public class IcebergRestCatalogService extends PersistentBase {
     handleCatalog(ctx, catalog -> {
       CreateNamespaceRequest request = bodyAsClass(ctx, CreateNamespaceRequest.class);
       Namespace ns = request.namespace();
-      checkUnsupported(ns.length() == 1,
+      checkUnsupported(
+          ns.length() == 1,
           "multi-level namespace is not supported now");
       String database = ns.level(0);
       checkAlreadyExists(!catalog.exist(database), "Database", database);
@@ -229,7 +234,6 @@ public class IcebergRestCatalogService extends PersistentBase {
     InternalCatalog internalCatalog = getCatalog(catalog);
     internalCatalog.dropDatabase(ns);
   }
-
 
   /**
    * POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/properties
@@ -268,7 +272,8 @@ public class IcebergRestCatalogService extends PersistentBase {
       String location = request.location();
       if (StringUtils.isBlank(location)) {
         String warehouse = catalog.getMetadata().getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
-        Preconditions.checkState(StringUtils.isNotBlank(warehouse),
+        Preconditions.checkState(
+            StringUtils.isNotBlank(warehouse),
             "catalog warehouse is not configured");
         warehouse = LocationUtil.stripTrailingSlash(warehouse);
         location = warehouse + "/" + database + "/" + tableName;
@@ -320,7 +325,6 @@ public class IcebergRestCatalogService extends PersistentBase {
       return LoadTableResponse.builder()
           .withTableMetadata(tableMetadata)
           .build();
-
     });
   }
 
@@ -351,7 +355,6 @@ public class IcebergRestCatalogService extends PersistentBase {
     });
   }
 
-
   /**
    * DELETE PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}
    */
@@ -374,12 +377,10 @@ public class IcebergRestCatalogService extends PersistentBase {
         }
       }
 
-
       ctx.status(HttpCode.NO_CONTENT);
       return null;
     });
   }
-
 
   /**
    * HEAD PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}
@@ -388,14 +389,12 @@ public class IcebergRestCatalogService extends PersistentBase {
     handleTable(ctx, ((catalog, tableMeta) -> null));
   }
 
-
   /**
    * POST PREFIX/v1/catalogs/{catalog}/tables/rename
    */
   public void renameTable(Context ctx) {
     throw new UnsupportedOperationException("rename is not supported now.");
   }
-
 
   /**
    * POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}/metrics
@@ -420,7 +419,6 @@ public class IcebergRestCatalogService extends PersistentBase {
     });
   }
 
-
   private <T> T bodyAsClass(Context ctx, Class<T> clz) {
     return jsonMapper.fromJsonString(ctx.body(), clz);
   }
@@ -441,7 +439,6 @@ public class IcebergRestCatalogService extends PersistentBase {
     }
   }
 
-
   private void handleNamespace(Context ctx, BiFunction<InternalCatalog, String, ? extends RESTResponse> handler) {
     handleCatalog(ctx, catalog -> {
       String ns = ctx.pathParam("namespace");
@@ -450,7 +447,6 @@ public class IcebergRestCatalogService extends PersistentBase {
       return handler.apply(catalog, ns);
     });
   }
-
 
   private void handleTable(
       Context ctx,
@@ -463,7 +459,8 @@ public class IcebergRestCatalogService extends PersistentBase {
       com.netease.arctic.server.table.TableMetadata metadata = tableService.loadTableMetadata(
           com.netease.arctic.table.TableIdentifier.of(catalog.name(), database, tableName).buildTableIdentifier()
       );
-      Preconditions.checkArgument(metadata.getFormat() == TableFormat.ICEBERG,
+      Preconditions.checkArgument(
+          metadata.getFormat() == TableFormat.ICEBERG,
           "it's not an iceberg table");
       return handler.apply(catalog, metadata);
     });
