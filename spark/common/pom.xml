@@ -242,9 +242,11 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <groups>
-                                unit
-                            </groups>
+                            <excludes>
+                                <exclude>**/it/**.java</exclude>
+                            </excludes>
+                            <groups>unit</groups>
+                            <excludedGroups>integration</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>

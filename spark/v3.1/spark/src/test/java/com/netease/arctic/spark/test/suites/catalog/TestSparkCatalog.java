@@ -1,8 +1,9 @@
-package com.netease.arctic.spark.test.it.catalog;
+package com.netease.arctic.spark.test.suites.catalog;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
+import com.netease.arctic.table.ArcticTable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -36,6 +37,8 @@ public class TestSparkCatalog extends SparkTableTestBase {
 
     sql(sqlText);
     tableExists();
+    ArcticTable table = loadTable();
+    Assertions.assertEquals(format, table.format());
 
     sqlText = "INSERT INTO " + target() +
         " VALUES " +
