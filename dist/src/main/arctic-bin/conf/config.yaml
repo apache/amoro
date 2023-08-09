@@ -50,7 +50,7 @@ ams:
   database:
     type: derby
     jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
-    url: jdbc:derby:/tmp/arctic/derby;create=true
+    url: jdbc:derby:/tmp/amoro/derby;create=true
 
   #  MySQL database configuration.
   #  database:

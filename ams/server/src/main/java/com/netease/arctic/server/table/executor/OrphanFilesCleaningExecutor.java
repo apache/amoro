@@ -113,15 +113,15 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
       // clear metadata files
       cleanMetadata(arcticTable, System.currentTimeMillis() - keepTime);
 
-      boolean needIndependentClean = CompatiblePropertyUtil.propertyAsBoolean(arcticTable.properties(),
-          TableProperties.ENABLE_INDEPENDENT_CLEAN,
-          TableProperties.ENABLE_INDEPENDENT_CLEAN_DEFAULT);
+      boolean needCleanDanglingDeleteFiles = CompatiblePropertyUtil.propertyAsBoolean(arcticTable.properties(),
+          TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN,
+          TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT);
 
-      if (!needIndependentClean) {
+      if (!needCleanDanglingDeleteFiles) {
         return;
       }
-      // clear independent files
-      cleanIndependentFiles(arcticTable);
+      // clear dangling delete files
+      cleanDanglingDeleteFiles(arcticTable);
     } catch (Throwable t) {
       LOG.error("{} orphan file clean unexpected error", tableRuntime.getTableIdentifier(), t);
     }
@@ -164,11 +164,11 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
     }
   }
 
-  public static void cleanIndependentFiles(ArcticTable arcticTable) {
+  public static void cleanDanglingDeleteFiles(ArcticTable arcticTable) {
     if (!arcticTable.isKeyedTable()) {
-      LOG.info("{} start delete independent files", arcticTable.id());
-      int independentFilesCnt = clearInternalTableIndependentFiles(arcticTable.asUnkeyedTable());
-      LOG.info("{} total delete {} independent files", arcticTable.id(), independentFilesCnt);
+      LOG.info("{} start delete dangling delete files", arcticTable.id());
+      int danglingDeleteFilesCnt = clearInternalTableDanglingDeleteFiles(arcticTable.asUnkeyedTable());
+      LOG.info("{} total delete {} dangling delete files", arcticTable.id(), danglingDeleteFilesCnt);
     }
   }
 
@@ -288,21 +288,21 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
     return 0;
   }
 
-  private static int clearInternalTableIndependentFiles(UnkeyedTable internalTable) {
-    Set<DeleteFile> independentFiles = IcebergTableUtil.getIndependentFiles(internalTable);
-    if (independentFiles.isEmpty()) {
+  private static int clearInternalTableDanglingDeleteFiles(UnkeyedTable internalTable) {
+    Set<DeleteFile> danglingDeleteFiles = IcebergTableUtil.getDanglingDeleteFiles(internalTable);
+    if (danglingDeleteFiles.isEmpty()) {
       return 0;
     }
     RewriteFiles rewriteFiles = internalTable.newRewrite();
-    rewriteFiles.rewriteFiles(Collections.emptySet(), independentFiles,
+    rewriteFiles.rewriteFiles(Collections.emptySet(), danglingDeleteFiles,
         Collections.emptySet(), Collections.emptySet());
     try {
       rewriteFiles.commit();
     } catch (ValidationException e) {
-      LOG.warn("Iceberg RewriteFiles commit failed on clear independentFiles, but ignore", e);
+      LOG.warn("Iceberg RewriteFiles commit failed on clear danglingDeleteFiles, but ignore", e);
       return 0;
     }
-    return independentFiles.size();
+    return danglingDeleteFiles.size();
   }
 
   private static Set<String> getValidMetadataFiles(UnkeyedTable internalTable) {
