@@ -145,6 +145,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   private void clearTasks(TableOptimizingProcess optimizingProcess) {
     retryQueue.removeIf(taskRuntime -> taskRuntime.getProcessId() == optimizingProcess.getProcessId());
     taskQueue.removeIf(taskRuntime -> taskRuntime.getProcessId() == optimizingProcess.getProcessId());
+    // remove the tasks from executingTaskMap
+    executingTaskMap.entrySet().removeIf(entry -> entry.getValue().getProcessId() == optimizingProcess.getProcessId());
   }
 
   @Override
@@ -234,6 +236,14 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     if (!expiredOptimizers.isEmpty()) {
       LOG.info("Expired optimizers: {}", expiredOptimizers);
     }
+
+    List<TaskRuntime> canceledTasks = executingTaskMap.values().stream()
+        .filter(task -> task.getStatus() == TaskRuntime.Status.CANCELED)
+        .collect(Collectors.toList());
+    canceledTasks.forEach(task -> {
+      LOG.info("Task {} is canceled, remove it from executing task map", task.getTaskId());
+      executingTaskMap.remove(task.getTaskId());
+    });
 
     List<TaskRuntime> suspendingTasks = executingTaskMap.values().stream()
         .filter(task -> task.isSuspending(currentTime, taskAckTimeout) ||
