@@ -145,7 +145,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   private void clearTasks(TableOptimizingProcess optimizingProcess) {
     retryQueue.removeIf(taskRuntime -> taskRuntime.getProcessId() == optimizingProcess.getProcessId());
     taskQueue.removeIf(taskRuntime -> taskRuntime.getProcessId() == optimizingProcess.getProcessId());
-    // remove the tasks from executingTaskMap
     executingTaskMap.entrySet().removeIf(entry -> entry.getValue().getProcessId() == optimizingProcess.getProcessId());
   }
 
