@@ -5,7 +5,6 @@ import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import com.netease.arctic.table.ArcticTable;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -33,7 +32,7 @@ public class TestSparkCatalog extends SparkTableTestBase {
         "id int, " +
         "data string, " +
         "pt string" +
-        ") USING " + provider(format) + " PARTITIONED BY (pt) " ;
+        ") USING " + provider(format) + " PARTITIONED BY (pt) ";
 
     sql(sqlText);
     tableExists();

@@ -22,9 +22,9 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.spark.SparkSQLProperties;
-import com.netease.arctic.spark.test.utils.Asserts;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
+import com.netease.arctic.spark.test.utils.Asserts;
 import com.netease.arctic.spark.test.utils.DataComparator;
 import com.netease.arctic.spark.test.utils.ExpectResultUtil;
 import com.netease.arctic.spark.test.utils.RecordGenerator;
@@ -109,7 +109,6 @@ public class TestInsertOverwriteSQL extends SparkTableTestBase {
       RecordGenerator.newRecord(schema, 13, "xxx", "EEE"),
       RecordGenerator.newRecord(schema, 14, "xxx", "EEE")
   );
-
 
 
   private ArcticTable table;

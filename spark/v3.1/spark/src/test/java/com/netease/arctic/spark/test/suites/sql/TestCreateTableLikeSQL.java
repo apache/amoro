@@ -20,9 +20,9 @@ package com.netease.arctic.spark.test.suites.sql;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.SparkSQLProperties;
-import com.netease.arctic.spark.test.utils.Asserts;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
+import com.netease.arctic.spark.test.utils.Asserts;
 import com.netease.arctic.spark.test.utils.TestTable;
 import com.netease.arctic.spark.test.utils.TestTables;
 import com.netease.arctic.table.ArcticTable;
@@ -64,7 +64,8 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
         Types.NestedField.required(1, "id", Types.IntegerType.get()),
         Types.NestedField.optional(2, "ts", Types.TimestampType.withZone())
     );
-    createArcticSource(schema, x -> {});
+    createArcticSource(schema, x -> {
+    });
 
     spark().conf().set(
         SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
