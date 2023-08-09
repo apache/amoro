@@ -4,7 +4,6 @@ import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 
 import java.util.Comparator;
@@ -33,12 +32,12 @@ public class SchedulingPolicy {
   public void setTableSorterIfNeeded(ResourceGroup optimizerGroup) {
     String schedulingPolicy = Optional.ofNullable(optimizerGroup.getProperties())
         .orElseGet(Maps::newHashMap)
-        .get(SCHEDULING_POLICY_PROPERTY_NAME);
-    if ((StringUtils.isBlank(schedulingPolicy) || schedulingPolicy.equalsIgnoreCase(QUOTA)) &&
-        tableSorter == null || (tableSorter instanceof BalancedSorter)) {
+        .getOrDefault(SCHEDULING_POLICY_PROPERTY_NAME, QUOTA);
+    if (schedulingPolicy.equalsIgnoreCase(QUOTA) &&
+        (tableSorter == null || (tableSorter instanceof BalancedSorter))) {
       tableSorter = new QuotaOccupySorter();
     } else if (schedulingPolicy.equalsIgnoreCase(BALANCED) &&
-        tableSorter == null || (tableSorter instanceof QuotaOccupySorter)) {
+        (tableSorter == null || (tableSorter instanceof QuotaOccupySorter))) {
       tableSorter = new BalancedSorter();
     } else {
       throw new IllegalArgumentException("Illegal scheduling policy: " + schedulingPolicy);
