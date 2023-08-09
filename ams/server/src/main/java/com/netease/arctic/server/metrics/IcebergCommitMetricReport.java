@@ -21,8 +21,6 @@ package com.netease.arctic.server.metrics;
 import com.netease.arctic.ams.api.metrics.AbstractMetricReport;
 import com.netease.arctic.ams.api.metrics.FormatType;
 import com.netease.arctic.ams.api.metrics.MetricType;
-import java.util.Map;
-import org.apache.iceberg.metrics.CommitMetricsResult;
 import org.apache.iceberg.metrics.ImmutableCommitReport;
 
 public class IcebergCommitMetricReport extends AbstractMetricReport<IcebergCommitMetrics> {
@@ -62,7 +60,7 @@ public class IcebergCommitMetricReport extends AbstractMetricReport<IcebergCommi
   }
 
   @Override
-  public MetricType getType() {
+  public MetricType type() {
     return MetricType.ICEBERG_COMMIT_METRIC;
   }
 }

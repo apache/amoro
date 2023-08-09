@@ -2,6 +2,11 @@ package com.netease.arctic.ams.api.metrics;
 
 import java.util.Map;
 
+/**
+ * This is an interface defining a reporter, which users can implement to notify metrics to a monitoring system.
+ * The system calls the open method to initialize the reporter and the close method to shut it down when needed.
+ * The report method is called to notify the reporter when a metric is generated.
+ */
 public interface MetricReporter {
 
   /**

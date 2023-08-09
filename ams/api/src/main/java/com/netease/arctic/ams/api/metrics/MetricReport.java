@@ -18,10 +18,26 @@
 
 package com.netease.arctic.ams.api.metrics;
 
+/**
+ * Metrics report
+ */
 public interface MetricReport<T> {
+
+  /**
+   * Get the table format type of the metric report, such as ICEBERG or AMORO
+   * @return {@link FormatType}
+   */
   FormatType format();
 
-  T metrics();
+  /**
+   * Get the metric type of the metric report, such as COMMIE_METRIC or OPTIMIZING_METRIC
+   * @return {@link MetricType}
+   */
+  MetricType type();
 
-  MetricType getType();
+  /**
+   * Metric content excluding dimension values
+   * @return metrics
+   */
+  T metrics();
 }

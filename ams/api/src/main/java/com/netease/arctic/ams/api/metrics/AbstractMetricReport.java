@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.api.metrics;
 
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import java.lang.annotation.Annotation;
@@ -28,19 +27,15 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Implementation of {@link MetricReport}, providing common functionality required by MetricReport
+ */
 public abstract class AbstractMetricReport<T> implements MetricReport<T> {
 
   public static final String METRICS_NAME = "metrics";
 
-  public JSONObject toJson() {
-    JSONObject jsonObject = new JSONObject();
-    jsonObject.putAll(parseTags(this));
-    jsonObject.put(METRICS_NAME, new JSONObject(parseTags(this.metrics())));
-    return jsonObject;
-  }
-
   public MetricWithTags toMetricWithTags() {
-    return new MetricWithTags(parseTags(this), parseTags(this.metrics()));
+    return new MetricWithTags(parseTags(this), parseMetrics(this.metrics()));
   }
 
   private Map<String, Object> parseTags(Object object) {
@@ -58,7 +53,7 @@ public abstract class AbstractMetricReport<T> implements MetricReport<T> {
   }
 
   private Map<String, Object> parseMetrics(Object object) {
-    List<Field> tagFields = getTagFields(object);
+    List<Field> tagFields = getMetricFields(object);
     Map<String, Object> tags = Maps.newHashMap();
     tagFields.forEach(field -> {
       MetricName metricName = field.getAnnotation(MetricName.class);

@@ -20,6 +20,10 @@ package com.netease.arctic.ams.api.metrics;
 
 import java.util.Map;
 
+/**
+ *  This is a simple data structure that separates tags and metrics, making it easier for reporters to write to popular
+ *  monitoring systems when processing {@link MetricReport}
+ */
 public class MetricWithTags {
   private final Map<String, Object> tags;
   private final Map<String, Object> metrics;

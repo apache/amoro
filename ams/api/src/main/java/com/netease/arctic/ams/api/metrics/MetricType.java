@@ -18,6 +18,9 @@
 
 package com.netease.arctic.ams.api.metrics;
 
+/**
+ * Metrics type
+ */
 public enum MetricType {
   ICEBERG_COMMIT_METRIC,
   ICEBERG_SCAN_METRIC,
