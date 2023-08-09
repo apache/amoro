@@ -154,8 +154,8 @@ public class TableProperties {
   public static final String BASE_SNAPSHOT_KEEP_MINUTES = "snapshot.base.keep.minutes";
   public static final long BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT = 720; // 12 Hours
 
-  public static final String ENABLE_INDEPENDENT_CLEAN = "clean-independent-delete-files.enabled";
-  public static final boolean ENABLE_INDEPENDENT_CLEAN_DEFAULT = true;
+  public static final String ENABLE_DANGLING_DELETE_FILES_CLEAN = "clean-dangling-delete-files.enabled";
+  public static final boolean ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT = true;
 
   public static final String ENABLE_ORPHAN_CLEAN = "clean-orphan-file.enabled";
   public static final boolean ENABLE_ORPHAN_CLEAN_DEFAULT = false;

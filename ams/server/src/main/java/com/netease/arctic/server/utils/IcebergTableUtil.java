@@ -121,7 +121,7 @@ public class IcebergTableUtil {
     return validFilesPath;
   }
 
-  public static Set<DeleteFile> getIndependentFiles(UnkeyedTable internalTable) {
+  public static Set<DeleteFile> getDanglingDeleteFiles(UnkeyedTable internalTable) {
     if (internalTable.currentSnapshot() == null) {
       return Collections.emptySet();
     }
@@ -134,11 +134,11 @@ public class IcebergTableUtil {
         }
       }
     } catch (IOException e) {
-      LOG.error("table scna plan files error", e);
+      LOG.error("table scan plan files error", e);
       return Collections.emptySet();
     }
 
-    Set<DeleteFile> independentFiles = new HashSet<>();
+    Set<DeleteFile> danglingDeleteFiles = new HashSet<>();
     TableEntriesScan entriesScan = TableEntriesScan.builder(internalTable)
         .useSnapshot(internalTable.currentSnapshot().snapshotId())
         .includeFileContent(FileContent.EQUALITY_DELETES, FileContent.POSITION_DELETES)
@@ -148,11 +148,11 @@ public class IcebergTableUtil {
       ContentFile<?> file = entry.getFile();
       String path = file.path().toString();
       if (!deleteFilesPath.contains(path)) {
-        independentFiles.add((DeleteFile) file);
+        danglingDeleteFiles.add((DeleteFile) file);
       }
     }
 
-    return independentFiles;
+    return danglingDeleteFiles;
   }
 
 

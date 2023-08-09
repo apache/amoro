@@ -44,14 +44,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-
 public class TestIcebergRestCatalogService {
   private static final Logger LOG = LoggerFactory.getLogger(TestIcebergRestCatalogService.class);
 
-
   static AmsEnvironment ams = AmsEnvironment.getIntegrationInstances();
   static String restCatalogUri = IcebergRestCatalogService.ICEBERG_REST_API_PREFIX;
-
 
   private final String database = "test_ns";
   private final String table = "test_iceberg_tbl";
@@ -85,7 +82,6 @@ public class TestIcebergRestCatalogService {
         "/" + database + "/" + table;
   }
 
-
   @Nested
   public class CatalogPropertiesTest {
     @Test
@@ -116,7 +112,6 @@ public class TestIcebergRestCatalogService {
     }
   }
 
-
   @Nested
   public class NamespaceTests {
     RESTCatalog nsCatalog;
@@ -131,11 +126,11 @@ public class TestIcebergRestCatalogService {
       Assertions.assertTrue(nsCatalog.listNamespaces().isEmpty());
       nsCatalog.createNamespace(Namespace.of(database));
       Assertions.assertEquals(1, nsCatalog.listNamespaces().size());
+      Assertions.assertEquals(0, nsCatalog.listNamespaces(Namespace.of(database)).size());
       nsCatalog.dropNamespace(Namespace.of(database));
       Assertions.assertTrue(nsCatalog.listNamespaces().isEmpty());
     }
   }
-
 
   @Nested
   public class TableTests {
@@ -157,7 +152,6 @@ public class TestIcebergRestCatalogService {
       nsCatalog.dropTable(identifier);
       if (serverCatalog.exist(database, table)) {
         serverCatalog.dropTable(database, table);
-
       }
       serverCatalog.dropDatabase(database);
     }
@@ -225,7 +219,6 @@ public class TestIcebergRestCatalogService {
       Assertions.assertEquals(files.size(), tasks.size());
     }
 
-
     @Test
     public void testArcticCatalogLoader() {
       Table tbl = nsCatalog.createTable(identifier, schema, spec);
@@ -252,9 +245,7 @@ public class TestIcebergRestCatalogService {
           arcticTable, reader, Expressions.alwaysTrue());
       Assertions.assertEquals(newRecords.size(), records.size());
     }
-
   }
-
 
   private RESTCatalog loadCatalog(Map<String, String> clientProperties) {
     clientProperties.put("uri", ams.getHttpUrl() + restCatalogUri);
@@ -268,5 +259,4 @@ public class TestIcebergRestCatalogService {
         clientProperties, store.getConfiguration()
     );
   }
-
 }
