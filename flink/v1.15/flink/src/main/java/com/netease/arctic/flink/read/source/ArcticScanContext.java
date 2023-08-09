@@ -23,9 +23,11 @@ package com.netease.arctic.flink.read.source;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Preconditions;
+import org.apache.flink.util.TimeUtils;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.flink.FlinkConfigOptions;
+import org.apache.iceberg.flink.FlinkReadOptions;
 import org.apache.iceberg.flink.source.ScanContext;
 import org.apache.iceberg.flink.source.StreamingStartingStrategy;
 
@@ -72,7 +74,12 @@ public class ArcticScanContext extends ScanContext implements Serializable {
       boolean exposeLocality,
       Integer planParallelism,
       int maxPlanningSnapshotCount,
-      String scanStartupMode) {
+      String scanStartupMode,
+      int maxAllowedPlanningFailures,
+      String branch,
+      String tag,
+      String startTag,
+      String endTag) {
     super(caseSensitive,
         snapshotId,
         startingStrategy,
@@ -92,7 +99,12 @@ public class ArcticScanContext extends ScanContext implements Serializable {
         includeColumnStats,
         exposeLocality,
         planParallelism,
-        maxPlanningSnapshotCount);
+        maxPlanningSnapshotCount,
+        maxAllowedPlanningFailures,
+        branch,
+        tag,
+        startTag,
+        endTag);
     this.scanStartupMode = scanStartupMode;
   }
 
@@ -164,28 +176,43 @@ public class ArcticScanContext extends ScanContext implements Serializable {
   }
 
   public static class Builder {
-    private boolean caseSensitive = CASE_SENSITIVE.defaultValue();
-    private Long snapshotId = SNAPSHOT_ID.defaultValue();
-    private StreamingStartingStrategy startingStrategy = STARTING_STRATEGY.defaultValue();
-    private Long startSnapshotTimestamp = START_SNAPSHOT_TIMESTAMP.defaultValue();
-    private Long startSnapshotId = START_SNAPSHOT_ID.defaultValue();
-    private Long endSnapshotId = END_SNAPSHOT_ID.defaultValue();
-    private Long asOfTimestamp = AS_OF_TIMESTAMP.defaultValue();
-    private Long splitSize = SPLIT_SIZE.defaultValue();
-    private Integer splitLookback = SPLIT_LOOKBACK.defaultValue();
-    private Long splitOpenFileCost = SPLIT_FILE_OPEN_COST.defaultValue();
-    private boolean isStreaming = STREAMING.defaultValue();
-    private Duration monitorInterval = MONITOR_INTERVAL.defaultValue();
+    private boolean caseSensitive = FlinkReadOptions.CASE_SENSITIVE_OPTION.defaultValue();
+    private Long snapshotId = FlinkReadOptions.SNAPSHOT_ID.defaultValue();
+    private StreamingStartingStrategy startingStrategy =
+        FlinkReadOptions.STARTING_STRATEGY_OPTION.defaultValue();
+    private Long startSnapshotTimestamp = FlinkReadOptions.START_SNAPSHOT_TIMESTAMP.defaultValue();
+    private Long startSnapshotId = FlinkReadOptions.START_SNAPSHOT_ID.defaultValue();
+    private Long endSnapshotId = FlinkReadOptions.END_SNAPSHOT_ID.defaultValue();
+    private Long asOfTimestamp = FlinkReadOptions.AS_OF_TIMESTAMP.defaultValue();
+    private Long splitSize = FlinkReadOptions.SPLIT_SIZE_OPTION.defaultValue();
+    private Integer splitLookback = FlinkReadOptions.SPLIT_LOOKBACK_OPTION.defaultValue();
+    private Long splitOpenFileCost = FlinkReadOptions.SPLIT_FILE_OPEN_COST_OPTION.defaultValue();
+    private boolean isStreaming = FlinkReadOptions.STREAMING_OPTION.defaultValue();
+    private Duration monitorInterval =
+        TimeUtils.parseDuration(FlinkReadOptions.MONITOR_INTERVAL_OPTION.defaultValue());
     private String nameMapping;
     private Schema projectedSchema;
     private List<Expression> filters;
-    private long limit = -1L;
+    private long limit = FlinkReadOptions.LIMIT_OPTION.defaultValue();
+    private boolean includeColumnStats =
+        FlinkReadOptions.INCLUDE_COLUMN_STATS_OPTION.defaultValue();
     private boolean exposeLocality;
     private Integer planParallelism =
         FlinkConfigOptions.TABLE_EXEC_ICEBERG_WORKER_POOL_SIZE.defaultValue();
-    private int maxPlanningSnapshotCount = MAX_PLANNING_SNAPSHOT_COUNT.defaultValue();
+    private int maxPlanningSnapshotCount =
+        FlinkReadOptions.MAX_PLANNING_SNAPSHOT_COUNT_OPTION.defaultValue();
+
+    private int maxAllowedPlanningFailures =
+        FlinkReadOptions.MAX_ALLOWED_PLANNING_FAILURES_OPTION.defaultValue();
+
+    private String branch = FlinkReadOptions.BRANCH.defaultValue();
+
+    private String tag = FlinkReadOptions.TAG.defaultValue();
+
+    private String startTag = FlinkReadOptions.START_TAG.defaultValue();
+
+    private String endTag = FlinkReadOptions.END_TAG.defaultValue();
     private String scanStartupMode;
-    private boolean includeColumnStats = INCLUDE_COLUMN_STATS.defaultValue();
 
     private Builder() {
     }
@@ -197,6 +224,16 @@ public class ArcticScanContext extends ScanContext implements Serializable {
 
     public Builder useSnapshotId(Long newSnapshotId) {
       this.snapshotId = newSnapshotId;
+      return this;
+    }
+
+    public Builder useTag(String tag) {
+      this.tag = tag;
+      return this;
+    }
+
+    public Builder useBranch(String branch) {
+      this.branch = branch;
       return this;
     }
 
@@ -217,6 +254,16 @@ public class ArcticScanContext extends ScanContext implements Serializable {
 
     public Builder endSnapshotId(Long newEndSnapshotId) {
       this.endSnapshotId = newEndSnapshotId;
+      return this;
+    }
+
+    public Builder startTag(String startTag) {
+      this.startTag = startTag;
+      return this;
+    }
+
+    public Builder endTag(String endTag) {
+      this.endTag = endTag;
       return this;
     }
 
@@ -285,6 +332,11 @@ public class ArcticScanContext extends ScanContext implements Serializable {
       return this;
     }
 
+    Builder maxAllowedPlanningFailures(int newMaxAllowedPlanningFailures) {
+      this.maxAllowedPlanningFailures = newMaxAllowedPlanningFailures;
+      return this;
+    }
+
     public Builder scanStartupMode(String scanStartupMode) {
       this.scanStartupMode = scanStartupMode;
       return this;
@@ -300,6 +352,10 @@ public class ArcticScanContext extends ScanContext implements Serializable {
       properties.forEach(config::setString);
 
       return this.useSnapshotId(config.get(SNAPSHOT_ID))
+          .useTag(config.get(TAG))
+          .useBranch(config.get(BRANCH))
+          .startTag(config.get(START_TAG))
+          .endTag(config.get(END_TAG))
           .caseSensitive(config.get(CASE_SENSITIVE))
           .asOfTimestamp(config.get(AS_OF_TIMESTAMP))
           .startingStrategy(config.get(STARTING_STRATEGY))
@@ -314,7 +370,8 @@ public class ArcticScanContext extends ScanContext implements Serializable {
           .nameMapping(properties.get(DEFAULT_NAME_MAPPING))
           .scanStartupMode(properties.get(SCAN_STARTUP_MODE.key()))
           .includeColumnStats(config.get(INCLUDE_COLUMN_STATS))
-          .maxPlanningSnapshotCount(config.get(MAX_PLANNING_SNAPSHOT_COUNT));
+          .maxPlanningSnapshotCount(config.get(MAX_PLANNING_SNAPSHOT_COUNT))
+          .maxAllowedPlanningFailures(maxAllowedPlanningFailures);
     }
 
     public ArcticScanContext build() {
@@ -345,7 +402,12 @@ public class ArcticScanContext extends ScanContext implements Serializable {
           exposeLocality,
           planParallelism,
           maxPlanningSnapshotCount,
-          scanStartupMode);
+          scanStartupMode,
+          maxAllowedPlanningFailures,
+          branch,
+          tag,
+          startTag,
+          endTag);
     }
   }
 }

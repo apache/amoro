@@ -42,6 +42,7 @@ import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.sink.FlinkAppenderFactory;
@@ -121,6 +122,7 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
     String baseLocation;
     EncryptionManager encryptionManager;
     Schema schema;
+    Table icebergTable;
     PrimaryKeySpec primaryKeySpec = null;
     if (table.isKeyedTable()) {
       KeyedTable keyedTable = table.asKeyedTable();
@@ -128,11 +130,13 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
       encryptionManager = keyedTable.baseTable().encryption();
       schema = keyedTable.baseTable().schema();
       primaryKeySpec = keyedTable.primaryKeySpec();
+      icebergTable = keyedTable.baseTable();
     } else {
       UnkeyedTable table = this.table.asUnkeyedTable();
       baseLocation = table.location();
       encryptionManager = table.encryption();
       schema = table.schema();
+      icebergTable = table;
     }
 
     Schema selectSchema = TypeUtil.reassignIds(
@@ -146,7 +150,7 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
     FileAppenderFactory<RowData> appenderFactory = TableTypeUtil.isHive(table) ?
         new AdaptHiveFlinkAppenderFactory(schema, flinkSchema, table.properties(), table.spec()) :
         new FlinkAppenderFactory(
-            schema, flinkSchema, table.properties(), table.spec());
+            icebergTable, schema, flinkSchema, table.properties(), table.spec(), null, null, null);
     return new FlinkBaseTaskWriter(
         fileFormat,
         appenderFactory,
@@ -180,7 +184,8 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
         new AdaptHiveFlinkAppenderFactory(changeSchemaWithMeta, flinkSchemaWithMeta,
             keyedTable.properties(), keyedTable.spec()) :
         new FlinkAppenderFactory(
-        changeSchemaWithMeta, flinkSchemaWithMeta, keyedTable.properties(), keyedTable.spec());
+            keyedTable.changeTable(), changeSchemaWithMeta, flinkSchemaWithMeta, keyedTable.properties(),
+            keyedTable.spec(), null, null, null);
     boolean upsert = table.isKeyedTable() && PropertyUtil.propertyAsBoolean(table.properties(),
         TableProperties.UPSERT_ENABLED, TableProperties.UPSERT_ENABLED_DEFAULT);
     return new FlinkChangeTaskWriter(
