@@ -1,27 +1,31 @@
 package com.netease.arctic.ams.api.metrics;
 
-import org.apache.iceberg.metrics.MetricsReport;
-
 import java.util.Map;
 
 public interface MetricReporter {
 
   /**
    * A custom MetricsReporter implementation must have a no-arg constructor, which will be called
-   * first. {@link MetricReporter#initialize(Map properties)} is called to complete the
+   * first. {@link MetricReporter#open(Map properties)} is called to complete the
    * initialization.
    *
    * @param properties properties
    */
-  default void initialize(Map<String, String> properties) {
+  default void open(Map<String, String> properties) {
 
   }
 
   /**
-   * Indicates that an operation is done by reporting a {@link MetricsReport}. A {@link
-   * MetricsReport} is usually directly derived from a {@link MetricsReport} instance.
+   * Indicates that an operation is done by reporting a {@link MetricReport}. A {@link
+   * MetricReport} is usually directly derived from a {@link MetricReport} instance.
    *
-   * @param report {@link MetricsReport} to report.
+   * @param metricReport {@link MetricReport} to report.
    */
-  void report(MetricsReport report);
+  void report(MetricReport metricReport);
+
+  /**
+   * Indicates that an operation is done by reporting a {@link MetricReport}. A {@link
+   * MetricReport} is usually directly derived from a {@link MetricReport} instance.
+   */
+  void close();
 }
