@@ -52,4 +52,7 @@ public interface ChangeTableIncrementalScan extends TableScan {
 
   @Override
   ChangeTableIncrementalScan useSnapshot(long snapshotId);
+
+  @Override
+  ChangeTableIncrementalScan useRef(String ref);
 }

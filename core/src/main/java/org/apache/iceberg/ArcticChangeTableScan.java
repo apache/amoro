@@ -47,6 +47,11 @@ public class ArcticChangeTableScan extends DataTableScan implements ChangeTableI
   }
 
   @Override
+  public ArcticChangeTableScan useRef(String name) {
+    return (ArcticChangeTableScan) super.useRef(name);
+  }
+
+  @Override
   protected ArcticChangeTableScan newRefinedScan(Table table, Schema schema, TableScanContext context) {
     ArcticChangeTableScan scan = new ArcticChangeTableScan(table, schema, context);
     scan.fromPartitionSequence = this.fromPartitionSequence;

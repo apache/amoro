@@ -26,11 +26,14 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.PuffinUtil;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.BinPacking;
 import org.apache.iceberg.util.PropertyUtil;
@@ -64,6 +67,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
   private final long splitSize;
   private Double splitTaskByDeleteRatio;
   private Expression expression;
+  private String ref;
 
   public BasicKeyedTableScan(BasicKeyedTable table) {
     this.table = table;
@@ -127,10 +131,24 @@ public class BasicKeyedTableScan implements KeyedTableScan {
     return this;
   }
 
+  @Override
+  public KeyedTableScan useRef(String ref) {
+    if (SnapshotRef.MAIN_BRANCH.equals(ref)) {
+      return this;
+    }
+    Snapshot snapshot = table.baseTable().snapshot(ref);
+    Preconditions.checkArgument(snapshot != null, "Cannot find ref %s", ref);
+    this.ref = ref;
+    return this;
+  }
+
   private CloseableIterable<ArcticFileScanTask> planBaseFiles() {
     TableScan scan = table.baseTable().newScan();
     if (this.expression != null) {
       scan = scan.filter(this.expression);
+    }
+    if (ref != null) {
+      scan = scan.useRef(ref);
     }
     CloseableIterable<FileScanTask> fileScanTasks = scan.planFiles();
     return CloseableIterable.transform(
@@ -151,6 +169,11 @@ public class BasicKeyedTableScan implements KeyedTableScan {
         .fromSequence(partitionOptimizedSequence);
 
     changeTableScan = (ChangeTableIncrementalScan) changeTableScan.filter(partitionExpressions);
+    if (ref != null) {
+      if (table.changeTable().refs().containsKey(ref)) {
+        changeTableScan = changeTableScan.useRef(ref);
+      }
+    }
 
     return CloseableIterable.transform(changeTableScan.planFiles(), s -> (ArcticFileScanTask) s);
   }

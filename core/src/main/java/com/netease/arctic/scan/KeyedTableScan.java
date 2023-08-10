@@ -48,4 +48,13 @@ public interface KeyedTableScan {
    */
   KeyedTableScan enableSplitTaskByDeleteRatio(double splitTaskByDeleteRatio);
 
+  /**
+   * Config this scan using the given reference.
+   *
+   * @param ref reference
+   * @return scan based on the given reference.
+   * @throws IllegalArgumentException if a reference with the given name could not be found
+   */
+  KeyedTableScan useRef(String ref);
+
 }
