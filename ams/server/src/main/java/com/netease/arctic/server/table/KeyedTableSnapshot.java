@@ -18,18 +18,13 @@
 
 package com.netease.arctic.server.table;
 
-import org.apache.iceberg.util.StructLikeMap;
-
 public class KeyedTableSnapshot implements TableSnapshot {
   private final long baseSnapshotId;
   private final long changeSnapshotId;
-  private final StructLikeMap<Long> partitionOptimizedSequence;
 
-  public KeyedTableSnapshot(long baseSnapshotId, long changeSnapshotId,
-                            StructLikeMap<Long> partitionOptimizedSequence) {
+  public KeyedTableSnapshot(long baseSnapshotId, long changeSnapshotId) {
     this.baseSnapshotId = baseSnapshotId;
     this.changeSnapshotId = changeSnapshotId;
-    this.partitionOptimizedSequence = partitionOptimizedSequence;
   }
 
   public long baseSnapshotId() {
@@ -38,10 +33,6 @@ public class KeyedTableSnapshot implements TableSnapshot {
 
   public long changeSnapshotId() {
     return changeSnapshotId;
-  }
-
-  public StructLikeMap<Long> partitionOptimizedSequence() {
-    return partitionOptimizedSequence;
   }
 
   @Override

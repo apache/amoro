@@ -25,14 +25,12 @@ import com.netease.arctic.server.table.TableSnapshot;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.utils.PuffinUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.List;
 
@@ -49,9 +47,8 @@ public class OptimizingTestHelpers {
   public static KeyedTableSnapshot getCurrentKeyedTableSnapshot(KeyedTable keyedTable) {
     long baseSnapshotId = IcebergTableUtil.getSnapshotId(keyedTable.baseTable(), true);
     long changeSnapshotId = IcebergTableUtil.getSnapshotId(keyedTable.changeTable(), true);
-    StructLikeMap<Long> partitionOptimizedSequence = PuffinUtil.reader(keyedTable).readOptimizedSequence();
 
-    return new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId, partitionOptimizedSequence);
+    return new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId);
   }
 
   public static List<Record> generateRecord(TableTestHelper tableTestHelper, int from, int to, String opTime) {
