@@ -123,12 +123,10 @@ public class SparkTableTestBase extends SparkTestBase {
   public void after() {
     LOG.debug("clean up table after test: " + catalog().name() + "." + database + "." + table);
     catalog().dropTable(TableIdentifier.of(catalog().name(), database, table), true);
-    if (SESSION_CATALOG.equals(currentCatalog)) {
-      try {
-        context.getHiveClient().dropTable(database, table);
-      } catch (Exception e) {
-        //pass
-      }
+    try {
+      context.dropHiveTable(database, table);
+    }catch (Exception e){
+      // pass
     }
   }
 
