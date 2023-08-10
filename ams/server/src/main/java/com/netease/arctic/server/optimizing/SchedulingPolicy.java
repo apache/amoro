@@ -33,12 +33,14 @@ public class SchedulingPolicy {
     String schedulingPolicy = Optional.ofNullable(optimizerGroup.getProperties())
         .orElseGet(Maps::newHashMap)
         .getOrDefault(SCHEDULING_POLICY_PROPERTY_NAME, QUOTA);
-    if (schedulingPolicy.equalsIgnoreCase(QUOTA) &&
-        (tableSorter == null || (tableSorter instanceof BalancedSorter))) {
-      tableSorter = new QuotaOccupySorter();
-    } else if (schedulingPolicy.equalsIgnoreCase(BALANCED) &&
-        (tableSorter == null || (tableSorter instanceof QuotaOccupySorter))) {
-      tableSorter = new BalancedSorter();
+    if (schedulingPolicy.equalsIgnoreCase(QUOTA)) {
+      if (tableSorter == null || !(tableSorter instanceof QuotaOccupySorter)) {
+        tableSorter = new QuotaOccupySorter();
+      }
+    } else if (schedulingPolicy.equalsIgnoreCase(BALANCED)) {
+      if (tableSorter == null || !(tableSorter instanceof BalancedSorter)) {
+        tableSorter = new BalancedSorter();
+      }
     } else {
       throw new IllegalArgumentException("Illegal scheduling policy: " + schedulingPolicy);
     }
