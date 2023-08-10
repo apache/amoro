@@ -34,13 +34,13 @@ public class SchedulingPolicy {
         .orElseGet(Maps::newHashMap)
         .getOrDefault(SCHEDULING_POLICY_PROPERTY_NAME, QUOTA);
     if (schedulingPolicy.equalsIgnoreCase(QUOTA)) {
-        if (tableSorter == null || !(tableSorter instanceof QuotaOccupySorter)) {
-          tableSorter = new QuotaOccupySorter();
-        }
+      if (tableSorter == null || !(tableSorter instanceof QuotaOccupySorter)) {
+        tableSorter = new QuotaOccupySorter();
+      }
     } else if (schedulingPolicy.equalsIgnoreCase(BALANCED)) {
-        if (tableSorter == null || !(tableSorter instanceof BalancedSorter)) {
-          tableSorter = new BalancedSorter();
-        }
+      if (tableSorter == null || !(tableSorter instanceof BalancedSorter)) {
+        tableSorter = new BalancedSorter();
+      }
     } else {
       throw new IllegalArgumentException("Illegal scheduling policy: " + schedulingPolicy);
     }
