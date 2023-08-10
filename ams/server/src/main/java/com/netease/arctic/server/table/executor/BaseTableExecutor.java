@@ -104,6 +104,7 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
   @Override
   protected void doDispose() {
     executor.shutdownNow();
+    logger.info("dispose thread pool for threads {}", getThreadName());
   }
 
   protected long getStartDelay() {
