@@ -72,7 +72,7 @@ public class TestOrphanFileCleanIceberg extends TestOrphanFileClean {
   }
 
   @Test
-  public void cleanIndependentFiles() throws IOException {
+  public void cleanDanglingDeleteFiles() throws IOException {
     List<Record> records = Lists.newArrayListWithCapacity(3);
     records.add(tableTestHelper().generateTestRecord(1, "test1", 0, "2022-01-01T00:00:00"));
     List<DataFile> dataFiles1 = tableTestHelper().writeBaseStore(getArcticTable().asUnkeyedTable(), 1L,
@@ -81,7 +81,7 @@ public class TestOrphanFileCleanIceberg extends TestOrphanFileClean {
     AppendFiles appendFiles = testTable.newAppend();
     dataFiles1.forEach(appendFiles::appendFile);
     appendFiles.commit();
-    assertIndependentFiles(testTable, 0);
+    assertDanglingDeleteFiles(testTable, 0);
     SortedPosDeleteWriter<Record> posDeleteWriter = AdaptHiveGenericTaskWriterBuilder.builderFor(testTable)
         .buildBasePosDeleteWriter(0, 0, dataFiles1.get(0).partition());
     posDeleteWriter.delete(dataFiles1.get(0).path(), 0);
@@ -94,12 +94,12 @@ public class TestOrphanFileCleanIceberg extends TestOrphanFileClean {
     testTable.newRewrite().rewriteFiles(Collections.singleton(dataFiles1.get(0)),
             Collections.singleton(dataFiles2.get(0)))
       .validateFromSnapshot(testTable.currentSnapshot().snapshotId()).commit();
-    assertIndependentFiles(testTable, 1);
-    OrphanFilesCleaningExecutor.cleanIndependentFiles(testTable);
-    assertIndependentFiles(testTable, 0);
+    assertDanglingDeleteFiles(testTable, 1);
+    OrphanFilesCleaningExecutor.cleanDanglingDeleteFiles(testTable);
+    assertDanglingDeleteFiles(testTable, 0);
   }
 
-  private void assertIndependentFiles(UnkeyedTable unkeyedTable, int count) {
+  private void assertDanglingDeleteFiles(UnkeyedTable unkeyedTable, int count) {
     TableScan tableScan = unkeyedTable.newScan();
     Set<String> files = new HashSet<>();
     for (FileScanTask task : tableScan.planFiles()) {
@@ -108,7 +108,7 @@ public class TestOrphanFileCleanIceberg extends TestOrphanFileClean {
         files.add(delete.path().toString());
       }
     }
-    Set<String> independentFiles = new HashSet<>();
+    Set<String> danglingDeleteFiles = new HashSet<>();
     Table manifestTable =
         MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) unkeyedTable).operations(),
           unkeyedTable.name(), metadataTableName(unkeyedTable.name(), MetadataTableType.ENTRIES),
@@ -119,16 +119,16 @@ public class TestOrphanFileCleanIceberg extends TestOrphanFileClean {
         int status = (int) entry.getField("status");
         String filePath = (String) dataFile.getField(DataFile.FILE_PATH.name());
         if (status != 2 && !files.contains(filePath)) {
-          independentFiles.add(filePath);
+          danglingDeleteFiles.add(filePath);
         }
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    for (String independentFile : independentFiles) {
-      LOG.info("find independent files " + independentFile);
+    for (String danglingDeleteFile : danglingDeleteFiles) {
+      LOG.info("find dangling delete files " + danglingDeleteFile);
     }
-    Assert.assertEquals(count, independentFiles.size());
+    Assert.assertEquals(count, danglingDeleteFiles.size());
   }
 
   private static String metadataTableName(String tableName, MetadataTableType type) {

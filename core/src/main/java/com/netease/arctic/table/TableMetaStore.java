@@ -35,7 +35,6 @@ import org.apache.iceberg.relocated.com.google.common.hash.Hashing;
 import org.apache.iceberg.relocated.com.google.common.io.ByteStreams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.security.krb5.KrbException;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -229,7 +228,7 @@ public class TableMetaStore implements Serializable {
           constructUgi();
         }
         LOG.info("Complete to build ugi {}", authInformation());
-      } catch (IOException | KrbException e) {
+      } catch (IOException e) {
         throw new RuntimeException("Fail to init user group information", e);
       }
     } else {
@@ -326,12 +325,11 @@ public class TableMetaStore implements Serializable {
     return authInformation;
   }
 
-  private void constructUgi() throws IOException, KrbException {
+  private void constructUgi() throws IOException {
     String krbConfFile = saveConfInPath(confCachePath, KRB_CONF_FILE_NAME, krbConf);
     String keyTabFile = saveConfInPath(confCachePath, KEY_TAB_FILE_NAME, krbKeyTab);
     System.clearProperty(HADOOP_USER_PROPERTY);
     System.setProperty(KRB5_CONF_PROPERTY, krbConfFile);
-    sun.security.krb5.Config.refresh();
     UserGroupInformation.setConfiguration(getConfiguration());
     KerberosName.resetDefaultRealm();
     ugi = UserGroupInformation.loginUserFromKeytabAndReturnUGI(krbPrincipal, keyTabFile);
