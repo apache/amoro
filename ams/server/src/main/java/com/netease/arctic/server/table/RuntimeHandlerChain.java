@@ -74,7 +74,7 @@ public abstract class RuntimeHandlerChain {
 
   public final void dispose() {
     if (next != null) {
-      next.doDispose();
+      next.dispose();
     }
     doSilently(this::doDispose);
   }
