@@ -34,7 +34,6 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CatalogUtil;
-import com.netease.arctic.utils.PuffinUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -53,7 +52,6 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.util.LocationUtil;
-import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,11 +87,8 @@ public class IcebergTableUtil {
     if (arcticTable.isUnkeyedTable()) {
       return new BasicTableSnapshot(tableRuntime.getCurrentSnapshotId());
     } else {
-      StructLikeMap<Long> partitionOptimizedSequence =
-          PuffinUtil.reader(arcticTable.asKeyedTable()).readOptimizedSequence();
       return new KeyedTableSnapshot(tableRuntime.getCurrentSnapshotId(),
-          tableRuntime.getCurrentChangeSnapshotId(),
-          partitionOptimizedSequence);
+          tableRuntime.getCurrentChangeSnapshotId());
     }
   }
 
