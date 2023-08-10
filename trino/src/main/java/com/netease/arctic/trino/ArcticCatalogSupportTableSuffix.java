@@ -22,7 +22,6 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
@@ -35,6 +34,7 @@ import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.TableBlockerManager;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.ExpireSnapshots;
@@ -63,6 +63,7 @@ import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
+import org.apache.thrift.TException;
 
 import java.util.List;
 import java.util.Map;
@@ -74,6 +75,8 @@ import java.util.stream.Collectors;
 public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
 
   private ArcticCatalog arcticCatalog;
+  private CatalogMeta meta;
+  private AmsClient client;
 
   public ArcticCatalogSupportTableSuffix(ArcticCatalog arcticCatalog) {
     this.arcticCatalog = arcticCatalog;
@@ -88,6 +91,8 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   public void initialize(
       AmsClient client, CatalogMeta meta, Map<String, String> properties) {
     arcticCatalog.initialize(client, meta, properties);
+    this.meta = meta;
+    this.client = client;
   }
 
   @Override
@@ -155,6 +160,11 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   @Override
   public void refresh() {
     arcticCatalog.refresh();
+    try {
+      this.meta = client.getCatalog(meta.getCatalogName());
+    } catch (TException e) {
+      throw new IllegalStateException(String.format("failed load catalog %s.", meta.getCatalogName()), e);
+    }
   }
 
   @Override
@@ -168,7 +178,7 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   }
 
   public TableMetaStore getTableMetaStore() {
-    return ((BasicArcticCatalog) arcticCatalog).getTableMetaStore();
+    return CatalogUtil.buildMetaStore(this.meta);
   }
 
   private static class ChangeTableWithExternalSchemas implements ChangeTable, HasTableOperations {
