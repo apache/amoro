@@ -27,6 +27,7 @@ public class AMSTransactionsOfTable {
   private String fileSize;
   private long commitTime;
   private String snapshotId;
+  private String operation;
   private Map<String, String> summary;
 
 
@@ -38,12 +39,14 @@ public class AMSTransactionsOfTable {
       int fileCount,
       String fileSize,
       long commitTime,
+      String operation,
       Map<String, String> summary) {
     this.transactionId = transactionId;
     this.fileCount = fileCount;
     this.fileSize = fileSize;
     this.commitTime = commitTime;
     this.snapshotId = this.transactionId;
+    this.operation = operation;
     this.summary = summary;
   }
 
@@ -87,6 +90,14 @@ public class AMSTransactionsOfTable {
     this.snapshotId = snapshotId;
   }
 
+  public String getOperation() {
+    return operation;
+  }
+
+  public void setOperation(String operation) {
+    this.operation = operation;
+  }
+
   public Map<String, String> getSummary() {
     return summary;
   }
@@ -108,11 +119,12 @@ public class AMSTransactionsOfTable {
         Objects.equal(transactionId, that.transactionId) &&
         Objects.equal(fileSize, that.fileSize) &&
         Objects.equal(snapshotId, that.snapshotId) &&
+        Objects.equal(operation, that.operation) &&
         Objects.equal(summary, that.summary);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(transactionId, fileCount, fileSize, commitTime, snapshotId, summary);
+    return Objects.hashCode(transactionId, fileCount, fileSize, commitTime, snapshotId, operation, summary);
   }
 }

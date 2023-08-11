@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.dashboard.utils;
 
+import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
@@ -39,6 +40,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.iceberg.SnapshotSummary;
 
 import static com.netease.arctic.server.ArcticManagementConf.HA_CLUSTER_NAME;
 import static com.netease.arctic.server.ArcticManagementConf.HA_ENABLE;
@@ -68,7 +70,15 @@ public class AmsUtil {
     transactionsOfTable.setFileSize(byteToXB(info.getFileSize()));
     transactionsOfTable.setCommitTime(info.getCommitTime());
     transactionsOfTable.setSnapshotId(info.getTransactionId() + "");
-    transactionsOfTable.setSummary(info.getSummary());
+    transactionsOfTable.setOperation(info.getOperation());
+    Map<String, String> summary = Maps.newHashMap(info.getSummary());
+    summary.computeIfPresent(SnapshotSummary.TOTAL_FILE_SIZE_PROP,
+        (k, v) -> byteToXB(Long.parseLong(info.getSummary().get(k))));
+    summary.computeIfPresent(SnapshotSummary.ADDED_FILE_SIZE_PROP,
+        (k, v) -> byteToXB(Long.parseLong(info.getSummary().get(k))));
+    summary.computeIfPresent(SnapshotSummary.REMOVED_FILE_SIZE_PROP,
+        (k, v) -> byteToXB(Long.parseLong(info.getSummary().get(k))));
+    transactionsOfTable.setSummary(summary);
     return transactionsOfTable;
   }
 

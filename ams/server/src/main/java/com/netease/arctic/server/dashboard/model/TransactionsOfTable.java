@@ -25,18 +25,24 @@ public class TransactionsOfTable {
   public int fileCount; // required
   public long fileSize; // required
   public long commitTime; // required
-
+  public String operation; // required
   public Map<String, String> summary;
 
   public TransactionsOfTable() {
   }
 
-  public TransactionsOfTable(long transactionId, int fileCount, long fileSize, long commitTime,
+  public TransactionsOfTable(
+      long transactionId,
+      int fileCount,
+      long fileSize,
+      long commitTime,
+      String operation,
       Map<String, String> summary) {
     this.transactionId = transactionId;
     this.fileCount = fileCount;
     this.fileSize = fileSize;
     this.commitTime = commitTime;
+    this.operation = operation;
     this.summary = summary;
   }
 
@@ -70,6 +76,14 @@ public class TransactionsOfTable {
 
   public void setCommitTime(long commitTime) {
     this.commitTime = commitTime;
+  }
+
+  public String getOperation() {
+    return operation;
+  }
+
+  public void setOperation(String operation) {
+    this.operation = operation;
   }
 
   public Map<String, String> getSummary() {

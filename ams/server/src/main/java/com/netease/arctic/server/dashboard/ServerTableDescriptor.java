@@ -94,6 +94,7 @@ public class ServerTableDescriptor extends PersistentBase {
           PropertyUtil
               .propertyAsLong(snapshot.summary(), org.apache.iceberg.SnapshotSummary.REMOVED_FILE_SIZE_PROP, 0));
       transactionsOfTable.setCommitTime(snapshot.timestampMillis());
+      transactionsOfTable.setOperation(snapshot.operation());
       transactionsOfTable.setSummary(snapshot.summary());
       transactionsOfTables.add(transactionsOfTable);
     }));
