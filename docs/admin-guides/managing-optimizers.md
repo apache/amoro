@@ -80,16 +80,16 @@ The following configuration needs to be filled in:
 
 - name: the name of the optimizer group, which can be seen in the list of optimizer groups on the front-end page.
 - container: the name of a container configured in containers.
-- properties: the default configuration under this group, is used as a configuration parameter for tasks when the optimize page is scaled out.
+- properties: the default configuration under this group, is used as a configuration parameter for tasks when the optimize page is scaled out.Supports native parameters for `flink on yarn`, and users can set parameters using the `<property>=<value>` or use `flink-conf.yaml` to configure parameters.
 
 The optimizer group supports the following properties:
 
-| Property            | Container type | Required | Default | Description |
-|---------------------|----------------|----------|---------|-------------|
+| Property            | Container type | Required | Default | Description                                                                                                                                                                                                                                                                                                                                                                                                      |
+|---------------------|----------------|----------|---------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | scheduling-policy   | All | No | quota | The scheduler group scheduling policy, the default value is `quota`, it will be scheduled according to the quota resources configured for each table, the larger the table quota is, the more optimizer resources it can take. There is also a configuration `balanced` that will balance the scheduling of each table, the longer the table has not been optimized, the higher the scheduling priority will be. |
-| taskmanager.memory   | flink | Yes | N/A | The memory size of Flink TaskManager. |
-| jobmanager.memory    | flink | Yes | N/A | The memory size of Flink JobManager.  |
-| memory   | local | Yes | N/A | The memory size of the local optimizer Java process. |
+| taskmanager.memory   | flink | No | N/A | The memory size of Flink TaskManager. Deprecated, suggested use `taskmanager.memory.process.size`. If not set, the parameters in `flink-conf.yaml` will be used by default.                                                                                                                                                                                                                                      |
+| jobmanager.memory    | flink | No | N/A | The memory size of Flink JobManager. Deprecated, suggested use `jobmanager.memory.process.size`. If not set, the parameters in `flink-conf.yaml` will be used by default.                                                                                                                                                                                                                                        |
+| memory   | local | Yes | N/A | The memory size of the local optimizer Java process.                                                                                                                                                                                                                                                                                                                                                             |
 
 ### Edit optimizer group
 
