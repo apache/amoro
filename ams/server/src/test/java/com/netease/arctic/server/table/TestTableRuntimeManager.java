@@ -20,7 +20,6 @@ package com.netease.arctic.server.table;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
@@ -37,16 +36,15 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][] {{BasicCatalogTestHelper.externalCatalog(),
-                            new BasicTableTestHelper(true, true)},
-                           {BasicCatalogTestHelper.externalCatalog(),
-                            new BasicTableTestHelper(false, true, TableFormat.ICEBERG)},
-                           {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-                            new HiveTableTestHelper(true, true)}};
+    return new Object[][]{
+        {BasicCatalogTestHelper.externalCatalog(), BasicTableTestHelper.mixedIcebergWithPkAndPt()},
+        {BasicCatalogTestHelper.externalCatalog(), BasicTableTestHelper.icebergWithPt()},
+        {HiveCatalogTestHelper.mixedHiveCatalog(TEST_HMS.getHiveConf()), HiveTableTestHelper.pkAndPtMixedHive()},
+    };
   }
 
   public TestTableRuntimeManager(CatalogTestHelper catalogTestHelper,
-      TableTestHelper tableTestHelper) {
+                                 TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper, true);
   }
 

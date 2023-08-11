@@ -20,19 +20,16 @@ package com.netease.arctic.server.table;
 
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.catalog.CatalogOperations;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableFormatOperations;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
-import org.apache.iceberg.catalog.Catalog;
-import org.apache.iceberg.catalog.Namespace;
-import org.apache.iceberg.catalog.SupportsNamespaces;
-import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Assert;
@@ -40,6 +37,7 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+
 import java.io.IOException;
 
 public class AMSTableTestBase extends TableServiceTestBase {
@@ -52,7 +50,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
   private final TableTestHelper tableTestHelper;
   private String catalogWarehouse;
   private MixedTables mixedTables;
-  private Catalog icebergCatalog;
+  private CatalogOperations catalogOperations = null;
   private CatalogMeta catalogMeta;
 
   private TableMeta tableMeta;
@@ -76,12 +74,14 @@ public class AMSTableTestBase extends TableServiceTestBase {
   public void init() throws IOException, TException {
     catalogWarehouse = temp.newFolder().getPath();
     catalogMeta = catalogTestHelper.buildCatalogMeta(catalogWarehouse);
-    if (TableFormat.ICEBERG.equals(tableTestHelper.format())) {
-      icebergCatalog = catalogTestHelper.buildIcebergCatalog(catalogMeta);
+
+    if (catalogTestHelper.supportCatalogOperations()) {
+      catalogOperations = catalogTestHelper.buildCatalogOperations(catalogMeta);
     } else {
       mixedTables = catalogTestHelper.buildMixedTables(catalogMeta);
       tableMeta = buildTableMeta();
     }
+
     tableService().createCatalog(catalogMeta);
     try {
       Database database = new Database();
@@ -98,9 +98,11 @@ public class AMSTableTestBase extends TableServiceTestBase {
 
   @After
   public void dispose() throws TException {
-    if (autoInitTable) {
+    try {
       dropTable();
       dropDatabase();
+    } catch (Exception e) {
+      //pass
     }
     if (catalogMeta != null) {
       tableService().dropCatalog(catalogMeta.getCatalogName());
@@ -123,8 +125,8 @@ public class AMSTableTestBase extends TableServiceTestBase {
   }
 
   protected void createDatabase() {
-    if (TableFormat.ICEBERG.equals(tableTestHelper.format())) {
-      ((SupportsNamespaces)icebergCatalog).createNamespace(Namespace.of(TableTestHelper.TEST_DB_NAME));
+    if (catalogOperations != null) {
+      catalogOperations.createDatabase(TableTestHelper.TEST_DB_NAME);
     } else if (!tableService().listDatabases(TableTestHelper.TEST_CATALOG_NAME)
         .contains(TableTestHelper.TEST_DB_NAME)) {
       tableService().createDatabase(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME);
@@ -132,19 +134,22 @@ public class AMSTableTestBase extends TableServiceTestBase {
   }
 
   protected void dropDatabase() {
-    if (TableFormat.ICEBERG.equals(tableTestHelper.format())) {
-      ((SupportsNamespaces)icebergCatalog).dropNamespace(Namespace.of(TableTestHelper.TEST_DB_NAME));
-    } else {
+    if (catalogOperations != null) {
+      catalogOperations.dropDatabase(TableTestHelper.TEST_DB_NAME);
+    } else if (tableService().listDatabases(TableTestHelper.TEST_CATALOG_NAME)
+        .contains(TableTestHelper.TEST_DB_NAME)) {
       tableService().dropDatabase(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME);
     }
   }
 
   protected void createTable() {
-    if (TableFormat.ICEBERG.equals(tableTestHelper.format())) {
-      icebergCatalog.createTable(
-          TableIdentifier.of(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME),
-          tableTestHelper.tableSchema(),
-          tableTestHelper.partitionSpec(), tableTestHelper.tableProperties());
+    if (catalogOperations != null) {
+      TableFormatOperations tableFormatOperations = catalogOperations.formatOperations(tableTestHelper.format());
+      tableFormatOperations.newTableBuilder(tableTestHelper.tableSchema(), TableTestHelper.TEST_TABLE_ID)
+          .withPartitionSpec(tableTestHelper.partitionSpec())
+          .withProperties(tableTestHelper.tableProperties())
+          .withPrimaryKeySpec(tableTestHelper.primaryKeySpec())
+          .create();
       tableService().exploreExternalCatalog();
     } else {
       mixedTables.createTableByMeta(tableMeta, tableTestHelper.tableSchema(), tableTestHelper.primaryKeySpec(),
@@ -153,11 +158,13 @@ public class AMSTableTestBase extends TableServiceTestBase {
       tableService().createTable(catalogMeta.getCatalogName(), tableMetadata);
     }
     serverTableIdentifier = tableService().listManagedTables().get(0);
+
   }
 
   protected void dropTable() {
-    if (TableFormat.ICEBERG.equals(tableTestHelper.format())) {
-      icebergCatalog.dropTable(TableIdentifier.of(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME));
+    if (catalogOperations != null) {
+      TableFormatOperations tableFormatOperations = catalogOperations.formatOperations(tableTestHelper.format());
+      tableFormatOperations.dropTable(TableTestHelper.TEST_TABLE_ID, true);
       tableService().exploreExternalCatalog();
     } else {
       mixedTables.dropTableByMeta(tableMeta, true);
@@ -200,4 +207,5 @@ public class AMSTableTestBase extends TableServiceTestBase {
   protected void validateTableRuntime(TableRuntime tableRuntime) {
     Assert.assertEquals(serverTableIdentifier(), tableRuntime.getTableIdentifier());
   }
+
 }

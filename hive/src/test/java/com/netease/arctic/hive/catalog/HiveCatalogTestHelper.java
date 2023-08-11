@@ -20,14 +20,17 @@ package com.netease.arctic.hive.catalog;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.catalog.CatalogOperations;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelpers;
+import com.netease.arctic.catalog.ExternalCatalogOperations;
 import com.netease.arctic.catalog.MixedTables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
@@ -37,6 +40,15 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
 
   private final TableFormat[] tableFormats;
   private final Configuration hiveConf;
+
+
+  public static HiveCatalogTestHelper mixedHiveCatalog(Configuration hiveConf) {
+    return new HiveCatalogTestHelper(hiveConf, TableFormat.MIXED_HIVE);
+  }
+
+  public static HiveCatalogTestHelper icebergHiveCatalog(Configuration hiveConf) {
+    return new HiveCatalogTestHelper(hiveConf, TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG);
+  }
 
   @Deprecated
   public HiveCatalogTestHelper(TableFormat tableFormat, Configuration hiveConf) {
@@ -73,6 +85,17 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
   @Override
   public MixedTables buildMixedTables(CatalogMeta catalogMeta) {
     return new MixedHiveTables(catalogMeta);
+  }
+
+  @Override
+  public CatalogOperations buildCatalogOperations(CatalogMeta catalogMeta) {
+    return new ExternalCatalogOperations(catalogMeta);
+  }
+
+  @Override
+  public boolean supportCatalogOperations() {
+    return Arrays.stream(this.tableFormats)
+        .noneMatch(t -> t == TableFormat.MIXED_HIVE);
   }
 
   @Override

@@ -50,6 +50,15 @@ public class BasicTableTestHelper implements TableTestHelper {
   public static final PrimaryKeySpec PRIMARY_KEY_SPEC = PrimaryKeySpec.builderFor(TABLE_SCHEMA)
       .addColumn("id").build();
 
+
+  public static TableTestHelper mixedIcebergWithPkAndPt() {
+    return new BasicTableTestHelper(true, true, TableFormat.MIXED_ICEBERG);
+  }
+
+  public static TableTestHelper icebergWithPt() {
+    return new BasicTableTestHelper(false, true, TableFormat.ICEBERG);
+  }
+
   private final Schema tableSchema;
   private final PrimaryKeySpec primaryKeySpec;
   private final PartitionSpec partitionSpec;

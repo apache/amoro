@@ -19,6 +19,7 @@
 package com.netease.arctic.hive.catalog;
 
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.HiveDataTestHelpers;
@@ -57,6 +58,14 @@ public class HiveTableTestHelper extends BasicTableTestHelper {
 
   public static final PartitionSpec HIVE_SPEC = PartitionSpec.builderFor(HIVE_TABLE_SCHEMA)
       .identity(COLUMN_NAME_OP_DAY).build();
+
+  public static TableTestHelper pkAndPtMixedHive() {
+    return new HiveTableTestHelper(true, true);
+  }
+
+  public static TableTestHelper ptMixedHive() {
+    return new HiveTableTestHelper(false, true);
+  }
 
   public HiveTableTestHelper(
       Schema tableSchema,

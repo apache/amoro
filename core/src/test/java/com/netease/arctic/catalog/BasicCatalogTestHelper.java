@@ -113,6 +113,19 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
   }
 
   @Override
+  public boolean supportCatalogOperations() {
+    return !isInternalCatalog();
+  }
+
+  @Override
+  public CatalogOperations buildCatalogOperations(CatalogMeta catalogMeta) {
+    if (isInternalCatalog()) {
+      throw new UnsupportedOperationException("Cannot build catalog operations for catalog(type=" + catalogType + ")");
+    }
+    return new ExternalCatalogOperations(catalogMeta);
+  }
+
+  @Override
   public String toString() {
     return catalogType;
   }

@@ -39,4 +39,8 @@ public interface CatalogTestHelper {
   Catalog buildIcebergCatalog(CatalogMeta catalogMeta);
 
   MixedTables buildMixedTables(CatalogMeta catalogMeta);
+
+  CatalogOperations buildCatalogOperations(CatalogMeta catalogMeta);
+
+  boolean supportCatalogOperations();
 }

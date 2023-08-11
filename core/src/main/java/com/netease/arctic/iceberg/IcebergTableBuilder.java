@@ -32,6 +32,7 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.Map;
 
@@ -71,7 +72,10 @@ public class IcebergTableBuilder extends BasicTableBuilder<IcebergTableBuilder> 
 
   @Override
   public TableBuilder withPrimaryKeySpec(PrimaryKeySpec primaryKeySpec) {
-    throw new UnsupportedOperationException("can't create an iceberg table with primary key");
+    Preconditions.checkArgument(
+        primaryKeySpec == null || !primaryKeySpec.primaryKeyExisted(),
+        "can't create an iceberg table with primary key");
+    return this;
   }
 
   @Override
