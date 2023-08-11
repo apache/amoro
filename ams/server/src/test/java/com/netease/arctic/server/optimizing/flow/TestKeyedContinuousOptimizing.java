@@ -35,12 +35,15 @@ import com.netease.arctic.server.optimizing.flow.checker.MinorOptimizingCheck;
 import com.netease.arctic.server.optimizing.flow.checker.OptimizingCountChecker;
 import com.netease.arctic.server.optimizing.flow.view.KeyedTableDataView;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.iceberg.TableProperties;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES;
 import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL;
@@ -55,31 +58,37 @@ public class TestKeyedContinuousOptimizing extends TableTestBase {
     super(catalogTestHelper, tableTestHelper);
   }
 
+  public static Map<String, String> icebergV2Properties() {
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put(TableProperties.FORMAT_VERSION, "2");
+    return properties;
+  }
+
   @Parameterized.Parameters(name = "{1}.{2}")
   public static Object[] parameters() {
-    return new Object[][] {
+    return new Object[][]{
         {
-            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, true)
-        },
-        {
-            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, false)
+            BasicCatalogTestHelper.externalCatalog(),
+            BasicTableTestHelper.mixedIcebergWithPkAndPt()
         },
         {
             BasicCatalogTestHelper.externalCatalog(),
-            new BasicTableTestHelper(true, false, TableFormat.ICEBERG)
+            BasicTableTestHelper.mixedIcebergWithPkNoPt()
         },
         {
             BasicCatalogTestHelper.externalCatalog(),
-            new BasicTableTestHelper(true, false, TableFormat.ICEBERG)
+            new BasicTableTestHelper(true, false, icebergV2Properties(), TableFormat.ICEBERG)
         },
         {
-            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            BasicCatalogTestHelper.externalCatalog(),
+            new BasicTableTestHelper(true, false, icebergV2Properties(), TableFormat.ICEBERG)
+        },
+        {
+            HiveCatalogTestHelper.mixedHiveCatalog(TEST_HMS.getHiveConf()),
             new HiveTableTestHelper(true, true)
         },
         {
-            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            HiveCatalogTestHelper.mixedHiveCatalog(TEST_HMS.getHiveConf()),
             new BasicTableTestHelper(true, false)
         }
     };

@@ -22,10 +22,8 @@ public class TestIcebergTableFileScanHelper extends TestUnkeyedTableFileScanHelp
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[][] parameters() {
     return new Object[][] {
-        {BasicCatalogTestHelper.externalCatalog(),
-            new BasicTableTestHelper(false, true, TableFormat.ICEBERG)},
-        {BasicCatalogTestHelper.externalCatalog(),
-            new BasicTableTestHelper(false, false, TableFormat.ICEBERG)}};
+        {BasicCatalogTestHelper.externalCatalog(), BasicTableTestHelper.icebergV2WithPt()},
+        {BasicCatalogTestHelper.externalCatalog(), BasicTableTestHelper.icebergV2WithoutPt()}};
   }
 
   @Override

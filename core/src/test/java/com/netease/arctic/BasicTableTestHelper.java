@@ -27,6 +27,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.types.Types;
@@ -55,8 +56,24 @@ public class BasicTableTestHelper implements TableTestHelper {
     return new BasicTableTestHelper(true, true, TableFormat.MIXED_ICEBERG);
   }
 
+  public static TableTestHelper mixedIcebergWithPkNoPt() {
+    return new BasicTableTestHelper(true, true, TableFormat.MIXED_ICEBERG);
+  }
+
   public static TableTestHelper icebergWithPt() {
     return new BasicTableTestHelper(false, true, TableFormat.ICEBERG);
+  }
+
+  public static TableTestHelper icebergWithoutPt() {
+    return new BasicTableTestHelper(false, false, TableFormat.ICEBERG);
+  }
+
+  public static TableTestHelper icebergV2WithPt() {
+    return icebergWithPt().withProperty(TableProperties.FORMAT_VERSION, "2");
+  }
+
+  public static TableTestHelper icebergV2WithoutPt() {
+    return icebergWithoutPt().withProperty(TableProperties.FORMAT_VERSION, "2");
   }
 
   private final Schema tableSchema;
@@ -155,6 +172,12 @@ public class BasicTableTestHelper implements TableTestHelper {
       ArcticTable table, Expression expression, Schema projectSchema,
       boolean useDiskMap) {
     return DataTestHelpers.readBaseStore(table, expression, projectSchema, useDiskMap);
+  }
+
+  @Override
+  public TableTestHelper withProperty(String key, String value) {
+    this.tableProperties.put(key, value);
+    return this;
   }
 
   @Override

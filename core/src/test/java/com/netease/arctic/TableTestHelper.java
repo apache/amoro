@@ -65,4 +65,6 @@ public interface TableTestHelper {
   List<Record> readChangeStore(KeyedTable keyedTable, Expression expression, Schema projectSchema, boolean useDiskMap);
 
   List<Record> readBaseStore(ArcticTable table, Expression expression, Schema projectSchema, boolean useDiskMap);
+
+  TableTestHelper withProperty(String key, String value);
 }
