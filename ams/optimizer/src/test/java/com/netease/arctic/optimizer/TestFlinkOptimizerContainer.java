@@ -50,6 +50,47 @@ public class TestFlinkOptimizerContainer {
     prop.put("taskmanager.memory.process.size", "100");
     prop.put("key1", "value1");
     prop.put("key2", "value2");
-    Assert.assertEquals("-yD key1=value1 -yD key2=value2", container.buildFlinkArgs(prop));
+    prop.put("flink-conf.key3", "value3");
+    prop.put("flink-conf.key4", "value4");
+    Assert.assertEquals("-yD key4=value4 -yD key3=value3", container.buildFlinkArgs(prop));
+  }
+
+  @Test
+  public void testGetMemorySizeValue() {
+    HashMap<String, String> prop = new HashMap<>();
+    prop.put("taskmanager.memory", "100");
+    prop.put("jobmanager.memory", "100");
+    HashMap<String, String> flinkConfig = new HashMap<>();
+    Assert.assertEquals(100L, container.getMemorySizeValue(prop, flinkConfig,
+        "taskmanager.memory",
+        "taskmanager.memory.process.size"));
+    Assert.assertEquals(100L, container.getMemorySizeValue(prop, flinkConfig,
+        "jobmanager.memory",
+        "jobmanager.memory.process.size"));
+    prop.clear();
+    prop.put("flink-conf.jobmanager.memory.process.size", "200 M");
+    prop.put("flink-conf.taskmanager.memory.process.size", "200");
+    Assert.assertEquals(200L, container.getMemorySizeValue(prop, flinkConfig,
+        "taskmanager.memory",
+        "taskmanager.memory.process.size"));
+    Assert.assertEquals(200L, container.getMemorySizeValue(prop, flinkConfig,
+        "jobmanager.memory",
+        "jobmanager.memory.process.size"));
+    prop.clear();
+    flinkConfig.put("jobmanager.memory.process.size", "300 M");
+    flinkConfig.put("taskmanager.memory.process.size", "300");
+    Assert.assertEquals(300L, container.getMemorySizeValue(prop, flinkConfig,
+        "taskmanager.memory",
+        "taskmanager.memory.process.size"));
+    Assert.assertEquals(300L, container.getMemorySizeValue(prop, flinkConfig,
+        "jobmanager.memory",
+        "jobmanager.memory.process.size"));
+    flinkConfig.clear();
+    Assert.assertEquals(0L, container.getMemorySizeValue(prop, flinkConfig,
+        "taskmanager.memory",
+        "taskmanager.memory.process.size"));
+    Assert.assertEquals(0L, container.getMemorySizeValue(prop, flinkConfig,
+        "jobmanager.memory",
+        "jobmanager.memory.process.size"));
   }
 }

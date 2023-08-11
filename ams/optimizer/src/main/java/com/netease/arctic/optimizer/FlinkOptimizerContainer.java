@@ -33,9 +33,12 @@ import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -45,8 +48,19 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
 
   public static final String FLINK_HOME_PROPERTY = "flink-home";
   public static final String FLINK_CONFIG_PATH = "/conf/flink-conf.yaml";
+
+  /**
+   * @deprecated This parameter is deprecated and will be removed in version 0.7.0.
+   */
+  @Deprecated
   public static final String TASK_MANAGER_MEMORY_PROPERTY = "taskmanager.memory";
+
+  /**
+   * @deprecated This parameter is deprecated and will be removed in version 0.7.0.
+   */
+  @Deprecated
   public static final String JOB_MANAGER_MEMORY_PROPERTY = "jobmanager.memory";
+  public static final String FLINK_PARAMETER_PREFIX = "flink-conf.";
   public static final String JOB_MANAGER_TOTAL_PROCESS_MEMORY = "jobmanager.memory.process.size";
   public static final String TASK_MANAGER_TOTAL_PROCESS_MEMORY = "taskmanager.memory.process.size";
   public static final String YARN_APPLICATION_ID_PROPERTY = "yarn-application-id";
@@ -111,16 +125,16 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
    * get jobManager and taskManager memory.
    * An example of using Jobmanager memory parameters is as follows:
    *    jobmanager.memory: 1024
-   *    jobmanager.memory.process.size: 1024M
+   *    flink-conf.jobmanager.memory.process.size: 1024M
    *    flink-conf.yaml
    * Prioritize from high to low.
    *
    */
-  protected Long getMemorySizeValue(Map<String, String> properties, Map<String, String> flinkConfig,
+  protected long getMemorySizeValue(Map<String, String> properties, Map<String, String> flinkConfig,
                                   String propertyKey, String finkConfigKey) {
     return Optional.ofNullable(properties.get(propertyKey))
         .map(Long::valueOf)
-        .orElseGet(() -> Optional.ofNullable(properties.get(finkConfigKey))
+        .orElseGet(() -> Optional.ofNullable(properties.get(FLINK_PARAMETER_PREFIX + finkConfigKey))
             .map((v) -> parseMemorySize(v))
             .orElseGet(() -> Optional.ofNullable(flinkConfig.get(finkConfigKey))
                 .map((v) -> parseMemorySize(v))
@@ -131,25 +145,18 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
    * build user configured flink native parameters
    */
   protected String buildFlinkArgs(Map<String, String> properties) {
-    final String[] keysToFilter = {
+    final Set<String> keysToFilter = new HashSet<>(Arrays.asList(
         JOB_MANAGER_MEMORY_PROPERTY,
         TASK_MANAGER_MEMORY_PROPERTY,
-        JOB_MANAGER_TOTAL_PROCESS_MEMORY,
-        TASK_MANAGER_TOTAL_PROCESS_MEMORY
-    };
-    return properties.entrySet()
-        .stream().filter(entry -> !containsKey(keysToFilter, entry.getKey()))
-        .map(entry -> "-yD " + entry.getKey() + "=" + entry.getValue())
-        .collect(Collectors.joining(" "));
-  }
+        FLINK_PARAMETER_PREFIX + JOB_MANAGER_TOTAL_PROCESS_MEMORY,
+        FLINK_PARAMETER_PREFIX + TASK_MANAGER_TOTAL_PROCESS_MEMORY
+    ));
 
-  private boolean containsKey(String[] keys, String key) {
-    for (String k : keys) {
-      if (k.equals(key)) {
-        return true;
-      }
-    }
-    return false;
+    return properties.entrySet()
+        .stream().filter(entry -> !keysToFilter.contains(entry.getKey()))
+        .filter(entry -> entry.getKey().startsWith(FLINK_PARAMETER_PREFIX))
+        .map(entry -> "-yD " + entry.getKey().substring(FLINK_PARAMETER_PREFIX.length()) + "=" + entry.getValue())
+        .collect(Collectors.joining(" "));
   }
 
   /**
