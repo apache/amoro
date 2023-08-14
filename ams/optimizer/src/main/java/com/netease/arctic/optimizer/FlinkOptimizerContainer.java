@@ -70,8 +70,9 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
 
 
   public String getFlinkHome() {
-    String flinkHome = PropertyUtil.checkAndGetProperty(getContainerProperties(), FLINK_HOME_PROPERTY);
-    return  flinkHome != null ? flinkHome.replaceAll("/$", "") : null;
+    return Optional.ofNullable(PropertyUtil.checkAndGetProperty(getContainerProperties(), FLINK_HOME_PROPERTY))
+        .map(flinkHome -> flinkHome.replaceAll("/$", ""))
+        .orElse(null);
   }
 
   @Override
@@ -133,7 +134,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
   protected long getMemorySizeValue(Map<String, String> properties, Map<String, String> flinkConfig,
                                   String propertyKey, String finkConfigKey) {
     return Optional.ofNullable(properties.get(propertyKey))
-        .map(Long::valueOf)
+        .map((v) -> parseMemorySize(v))
         .orElseGet(() -> Optional.ofNullable(properties.get(FLINK_PARAMETER_PREFIX + finkConfigKey))
             .map((v) -> parseMemorySize(v))
             .orElseGet(() -> Optional.ofNullable(flinkConfig.get(finkConfigKey))
@@ -146,8 +147,6 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
    */
   protected String buildFlinkArgs(Map<String, String> properties) {
     final Set<String> keysToFilter = new HashSet<>(Arrays.asList(
-        JOB_MANAGER_MEMORY_PROPERTY,
-        TASK_MANAGER_MEMORY_PROPERTY,
         FLINK_PARAMETER_PREFIX + JOB_MANAGER_TOTAL_PROCESS_MEMORY,
         FLINK_PARAMETER_PREFIX + TASK_MANAGER_TOTAL_PROCESS_MEMORY
     ));
