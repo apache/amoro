@@ -26,6 +26,7 @@ import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import com.netease.arctic.server.utils.Configurations;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
+import org.apache.iceberg.SnapshotSummary;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -40,7 +41,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.iceberg.SnapshotSummary;
 
 import static com.netease.arctic.server.ArcticManagementConf.HA_CLUSTER_NAME;
 import static com.netease.arctic.server.ArcticManagementConf.HA_ENABLE;
