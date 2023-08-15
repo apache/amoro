@@ -162,7 +162,7 @@ public class PuffinUtil {
     private StructLikeMap<Long> read(String type) {
       StatisticsFile statisticsFile = findStatisticsFile(type);
       if (statisticsFile == null) {
-        return null;
+        return StructLikeMap.create(table.spec().partitionType());
       }
       try (PuffinReader puffin = Puffin.read(table.io().newInputFile(statisticsFile.path())).build()) {
         FileMetadata fileMetadata = puffin.fileMetadata();
