@@ -39,7 +39,9 @@ import {
   Empty,
   Upload,
   Radio,
-  Collapse
+  Collapse,
+  Row,
+  Col
 } from 'ant-design-vue'
 
 const compontens = [
@@ -64,7 +66,9 @@ const compontens = [
   Empty,
   Upload,
   Radio,
-  Collapse
+  Collapse,
+  Row,
+  Col
 ]
 export default function (app: App): void {
   compontens.forEach(app.use)
