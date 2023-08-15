@@ -129,8 +129,8 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
     Snapshot toSnapshot = getArcticTable().changeTable().currentSnapshot();
 
     AbstractPartitionPlan plan = buildPlanWithCurrentFiles();
-    Assert.assertEquals(fromSnapshot.sequenceNumber(), plan.getFromSequence());
-    Assert.assertEquals(toSnapshot.sequenceNumber(), plan.getToSequence());
+    Assert.assertEquals(fromSnapshot.sequenceNumber(), (long) plan.getFromSequence());
+    Assert.assertEquals(toSnapshot.sequenceNumber(), (long) plan.getToSequence());
 
     List<TaskDescriptor> taskDescriptors = plan.splitTasks(0);
 
