@@ -46,6 +46,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT_ORC;
+import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT_PARQUET;
+import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT_ORC;
+import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT_PARQUET;
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_ORC;
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_PARQUET;
 
 public class UpgradeHiveTableUtil {
 
@@ -64,8 +73,8 @@ public class UpgradeHiveTableUtil {
   public static void upgradeHiveTable(
       ArcticHiveCatalog arcticHiveCatalog, TableIdentifier tableIdentifier,
       List<String> pkList, Map<String, String> properties) throws Exception {
-    if (!formatCheck(arcticHiveCatalog.getHMSClient(), tableIdentifier)) {
-      throw new IllegalArgumentException("Only support storage format is parquet");
+    if (!formatCheck(arcticHiveCatalog.getHMSClient(), tableIdentifier, properties)) {
+      throw new IllegalArgumentException("The storage format is not support");
     }
     boolean upgradeHive = false;
     try {
@@ -153,7 +162,8 @@ public class UpgradeHiveTableUtil {
    * @param tableIdentifier A table identifier
    * @return Support or not
    */
-  private static boolean formatCheck(HMSClientPool hiveClient, TableIdentifier tableIdentifier) throws IOException {
+  private static boolean formatCheck(HMSClientPool hiveClient, TableIdentifier tableIdentifier,
+      Map<String, String> properties) throws IOException {
     AtomicBoolean isSupport = new AtomicBoolean(false);
     try {
       hiveClient.run(client -> {
@@ -164,9 +174,23 @@ public class UpgradeHiveTableUtil {
           case HiveTableProperties.PARQUET_INPUT_FORMAT:
             if (storageDescriptor.getOutputFormat().equals(HiveTableProperties.PARQUET_OUTPUT_FORMAT) &&
                 serDeInfo.getSerializationLib().equals(HiveTableProperties.PARQUET_ROW_FORMAT_SERDE)) {
+              properties.put(DEFAULT_FILE_FORMAT, DEFAULT_FILE_FORMAT_PARQUET);
+              properties.put(BASE_FILE_FORMAT, BASE_FILE_FORMAT_PARQUET);
+              properties.put(CHANGE_FILE_FORMAT, CHANGE_FILE_FORMAT_PARQUET);
               isSupport.set(true);
             } else {
-              throw new IllegalStateException("Please check your hive table storage format is right");
+              throw new IllegalStateException("Please check your hive table storage format for parquet is right");
+            }
+            break;
+          case HiveTableProperties.ORC_INPUT_FORMAT:
+            if (storageDescriptor.getOutputFormat().equals(HiveTableProperties.ORC_OUTPUT_FORMAT) &&
+                serDeInfo.getSerializationLib().equals(HiveTableProperties.ORC_ROW_FORMAT_SERDE)) {
+              properties.put(DEFAULT_FILE_FORMAT, DEFAULT_FILE_FORMAT_ORC);
+              properties.put(BASE_FILE_FORMAT, BASE_FILE_FORMAT_ORC);
+              properties.put(CHANGE_FILE_FORMAT, CHANGE_FILE_FORMAT_ORC);
+              isSupport.set(true);
+            } else {
+              throw new IllegalStateException("Please check your hive table storage format for orc is right");
             }
             break;
           default:
