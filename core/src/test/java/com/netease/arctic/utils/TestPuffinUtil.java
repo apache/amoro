@@ -62,8 +62,8 @@ public class TestPuffinUtil extends TableTestBase {
         getArcticTable().asUnkeyedTable();
     table.newAppend().commit();
     PuffinUtil.Reader reader = PuffinUtil.reader(table);
-    Assert.assertNull(reader.readBaseOptimizedTime());
-    Assert.assertNull(reader.readOptimizedSequence());
+    Assert.assertTrue(reader.readBaseOptimizedTime().isEmpty());
+    Assert.assertTrue(reader.readOptimizedSequence().isEmpty());
 
     Snapshot snapshot = table.currentSnapshot();
     StructLikeMap<Long> optimizedTime = buildPartitionOptimizedTime();
