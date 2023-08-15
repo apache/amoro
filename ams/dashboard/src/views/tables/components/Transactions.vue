@@ -1,7 +1,7 @@
 <template>
   <div class="table-transactions">
     <a-table
-      rowKey="id"
+      rowKey="transactionId"
       :columns="columns"
       :data-source="dataSource"
       :pagination="pagination"
@@ -15,6 +15,12 @@
             {{ record.transactionId }}
           </a-button>
         </template>
+      </template>
+      <template #expandedRowRender="{ record }">
+        <a-row type="flex" :gutter="16" v-for="(value, key) in record.summary" :key="key">
+          <a-col flex="220px" style="text-align: right;">{{ key }} :</a-col>
+          <a-col flex="auto">{{ value }}</a-col>
+        </a-row>
       </template>
     </a-table>
     <template v-else>
@@ -58,6 +64,7 @@ const hasBreadcrumb = ref<boolean>(false)
 const { t } = useI18n()
 const columns: IColumns[] = shallowReactive([
   { title: t('transactionId'), dataIndex: 'transactionId', ellipsis: true },
+  { title: t('operation'), dataIndex: 'operation' },
   { title: t('fileCount'), dataIndex: 'fileCount' },
   { title: t('size'), dataIndex: 'fileSize' },
   { title: t('commitTime'), dataIndex: 'commitTime' },
