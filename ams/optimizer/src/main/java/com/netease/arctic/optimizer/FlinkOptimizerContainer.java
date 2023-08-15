@@ -67,6 +67,10 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
 
   private static final Pattern APPLICATION_ID_PATTERN = Pattern.compile("(.*)application_(\\d+)_(\\d+)");
   private static final int MAX_READ_APP_ID_TIME = 600000; //10 min
+  private static final Set<String> KEYS_TO_FILTER = new HashSet<>(Arrays.asList(
+      FLINK_PARAMETER_PREFIX + JOB_MANAGER_TOTAL_PROCESS_MEMORY,
+      FLINK_PARAMETER_PREFIX + TASK_MANAGER_TOTAL_PROCESS_MEMORY
+  ));
 
 
   public String getFlinkHome() {
@@ -146,13 +150,8 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
    * build user configured flink native parameters
    */
   protected String buildFlinkArgs(Map<String, String> properties) {
-    final Set<String> keysToFilter = new HashSet<>(Arrays.asList(
-        FLINK_PARAMETER_PREFIX + JOB_MANAGER_TOTAL_PROCESS_MEMORY,
-        FLINK_PARAMETER_PREFIX + TASK_MANAGER_TOTAL_PROCESS_MEMORY
-    ));
-
     return properties.entrySet()
-        .stream().filter(entry -> !keysToFilter.contains(entry.getKey()))
+        .stream().filter(entry -> !KEYS_TO_FILTER.contains(entry.getKey()))
         .filter(entry -> entry.getKey().startsWith(FLINK_PARAMETER_PREFIX))
         .map(entry -> "-yD " + entry.getKey().substring(FLINK_PARAMETER_PREFIX.length()) + "=" + entry.getValue())
         .collect(Collectors.joining(" "));
