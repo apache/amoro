@@ -110,10 +110,9 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     Long taskManagerMemory = getMemorySizeValue(properties, flinkConfig, TASK_MANAGER_MEMORY_PROPERTY,
         TASK_MANAGER_TOTAL_PROCESS_MEMORY);
     String jobPath = getAMSHome() + "/plugin/optimize/OptimizeJob.jar";
-    return String.format("%s/bin/flink run -m yarn-cluster -ytm %s -yjm %s %s -c %s %s -m %s %s",
+    return String.format("%s/bin/flink run -m yarn-cluster -ytm %s -yjm %s %s -c %s %s %s",
           getFlinkHome(), taskManagerMemory, jobManagerMemory, buildFlinkArgs(properties),
           FlinkOptimizer.class.getName(), jobPath,
-          0, // The actual memory usage is calculated by the optimizer
           super.buildOptimizerStartupArgsString(resource));
   }
 
