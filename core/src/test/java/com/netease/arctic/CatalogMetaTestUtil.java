@@ -62,6 +62,37 @@ public class CatalogMetaTestUtil {
     return meta;
   }
 
+  public static CatalogMeta createHadoopCatalog(File arcticBaseDir) throws IOException {
+    CatalogMeta meta = new CatalogMeta();
+    meta.setCatalogName("hadoop_default");
+    meta.setCatalogType(CatalogMetaProperties.CATALOG_TYPE_HADOOP);
+    Map<String, String> storageConfig = new HashMap<>();
+    storageConfig.put(
+        CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE,
+        CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS);
+
+    storageConfig.put(
+        CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE,
+        encodingSite(new Configuration()));
+    storageConfig.put(
+        CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE,
+        encodingSite(new Configuration()));
+    meta.setStorageConfigs(storageConfig);
+
+    meta.putToAuthConfigs(
+        CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE,
+        CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE);
+    meta.putToAuthConfigs(
+        CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME,
+        System.getProperty("user.name"));
+
+    meta.putToCatalogProperties(
+        CatalogMetaProperties.KEY_WAREHOUSE,
+        arcticBaseDir.getAbsolutePath()
+    );
+    return meta;
+  }
+
   public static String encodingSite(Configuration conf) throws IOException {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     conf.writeXml(out);
