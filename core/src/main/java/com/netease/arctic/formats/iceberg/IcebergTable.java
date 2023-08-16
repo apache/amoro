@@ -19,14 +19,14 @@
 package com.netease.arctic.formats.iceberg;
 
 import com.netease.arctic.AmoroTable;
-import com.netease.arctic.Identifier;
 import com.netease.arctic.Snapshot;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.table.TableIdentifier;
 import java.util.Map;
 
 public class IcebergTable implements AmoroTable {
   @Override
-  public Identifier id() {
+  public TableIdentifier id() {
     return null;
   }
 
