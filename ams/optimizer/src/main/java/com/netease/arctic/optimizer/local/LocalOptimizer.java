@@ -12,6 +12,11 @@ public class LocalOptimizer {
   public static void main(String[] args) throws CmdLineException {
     OptimizerConfig optimizerConfig = new OptimizerConfig(args);
     Optimizer optimizer = new Optimizer(optimizerConfig);
+
+    // calculate optimizer memory allocation
+    long memorySize = Runtime.getRuntime().maxMemory() / 1024 / 1024;
+    optimizerConfig.setMemorySize((int) memorySize);
+
     RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
     String processId = runtimeMXBean.getName().split("@")[0];
     optimizer.getToucher().withRegisterProperty(LocalOptimizerContainer.JOB_ID_PROPERTY, processId);
