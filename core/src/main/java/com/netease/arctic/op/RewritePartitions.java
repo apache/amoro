@@ -5,7 +5,9 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PendingUpdate;
 import org.apache.iceberg.StatisticsFile;
 
-public interface RewritePartitions extends PendingUpdate<StatisticsFile> {
+import java.util.List;
+
+public interface RewritePartitions extends PendingUpdate<List<StatisticsFile>> {
 
   /**
    * Add a {@link DataFile} to the table.

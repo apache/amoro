@@ -26,13 +26,14 @@ import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateStatistics;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Abstract transaction operation on {@link BaseTable} which will change
  * max transaction id map
  */
-public abstract class PartitionTransactionOperation implements PendingUpdate<StatisticsFile> {
+public abstract class PartitionTransactionOperation implements PendingUpdate<List<StatisticsFile>> {
 
   KeyedTable keyedTable;
   private Transaction tx;
@@ -63,10 +64,10 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Sta
    * @param transaction table transaction
    * @return changed partition properties
    */
-  protected abstract StatisticsFile apply(Transaction transaction);
+  protected abstract List<StatisticsFile> apply(Transaction transaction);
 
   @Override
-  public StatisticsFile apply() {
+  public List<StatisticsFile> apply() {
     return apply(tx);
   }
 
@@ -87,10 +88,10 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Sta
     }
     this.tx = keyedTable.baseTable().newTransaction();
 
-    StatisticsFile statisticsFile = apply();
-    if (statisticsFile != null) {
+    List<StatisticsFile> statisticsFiles = apply();
+    if (statisticsFiles != null && !statisticsFiles.isEmpty()) {
       UpdateStatistics updateStatistics = this.tx.updateStatistics();
-      updateStatistics.setStatistics(statisticsFile.snapshotId(), statisticsFile);
+      statisticsFiles.forEach(s -> updateStatistics.setStatistics(s.snapshotId(), s));
       updateStatistics.commit();
     }
 
