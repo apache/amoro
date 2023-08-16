@@ -217,6 +217,15 @@ public class PuffinUtil {
     }
   }
 
+  public static StatisticsFile copyToSnapshot(StatisticsFile statisticsFile, long snapshotId) {
+    return new GenericStatisticsFile(
+        snapshotId,
+        statisticsFile.path(),
+        statisticsFile.fileSizeInBytes(),
+        statisticsFile.fileFooterSizeInBytes(),
+        statisticsFile.blobMetadata());
+  }
+
   private static <T> String encodePartitionValues(PartitionSpec spec, StructLikeMap<T> partitionValues) {
     Map<String, T> stringKeyMap = Maps.newHashMap();
     for (StructLike pd : partitionValues.keySet()) {

@@ -31,6 +31,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.StructLikeMap;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -58,10 +59,10 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
   }
 
   @Override
-  protected StatisticsFile apply(Transaction transaction) {
+  protected List<StatisticsFile> apply(Transaction transaction) {
     PartitionSpec spec = transaction.table().spec();
     if (this.addFiles.isEmpty()) {
-      return null;
+      return Collections.emptyList();
     }
 
     Preconditions.checkNotNull(this.optimizedSequence, "optimized sequence must be set.");
@@ -80,10 +81,12 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
     }
     addFiles.forEach(f -> optimizedSequence.put(f.partition(), this.optimizedSequence));
 
-    return PuffinUtil.writer(transaction.table(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
-        .addOptimizedSequence(optimizedSequence)
-        .overwrite()
-        .write();
+    StatisticsFile statisticsFile =
+        PuffinUtil.writer(transaction.table(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
+            .addOptimizedSequence(optimizedSequence)
+            .overwrite()
+            .write();
+    return Collections.singletonList(statisticsFile);
   }
 
   @Override
