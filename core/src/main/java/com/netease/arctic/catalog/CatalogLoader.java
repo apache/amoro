@@ -18,10 +18,8 @@
 
 package com.netease.arctic.catalog;
 
-import com.netease.arctic.AmoroCatalog;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.PooledAmsClient;
-import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.Constants;
@@ -37,12 +35,10 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.thrift.TException;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
