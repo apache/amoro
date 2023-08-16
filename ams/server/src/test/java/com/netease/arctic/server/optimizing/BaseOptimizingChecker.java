@@ -75,7 +75,9 @@ public class BaseOptimizingChecker extends PersistentBase {
     Assert.assertEquals(optimizeType, optimizingProcess.getOptimizingType());
     Assert.assertEquals(
         fileCntBefore,
-        optimizingProcess.getSummary().getRewriteDataFileCnt() + optimizingProcess.getSummary().getEqDeleteFileCnt() +
+        optimizingProcess.getSummary().getReRowDeletedDataFileCnt() +
+            optimizingProcess.getSummary().getRewriteDataFileCnt() +
+            optimizingProcess.getSummary().getEqDeleteFileCnt() +
             optimizingProcess.getSummary().getPosDeleteFileCnt());
     Assert.assertEquals(fileCntAfter, optimizingProcess.getSummary().getNewFileCnt());
   }

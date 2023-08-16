@@ -61,28 +61,30 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL, 1, 1);
     assertIdRange(readRecords(table), 1, 100);
     // assert file are in hive location
-    // assertIdRange(readHiveTableData(), 1, 100);
+    assertIdRange(readHiveTableData(), 1, 100);
 
     // Step2: write 1 change delete record
-    writeChange(table, null, Lists.newArrayList(
+    writeChange(table, Lists.newArrayList(
+        newRecord(101, "aaa", quickDateWithZone(3))
+    ), Lists.newArrayList(
         newRecord(1, "aaa", quickDateWithZone(3))
     ));
-    // wait Minor Optimize result, generate 1 pos-delete file
+    // wait Minor Optimize result, generate 1 pos-delete file and 1 data file, but not move to hive location
     optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
-    assertIdRange(readRecords(table), 2, 100);
-    // assertIdRange(readHiveTableData(), 1, 100);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 3, 2);
+    assertIdRange(readRecords(table), 2, 101);
+    assertIdRange(readHiveTableData(), 1, 100);
 
     // Step3: write 2 small files to base
-    writeBase(table, rangeFromTo(101, 102, "aaa", quickDateWithZone(3)));
+    writeBase(table, rangeFromTo(102, 103, "aaa", quickDateWithZone(3)));
     // should not optimize with 1 small file
-    optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
-    writeBase(table, rangeFromTo(103, 104, "aaa", quickDateWithZone(3)));
-    // wait Major Optimize result, generate 1 data file from 2 small files, but not move to hive location
+    checker.assertOptimizeHangUp();
+    writeBase(table, rangeFromTo(104, 105, "aaa", quickDateWithZone(3)));
+    // wait Minor Optimize result, generate 1 data file, but not move to hive location
     optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 3, 1);
-    assertIdRange(readRecords(table), 2, 104);
+    assertIdRange(readRecords(table), 2, 105);
+    assertIdRange(readHiveTableData(), 1, 100);
 
     checker.assertOptimizeHangUp();
   }
@@ -91,21 +93,23 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
     KeyedTable table = arcticTable.asKeyedTable();
     // Step1: write 1 data file into base node(0,0)
     updateProperties(table, TableProperties.BASE_FILE_INDEX_HASH_BUCKET, 1 + "");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, 1000 + "");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES, false + "");
     writeBase(table, rangeFromTo(1, 100, "aaa", quickDateWithZone(3)));
     // wait Full Optimize result
     OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL, 1, 1);
     assertIdRange(readRecords(table), 1, 100);
     // assert file are in hive location
-    // assertIdRange(readHiveTableData(), 1, 100);
+    assertIdRange(readHiveTableData(), 1, 100);
 
     // Step2: write 1 small file to base
     writeBase(table, rangeFromTo(101, 102, "aaa", quickDateWithZone(3)));
     // wait Major Optimize result, generate 1 data file from 2 small files, but not move to hive location
     optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL, 1, 1);
     assertIdRange(readRecords(table), 1, 102);
-    // assertIdRange(readHiveTableData(), 1, 102);
+    assertIdRange(readHiveTableData(), 1, 102);
 
     checker.assertOptimizeHangUp();
   }

@@ -68,11 +68,13 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
   public Map<String, Long> getFromSequence() {
     return partitionPlanMap.entrySet().stream()
+        .filter(e -> ((AbstractPartitionPlan) e.getValue()).getFromSequence() != null)
         .collect(Collectors.toMap(Map.Entry::getKey, e -> ((AbstractPartitionPlan) e.getValue()).getFromSequence()));
   }
 
   public Map<String, Long> getToSequence() {
     return partitionPlanMap.entrySet().stream()
+        .filter(e -> ((AbstractPartitionPlan) e.getValue()).getToSequence() != null)
         .collect(Collectors.toMap(Map.Entry::getKey, e -> ((AbstractPartitionPlan) e.getValue()).getToSequence()));
   }
 
