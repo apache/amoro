@@ -23,7 +23,7 @@
     <parent>
         <artifactId>amoro-ams</artifactId>
         <groupId>com.netease.amoro</groupId>
-        <version>0.5.0-SNAPSHOT</version>
+        <version>0.6.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -36,6 +36,7 @@
         <avro.version>1.10.1</avro.version>
         <optimizer-flink.version>1.14.6</optimizer-flink.version>
         <flink.scala.suffix>_2.12</flink.scala.suffix>
+        <snakeyaml.version>1.30</snakeyaml.version>
     </properties>
 
     <dependencies>
@@ -223,6 +224,12 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-1.2-api</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>${snakeyaml.version}</version>
         </dependency>
     </dependencies>
 
