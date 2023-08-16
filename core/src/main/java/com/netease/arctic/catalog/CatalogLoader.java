@@ -18,8 +18,10 @@
 
 package com.netease.arctic.catalog;
 
+import com.netease.arctic.AmoroCatalog;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.PooledAmsClient;
+import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.Constants;
@@ -109,12 +111,14 @@ public class CatalogLoader {
       CatalogUtil.mergeCatalogProperties(catalogMeta, props);
       String catalogImpl;
       Set<TableFormat> tableFormats = CatalogUtil.tableFormats(catalogMeta);
-      Preconditions.checkArgument(tableFormats.size() == 1,
+      Preconditions.checkArgument(
+          tableFormats.size() == 1,
           "Catalog support only one table format now.");
       TableFormat tableFormat = tableFormats.iterator().next();
       switch (type) {
         case CATALOG_TYPE_HADOOP:
-          Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG),
+          Preconditions.checkArgument(
+              tableFormat.equals(TableFormat.ICEBERG),
               "Hadoop catalog support iceberg table only.");
           if (catalogMeta.getCatalogProperties().containsKey(CatalogMetaProperties.TABLE_FORMATS)) {
             catalogImpl = ICEBERG_CATALOG_IMPL;
@@ -145,9 +149,11 @@ public class CatalogLoader {
 
           break;
         case CATALOG_TYPE_CUSTOM:
-          Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG),
+          Preconditions.checkArgument(
+              tableFormat.equals(TableFormat.ICEBERG),
               "Custom catalog support iceberg table only.");
-          Preconditions.checkArgument(catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL),
+          Preconditions.checkArgument(
+              catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL),
               "Custom catalog properties must contains " + CatalogProperties.CATALOG_IMPL);
           catalogImpl = ICEBERG_CATALOG_IMPL;
           break;

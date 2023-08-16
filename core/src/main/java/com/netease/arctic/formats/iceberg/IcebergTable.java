@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,16 +16,37 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api;
+package com.netease.arctic.formats.iceberg;
 
-/**
- * Table formats Arctic supported
- *
- * @since 0.4.0
- */
-public enum TableFormat {
-  ICEBERG,
-  MIXED_ICEBERG,
-  MIXED_HIVE,
-  PAIMON;
+import com.netease.arctic.AmoroTable;
+import com.netease.arctic.Identifier;
+import com.netease.arctic.Snapshot;
+import com.netease.arctic.ams.api.TableFormat;
+import java.util.Map;
+
+public class IcebergTable implements AmoroTable {
+  @Override
+  public Identifier id() {
+    return null;
+  }
+
+  @Override
+  public TableFormat format() {
+    return null;
+  }
+
+  @Override
+  public Map<String, String> properties() {
+    return null;
+  }
+
+  @Override
+  public Object originalTable() {
+    return null;
+  }
+
+  @Override
+  public Snapshot currentSnapshot() {
+    return null;
+  }
 }
