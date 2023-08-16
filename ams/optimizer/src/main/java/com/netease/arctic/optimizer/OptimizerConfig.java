@@ -38,12 +38,8 @@ public class OptimizerConfig implements Serializable {
       usage = "Optimizer execution parallel", required = true)
   private int executionParallel;
 
-  /**
-   * @deprecated This parameter is deprecated and will be removed in version 0.7.0.
-   */
-  @Deprecated
   @Option(name = "-m", aliases = "--" + PropertyNames.OPTIMIZER_MEMORY_SIZE,
-      usage = "Optimizer memory size(MB)")
+      usage = "Optimizer memory size(MB)", required = true)
   private int memorySize;
 
   @Option(name = "-g", aliases = "--" + PropertyNames.OPTIMIZER_GROUP_NAME,
