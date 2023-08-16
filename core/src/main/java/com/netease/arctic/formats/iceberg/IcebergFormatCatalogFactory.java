@@ -28,8 +28,8 @@ import java.util.Map;
 
 public class IcebergFormatCatalogFactory implements FormatCatalogFactory {
   @Override
-  public FormatCatalog create(Map<String, String> properties, Configuration configuration) {
-    Catalog icebergCatalog = CatalogUtil.buildIcebergCatalog("iceberg", properties, configuration);
+  public FormatCatalog create(String name, Map<String, String> properties, Configuration configuration) {
+    Catalog icebergCatalog = CatalogUtil.buildIcebergCatalog(name, properties, configuration);
     return new IcebergFormatCatalog(icebergCatalog);
   }
 

@@ -21,7 +21,12 @@ package com.netease.arctic.formats.iceberg;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.FormatCatalog;
 import org.apache.iceberg.catalog.Catalog;
+import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.catalog.SupportsNamespaces;
+import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class IcebergFormatCatalog implements FormatCatalog {
 
@@ -33,34 +38,48 @@ public class IcebergFormatCatalog implements FormatCatalog {
 
   @Override
   public List<String> listDatabases() {
-    return null;
+    if (icebergCatalog instanceof SupportsNamespaces) {
+      return ((SupportsNamespaces) icebergCatalog).listNamespaces()
+          .stream().map(ns -> ns.level(0))
+          .collect(Collectors.toList());
+    }
+    return Lists.newArrayList();
   }
 
   @Override
   public boolean exist(String database) {
-    return false;
+    return listDatabases().contains(database);
   }
 
   @Override
   public boolean exist(String database, String table) {
-    return false;
+    TableIdentifier identifier = TableIdentifier.of(database, table);
+    return icebergCatalog.tableExists(identifier);
   }
 
   @Override
   public void createDatabase(String database) {
-
+    if (icebergCatalog instanceof SupportsNamespaces) {
+      Namespace ns = Namespace.of(database);
+      ((SupportsNamespaces) icebergCatalog).createNamespace(ns);
+    }
   }
 
   @Override
   public void dropDatabase(String database) {
-
+    Namespace ns = Namespace.of(database);
+    if (icebergCatalog instanceof SupportsNamespaces) {
+      ((SupportsNamespaces) icebergCatalog).dropNamespace(ns);
+    }
   }
 
   @Override
   public List<String> listTables(String database) {
-    return null;
+    return icebergCatalog.listTables(Namespace.of(database))
+        .stream()
+        .map(TableIdentifier::name)
+        .collect(Collectors.toList());
   }
-
 
   @Override
   public AmoroTable loadTable(String database, String table) {

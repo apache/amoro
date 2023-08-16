@@ -34,7 +34,7 @@ public interface FormatCatalogFactory {
    * @param configuration hadoop configuration
    * @return a new {@link FormatCatalog}
    */
-  FormatCatalog create(Map<String, String> properties, Configuration configuration);
+  FormatCatalog create(String catalogName, Map<String, String> properties, Configuration configuration);
 
   /**
    * format of this catalog factory

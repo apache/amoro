@@ -119,6 +119,11 @@ public class CommonUniversalCatalog implements UnifiedCatalog {
   }
 
   @Override
+  public String name() {
+    return this.meta.getCatalogName();
+  }
+
+  @Override
   public List<TableMeta> listTableMetas(String database) {
     if (!exist(database)) {
       throw new NoSuchDatabaseException("Database: " + database + " does not exist.");
@@ -160,7 +165,8 @@ public class CommonUniversalCatalog implements UnifiedCatalog {
     Map<TableFormat, FormatCatalog> formatCatalogs = Maps.newConcurrentMap();
     for (FormatCatalogFactory factory : loader) {
       if (formats.contains(factory.format())) {
-        formatCatalogs.put(factory.format(), factory.create(meta.getCatalogProperties(), store.getConfiguration()));
+        FormatCatalog catalog = factory.create(name(), meta.getCatalogProperties(), store.getConfiguration());
+        formatCatalogs.put(factory.format(), catalog);
       }
     }
     this.formatCatalogs = formatCatalogs;

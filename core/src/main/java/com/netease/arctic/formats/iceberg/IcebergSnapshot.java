@@ -16,30 +16,31 @@
  * limitations under the License.
  */
 
-package com.netease.arctic;
+package com.netease.arctic.formats.iceberg;
 
-import java.util.List;
+import com.netease.arctic.Snapshot;
 
-/**
- * UnifiedCatalog is a catalog that can visit tables with all types of formats.
- */
-public interface UnifiedCatalog extends AmoroCatalog {
+public class IcebergSnapshot implements Snapshot {
+  public IcebergSnapshot(org.apache.iceberg.Snapshot snapshot) {
+  }
 
-  /**
-   * name of this catalog
-   */
-  String name();
+  @Override
+  public long watermark() {
+    return 0;
+  }
 
-  /**
-   * list tables with format
-   *
-   * @param database given database
-   * @return identifier and format list
-   */
-  List<TableMeta> listTableMetas(String database);
+  @Override
+  public long commitTime() {
+    return 0;
+  }
 
-  /**
-   * Refresh catalog meta
-   */
-  void refresh();
+  @Override
+  public String id() {
+    return null;
+  }
+
+  @Override
+  public boolean equals(Snapshot snapshot) {
+    return false;
+  }
 }

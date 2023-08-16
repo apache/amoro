@@ -33,7 +33,7 @@ public interface AmoroTable {
    * Returns the name of this table
    */
   default String name() {
-    return id().getTableName();
+    return id().toString();
   }
 
   /**
