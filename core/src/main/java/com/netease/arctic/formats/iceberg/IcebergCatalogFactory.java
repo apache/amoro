@@ -26,11 +26,11 @@ import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.catalog.Catalog;
 import java.util.Map;
 
-public class IcebergFormatCatalogFactory implements FormatCatalogFactory {
+public class IcebergCatalogFactory implements FormatCatalogFactory {
   @Override
   public FormatCatalog create(String name, Map<String, String> properties, Configuration configuration) {
     Catalog icebergCatalog = CatalogUtil.buildIcebergCatalog(name, properties, configuration);
-    return new IcebergFormatCatalog(icebergCatalog);
+    return new IcebergCatalog(icebergCatalog);
   }
 
   @Override

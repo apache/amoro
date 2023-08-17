@@ -22,7 +22,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.TableIdentifier;
 import java.util.Map;
 
-public interface AmoroTable {
+public interface AmoroTable<T> {
 
   /**
    * Returns the {@link TableIdentifier} of this table
@@ -49,7 +49,7 @@ public interface AmoroTable {
   /**
    * Returns the original of this table
    */
-  Object originalTable();
+  T originalTable();
 
   /**
    * Returns the current snapshot of this table

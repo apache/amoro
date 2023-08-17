@@ -16,4 +16,4 @@
 # limitations under the License.
 #
 
-com.netease.arctic.formats.iceberg.IcebergFormatCatalogFactory
+com.netease.arctic.formats.iceberg.IcebergCatalogFactory

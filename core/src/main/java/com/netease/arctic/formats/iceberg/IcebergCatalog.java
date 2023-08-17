@@ -20,6 +20,7 @@ package com.netease.arctic.formats.iceberg;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.FormatCatalog;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
@@ -28,11 +29,11 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class IcebergFormatCatalog implements FormatCatalog {
+public class IcebergCatalog implements FormatCatalog {
 
   private final Catalog icebergCatalog;
 
-  public IcebergFormatCatalog(Catalog icebergCatalog) {
+  public IcebergCatalog(Catalog icebergCatalog) {
     this.icebergCatalog = icebergCatalog;
   }
 
@@ -82,7 +83,11 @@ public class IcebergFormatCatalog implements FormatCatalog {
   }
 
   @Override
-  public AmoroTable loadTable(String database, String table) {
-    return null;
+  public AmoroTable<?> loadTable(String database, String table) {
+    Table icebergTable = icebergCatalog.loadTable(TableIdentifier.of(database, table));
+    return new IcebergTable(
+        com.netease.arctic.table.TableIdentifier.of(icebergCatalog.name(), database, table),
+        icebergTable
+    );
   }
 }

@@ -34,12 +34,4 @@ public interface Snapshot {
    * Returns the id of this snapshot.
    */
   String id();
-
-  /**
-   * is this snapshot equals to the given snapshot
-   *
-   * @param snapshot given snapshot
-   * @return true if equals
-   */
-  boolean equals(Snapshot snapshot);
 }

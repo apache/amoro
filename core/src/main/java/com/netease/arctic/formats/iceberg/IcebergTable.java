@@ -25,7 +25,7 @@ import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.Table;
 import java.util.Map;
 
-public class IcebergTable implements AmoroTable {
+public class IcebergTable implements AmoroTable<Table> {
 
   TableIdentifier identifier;
   Table table;
@@ -51,7 +51,7 @@ public class IcebergTable implements AmoroTable {
   }
 
   @Override
-  public Object originalTable() {
+  public Table originalTable() {
     return table;
   }
 

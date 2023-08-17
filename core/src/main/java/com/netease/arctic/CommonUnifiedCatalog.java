@@ -24,36 +24,35 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.thrift.TException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class CommonUniversalCatalog implements UnifiedCatalog {
+public class CommonUnifiedCatalog implements UnifiedCatalog {
 
-  private AmsClient client;
+  private Supplier<CatalogMeta> metaSupplier;
   private CatalogMeta meta;
   private Map<TableFormat, FormatCatalog> formatCatalogs = Maps.newHashMap();
+  private Map<String, String> properties = Maps.newHashMap();
 
-  public CommonUniversalCatalog(AmsClient client, CatalogMeta meta) {
-    this.client = client;
+  public CommonUnifiedCatalog(
+      Supplier<CatalogMeta> catalogMetaSupplier, CatalogMeta meta, Map<String, String> properties
+  ) {
     this.meta = meta;
+    this.properties.putAll(properties);
+    this.metaSupplier = catalogMetaSupplier;
     initializeFormatCatalogs();
   }
 
   @Override
   public List<String> listDatabases() {
-    return formatCatalogAsOrder(TableFormat.ICEBERG, TableFormat.PAIMON)
-        .map(FormatCatalog::listDatabases)
-        .flatMap(List::stream)
-        .distinct()
-        .sorted()
-        .collect(Collectors.toList());
+    return findFirstFormatCatalog(TableFormat.values()).listDatabases();
   }
 
   @Override
@@ -72,14 +71,8 @@ public class CommonUniversalCatalog implements UnifiedCatalog {
     if (exist(database)) {
       throw new AlreadyExistsException("Database: " + database + " already exists.");
     }
-    formatCatalogAsOrder(TableFormat.ICEBERG, TableFormat.PAIMON)
-        .forEach(formatCatalog -> {
-          try {
-            formatCatalog.createDatabase(database);
-          } catch (AlreadyExistsException e) {
-            // ignore
-          }
-        });
+
+    findFirstFormatCatalog(TableFormat.values()).createDatabase(database);
   }
 
   @Override
@@ -90,32 +83,25 @@ public class CommonUniversalCatalog implements UnifiedCatalog {
     if (listTableMetas(database).size() > 0) {
       throw new IllegalStateException("Database: " + database + " is not empty.");
     }
-    formatCatalogAsOrder(TableFormat.ICEBERG, TableFormat.PAIMON)
-        .forEach(formatCatalog -> {
-          try {
-            formatCatalog.dropDatabase(database);
-          } catch (NoSuchDatabaseException e) {
-            // ignore
-          }
-        });
+    findFirstFormatCatalog(TableFormat.values()).dropDatabase(database);
   }
 
   @Override
-  public AmoroTable loadTable(String database, String table) {
+  public AmoroTable<?> loadTable(String database, String table) {
     if (!exist(database)) {
       throw new NoSuchDatabaseException("Database: " + database + " does not exist.");
     }
 
-    Optional<AmoroTable> amoroTable = formatCatalogAsOrder(
-        TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG, TableFormat.PAIMON
-    ).map(formatCatalog -> {
-      try {
-        return formatCatalog.loadTable(database, table);
-      } catch (NoSuchTableException | NoSuchDatabaseException e) {
-        return null;
-      }
-    }).filter(Objects::nonNull).findFirst();
-    return amoroTable.orElseThrow(() -> new NoSuchTableException("Table: " + table + " does not exist."));
+    return formatCatalogAsOrder(TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG, TableFormat.PAIMON)
+        .map(formatCatalog -> {
+          try {
+            return formatCatalog.loadTable(database, table);
+          } catch (NoSuchTableException e) {
+            return null;
+          }
+        })
+        .filter(Objects::nonNull).findFirst()
+        .orElseThrow(() -> new NoSuchTableException("Table: " + table + " does not exist."));
   }
 
   @Override
@@ -148,15 +134,9 @@ public class CommonUniversalCatalog implements UnifiedCatalog {
 
   @Override
   public synchronized void refresh() {
-    try {
-      this.meta = client.getCatalog(meta.getCatalogName());
-      initializeFormatCatalogs();
-    } catch (TException e) {
-      throw new IllegalStateException(String.format("failed load catalog %s.", this.meta.getCatalogName()), e);
-    }
+    this.meta = metaSupplier.get();
+    CatalogUtil.mergeCatalogProperties(meta, properties);
   }
-
-  // ================== protect methods ==================
 
   protected void initializeFormatCatalogs() {
     ServiceLoader<FormatCatalogFactory> loader = ServiceLoader.load(FormatCatalogFactory.class);
@@ -172,8 +152,6 @@ public class CommonUniversalCatalog implements UnifiedCatalog {
     this.formatCatalogs = formatCatalogs;
   }
 
-  // ===================== private methods =====================
-
   /**
    * get format catalogs as given format order
    */
@@ -181,5 +159,13 @@ public class CommonUniversalCatalog implements UnifiedCatalog {
     return Stream.of(formats)
         .filter(formatCatalogs::containsKey)
         .map(formatCatalogs::get);
+  }
+
+  private FormatCatalog findFirstFormatCatalog(TableFormat... formats) {
+    return Stream.of(formats)
+        .filter(formatCatalogs::containsKey)
+        .map(formatCatalogs::get)
+        .findFirst()
+        .orElseThrow(() -> new IllegalStateException("No format catalog found."));
   }
 }

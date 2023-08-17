@@ -21,26 +21,24 @@ package com.netease.arctic.formats.iceberg;
 import com.netease.arctic.Snapshot;
 
 public class IcebergSnapshot implements Snapshot {
+  org.apache.iceberg.Snapshot snapshot;
+
   public IcebergSnapshot(org.apache.iceberg.Snapshot snapshot) {
+    this.snapshot = snapshot;
   }
 
   @Override
   public long watermark() {
-    return 0;
+    return commitTime();
   }
 
   @Override
   public long commitTime() {
-    return 0;
+    return snapshot.timestampMillis();
   }
 
   @Override
   public String id() {
-    return null;
-  }
-
-  @Override
-  public boolean equals(Snapshot snapshot) {
-    return false;
+    return String.valueOf(snapshot.snapshotId());
   }
 }
