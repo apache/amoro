@@ -175,6 +175,18 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
               .withKeyMetadata(outputFile.keyMetadata())
               .equalityFieldIds(equalityFieldIds)
               .buildEqualityWriter();
+        case ORC:
+          return ORC.writeDeletes(outputFile.encryptingOutputFile())
+              .createWriterFunc((schema, typDesc) -> FlinkOrcWriter.buildWriter(lazyEqDeleteFlinkSchema(), schema))
+              .withPartition(partition)
+              .overwrite()
+              .setAll(props)
+              .metricsConfig(metricsConfig)
+              .rowSchema(eqDeleteRowSchema)
+              .withSpec(spec)
+              .withKeyMetadata(outputFile.keyMetadata())
+              .equalityFieldIds(equalityFieldIds)
+              .buildEqualityWriter();
 
         default:
           throw new UnsupportedOperationException(
@@ -214,6 +226,18 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
               .withSpec(spec)
               .withKeyMetadata(outputFile.keyMetadata())
               .transformPaths(path -> StringData.fromString(path.toString()))
+              .buildPositionWriter();
+
+        case ORC:
+          return ORC.writeDeletes(outputFile.encryptingOutputFile())
+              .createWriterFunc((schema, typDesc) -> FlinkOrcWriter.buildWriter(lazyPosDeleteFlinkSchema(), schema))
+              .withPartition(partition)
+              .overwrite()
+              .setAll(props)
+              .metricsConfig(metricsConfig)
+              .rowSchema(posDeleteRowSchema)
+              .withSpec(spec)
+              .withKeyMetadata(outputFile.keyMetadata())
               .buildPositionWriter();
 
         default:
