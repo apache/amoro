@@ -135,4 +135,4 @@ The description of the relevant parameters is shown in the following table:
 | -a AMS_THRIFT_SERVER_URL | The address of the AMS thrift service, for example: thrift://127.0.0.1:1261, can be obtained from the config.yaml configuration. |
 | -g OPTIMIZE_GROUP_NAME | Group name created in advance under external container. |
 | -p EXECUTOR_PARALLELISM | Optimizer parallelism usage. |
-| -m EXECUTOR_MEMORY | Optimizer memory usage. |
+| -m EXECUTOR_MEMORY | @Deprecated Optimizer memory usage. |
