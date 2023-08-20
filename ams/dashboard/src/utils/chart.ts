@@ -19,14 +19,7 @@
 import { ECOption } from '@/components/echarts'
 import i18n from '@/language/i18n'
 import { ILineChartOriginalData } from '@/types/common.type'
-
-/**
- * Compare two dates
- * @param date1
- * @param date2
- * @returns
- */
-const compareDate = (date1 = '', date2 = '') => new Date(date1).valueOf() - new Date(date2).valueOf()
+import { dateFormat } from '.'
 
 /**
  * Sort the line chart data in time order.
@@ -34,7 +27,7 @@ const compareDate = (date1 = '', date2 = '') => new Date(date1).valueOf() - new 
  * @param sortCallback
  * @returns
  */
-const sortLineChartDataByKey = (obj: ILineChartOriginalData = {}, sortCallback: ((a: string, b: string) => number) = compareDate): ILineChartOriginalData => {
+const sortLineChartDataByKey = (obj: ILineChartOriginalData = {}, sortCallback: ((a: string, b: string) => number) = (a, b) => (Number(a) - Number(b))): ILineChartOriginalData => {
   const keys = Object.keys(obj)
   if (!keys.length) {
     return {}
@@ -64,7 +57,7 @@ export const generateLineChartOption = (titleText: string, data: ILineChartOrigi
     },
     xAxis: {
       type: 'category',
-      data: Object.keys(data)
+      data: Object.keys(data).map(d => dateFormat(d))
     }
   }
   titleText && (option.title = {

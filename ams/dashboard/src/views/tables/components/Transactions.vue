@@ -122,12 +122,13 @@ async function getTableInfo() {
     const rcData: ILineChartOriginalData = {}
     const fcData: ILineChartOriginalData = {}
     list.forEach((p: TransactionItem) => {
-      p.commitTime = p.commitTime ? dateFormat(p.commitTime) : ''
-      dataSource.push(p)
+      // Assume that the time will not conflict and use the time as the unique key without formatting it.
       const { summary } = p
       const { 'total-records': totalRecords, 'total-equality-deletes': totalEqualityDeletes, 'total-position-deletes': totalPositionDeletes, 'total-data-files': totalDataFiles, 'total-delete-files': totalDeleteFiles } = summary
       rcData[p.commitTime] = { totalRecords, totalEqualityDeletes, totalPositionDeletes }
       fcData[p.commitTime] = { totalFiles: Number(totalDataFiles) + Number(totalDeleteFiles), totalDataFiles, totalDeleteFiles }
+      p.commitTime = p.commitTime ? dateFormat(p.commitTime) : ''
+      dataSource.push(p)
     })
     recordChartOption.value = generateLineChartOption(t('recordChartTitle'), rcData)
     fileChartOption.value = generateLineChartOption(t('fileChartTitle'), fcData)
