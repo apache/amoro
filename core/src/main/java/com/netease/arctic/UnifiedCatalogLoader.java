@@ -29,7 +29,7 @@ public class UnifiedCatalogLoader {
   public static UnifiedCatalog loadUnifiedCatalog(
       String amsUri, String catalogName, Map<String, String> clientSideProperties) {
     AmsClient client = new PooledAmsClient(amsUri);
-    return null;
+    return loadUnifiedCatalog(client, catalogName, clientSideProperties);
   }
 
   private static UnifiedCatalog loadUnifiedCatalog(AmsClient client, String catalogName, Map<String, String> props) {

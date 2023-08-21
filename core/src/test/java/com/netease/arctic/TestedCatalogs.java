@@ -19,28 +19,16 @@
 package com.netease.arctic;
 
 import com.netease.arctic.ams.api.TableFormat;
-import org.apache.hadoop.conf.Configuration;
-import java.util.Map;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.catalog.BasicCatalogTestHelper;
+import com.netease.arctic.catalog.CatalogTestHelper;
 
-/**
- * A factory to create a {@link FormatCatalog}.
- */
-public interface FormatCatalogFactory {
+public class TestedCatalogs {
+  public static CatalogTestHelper internalCatalog(TableFormat... format) {
+    return new BasicCatalogTestHelper(CatalogMetaProperties.CATALOG_TYPE_AMS, null, format);
+  }
 
-  /**
-   * Creates a {@link FormatCatalog} given a map of catalog properties.
-   *
-   * @param catalogName   catalog name
-   * @param metastoreType metastore type
-   * @param properties    catalog properties
-   * @param configuration hadoop configuration
-   * @return a new {@link FormatCatalog}
-   */
-  FormatCatalog create(
-      String catalogName, String metastoreType, Map<String, String> properties, Configuration configuration);
-
-  /**
-   * format of this catalog factory
-   */
-  TableFormat format();
+  public static CatalogTestHelper hadoopCatalog(TableFormat... format) {
+    return new BasicCatalogTestHelper(CatalogMetaProperties.CATALOG_TYPE_HADOOP, null, format);
+  }
 }

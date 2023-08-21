@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -145,7 +144,8 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     Map<TableFormat, FormatCatalog> formatCatalogs = Maps.newConcurrentMap();
     for (FormatCatalogFactory factory : loader) {
       if (formats.contains(factory.format())) {
-        FormatCatalog catalog = factory.create(name(), meta.getCatalogProperties(), store.getConfiguration());
+        FormatCatalog catalog = factory.create(
+            name(), meta.getCatalogType(), meta.getCatalogProperties(), store.getConfiguration());
         formatCatalogs.put(factory.format(), catalog);
       }
     }

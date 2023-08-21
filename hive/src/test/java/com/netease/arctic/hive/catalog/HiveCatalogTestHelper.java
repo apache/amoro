@@ -20,6 +20,7 @@ package com.netease.arctic.hive.catalog;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.catalog.MixedTables;
@@ -43,6 +44,11 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
         tableFormat.equals(TableFormat.MIXED_HIVE), "Cannot support table format:" + tableFormat);
     this.tableFormat = tableFormat;
     this.hiveConf = hiveConf;
+  }
+
+  @Override
+  public String metastoreType() {
+    return CatalogMetaProperties.CATALOG_TYPE_HIVE;
   }
 
   @Override

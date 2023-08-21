@@ -26,7 +26,8 @@ import java.util.Map;
 
 public class PaimonFormatCatalog implements FormatCatalogFactory {
   @Override
-  public FormatCatalog create(String name, Map<String, String> properties, Configuration configuration) {
+  public FormatCatalog create(
+      String name, String metastoreType, Map<String, String> properties, Configuration configuration) {
     // TODO: implement this method
     return null;
   }
