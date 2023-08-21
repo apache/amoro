@@ -185,7 +185,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
             Iterables.transform(
                 eqDeletes, s -> CloseableIterable.transform(
                     openDeletes(s.asDeleteFile(), deleteSchema),
-                    r -> new RecordWithLsn(s.getSequenceNumber(), r)))),
+                    r -> new RecordWithLsn(s.dataSequenceNumber(), r)))),
         RecordWithLsn::recordCopy);
 
     InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(deleteSchema.asStruct());

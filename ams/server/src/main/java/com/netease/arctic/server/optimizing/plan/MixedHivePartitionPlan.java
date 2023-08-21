@@ -45,7 +45,7 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   @Override
   public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
     super.addFile(dataFile, deletes);
-    long sequenceNumber = dataFile.getSequenceNumber();
+    long sequenceNumber = dataFile.dataSequenceNumber();
     if (sequenceNumber > maxSequence) {
       maxSequence = sequenceNumber;
     }

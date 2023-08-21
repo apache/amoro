@@ -33,7 +33,6 @@ import com.netease.arctic.server.exception.OptimizingCommitException;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.optimizing.UnKeyedTableCommit;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.SequenceNumberFetcher;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
@@ -272,17 +271,12 @@ public class TestUnKeyedTableCommit extends TableTestBase {
     }
     Map<String, ContentFile<?>> maps = new HashMap<>();
     CloseableIterable<FileScanTask> fileScanTasks = arcticTable.asUnkeyedTable().newScan().planFiles();
-    SequenceNumberFetcher sequenceNumberFetcher = new SequenceNumberFetcher(
-        arcticTable.asUnkeyedTable(),
-        arcticTable.asUnkeyedTable().currentSnapshot().snapshotId());
     for (FileScanTask fileScanTask : fileScanTasks) {
       maps.put(fileScanTask.file().path().toString(), new IcebergDataFile(
-          fileScanTask.file(),
-          sequenceNumberFetcher.sequenceNumberOf(fileScanTask.file().path().toString())));
+          fileScanTask.file()));
       for (DeleteFile deleteFile : fileScanTask.deletes()) {
         maps.put(deleteFile.path().toString(), new IcebergDeleteFile(
-            deleteFile,
-            sequenceNumberFetcher.sequenceNumberOf(deleteFile.path().toString())));
+            deleteFile));
       }
     }
     return maps;
