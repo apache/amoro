@@ -213,5 +213,8 @@ onMounted(() => {
   :deep(.ant-btn-link) {
     padding: 0;
   }
+  .ant-table-wrapper {
+    margin-top: 24px;
+  }
 }
 </style>

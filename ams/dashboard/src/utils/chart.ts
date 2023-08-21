@@ -58,6 +58,10 @@ export const generateLineChartOption = (titleText: string, data: ILineChartOrigi
     xAxis: {
       type: 'category',
       data: Object.keys(data).map(d => dateFormat(d))
+    },
+    grid: {
+      top: 40,
+      bottom: 50
     }
   }
   titleText && (option.title = {
@@ -75,10 +79,11 @@ export const generateLineChartOption = (titleText: string, data: ILineChartOrigi
       legendMap[tKey].push(val[key])
     })
   })
-  option.legend = { orient: 'vertical', left: 'right', top: 'middle', data: Object.keys(legendMap) }
+  option.legend = { top: 'bottom', data: Object.keys(legendMap), lineStyle: { opacity: 0 } }
   option.series = Object.keys(legendMap).map(key => ({
     name: key,
     type: 'line',
+    symbol: 'circle',
     data: legendMap[key]
   }))
   return option
