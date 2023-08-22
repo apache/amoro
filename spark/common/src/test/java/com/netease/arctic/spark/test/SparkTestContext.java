@@ -19,12 +19,13 @@
 package com.netease.arctic.spark.test;
 
 
-import com.netease.arctic.CatalogMetaTestUtil;
 import com.netease.arctic.SingletonResourceUtil;
 import com.netease.arctic.TestAms;
+import com.netease.arctic.TestedCatalogs;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.TestHMS;
-import com.netease.arctic.spark.test.utils.HiveCatalogMetaTestUtil;
+import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
@@ -37,11 +38,11 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.thrift.TException;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.IOException;
 import java.util.Map;
 
 public class SparkTestContext {
 
+  public static final String SESSION_CATALOG_IMPL = "com.netease.arctic.spark.ArcticSparkSessionCatalog";
   public static final String CATALOG_IMPL = "com.netease.arctic.spark.ArcticSparkCatalog";
   public static final String SQL_EXTENSIONS_IMPL = "com.netease.arctic.spark.ArcticSparkExtensions";
 
@@ -96,18 +97,20 @@ public class SparkTestContext {
     return hms.getHiveClient();
   }
 
-  private void setupCatalogs() throws IOException {
+  private void setupCatalogs() {
     if (SingletonResourceUtil.isUseSingletonResource()) {
       if (catalogSet) {
         return;
       }
     }
-    CatalogMeta arcticCatalogMeta = CatalogMetaTestUtil.createHadoopCatalog(warehouse.getRoot());
+    CatalogMeta arcticCatalogMeta = TestedCatalogs.hadoopCatalog(TableFormat.MIXED_ICEBERG)
+        .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
     arcticCatalogMeta.setCatalogName(EXTERNAL_HADOOP_CATALOG_NAME);
     ams.getAmsHandler().createCatalog(arcticCatalogMeta);
 
     HiveConf hiveConf = hms.getHiveConf();
-    CatalogMeta hiveCatalogMeta = HiveCatalogMetaTestUtil.createArcticCatalog(warehouse.getRoot(), hiveConf);
+    CatalogMeta hiveCatalogMeta = HiveCatalogTestHelper.build(hiveConf, TableFormat.MIXED_HIVE)
+            .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
     hiveCatalogMeta.setCatalogName(EXTERNAL_HIVE_CATALOG_NAME);
     ams.getAmsHandler().createCatalog(hiveCatalogMeta);
     catalogSet = true;

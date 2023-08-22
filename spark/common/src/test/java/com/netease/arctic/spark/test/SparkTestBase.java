@@ -59,7 +59,7 @@ public class SparkTestBase {
 
   protected Map<String, String> sparkSessionConfig() {
     return ImmutableMap.of(
-        "spark.sql.catalog.spark_catalog", "com.netease.arctic.spark.ArcticSparkSessionCatalog",
+        "spark.sql.catalog.spark_catalog", SparkTestContext.SESSION_CATALOG_IMPL,
         "spark.sql.catalog.spark_catalog.url", context.catalogUrl(SparkTestContext.EXTERNAL_HIVE_CATALOG_NAME)
     );
   }
