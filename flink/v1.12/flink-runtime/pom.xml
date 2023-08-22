@@ -156,6 +156,7 @@
                                     <include>com.github.ben-manes.caffeine:*</include>
                                     <include>org.apache.avro:*</include>
                                     <include>org.apache.orc:*</include>
+                                    <include>io.airlift:*</include>
                                     <include>commons-collections:*</include>
                                     <include>cglib:*</include>
                                     <include>com.google.guava:*</include>
