@@ -340,8 +340,8 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
 
     @Override
     public List<SplitTask> splitTasks(int targetTaskCount) {
-      // bin-packing
       List<FileTask> allDataFiles = Lists.newLinkedList();
+       // Prioritize packaging of fragment files to increase the executable rate(see method taskNeedExecute)
       fragmentFiles.forEach((dataFile, deleteFiles) ->
           allDataFiles.add(new FileTask(dataFile, deleteFiles, true)));
       segmentFiles.forEach((dataFile, deleteFiles) ->
