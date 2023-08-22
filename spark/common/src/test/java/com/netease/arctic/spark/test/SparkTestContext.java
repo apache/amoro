@@ -103,7 +103,7 @@ public class SparkTestContext {
         return;
       }
     }
-    CatalogMeta arcticCatalogMeta = TestedCatalogs.hadoopCatalog(TableFormat.MIXED_ICEBERG)
+    CatalogMeta arcticCatalogMeta = TestedCatalogs.internalCatalog(TableFormat.MIXED_ICEBERG)
         .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
     arcticCatalogMeta.setCatalogName(EXTERNAL_HADOOP_CATALOG_NAME);
     ams.getAmsHandler().createCatalog(arcticCatalogMeta);
