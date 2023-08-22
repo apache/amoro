@@ -248,6 +248,7 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     public void createCatalog(CatalogMeta catalogMeta) {
+      dropCatalog(catalogMeta.getCatalogName());
       catalogs.add(catalogMeta);
     }
 
@@ -360,7 +361,8 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     @Override
-    public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
+    public Blocker block(
+        TableIdentifier tableIdentifier, List<BlockableOperation> operations,
         Map<String, String> properties) throws TException {
       Map<String, Blocker> blockers = this.tableBlockers.computeIfAbsent(tableIdentifier, t -> new HashMap<>());
       long now = System.currentTimeMillis();

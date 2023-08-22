@@ -26,5 +26,6 @@ package com.netease.arctic.ams.api;
 public enum TableFormat {
   ICEBERG,
   MIXED_ICEBERG,
-  MIXED_HIVE;
+  MIXED_HIVE,
+  PAIMON;
 }
