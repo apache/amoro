@@ -119,7 +119,7 @@ public class ArcticChangeTableScan extends DataTableScan implements ChangeTableI
       }
     });
     return CloseableIterable
-        .transform(files, f -> IcebergContentFile.wrap(f.file(), f.getDataSequenceNumber()));
+        .transform(files, f -> IcebergContentFile.wrap(f.file()));
   }
 
   @Override
@@ -127,7 +127,7 @@ public class ArcticChangeTableScan extends DataTableScan implements ChangeTableI
     return CloseableIterable.transform(planFilesWithSequence(), fileWithSequence ->
         new BasicArcticFileScanTask(DefaultKeyedFile.parseChange(
             ((DataFile) fileWithSequence),
-            fileWithSequence.getSequenceNumber()), null, table().spec(), null)
+            fileWithSequence.dataSequenceNumber()), null, table().spec(), null)
     );
   }
 

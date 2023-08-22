@@ -56,7 +56,7 @@ public abstract class TableFileScanHelperTestBase extends TableTestBase {
       IcebergDataFile file = fileScanResult.file();
       assertDataFileClass(file);
       if (sequence != null) {
-        Assert.assertEquals(sequence.longValue(), file.getSequenceNumber());
+        Assert.assertEquals(sequence.longValue(), file.dataSequenceNumber().longValue());
       }
       if (deleteCnt != null) {
         Assert.assertEquals(deleteCnt.intValue(), fileScanResult.deleteFiles().size());

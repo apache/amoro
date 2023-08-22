@@ -75,17 +75,14 @@ public class UnkeyedTableFileScanHelper implements TableFileScanHelper {
   }
 
   private IcebergDataFile wrapBaseFile(DataFile dataFile) {
-    DefaultKeyedFile defaultKeyedFile = DefaultKeyedFile.parseBase(dataFile);
-    // the sequence of base file is useless for unkeyed table, since equality-delete files are not supported now
-    return new IcebergDataFile(defaultKeyedFile, 0);
+    return new IcebergDataFile(DefaultKeyedFile.parseBase(dataFile));
   }
 
   private IcebergContentFile<?> wrapDeleteFile(DeleteFile deleteFile) {
     if (deleteFile.content() == FileContent.EQUALITY_DELETES) {
       throw new UnsupportedOperationException("optimizing unkeyed table not support equality-delete");
     }
-    // the sequence of pos-delete file is useless for unkeyed table, since equality-delete files are not supported now
-    return new IcebergDeleteFile(deleteFile, 0);
+    return new IcebergDeleteFile(deleteFile);
   }
 
 }

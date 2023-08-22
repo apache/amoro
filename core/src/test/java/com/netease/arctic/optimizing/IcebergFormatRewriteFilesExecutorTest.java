@@ -133,16 +133,16 @@ public class IcebergFormatRewriteFilesExecutorTest extends TableTestBase {
         outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData, deletes).first();
 
     scanTask = new RewriteFilesInput(
-        new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
-        new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
-        new IcebergDeleteFile[] {new IcebergDeleteFile(eqDeleteFile, 2L),
-                                 new IcebergDeleteFile(posDeleteFile, 3L)},
+        new IcebergDataFile[] {DataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
+        new IcebergDataFile[] {DataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
+        new IcebergDeleteFile[] {DataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile,2L),
+                                 DataTestHelpers.wrapIcebergDeleteFile(posDeleteFile,3L)},
         new IcebergDeleteFile[] {},
         getArcticTable());
 
     dataScanTask = new RewriteFilesInput(
-        new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
-        new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
+        new IcebergDataFile[] {DataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
+        new IcebergDataFile[] {DataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
         new IcebergDeleteFile[] {},
         new IcebergDeleteFile[] {},
         getArcticTable());

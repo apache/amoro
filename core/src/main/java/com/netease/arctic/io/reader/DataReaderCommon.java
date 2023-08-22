@@ -74,7 +74,7 @@ public class DataReaderCommon {
 
     idToConstant.put(
         MetadataColumns.TRANSACTION_ID_FILED_ID,
-        convertConstant.apply(Types.LongType.get(), dataFile.getSequenceNumber()));
+        convertConstant.apply(Types.LongType.get(), dataFile.dataSequenceNumber()));
 
     return idToConstant;
   }

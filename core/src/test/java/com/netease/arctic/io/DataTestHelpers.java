@@ -22,6 +22,8 @@ import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.FileNameRules;
+import com.netease.arctic.data.IcebergDataFile;
+import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.io.reader.AbstractArcticDataReader;
 import com.netease.arctic.io.reader.AbstractIcebergDataReader;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
@@ -438,5 +440,23 @@ public class DataTestHelpers {
     expectRecord.setField(com.netease.arctic.table.MetadataColumns.FILE_OFFSET_FILED_NAME, offset);
     expectRecord.setField(com.netease.arctic.table.MetadataColumns.CHANGE_ACTION_NAME, action.toString());
     return expectRecord;
+  }
+
+  public static IcebergDataFile wrapIcebergDataFile(DataFile dataFile, Long dataSequenceNumber) {
+    return new IcebergDataFile(dataFile) {
+      @Override
+      public Long dataSequenceNumber() {
+        return dataSequenceNumber;
+      }
+    };
+  }
+
+  public static IcebergDeleteFile wrapIcebergDeleteFile(DeleteFile deleteFile, Long dataSequenceNumber) {
+    return new IcebergDeleteFile(deleteFile) {
+      @Override
+      public Long dataSequenceNumber() {
+        return dataSequenceNumber;
+      }
+    };
   }
 }

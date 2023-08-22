@@ -33,8 +33,7 @@ public class IcebergDeleteFile extends IcebergContentFile<DeleteFile> implements
 
   private DeleteFile deleteFile;
 
-  public IcebergDeleteFile(DeleteFile deleteFile, long sequenceNumber) {
-    super(sequenceNumber);
+  public IcebergDeleteFile(DeleteFile deleteFile) {
     this.deleteFile = deleteFile;
   }
 
@@ -135,11 +134,21 @@ public class IcebergDeleteFile extends IcebergContentFile<DeleteFile> implements
 
   @Override
   public DeleteFile copy() {
-    return new IcebergDeleteFile(deleteFile.copy(), getSequenceNumber());
+    return new IcebergDeleteFile(deleteFile.copy());
   }
 
   @Override
   public DeleteFile copyWithoutStats() {
-    return new IcebergDeleteFile(deleteFile.copyWithoutStats(), getSequenceNumber());
+    return new IcebergDeleteFile(deleteFile.copyWithoutStats());
+  }
+
+  @Override
+  public Long dataSequenceNumber() {
+    return deleteFile.dataSequenceNumber();
+  }
+
+  @Override
+  public Long fileSequenceNumber() {
+    return deleteFile.fileSequenceNumber();
   }
 }
