@@ -48,11 +48,11 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
     super.addFile(dataFile, deletes);
     if (evaluator().isChangeFile(dataFile)) {
-      markSequence(dataFile.getSequenceNumber());
+      markSequence(dataFile.dataSequenceNumber());
     }
     for (IcebergContentFile<?> deleteFile : deletes) {
       if (deleteFile.content() == FileContent.DATA) {
-        markSequence(deleteFile.getSequenceNumber());
+        markSequence(deleteFile.dataSequenceNumber());
       }
     }
   }

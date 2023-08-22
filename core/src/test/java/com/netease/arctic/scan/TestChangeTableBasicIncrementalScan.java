@@ -111,8 +111,8 @@ public class TestChangeTableBasicIncrementalScan extends TableDataTestBase {
     int cnt = 0;
     for (IcebergContentFile<?> file : files) {
       cnt++;
-      Assert.assertTrue(file.getSequenceNumber() >= minSequence);
-      Assert.assertTrue(file.getSequenceNumber() <= maxSequence);
+      Assert.assertTrue(file.dataSequenceNumber() >= minSequence);
+      Assert.assertTrue(file.dataSequenceNumber() <= maxSequence);
     }
     Assert.assertEquals(fileCnt, cnt);
   }

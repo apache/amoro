@@ -22,8 +22,6 @@ import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.server.ArcticServiceConstants;
-import com.netease.arctic.utils.SequenceNumberFetcher;
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
@@ -44,13 +42,11 @@ import java.util.stream.Collectors;
 public class IcebergTableFileScanHelper implements TableFileScanHelper {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergTableFileScanHelper.class);
   private final Table table;
-  private final SequenceNumberFetcher sequenceNumberFetcher;
   private PartitionFilter partitionFilter;
   private final long snapshotId;
 
   public IcebergTableFileScanHelper(Table table, long snapshotId) {
     this.table = table;
-    this.sequenceNumberFetcher = new SequenceNumberFetcher(table, snapshotId);
     this.snapshotId = snapshotId;
   }
 
@@ -74,7 +70,7 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
             continue;
           }
         }
-        IcebergDataFile dataFile = createDataFile(task.file());
+        IcebergDataFile dataFile = new IcebergDataFile(task.file());
         List<IcebergContentFile<?>> deleteFiles =
             task.deletes().stream()
                 .map(deleteFilesGenerator::generate)
@@ -95,19 +91,13 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
     return this;
   }
 
-  private IcebergDataFile createDataFile(DataFile dataFile) {
-    return new IcebergDataFile(dataFile, sequenceNumberFetcher.sequenceNumberOf(dataFile.path().toString()));
-  }
-
   private class IcebergDeleteFileCacheGenerator {
     private final Map<DeleteFile, IcebergDeleteFile> deleteFilesCache = Maps.newHashMap();
 
     IcebergDeleteFile generate(DeleteFile deleteFile) {
       return deleteFilesCache.computeIfAbsent(
           deleteFile,
-          file ->
-              new IcebergDeleteFile(
-                  file, sequenceNumberFetcher.sequenceNumberOf(file.path().toString())));
+          IcebergDeleteFile::new);
     }
   }
 }
