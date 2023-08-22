@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,29 +16,29 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.catalog;
+package com.netease.arctic.formats.iceberg;
 
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import org.apache.iceberg.catalog.Catalog;
+import com.netease.arctic.Snapshot;
 
-public interface CatalogTestHelper {
+public class IcebergSnapshot implements Snapshot {
+  org.apache.iceberg.Snapshot snapshot;
 
-  String TEST_CATALOG_NAME = TableTestHelper.TEST_CATALOG_NAME;
-
-  String metastoreType();
-
-  default boolean isInternalCatalog() {
-    return CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(metastoreType());
+  public IcebergSnapshot(org.apache.iceberg.Snapshot snapshot) {
+    this.snapshot = snapshot;
   }
 
-  TableFormat tableFormat();
+  @Override
+  public long watermark() {
+    return commitTime();
+  }
 
-  CatalogMeta buildCatalogMeta(String baseDir);
+  @Override
+  public long commitTime() {
+    return snapshot.timestampMillis();
+  }
 
-  Catalog buildIcebergCatalog(CatalogMeta catalogMeta);
-
-  MixedTables buildMixedTables(CatalogMeta catalogMeta);
+  @Override
+  public String id() {
+    return String.valueOf(snapshot.snapshotId());
+  }
 }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,29 +16,30 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.catalog;
+package com.netease.arctic;
 
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import org.apache.iceberg.catalog.Catalog;
+import java.util.List;
 
-public interface CatalogTestHelper {
+/**
+ * UnifiedCatalog is a catalog that can visit tables with all types of formats.
+ */
+public interface UnifiedCatalog extends AmoroCatalog {
 
-  String TEST_CATALOG_NAME = TableTestHelper.TEST_CATALOG_NAME;
+  /**
+   * name of this catalog
+   */
+  String name();
 
-  String metastoreType();
+  /**
+   * list tables with format
+   *
+   * @param database given database
+   * @return identifier and format list
+   */
+  List<TableMeta> listTableMetas(String database);
 
-  default boolean isInternalCatalog() {
-    return CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(metastoreType());
-  }
-
-  TableFormat tableFormat();
-
-  CatalogMeta buildCatalogMeta(String baseDir);
-
-  Catalog buildIcebergCatalog(CatalogMeta catalogMeta);
-
-  MixedTables buildMixedTables(CatalogMeta catalogMeta);
+  /**
+   * Refresh catalog meta
+   */
+  void refresh();
 }

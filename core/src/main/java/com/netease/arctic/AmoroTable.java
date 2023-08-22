@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,29 +16,43 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.catalog;
+package com.netease.arctic;
 
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import org.apache.iceberg.catalog.Catalog;
+import com.netease.arctic.table.TableIdentifier;
+import java.util.Map;
 
-public interface CatalogTestHelper {
+public interface AmoroTable<T> {
 
-  String TEST_CATALOG_NAME = TableTestHelper.TEST_CATALOG_NAME;
+  /**
+   * Returns the {@link TableIdentifier} of this table
+   */
+  TableIdentifier id();
 
-  String metastoreType();
-
-  default boolean isInternalCatalog() {
-    return CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(metastoreType());
+  /**
+   * Returns the name of this table
+   */
+  default String name() {
+    return id().toString();
   }
 
-  TableFormat tableFormat();
+  /**
+   * Returns the {@link TableFormat} of this table
+   */
+  TableFormat format();
 
-  CatalogMeta buildCatalogMeta(String baseDir);
+  /**
+   * Returns the properties of this table
+   */
+  Map<String, String> properties();
 
-  Catalog buildIcebergCatalog(CatalogMeta catalogMeta);
+  /**
+   * Returns the original of this table
+   */
+  T originalTable();
 
-  MixedTables buildMixedTables(CatalogMeta catalogMeta);
+  /**
+   * Returns the current snapshot of this table
+   */
+  Snapshot currentSnapshot();
 }
