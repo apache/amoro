@@ -48,6 +48,7 @@ export const generateLineChartOption = (titleText: string, data: ILineChartOrigi
     return {}
   }
   data = sortLineChartDataByKey(data)
+  const dataKeys = Object.keys(data)
   const option: ECOption = {
     tooltip: {
       trigger: 'axis'
@@ -57,7 +58,11 @@ export const generateLineChartOption = (titleText: string, data: ILineChartOrigi
     },
     xAxis: {
       type: 'category',
-      data: Object.keys(data).map(d => dateFormat(d))
+      data: dataKeys.map(d => dateFormat(d)),
+      axisTick: {
+        alignWithLabel: true,
+        interval: 0
+      }
     },
     grid: {
       top: 40,
