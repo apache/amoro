@@ -160,7 +160,7 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
       }
       DataFileType type = ((DefaultKeyedFile) (contentFile.asDataFile().internalDataFile())).type();
       if (type == DataFileType.INSERT_FILE || type == DataFileType.EQ_DELETE_FILE) {
-        minSequence = Math.min(minSequence, contentFile.getSequenceNumber());
+        minSequence = Math.min(minSequence, contentFile.dataSequenceNumber());
       }
     }
     StructLikeMap<Long> structLikeMap = StructLikeMap.create(spec.partitionType());
@@ -178,7 +178,7 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
       }
       DataFileType type = ((DefaultKeyedFile) (contentFile.asDataFile().internalDataFile())).type();
       if (type == DataFileType.INSERT_FILE || type == DataFileType.EQ_DELETE_FILE) {
-        minSequence = Math.max(minSequence, contentFile.getSequenceNumber());
+        minSequence = Math.max(minSequence, contentFile.dataSequenceNumber());
       }
     }
     StructLikeMap<Long> structLikeMap = StructLikeMap.create(spec.partitionType());
@@ -197,7 +197,7 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
     if (rewriteDataFiles != null) {
       rewriteData = Arrays.stream(rewriteDataFiles)
           .map(s -> (DefaultKeyedFile) allFiles.get(s.path().toString()))
-          .map(s -> IcebergContentFile.wrap(s, s.transactionId()).asDataFile())
+          .map(s -> IcebergContentFile.wrap(s).asDataFile())
           .toArray(IcebergDataFile[]::new);
     }
 
@@ -205,7 +205,7 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
     if (rePositionDataFiles != null) {
       rewritePos = Arrays.stream(rePositionDataFiles)
           .map(s -> (DefaultKeyedFile) allFiles.get(s.path().toString()))
-          .map(s -> IcebergContentFile.wrap(s, s.transactionId()).asDataFile())
+          .map(s -> IcebergContentFile.wrap(s).asDataFile())
           .toArray(IcebergDataFile[]::new);
     }
 
@@ -215,9 +215,9 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
           .map(s -> allFiles.get(s.path().toString()))
           .map(s -> {
                 if (s instanceof DefaultKeyedFile) {
-                  return IcebergContentFile.wrap(s, ((DefaultKeyedFile) s).transactionId());
+                  return IcebergContentFile.wrap(s);
                 } else {
-                  return IcebergContentFile.wrap(s, 0);
+                  return IcebergContentFile.wrap(s);
                 }
           }
           )

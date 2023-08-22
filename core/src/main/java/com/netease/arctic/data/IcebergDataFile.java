@@ -32,8 +32,7 @@ public class IcebergDataFile extends IcebergContentFile<DataFile> implements Dat
 
   private final DataFile dataFile;
 
-  public IcebergDataFile(DataFile dataFile, long sequenceNumber) {
-    super(sequenceNumber);
+  public IcebergDataFile(DataFile dataFile) {
     this.dataFile = dataFile;
   }
 
@@ -119,12 +118,22 @@ public class IcebergDataFile extends IcebergContentFile<DataFile> implements Dat
 
   @Override
   public DataFile copy() {
-    return new IcebergDataFile(dataFile.copy(), getSequenceNumber());
+    return new IcebergDataFile(dataFile.copy());
   }
 
   @Override
   public DataFile copyWithoutStats() {
-    return new IcebergDataFile(dataFile.copyWithoutStats(), getSequenceNumber());
+    return new IcebergDataFile(dataFile.copyWithoutStats());
+  }
+
+  @Override
+  public Long dataSequenceNumber() {
+    return dataFile.dataSequenceNumber();
+  }
+
+  @Override
+  public Long fileSequenceNumber() {
+    return dataFile.fileSequenceNumber();
   }
 
   public DataFile internalDataFile() {

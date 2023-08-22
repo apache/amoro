@@ -34,7 +34,6 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
@@ -134,7 +133,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
           }
           IcebergDataFile dataFile = wrapBaseFile(task.file());
           List<IcebergContentFile<?>> deleteFiles =
-              task.deletes().stream().map(this::wrapDeleteFile).collect(Collectors.toList());
+              task.deletes().stream().map(IcebergDeleteFile::new).collect(Collectors.toList());
           List<IcebergContentFile<?>> relatedChangeDeleteFiles = changeFiles.getRelatedDeleteFiles(dataFile);
           deleteFiles.addAll(relatedChangeDeleteFiles);
           results.add(new FileScanResult(dataFile, deleteFiles));
@@ -156,19 +155,13 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
 
   private IcebergDataFile wrapChangeFile(IcebergDataFile icebergDataFile) {
     DefaultKeyedFile defaultKeyedFile = DefaultKeyedFile.parseChange(icebergDataFile.internalFile(),
-        icebergDataFile.getSequenceNumber());
-    return new IcebergDataFile(defaultKeyedFile, icebergDataFile.getSequenceNumber());
+        icebergDataFile.dataSequenceNumber());
+    return new IcebergDataFile(defaultKeyedFile);
   }
 
   private IcebergDataFile wrapBaseFile(DataFile dataFile) {
     DefaultKeyedFile defaultKeyedFile = DefaultKeyedFile.parseBase(dataFile);
-    long transactionId = FileNameRules.parseTransactionId(dataFile.path().toString());
-    return new IcebergDataFile(defaultKeyedFile, transactionId);
-  }
-
-  private IcebergContentFile<?> wrapDeleteFile(DeleteFile deleteFile) {
-    long transactionId = FileNameRules.parseTransactionId(deleteFile.path().toString());
-    return new IcebergDeleteFile(deleteFile, transactionId);
+    return new IcebergDataFile(defaultKeyedFile);
   }
 
   private long getMaxSequenceLimit(KeyedTable arcticTable,
@@ -195,9 +188,9 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     try (CloseableIterable<IcebergContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence()) {
       for (IcebergContentFile<?> file : files) {
         SnapshotFileGroup fileGroup =
-            changeFilesGroupBySequence.computeIfAbsent(file.getSequenceNumber(), key -> {
-              long txId = FileNameRules.parseChangeTransactionId(file.path().toString(), file.getSequenceNumber());
-              return new SnapshotFileGroup(file.getSequenceNumber(), txId);
+            changeFilesGroupBySequence.computeIfAbsent(file.dataSequenceNumber(), key -> {
+              long txId = FileNameRules.parseChangeTransactionId(file.path().toString(), file.dataSequenceNumber());
+              return new SnapshotFileGroup(file.dataSequenceNumber(), txId);
             });
         fileGroup.addFile();
       }

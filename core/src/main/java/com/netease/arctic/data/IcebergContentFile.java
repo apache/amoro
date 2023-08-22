@@ -31,15 +31,6 @@ import java.util.Objects;
  * Interface can get iceberg sequenceNumber
  */
 public abstract class IcebergContentFile<F> implements ContentFile<F>, Serializable {
-  private long sequenceNumber;
-
-  public IcebergContentFile(long sequenceNumber) {
-    this.sequenceNumber = sequenceNumber;
-  }
-
-  public long getSequenceNumber() {
-    return sequenceNumber;
-  }
 
   public boolean isDataFile() {
     return content() == FileContent.DATA;
@@ -61,18 +52,18 @@ public abstract class IcebergContentFile<F> implements ContentFile<F>, Serializa
     return (IcebergDeleteFile) this;
   }
 
-  public static IcebergContentFile<?> wrap(ContentFile<?> contentFile, long sequenceNumber) {
+  public static IcebergContentFile<?> wrap(ContentFile<?> contentFile) {
     if (contentFile instanceof DataFile) {
       if (contentFile instanceof IcebergDataFile) {
         return (IcebergDataFile) contentFile;
       } else {
-        return new IcebergDataFile((DataFile) contentFile, sequenceNumber);
+        return new IcebergDataFile((DataFile) contentFile);
       }
     } else if (contentFile instanceof DeleteFile) {
       if (contentFile instanceof IcebergDeleteFile) {
         return (IcebergDeleteFile) contentFile;
       } else {
-        return new IcebergDeleteFile((DeleteFile) contentFile, sequenceNumber);
+        return new IcebergDeleteFile((DeleteFile) contentFile);
       }
     } else {
       throw new IllegalArgumentException("Only support DataFile or DeleteFile, can not support: " +
