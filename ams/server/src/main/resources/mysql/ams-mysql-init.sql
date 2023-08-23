@@ -210,19 +210,3 @@ CREATE TABLE `table_blocker` (
   PRIMARY KEY (`blocker_id`),
   KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Table blockers';
-
-CREATE TABLE `transaction_metric` (
-  `catalog_name` varchar(64) NOT NULL COMMENT 'Catalog name',
-  `db_name` varchar(128) NOT NULL COMMENT 'Database name',
-  `table_name` varchar(128) NOT NULL COMMENT 'Table name',
-  `transaction_id` varchar(64) NOT NULL COMMENT 'Transaction id',
-  `total_files` bigint(20) NOT NULL COMMENT 'Total files',
-  `add_files` bigint(20) NOT NULL COMMENT 'Add files',
-  `remove_files` bigint(20) NOT NULL COMMENT 'Remove files',
-  `total_records` bigint(20) NOT NULL COMMENT 'Total records',
-  `add_records` bigint(20) NOT NULL COMMENT 'Add records',
-  `remove_records` bigint(20) NOT NULL COMMENT 'Remove records',
-  `other_metrics` mediumtext COMMENT 'Other metrics'
-  PRIMARY KEY (`catalog_name`,`db_name`,`table_name`,`transaction_id`),
-  KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Transaction metadata';
