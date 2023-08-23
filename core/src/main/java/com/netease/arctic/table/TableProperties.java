@@ -109,7 +109,6 @@ public class TableProperties {
   public static final String SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES = "self-optimizing.full.rewrite-all-files";
   public static final boolean SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT = true;
 
-
   /**
    * deprecated table optimize related properties
    */
@@ -258,6 +257,20 @@ public class TableProperties {
   public static final String OWNER = "owner";
 
   /**
+   * table format related properties
+   */
+  public static final String TABLE_FORMAT = "table-format";
+  public static final String TABLE_FORMAT_MIXED_ICEBERG = "mixed-iceberg";
+  public static final String TABLE_FORMAT_MIXED_HIVE = "mixed-hive";
+
+  public static final String MIXED_FORMAT_PRIMARY_KEY_FIELDS = "mixed-format.primary-key-fields";
+  public static final String MIXED_FORMAT_TABLE_STORE = "mixed-format.table-store";
+  public static final String MIXED_FORMAT_TABLE_STORE_BASE = "mixed-format.table-store.base";
+  public static final String MIXED_FORMAT_TABLE_STORE_CHANGE = "mixed-format.table-store.change";
+
+  public static final String MIXED_ICEBERG_CHANGE_STORE_IDENTIFIER = "mixed-format.change.identifier";
+
+  /**
    * Protected properties which should not be read by user.
    */
   public static final Set<String> READ_PROTECTED_PROPERTIES = new HashSet<>();
@@ -275,7 +288,6 @@ public class TableProperties {
     READ_PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
     READ_PROTECTED_PROPERTIES.add(FORMAT_VERSION);
     READ_PROTECTED_PROPERTIES.add("flink.max-continuous-empty-commits");
-
 
     WRITE_PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
     WRITE_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_OPTIMIZED_SEQUENCE);

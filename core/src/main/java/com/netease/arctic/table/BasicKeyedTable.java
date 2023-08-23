@@ -22,6 +22,7 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.mixed.EmptyAmsClient;
 import com.netease.arctic.op.KeyedPartitionRewrite;
 import com.netease.arctic.op.KeyedSchemaUpdate;
 import com.netease.arctic.op.OverwriteBaseFiles;
@@ -41,7 +42,6 @@ import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
-import org.apache.thrift.TException;
 
 import java.util.Map;
 
@@ -52,23 +52,23 @@ public class BasicKeyedTable implements KeyedTable {
   private final String tableLocation;
   private final PrimaryKeySpec primaryKeySpec;
 
-  /**
-   * @deprecated since 0.5.0, will be removed in 0.6.0;
-   */
-  @Deprecated
-  protected final AmsClient client;
-
   protected final BaseTable baseTable;
   protected final ChangeTable changeTable;
   protected TableMeta tableMeta;
 
   public BasicKeyedTable(
-      TableMeta tableMeta, String tableLocation,
-      PrimaryKeySpec primaryKeySpec, AmsClient client, BaseTable baseTable, ChangeTable changeTable) {
-    this.tableMeta = tableMeta;
-    this.tableLocation = tableLocation;
-    this.primaryKeySpec = primaryKeySpec;
-    this.client = client;
+      TableIdentifier identifier, ArcticFileIO io,
+      PrimaryKeySpec keySpec, Table baseStore, Table changeStore,
+      Map<String, String> catalogProperties) {
+    this.tableLocation = null;
+    this.primaryKeySpec = keySpec;
+    this.baseTable = new BaseInternalTable(identifier, baseStore, io, new EmptyAmsClient(), catalogProperties);
+    this.changeTable = new ChangeInternalTable(identifier, changeStore, io, new EmptyAmsClient(), catalogProperties);
+  }
+
+  public BasicKeyedTable(PrimaryKeySpec keySpec, BaseTable baseTable, ChangeTable changeTable) {
+    this.tableLocation = null;
+    this.primaryKeySpec = keySpec;
     this.baseTable = baseTable;
     this.changeTable = changeTable;
   }
@@ -141,14 +141,6 @@ public class BasicKeyedTable implements KeyedTable {
 
   @Override
   public void refresh() {
-    try {
-      if (client != null) {
-        this.tableMeta = client.getTable(this.tableMeta.getTableIdentifier());
-      }
-    } catch (TException e) {
-      throw new IllegalStateException("failed refresh table from ams", e);
-    }
-
     baseTable.refresh();
     if (primaryKeySpec().primaryKeyExisted()) {
       changeTable.refresh();
