@@ -29,7 +29,6 @@ import com.netease.arctic.io.reader.BaseIcebergPosDeleteReader;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.TableProperties;
-import java.util.Map;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
@@ -49,6 +48,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @RunWith(Parameterized.class)
