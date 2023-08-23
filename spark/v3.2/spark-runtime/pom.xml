@@ -60,6 +60,7 @@
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <artifactSet>
                                 <includes>
+                                    <include>com.netease.amoro:amoro-spark-3-common</include>
                                     <include>com.netease.amoro:amoro-spark-3.2</include>
                                     <include>com.netease.amoro:amoro-core</include>
                                     <include>com.netease.amoro:amoro-ams-api</include>
