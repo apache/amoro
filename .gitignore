@@ -64,3 +64,4 @@ conf/
 *unit_test_base_tmp/
 
 */.gitignore
+local/conf/
