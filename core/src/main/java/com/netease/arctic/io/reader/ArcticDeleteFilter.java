@@ -143,10 +143,9 @@ public abstract class ArcticDeleteFilter<T> {
     this.primaryKeyId = primaryKeySpec.primaryKeyStruct().fields().stream()
         .map(Types.NestedField::fieldId).collect(Collectors.toSet());
     this.requiredSchema = fileProjection(tableSchema, requestedSchema, eqDeletes, posDeletes);
-    Set<Integer> deleteIds = Sets.newHashSet(primaryKeyId);
-    deleteIds.add(MetadataColumns.TRANSACTION_ID_FILED.fieldId());
-    deleteIds.add(MetadataColumns.FILE_OFFSET_FILED.fieldId());
-    this.deleteSchema = TypeUtil.select(requiredSchema, deleteIds);
+    this.deleteSchema = TypeUtil.join(
+        TypeUtil.select(requiredSchema, Sets.newHashSet(primaryKeyId)),
+        new Schema(MetadataColumns.FILE_OFFSET_FILED, MetadataColumns.TRANSACTION_ID_FILED));
     if (CollectionUtils.isNotEmpty(sourceNodes)) {
       this.deleteNodeFilter = new NodeFilter<>(sourceNodes, deleteSchema, primaryKeySpec, record -> record);
     } else {
@@ -314,9 +313,9 @@ public abstract class ArcticDeleteFilter<T> {
 
       case ORC:
         return ORC.read(input)
-              .project(deleteSchema)
-              .createReaderFunc(
-                  fileSchema -> GenericOrcReader.buildReader(deleteSchema, fileSchema)).build();
+            .project(deleteSchema)
+            .createReaderFunc(
+                fileSchema -> GenericOrcReader.buildReader(deleteSchema, fileSchema, idToConstant)).build();
       default:
         throw new UnsupportedOperationException(String.format(
             "Cannot read deletes, %s is not a supported format: %s",
@@ -417,9 +416,9 @@ public abstract class ArcticDeleteFilter<T> {
 
       case ORC:
         return ORC.read(input)
-              .project(deleteSchema)
-              .createReaderFunc(
-                  fileSchema -> GenericOrcReader.buildReader(deleteSchema, fileSchema)).build();
+            .project(deleteSchema)
+            .createReaderFunc(
+                fileSchema -> GenericOrcReader.buildReader(deleteSchema, fileSchema)).build();
       default:
         throw new UnsupportedOperationException(String.format(
             "Cannot read deletes, %s is not a supported format: %s",

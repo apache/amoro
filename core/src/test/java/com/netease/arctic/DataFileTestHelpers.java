@@ -20,6 +20,7 @@ package com.netease.arctic;
 
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Metrics;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -33,11 +34,17 @@ public class DataFileTestHelpers {
   public static DataFile getFile(
       String basePath, int number, PartitionSpec spec, String partitionPath,
       Metrics metrics, boolean fromCache) {
+    return getFile(basePath, number, spec, partitionPath, metrics, fromCache, FileFormat.PARQUET);
+  }
+
+  public static DataFile getFile(
+      String basePath, int number, PartitionSpec spec, String partitionPath,
+      Metrics metrics, boolean fromCache, FileFormat fileFormat) {
     String filePath;
     if (partitionPath != null) {
-      filePath = String.format("%s/%s/data-%d.parquet", basePath, partitionPath, number);
+      filePath = fileFormat.addExtension(String.format("%s/%s/data-%d.", basePath, partitionPath, number));
     } else {
-      filePath = String.format("%s/data-%d.parquet", basePath, number);
+      filePath = fileFormat.addExtension(String.format("%s/data-%d." + fileFormat, basePath, number));
     }
     if (fromCache) {
       return DATA_FILE_MAP.computeIfAbsent(filePath, path -> buildDataFile(filePath, spec, partitionPath, metrics));
@@ -52,6 +59,14 @@ public class DataFileTestHelpers {
 
   public static DataFile getFile(int number, String partitionPath) {
     return getFile("/data", number, BasicTableTestHelper.SPEC, partitionPath, null, true);
+  }
+
+  public static DataFile getFile(int number, FileFormat fileFormat) {
+    return getFile("/data", number, PartitionSpec.unpartitioned(), null, null, true, fileFormat);
+  }
+
+  public static DataFile getFile(int number, String partitionPath, FileFormat fileFormat) {
+    return getFile("/data", number, BasicTableTestHelper.SPEC, partitionPath, null, true, fileFormat);
   }
 
   private static DataFile buildDataFile(
