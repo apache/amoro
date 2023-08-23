@@ -18,6 +18,10 @@
 
 package com.netease.arctic.ams.api.metrics;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.Map;
 
 /**
@@ -43,5 +47,21 @@ public class MetricWithTags {
 
   public Map<String, Object> metrics() {
     return metrics;
+  }
+
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface TagName {
+    String value();
+  }
+
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface MetricName {
+    String value();
+  }
+
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface Metric {
   }
 }

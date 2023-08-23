@@ -16,28 +16,19 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.metrics;
+package com.netease.arctic.ams.api.metrics;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Timer;
-import org.apache.iceberg.metrics.CommitMetricsResult;
 
 public class IcebergCommitMetrics {
+  public final static String TOTAL_DURATION = "total_duration";
+  public final static String ATTEMPTS = "attempts";
 
-  private CommitMetricsResult originalMetric;
-
+  @MetricWithTags.MetricName(TOTAL_DURATION)
   private final Timer totalDuration = new Timer();
+  @MetricWithTags.MetricName(ATTEMPTS)
   private final Counter attempts = new Counter();
-
-  public IcebergCommitMetrics(CommitMetricsResult originalMetric) {
-    this.originalMetric = originalMetric;
-    if (originalMetric.totalDuration() != null) {
-      totalDuration.update(originalMetric.totalDuration().totalDuration());
-    }
-    if (originalMetric.attempts() != null) {
-      attempts.inc(originalMetric.attempts().value());
-    }
-  }
 
   public Timer getTotalDuration() {
     return totalDuration;

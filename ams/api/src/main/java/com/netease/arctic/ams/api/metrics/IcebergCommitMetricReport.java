@@ -18,10 +18,25 @@
 
 package com.netease.arctic.ams.api.metrics;
 
-/**
- * Metrics format type
- */
-public enum FormatType {
-  ICEBERG,
-  AMORO
+public interface IcebergCommitMetricReport extends MetricReport{
+
+  public final static String TABLE_NAME = "table_name";
+  public final static String SNAPSHOT_ID = "snapshot_id";
+  public final static String SEQUENCE_NUMBER = "sequence_number";
+  public final static String OPERATION = "operation";
+
+  @MetricWithTags.TagName(TABLE_NAME)
+  String tableName();
+
+  @MetricWithTags.TagName(SNAPSHOT_ID)
+  long snapshotId();
+
+  @MetricWithTags.TagName(SEQUENCE_NUMBER)
+  long sequenceNumber();
+
+  @MetricWithTags.TagName(OPERATION)
+  String operation();
+
+  @MetricWithTags.Metric
+  IcebergCommitMetrics commitMetrics();
 }
