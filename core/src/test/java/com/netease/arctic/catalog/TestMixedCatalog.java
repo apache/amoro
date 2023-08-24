@@ -57,7 +57,6 @@ public class TestMixedCatalog extends CatalogTestBase {
     return new Object[] {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG)};
   }
 
-
   @Before
   public void before() {
     if (!getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
@@ -65,12 +64,12 @@ public class TestMixedCatalog extends CatalogTestBase {
     }
   }
 
-  protected void validateCreatedTable(ArcticTable table) throws TException  {
+  protected void validateCreatedTable(ArcticTable table) throws TException {
     Assert.assertEquals(getCreateTableSchema().asStruct(), table.schema().asStruct());
     Assert.assertEquals(getCreateTableSpec(), table.spec());
     Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, table.id());
     if (table.isKeyedTable()) {
-      KeyedTable keyedTable = (KeyedTable)table;
+      KeyedTable keyedTable = (KeyedTable) table;
       Assert.assertEquals(BasicTableTestHelper.PRIMARY_KEY_SPEC, keyedTable.primaryKeySpec());
       Assert.assertEquals(getCreateTableSchema().asStruct(), keyedTable.baseTable().schema().asStruct());
       Assert.assertEquals(getCreateTableSpec(), keyedTable.baseTable().spec());
@@ -279,14 +278,16 @@ public class TestMixedCatalog extends CatalogTestBase {
   }
 
   protected void assertIcebergTableStore(Table tableStore, boolean isBaseStore, boolean isKeyedTable) {
-    Assert.assertEquals(2, ((HasTableOperations)tableStore).operations().current().formatVersion());
+    Assert.assertEquals(2, ((HasTableOperations) tableStore).operations().current().formatVersion());
     Assert.assertNotNull(tableStore.properties().get(TableProperties.TABLE_CREATE_TIME));
-    Assert.assertEquals("true",
+    Assert.assertEquals(
+        "true",
         tableStore.properties().get(org.apache.iceberg.TableProperties.METADATA_DELETE_AFTER_COMMIT_ENABLED));
-    Assert.assertEquals(String.valueOf(Integer.MAX_VALUE),
+    Assert.assertEquals(
+        String.valueOf(Integer.MAX_VALUE),
         tableStore.properties().get("flink.max-continuous-empty-commits"));
 
-    String expectTableStore = isBaseStore? TableProperties.MIXED_FORMAT_TABLE_STORE_BASE
+    String expectTableStore = isBaseStore ? TableProperties.MIXED_FORMAT_TABLE_STORE_BASE
         : TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE;
     Assert.assertEquals(expectTableStore, tableStore.properties().get(TableProperties.MIXED_FORMAT_TABLE_STORE));
 
@@ -296,6 +297,5 @@ public class TestMixedCatalog extends CatalogTestBase {
         Assert.assertNotNull(tableStore.properties().get(TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER));
       }
     }
-
   }
 }

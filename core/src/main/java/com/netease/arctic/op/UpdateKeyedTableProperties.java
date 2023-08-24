@@ -18,7 +18,6 @@
 
 package com.netease.arctic.op;
 
-import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.FileFormat;
@@ -26,7 +25,6 @@ import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
-
 import java.util.Map;
 import java.util.Set;
 

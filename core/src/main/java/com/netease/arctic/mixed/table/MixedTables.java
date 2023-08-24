@@ -58,8 +58,8 @@ public class MixedTables {
   public boolean isBaseStore(Table table) {
     String format = table.properties().get(TableProperties.TABLE_FORMAT);
     String tableStore = table.properties().get(TableProperties.MIXED_FORMAT_TABLE_STORE);
-    return TableProperties.TABLE_FORMAT_MIXED_ICEBERG.equalsIgnoreCase(format)
-        && TableProperties.MIXED_FORMAT_TABLE_STORE_BASE.equalsIgnoreCase(tableStore);
+    return TableProperties.TABLE_FORMAT_MIXED_ICEBERG.equalsIgnoreCase(format) &&
+        TableProperties.MIXED_FORMAT_TABLE_STORE_BASE.equalsIgnoreCase(tableStore);
   }
 
   public PrimaryKeySpec getPrimaryKeySpec(Table table) {

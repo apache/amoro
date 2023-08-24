@@ -20,9 +20,7 @@ package com.netease.arctic.table;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.mixed.EmptyAmsClient;
 import com.netease.arctic.op.KeyedPartitionRewrite;
 import com.netease.arctic.op.KeyedSchemaUpdate;
 import com.netease.arctic.op.OverwriteBaseFiles;
@@ -43,7 +41,6 @@ import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
-
 import java.util.Map;
 
 /**
@@ -55,7 +52,6 @@ public class BasicKeyedTable implements KeyedTable {
 
   protected final BaseTable baseTable;
   protected final ChangeTable changeTable;
-
 
   public BasicKeyedTable(String tableLocation, PrimaryKeySpec keySpec, BaseTable baseTable, ChangeTable changeTable) {
     this.tableLocation = tableLocation;
