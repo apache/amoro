@@ -44,7 +44,7 @@ import { LabelLayout, UniversalTransition } from 'echarts/features'
 import { CanvasRenderer } from 'echarts/renderers'
 
 // Use ComposeOption to combine an Option type with only the required components and charts
-type ECOption = echarts.ComposeOption<
+export type ECOption = echarts.ComposeOption<
   | BarSeriesOption
   | LineSeriesOption
   | TitleComponentOption
