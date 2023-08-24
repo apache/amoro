@@ -22,4 +22,5 @@ package com.netease.arctic.ams.api.metrics;
  * Metrics report
  */
 public interface MetricReport {
+  String name();
 }

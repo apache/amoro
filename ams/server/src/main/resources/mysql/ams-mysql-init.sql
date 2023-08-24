@@ -136,12 +136,9 @@ CREATE TABLE `table_optimizing_process`
     `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
     `from_sequence`                 mediumtext COMMENT 'from or min sequence of each partition',
     `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition',
-    `metrics`                       mediumtext COMMENT 'Metrics of this process',
     PRIMARY KEY (`process_id`),
     KEY  `table_index` (`table_id`, `plan_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
-
-ALTER TABLE `table_optimizing_process` ADD COLUMN `metrics` mediumtext COMMENT 'Metrics of this process';
 
 CREATE TABLE `task_runtime`
 (
