@@ -154,15 +154,15 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
 
     @Override
     public boolean isFullNecessary() {
-      if (!reachFullInterval()) {
+      if (!reachFullInterval() && !reachHiveRefreshInterval()) {
         return false;
       }
       return fragmentFileCount > getBaseSplitCount() || hasNewHiveData();
     }
 
     @Override
-    protected boolean reachFullInterval() {
-      return super.reachFullInterval() || reachHiveRefreshInterval();
+    protected boolean isFullOptimizing() {
+      return reachFullInterval() || reachHiveRefreshInterval();
     }
 
     protected boolean hasNewHiveData() {

@@ -43,6 +43,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   protected final OptimizingConfig config;
   protected final long fragmentSize;
   protected final long planTime;
+  private final boolean reachFullInterval;
 
   // fragment files
   protected int fragmentFileCount = 0;
@@ -66,7 +67,6 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   private Boolean necessary = null;
   private OptimizingType optimizingType = null;
   private String name;
-  private Boolean reachFullInterval = null;
 
   public CommonPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
     this.partition = partition;
@@ -74,6 +74,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     this.config = tableRuntime.getOptimizingConfig();
     this.fragmentSize = config.getTargetSize() / config.getFragmentRatio();
     this.planTime = planTime;
+    this.reachFullInterval = config.getFullTriggerInterval() >= 0 &&
+        planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
   }
 
   @Override
@@ -248,10 +250,6 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   protected boolean reachFullInterval() {
-    if (reachFullInterval == null) {
-      reachFullInterval = config.getFullTriggerInterval() >= 0 &&
-          planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
-    }
     return reachFullInterval;
   }
 
