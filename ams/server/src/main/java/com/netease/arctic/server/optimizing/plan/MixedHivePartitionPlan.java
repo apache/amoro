@@ -108,6 +108,8 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     private boolean filesNotInHiveLocation = false;
     // partition property
     protected long lastHiveOptimizedTime;
+    
+    private Boolean reachHiveRefreshInterval;
 
     public MixedHivePartitionEvaluator(TableRuntime tableRuntime, String partition, String hiveLocation,
                                        long planTime, boolean keyedTable) {
@@ -168,7 +170,11 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     }
 
     protected boolean reachHiveRefreshInterval() {
-      return config.getHiveRefreshInterval() >= 0 && planTime - lastHiveOptimizedTime > config.getHiveRefreshInterval();
+      if (reachHiveRefreshInterval == null) {
+        reachHiveRefreshInterval =
+            config.getHiveRefreshInterval() >= 0 && planTime - lastHiveOptimizedTime > config.getHiveRefreshInterval();
+      }
+      return reachHiveRefreshInterval;
     }
 
     @Override
