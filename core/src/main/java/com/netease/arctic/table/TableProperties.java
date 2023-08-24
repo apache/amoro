@@ -268,7 +268,7 @@ public class TableProperties {
   public static final String MIXED_FORMAT_TABLE_STORE_BASE = "mixed-format.table-store.base";
   public static final String MIXED_FORMAT_TABLE_STORE_CHANGE = "mixed-format.table-store.change";
 
-  public static final String MIXED_ICEBERG_CHANGE_STORE_IDENTIFIER = "mixed-format.change.identifier";
+  public static final String MIXED_FORMAT_CHANGE_STORE_IDENTIFIER = "mixed-format.change.identifier";
 
   /**
    * Protected properties which should not be read by user.

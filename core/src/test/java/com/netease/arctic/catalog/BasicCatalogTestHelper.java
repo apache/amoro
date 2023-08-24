@@ -42,8 +42,7 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
   }
 
   public BasicCatalogTestHelper(TableFormat tableFormat, Map<String, String> catalogProperties) {
-    this(tableFormat == TableFormat.MIXED_ICEBERG ? CATALOG_TYPE_AMS : CATALOG_TYPE_HADOOP,
-        catalogProperties, tableFormat);
+    this(CATALOG_TYPE_HADOOP, catalogProperties, tableFormat);
   }
 
   public BasicCatalogTestHelper(

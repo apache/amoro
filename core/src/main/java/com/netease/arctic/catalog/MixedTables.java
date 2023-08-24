@@ -101,10 +101,8 @@ public class MixedTables {
         CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
             tableMetaStore.getConfiguration()),
         fileIO, amsClient, catalogMeta.getCatalogProperties());
-    return new BasicKeyedTable(
-        tableIdentifier, fileIO,
-        buildPrimaryKeySpec(baseTable.schema(), tableMeta),
-        baseIcebergTable, changeIcebergTable, catalogMeta.getCatalogProperties());
+    PrimaryKeySpec keySpec = buildPrimaryKeySpec(baseTable.schema(), tableMeta);
+    return new BasicKeyedTable(tableLocation, keySpec, baseTable, changeTable);
   }
 
   protected String checkLocation(TableMeta meta, String locationKey) {
@@ -167,6 +165,10 @@ public class MixedTables {
         throw new IllegalStateException("create base table failed", e);
       }
     });
+    BaseTable baseTable = new BasicKeyedTable.BaseInternalTable(tableIdentifier,
+        CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO,
+            tableMetaStore.getConfiguration()),
+        fileIO, amsClient, catalogMeta.getCatalogProperties());
 
     Table changeIcebergTable = tableMetaStore.doAs(() -> {
       try {
@@ -175,10 +177,11 @@ public class MixedTables {
         throw new IllegalStateException("create change table failed", e);
       }
     });
-    return new BasicKeyedTable(
-        tableIdentifier, fileIO, primaryKeySpec,
-        baseIcebergTable, changeIcebergTable,
-        catalogMeta.getCatalogProperties());
+    ChangeTable changeTable = new BasicKeyedTable.ChangeInternalTable(tableIdentifier,
+        CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
+            tableMetaStore.getConfiguration()),
+        fileIO, amsClient, catalogMeta.getCatalogProperties());
+    return new BasicKeyedTable(tableLocation, primaryKeySpec, baseTable, changeTable);
   }
 
   protected void fillTableProperties(TableMeta tableMeta) {

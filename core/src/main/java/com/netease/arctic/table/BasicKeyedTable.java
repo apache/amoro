@@ -33,6 +33,7 @@ import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ArcticChangeTableScan;
 import org.apache.iceberg.PartitionSpec;
@@ -54,16 +55,13 @@ public class BasicKeyedTable implements KeyedTable {
 
   protected final BaseTable baseTable;
   protected final ChangeTable changeTable;
-  protected TableMeta tableMeta;
 
-  public BasicKeyedTable(
-      TableIdentifier identifier, ArcticFileIO io,
-      PrimaryKeySpec keySpec, Table baseStore, Table changeStore,
-      Map<String, String> catalogProperties) {
-    this.tableLocation = null;
+
+  public BasicKeyedTable(String tableLocation, PrimaryKeySpec keySpec, BaseTable baseTable, ChangeTable changeTable) {
+    this.tableLocation = tableLocation;
     this.primaryKeySpec = keySpec;
-    this.baseTable = new BaseInternalTable(identifier, baseStore, io, new EmptyAmsClient(), catalogProperties);
-    this.changeTable = new ChangeInternalTable(identifier, changeStore, io, new EmptyAmsClient(), catalogProperties);
+    this.baseTable = baseTable;
+    this.changeTable = changeTable;
   }
 
   public BasicKeyedTable(PrimaryKeySpec keySpec, BaseTable baseTable, ChangeTable changeTable) {
@@ -86,7 +84,7 @@ public class BasicKeyedTable implements KeyedTable {
 
   @Override
   public TableIdentifier id() {
-    return TableIdentifier.of(tableMeta.getTableIdentifier());
+    return baseTable.id();
   }
 
   @Override
@@ -101,7 +99,11 @@ public class BasicKeyedTable implements KeyedTable {
 
   @Override
   public String location() {
-    return tableLocation;
+    if (StringUtils.isEmpty(this.tableLocation)) {
+      return this.baseTable.location();
+    } else {
+      return this.tableLocation;
+    }
   }
 
   @Override
@@ -172,7 +174,7 @@ public class BasicKeyedTable implements KeyedTable {
 
   @Override
   public UpdateProperties updateProperties() {
-    return new UpdateKeyedTableProperties(this, tableMeta);
+    return new UpdateKeyedTableProperties(this);
   }
 
   @Override

@@ -47,6 +47,7 @@ import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.thrift.TException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,6 +56,7 @@ import java.util.stream.Collectors;
 
 public class BasicMixedIcebergCatalog implements ArcticCatalog {
 
+  private Map<String, String> clientSideProperties;
   private Catalog icebergCatalog;
   private TableMetaStore tableMetaStore;
   private CatalogMeta meta;
@@ -64,28 +66,42 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
 
   @Override
   public String name() {
-    return null;
+    return meta.getCatalogName();
   }
 
   @Override
   public void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties) {
-    meta.putToCatalogProperties(
-        org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE,
-        meta.getCatalogType());
-    if (meta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
-      meta.getCatalogProperties().remove("type");
+    this.client = client;
+    this.clientSideProperties = properties == null ? Maps.newHashMap() : properties;
+    this.initialize(meta);
+  }
+
+  private void initialize(CatalogMeta catalogMeta) {
+    CatalogUtil.mergeCatalogProperties(catalogMeta, clientSideProperties);
+
+    catalogMeta.putToCatalogProperties(
+        org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE, catalogMeta.getCatalogType());
+    if (catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
+      catalogMeta.getCatalogProperties().remove("type");
     }
-    this.tableMetaStore = CatalogUtil.buildMetaStore(meta);
-    this.icebergCatalog = tableMetaStore.doAs(() -> org.apache.iceberg.CatalogUtil.buildIcebergCatalog(
-        meta.getCatalogName(), meta.getCatalogProperties(), tableMetaStore.getConfiguration()));
-    if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION)) {
+
+    TableMetaStore metaStore = CatalogUtil.buildMetaStore(catalogMeta);
+    Catalog icebergCatalog = metaStore.doAs(() -> org.apache.iceberg.CatalogUtil.buildIcebergCatalog(
+        catalogMeta.getCatalogName(), catalogMeta.getCatalogProperties(), metaStore.getConfiguration()));
+    Pattern databaseFilterPattern = null;
+    if (catalogMeta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION)) {
       String databaseFilter =
-          meta.getCatalogProperties().get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
+          catalogMeta.getCatalogProperties().get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
       databaseFilterPattern = Pattern.compile(databaseFilter);
-    } else {
-      databaseFilterPattern = null;
     }
-    this.tables = new MixedTables(this.tableMetaStore, meta, icebergCatalog);
+    MixedTables tables = new MixedTables(metaStore, catalogMeta, icebergCatalog);
+    synchronized (this) {
+      this.tableMetaStore = metaStore;
+      this.icebergCatalog = icebergCatalog;
+      this.databaseFilterPattern = databaseFilterPattern;
+      this.tables = tables;
+      this.meta = catalogMeta;
+    }
   }
 
   @Override
@@ -192,7 +208,12 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
 
   @Override
   public void refresh() {
-
+    try {
+      CatalogMeta catalogMeta = client.getCatalog(this.name());
+      this.initialize(catalogMeta);
+    } catch (TException e) {
+      throw new IllegalStateException(String.format("failed load catalog %s.", name()), e);
+    }
   }
 
   @Override
