@@ -68,7 +68,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
 
   private static final int DATA_FILE_LIST_SPLIT = 3000;
 
-  // 1 days
+  // 1 hour
   private static final long INTERVAL = 60 * 60 * 1000L;
 
   public SnapshotsExpiringExecutor(TableManager tableRuntimes, int poolSize) {

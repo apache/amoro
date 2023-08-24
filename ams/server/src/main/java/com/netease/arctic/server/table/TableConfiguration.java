@@ -16,6 +16,7 @@ public class TableConfiguration {
   private boolean cleanOrphanEnabled;
   private long orphanExistingMinutes;
   private OptimizingConfig optimizingConfig;
+  private ExpiringDataConfig expiringDataConfig;
 
   public TableConfiguration() {
   }
@@ -74,18 +75,41 @@ public class TableConfiguration {
     return this;
   }
 
+  public ExpiringDataConfig getExpiringDataConfig() {
+    return expiringDataConfig;
+  }
+
+  public TableConfiguration setExpiringDataConfig(ExpiringDataConfig expiringDataConfig) {
+    this.expiringDataConfig = expiringDataConfig;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof TableConfiguration)) {
       return false;
     }
     TableConfiguration that = (TableConfiguration) o;
     return expireSnapshotEnabled == that.expireSnapshotEnabled && snapshotTTLMinutes == that.snapshotTTLMinutes &&
         changeDataTTLMinutes == that.changeDataTTLMinutes && cleanOrphanEnabled == that.cleanOrphanEnabled &&
-        orphanExistingMinutes == that.orphanExistingMinutes && Objects.equal(optimizingConfig, that.optimizingConfig);
+        orphanExistingMinutes == that.orphanExistingMinutes &&
+        Objects.equal(optimizingConfig, that.optimizingConfig) &&
+        Objects.equal(expiringDataConfig, that.expiringDataConfig);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(
+        expireSnapshotEnabled,
+        snapshotTTLMinutes,
+        changeDataTTLMinutes,
+        cleanOrphanEnabled,
+        orphanExistingMinutes,
+        optimizingConfig,
+        expiringDataConfig);
   }
 
   public static TableConfiguration parseConfig(Map<String, String> properties) {
@@ -109,6 +133,7 @@ public class TableConfiguration {
             properties,
             TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME,
             TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT))
-        .setOptimizingConfig(OptimizingConfig.parseOptimizingConfig(properties));
+        .setOptimizingConfig(OptimizingConfig.parseOptimizingConfig(properties))
+        .setExpiringDataConfig(ExpiringDataConfig.parse(properties));
   }
 }
