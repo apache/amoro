@@ -52,8 +52,8 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
 
   protected final Map<IcebergDataFile, List<IcebergContentFile<?>>> rewriteDataFiles = Maps.newHashMap();
   protected final Map<IcebergDataFile, List<IcebergContentFile<?>>> rewritePosDataFiles = Maps.newHashMap();
-  // protected Delete files are Delete files which are related to Data files not optimized in this plan
-  protected final Set<String> protectedDeleteFiles = Sets.newHashSet();
+  // reserved Delete files are Delete files which are related to Data files not optimized in this plan
+  protected final Set<String> reservedDeleteFiles = Sets.newHashSet();
 
   public AbstractPartitionPlan(TableRuntime tableRuntime,
                                ArcticTable table, String partition, long planTime) {
@@ -100,7 +100,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     boolean added = evaluator().addFile(dataFile, deletes);
     if (!added) {
       // if the Data file is not added, it's Delete files should not be removed from iceberg
-      deletes.stream().map(delete -> delete.path().toString()).forEach(protectedDeleteFiles::add);
+      deletes.stream().map(delete -> delete.path().toString()).forEach(reservedDeleteFiles::add);
       return false;
     }
     if (evaluator().fileShouldRewrite(dataFile, deletes)) {
@@ -228,7 +228,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       Set<IcebergContentFile<?>> readOnlyDeleteFiles = Sets.newHashSet();
       Set<IcebergContentFile<?>> rewriteDeleteFiles = Sets.newHashSet();
       for (IcebergContentFile<?> deleteFile : deleteFiles) {
-        if (protectedDeleteFiles.contains(deleteFile.path().toString())) {
+        if (reservedDeleteFiles.contains(deleteFile.path().toString())) {
           readOnlyDeleteFiles.add(deleteFile);
         } else {
           rewriteDeleteFiles.add(deleteFile);
