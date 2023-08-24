@@ -26,7 +26,6 @@ import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
-import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
@@ -51,12 +50,10 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   private long toSequence = INVALID_SEQUENCE;
   protected final long planTime;
 
-  protected final Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
-  protected final Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
-  protected final Map<String, Set<IcebergDataFile>> equalityDeleteFileMap = Maps.newHashMap();
-  protected final Map<String, Set<IcebergDataFile>> posDeleteFileMap = Maps.newHashMap();
-  
-  private List<SplitTask> splitTasks;
+  protected final Map<IcebergDataFile, List<IcebergContentFile<?>>> rewriteDataFiles = Maps.newHashMap();
+  protected final Map<IcebergDataFile, List<IcebergContentFile<?>>> rewritePosDataFiles = Maps.newHashMap();
+  // protected Delete files are Delete files related to Data files not optimized in this plan
+  protected final Set<String> protectedDeleteFiles = Sets.newHashSet();
 
   public AbstractPartitionPlan(TableRuntime tableRuntime,
                                ArcticTable table, String partition, long planTime) {
@@ -99,24 +96,19 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   }
 
   @Override
-  public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-    evaluator().addFile(dataFile, deletes);
-    if (evaluator().isFragmentFile(dataFile)) {
-      fragmentFiles.put(dataFile, deletes);
-    } else {
-      segmentFiles.put(dataFile, deletes);
+  public boolean addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    boolean added = evaluator().addFile(dataFile, deletes);
+    if (!added) {
+      // if the Data file is not added, it's Delete files should be not be removed from iceberg
+      deletes.stream().map(delete -> delete.path().toString()).forEach(protectedDeleteFiles::add);
+      return false;
     }
-    for (IcebergContentFile<?> deleteFile : deletes) {
-      if (deleteFile.content() == FileContent.POSITION_DELETES) {
-        posDeleteFileMap
-            .computeIfAbsent(deleteFile.path().toString(), delete -> Sets.newHashSet())
-            .add(dataFile);
-      } else {
-        equalityDeleteFileMap
-            .computeIfAbsent(deleteFile.path().toString(), delete -> Sets.newHashSet())
-            .add(dataFile);
-      }
+    if (evaluator().fileShouldRewrite(dataFile, deletes)) {
+      rewriteDataFiles.put(dataFile, deletes);
+    } else if (evaluator().segmentFileShouldRewritePos(dataFile, deletes)) {
+      rewritePosDataFiles.put(dataFile, deletes);
     }
+    return true;
   }
 
   @Override
@@ -128,34 +120,18 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     if (taskSplitter == null) {
       taskSplitter = buildTaskSplitter();
     }
-    this.splitTasks = taskSplitter.splitTasks(targetTaskCount).stream()
-        .filter(this::taskNeedExecute).collect(Collectors.toList());
-    return this.splitTasks.stream()
+    beforeSplit();
+    return taskSplitter.splitTasks(targetTaskCount).stream()
         .map(task -> task.buildTask(buildTaskProperties()))
         .collect(Collectors.toList());
   }
-
-  protected boolean taskNeedExecute(SplitTask task) {
-    // if there are no delete files and no more than 1 rewrite files, we should not execute
-    return !task.getDeleteFiles().isEmpty() || task.getRewriteDataFiles().size() > 1;
-  }
-
-  private boolean isOptimizing(IcebergDataFile dataFile) {
-    return this.splitTasks.stream().anyMatch(task -> task.contains(dataFile));
+  
+  protected void beforeSplit() {
   }
 
   protected abstract TaskSplitter buildTaskSplitter();
 
   protected abstract OptimizingInputProperties buildTaskProperties();
-
-  protected boolean fileShouldFullOptimizing(IcebergDataFile dataFile, List<IcebergContentFile<?>> deleteFiles) {
-    if (config.isFullRewriteAllFiles()) {
-      return true;
-    } else {
-      // if a file is related any delete files or is not big enough, it should full optimizing
-      return !deleteFiles.isEmpty() || dataFile.fileSizeInBytes() < config.getTargetSize() * 0.9;
-    }
-  }
 
   protected void markSequence(long sequence) {
     if (fromSequence == INVALID_SEQUENCE || fromSequence > sequence) {
@@ -225,39 +201,15 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
 
   protected class SplitTask {
     private final Set<IcebergDataFile> rewriteDataFiles = Sets.newHashSet();
-    private final Set<IcebergContentFile<?>> deleteFiles = Sets.newHashSet();
     private final Set<IcebergDataFile> rewritePosDataFiles = Sets.newHashSet();
+    private final Set<IcebergContentFile<?>> deleteFiles = Sets.newHashSet();
 
-    public SplitTask(Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles,
-                     Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles) {
-      if (evaluator().isFullNecessary()) {
-        fragmentFiles.forEach((icebergFile, deleteFileSet) -> {
-          if (fileShouldFullOptimizing(icebergFile, deleteFileSet)) {
-            rewriteDataFiles.add(icebergFile);
-            deleteFiles.addAll(deleteFileSet);
-          }
-        });
-        segmentFiles.forEach((icebergFile, deleteFileSet) -> {
-          if (fileShouldFullOptimizing(icebergFile, deleteFileSet)) {
-            rewriteDataFiles.add(icebergFile);
-            deleteFiles.addAll(deleteFileSet);
-          }
-        });
-      } else {
-        fragmentFiles.forEach((icebergFile, deleteFileSet) -> {
-          rewriteDataFiles.add(icebergFile);
-          deleteFiles.addAll(deleteFileSet);
-        });
-        segmentFiles.forEach((icebergFile, deleteFileSet) -> {
-          if (evaluator().shouldRewriteSegmentFile(icebergFile, deleteFileSet)) {
-            rewriteDataFiles.add(icebergFile);
-            deleteFiles.addAll(deleteFileSet);
-          } else if (evaluator.shouldRewritePosForSegmentFile(icebergFile, deleteFileSet)) {
-            rewritePosDataFiles.add(icebergFile);
-            deleteFiles.addAll(deleteFileSet);
-          }
-        });
-      }
+    public SplitTask(Set<IcebergDataFile> rewriteDataFiles,
+                     Set<IcebergDataFile> rewritePosDataFiles,
+                     Set<IcebergContentFile<?>> deleteFiles) {
+      this.rewriteDataFiles.addAll(rewriteDataFiles);
+      this.rewritePosDataFiles.addAll(rewritePosDataFiles);
+      this.deleteFiles.addAll(deleteFiles);
     }
 
     public Set<IcebergDataFile> getRewriteDataFiles() {
@@ -272,23 +224,11 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       return rewritePosDataFiles;
     }
 
-    public boolean contains(IcebergDataFile dataFile) {
-      return rewriteDataFiles.contains(dataFile) || rewritePosDataFiles.contains(dataFile);
-    }
-
     public TaskDescriptor buildTask(OptimizingInputProperties properties) {
       Set<IcebergContentFile<?>> readOnlyDeleteFiles = Sets.newHashSet();
       Set<IcebergContentFile<?>> rewriteDeleteFiles = Sets.newHashSet();
       for (IcebergContentFile<?> deleteFile : deleteFiles) {
-        Set<IcebergDataFile> relatedDataFiles;
-        if (deleteFile.content() == FileContent.POSITION_DELETES) {
-          relatedDataFiles = posDeleteFileMap.get(deleteFile.path().toString());
-        } else {
-          relatedDataFiles = equalityDeleteFileMap.get(deleteFile.path().toString());
-        }
-        boolean findDataFileNotOptimizing =
-            relatedDataFiles.stream().anyMatch(file -> !contains(file) && !isOptimizing(file));
-        if (findDataFileNotOptimizing) {
+        if (protectedDeleteFiles.contains(deleteFile.path().toString())) {
           readOnlyDeleteFiles.add(deleteFile);
         } else {
           rewriteDeleteFiles.add(deleteFile);
@@ -311,12 +251,12 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   protected static class FileTask {
     private final IcebergDataFile file;
     private final List<IcebergContentFile<?>> deleteFiles;
-    private final boolean isFragment;
+    private final boolean isRewriteDataFile;
 
-    public FileTask(IcebergDataFile file, List<IcebergContentFile<?>> deleteFiles, boolean isFragment) {
+    public FileTask(IcebergDataFile file, List<IcebergContentFile<?>> deleteFiles, boolean isRewriteDataFile) {
       this.file = file;
       this.deleteFiles = deleteFiles;
-      this.isFragment = isFragment;
+      this.isRewriteDataFile = isRewriteDataFile;
     }
 
     public IcebergDataFile getFile() {
@@ -327,12 +267,12 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       return deleteFiles;
     }
 
-    public boolean isFragment() {
-      return isFragment;
+    public boolean isRewriteDataFile() {
+      return isRewriteDataFile;
     }
 
-    public boolean isSegment() {
-      return !isFragment;
+    public boolean isRewritePosDataFile() {
+      return !isRewriteDataFile;
     }
   }
 
@@ -342,10 +282,10 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     public List<SplitTask> splitTasks(int targetTaskCount) {
       // bin-packing
       List<FileTask> allDataFiles = Lists.newArrayList();
-      segmentFiles.forEach((dataFile, deleteFiles) ->
-          allDataFiles.add(new FileTask(dataFile, deleteFiles, false)));
-      fragmentFiles.forEach((dataFile, deleteFiles) ->
+      rewriteDataFiles.forEach((dataFile, deleteFiles) ->
           allDataFiles.add(new FileTask(dataFile, deleteFiles, true)));
+      rewritePosDataFiles.forEach((dataFile, deleteFiles) ->
+          allDataFiles.add(new FileTask(dataFile, deleteFiles, false)));
 
       long taskSize = config.getTargetSize();
       Long sum = allDataFiles.stream().map(f -> f.getFile().fileSizeInBytes()).reduce(0L, Long::sum);
@@ -356,13 +296,19 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       // collect
       List<SplitTask> results = Lists.newArrayList();
       for (List<FileTask> fileTasks : packed) {
-        Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
-        Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
-        fileTasks.stream().filter(FileTask::isFragment)
-            .forEach(f -> fragmentFiles.put(f.getFile(), f.getDeleteFiles()));
-        fileTasks.stream().filter(FileTask::isSegment)
-            .forEach(f -> segmentFiles.put(f.getFile(), f.getDeleteFiles()));
-        results.add(new SplitTask(fragmentFiles, segmentFiles));
+        Set<IcebergDataFile> rewriteDataFiles = Sets.newHashSet();
+        Set<IcebergDataFile> rewritePosDataFiles = Sets.newHashSet();
+        Set<IcebergContentFile<?>> deleteFiles = Sets.newHashSet();
+
+        fileTasks.stream().filter(FileTask::isRewriteDataFile).forEach(f -> {
+          rewriteDataFiles.add(f.getFile());
+          deleteFiles.addAll(f.getDeleteFiles());
+        });
+        fileTasks.stream().filter(FileTask::isRewritePosDataFile).forEach(f -> {
+          rewritePosDataFiles.add(f.getFile());
+          deleteFiles.addAll(f.getDeleteFiles());
+        });
+        results.add(new SplitTask(rewriteDataFiles, rewritePosDataFiles, deleteFiles));
       }
       return results;
     }

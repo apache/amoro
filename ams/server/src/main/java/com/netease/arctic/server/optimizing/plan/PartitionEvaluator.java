@@ -36,7 +36,7 @@ public interface PartitionEvaluator {
 
   String getPartition();
 
-  void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes);
+  boolean addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes);
   
   void addPartitionProperties(Map<String, String> properties);
 

@@ -31,10 +31,12 @@ import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
@@ -45,8 +47,10 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   }
 
   @Override
-  public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-    super.addFile(dataFile, deletes);
+  public boolean addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    if (!super.addFile(dataFile, deletes)) {
+      return false;
+    }
     if (evaluator().isChangeFile(dataFile)) {
       markSequence(dataFile.dataSequenceNumber());
     }
@@ -55,20 +59,12 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
         markSequence(deleteFile.dataSequenceNumber());
       }
     }
+    return true;
   }
 
   @Override
   protected MixedIcebergPartitionEvaluator evaluator() {
     return ((MixedIcebergPartitionEvaluator) super.evaluator());
-  }
-
-  @Override
-  protected boolean taskNeedExecute(SplitTask task) {
-    if (super.taskNeedExecute(task)) {
-      return true;
-    } else {
-      return task.getRewriteDataFiles().stream().anyMatch(evaluator()::isChangeFile);
-    }
   }
 
   @Override
@@ -109,11 +105,14 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
 
     @Override
-    public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-      super.addFile(dataFile, deletes);
+    public boolean addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+      if (!super.addFile(dataFile, deletes)) {
+        return false;
+      }
       if (!hasChangeFiles && isChangeFile(dataFile)) {
         hasChangeFiles = true;
       }
+      return true;
     }
 
     @Override
@@ -166,7 +165,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
 
     @Override
-    public boolean shouldRewritePosForSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    public boolean segmentFileShouldRewritePos(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
       if (deletes.stream().anyMatch(
           delete -> delete.content() == FileContent.EQUALITY_DELETES || delete.content() == FileContent.DATA)) {
         // change equality delete file's content is DATA
@@ -232,17 +231,20 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     public List<SplitTask> splitTasks(int targetTaskCount) {
       List<SplitTask> result = Lists.newArrayList();
       FileTree rootTree = FileTree.newTreeRoot();
-      segmentFiles.forEach(rootTree::addSegmentFile);
-      fragmentFiles.forEach(rootTree::addFragmentFile);
+      rewritePosDataFiles.forEach(rootTree::addRewritePosDataFile);
+      rewriteDataFiles.forEach(rootTree::addRewriteDataFile);
       rootTree.completeTree();
       List<FileTree> subTrees = Lists.newArrayList();
       rootTree.splitFileTree(subTrees, new SplitIfNoFileExists());
       for (FileTree subTree : subTrees) {
-        Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
-        Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
-        subTree.collectFragmentFiles(fragmentFiles);
-        subTree.collectSegmentFiles(segmentFiles);
-        result.add(new SplitTask(fragmentFiles, segmentFiles));
+        Map<IcebergDataFile, List<IcebergContentFile<?>>> rewriteDataFiles = Maps.newHashMap();
+        Map<IcebergDataFile, List<IcebergContentFile<?>>> rewritePosDataFiles = Maps.newHashMap();
+        Set<IcebergContentFile<?>> deleteFiles = Sets.newHashSet();
+        subTree.collectRewriteDataFiles(rewriteDataFiles);
+        subTree.collectRewritePosDataFiles(rewritePosDataFiles);
+        rewriteDataFiles.forEach((f, deletes) -> deleteFiles.addAll(deletes));
+        rewritePosDataFiles.forEach((f, deletes) -> deleteFiles.addAll(deletes));
+        result.add(new SplitTask(rewriteDataFiles.keySet(), rewritePosDataFiles.keySet(), deleteFiles));
       }
       return result;
     }
@@ -251,8 +253,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   private static class FileTree {
 
     private final DataTreeNode node;
-    private final Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
-    private final Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
+    private final Map<IcebergDataFile, List<IcebergContentFile<?>>> rewriteDataFiles = Maps.newHashMap();
+    private final Map<IcebergDataFile, List<IcebergContentFile<?>>> rewritePosDataFiles = Maps.newHashMap();
 
     private FileTree left;
     private FileTree right;
@@ -303,40 +305,40 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       }
     }
 
-    public void collectFragmentFiles(Map<IcebergDataFile, List<IcebergContentFile<?>>> collector) {
-      collector.putAll(fragmentFiles);
+    public void collectRewriteDataFiles(Map<IcebergDataFile, List<IcebergContentFile<?>>> collector) {
+      collector.putAll(rewriteDataFiles);
       if (left != null) {
-        left.collectFragmentFiles(collector);
+        left.collectRewriteDataFiles(collector);
       }
       if (right != null) {
-        right.collectFragmentFiles(collector);
+        right.collectRewriteDataFiles(collector);
       }
     }
 
-    public void collectSegmentFiles(Map<IcebergDataFile, List<IcebergContentFile<?>>> collector) {
-      collector.putAll(segmentFiles);
+    public void collectRewritePosDataFiles(Map<IcebergDataFile, List<IcebergContentFile<?>>> collector) {
+      collector.putAll(rewritePosDataFiles);
       if (left != null) {
-        left.collectSegmentFiles(collector);
+        left.collectRewritePosDataFiles(collector);
       }
       if (right != null) {
-        right.collectSegmentFiles(collector);
+        right.collectRewritePosDataFiles(collector);
       }
     }
 
-    public void addSegmentFile(IcebergDataFile file, List<IcebergContentFile<?>> deleteFiles) {
+    public void addRewritePosDataFile(IcebergDataFile file, List<IcebergContentFile<?>> deleteFiles) {
       PrimaryKeyedFile primaryKeyedFile = (PrimaryKeyedFile) file.internalFile();
       FileTree node = putNodeIfAbsent(primaryKeyedFile.node());
-      node.segmentFiles.put(file, deleteFiles);
+      node.rewritePosDataFiles.put(file, deleteFiles);
     }
 
-    public void addFragmentFile(IcebergDataFile file, List<IcebergContentFile<?>> deleteFiles) {
+    public void addRewriteDataFile(IcebergDataFile file, List<IcebergContentFile<?>> deleteFiles) {
       PrimaryKeyedFile primaryKeyedFile = (PrimaryKeyedFile) file.internalFile();
       FileTree node = putNodeIfAbsent(primaryKeyedFile.node());
-      node.fragmentFiles.put(file, deleteFiles);
+      node.rewriteDataFiles.put(file, deleteFiles);
     }
 
     public boolean isRootEmpty() {
-      return segmentFiles.isEmpty() && fragmentFiles.isEmpty();
+      return rewritePosDataFiles.isEmpty() && rewriteDataFiles.isEmpty();
     }
 
     public boolean isLeaf() {
@@ -380,7 +382,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
 
     private boolean fileExist() {
-      return !segmentFiles.isEmpty() || !fragmentFiles.isEmpty();
+      return !rewritePosDataFiles.isEmpty() || !rewriteDataFiles.isEmpty();
     }
   }
 

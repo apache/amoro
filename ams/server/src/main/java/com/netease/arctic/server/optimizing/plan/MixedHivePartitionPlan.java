@@ -27,6 +27,7 @@ import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.List;
 import java.util.Map;
@@ -43,22 +44,26 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   }
 
   @Override
-  public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-    super.addFile(dataFile, deletes);
+  public boolean addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    if (!super.addFile(dataFile, deletes)) {
+      return false;
+    }
     long sequenceNumber = dataFile.dataSequenceNumber();
     if (sequenceNumber > maxSequence) {
       maxSequence = sequenceNumber;
     }
+    return true;
   }
 
   @Override
-  protected boolean fileShouldFullOptimizing(IcebergDataFile dataFile, List<IcebergContentFile<?>> deleteFiles) {
-    if (moveFiles2CurrentHiveLocation()) {
-      // if we are going to move files to old hive location, only files not in hive location should full optimizing
-      return evaluator().notInHiveLocation(dataFile);
-    } else {
-      // if we are going to rewrite all files to a new hive location, all files should full optimizing
-      return true;
+  protected void beforeSplit() {
+    super.beforeSplit();
+    if (evaluator().isFullOptimizing() && moveFiles2CurrentHiveLocation()) {
+      // This is an improvement for full optimizing of hive table, if there is no delete files, we only have to move 
+      // files not in hive location to hive location, so the files in the hive location should not be optimizing.
+      Preconditions.checkArgument(protectedDeleteFiles.isEmpty(), "delete files should be empty");
+      rewriteDataFiles.entrySet().removeIf(entry -> evaluator().inHiveLocation(entry.getKey()));
+      rewritePosDataFiles.entrySet().removeIf(entry -> evaluator().inHiveLocation(entry.getKey()));
     }
   }
 
@@ -74,16 +79,6 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   @Override
   protected CommonPartitionEvaluator buildEvaluator() {
     return new MixedHivePartitionEvaluator(tableRuntime, partition, hiveLocation, planTime, isKeyedTable());
-  }
-
-  @Override
-  protected boolean taskNeedExecute(SplitTask task) {
-    if (evaluator().isFullNecessary()) {
-      // if is full optimizing for hive, task should execute if there are any data files
-      return task.getRewriteDataFiles().size() > 0;
-    } else {
-      return super.taskNeedExecute(task);
-    }
   }
 
   @Override
@@ -121,11 +116,14 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     }
 
     @Override
-    public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-      super.addFile(dataFile, deletes);
-      if (!filesNotInHiveLocation && notInHiveLocation(dataFile)) {
+    public boolean addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+      if (!super.addFile(dataFile, deletes)) {
+        return false;
+      }
+      if (!filesNotInHiveLocation && !inHiveLocation(dataFile)) {
         filesNotInHiveLocation = true;
       }
+      return true;
     }
 
     @Override
@@ -143,7 +141,7 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
       PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
       if (file.type() == DataFileType.BASE_FILE) {
         // we treat all files in hive location as segment files
-        return dataFile.fileSizeInBytes() <= fragmentSize && notInHiveLocation(dataFile);
+        return dataFile.fileSizeInBytes() <= fragmentSize && !inHiveLocation(dataFile);
       } else if (file.type() == DataFileType.INSERT_FILE) {
         // we treat all insert files as fragment files
         return true;
@@ -154,13 +152,15 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
 
     @Override
     public boolean isFullNecessary() {
-      if (reachHiveRefreshInterval() && hasNewHiveData()) {
-        return true;
-      }
       if (!reachFullInterval()) {
         return false;
       }
       return fragmentFileCount > getBaseSplitCount() || hasNewHiveData();
+    }
+
+    @Override
+    protected boolean reachFullInterval() {
+      return super.reachFullInterval() || reachHiveRefreshInterval();
     }
 
     protected boolean hasNewHiveData() {
@@ -172,8 +172,18 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     }
 
     @Override
-    public boolean shouldRewriteSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-      return super.shouldRewriteSegmentFile(dataFile, deletes) && notInHiveLocation(dataFile);
+    public boolean fileShouldRewrite(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+      if (isFullOptimizing()) {
+        return fileShouldFullOptimizing(dataFile, deletes);
+      } else {
+        // if it is not full optimizing, we only rewrite files not in hive location
+        return !inHiveLocation(dataFile) && super.fileShouldRewrite(dataFile, deletes);
+      }
+    }
+
+    @Override
+    protected boolean fileShouldFullOptimizing(IcebergDataFile dataFile, List<IcebergContentFile<?>> deleteFiles) {
+      return true;
     }
 
     @Override
@@ -182,8 +192,8 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
           hasChangeFiles && reachBaseRefreshInterval() || hasNewHiveData() && reachHiveRefreshInterval());
     }
 
-    private boolean notInHiveLocation(IcebergContentFile<?> file) {
-      return !file.path().toString().contains(hiveLocation);
+    private boolean inHiveLocation(IcebergContentFile<?> file) {
+      return file.path().toString().contains(hiveLocation);
     }
   }
 

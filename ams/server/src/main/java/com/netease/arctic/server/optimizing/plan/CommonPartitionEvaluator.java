@@ -66,6 +66,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   private Boolean necessary = null;
   private OptimizingType optimizingType = null;
   private String name;
+  private Boolean reachFullInterval = null;
 
   public CommonPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
     this.partition = partition;
@@ -85,11 +86,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   @Override
-  public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+  public boolean addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
     if (isFragmentFile(dataFile)) {
-      addFragmentFile(dataFile, deletes);
+      return addFragmentFile(dataFile, deletes);
     } else {
-      addSegmentFile(dataFile, deletes);
+      return addSegmentFile(dataFile, deletes);
     }
   }
 
@@ -105,36 +106,66 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     return deleteExist;
   }
 
-  private void addFragmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+  private boolean addFragmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    if (!fileShouldRewrite(dataFile, deletes)) {
+      return false;
+    }
     fragmentFileSize += dataFile.fileSizeInBytes();
     fragmentFileCount += 1;
 
     for (IcebergContentFile<?> delete : deletes) {
       addDelete(delete);
     }
+    return true;
   }
 
-  private void addSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-    segmentFileSize += dataFile.fileSizeInBytes();
-    segmentFileCount += 1;
-
-    if (shouldRewriteSegmentFile(dataFile, deletes)) {
+  private boolean addSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    if (fileShouldRewrite(dataFile, deletes)) {
       rewriteSegmentFileSize += dataFile.fileSizeInBytes();
       rewriteSegmentFileCount += 1;
-    } else if (shouldRewritePosForSegmentFile(dataFile, deletes)) {
+    } else if (segmentFileShouldRewritePos(dataFile, deletes)) {
       rewritePosSegmentFileSize += dataFile.fileSizeInBytes();
       rewritePosSegmentFileCount += 1;
+    } else {
+      return false;
     }
+
+    segmentFileSize += dataFile.fileSizeInBytes();
+    segmentFileCount += 1;
     for (IcebergContentFile<?> delete : deletes) {
       addDelete(delete);
     }
+    return true;
   }
 
-  public boolean shouldRewriteSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+  protected boolean fileShouldFullOptimizing(IcebergDataFile dataFile, List<IcebergContentFile<?>> deleteFiles) {
+    if (config.isFullRewriteAllFiles()) {
+      return true;
+    }
+    if (isFragmentFile(dataFile)) {
+      return true;
+    }
+    // if a file is related any delete files or is not big enough, it should full optimizing
+    return !deleteFiles.isEmpty() || dataFile.fileSizeInBytes() < config.getTargetSize() * 0.9;
+  }
+
+  public boolean fileShouldRewrite(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    if (isFullOptimizing()) {
+      return fileShouldFullOptimizing(dataFile, deletes);
+    }
+    if (isFragmentFile(dataFile)) {
+      return true;
+    }
     return getRecordCount(deletes) > dataFile.recordCount() * config.getMajorDuplicateRatio();
   }
 
-  public boolean shouldRewritePosForSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+  public boolean segmentFileShouldRewritePos(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    if (isFullOptimizing()) {
+      return false;
+    }
+    if (isFragmentFile(dataFile)) {
+      return false;
+    }
     if (deletes.stream().anyMatch(delete -> delete.content() == FileContent.EQUALITY_DELETES)) {
       return true;
     } else if (deletes.stream().filter(delete -> delete.content() == FileContent.POSITION_DELETES).count() >= 2) {
@@ -142,6 +173,10 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     } else {
       return false;
     }
+  }
+  
+  protected boolean isFullOptimizing() {
+    return reachFullInterval();
   }
 
   private long getRecordCount(List<IcebergContentFile<?>> files) {
@@ -213,8 +248,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   protected boolean reachFullInterval() {
-    return config.getFullTriggerInterval() >= 0 &&
-        planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
+    if (reachFullInterval == null) {
+      reachFullInterval = config.getFullTriggerInterval() >= 0 &&
+          planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
+    }
+    return reachFullInterval;
   }
 
   public boolean isFullNecessary() {
