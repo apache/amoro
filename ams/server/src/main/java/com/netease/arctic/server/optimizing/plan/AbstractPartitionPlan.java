@@ -52,7 +52,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
 
   protected final Map<IcebergDataFile, List<IcebergContentFile<?>>> rewriteDataFiles = Maps.newHashMap();
   protected final Map<IcebergDataFile, List<IcebergContentFile<?>>> rewritePosDataFiles = Maps.newHashMap();
-  // protected Delete files are Delete files related to Data files not optimized in this plan
+  // protected Delete files are Delete files which are related to Data files not optimized in this plan
   protected final Set<String> protectedDeleteFiles = Sets.newHashSet();
 
   public AbstractPartitionPlan(TableRuntime tableRuntime,
@@ -99,7 +99,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   public boolean addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
     boolean added = evaluator().addFile(dataFile, deletes);
     if (!added) {
-      // if the Data file is not added, it's Delete files should be not be removed from iceberg
+      // if the Data file is not added, it's Delete files should not be removed from iceberg
       deletes.stream().map(delete -> delete.path().toString()).forEach(protectedDeleteFiles::add);
       return false;
     }

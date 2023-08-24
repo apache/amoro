@@ -59,7 +59,7 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   protected void beforeSplit() {
     super.beforeSplit();
     if (evaluator().isFullOptimizing() && moveFiles2CurrentHiveLocation()) {
-      // This is an improvement for full optimizing of hive table, if there is no delete files, we only have to move 
+      // This is an improvement for full optimizing of hive table, if there are no delete files, we only have to move 
       // files not in hive location to hive location, so the files in the hive location should not be optimizing.
       Preconditions.checkArgument(protectedDeleteFiles.isEmpty(), "delete files should be empty");
       rewriteDataFiles.entrySet().removeIf(entry -> evaluator().inHiveLocation(entry.getKey()));
