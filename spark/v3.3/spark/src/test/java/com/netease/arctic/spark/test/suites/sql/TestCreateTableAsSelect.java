@@ -20,13 +20,13 @@ package com.netease.arctic.spark.test.suites.sql;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.SparkSQLProperties;
-import com.netease.arctic.spark.test.Asserts;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
-import com.netease.arctic.spark.test.helper.DataComparator;
-import com.netease.arctic.spark.test.helper.TableFiles;
-import com.netease.arctic.spark.test.helper.TestTableHelper;
-import com.netease.arctic.spark.test.helper.TestTables;
+import com.netease.arctic.spark.test.utils.Asserts;
+import com.netease.arctic.spark.test.utils.DataComparator;
+import com.netease.arctic.spark.test.utils.TableFiles;
+import com.netease.arctic.spark.test.utils.TestTableUtil;
+import com.netease.arctic.spark.test.utils.TestTables;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -146,8 +146,8 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
         " AS SELECT * FROM " + source();
     sql(sqlText);
 
-    Schema expectSchema = TestTableHelper.toSchemaWithPrimaryKey(simpleSourceSchema, keySpec);
-    expectSchema = TestTableHelper.timestampToWithoutZone(expectSchema);
+    Schema expectSchema = TestTableUtil.toSchemaWithPrimaryKey(simpleSourceSchema, keySpec);
+    expectSchema = TestTableUtil.timestampToWithoutZone(expectSchema);
 
     ArcticTable table = loadTable();
     Asserts.assertPartition(ptSpec, table.spec());
@@ -156,7 +156,7 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
       Asserts.assertPrimaryKey(keySpec, table.asKeyedTable().primaryKeySpec());
     }
     Asserts.assertType(expectSchema.asStruct(), table.schema().asStruct());
-    TableFiles files = TestTableHelper.files(table);
+    TableFiles files = TestTableUtil.files(table);
     Asserts.assertAllFilesInBaseStore(files);
 
     if (TableFormat.MIXED_HIVE == format) {
@@ -166,7 +166,7 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
       Asserts.assertAllFilesInHiveLocation(files, hiveTable.getSd().getLocation());
     }
 
-    List<Record> records = TestTableHelper.tableRecords(table);
+    List<Record> records = TestTableUtil.tableRecords(table);
     DataComparator.build(simpleSourceData, records)
         .ignoreOrder(Comparator.comparing(r -> (Integer) r.get(0)))
         .assertRecordsEqual();

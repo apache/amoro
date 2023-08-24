@@ -23,10 +23,10 @@ import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.spark.SparkSQLProperties;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
-import com.netease.arctic.spark.test.helper.DataComparator;
-import com.netease.arctic.spark.test.helper.ExpectResultHelper;
-import com.netease.arctic.spark.test.helper.RecordGenerator;
-import com.netease.arctic.spark.test.helper.TestTableHelper;
+import com.netease.arctic.spark.test.utils.DataComparator;
+import com.netease.arctic.spark.test.utils.ExpectResultUtil;
+import com.netease.arctic.spark.test.utils.RecordGenerator;
+import com.netease.arctic.spark.test.utils.TestTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -134,12 +134,12 @@ public class TestInsertIntoSQL extends SparkTableTestBase {
 
     createViewSource(schema, source);
 
-    TestTableHelper.writeToBase(table, base);
+    TestTableUtil.writeToBase(table, base);
     sql("INSERT INTO " + target() + " SELECT * FROM " + source());
     table.refresh();
 
     // mor result
-    List<Record> results = TestTableHelper.tableRecords(table);
+    List<Record> results = TestTableUtil.tableRecords(table);
     List<Record> expects = Lists.newArrayList();
     expects.addAll(base);
     expects.addAll(source);
@@ -176,40 +176,40 @@ public class TestInsertIntoSQL extends SparkTableTestBase {
             .withPartitionSpec(ptSpec));
     createViewSource(schema, source);
 
-    TestTableHelper.writeToBase(table, base);
+    TestTableUtil.writeToBase(table, base);
     sql("INSERT INTO " + target() + " SELECT * FROM " + source());
 
 
     List<Record> expects;
     if (keySpec.primaryKeyExisted()) {
-      expects = ExpectResultHelper.upsertResult(base, source, r -> r.get(0, Integer.class));
+      expects = ExpectResultUtil.upsertResult(base, source, r -> r.get(0, Integer.class));
     } else {
       expects = Lists.newArrayList(base);
       expects.addAll(source);
     }
 
     table.refresh();
-    List<Record> results = TestTableHelper.tableRecords(table);
+    List<Record> results = TestTableUtil.tableRecords(table);
     DataComparator.build(expects, results)
         .ignoreOrder(comparator)
         .assertRecordsEqual();
 
     if (table.isKeyedTable()) {
-      List<Record> deletes = ExpectResultHelper.upsertDeletes(base, source, r -> r.get(0, Integer.class));
+      List<Record> deletes = ExpectResultUtil.upsertDeletes(base, source, r -> r.get(0, Integer.class));
 
       List<Record> expectChanges = deletes.stream()
           .map(
-              r -> TestTableHelper.extendMetadataValue(
+              r -> TestTableUtil.extendMetadataValue(
                   r, MetadataColumns.CHANGE_ACTION_FIELD, ChangeAction.DELETE.name())
           ).collect(Collectors.toList());
 
       source.stream().map(
-          r -> TestTableHelper.extendMetadataValue(
+          r -> TestTableUtil.extendMetadataValue(
               r, MetadataColumns.CHANGE_ACTION_FIELD, ChangeAction.INSERT.name()
           )
       ).forEach(expectChanges::add);
 
-      List<Record> changes = TestTableHelper.changeRecordsWithAction(table.asKeyedTable());
+      List<Record> changes = TestTableUtil.changeRecordsWithAction(table.asKeyedTable());
 
       DataComparator.build(expectChanges, changes)
           .ignoreOrder(pkComparator.thenComparing(changeActionComparator))

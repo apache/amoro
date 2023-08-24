@@ -18,11 +18,11 @@
 
 package com.netease.arctic.trino.arctic;
 
-import com.netease.arctic.CatalogMetaTestUtil;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.table.KeyedHiveTable;
@@ -130,7 +130,8 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
           CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS);
       storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE, MockArcticMetastoreServer.getHadoopSite());
       storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE, MockArcticMetastoreServer.getHadoopSite());
-      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE, CatalogMetaTestUtil.encodingSite(hms.hiveConf()));
+      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE,
+          CatalogTestHelpers.encodeHadoopConfiguration(hms.hiveConf()));
 
 
       Map<String, String> authConfig = new HashMap<>();
