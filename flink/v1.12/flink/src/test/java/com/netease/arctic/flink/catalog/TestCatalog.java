@@ -54,7 +54,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
 
-public class TestCatalog extends CatalogTestBase{
+public class TestCatalog extends CatalogTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(TestCatalog.class);
 
   @Rule
@@ -98,6 +98,7 @@ public class TestCatalog extends CatalogTestBase{
         " WITH (" +
         " 'connector' = 'arctic'" +
         ")");
+    sql("USE  arcticCatalog." + DB);
     sql("SHOW tables");
 
     Assert.assertTrue(getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID).isKeyedTable());
@@ -162,7 +163,7 @@ public class TestCatalog extends CatalogTestBase{
         builder.append(",");
       }
       builder.append("'").append(entry.getKey()).append("'").append("=")
-        .append("'").append(entry.getValue()).append("'");
+          .append("'").append(entry.getValue()).append("'");
       propCount++;
     }
     builder.append(")");
@@ -171,7 +172,7 @@ public class TestCatalog extends CatalogTestBase{
 
   protected List<Row> sql(String query, Object... args) {
     TableResult tableResult = getTableEnv()
-      .executeSql(String.format(query, args));
+        .executeSql(String.format(query, args));
     tableResult.getJobClient().ifPresent(c -> {
       try {
         c.getJobExecutionResult().get();
@@ -192,14 +193,14 @@ public class TestCatalog extends CatalogTestBase{
       synchronized (this) {
         if (env == null) {
           StateBackend backend = new FsStateBackend(
-            "file:///" + System.getProperty("java.io.tmpdir") + "/flink/backend");
+              "file:///" + System.getProperty("java.io.tmpdir") + "/flink/backend");
           env =
-            StreamExecutionEnvironment.getExecutionEnvironment(MiniClusterResource.DISABLE_CLASSLOADER_CHECK_CONFIG);
+              StreamExecutionEnvironment.getExecutionEnvironment(MiniClusterResource.DISABLE_CLASSLOADER_CHECK_CONFIG);
           env.setParallelism(1);
           env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
           env.getCheckpointConfig().setCheckpointInterval(300);
           env.getCheckpointConfig().enableExternalizedCheckpoints(
-            CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
+              CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
           env.setStateBackend(backend);
           env.setRestartStrategy(RestartStrategies.noRestart());
         }
@@ -213,9 +214,9 @@ public class TestCatalog extends CatalogTestBase{
       synchronized (this) {
         if (tEnv == null) {
           this.tEnv = StreamTableEnvironment.create(getEnv(), EnvironmentSettings
-            .newInstance()
-            .useBlinkPlanner()
-            .inStreamingMode().build());
+              .newInstance()
+              .useBlinkPlanner()
+              .inStreamingMode().build());
           Configuration configuration = tEnv.getConfig().getConfiguration();
           // set low-level key-value options
           configuration.setString(TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED.key(), "true");
