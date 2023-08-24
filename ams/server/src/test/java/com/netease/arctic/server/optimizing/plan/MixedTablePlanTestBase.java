@@ -286,10 +286,6 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   protected AbstractPartitionPlan buildPlanWithCurrentFiles() {
     TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
     AbstractPartitionPlan partitionPlan = getAndCheckPartitionPlan();
-    List<TableFileScanHelper.FileScanResult> scan = tableFileScanHelper.scan();
-    for (TableFileScanHelper.FileScanResult fileScanResult : scan) {
-      partitionPlan.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
-    }
     PartitionSpec spec = getArcticTable().spec();
     partitionProperty().forEach((partition, properties) -> {
       String partitionToPath = spec.partitionToPath(partition);
@@ -297,6 +293,10 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
         partitionPlan.addPartitionProperties(properties);
       }
     });
+    List<TableFileScanHelper.FileScanResult> scan = tableFileScanHelper.scan();
+    for (TableFileScanHelper.FileScanResult fileScanResult : scan) {
+      partitionPlan.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
+    }
     return partitionPlan;
   }
 

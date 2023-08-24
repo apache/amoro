@@ -94,12 +94,7 @@ public class OptimizingEvaluator {
 
   private void initPartitionPlans(TableFileScanHelper tableFileScanHelper) {
     PartitionSpec partitionSpec = arcticTable.spec();
-    for (TableFileScanHelper.FileScanResult fileScanResult : tableFileScanHelper.scan()) {
-      StructLike partition = fileScanResult.file().partition();
-      String partitionPath = partitionSpec.partitionToPath(partition);
-      PartitionEvaluator evaluator = partitionPlanMap.computeIfAbsent(partitionPath, this::buildEvaluator);
-      evaluator.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
-    }
+    // add partition properties first, then add files, because files may use these properties
     partitionProperty().forEach((partition, properties) -> {
       String partitionToPath = partitionSpec.partitionToPath(partition);
       PartitionEvaluator evaluator = partitionPlanMap.get(partitionToPath);
@@ -107,6 +102,12 @@ public class OptimizingEvaluator {
         evaluator.addPartitionProperties(properties);
       }
     });
+    for (TableFileScanHelper.FileScanResult fileScanResult : tableFileScanHelper.scan()) {
+      StructLike partition = fileScanResult.file().partition();
+      String partitionPath = partitionSpec.partitionToPath(partition);
+      PartitionEvaluator evaluator = partitionPlanMap.computeIfAbsent(partitionPath, this::buildEvaluator);
+      evaluator.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
+    }
     partitionPlanMap.values().removeIf(plan -> !plan.isNecessary());
   }
 
