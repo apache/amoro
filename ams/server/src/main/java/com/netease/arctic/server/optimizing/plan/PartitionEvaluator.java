@@ -18,9 +18,9 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.server.optimizing.OptimizingType;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
 
 import java.util.List;
 import java.util.Map;
@@ -36,7 +36,7 @@ public interface PartitionEvaluator {
 
   String getPartition();
 
-  void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes);
+  void addFile(DataFile dataFile, List<ContentFile<?>> deletes);
   
   void addPartitionProperties(Map<String, String> properties);
 

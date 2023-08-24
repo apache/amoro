@@ -18,12 +18,11 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -80,12 +79,12 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     return partition;
   }
 
-  protected boolean isFragmentFile(IcebergDataFile dataFile) {
+  protected boolean isFragmentFile(DataFile dataFile) {
     return dataFile.fileSizeInBytes() <= fragmentSize;
   }
 
   @Override
-  public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+  public void addFile(DataFile dataFile, List<ContentFile<?>> deletes) {
     if (isFragmentFile(dataFile)) {
       addFragmentFile(dataFile, deletes);
     } else {
@@ -97,7 +96,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   public void addPartitionProperties(Map<String, String> properties) {
   }
 
-  private boolean isDuplicateDelete(IcebergContentFile<?> delete) {
+  private boolean isDuplicateDelete(ContentFile<?> delete) {
     boolean deleteExist = deleteFileSet.contains(delete.path().toString());
     if (!deleteExist) {
       deleteFileSet.add(delete.path().toString());
@@ -105,16 +104,16 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     return deleteExist;
   }
 
-  private void addFragmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+  private void addFragmentFile(DataFile dataFile, List<ContentFile<?>> deletes) {
     fragmentFileSize += dataFile.fileSizeInBytes();
     fragmentFileCount += 1;
 
-    for (IcebergContentFile<?> delete : deletes) {
+    for (ContentFile<?> delete : deletes) {
       addDelete(delete);
     }
   }
 
-  private void addSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+  private void addSegmentFile(DataFile dataFile, List<ContentFile<?>> deletes) {
     segmentFileSize += dataFile.fileSizeInBytes();
     segmentFileCount += 1;
 
@@ -125,16 +124,16 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
       rewritePosSegmentFileSize += dataFile.fileSizeInBytes();
       rewritePosSegmentFileCount += 1;
     }
-    for (IcebergContentFile<?> delete : deletes) {
+    for (ContentFile<?> delete : deletes) {
       addDelete(delete);
     }
   }
 
-  public boolean shouldRewriteSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+  public boolean shouldRewriteSegmentFile(DataFile dataFile, List<ContentFile<?>> deletes) {
     return getRecordCount(deletes) > dataFile.recordCount() * config.getMajorDuplicateRatio();
   }
 
-  public boolean shouldRewritePosForSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+  public boolean shouldRewritePosForSegmentFile(DataFile dataFile, List<ContentFile<?>> deletes) {
     if (deletes.stream().anyMatch(delete -> delete.content() == FileContent.EQUALITY_DELETES)) {
       return true;
     } else if (deletes.stream().filter(delete -> delete.content() == FileContent.POSITION_DELETES).count() >= 2) {
@@ -144,11 +143,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     }
   }
 
-  private long getRecordCount(List<IcebergContentFile<?>> files) {
+  private long getRecordCount(List<ContentFile<?>> files) {
     return files.stream().mapToLong(ContentFile::recordCount).sum();
   }
 
-  private void addDelete(IcebergContentFile<?> delete) {
+  private void addDelete(ContentFile<?> delete) {
     if (isDuplicateDelete(delete)) {
       return;
     }
