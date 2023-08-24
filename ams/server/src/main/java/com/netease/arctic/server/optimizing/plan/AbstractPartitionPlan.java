@@ -107,6 +107,8 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       rewriteDataFiles.put(dataFile, deletes);
     } else if (evaluator().segmentFileShouldRewritePos(dataFile, deletes)) {
       rewritePosDataFiles.put(dataFile, deletes);
+    } else {
+      return false;
     }
     return true;
   }
