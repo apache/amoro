@@ -21,8 +21,8 @@ package com.netease.arctic.spark.test.suites.sql;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
-import com.netease.arctic.spark.test.helper.TableFiles;
-import com.netease.arctic.spark.test.helper.TestTableHelper;
+import com.netease.arctic.spark.test.utils.TableFiles;
+import com.netease.arctic.spark.test.utils.TestTableUtil;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.junit.jupiter.api.Assertions;
@@ -60,7 +60,7 @@ public class TestDropPartitionSQL extends SparkTableTestBase {
     sql("alter table " + target().database + "." + target().table + " drop if exists partition (day='c')");
     Dataset<Row> sql = sql("select * from " +
         target().database + "." + target().table);
-    TableFiles files = TestTableHelper.files(loadTable());
+    TableFiles files = TestTableUtil.files(loadTable());
     if (primaryKeyDDL.isEmpty()) {
       Assertions.assertEquals(2, files.baseDataFiles.size());
     } else {

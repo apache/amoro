@@ -19,7 +19,7 @@
 package com.netease.arctic.spark.test.suites.ut.sql.parser;
 
 import com.netease.arctic.spark.sql.catalyst.parser.ArcticSqlExtensionsParser;
-import com.netease.arctic.spark.test.helper.ScalaTestHelper;
+import com.netease.arctic.spark.test.utils.ScalaTestUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.spark.sql.catalyst.analysis.UnresolvedDBObjectName;
 import org.apache.spark.sql.catalyst.parser.AbstractSqlParser;
@@ -94,7 +94,7 @@ public class TestSqlExtendParser {
     Assertions.assertTrue(plan instanceof CreateTable, "Not a CreateTableStatement");
     CreateTable create = (CreateTable) plan;
 
-    Seq<String> expectNameSeq = ScalaTestHelper.seq(expectTableName);
+    Seq<String> expectNameSeq = ScalaTestUtil.seq(expectTableName);
     UnresolvedDBObjectName namePlan = (UnresolvedDBObjectName) create.name();
 
     Assertions.assertEquals(expectNameSeq, namePlan.nameParts());

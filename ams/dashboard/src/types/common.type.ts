@@ -135,12 +135,21 @@ export interface BreadcrumbTransactionItem {
   commitTime: number | string
 }
 
+export interface TransactionItemSummary {
+  'total-data-files': number
+  'total-delete-files': number
+  'total-records': number
+  'total-position-deletes': number
+  'total-equality-deletes': number
+}
+
 export interface TransactionItem {
   transactionId: string
   fileCount: number
   fileSize: string
   commitTime: string
   snapshotId: string
+  summary: TransactionItemSummary
 }
 
 export interface OperationItem {
@@ -305,3 +314,5 @@ export enum tableTypeIconMap {
   ARCTIC = 'amoro',
   HIVE = 'hive'
 }
+
+export type ILineChartOriginalData = Record<string, Record<string, number>>

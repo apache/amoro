@@ -23,11 +23,11 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
-import com.netease.arctic.spark.test.helper.DataComparator;
-import com.netease.arctic.spark.test.helper.RecordGenerator;
-import com.netease.arctic.spark.test.helper.TestTable;
-import com.netease.arctic.spark.test.helper.TestTableHelper;
-import com.netease.arctic.spark.test.helper.TestTables;
+import com.netease.arctic.spark.test.utils.DataComparator;
+import com.netease.arctic.spark.test.utils.RecordGenerator;
+import com.netease.arctic.spark.test.utils.TestTable;
+import com.netease.arctic.spark.test.utils.TestTableUtil;
+import com.netease.arctic.spark.test.utils.TestTables;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.MetadataColumns;
 import org.apache.iceberg.Schema;
@@ -74,7 +74,7 @@ public class TestSelectSQL extends SparkTableTestBase {
     RecordGenerator dataGen = table.newDateGen();
 
     List<Record> base = dataGen.records(10);
-    TestTableHelper.writeToBase(tbl, base);
+    TestTableUtil.writeToBase(tbl, base);
     LinkedList<Record> expects = Lists.newLinkedList(base);
 
 
@@ -96,8 +96,8 @@ public class TestSelectSQL extends SparkTableTestBase {
     // insert some delete in change(delete non exists records)
     changeDelete.addAll(dataGen.records(3));
 
-    TestTableHelper.writeToChange(tbl.asKeyedTable(), changeInsert, ChangeAction.INSERT);
-    TestTableHelper.writeToChange(tbl.asKeyedTable(), changeDelete, ChangeAction.DELETE);
+    TestTableUtil.writeToChange(tbl.asKeyedTable(), changeInsert, ChangeAction.INSERT);
+    TestTableUtil.writeToChange(tbl.asKeyedTable(), changeDelete, ChangeAction.DELETE);
     // reload table;
     LinkedList<Record> expectChange = Lists.newLinkedList(changeInsert);
     expectChange.addAll(changeDelete);
@@ -106,7 +106,7 @@ public class TestSelectSQL extends SparkTableTestBase {
     //Assert MOR
     Dataset<Row> ds = sql("SELECT * FROM " + target() + " ORDER BY id");
     List<Record> actual = ds.collectAsList().stream()
-        .map(r -> TestTableHelper.rowToRecord(r, table.schema.asStruct()))
+        .map(r -> TestTableUtil.rowToRecord(r, table.schema.asStruct()))
         .collect(Collectors.toList());
     expects.sort(Comparator.comparing(r -> r.get(0, Integer.class)));
 
@@ -117,7 +117,7 @@ public class TestSelectSQL extends SparkTableTestBase {
     Assertions.assertEquals(expectChange.size(), changeActual.size());
 
     Schema changeSchema = MetadataColumns.appendChangeStoreMetadataColumns(table.schema);
-    changeActual.stream().map(r -> TestTableHelper.rowToRecord(r, changeSchema.asStruct()))
+    changeActual.stream().map(r -> TestTableUtil.rowToRecord(r, changeSchema.asStruct()))
         .forEach(r -> {
           Assertions.assertNotNull(r.getField(MetadataColumns.CHANGE_ACTION_NAME));
           Assertions.assertTrue(((Long)r.getField(MetadataColumns.TRANSACTION_ID_FILED_NAME)) > 0);
