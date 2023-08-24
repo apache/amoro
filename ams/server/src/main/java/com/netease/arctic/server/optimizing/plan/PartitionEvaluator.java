@@ -36,6 +36,12 @@ public interface PartitionEvaluator {
 
   String getPartition();
 
+  /**
+   * Add a Data file and its related Delete files to this evaluator
+   * @param dataFile - Data file
+   * @param deletes  - Delete files
+   * @return true if the file is added successfully, false if the file will not be optimized
+   */
   boolean addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes);
   
   void addPartitionProperties(Map<String, String> properties);
