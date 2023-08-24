@@ -130,6 +130,8 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
 
     @Override
     public void addPartitionProperties(Map<String, String> properties) {
+      Preconditions.checkArgument(reachHiveRefreshInterval == null,
+          "partition properties should be added before add files");
       super.addPartitionProperties(properties);
       String optimizedTime = properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
       if (optimizedTime != null) {
