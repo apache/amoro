@@ -23,6 +23,7 @@ import com.google.common.collect.Sets;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.iceberg.InternalRecordWrapper;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
@@ -111,7 +112,7 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
   protected KeyedTable testKeyedTable;
 
   protected void setupTables() throws Exception {
-    testCatalog = CatalogLoader.load(AMS.getUrl());
+    testCatalog = CatalogLoader.load(AMS.getUrl(CatalogTestHelper.TEST_CATALOG_NAME));
 
     File tableDir = tmp.newFolder();
     testTable = testCatalog
