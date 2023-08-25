@@ -64,6 +64,13 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   private AmsClient client;
   private MixedTables tables;
 
+  public BasicMixedIcebergCatalog() {
+  }
+
+  public BasicMixedIcebergCatalog(CatalogMeta meta) {
+    this.initialize(meta);
+  }
+
   @Override
   public String name() {
     return meta.getCatalogName();
