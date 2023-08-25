@@ -340,21 +340,20 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
 
     @Override
     public List<SplitTask> splitTasks(int targetTaskCount) {
-      // bin-packing
-      List<FileTask> allDataFiles = Lists.newArrayList();
-      segmentFiles.forEach((dataFile, deleteFiles) ->
-          allDataFiles.add(new FileTask(dataFile, deleteFiles, false)));
+      List<FileTask> allDataFiles = Lists.newLinkedList();
+      // If there are only one fragment file in a bin, the split task base on the bin will be un-executable
+      // Therefore prioritize packaging of fragment files to increase the executable rate(see method taskNeedExecute)
       fragmentFiles.forEach((dataFile, deleteFiles) ->
           allDataFiles.add(new FileTask(dataFile, deleteFiles, true)));
+      segmentFiles.forEach((dataFile, deleteFiles) ->
+          allDataFiles.add(new FileTask(dataFile, deleteFiles, false)));
 
-      long taskSize = config.getTargetSize();
-      Long sum = allDataFiles.stream().map(f -> f.getFile().fileSizeInBytes()).reduce(0L, Long::sum);
-      int taskCnt = (int) (sum / taskSize) + 1;
-      List<List<FileTask>> packed = new BinPacking.ListPacker<FileTask>(taskSize, taskCnt, true)
+      List<List<FileTask>> packed = new BinPacking.ListPacker<FileTask>(
+          config.getTargetSize(), Integer.MAX_VALUE, false)
           .pack(allDataFiles, f -> f.getFile().fileSizeInBytes());
 
       // collect
-      List<SplitTask> results = Lists.newArrayList();
+      List<SplitTask> results = Lists.newArrayListWithCapacity(packed.size());
       for (List<FileTask> fileTasks : packed) {
         Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
         Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
