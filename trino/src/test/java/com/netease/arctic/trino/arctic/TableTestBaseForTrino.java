@@ -20,6 +20,7 @@ package com.netease.arctic.trino.arctic;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
@@ -67,6 +68,7 @@ import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
 public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
 
   protected static TemporaryFolder tmp = new TemporaryFolder();
+  protected static File warehouse;
 
   protected static MockArcticMetastoreServer AMS;
 
@@ -135,6 +137,17 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
     // implement for sub case
   }
 
+  protected static String warehousePath() {
+    return warehouse.getAbsolutePath();
+  }
+
+  protected static void setupCatalog(CatalogTestHelper catalogTestHelper) throws IOException {
+    tmp.create();
+    warehouse = tmp.newFolder("warehouse");
+    AMS = MockArcticMetastoreServer.getInstance();
+    CatalogMeta catalogMeta = catalogTestHelper.buildCatalogMeta(warehouse.getAbsolutePath());
+    AMS.handler().createCatalog(catalogMeta);
+  }
 
   protected void clearTable() {
     testCatalog.dropTable(TABLE_ID, true);

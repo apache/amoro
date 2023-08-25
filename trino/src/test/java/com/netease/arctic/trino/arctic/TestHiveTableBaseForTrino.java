@@ -18,10 +18,8 @@
 
 package com.netease.arctic.trino.arctic;
 
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
@@ -44,7 +42,6 @@ import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.rules.TemporaryFolder;
-import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +53,7 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
   protected static final String HIVE_CATALOG_NAME = "hive_catalog";
   protected static final AtomicInteger testCount = new AtomicInteger(0);
 
-  protected static final TemporaryFolder tempFolder = new TemporaryFolder();
+  private static final TemporaryFolder tempFolder = new TemporaryFolder();
 
   protected static HMSMockServer hms;
 
@@ -120,9 +117,7 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
       Database db = new Database(HIVE_DB_NAME, "description", dbPath, new HashMap<>());
       hms.getClient().createDatabase(db);
 
-      CatalogTestHelper testCatalog = new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, hms.hiveConf());
-      CatalogMeta catalogMeta = testCatalog.buildCatalogMeta(tempFolder.newFolder("warehouse").getAbsolutePath());
-      AMS.handler().createCatalog(catalogMeta);
+      setupCatalog(new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, hms.hiveConf()));
     }
   }
 
@@ -137,29 +132,28 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
 
   protected void setupTables() throws Exception {
     hiveCatalog = (ArcticHiveCatalog) CatalogLoader.load(AMS.getUrl(HIVE_CATALOG_NAME));
-    File tableDir = tmp.newFolder();
 
     testHiveTable = (UnkeyedHiveTable) hiveCatalog
         .newTableBuilder(HIVE_TABLE_ID, HIVE_TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/table")
+        .withProperty(TableProperties.LOCATION, warehousePath() + "/table")
         .withPartitionSpec(HIVE_SPEC)
         .create().asUnkeyedTable();
 
     testUnPartitionHiveTable = (UnkeyedHiveTable) hiveCatalog
         .newTableBuilder(UN_PARTITION_HIVE_TABLE_ID, HIVE_TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/un_partition_table")
+        .withProperty(TableProperties.LOCATION, warehousePath() + "/un_partition_table")
         .create().asUnkeyedTable();
 
     testKeyedHiveTable = (KeyedHiveTable) hiveCatalog
         .newTableBuilder(HIVE_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_table")
+        .withProperty(TableProperties.LOCATION, warehousePath() + "/pk_table")
         .withPartitionSpec(HIVE_SPEC)
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
 
     testUnPartitionKeyedHiveTable = (KeyedHiveTable) hiveCatalog
         .newTableBuilder(UN_PARTITION_HIVE_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/un_partition_pk_table")
+        .withProperty(TableProperties.LOCATION, warehousePath() + "/un_partition_pk_table")
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
   }

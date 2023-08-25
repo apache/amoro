@@ -20,16 +20,11 @@ package com.netease.arctic.trino.arctic;
 
 import com.google.common.collect.ImmutableMap;
 import com.netease.arctic.TestedCatalogs;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import io.trino.testing.QueryRunner;
-import org.junit.ClassRule;
-import org.junit.rules.TemporaryFolder;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
-
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,18 +32,12 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
 
   public static final String PK_TABLE_FULL_NAME = "arctic.test_db.test_pk_table";
 
-  @ClassRule
-  public static TemporaryFolder tmp = new TemporaryFolder();
-
   @Override
   protected QueryRunner createQueryRunner() throws Exception {
-    AMS = MockArcticMetastoreServer.getInstance();
     CatalogTestHelper testCatalog = TestedCatalogs.hadoopCatalog(TableFormat.MIXED_ICEBERG);
-    CatalogMeta catalogMeta = testCatalog.buildCatalogMeta(tmp.getRoot().getAbsolutePath());
-    AMS.handler().createCatalog(catalogMeta);
+    setupCatalog(testCatalog);
 
     // setupAMS();
-    tmp.create();
     setupTables();
     initData();
     return ArcticQueryRunner.builder()
@@ -79,7 +68,8 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
 
   @Test
   public void tableMORWithProject() throws InterruptedException {
-    assertQuery("select op_time, \"name$name\" from " + PK_TABLE_FULL_NAME,
+    assertQuery(
+        "select op_time, \"name$name\" from " + PK_TABLE_FULL_NAME,
         "VALUES (TIMESTAMP '2022-01-01 12:00:00', 'john'), " +
             "(TIMESTAMP'2022-01-02 12:00:00', 'lily'), " +
             "(TIMESTAMP'2022-01-03 12:00:00', 'jake'), " +
@@ -103,7 +93,8 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
 
   @Test
   public void changeQuery() {
-    assertQuery("select * from " + "arctic.test_db.\"test_pk_table#change\"",
+    assertQuery(
+        "select * from " + "arctic.test_db.\"test_pk_table#change\"",
         "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT')," +
             "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT')," +
             "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
@@ -111,7 +102,8 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
 
   @Test
   public void changeQueryWhenTableNameContainCatalogAndDataBase() {
-    assertQuery("select * from " + "arctic.test_db.\"arctic.test_db.test_pk_table#change\"",
+    assertQuery(
+        "select * from " + "arctic.test_db.\"arctic.test_db.test_pk_table#change\"",
         "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT')," +
             "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT')," +
             "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
@@ -119,7 +111,8 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
 
   @Test
   public void changeQueryWhenTableNameContainDataBase() {
-    assertQuery("select * from " + "arctic.test_db.\"test_db.test_pk_table#change\"",
+    assertQuery(
+        "select * from " + "arctic.test_db.\"test_db.test_pk_table#change\"",
         "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT')," +
             "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT')," +
             "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
