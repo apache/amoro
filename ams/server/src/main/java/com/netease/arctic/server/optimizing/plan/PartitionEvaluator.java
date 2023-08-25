@@ -23,7 +23,6 @@ import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.server.optimizing.OptimizingType;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * PartitionEvaluator is used to evaluate whether a partition is necessary to be optimized.
@@ -52,13 +51,6 @@ public interface PartitionEvaluator {
    * @return true if the file is added successfully, false if the file will not be optimized
    */
   boolean addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes);
-
-  /**
-   * Add some properties of this partition. It should be noted that properties should be added before adding any files.
-   *
-   * @param properties - properties of this partition
-   */
-  void addPartitionProperties(Map<String, String> properties);
 
   /**
    * Whether this partition is necessary to optimize.

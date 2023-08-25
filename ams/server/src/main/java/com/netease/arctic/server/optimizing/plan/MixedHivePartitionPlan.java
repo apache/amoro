@@ -78,7 +78,8 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
 
   @Override
   protected CommonPartitionEvaluator buildEvaluator() {
-    return new MixedHivePartitionEvaluator(tableRuntime, partition, hiveLocation, planTime, isKeyedTable());
+    return new MixedHivePartitionEvaluator(tableRuntime, partition, partitionProperties, hiveLocation, planTime,
+        isKeyedTable());
   }
 
   @Override
@@ -105,16 +106,20 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
 
   protected static class MixedHivePartitionEvaluator extends MixedIcebergPartitionEvaluator {
     private final String hiveLocation;
-    private boolean filesNotInHiveLocation = false;
-    // partition property
-    protected long lastHiveOptimizedTime;
-    
-    private Boolean reachHiveRefreshInterval;
+    private final boolean reachHiveRefreshInterval;
 
-    public MixedHivePartitionEvaluator(TableRuntime tableRuntime, String partition, String hiveLocation,
+    private boolean filesNotInHiveLocation = false;
+
+    public MixedHivePartitionEvaluator(TableRuntime tableRuntime, String partition,
+                                       Map<String, String> partitionProperties, String hiveLocation,
                                        long planTime, boolean keyedTable) {
-      super(tableRuntime, partition, planTime, keyedTable);
+      super(tableRuntime, partition, partitionProperties, planTime, keyedTable);
       this.hiveLocation = hiveLocation;
+      String optimizedTime = partitionProperties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
+      // the unit of transient-time is seconds
+      long lastHiveOptimizedTime = optimizedTime == null ? 0 : Integer.parseInt(optimizedTime) * 1000L;
+      this.reachHiveRefreshInterval =
+          config.getHiveRefreshInterval() >= 0 && planTime - lastHiveOptimizedTime > config.getHiveRefreshInterval();
     }
 
     @Override
@@ -126,18 +131,6 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
         filesNotInHiveLocation = true;
       }
       return true;
-    }
-
-    @Override
-    public void addPartitionProperties(Map<String, String> properties) {
-      Preconditions.checkArgument(reachHiveRefreshInterval == null,
-          "partition properties should be added before add files");
-      super.addPartitionProperties(properties);
-      String optimizedTime = properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
-      if (optimizedTime != null) {
-        // the unit of transient-time is seconds
-        this.lastHiveOptimizedTime = Integer.parseInt(optimizedTime) * 1000L;
-      }
     }
 
     @Override
@@ -172,10 +165,6 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     }
 
     protected boolean reachHiveRefreshInterval() {
-      if (reachHiveRefreshInterval == null) {
-        reachHiveRefreshInterval =
-            config.getHiveRefreshInterval() >= 0 && planTime - lastHiveOptimizedTime > config.getHiveRefreshInterval();
-      }
       return reachHiveRefreshInterval;
     }
 

@@ -26,6 +26,7 @@ import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
@@ -49,6 +50,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   private long fromSequence = INVALID_SEQUENCE;
   private long toSequence = INVALID_SEQUENCE;
   protected final long planTime;
+  protected final Map<String, String> partitionProperties;
 
   protected final Map<IcebergDataFile, List<IcebergContentFile<?>>> rewriteDataFiles = Maps.newHashMap();
   protected final Map<IcebergDataFile, List<IcebergContentFile<?>>> rewritePosDataFiles = Maps.newHashMap();
@@ -62,6 +64,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     this.config = tableRuntime.getOptimizingConfig();
     this.tableRuntime = tableRuntime;
     this.planTime = planTime;
+    this.partitionProperties = TablePropertyUtil.getPartitionProperties(table, partition);
   }
 
   @Override
@@ -77,7 +80,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   }
 
   protected CommonPartitionEvaluator buildEvaluator() {
-    return new CommonPartitionEvaluator(tableRuntime, partition, planTime);
+    return new CommonPartitionEvaluator(tableRuntime, partition, partitionProperties, planTime);
   }
 
   @Override
@@ -111,11 +114,6 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       return false;
     }
     return true;
-  }
-
-  @Override
-  public void addPartitionProperties(Map<String, String> properties) {
-    evaluator().addPartitionProperties(properties);
   }
 
   public List<TaskDescriptor> splitTasks(int targetTaskCount) {

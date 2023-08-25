@@ -43,6 +43,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   protected final OptimizingConfig config;
   protected final long fragmentSize;
   protected final long planTime;
+  protected final Map<String, String> partitionProperties;
   private final boolean reachFullInterval;
 
   // fragment files
@@ -68,7 +69,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   private OptimizingType optimizingType = null;
   private String name;
 
-  public CommonPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
+  public CommonPartitionEvaluator(TableRuntime tableRuntime, String partition, Map<String, String> partitionProperties,
+                                  long planTime) {
     this.partition = partition;
     this.tableRuntime = tableRuntime;
     this.config = tableRuntime.getOptimizingConfig();
@@ -76,6 +78,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     this.planTime = planTime;
     this.reachFullInterval = config.getFullTriggerInterval() >= 0 &&
         planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
+    this.partitionProperties = partitionProperties;
   }
 
   @Override
@@ -94,10 +97,6 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     } else {
       return addSegmentFile(dataFile, deletes);
     }
-  }
-
-  @Override
-  public void addPartitionProperties(Map<String, String> properties) {
   }
 
   private boolean isDuplicateDelete(IcebergContentFile<?> delete) {

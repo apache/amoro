@@ -89,19 +89,24 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
 
   @Override
   protected CommonPartitionEvaluator buildEvaluator() {
-    return new MixedIcebergPartitionEvaluator(tableRuntime, partition, planTime, isKeyedTable());
+    return new MixedIcebergPartitionEvaluator(tableRuntime, partition, partitionProperties, planTime,
+        isKeyedTable());
   }
 
   protected static class MixedIcebergPartitionEvaluator extends CommonPartitionEvaluator {
     protected final boolean keyedTable;
     protected boolean hasChangeFiles = false;
-    // partition property
-    protected long lastBaseOptimizedTime;
+    private final boolean reachBaseRefreshInterval;
 
-    public MixedIcebergPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime,
+    public MixedIcebergPartitionEvaluator(TableRuntime tableRuntime, String partition,
+                                          Map<String, String> partitionProperties, long planTime,
                                           boolean keyedTable) {
-      super(tableRuntime, partition, planTime);
+      super(tableRuntime, partition, partitionProperties, planTime);
       this.keyedTable = keyedTable;
+      String optimizedTime = partitionProperties.get(TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
+      long lastBaseOptimizedTime = optimizedTime == null ? 0 : Long.parseLong(optimizedTime);
+      this.reachBaseRefreshInterval =
+          config.getBaseRefreshInterval() >= 0 && planTime - lastBaseOptimizedTime > config.getBaseRefreshInterval();
     }
 
     @Override
@@ -113,15 +118,6 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
         hasChangeFiles = true;
       }
       return true;
-    }
-
-    @Override
-    public void addPartitionProperties(Map<String, String> properties) {
-      super.addPartitionProperties(properties);
-      String optimizedTime = properties.get(TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
-      if (optimizedTime != null) {
-        this.lastBaseOptimizedTime = Long.parseLong(optimizedTime);
-      }
     }
 
     protected boolean isChangeFile(IcebergDataFile dataFile) {
@@ -178,7 +174,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
 
     protected boolean reachBaseRefreshInterval() {
-      return config.getBaseRefreshInterval() >= 0 && planTime - lastBaseOptimizedTime > config.getBaseRefreshInterval();
+      return reachBaseRefreshInterval;
     }
 
     protected int getBaseSplitCount() {

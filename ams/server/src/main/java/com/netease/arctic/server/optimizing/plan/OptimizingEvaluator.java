@@ -28,13 +28,13 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableSnapshot;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.utils.TablePropertyUtil;
 import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
-import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,42 +95,31 @@ public class OptimizingEvaluator {
   private void initPartitionPlans(TableFileScanHelper tableFileScanHelper) {
     PartitionSpec partitionSpec = arcticTable.spec();
     // add partition properties before adding files
-    StructLikeMap<Map<String, String>> partitionProperties = partitionProperty();
     for (TableFileScanHelper.FileScanResult fileScanResult : tableFileScanHelper.scan()) {
       StructLike partition = fileScanResult.file().partition();
       String partitionPath = partitionSpec.partitionToPath(partition);
-      if (!partitionPlanMap.containsKey(partitionPath)) {
-        PartitionEvaluator evaluator = buildEvaluator(partitionPath);
-        if (partitionProperties.containsKey(partition)) {
-          evaluator.addPartitionProperties(partitionProperties.get(partition));
-        }
-        partitionPlanMap.put(partitionPath, evaluator);
-      }
-      PartitionEvaluator evaluator = partitionPlanMap.get(partitionPath);
+      PartitionEvaluator evaluator = partitionPlanMap.computeIfAbsent(partitionPath, this::buildEvaluator);
       evaluator.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
     }
     partitionPlanMap.values().removeIf(plan -> !plan.isNecessary());
   }
 
-  private StructLikeMap<Map<String, String>> partitionProperty() {
-    if (arcticTable.isKeyedTable()) {
-      return arcticTable.asKeyedTable().baseTable().partitionProperty();
-    } else {
-      return arcticTable.asUnkeyedTable().partitionProperty();
-    }
+  private Map<String, String> partitionProperties(String partitionPath) {
+    return TablePropertyUtil.getPartitionProperties(arcticTable, partitionPath);
   }
 
   protected PartitionEvaluator buildEvaluator(String partitionPath) {
+    Map<String, String> partitionProperties = partitionProperties(partitionPath);
     if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
-      return new CommonPartitionEvaluator(tableRuntime, partitionPath, System.currentTimeMillis());
+      return new CommonPartitionEvaluator(tableRuntime, partitionPath, partitionProperties, System.currentTimeMillis());
     } else {
       if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {
         String hiveLocation = (((SupportHive) arcticTable).hiveLocation());
-        return new MixedHivePartitionPlan.MixedHivePartitionEvaluator(tableRuntime, partitionPath, hiveLocation,
-            System.currentTimeMillis(), arcticTable.isKeyedTable());
+        return new MixedHivePartitionPlan.MixedHivePartitionEvaluator(tableRuntime, partitionPath, partitionProperties,
+            hiveLocation, System.currentTimeMillis(), arcticTable.isKeyedTable());
       } else {
         return new MixedIcebergPartitionPlan.MixedIcebergPartitionEvaluator(tableRuntime, partitionPath,
-            System.currentTimeMillis(), arcticTable.isKeyedTable());
+            partitionProperties, System.currentTimeMillis(), arcticTable.isKeyedTable());
       }
     }
   }
