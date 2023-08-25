@@ -92,6 +92,9 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
   @Override
   public boolean addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    if (!config.isEnabled()) {
+      return false;
+    }
     if (isFragmentFile(dataFile)) {
       return addFragmentFile(dataFile, deletes);
     } else {
