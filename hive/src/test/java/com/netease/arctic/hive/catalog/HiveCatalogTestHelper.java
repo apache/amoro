@@ -39,6 +39,11 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
   private final TableFormat tableFormat;
   private final Configuration hiveConf;
 
+  public static CatalogTestHelper build(Configuration hiveConf, TableFormat... formats) {
+    Preconditions.checkArgument(formats.length == 1, "Cannot support multiple table formats");
+    return new HiveCatalogTestHelper(formats[0], hiveConf);
+  }
+
   public HiveCatalogTestHelper(TableFormat tableFormat, Configuration hiveConf) {
     Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG) ||
         tableFormat.equals(TableFormat.MIXED_HIVE), "Cannot support table format:" + tableFormat);

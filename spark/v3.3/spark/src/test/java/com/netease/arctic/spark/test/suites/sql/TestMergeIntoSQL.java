@@ -22,10 +22,10 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
-import com.netease.arctic.spark.test.helper.DataComparator;
-import com.netease.arctic.spark.test.helper.ExpectResultHelper;
-import com.netease.arctic.spark.test.helper.RecordGenerator;
-import com.netease.arctic.spark.test.helper.TestTableHelper;
+import com.netease.arctic.spark.test.utils.DataComparator;
+import com.netease.arctic.spark.test.utils.ExpectResultUtil;
+import com.netease.arctic.spark.test.utils.RecordGenerator;
+import com.netease.arctic.spark.test.utils.TestTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
@@ -77,10 +77,10 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
     target.addAll(change);
 
     if (table.isKeyedTable()) {
-      TestTableHelper.writeToBase(table, base);
-      TestTableHelper.writeToChange(table.asKeyedTable(), change, ChangeAction.INSERT);
+      TestTableUtil.writeToBase(table, base);
+      TestTableUtil.writeToChange(table.asKeyedTable(), change, ChangeAction.INSERT);
     } else {
-      TestTableHelper.writeToBase(table, target);
+      TestTableUtil.writeToBase(table, target);
     }
   }
 
@@ -106,7 +106,7 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
         "WHEN MATCHED AND t.id = 2 THEN UPDATE SET * " +
         "WHEN NOT MATCHED AND s.id != 5 THEN INSERT *");
 
-    List<Record> expects = ExpectResultHelper.expectMergeResult(
+    List<Record> expects = ExpectResultUtil.expectMergeResult(
             target, source, r -> r.getField("id")
         ).whenMatched((t, s) -> t.getField("id").equals(1), (t, s) -> null)
         .whenMatched((t, s) -> t.getField("id").equals(2), (t, s) -> s)
@@ -114,7 +114,7 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
         .results();
 
     ArcticTable table = loadTable();
-    List<Record> actual = TestTableHelper.tableRecords(table);
+    List<Record> actual = TestTableUtil.tableRecords(table);
     DataComparator.build(expects, actual)
         .ignoreOrder("id")
         .assertRecordsEqual();
@@ -130,7 +130,7 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
     sql("MERGE INTO " + target() + " AS t USING " + source() + " AS s ON t.id == s.id " +
         "WHEN MATCHED AND t.id = 2 THEN UPDATE SET t.data = 'ccc' ");
 
-    List<Record> expects = ExpectResultHelper.expectMergeResult(
+    List<Record> expects = ExpectResultUtil.expectMergeResult(
             target, source, r -> r.getField("id")
         ).whenMatched((t, s) -> t.getField("id").equals(2), (t, s) -> {
           t.setField("data", "ccc");
@@ -139,7 +139,7 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
         .results();
 
     ArcticTable table = loadTable();
-    List<Record> actual = TestTableHelper.tableRecords(table);
+    List<Record> actual = TestTableUtil.tableRecords(table);
     DataComparator.build(expects, actual)
         .ignoreOrder("id")
         .assertRecordsEqual();
@@ -159,7 +159,7 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
 
     table.refresh();
     List<Record> expects = Lists.newArrayList(source);
-    List<Record> actual = TestTableHelper.tableRecords(table);
+    List<Record> actual = TestTableUtil.tableRecords(table);
     DataComparator.build(expects, actual)
         .ignoreOrder("id")
         .assertRecordsEqual();
@@ -176,14 +176,14 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
         "WHEN MATCHED THEN UPDATE SET * " +
         "WHEN NOT MATCHED THEN INSERT *");
 
-    List<Record> expects = ExpectResultHelper.expectMergeResult(
+    List<Record> expects = ExpectResultUtil.expectMergeResult(
             target, source, r -> r.getField("id")
         ).whenMatched((t, s) -> true, (t, s) -> s)
         .whenNotMatched(s -> true, Function.identity())
         .results();
 
     ArcticTable table = loadTable();
-    List<Record> actual = TestTableHelper.tableRecords(table);
+    List<Record> actual = TestTableUtil.tableRecords(table);
     DataComparator.build(expects, actual)
         .ignoreOrder("id")
         .assertRecordsEqual();
@@ -198,13 +198,13 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
     sql("MERGE INTO " + target() + " AS t USING " + source() + " AS s ON t.id == s.id " +
         "WHEN MATCHED THEN DELETE ");
 
-    List<Record> expects = ExpectResultHelper.expectMergeResult(
+    List<Record> expects = ExpectResultUtil.expectMergeResult(
             target, source, r -> r.getField("id")
         ).whenMatched((t, s) -> true, (t, s) -> null)
         .results();
 
     ArcticTable table = loadTable();
-    List<Record> actual = TestTableHelper.tableRecords(table);
+    List<Record> actual = TestTableUtil.tableRecords(table);
     DataComparator.build(expects, actual)
         .ignoreOrder("id")
         .assertRecordsEqual();
@@ -226,14 +226,14 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
       r.setField("data", s.getField("pt"));
       return r;
     };
-    List<Record> expects = ExpectResultHelper.expectMergeResult(
+    List<Record> expects = ExpectResultUtil.expectMergeResult(
             target, source, r -> r.getField("id")
         ).whenMatched((t, s) -> true, (t, s) -> dataAsPt.apply(s))
         .whenNotMatched(s -> true, dataAsPt)
         .results();
 
     ArcticTable table = loadTable();
-    List<Record> actual = TestTableHelper.tableRecords(table);
+    List<Record> actual = TestTableUtil.tableRecords(table);
     DataComparator.build(expects, actual)
         .ignoreOrder("id")
         .assertRecordsEqual();

@@ -31,6 +31,7 @@
     <url>https://amoro.netease.com</url>
 
     <modules>
+        <module>common</module>
         <module>v3.1/spark</module>
         <module>v3.1/spark-runtime</module>
         <module>v3.2/spark</module>

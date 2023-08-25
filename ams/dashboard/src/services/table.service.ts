@@ -110,7 +110,7 @@ export function getTransactions(
     table: string,
     page: number
     pageSize: number
-    token: string
+    token?: string
   }
 ) {
   const { catalog, db, table, page, pageSize, token } = params
@@ -126,7 +126,7 @@ export function getDetailByTransactionId(
     transactionId: string,
     page: number
     pageSize: number
-    token: string
+    token?: string
   }
 ) {
   const { catalog, db, table, transactionId, page, pageSize, token } = params
