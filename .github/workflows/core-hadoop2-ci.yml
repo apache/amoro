@@ -13,19 +13,14 @@ on:
     branches:
       - "master"
       - "0.**"
-    paths-ignpore:
-      - ".github/**"
-      - ".idea/**"
-      - "dev/**"
-      - "dist/**"
-      - "docker/**"
-      - "docs/**"
-      - "style/**"
-      - ".gitignore"
-      - "LICENSE"
-      - "README.md"
-      - ".scalafmt.conf"
-      - "CONTRIBUTING.md"
+    paths:
+      - "ams/**"
+      - "core/**"
+      - "flink/**"
+      - "hive/**"
+      - "spark/**"
+      - "trino/**"
+      - "pom.xml"
 
 jobs:
   build:
