@@ -101,19 +101,20 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   @Override
   public boolean addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
     boolean added = evaluator().addFile(dataFile, deletes);
+    if (added) {
+      if (evaluator().fileShouldRewrite(dataFile, deletes)) {
+        rewriteDataFiles.put(dataFile, deletes);
+      } else if (evaluator().segmentFileShouldRewritePos(dataFile, deletes)) {
+        rewritePosDataFiles.put(dataFile, deletes);
+      } else {
+        added = false;
+      }
+    }
     if (!added) {
       // if the Data file is not added, it's Delete files should not be removed from iceberg
       deletes.stream().map(delete -> delete.path().toString()).forEach(reservedDeleteFiles::add);
-      return false;
     }
-    if (evaluator().fileShouldRewrite(dataFile, deletes)) {
-      rewriteDataFiles.put(dataFile, deletes);
-    } else if (evaluator().segmentFileShouldRewritePos(dataFile, deletes)) {
-      rewritePosDataFiles.put(dataFile, deletes);
-    } else {
-      return false;
-    }
-    return true;
+    return added;
   }
 
   public List<TaskDescriptor> splitTasks(int targetTaskCount) {
