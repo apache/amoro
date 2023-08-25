@@ -288,14 +288,12 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       rewritePosDataFiles.forEach((dataFile, deleteFiles) ->
           allDataFiles.add(new FileTask(dataFile, deleteFiles, false)));
 
-      long taskSize = config.getTargetSize();
-      Long sum = allDataFiles.stream().map(f -> f.getFile().fileSizeInBytes()).reduce(0L, Long::sum);
-      int taskCnt = (int) (sum / taskSize) + 1;
-      List<List<FileTask>> packed = new BinPacking.ListPacker<FileTask>(taskSize, taskCnt, true)
+      List<List<FileTask>> packed = new BinPacking.ListPacker<FileTask>(
+          config.getTargetSize(), Integer.MAX_VALUE, false)
           .pack(allDataFiles, f -> f.getFile().fileSizeInBytes());
 
       // collect
-      List<SplitTask> results = Lists.newArrayList();
+      List<SplitTask> results = Lists.newArrayListWithCapacity(packed.size());
       for (List<FileTask> fileTasks : packed) {
         Set<IcebergDataFile> rewriteDataFiles = Sets.newHashSet();
         Set<IcebergDataFile> rewritePosDataFiles = Sets.newHashSet();
