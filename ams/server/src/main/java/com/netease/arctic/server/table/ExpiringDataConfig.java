@@ -1,6 +1,7 @@
 package com.netease.arctic.server.table;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import java.util.Map;
 
@@ -66,9 +67,27 @@ public class ExpiringDataConfig {
   }
 
   public static ExpiringDataConfig parse(Map<String, String> properties) {
-    return new ExpiringDataConfig().setEnabled(CompatiblePropertyUtil.propertyAsBoolean(
-        properties,
-        "",
-        false));
+    return new ExpiringDataConfig()
+        .setEnabled(CompatiblePropertyUtil.propertyAsBoolean(
+            properties,
+            TableProperties.ENABLE_DATA_EXPIRE,
+            TableProperties.ENABLE_DATA_EXPIRE_DEFAULT))
+        .setLevel(CompatiblePropertyUtil.propertyAsString(
+            properties,
+            TableProperties.ENABLE_DATA_EXPIRE_LEVEL,
+            TableProperties.ENABLE_DATA_EXPIRE_LEVEL_DEFAULT))
+        .setField(CompatiblePropertyUtil.propertyAsString(
+            properties,
+            TableProperties.ENABLE_DATA_EXPIRE_FIELD,
+            ""))
+        .setDateFormatter(CompatiblePropertyUtil.propertyAsString(
+            properties,
+            TableProperties.ENABLE_DATA_EXPIRE_DATE_FORMATTER,
+            TableProperties.ENABLE_DATA_EXPIRE_DATE_FORMATTER_DEFAULT))
+        .setRetentionTime(CompatiblePropertyUtil.propertyAsLong(
+            properties,
+            TableProperties.ENABLE_DATA_EXPIRE_RETENTION_TIME,
+            TableProperties.ENABLE_DATA_EXPIRE_RETENTION_TIME_DEFAULT
+        ));
   }
 }

@@ -91,7 +91,7 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
     }
   }
 
-  protected void addIcebergDataFile(DataFile file) {
+  public void addIcebergDataFile(DataFile file) {
     if (tracer != null) {
       tracer.addDataFile(file);
     }
