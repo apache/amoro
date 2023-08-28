@@ -33,7 +33,6 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
@@ -208,10 +207,6 @@ public class BasicArcticCatalog implements ArcticCatalog {
   @Override
   public Map<String, String> properties() {
     return catalogMeta.getCatalogProperties();
-  }
-
-  public TableMetaStore getTableMetaStore() {
-    return tables.getTableMetaStore();
   }
 
   protected TableMeta getArcticTableMeta(TableIdentifier identifier) {

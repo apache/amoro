@@ -161,6 +161,20 @@ public class CatalogLoader {
     }
   }
 
+
+  public static CatalogMeta loadMeta(String catalogUrl) {
+    ArcticThriftUrl url = ArcticThriftUrl.parse(catalogUrl, Constants.THRIFT_TABLE_SERVICE_NAME);
+    if (url.catalogName() == null || url.catalogName().contains("/")) {
+      throw new IllegalArgumentException("invalid catalog name " + url.catalogName());
+    }
+    AmsClient client = new PooledAmsClient(catalogUrl);
+    try {
+      return client.getCatalog(url.catalogName());
+    } catch (TException e) {
+      throw new IllegalStateException("failed when load catalog " + url.catalogName(), e);
+    }
+  }
+
   /**
    * Show catalog list in arctic metastore.
    *

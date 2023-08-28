@@ -19,6 +19,7 @@
 package com.netease.arctic.trino;
 
 import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.table.TableMetaStore;
 
 /**
  * A interface of factory to generate ArcticCatalog
@@ -29,4 +30,6 @@ public interface ArcticCatalogFactory {
    * generate ArcticCatalog
    */
   ArcticCatalog getArcticCatalog();
+
+  TableMetaStore getTableMetastore();
 }
