@@ -142,14 +142,14 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   @Override
   public List<TableIdentifier> listTables(String database) {
     List<org.apache.iceberg.catalog.TableIdentifier> icebergTableList =
-        icebergCatalog.listTables(Namespace.of(database));
+        tableMetaStore.doAs(() -> icebergCatalog.listTables(Namespace.of(database)));
     List<TableIdentifier> mixedTables = Lists.newArrayList();
     Set<org.apache.iceberg.catalog.TableIdentifier> visited = Sets.newHashSet();
     for (org.apache.iceberg.catalog.TableIdentifier identifier : icebergTableList) {
       if (visited.contains(identifier)) {
         continue;
       }
-      Table table = icebergCatalog.loadTable(identifier);
+      Table table = tableMetaStore.doAs(() -> icebergCatalog.loadTable(identifier));
       if (tables.isBaseStore(table)) {
         mixedTables.add(TableIdentifier.of(meta.getCatalogName(), database, identifier.name()));
         visited.add(identifier);
@@ -189,11 +189,11 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     // delete custom trash location
     String customTrashLocation = table.properties().get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
     ArcticFileIO io = table.io();
-    boolean deleted = icebergCatalog.dropTable(toIcebergTableIdentifier(tableIdentifier), purge);
+    boolean deleted = dropTableInternal(toIcebergTableIdentifier(tableIdentifier), purge);
     boolean changeDeleted = false;
     if (table.isKeyedTable()) {
       try {
-        changeDeleted = icebergCatalog.dropTable(tables.changeStoreIdentifier(base.asUnkeyedTable()), purge);
+        changeDeleted = dropTableInternal(tables.changeStoreIdentifier(base.asUnkeyedTable()), purge);
       } catch (Exception e) {
         // pass
       }
@@ -235,6 +235,10 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
 
   private org.apache.iceberg.catalog.TableIdentifier toIcebergTableIdentifier(TableIdentifier identifier) {
     return org.apache.iceberg.catalog.TableIdentifier.of(identifier.getDatabase(), identifier.getTableName());
+  }
+
+  private boolean dropTableInternal(org.apache.iceberg.catalog.TableIdentifier tableIdentifier, boolean purge) {
+    return tableMetaStore.doAs(() -> icebergCatalog.dropTable(tableIdentifier, purge));
   }
 
   private SupportsNamespaces asNamespaceCatalog() {

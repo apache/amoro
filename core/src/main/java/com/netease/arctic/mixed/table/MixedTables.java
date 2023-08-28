@@ -118,8 +118,7 @@ public class MixedTables {
     Map<String, String> tableStoreProperties = tableStoreProperties(keySpec, properties);
     TableIdentifier baseIdentifier = TableIdentifier.of(identifier.getDatabase(), identifier.getTableName());
     TableIdentifier changeIdentifier = changeStoreIdentifier(baseIdentifier);
-    if (keySpec.primaryKeyExisted() &&
-        icebergCatalog.tableExists(changeIdentifier)) {
+    if (keySpec.primaryKeyExisted() && tableStoreExists(changeIdentifier)) {
       throw new AlreadyExistsException("change store already exists");
     }
 
@@ -128,10 +127,10 @@ public class MixedTables {
         .withProperty(TableProperties.MIXED_FORMAT_TABLE_STORE, TableProperties.MIXED_FORMAT_TABLE_STORE_BASE)
         .withProperties(tableStoreProperties);
     if (keySpec.primaryKeyExisted()) {
-      baseBuilder = baseBuilder.withProperty(
+      baseBuilder.withProperty(
           TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER, changeIdentifier.toString());
     }
-    Table base = baseBuilder.create();
+    Table base = tableMetaStore.doAs(baseBuilder::create);
     ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
 
     if (!keySpec.primaryKeyExisted()) {
@@ -139,11 +138,11 @@ public class MixedTables {
     }
     AmsClient client = new EmptyAmsClient();
 
-    Table change = icebergCatalog.buildTable(changeIdentifier, schema)
+    Catalog.TableBuilder changeBuilder = icebergCatalog.buildTable(changeIdentifier, schema)
         .withProperties(tableStoreProperties)
         .withPartitionSpec(partitionSpec)
-        .withProperty(TableProperties.MIXED_FORMAT_TABLE_STORE, TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE)
-        .create();
+        .withProperty(TableProperties.MIXED_FORMAT_TABLE_STORE, TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE);
+    Table change = tableMetaStore.doAs(changeBuilder::create);
     BaseTable baseStore = new BasicKeyedTable.BaseInternalTable(
         identifier, base, io, client, catalogMeta.getCatalogProperties());
     ChangeTable changeStore = new BasicKeyedTable.ChangeInternalTable(
@@ -170,5 +169,9 @@ public class MixedTables {
     TableIdentifier changeIdentifier = changeStoreIdentifier(base);
     return tableMetaStore.doAs(
         () -> icebergCatalog.loadTable(changeIdentifier));
+  }
+
+  private boolean tableStoreExists(TableIdentifier identifier) {
+    return tableMetaStore.doAs(() -> icebergCatalog.tableExists(identifier));
   }
 }
