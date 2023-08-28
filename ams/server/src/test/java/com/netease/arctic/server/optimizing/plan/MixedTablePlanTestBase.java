@@ -40,7 +40,6 @@ import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.data.Record;
@@ -289,13 +288,6 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     for (TableFileScanHelper.FileScanResult fileScanResult : scan) {
       partitionPlan.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
     }
-    PartitionSpec spec = getArcticTable().spec();
-    partitionProperty().forEach((partition, properties) -> {
-      String partitionToPath = spec.partitionToPath(partition);
-      if (partitionToPath.equals(partitionPlan.getPartition())) {
-        partitionPlan.addPartitionProperties(properties);
-      }
-    });
     return partitionPlan;
   }
 
