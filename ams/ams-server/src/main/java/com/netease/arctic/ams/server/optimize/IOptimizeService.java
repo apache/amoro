@@ -116,8 +116,10 @@ public interface IOptimizeService extends Closeable {
   /**
    * Clear removed table from cache
    * @param toRemoveTable -
+   * @param deleteRuntime -
+   * @param deleteHistory -
    */
-  void clearRemovedTable(TableIdentifier toRemoveTable);
+  void clearRemovedTable(TableIdentifier toRemoveTable, boolean deleteRuntime, boolean deleteHistory);
 
   /**
    * Start table optimize

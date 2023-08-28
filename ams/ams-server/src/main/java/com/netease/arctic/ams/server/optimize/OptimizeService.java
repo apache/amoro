@@ -199,7 +199,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
       List<TableIdentifier> toRemoveTables = getValidTables().stream()
           .filter(t -> !tableIdentifiers.contains(t))
           .collect(Collectors.toList());
-      clearRemovedTables(toRemoveTables);
+      clearRemovedTables(toRemoveTables, true, false);
 
       // update optimizing tables set
       addOptimizingTables();
@@ -217,9 +217,10 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   /**
    * clean self-optimizing table and related tasks
    * @param tableIdentifier Arctic table identifier
-   * @param pureDelete whether delete history records and table runtime in sysdb
+   * @param deleteRuntime whether delete table runtime in sysdb
+   * @param deleteHistory whether delete history records
    */
-  private void clearOptimizeTable(TableIdentifier tableIdentifier, boolean pureDelete) {
+  private void clearOptimizeTable(TableIdentifier tableIdentifier, boolean deleteRuntime, boolean deleteHistory) {
     if (!optimizeTables.containsKey(tableIdentifier)) {
       return;
     }
@@ -230,12 +231,14 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     } catch (Throwable t) {
       LOG.debug("failed to delete " + tableIdentifier + " optimize task, ignore", t);
     }
-    if (pureDelete) {
+    if (deleteRuntime) {
       try {
         deleteTableOptimizeRuntime(tableIdentifier);
       } catch (Throwable t) {
         LOG.debug("failed to delete  " + tableIdentifier + " runtime, ignore", t);
       }
+    }
+    if (deleteHistory) {
       try {
         deleteOptimizeRecord(tableIdentifier);
         deleteOptimizeTaskHistory(tableIdentifier);
@@ -446,18 +449,20 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
         .run(task);
   }
 
-  private void clearRemovedTables(List<TableIdentifier> toRemoveTables) {
+  private void clearRemovedTables(List<TableIdentifier> toRemoveTables, boolean deleteRuntime, boolean deleteHistory) {
     if (!inited) {
       LOG.info("OptimizeService init not completed, can't remove tables");
       return;
     }
-    parallelProcessTables(toRemoveTables, this::clearRemovedTable);
+    parallelProcessTables(toRemoveTables, toRemoveTable -> {
+      clearRemovedTable(toRemoveTable, deleteRuntime, deleteHistory);
+    });
     LOG.info("clear tables[{}] {}", toRemoveTables.size(), toRemoveTables);
   }
 
   @Override
-  public void clearRemovedTable(TableIdentifier toRemoveTable) {
-    clearOptimizeTable(toRemoveTable, true);
+  public void clearRemovedTable(TableIdentifier toRemoveTable, boolean deleteRuntime, boolean deleteHistory) {
+    clearOptimizeTable(toRemoveTable, deleteRuntime, deleteHistory);
     unOptimizeTables.remove(toRemoveTable);
     LOG.info("clear table {}", toRemoveTable);
   }
@@ -510,7 +515,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
       return;
     }
 
-    clearOptimizeTable(tableIdentifier, false);
+    clearOptimizeTable(tableIdentifier, false, false);
     unOptimizeTables.add(tableIdentifier);
     LOG.info("Disable self-optimizing table: {}", tableIdentifier);
   }
