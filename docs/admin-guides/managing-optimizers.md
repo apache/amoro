@@ -37,7 +37,7 @@ The required properties include "flink-home", and all environment variables that
 in the "export.{env_arg}" property of the container's properties. The commonly used configurations are as follows:
 
 - flink-home, download the Flink installation package and unzip it. Take Flink-1.14.6 as an example,
-  download https://archive.apache.org/dist/flink/flink-1.14.6/flink-1.14.6-bin-scala_2.11.tgz , assuming that it is
+  download https://archive.apache.org/dist/flink/flink-1.14.6/flink-1.14.6-bin-scala_2.12.tgz , assuming that it is
   extracted to /opt/ directory, then configure the value /opt/ flink-1.14.6/. Since the Flink distribution does not come
   with the hadoop compatible package flink-shaded-hadoop-2-uber-x.y.z.jar, you need to download it and copy it to the
   FLINK_HOME/lib directory. The flink-shaded-hadoop-2-uber-2.7.5-10.0.jar is generally sufficient and can be downloaded
@@ -133,8 +133,7 @@ You can submit optimizer in your own Flink task development platform or local Fl
  -p 1 \
  -eds \
  -dsp /tmp \
- -msz 512 \
- -id 9c12edca-b0bf-434d-a954-dd8aab88a284
+ -msz 512
 ```
 The description of the relevant parameters is shown in the following table:
 
@@ -147,4 +146,3 @@ The description of the relevant parameters is shown in the following table:
 | -eds     | No       | Whether extend storage to disk, default false.                                                                                                                                                                                            |
 | -dsp     | No       | Defines the directory where the storage files are saved, the default temporary-file directory is specified by the system property `java.io.tmpdir`. On UNIX systems the default value of this property is typically "/tmp" or "/var/tmp". |
 | -msz     | No       | Memory storage size limit when extending disk storage(MB), default 512(MB).                                                                                                                                                               |
-| -id      | No       | Identifiers registered with AMS.                                                                                                                                                                                                          |
