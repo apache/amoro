@@ -40,7 +40,6 @@ import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
-import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -129,11 +128,13 @@ public class SqlSessionFactoryProvider {
       } catch (Exception e) {
         throw new IllegalStateException("Create derby tables failed", e);
       }
-    }else if (ArcticManagementConf.DB_TYPE_MYSQL.equals(config.getString(ArcticManagementConf.DB_TYPE))) {
+    } else if (ArcticManagementConf.DB_TYPE_MYSQL.equals(config.getString(ArcticManagementConf.DB_TYPE))) {
       try (SqlSession sqlSession = get().openSession(true)) {
         try (Connection connection = sqlSession.getConnection()) {
           try (Statement statement = connection.createStatement()) {
-            String query = String.format("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'", connection.getCatalog(), "CATALOG_METADATA");
+            String query = String.format(
+                    "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'",
+                    connection.getCatalog(), "CATALOG_METADATA");
             try (ResultSet rs = statement.executeQuery(query)) {
               if (rs.next()) {
                 if (rs.getInt(1) == 0) {
@@ -158,6 +159,7 @@ public class SqlSessionFactoryProvider {
     }
     return scriptUrl.getPath();
   }
+
   private String getMysqlInitSqlScriptPath() {
     URL scriptUrl = ClassLoader.getSystemResource(MYSQL_INIT_SQL_SCRIPT);
     if (scriptUrl == null) {
@@ -165,6 +167,7 @@ public class SqlSessionFactoryProvider {
     }
     return scriptUrl.getPath();
   }
+
   public SqlSessionFactory get() {
     Preconditions.checkState(
             sqlSessionFactory != null,
