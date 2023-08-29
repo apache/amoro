@@ -18,6 +18,9 @@ public class ExpiringDataConfig {
   // table-expire.data.retention-time
   private long retentionTime;
 
+  public static final String  EXPIRE_TIMESTAMP_MS = "TIMESTAMP_MS";
+  public static final String  EXPIRE_TIMESTAMP_S = "TIMESTAMP_S";
+
   public ExpiringDataConfig() {
   }
 
@@ -70,24 +73,24 @@ public class ExpiringDataConfig {
     return new ExpiringDataConfig()
         .setEnabled(CompatiblePropertyUtil.propertyAsBoolean(
             properties,
-            TableProperties.ENABLE_DATA_EXPIRE,
-            TableProperties.ENABLE_DATA_EXPIRE_DEFAULT))
+            TableProperties.ENABLE_DATA_EXPIRATION,
+            TableProperties.ENABLE_DATA_EXPIRATION_DEFAULT))
         .setLevel(CompatiblePropertyUtil.propertyAsString(
             properties,
-            TableProperties.ENABLE_DATA_EXPIRE_LEVEL,
-            TableProperties.ENABLE_DATA_EXPIRE_LEVEL_DEFAULT))
+            TableProperties.DATA_EXPIRATION_LEVEL,
+            TableProperties.DATA_EXPIRATION_LEVEL_DEFAULT))
         .setField(CompatiblePropertyUtil.propertyAsString(
             properties,
-            TableProperties.ENABLE_DATA_EXPIRE_FIELD,
-            ""))
+            TableProperties.DATA_EXPIRATION_FIELD,
+            null))
         .setDateFormatter(CompatiblePropertyUtil.propertyAsString(
             properties,
-            TableProperties.ENABLE_DATA_EXPIRE_DATE_FORMATTER,
-            TableProperties.ENABLE_DATA_EXPIRE_DATE_FORMATTER_DEFAULT))
+            TableProperties.DATA_EXPIRATION_DATE_STRING_FORMAT,
+            TableProperties.DATA_EXPIRATION_DATE_STRING_FORMAT_DEFAULT))
         .setRetentionTime(CompatiblePropertyUtil.propertyAsLong(
             properties,
-            TableProperties.ENABLE_DATA_EXPIRE_RETENTION_TIME,
-            TableProperties.ENABLE_DATA_EXPIRE_RETENTION_TIME_DEFAULT
+            TableProperties.DATA_EXPIRATION_RETENTION_TIME,
+            TableProperties.DATA_EXPIRATION_RETENTION_TIME_DEFAULT
         ));
   }
 }
