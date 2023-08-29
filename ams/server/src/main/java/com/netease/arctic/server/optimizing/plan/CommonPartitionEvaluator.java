@@ -18,12 +18,11 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -86,12 +85,12 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     return partition;
   }
 
-  protected boolean isFragmentFile(IcebergDataFile dataFile) {
+  protected boolean isFragmentFile(DataFile dataFile) {
     return dataFile.fileSizeInBytes() <= fragmentSize;
   }
 
   @Override
-  public boolean addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+  public boolean addFile(DataFile dataFile, List<ContentFile<?>> deletes) {
     if (!config.isEnabled()) {
       return false;
     }
@@ -102,7 +101,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     }
   }
 
-  private boolean isDuplicateDelete(IcebergContentFile<?> delete) {
+  private boolean isDuplicateDelete(ContentFile<?> delete) {
     boolean deleteExist = deleteFileSet.contains(delete.path().toString());
     if (!deleteExist) {
       deleteFileSet.add(delete.path().toString());
@@ -110,20 +109,20 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     return deleteExist;
   }
 
-  private boolean addFragmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+  private boolean addFragmentFile(DataFile dataFile, List<ContentFile<?>> deletes) {
     if (!fileShouldRewrite(dataFile, deletes)) {
       return false;
     }
     fragmentFileSize += dataFile.fileSizeInBytes();
     fragmentFileCount += 1;
 
-    for (IcebergContentFile<?> delete : deletes) {
+    for (ContentFile<?> delete : deletes) {
       addDelete(delete);
     }
     return true;
   }
 
-  private boolean addSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+  private boolean addSegmentFile(DataFile dataFile, List<ContentFile<?>> deletes) {
     if (fileShouldRewrite(dataFile, deletes)) {
       rewriteSegmentFileSize += dataFile.fileSizeInBytes();
       rewriteSegmentFileCount += 1;
@@ -136,13 +135,13 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
     segmentFileSize += dataFile.fileSizeInBytes();
     segmentFileCount += 1;
-    for (IcebergContentFile<?> delete : deletes) {
+    for (ContentFile<?> delete : deletes) {
       addDelete(delete);
     }
     return true;
   }
 
-  protected boolean fileShouldFullOptimizing(IcebergDataFile dataFile, List<IcebergContentFile<?>> deleteFiles) {
+  protected boolean fileShouldFullOptimizing(DataFile dataFile, List<ContentFile<?>> deleteFiles) {
     if (config.isFullRewriteAllFiles()) {
       return true;
     }
@@ -153,7 +152,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     return !deleteFiles.isEmpty() || dataFile.fileSizeInBytes() < config.getTargetSize() * 0.9;
   }
 
-  public boolean fileShouldRewrite(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+  public boolean fileShouldRewrite(DataFile dataFile, List<ContentFile<?>> deletes) {
     if (isFullOptimizing()) {
       return fileShouldFullOptimizing(dataFile, deletes);
     }
@@ -163,7 +162,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     return getRecordCount(deletes) > dataFile.recordCount() * config.getMajorDuplicateRatio();
   }
 
-  public boolean segmentFileShouldRewritePos(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+  public boolean segmentFileShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
     if (isFullOptimizing()) {
       return false;
     }
@@ -178,16 +177,16 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
       return false;
     }
   }
-  
+
   protected boolean isFullOptimizing() {
     return reachFullInterval();
   }
 
-  private long getRecordCount(List<IcebergContentFile<?>> files) {
+  private long getRecordCount(List<ContentFile<?>> files) {
     return files.stream().mapToLong(ContentFile::recordCount).sum();
   }
 
-  private void addDelete(IcebergContentFile<?> delete) {
+  private void addDelete(ContentFile<?> delete) {
     if (isDuplicateDelete(delete)) {
       return;
     }

@@ -18,9 +18,9 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.server.optimizing.OptimizingType;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
 
 import java.util.List;
 
@@ -50,7 +50,7 @@ public interface PartitionEvaluator {
    * @param deletes  - Delete files
    * @return true if the file is added successfully, false if the file will not be optimized
    */
-  boolean addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes);
+  boolean addFile(DataFile dataFile, List<ContentFile<?>> deletes);
 
   /**
    * Whether this partition is necessary to optimize.

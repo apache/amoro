@@ -19,12 +19,12 @@
 package com.netease.arctic.optimizing;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.writer.SetTreeNode;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
@@ -187,7 +187,7 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
   }
 
   protected StructLike partition() {
-    IcebergContentFile<?>[] dataFiles = input.allFiles();
+    ContentFile<?>[] dataFiles = input.allFiles();
     return dataFiles[0].partition();
   }
 
