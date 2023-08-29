@@ -21,10 +21,12 @@ package com.netease.arctic.optimizing;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 
+import java.io.Closeable;
+
 /**
  * An interface to read the data and delete data.
  */
-public interface OptimizingDataReader {
+public interface OptimizingDataReader extends Closeable {
 
   /**
    * Reading data of optimizing task, If a task contains a delete operation, then the read result is MOR.
