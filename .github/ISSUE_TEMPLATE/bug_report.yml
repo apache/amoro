@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-name: Arctic Bug Report
+name: Amoro Bug Report
 description: File a bug report
 title: "[Bug]: "
 labels: ["type:bug"]
@@ -23,7 +23,7 @@ body:
     attributes:
       value: |
         Thanks for taking the time to fill out this bug report!
-        We really appreciate the community's efforts to improve Arctic.
+        We really appreciate the community's efforts to improve Amoro.
 
         Please feel free to report the problem you encountered.
         If you're sure that it is indeed a bug, please try your best to log the reproducible steps.
@@ -41,7 +41,7 @@ body:
     id: version
     attributes:
       label: Affects Versions
-      description: What version of Arctic are affected by this bug?
+      description: What version of Amoro are affected by this bug?
       placeholder: >
         e.g. master/0.3.0/...
     validations:
@@ -87,6 +87,16 @@ body:
         e.g How often does this problem occur? (Once? Every time? Only when certain conditions are met?)
     validations:
       required: false
+
+  - type: checkboxes
+    attributes:
+      label: Are you willing to submit a PR?
+      description: >
+        This is absolutely not required, but we are happy to guide you in the contribution process
+        especially if you already have a good understanding of how to fix the bug.
+        Amoro is a community-managed project and we love to bring new contributors in.
+      options:
+        - label: Yes I am willing to submit a PR!
 
   - type: checkboxes
     id: terms
