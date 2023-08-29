@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestHiveTable extends TestHiveTableBaseForTrino {
@@ -83,7 +84,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
     return ArcticQueryRunner.builder()
         .setExtraProperties(ImmutableMap.of("http-server.http.port", "8080"))
         .setIcebergProperties(ImmutableMap.of("arctic.url",
-            String.format("thrift://localhost:%s/%s", AMS.port(), HIVE_CATALOG_NAME)))
+            String.format("thrift://localhost:%s/%s", AMS.port(), TEST_CATALOG_NAME)))
         .build();
   }
 

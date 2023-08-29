@@ -38,6 +38,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import io.trino.testing.AbstractTestQueryFramework;
+import io.trino.testng.services.ManageTestResources;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
@@ -70,6 +71,7 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
   protected static TemporaryFolder tmp = new TemporaryFolder();
   protected static File warehouse;
 
+  @ManageTestResources.Suppress(because = "no need")
   protected static MockArcticMetastoreServer AMS;
 
   protected static final TableIdentifier TABLE_ID =
