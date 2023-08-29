@@ -37,10 +37,9 @@ else
 fi
 XMX=$XMX_CONFIG
 XMS=$XMS_CONFIG
-MAX_PERM=$MAX_PERM_CONFIG
 
 JAVA_OPTS="-server -Xloggc:$AMORO_HOME/logs/gc.log -XX:+IgnoreUnrecognizedVMOptions -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=10M \
--Xms${XMS}m -Xmx${XMX}m -XX:MaxMetaspaceSize=${MAX_PERM}m \
+-Xms${XMS}m -Xmx${XMX}m \
 -verbose:gc -XX:+PrintGCDetails \
 -Dcom.sun.management.jmxremote \
 -Dcom.sun.management.jmxremote.ssl=false \
