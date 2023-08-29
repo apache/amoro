@@ -76,8 +76,4 @@ public interface TableBuilder {
    */
   ArcticTable create();
 
-  /**
-   * Create a transaction for create table;
-   */
-  Transaction newCreateTableTransaction();
 }

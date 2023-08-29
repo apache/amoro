@@ -18,7 +18,6 @@
 
 package com.netease.arctic.hive.table;
 
-import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.hive.HMSClientPool;
@@ -52,7 +51,6 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
       TableMeta tableMeta,
       String tableLocation,
       PrimaryKeySpec primaryKeySpec,
-      AmsClient client,
       HMSClientPool hiveClient,
       UnkeyedHiveTable baseTable,
       ChangeTable changeTable) {
@@ -127,8 +125,8 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
 
     public HiveChangeInternalTable(
         TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,
-        AmsClient client, Map<String, String> catalogProperties) {
-      super(tableIdentifier, changeIcebergTable, arcticFileIO, client, catalogProperties);
+        Map<String, String> catalogProperties) {
+      super(tableIdentifier, changeIcebergTable, arcticFileIO, catalogProperties);
     }
 
     @Override
@@ -151,10 +149,10 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
 
     public HiveBaseInternalTable(
         TableIdentifier tableIdentifier, Table icebergTable,
-        ArcticHadoopFileIO arcticFileIO, String tableLocation, AmsClient client,
+        ArcticHadoopFileIO arcticFileIO, String tableLocation,
         HMSClientPool hiveClient, Map<String, String> catalogProperties,
         boolean syncHiveChange) {
-      super(tableIdentifier, icebergTable, arcticFileIO, tableLocation, client, hiveClient, catalogProperties,
+      super(tableIdentifier, icebergTable, arcticFileIO, tableLocation,   hiveClient, catalogProperties,
           syncHiveChange);
     }
 

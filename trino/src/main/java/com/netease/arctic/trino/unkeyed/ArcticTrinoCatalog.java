@@ -133,9 +133,7 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
       ConnectorSession session, SchemaTableName schemaTableName,
       Schema schema, PartitionSpec partitionSpec,
       String location, Map<String, String> properties) {
-    return arcticCatalog.newTableBuilder(getTableIdentifier(schemaTableName), schema)
-            .withPartitionSpec(partitionSpec)
-            .withProperties(properties).newCreateTableTransaction();
+    throw new TrinoException(NOT_SUPPORTED, "Unsupported transactional create table");
   }
 
   @Override

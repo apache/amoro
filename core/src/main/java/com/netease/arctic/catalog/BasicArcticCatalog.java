@@ -26,9 +26,6 @@ import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.ArcticFileIOs;
-import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
@@ -36,32 +33,25 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
-import com.netease.arctic.trace.CreateTableTransaction;
 import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.TableMetadata;
-import org.apache.iceberg.TableOperations;
-import org.apache.iceberg.Transaction;
-import org.apache.iceberg.Transactions;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
@@ -292,31 +282,6 @@ public class BasicArcticCatalog implements ArcticCatalog {
       return tables.createTableByMeta(tableMeta, schema, primaryKeySpec, partitionSpec);
     }
 
-    public Transaction newCreateTableTransaction() {
-      ArcticFileIO arcticFileIO = ArcticFileIOs.buildHadoopFileIO(tables.getTableMetaStore());
-      ConvertStructUtil.TableMetaBuilder builder = createTableMataBuilder();
-      TableMeta meta = builder.build();
-      String location = getTableLocationForCreate();
-      TableOperations tableOperations = new ArcticHadoopTableOperations(new Path(location),
-          arcticFileIO, tables.getTableMetaStore().getConfiguration());
-      TableMetadata tableMetadata = tableMetadata(schema, partitionSpec, sortOrder, properties, location);
-      Transaction transaction =
-          Transactions.createTableTransaction(identifier.getTableName(), tableOperations, tableMetadata);
-      return new CreateTableTransaction(
-          transaction,
-          this::create,
-          () -> {
-            doRollbackCreateTable(meta);
-            try {
-              client.removeTable(
-                  identifier.buildTableIdentifier(),
-                  true);
-            } catch (TException e) {
-              throw new RuntimeException(e);
-            }
-          }
-      );
-    }
 
     protected void doCreateCheck() {
       if (primaryKeySpec.primaryKeyExisted()) {

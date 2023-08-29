@@ -20,9 +20,6 @@ package com.netease.arctic.trace;
 
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.AppendFiles;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DataOperations;
-import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.ExpireSnapshots;
 import org.apache.iceberg.HasTableOperations;
@@ -51,28 +48,20 @@ import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.LocationProvider;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
-/**
- * Wrap {@link Transaction} with {@link TableTracer}.
- */
 public class ArcticTransaction implements Transaction {
 
   private final ArcticTable arcticTable;
   private final Transaction transaction;
-  private final AmsTableTracer tracer;
 
   private final Table transactionTable;
 
-  public ArcticTransaction(ArcticTable arcticTable, Transaction transaction, AmsTableTracer tracer) {
+  public ArcticTransaction(ArcticTable arcticTable, Transaction transaction) {
     this.arcticTable = arcticTable;
     this.transaction = transaction;
-    this.tracer = tracer;
-
     this.transactionTable = new TransactionTable();
   }
 
@@ -83,13 +72,7 @@ public class ArcticTransaction implements Transaction {
 
   @Override
   public UpdateSchema updateSchema() {
-    UpdateSchema updateSchema = transaction.updateSchema();
-    if (tracer != null) {
-      tracer.setAction(TraceOperations.UPDATE_SCHEMA);
-      return new TracedSchemaUpdate(updateSchema, new TransactionTracker());
-    } else {
-      return updateSchema;
-    }
+    return transaction.updateSchema();
   }
 
   @Override
@@ -99,13 +82,7 @@ public class ArcticTransaction implements Transaction {
 
   @Override
   public UpdateProperties updateProperties() {
-    UpdateProperties updateProperties = transaction.updateProperties();
-    if (tracer != null) {
-      tracer.setAction(TraceOperations.UPDATE_PROPERTIES);
-      return new TracedUpdateProperties(updateProperties, new TransactionTracker());
-    } else {
-      return updateProperties;
-    }
+    return transaction.updateProperties();
   }
 
   @Override
@@ -120,23 +97,17 @@ public class ArcticTransaction implements Transaction {
 
   @Override
   public AppendFiles newAppend() {
-    tableTracer().ifPresent(tracer -> tracer.setAction(DataOperations.APPEND));
-    return ArcticAppendFiles.buildFor(arcticTable, false).inTransaction(transaction)
-        .traceTable(transactionTracer()).build();
+    return ArcticAppendFiles.buildFor(arcticTable, false).inTransaction(transaction).build();
   }
 
   @Override
   public AppendFiles newFastAppend() {
-    tableTracer().ifPresent(tracer -> tracer.setAction(DataOperations.APPEND));
-    return ArcticAppendFiles.buildFor(arcticTable, true).inTransaction(transaction)
-        .traceTable(transactionTracer()).build();
+    return ArcticAppendFiles.buildFor(arcticTable, true).inTransaction(transaction).build();
   }
 
   @Override
   public RewriteFiles newRewrite() {
-    tableTracer().ifPresent(tracer -> tracer.setAction(DataOperations.REPLACE));
-    return ArcticRewriteFiles.buildFor(arcticTable).inTransaction(transaction)
-        .traceTable(transactionTracer()).build();
+    return ArcticRewriteFiles.buildFor(arcticTable).inTransaction(transaction).build();
   }
 
   @Override
@@ -146,30 +117,22 @@ public class ArcticTransaction implements Transaction {
 
   @Override
   public OverwriteFiles newOverwrite() {
-    tableTracer().ifPresent(tracer -> tracer.setAction(DataOperations.OVERWRITE));
-    return ArcticOverwriteFiles.buildFor(arcticTable).inTransaction(transaction)
-        .traceTable(transactionTracer()).build();
+    return ArcticOverwriteFiles.buildFor(arcticTable).inTransaction(transaction).build();
   }
 
   @Override
   public RowDelta newRowDelta() {
-    tableTracer().ifPresent(tracer -> tracer.setAction(DataOperations.OVERWRITE));
-    return ArcticRowDelta.buildFor(arcticTable).inTransaction(transaction)
-        .traceTable(transactionTracer()).build();
+    return ArcticRowDelta.buildFor(arcticTable).inTransaction(transaction).build();
   }
 
   @Override
   public ReplacePartitions newReplacePartitions() {
-    tableTracer().ifPresent(tracer -> tracer.setAction(DataOperations.OVERWRITE));
-    return ArcticReplacePartitions.buildFor(arcticTable).inTransaction(transaction)
-        .traceTable(transactionTracer()).build();
+    return ArcticReplacePartitions.buildFor(arcticTable).inTransaction(transaction).build();
   }
 
   @Override
   public DeleteFiles newDelete() {
-    tableTracer().ifPresent(tracer -> tracer.setAction(DataOperations.DELETE));
-    return ArcticDeleteFiles.buildFor(arcticTable).inTransaction(transaction)
-        .traceTable(transactionTracer()).build();
+    return ArcticDeleteFiles.buildFor(arcticTable).inTransaction(transaction).build();
   }
 
   @Override
@@ -180,70 +143,6 @@ public class ArcticTransaction implements Transaction {
   @Override
   public void commitTransaction() {
     transaction.commitTransaction();
-    tableTracer().ifPresent(AmsTableTracer::commit);
-  }
-
-  private Optional<AmsTableTracer> tableTracer() {
-    return Optional.ofNullable(tracer);
-  }
-
-  private TableTracer transactionTracer() {
-    if (tracer != null) {
-      return new TransactionTracker();
-    } else {
-      return null;
-    }
-  }
-
-  class TransactionTracker implements TableTracer {
-
-    AmsTableTracer.InternalTableChange internalTableChange;
-
-    public TransactionTracker() {
-      internalTableChange = new AmsTableTracer.InternalTableChange();
-    }
-
-    @Override
-    public void addDataFile(DataFile dataFile) {
-      internalTableChange.addDataFile(dataFile);
-    }
-
-    @Override
-    public void deleteDataFile(DataFile dataFile) {
-      internalTableChange.deleteDataFile(dataFile);
-    }
-
-    @Override
-    public void addDeleteFile(DeleteFile deleteFile) {
-      internalTableChange.addDeleteFile(deleteFile);
-    }
-
-    @Override
-    public void deleteDeleteFile(DeleteFile deleteFile) {
-      internalTableChange.deleteDeleteFile(deleteFile);
-    }
-
-    @Override
-    public void commit() {
-      if (transaction.table().currentSnapshot() != null) {
-        tracer.addTransactionTableSnapshot(transaction.table().currentSnapshot().snapshotId(), internalTableChange);
-      }
-    }
-
-    @Override
-    public void replaceProperties(Map<String, String> newProperties) {
-      tracer.replaceProperties(newProperties);
-    }
-
-    @Override
-    public void setSnapshotSummary(String key, String value) {
-      tracer.setSnapshotSummary(key, value);
-    }
-
-    @Override
-    public void updateColumn(UpdateColumn updateColumn) {
-      tracer.updateColumn(updateColumn);
-    }
   }
 
   class TransactionTable implements Table, HasTableOperations, Serializable {

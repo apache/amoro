@@ -81,11 +81,5 @@ public abstract class BasicTableBuilder<ThisT extends TableBuilder> implements T
     this.keySpec = primaryKeySpec;
     return self();
   }
-
-  @Override
-  public Transaction newCreateTableTransaction() {
-    throw new UnsupportedOperationException("do not support create table transactional.");
-  }
-
   protected abstract ThisT self();
 }

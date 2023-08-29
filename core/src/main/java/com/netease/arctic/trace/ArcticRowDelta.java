@@ -18,23 +18,17 @@
 
 package com.netease.arctic.trace;
 
-import com.netease.arctic.AmsClient;
 import com.netease.arctic.op.ArcticUpdate;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
-
 import java.util.function.Supplier;
 
 
-/**
- * Wrap {@link RowDelta} with {@link TableTracer}.
- */
 public class ArcticRowDelta extends ArcticUpdate<RowDelta> implements RowDelta {
 
   private final RowDelta rowDelta;
@@ -43,14 +37,14 @@ public class ArcticRowDelta extends ArcticUpdate<RowDelta> implements RowDelta {
     return new ArcticRowDelta.Builder(table);
   }
 
-  private ArcticRowDelta(ArcticTable arcticTable, RowDelta rowDelta, TableTracer tracer) {
-    super(arcticTable, rowDelta, tracer);
+  private ArcticRowDelta(ArcticTable arcticTable, RowDelta rowDelta) {
+    super(arcticTable, rowDelta);
     this.rowDelta = rowDelta;
   }
 
-  private ArcticRowDelta(ArcticTable arcticTable, RowDelta rowDelta, TableTracer tracer,
+  private ArcticRowDelta(ArcticTable arcticTable, RowDelta rowDelta,
       Transaction transaction, boolean autoCommitTransaction) {
-    super(arcticTable, rowDelta, tracer, transaction, autoCommitTransaction);
+    super(arcticTable, rowDelta, transaction, autoCommitTransaction);
     this.rowDelta = rowDelta;
   }
 
@@ -122,26 +116,15 @@ public class ArcticRowDelta extends ArcticUpdate<RowDelta> implements RowDelta {
       generateWatermark();
     }
 
+
     @Override
-    public ArcticUpdate.Builder<ArcticRowDelta, RowDelta> traceTable(
-        AmsClient client, UnkeyedTable traceTable) {
-      if (client != null) {
-        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.OVERWRITE, client, true);
-        traceTable(tracer);
-      }
-      return this;
+    protected ArcticRowDelta updateWithWatermark(Transaction transaction, boolean autoCommitTransaction) {
+      return new ArcticRowDelta(table, transaction.newRowDelta(), transaction, autoCommitTransaction);
     }
 
     @Override
-    protected ArcticRowDelta updateWithWatermark(
-        TableTracer tableTracer, Transaction transaction, boolean autoCommitTransaction) {
-      return new ArcticRowDelta(table, transaction.newRowDelta(),
-          tableTracer, transaction, autoCommitTransaction);
-    }
-
-    @Override
-    protected ArcticRowDelta updateWithoutWatermark(TableTracer tableTracer, Supplier<RowDelta> delegateSupplier) {
-      return new ArcticRowDelta(table, delegateSupplier.get(), tableTracer);
+    protected ArcticRowDelta updateWithoutWatermark(Supplier<RowDelta> delegateSupplier) {
+      return new ArcticRowDelta(table, delegateSupplier.get());
     }
 
     @Override

@@ -18,7 +18,6 @@
 
 package com.netease.arctic.table;
 
-import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.KeyedPartitionRewrite;
@@ -202,8 +201,8 @@ public class BasicKeyedTable implements KeyedTable {
 
     public BaseInternalTable(
         TableIdentifier tableIdentifier, Table baseIcebergTable, ArcticFileIO arcticFileIO,
-        AmsClient client, Map<String, String> catalogProperties) {
-      super(tableIdentifier, baseIcebergTable, arcticFileIO, client, catalogProperties);
+        Map<String, String> catalogProperties) {
+      super(tableIdentifier, baseIcebergTable, arcticFileIO,  catalogProperties);
     }
   }
 
@@ -211,8 +210,8 @@ public class BasicKeyedTable implements KeyedTable {
 
     public ChangeInternalTable(
         TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,
-        AmsClient client, Map<String, String> catalogProperties) {
-      super(tableIdentifier, changeIcebergTable, arcticFileIO, client, catalogProperties);
+        Map<String, String> catalogProperties) {
+      super(tableIdentifier, changeIcebergTable, arcticFileIO, catalogProperties);
     }
 
     @Override

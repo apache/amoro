@@ -18,16 +18,13 @@
 
 package com.netease.arctic.trace;
 
-import com.netease.arctic.AmsClient;
 import com.netease.arctic.op.ArcticUpdate;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
-
 import java.util.function.Supplier;
 
 /**
@@ -41,14 +38,15 @@ public class ArcticAppendFiles extends ArcticUpdate<AppendFiles> implements Appe
     return new Builder(table, fastAppend);
   }
 
-  private ArcticAppendFiles(ArcticTable arcticTable, AppendFiles appendFiles, TableTracer tracer) {
-    super(arcticTable, appendFiles, tracer);
+  private ArcticAppendFiles(ArcticTable arcticTable, AppendFiles appendFiles) {
+    super(arcticTable, appendFiles);
     this.appendFiles = appendFiles;
   }
 
-  private ArcticAppendFiles(ArcticTable arcticTable, AppendFiles appendFiles, TableTracer tracer,
+  private ArcticAppendFiles(
+      ArcticTable arcticTable, AppendFiles appendFiles,
       Transaction transaction, boolean autoCommitTransaction) {
-    super(arcticTable, appendFiles, tracer, transaction, autoCommitTransaction);
+    super(arcticTable, appendFiles, transaction, autoCommitTransaction);
     this.appendFiles = appendFiles;
   }
 
@@ -82,9 +80,8 @@ public class ArcticAppendFiles extends ArcticUpdate<AppendFiles> implements Appe
     }
 
     @Override
-    protected ArcticAppendFiles updateWithWatermark(
-        TableTracer tableTracer, Transaction transaction, boolean autoCommitTransaction) {
-      return new ArcticAppendFiles(table, newAppendFiles(transaction), tableTracer, transaction, autoCommitTransaction);
+    protected ArcticAppendFiles updateWithWatermark(Transaction transaction, boolean autoCommitTransaction) {
+      return new ArcticAppendFiles(table, newAppendFiles(transaction), transaction, autoCommitTransaction);
     }
 
     @Override
@@ -98,18 +95,8 @@ public class ArcticAppendFiles extends ArcticUpdate<AppendFiles> implements Appe
     }
 
     @Override
-    protected ArcticAppendFiles updateWithoutWatermark(
-        TableTracer tableTracer, Supplier<AppendFiles> delegateSupplier) {
-      return new ArcticAppendFiles(table, delegateSupplier.get(), tableTracer);
-    }
-
-    @Override
-    public ArcticUpdate.Builder<ArcticAppendFiles, AppendFiles> traceTable(AmsClient client, UnkeyedTable traceTable) {
-      if (client != null) {
-        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.APPEND, client, true);
-        traceTable(tracer);
-      }
-      return this;
+    protected ArcticAppendFiles updateWithoutWatermark(Supplier<AppendFiles> delegateSupplier) {
+      return new ArcticAppendFiles(table, delegateSupplier.get());
     }
 
     private AppendFiles newAppendFiles(Transaction transaction) {
