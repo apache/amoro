@@ -77,10 +77,10 @@ public interface IcebergCommitReport extends MetricReport {
   Map<String, String> metadata();
 
   @TaggedMetrics.Metric(name = TOTAL_DURATION)
-  Timer getTotalDuration();
+  Timer totalDuration();
 
   @TaggedMetrics.Metric(name = ATTEMPTS)
-  Counter getAttempts();
+  Counter attempts();
 
   @Nullable
   @TaggedMetrics.Metric(name = ADDED_DATA_FILES)
