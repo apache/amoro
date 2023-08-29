@@ -157,7 +157,6 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
 
     testCatalog.dropTable(PK_TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(PK_TABLE_ID.buildTableIdentifier());
-    AMS.stopAndCleanUp();
     AMS = null;
   }
 

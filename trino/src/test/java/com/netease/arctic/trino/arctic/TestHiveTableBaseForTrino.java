@@ -173,7 +173,6 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
 
     hiveCatalog.dropTable(UN_PARTITION_HIVE_PK_TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(UN_PARTITION_HIVE_PK_TABLE_ID.buildTableIdentifier());
-    AMS.stopAndCleanUp();
     AMS = null;
   }
 
