@@ -28,6 +28,7 @@ import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import io.trino.testng.services.ManageTestResources;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.Partition;
@@ -48,24 +49,26 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+
 public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
   protected static final String HIVE_DB_NAME = "hivedb";
   protected static final String HIVE_CATALOG_NAME = "hive_catalog";
   protected static final AtomicInteger testCount = new AtomicInteger(0);
 
   private static final TemporaryFolder tempFolder = new TemporaryFolder();
-
+  @ManageTestResources.Suppress(because = "no need")
   protected static HMSMockServer hms;
 
   protected static final TableIdentifier HIVE_TABLE_ID =
-      TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "test_hive_table");
+      TableIdentifier.of(TEST_CATALOG_NAME, HIVE_DB_NAME, "test_hive_table");
   protected static final TableIdentifier HIVE_PK_TABLE_ID =
-      TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "test_pk_hive_table");
+      TableIdentifier.of(TEST_CATALOG_NAME, HIVE_DB_NAME, "test_pk_hive_table");
 
   protected static final TableIdentifier UN_PARTITION_HIVE_TABLE_ID =
-      TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "un_partition_test_hive_table");
+      TableIdentifier.of(TEST_CATALOG_NAME, HIVE_DB_NAME, "un_partition_test_hive_table");
   protected static final TableIdentifier UN_PARTITION_HIVE_PK_TABLE_ID =
-      TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "un_partition_test_pk_hive_table");
+      TableIdentifier.of(TEST_CATALOG_NAME, HIVE_DB_NAME, "un_partition_test_pk_hive_table");
 
   public static final String COLUMN_NAME_ID = "id";
   public static final String COLUMN_NAME_OP_TIME = "op_time";
@@ -131,7 +134,7 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
   }
 
   protected void setupTables() throws Exception {
-    hiveCatalog = (ArcticHiveCatalog) CatalogLoader.load(AMS.getUrl(HIVE_CATALOG_NAME));
+    hiveCatalog = (ArcticHiveCatalog) CatalogLoader.load(AMS.getUrl(TEST_CATALOG_NAME));
 
     testHiveTable = (UnkeyedHiveTable) hiveCatalog
         .newTableBuilder(HIVE_TABLE_ID, HIVE_TABLE_SCHEMA)
