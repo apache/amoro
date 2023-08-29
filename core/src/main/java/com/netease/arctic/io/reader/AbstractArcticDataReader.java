@@ -162,11 +162,23 @@ public abstract class AbstractArcticDataReader<T> implements Serializable {
           CloseableIterable.concat(
               CloseableIterable.transform(
                   CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-                  fileScanTask ->
-                      newParquetIterable(
-                          fileScanTask,
-                          newProjectedSchema,
-                          DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
+                  fileScanTask -> {
+                    switch (fileScanTask.file().format()) {
+                      case PARQUET:
+                        return newParquetIterable(
+                            fileScanTask,
+                            newProjectedSchema,
+                            DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant));
+                      case ORC:
+                        return newOrcIterable(
+                            fileScanTask,
+                            newProjectedSchema,
+                            DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant));
+                      default:
+                        throw new UnsupportedOperationException(
+                            "Cannot read unknown format: " + fileScanTask.file().format());
+                    }
+                  })));
       return dataIterable.iterator();
     } else {
       return CloseableIterator.empty();
