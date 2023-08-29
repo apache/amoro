@@ -52,6 +52,7 @@ import java.time.Duration;
 public class SqlSessionFactoryProvider {
 
   private static final String DERBY_INIT_SQL_SCRIPT = "derby/ams-derby-init.sql";
+  private static final String MYSQL_INIT_SQL_SCRIPT = "mysql/ams-mysql-init.sql";
 
   private static final SqlSessionFactoryProvider INSTANCE = new SqlSessionFactoryProvider();
 
@@ -84,7 +85,7 @@ public class SqlSessionFactoryProvider {
     dataSource.setNumTestsPerEvictionRun(BaseObjectPoolConfig.DEFAULT_NUM_TESTS_PER_EVICTION_RUN);
     dataSource.setTestOnReturn(BaseObjectPoolConfig.DEFAULT_TEST_ON_RETURN);
     dataSource.setSoftMinEvictableIdleTimeMillis(
-        BaseObjectPoolConfig.DEFAULT_SOFT_MIN_EVICTABLE_IDLE_TIME.toMillis());
+            BaseObjectPoolConfig.DEFAULT_SOFT_MIN_EVICTABLE_IDLE_TIME.toMillis());
     dataSource.setLifo(BaseObjectPoolConfig.DEFAULT_LIFO);
     TransactionFactory transactionFactory = new JdbcTransactionFactory();
     Environment environment = new Environment("develop", transactionFactory, dataSource);
@@ -118,13 +119,33 @@ public class SqlSessionFactoryProvider {
               if (!rs.next()) {
                 ScriptRunner runner = new ScriptRunner(connection);
                 runner.runScript(new InputStreamReader(new FileInputStream(getDerbyInitSqlScriptPath()),
-                    StandardCharsets.UTF_8));
+                        StandardCharsets.UTF_8));
               }
             }
           }
         }
       } catch (Exception e) {
         throw new IllegalStateException("Create derby tables failed", e);
+      }
+    }else if (ArcticManagementConf.DB_TYPE_MYSQL.equals(config.getString(ArcticManagementConf.DB_TYPE))) {
+      try (SqlSession sqlSession = get().openSession(true)) {
+        try (Connection connection = sqlSession.getConnection()) {
+          try (Statement statement = connection.createStatement()) {
+            String query = String.format("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'", connection.getCatalog(), "CATALOG_METADATA");
+            try (ResultSet rs = statement.executeQuery(query)) {
+              if (rs.next()) {
+                if (rs.getInt(1) == 0) {
+                  ScriptRunner runner = new ScriptRunner(connection);
+                  runner.runScript(new InputStreamReader(new FileInputStream(getMysqlInitSqlScriptPath()),
+                          StandardCharsets.UTF_8));
+                }
+
+              }
+            }
+          }
+        }
+      } catch (Exception e) {
+        throw new IllegalStateException("Create mysql tables failed", e);
       }
     }
   }
@@ -136,11 +157,17 @@ public class SqlSessionFactoryProvider {
     }
     return scriptUrl.getPath();
   }
-
+  private String getMysqlInitSqlScriptPath() {
+    URL scriptUrl = ClassLoader.getSystemResource(MYSQL_INIT_SQL_SCRIPT);
+    if (scriptUrl == null) {
+      throw new IllegalStateException("Cannot find mysql init sql script:" + MYSQL_INIT_SQL_SCRIPT);
+    }
+    return scriptUrl.getPath();
+  }
   public SqlSessionFactory get() {
     Preconditions.checkState(
-        sqlSessionFactory != null,
-        "Persistent configuration is not initialized yet.");
+            sqlSessionFactory != null,
+            "Persistent configuration is not initialized yet.");
 
     return sqlSessionFactory;
   }
