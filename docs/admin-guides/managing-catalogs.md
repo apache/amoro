@@ -49,6 +49,7 @@ Common properties include:
 - warehouse: Warehouse **must be configured**, as it determines where our database and table files should be placed
 - catalog-impl: when the metastore is **Custom**, an additional catalog-impl must be defined, and the user must put the jar package for the custom catalog implementation into the **{ARCTIC_HOME}/lib** directory, **and the service must be restarted to take effect**
 - table.*: If you want to add the same table configuration to all tables under a catalog, you can add `table.` before the configuration key to indicate that it is a table-level configuration. For example, `table.self-optimizing.group`
+- table.filter-regular-expression: If you want to filter the same table under a database, you can add `table.filter-regular-expression` before the configuration key to indicate that it is a table-level configuration. For example, `table.filter-regular-expression`='(A\.a)|(B\.b)'
 
 We recommend users to create a Catalog following the guidelines below：
 
