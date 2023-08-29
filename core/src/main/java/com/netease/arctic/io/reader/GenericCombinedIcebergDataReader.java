@@ -55,6 +55,7 @@ import java.util.stream.Collectors;
 
 /**
  * Read data by {@link CombinedIcebergScanTask} for optimizer of native iceberg.
+ * During the execution of readData and readDeleteData, delete data is read only once, thereby improving performance.
  */
 public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
 

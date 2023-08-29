@@ -54,6 +54,10 @@ import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
 import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 import static org.apache.iceberg.TableProperties.DELETE_DEFAULT_FILE_FORMAT;
 
+/**
+ * An abstract OptimizingExecutor implementation that rewrites the rewrittenDataFiles
+ * in RewriteInput and generates new position delete for rePosDeletedDataFiles.
+ */
 public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor<RewriteFilesOutput> {
 
   private static final Logger LOG = LoggerFactory.getLogger(AbstractRewriteFilesExecutor.class);
@@ -86,11 +90,12 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
 
   @Override
   public RewriteFilesOutput execute() {
-    LOG.info("Start processing iceberg table optimize task: {}", input);
+    LOG.info("Start processing table optimize task: {}", input);
+
     List<DataFile> dataFiles = new ArrayList<>();
     List<DeleteFile> deleteFiles = new ArrayList<>();
 
-    long startT = System.currentTimeMillis();
+    long startTime = System.currentTimeMillis();
     try {
       if (!ArrayUtils.isEmpty(input.rePosDeletedDataFiles())) {
         deleteFiles = io.doAs(this::equalityToPosition);
@@ -102,8 +107,7 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
     } finally {
       dataReader.close();
     }
-    long endT = System.currentTimeMillis();
-    long duration = endT - startT;
+    long duration = System.currentTimeMillis() - startTime;
 
     Map<String, String> summary = resolverSummary(dataFiles, deleteFiles, duration);
     return new RewriteFilesOutput(
