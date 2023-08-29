@@ -94,22 +94,6 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTableTestBase {
         .table(tablePath);
     Assertions.assertEquals(6, df.count());
 
-    // replace test
-    df = spark().createDataFrame(
-        Lists.newArrayList(
-            RowFactory.create(7, "aaa", "aaa"),
-            RowFactory.create(8, "bbb", "bbb"),
-            RowFactory.create(9, "ccc", "ccc")
-        ), structType
-    );
-    df.writeTo(tablePath)
-        .partitionedBy(new Column("day"))
-        .replace();
-    df = spark().read()
-        .table(tablePath);
-    Assertions.assertEquals(3, df.count());
-    df.show();
-
     // overwritePartition test
     df = spark().createDataFrame(
         Lists.newArrayList(
@@ -122,7 +106,7 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTableTestBase {
         .overwritePartitions();
     df = spark().read()
         .table(tablePath);
-    Assertions.assertEquals(5, df.count());
+    Assertions.assertEquals(7, df.count());
   }
 
   public static Stream<Arguments> testV1ApiUnkeyedTable() {

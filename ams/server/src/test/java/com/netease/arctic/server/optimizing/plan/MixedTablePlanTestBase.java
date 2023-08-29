@@ -23,7 +23,6 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
 import com.netease.arctic.io.DataTestHelpers;
@@ -41,7 +40,6 @@ import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.data.Record;
@@ -290,13 +288,6 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     for (TableFileScanHelper.FileScanResult fileScanResult : scan) {
       partitionPlan.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
     }
-    PartitionSpec spec = getArcticTable().spec();
-    partitionProperty().forEach((partition, properties) -> {
-      String partitionToPath = spec.partitionToPath(partition);
-      if (partitionToPath.equals(partitionPlan.getPartition())) {
-        partitionPlan.addPartitionProperties(properties);
-      }
-    });
     return partitionPlan;
   }
 
@@ -381,7 +372,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
     List<TableFileScanHelper.FileScanResult> scan = tableFileScanHelper.scan();
     return scan.stream().collect(Collectors.groupingBy(f -> {
-      PrimaryKeyedFile primaryKeyedFile = (PrimaryKeyedFile) f.file().internalFile();
+      PrimaryKeyedFile primaryKeyedFile = (PrimaryKeyedFile) f.file();
       return primaryKeyedFile.node();
     }));
   }
@@ -406,7 +397,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     Assert.assertEquals(expect, actual);
   }
 
-  private void assertFiles(List<? extends ContentFile<?>> expect, IcebergContentFile<?>[] actual) {
+  private void assertFiles(List<? extends ContentFile<?>> expect, ContentFile<?>[] actual) {
     if (expect == null) {
       Assert.assertNull(actual);
       return;

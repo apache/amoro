@@ -19,9 +19,9 @@
 package com.netease.arctic.scan;
 
 import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.io.TableDataTestBase;
 import com.netease.arctic.utils.ArcticDataFiles;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
@@ -34,7 +34,7 @@ public class TestChangeTableBasicIncrementalScan extends TableDataTestBase {
   public void testIncrementalScan() {
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan();
-    CloseableIterable<IcebergContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
+    CloseableIterable<ContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
 
     assertFiles(files, 3, 1, 2);
   }
@@ -46,7 +46,7 @@ public class TestChangeTableBasicIncrementalScan extends TableDataTestBase {
     fromSequence.put(partitionData, 1L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence);
-    CloseableIterable<IcebergContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
+    CloseableIterable<ContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
 
     assertFiles(files, 1, 2, 2);
   }
@@ -55,7 +55,7 @@ public class TestChangeTableBasicIncrementalScan extends TableDataTestBase {
   public void testIncrementalScanTo() {
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan().toSequence(1);
-    CloseableIterable<IcebergContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
+    CloseableIterable<ContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
 
     assertFiles(files, 2, 1, 1);
   }
@@ -67,7 +67,7 @@ public class TestChangeTableBasicIncrementalScan extends TableDataTestBase {
     fromSequence.put(partitionData, 1L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence).toSequence(1);
-    CloseableIterable<IcebergContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
+    CloseableIterable<ContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
 
     assertFiles(files, 0, 0, 0);
   }
@@ -83,7 +83,7 @@ public class TestChangeTableBasicIncrementalScan extends TableDataTestBase {
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence)
             .fromLegacyTransaction(fromLegacyTxId);
-    CloseableIterable<IcebergContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
+    CloseableIterable<ContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
 
     assertFiles(files, 1, 2, 2);
   }
@@ -96,23 +96,23 @@ public class TestChangeTableBasicIncrementalScan extends TableDataTestBase {
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan()
             .fromLegacyTransaction(fromLegacyTxId);
-    CloseableIterable<IcebergContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
+    CloseableIterable<ContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
 
     int cnt = 0;
-    for (IcebergContentFile<?> file : files) {
+    for (ContentFile<?> file : files) {
       cnt++;
       Assert.assertTrue(FileNameRules.parseTransactionId(file.path().toString()) > 2L);
     }
     Assert.assertEquals(1, cnt);
   }
 
-  private void assertFiles(CloseableIterable<IcebergContentFile<?>> files, int fileCnt,
+  private void assertFiles(CloseableIterable<ContentFile<?>> files, int fileCnt,
                            long minSequence, long maxSequence) {
     int cnt = 0;
-    for (IcebergContentFile<?> file : files) {
+    for (ContentFile<?> file : files) {
       cnt++;
-      Assert.assertTrue(file.getSequenceNumber() >= minSequence);
-      Assert.assertTrue(file.getSequenceNumber() <= maxSequence);
+      Assert.assertTrue(file.dataSequenceNumber() >= minSequence);
+      Assert.assertTrue(file.dataSequenceNumber() <= maxSequence);
     }
     Assert.assertEquals(fileCnt, cnt);
   }

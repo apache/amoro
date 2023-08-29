@@ -183,7 +183,7 @@ public class TestAlterTableColumnSQL extends SparkTableTestBase {
   @DisplayName("Test `alter column`")
   @ParameterizedTest
   @MethodSource()
-  @EnableCatalogSelect.SelectCatalog(use = INTERNAL_CATALOG)
+  @EnableCatalogSelect.SelectCatalog(use = HADOOP_CATALOG)
   public void testAlterColumn(String alterText, String primaryKeyDDL, Types.StructType expectedSchema) {
     String sqlText = "CREATE TABLE " + target() + " ( \n" +
         "id bigint, data string, ts timestamp, count int " + primaryKeyDDL + " ) using " +

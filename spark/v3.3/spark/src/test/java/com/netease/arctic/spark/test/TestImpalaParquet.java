@@ -21,7 +21,7 @@ package com.netease.arctic.spark.test;
 import com.google.common.collect.Iterators;
 import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.spark.reader.SparkParquetReaders;
-import com.netease.arctic.spark.test.helper.ResourceInputFile;
+import com.netease.arctic.spark.test.utils.ResourceInputFile;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterator;

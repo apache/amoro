@@ -28,8 +28,8 @@ import com.netease.arctic.spark.ArcticSparkSessionCatalog;
 import com.netease.arctic.spark.MultiDelegateSessionCatalog;
 import com.netease.arctic.spark.test.SparkTestBase;
 import com.netease.arctic.spark.test.SparkTestContext;
-import com.netease.arctic.spark.test.helper.RecordGenerator;
-import com.netease.arctic.spark.test.helper.TestTableHelper;
+import com.netease.arctic.spark.test.utils.RecordGenerator;
+import com.netease.arctic.spark.test.utils.TestTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -164,7 +164,7 @@ public class TestMultiDelegateSessionCatalog extends SparkTestBase {
 
     ArcticTable table = catalog().loadTable(arcticTableId);
     Assertions.assertTrue(table.isKeyedTable());
-    TestTableHelper.writeToChange(table.asKeyedTable(), Lists.newArrayList(
+    TestTableUtil.writeToChange(table.asKeyedTable(), Lists.newArrayList(
         RecordGenerator.newRecord(schema, 4L, "d", "2020-01-01"),
         RecordGenerator.newRecord(schema, 5L, "e", "2021-01-01"),
         RecordGenerator.newRecord(schema, 6L, "f", "2022-01-01")

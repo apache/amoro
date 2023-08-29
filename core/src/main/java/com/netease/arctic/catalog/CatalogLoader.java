@@ -35,12 +35,10 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.thrift.TException;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
@@ -109,12 +107,14 @@ public class CatalogLoader {
       CatalogUtil.mergeCatalogProperties(catalogMeta, props);
       String catalogImpl;
       Set<TableFormat> tableFormats = CatalogUtil.tableFormats(catalogMeta);
-      Preconditions.checkArgument(tableFormats.size() == 1,
+      Preconditions.checkArgument(
+          tableFormats.size() == 1,
           "Catalog support only one table format now.");
       TableFormat tableFormat = tableFormats.iterator().next();
       switch (type) {
         case CATALOG_TYPE_HADOOP:
-          Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG),
+          Preconditions.checkArgument(
+              tableFormat.equals(TableFormat.ICEBERG),
               "Hadoop catalog support iceberg table only.");
           if (catalogMeta.getCatalogProperties().containsKey(CatalogMetaProperties.TABLE_FORMATS)) {
             catalogImpl = ICEBERG_CATALOG_IMPL;
@@ -145,9 +145,11 @@ public class CatalogLoader {
 
           break;
         case CATALOG_TYPE_CUSTOM:
-          Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG),
+          Preconditions.checkArgument(
+              tableFormat.equals(TableFormat.ICEBERG),
               "Custom catalog support iceberg table only.");
-          Preconditions.checkArgument(catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL),
+          Preconditions.checkArgument(
+              catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL),
               "Custom catalog properties must contains " + CatalogProperties.CATALOG_IMPL);
           catalogImpl = ICEBERG_CATALOG_IMPL;
           break;

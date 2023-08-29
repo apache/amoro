@@ -18,8 +18,6 @@
 
 package com.netease.arctic.io.reader;
 
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.iceberg.CombinedDeleteFilter;
 import com.netease.arctic.iceberg.StructForDelete;
 import com.netease.arctic.io.ArcticFileIO;
@@ -27,6 +25,7 @@ import com.netease.arctic.optimizing.OptimizingDataReader;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
 import com.netease.arctic.utils.map.StructLikeCollections;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.PartitionSpec;
@@ -65,7 +64,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected final BiFunction<Type, Object, Object> convertConstant;
   protected final boolean reuseContainer;
 
-  protected final IcebergContentFile[] deleteFiles;
+  protected final ContentFile[] deleteFiles;
   protected CombinedDeleteFilter<Record> deleteFilter;
 
   protected PartitionSpec spec;
@@ -87,7 +86,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     this.input = rewriteFilesInput;
     this.deleteFiles = rewriteFilesInput.deleteFiles();
     Set<String> positionPathSet = Arrays.stream(rewriteFilesInput.dataFiles())
-        .map(s -> s.asDataFile().path().toString()).collect(Collectors.toSet());
+        .map(s -> s.path().toString()).collect(Collectors.toSet());
     this.deleteFilter = new GenericDeleteFilter(deleteFiles, positionPathSet, tableSchema, structLikeCollections);
   }
 
@@ -142,12 +141,12 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   }
 
   private CloseableIterable<Record> openFile(
-      IcebergDataFile icebergContentFile,
+      DataFile dataFile,
       PartitionSpec spec, Schema require) {
-    Map<Integer, ?> idToConstant = DataReaderCommon.getIdToConstant(icebergContentFile, require, spec,
+    Map<Integer, ?> idToConstant = DataReaderCommon.getIdToConstant(dataFile, require, spec,
         convertConstant);
 
-    return openFile(icebergContentFile.asDataFile(), require, idToConstant);
+    return openFile(dataFile, require, idToConstant);
   }
 
   private CloseableIterable<Record> openFile(DataFile dataFile, Schema fileProjection, Map<Integer, ?> idToConstant) {
@@ -258,7 +257,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected class GenericDeleteFilter extends CombinedDeleteFilter<Record> {
 
     public GenericDeleteFilter(
-        IcebergContentFile[] deleteFiles,
+        ContentFile[] deleteFiles,
         Set<String> positionPathSets,
         Schema tableSchema,
         StructLikeCollections structLikeCollections) {

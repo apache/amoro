@@ -368,7 +368,7 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
           fileInfo.createdAtMillis() < lastTime &&
           (excludeRegex == null || !excludeRegex.matcher(
               TableFileUtil.getFileName(fileInfo.location())).matches())) {
-        pio.deleteFile(uriPath);
+        pio.deleteFile(fileInfo.location());
         count += 1;
       }
     }

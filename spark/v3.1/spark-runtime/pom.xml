@@ -22,7 +22,7 @@
     <parent>
         <groupId>com.netease.amoro</groupId>
         <artifactId>amoro-spark</artifactId>
-        <version>0.5.0-SNAPSHOT</version>
+        <version>0.6.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -58,6 +58,7 @@
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <artifactSet>
                                 <includes>
+                                    <include>com.netease.amoro:amoro-spark-3-common</include>
                                     <include>com.netease.amoro:amoro-spark-3.1</include>
                                     <include>com.netease.amoro:amoro-core</include>
                                     <include>com.netease.amoro:amoro-ams-api</include>
