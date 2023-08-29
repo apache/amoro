@@ -39,7 +39,7 @@ public class TaggedMetrics {
   private final Map<String, Object> tags;
   private final Map<String, Object> metrics;
 
-  public TaggedMetrics(Map<String, Object> tags, Map<String, Object> metrics) {
+  private TaggedMetrics(Map<String, Object> tags, Map<String, Object> metrics) {
     this.tags = tags;
     this.metrics = metrics;
   }
