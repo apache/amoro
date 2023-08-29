@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.scan.TableEntriesScan;
+import com.netease.arctic.server.table.ExpiringDataConfig;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
@@ -43,9 +44,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.server.table.ExpiringDataConfig.EXPIRE_TIMESTAMP_MS;
-import static com.netease.arctic.server.table.ExpiringDataConfig.EXPIRE_TIMESTAMP_S;
-
 public class DataExpiringExecutor extends BaseTableExecutor {
 
   private static final Logger LOG = LoggerFactory.getLogger(DataExpiringExecutor.class);
@@ -72,6 +70,9 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       }
     }
   }
+
+  public static final String  EXPIRE_TIMESTAMP_MS = "TIMESTAMP_MS";
+  public static final String  EXPIRE_TIMESTAMP_S = "TIMESTAMP_S";
 
   protected DataExpiringExecutor(TableManager tableManager, int poolSize, long interval) {
     super(tableManager, poolSize);
@@ -104,15 +105,15 @@ public class DataExpiringExecutor extends BaseTableExecutor {
         return;
       }
 
-      purgeTable(arcticTable);
+      DataExpirationConfig expirationConfig =
+          new DataExpirationConfig(arcticTable, tableRuntime.getTableConfiguration().getExpiringDataConfig());
+      purgeTable(arcticTable, expirationConfig);
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
     }
   }
 
-  private void purgeTable(ArcticTable table) {
-    DataExpirationConfig expirationConfig = new DataExpirationConfig(table);
-
+  private void purgeTable(ArcticTable table, DataExpirationConfig expirationConfig) {
     if (table.isKeyedTable()) {
       KeyedTable keyedTable = table.asKeyedTable();
       purgeTableData(keyedTable.changeTable(), expirationConfig);
@@ -347,18 +348,15 @@ public class DataExpiringExecutor extends BaseTableExecutor {
     return literal;
   }
 
-  static class DataExpirationConfig {
+  private static class DataExpirationConfig {
     Types.NestedField expirationField;
     ExpireLevel expirationLevel;
     long retentionTime;
     DateTimeFormatter dateFormatter;
     String numberDateFormat;
 
-    DataExpirationConfig(ArcticTable table) {
-      Map<String, String> properties = table.properties();
-      String field = CompatiblePropertyUtil.propertyAsString(
-          properties,
-          TableProperties.DATA_EXPIRATION_FIELD, null);
+    DataExpirationConfig(ArcticTable table, ExpiringDataConfig config) {
+      String field = config.getField();
       expirationField = table.schema().findField(field);
       Preconditions.checkArgument(StringUtils.isNoneBlank(field) && null != expirationField,
           String.format("Field(%s) used to determine data expiration is illegal for table(%s)", field, table.name()));
@@ -366,21 +364,10 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       Preconditions.checkArgument(FIELD_TYPES.contains(typeID),
           String.format("The type(%s) of filed(%s) is incompatible for table(%s)", typeID.name(), field, table.name()));
 
-      expirationLevel = ExpireLevel.fromString(CompatiblePropertyUtil.propertyAsString(
-          properties,
-          TableProperties.DATA_EXPIRATION_LEVEL, TableProperties.DATA_EXPIRATION_LEVEL_DEFAULT));
-      retentionTime = CompatiblePropertyUtil.propertyAsLong(
-          properties,
-          TableProperties.DATA_EXPIRATION_RETENTION_TIME,
-          TableProperties.DATA_EXPIRATION_RETENTION_TIME_DEFAULT / 1000) * 1000;
-      dateFormatter = DateTimeFormat.forPattern(CompatiblePropertyUtil.propertyAsString(
-              properties,
-              TableProperties.DATA_EXPIRATION_DATE_STRING_FORMAT,
-              TableProperties.DATA_EXPIRATION_DATE_STRING_FORMAT_DEFAULT));
-      numberDateFormat = CompatiblePropertyUtil.propertyAsString(
-          properties,
-          TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT,
-          TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT);
+      expirationLevel = ExpireLevel.fromString(config.getLevel());
+      retentionTime = config.getRetentionTime() * 1000;
+      dateFormatter = DateTimeFormat.forPattern(config.getDateStringFormat());
+      numberDateFormat = config.getDateNumberFormat();
       Preconditions.checkArgument(typeID.equals(Type.TypeID.TIMESTAMP) ||
           typeID.equals(Type.TypeID.STRING) ||
           (typeID.equals(Type.TypeID.LONG) && numberDateFormat.equals(EXPIRE_TIMESTAMP_MS)) ||

@@ -13,13 +13,12 @@ public class ExpiringDataConfig {
   private String level;
   // table-expire.data.field
   private String field;
-  // table-expire.data.date-formatter
-  private String dateFormatter;
+  // table-expire.data.datetime-string-format
+  private String dateStringFormat;
+  // table-expire.data.datetime-number-format
+  private String dateNumberFormat;
   // table-expire.data.retention-time
   private long retentionTime;
-
-  public static final String  EXPIRE_TIMESTAMP_MS = "TIMESTAMP_MS";
-  public static final String  EXPIRE_TIMESTAMP_S = "TIMESTAMP_S";
 
   public ExpiringDataConfig() {
   }
@@ -51,12 +50,21 @@ public class ExpiringDataConfig {
     return this;
   }
 
-  public String getDateFormatter() {
-    return dateFormatter;
+  public String getDateStringFormat() {
+    return dateStringFormat;
   }
 
-  public ExpiringDataConfig setDateFormatter(String dateFormatter) {
-    this.dateFormatter = dateFormatter;
+  public ExpiringDataConfig setDateStringFormat(String dateStringFormat) {
+    this.dateStringFormat = dateStringFormat;
+    return this;
+  }
+
+  public String getDateNumberFormat() {
+    return dateNumberFormat;
+  }
+
+  public ExpiringDataConfig setDateNumberFormat(String dateNumberFormat) {
+    this.dateNumberFormat = dateNumberFormat;
     return this;
   }
 
@@ -83,14 +91,18 @@ public class ExpiringDataConfig {
             properties,
             TableProperties.DATA_EXPIRATION_FIELD,
             null))
-        .setDateFormatter(CompatiblePropertyUtil.propertyAsString(
+        .setDateStringFormat(CompatiblePropertyUtil.propertyAsString(
             properties,
             TableProperties.DATA_EXPIRATION_DATE_STRING_FORMAT,
             TableProperties.DATA_EXPIRATION_DATE_STRING_FORMAT_DEFAULT))
+        .setDateNumberFormat(CompatiblePropertyUtil.propertyAsString(
+            properties,
+            TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT,
+            TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT))
         .setRetentionTime(CompatiblePropertyUtil.propertyAsLong(
             properties,
             TableProperties.DATA_EXPIRATION_RETENTION_TIME,
-            TableProperties.DATA_EXPIRATION_RETENTION_TIME_DEFAULT
+            TableProperties.DATA_EXPIRATION_RETENTION_TIME_DEFAULT / 1000
         ));
   }
 }
