@@ -79,19 +79,19 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
   @SuppressWarnings({"rawtypes", "unchecked"})
   private OptimizingTaskResult executeTask(OptimizingTask task) {
     try {
-      OptimizingInputProperties parse = OptimizingInputProperties.parse(task.getProperties());
-      String executorFactoryImpl = parse.getExecutorFactoryImpl();
+      OptimizingInputProperties properties = OptimizingInputProperties.parse(task.getProperties());
+      String executorFactoryImpl = properties.getExecutorFactoryImpl();
       TableOptimizing.OptimizingInput input = SerializationUtil.simpleDeserialize(task.getTaskInput());
       DynConstructors.Ctor<OptimizingExecutorFactory> ctor = DynConstructors.builder(OptimizingExecutorFactory.class)
           .impl(executorFactoryImpl).buildChecked();
       OptimizingExecutorFactory factory = ctor.newInstance();
 
       if (getConfig().isExtendDiskStorage()) {
-        parse.enableSpillMap();
+        properties.enableSpillMap();
       }
-      parse.setMaxSizeInMemory(getConfig().getMemoryStorageSize());
-      parse.setSpillMapPath(getConfig().getDiskStoragePath());
-      factory.initialize(parse.getProperties());
+      properties.setMaxSizeInMemory(getConfig().getMemoryStorageSize() * 1024 * 1024);
+      properties.setSpillMapPath(getConfig().getDiskStoragePath());
+      factory.initialize(properties.getProperties());
 
       OptimizingExecutor executor = factory.createExecutor(input);
       TableOptimizing.OptimizingOutput output = executor.execute();
