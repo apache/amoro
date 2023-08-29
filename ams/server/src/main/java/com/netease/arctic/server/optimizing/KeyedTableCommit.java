@@ -2,7 +2,6 @@ package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.op.OverwriteBaseFiles;
@@ -11,6 +10,7 @@ import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.exception.OptimizingCommitException;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.trace.SnapshotSummary;
+import com.netease.arctic.utils.ContentFiles;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
@@ -89,7 +89,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
       //Only base data file need to remove
       if (input.rewrittenDataFiles() != null) {
         Arrays.stream(input.rewrittenDataFiles())
-            .map(s -> (PrimaryKeyedFile) s.asDataFile().internalDataFile())
+            .map(s -> (PrimaryKeyedFile) s)
             .filter(s -> s.type() == DataFileType.BASE_FILE)
             .forEach(removedDataFiles::add);
       }
@@ -97,8 +97,8 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
       //Only position delete need to remove
       if (input.rewrittenDeleteFiles() != null) {
         Arrays.stream(input.rewrittenDeleteFiles())
-            .filter(IcebergContentFile::isDeleteFile)
-            .map(IcebergContentFile::asDeleteFile)
+            .filter(ContentFiles::isDeleteFile)
+            .map(ContentFiles::asDeleteFile)
             .forEach(removedDeleteFiles::add);
       }
 

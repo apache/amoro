@@ -18,11 +18,11 @@
 
 package com.netease.arctic.optimizing;
 
-import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
 import com.netease.arctic.io.writer.IcebergFanoutPosDeleteWriter;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.map.StructLikeCollections;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.TableProperties;
@@ -58,14 +58,14 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
   protected OptimizingDataReader dataReader() {
     Set<String> set = new HashSet<>();
     if (input.rewrittenDataFiles() != null) {
-      for (IcebergDataFile icebergContentFile : input.rewrittenDataFiles()) {
-        set.add(icebergContentFile.path().toString());
+      for (DataFile dataFile : input.rewrittenDataFiles()) {
+        set.add(dataFile.path().toString());
       }
     }
 
     if (input.rePosDeletedDataFiles() != null) {
-      for (IcebergDataFile icebergContentFile : input.rePosDeletedDataFiles()) {
-        set.add(icebergContentFile.path().toString());
+      for (DataFile dataFile : input.rePosDeletedDataFiles()) {
+        set.add(dataFile.path().toString());
       }
     }
     return new GenericCombinedIcebergDataReader(
