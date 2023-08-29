@@ -123,15 +123,28 @@ Currently, only pptimizer scaled through the dashboard can be released on dashbo
 You can submit optimizer in your own Flink task development platform or local Flink environment with the following configuration. The main parameters include:
 
 ```shell
-flink run -m yarn-cluster  -ytm {EXECUTOR_TASKMANAGER_MEMORY} -yjm {EXECUTOR_JOBMANAGER_MEMORY}  -c com.netease.arctic.optimizer.flink.FlinkOptimizer  {ARCTIC_HOME}/plugin/optimize/OptimizeJob.jar -a {AMS_THRIFT_SERVER_URL} -g {OPTIMIZE_GROUP_NAME} -p {EXECUTOR_PARALLELISM} -m {EXECUTOR_MEMORY}  --hb 60000
+./bin/flink run-application -t yarn-application \
+ -Djobmanager.memory.process.size=1024m \
+ -Dtaskmanager.memory.process.size=2048m \
+ -c com.netease.arctic.optimizer.flink.FlinkOptimizer \
+ ${ARCTIC_HOME}/plugin/optimize/OptimizeJob.jar \
+ -a 127.0.0.1:1261 \
+ -g flinkGroup \
+ -p 1 \
+ -eds \
+ -dsp /tmp \
+ -msz 512 \
+ -id 9c12edca-b0bf-434d-a954-dd8aab88a284
 ```
 The description of the relevant parameters is shown in the following table:
 
-| Property | Description |
-|----------|-------------|
-| -ytm EXECUTOR_TASKMANAGER_MEMORY | Flink task task manager memory Size. |
-| -yjm EXECUTOR_JOBMANAGER_MEMORY  | Flink task job mamanger memory Size. |
-| ARCTIC_HOME | Amoro home directory |
-| -a AMS_THRIFT_SERVER_URL | The address of the AMS thrift service, for example: thrift://127.0.0.1:1261, can be obtained from the config.yaml configuration. |
-| -g OPTIMIZE_GROUP_NAME | Group name created in advance under external container. |
-| -p EXECUTOR_PARALLELISM | Optimizer parallelism usage. |
+| Property | Required | Description                                                                                                                                                                                                                               |
+|----------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -a       | Yes      | The address of the AMS thrift service, for example: thrift://127.0.0.1:1261, can be obtained from the config.yaml configuration.                                                                                                          |
+| -g       | Yes      | Group name created in advance under external container.                                                                                                                                                                                   |
+| -p       | Yes      | Optimizer parallelism usage.                                                                                                                                                                                                              |
+| -hb      | No       | Heart beat interval with ams, default 10000(ms).                                                                                                                                                                                          |
+| -eds     | No       | Whether extend storage to disk, default false.                                                                                                                                                                                            |
+| -dsp     | No       | Defines the directory where the storage files are saved, the default temporary-file directory is specified by the system property `java.io.tmpdir`. On UNIX systems the default value of this property is typically "/tmp" or "/var/tmp". |
+| -msz     | No       | Memory storage size limit when extending disk storage(MB), default 512(MB).                                                                                                                                                               |
+| -id      | No       | Identifiers registered with AMS.                                                                                                                                                                                                          |
