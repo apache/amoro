@@ -44,6 +44,8 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -118,7 +120,7 @@ public class SqlSessionFactoryProvider {
             try (ResultSet rs = statement.executeQuery(query)) {
               if (!rs.next()) {
                 ScriptRunner runner = new ScriptRunner(connection);
-                runner.runScript(new InputStreamReader(new FileInputStream(getDerbyInitSqlScriptPath()),
+                runner.runScript(new InputStreamReader(Files.newInputStream(Paths.get(getDerbyInitSqlScriptPath())),
                         StandardCharsets.UTF_8));
               }
             }
@@ -136,7 +138,7 @@ public class SqlSessionFactoryProvider {
               if (rs.next()) {
                 if (rs.getInt(1) == 0) {
                   ScriptRunner runner = new ScriptRunner(connection);
-                  runner.runScript(new InputStreamReader(new FileInputStream(getMysqlInitSqlScriptPath()),
+                  runner.runScript(new InputStreamReader(Files.newInputStream(Paths.get(getMysqlInitSqlScriptPath())),
                           StandardCharsets.UTF_8));
                 }
 
