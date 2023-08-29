@@ -18,13 +18,13 @@
 
 package com.netease.arctic.iceberg;
 
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.CloseablePredicate;
+import com.netease.arctic.utils.ContentFiles;
 import com.netease.arctic.utils.map.StructLikeBaseMap;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.Accessor;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
@@ -75,8 +75,8 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
   private static final Accessor<StructLike> POSITION_ACCESSOR = POS_DELETE_SCHEMA
       .accessorForField(MetadataColumns.DELETE_FILE_POS.fieldId());
 
-  private final List<IcebergDeleteFile> posDeletes;
-  private final List<IcebergDeleteFile> eqDeletes;
+  private final List<DeleteFile> posDeletes;
+  private final List<DeleteFile> eqDeletes;
 
   private Map<String, Set<Long>> positionMap;
 
@@ -91,27 +91,27 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
   private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
 
   protected CombinedDeleteFilter(
-      IcebergContentFile<?>[] deleteFiles,
+      ContentFile<?>[] deleteFiles,
       Set<String> positionPathSets,
       Schema tableSchema,
       StructLikeCollections structLikeCollections) {
-    ImmutableList.Builder<IcebergDeleteFile> posDeleteBuilder = ImmutableList.builder();
-    ImmutableList.Builder<IcebergDeleteFile> eqDeleteBuilder = ImmutableList.builder();
+    ImmutableList.Builder<DeleteFile> posDeleteBuilder = ImmutableList.builder();
+    ImmutableList.Builder<DeleteFile> eqDeleteBuilder = ImmutableList.builder();
     if (deleteFiles != null) {
-      for (IcebergContentFile<?> delete : deleteFiles) {
+      for (ContentFile<?> delete : deleteFiles) {
         switch (delete.content()) {
           case POSITION_DELETES:
-            posDeleteBuilder.add(delete.asDeleteFile());
+            posDeleteBuilder.add(ContentFiles.asDeleteFile(delete));
             break;
           case EQUALITY_DELETES:
             if (deleteIds.isEmpty()) {
-              deleteIds = ImmutableSet.copyOf(delete.asDeleteFile().equalityFieldIds());
+              deleteIds = ImmutableSet.copyOf(ContentFiles.asDeleteFile(delete).equalityFieldIds());
             } else {
               Preconditions.checkArgument(
-                  deleteIds.equals(ImmutableSet.copyOf(delete.asDeleteFile().equalityFieldIds())),
+                  deleteIds.equals(ImmutableSet.copyOf(ContentFiles.asDeleteFile(delete).equalityFieldIds())),
                   "Equality delete files have different delete fields");
             }
-            eqDeleteBuilder.add(delete.asDeleteFile());
+            eqDeleteBuilder.add(ContentFiles.asDeleteFile(delete));
             break;
           default:
             throw new UnsupportedOperationException("Unknown delete file content: " + delete.content());
@@ -184,7 +184,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
         CloseableIterable.concat(
             Iterables.transform(
                 eqDeletes, s -> CloseableIterable.transform(
-                    openDeletes(s.asDeleteFile(), deleteSchema),
+                    openDeletes(ContentFiles.asDeleteFile(s), deleteSchema),
                     r -> new RecordWithLsn(s.dataSequenceNumber(), r)))),
         RecordWithLsn::recordCopy);
 

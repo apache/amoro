@@ -22,11 +22,11 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
+import com.netease.arctic.utils.ContentFiles;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.FileContent;
 import org.junit.Assert;
 
 import java.util.List;
@@ -53,7 +53,7 @@ public abstract class TableFileScanHelperTestBase extends TableTestBase {
                                   Integer deleteCnt) {
     Assert.assertEquals(size, result.size());
     for (TableFileScanHelper.FileScanResult fileScanResult : result) {
-      IcebergDataFile file = fileScanResult.file();
+      DataFile file = fileScanResult.file();
       assertDataFileClass(file);
       if (sequence != null) {
         Assert.assertEquals(sequence.longValue(), file.dataSequenceNumber().longValue());
@@ -61,20 +61,20 @@ public abstract class TableFileScanHelperTestBase extends TableTestBase {
       if (deleteCnt != null) {
         Assert.assertEquals(deleteCnt.intValue(), fileScanResult.deleteFiles().size());
       }
-      for (IcebergContentFile<?> deleteFile : fileScanResult.deleteFiles()) {
-        if (deleteFile.content() == FileContent.DATA) {
-          Assert.assertTrue(deleteFile.internalFile() instanceof PrimaryKeyedFile);
-          PrimaryKeyedFile primaryKeyedFile = (PrimaryKeyedFile) deleteFile.internalFile();
+      for (ContentFile<?> deleteFile : fileScanResult.deleteFiles()) {
+        if (ContentFiles.isDataFile(deleteFile)) {
+          Assert.assertTrue(deleteFile instanceof PrimaryKeyedFile);
+          PrimaryKeyedFile primaryKeyedFile = (PrimaryKeyedFile) deleteFile;
           Assert.assertEquals(DataFileType.EQ_DELETE_FILE, primaryKeyedFile.type());
         } else {
-          Assert.assertTrue(deleteFile.internalFile() instanceof DeleteFile);
+          Assert.assertTrue(deleteFile instanceof DeleteFile);
         }
       }
     }
   }
 
-  protected void assertDataFileClass(IcebergDataFile file) {
-    Assert.assertTrue(file.internalFile() instanceof PrimaryKeyedFile);
+  protected void assertDataFileClass(DataFile file) {
+    Assert.assertTrue(file instanceof PrimaryKeyedFile);
   }
 
   protected String getPartition() {

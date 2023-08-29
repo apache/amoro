@@ -20,7 +20,6 @@ package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
@@ -34,6 +33,7 @@ import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.SnapshotSummary;
+import com.netease.arctic.utils.ContentFiles;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.hive.metastore.api.Partition;
@@ -165,7 +165,7 @@ public class UnKeyedTableCommit {
       }
       if (task.getInput().rewrittenDeleteFiles() != null) {
         removedDeleteFiles.addAll(Arrays.stream(task.getInput().rewrittenDeleteFiles())
-            .map(IcebergContentFile::asDeleteFile).collect(Collectors.toSet()));
+            .map(ContentFiles::asDeleteFile).collect(Collectors.toSet()));
       }
     }
 

@@ -24,9 +24,6 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
-import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.exception.OptimizingCommitException;
@@ -272,11 +269,9 @@ public class TestUnKeyedTableCommit extends TableTestBase {
     Map<String, ContentFile<?>> maps = new HashMap<>();
     CloseableIterable<FileScanTask> fileScanTasks = arcticTable.asUnkeyedTable().newScan().planFiles();
     for (FileScanTask fileScanTask : fileScanTasks) {
-      maps.put(fileScanTask.file().path().toString(), new IcebergDataFile(
-          fileScanTask.file()));
+      maps.put(fileScanTask.file().path().toString(), fileScanTask.file());
       for (DeleteFile deleteFile : fileScanTask.deletes()) {
-        maps.put(deleteFile.path().toString(), new IcebergDeleteFile(
-            deleteFile));
+        maps.put(deleteFile.path().toString(), deleteFile);
       }
     }
     return maps;
@@ -327,25 +322,25 @@ public class TestUnKeyedTableCommit extends TableTestBase {
       ContentFile<?>[] deleteFiles) {
     Map<String, ContentFile<?>> allFiles = getAllFiles();
 
-    IcebergDataFile[] rewriteData = null;
+    DataFile[] rewriteData = null;
     if (rewriteDataFiles != null) {
       rewriteData = Arrays.stream(rewriteDataFiles)
           .map(s -> allFiles.get(s.path().toString()))
-          .toArray(IcebergDataFile[]::new);
+          .toArray(DataFile[]::new);
     }
 
-    IcebergDataFile[] rewritePos = null;
+    DataFile[] rewritePos = null;
     if (rePositionDataFiles != null) {
       rewritePos = Arrays.stream(rePositionDataFiles)
           .map(s -> allFiles.get(s.path().toString()))
-          .toArray(IcebergDataFile[]::new);
+          .toArray(DataFile[]::new);
     }
 
-    IcebergContentFile<?>[] delete = null;
+    ContentFile<?>[] delete = null;
     if (deleteFiles != null) {
       delete = Arrays.stream(deleteFiles)
           .map(s -> allFiles.get(s.path().toString()))
-          .toArray(IcebergContentFile[]::new);
+          .toArray(ContentFile[]::new);
     }
     return new RewriteFilesInput(rewriteData, rewritePos, null, delete, arcticTable);
   }

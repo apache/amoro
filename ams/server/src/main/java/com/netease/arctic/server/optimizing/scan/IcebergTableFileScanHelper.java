@@ -18,26 +18,21 @@
 
 package com.netease.arctic.server.optimizing.scan;
 
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
-import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.server.ArcticServiceConstants;
-import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class IcebergTableFileScanHelper implements TableFileScanHelper {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergTableFileScanHelper.class);
@@ -61,7 +56,6 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
     PartitionSpec partitionSpec = table.spec();
     try (CloseableIterable<FileScanTask> filesIterable =
         table.newScan().useSnapshot(snapshotId).planFiles()) {
-      IcebergDeleteFileCacheGenerator deleteFilesGenerator = new IcebergDeleteFileCacheGenerator();
       for (FileScanTask task : filesIterable) {
         if (partitionFilter != null) {
           StructLike partition = task.file().partition();
@@ -70,12 +64,8 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
             continue;
           }
         }
-        IcebergDataFile dataFile = new IcebergDataFile(task.file());
-        List<IcebergContentFile<?>> deleteFiles =
-            task.deletes().stream()
-                .map(deleteFilesGenerator::generate)
-                .collect(Collectors.toList());
-        results.add(new FileScanResult(dataFile, deleteFiles));
+        List<ContentFile<?>> deleteFiles = new ArrayList<>(task.deletes());
+        results.add(new FileScanResult(task.file(), deleteFiles));
       }
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to close table scan of " + table.name(), e);
@@ -89,15 +79,5 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
   public TableFileScanHelper withPartitionFilter(PartitionFilter partitionFilter) {
     this.partitionFilter = partitionFilter;
     return this;
-  }
-
-  private class IcebergDeleteFileCacheGenerator {
-    private final Map<DeleteFile, IcebergDeleteFile> deleteFilesCache = Maps.newHashMap();
-
-    IcebergDeleteFile generate(DeleteFile deleteFile) {
-      return deleteFilesCache.computeIfAbsent(
-          deleteFile,
-          IcebergDeleteFile::new);
-    }
   }
 }

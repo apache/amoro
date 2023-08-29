@@ -16,43 +16,36 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.optimizing.scan;
+package com.netease.arctic.utils;
 
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileContent;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
-import java.util.List;
+public class ContentFiles {
 
-public interface TableFileScanHelper {
-  class FileScanResult {
-    private final DataFile file;
-    private final List<ContentFile<?>> deleteFiles;
-
-    public FileScanResult(DataFile file, List<ContentFile<?>> deleteFiles) {
-      this.file = file;
-      this.deleteFiles = deleteFiles;
-    }
-
-    public DataFile file() {
-      return file;
-    }
-
-    public List<ContentFile<?>> deleteFiles() {
-      return deleteFiles;
-    }
+  private ContentFiles() {
+    throw new UnsupportedOperationException();
   }
 
-  interface PartitionFilter {
-    /**
-     * If we should keep or skip this partition
-     *
-     * @param partition -
-     * @return true for keep this partition
-     */
-    boolean test(String partition);
+  public static boolean isDeleteFile(ContentFile<?> contentFile) {
+    return !isDataFile(contentFile);
   }
 
-  List<FileScanResult> scan();
+  public static boolean isDataFile(ContentFile<?> contentFile) {
+    return contentFile.content() == FileContent.DATA;
+  }
 
-  TableFileScanHelper withPartitionFilter(PartitionFilter partitionFilter);
+  public static DataFile asDataFile(ContentFile<?> contentFile) {
+    Preconditions.checkArgument(isDataFile(contentFile), "Not a data file");
+    return (DataFile) contentFile;
+  }
+
+  public static DeleteFile asDeleteFile(ContentFile<?> contentFile) {
+    Preconditions.checkArgument(isDeleteFile(contentFile), "Not a delete file");
+    return (DeleteFile) contentFile;
+  }
+
 }
