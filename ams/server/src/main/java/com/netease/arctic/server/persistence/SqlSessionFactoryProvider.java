@@ -141,7 +141,6 @@ public class SqlSessionFactoryProvider {
                   runner.runScript(new InputStreamReader(Files.newInputStream(Paths.get(getMysqlInitSqlScriptPath())),
                           StandardCharsets.UTF_8));
                 }
-
               }
             }
           }
