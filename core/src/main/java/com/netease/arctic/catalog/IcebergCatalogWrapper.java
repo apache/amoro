@@ -57,7 +57,7 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
   private CatalogMeta meta;
   private Map<String, String> customProperties;
   private Pattern databaseFilterPattern;
-  private Pattern tableFilterPattern;
+  private Pattern databaseTableFilterPattern;
   private transient TableMetaStore tableMetaStore;
   private transient Catalog icebergCatalog;
 
@@ -92,12 +92,12 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
       databaseFilterPattern = null;
     }
 
-    if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_TABLE_FILTER_REGULAR_EXPRESSION)) {
-      String tableFilter =
-              meta.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER_REGULAR_EXPRESSION);
-      tableFilterPattern = Pattern.compile(tableFilter);
+    if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_DATABASE_TABLE_FILTER_REGULAR_EXPRESSION)) {
+      String databaseTableFilter =
+              meta.getCatalogProperties().get(CatalogMetaProperties.KEY_DATABASE_TABLE_FILTER_REGULAR_EXPRESSION);
+      databaseTableFilterPattern = Pattern.compile(databaseTableFilter);
     } else {
-      tableFilterPattern = null;
+      databaseTableFilterPattern = null;
     }
 
   }
@@ -159,7 +159,7 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
   public List<TableIdentifier> listTables(String database) {
     return tableMetaStore.doAs(() -> icebergCatalog.listTables(Namespace.of(database)).stream()
             .filter(tableIdentifier -> tableIdentifier.namespace().levels().length == 1 &&
-                    (tableFilterPattern == null || tableFilterPattern.matcher(tableIdentifier.name()).matches()))
+                    (databaseTableFilterPattern == null || databaseTableFilterPattern.matcher((database + "." + tableIdentifier.name())).matches()))
             .map(tableIdentifier -> TableIdentifier.of(name(), database, tableIdentifier.name()))
             .collect(Collectors.toList()));
   }
