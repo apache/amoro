@@ -111,7 +111,8 @@ public class SqlSessionFactoryProvider {
 
   // create tables for derby database type
   private void createTablesIfNeed(Configurations config) {
-    if (ArcticManagementConf.DB_TYPE_DERBY.equals(config.getString(ArcticManagementConf.DB_TYPE))) {
+    String dbTypeConfig = config.getString(ArcticManagementConf.DB_TYPE);
+    if (ArcticManagementConf.DB_TYPE_DERBY.equals(dbTypeConfig)) {
       try (SqlSession sqlSession = get().openSession(true)) {
         try (Connection connection = sqlSession.getConnection()) {
           try (Statement statement = connection.createStatement()) {
@@ -119,7 +120,8 @@ public class SqlSessionFactoryProvider {
             try (ResultSet rs = statement.executeQuery(query)) {
               if (!rs.next()) {
                 ScriptRunner runner = new ScriptRunner(connection);
-                runner.runScript(new InputStreamReader(Files.newInputStream(Paths.get(getDerbyInitSqlScriptPath())),
+                runner.runScript(new InputStreamReader(Files.newInputStream(
+                        Paths.get(getInitSqlScriptPath(dbTypeConfig))),
                         StandardCharsets.UTF_8));
               }
             }
@@ -128,7 +130,7 @@ public class SqlSessionFactoryProvider {
       } catch (Exception e) {
         throw new IllegalStateException("Create derby tables failed", e);
       }
-    } else if (ArcticManagementConf.DB_TYPE_MYSQL.equals(config.getString(ArcticManagementConf.DB_TYPE))) {
+    } else if (ArcticManagementConf.DB_TYPE_MYSQL.equals(dbTypeConfig)) {
       try (SqlSession sqlSession = get().openSession(true)) {
         try (Connection connection = sqlSession.getConnection()) {
           try (Statement statement = connection.createStatement()) {
@@ -139,7 +141,8 @@ public class SqlSessionFactoryProvider {
               if (rs.next()) {
                 if (rs.getInt(1) == 0) {
                   ScriptRunner runner = new ScriptRunner(connection);
-                  runner.runScript(new InputStreamReader(Files.newInputStream(Paths.get(getMysqlInitSqlScriptPath())),
+                  runner.runScript(new InputStreamReader(Files.newInputStream(
+                          Paths.get(getInitSqlScriptPath(dbTypeConfig))),
                           StandardCharsets.UTF_8));
                 }
               }
@@ -152,21 +155,24 @@ public class SqlSessionFactoryProvider {
     }
   }
 
-  private String getDerbyInitSqlScriptPath() {
-    URL scriptUrl = ClassLoader.getSystemResource(DERBY_INIT_SQL_SCRIPT);
-    if (scriptUrl == null) {
-      throw new IllegalStateException("Cannot find derby init sql script:" + DERBY_INIT_SQL_SCRIPT);
+  private String getInitSqlScriptPath(String type) {
+    if (type.equals(ArcticManagementConf.DB_TYPE_MYSQL)) {
+      URL scriptUrl = ClassLoader.getSystemResource(MYSQL_INIT_SQL_SCRIPT);
+      if (scriptUrl == null) {
+        throw new IllegalStateException("Cannot find mysql init sql script:" + MYSQL_INIT_SQL_SCRIPT);
+      }
+      return scriptUrl.getPath();
+    } else if (type.equals(ArcticManagementConf.DB_TYPE_DERBY)) {
+      URL scriptUrl = ClassLoader.getSystemResource(DERBY_INIT_SQL_SCRIPT);
+      if (scriptUrl == null) {
+        throw new IllegalStateException("Cannot find derby init sql script:" + DERBY_INIT_SQL_SCRIPT);
+      }
+      return scriptUrl.getPath();
     }
-    return scriptUrl.getPath();
+    return null;
   }
 
-  private String getMysqlInitSqlScriptPath() {
-    URL scriptUrl = ClassLoader.getSystemResource(MYSQL_INIT_SQL_SCRIPT);
-    if (scriptUrl == null) {
-      throw new IllegalStateException("Cannot find mysql init sql script:" + MYSQL_INIT_SQL_SCRIPT);
-    }
-    return scriptUrl.getPath();
-  }
+
 
   public SqlSessionFactory get() {
     Preconditions.checkState(
