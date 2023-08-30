@@ -92,9 +92,9 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
       databaseFilterPattern = null;
     }
 
-    if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_TABLE_FILTER_REGULAR_EXPRESSION)) {
+    if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_TABLE_FILTER)) {
       String tableFilter =
-              meta.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER_REGULAR_EXPRESSION);
+              meta.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
       tableFilterPattern = Pattern.compile(tableFilter);
     } else {
       tableFilterPattern = null;
