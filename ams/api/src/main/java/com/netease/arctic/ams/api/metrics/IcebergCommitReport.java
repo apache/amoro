@@ -20,7 +20,7 @@ package com.netease.arctic.ams.api.metrics;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Timer;
-import javax.annotation.Nullable;
+
 import java.util.Map;
 
 public class IcebergCommitReport implements MetricReport {
