@@ -1,11 +1,9 @@
 package com.netease.arctic.server.optimizing.scan;
 
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
-import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.table.UnkeyedTable;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
@@ -55,8 +53,8 @@ public class UnkeyedTableFileScanHelper implements TableFileScanHelper {
             continue;
           }
         }
-        IcebergDataFile dataFile = wrapBaseFile(task.file());
-        List<IcebergContentFile<?>> deleteFiles =
+        DataFile dataFile = wrapBaseFile(task.file());
+        List<ContentFile<?>> deleteFiles =
             task.deletes().stream().map(this::wrapDeleteFile).collect(Collectors.toList());
         results.add(new FileScanResult(dataFile, deleteFiles));
       }
@@ -74,15 +72,15 @@ public class UnkeyedTableFileScanHelper implements TableFileScanHelper {
     return this;
   }
 
-  private IcebergDataFile wrapBaseFile(DataFile dataFile) {
-    return new IcebergDataFile(DefaultKeyedFile.parseBase(dataFile));
+  private DataFile wrapBaseFile(DataFile dataFile) {
+    return DefaultKeyedFile.parseBase(dataFile);
   }
 
-  private IcebergContentFile<?> wrapDeleteFile(DeleteFile deleteFile) {
+  private ContentFile<?> wrapDeleteFile(DeleteFile deleteFile) {
     if (deleteFile.content() == FileContent.EQUALITY_DELETES) {
       throw new UnsupportedOperationException("optimizing unkeyed table not support equality-delete");
     }
-    return new IcebergDeleteFile(deleteFile);
+    return deleteFile;
   }
 
 }
