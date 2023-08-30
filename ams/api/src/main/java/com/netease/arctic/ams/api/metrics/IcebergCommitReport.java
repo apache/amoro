@@ -23,150 +23,227 @@ import com.codahale.metrics.Timer;
 import javax.annotation.Nullable;
 import java.util.Map;
 
-public interface IcebergCommitReport extends MetricReport {
+public class IcebergCommitReport implements MetricReport {
 
-  String TABLE_NAME = "table-name";
-  String SNAPSHOT_ID = "snapshot-id";
-  String SEQUENCE_NUMBER = "sequence-number";
-  String OPERATION = "operation";
-  String METADATA = "metadata";
+  public static final String TABLE_NAME = "table-name";
+  public static final String SNAPSHOT_ID = "snapshot-id";
+  public static final String SEQUENCE_NUMBER = "sequence-number";
+  public static final String OPERATION = "operation";
+  public static final String METADATA = "metadata";
 
-  String TOTAL_DURATION = "total-duration";
-  String ATTEMPTS = "attempts";
-  String ADDED_DATA_FILES = "added-data-files";
-  String REMOVED_DATA_FILES = "removed-data-files";
-  String TOTAL_DATA_FILES = "total-data-files";
-  String ADDED_DELETE_FILES = "added-delete-files";
-  String ADDED_EQ_DELETE_FILES = "added-equality-delete-files";
-  String ADDED_POS_DELETE_FILES = "added-positional-delete-files";
-  String REMOVED_POS_DELETE_FILES = "removed-positional-delete-files";
-  String REMOVED_EQ_DELETE_FILES = "removed-equality-delete-files";
-  String REMOVED_DELETE_FILES = "removed-delete-files";
-  String TOTAL_DELETE_FILES = "total-delete-files";
-  String ADDED_RECORDS = "added-records";
-  String REMOVED_RECORDS = "removed-records";
-  String TOTAL_RECORDS = "total-records";
-  String ADDED_FILE_SIZE_BYTES = "added-files-size-bytes";
-  String REMOVED_FILE_SIZE_BYTES = "removed-files-size-bytes";
-  String TOTAL_FILE_SIZE_BYTES = "total-files-size-bytes";
-  String ADDED_POS_DELETES = "added-positional-deletes";
-  String REMOVED_POS_DELETES = "removed-positional-deletes";
-  String TOTAL_POS_DELETES = "total-positional-deletes";
-  String ADDED_EQ_DELETES = "added-equality-deletes";
-  String REMOVED_EQ_DELETES = "removed-equality-deletes";
-  String TOTAL_EQ_DELETES = "total-equality-deletes";
+  public static final String TOTAL_DURATION = "total-duration";
+  public static final String ATTEMPTS = "attempts";
+  public static final String ADDED_DATA_FILES = "added-data-files";
+  public static final String REMOVED_DATA_FILES = "removed-data-files";
+  public static final String TOTAL_DATA_FILES = "total-data-files";
+  public static final String ADDED_DELETE_FILES = "added-delete-files";
+  public static final String ADDED_EQ_DELETE_FILES = "added-equality-delete-files";
+  public static final String ADDED_POS_DELETE_FILES = "added-positional-delete-files";
+  public static final String REMOVED_POS_DELETE_FILES = "removed-positional-delete-files";
+  public static final String REMOVED_EQ_DELETE_FILES = "removed-equality-delete-files";
+  public static final String REMOVED_DELETE_FILES = "removed-delete-files";
+  public static final String TOTAL_DELETE_FILES = "total-delete-files";
+  public static final String ADDED_RECORDS = "added-records";
+  public static final String REMOVED_RECORDS = "removed-records";
+  public static final String TOTAL_RECORDS = "total-records";
+  public static final String ADDED_FILE_SIZE_BYTES = "added-files-size-bytes";
+  public static final String REMOVED_FILE_SIZE_BYTES = "removed-files-size-bytes";
+  public static final String TOTAL_FILE_SIZE_BYTES = "total-files-size-bytes";
+  public static final String ADDED_POS_DELETES = "added-positional-deletes";
+  public static final String REMOVED_POS_DELETES = "removed-positional-deletes";
+  public static final String TOTAL_POS_DELETES = "total-positional-deletes";
+  public static final String ADDED_EQ_DELETES = "added-equality-deletes";
+  public static final String REMOVED_EQ_DELETES = "removed-equality-deletes";
+  public static final String TOTAL_EQ_DELETES = "total-equality-deletes";
+
+  private final String tableName;
+  private final Long snapshotId;
+  private final Long sequenceNumber;
+  private final String operation;
+  private final Map<String, String> metadata;
+
+  private final Timer totalDuration = new Timer();
+  private final Counter attempts = new Counter();
+  private final Counter addedDataFiles = new Counter();
+  private final Counter removedDataFiles = new Counter();
+  private final Counter totalDataFiles = new Counter();
+  private final Counter addedDeleteFiles = new Counter();
+  private final Counter addedEqualityDeleteFiles = new Counter();
+  private final Counter addedPositionalDeleteFiles = new Counter();
+  private final Counter removedDeleteFiles = new Counter();
+  private final Counter removedEqualityDeleteFiles = new Counter();
+  private final Counter removedPositionalDeleteFiles = new Counter();
+  private final Counter totalDeleteFiles = new Counter();
+  private final Counter addedRecords = new Counter();
+  private final Counter removedRecords = new Counter();
+  private final Counter totalRecords = new Counter();
+  private final Counter addedFilesSizeInBytes = new Counter();
+  private final Counter removedFilesSizeInBytes = new Counter();
+  private final Counter totalFilesSizeInBytes = new Counter();
+  private final Counter addedPositionalDeletes = new Counter();
+  private final Counter removedPositionalDeletes = new Counter();
+  private final Counter totalPositionalDeletes = new Counter();
+  private final Counter addedEqualityDeletes = new Counter();
+  private final Counter removedEqualityDeletes = new Counter();
+  private final Counter totalEqualityDeletes = new Counter();
+
+  public IcebergCommitReport(
+      String tableName, Long snapshotId, Long sequenceNumber, String operation, Map<String,
+      String> metadata) {
+    this.tableName = tableName;
+    this.snapshotId = snapshotId;
+    this.sequenceNumber = sequenceNumber;
+    this.operation = operation;
+    this.metadata = metadata;
+  }
 
   @Override
-  default String name() {
+  public String name() {
     return "iceberg_commit_report";
   }
 
   @TaggedMetrics.Tag(name = TABLE_NAME)
-  String tableName();
+  public String tableName() {
+    return this.tableName;
+  }
 
   @TaggedMetrics.Tag(name = SNAPSHOT_ID)
-  long snapshotId();
+  public long snapshotId() {
+    return this.snapshotId;
+  }
 
   @TaggedMetrics.Tag(name = SEQUENCE_NUMBER)
-  long sequenceNumber();
+  public long sequenceNumber() {
+    return this.sequenceNumber;
+  }
 
   @TaggedMetrics.Tag(name = OPERATION)
-  String operation();
+  public String operation() {
+    return this.operation;
+  }
 
   @TaggedMetrics.Tag(name = METADATA)
-  Map<String, String> metadata();
+  public Map<String, String> metadata() {
+    return this.metadata;
+  }
 
   @TaggedMetrics.Metric(name = TOTAL_DURATION)
-  Timer totalDuration();
+  public Timer totalDuration() {
+    return this.totalDuration;
+  }
 
   @TaggedMetrics.Metric(name = ATTEMPTS)
-  Counter attempts();
+  public Counter attempts() {
+    return this.attempts;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = ADDED_DATA_FILES)
-  Counter addedDataFiles();
+  public Counter addedDataFiles() {
+    return this.addedDataFiles;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = REMOVED_DATA_FILES)
-  Counter removedDataFiles();
+  public Counter removedDataFiles() {
+    return this.removedDataFiles;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = TOTAL_DATA_FILES)
-  Counter totalDataFiles();
+  public Counter totalDataFiles() {
+    return this.totalDataFiles;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = ADDED_DELETE_FILES)
-  Counter addedDeleteFiles();
+  public Counter addedDeleteFiles() {
+    return this.addedDeleteFiles;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = ADDED_EQ_DELETE_FILES)
-  Counter addedEqualityDeleteFiles();
+  public Counter addedEqualityDeleteFiles() {
+    return this.addedEqualityDeleteFiles;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = ADDED_POS_DELETE_FILES)
-  Counter addedPositionalDeleteFiles();
+  public Counter addedPositionalDeleteFiles() {
+    return this.addedPositionalDeleteFiles;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = REMOVED_DELETE_FILES)
-  Counter removedDeleteFiles();
+  public Counter removedDeleteFiles() {
+    return this.removedDeleteFiles;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = REMOVED_EQ_DELETE_FILES)
-  Counter removedEqualityDeleteFiles();
+  public Counter removedEqualityDeleteFiles() {
+    return this.removedEqualityDeleteFiles;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = REMOVED_POS_DELETE_FILES)
-  Counter removedPositionalDeleteFiles();
+  public Counter removedPositionalDeleteFiles() {
+    return this.removedPositionalDeleteFiles;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = TOTAL_DELETE_FILES)
-  Counter totalDeleteFiles();
+  public Counter totalDeleteFiles() {
+    return this.totalDeleteFiles;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = ADDED_RECORDS)
-  Counter addedRecords();
+  public Counter addedRecords() {
+    return this.addedRecords;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = REMOVED_RECORDS)
-  Counter removedRecords();
+  public Counter removedRecords() {
+    return this.removedRecords;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = TOTAL_RECORDS)
-  Counter totalRecords();
+  public Counter totalRecords() {
+    return this.totalRecords;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = ADDED_FILE_SIZE_BYTES)
-  Counter addedFilesSizeInBytes();
+  public Counter addedFilesSizeInBytes() {
+    return this.addedFilesSizeInBytes;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = REMOVED_FILE_SIZE_BYTES)
-  Counter removedFilesSizeInBytes();
+  public Counter removedFilesSizeInBytes() {
+    return this.removedFilesSizeInBytes;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = TOTAL_FILE_SIZE_BYTES)
-  Counter totalFilesSizeInBytes();
+  public Counter totalFilesSizeInBytes() {
+    return this.totalFilesSizeInBytes;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = ADDED_POS_DELETES)
-  Counter addedPositionalDeletes();
+  public Counter addedPositionalDeletes() {
+    return this.addedPositionalDeletes;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = REMOVED_POS_DELETES)
-  Counter removedPositionalDeletes();
+  public Counter removedPositionalDeletes() {
+    return this.removedPositionalDeletes;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = TOTAL_POS_DELETES)
-  Counter totalPositionalDeletes();
+  public Counter totalPositionalDeletes() {
+    return this.totalPositionalDeletes;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = ADDED_EQ_DELETES)
-  Counter addedEqualityDeletes();
+  public Counter addedEqualityDeletes() {
+    return this.addedEqualityDeletes;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = REMOVED_EQ_DELETES)
-  Counter removedEqualityDeletes();
+  public Counter removedEqualityDeletes() {
+    return this.removedEqualityDeletes;
+  }
 
-  @Nullable
   @TaggedMetrics.Metric(name = TOTAL_EQ_DELETES)
-  Counter totalEqualityDeletes();
+  public Counter totalEqualityDeletes() {
+    return this.totalEqualityDeletes;
+  }
 }
