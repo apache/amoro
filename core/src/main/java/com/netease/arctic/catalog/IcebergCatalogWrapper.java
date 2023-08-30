@@ -158,10 +158,11 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
   @Override
   public List<TableIdentifier> listTables(String database) {
     return tableMetaStore.doAs(() -> icebergCatalog.listTables(Namespace.of(database)).stream()
-            .filter(tableIdentifier -> tableIdentifier.namespace().levels().length == 1 &&
-                    (tableFilterPattern == null || tableFilterPattern.matcher((database + "." + tableIdentifier.name())).matches()))
-            .map(tableIdentifier -> TableIdentifier.of(name(), database, tableIdentifier.name()))
-            .collect(Collectors.toList()));
+        .filter(tableIdentifier -> tableIdentifier.namespace().levels().length == 1 &&
+            (tableFilterPattern == null ||
+                tableFilterPattern.matcher((database + "." + tableIdentifier.name())).matches()))
+        .map(tableIdentifier -> TableIdentifier.of(name(), database, tableIdentifier.name()))
+        .collect(Collectors.toList()));
   }
 
   public List<TableIdentifier> listTables() {
