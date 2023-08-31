@@ -109,67 +109,50 @@ public class SqlSessionFactoryProvider {
     createTablesIfNeed(config);
   }
 
-  // create tables for derby database type
+  /**
+   * create tables for database
+   * @param config
+   */
   private void createTablesIfNeed(Configurations config) {
     String dbTypeConfig = config.getString(ArcticManagementConf.DB_TYPE);
-    if (ArcticManagementConf.DB_TYPE_DERBY.equals(dbTypeConfig)) {
-      try (SqlSession sqlSession = get().openSession(true)) {
-        try (Connection connection = sqlSession.getConnection()) {
-          try (Statement statement = connection.createStatement()) {
-            String query = "SELECT 1 FROM SYS.SYSTABLES WHERE TABLENAME = 'CATALOG_METADATA'";
-            try (ResultSet rs = statement.executeQuery(query)) {
-              if (!rs.next()) {
-                ScriptRunner runner = new ScriptRunner(connection);
-                runner.runScript(new InputStreamReader(Files.newInputStream(
-                        Paths.get(getInitSqlScriptPath(dbTypeConfig))),
-                        StandardCharsets.UTF_8));
-              }
-            }
-          }
-        }
-      } catch (Exception e) {
-        throw new IllegalStateException("Create derby tables failed", e);
+    String query = "";
+
+    try (SqlSession sqlSession = get().openSession(true);
+         Connection connection = sqlSession.getConnection();
+         Statement statement = connection.createStatement();) {
+      if (ArcticManagementConf.DB_TYPE_DERBY.equals(dbTypeConfig)) {
+        query = "SELECT 1 FROM SYS.SYSTABLES WHERE TABLENAME = 'CATALOG_METADATA'";
+      } else if (ArcticManagementConf.DB_TYPE_MYSQL.equals(dbTypeConfig)) {
+        query = String.format(
+            "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'",
+            connection.getCatalog(), "CATALOG_METADATA");
       }
-    } else if (ArcticManagementConf.DB_TYPE_MYSQL.equals(dbTypeConfig)) {
-      try (SqlSession sqlSession = get().openSession(true)) {
-        try (Connection connection = sqlSession.getConnection()) {
-          try (Statement statement = connection.createStatement()) {
-            String query = String.format(
-                    "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'",
-                    connection.getCatalog(), "CATALOG_METADATA");
-            try (ResultSet rs = statement.executeQuery(query)) {
-              if (rs.next()) {
-                if (rs.getInt(1) == 0) {
-                  ScriptRunner runner = new ScriptRunner(connection);
-                  runner.runScript(new InputStreamReader(Files.newInputStream(
-                          Paths.get(getInitSqlScriptPath(dbTypeConfig))),
-                          StandardCharsets.UTF_8));
-                }
-              }
-            }
-          }
-        }
-      } catch (Exception e) {
-        throw new IllegalStateException("Create mysql tables failed", e);
+      ResultSet rs = statement.executeQuery(query);
+      if (!rs.next()) {
+        ScriptRunner runner = new ScriptRunner(connection);
+        runner.runScript(new InputStreamReader(Files.newInputStream(
+            Paths.get(getInitSqlScriptPath(dbTypeConfig))),
+            StandardCharsets.UTF_8));
       }
+    } catch (Exception e) {
+      throw new IllegalStateException("Create tables failed", e);
     }
+
+
   }
 
   private String getInitSqlScriptPath(String type) {
+    String scriptPath = null;
     if (type.equals(ArcticManagementConf.DB_TYPE_MYSQL)) {
-      URL scriptUrl = ClassLoader.getSystemResource(MYSQL_INIT_SQL_SCRIPT);
-      if (scriptUrl == null) {
-        throw new IllegalStateException("Cannot find mysql init sql script:" + MYSQL_INIT_SQL_SCRIPT);
-      }
-      return scriptUrl.getPath();
+      scriptPath = MYSQL_INIT_SQL_SCRIPT;
     } else if (type.equals(ArcticManagementConf.DB_TYPE_DERBY)) {
-      URL scriptUrl = ClassLoader.getSystemResource(DERBY_INIT_SQL_SCRIPT);
-      if (scriptUrl == null) {
-        throw new IllegalStateException("Cannot find derby init sql script:" + DERBY_INIT_SQL_SCRIPT);
-      }
-      return scriptUrl.getPath();
+      scriptPath = DERBY_INIT_SQL_SCRIPT;
     }
-    return null;
+    URL scriptUrl = ClassLoader.getSystemResource(scriptPath);
+    if (scriptUrl == null) {
+      throw new IllegalStateException("Cannot find  init sql script:" + scriptPath);
+    }
+    return scriptUrl.getPath();
   }
 
 
