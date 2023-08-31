@@ -43,7 +43,7 @@ public class CatalogBuilder {
         }
       case CATALOG_TYPE_AMS:
         if (tableFormat.equals(TableFormat.MIXED_ICEBERG)) {
-          return new MixedCatalogImpl(catalogMeta);
+          return new InternalMixedCatalogImpl(catalogMeta);
         } else if (tableFormat.equals(TableFormat.ICEBERG)) {
           return new InternalIcebergCatalogImpl(catalogMeta, serverConfiguration);
         } else {

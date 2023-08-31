@@ -27,7 +27,7 @@ import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
-import com.netease.arctic.mixed.catalog.BasicMixedIcebergCatalog;
+import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.common.DynConstructors;
@@ -113,9 +113,9 @@ public class CatalogLoader {
           }
           break;
         case CATALOG_TYPE_HIVE:
-          if (tableFormat.equals(TableFormat.ICEBERG)) {
+          if (TableFormat.ICEBERG == tableFormat) {
             catalogImpl = ICEBERG_CATALOG_IMPL;
-          } else if (tableFormat.equals(TableFormat.MIXED_HIVE)) {
+          } else if (TableFormat.MIXED_HIVE == tableFormat) {
             catalogImpl = HIVE_CATALOG_IMPL;
           } else if (TableFormat.MIXED_ICEBERG == tableFormat) {
             catalogImpl = MIXED_ICEBERG_CATALOG_IMP;
@@ -124,9 +124,9 @@ public class CatalogLoader {
           }
           break;
         case CATALOG_TYPE_AMS:
-          if (tableFormat.equals(TableFormat.MIXED_ICEBERG)) {
+          if (TableFormat.MIXED_ICEBERG == tableFormat) {
             catalogImpl = AMS_CATALOG_IMPL;
-          } else if (tableFormat.equals(TableFormat.ICEBERG)) {
+          } else if (TableFormat.ICEBERG == tableFormat) {
             catalogMeta.putToCatalogProperties(CatalogProperties.WAREHOUSE_LOCATION, catalogName);
             catalogMeta.putToCatalogProperties(CatalogProperties.CATALOG_IMPL, ICEBERG_REST_CATALOG);
             catalogImpl = ICEBERG_CATALOG_IMPL;
@@ -161,7 +161,12 @@ public class CatalogLoader {
     }
   }
 
-
+  /**
+   * Load catalog meta from arctic metastore.
+   *
+   * @param catalogUrl - catalog url
+   * @return catalog meta
+   */
   public static CatalogMeta loadMeta(String catalogUrl) {
     ArcticThriftUrl url = ArcticThriftUrl.parse(catalogUrl, Constants.THRIFT_TABLE_SERVICE_NAME);
     if (url.catalogName() == null || url.catalogName().contains("/")) {

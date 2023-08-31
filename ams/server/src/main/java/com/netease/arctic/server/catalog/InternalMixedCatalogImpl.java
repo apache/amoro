@@ -6,16 +6,16 @@ import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.table.ArcticTable;
 
-public class MixedCatalogImpl extends InternalCatalog {
+public class InternalMixedCatalogImpl extends InternalCatalog {
 
   private final MixedTables tables;
 
-  protected MixedCatalogImpl(CatalogMeta metadata) {
+  protected InternalMixedCatalogImpl(CatalogMeta metadata) {
     super(metadata);
     this.tables = new MixedTables(metadata);
   }
 
-  protected MixedCatalogImpl(CatalogMeta metadata, MixedTables tables) {
+  protected InternalMixedCatalogImpl(CatalogMeta metadata, MixedTables tables) {
     super(metadata);
     this.tables = tables;
   }

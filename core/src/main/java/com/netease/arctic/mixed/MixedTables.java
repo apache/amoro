@@ -16,14 +16,13 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.mixed.table;
-
-import com.netease.arctic.AmsClient;
+package com.netease.arctic.mixed;
+ 
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
-import com.netease.arctic.mixed.EmptyAmsClient;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BasicKeyedTable;
@@ -58,7 +57,7 @@ public class MixedTables {
   public boolean isBaseStore(Table table) {
     String format = table.properties().get(TableProperties.TABLE_FORMAT);
     String tableStore = table.properties().get(TableProperties.MIXED_FORMAT_TABLE_STORE);
-    return TableProperties.TABLE_FORMAT_MIXED_ICEBERG.equalsIgnoreCase(format) &&
+    return TableFormat.MIXED_ICEBERG.name().equalsIgnoreCase(format) &&
         TableProperties.MIXED_FORMAT_TABLE_STORE_BASE.equalsIgnoreCase(tableStore);
   }
 
@@ -87,8 +86,8 @@ public class MixedTables {
 
   protected TableIdentifier changeStoreIdentifier(TableIdentifier baseIdentifier) {
     String separator = catalogMeta.getCatalogProperties().getOrDefault(
-        CatalogMetaProperties.MIXED_FORMAT_CHANGE_STORE_SEPARATOR,
-        CatalogMetaProperties.MIXED_FORMAT_CHANGE_STORE_SEPARATOR_DEFAULT
+        CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR,
+        CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR_DEFAULT
     );
     return TableIdentifier.of(
         baseIdentifier.namespace(),
@@ -99,15 +98,14 @@ public class MixedTables {
   public ArcticTable loadTable(Table base, com.netease.arctic.table.TableIdentifier tableIdentifier) {
     ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
     PrimaryKeySpec keySpec = getPrimaryKeySpec(base);
-    AmsClient client = new EmptyAmsClient();
     if (!keySpec.primaryKeyExisted()) {
-      return new BasicUnkeyedTable(tableIdentifier, base, io, client, catalogMeta.getCatalogProperties());
+      return new BasicUnkeyedTable(tableIdentifier, base, io, null, catalogMeta.getCatalogProperties());
     }
     Table changeIcebergTable = loadChangeStore(base);
     BaseTable baseStore = new BasicKeyedTable.BaseInternalTable(
-        tableIdentifier, base, io, client, catalogMeta.getCatalogProperties());
+        tableIdentifier, base, io, null, catalogMeta.getCatalogProperties());
     ChangeTable changeStore = new BasicKeyedTable.ChangeInternalTable(
-        tableIdentifier, changeIcebergTable, io, client, catalogMeta.getCatalogProperties());
+        tableIdentifier, changeIcebergTable, io, null, catalogMeta.getCatalogProperties());
     return new BasicKeyedTable(keySpec, baseStore, changeStore);
   }
 
@@ -134,9 +132,8 @@ public class MixedTables {
     ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
 
     if (!keySpec.primaryKeyExisted()) {
-      return new BasicUnkeyedTable(identifier, base, io, new EmptyAmsClient(), catalogMeta.getCatalogProperties());
+      return new BasicUnkeyedTable(identifier, base, io, null, catalogMeta.getCatalogProperties());
     }
-    AmsClient client = new EmptyAmsClient();
 
     Catalog.TableBuilder changeBuilder = icebergCatalog.buildTable(changeIdentifier, schema)
         .withProperties(tableStoreProperties)
@@ -144,15 +141,15 @@ public class MixedTables {
         .withProperty(TableProperties.MIXED_FORMAT_TABLE_STORE, TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE);
     Table change = tableMetaStore.doAs(changeBuilder::create);
     BaseTable baseStore = new BasicKeyedTable.BaseInternalTable(
-        identifier, base, io, client, catalogMeta.getCatalogProperties());
+        identifier, base, io, null, catalogMeta.getCatalogProperties());
     ChangeTable changeStore = new BasicKeyedTable.ChangeInternalTable(
-        identifier, change, io, client, catalogMeta.getCatalogProperties());
+        identifier, change, io, null, catalogMeta.getCatalogProperties());
     return new BasicKeyedTable(keySpec, baseStore, changeStore);
   }
 
   protected Map<String, String> tableStoreProperties(PrimaryKeySpec keySpec, Map<String, String> tableProperties) {
     Map<String, String> properties = Maps.newHashMap(tableProperties);
-    properties.put(TableProperties.TABLE_FORMAT, TableProperties.TABLE_FORMAT_MIXED_ICEBERG);
+    properties.put(TableProperties.TABLE_FORMAT, TableFormat.MIXED_ICEBERG.name());
     if (keySpec.primaryKeyExisted()) {
       String fields = Joiner.on(",").join(keySpec.fieldNames());
       properties.put(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS, fields);
