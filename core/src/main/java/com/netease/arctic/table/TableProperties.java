@@ -260,14 +260,10 @@ public class TableProperties {
    * table format related properties
    */
   public static final String TABLE_FORMAT = "table-format";
-  public static final String TABLE_FORMAT_MIXED_ICEBERG = "mixed-iceberg";
-  public static final String TABLE_FORMAT_MIXED_HIVE = "mixed-hive";
-
   public static final String MIXED_FORMAT_PRIMARY_KEY_FIELDS = "mixed-format.primary-key-fields";
   public static final String MIXED_FORMAT_TABLE_STORE = "mixed-format.table-store";
-  public static final String MIXED_FORMAT_TABLE_STORE_BASE = "mixed-format.table-store.base";
-  public static final String MIXED_FORMAT_TABLE_STORE_CHANGE = "mixed-format.table-store.change";
-
+  public static final String MIXED_FORMAT_TABLE_STORE_BASE = "base";
+  public static final String MIXED_FORMAT_TABLE_STORE_CHANGE = "change";
   public static final String MIXED_FORMAT_CHANGE_STORE_IDENTIFIER = "mixed-format.change.identifier";
 
   /**

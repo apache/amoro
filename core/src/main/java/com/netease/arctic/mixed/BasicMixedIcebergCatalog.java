@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.mixed.catalog;
+package com.netease.arctic.mixed;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
@@ -24,7 +24,6 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.TableTrashManagers;
-import com.netease.arctic.mixed.table.MixedTables;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;

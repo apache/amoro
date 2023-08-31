@@ -27,7 +27,7 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.IcebergCatalogWrapper;
 import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.hive.TestHMS;
-import com.netease.arctic.mixed.catalog.BasicMixedIcebergCatalog;
+import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;

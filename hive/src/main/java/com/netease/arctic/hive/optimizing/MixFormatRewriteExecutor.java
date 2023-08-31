@@ -23,6 +23,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * OptimizingExecutor form mixed format
+ */
 public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
 
   private String outputDir;

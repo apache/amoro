@@ -16,9 +16,10 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.mixed.table;
+package com.netease.arctic.mixed;
 
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
@@ -56,7 +57,7 @@ public class MixedTables {
   public boolean isBaseStore(Table table) {
     String format = table.properties().get(TableProperties.TABLE_FORMAT);
     String tableStore = table.properties().get(TableProperties.MIXED_FORMAT_TABLE_STORE);
-    return TableProperties.TABLE_FORMAT_MIXED_ICEBERG.equalsIgnoreCase(format) &&
+    return TableFormat.MIXED_ICEBERG.name().equalsIgnoreCase(format) &&
         TableProperties.MIXED_FORMAT_TABLE_STORE_BASE.equalsIgnoreCase(tableStore);
   }
 
@@ -85,8 +86,8 @@ public class MixedTables {
 
   protected TableIdentifier changeStoreIdentifier(TableIdentifier baseIdentifier) {
     String separator = catalogMeta.getCatalogProperties().getOrDefault(
-        CatalogMetaProperties.MIXED_FORMAT_CHANGE_STORE_SEPARATOR,
-        CatalogMetaProperties.MIXED_FORMAT_CHANGE_STORE_SEPARATOR_DEFAULT
+        CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR,
+        CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR_DEFAULT
     );
     return TableIdentifier.of(
         baseIdentifier.namespace(),
@@ -148,7 +149,7 @@ public class MixedTables {
 
   protected Map<String, String> tableStoreProperties(PrimaryKeySpec keySpec, Map<String, String> tableProperties) {
     Map<String, String> properties = Maps.newHashMap(tableProperties);
-    properties.put(TableProperties.TABLE_FORMAT, TableProperties.TABLE_FORMAT_MIXED_ICEBERG);
+    properties.put(TableProperties.TABLE_FORMAT, TableFormat.MIXED_ICEBERG.name());
     if (keySpec.primaryKeyExisted()) {
       String fields = Joiner.on(",").join(keySpec.fieldNames());
       properties.put(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS, fields);

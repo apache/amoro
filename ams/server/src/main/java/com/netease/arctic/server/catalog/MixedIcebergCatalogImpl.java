@@ -20,13 +20,13 @@ package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
-import com.netease.arctic.mixed.catalog.BasicMixedIcebergCatalog;
+import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
 import com.netease.arctic.table.ArcticTable;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class MixedIcebergCatalogImpl extends ExternalCatalog {
-  BasicMixedIcebergCatalog mixedIcebergCatalog;
+  private BasicMixedIcebergCatalog mixedIcebergCatalog;
 
   protected MixedIcebergCatalogImpl(CatalogMeta metadata) {
     super(metadata);
