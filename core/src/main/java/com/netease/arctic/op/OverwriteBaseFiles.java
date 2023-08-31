@@ -244,7 +244,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     // step3: set optimized sequence id, optimized time
     long commitTime = System.currentTimeMillis();
     PartitionSpec spec = transaction.table().spec();
-    PuffinUtil.Reader reader = PuffinUtil.reader(transaction.table());
+    PuffinUtil.Reader reader = PuffinUtil.reader(keyedTable.baseTable());
     StructLikeMap<Long> oldOptimizedSequence = reader.readOptimizedSequence();
     StructLikeMap<Long> oldOptimizedTime = reader.readBaseOptimizedTime();
     StructLikeMap<Long> optimizedSequence = StructLikeMap.create(spec.partitionType());
@@ -273,7 +273,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         result.add(PuffinUtil.copyToSnapshot(statisticsFile, newSnapshot.snapshotId()));
       } else {
         statisticsFile =
-            PuffinUtil.writer(transaction.table(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
+            PuffinUtil.writer(keyedTable.baseTable(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
                 .addOptimizedSequence(optimizedSequence)
                 .addBaseOptimizedTime(optimizedTime)
                 .overwrite()

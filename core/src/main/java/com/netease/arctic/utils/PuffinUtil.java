@@ -22,13 +22,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.GenericBlobMetadata;
 import org.apache.iceberg.GenericStatisticsFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.Table;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.puffin.Blob;
 import org.apache.iceberg.puffin.BlobMetadata;
@@ -52,11 +53,11 @@ public class PuffinUtil {
   public static final String BLOB_TYPE_OPTIMIZED_SEQUENCE = "optimized-sequence";
   public static final String BLOB_TYPE_BASE_OPTIMIZED_TIME = "base-optimized-time";
 
-  public static Writer writer(Table table, long snapshotId, long sequenceNumber) {
+  public static Writer writer(UnkeyedTable table, long snapshotId, long sequenceNumber) {
     return new Writer(table, snapshotId, sequenceNumber);
   }
 
-  public static Reader reader(Table table) {
+  public static Reader reader(UnkeyedTable table) {
     return new Reader(table);
   }
 
@@ -65,14 +66,14 @@ public class PuffinUtil {
   }
 
   public static class Writer {
-    private final Table table;
+    private final UnkeyedTable table;
     private final long snapshotId;
     private final long sequenceNumber;
     private StructLikeMap<Long> optimizedSequence;
     private StructLikeMap<Long> baseOptimizedTime;
     private boolean overwrite = false;
 
-    private Writer(Table table, long snapshotId, long sequenceNumber) {
+    private Writer(UnkeyedTable table, long snapshotId, long sequenceNumber) {
       this.table = table;
       this.snapshotId = snapshotId;
       this.sequenceNumber = sequenceNumber;
@@ -139,10 +140,10 @@ public class PuffinUtil {
   }
 
   public static class Reader {
-    private final Table table;
+    private final UnkeyedTable table;
     private Long snapshotId;
 
-    private Reader(Table table) {
+    private Reader(UnkeyedTable table) {
       this.table = table;
     }
     
@@ -152,17 +153,25 @@ public class PuffinUtil {
     }
 
     public StructLikeMap<Long> readOptimizedSequence() {
-      return read(BLOB_TYPE_OPTIMIZED_SEQUENCE);
+      StructLikeMap<Long> optimizedSequence = read(BLOB_TYPE_OPTIMIZED_SEQUENCE);
+      if (optimizedSequence != null) {
+        return optimizedSequence;
+      }
+      return TablePropertyUtil.getPartitionLongProperties(table, TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
     }
 
     public StructLikeMap<Long> readBaseOptimizedTime() {
-      return read(BLOB_TYPE_BASE_OPTIMIZED_TIME);
+      StructLikeMap<Long> baseOptimizedTime = read(BLOB_TYPE_BASE_OPTIMIZED_TIME);
+      if (baseOptimizedTime != null) {
+        return baseOptimizedTime;
+      }
+      return TablePropertyUtil.getPartitionLongProperties(table, TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
     }
 
     private StructLikeMap<Long> read(String type) {
       StatisticsFile statisticsFile = findStatisticsFile(type);
       if (statisticsFile == null) {
-        return StructLikeMap.create(table.spec().partitionType());
+        return null;
       }
       try (PuffinReader puffin = Puffin.read(table.io().newInputFile(statisticsFile.path())).build()) {
         FileMetadata fileMetadata = puffin.fileMetadata();
