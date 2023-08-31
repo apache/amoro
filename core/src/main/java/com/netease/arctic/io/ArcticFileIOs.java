@@ -59,7 +59,7 @@ public class ArcticFileIOs {
     if (io instanceof HadoopFileIO) {
       return buildHadoopFileIO(tableMetaStore);
     } else {
-      return new ArcticFileIOIcebergAdapter(io);
+      return new ArcticFileIOAdapter(io);
     }
   }
 }
