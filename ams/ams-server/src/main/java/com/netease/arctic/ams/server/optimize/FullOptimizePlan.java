@@ -272,9 +272,9 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
    * @return true - if it needs to split
    */
   protected boolean needSplitRootNode(String partitionToPath) {
-    if (arcticTable.spec().isPartitioned()) {
+    if (arcticTable.spec().isPartitioned() || arcticTable.isUnkeyedTable()) {
       // To limit the scope of this feature and avoid optimizing a large number of historical partitions, 
-      // it only applies to unpartitioned tables.
+      // it only applies to unpartitioned keyed tables.
       return false;
     }
     int baseBucket = PropertyUtil.propertyAsInt(arcticTable.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,

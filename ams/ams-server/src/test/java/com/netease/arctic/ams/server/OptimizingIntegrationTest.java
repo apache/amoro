@@ -58,6 +58,7 @@ public class OptimizingIntegrationTest {
   private static final TableIdentifier TB_11 = TableIdentifier.of(CATALOG, DATABASE, "test_table11");
   private static final TableIdentifier TB_12 = TableIdentifier.of(ICEBERG_CATALOG, DATABASE, "iceberg_table12");
   private static final TableIdentifier TB_13 = TableIdentifier.of(CATALOG, DATABASE, "test_table13");
+  private static final TableIdentifier TB_14 = TableIdentifier.of(CATALOG, DATABASE, "test_table14");
 
   private static final ConcurrentHashMap<String, ArcticCatalog> catalogsCache = new ConcurrentHashMap<>();
 
@@ -184,8 +185,8 @@ public class OptimizingIntegrationTest {
 
   @Test
   public void testPartitionArcticTablePartialOptimizing() {
-    ArcticTable arcticTable = createArcticTable(TB_13, PRIMARY_KEY, SPEC);
-    assertTableExist(TB_13);
+    ArcticTable arcticTable = createArcticTable(TB_14, PRIMARY_KEY, SPEC);
+    assertTableExist(TB_14);
     MixedIcebergOptimizingTest testCase = new MixedIcebergOptimizingTest(arcticTable, getOptimizeHistoryStartId());
     testCase.testPartitionArcticTablePartialOptimizing();
   }
