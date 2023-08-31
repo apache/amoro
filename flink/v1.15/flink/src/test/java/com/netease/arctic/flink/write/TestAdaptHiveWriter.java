@@ -40,9 +40,11 @@ import org.apache.flink.table.data.TimestampData;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
+import org.apache.iceberg.flink.data.FlinkOrcReader;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
+import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -253,20 +255,41 @@ public class TestAdaptHiveWriter extends TableTestBase {
     WriteResult complete = changeWrite.complete();
     Arrays.stream(complete.dataFiles()).forEach(s -> Assert.assertTrue(s.path().toString().contains(pathFeature)));
     CloseableIterable<RowData> concat =
-        CloseableIterable.concat(Arrays.stream(complete.dataFiles()).map(s -> readParquet(
-            table.schema(),
-            s.path().toString())).collect(Collectors.toList()));
+        CloseableIterable.concat(Arrays.stream(complete.dataFiles()).map(
+            s -> {
+              switch (s.format()) {
+                case PARQUET:
+                  return readParquet(table.schema(), s.path().toString());
+                case ORC:
+                  return readOrc(table.schema(), s.path().toString());
+                default:
+                  throw new UnsupportedOperationException(
+                      "Cannot read unknown format: " + s.format());
+              }
+            }
+        ).collect(Collectors.toList()));
     Set<RowData> result = new HashSet<>();
     Iterators.addAll(result, concat.iterator());
     Assert.assertEquals(result, records.stream().collect(Collectors.toSet()));
   }
 
-  private CloseableIterable<RowData> readParquet(Schema schema, String path){
+  private CloseableIterable<RowData> readParquet(Schema schema, String path) {
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
             Files.localInput(path))
         .project(schema)
         .createReaderFunc(fileSchema -> AdaptHiveFlinkParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
         .caseSensitive(false);
+
+    CloseableIterable<RowData> iterable = builder.build();
+    return iterable;
+  }
+
+  private CloseableIterable<RowData> readOrc(Schema schema, String path) {
+    ORC.ReadBuilder builder =
+        ORC.read(Files.localInput(path))
+            .project(schema)
+            .createReaderFunc(fileSchema -> new FlinkOrcReader(schema, fileSchema, new HashMap<>()))
+            .caseSensitive(false);
 
     CloseableIterable<RowData> iterable = builder.build();
     return iterable;
