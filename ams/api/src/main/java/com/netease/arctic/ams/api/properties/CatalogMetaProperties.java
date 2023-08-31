@@ -41,7 +41,12 @@ public class CatalogMetaProperties {
   @Deprecated
   public static final String KEY_WAREHOUSE_DIR = "warehouse.dir";
   public static final String KEY_WAREHOUSE = "warehouse";
+  /**
+   * @deprecated since 0.6.0, will be removed in 0.7.0; use {@link CatalogMetaProperties#KEY_TABLE_FILTER} instead.
+   */
+  @Deprecated
   public static final String KEY_DATABASE_FILTER_REGULAR_EXPRESSION = "database.filter-regular-expression";
+  public static final String KEY_TABLE_FILTER = "table-filter";
 
   public static final String CATALOG_TYPE_HADOOP = "hadoop";
   public static final String CATALOG_TYPE_HIVE = "hive";
