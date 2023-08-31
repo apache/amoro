@@ -44,7 +44,7 @@ public class DataFileTestHelpers {
     if (partitionPath != null) {
       filePath = fileFormat.addExtension(String.format("%s/%s/data-%d.", basePath, partitionPath, number));
     } else {
-      filePath = fileFormat.addExtension(String.format("%s/data-%d." + fileFormat, basePath, number));
+      filePath = fileFormat.addExtension(String.format("%s/data-%d.", basePath, number));
     }
     if (fromCache) {
       return DATA_FILE_MAP.computeIfAbsent(filePath, path -> buildDataFile(filePath, spec, partitionPath, metrics));

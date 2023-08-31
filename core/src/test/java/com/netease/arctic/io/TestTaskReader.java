@@ -18,7 +18,6 @@
 
 package com.netease.arctic.io;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -28,7 +27,6 @@ import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.reader.BaseIcebergPosDeleteReader;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
-import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
@@ -48,8 +46,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_ORC;
 
 @RunWith(Parameterized.class)
 public class TestTaskReader extends TableDataTestBase {
@@ -58,19 +56,15 @@ public class TestTaskReader extends TableDataTestBase {
 
   @Parameterized.Parameters(name = "useDiskMap = {2}")
   public static Object[] parameters() {
-    Map<String, String> tableProperties = Maps.newHashMap();
-    tableProperties.put(TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_ORC);
-    tableProperties.put(TableProperties.CHANGE_FILE_FORMAT, TableProperties.CHANGE_FILE_FORMAT_ORC);
-    tableProperties.put(TableProperties.DEFAULT_FILE_FORMAT, TableProperties.DEFAULT_FILE_FORMAT_ORC);
     return new Object[][] {
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
          new BasicTableTestHelper(true, true), false},
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
          new BasicTableTestHelper(true, true), true},
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(true, true, tableProperties), false},
+         new BasicTableTestHelper(true, true, DEFAULT_FILE_FORMAT_ORC), false},
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(true, true, tableProperties), true}
+         new BasicTableTestHelper(true, true, DEFAULT_FILE_FORMAT_ORC), true}
     };
   }
 

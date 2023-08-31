@@ -63,6 +63,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_ORC;
 
 @RunWith(Parameterized.class)
 public class TestAdaptHiveWriter extends TableTestBase {
@@ -76,14 +77,24 @@ public class TestAdaptHiveWriter extends TableTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][] {{new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-      new HiveTableTestHelper(true, true)},
+    return new Object[][] {
+      {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, true)},
       {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
         new HiveTableTestHelper(true, false)},
       {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
         new HiveTableTestHelper(false, true)},
       {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(false, false)}};
+        new HiveTableTestHelper(false, false)},
+      {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, true, DEFAULT_FILE_FORMAT_ORC)},
+      {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, false, DEFAULT_FILE_FORMAT_ORC)},
+      {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(false, true, DEFAULT_FILE_FORMAT_ORC)},
+      {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(false, false, DEFAULT_FILE_FORMAT_ORC)},
+    };
   }
 
   @Test

@@ -29,6 +29,7 @@ import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.scan.TableEntriesScan;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.iceberg.AppendFiles;
@@ -36,6 +37,7 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.data.Record;
@@ -51,8 +53,10 @@ import org.junit.runners.Parameterized;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_ORC;
 
 @RunWith(Parameterized.class)
 public class TestTaskWriter extends TableTestBase {
@@ -66,7 +70,16 @@ public class TestTaskWriter extends TableTestBase {
                            {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
                             new BasicTableTestHelper(false, true)},
                            {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(false, false)}};
+                            new BasicTableTestHelper(false, false)},
+                           {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+                            new BasicTableTestHelper(true, true, DEFAULT_FILE_FORMAT_ORC)},
+                           {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+                            new BasicTableTestHelper(true, false, DEFAULT_FILE_FORMAT_ORC)},
+                           {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+                            new BasicTableTestHelper(false, true, DEFAULT_FILE_FORMAT_ORC)},
+                           {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+                            new BasicTableTestHelper(false, false, DEFAULT_FILE_FORMAT_ORC)}
+    };
   }
 
   public TestTaskWriter(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -111,8 +124,12 @@ public class TestTaskWriter extends TableTestBase {
 
   @Test
   public void testBasePosDeleteWriter() throws IOException {
+    String fileFormat = tableTestHelper().tableProperties()
+        .getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
+        TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
     DataFile dataFile = DataFileTestHelpers.getFile("/data", 1, getArcticTable().spec(),
-        isPartitionedTable() ? "op_time_day=2020-01-01" : null, null, false);
+        isPartitionedTable() ? "op_time_day=2020-01-01" : null, null, false,
+        FileFormat.valueOf(fileFormat.toUpperCase(Locale.ENGLISH)));
     GenericTaskWriters.Builder builder = GenericTaskWriters.builderFor(getArcticTable());
     if (isKeyedTable()) {
       builder.withTransactionId(1L);
