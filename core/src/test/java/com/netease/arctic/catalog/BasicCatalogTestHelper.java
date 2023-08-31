@@ -26,7 +26,6 @@ import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import java.util.Map;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
@@ -42,8 +41,7 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
   }
 
   public BasicCatalogTestHelper(TableFormat tableFormat, Map<String, String> catalogProperties) {
-    this(tableFormat == TableFormat.MIXED_ICEBERG ? CATALOG_TYPE_AMS : CATALOG_TYPE_HADOOP,
-        catalogProperties, tableFormat);
+    this(CATALOG_TYPE_HADOOP, catalogProperties, tableFormat);
   }
 
   public BasicCatalogTestHelper(

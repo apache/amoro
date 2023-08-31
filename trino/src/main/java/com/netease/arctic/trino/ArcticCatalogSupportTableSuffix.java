@@ -22,7 +22,6 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
@@ -33,7 +32,6 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
@@ -63,7 +61,6 @@ import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
-
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -73,7 +70,7 @@ import java.util.stream.Collectors;
  */
 public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
 
-  private ArcticCatalog arcticCatalog;
+  private final ArcticCatalog arcticCatalog;
 
   public ArcticCatalogSupportTableSuffix(ArcticCatalog arcticCatalog) {
     this.arcticCatalog = arcticCatalog;
@@ -160,10 +157,6 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   @Override
   public Map<String, String> properties() {
     return arcticCatalog.properties();
-  }
-
-  public TableMetaStore getTableMetaStore() {
-    return ((BasicArcticCatalog) arcticCatalog).getTableMetaStore();
   }
 
   private static class ChangeTableWithExternalSchemas implements ChangeTable, HasTableOperations {

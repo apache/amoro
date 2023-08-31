@@ -42,6 +42,8 @@ import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,6 +62,13 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
   private Pattern tableFilterPattern;
   private transient TableMetaStore tableMetaStore;
   private transient Catalog icebergCatalog;
+
+  public IcebergCatalogWrapper() {
+  }
+
+  public IcebergCatalogWrapper(CatalogMeta meta) {
+    initialize(meta, Maps.newHashMap());
+  }
 
   @Override
   public String name() {
@@ -217,7 +226,6 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
     return new IcebergTableBuilder(schema, identifier);
   }
 
-
   @Override
   public void refresh() {
   }
@@ -273,14 +281,16 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
 
     @Override
     public TableBuilder withPrimaryKeySpec(PrimaryKeySpec primaryKeySpec) {
-      throw new UnsupportedOperationException("can't create an iceberg table with primary key");
+      Preconditions.checkArgument(
+          primaryKeySpec == null || !primaryKeySpec.primaryKeyExisted(),
+          "can't create an iceberg table with primary key");
+      return this;
     }
 
     @Override
     protected IcebergTableBuilder self() {
       return this;
     }
-
   }
 
   public static class BasicIcebergTable extends BasicUnkeyedTable {

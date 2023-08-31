@@ -208,9 +208,9 @@ const tableFormatText = {
 }
 const storeSupportFormat: {[prop:string]: string[]} = {
   ams: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
-  hive: [tableFormatMap.MIXED_HIVE, tableFormatMap.ICEBERG],
-  hadoop: [tableFormatMap.ICEBERG],
-  custom: [tableFormatMap.ICEBERG]
+  hive: [tableFormatMap.MIXED_HIVE, tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
+  hadoop: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
+  custom: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG]
 }
 const storageConfigFileNameMap = {
   'hadoop.core.site': 'core-site.xml',
