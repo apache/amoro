@@ -31,6 +31,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Map;
 
+/**
+ * TODO: this class will be removed when we support using restCatalog as base store for InternalCatalog
+ */
 public class MixedTables {
 
   private static final Logger LOG = LoggerFactory.getLogger(MixedTables.class);
