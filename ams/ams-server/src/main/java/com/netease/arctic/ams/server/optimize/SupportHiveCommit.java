@@ -88,35 +88,10 @@ public class SupportHiveCommit extends BasicOptimizeCommit {
 
           List<ByteBuffer> newTargetFiles = new ArrayList<>(targetFiles.size());
           for (DataFile targetFile : targetFiles) {
-            if (partitionPathMap.get(partition) == null) {
-              List<String> partitionValues =
-                  HivePartitionUtil.partitionValuesAsList(targetFile.partition(), partitionSchema);
-              String partitionPath;
-              if (arcticTable.spec().isUnpartitioned()) {
-                try {
-                  Table hiveTable = ((SupportHive) arcticTable).getHMSClient().run(client ->
-                      client.getTable(arcticTable.id().getDatabase(), arcticTable.id().getTableName()));
-                  partitionPath = hiveTable.getSd().getLocation();
-                } catch (Exception e) {
-                  LOG.error("Get hive table failed", e);
-                  break;
-                }
-              } else {
-                String hiveSubdirectory = arcticTable.isKeyedTable() ?
-                    HiveTableUtil.newHiveSubdirectory(maxTransactionId) : HiveTableUtil.newHiveSubdirectory();
+            String partitionPath = partitionPathMap.computeIfAbsent(partition,
+                key -> getPartitionPath(hiveClient, maxTransactionId, targetFile, partitionSchema));
 
-                Partition p = HivePartitionUtil.getPartition(hiveClient, arcticTable, partitionValues);
-                if (p == null) {
-                  partitionPath = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
-                      arcticTable.spec(), targetFile.partition(), hiveSubdirectory);
-                } else {
-                  partitionPath = p.getSd().getLocation();
-                }
-              }
-              partitionPathMap.put(partition, partitionPath);
-            }
-
-            DataFile finalDataFile = moveTargetFiles(targetFile, partitionPathMap.get(partition));
+            DataFile finalDataFile = moveTargetFiles(targetFile, partitionPath);
             newTargetFiles.add(SerializationUtils.toByteBuffer(finalDataFile));
           }
 
@@ -127,6 +102,33 @@ public class SupportHiveCommit extends BasicOptimizeCommit {
     });
 
     return super.commit(baseSnapshotId);
+  }
+
+  private String getPartitionPath(HMSClientPool hiveClient, long maxTransactionId, DataFile targetFile,
+                                  Types.StructType partitionSchema) {
+    List<String> partitionValues = HivePartitionUtil.partitionValuesAsList(targetFile.partition(), partitionSchema);
+    String partitionPath;
+    if (arcticTable.spec().isUnpartitioned()) {
+      try {
+        Table hiveTable = ((SupportHive) arcticTable).getHMSClient().run(client ->
+            client.getTable(arcticTable.id().getDatabase(), arcticTable.id().getTableName()));
+        partitionPath = hiveTable.getSd().getLocation();
+      } catch (Exception e) {
+        throw new RuntimeException("Get hive table failed", e);
+      }
+    } else {
+      String hiveSubdirectory = arcticTable.isKeyedTable() ?
+          HiveTableUtil.newHiveSubdirectory(maxTransactionId) : HiveTableUtil.newHiveSubdirectory();
+
+      Partition p = HivePartitionUtil.getPartition(hiveClient, arcticTable, partitionValues);
+      if (p == null) {
+        partitionPath = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
+            arcticTable.spec(), targetFile.partition(), hiveSubdirectory);
+      } else {
+        partitionPath = p.getSd().getLocation();
+      }
+    }
+    return partitionPath;
   }
 
   protected boolean isPartitionMajorOptimizeSupportHive(String partition, List<OptimizeTaskItem> optimizeTaskItems) {
