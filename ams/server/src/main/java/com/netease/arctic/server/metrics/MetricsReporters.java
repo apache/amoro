@@ -16,24 +16,19 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizing;
+package com.netease.arctic.server.metrics;
 
-import java.io.Serializable;
-import java.util.Map;
+import com.netease.arctic.ams.api.metrics.MetricReport;
+import com.netease.arctic.ams.api.metrics.MetricReporter;
 
-/**
- * A factory to create {@link OptimizingCommitter}.
- * @param <O>
- */
-public interface OptimizingCommitterFactory<O extends TableOptimizing.OptimizingOutput> extends Serializable {
+import java.util.Set;
 
-  /** Create an {@link OptimizingCommitter} by OptimizingOutputs of all tasks. */
-  OptimizingCommitter createCommitter(O[] outputs, Map<String, String> properties);
+public class MetricsReporters {
+  private Set<MetricReporter> metricReporters;
 
-  /** OptimizingCommitter to commit all optimizing result. */
-  interface OptimizingCommitter extends Serializable {
-
-    /** Commit all optimizing result. */
-    void commit();
+  public void report(MetricReport report) {
+    for (MetricReporter reporter : metricReporters) {
+      reporter.report(report);
+    }
   }
 }

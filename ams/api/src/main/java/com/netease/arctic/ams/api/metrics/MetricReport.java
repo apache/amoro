@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,24 +16,11 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizing;
-
-import java.io.Serializable;
-import java.util.Map;
+package com.netease.arctic.ams.api.metrics;
 
 /**
- * A factory to create {@link OptimizingCommitter}.
- * @param <O>
+ * Metrics report
  */
-public interface OptimizingCommitterFactory<O extends TableOptimizing.OptimizingOutput> extends Serializable {
-
-  /** Create an {@link OptimizingCommitter} by OptimizingOutputs of all tasks. */
-  OptimizingCommitter createCommitter(O[] outputs, Map<String, String> properties);
-
-  /** OptimizingCommitter to commit all optimizing result. */
-  interface OptimizingCommitter extends Serializable {
-
-    /** Commit all optimizing result. */
-    void commit();
-  }
+public interface MetricReport {
+  String name();
 }
