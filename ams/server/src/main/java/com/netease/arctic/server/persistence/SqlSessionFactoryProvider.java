@@ -86,7 +86,7 @@ public class SqlSessionFactoryProvider {
     dataSource.setNumTestsPerEvictionRun(BaseObjectPoolConfig.DEFAULT_NUM_TESTS_PER_EVICTION_RUN);
     dataSource.setTestOnReturn(BaseObjectPoolConfig.DEFAULT_TEST_ON_RETURN);
     dataSource.setSoftMinEvictableIdleTimeMillis(
-            BaseObjectPoolConfig.DEFAULT_SOFT_MIN_EVICTABLE_IDLE_TIME.toMillis());
+        BaseObjectPoolConfig.DEFAULT_SOFT_MIN_EVICTABLE_IDLE_TIME.toMillis());
     dataSource.setLifo(BaseObjectPoolConfig.DEFAULT_LIFO);
     TransactionFactory transactionFactory = new JdbcTransactionFactory();
     Environment environment = new Environment("develop", transactionFactory, dataSource);
@@ -111,6 +111,7 @@ public class SqlSessionFactoryProvider {
 
   /**
    * create tables for database
+   *
    * @param config
    */
   private void createTablesIfNeed(Configurations config) {
@@ -137,8 +138,6 @@ public class SqlSessionFactoryProvider {
     } catch (Exception e) {
       throw new IllegalStateException("Create tables failed", e);
     }
-
-
   }
 
   private String getInitSqlScriptPath(String type) {
@@ -150,18 +149,15 @@ public class SqlSessionFactoryProvider {
     }
     URL scriptUrl = ClassLoader.getSystemResource(scriptPath);
     if (scriptUrl == null) {
-      throw new IllegalStateException("Cannot find  init sql script:" + scriptPath);
+      throw new IllegalStateException("Cannot find init sql script:" + scriptPath);
     }
     return scriptUrl.getPath();
   }
 
-
-
   public SqlSessionFactory get() {
     Preconditions.checkState(
-            sqlSessionFactory != null,
-            "Persistent configuration is not initialized yet.");
-
+        sqlSessionFactory != null,
+        "Persistent configuration is not initialized yet.");
     return sqlSessionFactory;
   }
 }
