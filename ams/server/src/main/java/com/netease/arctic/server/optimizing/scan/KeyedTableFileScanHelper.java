@@ -22,9 +22,6 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
-import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.table.KeyedTableSnapshot;
@@ -33,9 +30,10 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
+import com.netease.arctic.utils.ContentFiles;
 import com.netease.arctic.utils.PuffinUtil;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
@@ -59,7 +57,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class KeyedTableFileScanHelper implements TableFileScanHelper {
@@ -96,8 +93,8 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
             .fromSequence(partitionOptimizedSequence)
             .toSequence(maxSequence)
             .useSnapshot(changeSnapshotId);
-        for (IcebergContentFile<?> icebergContentFile : changeTableIncrementalScan.planFilesWithSequence()) {
-          changeFiles.addFile(wrapChangeFile(((IcebergDataFile) icebergContentFile)));
+        for (ContentFile<?> contentFile : changeTableIncrementalScan.planFilesWithSequence()) {
+          changeFiles.addFile(wrapChangeFile((ContentFiles.asDataFile(contentFile))));
         }
         PartitionSpec partitionSpec = changeTable.spec();
         changeFiles.allInsertFiles().forEach(insertFile -> {
@@ -108,7 +105,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
               return;
             }
           }
-          List<IcebergContentFile<?>> relatedDeleteFiles = changeFiles.getRelatedDeleteFiles(insertFile);
+          List<ContentFile<?>> relatedDeleteFiles = changeFiles.getRelatedDeleteFiles(insertFile);
           results.add(new FileScanResult(insertFile, relatedDeleteFiles));
         });
       }
@@ -129,10 +126,9 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
               continue;
             }
           }
-          IcebergDataFile dataFile = wrapBaseFile(task.file());
-          List<IcebergContentFile<?>> deleteFiles =
-              task.deletes().stream().map(this::wrapDeleteFile).collect(Collectors.toList());
-          List<IcebergContentFile<?>> relatedChangeDeleteFiles = changeFiles.getRelatedDeleteFiles(dataFile);
+          DataFile dataFile = wrapBaseFile(task.file());
+          List<ContentFile<?>> deleteFiles = new ArrayList<>(task.deletes());
+          List<ContentFile<?>> relatedChangeDeleteFiles = changeFiles.getRelatedDeleteFiles(dataFile);
           deleteFiles.addAll(relatedChangeDeleteFiles);
           results.add(new FileScanResult(dataFile, deleteFiles));
         }
@@ -151,21 +147,12 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     return this;
   }
 
-  private IcebergDataFile wrapChangeFile(IcebergDataFile icebergDataFile) {
-    DefaultKeyedFile defaultKeyedFile = DefaultKeyedFile.parseChange(icebergDataFile.internalFile(),
-        icebergDataFile.getSequenceNumber());
-    return new IcebergDataFile(defaultKeyedFile, icebergDataFile.getSequenceNumber());
+  private DataFile wrapChangeFile(DataFile dataFile) {
+    return DefaultKeyedFile.parseChange(dataFile, dataFile.dataSequenceNumber());
   }
 
-  private IcebergDataFile wrapBaseFile(DataFile dataFile) {
-    DefaultKeyedFile defaultKeyedFile = DefaultKeyedFile.parseBase(dataFile);
-    long transactionId = FileNameRules.parseTransactionId(dataFile.path().toString());
-    return new IcebergDataFile(defaultKeyedFile, transactionId);
-  }
-
-  private IcebergContentFile<?> wrapDeleteFile(DeleteFile deleteFile) {
-    long transactionId = FileNameRules.parseTransactionId(deleteFile.path().toString());
-    return new IcebergDeleteFile(deleteFile, transactionId);
+  private DataFile wrapBaseFile(DataFile dataFile) {
+    return DefaultKeyedFile.parseBase(dataFile);
   }
 
   private long getMaxSequenceLimit(KeyedTable arcticTable,
@@ -187,12 +174,12 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
             .fromSequence(partitionOptimizedSequence)
             .useSnapshot(changeSnapshot.snapshotId());
     Map<Long, SnapshotFileGroup> changeFilesGroupBySequence = new HashMap<>();
-    try (CloseableIterable<IcebergContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence()) {
-      for (IcebergContentFile<?> file : files) {
+    try (CloseableIterable<ContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence()) {
+      for (ContentFile<?> file : files) {
         SnapshotFileGroup fileGroup =
-            changeFilesGroupBySequence.computeIfAbsent(file.getSequenceNumber(), key -> {
-              long txId = FileNameRules.parseChangeTransactionId(file.path().toString(), file.getSequenceNumber());
-              return new SnapshotFileGroup(file.getSequenceNumber(), txId);
+            changeFilesGroupBySequence.computeIfAbsent(file.dataSequenceNumber(), key -> {
+              long txId = FileNameRules.parseChangeTransactionId(file.path().toString(), file.dataSequenceNumber());
+              return new SnapshotFileGroup(file.dataSequenceNumber(), txId);
             });
         fileGroup.addFile();
       }
@@ -221,17 +208,17 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
 
   private static class ChangeFiles {
     private final KeyedTable arcticTable;
-    private final Map<String, Map<DataTreeNode, List<IcebergContentFile<?>>>> cachedRelatedDeleteFiles =
+    private final Map<String, Map<DataTreeNode, List<ContentFile<?>>>> cachedRelatedDeleteFiles =
         Maps.newHashMap();
 
-    private final Map<String, Map<DataTreeNode, Set<IcebergContentFile<?>>>> equalityDeleteFiles = Maps.newHashMap();
-    private final Map<String, Map<DataTreeNode, Set<IcebergDataFile>>> insertFiles = Maps.newHashMap();
+    private final Map<String, Map<DataTreeNode, Set<ContentFile<?>>>> equalityDeleteFiles = Maps.newHashMap();
+    private final Map<String, Map<DataTreeNode, Set<DataFile>>> insertFiles = Maps.newHashMap();
 
     public ChangeFiles(KeyedTable arcticTable) {
       this.arcticTable = arcticTable;
     }
 
-    public void addFile(IcebergDataFile file) {
+    public void addFile(DataFile file) {
       String partition = arcticTable.spec().partitionToPath(file.partition());
       DataTreeNode node = FileNameRules.parseFileNodeFromFileName(file.path().toString());
       DataFileType type = FileNameRules.parseFileTypeForChange(file.path().toString());
@@ -251,25 +238,25 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
       }
     }
 
-    public Stream<IcebergDataFile> allInsertFiles() {
+    public Stream<DataFile> allInsertFiles() {
       return insertFiles.values().stream()
           .flatMap(dataTreeNodeSetMap -> dataTreeNodeSetMap.values().stream())
           .flatMap(Collection::stream);
     }
 
-    public List<IcebergContentFile<?>> getRelatedDeleteFiles(DataFile file) {
+    public List<ContentFile<?>> getRelatedDeleteFiles(DataFile file) {
       String partition = arcticTable.spec().partitionToPath(file.partition());
       if (!equalityDeleteFiles.containsKey(partition)) {
         return Collections.emptyList();
       }
       DataTreeNode node = FileNameRules.parseFileNodeFromFileName(file.path().toString());
-      Map<DataTreeNode, List<IcebergContentFile<?>>> partitionDeleteFiles =
+      Map<DataTreeNode, List<ContentFile<?>>> partitionDeleteFiles =
           cachedRelatedDeleteFiles.computeIfAbsent(partition, key -> Maps.newHashMap());
       if (partitionDeleteFiles.containsKey(node)) {
         return partitionDeleteFiles.get(node);
       } else {
-        List<IcebergContentFile<?>> result = Lists.newArrayList();
-        for (Map.Entry<DataTreeNode, Set<IcebergContentFile<?>>> entry : equalityDeleteFiles.get(partition)
+        List<ContentFile<?>> result = Lists.newArrayList();
+        for (Map.Entry<DataTreeNode, Set<ContentFile<?>>> entry : equalityDeleteFiles.get(partition)
             .entrySet()) {
           DataTreeNode deleteNode = entry.getKey();
           if (node.isSonOf(deleteNode) || deleteNode.isSonOf(node)) {

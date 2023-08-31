@@ -18,9 +18,9 @@
 
 package com.netease.arctic.scan;
 
-import com.netease.arctic.data.IcebergDataFile;
-import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.io.reader.GenericIcebergDataReader;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
@@ -32,29 +32,29 @@ import java.util.List;
  */
 public class CombinedIcebergScanTask {
 
-  private final IcebergDataFile[] dataFiles;
+  private final DataFile[] dataFiles;
 
-  private final IcebergDeleteFile[] deleteFiles;
+  private final DeleteFile[] deleteFiles;
 
   private final PartitionSpec partitionSpec;
 
   private final StructLike partitionData;
 
   public CombinedIcebergScanTask(
-      IcebergDataFile[] dataFiles,
-      IcebergDeleteFile[] deleteFiles,
+      DataFile[] dataFiles,
+      DeleteFile[] deleteFiles,
       PartitionSpec partitionSpec, StructLike partitionData) {
-    this.dataFiles = dataFiles == null ? new IcebergDataFile[0] : dataFiles;
-    this.deleteFiles = deleteFiles == null ? new IcebergDeleteFile[0] : deleteFiles;
+    this.dataFiles = dataFiles == null ? new DataFile[0] : dataFiles;
+    this.deleteFiles = deleteFiles == null ? new DeleteFile[0] : deleteFiles;
     this.partitionSpec = partitionSpec;
     this.partitionData = partitionData;
   }
 
-  public List<IcebergDataFile> getDataFiles() {
+  public List<DataFile> getDataFiles() {
     return ImmutableList.copyOf(dataFiles);
   }
 
-  public List<IcebergDeleteFile> getDeleteFiles() {
+  public List<DeleteFile> getDeleteFiles() {
     return ImmutableList.copyOf(deleteFiles);
   }
 

@@ -10,12 +10,11 @@ public class TestOptimizerConfig {
 
   @Test
   public void testParseArguments() throws CmdLineException {
-    String cmd = "-a thrift://127.0.0.1:1260 -p 11 -m 1024 -g g1 -hb 2000 -eds -dsp /tmp/arctic -msz 512";
+    String cmd = "-a thrift://127.0.0.1:1260 -p 11 -g g1 -hb 2000 -eds -dsp /tmp/arctic -msz 512";
     String[] args = cmd.split(" ");
     OptimizerConfig optimizerConfig = new OptimizerConfig(args);
     Assert.assertEquals("thrift://127.0.0.1:1260", optimizerConfig.getAmsUrl());
     Assert.assertEquals(11, optimizerConfig.getExecutionParallel());
-    Assert.assertEquals(1024, optimizerConfig.getMemorySize());
     Assert.assertEquals("g1", optimizerConfig.getGroupName());
     Assert.assertEquals(2000, optimizerConfig.getHeartBeat());
     Assert.assertTrue(optimizerConfig.isExtendDiskStorage());
@@ -28,7 +27,6 @@ public class TestOptimizerConfig {
     OptimizerConfig config = new OptimizerConfig();
     String amsUrl = "thrift://127.0.0.1:1260";
     int executionParallel = 4;
-    int memorySize = 1024;
     String groupName = "testGroup";
     long heartBeat = 20000;
     String diskStoragePath = "/tmp";
@@ -37,7 +35,6 @@ public class TestOptimizerConfig {
 
     config.setAmsUrl(amsUrl);
     config.setExecutionParallel(executionParallel);
-    config.setMemorySize(memorySize);
     config.setGroupName(groupName);
     config.setHeartBeat(heartBeat);
     config.setExtendDiskStorage(true);
@@ -47,7 +44,6 @@ public class TestOptimizerConfig {
 
     Assert.assertEquals(amsUrl, config.getAmsUrl());
     Assert.assertEquals(executionParallel, config.getExecutionParallel());
-    Assert.assertEquals(memorySize, config.getMemorySize());
     Assert.assertEquals(groupName, config.getGroupName());
     Assert.assertEquals(heartBeat, config.getHeartBeat());
     Assert.assertTrue(config.isExtendDiskStorage());
@@ -58,19 +54,19 @@ public class TestOptimizerConfig {
 
   @Test(expected = CmdLineException.class)
   public void testMissingRequiredArgs() throws CmdLineException {
-    String[] args = {"-a", "thrift://127.0.0.1:1260", "-p", "4", "-g", "testGroup"};
+    String[] args = {"-a", "thrift://127.0.0.1:1260", "-p", "4"};
     new OptimizerConfig(args);
   }
 
   @Test(expected = CmdLineException.class)
   public void testInvalidArgs() throws CmdLineException {
-    String[] args = {"-a", "thrift://127.0.0.1:1260", "-p", "invalid", "-m", "1024", "-g", "testGroup"};
+    String[] args = {"-a", "thrift://127.0.0.1:1260", "-p", "invalid", "-g", "testGroup"};
     new OptimizerConfig(args);
   }
 
   @Test(expected = CmdLineException.class)
   public void testMissingValueArgs() throws CmdLineException {
-    String[] args = {"-a", "thrift://127.0.0.1:1260", "-p", "-m", "1024", "-g", "testGroup"};
+    String[] args = {"-a", "thrift://127.0.0.1:1260", "-p", "-g", "testGroup"};
     new OptimizerConfig(args);
   }
 }

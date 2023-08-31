@@ -154,6 +154,16 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
   }
 
   @Override
+  public Long dataSequenceNumber() {
+    return internalFile.dataSequenceNumber();
+  }
+
+  @Override
+  public Long fileSequenceNumber() {
+    return internalFile.dataSequenceNumber();
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;

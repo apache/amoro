@@ -21,8 +21,8 @@ package com.netease.arctic.server.table;
 import com.google.common.collect.Lists;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.TestedCatalogs;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.IllegalMetadataException;
@@ -41,7 +41,7 @@ public class TestDatabaseService extends AMSTableTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][] {{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+    return new Object[][] {{TestedCatalogs.internalCatalog(TableFormat.MIXED_ICEBERG),
                             new BasicTableTestHelper(true, true)}};
   }
 
@@ -55,28 +55,34 @@ public class TestDatabaseService extends AMSTableTestBase {
     tableService().createDatabase(TEST_CATALOG_NAME, TEST_DB_NAME);
 
     // test create duplicate database
-    Assert.assertThrows(AlreadyExistsException.class,
+    Assert.assertThrows(
+        AlreadyExistsException.class,
         () -> tableService().createDatabase(TEST_CATALOG_NAME, TEST_DB_NAME));
 
     // test list database
-    Assert.assertEquals(Lists.newArrayList(TEST_DB_NAME),
+    Assert.assertEquals(
+        Lists.newArrayList(TEST_DB_NAME),
         tableService().listDatabases(TEST_CATALOG_NAME));
 
     // test drop database
     tableService().dropDatabase(TEST_CATALOG_NAME, TEST_DB_NAME);
-    Assert.assertEquals(Lists.newArrayList(),
+    Assert.assertEquals(
+        Lists.newArrayList(),
         tableService().listDatabases(TEST_CATALOG_NAME));
 
     // test drop unknown database
-    Assert.assertThrows(ObjectNotExistsException.class,
+    Assert.assertThrows(
+        ObjectNotExistsException.class,
         () -> tableService().dropDatabase(TEST_CATALOG_NAME, TEST_DB_NAME));
 
     // test create database in not existed catalog
-    Assert.assertThrows(ObjectNotExistsException.class,
+    Assert.assertThrows(
+        ObjectNotExistsException.class,
         () -> tableService().createDatabase("unknown", TEST_DB_NAME));
 
     // test drop database in not existed catalog
-    Assert.assertThrows(ObjectNotExistsException.class,
+    Assert.assertThrows(
+        ObjectNotExistsException.class,
         () -> tableService().dropDatabase("unknown", TEST_DB_NAME));
   }
 
@@ -85,7 +91,8 @@ public class TestDatabaseService extends AMSTableTestBase {
     Assume.assumeTrue(catalogTestHelper().tableFormat().equals(TableFormat.MIXED_ICEBERG));
     tableService().createDatabase(TEST_CATALOG_NAME, TEST_DB_NAME);
     createTable();
-    Assert.assertThrows(IllegalMetadataException.class, () -> tableService().dropDatabase(TEST_CATALOG_NAME,
+    Assert.assertThrows(IllegalMetadataException.class, () -> tableService().dropDatabase(
+        TEST_CATALOG_NAME,
         TEST_DB_NAME));
     dropTable();
     tableService().dropDatabase(TEST_CATALOG_NAME, TEST_DB_NAME);

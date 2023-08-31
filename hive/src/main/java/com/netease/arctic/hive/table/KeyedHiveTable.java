@@ -56,7 +56,7 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
       HMSClientPool hiveClient,
       UnkeyedHiveTable baseTable,
       ChangeTable changeTable) {
-    super(tableMeta, tableLocation, primaryKeySpec, client, baseTable, changeTable);
+    super(tableLocation, primaryKeySpec, baseTable, changeTable);
     this.hiveClient = hiveClient;
     if (enableSyncHiveSchemaToArctic()) {
       syncHiveSchemaToArctic();
@@ -122,7 +122,6 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
   public HMSClientPool getHMSClient() {
     return hiveClient;
   }
-
 
   public static class HiveChangeInternalTable extends BasicUnkeyedTable implements ChangeTable {
 

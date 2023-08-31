@@ -25,8 +25,6 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.scan.ArcticFileScanTask;
@@ -35,6 +33,7 @@ import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.server.exception.OptimizingCommitException;
 import com.netease.arctic.server.optimizing.KeyedTableCommit;
 import com.netease.arctic.server.optimizing.TaskRuntime;
+import com.netease.arctic.utils.ContentFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
@@ -154,13 +153,13 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
 
   private StructLikeMap<Long> getFromSequenceOfPartitions(RewriteFilesInput input) {
     long minSequence = Long.MAX_VALUE;
-    for (IcebergContentFile<?> contentFile : input.allFiles()) {
-      if (contentFile.isDeleteFile()) {
+    for (ContentFile<?> contentFile : input.allFiles()) {
+      if (ContentFiles.isDeleteFile(contentFile)) {
         continue;
       }
-      DataFileType type = ((DefaultKeyedFile) (contentFile.asDataFile().internalDataFile())).type();
+      DataFileType type = ((DefaultKeyedFile) (ContentFiles.asDataFile(contentFile))).type();
       if (type == DataFileType.INSERT_FILE || type == DataFileType.EQ_DELETE_FILE) {
-        minSequence = Math.min(minSequence, contentFile.getSequenceNumber());
+        minSequence = Math.min(minSequence, contentFile.dataSequenceNumber());
       }
     }
     StructLikeMap<Long> structLikeMap = StructLikeMap.create(spec.partitionType());
@@ -172,13 +171,13 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
 
   private StructLikeMap<Long> getToSequenceOfPartitions(RewriteFilesInput input) {
     long minSequence = -1;
-    for (IcebergContentFile<?> contentFile : input.allFiles()) {
-      if (contentFile.isDeleteFile()) {
+    for (ContentFile<?> contentFile : input.allFiles()) {
+      if (ContentFiles.isDeleteFile(contentFile)) {
         continue;
       }
-      DataFileType type = ((DefaultKeyedFile) (contentFile.asDataFile().internalDataFile())).type();
+      DataFileType type = ((DefaultKeyedFile) (ContentFiles.asDataFile(contentFile))).type();
       if (type == DataFileType.INSERT_FILE || type == DataFileType.EQ_DELETE_FILE) {
-        minSequence = Math.max(minSequence, contentFile.getSequenceNumber());
+        minSequence = Math.max(minSequence, contentFile.dataSequenceNumber());
       }
     }
     StructLikeMap<Long> structLikeMap = StructLikeMap.create(spec.partitionType());
@@ -193,35 +192,33 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
       ContentFile<?>[] deleteFiles) {
     Map<String, ContentFile<?>> allFiles = getAllFiles();
 
-    IcebergDataFile[] rewriteData = null;
+    DataFile[] rewriteData = null;
     if (rewriteDataFiles != null) {
       rewriteData = Arrays.stream(rewriteDataFiles)
           .map(s -> (DefaultKeyedFile) allFiles.get(s.path().toString()))
-          .map(s -> IcebergContentFile.wrap(s, s.transactionId()).asDataFile())
-          .toArray(IcebergDataFile[]::new);
+          .toArray(DataFile[]::new);
     }
 
-    IcebergDataFile[] rewritePos = null;
+    DataFile[] rewritePos = null;
     if (rePositionDataFiles != null) {
       rewritePos = Arrays.stream(rePositionDataFiles)
           .map(s -> (DefaultKeyedFile) allFiles.get(s.path().toString()))
-          .map(s -> IcebergContentFile.wrap(s, s.transactionId()).asDataFile())
-          .toArray(IcebergDataFile[]::new);
+          .toArray(DataFile[]::new);
     }
 
-    IcebergContentFile<?>[] delete = null;
+    ContentFile<?>[] delete = null;
     if (deleteFiles != null) {
       delete = Arrays.stream(deleteFiles)
           .map(s -> allFiles.get(s.path().toString()))
           .map(s -> {
                 if (s instanceof DefaultKeyedFile) {
-                  return IcebergContentFile.wrap(s, ((DefaultKeyedFile) s).transactionId());
+                  return s;
                 } else {
-                  return IcebergContentFile.wrap(s, 0);
+                  return s;
                 }
           }
           )
-          .toArray(IcebergContentFile[]::new);
+          .toArray(ContentFile[]::new);
     }
     return new RewriteFilesInput(rewriteData, rewritePos, null, delete, arcticTable);
   }

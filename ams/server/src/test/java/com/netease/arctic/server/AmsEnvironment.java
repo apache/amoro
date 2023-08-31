@@ -250,7 +250,7 @@ public class AmsEnvironment {
             .addProperty("memory", "1024")
             .build());
     new Thread(() -> {
-      String[] startArgs = {"-m", "1024", "-a", getOptimizingServiceUrl(), "-p", "1", "-g", "default"};
+      String[] startArgs = {"-a", getOptimizingServiceUrl(), "-p", "1", "-g", "default"};
       try {
         LocalOptimizer.main(startArgs);
       } catch (CmdLineException e) {

@@ -22,8 +22,8 @@ import com.google.common.collect.Maps;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.spark.SparkSQLProperties;
 import com.netease.arctic.spark.test.SparkTableTestBase;
-import com.netease.arctic.spark.test.helper.RecordGenerator;
-import com.netease.arctic.spark.test.helper.TestTableHelper;
+import com.netease.arctic.spark.test.utils.RecordGenerator;
+import com.netease.arctic.spark.test.utils.TestTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -168,7 +168,7 @@ public class TestArcticSessionCatalog extends SparkTableTestBase {
 
     sql("insert into " + target() + " select * from " + source());
     ArcticTable table = loadTable();
-    List<Record> changes = TestTableHelper.changeRecordsWithAction(table.asKeyedTable());
+    List<Record> changes = TestTableUtil.changeRecordsWithAction(table.asKeyedTable());
     Assertions.assertTrue(changes.size() > 0);
   }
 }

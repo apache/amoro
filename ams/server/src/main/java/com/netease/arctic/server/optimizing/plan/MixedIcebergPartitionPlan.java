@@ -20,21 +20,23 @@ package com.netease.arctic.server.optimizing.plan;
 
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
@@ -45,30 +47,24 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   }
 
   @Override
-  public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-    super.addFile(dataFile, deletes);
-    if (evaluator().isChangeFile(dataFile)) {
-      markSequence(dataFile.getSequenceNumber());
+  public boolean addFile(DataFile dataFile, List<ContentFile<?>> deletes) {
+    if (!super.addFile(dataFile, deletes)) {
+      return false;
     }
-    for (IcebergContentFile<?> deleteFile : deletes) {
+    if (evaluator().isChangeFile(dataFile)) {
+      markSequence(dataFile.dataSequenceNumber());
+    }
+    for (ContentFile<?> deleteFile : deletes) {
       if (deleteFile.content() == FileContent.DATA) {
-        markSequence(deleteFile.getSequenceNumber());
+        markSequence(deleteFile.dataSequenceNumber());
       }
     }
+    return true;
   }
 
   @Override
   protected MixedIcebergPartitionEvaluator evaluator() {
     return ((MixedIcebergPartitionEvaluator) super.evaluator());
-  }
-
-  @Override
-  protected boolean taskNeedExecute(SplitTask task) {
-    if (super.taskNeedExecute(task)) {
-      return true;
-    } else {
-      return task.getRewriteDataFiles().stream().anyMatch(evaluator()::isChangeFile);
-    }
   }
 
   @Override
@@ -93,49 +89,48 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
 
   @Override
   protected CommonPartitionEvaluator buildEvaluator() {
-    return new MixedIcebergPartitionEvaluator(tableRuntime, partition, planTime, isKeyedTable());
+    return new MixedIcebergPartitionEvaluator(tableRuntime, partition, partitionProperties, planTime,
+        isKeyedTable());
   }
 
   protected static class MixedIcebergPartitionEvaluator extends CommonPartitionEvaluator {
     protected final boolean keyedTable;
     protected boolean hasChangeFiles = false;
-    // partition property
-    protected long lastBaseOptimizedTime;
+    private final boolean reachBaseRefreshInterval;
 
-    public MixedIcebergPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime,
+    public MixedIcebergPartitionEvaluator(TableRuntime tableRuntime, String partition,
+                                          Map<String, String> partitionProperties, long planTime,
                                           boolean keyedTable) {
-      super(tableRuntime, partition, planTime);
+      super(tableRuntime, partition, partitionProperties, planTime);
       this.keyedTable = keyedTable;
+      String optimizedTime = partitionProperties.get(TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
+      long lastBaseOptimizedTime = optimizedTime == null ? 0 : Long.parseLong(optimizedTime);
+      this.reachBaseRefreshInterval =
+          config.getBaseRefreshInterval() >= 0 && planTime - lastBaseOptimizedTime > config.getBaseRefreshInterval();
     }
 
     @Override
-    public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-      super.addFile(dataFile, deletes);
+    public boolean addFile(DataFile dataFile, List<ContentFile<?>> deletes) {
+      if (!super.addFile(dataFile, deletes)) {
+        return false;
+      }
       if (!hasChangeFiles && isChangeFile(dataFile)) {
         hasChangeFiles = true;
       }
+      return true;
     }
 
-    @Override
-    public void addPartitionProperties(Map<String, String> properties) {
-      super.addPartitionProperties(properties);
-      String optimizedTime = properties.get(TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
-      if (optimizedTime != null) {
-        this.lastBaseOptimizedTime = Long.parseLong(optimizedTime);
-      }
-    }
-
-    protected boolean isChangeFile(IcebergDataFile dataFile) {
+    protected boolean isChangeFile(DataFile dataFile) {
       if (!keyedTable) {
         return false;
       }
-      PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
+      PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile;
       return file.type() == DataFileType.INSERT_FILE || file.type() == DataFileType.EQ_DELETE_FILE;
     }
 
     @Override
-    protected boolean isFragmentFile(IcebergDataFile dataFile) {
-      PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile.internalFile();
+    protected boolean isFragmentFile(DataFile dataFile) {
+      PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile;
       if (file.type() == DataFileType.BASE_FILE) {
         return dataFile.fileSizeInBytes() <= fragmentSize;
       } else if (file.type() == DataFileType.INSERT_FILE) {
@@ -166,7 +161,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
 
     @Override
-    public boolean shouldRewritePosForSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+    public boolean segmentFileShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
       if (deletes.stream().anyMatch(
           delete -> delete.content() == FileContent.EQUALITY_DELETES || delete.content() == FileContent.DATA)) {
         // change equality delete file's content is DATA
@@ -179,7 +174,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
 
     protected boolean reachBaseRefreshInterval() {
-      return config.getBaseRefreshInterval() >= 0 && planTime - lastBaseOptimizedTime > config.getBaseRefreshInterval();
+      return reachBaseRefreshInterval;
     }
 
     protected int getBaseSplitCount() {
@@ -232,17 +227,20 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     public List<SplitTask> splitTasks(int targetTaskCount) {
       List<SplitTask> result = Lists.newArrayList();
       FileTree rootTree = FileTree.newTreeRoot();
-      segmentFiles.forEach(rootTree::addSegmentFile);
-      fragmentFiles.forEach(rootTree::addFragmentFile);
+      rewritePosDataFiles.forEach(rootTree::addRewritePosDataFile);
+      rewriteDataFiles.forEach(rootTree::addRewriteDataFile);
       rootTree.completeTree();
       List<FileTree> subTrees = Lists.newArrayList();
       rootTree.splitFileTree(subTrees, new SplitIfNoFileExists());
       for (FileTree subTree : subTrees) {
-        Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
-        Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
-        subTree.collectFragmentFiles(fragmentFiles);
-        subTree.collectSegmentFiles(segmentFiles);
-        result.add(new SplitTask(fragmentFiles, segmentFiles));
+        Map<DataFile, List<ContentFile<?>>> rewriteDataFiles = Maps.newHashMap();
+        Map<DataFile, List<ContentFile<?>>> rewritePosDataFiles = Maps.newHashMap();
+        Set<ContentFile<?>> deleteFiles = Sets.newHashSet();
+        subTree.collectRewriteDataFiles(rewriteDataFiles);
+        subTree.collectRewritePosDataFiles(rewritePosDataFiles);
+        rewriteDataFiles.forEach((f, deletes) -> deleteFiles.addAll(deletes));
+        rewritePosDataFiles.forEach((f, deletes) -> deleteFiles.addAll(deletes));
+        result.add(new SplitTask(rewriteDataFiles.keySet(), rewritePosDataFiles.keySet(), deleteFiles));
       }
       return result;
     }
@@ -251,8 +249,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   private static class FileTree {
 
     private final DataTreeNode node;
-    private final Map<IcebergDataFile, List<IcebergContentFile<?>>> fragmentFiles = Maps.newHashMap();
-    private final Map<IcebergDataFile, List<IcebergContentFile<?>>> segmentFiles = Maps.newHashMap();
+    private final Map<DataFile, List<ContentFile<?>>> rewriteDataFiles = Maps.newHashMap();
+    private final Map<DataFile, List<ContentFile<?>>> rewritePosDataFiles = Maps.newHashMap();
 
     private FileTree left;
     private FileTree right;
@@ -303,40 +301,40 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       }
     }
 
-    public void collectFragmentFiles(Map<IcebergDataFile, List<IcebergContentFile<?>>> collector) {
-      collector.putAll(fragmentFiles);
+    public void collectRewriteDataFiles(Map<DataFile, List<ContentFile<?>>> collector) {
+      collector.putAll(rewriteDataFiles);
       if (left != null) {
-        left.collectFragmentFiles(collector);
+        left.collectRewriteDataFiles(collector);
       }
       if (right != null) {
-        right.collectFragmentFiles(collector);
+        right.collectRewriteDataFiles(collector);
       }
     }
 
-    public void collectSegmentFiles(Map<IcebergDataFile, List<IcebergContentFile<?>>> collector) {
-      collector.putAll(segmentFiles);
+    public void collectRewritePosDataFiles(Map<DataFile, List<ContentFile<?>>> collector) {
+      collector.putAll(rewritePosDataFiles);
       if (left != null) {
-        left.collectSegmentFiles(collector);
+        left.collectRewritePosDataFiles(collector);
       }
       if (right != null) {
-        right.collectSegmentFiles(collector);
+        right.collectRewritePosDataFiles(collector);
       }
     }
 
-    public void addSegmentFile(IcebergDataFile file, List<IcebergContentFile<?>> deleteFiles) {
-      PrimaryKeyedFile primaryKeyedFile = (PrimaryKeyedFile) file.internalFile();
+    public void addRewritePosDataFile(DataFile file, List<ContentFile<?>> deleteFiles) {
+      PrimaryKeyedFile primaryKeyedFile = (PrimaryKeyedFile) file;
       FileTree node = putNodeIfAbsent(primaryKeyedFile.node());
-      node.segmentFiles.put(file, deleteFiles);
+      node.rewritePosDataFiles.put(file, deleteFiles);
     }
 
-    public void addFragmentFile(IcebergDataFile file, List<IcebergContentFile<?>> deleteFiles) {
-      PrimaryKeyedFile primaryKeyedFile = (PrimaryKeyedFile) file.internalFile();
+    public void addRewriteDataFile(DataFile file, List<ContentFile<?>> deleteFiles) {
+      PrimaryKeyedFile primaryKeyedFile = (PrimaryKeyedFile) file;
       FileTree node = putNodeIfAbsent(primaryKeyedFile.node());
-      node.fragmentFiles.put(file, deleteFiles);
+      node.rewriteDataFiles.put(file, deleteFiles);
     }
 
     public boolean isRootEmpty() {
-      return segmentFiles.isEmpty() && fragmentFiles.isEmpty();
+      return rewritePosDataFiles.isEmpty() && rewriteDataFiles.isEmpty();
     }
 
     public boolean isLeaf() {
@@ -380,7 +378,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
 
     private boolean fileExist() {
-      return !segmentFiles.isEmpty() || !fragmentFiles.isEmpty();
+      return !rewritePosDataFiles.isEmpty() || !rewriteDataFiles.isEmpty();
     }
   }
 

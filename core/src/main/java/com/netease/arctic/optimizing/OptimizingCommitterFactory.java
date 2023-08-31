@@ -21,14 +21,19 @@ package com.netease.arctic.optimizing;
 import java.io.Serializable;
 import java.util.Map;
 
+/**
+ * A factory to create {@link OptimizingCommitter}.
+ * @param <O>
+ */
 public interface OptimizingCommitterFactory<O extends TableOptimizing.OptimizingOutput> extends Serializable {
 
+  /** Create an {@link OptimizingCommitter} by OptimizingOutputs of all tasks. */
   OptimizingCommitter createCommitter(O[] outputs, Map<String, String> properties);
 
+  /** OptimizingCommitter to commit all optimizing result. */
   interface OptimizingCommitter extends Serializable {
 
+    /** Commit all optimizing result. */
     void commit();
-
-    Map<String, String> summary();
   }
 }

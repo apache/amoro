@@ -204,6 +204,11 @@
             </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-spark-3-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
@@ -277,6 +282,14 @@
         <dependency>
             <groupId>com.netease.amoro</groupId>
             <artifactId>amoro-core</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-spark-3-common</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

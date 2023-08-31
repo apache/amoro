@@ -41,8 +41,6 @@ import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -53,6 +51,7 @@ import java.util.List;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestHiveTable extends TestHiveTableBaseForTrino {
@@ -79,15 +78,13 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
   @Override
   protected QueryRunner createQueryRunner() throws Exception {
     AMS = MockArcticMetastoreServer.getInstance();
-    tmp.create();
-    tempFolder.create();
     startMetastore();
     setupTables();
     initData();
     return ArcticQueryRunner.builder()
         .setExtraProperties(ImmutableMap.of("http-server.http.port", "8080"))
         .setIcebergProperties(ImmutableMap.of("arctic.url",
-            String.format("thrift://localhost:%s/%s", AMS.port(), HIVE_CATALOG_NAME)))
+            String.format("thrift://localhost:%s/%s", AMS.port(), TEST_CATALOG_NAME)))
         .build();
   }
 
