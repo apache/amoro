@@ -25,6 +25,8 @@ import java.util.Map;
 
 public class IcebergCommitReport implements MetricReport {
 
+  public static final String ICEBERG_COMMIT_REPORT_NAME = "iceberg_commit_report";
+
   public static final String TABLE_NAME = "table-name";
   public static final String SNAPSHOT_ID = "snapshot-id";
   public static final String SEQUENCE_NUMBER = "sequence-number";
@@ -99,7 +101,7 @@ public class IcebergCommitReport implements MetricReport {
 
   @Override
   public String name() {
-    return "iceberg_commit_report";
+    return ICEBERG_COMMIT_REPORT_NAME;
   }
 
   @TaggedMetrics.Tag(name = TABLE_NAME)
@@ -122,7 +124,6 @@ public class IcebergCommitReport implements MetricReport {
     return this.operation;
   }
 
-  @TaggedMetrics.Tag(name = METADATA)
   public Map<String, String> metadata() {
     return this.metadata;
   }
