@@ -18,7 +18,7 @@ public class ExpiringDataConfig {
   // table-expire.data.datetime-number-format
   private String dateNumberFormat;
   // table-expire.data.retention-time
-  private long retentionTime;
+  private String retentionTime;
 
   public ExpiringDataConfig() {
   }
@@ -68,11 +68,11 @@ public class ExpiringDataConfig {
     return this;
   }
 
-  public long getRetentionTime() {
+  public String getRetentionTime() {
     return retentionTime;
   }
 
-  public ExpiringDataConfig setRetentionTime(long retentionTime) {
+  public ExpiringDataConfig setRetentionTime(String retentionTime) {
     this.retentionTime = retentionTime;
     return this;
   }
@@ -99,10 +99,10 @@ public class ExpiringDataConfig {
             properties,
             TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT,
             TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT))
-        .setRetentionTime(CompatiblePropertyUtil.propertyAsLong(
+        .setRetentionTime(CompatiblePropertyUtil.propertyAsString(
             properties,
             TableProperties.DATA_EXPIRATION_RETENTION_TIME,
-            TableProperties.DATA_EXPIRATION_RETENTION_TIME_DEFAULT / 1000
+            null
         ));
   }
 }

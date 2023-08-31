@@ -9,6 +9,7 @@ import com.netease.arctic.server.table.ExpiringDataConfig;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.utils.ConfigurationUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -37,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -48,12 +50,11 @@ public class DataExpiringExecutor extends BaseTableExecutor {
 
   private static final Logger LOG = LoggerFactory.getLogger(DataExpiringExecutor.class);
 
-  private final long interval;
+  private final Duration interval;
   private static final Set<Type.TypeID> FIELD_TYPES = Sets.newHashSet(
       Type.TypeID.TIMESTAMP,
       Type.TypeID.STRING,
-      Type.TypeID.LONG,
-      Type.TypeID.INTEGER
+      Type.TypeID.LONG
   );
 
   public enum ExpireLevel {
@@ -74,14 +75,14 @@ public class DataExpiringExecutor extends BaseTableExecutor {
   public static final String  EXPIRE_TIMESTAMP_MS = "TIMESTAMP_MS";
   public static final String  EXPIRE_TIMESTAMP_S = "TIMESTAMP_S";
 
-  protected DataExpiringExecutor(TableManager tableManager, int poolSize, long interval) {
+  protected DataExpiringExecutor(TableManager tableManager, int poolSize, Duration interval) {
     super(tableManager, poolSize);
     this.interval = interval;
   }
 
   @Override
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return interval * 1000;
+    return interval.toMillis();
   }
 
   @Override
@@ -107,6 +108,9 @@ public class DataExpiringExecutor extends BaseTableExecutor {
 
       DataExpirationConfig expirationConfig =
           new DataExpirationConfig(arcticTable, tableRuntime.getTableConfiguration().getExpiringDataConfig());
+      if (expirationConfig.retentionTime == 0) {
+        return;
+      }
       purgeTable(arcticTable, expirationConfig);
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
@@ -164,7 +168,6 @@ public class DataExpiringExecutor extends BaseTableExecutor {
             expirationConfig.expirationField.name(),
             expirationConfig.dateFormatter.print(expireTimestamp));
       case LONG:
-      case INTEGER:
         return getNumberDateTimeExpression(expirationConfig.expirationField.name(),
             expireTimestamp,
             expirationConfig.numberDateFormat);
@@ -200,6 +203,11 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, this.getThreadName());
       rewriteFiles.commit();
     }
+
+    // TODO: persistent table expiration record. Contains some meta information such as table_id, snapshotId,
+    //  file_infos(file_content, path, recordCount, fileSizeInBytes, equalityFieldIds, partitionPath,
+    //  sequenceNumber) and expireTimestamp...
+
     LOG.info("Expired files older than {}, {} data files[{}] and {} delete files[{}]",
         expireTimestamp,
         dataFiles.size(), dataFiles.stream().map(ContentFile::path).collect(Collectors.joining(",")),
@@ -233,17 +241,17 @@ public class DataExpiringExecutor extends BaseTableExecutor {
 
   static class DataFileFreshness {
     long latestExpiredSeq;
-    long latestUpdateMill;
+    long latestUpdateMillis;
     long expiredDataFileCount;
     long totalDataFileCount;
 
-    DataFileFreshness(long sequenceNumber, long latestUpdateMill) {
+    DataFileFreshness(long sequenceNumber, long latestUpdateMillis) {
       this.latestExpiredSeq = sequenceNumber;
-      this.latestUpdateMill = latestUpdateMill;
+      this.latestUpdateMillis = latestUpdateMillis;
     }
 
-    DataFileFreshness updateLatestMill(long ts) {
-      this.latestUpdateMill = ts;
+    DataFileFreshness updateLatestMillis(long ts) {
+      this.latestUpdateMillis = ts;
       return this;
     }
 
@@ -278,8 +286,8 @@ public class DataExpiringExecutor extends BaseTableExecutor {
           expirationConfig.expirationField, expirationConfig.dateFormatter, expirationConfig.numberDateFormat);
       if (partitionFreshness.containsKey(partition)) {
         DataFileFreshness freshness = partitionFreshness.get(partition);
-        if (freshness.latestUpdateMill <= literal.value()) {
-          partitionFreshness.put(partition, freshness.updateLatestMill(literal.value()).incTotalCount());
+        if (freshness.latestUpdateMillis <= literal.value()) {
+          partitionFreshness.put(partition, freshness.updateLatestMillis(literal.value()).incTotalCount());
         }
       } else {
         partitionFreshness.putIfAbsent(partition,
@@ -334,16 +342,19 @@ public class DataExpiringExecutor extends BaseTableExecutor {
     } else if (upperBound instanceof Long) {
       switch (type.typeId()) {
         case TIMESTAMP:
+          // nanosecond -> millisecond
           literal = Literal.of((Long) upperBound / 1000);
           break;
         default:
-          literal = Literal.of((Long) upperBound);
+          if (numberDateFormatter.equals(EXPIRE_TIMESTAMP_MS)) {
+            literal = Literal.of((Long) upperBound);
+          } else {
+            // second -> millisecond
+            literal = Literal.of((Long) upperBound * 1000);
+          }
       }
     } else if (upperBound instanceof String && type.typeId().equals(Type.TypeID.STRING)) {
       literal = Literal.of(formatter.parseMillis(upperBound.toString()));
-    } else if (upperBound instanceof Integer &&
-        type.typeId().equals(Type.TypeID.INTEGER) && numberDateFormatter.equals(EXPIRE_TIMESTAMP_S)) {
-      literal = Literal.of((Integer) upperBound * 1000L);
     }
     return literal;
   }
@@ -365,15 +376,11 @@ public class DataExpiringExecutor extends BaseTableExecutor {
           String.format("The type(%s) of filed(%s) is incompatible for table(%s)", typeID.name(), field, table.name()));
 
       expirationLevel = ExpireLevel.fromString(config.getLevel());
-      retentionTime = config.getRetentionTime() * 1000;
+      if (StringUtils.isNotBlank(config.getRetentionTime())) {
+        retentionTime = ConfigurationUtil.TimeUtils.parseDuration(config.getRetentionTime()).toMillis();
+      }
       dateFormatter = DateTimeFormat.forPattern(config.getDateStringFormat());
       numberDateFormat = config.getDateNumberFormat();
-      Preconditions.checkArgument(typeID.equals(Type.TypeID.TIMESTAMP) ||
-          typeID.equals(Type.TypeID.STRING) ||
-          (typeID.equals(Type.TypeID.LONG) && numberDateFormat.equals(EXPIRE_TIMESTAMP_MS)) ||
-          (typeID.equals(Type.TypeID.INTEGER) && numberDateFormat.equals(EXPIRE_TIMESTAMP_S)),
-          String.format("The type(%s) of filed(%s) cannot convert to %s which in the table(%s)", typeID.name(), field,
-              numberDateFormat, table.name()));
     }
   }
 }

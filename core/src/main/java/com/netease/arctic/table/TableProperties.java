@@ -161,8 +161,6 @@ public class TableProperties {
   public static final String DATA_EXPIRATION_DATE_NUMBER_FORMAT = "table-expire.data.datetime-number-format";
   public static final String DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT = "TIMESTAMP_MS";
   public static final String DATA_EXPIRATION_RETENTION_TIME = "table-expire.data.retention-time";
-  public static final long DATA_EXPIRATION_RETENTION_TIME_DEFAULT = Long.MAX_VALUE;
-
 
   public static final String ENABLE_DANGLING_DELETE_FILES_CLEAN = "clean-dangling-delete-files.enabled";
   public static final boolean ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT = true;

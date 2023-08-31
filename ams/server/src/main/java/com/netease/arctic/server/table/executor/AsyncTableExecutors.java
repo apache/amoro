@@ -44,7 +44,7 @@ public class AsyncTableExecutors {
       this.dataExpiringExecutor = new DataExpiringExecutor(
           tableManager,
           conf.getInteger(ArcticManagementConf.DATA_EXPIRATION_THREAD_COUNT),
-          conf.getLong(ArcticManagementConf.DATA_EXPIRATION_INTERVAL));
+          conf.get(ArcticManagementConf.DATA_EXPIRATION_INTERVAL));
     }
   }
 

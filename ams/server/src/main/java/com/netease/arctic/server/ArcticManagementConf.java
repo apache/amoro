@@ -21,6 +21,7 @@ package com.netease.arctic.server;
 
 import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.ConfigOptions;
+import java.time.Duration;
 
 public class ArcticManagementConf {
 
@@ -265,11 +266,11 @@ public class ArcticManagementConf {
           .intType()
           .defaultValue(10)
           .withDescription("The number of threads used for data expiring");
-  public static final ConfigOption<Long> DATA_EXPIRATION_INTERVAL =
+  public static final ConfigOption<Duration> DATA_EXPIRATION_INTERVAL =
       ConfigOptions.key("data-expiration.interval")
-          .longType()
-          .defaultValue(86400L)
-          .withDescription("Interval to expire data. unit: second");
+          .durationType()
+          .defaultValue(Duration.ofDays(1))
+          .withDescription("Execute interval for data expiration");
 
   public static final String SYSTEM_CONFIG = "ams";
 
