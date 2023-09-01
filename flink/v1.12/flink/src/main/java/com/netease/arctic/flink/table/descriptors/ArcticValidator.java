@@ -78,6 +78,7 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
   public static final String SCAN_STARTUP_MODE_EARLIEST = "earliest";
   public static final String SCAN_STARTUP_MODE_LATEST = "latest";
   public static final String SCAN_STARTUP_MODE_TIMESTAMP = "timestamp";
+  public static final String SCAN_STARTUP_MODE_GROUP_OFFSETS = "group-offsets";
 
   public static final ConfigOption<Boolean> ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE =
       ConfigOptions.key("log-store.consistency-guarantee.enabled")

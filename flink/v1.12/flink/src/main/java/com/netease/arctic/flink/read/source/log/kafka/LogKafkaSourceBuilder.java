@@ -48,6 +48,7 @@ import java.util.regex.Pattern;
 
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_GROUP_OFFSETS;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
@@ -207,6 +208,7 @@ public class LogKafkaSourceBuilder {
   public LogKafkaSourceBuilder setStartingOffsets(
       OffsetsInitializer startingOffsetsInitializer) {
     this.startingOffsetsInitializer = startingOffsetsInitializer;
+    LOG.info("Setting LogKafkaSource starting offset: {}", startingOffsetsInitializer);
     return this;
   }
 
@@ -428,10 +430,16 @@ public class LogKafkaSourceBuilder {
       case SCAN_STARTUP_MODE_TIMESTAMP:
         setStartingOffsets(OffsetsInitializer.timestamp(startupTimestampMillis));
         break;
+      case SCAN_STARTUP_MODE_GROUP_OFFSETS:
+        setStartingOffsets(OffsetsInitializer.committedOffsets());
+        break;
       default:
         throw new ValidationException(String.format(
-            "%s only support '%s', '%s', '%s'. But input is '%s'", ArcticValidator.SCAN_STARTUP_MODE,
-            SCAN_STARTUP_MODE_LATEST, SCAN_STARTUP_MODE_EARLIEST, SCAN_STARTUP_MODE_TIMESTAMP, startupMode));
+            "%s only support '%s', '%s', '%s', '%s'. But input is '%s'",
+            ArcticValidator.SCAN_STARTUP_MODE,
+            SCAN_STARTUP_MODE_LATEST, SCAN_STARTUP_MODE_EARLIEST,
+            SCAN_STARTUP_MODE_TIMESTAMP, SCAN_STARTUP_MODE_GROUP_OFFSETS,
+          startupMode));
     }
   }
 
