@@ -1,0 +1,119 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $.Release.Name }}
+  labels:
+    {{- include "amoro.labels" . | nindent 4 }}
+spec:
+  {{/* TODO If Support Replica can be use more than 1 */}}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "amoro.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/conf: {{ include (print $.Template.BasePath "/amoro-configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "amoro.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if or .Values.serviceAccount.name .Values.serviceAccount.create }}
+      serviceAccountName: {{ .Values.serviceAccount.name | default .Release.Name }}
+      {{- end }}
+      containers:
+        - name: amoro-ams
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.command }}
+          command: {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
+            {{- with .Values.args }}
+          args: {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
+          env:
+           {{- with .Values.env }}
+           {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
+          envFrom:
+           {{- with .Values.envFrom }}
+          {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: rest
+              containerPort: {{ .Values.server.rest.port }}
+            - name: table
+              containerPort: {{ .Values.server.table.port }}
+            - name: optimizing
+              containerPort: {{ .Values.server.optimizing.port }}
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /health/status
+              port: rest
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+              {{- end }}
+              {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /versionInfo
+              port: rest
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: conf
+              mountPath: {{ .Values.amoroDir }}/amoro-{{ .Chart.AppVersion }}/conf/config.yaml
+              readOnly: true
+              subPath: "config.yaml"
+              {{- with .Values.volumeMounts }}
+                {{- tpl (toYaml .) $ | nindent 12 }}
+              {{- end }}
+            {{- if or .Values.amoroConf.log4j2 }}
+            - name: conf
+              mountPath: {{ .Values.amoroDir }}/amoro-{{ .Chart.AppVersion }}/conf/log4j2.xml
+              readOnly: true
+              subPath: "log4j2.xml"
+              {{- with .Values.volumeMounts }}
+                {{- tpl (toYaml .) $ | nindent 12 }}
+              {{- end }}
+            {{- end }}
+          {{- with .Values.containers }}
+            {{- tpl (toYaml .) $ | nindent 8 }}
+          {{- end }}
+      volumes:
+        - name: conf
+          configMap:
+            name: {{ .Release.Name }}
+        {{- with .Values.volumes }}
+          {{- tpl (toYaml .) $ | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.securityContext }}
+      securityContext: {{- toYaml . | nindent 8 }}
+      {{- end }}
