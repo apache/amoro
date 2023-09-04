@@ -31,7 +31,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Copy from Iceberg {@link LockManagers.InMemoryLockManager}, fix the NullPointException when release lock.
+ * Copy from Iceberg {@link LockManagers.InMemoryLockManager}, fix the NullPointerException when release lock.
  */
 public class ArcticInMemoryLockManager extends LockManagers.BaseLockManager {
 
