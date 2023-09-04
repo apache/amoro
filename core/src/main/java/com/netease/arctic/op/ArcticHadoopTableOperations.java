@@ -19,20 +19,20 @@
 package com.netease.arctic.op;
 
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.utils.ArcticInMemoryLockManager;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.exceptions.CommitStateUnknownException;
 import org.apache.iceberg.hadoop.HadoopTableOperations;
-import org.apache.iceberg.util.LockManagers;
 
 public class ArcticHadoopTableOperations extends HadoopTableOperations {
 
   private final ArcticFileIO arcticFileIO;
 
   public ArcticHadoopTableOperations(Path location, ArcticFileIO fileIO, Configuration conf) {
-    super(location, fileIO, conf, LockManagers.defaultLockManager());
+    super(location, fileIO, conf, ArcticInMemoryLockManager.instance());
     this.arcticFileIO = fileIO;
   }
 
