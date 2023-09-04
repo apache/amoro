@@ -137,6 +137,10 @@ public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implemen
       this.checkOrphanFiles = Boolean.parseBoolean(value);
     }
 
+    if (SYNC_DATA_TO_HIVE.equals(property)) {
+      this.syncDataToHive = Boolean.parseBoolean(value);
+    }
+
     delegate.set(property, value);
     return this;
   }
