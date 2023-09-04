@@ -32,6 +32,7 @@ import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.ams.api.resource.ResourceManager;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.exception.PluginRetryAuthException;
+import com.netease.arctic.server.manager.MetricsManager;
 import com.netease.arctic.server.optimizing.OptimizingQueue;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.persistence.StatedPersistentBase;
@@ -86,6 +87,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final DefaultTableService tableManager;
   private final RuntimeHandlerChain tableHandlerChain;
   private Timer optimizerMonitorTimer;
+  private MetricsManager metricsManager;
 
   public DefaultOptimizingService(Configurations serviceConfig, DefaultTableService tableService) {
     this.optimizerTouchTimeout = serviceConfig.getLong(ArcticManagementConf.OPTIMIZER_HB_TIMEOUT);
@@ -120,7 +122,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
                   Optional.ofNullable(tableRuntimeMetas).orElseGet(ArrayList::new),
                   Optional.ofNullable(optimizersUnderGroup).orElseGet(ArrayList::new),
                   optimizerTouchTimeout,
-                  taskAckTimeout);
+                  taskAckTimeout,
+                  metricsManager);
           optimizingQueueByGroup.put(groupName, optimizingQueue);
           if (CollectionUtils.isNotEmpty(optimizersUnderGroup)) {
             optimizersUnderGroup.forEach(
@@ -131,6 +134,30 @@ public class DefaultOptimizingService extends StatedPersistentBase
         .keySet()
         .forEach(groupName -> LOG.warn("Unloaded task runtime in group " + groupName));
   }
+
+  //TODO metric
+//  public void loadOptimizingQueues(List<TableRuntimeMeta> tableRuntimeMetaList) {
+//    List<ResourceGroup> optimizerGroups = getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups);
+//    List<OptimizerInstance> optimizers = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
+//    Map<String, List<OptimizerInstance>> optimizersByGroup =
+//        optimizers.stream().collect(Collectors.groupingBy(OptimizerInstance::getGroupName));
+//    Map<String, List<TableRuntimeMeta>> groupToTableRuntimes = tableRuntimeMetaList.stream()
+//        .collect(Collectors.groupingBy(TableRuntimeMeta::getOptimizerGroup));
+//    optimizerGroups.forEach(group -> {
+//      String groupName = group.getName();
+//      List<TableRuntimeMeta> tableRuntimeMetas = groupToTableRuntimes.remove(groupName);
+//      List<OptimizerInstance> optimizersUnderGroup = optimizersByGroup.get(groupName);
+//      OptimizingQueue optimizingQueue = new OptimizingQueue(tableManager, group,
+//          Optional.ofNullable(tableRuntimeMetas).orElseGet(ArrayList::new),
+//          Optional.ofNullable(optimizersUnderGroup).orElseGet(ArrayList::new),
+//          optimizerTouchTimeout, taskAckTimeout, tableManager.getMetricsReporters());
+//      optimizingQueueByGroup.put(groupName, optimizingQueue);
+//      if (CollectionUtils.isNotEmpty(optimizersUnderGroup)) {
+//        optimizersUnderGroup.forEach(optimizer -> optimizingQueueByToken.put(optimizer.getToken(), optimizingQueue));
+//      }
+//    });
+//    groupToTableRuntimes.keySet().forEach(groupName -> LOG.warn("Unloaded task runtime in group " + groupName));
+//  }
 
   @Override
   public void ping() {}

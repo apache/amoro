@@ -127,7 +127,7 @@ public class ArcticServiceContainer {
   }
 
   public void startService() throws Exception {
-    tableService = new DefaultTableService(serviceConfig);
+    tableService = new DefaultTableService(serviceConfig, metricsManager);
     optimizingService = new DefaultOptimizingService(serviceConfig, tableService);
 
     LOG.info("Setting up AMS table executors...");

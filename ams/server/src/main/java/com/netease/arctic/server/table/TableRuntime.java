@@ -21,9 +21,11 @@ package com.netease.arctic.server.table;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.metrics.SelfOptimizingStatusDurationReport;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.BlockerConflictException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
+import com.netease.arctic.server.manager.MetricsManager;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
@@ -55,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
@@ -66,6 +69,7 @@ public class TableRuntime extends StatedPersistentBase {
   private final ServerTableIdentifier tableIdentifier;
   private final List<TaskRuntime.TaskQuota> taskQuotas =
       Collections.synchronizedList(new ArrayList<>());
+  private MetricsManager metricsManager;
 
   // for unKeyedTable or base table
   @StateField private volatile long currentSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
@@ -95,16 +99,18 @@ public class TableRuntime extends StatedPersistentBase {
   protected TableRuntime(
       ServerTableIdentifier tableIdentifier,
       TableRuntimeHandler tableHandler,
-      Map<String, String> properties) {
+      Map<String, String> properties,
+      MetricsManager metricsManager) {
     Preconditions.checkNotNull(tableIdentifier, tableHandler);
     this.tableHandler = tableHandler;
     this.tableIdentifier = tableIdentifier;
     this.tableConfiguration = TableConfiguration.parseConfig(properties);
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
+    this.metricsManager = metricsManager;
     persistTableRuntime();
   }
 
-  protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
+  protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler, MetricsManager metricsManager) {
     Preconditions.checkNotNull(tableRuntimeMeta, tableHandler);
     this.tableHandler = tableHandler;
     this.tableIdentifier =
@@ -114,6 +120,7 @@ public class TableRuntime extends StatedPersistentBase {
             tableRuntimeMeta.getDbName(),
             tableRuntimeMeta.getTableName(),
             tableRuntimeMeta.getFormat());
+    this.metricsManager = metricsManager;
     this.currentSnapshotId = tableRuntimeMeta.getCurrentSnapshotId();
     this.lastOptimizedSnapshotId = tableRuntimeMeta.getLastOptimizedSnapshotId();
     this.lastOptimizedChangeSnapshotId = tableRuntimeMeta.getLastOptimizedChangeSnapshotId();
@@ -256,6 +263,16 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   private void updateOptimizingStatus(OptimizingStatus status) {
+    SelfOptimizingStatusDurationReport selfOptimizingStatusDurationReport =
+        new SelfOptimizingStatusDurationReport(tableIdentifier.toString(), optimizingStatus.displayValue());
+    selfOptimizingStatusDurationReport.tableOptimizingStatusDuration()
+        .update((System.currentTimeMillis() - currentStatusStartTime), TimeUnit.MILLISECONDS);
+    if (optimizingStatus == OptimizingStatus.COMMITTING) {
+      selfOptimizingStatusDurationReport.setOptimizingType(optimizingProcess.getOptimizingType().name());
+      selfOptimizingStatusDurationReport.setOptimizingProcessId(optimizingProcess.getProcessId());
+      selfOptimizingStatusDurationReport.setTargetSnapshotId(optimizingProcess.getTargetSnapshotId());
+    }
+    metricsManager.emit(selfOptimizingStatusDurationReport);
     this.optimizingStatus = status;
     this.currentStatusStartTime = System.currentTimeMillis();
   }

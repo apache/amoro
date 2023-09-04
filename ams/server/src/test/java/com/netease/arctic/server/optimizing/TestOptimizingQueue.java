@@ -13,6 +13,7 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.optimizing.TableOptimizing;
+import com.netease.arctic.server.manager.MetricsManager;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.resource.OptimizerInstance;
@@ -63,7 +64,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntimeMeta),
             Collections.emptyList(),
             60000,
-            3000);
+            3000,
+            metricsManager());
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingTask optimizingTask = queue.pollTask(authToken, 1);
     Assert.assertNull(optimizingTask);
@@ -78,7 +80,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.emptyList(),
             Collections.emptyList(),
             60000,
-            3000);
+            3000,
+            metricsManager());
     Assert.assertEquals(0, queue.getSchedulingPolicy().getTableRuntimeMap().size());
     TableRuntimeMeta tableRuntimeMeta =
         buildTableRuntimeMeta(OptimizingStatus.IDLE, defaultResourceGroup());
@@ -102,7 +105,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntimeMeta),
             Collections.emptyList(),
             60000,
-            3000);
+            3000,
+            metricsManager());
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -152,7 +156,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntimeMeta),
             Collections.emptyList(),
             60000,
-            3000);
+            3000,
+            metricsManager());
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -174,7 +179,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntimeMeta),
             Collections.emptyList(),
             60000,
-            3000);
+            3000,
+            metricsManager());
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -209,7 +215,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntimeMeta),
             Collections.emptyList(),
             60000,
-            3000);
+            3000,
+            metricsManager());
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -220,7 +227,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // 2.reload from sysdb
     List<TableRuntimeMeta> tableRuntimeMetas = persistency.selectTableRuntimeMetas();
     Assert.assertEquals(1, tableRuntimeMetas.size());
-    tableRuntimeMetas.get(0).constructTableRuntime(tableService());
+    tableRuntimeMetas.get(0).constructTableRuntime(tableService(), new MetricsManager());
     queue =
         new OptimizingQueue(
             tableService(),
@@ -228,7 +235,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             tableRuntimeMetas,
             queue.getOptimizers(),
             60000,
-            3000);
+            3000,
+            metricsManager());
 
     Assert.assertEquals(1, queue.getExecutingTaskMap().size());
     TaskRuntime taskRuntime = queue.getExecutingTaskMap().get(task.getTaskId());
@@ -252,7 +260,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntimeMeta),
             Collections.emptyList(),
             60000,
-            3000);
+            3000,
+            metricsManager());
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -266,7 +275,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // 3.reload from sysdb
     List<TableRuntimeMeta> tableRuntimeMetas = persistency.selectTableRuntimeMetas();
     Assert.assertEquals(1, tableRuntimeMetas.size());
-    tableRuntimeMetas.get(0).constructTableRuntime(tableService());
+    tableRuntimeMetas.get(0).constructTableRuntime(tableService(), metricsManager());
     queue =
         new OptimizingQueue(
             tableService(),
@@ -274,7 +283,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             tableRuntimeMetas,
             queue.getOptimizers(),
             60000,
-            3000);
+            3000,
+            metricsManager());
 
     Assert.assertEquals(1, queue.getExecutingTaskMap().size());
     TaskRuntime taskRuntime = queue.getExecutingTaskMap().get(task.getTaskId());
@@ -295,7 +305,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntimeMeta),
             Collections.emptyList(),
             60000,
-            3000);
+            3000,
+            metricsManager());
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -312,7 +323,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // 4.reload from sysdb
     List<TableRuntimeMeta> tableRuntimeMetas = persistency.selectTableRuntimeMetas();
     Assert.assertEquals(1, tableRuntimeMetas.size());
-    tableRuntimeMetas.get(0).constructTableRuntime(tableService());
+    tableRuntimeMetas.get(0).constructTableRuntime(tableService(), metricsManager());
     queue =
         new OptimizingQueue(
             tableService(),
@@ -320,7 +331,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             tableRuntimeMetas,
             Collections.emptyList(),
             60000,
-            3000);
+            3000,
+            metricsManager());
 
     Assert.assertEquals(0, queue.getExecutingTaskMap().size());
   }
@@ -336,7 +348,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntimeMeta),
             Collections.emptyList(),
             60000,
-            3000);
+            3000,
+            metricsManager());
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -353,7 +366,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // 4.reload from sysdb
     List<TableRuntimeMeta> tableRuntimeMetas = persistency.selectTableRuntimeMetas();
     Assert.assertEquals(1, tableRuntimeMetas.size());
-    tableRuntimeMetas.get(0).constructTableRuntime(tableService());
+    tableRuntimeMetas.get(0).constructTableRuntime(tableService(), metricsManager());
     queue =
         new OptimizingQueue(
             tableService(),
@@ -361,7 +374,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             tableRuntimeMetas,
             queue.getOptimizers(),
             60000,
-            3000);
+            3000,
+            metricsManager());
 
     Assert.assertEquals(0, queue.getExecutingTaskMap().size());
 
@@ -447,7 +461,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.emptyList(),
             Collections.emptyList(),
             60000,
-            3000);
+            3000,
+            metricsManager());
     OptimizerRegisterInfo registerInfo = buildRegisterInfo();
 
     // authenticate
@@ -500,7 +515,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     tableRuntimeMeta.setTableStatus(status);
     tableRuntimeMeta.setTableConfig(TableConfiguration.parseConfig(arcticTable.properties()));
     tableRuntimeMeta.setOptimizerGroup(resourceGroup.getName());
-    tableRuntimeMeta.constructTableRuntime(tableService());
+    tableRuntimeMeta.constructTableRuntime(tableService(), metricsManager());
     return tableRuntimeMeta;
   }
 
