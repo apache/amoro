@@ -230,9 +230,9 @@ public class HiveMetaSynchronizer {
 
   /**
    * Synchronize the data change of the arctic table to hive table
-   * @param table
+   * @param table support hive table
    */
-  public static void syncArcticDataToHive(SupportHive table) throws Exception {
+  public static void syncArcticDataToHive(SupportHive table) {
     UnkeyedTable baseStore;
     if (table.isKeyedTable()) {
       baseStore = table.asKeyedTable().baseTable();
@@ -241,10 +241,14 @@ public class HiveMetaSynchronizer {
     }
     StructLikeMap<Map<String, String>> partitionProperty = baseStore.partitionProperty();
 
-    if (baseStore.spec().isUnpartitioned()) {
-      syncNoPartitionTable(table, partitionProperty);
-    } else {
-      syncPartitionTable(table, partitionProperty);
+    try {
+      if (baseStore.spec().isUnpartitioned()) {
+        syncNoPartitionTable(table, partitionProperty);
+      } else {
+        syncPartitionTable(table, partitionProperty);
+      }
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to sync arctic data to hive:" + table.id(), e);
     }
   }
 
