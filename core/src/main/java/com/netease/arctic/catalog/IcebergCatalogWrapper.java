@@ -300,7 +300,7 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
         Table icebergTable,
         ArcticFileIO arcticFileIO,
         Map<String, String> catalogProperties) {
-      super(tableIdentifier, icebergTable, arcticFileIO, null, catalogProperties);
+      super(tableIdentifier, icebergTable, arcticFileIO, catalogProperties);
     }
 
     @Override
