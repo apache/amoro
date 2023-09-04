@@ -468,7 +468,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
       return;
     }
     try (CloseableIterable<FileScanTask> tasks = table.newScan().filter(expr).planFiles()) {
-      Lists.newArrayList(tasks).stream().map(FileScanTask::file).forEach(this.deleteFiles::add);
+      tasks.forEach(task -> deleteFiles.add(task.file()));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
