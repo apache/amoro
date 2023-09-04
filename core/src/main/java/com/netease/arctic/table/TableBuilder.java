@@ -20,7 +20,6 @@ package com.netease.arctic.table;
 
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.SortOrder;
-import org.apache.iceberg.Transaction;
 
 import java.util.Map;
 

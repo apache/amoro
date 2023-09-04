@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,8 +16,14 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.trace;
+package com.netease.arctic.op;
 
+import com.netease.arctic.op.ArcticAppendFiles;
+import com.netease.arctic.op.ArcticDeleteFiles;
+import com.netease.arctic.op.ArcticOverwriteFiles;
+import com.netease.arctic.op.ArcticReplacePartitions;
+import com.netease.arctic.op.ArcticRewriteFiles;
+import com.netease.arctic.op.ArcticRowDelta;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;

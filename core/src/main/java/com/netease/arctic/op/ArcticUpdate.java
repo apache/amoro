@@ -51,7 +51,7 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
   protected final boolean autoCommitTransaction;
   protected final WatermarkGenerator watermarkGenerator;
 
-  public ArcticUpdate(ArcticTable arcticTable, SnapshotUpdate<T> delegate ) {
+  public ArcticUpdate(ArcticTable arcticTable, SnapshotUpdate<T> delegate) {
     this.arcticTable = arcticTable;
     this.transaction = null;
     this.autoCommitTransaction = false;

@@ -22,7 +22,6 @@ import com.netease.arctic.ams.api.TableFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
-import org.apache.iceberg.Transaction;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
@@ -81,5 +80,6 @@ public abstract class BasicTableBuilder<ThisT extends TableBuilder> implements T
     this.keySpec = primaryKeySpec;
     return self();
   }
+
   protected abstract ThisT self();
 }

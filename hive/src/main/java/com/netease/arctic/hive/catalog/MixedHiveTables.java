@@ -39,7 +39,7 @@ public class MixedHiveTables extends MixedTables {
   private volatile CachedHiveClientPool hiveClientPool;
 
   public MixedHiveTables(CatalogMeta catalogMeta) {
-    super(catalogMeta );
+    super(catalogMeta);
     this.hiveClientPool = new CachedHiveClientPool(getTableMetaStore(), catalogMeta.getCatalogProperties());
   }
 

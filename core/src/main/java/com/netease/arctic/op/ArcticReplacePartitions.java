@@ -16,9 +16,8 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.trace;
+package com.netease.arctic.op;
 
-import com.netease.arctic.op.ArcticUpdate;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ReplacePartitions;

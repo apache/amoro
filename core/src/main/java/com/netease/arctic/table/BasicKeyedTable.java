@@ -24,11 +24,11 @@ import com.netease.arctic.op.KeyedPartitionRewrite;
 import com.netease.arctic.op.KeyedSchemaUpdate;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
+import com.netease.arctic.op.SnapshotSummary;
 import com.netease.arctic.op.UpdateKeyedTableProperties;
 import com.netease.arctic.scan.BasicKeyedTableScan;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.scan.KeyedTableScan;
-import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.AppendFiles;
@@ -202,7 +202,7 @@ public class BasicKeyedTable implements KeyedTable {
     public BaseInternalTable(
         TableIdentifier tableIdentifier, Table baseIcebergTable, ArcticFileIO arcticFileIO,
         Map<String, String> catalogProperties) {
-      super(tableIdentifier, baseIcebergTable, arcticFileIO,  catalogProperties);
+      super(tableIdentifier, baseIcebergTable, arcticFileIO, catalogProperties);
     }
   }
 
