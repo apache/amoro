@@ -153,19 +153,26 @@ public class PuffinUtil {
     }
 
     public StructLikeMap<Long> readOptimizedSequence() {
-      StructLikeMap<Long> optimizedSequence = read(BLOB_TYPE_OPTIMIZED_SEQUENCE);
-      if (optimizedSequence != null) {
-        return optimizedSequence;
-      }
-      return TablePropertyUtil.getPartitionLongProperties(table, TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
+      return readWithCompatibility(BLOB_TYPE_OPTIMIZED_SEQUENCE);
     }
 
     public StructLikeMap<Long> readBaseOptimizedTime() {
-      StructLikeMap<Long> baseOptimizedTime = read(BLOB_TYPE_BASE_OPTIMIZED_TIME);
-      if (baseOptimizedTime != null) {
-        return baseOptimizedTime;
+      return readWithCompatibility(BLOB_TYPE_BASE_OPTIMIZED_TIME);
+    }
+
+    private StructLikeMap<Long> readWithCompatibility(String type) {
+      StructLikeMap<Long> result = read(type);
+      if (result != null) {
+        return result;
       }
-      return TablePropertyUtil.getPartitionLongProperties(table, TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
+      switch (type) {
+        case BLOB_TYPE_OPTIMIZED_SEQUENCE:
+          return TablePropertyUtil.getPartitionLongProperties(table, TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
+        case BLOB_TYPE_BASE_OPTIMIZED_TIME:
+          return TablePropertyUtil.getPartitionLongProperties(table, TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
+        default:
+          throw new IllegalArgumentException("Unknown blob type: " + type);
+      }
     }
 
     private StructLikeMap<Long> read(String type) {
