@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.api;
 
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import org.apache.thrift.TException;
 import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -53,7 +52,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 
 public class MockArcticMetastoreServer implements Runnable {
   private static final Logger LOG = LoggerFactory.getLogger(MockArcticMetastoreServer.class);
@@ -74,44 +72,10 @@ public class MockArcticMetastoreServer implements Runnable {
   public static MockArcticMetastoreServer getInstance() {
     if (!INSTANCE.isStarted()) {
       INSTANCE.start();
-      Map<String, String> storageConfig = new HashMap<>();
-      storageConfig.put(
-          CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE,
-          CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS);
-      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE, getHadoopSite());
-      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE, getHadoopSite());
-
-      Map<String, String> authConfig = new HashMap<>();
-      authConfig.put(
-          CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE,
-          CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE);
-      authConfig.put(
-          CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME,
-          System.getProperty("user.name"));
-
-      Map<String, String> catalogProperties = new HashMap<>();
-      catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE, "/tmp");
-
-      CatalogMeta catalogMeta = new CatalogMeta(TEST_CATALOG_NAME, CATALOG_TYPE_HADOOP,
-          storageConfig, authConfig, catalogProperties);
-      INSTANCE.handler().createCatalog(catalogMeta);
-
-      try {
-        INSTANCE.handler().createDatabase(TEST_CATALOG_NAME, TEST_DB_NAME);
-      } catch (TException e) {
-        throw new RuntimeException(e);
-      }
     }
     return INSTANCE;
   }
 
-  public void createCatalogIfAbsent(CatalogMeta catalogMeta) {
-    MockArcticMetastoreServer server = getInstance();
-    if (server.handler().getCatalogs().stream()
-        .noneMatch(meta -> meta.getCatalogName().equals(catalogMeta.getCatalogName()))) {
-      server.handler().createCatalog(catalogMeta);
-    }
-  }
 
   public static String getHadoopSite() {
     return Base64.getEncoder().encodeToString("<configuration></configuration>".getBytes(StandardCharsets.UTF_8));

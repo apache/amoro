@@ -22,6 +22,8 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CatalogUtil;
+import org.apache.iceberg.hadoop.HadoopFileIO;
+import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Map;
@@ -51,5 +53,13 @@ public class ArcticFileIOs {
 
   public static ArcticHadoopFileIO buildHadoopFileIO(TableMetaStore tableMetaStore) {
     return new ArcticHadoopFileIO(tableMetaStore);
+  }
+
+  public static ArcticFileIO  buildAdaptIcebergFileIO(TableMetaStore tableMetaStore, FileIO io) {
+    if (io instanceof HadoopFileIO) {
+      return buildHadoopFileIO(tableMetaStore);
+    } else {
+      return new ArcticFileIOAdapter(io);
+    }
   }
 }

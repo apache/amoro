@@ -20,9 +20,11 @@ package com.netease.arctic.trino.arctic;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.iceberg.InternalRecordWrapper;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
@@ -36,6 +38,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import io.trino.testing.AbstractTestQueryFramework;
+import io.trino.testng.services.ManageTestResources;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
@@ -66,7 +69,9 @@ import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
 public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
 
   protected static TemporaryFolder tmp = new TemporaryFolder();
+  protected static File warehouse;
 
+  @ManageTestResources.Suppress(because = "no need")
   protected static MockArcticMetastoreServer AMS;
 
   protected static final TableIdentifier TABLE_ID =
@@ -111,7 +116,7 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
   protected KeyedTable testKeyedTable;
 
   protected void setupTables() throws Exception {
-    testCatalog = CatalogLoader.load(AMS.getUrl());
+    testCatalog = CatalogLoader.load(AMS.getUrl(CatalogTestHelper.TEST_CATALOG_NAME));
 
     File tableDir = tmp.newFolder();
     testTable = testCatalog
@@ -134,6 +139,17 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
     // implement for sub case
   }
 
+  protected static String warehousePath() {
+    return warehouse.getAbsolutePath();
+  }
+
+  protected static void setupCatalog(CatalogTestHelper catalogTestHelper) throws IOException {
+    tmp.create();
+    warehouse = tmp.newFolder("warehouse");
+    AMS = MockArcticMetastoreServer.getInstance();
+    CatalogMeta catalogMeta = catalogTestHelper.buildCatalogMeta(warehouse.getAbsolutePath());
+    AMS.handler().createCatalog(catalogMeta);
+  }
 
   protected void clearTable() {
     testCatalog.dropTable(TABLE_ID, true);
@@ -141,7 +157,6 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
 
     testCatalog.dropTable(PK_TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(PK_TABLE_ID.buildTableIdentifier());
-    AMS.stopAndCleanUp();
     AMS = null;
   }
 

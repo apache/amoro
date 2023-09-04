@@ -18,10 +18,12 @@
 
 package com.netease.arctic.trino;
 
+import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.utils.CatalogUtil;
 import io.trino.spi.classloader.ThreadContextClassLoader;
-
 import javax.inject.Inject;
 import java.util.Collections;
 
@@ -30,9 +32,10 @@ import java.util.Collections;
  */
 public class DefaultArcticCatalogFactory implements ArcticCatalogFactory {
 
-  private ArcticConfig arcticConfig;
+  private final ArcticConfig arcticConfig;
 
   private ArcticCatalog arcticCatalog;
+  private TableMetaStore tableMetaStore;
 
   @Inject
   public DefaultArcticCatalogFactory(ArcticConfig arcticConfig) {
@@ -52,5 +55,20 @@ public class DefaultArcticCatalogFactory implements ArcticCatalogFactory {
       }
     }
     return arcticCatalog;
+  }
+
+  @Override
+  public TableMetaStore getTableMetastore() {
+    if (this.tableMetaStore == null) {
+      synchronized (this) {
+        if (this.tableMetaStore == null) {
+          try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(this.getClass().getClassLoader())) {
+            CatalogMeta meta = CatalogLoader.loadMeta(arcticConfig.getCatalogUrl());
+            this.tableMetaStore = CatalogUtil.buildMetaStore(meta);
+          }
+        }
+      }
+    }
+    return this.tableMetaStore;
   }
 }
