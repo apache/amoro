@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.trino.unkeyed;
+package com.netease.arctic.op;
 
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.AppendFiles;
@@ -47,15 +47,17 @@ public class CreateTableTransaction implements Transaction {
   private final List<DataFile> appendDataFiles = Lists.newArrayList();
   private final Supplier<ArcticTable> tableCreator;
   private final Runnable rollback;
+  private final Transaction transaction;
 
-  public CreateTableTransaction(Supplier<ArcticTable> tableSupplier, Runnable rollback) {
+  public CreateTableTransaction(Transaction transaction, Supplier<ArcticTable> tableSupplier, Runnable rollback) {
+    this.transaction = transaction;
     this.tableCreator = tableSupplier;
     this.rollback = rollback;
   }
 
   @Override
   public Table table() {
-    throw new UnsupportedOperationException("create table transaction unsupported updateSchema");
+    return transaction.table();
   }
 
   @Override

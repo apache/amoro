@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.TableTrashManagers;
+import com.netease.arctic.op.CreateTableTransaction;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
@@ -38,6 +39,7 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
@@ -300,6 +302,18 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     @Override
     public ArcticTable create() {
       return tables.createTable(identifier, schema, partitionSpec, primaryKeySpec, properties);
+    }
+
+    @Override
+    public Transaction createTransaction() {
+      Transaction transaction = icebergCatalog.newCreateTableTransaction(
+              org.apache.iceberg.catalog.TableIdentifier.of(identifier.getDatabase(), identifier.getTableName()),
+              schema, partitionSpec, properties);
+      return new CreateTableTransaction(
+              transaction,
+              this::create,
+              () -> dropTable(identifier, true)
+      );
     }
   }
 }

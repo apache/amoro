@@ -37,6 +37,7 @@ import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
@@ -277,6 +278,13 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
       FileIO io = table.io();
       ArcticFileIO arcticFileIO = createArcticFileIO(io);
       return new BasicIcebergTable(identifier, table, arcticFileIO, meta.getCatalogProperties());
+    }
+
+    @Override
+    public Transaction createTransaction() {
+      return icebergCatalog.newCreateTableTransaction(
+              toIcebergTableIdentifier(identifier), schema,
+              spec, properties);
     }
 
     @Override
