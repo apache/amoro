@@ -38,7 +38,6 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.Transaction;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
@@ -301,11 +300,6 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     @Override
     public ArcticTable create() {
       return tables.createTable(identifier, schema, partitionSpec, primaryKeySpec, properties);
-    }
-
-    @Override
-    public Transaction newCreateTableTransaction() {
-      return null;
     }
   }
 }
