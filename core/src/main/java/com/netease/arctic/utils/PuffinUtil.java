@@ -49,6 +49,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Util class for write and read optimized sequences/time from Iceberg Puffin files.
+ * Puffin are a kind of file format for Iceberg statistics file {@link StatisticsFile}.
+ */
 public class PuffinUtil {
   public static final String BLOB_TYPE_OPTIMIZED_SEQUENCE = "optimized-sequence";
   public static final String BLOB_TYPE_BASE_OPTIMIZED_TIME = "base-optimized-time";
@@ -165,6 +169,8 @@ public class PuffinUtil {
       if (result != null) {
         return result;
       }
+      // to be compatible with old Amoro version 0.5.0 which didn't use puffin file and stored the statistics in
+      // table properties
       switch (type) {
         case BLOB_TYPE_OPTIMIZED_SEQUENCE:
           return TablePropertyUtil.getPartitionLongProperties(table, TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
