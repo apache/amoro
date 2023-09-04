@@ -132,6 +132,7 @@ public class ArcticInMemoryLockManager extends LockManagers.BaseLockManager {
       return false;
     }
 
+    // where NPE happens
     Optional.ofNullable(HEARTBEATS.remove(entityId))
         .ifPresent(future -> future.cancel(false));
     LOCKS.remove(entityId);
