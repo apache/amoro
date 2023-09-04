@@ -21,6 +21,7 @@ package com.netease.arctic.trino.unkeyed;
 import com.google.common.collect.ImmutableList;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import io.trino.plugin.hive.util.HiveUtil;
 import io.trino.plugin.iceberg.ColumnIdentity;
@@ -133,7 +134,15 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
       ConnectorSession session, SchemaTableName schemaTableName,
       Schema schema, PartitionSpec partitionSpec,
       String location, Map<String, String> properties) {
-    throw new TrinoException(NOT_SUPPORTED, "Unsupported transactional create table");
+    TableIdentifier identifier = getTableIdentifier(schemaTableName);
+    TableBuilder tableBuilder = arcticCatalog.newTableBuilder(identifier, schema)
+        .withPartitionSpec(partitionSpec)
+        .withProperties(properties);
+    
+    return new CreateTableTransaction(
+        tableBuilder::create,
+        () -> arcticCatalog.dropTable(identifier, true)
+    );
   }
 
   @Override
