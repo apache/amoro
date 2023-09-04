@@ -20,9 +20,7 @@ package com.netease.arctic.trino.unkeyed;
 
 import com.google.common.collect.ImmutableList;
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.op.CreateTableTransaction;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import io.trino.plugin.hive.util.HiveUtil;
 import io.trino.plugin.iceberg.ColumnIdentity;
