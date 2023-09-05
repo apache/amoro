@@ -19,7 +19,7 @@
 package com.netease.arctic.op;
 
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.utils.ArcticInMemoryLockManager;
+import com.netease.arctic.utils.IcebergInMemoryLockManager;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.TableMetadata;
@@ -32,7 +32,7 @@ public class ArcticHadoopTableOperations extends HadoopTableOperations {
   private final ArcticFileIO arcticFileIO;
 
   public ArcticHadoopTableOperations(Path location, ArcticFileIO fileIO, Configuration conf) {
-    super(location, fileIO, conf, ArcticInMemoryLockManager.instance());
+    super(location, fileIO, conf, IcebergInMemoryLockManager.instance());
     this.arcticFileIO = fileIO;
   }
 

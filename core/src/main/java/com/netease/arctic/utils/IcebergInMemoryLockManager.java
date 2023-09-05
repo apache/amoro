@@ -32,21 +32,22 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Copy from Iceberg {@link LockManagers.InMemoryLockManager}, fix the NullPointerException when release lock.
+ * After this <a href="https://github.com/apache/iceberg/issues/4550">issue</a> is fixed, this class can be removed.
  */
-public class ArcticInMemoryLockManager extends LockManagers.BaseLockManager {
+public class IcebergInMemoryLockManager extends LockManagers.BaseLockManager {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticInMemoryLockManager.class);
+  private static final Logger LOG = LoggerFactory.getLogger(IcebergInMemoryLockManager.class);
 
   private static final Map<String, InMemoryLockContent> LOCKS = Maps.newConcurrentMap();
   private static final Map<String, ScheduledFuture<?>> HEARTBEATS = Maps.newHashMap();
 
-  private static final ArcticInMemoryLockManager INSTANCE = new ArcticInMemoryLockManager(Maps.newHashMap());
+  private static final IcebergInMemoryLockManager INSTANCE = new IcebergInMemoryLockManager(Maps.newHashMap());
 
-  public static ArcticInMemoryLockManager instance() {
+  public static IcebergInMemoryLockManager instance() {
     return INSTANCE;
   }
 
-  ArcticInMemoryLockManager(Map<String, String> properties) {
+  IcebergInMemoryLockManager(Map<String, String> properties) {
     initialize(properties);
   }
 
