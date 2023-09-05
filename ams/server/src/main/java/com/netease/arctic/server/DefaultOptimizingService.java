@@ -19,6 +19,7 @@
 package com.netease.arctic.server;
 
 import com.google.common.base.Preconditions;
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizingService;
@@ -331,7 +332,7 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
     }
 
     @Override
-    public void handleTableAdded(ArcticTable table, TableRuntime tableRuntime) {
+    public void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
       getOptionalQueueByGroup(tableRuntime.getOptimizerGroup()).ifPresent(q -> q.refreshTable(tableRuntime));
     }
 

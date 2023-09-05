@@ -26,7 +26,7 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
-import com.netease.arctic.server.table.KeyedTableSnapshot;
+import com.netease.arctic.server.table.KeyedSnapshotWrapper;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -225,7 +225,7 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
         TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable());
     StructLikeMap<Long> legacyPartitionMaxTransactionId =
         TablePropertyUtil.getLegacyPartitionMaxTransactionId(getArcticTable());
-    return new KeyedTableFileScanHelper(getArcticTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId,
+    return new KeyedTableFileScanHelper(getArcticTable(), new KeyedSnapshotWrapper(baseSnapshotId, changeSnapshotId,
         partitionOptimizedSequence, legacyPartitionMaxTransactionId));
   }
 

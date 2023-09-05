@@ -18,7 +18,10 @@
 
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.AmoroTable;
+import com.netease.arctic.TableSnapshot;
 import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.BlockerConflictException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
@@ -33,10 +36,7 @@ import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.blocker.TableBlocker;
-import com.netease.arctic.server.utils.IcebergTableUtil;
-import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.blocker.RenewableBlocker;
-import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
@@ -61,18 +61,14 @@ public class TableRuntime extends StatedPersistentBase {
 
   private final TableRuntimeHandler tableHandler;
   private final ServerTableIdentifier tableIdentifier;
+  private final TableFormat format;
   private final List<TaskRuntime.TaskQuota> taskQuotas = Collections.synchronizedList(new ArrayList<>());
 
   // for unKeyedTable or base table
   @StateField
-  private volatile long currentSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+  private volatile TableSnapshot currentSnapshot;
   @StateField
-  private volatile long lastOptimizedSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
-  @StateField
-  private volatile long lastOptimizedChangeSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
-  // for change table
-  @StateField
-  private volatile long currentChangeSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+  private volatile TableSnapshot lastOptimizedSnapshot;
   @StateField
   private volatile OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
   @StateField
@@ -97,11 +93,12 @@ public class TableRuntime extends StatedPersistentBase {
   private final ReentrantLock blockerLock = new ReentrantLock();
 
   protected TableRuntime(
-      ServerTableIdentifier tableIdentifier, TableRuntimeHandler tableHandler,
+      ServerTableIdentifier tableIdentifier, TableFormat format, TableRuntimeHandler tableHandler,
       Map<String, String> properties) {
     Preconditions.checkNotNull(tableIdentifier, tableHandler);
     this.tableHandler = tableHandler;
     this.tableIdentifier = tableIdentifier;
+    this.format = format;
     this.tableConfiguration = TableConfiguration.parseConfig(properties);
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
     persistTableRuntime();
@@ -112,10 +109,8 @@ public class TableRuntime extends StatedPersistentBase {
     this.tableHandler = tableHandler;
     this.tableIdentifier = ServerTableIdentifier.of(tableRuntimeMeta.getTableId(), tableRuntimeMeta.getCatalogName(),
         tableRuntimeMeta.getDbName(), tableRuntimeMeta.getTableName());
-    this.currentSnapshotId = tableRuntimeMeta.getCurrentSnapshotId();
-    this.lastOptimizedSnapshotId = tableRuntimeMeta.getLastOptimizedSnapshotId();
-    this.lastOptimizedChangeSnapshotId = tableRuntimeMeta.getLastOptimizedChangeSnapshotId();
-    this.currentChangeSnapshotId = tableRuntimeMeta.getCurrentChangeSnapshotId();
+    this.currentSnapshot = tableRuntimeMeta.getCurrentSnapshot();
+    this.lastOptimizedSnapshot = tableRuntimeMeta.getLastOptimizedSnapshot();
     this.currentStatusStartTime = tableRuntimeMeta.getCurrentStatusStartTime();
     this.lastMinorOptimizingTime = tableRuntimeMeta.getLastMinorOptimizingTime();
     this.lastMajorOptimizingTime = tableRuntimeMeta.getLastMajorOptimizingTime();
@@ -125,6 +120,7 @@ public class TableRuntime extends StatedPersistentBase {
     this.processId = tableRuntimeMeta.getOptimizingProcessId();
     this.optimizingStatus = tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
+    this.format = tableRuntimeMeta.getFormat();
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -169,7 +165,6 @@ public class TableRuntime extends StatedPersistentBase {
     invokeConsisitency(() -> {
       this.pendingInput = pendingInput;
       if (optimizingStatus == OptimizingStatus.IDLE) {
-        this.currentChangeSnapshotId = System.currentTimeMillis();
         updateOptimizingStatus(OptimizingStatus.PENDING);
         persistUpdatingRuntime();
         LOG.info("{} status changed from idle to pending with pendingInput {}", tableIdentifier, pendingInput);
@@ -178,7 +173,7 @@ public class TableRuntime extends StatedPersistentBase {
     });
   }
 
-  public TableRuntime refresh(ArcticTable table) {
+  public TableRuntime refresh(AmoroTable<?> table) {
     return invokeConsisitency(() -> {
       TableConfiguration configuration = tableConfiguration;
       boolean configChanged = updateConfigInternal(table.properties());
@@ -220,8 +215,7 @@ public class TableRuntime extends StatedPersistentBase {
     invokeConsisitency(() -> {
       OptimizingStatus originalStatus = optimizingStatus;
       if (success) {
-        lastOptimizedSnapshotId = optimizingProcess.getTargetSnapshotId();
-        lastOptimizedChangeSnapshotId = optimizingProcess.getTargetChangeSnapshotId();
+        lastOptimizedSnapshot = optimizingProcess.getFromSnapshot();
         if (optimizingProcess.getOptimizingType() == OptimizingType.MINOR) {
           lastMinorOptimizingTime = optimizingProcess.getPlanTime();
         } else if (optimizingProcess.getOptimizingType() == OptimizingType.MAJOR) {
@@ -242,25 +236,11 @@ public class TableRuntime extends StatedPersistentBase {
     this.currentStatusStartTime = System.currentTimeMillis();
   }
 
-  private boolean refreshSnapshots(ArcticTable table) {
-    if (table.isKeyedTable()) {
-      long lastSnapshotId = currentSnapshotId;
-      long changeSnapshotId = currentChangeSnapshotId;
-      currentSnapshotId = IcebergTableUtil.getSnapshotId(table.asKeyedTable().baseTable(), false);
-      currentChangeSnapshotId = IcebergTableUtil.getSnapshotId(table.asKeyedTable().changeTable(), false);
-      if (currentSnapshotId != lastSnapshotId || currentChangeSnapshotId != changeSnapshotId) {
-        LOG.info("Refreshing table {} with base snapshot id {} and change snapshot id {}", tableIdentifier,
-            currentSnapshotId, currentChangeSnapshotId);
-        return true;
-      }
-    } else {
-      long lastSnapshotId = currentSnapshotId;
-      Snapshot currentSnapshot = table.asUnkeyedTable().currentSnapshot();
-      currentSnapshotId = currentSnapshot == null ? -1 : currentSnapshot.snapshotId();
-      if (currentSnapshotId != lastSnapshotId) {
-        LOG.info("Refreshing table {} with base snapshot id {}", tableIdentifier, currentSnapshotId);
-        return true;
-      }
+  private boolean refreshSnapshots(AmoroTable<?> table) {
+    TableSnapshot lastSnapshot = currentSnapshot;
+    currentSnapshot = table.currentSnapshot();
+    if ((lastSnapshot == null && currentSnapshot == null) || !currentSnapshot.equals(lastSnapshot)) {
+      return true;
     }
     return false;
   }
@@ -303,32 +283,24 @@ public class TableRuntime extends StatedPersistentBase {
     return optimizingProcess;
   }
 
-  public long getCurrentSnapshotId() {
-    return currentSnapshotId;
-  }
-
-  public void updateCurrentChangeSnapshotId(long snapshotId) {
-    this.currentChangeSnapshotId = snapshotId;
+  public TableSnapshot getCurrentSnapshot() {
+    return currentSnapshot;
   }
 
   public ServerTableIdentifier getTableIdentifier() {
     return tableIdentifier;
   }
 
+  public TableFormat getFormat() {
+    return format;
+  }
+
   public OptimizingStatus getOptimizingStatus() {
     return optimizingStatus;
   }
 
-  public long getLastOptimizedSnapshotId() {
-    return lastOptimizedSnapshotId;
-  }
-
-  public long getLastOptimizedChangeSnapshotId() {
-    return lastOptimizedChangeSnapshotId;
-  }
-
-  public long getCurrentChangeSnapshotId() {
-    return currentChangeSnapshotId;
+  public TableSnapshot getLastOptimizedSnapshot() {
+    return lastOptimizedSnapshot;
   }
 
   public long getCurrentStatusStartTime() {
@@ -371,10 +343,6 @@ public class TableRuntime extends StatedPersistentBase {
     return tableConfiguration.getOptimizingConfig().getTargetSize();
   }
 
-  public void setCurrentChangeSnapshotId(long currentChangeSnapshotId) {
-    this.currentChangeSnapshotId = currentChangeSnapshotId;
-  }
-
   public int getMaxExecuteRetryCount() {
     return tableConfiguration.getOptimizingConfig().getMaxExecuteRetryCount();
   }
@@ -387,9 +355,8 @@ public class TableRuntime extends StatedPersistentBase {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("tableIdentifier", tableIdentifier)
-        .add("currentSnapshotId", currentSnapshotId)
-        .add("lastOptimizedSnapshotId", lastOptimizedSnapshotId)
-        .add("lastOptimizedChangeSnapshotId", lastOptimizedChangeSnapshotId)
+        .add("currentSnapshot", currentSnapshot)
+        .add("lastOptimizedSnapshot", lastOptimizedSnapshot)
         .add("optimizingStatus", optimizingStatus)
         .add("currentStatusStartTime", currentStatusStartTime)
         .add("lastMajorOptimizingTime", lastMajorOptimizingTime)

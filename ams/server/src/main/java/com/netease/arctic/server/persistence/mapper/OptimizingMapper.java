@@ -1,5 +1,6 @@
 package com.netease.arctic.server.persistence.mapper;
 
+import com.netease.arctic.TableSnapshot;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.optimizing.MetricsSummary;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
@@ -34,9 +35,10 @@ public interface OptimizingMapper {
   void deleteOptimizingProcessBefore(@Param("tableId") long tableId, @Param("time") long time);
 
   @Insert("INSERT INTO table_optimizing_process(table_id, catalog_name, db_name, table_name ,process_id," +
-      " target_snapshot_id, target_change_snapshot_id, status, optimizing_type, plan_time, summary, from_sequence," +
+      " from_snapshot, status, optimizing_type, plan_time, summary, from_sequence," +
       " to_sequence) VALUES (#{table.id}, #{table.catalog}," +
-      " #{table.database}, #{table.tableName}, #{processId}, #{targetSnapshotId}, #{targetChangeSnapshotId}," +
+      " #{table.database}, #{table.tableName}, #{processId}, " +
+      " #{fromSnapshot, typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert}," +
       " #{status}, #{optimizingType}," +
       " #{planTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}," +
@@ -46,8 +48,7 @@ public interface OptimizingMapper {
   void insertOptimizingProcess(
       @Param("table") ServerTableIdentifier tableIdentifier,
       @Param("processId") long processId,
-      @Param("targetSnapshotId") long targetSnapshotId,
-      @Param("targetChangeSnapshotId") long targetChangeSnapshotId,
+      @Param("fromSnapshot") TableSnapshot fromSnapshot,
       @Param("status") OptimizingProcess.Status status,
       @Param("optimizingType") OptimizingType optimizingType,
       @Param("planTime") long planTime,
@@ -68,8 +69,8 @@ public interface OptimizingMapper {
       @Param("summary") MetricsSummary summary,
       @Param("failedReason") String failedReason);
 
-  @Select("SELECT a.process_id, a.table_id, a.catalog_name, a.db_name, a.table_name, a.target_snapshot_id," +
-      " a.target_change_snapshot_id, a.status, a.optimizing_type, a.plan_time, a.end_time," +
+  @Select("SELECT a.process_id, a.table_id, a.catalog_name, a.db_name, a.table_name, a.from_snapshot," +
+      " a.status, a.optimizing_type, a.plan_time, a.end_time," +
       " a.fail_reason, a.summary, a.from_sequence, a.to_sequence FROM table_optimizing_process a" +
       " INNER JOIN table_identifier b ON a.table_id = b.table_id" +
       " WHERE a.catalog_name = #{catalogName} AND a.db_name = #{dbName} AND a.table_name = #{tableName}" +
@@ -81,8 +82,7 @@ public interface OptimizingMapper {
       @Result(property = "catalogName", column = "catalog_name"),
       @Result(property = "dbName", column = "db_name"),
       @Result(property = "tableName", column = "table_name"),
-      @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
-      @Result(property = "targetChangeSnapshotId", column = "target_change_snapshot_id"),
+      @Result(property = "fromSnapshot", column = "from_snapshot", typeHandler = Object2ByteArrayConvert.class),
       @Result(property = "status", column = "status"),
       @Result(property = "optimizingType", column = "optimizing_type"),
       @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),

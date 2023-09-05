@@ -1,6 +1,7 @@
 package com.netease.arctic.server.table.executor;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.table.RuntimeHandlerChain;
 import com.netease.arctic.server.table.TableConfiguration;
@@ -97,7 +98,7 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
   }
 
   @Override
-  public void handleTableAdded(ArcticTable table, TableRuntime tableRuntime) {
+  public void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
     scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 
@@ -111,7 +112,7 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
     return START_DELAY;
   }
 
-  protected ArcticTable loadTable(TableRuntime tableRuntime) {
+  protected AmoroTable<?> loadTable(TableRuntime tableRuntime) {
     return tableManager.loadTable(tableRuntime.getTableIdentifier());
   }
 }

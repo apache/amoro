@@ -33,8 +33,11 @@ public class IcebergCatalog implements FormatCatalog {
 
   private final Catalog icebergCatalog;
 
-  public IcebergCatalog(Catalog icebergCatalog) {
+  private final String name;
+
+  public IcebergCatalog(Catalog icebergCatalog, String name) {
     this.icebergCatalog = icebergCatalog;
+    this.name = name;
   }
 
   @Override
@@ -89,5 +92,10 @@ public class IcebergCatalog implements FormatCatalog {
         com.netease.arctic.table.TableIdentifier.of(icebergCatalog.name(), database, table),
         icebergTable
     );
+  }
+
+  @Override
+  public String name() {
+    return name;
   }
 }

@@ -18,15 +18,7 @@
 
 package com.netease.arctic.server.table;
 
-public class BasicTableSnapshot implements TableSnapshot {
-  private final long snapshotId;
+public interface SnapshotWrapper {
 
-  public BasicTableSnapshot(long snapshotId) {
-    this.snapshotId = snapshotId;
-  }
-
-  @Override
-  public long snapshotId() {
-    return snapshotId;
-  }
+  long snapshotId();
 }

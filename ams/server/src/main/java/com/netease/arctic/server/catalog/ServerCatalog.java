@@ -1,5 +1,6 @@
 package com.netease.arctic.server.catalog;
 
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.persistence.PersistentBase;
@@ -40,5 +41,5 @@ public abstract class ServerCatalog extends PersistentBase {
 
   public abstract List<TableIdentifier> listTables(String database);
 
-  public abstract ArcticTable loadTable(String database, String tableName);
+  public abstract AmoroTable<?> loadTable(String database, String tableName);
 }

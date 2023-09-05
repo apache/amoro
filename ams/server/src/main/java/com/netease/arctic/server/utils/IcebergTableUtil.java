@@ -19,17 +19,19 @@
 package com.netease.arctic.server.utils;
 
 import com.netease.arctic.IcebergFileEntry;
+import com.netease.arctic.TableSnapshot;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
+import com.netease.arctic.formats.iceberg.IcebergSnapshot;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.ArcticServiceConstants;
-import com.netease.arctic.server.table.BasicTableSnapshot;
-import com.netease.arctic.server.table.KeyedTableSnapshot;
+import com.netease.arctic.server.table.BasicSnapshotWrapper;
+import com.netease.arctic.server.table.KeyedSnapshotWrapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.table.TableSnapshot;
+import com.netease.arctic.server.table.SnapshotWrapper;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.UnkeyedTable;
@@ -44,6 +46,7 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.TableProperties;
@@ -84,22 +87,6 @@ public class IcebergTableUtil {
     }
   }
 
-  public static TableSnapshot getSnapshot(ArcticTable arcticTable, TableRuntime tableRuntime) {
-    tableRuntime.refresh(arcticTable);
-    if (arcticTable.isUnkeyedTable()) {
-      return new BasicTableSnapshot(tableRuntime.getCurrentSnapshotId());
-    } else {
-      StructLikeMap<Long> partitionOptimizedSequence =
-          TablePropertyUtil.getPartitionOptimizedSequence(arcticTable.asKeyedTable());
-      StructLikeMap<Long> legacyPartitionMaxTransactionId =
-          TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
-      return new KeyedTableSnapshot(tableRuntime.getCurrentSnapshotId(),
-          tableRuntime.getCurrentChangeSnapshotId(),
-          partitionOptimizedSequence,
-          legacyPartitionMaxTransactionId);
-    }
-  }
-
   public static Snapshot getSnapshot(UnkeyedTable internalTable, boolean refresh) {
     if (refresh) {
       internalTable.refresh();
@@ -107,7 +94,7 @@ public class IcebergTableUtil {
     return internalTable.currentSnapshot();
   }
 
-  public static Set<String> getAllContentFilePath(UnkeyedTable internalTable) {
+  public static Set<String> getAllContentFilePath(Table internalTable) {
     Set<String> validFilesPath = new HashSet<>();
 
     TableEntriesScan entriesScan = TableEntriesScan.builder(internalTable)
@@ -124,7 +111,7 @@ public class IcebergTableUtil {
     return validFilesPath;
   }
 
-  public static Set<DeleteFile> getDanglingDeleteFiles(UnkeyedTable internalTable) {
+  public static Set<DeleteFile> getDanglingDeleteFiles(Table internalTable) {
     if (internalTable.currentSnapshot() == null) {
       return Collections.emptySet();
     }

@@ -1,5 +1,6 @@
 package com.netease.arctic.server.table.executor;
 
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
@@ -38,7 +39,7 @@ public class OptimizingCommitExecutor extends BaseTableExecutor {
   }
 
   @Override
-  public void handleTableAdded(ArcticTable table, TableRuntime tableRuntime) {
+  public void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
   }
 
   protected long getStartDelay() {

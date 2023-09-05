@@ -1,5 +1,7 @@
 package com.netease.arctic.server.optimizing;
 
+import com.netease.arctic.TableSnapshot;
+
 public interface OptimizingProcess {
 
   long getProcessId();
@@ -8,9 +10,7 @@ public interface OptimizingProcess {
 
   boolean isClosed();
 
-  long getTargetSnapshotId();
-  
-  long getTargetChangeSnapshotId();
+  TableSnapshot getFromSnapshot();
 
   long getPlanTime();
 

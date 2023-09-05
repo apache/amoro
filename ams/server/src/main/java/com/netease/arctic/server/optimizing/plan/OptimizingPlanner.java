@@ -18,11 +18,14 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
+import com.netease.arctic.TableSnapshot;
+import com.netease.arctic.formats.iceberg.IcebergSnapshot;
+import com.netease.arctic.formats.mixed.iceberg.MixedIcebergSnapshot;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
-import com.netease.arctic.server.table.KeyedTableSnapshot;
+import com.netease.arctic.server.table.KeyedSnapshotWrapper;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableTypeUtil;
@@ -81,13 +84,13 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     return partitionFilter;
   }
 
-  public long getTargetSnapshotId() {
-    return currentSnapshot.snapshotId();
+  public TableSnapshot getFromSnapshot() {
+    return currentSnapshot;
   }
 
   public long getTargetChangeSnapshotId() {
-    if (currentSnapshot instanceof KeyedTableSnapshot) {
-      return ((KeyedTableSnapshot) currentSnapshot).changeSnapshotId();
+    if (currentSnapshot instanceof KeyedSnapshotWrapper) {
+      return ((KeyedSnapshotWrapper) currentSnapshot).changeSnapshotId();
     } else {
       return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
     }

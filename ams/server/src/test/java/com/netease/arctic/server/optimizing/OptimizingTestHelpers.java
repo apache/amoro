@@ -19,9 +19,9 @@
 package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.server.table.BasicTableSnapshot;
-import com.netease.arctic.server.table.KeyedTableSnapshot;
-import com.netease.arctic.server.table.TableSnapshot;
+import com.netease.arctic.server.table.BasicSnapshotWrapper;
+import com.netease.arctic.server.table.KeyedSnapshotWrapper;
+import com.netease.arctic.server.table.SnapshotWrapper;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -37,16 +37,16 @@ import org.apache.iceberg.util.StructLikeMap;
 import java.util.List;
 
 public class OptimizingTestHelpers {
-  public static TableSnapshot getCurrentTableSnapshot(ArcticTable table) {
+  public static SnapshotWrapper getCurrentTableSnapshot(ArcticTable table) {
     if (table.isKeyedTable()) {
       return getCurrentKeyedTableSnapshot(table.asKeyedTable());
     } else {
       long baseSnapshotId = IcebergTableUtil.getSnapshotId(table.asUnkeyedTable(), true);
-      return new BasicTableSnapshot(baseSnapshotId);
+      return new BasicSnapshotWrapper(baseSnapshotId);
     }
   }
 
-  public static KeyedTableSnapshot getCurrentKeyedTableSnapshot(KeyedTable keyedTable) {
+  public static KeyedSnapshotWrapper getCurrentKeyedTableSnapshot(KeyedTable keyedTable) {
     long baseSnapshotId = IcebergTableUtil.getSnapshotId(keyedTable.baseTable(), true);
     long changeSnapshotId = IcebergTableUtil.getSnapshotId(keyedTable.changeTable(), true);
     StructLikeMap<Long> partitionOptimizedSequence =
@@ -54,7 +54,7 @@ public class OptimizingTestHelpers {
     StructLikeMap<Long> legacyPartitionMaxTransactionId =
         TablePropertyUtil.getLegacyPartitionMaxTransactionId(keyedTable);
 
-    return new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId,
+    return new KeyedSnapshotWrapper(baseSnapshotId, changeSnapshotId,
         partitionOptimizedSequence, legacyPartitionMaxTransactionId);
   }
 

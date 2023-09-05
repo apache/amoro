@@ -3,6 +3,8 @@ package com.netease.arctic.server.optimizing;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
+import com.netease.arctic.AmoroTable;
+import com.netease.arctic.TableSnapshot;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizingService;
@@ -11,6 +13,8 @@ import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
+import com.netease.arctic.formats.iceberg.IcebergSnapshot;
+import com.netease.arctic.formats.mixed.iceberg.MixedIcebergSnapshot;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.OptimizingClosedException;
@@ -302,8 +306,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     for (TableRuntime tableRuntime : scheduledTables) {
       LOG.debug("Planning table {}", tableRuntime.getTableIdentifier());
       try {
-        ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
-        OptimizingPlanner planner = new OptimizingPlanner(tableRuntime.refresh(table), table,
+        AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
+        OptimizingPlanner planner = new OptimizingPlanner(
+            tableRuntime.refresh(table),
+            (ArcticTable) table.originalTable(),
             getAvailableCore());
         if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
           LOG.info("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
@@ -344,8 +350,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     private final OptimizingType optimizingType;
     private final TableRuntime tableRuntime;
     private final long planTime;
-    private final long targetSnapshotId;
-    private final long targetChangeSnapshotId;
+    private final TableSnapshot fromSnapshot;
     private final Map<OptimizingTaskId, TaskRuntime> taskMap = Maps.newHashMap();
     private final Lock lock = new ReentrantLock();
     private volatile Status status = OptimizingProcess.Status.RUNNING;
@@ -362,8 +367,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       tableRuntime = planner.getTableRuntime();
       optimizingType = planner.getOptimizingType();
       planTime = planner.getPlanTime();
-      targetSnapshotId = planner.getTargetSnapshotId();
-      targetChangeSnapshotId = planner.getTargetChangeSnapshotId();
+      fromSnapshot = planner.getFromSnapshot();
       loadTaskRuntimes(planner.planTasks());
       fromSequence = planner.getFromSequence();
       toSequence = planner.getToSequence();
@@ -374,8 +378,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       processId = tableRuntimeMeta.getOptimizingProcessId();
       tableRuntime = tableRuntimeMeta.getTableRuntime();
       optimizingType = tableRuntimeMeta.getOptimizingType();
-      targetSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
-      targetChangeSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
+      fromSnapshot = tableRuntimeMeta.getFromSnapshot();
       planTime = tableRuntimeMeta.getPlanTime();
       if (tableRuntimeMeta.getFromSequence() != null) {
         fromSequence = tableRuntimeMeta.getFromSequence();
@@ -458,6 +461,11 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     }
 
     @Override
+    public TableSnapshot getFromSnapshot() {
+      return fromSnapshot;
+    }
+
+    @Override
     public long getPlanTime() {
       return planTime;
     }
@@ -468,16 +476,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           System.currentTimeMillis() - planTime :
           endTime - planTime;
       return Math.max(0, dur);
-    }
-
-    @Override
-    public long getTargetSnapshotId() {
-      return targetSnapshotId;
-    }
-
-    @Override
-    public long getTargetChangeSnapshotId() {
-      return targetChangeSnapshotId;
     }
 
     public String getFailedReason() {
@@ -546,13 +544,25 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       return new MetricsSummary(taskMap.values());
     }
 
-    private UnKeyedTableCommit buildCommit() {
-      ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
-      if (table.isUnkeyedTable()) {
-        return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values());
+    private long getFromSnapshotId() {
+      long fromSnapshotId;
+      if (fromSnapshot instanceof MixedIcebergSnapshot) {
+        fromSnapshotId = ((MixedIcebergSnapshot)fromSnapshot).getBaseSnapshotId();
       } else {
-        return new KeyedTableCommit(table, taskMap.values(), targetSnapshotId,
-            convertPartitionSequence(table, fromSequence), convertPartitionSequence(table, toSequence));
+        fromSnapshotId = ((IcebergSnapshot)fromSnapshot).getSnapshot().snapshotId();
+      }
+      return fromSnapshotId;
+    }
+
+    private UnKeyedTableCommit buildCommit() {
+      AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
+      ArcticTable arcticTable = (ArcticTable) table.originalTable();
+      long fromSnapshotId = getFromSnapshotId();
+      if (arcticTable.isUnkeyedTable()) {
+        return new UnKeyedTableCommit(fromSnapshotId, arcticTable, taskMap.values());
+      } else {
+        return new KeyedTableCommit(arcticTable, taskMap.values(), fromSnapshotId,
+            convertPartitionSequence(arcticTable, fromSequence), convertPartitionSequence(arcticTable, toSequence));
       }
     }
 
@@ -574,7 +584,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       doAsTransaction(
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.insertOptimizingProcess(tableRuntime.getTableIdentifier(),
-                  processId, targetSnapshotId, targetChangeSnapshotId, status, optimizingType, planTime, getSummary(),
+                  processId, fromSnapshot, status, optimizingType, planTime, getSummary(),
                   fromSequence, toSequence)),
           () -> doAs(OptimizingMapper.class, mapper ->
               mapper.insertTaskRuntimes(Lists.newArrayList(taskMap.values()))),

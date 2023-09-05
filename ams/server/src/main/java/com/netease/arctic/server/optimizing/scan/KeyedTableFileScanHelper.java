@@ -27,7 +27,7 @@ import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.server.ArcticServiceConstants;
-import com.netease.arctic.server.table.KeyedTableSnapshot;
+import com.netease.arctic.server.table.KeyedSnapshotWrapper;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -70,12 +70,17 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
   private final StructLikeMap<Long> partitionOptimizedSequence;
   private final StructLikeMap<Long> legacyPartitionMaxTransactionId;
 
-  public KeyedTableFileScanHelper(KeyedTable arcticTable, KeyedTableSnapshot snapshot) {
+  public KeyedTableFileScanHelper(
+      KeyedTable arcticTable,
+      long changeSnapshotId,
+      long baseSnapshotId,
+      StructLikeMap<Long> partitionOptimizedSequence,
+      StructLikeMap<Long> legacyPartitionMaxTransactionId) {
     this.arcticTable = arcticTable;
-    this.baseSnapshotId = snapshot.baseSnapshotId();
-    this.changeSnapshotId = snapshot.changeSnapshotId();
-    this.partitionOptimizedSequence = snapshot.partitionOptimizedSequence();
-    this.legacyPartitionMaxTransactionId = snapshot.legacyPartitionMaxTransactionId();
+    this.changeSnapshotId = changeSnapshotId;
+    this.baseSnapshotId = baseSnapshotId;
+    this.partitionOptimizedSequence = partitionOptimizedSequence;
+    this.legacyPartitionMaxTransactionId = legacyPartitionMaxTransactionId;
   }
 
   @Override

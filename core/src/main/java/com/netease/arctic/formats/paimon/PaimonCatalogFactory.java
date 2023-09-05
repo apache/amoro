@@ -16,48 +16,32 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.formats.iceberg;
+package com.netease.arctic.formats.paimon;
 
-import com.netease.arctic.AmoroTable;
-import com.netease.arctic.TableSnapshot;
+import com.netease.arctic.FormatCatalog;
+import com.netease.arctic.FormatCatalogFactory;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.table.TableIdentifier;
-import org.apache.iceberg.Table;
+import com.netease.arctic.utils.CatalogUtil;
+import org.apache.hadoop.conf.Configuration;
 import java.util.Map;
+import org.apache.paimon.catalog.CatalogContext;
+import org.apache.paimon.catalog.CatalogFactory;
+import org.apache.paimon.options.CatalogOptions;
+import org.apache.paimon.options.Options;
 
-public class IcebergTable implements AmoroTable<Table> {
-
-  TableIdentifier identifier;
-  Table table;
-
-  public IcebergTable(TableIdentifier identifier, Table table) {
-    this.table = table;
-    this.identifier = identifier;
-  }
-
+public class PaimonCatalogFactory implements FormatCatalogFactory {
   @Override
-  public TableIdentifier id() {
-    return this.identifier;
+  public PaimonCatalog create(
+      String name, String metastoreType, Map<String, String> properties, Configuration configuration) {
+    Options options = Options.fromMap(properties);
+
+    CatalogContext catalogContext = CatalogContext.create(options, configuration);
+
+    return new PaimonCatalog(CatalogFactory.createCatalog(catalogContext), name);
   }
 
   @Override
   public TableFormat format() {
-    return TableFormat.ICEBERG;
-  }
-
-  @Override
-  public Map<String, String> properties() {
-    return table.properties();
-  }
-
-  @Override
-  public Table originalTable() {
-    return table;
-  }
-
-  @Override
-  public TableSnapshot currentSnapshot() {
-    org.apache.iceberg.Snapshot snapshot = table.currentSnapshot();
-    return new IcebergSnapshot(snapshot);
+    return TableFormat.PAIMON;
   }
 }

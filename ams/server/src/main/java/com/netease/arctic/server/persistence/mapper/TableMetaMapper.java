@@ -257,10 +257,11 @@ public interface TableMetaMapper {
   })
   List<ServerTableIdentifier> selectAllTableIdentifiers();
 
-  @Update("UPDATE table_runtime SET current_snapshot_id = #{runtime.currentSnapshotId}," +
-      " current_change_snapshotId =#{runtime.currentChangeSnapshotId}," +
-      " last_optimized_snapshotId = #{runtime.lastOptimizedSnapshotId}," +
-      " last_optimized_change_snapshotId = #{runtime.lastOptimizedChangeSnapshotId}," +
+  @Update("UPDATE table_runtime SET " +
+      " current_snapshot = #{runtime.currentSnapshot, " +
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}," +
+      " last_optimized_snapshot = #{runtime.lastOptimizedSnapshot, " +
+      " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}," +
       " last_major_optimizing_time = #{runtime.lastMajorOptimizingTime, " +
       " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " last_minor_optimizing_time = #{runtime.lastMinorOptimizingTime," +
@@ -282,15 +283,16 @@ public interface TableMetaMapper {
   @Delete("DELETE FROM table_runtime WHERE table_id = #{tableId}")
   void deleteOptimizingRuntime(@Param("tableId") long tableId);
 
-  @Insert("INSERT INTO table_runtime (table_id, catalog_name, db_name, table_name, current_snapshot_id," +
-      " current_change_snapshotId, last_optimized_snapshotId, last_optimized_change_snapshotId," +
+  @Insert("INSERT INTO table_runtime (table_id, catalog_name, db_name, table_name, format, current_snapshot," +
+      " last_optimized_snapshot, " +
       " last_major_optimizing_time, last_minor_optimizing_time," +
       " last_full_optimizing_time, optimizing_status, optimizing_status_start_time, optimizing_process_id," +
       " optimizer_group, table_config, pending_input) VALUES" +
       " (#{runtime.tableIdentifier.id}, #{runtime.tableIdentifier.catalog}," +
-      " #{runtime.tableIdentifier.database}, #{runtime.tableIdentifier.tableName},#{runtime.currentSnapshotId}," +
-      " #{runtime.currentChangeSnapshotId}, #{runtime.lastOptimizedSnapshotId}," +
-      " #{runtime.lastOptimizedChangeSnapshotId}, #{runtime.lastMajorOptimizingTime," +
+      " #{runtime.tableIdentifier.database}, #{runtime.tableIdentifier.tableName}, #{runtime.format}," +
+      " #{runtime.currentSnapshot, typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}," +
+      " #{runtime.lastOptimizedSnapshot, typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}," +
+      " #{runtime.lastMajorOptimizingTime," +
       " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
       " #{runtime.lastMinorOptimizingTime," +
       " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
@@ -306,22 +308,23 @@ public interface TableMetaMapper {
       " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter})")
   void insertTableRuntime(@Param("runtime") TableRuntime runtime);
 
-  @Select("SELECT a.table_id, a.catalog_name, a.db_name, a.table_name, a.current_snapshot_id, a" +
-      ".current_change_snapshotId, a.last_optimized_snapshotId, a.last_optimized_change_snapshotId," +
+  @Select("SELECT a.table_id, a.catalog_name, a.db_name, a.table_name, a.format, a.current_snapshot, " +
+      " a.last_optimized_snapshot," +
       " a.last_major_optimizing_time, a.last_minor_optimizing_time, a.last_full_optimizing_time, a.optimizing_status," +
       " a.optimizing_status_start_time, a.optimizing_process_id," +
-      " a.optimizer_group, a.table_config, a.pending_input, b.optimizing_type, b.target_snapshot_id," +
-      " b.target_change_snapshot_id, b.plan_time, b.from_sequence, b.to_sequence FROM table_runtime a" +
+      " a.optimizer_group, a.table_config, a.pending_input, b.optimizing_type, b.from_snapshot," +
+      " b.plan_time, b.from_sequence, b.to_sequence FROM table_runtime a" +
       " LEFT JOIN table_optimizing_process b ON a.optimizing_process_id = b.process_id")
   @Results({
       @Result(property = "tableId", column = "table_id"),
       @Result(property = "catalogName", column = "catalog_name"),
       @Result(property = "dbName", column = "db_name"),
       @Result(property = "tableName", column = "table_name"),
-      @Result(property = "currentSnapshotId", column = "current_snapshot_id"),
-      @Result(property = "currentChangeSnapshotId", column = "current_change_snapshotId"),
-      @Result(property = "lastOptimizedSnapshotId", column = "last_optimized_snapshotId"),
-      @Result(property = "lastOptimizedChangeSnapshotId", column = "last_optimized_change_snapshotId"),
+      @Result(property = "format", column = "format"),
+      @Result(property = "currentSnapshotId", column = "current_snapshot_id",
+          typeHandler = JsonObjectConverter.class),
+      @Result(property = "lastOptimizedSnapshotId", column = "last_optimized_snapshotId",
+          typeHandler = JsonObjectConverter.class),
       @Result(property = "lastMajorOptimizingTime", column = "last_major_optimizing_time", typeHandler =
           Long2TsConverter.class),
       @Result(property = "lastMinorOptimizingTime", column = "last_minor_optimizing_time", typeHandler =
@@ -336,8 +339,7 @@ public interface TableMetaMapper {
       @Result(property = "tableConfig", column = "table_config", typeHandler = JsonObjectConverter.class),
       @Result(property = "pendingInput", column = "pending_input", typeHandler = JsonObjectConverter.class),
       @Result(property = "optimizingType", column = "optimizing_type"),
-      @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
-      @Result(property = "targetChangeSnapshotId", column = "target_change_napshot_id"),
+      @Result(property = "fromSnapshot", column = "from_snapshot", typeHandler = JsonObjectConverter.class),
       @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),
       @Result(property = "fromSequence", column = "from_sequence", typeHandler = MapLong2StringConverter.class),
       @Result(property = "toSequence", column = "to_sequence", typeHandler = MapLong2StringConverter.class)

@@ -1,10 +1,11 @@
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.table.ArcticTable;
 
 public interface TableManager extends TableRuntimeHandler {
 
-  ArcticTable loadTable(ServerTableIdentifier tableIdentifier);
+  AmoroTable<?> loadTable(ServerTableIdentifier tableIdentifier);
 
   TableRuntime getRuntime(ServerTableIdentifier tableIdentifier);
 

@@ -20,13 +20,13 @@ package com.netease.arctic.server.table;
 
 import org.apache.iceberg.util.StructLikeMap;
 
-public class KeyedTableSnapshot implements TableSnapshot {
+public class KeyedSnapshotWrapper implements SnapshotWrapper {
   private final long baseSnapshotId;
   private final long changeSnapshotId;
   private final StructLikeMap<Long> partitionOptimizedSequence;
   private final StructLikeMap<Long> legacyPartitionMaxTransactionId;
 
-  public KeyedTableSnapshot(long baseSnapshotId, long changeSnapshotId,
+  public KeyedSnapshotWrapper(long baseSnapshotId, long changeSnapshotId,
                             StructLikeMap<Long> partitionOptimizedSequence,
                             StructLikeMap<Long> legacyPartitionMaxTransactionId) {
     this.baseSnapshotId = baseSnapshotId;
