@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,23 +16,16 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.trace;
+package com.netease.arctic.op;
 
-import com.netease.arctic.AmsClient;
-import com.netease.arctic.op.ArcticUpdate;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
-
 import java.util.function.Supplier;
 
-/**
- * Wrap {@link DeleteFiles} with {@link TableTracer}.
- */
 public class ArcticDeleteFiles extends ArcticUpdate<DeleteFiles> implements DeleteFiles {
 
   private final DeleteFiles deleteFiles;
@@ -41,8 +34,8 @@ public class ArcticDeleteFiles extends ArcticUpdate<DeleteFiles> implements Dele
     return new Builder(table);
   }
 
-  protected ArcticDeleteFiles(ArcticTable table, DeleteFiles deleteFiles, TableTracer tracer) {
-    super(table, deleteFiles, tracer);
+  protected ArcticDeleteFiles(ArcticTable table, DeleteFiles deleteFiles) {
+    super(table, deleteFiles);
     this.deleteFiles = deleteFiles;
   }
 
@@ -82,26 +75,15 @@ public class ArcticDeleteFiles extends ArcticUpdate<DeleteFiles> implements Dele
     }
 
     @Override
-    public ArcticUpdate.Builder<ArcticDeleteFiles, DeleteFiles> traceTable(AmsClient client, UnkeyedTable traceTable) {
-      if (client != null) {
-        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.DELETE, client, true);
-        traceTable(tracer);
-      }
-      return this;
-    }
-
-    @Override
     protected ArcticDeleteFiles updateWithWatermark(
-        TableTracer tableTracer,
         Transaction transaction,
         boolean autoCommitTransaction) {
-      return new ArcticDeleteFiles(table, transaction.newDelete(), tableTracer);
+      return new ArcticDeleteFiles(table, transaction.newDelete());
     }
 
     @Override
-    protected ArcticDeleteFiles updateWithoutWatermark(
-        TableTracer tableTracer, Supplier<DeleteFiles> delegateSupplier) {
-      return new ArcticDeleteFiles(table, delegateSupplier.get(), tableTracer);
+    protected ArcticDeleteFiles updateWithoutWatermark(Supplier<DeleteFiles> delegateSupplier) {
+      return new ArcticDeleteFiles(table, delegateSupplier.get());
     }
 
     @Override
@@ -113,6 +95,5 @@ public class ArcticDeleteFiles extends ArcticUpdate<DeleteFiles> implements Dele
     protected Supplier<DeleteFiles> tableStoreDelegateSupplier(Table tableStore) {
       return tableStore::newDelete;
     }
-
   }
 }

@@ -16,17 +16,13 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.trace;
+package com.netease.arctic.op;
 
-import com.netease.arctic.AmsClient;
-import com.netease.arctic.op.ArcticUpdate;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
-
 import java.util.function.Supplier;
 
 public class ArcticReplacePartitions extends ArcticUpdate<ReplacePartitions> implements ReplacePartitions {
@@ -37,14 +33,15 @@ public class ArcticReplacePartitions extends ArcticUpdate<ReplacePartitions> imp
     return new ArcticReplacePartitions.Builder(table);
   }
 
-  private ArcticReplacePartitions(ArcticTable arcticTable, ReplacePartitions replacePartitions, TableTracer tracer) {
-    super(arcticTable, replacePartitions, tracer);
+  private ArcticReplacePartitions(ArcticTable arcticTable, ReplacePartitions replacePartitions) {
+    super(arcticTable, replacePartitions);
     this.replacePartitions = replacePartitions;
   }
 
-  private ArcticReplacePartitions(ArcticTable arcticTable, ReplacePartitions replacePartitions, TableTracer tracer,
+  private ArcticReplacePartitions(
+      ArcticTable arcticTable, ReplacePartitions replacePartitions,
       Transaction transaction, boolean autoCommitTransaction) {
-    super(arcticTable, replacePartitions, tracer, transaction, autoCommitTransaction);
+    super(arcticTable, replacePartitions, transaction, autoCommitTransaction);
     this.replacePartitions = replacePartitions;
   }
 
@@ -79,7 +76,6 @@ public class ArcticReplacePartitions extends ArcticUpdate<ReplacePartitions> imp
     return this;
   }
 
-
   @Override
   protected ReplacePartitions self() {
     return this;
@@ -93,27 +89,14 @@ public class ArcticReplacePartitions extends ArcticUpdate<ReplacePartitions> imp
     }
 
     @Override
-    public ArcticUpdate.Builder<ArcticReplacePartitions, ReplacePartitions> traceTable(
-        AmsClient client, UnkeyedTable traceTable) {
-      if (client != null) {
-        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.OVERWRITE, client, true);
-        traceTable(tracer);
-      }
-      return this;
-    }
-
-    @Override
-    protected ArcticReplacePartitions updateWithWatermark(
-        TableTracer tableTracer, Transaction transaction, boolean autoCommitTransaction) {
-      return new ArcticReplacePartitions(table, transaction.newReplacePartitions(),
-          tableTracer, transaction, autoCommitTransaction);
+    protected ArcticReplacePartitions updateWithWatermark(Transaction transaction, boolean autoCommitTransaction) {
+      return new ArcticReplacePartitions(table, transaction.newReplacePartitions(), transaction, autoCommitTransaction);
     }
 
     @Override
     protected ArcticReplacePartitions updateWithoutWatermark(
-        TableTracer tableTracer,
         Supplier<ReplacePartitions> delegateSupplier) {
-      return new ArcticReplacePartitions(table, delegateSupplier.get(), tableTracer);
+      return new ArcticReplacePartitions(table, delegateSupplier.get());
     }
 
     @Override

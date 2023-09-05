@@ -22,7 +22,6 @@ import com.netease.arctic.ams.api.TableFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
-import org.apache.iceberg.Transaction;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
@@ -80,11 +79,6 @@ public abstract class BasicTableBuilder<ThisT extends TableBuilder> implements T
   public TableBuilder withPrimaryKeySpec(PrimaryKeySpec primaryKeySpec) {
     this.keySpec = primaryKeySpec;
     return self();
-  }
-
-  @Override
-  public Transaction newCreateTableTransaction() {
-    throw new UnsupportedOperationException("do not support create table transactional.");
   }
 
   protected abstract ThisT self();
