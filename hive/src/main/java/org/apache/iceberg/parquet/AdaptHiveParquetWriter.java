@@ -127,7 +127,7 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
 
   @Override
   public Metrics metrics() {
-    return ParquetUtil.footerMetrics(writer.getFooter(), model.metrics(), metricsConfig);
+    return AdaptHiveParquetUtil.footerMetrics(writer.getFooter(), model.metrics(), metricsConfig);
   }
 
   /**

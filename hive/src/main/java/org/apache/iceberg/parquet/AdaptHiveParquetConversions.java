@@ -58,7 +58,8 @@ class AdaptHiveParquetConversions {
       case LONG:
       case TIME:
       case TIMESTAMP:
-        return (Literal<T>) Literal.of((Long) value);
+        Function<Object, Object> timeConversion = converterFromParquet(parquetType, type);
+        return (Literal<T>) Literal.of((Long) timeConversion.apply(value));
       case FLOAT:
         return (Literal<T>) Literal.of((Float) value);
       case DOUBLE:
