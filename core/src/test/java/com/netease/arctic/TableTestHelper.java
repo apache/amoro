@@ -41,6 +41,10 @@ public interface TableTestHelper {
   TableIdentifier TEST_TABLE_ID =
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, TEST_TABLE_NAME);
 
+  default TableIdentifier id() {
+    return TEST_TABLE_ID;
+  }
+
   Schema tableSchema();
 
   PartitionSpec partitionSpec();

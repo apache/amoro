@@ -31,7 +31,7 @@ import java.net.URI;
  */
 public class ArcticHdfsConfiguration implements HdfsConfiguration {
 
-  private ArcticCatalogFactory arcticCatalogFactory;
+  private final ArcticCatalogFactory arcticCatalogFactory;
 
   @Inject
   public ArcticHdfsConfiguration(ArcticCatalogFactory arcticCatalogFactory) {
@@ -41,9 +41,7 @@ public class ArcticHdfsConfiguration implements HdfsConfiguration {
   @Override
   public Configuration getConfiguration(HdfsContext context, URI uri) {
     try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(this.getClass().getClassLoader())) {
-      Configuration configuration = ((ArcticCatalogSupportTableSuffix) arcticCatalogFactory.getArcticCatalog())
-          .getTableMetaStore().getConfiguration();
-      return configuration;
+      return arcticCatalogFactory.getTableMetastore().getConfiguration();
     }
   }
 }

@@ -31,6 +31,7 @@ import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
+import com.netease.arctic.op.SnapshotSummary;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataOperations;
