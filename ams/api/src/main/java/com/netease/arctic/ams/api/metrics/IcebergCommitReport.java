@@ -19,6 +19,8 @@
 package com.netease.arctic.ams.api.metrics;
 
 import com.codahale.metrics.Counter;
+import com.codahale.metrics.DefaultSettableGauge;
+import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Timer;
 
 import java.util.Map;
@@ -32,6 +34,7 @@ public class IcebergCommitReport implements MetricReport {
   public static final String SEQUENCE_NUMBER = "sequence-number";
   public static final String OPERATION = "operation";
   public static final String METADATA = "metadata";
+  public static final String COMMIE_TIME = "commit-time";
 
   public static final String TOTAL_DURATION = "total-duration";
   public static final String ATTEMPTS = "attempts";
@@ -63,6 +66,7 @@ public class IcebergCommitReport implements MetricReport {
   private final Long sequenceNumber;
   private final String operation;
   private final Map<String, String> metadata;
+  private final Long commitTime;
 
   private final Timer totalDuration = new Timer();
   private final Counter attempts = new Counter();
@@ -91,12 +95,13 @@ public class IcebergCommitReport implements MetricReport {
 
   public IcebergCommitReport(
       String tableName, Long snapshotId, Long sequenceNumber, String operation, Map<String,
-      String> metadata) {
+      String> metadata, Long commitTime) {
     this.tableName = tableName;
     this.snapshotId = snapshotId;
     this.sequenceNumber = sequenceNumber;
     this.operation = operation;
     this.metadata = metadata;
+    this.commitTime = commitTime;
   }
 
   @Override
@@ -126,6 +131,11 @@ public class IcebergCommitReport implements MetricReport {
 
   public Map<String, String> metadata() {
     return this.metadata;
+  }
+
+  @TaggedMetrics.Tag(name = COMMIE_TIME)
+  public long commitTime() {
+    return this.commitTime;
   }
 
   @TaggedMetrics.Metric(name = TOTAL_DURATION)
