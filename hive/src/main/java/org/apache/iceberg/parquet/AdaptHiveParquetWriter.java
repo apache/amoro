@@ -127,6 +127,7 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
 
   @Override
   public Metrics metrics() {
+    //Change For Arctic: Add metrics for int96 type
     return AdaptHiveParquetUtil.footerMetrics(writer.getFooter(), model.metrics(), metricsConfig);
   }
 

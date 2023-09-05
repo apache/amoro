@@ -58,8 +58,10 @@ class AdaptHiveParquetConversions {
       case LONG:
       case TIME:
       case TIMESTAMP:
+        //Change For Arctic: Add metrics for int96 type
         Function<Object, Object> timeConversion = converterFromParquet(parquetType, type);
         return (Literal<T>) Literal.of((Long) timeConversion.apply(value));
+        //Change For Arctic
       case FLOAT:
         return (Literal<T>) Literal.of((Float) value);
       case DOUBLE:

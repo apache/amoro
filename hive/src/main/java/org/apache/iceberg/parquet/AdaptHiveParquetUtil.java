@@ -124,6 +124,7 @@ public class AdaptHiveParquetUtil {
           if (metricsMode != MetricsModes.Counts.get() && !fieldMetricsMap.containsKey(fieldId)) {
             Types.NestedField field = fileSchema.findField(fieldId);
             if (field != null && stats.hasNonNullValue() && shouldStoreBounds(column, fileSchema)) {
+              //Change For Arctic: Add metrics for int96 type
               Literal<?> min =
                   AdaptHiveParquetConversions.fromParquetPrimitive(
                       field.type(), column.getPrimitiveType(), stats.genericGetMin());
@@ -132,6 +133,7 @@ public class AdaptHiveParquetUtil {
                   AdaptHiveParquetConversions.fromParquetPrimitive(
                       field.type(), column.getPrimitiveType(), stats.genericGetMax());
               updateMax(upperBounds, fieldId, field.type(), max, metricsMode);
+              //Change For Arctic
             }
           }
         }
@@ -221,6 +223,9 @@ public class AdaptHiveParquetUtil {
 
   // we allow struct nesting, but not maps or arrays
   private static boolean shouldStoreBounds(ColumnChunkMetaData column, Schema schema) {
+    //Change For Arctic: Add metrics for int96 type
+    // Delete int96 don't need metric logic.
+    //Change For Arctic
     ColumnPath columnPath = column.getPath();
     Iterator<String> pathIterator = columnPath.iterator();
     Type currentType = schema.asStruct();
