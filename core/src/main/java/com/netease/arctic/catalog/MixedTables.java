@@ -30,7 +30,6 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Map;
 
 public class MixedTables {
@@ -102,8 +101,8 @@ public class MixedTables {
         CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
             tableMetaStore.getConfiguration()),
         fileIO, amsClient, catalogMeta.getCatalogProperties());
-    return new BasicKeyedTable(tableMeta, tableLocation,
-        buildPrimaryKeySpec(baseTable.schema(), tableMeta), amsClient, baseTable, changeTable);
+    PrimaryKeySpec keySpec = buildPrimaryKeySpec(baseTable.schema(), tableMeta);
+    return new BasicKeyedTable(tableLocation, keySpec, baseTable, changeTable);
   }
 
   protected String checkLocation(TableMeta meta, String locationKey) {
@@ -137,8 +136,9 @@ public class MixedTables {
         fileIO, tableMetaStore.getConfiguration()), fileIO, amsClient, catalogMeta.getCatalogProperties());
   }
 
-  public ArcticTable createTableByMeta(TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
-                                       PartitionSpec partitionSpec) {
+  public ArcticTable createTableByMeta(
+      TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
+      PartitionSpec partitionSpec) {
     if (primaryKeySpec.primaryKeyExisted()) {
       return createKeyedTable(tableMeta, schema, primaryKeySpec, partitionSpec);
     } else {
@@ -146,8 +146,9 @@ public class MixedTables {
     }
   }
 
-  protected KeyedTable createKeyedTable(TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
-                                        PartitionSpec partitionSpec) {
+  protected KeyedTable createKeyedTable(
+      TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
+      PartitionSpec partitionSpec) {
     TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
@@ -164,7 +165,6 @@ public class MixedTables {
         throw new IllegalStateException("create base table failed", e);
       }
     });
-
     BaseTable baseTable = new BasicKeyedTable.BaseInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO,
             tableMetaStore.getConfiguration()),
@@ -181,8 +181,7 @@ public class MixedTables {
         CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
             tableMetaStore.getConfiguration()),
         fileIO, amsClient, catalogMeta.getCatalogProperties());
-    return new BasicKeyedTable(tableMeta, tableLocation,
-        primaryKeySpec, amsClient, baseTable, changeTable);
+    return new BasicKeyedTable(tableLocation, primaryKeySpec, baseTable, changeTable);
   }
 
   protected void fillTableProperties(TableMeta tableMeta) {
@@ -192,8 +191,9 @@ public class MixedTables {
     tableMeta.putToProperties("flink.max-continuous-empty-commits", String.valueOf(Integer.MAX_VALUE));
   }
 
-  protected UnkeyedTable createUnKeyedTable(TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
-                                            PartitionSpec partitionSpec) {
+  protected UnkeyedTable createUnKeyedTable(
+      TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
+      PartitionSpec partitionSpec) {
     TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);

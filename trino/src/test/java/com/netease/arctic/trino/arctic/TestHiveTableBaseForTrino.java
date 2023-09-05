@@ -18,18 +18,17 @@
 
 package com.netease.arctic.trino.arctic;
 
-import com.netease.arctic.CatalogMetaTestUtil;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.MockArcticMetastoreServer;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
+import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import io.trino.testng.services.ManageTestResources;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.Partition;
@@ -44,34 +43,32 @@ import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.rules.TemporaryFolder;
-
-import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 
 public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
   protected static final String HIVE_DB_NAME = "hivedb";
   protected static final String HIVE_CATALOG_NAME = "hive_catalog";
   protected static final AtomicInteger testCount = new AtomicInteger(0);
 
-  protected static final TemporaryFolder tempFolder = new TemporaryFolder();
-
+  private static final TemporaryFolder tempFolder = new TemporaryFolder();
+  @ManageTestResources.Suppress(because = "no need")
   protected static HMSMockServer hms;
 
   protected static final TableIdentifier HIVE_TABLE_ID =
-      TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "test_hive_table");
+      TableIdentifier.of(TEST_CATALOG_NAME, HIVE_DB_NAME, "test_hive_table");
   protected static final TableIdentifier HIVE_PK_TABLE_ID =
-      TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "test_pk_hive_table");
+      TableIdentifier.of(TEST_CATALOG_NAME, HIVE_DB_NAME, "test_pk_hive_table");
 
   protected static final TableIdentifier UN_PARTITION_HIVE_TABLE_ID =
-      TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "un_partition_test_hive_table");
+      TableIdentifier.of(TEST_CATALOG_NAME, HIVE_DB_NAME, "un_partition_test_hive_table");
   protected static final TableIdentifier UN_PARTITION_HIVE_PK_TABLE_ID =
-      TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "un_partition_test_pk_hive_table");
+      TableIdentifier.of(TEST_CATALOG_NAME, HIVE_DB_NAME, "un_partition_test_pk_hive_table");
 
   public static final String COLUMN_NAME_ID = "id";
   public static final String COLUMN_NAME_OP_TIME = "op_time";
@@ -112,7 +109,6 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
   protected UnkeyedHiveTable testUnPartitionHiveTable;
   protected KeyedHiveTable testUnPartitionKeyedHiveTable;
 
-
   protected static void startMetastore() throws Exception {
     int ref = testCount.incrementAndGet();
     if (ref == 1) {
@@ -124,29 +120,9 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
       Database db = new Database(HIVE_DB_NAME, "description", dbPath, new HashMap<>());
       hms.getClient().createDatabase(db);
 
-      Map<String, String> storageConfig = new HashMap<>();
-      storageConfig.put(
-          CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE,
-          CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS);
-      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE, MockArcticMetastoreServer.getHadoopSite());
-      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE, MockArcticMetastoreServer.getHadoopSite());
-      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE, CatalogMetaTestUtil.encodingSite(hms.hiveConf()));
-
-
-      Map<String, String> authConfig = new HashMap<>();
-      authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE,
-          CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE);
-      authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME,
-          System.getProperty("user.name"));
-
-      Map<String, String> catalogProperties = new HashMap<>();
-
-      CatalogMeta catalogMeta = new CatalogMeta(HIVE_CATALOG_NAME, CATALOG_TYPE_HIVE,
-          storageConfig, authConfig, catalogProperties);
-      AMS.createCatalogIfAbsent(catalogMeta);
+      setupCatalog(new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, hms.hiveConf()));
     }
   }
-
 
   protected static void stopMetastore() {
     int ref = testCount.decrementAndGet();
@@ -157,36 +133,33 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
     }
   }
 
-
   protected void setupTables() throws Exception {
-    hiveCatalog = (ArcticHiveCatalog) CatalogLoader.load(AMS.getUrl(HIVE_CATALOG_NAME));
-    File tableDir = tmp.newFolder();
+    hiveCatalog = (ArcticHiveCatalog) CatalogLoader.load(AMS.getUrl(TEST_CATALOG_NAME));
 
     testHiveTable = (UnkeyedHiveTable) hiveCatalog
         .newTableBuilder(HIVE_TABLE_ID, HIVE_TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/table")
+        .withProperty(TableProperties.LOCATION, warehousePath() + "/table")
         .withPartitionSpec(HIVE_SPEC)
         .create().asUnkeyedTable();
 
     testUnPartitionHiveTable = (UnkeyedHiveTable) hiveCatalog
         .newTableBuilder(UN_PARTITION_HIVE_TABLE_ID, HIVE_TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/un_partition_table")
+        .withProperty(TableProperties.LOCATION, warehousePath() + "/un_partition_table")
         .create().asUnkeyedTable();
 
     testKeyedHiveTable = (KeyedHiveTable) hiveCatalog
         .newTableBuilder(HIVE_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_table")
+        .withProperty(TableProperties.LOCATION, warehousePath() + "/pk_table")
         .withPartitionSpec(HIVE_SPEC)
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
 
     testUnPartitionKeyedHiveTable = (KeyedHiveTable) hiveCatalog
         .newTableBuilder(UN_PARTITION_HIVE_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/un_partition_pk_table")
+        .withProperty(TableProperties.LOCATION, warehousePath() + "/un_partition_pk_table")
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
   }
-
 
   protected void clearTable() {
     hiveCatalog.dropTable(HIVE_TABLE_ID, true);
@@ -200,7 +173,6 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
 
     hiveCatalog.dropTable(UN_PARTITION_HIVE_PK_TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(UN_PARTITION_HIVE_PK_TABLE_ID.buildTableIdentifier());
-    AMS.stopAndCleanUp();
     AMS = null;
   }
 
@@ -251,7 +223,8 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
    * @param table
    * @throws TException
    */
-  public static void assertHivePartitionLocations(Map<String, String> partitionLocations, ArcticTable table) throws TException {
+  public static void assertHivePartitionLocations(Map<String, String> partitionLocations, ArcticTable table)
+      throws TException {
     TableIdentifier identifier = table.id();
     final String database = identifier.getDatabase();
     final String tableName = identifier.getTableName();
@@ -274,7 +247,8 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
 
     for (Partition p : partitions) {
       String valuePath = getPartitionPath(p.getValues(), table.spec());
-      Assert.assertTrue("partition " + valuePath + " is not expected",
+      Assert.assertTrue(
+          "partition " + valuePath + " is not expected",
           partitionLocations.containsKey(valuePath));
 
       String locationExpect = partitionLocations.get(valuePath);

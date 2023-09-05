@@ -18,26 +18,26 @@
 
 package com.netease.arctic.server.optimizing.scan;
 
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
 
 import java.util.List;
 
 public interface TableFileScanHelper {
   class FileScanResult {
-    private final IcebergDataFile file;
-    private final List<IcebergContentFile<?>> deleteFiles;
+    private final DataFile file;
+    private final List<ContentFile<?>> deleteFiles;
 
-    public FileScanResult(IcebergDataFile file, List<IcebergContentFile<?>> deleteFiles) {
+    public FileScanResult(DataFile file, List<ContentFile<?>> deleteFiles) {
       this.file = file;
       this.deleteFiles = deleteFiles;
     }
 
-    public IcebergDataFile file() {
+    public DataFile file() {
       return file;
     }
 
-    public List<IcebergContentFile<?>> deleteFiles() {
+    public List<ContentFile<?>> deleteFiles() {
       return deleteFiles;
     }
   }

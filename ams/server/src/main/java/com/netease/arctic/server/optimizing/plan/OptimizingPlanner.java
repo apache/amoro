@@ -118,8 +118,8 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     }
 
     List<PartitionEvaluator> evaluators = new ArrayList<>(partitionPlanMap.values());
-    evaluators.sort(Comparator.comparing(PartitionEvaluator::getWeight));
-    Collections.reverse(evaluators);
+    // prioritize partitions with high cost to avoid starvation
+    evaluators.sort(Comparator.comparing(PartitionEvaluator::getWeight, Comparator.reverseOrder()));
 
     double maxInputSize = MAX_INPUT_FILE_SIZE_PER_THREAD * availableCore;
     List<PartitionEvaluator> inputPartitions = Lists.newArrayList();

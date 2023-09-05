@@ -74,6 +74,8 @@ import org.apache.iceberg.types.Types;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
@@ -438,5 +440,35 @@ public class DataTestHelpers {
     expectRecord.setField(com.netease.arctic.table.MetadataColumns.FILE_OFFSET_FILED_NAME, offset);
     expectRecord.setField(com.netease.arctic.table.MetadataColumns.CHANGE_ACTION_NAME, action.toString());
     return expectRecord;
+  }
+
+  public static DataFile wrapIcebergDataFile(DataFile dataFile, Long dataSequenceNumber) {
+    InvocationHandler handler = (proxy, method, args) -> {
+      if (method.getName().equals("dataSequenceNumber") && (args == null || args.length == 0)) {
+        return dataSequenceNumber;
+      } else {
+        return method.invoke(dataFile, args);
+      }
+    };
+    return (DataFile) Proxy.newProxyInstance(
+        DataFile.class.getClassLoader(),
+        new Class[]{DataFile.class},
+        handler
+    );
+  }
+
+  public static DeleteFile wrapIcebergDeleteFile(DeleteFile deleteFile, Long dataSequenceNumber) {
+    InvocationHandler handler = (proxy, method, args) -> {
+      if (method.getName().equals("dataSequenceNumber") && (args == null || args.length == 0)) {
+        return dataSequenceNumber;
+      } else {
+        return method.invoke(deleteFile, args);
+      }
+    };
+    return (DeleteFile) Proxy.newProxyInstance(
+        DeleteFile.class.getClassLoader(),
+        new Class[]{DeleteFile.class},
+        handler
+    );
   }
 }

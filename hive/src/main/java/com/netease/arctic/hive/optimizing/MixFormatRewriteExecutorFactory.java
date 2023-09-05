@@ -26,6 +26,9 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 
+/**
+ * A factory to create {@link MixFormatRewriteExecutor}
+ */
 public class MixFormatRewriteExecutorFactory implements OptimizingExecutorFactory<RewriteFilesInput> {
 
   private Map<String, String> properties;

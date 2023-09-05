@@ -19,7 +19,6 @@
 package org.apache.iceberg;
 
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import org.apache.iceberg.io.CloseableIterable;
@@ -74,7 +73,7 @@ public class ArcticChangeTableScan extends DataTableScan implements ChangeTableI
   }
 
   @Override
-  public CloseableIterable<IcebergContentFile<?>> planFilesWithSequence() {
+  public CloseableIterable<ContentFile<?>> planFilesWithSequence() {
     Snapshot snapshot = snapshot();
 
     FileIO io = table().io();
@@ -107,7 +106,7 @@ public class ArcticChangeTableScan extends DataTableScan implements ChangeTableI
       return shouldKeepFile(partition, sequenceNumber);
     });
     return CloseableIterable
-        .transform(files, f -> IcebergContentFile.wrap(f.file(), f.getDataSequenceNumber()));
+        .transform(files, f -> f.file());
   }
 
   @Override
@@ -115,7 +114,7 @@ public class ArcticChangeTableScan extends DataTableScan implements ChangeTableI
     return CloseableIterable.transform(planFilesWithSequence(), fileWithSequence ->
         new BasicArcticFileScanTask(DefaultKeyedFile.parseChange(
             ((DataFile) fileWithSequence),
-            fileWithSequence.getSequenceNumber()), null, table().spec(), null)
+            fileWithSequence.dataSequenceNumber()), null, table().spec(), null)
     );
   }
 

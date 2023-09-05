@@ -18,10 +18,10 @@
 
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.TestedCatalogs;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
@@ -46,7 +46,7 @@ public class TestCatalogService extends TableServiceTestBase {
 
   @Parameterized.Parameters(name = "{0}")
   public static Object[] parameters() {
-    return new Object[][] {{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG)},
+    return new Object[][] {{TestedCatalogs.internalCatalog(TableFormat.MIXED_ICEBERG)},
                            {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf())}};
   }
 
@@ -122,5 +122,4 @@ public class TestCatalogService extends TableServiceTestBase {
     tableService().dropDatabase(catalogMeta.getCatalogName(), "test_db");
     tableService().dropCatalog(catalogMeta.getCatalogName());
   }
-
 }

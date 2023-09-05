@@ -25,11 +25,11 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.Table;
 import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Test;
@@ -58,7 +58,7 @@ public class TestPuffinUtil extends TableTestBase {
 
   @Test
   public void testWriteAndReadPuffin() {
-    Table table = getArcticTable().isKeyedTable() ? getArcticTable().asKeyedTable().baseTable() :
+    UnkeyedTable table = getArcticTable().isKeyedTable() ? getArcticTable().asKeyedTable().baseTable() :
         getArcticTable().asUnkeyedTable();
     table.newAppend().commit();
     PuffinUtil.Reader reader = PuffinUtil.reader(table);

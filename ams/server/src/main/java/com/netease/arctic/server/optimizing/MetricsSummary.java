@@ -1,8 +1,8 @@
 package com.netease.arctic.server.optimizing;
 
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.optimizing.RewriteFilesInput;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
@@ -26,13 +26,13 @@ public class MetricsSummary {
   protected MetricsSummary(RewriteFilesInput input) {
     rewriteDataFileCnt = input.rewrittenDataFiles().length;
     reRowDeletedDataFileCnt = input.rePosDeletedDataFiles().length;
-    for (IcebergDataFile rewriteFile : input.rewrittenDataFiles()) {
+    for (DataFile rewriteFile : input.rewrittenDataFiles()) {
       rewriteDataSize += rewriteFile.fileSizeInBytes();
     }
-    for (IcebergDataFile rewritePosDataFile : input.rePosDeletedDataFiles()) {
+    for (DataFile rewritePosDataFile : input.rePosDeletedDataFiles()) {
       rewritePosDataSize += rewritePosDataFile.fileSizeInBytes();
     }
-    for (IcebergContentFile<?> delete : input.deleteFiles()) {
+    for (ContentFile<?> delete : input.deleteFiles()) {
       if (delete.content() == FileContent.POSITION_DELETES) {
         positionalDeleteSize += delete.fileSizeInBytes();
         posDeleteFileCnt++;

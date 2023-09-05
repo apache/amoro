@@ -31,17 +31,13 @@ import javax.inject.Inject;
  */
 public class ArcticHdfsAuthentication implements HdfsAuthentication {
 
-  private ArcticCatalogFactory arcticCatalogFactory;
+  private final TableMetaStore tableMetaStore;
 
-  private TableMetaStore tableMetaStore;
-
-  private ArcticConfig arcticConfig;
+  private final ArcticConfig arcticConfig;
 
   @Inject
   public ArcticHdfsAuthentication(ArcticCatalogFactory arcticCatalogFactory, ArcticConfig arcticConfig) {
-    this.arcticCatalogFactory = arcticCatalogFactory;
-    this.tableMetaStore =
-        ((ArcticCatalogSupportTableSuffix) arcticCatalogFactory.getArcticCatalog()).getTableMetaStore();
+    this.tableMetaStore = arcticCatalogFactory.getTableMetastore();
     this.arcticConfig = arcticConfig;
   }
 

@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-name: Arctic Improvement
+name: Amoro Improvement
 title: "[Improvement]: "
 description: Suggest an improvement on performance, code quality, user experience, etc
 labels: [ "type:improvement" ]
@@ -22,14 +22,14 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for contributing to Arctic!
+        Thank you for contributing to Amoro!
 
   - type: checkboxes
     attributes:
       label: Search before asking
       options:
         - label: >
-            I have searched in the [issues](https://github.com/NetEase/arctic/issues?q=is%3Aissue) and found no similar
+            I have searched in the [issues](https://github.com/NetEase/amoro/issues?q=is%3Aissue) and found no similar
             issues.
           required: true
 
@@ -55,7 +55,7 @@ body:
       description: >
         This is absolutely not required, but we are happy to guide you in the contribution process
         especially if you already have a good understanding of how to implement the feature.
-        Arctic is a community-managed project and we love to bring new contributors in.
+        Amoro is a community-managed project and we love to bring new contributors in.
       options:
         - label: Yes I am willing to submit a PR!
 

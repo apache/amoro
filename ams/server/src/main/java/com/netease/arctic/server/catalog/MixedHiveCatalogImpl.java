@@ -27,7 +27,7 @@ import org.apache.thrift.TException;
 
 import java.util.List;
 
-public class MixedHiveCatalogImpl extends MixedCatalogImpl {
+public class MixedHiveCatalogImpl extends InternalMixedCatalogImpl {
 
   private volatile CachedHiveClientPool hiveClientPool;
 

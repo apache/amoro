@@ -73,7 +73,7 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
     replacePartitions.commit();
     CreateSnapshotEvent newSnapshot = (CreateSnapshotEvent) replacePartitions.updateEvent();
 
-    PuffinUtil.Reader reader = PuffinUtil.reader(transaction.table());
+    PuffinUtil.Reader reader = PuffinUtil.reader(keyedTable.baseTable());
     StructLikeMap<Long> oldOptimizedSequence = reader.readOptimizedSequence();
     StructLikeMap<Long> optimizedSequence = StructLikeMap.create(spec.partitionType());
     if (oldOptimizedSequence != null) {
@@ -82,7 +82,7 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
     addFiles.forEach(f -> optimizedSequence.put(f.partition(), this.optimizedSequence));
 
     StatisticsFile statisticsFile =
-        PuffinUtil.writer(transaction.table(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
+        PuffinUtil.writer(keyedTable.baseTable(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
             .addOptimizedSequence(optimizedSequence)
             .overwrite()
             .write();

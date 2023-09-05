@@ -176,5 +176,13 @@ export default {
   cannotDeleteGroupModalContent: 'This group has been used.',
   deleteGroupModalTitle: 'Remove this group',
   processId: 'Process Id',
-  tasks: 'Tasks'
+  tasks: 'Tasks',
+  recordChartTitle: 'Table record count',
+  fileChartTitle: 'Table file count',
+  totalRecords: 'total-records',
+  totalEqualityDeletes: 'eq-delete-records',
+  totalPositionDeletes: 'pos-delete-records',
+  totalFiles: 'total-files',
+  totalDataFiles: 'data-files',
+  totalDeleteFiles: 'delete-files'
 }

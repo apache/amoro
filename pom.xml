@@ -113,6 +113,7 @@
         <!--        <guava.version>32.1.1-jre</guava.version>-->
         <terminal.spark.version>3.3.2</terminal.spark.version>
         <terminal.spark.major.version>3.3</terminal.spark.major.version>
+        <dropwizard.metrics.version>4.2.19</dropwizard.metrics.version>
     </properties>
 
     <dependencyManagement>
@@ -350,6 +351,12 @@
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>url-connection-client</artifactId>
                 <version>${awssdk.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-core</artifactId>
+                <version>${dropwizard.metrics.version}</version>
             </dependency>
 
             <dependency>
