@@ -19,8 +19,6 @@
 package com.netease.arctic.ams.api.metrics;
 
 import com.codahale.metrics.Counter;
-import com.codahale.metrics.DefaultSettableGauge;
-import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Timer;
 
 import java.util.Map;
