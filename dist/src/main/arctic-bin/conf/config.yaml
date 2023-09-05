@@ -47,6 +47,11 @@ ams:
     enabled: true
     thread-count: 10
 
+  data-expiration:
+    enabled: false
+    thread-count: 10
+    interval: 1d
+
   database:
     type: derby
     jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
