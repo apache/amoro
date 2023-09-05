@@ -297,31 +297,31 @@ public class BasicArcticCatalog implements ArcticCatalog {
       TableMeta meta = builder.build();
       String location = getTableLocationForCreate();
       TableOperations tableOperations = new ArcticHadoopTableOperations(new Path(location),
-              arcticFileIO, tableMetaStore.getConfiguration());
+          arcticFileIO, tableMetaStore.getConfiguration());
       TableMetadata tableMetadata = tableMetadata(schema, partitionSpec, sortOrder, properties, location);
       Transaction transaction =
-              Transactions.createTableTransaction(identifier.getTableName(), tableOperations, tableMetadata);
+          Transactions.createTableTransaction(identifier.getTableName(), tableOperations, tableMetadata);
       return new CreateTableTransaction(
-              transaction,
-              this::create,
-              () -> {
-                doRollbackCreateTable(meta);
-                try {
-                  client.removeTable(
-                          identifier.buildTableIdentifier(),
-                          true);
-                } catch (TException e) {
-                  throw new RuntimeException(e);
-                }
-              }
+          transaction,
+          this::create,
+          () -> {
+            doRollbackCreateTable(meta);
+            try {
+              client.removeTable(
+                  identifier.buildTableIdentifier(),
+                  true);
+            } catch (TException e) {
+              throw new RuntimeException(e);
+            }
+          }
       );
     }
 
-    protected ArcticTable createTableByMeta(TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
-                                            PartitionSpec partitionSpec) {
+    protected ArcticTable createTableByMeta(
+        TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
+        PartitionSpec partitionSpec) {
       return tables.createTableByMeta(tableMeta, schema, primaryKeySpec, partitionSpec);
     }
-
 
     protected void doCreateCheck() {
       if (primaryKeySpec.primaryKeyExisted()) {
@@ -348,17 +348,20 @@ public class BasicArcticCatalog implements ArcticCatalog {
     }
 
     protected void checkProperties() {
-      Map<String, String> mergedProperties = CatalogUtil.mergeCatalogPropertiesToTable(properties,
-          catalogMeta.getCatalogProperties());
+      Map<String, String> mergedProperties = CatalogUtil.mergeCatalogPropertiesToTable(
+          properties, catalogMeta.getCatalogProperties());
       boolean enableStream = CompatiblePropertyUtil.propertyAsBoolean(mergedProperties,
           TableProperties.ENABLE_LOG_STORE, TableProperties.ENABLE_LOG_STORE_DEFAULT);
       if (enableStream) {
-        Preconditions.checkArgument(mergedProperties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC),
+        Preconditions.checkArgument(
+            mergedProperties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC),
             "log-store.topic must not be null when log-store.enabled is true.");
-        Preconditions.checkArgument(mergedProperties.containsKey(TableProperties.LOG_STORE_ADDRESS),
+        Preconditions.checkArgument(
+            mergedProperties.containsKey(TableProperties.LOG_STORE_ADDRESS),
             "log-store.address must not be null when log-store.enabled is true.");
         String logStoreType = mergedProperties.get(LOG_STORE_TYPE);
-        Preconditions.checkArgument(logStoreType == null ||
+        Preconditions.checkArgument(
+            logStoreType == null ||
                 logStoreType.equals(LOG_STORE_STORAGE_TYPE_KAFKA) ||
                 logStoreType.equals(LOG_STORE_STORAGE_TYPE_PULSAR),
             String.format(

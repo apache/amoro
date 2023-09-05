@@ -151,7 +151,7 @@ public class TestBasicArcticCatalog extends BasicArcticCatalog {
     @Override
     public Transaction createTransaction() {
       return catalog.newCreateTableTransaction(org.apache.iceberg.catalog.TableIdentifier.of(identifier.getCatalog(),
-              identifier.getDatabase(), identifier.getTableName()), schema, partitionSpec, location, properties);
+          identifier.getDatabase(), identifier.getTableName()), schema, partitionSpec, location, properties);
     }
   }
 }

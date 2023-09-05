@@ -48,6 +48,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.thrift.TException;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -307,12 +308,12 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     @Override
     public Transaction createTransaction() {
       Transaction transaction = icebergCatalog.newCreateTableTransaction(
-              org.apache.iceberg.catalog.TableIdentifier.of(identifier.getDatabase(), identifier.getTableName()),
-              schema, partitionSpec, properties);
+          org.apache.iceberg.catalog.TableIdentifier.of(identifier.getDatabase(), identifier.getTableName()),
+          schema, partitionSpec, properties);
       return new CreateTableTransaction(
-              transaction,
-              this::create,
-              () -> dropTable(identifier, true)
+          transaction,
+          this::create,
+          () -> dropTable(identifier, true)
       );
     }
   }

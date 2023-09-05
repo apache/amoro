@@ -104,12 +104,11 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
 
     if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_TABLE_FILTER)) {
       String tableFilter =
-              meta.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
+          meta.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
       tableFilterPattern = Pattern.compile(tableFilter);
     } else {
       tableFilterPattern = null;
     }
-
   }
 
   public IcebergCatalogWrapper(CatalogMeta meta, Map<String, String> properties) {
@@ -283,8 +282,8 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
     @Override
     public Transaction createTransaction() {
       return icebergCatalog.newCreateTableTransaction(
-              toIcebergTableIdentifier(identifier), schema,
-              spec, properties);
+          toIcebergTableIdentifier(identifier), schema,
+          spec, properties);
     }
 
     @Override
