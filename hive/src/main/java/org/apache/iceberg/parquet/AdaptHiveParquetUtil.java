@@ -1,16 +1,5 @@
 package org.apache.iceberg.parquet;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.iceberg.FieldMetrics;
 import org.apache.iceberg.Metrics;
 import org.apache.iceberg.MetricsConfig;
@@ -46,9 +35,22 @@ import org.apache.parquet.io.ParquetDecodingException;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 public class AdaptHiveParquetUtil {
   // not meant to be instantiated
-  private AdaptHiveParquetUtil() {}
+  private AdaptHiveParquetUtil() {
+  }
 
   private static final long UNIX_EPOCH_JULIAN = 2_440_588L;
 
@@ -397,7 +399,7 @@ public class AdaptHiveParquetUtil {
     long timeOfDayNanos = buffer.getLong();
     // 4 bytes(julianDay)
     int julianDay = buffer.getInt();
-    return TimeUnit.DAYS.toMicros(julianDay - UNIX_EPOCH_JULIAN)
-        + TimeUnit.NANOSECONDS.toMicros(timeOfDayNanos);
+    return TimeUnit.DAYS.toMicros(julianDay - UNIX_EPOCH_JULIAN) +
+        TimeUnit.NANOSECONDS.toMicros(timeOfDayNanos);
   }
 }
