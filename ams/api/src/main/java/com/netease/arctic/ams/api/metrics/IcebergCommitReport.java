@@ -32,7 +32,7 @@ public class IcebergCommitReport implements MetricReport {
   public static final String SEQUENCE_NUMBER = "sequence-number";
   public static final String OPERATION = "operation";
   public static final String METADATA = "metadata";
-  public static final String COMMIE_TIME = "commit-time";
+  public static final String COMMIE_TIMESTAMP = "commit-timestamp";
 
   public static final String TOTAL_DURATION = "total-duration";
   public static final String ATTEMPTS = "attempts";
@@ -64,7 +64,7 @@ public class IcebergCommitReport implements MetricReport {
   private final Long sequenceNumber;
   private final String operation;
   private final Map<String, String> metadata;
-  private final Long commitTime;
+  private final Long commitTimestamp;
 
   private final Timer totalDuration = new Timer();
   private final Counter attempts = new Counter();
@@ -93,13 +93,13 @@ public class IcebergCommitReport implements MetricReport {
 
   public IcebergCommitReport(
       String tableName, Long snapshotId, Long sequenceNumber, String operation, Map<String,
-      String> metadata, Long commitTime) {
+      String> metadata, Long commitTimestamp) {
     this.tableName = tableName;
     this.snapshotId = snapshotId;
     this.sequenceNumber = sequenceNumber;
     this.operation = operation;
     this.metadata = metadata;
-    this.commitTime = commitTime;
+    this.commitTimestamp = commitTimestamp;
   }
 
   @Override
@@ -131,9 +131,9 @@ public class IcebergCommitReport implements MetricReport {
     return this.metadata;
   }
 
-  @TaggedMetrics.Tag(name = COMMIE_TIME)
-  public long commitTime() {
-    return this.commitTime;
+  @TaggedMetrics.Tag(name = COMMIE_TIMESTAMP)
+  public long commitTimestamp() {
+    return this.commitTimestamp;
   }
 
   @TaggedMetrics.Metric(name = TOTAL_DURATION)
