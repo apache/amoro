@@ -18,9 +18,6 @@
 
 package org.apache.iceberg.data;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.Map;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.MetricsConfig;
 import org.apache.iceberg.PartitionSpec;
@@ -40,6 +37,9 @@ import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.Map;
 
 /** Factory to create a new {@link FileAppender} to write {@link Record}s. */
 public class GenericAppenderFactory implements FileAppenderFactory<Record> {
