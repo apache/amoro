@@ -18,7 +18,6 @@
 
 package com.netease.arctic.hive.table;
 
-import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
@@ -58,7 +57,6 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
       Table icebergTable,
       ArcticHadoopFileIO arcticFileIO,
       String tableLocation,
-      AmsClient client,
       HMSClientPool hiveClient,
       Map<String, String> catalogProperties) {
     this(
@@ -66,7 +64,6 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
         icebergTable,
         arcticFileIO,
         tableLocation,
-        client,
         hiveClient,
         catalogProperties,
         true);
@@ -77,11 +74,10 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
       Table icebergTable,
       ArcticHadoopFileIO arcticFileIO,
       String tableLocation,
-      AmsClient client,
       HMSClientPool hiveClient,
       Map<String, String> catalogProperties,
       boolean syncHiveChange) {
-    super(tableIdentifier, icebergTable, arcticFileIO, client, catalogProperties);
+    super(tableIdentifier, icebergTable, arcticFileIO, catalogProperties);
     this.fileIO = arcticFileIO;
     this.hiveClient = hiveClient;
     this.tableLocation = tableLocation;
