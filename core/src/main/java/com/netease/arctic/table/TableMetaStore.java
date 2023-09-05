@@ -426,7 +426,12 @@ public class TableMetaStore implements Serializable {
     return String.format("%s/%s", confPath.toString(), confName);
   }
 
-  private static Configuration buildConfiguration(TableMetaStore metaStore) {
+  private Configuration buildConfiguration(TableMetaStore metaStore) {
+    if (TableMetaStore.AUTH_METHOD_KERBEROS.equals(metaStore.authMethod)) {
+      generateKrbConfPath();
+      String krbConfFile = saveConfInPath(confCachePath, KRB_CONF_FILE_NAME, krbConf);
+      System.setProperty(KRB5_CONF_PROPERTY, krbConfFile);
+    }
     Configuration configuration = new Configuration();
     configuration.addResource(new ByteArrayInputStream(metaStore.getCoreSite()));
     configuration.addResource(new ByteArrayInputStream(metaStore.getHdfsSite()));
