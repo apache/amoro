@@ -78,6 +78,8 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
   private long nextCheckRecordCount = 10;
   private boolean closed;
 
+  private Schema schema;
+
   private static final String COLUMN_INDEX_TRUNCATE_LENGTH = "parquet.columnindex.truncate.length";
   private static final int DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH = 64;
 
@@ -96,6 +98,7 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
     this.compressor = new CodecFactory(conf, props.getPageSizeThreshold()).getCompressor(codec);
     //Change For Arctic
     this.parquetSchema = AdaptHiveParquetSchemaUtil.convert(schema, "table");
+    this.schema = schema;
     //Change For Arctic
     this.model = (ParquetValueWriter<T>) createWriterFunc.apply(parquetSchema);
     this.metricsConfig = metricsConfig;
@@ -128,7 +131,7 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
   @Override
   public Metrics metrics() {
     //Change For Arctic: Add metrics for int96 type
-    return AdaptHiveParquetUtil.footerMetrics(writer.getFooter(), model.metrics(), metricsConfig);
+    return AdaptHiveParquetUtil.footerMetrics(writer.getFooter(), model.metrics(), metricsConfig, schema);
   }
 
   /**

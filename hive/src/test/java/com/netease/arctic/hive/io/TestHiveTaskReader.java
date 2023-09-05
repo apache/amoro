@@ -27,6 +27,7 @@ import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.io.TestTaskReader;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.iceberg.PartitionData;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
@@ -74,7 +75,10 @@ public class TestHiveTaskReader extends TestTaskReader {
     Expression filter = Expressions.equal("op_time", "2022-01-01T12:00:00");
     List<KeyedTableScanTask> readTasks = planReadTask(filter);
     // Fields of type INT96 do not save their min/max state, so filter push down is not possible.
-    Assert.assertEquals(5, readTasks.size());
+    PartitionData partitionData = new PartitionData(getArcticTable().spec().partitionType());
+    partitionData.put(0, "2022-01-01");
+    Assert.assertTrue(readTasks.stream().flatMap(t -> t.dataTasks().stream())
+        .allMatch(d -> d.file().partition().equals(partitionData)));
     Set<Record> records = Sets.newHashSet(tableTestHelper().readKeyedTable(getArcticTable().asKeyedTable(),
         filter, null, isUseDiskMap(), false));
     //expect: (id=1),(id=6), change store can only be filtered by partition expression now.
