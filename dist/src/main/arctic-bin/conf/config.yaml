@@ -82,6 +82,11 @@ containers:
     properties:
       export.JAVA_HOME: "/opt/java"   # JDK environment
 
+  - name: KubernetesContainer
+    container-impl: com.netease.arctic.optimizer.KubernetesOptimizerContainer
+    properties:
+      export.JAVA_HOME: "/opt/java"   # JDK environment
+
 #containers:
 #  - name: flinkContainer
 #    container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer

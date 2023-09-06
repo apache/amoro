@@ -123,6 +123,10 @@
                     <groupId>com.sun.jersey</groupId>
                     <artifactId>jersey-servlet</artifactId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>okhttp</artifactId>
+                    <groupId>com.squareup.okhttp</groupId>
+                </exclusion>
             </exclusions>
         </dependency>
 

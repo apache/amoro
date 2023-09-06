@@ -36,7 +36,7 @@
         <avro.version>1.10.1</avro.version>
         <optimizer-flink.version>1.14.6</optimizer-flink.version>
         <flink.scala.suffix>_2.12</flink.scala.suffix>
-        <snakeyaml.version>1.30</snakeyaml.version>
+        <snakeyaml.version>1.33</snakeyaml.version>
     </properties>
 
     <dependencies>
@@ -226,11 +226,29 @@
             <scope>test</scope>
         </dependency>
 
+
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-client</artifactId>
+            <version>6.5.0</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>snakeyaml</artifactId>
+                    <groupId>org.yaml</groupId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.squareup.okhttp3</groupId>
+                    <artifactId>okhttp</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
             <version>${snakeyaml.version}</version>
         </dependency>
+
     </dependencies>
 
     <build>

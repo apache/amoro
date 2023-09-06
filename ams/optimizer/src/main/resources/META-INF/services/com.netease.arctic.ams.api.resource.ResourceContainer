@@ -18,3 +18,4 @@
 
 com.netease.arctic.optimizer.FlinkOptimizerContainer
 com.netease.arctic.optimizer.LocalOptimizerContainer
+com.netease.arctic.optimizer.KubernetesOptimizerContainer
