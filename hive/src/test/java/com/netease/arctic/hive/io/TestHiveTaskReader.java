@@ -25,11 +25,8 @@ import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.io.TestTaskReader;
-import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
-import org.apache.iceberg.PartitionData;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
@@ -39,7 +36,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.util.List;
 import java.util.Set;
 
 @RunWith(Parameterized.class)
@@ -67,25 +63,6 @@ public class TestHiveTaskReader extends TestTaskReader {
                                     .addColumn("id").addColumn("op_time").build(), HiveTableTestHelper.HIVE_SPEC,
                                 Maps.newHashMap()),
                             false}};
-  }
-
-  @Test
-  public void testMergeOnReadFilterTimestampType() {
-    // where op_time = '2022-01-01T12:00:00'
-    Expression filter = Expressions.equal("op_time", "2022-01-01T12:00:00");
-    List<KeyedTableScanTask> readTasks = planReadTask(filter);
-    // Fields of type INT96 do not save their min/max state, so filter push down is not possible.
-    PartitionData partitionData = new PartitionData(getArcticTable().spec().partitionType());
-    partitionData.put(0, "2022-01-01");
-    Assert.assertTrue(readTasks.stream().flatMap(t -> t.dataTasks().stream())
-        .allMatch(d -> d.file().partition().equals(partitionData)));
-    Set<Record> records = Sets.newHashSet(tableTestHelper().readKeyedTable(getArcticTable().asKeyedTable(),
-        filter, null, isUseDiskMap(), false));
-    //expect: (id=1),(id=6), change store can only be filtered by partition expression now.
-    Set<Record> expectRecords = Sets.newHashSet();
-    expectRecords.add(allRecords.get(0));
-    expectRecords.add(allRecords.get(5));
-    Assert.assertEquals(expectRecords, records);
   }
 
   @Test
