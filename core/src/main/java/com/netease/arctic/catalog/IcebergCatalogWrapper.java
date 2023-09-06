@@ -37,6 +37,7 @@ import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
@@ -103,12 +104,11 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
 
     if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_TABLE_FILTER)) {
       String tableFilter =
-              meta.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
+          meta.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
       tableFilterPattern = Pattern.compile(tableFilter);
     } else {
       tableFilterPattern = null;
     }
-
   }
 
   public IcebergCatalogWrapper(CatalogMeta meta, Map<String, String> properties) {
@@ -280,6 +280,13 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
     }
 
     @Override
+    public Transaction createTransaction() {
+      return icebergCatalog.newCreateTableTransaction(
+          toIcebergTableIdentifier(identifier), schema,
+          spec, properties);
+    }
+
+    @Override
     public TableBuilder withPrimaryKeySpec(PrimaryKeySpec primaryKeySpec) {
       Preconditions.checkArgument(
           primaryKeySpec == null || !primaryKeySpec.primaryKeyExisted(),
@@ -300,7 +307,7 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
         Table icebergTable,
         ArcticFileIO arcticFileIO,
         Map<String, String> catalogProperties) {
-      super(tableIdentifier, icebergTable, arcticFileIO, null, catalogProperties);
+      super(tableIdentifier, icebergTable, arcticFileIO, catalogProperties);
     }
 
     @Override

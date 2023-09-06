@@ -1,6 +1,5 @@
 package com.netease.arctic.hive.catalog;
 
-import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
@@ -40,11 +39,7 @@ public class MixedHiveTables extends MixedTables {
   private volatile CachedHiveClientPool hiveClientPool;
 
   public MixedHiveTables(CatalogMeta catalogMeta) {
-    this(catalogMeta, null);
-  }
-
-  public MixedHiveTables(CatalogMeta catalogMeta, AmsClient amsClient) {
-    super(catalogMeta, amsClient);
+    super(catalogMeta);
     this.hiveClientPool = new CachedHiveClientPool(getTableMetaStore(), catalogMeta.getCatalogProperties());
   }
 
@@ -66,15 +61,15 @@ public class MixedHiveTables extends MixedTables {
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
     UnkeyedHiveTable baseTable = new KeyedHiveTable.HiveBaseInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
-        fileIO, tableLocation, amsClient, hiveClientPool, catalogMeta.getCatalogProperties(), false);
+        fileIO, tableLocation,  hiveClientPool, catalogMeta.getCatalogProperties(), false);
 
     Table changeIcebergTable = tableMetaStore.doAs(() -> tables.load(changeLocation));
     ChangeTable changeTable = new KeyedHiveTable.HiveChangeInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
             tableMetaStore.getConfiguration()),
-        fileIO, amsClient, catalogMeta.getCatalogProperties());
+        fileIO, catalogMeta.getCatalogProperties());
     return new KeyedHiveTable(tableMeta, tableLocation,
-        buildPrimaryKeySpec(baseTable.schema(), tableMeta), amsClient, hiveClientPool, baseTable, changeTable);
+        buildPrimaryKeySpec(baseTable.schema(), tableMeta), hiveClientPool, baseTable, changeTable);
   }
 
   /**
@@ -97,7 +92,7 @@ public class MixedHiveTables extends MixedTables {
     checkPrivilege(fileIO, baseLocation);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
     return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
-        fileIO, tableMetaStore.getConfiguration()), fileIO, tableLocation, amsClient, hiveClientPool,
+        fileIO, tableMetaStore.getConfiguration()), fileIO, tableLocation, hiveClientPool,
         catalogMeta.getCatalogProperties());
   }
 
@@ -132,7 +127,7 @@ public class MixedHiveTables extends MixedTables {
     UnkeyedHiveTable baseTable = new KeyedHiveTable.HiveBaseInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO,
             tableMetaStore.getConfiguration()),
-        fileIO, tableLocation, amsClient, hiveClientPool, catalogMeta.getCatalogProperties(), false);
+        fileIO, tableLocation, hiveClientPool, catalogMeta.getCatalogProperties(), false);
 
     Table changeIcebergTable = tableMetaStore.doAs(() -> {
       try {
@@ -147,7 +142,7 @@ public class MixedHiveTables extends MixedTables {
     ChangeTable changeTable = new KeyedHiveTable.HiveChangeInternalTable(tableIdentifier,
         CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
             tableMetaStore.getConfiguration()),
-        fileIO, amsClient, catalogMeta.getCatalogProperties());
+        fileIO, catalogMeta.getCatalogProperties());
 
     Map<String, String> metaProperties = tableMeta.getProperties();
     try {
@@ -173,7 +168,7 @@ public class MixedHiveTables extends MixedTables {
       throw new RuntimeException("Failed to create hive table:" + tableMeta.getTableIdentifier(), e);
     }
     return new KeyedHiveTable(tableMeta, tableLocation,
-        primaryKeySpec, amsClient, hiveClientPool, baseTable, changeTable);
+        primaryKeySpec, hiveClientPool, baseTable, changeTable);
   }
 
   @Override
@@ -225,7 +220,7 @@ public class MixedHiveTables extends MixedTables {
         tableIdentifier, tableLocation, tableMeta.getProperties(),
         tableMetaStore, catalogMeta.getCatalogProperties());
     return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
-        tableMetaStore.getConfiguration()), fileIO, tableLocation, amsClient, hiveClientPool,
+        tableMetaStore.getConfiguration()), fileIO, tableLocation, hiveClientPool,
         catalogMeta.getCatalogProperties());
   }
 

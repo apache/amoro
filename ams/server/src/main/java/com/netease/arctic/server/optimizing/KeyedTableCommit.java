@@ -5,11 +5,11 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.op.OverwriteBaseFiles;
+import com.netease.arctic.op.SnapshotSummary;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.exception.OptimizingCommitException;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.ContentFiles;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -23,13 +23,11 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.glassfish.jersey.internal.guava.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
 import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
 import static com.netease.arctic.hive.op.UpdateHiveFiles.SYNC_DATA_TO_HIVE;
 import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
