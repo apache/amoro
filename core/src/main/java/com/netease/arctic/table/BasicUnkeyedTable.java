@@ -114,6 +114,11 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   }
 
   @Override
+  public String name() {
+    return icebergTable.name();
+  }
+
+  @Override
   public Map<Integer, Schema> schemas() {
     return icebergTable.schemas();
   }
