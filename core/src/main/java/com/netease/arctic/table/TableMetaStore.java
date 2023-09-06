@@ -428,7 +428,7 @@ public class TableMetaStore implements Serializable {
     return String.format("%s/%s", confPath.toString(), confName);
   }
 
-  private Configuration buildConfiguration(TableMetaStore metaStore) {
+  private static Configuration buildConfiguration(TableMetaStore metaStore) {
     Configuration configuration = new Configuration();
     configuration.addResource(new ByteArrayInputStream(metaStore.getCoreSite()));
     configuration.addResource(new ByteArrayInputStream(metaStore.getHdfsSite()));
