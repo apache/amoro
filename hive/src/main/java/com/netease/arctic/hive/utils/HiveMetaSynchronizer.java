@@ -67,7 +67,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Utils for sync the metadata(schema/data) of the hive table to arctic table or sync data of arctic table to hive table
+ * Utils for syncing the metadata between the hive table and the arctic table.
  */
 public class HiveMetaSynchronizer {
 
