@@ -19,8 +19,6 @@
 package com.netease.arctic.server.optimizing.plan;
 
 import com.netease.arctic.TableSnapshot;
-import com.netease.arctic.formats.iceberg.IcebergSnapshot;
-import com.netease.arctic.formats.mixed.iceberg.MixedIcebergSnapshot;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.OptimizingType;

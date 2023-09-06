@@ -47,7 +47,6 @@ public class PaimonTable implements AmoroTable<Table> {
     }
 
     Snapshot snapshot = ((DataTable) table).snapshotManager().latestSnapshot();
-    return snapshot == null ? null : new TableSnapshot(snapshot.id(),
-        snapshot.watermark(), snapshot.timeMillis());
+    return snapshot == null ? null : new PaimonSnapshot(snapshot);
   }
 }

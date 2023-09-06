@@ -18,6 +18,8 @@
 
 package com.netease.arctic;
 
+import org.apache.commons.lang3.ObjectUtils;
+
 public interface TableSnapshot {
 
   /**

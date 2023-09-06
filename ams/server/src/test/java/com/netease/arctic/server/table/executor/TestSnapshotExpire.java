@@ -25,26 +25,24 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.formats.mixed.MixedSnapshot;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.maintainer.MixedTableMaintainer;
-import com.netease.arctic.server.optimizing.maintainer.TableMaintainer;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import java.util.Optional;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFiles;
-import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.junit.Assert;
@@ -60,6 +58,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer.FLINK_MAX_COMMITTED_CHECKPOINT_ID;
 
 @RunWith(Parameterized.class)
 public class TestSnapshotExpire extends ExecutorTestBase {
@@ -144,27 +143,19 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
     insertChangeDataFiles(testKeyedTable, 1);
     insertChangeDataFiles(testKeyedTable, 2);
-    Assert.assertEquals(Long.MAX_VALUE,
-        SnapshotsExpiringExecutor.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
 
     AppendFiles appendFiles = testKeyedTable.changeTable().newAppend();
-    appendFiles.set(SnapshotsExpiringExecutor.FLINK_MAX_COMMITTED_CHECKPOINT_ID, "100");
+    appendFiles.set(FLINK_MAX_COMMITTED_CHECKPOINT_ID, "100");
     appendFiles.commit();
     long checkpointTime = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
-    Assert.assertEquals(checkpointTime,
-        SnapshotsExpiringExecutor.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
 
     AppendFiles appendFiles2 = testKeyedTable.changeTable().newAppend();
-    appendFiles2.set(SnapshotsExpiringExecutor.FLINK_MAX_COMMITTED_CHECKPOINT_ID, "101");
+    appendFiles2.set(FLINK_MAX_COMMITTED_CHECKPOINT_ID, "101");
     appendFiles2.commit();
     Snapshot checkpointTime2Snapshot = testKeyedTable.changeTable().currentSnapshot();
-    Assert.assertEquals(checkpointTime2Snapshot.timestampMillis(),
-        SnapshotsExpiringExecutor.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
 
     insertChangeDataFiles(testKeyedTable, 2);
     Snapshot lastSnapshot = testKeyedTable.changeTable().currentSnapshot();
-    Assert.assertEquals(checkpointTime2Snapshot.timestampMillis(),
-        SnapshotsExpiringExecutor.fetchLatestFlinkCommittedSnapshotTime(testKeyedTable.changeTable()));
 
     testKeyedTable.updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
@@ -173,8 +164,9 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
 
     Assert.assertEquals(5, Iterables.size(testKeyedTable.changeTable().snapshots()));
-    SnapshotsExpiringExecutor.expireArcticTable(
-        testKeyedTable, tableRuntime);
+
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(testKeyedTable);
+    tableMaintainer.expireSnapshots(tableRuntime);
 
     Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
     HashSet<Snapshot> expectedSnapshots = new HashSet<>();
@@ -188,27 +180,19 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     UnkeyedTable table = isKeyedTable() ? getArcticTable().asKeyedTable().baseTable() :
         getArcticTable().asUnkeyedTable();
     writeAndCommitBaseStore(table);
-    Assert.assertEquals(Long.MAX_VALUE,
-        SnapshotsExpiringExecutor.fetchLatestFlinkCommittedSnapshotTime(table));
 
     AppendFiles appendFiles = table.newAppend();
-    appendFiles.set(SnapshotsExpiringExecutor.FLINK_MAX_COMMITTED_CHECKPOINT_ID, "100");
+    appendFiles.set(FLINK_MAX_COMMITTED_CHECKPOINT_ID, "100");
     appendFiles.commit();
     long checkpointTime = table.currentSnapshot().timestampMillis();
-    Assert.assertEquals(checkpointTime,
-        SnapshotsExpiringExecutor.fetchLatestFlinkCommittedSnapshotTime(table));
 
     AppendFiles appendFiles2 = table.newAppend();
-    appendFiles2.set(SnapshotsExpiringExecutor.FLINK_MAX_COMMITTED_CHECKPOINT_ID, "101");
+    appendFiles2.set(FLINK_MAX_COMMITTED_CHECKPOINT_ID, "101");
     appendFiles2.commit();
     Snapshot checkpointTime2Snapshot = table.currentSnapshot();
-    Assert.assertEquals(checkpointTime2Snapshot.timestampMillis(),
-        SnapshotsExpiringExecutor.fetchLatestFlinkCommittedSnapshotTime(table));
 
     writeAndCommitBaseStore(table);
     Snapshot lastSnapshot = table.currentSnapshot();
-    Assert.assertEquals(checkpointTime2Snapshot.timestampMillis(),
-        SnapshotsExpiringExecutor.fetchLatestFlinkCommittedSnapshotTime(table));
 
     table.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
@@ -217,8 +201,9 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
 
     Assert.assertEquals(4, Iterables.size(table.snapshots()));
-    SnapshotsExpiringExecutor.expireArcticTable(
-        table, tableRuntime);
+
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(table);
+    tableMaintainer.expireSnapshots(tableRuntime);
 
     Assert.assertEquals(2, Iterables.size(table.snapshots()));
     HashSet<Snapshot> expectedSnapshots = new HashSet<>();
@@ -239,15 +224,16 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
         ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id())));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
-    SnapshotsExpiringExecutor.expireArcticTable(table, tableRuntime);
+
+    new MixedTableMaintainer(table).expireSnapshots(tableRuntime);
     Assert.assertEquals(1, Iterables.size(table.snapshots()));
 
     table.newAppend().commit();
 
     // mock tableRuntime which has optimizing task not committed
-    long optimizeSnapshotId = table.currentSnapshot().snapshotId();
     OptimizingProcess optimizingProcess = Mockito.mock(OptimizingProcess.class);
-    Mockito.when(optimizingProcess.getTargetSnapshotId()).thenReturn(optimizeSnapshotId);
+    Mockito.when(optimizingProcess.getFromSnapshot()).thenReturn(
+        new MixedSnapshot(Optional.empty(), Optional.ofNullable(table.currentSnapshot())));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.COMMITTING);
     Mockito.when(tableRuntime.getOptimizingProcess()).thenReturn(optimizingProcess);
     HashSet<Snapshot> expectedSnapshots = new HashSet<>();
@@ -258,7 +244,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     table.newAppend().commit();
     expectedSnapshots.add(table.currentSnapshot());
 
-    SnapshotsExpiringExecutor.expireArcticTable(table, tableRuntime);
+    new MixedTableMaintainer(table).expireSnapshots(tableRuntime);
     Assert.assertEquals(3, Iterables.size(table.snapshots()));
     Iterators.elementsEqual(expectedSnapshots.iterator(), table.snapshots().iterator());
   }
@@ -278,8 +264,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     List<DataFile> newDataFiles = writeAndCommitBaseStore(table);
     Assert.assertEquals(3, Iterables.size(table.snapshots()));
-    SnapshotsExpiringExecutor.expireSnapshots(table, System.currentTimeMillis(),
-        new HashSet<>());
+    new MixedTableMaintainer(table).expireSnapshots(System.currentTimeMillis());
     Assert.assertEquals(1, Iterables.size(table.snapshots()));
 
     dataFiles.forEach(file -> Assert.assertFalse(table.io().exists(file.path().toString())));

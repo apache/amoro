@@ -20,16 +20,13 @@ package com.netease.arctic.server.optimizing.plan;
 
 import com.netease.arctic.TableSnapshot;
 import com.netease.arctic.formats.iceberg.IcebergSnapshot;
-import com.netease.arctic.formats.mixed.iceberg.MixedIcebergSnapshot;
+import com.netease.arctic.formats.mixed.MixedSnapshot;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.optimizing.scan.IcebergTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
-import com.netease.arctic.server.table.KeyedSnapshotWrapper;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.table.SnapshotWrapper;
-import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TablePropertyUtil;
 import com.netease.arctic.utils.TableTypeUtil;
@@ -78,17 +75,17 @@ public class OptimizingEvaluator {
       tableFileScanHelper = new IcebergTableFileScanHelper(arcticTable.asUnkeyedTable(),
           ((IcebergSnapshot)currentSnapshot).getSnapshot().snapshotId());
     } else {
-      MixedIcebergSnapshot mixedIcebergSnapshot = (MixedIcebergSnapshot) currentSnapshot;
+      MixedSnapshot mixedSnapshot = (MixedSnapshot) currentSnapshot;
       if (arcticTable.isUnkeyedTable()) {
         tableFileScanHelper =
             new UnkeyedTableFileScanHelper(arcticTable.asUnkeyedTable(),
-                mixedIcebergSnapshot.getBaseSnapshot().get().snapshotId());
+                mixedSnapshot.getBaseSnapshot().get().snapshotId());
       } else {
 
         tableFileScanHelper =
             new KeyedTableFileScanHelper(arcticTable.asKeyedTable(),
-                mixedIcebergSnapshot.getChangeSnapshot().get().snapshotId(),
-                mixedIcebergSnapshot.getBaseSnapshot().get().snapshotId(),
+                mixedSnapshot.getChangeSnapshot().get().snapshotId(),
+                mixedSnapshot.getBaseSnapshot().get().snapshotId(),
                 partitionOptimizedSequence,
                 legacyPartitionMaxTransactionId);
       }

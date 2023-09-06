@@ -3,7 +3,7 @@ package com.netease.arctic.server.optimizing.maintainer;
 import com.google.common.base.Strings;
 import com.netease.arctic.TableSnapshot;
 import com.netease.arctic.formats.iceberg.IcebergSnapshot;
-import com.netease.arctic.formats.mixed.iceberg.MixedIcebergSnapshot;
+import com.netease.arctic.formats.mixed.MixedSnapshot;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
 import com.netease.arctic.io.SupportsFileSystemOperations;
@@ -247,8 +247,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   private static long getFromSnapshotId(TableSnapshot fromSnapshot) {
     long fromSnapshotId;
-    if (fromSnapshot instanceof MixedIcebergSnapshot) {
-      fromSnapshotId = ((MixedIcebergSnapshot)fromSnapshot).getBaseSnapshotId();
+    if (fromSnapshot instanceof MixedSnapshot) {
+      fromSnapshotId = ((MixedSnapshot)fromSnapshot).getBaseSnapshotId();
     } else {
       fromSnapshotId = ((IcebergSnapshot)fromSnapshot).getSnapshot().snapshotId();
     }

@@ -1,7 +1,9 @@
 package com.netease.arctic.server.catalog;
 
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.catalog.MixedTables;
+import com.netease.arctic.formats.mixed.MixedIcebergTable;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.table.ArcticTable;
@@ -27,10 +29,14 @@ public class MixedCatalogImpl extends InternalCatalog {
   }
 
   @Override
-  public ArcticTable loadTable(String database, String tableName) {
+  public AmoroTable<?> loadTable(String database, String tableName) {
     TableMetadata tableMetadata = getAs(TableMetaMapper.class, mapper ->
         mapper.selectTableMetaByName(getMetadata().getCatalogName(), database, tableName));
-    return tableMetadata == null ? null : tables.loadTableByMeta(tableMetadata.buildTableMeta());
+    if (tableMetadata == null) {
+      return null;
+    }
+    ArcticTable arcticTable = tables.loadTableByMeta(tableMetadata.buildTableMeta());
+    return new MixedIcebergTable(arcticTable);
   }
 
   protected MixedTables tables() {

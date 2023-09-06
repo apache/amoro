@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
+import java.util.Objects;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 
 import java.util.Comparator;
@@ -51,8 +52,7 @@ public class SchedulingPolicy {
     try {
       return tableRuntimeMap.values().stream()
           .filter(tableRuntime -> tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING &&
-              (tableRuntime.getLastOptimizedSnapshot() != tableRuntime.getCurrentSnapshot() ||
-                  tableRuntime.getLastOptimizedChangeSnapshotId() != tableRuntime.getCurrentChangeSnapshotId()))
+              Objects.equals(tableRuntime.getLastOptimizedSnapshot(), tableRuntime.getCurrentSnapshot()))
           .sorted(tableSorter)
           .collect(Collectors.toList());
     } finally {

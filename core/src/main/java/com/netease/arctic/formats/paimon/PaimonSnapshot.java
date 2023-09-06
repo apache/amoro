@@ -7,6 +7,10 @@ public class PaimonSnapshot implements TableSnapshot {
 
   private Snapshot snapshot;
 
+  public PaimonSnapshot(Snapshot snapshot) {
+    this.snapshot = snapshot;
+  }
+
   @Override
   public long watermark() {
     return snapshot.watermark();

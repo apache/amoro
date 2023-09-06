@@ -14,7 +14,7 @@ import com.netease.arctic.ams.api.OptimizingTaskResult;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.formats.iceberg.IcebergSnapshot;
-import com.netease.arctic.formats.mixed.iceberg.MixedIcebergSnapshot;
+import com.netease.arctic.formats.mixed.MixedSnapshot;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.OptimizingClosedException;
@@ -546,8 +546,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
     private long getFromSnapshotId() {
       long fromSnapshotId;
-      if (fromSnapshot instanceof MixedIcebergSnapshot) {
-        fromSnapshotId = ((MixedIcebergSnapshot)fromSnapshot).getBaseSnapshotId();
+      if (fromSnapshot instanceof MixedSnapshot) {
+        fromSnapshotId = ((MixedSnapshot)fromSnapshot).getBaseSnapshotId();
       } else {
         fromSnapshotId = ((IcebergSnapshot)fromSnapshot).getSnapshot().snapshotId();
       }
