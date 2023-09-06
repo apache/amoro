@@ -25,6 +25,10 @@ please refer to the documentation at [Iceberg Connector](https://trino.io/docs/c
 connector.name=arctic
 arctic.url=thrift://{ip}:{port}/{catalogName}
 ```
+- Configure the JVM configuration file for Trino in the {trino_home}/etc directory named `jvm.config` :
+```tex
+--add-exports=java.security.jgss/sun.security.krb5=ALL-UNNAMED
+```
 
 ### Support SQL statement
 
