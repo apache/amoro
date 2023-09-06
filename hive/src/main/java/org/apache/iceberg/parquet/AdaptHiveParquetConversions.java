@@ -19,6 +19,7 @@
 
 package org.apache.iceberg.parquet;
 
+import java.time.LocalDateTime;
 import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
@@ -97,8 +98,7 @@ class AdaptHiveParquetConversions {
         if (!((Types.TimestampType) icebergType).shouldAdjustToUTC()) {
           //iceberg org.apache.iceberg.expressions.Literals resolve timestamp without tz use UTC, but in fact it is
           // local time zone
-          instant = instant.atZone(ZoneId.systemDefault()).toLocalDateTime().toInstant(
-              ZoneOffset.UTC);
+          instant = LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toInstant(ZoneOffset.UTC);
         }
         return ChronoUnit.MICROS.between(EPOCH, instant);
       };

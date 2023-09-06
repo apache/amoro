@@ -187,7 +187,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       try (CloseableIterable<FileEntry> entries = CloseableIterable.withNoopClose(Iterables.concat(changed, based))) {
         CloseableIterable<FileEntry> mayExpiredFiles = CloseableIterable.withNoopClose(
             Lists.newArrayList(CloseableIterable.filter(entries,
-                e -> mayExpired(e, expirationConfig, partitionFreshness, expireTimestamp, TableTypeUtil.isHive(table)))));
+                e -> mayExpired(e, expirationConfig, partitionFreshness, expireTimestamp))));
         CloseableIterable.filter(mayExpiredFiles, e -> willNotRetain(e, expirationConfig, partitionFreshness))
             .forEach(e -> {
               if (e.isChange) {
@@ -209,7 +209,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
           = fileEntriesScan(unkeyedTable, partitionFilter, snapshot).entries()) {
         CloseableIterable<IcebergFileEntry> mayExpiredFiles = CloseableIterable.withNoopClose(
             Lists.newArrayList(CloseableIterable.filter(entries,
-                e -> mayExpired(e, expirationConfig, partitionFreshness, expireTimestamp, TableTypeUtil.isHive(table)))));
+                e -> mayExpired(e, expirationConfig, partitionFreshness, expireTimestamp))));
         CloseableIterable.filter(
                 mayExpiredFiles,
                 e -> willNotRetain(e, expirationConfig, partitionFreshness))
@@ -324,8 +324,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       IcebergFileEntry fileEntry,
       DataExpirationConfig expirationConfig,
       Map<StructLike, DataFileFreshness> partitionFreshness,
-      Long expireTimestamp,
-      boolean isHiveTable) {
+      Long expireTimestamp) {
     ContentFile<?> contentFile = fileEntry.getFile();
     StructLike partition = contentFile.partition();
 
@@ -334,7 +333,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       Literal<Long> literal = getExpireTimestampLiteral(
           contentFile, expirationConfig.expirationField.type(),
           expirationConfig.expirationField, expirationConfig.dateFormatter,
-          expirationConfig.numberDateFormat, isHiveTable);
+          expirationConfig.numberDateFormat);
       if (partitionFreshness.containsKey(partition)) {
         DataFileFreshness freshness = partitionFreshness.get(partition).incTotalCount();
         if (freshness.latestUpdateMillis <= literal.value()) {
@@ -385,8 +384,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       Type type,
       Types.NestedField field,
       DateTimeFormatter formatter,
-      String numberDateFormatter,
-      boolean isHiveTable) {
+      String numberDateFormatter) {
     Object upperBound = Conversions.fromByteBuffer(type, contentFile.upperBounds().get(field.fieldId()));
     Literal<Long> literal = Literal.of(Long.MAX_VALUE);
     if (null == upperBound) {
@@ -395,14 +393,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       switch (type.typeId()) {
         case TIMESTAMP:
           // nanosecond -> millisecond
-          long millis = (Long) upperBound / 1000;
-          literal = Literal.of(millis);
-          if (isHiveTable && !((Types.TimestampType) type).shouldAdjustToUTC()) {
-            literal =
-                Literal.of(Instant.ofEpochMilli(millis)
-                    .atZone(ZoneId.systemDefault()).toLocalDateTime()
-                    .toInstant(ZoneOffset.UTC).toEpochMilli());
-          }
+          literal = Literal.of((Long) upperBound / 1000);
           break;
         default:
           if (numberDateFormatter.equals(EXPIRE_TIMESTAMP_MS)) {
