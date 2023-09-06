@@ -631,9 +631,11 @@
                         <java>
                             <googleJavaFormat>
                                 <version>1.7</version>
-                                <style>AOSP</style>
                             </googleJavaFormat>
                             <removeUnusedImports />
+                            <importOrder>
+                                <order>,javax,java,\\#</order>
+                            </importOrder>
                         </java>
                     </configuration>
                 </plugin>
