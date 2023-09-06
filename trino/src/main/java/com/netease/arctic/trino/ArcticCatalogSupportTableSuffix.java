@@ -193,6 +193,11 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     }
 
     @Override
+    public String name() {
+      return table.name();
+    }
+
+    @Override
     public Map<Integer, Schema> schemas() {
       return table.schemas();
     }
