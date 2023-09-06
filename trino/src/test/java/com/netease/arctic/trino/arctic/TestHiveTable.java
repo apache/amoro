@@ -148,8 +148,8 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
         .skippingTypesCheck()
         .matches("VALUES " +
             "('id', NULL, NULL, 0e0, NULL, '1', '6'), " +
-            "('op_time', NULL, NULL, 0e0, NULL, NULL, NULL), " +
-            "('op_time_with_zone', NULL, NULL, 0e0, NULL, NULL, NULL), " +
+            "('op_time', NULL, NULL, 0e0, NULL, '2022-01-01 12:00:00.000000', '2022-01-04 12:00:00.000000'), " +
+            "('op_time_with_zone', NULL, NULL, 0e0, NULL,'2022-01-01 12:00:00.000 UTC', '2022-01-04 12:00:00.000 UTC'), " +
             "('d$d', NULL, NULL, 0e0, NULL, '100.0', '105.0'), " +
             "('map_name', NULL, NULL, NULL, NULL, NULL, NULL), " +
             "('array_name', NULL, NULL, NULL, NULL, NULL, NULL), " +
