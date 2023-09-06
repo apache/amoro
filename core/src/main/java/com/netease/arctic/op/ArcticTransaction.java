@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,20 +16,21 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.trace;
+package com.netease.arctic.op;
 
+import com.netease.arctic.op.ArcticAppendFiles;
+import com.netease.arctic.op.ArcticDeleteFiles;
+import com.netease.arctic.op.ArcticOverwriteFiles;
+import com.netease.arctic.op.ArcticReplacePartitions;
+import com.netease.arctic.op.ArcticRewriteFiles;
+import com.netease.arctic.op.ArcticRowDelta;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.ExpireSnapshots;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.HistoryEntry;
 import org.apache.iceberg.ManageSnapshots;
-import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.ReplacePartitions;
@@ -53,34 +54,21 @@ import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.LocationProvider;
-
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
+public class ArcticTransaction implements Transaction {
 
-public class CreateTableTransaction implements Transaction {
+  private final ArcticTable arcticTable;
+  private final Transaction transaction;
 
-  private final Transaction fakeTransaction;
-
-  private final TransactionTracker transactionTracer;
   private final Table transactionTable;
-  private final Supplier<ArcticTable> createTable;
-  private final Runnable rollback;
 
-  public CreateTableTransaction(
-      Transaction fakeTransaction,
-      Supplier<ArcticTable> createTable,
-      Runnable rollback) {
-    this.fakeTransaction = fakeTransaction;
-    this.transactionTracer = new TransactionTracker();
+  public ArcticTransaction(ArcticTable arcticTable, Transaction transaction) {
+    this.arcticTable = arcticTable;
+    this.transaction = transaction;
     this.transactionTable = new TransactionTable();
-    this.createTable = createTable;
-    this.rollback = rollback;
   }
 
   @Override
@@ -90,184 +78,77 @@ public class CreateTableTransaction implements Transaction {
 
   @Override
   public UpdateSchema updateSchema() {
-    throw new UnsupportedOperationException("create table transaction unsupported updateSchema");
+    return transaction.updateSchema();
   }
 
   @Override
   public UpdatePartitionSpec updateSpec() {
-    throw new UnsupportedOperationException("create table transaction unsupported updateSpec");
+    return transaction.updateSpec();
   }
 
   @Override
   public UpdateProperties updateProperties() {
-    throw new UnsupportedOperationException("create table transaction unsupported updateProperties");
+    return transaction.updateProperties();
   }
 
   @Override
   public ReplaceSortOrder replaceSortOrder() {
-    throw new UnsupportedOperationException("create table transaction unsupported updateProperties");
+    return transaction.replaceSortOrder();
   }
 
   @Override
   public UpdateLocation updateLocation() {
-    throw new UnsupportedOperationException("create table transaction unsupported updateProperties");
+    return transaction.updateLocation();
   }
 
   @Override
   public AppendFiles newAppend() {
-    return new AppendFiles() {
-      @Override
-      public AppendFiles appendFile(DataFile file) {
-        transactionTracer.addDataFile(file);
-        return this;
-      }
-
-      @Override
-      public AppendFiles appendManifest(ManifestFile file) {
-        throw new UnsupportedOperationException("create table transaction AppendFiles unsupported ManifestFile");
-      }
-
-      @Override
-      public AppendFiles set(String property, String value) {
-        throw new UnsupportedOperationException("create table transaction AppendFiles unsupported set");
-      }
-
-      @Override
-      public AppendFiles deleteWith(Consumer<String> deleteFunc) {
-        throw new UnsupportedOperationException("create table transaction AppendFiles unsupported deleteWith");
-      }
-
-      @Override
-      public AppendFiles stageOnly() {
-        throw new UnsupportedOperationException("create table transaction AppendFiles unsupported stageOnly");
-      }
-
-      @Override
-      public AppendFiles scanManifestsWith(ExecutorService executorService) {
-        throw new UnsupportedOperationException("create table transaction AppendFiles unsupported scanManifestsWith");
-      }
-
-      @Override
-      public Snapshot apply() {
-        throw new UnsupportedOperationException("create table transaction AppendFiles unsupported apply");
-      }
-
-      @Override
-      public void commit() {
-        transactionTracer.commit();
-      }
-    };
+    return ArcticAppendFiles.buildFor(arcticTable, false).inTransaction(transaction).build();
   }
 
   @Override
   public AppendFiles newFastAppend() {
-    throw new UnsupportedOperationException("create table transaction unsupported updateProperties");
+    return ArcticAppendFiles.buildFor(arcticTable, true).inTransaction(transaction).build();
   }
 
   @Override
   public RewriteFiles newRewrite() {
-    throw new UnsupportedOperationException("create table transaction unsupported newRewrite");
+    return ArcticRewriteFiles.buildFor(arcticTable).inTransaction(transaction).build();
   }
 
   @Override
   public RewriteManifests rewriteManifests() {
-    throw new UnsupportedOperationException("create table transaction unsupported rewriteManifests");
+    return transaction.rewriteManifests();
   }
 
   @Override
   public OverwriteFiles newOverwrite() {
-    throw new UnsupportedOperationException("create table transaction unsupported newOverwrite");
+    return ArcticOverwriteFiles.buildFor(arcticTable).inTransaction(transaction).build();
   }
 
   @Override
   public RowDelta newRowDelta() {
-    throw new UnsupportedOperationException("create table transaction unsupported newRowDelta");
+    return ArcticRowDelta.buildFor(arcticTable).inTransaction(transaction).build();
   }
 
   @Override
   public ReplacePartitions newReplacePartitions() {
-    throw new UnsupportedOperationException("create table transaction unsupported newReplacePartitions");
+    return ArcticReplacePartitions.buildFor(arcticTable).inTransaction(transaction).build();
   }
 
   @Override
   public DeleteFiles newDelete() {
-    throw new UnsupportedOperationException("create table transaction unsupported newReplacePartitions");
+    return ArcticDeleteFiles.buildFor(arcticTable).inTransaction(transaction).build();
   }
 
   @Override
   public ExpireSnapshots expireSnapshots() {
-    throw new UnsupportedOperationException("create table transaction unsupported newReplacePartitions");
+    return transaction.expireSnapshots();
   }
 
   @Override
   public void commitTransaction() {
-    try {
-      ArcticTable arcticTable = createTable.get();
-      if (!transactionTracer.add.isEmpty()) {
-        if (!transactionTracer.isCommit) {
-          throw new IllegalStateException("last operation has not committed");
-        }
-        Transaction transaction;
-        if (arcticTable.isUnkeyedTable()) {
-          UnkeyedTable table = arcticTable.asUnkeyedTable();
-          transaction = table.newTransaction();
-        } else {
-          KeyedTable keyedTable = arcticTable.asKeyedTable();
-          transaction = keyedTable.baseTable().newTransaction();
-        }
-        AppendFiles appendFiles = transaction.newAppend();
-        for (DataFile dataFile : transactionTracer.add) {
-          appendFiles.appendFile(dataFile);
-        }
-        appendFiles.commit();
-        transaction.commitTransaction();
-      }
-    } catch (Throwable t) {
-      rollback.run();
-      throw t;
-    }
-  }
-
-  static class TransactionTracker implements TableTracer {
-
-    private final List<DataFile> add = new ArrayList<>();
-
-    private boolean isCommit;
-
-    @Override
-    public void addDataFile(DataFile dataFile) {
-      add.add(dataFile);
-    }
-
-    @Override
-    public void deleteDataFile(DataFile dataFile) {
-    }
-
-    @Override
-    public void addDeleteFile(DeleteFile deleteFile) {
-    }
-
-    @Override
-    public void deleteDeleteFile(DeleteFile deleteFile) {
-    }
-
-    @Override
-    public void commit() {
-      isCommit = true;
-    }
-
-    @Override
-    public void replaceProperties(Map<String, String> newProperties) {
-    }
-
-    @Override
-    public void setSnapshotSummary(String key, String value) {
-    }
-
-    @Override
-    public void updateColumn(UpdateColumn updateColumn) {
-
-    }
+    transaction.commitTransaction();
   }
 
   class TransactionTable implements Table, HasTableOperations, Serializable {
@@ -275,7 +156,7 @@ public class CreateTableTransaction implements Transaction {
     Table transactionTable;
 
     public TransactionTable() {
-      transactionTable = fakeTransaction.table();
+      transactionTable = transaction.table();
     }
 
     @Override
@@ -430,7 +311,6 @@ public class CreateTableTransaction implements Transaction {
     public ExpireSnapshots expireSnapshots() {
       return transactionTable.expireSnapshots();
     }
-
 
     @Override
     public ManageSnapshots manageSnapshots() {
