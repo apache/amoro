@@ -769,6 +769,7 @@ public class OptimizeQueueService extends IJDBCService implements Closeable {
           }
 
           OptimizePlanResult optimizePlanResult = OptimizePlanResult.EMPTY;
+          long startPlanTime = System.currentTimeMillis();
           if (tableItem.startPlanIfNot()) {
             try {
               if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
@@ -778,13 +779,13 @@ public class OptimizeQueueService extends IJDBCService implements Closeable {
               }
             } finally {
               tableItem.finishPlan();
+              LOG.info("{} finish plan cost {} ms, get {} tasks", tableItem.getTableIdentifier(),
+                  System.currentTimeMillis() - startPlanTime, optimizePlanResult.getOptimizeTasks().size());
             }
           }
 
           if (!optimizePlanResult.isEmpty()) {
             initTableOptimizeRuntime(tableItem, optimizePlanResult);
-            LOG.debug("{} after plan get {} tasks", tableItem.getTableIdentifier(),
-                optimizePlanResult.getOptimizeTasks().size());
 
             List<OptimizeTaskItem> toExecuteTasks = addTask(tableItem, optimizePlanResult.getOptimizeTasks());
             if (!toExecuteTasks.isEmpty()) {
