@@ -731,6 +731,10 @@ public class OptimizeQueueService extends IJDBCService implements Closeable {
       for (TableIdentifier tableIdentifier : tableSort) {
         try {
           TableOptimizeItem tableItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
+          if (tableItem.getTableOptimizeRuntime().getOptimizeStatus() != TableOptimizeRuntime.OptimizeStatus.Pending) {
+            // only table in pending should plan
+            continue;
+          }
           ArcticTable arcticTable = tableItem.getArcticTable(true);
 
           Map<String, String> properties = arcticTable.properties();
@@ -762,11 +766,6 @@ public class OptimizeQueueService extends IJDBCService implements Closeable {
             } else {
               continue;
             }
-          }
-
-          if (tableItem.getTableOptimizeRuntime().getOptimizeStatus() != TableOptimizeRuntime.OptimizeStatus.Pending) {
-            // only table in pending should plan
-            continue;
           }
 
           OptimizePlanResult optimizePlanResult = OptimizePlanResult.EMPTY;
