@@ -456,11 +456,11 @@ public class LogKafkaSourceBuilder {
         break;
       default:
         throw new ValidationException(String.format(
-          "%s only support '%s', '%s', '%s', '%s'. But input is '%s'",
+          "%s only support '%s', '%s', '%s', '%s', '%s'. But input is '%s'",
           ArcticValidator.SCAN_STARTUP_MODE,
           SCAN_STARTUP_MODE_LATEST, SCAN_STARTUP_MODE_EARLIEST,
           SCAN_STARTUP_MODE_TIMESTAMP, SCAN_STARTUP_MODE_GROUP_OFFSETS,
-          startupMode));
+          SCAN_STARTUP_MODE_SPECIFIC_OFFSETS, startupMode));
     }
   }
 
