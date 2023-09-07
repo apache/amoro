@@ -32,7 +32,8 @@ import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
 case class TruncateArcticTableExec(table: Table, partitionSpec: Option[TablePartitionSpec])
   extends V2CommandExec {
   override protected def run(): Seq[InternalRow] = {
-    Preconditions.checkArgument(partitionSpec.isEmpty,
+    Preconditions.checkArgument(
+      partitionSpec.isEmpty,
       "Catalog support only one table format now.",
       Array.empty[AnyRef]: _*)
     table match {

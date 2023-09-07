@@ -37,8 +37,8 @@ import org.apache.spark.sql.execution.command.CreateTableLikeCommand
  */
 case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[LogicalPlan] {
   private def isCreateArcticTableLikeCommand(
-                                              targetTable: TableIdentifier,
-                                              provider: Option[String]): Boolean = {
+      targetTable: TableIdentifier,
+      provider: Option[String]): Boolean = {
     val (targetCatalog, _) = buildCatalogAndIdentifier(sparkSession, targetTable)
     isCreateArcticTable(targetCatalog, provider)
   }
@@ -63,8 +63,14 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
           if isArcticTable(r.table) =>
         TruncateArcticTable(t.child)
 
-      case c @ CreateTableAsSelect(ResolvedDBObjectName(catalog: TableCatalog, _), _, _, tableSpec, options, _)
-        if isCreateArcticTable(catalog, tableSpec.provider) =>
+      case c @ CreateTableAsSelect(
+            ResolvedDBObjectName(catalog: TableCatalog, _),
+            _,
+            _,
+            tableSpec,
+            options,
+            _)
+          if isCreateArcticTable(catalog, tableSpec.provider) =>
         var propertiesMap: Map[String, String] = tableSpec.properties
         var optionsMap: Map[String, String] = options
         if (options.contains("primary.keys")) {
