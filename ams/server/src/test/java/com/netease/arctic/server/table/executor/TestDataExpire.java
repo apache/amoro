@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.BasicTableTestHelper;
@@ -254,7 +272,7 @@ public class TestDataExpire extends ExecutorTestBase {
     OptimizingTestHelpers.appendBase(keyedTable, tableTestHelper().writeBaseStore(keyedTable, 0, baseRecords, false));
 
     ArrayList<Record> newRecords = Lists.newArrayList(
-        createRecord(3, "333", parseMillis("2022-01-02T12:00:00"), "2022-01-02T12:00:00"),
+        createRecord(3, "333", parseMillis("2022-01-02T18:00:00"), "2022-01-02T18:00:00"),
         createRecord(4, "444", parseMillis("2021-12-30T19:00:00"), "2021-12-30T19:00:00")
     );
     OptimizingTestHelpers.appendChange(keyedTable, tableTestHelper().writeChangeStore(keyedTable, 1L,
@@ -287,7 +305,7 @@ public class TestDataExpire extends ExecutorTestBase {
     List<Record> records = Lists.newArrayList(
         createRecord(1, "111", parseMillis("2022-01-01T12:00:00"), "2022-01-01T12:00:00"),
         createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),
-        createRecord(3, "333", parseMillis("2022-01-02T12:00:00"), "2022-01-02T12:00:00"),
+        createRecord(3, "333", parseMillis("2022-01-02T18:00:00"), "2022-01-02T18:00:00"),
         createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00")
     );
     records.forEach(r -> OptimizingTestHelpers.appendBase(
