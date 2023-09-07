@@ -153,7 +153,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
    * @param instant timestamp/timestampz/long field type uses UTC, others will use the local time zone
    */
   protected static void purgeTableFrom(ArcticTable table, DataExpirationConfig expirationConfig, Instant instant) {
-    long expireTimestamp = Math.max(instant.toEpochMilli() - expirationConfig.retentionTime, 0L);
+    long expireTimestamp = instant.minusMillis(expirationConfig.retentionTime).toEpochMilli();
     LOG.info("Expiring Data older than {} in table {} ", Instant.ofEpochMilli(expireTimestamp)
             .atZone(getDefaultZoneId(expirationConfig.expirationField))
             .toLocalDateTime(),
