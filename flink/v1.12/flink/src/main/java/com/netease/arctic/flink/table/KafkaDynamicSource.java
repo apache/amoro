@@ -77,7 +77,6 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_ALL_KINDS;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_GROUP_OFFSETS;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
 import static org.apache.flink.table.connector.ChangelogMode.insertOnly;
@@ -253,12 +252,10 @@ public class KafkaDynamicSource
         return StartupMode.EARLIEST;
       case SCAN_STARTUP_MODE_TIMESTAMP:
         return StartupMode.TIMESTAMP;
-      case SCAN_STARTUP_MODE_GROUP_OFFSETS:
-        return StartupMode.GROUP_OFFSETS;
       default:
         throw new ValidationException(String.format(
-            "%s only support '%s', '%s'. But input is '%s'", ArcticValidator.SCAN_STARTUP_MODE,
-            SCAN_STARTUP_MODE_LATEST, SCAN_STARTUP_MODE_EARLIEST, startupMode));
+            "%s only support '%s', '%s, %s'. But input is '%s'", ArcticValidator.SCAN_STARTUP_MODE,
+            SCAN_STARTUP_MODE_LATEST, SCAN_STARTUP_MODE_EARLIEST, SCAN_STARTUP_MODE_TIMESTAMP, startupMode));
     }
   }
   
