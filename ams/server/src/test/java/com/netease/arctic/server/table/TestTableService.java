@@ -20,11 +20,11 @@ package com.netease.arctic.server.table;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.TestedCatalogs;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
@@ -51,7 +51,7 @@ public class TestTableService extends AMSTableTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][] {{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+    return new Object[][] {{TestedCatalogs.internalCatalog(TableFormat.MIXED_ICEBERG),
                             new BasicTableTestHelper(true, true)},
                            {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
                             new HiveTableTestHelper(true, true)}};
@@ -71,7 +71,8 @@ public class TestTableService extends AMSTableTestBase {
         tableMeta().getTableIdentifier()).buildTableMeta());
 
     // test list tables
-    List<TableIdentifier> tableIdentifierList = tableService().listTables(TEST_CATALOG_NAME,
+    List<TableIdentifier> tableIdentifierList = tableService().listTables(
+        TEST_CATALOG_NAME,
         TEST_DB_NAME);
     Assert.assertEquals(1, tableIdentifierList.size());
     Assert.assertEquals(tableMeta().getTableIdentifier(), tableIdentifierList.get(0));
@@ -89,7 +90,8 @@ public class TestTableService extends AMSTableTestBase {
     Assert.assertTrue(tableService().tableExist(tableMeta().getTableIdentifier()));
 
     // test create duplicate table
-    Assert.assertThrows(AlreadyExistsException.class, () -> tableService().createTable(TEST_CATALOG_NAME,
+    Assert.assertThrows(AlreadyExistsException.class, () -> tableService().createTable(
+        TEST_CATALOG_NAME,
         tableMetadata()));
 
     // test create table with wrong catalog name
@@ -126,7 +128,8 @@ public class TestTableService extends AMSTableTestBase {
     Assert.assertFalse(tableService().tableExist(tableMeta().getTableIdentifier()));
 
     // test drop not existed table
-    Assert.assertThrows(ObjectNotExistsException.class,
+    Assert.assertThrows(
+        ObjectNotExistsException.class,
         () -> tableService().dropTableMetadata(tableMeta().getTableIdentifier(), true));
 
     tableService().dropDatabase(TEST_CATALOG_NAME, TEST_DB_NAME);
@@ -298,7 +301,7 @@ public class TestTableService extends AMSTableTestBase {
     blockers = tableService().getBlockers(serverTableIdentifier().getIdentifier());
     Assert.assertEquals(i, blockers.size());
   }
-  
+
   private Map<String, String> getProperties() {
     Map<String, String> properties = new HashMap<>();
     properties.put("test_key", "test_value");

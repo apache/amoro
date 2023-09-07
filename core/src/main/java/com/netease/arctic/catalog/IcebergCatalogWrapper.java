@@ -37,11 +37,14 @@ import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,8 +60,16 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
   private CatalogMeta meta;
   private Map<String, String> customProperties;
   private Pattern databaseFilterPattern;
+  private Pattern tableFilterPattern;
   private transient TableMetaStore tableMetaStore;
   private transient Catalog icebergCatalog;
+
+  public IcebergCatalogWrapper() {
+  }
+
+  public IcebergCatalogWrapper(CatalogMeta meta) {
+    initialize(meta, Maps.newHashMap());
+  }
 
   @Override
   public String name() {
@@ -89,6 +100,14 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
       databaseFilterPattern = Pattern.compile(databaseFilter);
     } else {
       databaseFilterPattern = null;
+    }
+
+    if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_TABLE_FILTER)) {
+      String tableFilter =
+          meta.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
+      tableFilterPattern = Pattern.compile(tableFilter);
+    } else {
+      tableFilterPattern = null;
     }
   }
 
@@ -148,7 +167,9 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
   @Override
   public List<TableIdentifier> listTables(String database) {
     return tableMetaStore.doAs(() -> icebergCatalog.listTables(Namespace.of(database)).stream()
-        .filter(tableIdentifier -> tableIdentifier.namespace().levels().length == 1)
+        .filter(tableIdentifier -> tableIdentifier.namespace().levels().length == 1 &&
+            (tableFilterPattern == null ||
+                tableFilterPattern.matcher((database + "." + tableIdentifier.name())).matches()))
         .map(tableIdentifier -> TableIdentifier.of(name(), database, tableIdentifier.name()))
         .collect(Collectors.toList()));
   }
@@ -205,7 +226,6 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
     return new IcebergTableBuilder(schema, identifier);
   }
 
-
   @Override
   public void refresh() {
   }
@@ -260,15 +280,24 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
     }
 
     @Override
+    public Transaction createTransaction() {
+      return icebergCatalog.newCreateTableTransaction(
+          toIcebergTableIdentifier(identifier), schema,
+          spec, properties);
+    }
+
+    @Override
     public TableBuilder withPrimaryKeySpec(PrimaryKeySpec primaryKeySpec) {
-      throw new UnsupportedOperationException("can't create an iceberg table with primary key");
+      Preconditions.checkArgument(
+          primaryKeySpec == null || !primaryKeySpec.primaryKeyExisted(),
+          "can't create an iceberg table with primary key");
+      return this;
     }
 
     @Override
     protected IcebergTableBuilder self() {
       return this;
     }
-
   }
 
   public static class BasicIcebergTable extends BasicUnkeyedTable {
@@ -278,7 +307,7 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
         Table icebergTable,
         ArcticFileIO arcticFileIO,
         Map<String, String> catalogProperties) {
-      super(tableIdentifier, icebergTable, arcticFileIO, null, catalogProperties);
+      super(tableIdentifier, icebergTable, arcticFileIO, catalogProperties);
     }
 
     @Override
