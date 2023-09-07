@@ -254,8 +254,8 @@ public class KafkaDynamicSource
         return StartupMode.TIMESTAMP;
       default:
         throw new ValidationException(String.format(
-            "%s only support '%s', '%s, %s'. But input is '%s'", ArcticValidator.SCAN_STARTUP_MODE,
-            SCAN_STARTUP_MODE_LATEST, SCAN_STARTUP_MODE_EARLIEST, SCAN_STARTUP_MODE_TIMESTAMP, startupMode));
+            "%s only support '%s', '%s'. But input is '%s'", ArcticValidator.SCAN_STARTUP_MODE,
+            SCAN_STARTUP_MODE_LATEST, SCAN_STARTUP_MODE_EARLIEST, startupMode));
     }
   }
   
