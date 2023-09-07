@@ -1,11 +1,12 @@
 package com.netease.arctic.server.table.executor;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.netease.arctic.IcebergFileEntry;
-import com.netease.arctic.hive.utils.TableTypeUtil;
+import com.netease.arctic.op.SnapshotSummary;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.table.ExpiringDataConfig;
@@ -19,10 +20,8 @@ import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.curator.shaded.com.google.common.collect.Iterables;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
