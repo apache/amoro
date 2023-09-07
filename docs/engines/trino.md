@@ -20,7 +20,6 @@ please refer to the documentation at [Iceberg Connector](https://trino.io/docs/c
 - Create the {trino_home}/plugin/amoro directory in the Trino installation package, 
   and extract the contents of the amoro-trino package trino-amoro-xx-SNAPSHOT.tar.gz to the {trino_home}/plugin/amoro directory.
 - Configure the Catalog configuration file for Amoro in the {trino_home}/etc/catalog directory, for example:
-- 
 ```tex
 connector.name=arctic
 arctic.url=thrift://{ip}:{port}/{catalogName}
