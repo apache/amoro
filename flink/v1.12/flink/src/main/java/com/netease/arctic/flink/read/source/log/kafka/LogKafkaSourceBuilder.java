@@ -38,9 +38,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
@@ -50,7 +50,9 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_ST
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_GROUP_OFFSETS;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_SPECIFIC_OFFSETS;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_SPECIFIC_OFFSETS;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
 import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.fetchLogstorePrefixProperties;
 import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
@@ -76,6 +78,8 @@ public class LogKafkaSourceBuilder {
   private static final String[] REQUIRED_CONFIGS = {
       ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, ConsumerConfig.GROUP_ID_CONFIG
   };
+  private static final String PARTITION = "partition";
+  private static final String OFFSET = "offset";
   // The subscriber specifies the partitions to subscribe to.
   private KafkaSubscriber subscriber;
   // Users can specify the starting / stopping offset initializer.
@@ -412,13 +416,6 @@ public class LogKafkaSourceBuilder {
   private void setupStartupMode() {
     String startupMode = CompatiblePropertyUtil.propertyAsString(tableProperties, SCAN_STARTUP_MODE.key(),
         SCAN_STARTUP_MODE.defaultValue()).toLowerCase();
-    long startupTimestampMillis = 0L;
-    if (Objects.equals(startupMode.toLowerCase(), SCAN_STARTUP_MODE_TIMESTAMP)) {
-      startupTimestampMillis = Long.parseLong(Preconditions.checkNotNull(
-          tableProperties.get(SCAN_STARTUP_TIMESTAMP_MILLIS.key()),
-          String.format("'%s' should be set in '%s' mode",
-              SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP)));
-    }
 
     switch (startupMode) {
       case SCAN_STARTUP_MODE_EARLIEST:
@@ -428,10 +425,31 @@ public class LogKafkaSourceBuilder {
         setStartingOffsets(OffsetsInitializer.latest());
         break;
       case SCAN_STARTUP_MODE_TIMESTAMP:
+        long startupTimestampMillis = Long.parseLong(Preconditions.checkNotNull(
+            tableProperties.get(SCAN_STARTUP_TIMESTAMP_MILLIS.key()),
+            String.format("'%s' should be set in '%s' mode",
+            SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP)));
         setStartingOffsets(OffsetsInitializer.timestamp(startupTimestampMillis));
         break;
       case SCAN_STARTUP_MODE_GROUP_OFFSETS:
         setStartingOffsets(OffsetsInitializer.committedOffsets());
+        break;
+      case SCAN_STARTUP_MODE_SPECIFIC_OFFSETS:
+        Map<TopicPartition, Long> specificOffsets = new HashMap<>();
+        String specificOffsetsStrOpt = Preconditions.checkNotNull(
+            tableProperties.get(SCAN_STARTUP_SPECIFIC_OFFSETS.key()),
+            String.format("'%s' should be set in '%s' mode",
+            SCAN_STARTUP_SPECIFIC_OFFSETS.key(), SCAN_STARTUP_MODE_SPECIFIC_OFFSETS));
+        final Map<Integer, Long> offsetMap =
+            parseSpecificOffsets(specificOffsetsStrOpt, SCAN_STARTUP_SPECIFIC_OFFSETS.key());
+        offsetMap.forEach(
+            (partition, offset) -> {
+            final TopicPartition topicPartition =
+                new TopicPartition(getLogTopic(tableProperties).get(0), partition);
+            specificOffsets.put(topicPartition, offset);
+          }
+        );
+        setStartingOffsets(OffsetsInitializer.offsets(specificOffsets));
         break;
       default:
         throw new ValidationException(String.format(
@@ -511,5 +529,44 @@ public class LogKafkaSourceBuilder {
     checkNotNull(
         subscriber,
         String.format("No topic is specified, '%s' should be set.", LOG_STORE_MESSAGE_TOPIC));
+  }
+
+  public static Map<Integer, Long> parseSpecificOffsets(
+      String specificOffsetsStr, String optionKey) {
+    final Map<Integer, Long> offsetMap = new HashMap<>();
+    final String[] pairs = specificOffsetsStr.split(";");
+    final String validationExceptionMessage =
+        String.format(
+        "Invalid properties '%s' should follow the format " +
+          "'partition:0,offset:42;partition:1,offset:300', but is '%s'.",
+        optionKey, specificOffsetsStr);
+
+    if (pairs.length == 0) {
+      throw new ValidationException(validationExceptionMessage);
+    }
+
+    for (String pair : pairs) {
+      if (null == pair || pair.length() == 0 || !pair.contains(",")) {
+        throw new ValidationException(validationExceptionMessage);
+      }
+
+      final String[] kv = pair.split(",");
+      if (kv.length != 2 ||
+          !kv[0].startsWith(PARTITION + ':') ||
+          !kv[1].startsWith(OFFSET + ':')) {
+        throw new ValidationException(validationExceptionMessage);
+      }
+
+      String partitionValue = kv[0].substring(kv[0].indexOf(":") + 1);
+      String offsetValue = kv[1].substring(kv[1].indexOf(":") + 1);
+      try {
+        final Integer partition = Integer.valueOf(partitionValue);
+        final Long offset = Long.valueOf(offsetValue);
+        offsetMap.put(partition, offset);
+      } catch (NumberFormatException e) {
+        throw new ValidationException(validationExceptionMessage, e);
+      }
+    }
+    return offsetMap;
   }
 }
