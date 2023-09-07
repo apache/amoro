@@ -170,12 +170,8 @@ public class MajorOptimizePlan extends AbstractArcticOptimizePlan {
     List<DeleteFile> posDeleteFiles = getPosDeleteFilesFromFileTree(partition);
     if (nodeTaskNeedBuild(partition, posDeleteFiles, baseFiles)) {
       // for unkeyed table, tasks can be bin-packed
-      long taskSize = CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
-          TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
-          TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
-      Long sum = baseFiles.stream().map(DataFile::fileSizeInBytes).reduce(0L, Long::sum);
-      int taskCnt = (int) (sum / taskSize) + 1;
-      List<List<DataFile>> packed = new BinPacking.ListPacker<DataFile>(taskSize, taskCnt, true)
+      long taskSize = getTaskSize();
+      List<List<DataFile>> packed = new BinPacking.ListPacker<DataFile>(taskSize, Integer.MAX_VALUE, true)
           .pack(baseFiles, DataFile::fileSizeInBytes);
       for (List<DataFile> files : packed) {
         if (CollectionUtils.isNotEmpty(files)) {

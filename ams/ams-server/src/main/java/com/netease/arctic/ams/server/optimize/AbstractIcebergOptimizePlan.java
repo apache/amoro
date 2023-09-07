@@ -28,7 +28,6 @@ import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
 import com.netease.arctic.data.file.DataFileWithSequence;
 import com.netease.arctic.data.file.DeleteFileWithSequence;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SequenceNumberFetcher;
 import com.netease.arctic.utils.SerializationUtils;
 import org.apache.iceberg.DataFile;
@@ -36,7 +35,6 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.util.BinPacking;
-import org.apache.iceberg.util.PropertyUtil;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -78,13 +76,8 @@ public abstract class AbstractIcebergOptimizePlan extends AbstractOptimizePlan {
   }
 
   protected List<List<FileScanTask>> binPackFileScanTask(List<FileScanTask> fileScanTasks) {
-    long targetFileSize = getTargetSize();
-
-    Long sum = fileScanTasks.stream()
-        .map(fileScanTask -> fileScanTask.file().fileSizeInBytes()).reduce(0L, Long::sum);
-    int taskCnt = (int) (sum / targetFileSize) + 1;
-
-    return new BinPacking.ListPacker<FileScanTask>(targetFileSize, taskCnt, true)
+    long taskSize = getTaskSize();
+    return new BinPacking.ListPacker<FileScanTask>(taskSize, Integer.MAX_VALUE, true)
         .pack(fileScanTasks, fileScanTask -> fileScanTask.file().fileSizeInBytes());
   }
 
@@ -177,12 +170,6 @@ public abstract class AbstractIcebergOptimizePlan extends AbstractOptimizePlan {
       sequenceNumberFetcher = new SequenceNumberFetcher(arcticTable.asUnkeyedTable(), getCurrentSnapshotId());
     }
     return sequenceNumberFetcher;
-  }
-
-  private long getTargetSize() {
-    return PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
-        TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
   }
 
   protected void getOptimizeFile(List<FileScanTask> fileScanTasks,

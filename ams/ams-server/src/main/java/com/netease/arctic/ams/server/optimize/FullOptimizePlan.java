@@ -116,11 +116,10 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
   protected List<BasicOptimizeTask> collectTask(String partition) {
     List<BasicOptimizeTask> result;
     if (arcticTable.isUnkeyedTable()) {
-      result = collectTasksWithBinPack(partition, getOptimizingTargetSize());
+      result = collectTasksWithBinPack(partition, getTaskSize());
     } else {
       if (allBaseFilesInRootNode(partition)) {
-        // TO avoid too big task size leading to optimizer OOM, we limit the max task size to 4 * optimizing target size
-        result = collectTasksWithBinPack(partition, getOptimizingTargetSize() * Math.min(4, getBaseBucketSize()));
+        result = collectTasksWithBinPack(partition, getTaskSize());
       } else {
         result = collectTasksWithNodes(partition);
       }
@@ -204,9 +203,7 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
           false, constructCustomHiveSubdirectory(baseFiles)
       );
 
-      Long sum = baseFiles.stream().map(DataFile::fileSizeInBytes).reduce(0L, Long::sum);
-      int taskCnt = (int) (sum / taskSize) + 1;
-      List<List<DataFile>> packed = new BinPacking.ListPacker<DataFile>(taskSize, taskCnt, true)
+      List<List<DataFile>> packed = new BinPacking.ListPacker<DataFile>(taskSize, Integer.MAX_VALUE, true)
           .pack(baseFiles, DataFile::fileSizeInBytes);
       for (List<DataFile> files : packed) {
         if (CollectionUtils.isNotEmpty(files)) {
