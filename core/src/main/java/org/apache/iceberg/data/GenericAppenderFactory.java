@@ -41,7 +41,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Map;
 
-/** Factory to create a new {@link FileAppender} to write {@link Record}s. */
+/** Copied from https://github.com/apache/iceberg
+ * Line 223: add metricsConfig for ORC PositionDeleteWriter in newPosDeleteWriter method
+ * Factory to create a new {@link FileAppender} to write {@link Record}s. */
 public class GenericAppenderFactory implements FileAppenderFactory<Record> {
 
   private final Schema schema;
