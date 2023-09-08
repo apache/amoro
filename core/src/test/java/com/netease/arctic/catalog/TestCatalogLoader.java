@@ -77,18 +77,6 @@ public class TestCatalogLoader {
   }
 
   @Test
-  public void testLoadOldAMSCatalog() {
-    Map<String, String> properties = Maps.newHashMap();
-    CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(TEST_CATALOG_NAME,
-        CatalogMetaProperties.CATALOG_TYPE_HADOOP, properties);
-    TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
-    ArcticCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
-    Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
-    Assert.assertTrue(loadCatalog instanceof BasicArcticCatalog);
-    TEST_AMS.getAmsHandler().dropCatalog(TEST_CATALOG_NAME);
-  }
-
-  @Test
   public void testLoadNotExistedCatalog() {
     Assert.assertThrows("catalog not found, please check catalog name", IllegalArgumentException.class,
         () -> CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME)));

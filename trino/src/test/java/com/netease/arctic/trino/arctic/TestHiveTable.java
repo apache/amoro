@@ -41,8 +41,6 @@ import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -53,6 +51,7 @@ import java.util.List;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestHiveTable extends TestHiveTableBaseForTrino {
@@ -79,15 +78,13 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
   @Override
   protected QueryRunner createQueryRunner() throws Exception {
     AMS = MockArcticMetastoreServer.getInstance();
-    tmp.create();
-    tempFolder.create();
     startMetastore();
     setupTables();
     initData();
     return ArcticQueryRunner.builder()
         .setExtraProperties(ImmutableMap.of("http-server.http.port", "8080"))
         .setIcebergProperties(ImmutableMap.of("arctic.url",
-            String.format("thrift://localhost:%s/%s", AMS.port(), HIVE_CATALOG_NAME)))
+            String.format("thrift://localhost:%s/%s", AMS.port(), TEST_CATALOG_NAME)))
         .build();
   }
 
@@ -151,8 +148,8 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
         .skippingTypesCheck()
         .matches("VALUES " +
             "('id', NULL, NULL, 0e0, NULL, '1', '6'), " +
-            "('op_time', NULL, NULL, 0e0, NULL, NULL, NULL), " +
-            "('op_time_with_zone', NULL, NULL, 0e0, NULL, NULL, NULL), " +
+            "('op_time', NULL, NULL, 0e0, NULL, '2022-01-01 12:00:00.000000', '2022-01-04 12:00:00.000000'), " +
+            "('op_time_with_zone', NULL, NULL, 0e0, NULL,'2022-01-01 12:00:00.000 UTC', '2022-01-04 12:00:00.000 UTC'), " +
             "('d$d', NULL, NULL, 0e0, NULL, '100.0', '105.0'), " +
             "('map_name', NULL, NULL, NULL, NULL, NULL, NULL), " +
             "('array_name', NULL, NULL, NULL, NULL, NULL, NULL), " +

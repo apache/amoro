@@ -29,6 +29,7 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
+import com.netease.arctic.op.CreateTableTransaction;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
@@ -37,7 +38,6 @@ import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
-import com.netease.arctic.trace.CreateTableTransaction;
 import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
@@ -77,6 +77,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
   protected CatalogMeta catalogMeta;
   protected Map<String, String> customProperties;
   protected MixedTables tables;
+  protected transient TableMetaStore tableMetaStore;
 
   @Override
   public String name() {
@@ -93,6 +94,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
     this.customProperties = properties;
     CatalogUtil.mergeCatalogProperties(catalogMeta, properties);
     tables = newMixedTables(catalogMeta);
+    tableMetaStore = CatalogUtil.buildMetaStore(meta);
   }
 
   protected MixedTables newMixedTables(CatalogMeta catalogMeta) {
@@ -210,10 +212,6 @@ public class BasicArcticCatalog implements ArcticCatalog {
     return catalogMeta.getCatalogProperties();
   }
 
-  public TableMetaStore getTableMetaStore() {
-    return tables.getTableMetaStore();
-  }
-
   protected TableMeta getArcticTableMeta(TableIdentifier identifier) {
     TableMeta tableMeta;
     try {
@@ -292,18 +290,14 @@ public class BasicArcticCatalog implements ArcticCatalog {
       return table;
     }
 
-    protected ArcticTable createTableByMeta(TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
-                                            PartitionSpec partitionSpec) {
-      return tables.createTableByMeta(tableMeta, schema, primaryKeySpec, partitionSpec);
-    }
-
-    public Transaction newCreateTableTransaction() {
-      ArcticFileIO arcticFileIO = ArcticFileIOs.buildHadoopFileIO(tables.getTableMetaStore());
+    @Override
+    public Transaction createTransaction() {
+      ArcticFileIO arcticFileIO = ArcticFileIOs.buildHadoopFileIO(tableMetaStore);
       ConvertStructUtil.TableMetaBuilder builder = createTableMataBuilder();
       TableMeta meta = builder.build();
       String location = getTableLocationForCreate();
       TableOperations tableOperations = new ArcticHadoopTableOperations(new Path(location),
-          arcticFileIO, tables.getTableMetaStore().getConfiguration());
+          arcticFileIO, tableMetaStore.getConfiguration());
       TableMetadata tableMetadata = tableMetadata(schema, partitionSpec, sortOrder, properties, location);
       Transaction transaction =
           Transactions.createTableTransaction(identifier.getTableName(), tableOperations, tableMetadata);
@@ -321,6 +315,12 @@ public class BasicArcticCatalog implements ArcticCatalog {
             }
           }
       );
+    }
+
+    protected ArcticTable createTableByMeta(
+        TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
+        PartitionSpec partitionSpec) {
+      return tables.createTableByMeta(tableMeta, schema, primaryKeySpec, partitionSpec);
     }
 
     protected void doCreateCheck() {
@@ -348,17 +348,20 @@ public class BasicArcticCatalog implements ArcticCatalog {
     }
 
     protected void checkProperties() {
-      Map<String, String> mergedProperties = CatalogUtil.mergeCatalogPropertiesToTable(properties,
-          catalogMeta.getCatalogProperties());
+      Map<String, String> mergedProperties = CatalogUtil.mergeCatalogPropertiesToTable(
+          properties, catalogMeta.getCatalogProperties());
       boolean enableStream = CompatiblePropertyUtil.propertyAsBoolean(mergedProperties,
           TableProperties.ENABLE_LOG_STORE, TableProperties.ENABLE_LOG_STORE_DEFAULT);
       if (enableStream) {
-        Preconditions.checkArgument(mergedProperties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC),
+        Preconditions.checkArgument(
+            mergedProperties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC),
             "log-store.topic must not be null when log-store.enabled is true.");
-        Preconditions.checkArgument(mergedProperties.containsKey(TableProperties.LOG_STORE_ADDRESS),
+        Preconditions.checkArgument(
+            mergedProperties.containsKey(TableProperties.LOG_STORE_ADDRESS),
             "log-store.address must not be null when log-store.enabled is true.");
         String logStoreType = mergedProperties.get(LOG_STORE_TYPE);
-        Preconditions.checkArgument(logStoreType == null ||
+        Preconditions.checkArgument(
+            logStoreType == null ||
                 logStoreType.equals(LOG_STORE_STORAGE_TYPE_KAFKA) ||
                 logStoreType.equals(LOG_STORE_STORAGE_TYPE_PULSAR),
             String.format(

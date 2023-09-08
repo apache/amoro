@@ -23,7 +23,6 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableMetaStore;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.PartitionSpec;
@@ -41,9 +40,9 @@ import java.util.stream.Collectors;
 
 public class TestBasicArcticCatalog extends BasicArcticCatalog {
 
-  private String location;
+  private final String location;
 
-  private HadoopCatalog catalog;
+  private final HadoopCatalog catalog;
 
   public TestBasicArcticCatalog(String location) {
     this.location = location;
@@ -87,11 +86,6 @@ public class TestBasicArcticCatalog extends BasicArcticCatalog {
   public boolean dropTable(TableIdentifier identifier, boolean purge) {
     return catalog.dropTable(org.apache.iceberg.catalog.TableIdentifier.of(identifier.getCatalog(),
         identifier.getDatabase(), identifier.getTableName()), purge);
-  }
-
-  @Override
-  public TableMetaStore getTableMetaStore() {
-    return TableMetaStore.EMPTY;
   }
 
   @Override
@@ -154,7 +148,8 @@ public class TestBasicArcticCatalog extends BasicArcticCatalog {
       return null;
     }
 
-    public Transaction newCreateTableTransaction() {
+    @Override
+    public Transaction createTransaction() {
       return catalog.newCreateTableTransaction(org.apache.iceberg.catalog.TableIdentifier.of(identifier.getCatalog(),
           identifier.getDatabase(), identifier.getTableName()), schema, partitionSpec, location, properties);
     }

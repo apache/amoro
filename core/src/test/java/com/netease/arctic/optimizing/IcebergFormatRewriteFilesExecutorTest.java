@@ -22,8 +22,6 @@ import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.data.IcebergDataFile;
-import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.DataFile;
@@ -133,18 +131,18 @@ public class IcebergFormatRewriteFilesExecutorTest extends TableTestBase {
         outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData, deletes).first();
 
     scanTask = new RewriteFilesInput(
-        new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
-        new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
-        new IcebergDeleteFile[] {new IcebergDeleteFile(eqDeleteFile, 2L),
-                                 new IcebergDeleteFile(posDeleteFile, 3L)},
-        new IcebergDeleteFile[] {},
+        new DataFile[] {DataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
+        new DataFile[] {DataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
+        new DeleteFile[] {DataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile,2L),
+                                 DataTestHelpers.wrapIcebergDeleteFile(posDeleteFile,3L)},
+        new DeleteFile[] {},
         getArcticTable());
 
     dataScanTask = new RewriteFilesInput(
-        new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
-        new IcebergDataFile[] {new IcebergDataFile(dataFile, 1L)},
-        new IcebergDeleteFile[] {},
-        new IcebergDeleteFile[] {},
+        new DataFile[] {DataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
+        new DataFile[] {DataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
+        new DeleteFile[] {},
+        new DeleteFile[] {},
         getArcticTable());
   }
 

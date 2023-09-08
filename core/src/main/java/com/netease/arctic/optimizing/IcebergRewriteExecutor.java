@@ -18,7 +18,6 @@
 
 package com.netease.arctic.optimizing;
 
-import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
 import com.netease.arctic.io.writer.IcebergFanoutPosDeleteWriter;
 import com.netease.arctic.table.ArcticTable;
@@ -41,10 +40,11 @@ import org.apache.iceberg.io.FileWriterFactory;
 import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.io.RollingDataWriter;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
+/**
+ * OptimizingExecutor for iceberg format.
+ */
 public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
 
   public IcebergRewriteExecutor(
@@ -56,18 +56,6 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
 
   @Override
   protected OptimizingDataReader dataReader() {
-    Set<String> set = new HashSet<>();
-    if (input.rewrittenDataFiles() != null) {
-      for (IcebergDataFile icebergContentFile : input.rewrittenDataFiles()) {
-        set.add(icebergContentFile.path().toString());
-      }
-    }
-
-    if (input.rePosDeletedDataFiles() != null) {
-      for (IcebergDataFile icebergContentFile : input.rePosDeletedDataFiles()) {
-        set.add(icebergContentFile.path().toString());
-      }
-    }
     return new GenericCombinedIcebergDataReader(
         io,
         table.schema(),

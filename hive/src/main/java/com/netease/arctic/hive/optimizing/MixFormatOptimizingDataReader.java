@@ -26,7 +26,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * This class is a temporary implementation，A delete multiplexed reader will be implemented in the future
+ * This class is a temporary implementation, as readData and readDeleteData need to read the delete file twice.
+ * Later on, it will be changed to read the delete file only once.
+ * Can read both Mixed-hive and Mixed-iceberg format.
  */
 public class MixFormatOptimizingDataReader implements OptimizingDataReader {
 

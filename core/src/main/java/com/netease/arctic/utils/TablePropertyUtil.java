@@ -21,6 +21,7 @@ package com.netease.arctic.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
@@ -123,6 +124,31 @@ public class TablePropertyUtil {
       }
     });
 
+    return result;
+  }
+
+  public static Map<String, String> getPartitionProperties(ArcticTable arcticTable, String partitionPath) {
+    return getPartitionProperties(
+        arcticTable.isKeyedTable() ? arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable(),
+        partitionPath);
+  }
+
+  public static Map<String, String> getPartitionProperties(UnkeyedTable unkeyedTable, String partitionPath) {
+    StructLike partitionData;
+    if (unkeyedTable.spec().isUnpartitioned()) {
+      partitionData = TablePropertyUtil.EMPTY_STRUCT;
+    } else {
+      partitionData = ArcticDataFiles.data(unkeyedTable.spec(), partitionPath);
+    }
+    return getPartitionProperties(unkeyedTable, partitionData);
+  }
+
+  public static Map<String, String> getPartitionProperties(UnkeyedTable unkeyedTable, StructLike partitionData) {
+    Map<String, String> result = Maps.newHashMap();
+    StructLikeMap<Map<String, String>> partitionProperty = unkeyedTable.partitionProperty();
+    if (partitionProperty.containsKey(partitionData)) {
+      result = partitionProperty.get(partitionData);
+    }
     return result;
   }
 

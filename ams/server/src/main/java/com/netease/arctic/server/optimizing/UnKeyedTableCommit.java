@@ -20,12 +20,12 @@ package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
+import com.netease.arctic.op.SnapshotSummary;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.ArcticServiceConstants;
@@ -33,7 +33,7 @@ import com.netease.arctic.server.exception.OptimizingCommitException;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.trace.SnapshotSummary;
+import com.netease.arctic.utils.ContentFiles;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.hive.metastore.api.Partition;
@@ -52,7 +52,6 @@ import org.apache.iceberg.util.SnapshotUtil;
 import org.glassfish.jersey.internal.guava.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -63,7 +62,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
 import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
 
@@ -165,7 +163,7 @@ public class UnKeyedTableCommit {
       }
       if (task.getInput().rewrittenDeleteFiles() != null) {
         removedDeleteFiles.addAll(Arrays.stream(task.getInput().rewrittenDeleteFiles())
-            .map(IcebergContentFile::asDeleteFile).collect(Collectors.toSet()));
+            .map(ContentFiles::asDeleteFile).collect(Collectors.toSet()));
       }
     }
 

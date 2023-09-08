@@ -219,6 +219,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-spark-3-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.iceberg</groupId>
             <artifactId>iceberg-spark-3.2_2.12</artifactId>
             <version>${iceberg.version}</version>
@@ -337,6 +343,14 @@
         </dependency>
 
         <dependency>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-spark-3-common</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-exec</artifactId>
             <version>${hive.version}</version>
@@ -421,10 +435,14 @@
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.scalastyle</groupId>
-                <artifactId>scalastyle-maven-plugin</artifactId>
+                <configuration>
+                    <java>
+                        <excludes>
+                            <exclude>src/main/java/**/*.java</exclude>
+                            <exclude>src/test/java/**/*.java</exclude>
+                        </excludes>
+                    </java>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>

@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-name: Arctic Feature Request
+name: Amoro Feature Request
 description: Suggest an idea for this project
 title: "[Feature]: "
 labels: ["type:feature"]
@@ -24,7 +24,7 @@ body:
       value: |
         Thank you for finding the time to propose new feature!
 
-        We really appreciate the community efforts to improve Arctic.
+        We really appreciate the community efforts to improve Amoro.
 
   - type: textarea
     attributes:
@@ -72,7 +72,7 @@ body:
       description: >
         This is absolutely not required, but we are happy to guide you in the contribution process
         especially if you already have a good understanding of how to implement the feature.
-        Arctic is a community-managed project and we love to bring new contributors in.
+        Amoro is a community-managed project and we love to bring new contributors in.
       options:
         - label: Yes I am willing to submit a PR!
 

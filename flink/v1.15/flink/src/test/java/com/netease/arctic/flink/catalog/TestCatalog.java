@@ -94,6 +94,7 @@ public class TestCatalog extends CatalogTestBase {
         " WITH (" +
         " 'connector' = 'arctic'" +
         ")");
+    sql("USE  arcticCatalog." + DB);
     sql("SHOW tables");
 
     Assert.assertTrue(getCatalog().loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE)).isKeyedTable());
