@@ -135,7 +135,7 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
       String location, Map<String, String> properties) {
     return arcticCatalog.newTableBuilder(getTableIdentifier(schemaTableName), schema)
             .withPartitionSpec(partitionSpec)
-            .withProperties(properties).newCreateTableTransaction();
+            .withProperties(properties).createTransaction();
   }
 
   @Override

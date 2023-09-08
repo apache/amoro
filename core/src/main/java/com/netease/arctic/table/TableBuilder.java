@@ -79,5 +79,5 @@ public interface TableBuilder {
   /**
    * Create a transaction for create table;
    */
-  Transaction newCreateTableTransaction();
+  Transaction createTransaction();
 }
