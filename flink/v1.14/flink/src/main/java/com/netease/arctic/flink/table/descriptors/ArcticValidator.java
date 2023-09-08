@@ -78,6 +78,8 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
   public static final String SCAN_STARTUP_MODE_EARLIEST = "earliest";
   public static final String SCAN_STARTUP_MODE_LATEST = "latest";
   public static final String SCAN_STARTUP_MODE_TIMESTAMP = "timestamp";
+  public static final String SCAN_STARTUP_MODE_GROUP_OFFSETS = "group-offsets";
+  public static final String SCAN_STARTUP_MODE_SPECIFIC_OFFSETS = "specific-offsets";
 
   public static final ConfigOption<Boolean> ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE =
       ConfigOptions.key("log-store.consistency-guarantee.enabled")
@@ -121,11 +123,11 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
       .defaultValue(2048)
       .withDescription("The target number of records for Iceberg reader fetch batch.");
 
-  public static final ConfigOption<String> SCAN_STARTUP_MODE = ConfigOptions
-      .key("scan.startup.mode")
-      .stringType()
-      .defaultValue(SCAN_STARTUP_MODE_LATEST)
-      .withDescription(String.format("Optional startup mode for arctic source, valid values are " +
+  public static final ConfigOption<String> SCAN_STARTUP_MODE =
+      ConfigOptions.key("scan.startup.mode")
+          .stringType()
+          .defaultValue(SCAN_STARTUP_MODE_LATEST)
+          .withDescription(String.format("Optional startup mode for arctic source, valid values are " +
               "\"earliest\" or \"latest\", \"timestamp\". If %s values %s, \"earliest\":" +
               " read earliest table data including base and change files from" +
               " the current snapshot, \"latest\": read all incremental data in the change table starting from the" +
@@ -133,7 +135,7 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
               " If %s values %s, \"earliest\": start from the earliest offset possible." +
               " \"latest\": start from the latest offset," +
               " \"timestamp\": start from user-supplied timestamp for each partition.",
-          ARCTIC_READ_MODE, ARCTIC_READ_FILE, ARCTIC_READ_MODE, ARCTIC_READ_LOG));
+              ARCTIC_READ_MODE, ARCTIC_READ_FILE, ARCTIC_READ_MODE, ARCTIC_READ_LOG));
 
   public static final ConfigOption<Long> SCAN_STARTUP_TIMESTAMP_MILLIS =
       ConfigOptions.key("scan.startup.timestamp-millis")
@@ -141,6 +143,13 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
           .noDefaultValue()
           .withDescription(
               "Optional timestamp used in case of \"timestamp\" startup mode");
+
+  public static final ConfigOption<String> SCAN_STARTUP_SPECIFIC_OFFSETS =
+      ConfigOptions.key("scan.startup.specific-offsets")
+        .stringType()
+        .noDefaultValue()
+        .withDescription(
+            "Optional timestamp used in case of \"timestamp\" startup mode");
 
   public static final ConfigOption<Boolean> SUBMIT_EMPTY_SNAPSHOTS = ConfigOptions
       .key("submit.empty.snapshots")
