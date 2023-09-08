@@ -112,7 +112,7 @@ make sure the port is not used before configuring it
 
 Users can use MySQL as the system database instead of Derby. 
 
-When AMS is first started, it will automatically create table structures in MySQL.
+Create an empty database in MySQL, then AMS will automatically create table structures in this MySQL database when it first started.
 
 One thing you need to do is Adding MySQL configuration under `config.yaml` of Ams:
 
