@@ -34,6 +34,7 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import com.netease.arctic.utils.CatalogUtil;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -86,16 +87,11 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
 
   private void initialize(CatalogMeta catalogMeta) {
     CatalogUtil.mergeCatalogProperties(catalogMeta, clientSideProperties);
-
-    catalogMeta.putToCatalogProperties(
-        org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE, catalogMeta.getCatalogType());
-    if (catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
-      catalogMeta.getCatalogProperties().remove("type");
-    }
-
     TableMetaStore metaStore = CatalogUtil.buildMetaStore(catalogMeta);
-    Catalog icebergCatalog = metaStore.doAs(() -> org.apache.iceberg.CatalogUtil.buildIcebergCatalog(
-        catalogMeta.getCatalogName(), catalogMeta.getCatalogProperties(), metaStore.getConfiguration()));
+    Catalog icebergCatalog = metaStore.doAs(() -> buildIcebergCatalog(
+        catalogMeta.getCatalogName(), catalogMeta.getCatalogType(),
+        catalogMeta.getCatalogProperties(), metaStore.getConfiguration()
+    ));
     Pattern databaseFilterPattern = null;
     if (catalogMeta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION)) {
       String databaseFilter =
@@ -143,14 +139,14 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   @Override
   public List<TableIdentifier> listTables(String database) {
     List<org.apache.iceberg.catalog.TableIdentifier> icebergTableList =
-        tableMetaStore.doAs(() -> icebergCatalog.listTables(Namespace.of(database)));
+        tableMetaStore.doAs(() -> icebergCatalog().listTables(Namespace.of(database)));
     List<TableIdentifier> mixedTables = Lists.newArrayList();
     Set<org.apache.iceberg.catalog.TableIdentifier> visited = Sets.newHashSet();
     for (org.apache.iceberg.catalog.TableIdentifier identifier : icebergTableList) {
       if (visited.contains(identifier)) {
         continue;
       }
-      Table table = tableMetaStore.doAs(() -> icebergCatalog.loadTable(identifier));
+      Table table = tableMetaStore.doAs(() -> icebergCatalog().loadTable(identifier));
       if (tables.isBaseStore(table)) {
         mixedTables.add(TableIdentifier.of(meta.getCatalogName(), database, identifier.name()));
         visited.add(identifier);
@@ -166,7 +162,7 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   @Override
   public ArcticTable loadTable(TableIdentifier tableIdentifier) {
     Table base = tableMetaStore.doAs(
-        () -> icebergCatalog.loadTable(toIcebergTableIdentifier(tableIdentifier)));
+        () -> icebergCatalog().loadTable(toIcebergTableIdentifier(tableIdentifier)));
     if (!tables.isBaseStore(base)) {
       throw new NoSuchTableException("table " + base.name() + " is not a mixed iceberg table");
     }
@@ -234,15 +230,29 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     return Maps.newHashMap(this.meta.getCatalogProperties());
   }
 
+  protected Catalog icebergCatalog() {
+    return this.icebergCatalog;
+  }
+
+  protected Catalog buildIcebergCatalog(
+      String name, String metastoreType, Map<String, String> properties, Configuration hadoopConf) {
+    if (!properties.containsKey(CatalogProperties.CATALOG_IMPL)) {
+      properties = Maps.newHashMap(properties);
+      properties.put(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE, metastoreType);
+    }
+    return org.apache.iceberg.CatalogUtil.buildIcebergCatalog(name, properties, hadoopConf);
+  }
+
   private org.apache.iceberg.catalog.TableIdentifier toIcebergTableIdentifier(TableIdentifier identifier) {
     return org.apache.iceberg.catalog.TableIdentifier.of(identifier.getDatabase(), identifier.getTableName());
   }
 
   private boolean dropTableInternal(org.apache.iceberg.catalog.TableIdentifier tableIdentifier, boolean purge) {
-    return tableMetaStore.doAs(() -> icebergCatalog.dropTable(tableIdentifier, purge));
+    return tableMetaStore.doAs(() -> icebergCatalog().dropTable(tableIdentifier, purge));
   }
 
   private SupportsNamespaces asNamespaceCatalog() {
+    Catalog icebergCatalog = icebergCatalog();
     if (!(icebergCatalog instanceof SupportsNamespaces)) {
       throw new UnsupportedOperationException(String.format(
           "Iceberg catalog: %s doesn't implement SupportsNamespaces",
@@ -257,7 +267,6 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     private final Schema schema;
 
     private PartitionSpec partitionSpec;
-    private SortOrder sortOrder;
     private Map<String, String> properties;
     private PrimaryKeySpec primaryKeySpec;
 
@@ -265,7 +274,6 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
       this.identifier = identifier;
       this.schema = schema;
       this.partitionSpec = PartitionSpec.unpartitioned();
-      this.sortOrder = SortOrder.unsorted();
       this.properties = Maps.newHashMap();
       this.primaryKeySpec = PrimaryKeySpec.noPrimaryKey();
     }
@@ -278,7 +286,9 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
 
     @Override
     public TableBuilder withSortOrder(SortOrder sortOrder) {
-      this.sortOrder = sortOrder;
+      if (sortOrder.isSorted()) {
+        throw new UnsupportedOperationException("SortOrder is not supported by mixed-iceberg format");
+      }
       return this;
     }
 
@@ -307,7 +317,7 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
 
     @Override
     public Transaction createTransaction() {
-      Transaction transaction = icebergCatalog.newCreateTableTransaction(
+      Transaction transaction = icebergCatalog().newCreateTableTransaction(
           org.apache.iceberg.catalog.TableIdentifier.of(identifier.getDatabase(), identifier.getTableName()),
           schema, partitionSpec, properties);
       return new CreateTableTransaction(

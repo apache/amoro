@@ -28,6 +28,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
+import com.netease.arctic.mixed.MixedIcebergAmoroCatalog;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.common.DynConstructors;
@@ -49,10 +50,11 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALO
  */
 public class CatalogLoader {
 
-  public static final String AMS_CATALOG_IMPL = BasicArcticCatalog.class.getName();
   public static final String ICEBERG_CATALOG_IMPL = BasicIcebergCatalog.class.getName();
   public static final String HIVE_CATALOG_IMPL = "com.netease.arctic.hive.catalog.ArcticHiveCatalog";
   public static final String MIXED_ICEBERG_CATALOG_IMP = BasicMixedIcebergCatalog.class.getName();
+
+  public static final String MIXED_ICEBERG_AMORO_CATALOG_IMPL = MixedIcebergAmoroCatalog.class.getName();
 
   public static final String ICEBERG_REST_CATALOG = RESTCatalog.class.getName();
 
@@ -125,7 +127,7 @@ public class CatalogLoader {
           break;
         case CATALOG_TYPE_AMS:
           if (TableFormat.MIXED_ICEBERG == tableFormat) {
-            catalogImpl = AMS_CATALOG_IMPL;
+            catalogImpl = MIXED_ICEBERG_AMORO_CATALOG_IMPL;
           } else if (TableFormat.ICEBERG == tableFormat) {
             catalogMeta.putToCatalogProperties(CatalogProperties.WAREHOUSE_LOCATION, catalogName);
             catalogMeta.putToCatalogProperties(CatalogProperties.CATALOG_IMPL, ICEBERG_REST_CATALOG);
