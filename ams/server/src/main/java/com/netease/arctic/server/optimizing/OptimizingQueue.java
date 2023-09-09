@@ -167,6 +167,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   @Override
   public OptimizingTask pollTask(String authToken, int threadId) {
+    OptimizerInstance optimizer = getAuthenticatedOptimizer(authToken);
+    LOG.debug("Optimizer executor[{},{}] poll task", optimizer.getToken(), threadId);
     TaskRuntime task = Optional.ofNullable(retryQueue.poll())
         .orElseGet(this::pollOrPlan);
 
@@ -194,6 +196,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   @Override
   public void ackTask(String authToken, int threadId, OptimizingTaskId taskId) {
+    OptimizerInstance optimizer = getAuthenticatedOptimizer(authToken);
+    LOG.debug("Optimizer executor[{},{}] ack task {}", optimizer.getToken(), threadId, taskId);
     Optional.ofNullable(executingTaskMap.get(taskId))
         .orElseThrow(() -> new TaskNotFoundException(taskId))
         .ack(new OptimizingThread(authToken, threadId));
@@ -201,6 +205,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   @Override
   public void completeTask(String authToken, OptimizingTaskResult taskResult) {
+    OptimizerInstance optimizer = getAuthenticatedOptimizer(authToken);
+    LOG.debug("Optimizer executor[{},{}] complete task {}", optimizer.getToken(), taskResult.getThreadId(), taskResult.getTaskId());
     OptimizingThread thread = new OptimizingThread(authToken, taskResult.getThreadId());
     TaskRuntime task = executingTaskMap.remove(taskResult.getTaskId());
     try {
@@ -252,13 +258,12 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     suspendingTasks.forEach(task -> {
       LOG.info("Task {} is suspending, since it's optimizer is expired, put it to retry queue, optimizer {}",
           task.getTaskId(), task.getOptimizingThread());
-      executingTaskMap.remove(task.getTaskId());
       try {
         //optimizing task of suspending optimizer would not be counted for retrying
         retryTask(task, false);
+        executingTaskMap.remove(task.getTaskId());
       } catch (Throwable t) {
         LOG.error("Retry task {} failed, put it back to executing tasks", task.getTaskId(), t);
-        executingTaskMap.put(task.getTaskId(), task);
         // retry next task, not throw exception
       }
     });
