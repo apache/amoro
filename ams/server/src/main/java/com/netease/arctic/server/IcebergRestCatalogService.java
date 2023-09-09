@@ -23,8 +23,8 @@ import com.netease.arctic.utils.CatalogUtil;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.ContentType;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
-import io.javalin.plugin.json.JavalinJackson;
+import io.javalin.http.HttpStatus;
+import io.javalin.json.JavalinJackson;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.SortOrder;
@@ -123,7 +123,7 @@ public class IcebergRestCatalogService extends PersistentBase {
   }
 
   public boolean needHandleException(Context ctx) {
-    return ctx.req.getRequestURI().startsWith(ICEBERG_REST_API_PREFIX);
+    return ctx.req().getRequestURI().startsWith(ICEBERG_REST_API_PREFIX);
   }
 
   public void handleException(Exception e, Context ctx) {
@@ -133,7 +133,7 @@ public class IcebergRestCatalogService extends PersistentBase {
         .withType(e.getClass().getSimpleName())
         .withMessage(e.getMessage())
         .build();
-    ctx.res.setStatus(code.code);
+    ctx.res().setStatus(code.code);
     jsonResponse(ctx, response);
     if (code.code >= 500) {
       LOG.warn("InternalServer Error", e);
@@ -147,7 +147,7 @@ public class IcebergRestCatalogService extends PersistentBase {
    * GET PREFIX/v1/config?warehouse={warehouse}
    */
   public void getCatalogConfig(Context ctx) {
-    String warehouse = ctx.req.getParameter("warehouse");
+    String warehouse = ctx.req().getParameter("warehouse");
     Preconditions.checkNotNull(warehouse, "lack required params: warehouse");
     InternalCatalog catalog = getCatalog(warehouse);
     Map<String, String> properties = Maps.newHashMap();
@@ -174,7 +174,7 @@ public class IcebergRestCatalogService extends PersistentBase {
    */
   public void listNamespaces(Context ctx) {
     handleCatalog(ctx, catalog -> {
-      String ns = ctx.req.getParameter("parent");
+      String ns = ctx.req().getParameter("parent");
       List<Namespace> nsLists = Lists.newArrayList();
       List<String> databases = catalog.listDatabases();
       if (ns == null) {
@@ -361,7 +361,7 @@ public class IcebergRestCatalogService extends PersistentBase {
   public void deleteTable(Context ctx) {
     handleTable(ctx, (catalog, tableMetadata) -> {
       boolean purge = Boolean.parseBoolean(
-          Optional.ofNullable(ctx.req.getParameter("purgeRequested")).orElse("false"));
+          Optional.ofNullable(ctx.req().getParameter("purgeRequested")).orElse("false"));
       TableMetadata current = null;
       try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
         try {
@@ -376,8 +376,7 @@ public class IcebergRestCatalogService extends PersistentBase {
           org.apache.iceberg.CatalogUtil.dropTableData(io, current);
         }
       }
-
-      ctx.status(HttpCode.NO_CONTENT);
+      ctx.status(HttpStatus.NO_CONTENT);
       return null;
     });
   }
@@ -425,7 +424,7 @@ public class IcebergRestCatalogService extends PersistentBase {
 
   private void jsonResponse(Context ctx, RESTResponse rsp) {
     ctx.contentType(ContentType.APPLICATION_JSON)
-        .result(jsonMapper.toJsonString(rsp));
+        .result(jsonMapper.toJsonString(rsp,rsp.getClass()));
   }
 
   private void handleCatalog(Context ctx, Function<InternalCatalog, ? extends RESTResponse> handler) {

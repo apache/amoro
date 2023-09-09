@@ -108,7 +108,7 @@ public class CommonUtil {
 
     if (StringUtils.isNotEmpty(token)) {
       // regex extract  catalog, db, table
-      String url = ctx.req.getRequestURI();
+      String url = ctx.req().getRequestURI();
       for (String whiteListUrl : TOKEN_WHITE_LIST) {
         if (url.contains(whiteListUrl)) {
           return;

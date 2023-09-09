@@ -44,7 +44,9 @@ import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.ThriftServiceProxy;
 import io.javalin.Javalin;
-import io.javalin.http.HttpCode;
+import io.javalin.config.JavalinConfig;
+import io.javalin.http.HttpStatus;
+import io.javalin.plugin.bundled.CorsPluginConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -76,6 +78,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Consumer;
 
 public class ArcticServiceContainer {
 
@@ -195,10 +198,13 @@ public class ArcticServiceContainer {
         serviceConfig, tableService, optimizingService, terminalManager);
     IcebergRestCatalogService restCatalogService = new IcebergRestCatalogService(tableService);
 
-    httpServer = Javalin.create(config -> {
-      config.addStaticFiles(dashboardServer.configStaticFiles());
-      config.sessionHandler(SessionHandler::new);
-      config.enableCorsForAllOrigins();
+    httpServer = Javalin.create(new Consumer<JavalinConfig>() {
+      @Override
+      public void accept(JavalinConfig config) {
+        config.staticFiles.add(dashboardServer.configStaticFiles());
+        config.jetty.sessionHandler(SessionHandler::new);
+        config.plugins.enableCors(cors -> cors.corsConfigs().add(CorsPluginConfig::anyHost));
+      }
     });
     httpServer.routes(() -> {
       dashboardServer.endpoints().addEndpoints();
@@ -221,15 +227,15 @@ public class ArcticServiceContainer {
       }
     });
     // default response handle
-    httpServer.error(HttpCode.NOT_FOUND.getStatus(), ctx -> {
+    httpServer.error(HttpStatus.NOT_FOUND, ctx -> {
       if (!restCatalogService.needHandleException(ctx)) {
-        ctx.json(new ErrorResponse(HttpCode.NOT_FOUND, "page not found!", ""));
+        ctx.json(new ErrorResponse(HttpStatus.NOT_FOUND, "page not found!", ""));
       }
     });
 
-    httpServer.error(HttpCode.INTERNAL_SERVER_ERROR.getStatus(), ctx -> {
+    httpServer.error(HttpStatus.INTERNAL_SERVER_ERROR, ctx -> {
       if (!restCatalogService.needHandleException(ctx)) {
-        ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, "internal error!", ""));
+        ctx.json(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "internal error!", ""));
       }
     });
   }

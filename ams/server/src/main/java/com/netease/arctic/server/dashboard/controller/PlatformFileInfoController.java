@@ -30,10 +30,11 @@ import java.io.InputStream;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class PlatformFileInfoController {
 
-  private PlatformFileManager platformFileInfoService;
+  private final PlatformFileManager platformFileInfoService;
 
   public PlatformFileInfoController(PlatformFileManager platformFileInfoService) {
     this.platformFileInfoService = platformFileInfoService;
@@ -45,9 +46,9 @@ public class PlatformFileInfoController {
    * @param ctx
    */
   public void uploadFile(Context ctx) throws IOException {
-    InputStream bodyAsInputStream = ctx.uploadedFile("file").getContent();
+    InputStream bodyAsInputStream = Objects.requireNonNull(ctx.uploadedFile("file")).content();
     //todo getRuntime file name
-    String name = ctx.uploadedFile("file").getFilename();
+    String name = Objects.requireNonNull(ctx.uploadedFile("file")).filename();
     byte[] bytes = IOUtils.toByteArray(bodyAsInputStream);
     String content = Base64.getEncoder().encodeToString(bytes);
     Integer fid = platformFileInfoService.addFile(name, content);

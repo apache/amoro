@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.dashboard.response;
 
-import io.javalin.http.HttpCode;
+import io.javalin.http.HttpStatus;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 public class ErrorResponse extends Response {
@@ -29,13 +29,13 @@ public class ErrorResponse extends Response {
     this.requestId = requestId;
   }
 
-  public ErrorResponse(HttpCode httpStatus, String message, String requestId) {
-    super(httpStatus.getStatus(), message);
+  public ErrorResponse(HttpStatus httpStatus, String message, String requestId) {
+    super(httpStatus.getCode(), message);
     this.requestId = requestId;
   }
 
   public ErrorResponse(String message) {
-    super(HttpCode.BAD_REQUEST.getStatus(), message);
+    super(HttpStatus.BAD_REQUEST.getCode(), message);
     this.requestId = null;
   }
 

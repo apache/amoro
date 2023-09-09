@@ -40,7 +40,7 @@ import com.netease.arctic.server.utils.Configurations;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.ContentType;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
+import io.javalin.http.HttpStatus;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.http.staticfiles.StaticFileConfig;
 import org.apache.commons.lang3.StringUtils;
@@ -288,7 +288,7 @@ public class DashboardServer {
   public void preHandleRequest(Context ctx) {
     String uriPath = ctx.path();
     if (needApiKeyCheck(uriPath)) {
-      checkApiToken(ctx.method(), ctx.url(), ctx.queryParam("apiKey"),
+      checkApiToken(ctx.method().name(), ctx.url(), ctx.queryParam("apiKey"),
           ctx.queryParam("signature"), ctx.queryParamMap());
     } else if (needLoginCheck(uriPath)) {
       if (null == ctx.sessionAttribute("user")) {
@@ -305,19 +305,19 @@ public class DashboardServer {
     if (e instanceof ForbiddenException) {
       try {
         // request doesn't start with /ams is  page request. we return index.html
-        if (!ctx.req.getRequestURI().startsWith("/ams")) {
+        if (!ctx.req().getRequestURI().startsWith("/ams")) {
           ctx.html(getFileContent());
         } else {
-          ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "need login before request", ""));
+          ctx.json(new ErrorResponse(HttpStatus.FORBIDDEN, "need login before request", ""));
         }
       } catch (Exception fe) {
         LOG.error("Failed to getRuntime index.html {}", fe.getMessage(), fe);
       }
     } else if (e instanceof SignatureCheckException) {
-      ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Signature Exception  before request", ""));
+      ctx.json(new ErrorResponse(HttpStatus.FORBIDDEN, "Signature Exception  before request", ""));
     } else {
       LOG.error("Failed to handle request", e);
-      ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, e.getMessage(), ""));
+      ctx.json(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(), ""));
     }
   }
 
