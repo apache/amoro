@@ -7,6 +7,9 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.hive.TestHMS;
+import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
+import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.spark.reader.SparkParquetReaders;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.DataFile;
@@ -23,14 +26,17 @@ import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.connector.write.DataWriter;
 import org.apache.spark.sql.connector.write.LogicalWriteInfoImpl;
 import org.apache.spark.sql.connector.write.Write;
+import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import org.apache.spark.unsafe.types.UTF8String;
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,6 +48,9 @@ import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_ORC;
 
 @RunWith(Parameterized.class)
 public class TestSparkWriter extends TableTestBase {
+  @ClassRule
+  public static TestHMS TEST_HMS = new TestHMS();
+
   public TestSparkWriter(CatalogTestHelper catalogTestHelper,
       TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
@@ -65,7 +74,23 @@ public class TestSparkWriter extends TableTestBase {
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
             new BasicTableTestHelper(false, true, DEFAULT_FILE_FORMAT_ORC)},
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, false, DEFAULT_FILE_FORMAT_ORC)}
+            new BasicTableTestHelper(false, false, DEFAULT_FILE_FORMAT_ORC)},
+        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(true, true)},
+        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(true, false)},
+        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(false, true)},
+        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(false, false)},
+        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(true, true, DEFAULT_FILE_FORMAT_ORC)},
+        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(true, false, DEFAULT_FILE_FORMAT_ORC)},
+        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(false, true, DEFAULT_FILE_FORMAT_ORC)},
+        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(false, false, DEFAULT_FILE_FORMAT_ORC)}
     };
   }
 
@@ -107,8 +132,7 @@ public class TestSparkWriter extends TableTestBase {
     Write write = builder.build();
     DataWriter<InternalRow> writer = write.toBatch().createBatchWriterFactory(null).createWriter(0,0);
     //create record
-    InternalRow record =
-        new GenericInternalRow(new Object[] {1, UTF8String.fromString("lily"), 0L, 1641009600000L});
+    InternalRow record = geneRowData();
     List<InternalRow> records = Arrays.asList(record);
     writer.write(record);
     WriteTaskCommit commit = (WriteTaskCommit)writer.commit();
@@ -153,6 +177,19 @@ public class TestSparkWriter extends TableTestBase {
 
     CloseableIterable<InternalRow> iterable = builder.build();
     return iterable;
+  }
+
+  private InternalRow geneRowData() {
+    InternalRow record;
+    if (getArcticTable().format() == TableFormat.MIXED_HIVE) {
+      record =
+          new GenericInternalRow(new Object[] {1, UTF8String.fromString("lily"), 0L, 1641009600000L, 1641009600000L,
+              Decimal.apply(new BigDecimal("0")), UTF8String.fromString("2022-01-01")});
+    } else {
+      record =
+          new GenericInternalRow(new Object[] {1, UTF8String.fromString("lily"), 0L, 1641009600000L});
+    }
+    return record;
   }
 
 
