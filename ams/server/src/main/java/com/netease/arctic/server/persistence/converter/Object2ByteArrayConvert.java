@@ -17,7 +17,7 @@ public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
   @Override
   public void setParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType) throws SQLException {
     if (parameter == null) {
-      ps.setNull(i, Types.BLOB);
+      ps.setNull(i, Types.BINARY);
       return;
     }
 

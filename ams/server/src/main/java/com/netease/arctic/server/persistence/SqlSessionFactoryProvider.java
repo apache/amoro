@@ -54,6 +54,7 @@ public class SqlSessionFactoryProvider {
 
   private static final String DERBY_INIT_SQL_SCRIPT = "derby/ams-derby-init.sql";
   private static final String MYSQL_INIT_SQL_SCRIPT = "mysql/ams-mysql-init.sql";
+  private static final String POSTGRES_INIT_SQL_SCRIPT = "postgres/ams-postgres-init.sql";
 
   private static final SqlSessionFactoryProvider INSTANCE = new SqlSessionFactoryProvider();
 
@@ -67,7 +68,8 @@ public class SqlSessionFactoryProvider {
     BasicDataSource dataSource = new BasicDataSource();
     dataSource.setUrl(config.getString(ArcticManagementConf.DB_CONNECTION_URL));
     dataSource.setDriverClassName(config.getString(ArcticManagementConf.DB_DRIVER_CLASS_NAME));
-    if (ArcticManagementConf.DB_TYPE_MYSQL.equals(config.getString(ArcticManagementConf.DB_TYPE))) {
+    if (ArcticManagementConf.DB_TYPE_MYSQL.equals(config.getString(ArcticManagementConf.DB_TYPE)) ||
+        ArcticManagementConf.DB_TYPE_POSTGRES.equals(config.getString(ArcticManagementConf.DB_TYPE))) {
       dataSource.setUsername(config.getString(ArcticManagementConf.DB_USER_NAME));
       dataSource.setPassword(config.getString(ArcticManagementConf.DB_PASSWORD));
     }
@@ -127,6 +129,9 @@ public class SqlSessionFactoryProvider {
         query = String.format(
             "SELECT 1 FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'",
             connection.getCatalog(), "CATALOG_METADATA");
+      } else if (ArcticManagementConf.DB_TYPE_POSTGRES.equals(dbTypeConfig)) {
+        query = "SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = " +
+            "'catalog_metadata'";
       }
       try (ResultSet rs = statement.executeQuery(query);) {
         if (!rs.next()) {
@@ -147,6 +152,8 @@ public class SqlSessionFactoryProvider {
       scriptPath = MYSQL_INIT_SQL_SCRIPT;
     } else if (type.equals(ArcticManagementConf.DB_TYPE_DERBY)) {
       scriptPath = DERBY_INIT_SQL_SCRIPT;
+    } else if (type.equals(ArcticManagementConf.DB_TYPE_POSTGRES)) {
+      scriptPath = POSTGRES_INIT_SQL_SCRIPT;
     }
     URL scriptUrl = ClassLoader.getSystemResource(scriptPath);
     if (scriptUrl == null) {
