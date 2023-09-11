@@ -251,20 +251,23 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     });
 
     List<TaskRuntime> suspendingTasks = executingTaskMap.values().stream()
+        .filter(task -> task.getStatus().equals(TaskRuntime.Status.SCHEDULED) ||
+            task.getStatus().equals(TaskRuntime.Status.ACKED))
         .filter(task -> task.isSuspending(currentTime, taskAckTimeout) ||
             expiredOptimizers.contains(task.getOptimizingThread().getToken()) ||
             !authOptimizers.containsKey(task.getOptimizingThread().getToken()))
         .collect(Collectors.toList());
     suspendingTasks.forEach(task -> {
       LOG.info("Task {} is suspending, since it's optimizer is expired, put it to retry queue, optimizer {}",
-          task.getTaskId(), task.getOptimizingThread());
+              task.getTaskId(), task.getOptimizingThread());
+      executingTaskMap.remove(task.getTaskId());
       try {
         //optimizing task of suspending optimizer would not be counted for retrying
         retryTask(task, false);
-        executingTaskMap.remove(task.getTaskId());
       } catch (Throwable t) {
         LOG.error("Retry task {} failed, put it back to executing tasks", task.getTaskId(), t);
         // retry next task, not throw exception
+        executingTaskMap.put(task.getTaskId(), task);
       }
     });
     return expiredOptimizers;
