@@ -167,8 +167,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   @Override
   public OptimizingTask pollTask(String authToken, int threadId) {
-    OptimizerInstance optimizer = getAuthenticatedOptimizer(authToken);
-    LOG.debug("Optimizer executor[{},{}] poll task", optimizer.getToken(), threadId);
+    getAuthenticatedOptimizer(authToken);
     TaskRuntime task = Optional.ofNullable(retryQueue.poll())
         .orElseGet(this::pollOrPlan);
 
@@ -196,8 +195,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   @Override
   public void ackTask(String authToken, int threadId, OptimizingTaskId taskId) {
-    OptimizerInstance optimizer = getAuthenticatedOptimizer(authToken);
-    LOG.debug("Optimizer executor[{},{}] ack task {}", optimizer.getToken(), threadId, taskId);
+    getAuthenticatedOptimizer(authToken);
     Optional.ofNullable(executingTaskMap.get(taskId))
         .orElseThrow(() -> new TaskNotFoundException(taskId))
         .ack(new OptimizingThread(authToken, threadId));
@@ -205,8 +203,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   @Override
   public void completeTask(String authToken, OptimizingTaskResult taskResult) {
-    OptimizerInstance optimizer = getAuthenticatedOptimizer(authToken);
-    LOG.debug("Optimizer executor[{},{}] complete task {}", optimizer.getToken(), taskResult.getThreadId(), taskResult.getTaskId());
+    getAuthenticatedOptimizer(authToken);
     OptimizingThread thread = new OptimizingThread(authToken, taskResult.getThreadId());
     TaskRuntime task = executingTaskMap.remove(taskResult.getTaskId());
     try {
