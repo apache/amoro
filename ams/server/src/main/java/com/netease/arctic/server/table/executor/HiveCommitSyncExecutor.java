@@ -50,7 +50,7 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
     }
   }
 
-  public static void syncIcebergToHive(ArcticTable arcticTable) throws Exception {
+  public static void syncIcebergToHive(ArcticTable arcticTable) {
     HiveMetaSynchronizer.syncArcticDataToHive((SupportHive) arcticTable);
   }
 }
