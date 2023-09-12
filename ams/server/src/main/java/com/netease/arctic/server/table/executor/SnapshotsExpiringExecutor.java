@@ -24,8 +24,6 @@ import com.netease.arctic.server.optimizing.maintainer.TableMaintainer;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +63,8 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
       if (!tableConfiguration.isExpireSnapshotEnabled()) {
         return;
       }
+
+      AmoroTable<?> amoroTable = loadTable(tableRuntime);
       TableMaintainer tableMaintainer = TableMaintainer.createMaintainer(amoroTable);
       tableMaintainer.expireSnapshots(tableRuntime);
     } catch (Throwable t) {
