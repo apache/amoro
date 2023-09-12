@@ -28,11 +28,9 @@ import org.apache.spark.sql.catalyst.parser.ParseException
  */
 private[sql] object QueryParsingErrors {
 
-
   def columnAliasInOperationNotAllowedError(op: String, ctx: TableAliasContext): Throwable = {
     new ParseException(s"Columns aliases are not allowed in $op.", ctx.identifierList())
   }
-
 
   def combinationQueryResultClausesUnsupportedError(ctx: QueryOrganizationContext): Throwable = {
     new ParseException(
@@ -84,7 +82,6 @@ private[sql] object QueryParsingErrors {
     new ParseException(s"Cannot resolve window reference '$name'", ctx)
   }
 
-
   def naturalCrossJoinUnsupportedError(ctx: RelationContext): Throwable = {
     new ParseException("NATURAL CROSS JOIN is not supported", ctx)
   }
@@ -104,7 +101,6 @@ private[sql] object QueryParsingErrors {
       ctx)
   }
 
-
   def invalidFromToUnitValueError(ctx: IntervalValueContext): Throwable = {
     new ParseException("The value of from-to unit must be a string", ctx)
   }
@@ -112,7 +108,6 @@ private[sql] object QueryParsingErrors {
   def storedAsAndStoredByBothSpecifiedError(ctx: CreateFileFormatContext): Throwable = {
     new ParseException("Expected either STORED AS or STORED BY, not both", ctx)
   }
-
 
   def invalidEscapeStringError(ctx: PredicateContext): Throwable = {
     new ParseException("Invalid escape string. Escape string must contain only one character.", ctx)
@@ -126,8 +121,10 @@ private[sql] object QueryParsingErrors {
   }
 
   def invalidIntervalFormError(value: String, ctx: MultiUnitsIntervalContext): Throwable = {
-    new ParseException("Can only use numbers in the interval value part for" +
-      s" multiple unit value pairs interval form, but got invalid value: $value", ctx)
+    new ParseException(
+      "Can only use numbers in the interval value part for" +
+        s" multiple unit value pairs interval form, but got invalid value: $value",
+      ctx)
   }
 
   def functionNameUnsupportedError(functionName: String, ctx: ParserRuleContext): Throwable = {
@@ -179,7 +176,6 @@ private[sql] object QueryParsingErrors {
     new ParseException("at least one time unit should be given for interval literal", ctx)
   }
 
-
   def fromToIntervalUnsupportedError(
       from: String,
       to: String,
@@ -206,11 +202,9 @@ private[sql] object QueryParsingErrors {
     new ParseException(s"Too many arguments for transform $name", ctx)
   }
 
-
   def invalidBucketsNumberError(describe: String, ctx: ApplyTransformContext): Throwable = {
     new ParseException(s"Invalid number of buckets: $describe", ctx)
   }
-
 
   def cannotCleanReservedNamespacePropertyError(
       property: String,
@@ -218,7 +212,6 @@ private[sql] object QueryParsingErrors {
       msg: String): Throwable = {
     new ParseException(s"$property is a reserved namespace property, $msg.", ctx)
   }
-
 
   def cannotCleanReservedTablePropertyError(
       property: String,
