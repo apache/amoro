@@ -37,7 +37,7 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
   public void testIncrementalScan() throws IOException {
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan();
-    try(CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
+    try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
       assertFilesSequence(tasks, 3, 1, 2);
     }
   }
@@ -49,7 +49,7 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
     fromSequence.put(partitionData, 1L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence);
-    try(CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
+    try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
       assertFilesSequence(tasks, 1, 2, 2);
     }
   }
@@ -58,7 +58,7 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
   public void testIncrementalScanTo() throws IOException {
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan().toSequence(1);
-    try(CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
+    try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
       assertFilesSequence(tasks, 2, 1, 1);
     }
   }
@@ -70,7 +70,7 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
     fromSequence.put(partitionData, 1L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence).toSequence(1);
-    try(CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
+    try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
       assertFilesSequence(tasks, 0, 0, 0);
     }
   }
@@ -86,7 +86,7 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence)
             .fromLegacyTransaction(fromLegacyTxId);
-    try(CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
+    try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
       assertFilesSequence(tasks, 1, 2, 2);
     }
   }
@@ -99,8 +99,8 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan()
             .fromLegacyTransaction(fromLegacyTxId);
-    try(CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
-      assertFiles(tasks, 1, task-> FileNameRules.parseTransactionId(task.file().path().toString()) > 2L);
+    try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
+      assertFiles(tasks, 1, task -> FileNameRules.parseTransactionId(task.file().path().toString()) > 2L);
     }
   }
 
