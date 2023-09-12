@@ -159,7 +159,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     if (isFragmentFile(dataFile)) {
       return true;
     }
-    return getRecordCount(deletes) > dataFile.recordCount() * config.getMajorDuplicateRatio();
+    return getPosDeletesRecordCount(deletes) > dataFile.recordCount() * config.getMajorDuplicateRatio();
   }
 
   public boolean segmentFileShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
@@ -182,8 +182,9 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     return reachFullInterval();
   }
 
-  private long getRecordCount(List<ContentFile<?>> files) {
-    return files.stream().mapToLong(ContentFile::recordCount).sum();
+  private long getPosDeletesRecordCount(List<ContentFile<?>> files) {
+    return files.stream().filter(file -> file.content() == FileContent.POSITION_DELETES)
+        .mapToLong(ContentFile::recordCount).sum();
   }
 
   private void addDelete(ContentFile<?> delete) {
