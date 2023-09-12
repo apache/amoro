@@ -39,7 +39,7 @@ public class TestBaseCombinedScanTask {
             2L,
             ManifestEntryFields.Status.ADDED,
             DataFiles.builder(PartitionSpec.unpartitioned())
-                .withPath("/tmp/test.parquet")
+                .withPath("/tmp/1-I-2-0-0-9009257362994691056-2.parquet")
                 .withFileSizeInBytes(10L)
                 .withRecordCount(100L)
                 .build()
@@ -65,7 +65,7 @@ public class TestBaseCombinedScanTask {
         "tasks=NodeFileScanTask{\n" +
         "\tbaseTasks=[], \n" +
         "\tinsertTasks=[DefaultKeyedFile{\n" +
-        "\t\tfile=/tmp/test.parquet, \n" +
+        "\t\tfile=/tmp/1-I-2-0-0-9009257362994691056-2.parquet, \n" +
         "\t\ttype=I, \n" +
         "\t\tmask=0, \n" +
         "\t\tindex=0, \n" +

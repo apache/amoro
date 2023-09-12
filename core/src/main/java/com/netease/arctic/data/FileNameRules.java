@@ -23,6 +23,7 @@ import com.netease.arctic.io.writer.TaskWriterKey;
 import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
@@ -92,7 +93,7 @@ public class FileNameRules {
    * @param sequenceNumber iceberg sequenceNumber
    * @return fileMeta
    */
-  public static DefaultKeyedFile.FileMeta parseChange(String path, long sequenceNumber) {
+  public static DefaultKeyedFile.FileMeta parseChange(String path, Long sequenceNumber) {
     String fileName = TableFileUtil.getFileName(path);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     if (matchArcticFileFormat(matcher)) {
@@ -101,10 +102,14 @@ public class FileNameRules {
       long nodeId = Long.parseLong(matcher.group(1));
       type = DataFileType.ofShortName(matcher.group(2));
       transactionId = Long.parseLong(matcher.group(3));
+      Preconditions.checkArgument(transactionId > 0 || sequenceNumber != null,
+          "Data sequence number of File is null");
       transactionId = transactionId == 0 ? sequenceNumber : transactionId;
       DataTreeNode node = DataTreeNode.ofId(nodeId);
       return new DefaultKeyedFile.FileMeta(transactionId, type, node);
     } else {
+      Preconditions.checkArgument(sequenceNumber != null,
+          "Data sequence number of File is null");
       return new DefaultKeyedFile.FileMeta(sequenceNumber, DataFileType.INSERT_FILE, DataTreeNode.ROOT);
     }
   }
