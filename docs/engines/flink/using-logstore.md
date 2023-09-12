@@ -24,11 +24,11 @@ Users can enable LogStore by configuring the following parameters when creating 
 
 ## Overview
 
-|	Flink    |	Kafka    |  Pulsar	|	
-|-----	|-----	|-----	|			
-|	Flink 1.12	|	&#x2714	|	&#x2714	|
-|	Flink 1.14	|	&#x2714	|	&#x2716	|
-|	Flink 1.15	|	&#x2714	|	&#x2716	|
+| Flink      | Kafka    | Pulsar   |
+|------------|----------|----------|
+| Flink 1.12 | &#x2714; | &#x2714; |
+| Flink 1.14 | &#x2714; | &#x2716; |
+| Flink 1.15 | &#x2714; | &#x2716; |
 
 Kafka as LogStore Version Description:
 

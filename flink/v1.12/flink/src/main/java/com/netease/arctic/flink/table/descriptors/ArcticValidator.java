@@ -78,6 +78,8 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
   public static final String SCAN_STARTUP_MODE_EARLIEST = "earliest";
   public static final String SCAN_STARTUP_MODE_LATEST = "latest";
   public static final String SCAN_STARTUP_MODE_TIMESTAMP = "timestamp";
+  public static final String SCAN_STARTUP_MODE_GROUP_OFFSETS = "group-offsets";
+  public static final String SCAN_STARTUP_MODE_SPECIFIC_OFFSETS = "specific-offsets";
 
   public static final ConfigOption<Boolean> ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE =
       ConfigOptions.key("log-store.consistency-guarantee.enabled")
@@ -135,12 +137,19 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
               " \"timestamp\": start from user-supplied timestamp for each partition.",
           ARCTIC_READ_MODE, ARCTIC_READ_FILE, ARCTIC_READ_MODE, ARCTIC_READ_LOG));
 
-  public static final ConfigOption<Long> SCAN_STARTUP_TIMESTAMP_MILLIS =
-      ConfigOptions.key("scan.startup.timestamp-millis")
-          .longType()
-          .noDefaultValue()
-          .withDescription(
-              "Optional timestamp used in case of \"timestamp\" startup mode");
+  public static final ConfigOption<Long> SCAN_STARTUP_TIMESTAMP_MILLIS = ConfigOptions
+      .key("scan.startup.timestamp-millis")
+      .longType()
+      .noDefaultValue()
+      .withDescription(
+          "Optional timestamp used in case of \"timestamp\" startup mode");
+
+  public static final ConfigOption<String> SCAN_STARTUP_SPECIFIC_OFFSETS = ConfigOptions
+      .key("scan.startup.specific-offsets")
+      .stringType()
+      .noDefaultValue()
+      .withDescription(
+        "Optional timestamp used in case of \"timestamp\" startup mode");
 
   public static final ConfigOption<Boolean> SUBMIT_EMPTY_SNAPSHOTS = ConfigOptions
       .key("submit.empty.snapshots")

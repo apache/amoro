@@ -30,9 +30,7 @@ import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.ManifestFile;
@@ -89,37 +87,30 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   public void execute(TableRuntime tableRuntime) {
     try {
       LOG.info("{} clean orphan files", tableRuntime.getTableIdentifier());
-      ArcticTable arcticTable = loadTable(tableRuntime);
+      TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
 
-      boolean needOrphanClean = CompatiblePropertyUtil.propertyAsBoolean(
-          arcticTable.properties(),
-          TableProperties.ENABLE_ORPHAN_CLEAN,
-          TableProperties.ENABLE_ORPHAN_CLEAN_DEFAULT);
-
-      if (!needOrphanClean) {
+      if (!tableConfiguration.isCleanOrphanEnabled()) {
         return;
       }
 
-      long keepTime = CompatiblePropertyUtil.propertyAsLong(
-          arcticTable.properties(),
-          TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME,
-          TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT) * 60 * 1000;
+      long keepTime = tableConfiguration.getOrphanExistingMinutes() * 60 * 1000;
 
       LOG.info("{} clean orphan files, keepTime={}", tableRuntime.getTableIdentifier(), keepTime);
       // clear data files
+      ArcticTable arcticTable = loadTable(tableRuntime);
       cleanContentFiles(arcticTable, System.currentTimeMillis() - keepTime);
 
-      arcticTable = loadTable(tableRuntime);
+      // it may cost a long time to clean content files, so refresh the table to the current snapshot before cleaning 
+      // the metadata files
+      arcticTable.refresh();
       // clear metadata files
       cleanMetadata(arcticTable, System.currentTimeMillis() - keepTime);
 
-      boolean needCleanDanglingDeleteFiles = CompatiblePropertyUtil.propertyAsBoolean(arcticTable.properties(),
-          TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN,
-          TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT);
-
-      if (!needCleanDanglingDeleteFiles) {
+      if (!tableConfiguration.isDeleteDanglingDeleteFilesEnabled()) {
         return;
       }
+      // refresh to the current snapshot before clean dangling delete files
+      arcticTable.refresh();
       // clear dangling delete files
       cleanDanglingDeleteFiles(arcticTable);
     } catch (Throwable t) {

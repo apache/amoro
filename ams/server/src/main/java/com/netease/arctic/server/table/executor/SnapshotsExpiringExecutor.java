@@ -29,9 +29,7 @@ import com.netease.arctic.server.utils.HiveLocationUtil;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -68,7 +66,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
 
   private static final int DATA_FILE_LIST_SPLIT = 3000;
 
-  // 1 days
+  // 1 hour
   private static final long INTERVAL = 60 * 60 * 1000L;
 
   public SnapshotsExpiringExecutor(TableManager tableRuntimes, int poolSize) {
@@ -93,15 +91,12 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
   @Override
   public void execute(TableRuntime tableRuntime) {
     try {
-      ArcticTable arcticTable = loadTable(tableRuntime);
-      boolean needClean = CompatiblePropertyUtil.propertyAsBoolean(
-          arcticTable.properties(),
-          TableProperties.ENABLE_TABLE_EXPIRE,
-          TableProperties.ENABLE_TABLE_EXPIRE_DEFAULT);
-      if (!needClean) {
+      TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
+      if (!tableConfiguration.isExpireSnapshotEnabled()) {
         return;
       }
 
+      ArcticTable arcticTable = loadTable(tableRuntime);
       expireArcticTable(arcticTable, tableRuntime);
     } catch (Throwable t) {
       LOG.error("unexpected expire error of table {} ", tableRuntime.getTableIdentifier(), t);
@@ -110,16 +105,11 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
 
   public static void expireArcticTable(ArcticTable arcticTable, TableRuntime tableRuntime) {
     long startTime = System.currentTimeMillis();
+    TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
     LOG.info("{} start expire", tableRuntime.getTableIdentifier());
 
-    long changeDataTTL = CompatiblePropertyUtil.propertyAsLong(
-        arcticTable.properties(),
-        TableProperties.CHANGE_DATA_TTL,
-        TableProperties.CHANGE_DATA_TTL_DEFAULT) * 60 * 1000;
-    long baseSnapshotsKeepTime = CompatiblePropertyUtil.propertyAsLong(
-        arcticTable.properties(),
-        TableProperties.BASE_SNAPSHOT_KEEP_MINUTES,
-        TableProperties.BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT) * 60 * 1000;
+    long changeDataTTL = tableConfiguration.getChangeDataTTLMinutes() * 60 * 1000;
+    long baseSnapshotsKeepTime = tableConfiguration.getSnapshotTTLMinutes() * 60 * 1000;
 
     Set<String> hiveLocations = new HashSet<>();
     if (TableTypeUtil.isHive(arcticTable)) {
