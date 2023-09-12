@@ -51,6 +51,10 @@ public class DataIterator<T> implements CloseableIterator<T> {
   private final Function<T, Long> arcticFileOffsetGetter;
   private final Function<T, T> arcticMetaColumnRemover;
 
+  public DataIterator() {
+    this(null, Collections.emptyList(), t -> Long.MIN_VALUE, t -> t);
+  }
+
   public DataIterator(
       FileScanTaskReader<T> fileScanTaskReader,
       Collection<ArcticFileScanTask> tasks,

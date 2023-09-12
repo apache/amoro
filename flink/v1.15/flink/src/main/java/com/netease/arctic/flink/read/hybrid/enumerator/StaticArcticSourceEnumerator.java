@@ -18,7 +18,6 @@
 
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
-import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.assigner.SplitAssigner;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.source.ArcticScanContext;
@@ -29,8 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Collection;
 
 import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
 
@@ -45,6 +43,7 @@ public class StaticArcticSourceEnumerator extends AbstractArcticEnumerator {
   private transient KeyedTable keyedTable;
   private final ArcticScanContext scanContext;
   private final boolean shouldEnumerate;
+  private final ContinuousSplitPlanner splitPlanner;
 
   public StaticArcticSourceEnumerator(
       SplitEnumeratorContext<ArcticSplit> enumeratorContext,
@@ -56,8 +55,9 @@ public class StaticArcticSourceEnumerator extends AbstractArcticEnumerator {
     this.loader = loader;
     this.assigner = assigner;
     this.scanContext = scanContext;
-    // split enumeration is not needed during restore scenario
+    // split enumeration is not needed during a restore scenario
     this.shouldEnumerate = enumState == null;
+    this.splitPlanner = new MergeOnReadPlannerImpl(loader);
   }
 
   @Override
@@ -69,7 +69,7 @@ public class StaticArcticSourceEnumerator extends AbstractArcticEnumerator {
     if (shouldEnumerate) {
       keyedTable.baseTable().refresh();
       keyedTable.changeTable().refresh();
-      List<ArcticSplit> splits = FlinkSplitPlanner.planFullTable(keyedTable, new AtomicInteger());
+      Collection<ArcticSplit> splits = splitPlanner.planSplits(null, scanContext.filters()).splits();
       assigner.onDiscoveredSplits(splits);
       LOG.info("Discovered {} splits from table {} during job initialization",
           splits.size(), keyedTable.name());

@@ -83,6 +83,8 @@ import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE_DEFAULT;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_DEFAULT;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
+import static org.apache.flink.api.common.RuntimeExecutionMode.BATCH;
+import static org.apache.flink.configuration.ExecutionOptions.RUNTIME_MODE;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.KEY_FIELDS_PREFIX;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.KEY_FORMAT;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.PROPS_BOOTSTRAP_SERVERS;
@@ -162,8 +164,9 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         dimTable);
     switch (readMode) {
       case ArcticValidator.ARCTIC_READ_FILE:
-        LOG.info("build file reader");
-        arcticDynamicSource = new ArcticFileSource(tableLoader, tableSchema, arcticTable, confWithAll);
+        boolean batchMode = context.getConfiguration().get(RUNTIME_MODE).equals(BATCH);
+        LOG.info("build file reader in {} runtime mode", batchMode ? "batch" : "streaming");
+        arcticDynamicSource = new ArcticFileSource(tableLoader, tableSchema, arcticTable, confWithAll, batchMode);
         break;
       case ArcticValidator.ARCTIC_READ_LOG:
       default:

@@ -52,60 +52,36 @@ public class ArcticScanContext extends ScanContext implements Serializable {
   private static final long serialVersionUID = 1L;
 
   private final String scanStartupMode;
+  private final boolean batchMode;
 
-  protected ArcticScanContext(
-      boolean caseSensitive,
-      Long snapshotId,
-      StreamingStartingStrategy startingStrategy,
-      Long startSnapshotTimestamp,
-      Long startSnapshotId,
-      Long endSnapshotId,
-      Long asOfTimestamp,
-      Long splitSize,
-      Integer splitLookback,
-      Long splitOpenFileCost,
-      boolean isStreaming,
-      Duration monitorInterval,
-      String nameMapping,
-      Schema schema,
-      List<Expression> filters,
-      long limit,
-      boolean includeColumnStats,
-      boolean exposeLocality,
-      Integer planParallelism,
-      int maxPlanningSnapshotCount,
-      String scanStartupMode,
-      int maxAllowedPlanningFailures,
-      String branch,
-      String tag,
-      String startTag,
-      String endTag) {
-    super(caseSensitive,
-        snapshotId,
-        startingStrategy,
-        startSnapshotTimestamp,
-        startSnapshotId,
-        endSnapshotId,
-        asOfTimestamp,
-        splitSize,
-        splitLookback,
-        splitOpenFileCost,
-        isStreaming,
-        monitorInterval,
-        nameMapping,
-        schema,
-        filters,
-        limit,
-        includeColumnStats,
-        exposeLocality,
-        planParallelism,
-        maxPlanningSnapshotCount,
-        maxAllowedPlanningFailures,
-        branch,
-        tag,
-        startTag,
-        endTag);
-    this.scanStartupMode = scanStartupMode;
+  protected ArcticScanContext(Builder builder) {
+    super(builder.caseSensitive,
+        builder.snapshotId,
+        builder.startingStrategy,
+        builder.startSnapshotTimestamp,
+        builder.startSnapshotId,
+        builder.endSnapshotId,
+        builder.asOfTimestamp,
+        builder.splitSize,
+        builder.splitLookback,
+        builder.splitOpenFileCost,
+        builder.isStreaming,
+        builder.monitorInterval,
+        builder.nameMapping,
+        builder.projectedSchema,
+        builder.filters,
+        builder.limit,
+        builder.includeColumnStats,
+        builder.exposeLocality,
+        builder.planParallelism,
+        builder.maxPlanningSnapshotCount,
+        builder.maxAllowedPlanningFailures,
+        builder.branch,
+        builder.tag,
+        builder.startTag,
+        builder.endTag);
+    this.scanStartupMode = builder.scanStartupMode;
+    this.batchMode = builder.batchMode;
   }
 
   public boolean caseSensitive() {
@@ -175,6 +151,10 @@ public class ArcticScanContext extends ScanContext implements Serializable {
     return scanStartupMode;
   }
 
+  public boolean isBatchMode() {
+    return batchMode;
+  }
+
   public static class Builder {
     private boolean caseSensitive = FlinkReadOptions.CASE_SENSITIVE_OPTION.defaultValue();
     private Long snapshotId = FlinkReadOptions.SNAPSHOT_ID.defaultValue();
@@ -199,8 +179,7 @@ public class ArcticScanContext extends ScanContext implements Serializable {
     private boolean exposeLocality;
     private Integer planParallelism =
         FlinkConfigOptions.TABLE_EXEC_ICEBERG_WORKER_POOL_SIZE.defaultValue();
-    private int maxPlanningSnapshotCount =
-        FlinkReadOptions.MAX_PLANNING_SNAPSHOT_COUNT_OPTION.defaultValue();
+    private int maxPlanningSnapshotCount = MAX_PLANNING_SNAPSHOT_COUNT.defaultValue();
 
     private int maxAllowedPlanningFailures =
         FlinkReadOptions.MAX_ALLOWED_PLANNING_FAILURES_OPTION.defaultValue();
@@ -213,6 +192,7 @@ public class ArcticScanContext extends ScanContext implements Serializable {
 
     private String endTag = FlinkReadOptions.END_TAG.defaultValue();
     private String scanStartupMode;
+    private boolean batchMode = false;
 
     private Builder() {
     }
@@ -347,6 +327,11 @@ public class ArcticScanContext extends ScanContext implements Serializable {
       return this;
     }
 
+    public Builder batchMode(boolean batchMode) {
+      this.batchMode = batchMode;
+      return this;
+    }
+
     public Builder fromProperties(Map<String, String> properties) {
       Configuration config = new Configuration();
       properties.forEach(config::setString);
@@ -381,33 +366,10 @@ public class ArcticScanContext extends ScanContext implements Serializable {
               Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_LATEST),
           String.format("only support %s, %s when %s is %s",
               SCAN_STARTUP_MODE_EARLIEST, SCAN_STARTUP_MODE_LATEST, ARCTIC_READ_MODE, ARCTIC_READ_FILE));
-      return new ArcticScanContext(
-          caseSensitive,
-          snapshotId,
-          startingStrategy,
-          startSnapshotTimestamp,
-          startSnapshotId,
-          endSnapshotId,
-          asOfTimestamp,
-          splitSize,
-          splitLookback,
-          splitOpenFileCost,
-          isStreaming,
-          monitorInterval,
-          nameMapping,
-          projectedSchema,
-          filters,
-          limit,
-          includeColumnStats,
-          exposeLocality,
-          planParallelism,
-          maxPlanningSnapshotCount,
-          scanStartupMode,
-          maxAllowedPlanningFailures,
-          branch,
-          tag,
-          startTag,
-          endTag);
+      Preconditions.checkArgument(
+          !(isStreaming && batchMode),
+          String.format("only support %s = false when execution.runtime-mode is batch", STREAMING.key()));
+      return new ArcticScanContext(this);
     }
   }
 }

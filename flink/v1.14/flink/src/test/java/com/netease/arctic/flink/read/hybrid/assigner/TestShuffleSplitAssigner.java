@@ -183,7 +183,7 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
     } while (subtaskId < totalParallelism);
 
 
-    List<RowData> excepts = exceptsCollection();
+    List<RowData> excepts = expectedCollection();
     excepts.addAll(generateRecords());
     RowData[] array = excepts.stream().sorted(Comparator.comparing(RowData::toString))
         .collect(Collectors.toList())

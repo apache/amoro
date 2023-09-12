@@ -51,6 +51,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.DIM_TABLE_ENABLE;
+import static org.apache.flink.api.common.RuntimeExecutionMode.BATCH;
+import static org.apache.flink.configuration.ExecutionOptions.RUNTIME_MODE;
 
 /**
  * Flink table api that generates arctic base/change file source operators.
@@ -70,6 +72,7 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
   private final ArcticTableLoader loader;
   private final TableSchema tableSchema;
   private final ReadableConfig readableConfig;
+  private final boolean batchMode;
 
   private ArcticFileSource(ArcticFileSource toCopy) {
     this.loader = toCopy.loader;
@@ -79,6 +82,7 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
     this.filters = toCopy.filters;
     this.readableConfig = toCopy.readableConfig;
     this.table = toCopy.table;
+    this.batchMode = toCopy.batchMode;
   }
 
   public ArcticFileSource(ArcticTableLoader loader,
@@ -87,7 +91,8 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
                           ArcticTable table,
                           long limit,
                           List<Expression> filters,
-                          ReadableConfig readableConfig) {
+                          ReadableConfig readableConfig,
+                          boolean batchMode) {
     this.loader = loader;
     this.tableSchema = tableSchema;
     this.projectedFields = projectedFields;
@@ -95,11 +100,16 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
     this.table = table;
     this.filters = filters;
     this.readableConfig = readableConfig;
+    this.batchMode = batchMode;
   }
 
-  public ArcticFileSource(ArcticTableLoader loader, TableSchema tableSchema, ArcticTable table,
-                          ReadableConfig readableConfig) {
-    this(loader, tableSchema, null, table, -1, ImmutableList.of(), readableConfig);
+  public ArcticFileSource(
+      ArcticTableLoader loader,
+      TableSchema tableSchema,
+      ArcticTable table,
+      ReadableConfig readableConfig,
+      boolean batchMode) {
+    this(loader, tableSchema, null, table, -1, ImmutableList.of(), readableConfig, batchMode);
   }
 
   @Override
@@ -121,6 +131,7 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
         .limit(limit)
         .filters(filters)
         .flinkConf(readableConfig)
+        .batchMode(execEnv.getConfiguration().get(RUNTIME_MODE).equals(BATCH))
         .watermarkStrategy(watermarkStrategy)
         .build();
   }
@@ -168,7 +179,7 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
 
   @Override
   public ChangelogMode getChangelogMode() {
-    if (table.isUnkeyedTable()) {
+    if (table.isUnkeyedTable() || batchMode) {
       return ChangelogMode.insertOnly();
     }
     return ChangelogMode.newBuilder()
