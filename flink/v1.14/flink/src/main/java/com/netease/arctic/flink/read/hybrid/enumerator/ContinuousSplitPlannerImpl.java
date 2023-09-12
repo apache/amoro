@@ -24,11 +24,10 @@ import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ChangelogSplit;
 import com.netease.arctic.flink.read.hybrid.split.SnapshotSplit;
 import com.netease.arctic.flink.table.ArcticTableLoader;
-import com.netease.arctic.scan.TableEntriesScan;
+import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.annotation.Internal;
-import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.expressions.Expression;
 import org.slf4j.Logger;
@@ -81,24 +80,19 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
     long fromChangeSnapshotId = lastPosition.changeSnapshotId();
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
     if (changeSnapshot != null && changeSnapshot.snapshotId() != fromChangeSnapshotId) {
+      long snapshotId = changeSnapshot.snapshotId();
+      ChangeTableIncrementalScan changeTableScan = table.changeTable().newScan().useSnapshot(snapshotId);
+      if (filters != null) {
+        filters.forEach(changeTableScan::filter);
+      }
+
       Long fromSequence = null;
       if (fromChangeSnapshotId != Long.MIN_VALUE) {
         Snapshot snapshot = table.changeTable().snapshot(fromChangeSnapshotId);
         fromSequence = snapshot.sequenceNumber();
       }
 
-      long snapshotId = changeSnapshot.snapshotId();
-      TableEntriesScan.Builder tableEntriesScanBuilder =
-          TableEntriesScan.builder(table.changeTable())
-              .useSnapshot(snapshotId)
-              .includeFileContent(FileContent.DATA);
-      if (filters != null) {
-        filters.forEach(tableEntriesScanBuilder::withDataFilter);
-      }
-      TableEntriesScan entriesScan = tableEntriesScanBuilder.build();
-
-      List<ArcticSplit> arcticChangeSplit =
-          planChangeTable(entriesScan, fromSequence, table.changeTable().spec(), splitCount);
+      List<ArcticSplit> arcticChangeSplit = planChangeTable(changeTableScan, fromSequence, splitCount);
       return new ContinuousEnumerationResult(
           arcticChangeSplit,
           lastPosition,

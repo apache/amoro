@@ -21,6 +21,7 @@ package com.netease.arctic.flink.read;
 
 import com.netease.arctic.flink.read.hybrid.reader.TestRowDataReaderFunction;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
+import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.scan.TableEntriesScan;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
@@ -54,16 +55,13 @@ public class TestFlinkSplitPlanner extends TestRowDataReaderFunction {
     writeUpdate();
     testKeyedTable.changeTable().refresh();
     long nowSnapshotId = testKeyedTable.changeTable().currentSnapshot().snapshotId();
-    TableEntriesScan entriesScan = TableEntriesScan.builder(testKeyedTable.changeTable())
-        .useSnapshot(nowSnapshotId)
-        .includeFileContent(FileContent.DATA)
-        .build();
-    PartitionSpec spec = testKeyedTable.changeTable().spec();
+    ChangeTableIncrementalScan changeTableScan = testKeyedTable.changeTable().newScan().useSnapshot(nowSnapshotId);
+
     Snapshot snapshot = testKeyedTable.changeTable().snapshot(startSnapshotId);
     long fromSequence = snapshot.sequenceNumber();
 
     List<ArcticSplit> changeSplits =
-        FlinkSplitPlanner.planChangeTable(entriesScan, fromSequence, spec, new AtomicInteger());
+        FlinkSplitPlanner.planChangeTable(changeTableScan, fromSequence, new AtomicInteger());
 
     Assert.assertEquals(1, changeSplits.size());
   }
