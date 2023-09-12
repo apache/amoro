@@ -47,8 +47,7 @@ public interface MetricsReporter {
   void report(MetricsContent metricsContent);
 
   /**
-   * Indicates that an operation is done by reporting a {@link MetricsContent}. A {@link
-   * MetricsContent} is usually directly derived from a {@link MetricsContent} instance.
+   * {@link MetricsReporter#close()} will be called when the reporter is deleted or closed..
    */
   default void close() {
 

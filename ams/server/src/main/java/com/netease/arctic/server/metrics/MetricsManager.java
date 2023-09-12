@@ -77,8 +77,7 @@ public class MetricsManager {
 
   public void unregister(String name) {
     if (this.amoroReporters.containsKey(name)) {
-      this.amoroReporters.get(name).close();
-      this.amoroReporters.remove(name);
+      this.amoroReporters.remove(name).close();
     } else {
       this.icebergReporters.remove(name);
     }

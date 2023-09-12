@@ -91,10 +91,3 @@ containers:
 #      export.HADOOP_CONF_DIR: "/etc/hadoop/conf/"                   # Hadoop config dir
 #      export.HADOOP_USER_NAME: "hadoop"                             # Hadoop user submit on yarn
 #      export.FLINK_CONF_DIR: "/etc/hadoop/conf/"                    # Flink config dir
-
-#reporters:
-#  - name: report1
-#    impl: {reporter class}
-#    properties:
-#      host: 127.0.0.1
-#      port: 8080
