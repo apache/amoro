@@ -44,6 +44,7 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.TableProperties;
@@ -85,7 +86,6 @@ public class IcebergTableUtil {
   }
 
   public static TableSnapshot getSnapshot(ArcticTable arcticTable, TableRuntime tableRuntime) {
-    tableRuntime.refresh(arcticTable);
     if (arcticTable.isUnkeyedTable()) {
       return new BasicTableSnapshot(tableRuntime.getCurrentSnapshotId());
     } else {
@@ -107,7 +107,7 @@ public class IcebergTableUtil {
     return internalTable.currentSnapshot();
   }
 
-  public static Set<String> getAllContentFilePath(UnkeyedTable internalTable) {
+  public static Set<String> getAllContentFilePath(Table internalTable) {
     Set<String> validFilesPath = new HashSet<>();
 
     TableEntriesScan entriesScan = TableEntriesScan.builder(internalTable)
@@ -124,7 +124,7 @@ public class IcebergTableUtil {
     return validFilesPath;
   }
 
-  public static Set<DeleteFile> getDanglingDeleteFiles(UnkeyedTable internalTable) {
+  public static Set<DeleteFile> getDanglingDeleteFiles(Table internalTable) {
     if (internalTable.currentSnapshot() == null) {
       return Collections.emptySet();
     }

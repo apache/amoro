@@ -25,6 +25,7 @@ import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.server.optimizing.maintainer.MixedTableMaintainer;
 import org.apache.iceberg.io.OutputFile;
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -35,7 +36,7 @@ import org.junit.runners.Parameterized;
 import java.io.File;
 import java.io.IOException;
 
-import static com.netease.arctic.server.table.executor.OrphanFilesCleaningExecutor.DATA_FOLDER_NAME;
+import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer.DATA_FOLDER_NAME;
 
 @RunWith(Parameterized.class)
 public class TestOrphanFileCleanHive extends TestOrphanFileClean {
@@ -67,7 +68,9 @@ public class TestOrphanFileCleanHive extends TestOrphanFileClean {
     OutputFile changeOrphanDataFile = getArcticTable().io().newOutputFile(hiveOrphanFilePath);
     changeOrphanDataFile.createOrOverwrite().close();
     Assert.assertTrue(getArcticTable().io().exists(hiveOrphanFilePath));
-    OrphanFilesCleaningExecutor.cleanContentFiles(getArcticTable(), System.currentTimeMillis());
+
+    MixedTableMaintainer maintainer = new MixedTableMaintainer(getArcticTable());
+    maintainer.cleanContentFiles(System.currentTimeMillis());
     Assert.assertTrue(getArcticTable().io().exists(hiveOrphanFilePath));
   }
 

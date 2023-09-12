@@ -16,24 +16,22 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.formats.paimon;
+package com.netease.arctic;
 
-import com.netease.arctic.FormatCatalog;
-import com.netease.arctic.FormatCatalogFactory;
-import com.netease.arctic.ams.api.TableFormat;
-import org.apache.hadoop.conf.Configuration;
-import java.util.Map;
+public interface TableSnapshot {
 
-public class PaimonFormatCatalog implements FormatCatalogFactory {
-  @Override
-  public FormatCatalog create(
-      String name, String metastoreType, Map<String, String> properties, Configuration configuration) {
-    // TODO: implement this method
-    return null;
-  }
+  /**
+   * Returns the watermark of this snapshot.
+   */
+  long watermark();
 
-  @Override
-  public TableFormat format() {
-    return TableFormat.PAIMON;
-  }
+  /**
+   * Returns the commit time of this snapshot.
+   */
+  long commitTime();
+
+  /**
+   * Returns the id of this snapshot.
+   */
+  String id();
 }

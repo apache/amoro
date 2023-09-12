@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.table.executor;
 
+import com.netease.arctic.AmoroTable;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
 import com.netease.arctic.server.table.TableManager;
@@ -39,7 +41,9 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
-    return true;
+    return tableRuntime.getFormat() == TableFormat.ICEBERG ||
+        tableRuntime.getFormat() == TableFormat.MIXED_ICEBERG ||
+        tableRuntime.getFormat() == TableFormat.MIXED_HIVE;
   }
 
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
@@ -54,9 +58,9 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     }
   }
 
-  private void tryEvaluatingPendingInput(TableRuntime tableRuntime, ArcticTable table) {
+  private void tryEvaluatingPendingInput(TableRuntime tableRuntime, AmoroTable<?> table) {
     if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
-      OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, table);
+      OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, (ArcticTable) table.originalTable());
       if (evaluator.isNecessary()) {
         OptimizingEvaluator.PendingInput pendingInput = evaluator.getPendingInput();
         logger.debug("{} optimizing is necessary and get pending input {}", tableRuntime.getTableIdentifier(),
@@ -71,7 +75,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     try {
       long lastOptimizedSnapshotId = tableRuntime.getLastOptimizedSnapshotId();
       long lastOptimizedChangeSnapshotId = tableRuntime.getLastOptimizedChangeSnapshotId();
-      ArcticTable table = loadTable(tableRuntime);
+      AmoroTable<?> table = loadTable(tableRuntime);
       tableRuntime.refresh(table);
       if (lastOptimizedSnapshotId != tableRuntime.getCurrentSnapshotId() ||
           lastOptimizedChangeSnapshotId != tableRuntime.getCurrentChangeSnapshotId()) {

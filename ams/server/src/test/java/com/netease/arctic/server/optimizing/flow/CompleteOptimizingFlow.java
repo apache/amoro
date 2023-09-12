@@ -170,7 +170,6 @@ public class CompleteOptimizingFlow {
     Mockito.doCallRealMethod().when(tableRuntime).getLastMajorOptimizingTime();
     Mockito.doCallRealMethod().when(tableRuntime).getLastFullOptimizingTime();
     Mockito.when(tableRuntime.getOptimizingConfig()).thenAnswer(f -> optimizingConfig());
-    Mockito.when(tableRuntime.getCurrentChangeSnapshotId()).thenAnswer(f -> getCurrentChangeSnapshotId());
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(ServerTableIdentifier.of(1L, "a", "b", "c"));
     return new OptimizingPlanner(tableRuntime, table, availableCore);
   }

@@ -26,6 +26,7 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
+import com.netease.arctic.server.optimizing.maintainer.MixedTableMaintainer;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -95,7 +96,10 @@ public class TestOrphanFileCleanIceberg extends TestOrphanFileClean {
             Collections.singleton(dataFiles2.get(0)))
       .validateFromSnapshot(testTable.currentSnapshot().snapshotId()).commit();
     assertDanglingDeleteFiles(testTable, 1);
-    OrphanFilesCleaningExecutor.cleanDanglingDeleteFiles(testTable);
+
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(testTable);
+    tableMaintainer.cleanDanglingDeleteFiles();
+
     assertDanglingDeleteFiles(testTable, 0);
   }
 

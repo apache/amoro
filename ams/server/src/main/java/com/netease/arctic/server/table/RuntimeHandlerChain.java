@@ -1,7 +1,7 @@
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
-import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +54,7 @@ public abstract class RuntimeHandlerChain {
     }
   }
 
-  public final void fireTableAdded(ArcticTable table, TableRuntime tableRuntime) {
+  public final void fireTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
     if (!initialized) return;
 
     doSilently(() -> handleTableAdded(table, tableRuntime));
@@ -91,7 +91,7 @@ public abstract class RuntimeHandlerChain {
 
   protected abstract void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig);
 
-  protected abstract void handleTableAdded(ArcticTable table, TableRuntime tableRuntime);
+  protected abstract void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime);
 
   protected abstract void handleTableRemoved(TableRuntime tableRuntime);
 

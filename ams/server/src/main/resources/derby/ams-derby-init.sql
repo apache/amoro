@@ -89,6 +89,7 @@ CREATE TABLE table_runtime (
     catalog_name                VARCHAR(64) NOT NULL,
     db_name                     VARCHAR(128) NOT NULL,
     table_name                  VARCHAR(128) NOT NULL,
+    format                      VARCHAR(32)  NOT NULL COMMENT "format",
     current_snapshot_id         BIGINT NOT NULL DEFAULT -1,
     current_change_snapshotId   BIGINT,
     last_optimized_snapshotId   BIGINT NOT NULL DEFAULT -1,

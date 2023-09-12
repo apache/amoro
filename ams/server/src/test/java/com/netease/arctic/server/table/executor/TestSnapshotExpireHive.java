@@ -24,6 +24,8 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
+import com.netease.arctic.server.optimizing.maintainer.MixedTableMaintainer;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.iceberg.DataFile;
@@ -69,6 +71,10 @@ public class TestSnapshotExpireHive extends TestSnapshotExpire {
 
     DeleteFiles deleteHiveFiles = isKeyedTable() ?
         getArcticTable().asKeyedTable().baseTable().newDelete() : getArcticTable().asUnkeyedTable().newDelete();
+
+    getArcticTable().updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
+    getArcticTable().updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
+
     for (DataFile hiveFile : hiveFiles) {
       Assert.assertTrue(getArcticTable().io().exists(hiveFile.path().toString()));
       deleteHiveFiles.deleteFile(hiveFile);
@@ -97,7 +103,8 @@ public class TestSnapshotExpireHive extends TestSnapshotExpire {
     }
     UnkeyedTable unkeyedTable = isKeyedTable() ?
         getArcticTable().asKeyedTable().baseTable() : getArcticTable().asUnkeyedTable();
-    SnapshotsExpiringExecutor.expireSnapshots(unkeyedTable, System.currentTimeMillis(), hiveLocation);
+    new MixedTableMaintainer(unkeyedTable)
+        .getBaseMaintainer().expireSnapshots(System.currentTimeMillis(), hiveLocation);
     Assert.assertEquals(1, Iterables.size(unkeyedTable.snapshots()));
 
     hiveFiles.forEach(file -> Assert.assertTrue(getArcticTable().io().exists(file.path().toString())));

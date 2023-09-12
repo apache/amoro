@@ -48,8 +48,9 @@ import java.util.List;
 
 @RunWith(Parameterized.class)
 public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
-  public TestKeyedTableFileScanHelper(CatalogTestHelper catalogTestHelper,
-                                      TableTestHelper tableTestHelper) {
+  public TestKeyedTableFileScanHelper(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
@@ -57,9 +58,9 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
   public static Object[][] parameters() {
     return new Object[][] {
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, true)},
+         new BasicTableTestHelper(true, true)},
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, false)}};
+         new BasicTableTestHelper(true, false)}};
   }
 
   @Test
@@ -71,7 +72,8 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
   @Test
   public void testScanEmptySnapshot() {
     long transactionId = getArcticTable().beginTransaction("");
-    OptimizingTestHelpers.appendBase(getArcticTable(),
+    OptimizingTestHelpers.appendBase(
+        getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), transactionId, Collections.emptyList(), false));
 
     List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
@@ -87,7 +89,8 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
         tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00")
     );
     long transactionId = getArcticTable().beginTransaction("");
-    OptimizingTestHelpers.appendBase(getArcticTable(),
+    OptimizingTestHelpers.appendBase(
+        getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
 
     List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
@@ -123,7 +126,8 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
     );
 
     long transactionId = getArcticTable().beginTransaction("");
-    OptimizingTestHelpers.appendBase(getArcticTable(),
+    OptimizingTestHelpers.appendBase(
+        getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
 
     transactionId = getArcticTable().beginTransaction("");
@@ -164,7 +168,8 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
         tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00")
     );
     long transactionId = getArcticTable().beginTransaction("");
-    List<DataFile> dataFiles = OptimizingTestHelpers.appendBase(getArcticTable(),
+    List<DataFile> dataFiles = OptimizingTestHelpers.appendBase(
+        getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
@@ -267,9 +272,7 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
     Assert.assertEquals(Long.MAX_VALUE, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 9));
   }
 
-
   private static KeyedTableFileScanHelper.SnapshotFileGroup buildSequenceGroup(long sequence, long txId, int cnt) {
     return new KeyedTableFileScanHelper.SnapshotFileGroup(sequence, txId, cnt);
   }
-
 }

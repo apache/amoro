@@ -24,6 +24,8 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.server.optimizing.maintainer.MixedTableMaintainer;
+import com.netease.arctic.server.optimizing.maintainer.TableMaintainer;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
@@ -43,8 +45,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.netease.arctic.server.table.executor.OrphanFilesCleaningExecutor.DATA_FOLDER_NAME;
-import static com.netease.arctic.server.table.executor.OrphanFilesCleaningExecutor.FLINK_JOB_ID;
+import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer.DATA_FOLDER_NAME;
+import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer.FLINK_JOB_ID;
 
 @RunWith(Parameterized.class)
 public class TestOrphanFileClean extends ExecutorTestBase {
@@ -92,12 +94,12 @@ public class TestOrphanFileClean extends ExecutorTestBase {
       Assert.assertTrue(getArcticTable().io().exists(changeOrphanFilePath));
     }
 
-    OrphanFilesCleaningExecutor.cleanContentFiles(
-        getArcticTable(),
+    MixedTableMaintainer maintainer = new MixedTableMaintainer(getArcticTable());
+    maintainer.cleanContentFiles(
         System.currentTimeMillis() - TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT * 60 * 1000);
-    OrphanFilesCleaningExecutor.cleanMetadata(
-        getArcticTable(),
+    maintainer.cleanMetadata(
         System.currentTimeMillis() - TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT * 60 * 1000);
+
     Assert.assertTrue(getArcticTable().io().exists(baseOrphanFileDir));
     Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
 
@@ -105,8 +107,8 @@ public class TestOrphanFileClean extends ExecutorTestBase {
       Assert.assertTrue(getArcticTable().io().exists(changeOrphanFilePath));
     }
 
-    OrphanFilesCleaningExecutor.cleanContentFiles(getArcticTable(), System.currentTimeMillis());
-    OrphanFilesCleaningExecutor.cleanMetadata(getArcticTable(), System.currentTimeMillis());
+    maintainer.cleanContentFiles(System.currentTimeMillis());
+    maintainer.cleanMetadata(System.currentTimeMillis());
 
     Assert.assertFalse(getArcticTable().io().exists(baseOrphanFileDir));
     Assert.assertFalse(getArcticTable().io().exists(baseOrphanFilePath));
@@ -149,7 +151,8 @@ public class TestOrphanFileClean extends ExecutorTestBase {
       Assert.assertTrue(getArcticTable().io().exists(changeInvalidMetadataJson));
     }
 
-    OrphanFilesCleaningExecutor.cleanMetadata(getArcticTable(), System.currentTimeMillis());
+    MixedTableMaintainer maintainer = new MixedTableMaintainer(getArcticTable());
+    maintainer.cleanMetadata(System.currentTimeMillis());
 
     Assert.assertFalse(getArcticTable().io().exists(baseOrphanFilePath));
     if (isKeyedTable()) {
@@ -183,7 +186,9 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     }
     pathAll.forEach(path -> Assert.assertTrue(testKeyedTable.io().exists(path)));
 
-    OrphanFilesCleaningExecutor.cleanContentFiles(testKeyedTable, System.currentTimeMillis());
+    MixedTableMaintainer maintainer = new MixedTableMaintainer(getArcticTable());
+    maintainer.cleanContentFiles(System.currentTimeMillis());
+
     fileInBaseStore.forEach(path -> Assert.assertTrue(testKeyedTable.io().exists(path)));
     fileOnlyInChangeLocation.forEach(path -> Assert.assertFalse(testKeyedTable.io().exists(path)));
   }
@@ -234,7 +239,8 @@ public class TestOrphanFileClean extends ExecutorTestBase {
       Assert.assertTrue(getArcticTable().io().exists(changeInvalidMetadataJson));
     }
 
-    OrphanFilesCleaningExecutor.cleanMetadata(getArcticTable(), System.currentTimeMillis());
+    TableMaintainer tableMaintainer = new MixedTableMaintainer(getArcticTable());
+    tableMaintainer.cleanMetadata(System.currentTimeMillis());
     Assert.assertFalse(getArcticTable().io().exists(baseOrphanFilePath));
     if (isKeyedTable()) {
       // files whose file name starts with flink.job-id should not be deleted
