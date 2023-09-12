@@ -159,6 +159,12 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     if (isFragmentFile(dataFile)) {
       return true;
     }
+    // When Upsert writing is enabled in the Flink engine, both INSERT and UPDATE_AFTER will generate deletes files
+    // (Most are eq-delete), and eq-delete file will be associated with the data file before the current snapshot.
+    // The eq-delete does not accurately reflect how much data has been deleted in the current segment file
+    // (That is, whether the segment file needs to be rewritten).
+    // And the eq-delete file will be converted to pos-delete during minor optimizing, so only pos-delete record
+    // count is calculated here.
     return getPosDeletesRecordCount(deletes) > dataFile.recordCount() * config.getMajorDuplicateRatio();
   }
 
