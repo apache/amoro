@@ -30,7 +30,6 @@ import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.PuffinUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;

@@ -477,7 +477,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
         .write();
     baseTable.updateStatistics().setStatistics(s2.snapshotId(), file2).commit();
     
-    long tAfterS2 = waitUntilAfter(s2.timestampMillis());
+    long expireTime = waitUntilAfter(s2.timestampMillis());
 
     // commit an empty snapshot and its statistic file
     baseTable.newAppend().commit();
@@ -490,7 +490,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Assert.assertTrue(baseTable.io().exists(file1.path()));
     Assert.assertTrue(baseTable.io().exists(file2.path()));
     Assert.assertTrue(baseTable.io().exists(file3.path()));
-    SnapshotsExpiringExecutor.expireSnapshots(baseTable, tAfterS2, new HashSet<>());
+    SnapshotsExpiringExecutor.expireSnapshots(baseTable, expireTime, new HashSet<>());
 
     Assert.assertEquals(1, Iterables.size(baseTable.snapshots()));
     Assert.assertFalse(baseTable.io().exists(file1.path()));
