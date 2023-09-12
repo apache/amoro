@@ -19,20 +19,12 @@
 package com.netease.arctic.server.optimizing.scan;
 
 import com.netease.arctic.server.ArcticServiceConstants;
-import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class IcebergTableFileScanHelper implements TableFileScanHelper {
   private final Table table;

@@ -23,6 +23,7 @@ import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.Strings;
+
 import java.util.Map;
 
 public class TableTrashManagers {

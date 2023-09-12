@@ -37,8 +37,8 @@ import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableService;
 import io.javalin.http.Context;
-import javax.ws.rs.BadRequestException;
 
+import javax.ws.rs.BadRequestException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;

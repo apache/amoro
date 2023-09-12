@@ -18,9 +18,7 @@
 
 package com.netease.arctic.scan;
 
-import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.TableScan;
-import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
 
 public interface ChangeTableIncrementalScan extends TableScan {

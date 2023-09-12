@@ -39,6 +39,7 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+
 import java.io.IOException;
 
 public class AMSTableTestBase extends TableServiceTestBase {
