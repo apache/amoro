@@ -16,11 +16,36 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.metrics;
+package com.netease.arctic.server.metrics;
 
-/**
- * Metrics report
- */
-public interface MetricReport {
-  String name();
+import java.util.Map;
+
+public class ReporterMeta {
+  private String name;
+  private String impl;
+  private Map<String, String> properties;
+
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public String getImpl() {
+    return impl;
+  }
+
+  public void setImpl(String impl) {
+    this.impl = impl;
+  }
+
+  public Map<String, String> getProperties() {
+    return properties;
+  }
+
+  public void setProperties(Map<String, String> properties) {
+    this.properties = properties;
+  }
 }

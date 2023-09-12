@@ -25,11 +25,11 @@ import java.util.Map;
  * The system calls the open method to initialize the reporter and the close method to shut it down when needed.
  * The report method is called to notify the reporter when a metric is generated.
  */
-public interface MetricReporter {
+public interface MetricsReporter {
 
   /**
    * A custom MetricsReporter implementation must have a no-arg constructor, which will be called
-   * first. {@link MetricReporter#open(Map properties)} is called to complete the
+   * first. {@link MetricsReporter#open(Map properties)} is called to complete the
    * initialization.
    *
    * @param properties properties
@@ -39,16 +39,18 @@ public interface MetricReporter {
   }
 
   /**
-   * Indicates that an operation is done by reporting a {@link MetricReport}. A {@link
-   * MetricReport} is usually directly derived from a {@link MetricReport} instance.
+   * Indicates that an operation is done by reporting a {@link MetricsContent}. A {@link
+   * MetricsContent} is usually directly derived from a {@link MetricsContent} instance.
    *
-   * @param metricReport {@link MetricReport} to report.
+   * @param metricsContent {@link MetricsContent} to report.
    */
-  void report(MetricReport metricReport);
+  void report(MetricsContent metricsContent);
 
   /**
-   * Indicates that an operation is done by reporting a {@link MetricReport}. A {@link
-   * MetricReport} is usually directly derived from a {@link MetricReport} instance.
+   * Indicates that an operation is done by reporting a {@link MetricsContent}. A {@link
+   * MetricsContent} is usually directly derived from a {@link MetricsContent} instance.
    */
-  void close();
+  default void close() {
+
+  }
 }

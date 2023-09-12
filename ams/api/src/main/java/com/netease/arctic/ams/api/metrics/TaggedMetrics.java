@@ -32,41 +32,41 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *  This is a simple data structure that separates tags and metrics, making it easier for reporters to write to popular
- *  monitoring systems when processing {@link MetricReport}
+ * This is a simple data structure that separates tags and metrics, making it easier for reporters to write to popular
+ * monitoring systems when processing {@link MetricsContent}
  */
 public class TaggedMetrics {
   private final Map<String, Object> tags;
-  private final Map<String, Object> metrics;
+  private final Map<String, com.codahale.metrics.Metric> metrics;
 
-  private TaggedMetrics(Map<String, Object> tags, Map<String, Object> metrics) {
+  private TaggedMetrics(Map<String, Object> tags, Map<String, com.codahale.metrics.Metric> metrics) {
     this.tags = tags;
     this.metrics = metrics;
   }
 
-  public static TaggedMetrics of(Map<String, Object> tags, Map<String, Object> metrics) {
+  public static TaggedMetrics of(Map<String, Object> tags, Map<String, com.codahale.metrics.Metric> metrics) {
     return new TaggedMetrics(tags, metrics);
   }
 
-  public static TaggedMetrics from(MetricReport metricReport) {
-    return of(parseTags(metricReport), parseMetrics(metricReport));
+  public static TaggedMetrics from(MetricsContent metricsContent) {
+    return of(parseTags(metricsContent), parseMetrics(metricsContent));
   }
 
   public Map<String, Object> tags() {
     return tags;
   }
 
-  public Map<String, Object> metrics() {
+  public Map<String, com.codahale.metrics.Metric> metrics() {
     return metrics;
   }
 
-  private static Map<String, Object> parseTags(Object object) {
-    List<Method> tagMethods = getAnnotationMethods(object, TaggedMetrics.Tag.class);
+  private static Map<String, Object> parseTags(MetricsContent metricsContent) {
+    List<Method> tagMethods = getAnnotationMethods(metricsContent, TaggedMetrics.Tag.class);
     Map<String, Object> tags = Maps.newHashMap();
     tagMethods.forEach(method -> {
       TaggedMetrics.Tag tag = method.getAnnotation(TaggedMetrics.Tag.class);
       try {
-        tags.put(tag.name(), method.invoke(object));
+        tags.put(tag.name(), method.invoke(metricsContent));
       } catch (IllegalAccessException | InvocationTargetException e) {
         throw new RuntimeException(e);
       }
@@ -74,14 +74,14 @@ public class TaggedMetrics {
     return tags;
   }
 
-  private static Map<String, Object> parseMetrics(Object object) {
-    List<Method> tagMethods = getAnnotationMethods(object, TaggedMetrics.Metric.class);
-    Map<String, Object> metrics = Maps.newHashMap();
+  private static Map<String, com.codahale.metrics.Metric> parseMetrics(MetricsContent metricsContent) {
+    List<Method> tagMethods = getAnnotationMethods(metricsContent, TaggedMetrics.Metric.class);
+    Map<String, com.codahale.metrics.Metric> metrics = Maps.newHashMap();
     tagMethods.forEach(method -> {
       TaggedMetrics.Metric metric = method.getAnnotation(TaggedMetrics.Metric.class);
       try {
-        if (method.invoke(object) != null) {
-          metrics.put(metric.name(), method.invoke(object));
+        if (method.invoke(metricsContent) != null) {
+          metrics.put(metric.name(), (com.codahale.metrics.Metric) method.invoke(metricsContent));
         }
       } catch (IllegalAccessException | InvocationTargetException e) {
         throw new RuntimeException(e);
