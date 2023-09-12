@@ -43,6 +43,7 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.StructLikeMap;
@@ -50,6 +51,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.mockito.Mockito;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -284,10 +287,14 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   protected AbstractPartitionPlan buildPlanWithCurrentFiles() {
     TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
     AbstractPartitionPlan partitionPlan = getAndCheckPartitionPlan();
-    List<TableFileScanHelper.FileScanResult> scan = tableFileScanHelper.scan();
-    for (TableFileScanHelper.FileScanResult fileScanResult : scan) {
-      partitionPlan.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
+    try (CloseableIterable<TableFileScanHelper.FileScanResult> results = tableFileScanHelper.scan()) {
+      for (TableFileScanHelper.FileScanResult fileScanResult : results) {
+        partitionPlan.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
+      }
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
     }
+
     return partitionPlan;
   }
 
@@ -370,16 +377,26 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
   protected Map<DataTreeNode, List<TableFileScanHelper.FileScanResult>> scanBaseFilesGroupByNode() {
     TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
-    List<TableFileScanHelper.FileScanResult> scan = tableFileScanHelper.scan();
-    return scan.stream().collect(Collectors.groupingBy(f -> {
-      PrimaryKeyedFile primaryKeyedFile = (PrimaryKeyedFile) f.file();
-      return primaryKeyedFile.node();
-    }));
+    Map<DataTreeNode, List<TableFileScanHelper.FileScanResult>> resultMap = Maps.newHashMap();
+    try (CloseableIterable<TableFileScanHelper.FileScanResult> results = tableFileScanHelper.scan()) {
+      for (TableFileScanHelper.FileScanResult result : results) {
+        PrimaryKeyedFile primaryKeyedFile = (PrimaryKeyedFile) result.file();
+        resultMap.putIfAbsent(primaryKeyedFile.node(), Lists.newArrayList());
+        resultMap.get(primaryKeyedFile.node()).add(result);
+      }
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+    return resultMap;
   }
 
   protected List<TableFileScanHelper.FileScanResult> scanFiles() {
     TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
-    return tableFileScanHelper.scan();
+    try (CloseableIterable<TableFileScanHelper.FileScanResult> results = tableFileScanHelper.scan()) {
+      return Lists.newArrayList(results.iterator());
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   protected void assertTask(TaskDescriptor actual, List<DataFile> rewrittenDataFiles,

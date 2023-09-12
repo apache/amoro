@@ -118,8 +118,7 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
       if (entry.getSequenceNumber() <= fromSequence) {
         continue;
       }
-      DefaultKeyedFile keyedFile =
-          DefaultKeyedFile.parseChange((DataFile) entry.getFile(), entry.getSequenceNumber());
+      DefaultKeyedFile keyedFile = DefaultKeyedFile.parseChange((DataFile) entry.getFile());
       BasicArcticFileScanTask task =
           new BasicArcticFileScanTask(keyedFile, null, testKeyedTable.changeTable().spec(), null);
       if (task.fileType().equals(DataFileType.INSERT_FILE)) {

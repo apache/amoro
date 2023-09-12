@@ -21,59 +21,62 @@ package com.netease.arctic.scan;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.io.TableDataTestBase;
 import com.netease.arctic.utils.ArcticDataFiles;
-import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class TestChangeTableBasicIncrementalScan extends TableDataTestBase {
+import java.io.IOException;
+import java.util.function.Predicate;
+
+public class TestMixedChangeTableScan extends TableDataTestBase {
 
   @Test
-  public void testIncrementalScan() {
+  public void testIncrementalScan() throws IOException {
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan();
-    CloseableIterable<ContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
-
-    assertFiles(files, 3, 1, 2);
+    try(CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
+      assertFilesSequence(tasks, 3, 1, 2);
+    }
   }
 
   @Test
-  public void testIncrementalScanFrom() {
+  public void testIncrementalScanFrom() throws IOException {
     StructLikeMap<Long> fromSequence = StructLikeMap.create(getArcticTable().spec().partitionType());
     StructLike partitionData = ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
     fromSequence.put(partitionData, 1L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence);
-    CloseableIterable<ContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
-
-    assertFiles(files, 1, 2, 2);
+    try(CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
+      assertFilesSequence(tasks, 1, 2, 2);
+    }
   }
 
   @Test
-  public void testIncrementalScanTo() {
+  public void testIncrementalScanTo() throws IOException {
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan().toSequence(1);
-    CloseableIterable<ContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
-
-    assertFiles(files, 2, 1, 1);
+    try(CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
+      assertFilesSequence(tasks, 2, 1, 1);
+    }
   }
 
   @Test
-  public void testIncrementalScanFromTo() {
+  public void testIncrementalScanFromTo() throws IOException {
     StructLikeMap<Long> fromSequence = StructLikeMap.create(getArcticTable().spec().partitionType());
     StructLike partitionData = ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
     fromSequence.put(partitionData, 1L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence).toSequence(1);
-    CloseableIterable<ContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
-
-    assertFiles(files, 0, 0, 0);
+    try(CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
+      assertFilesSequence(tasks, 0, 0, 0);
+    }
   }
 
   @Test
-  public void testIgnoreLegacyTxId() {
+  public void testIgnoreLegacyTxId() throws IOException {
     StructLikeMap<Long> fromSequence = StructLikeMap.create(getArcticTable().spec().partitionType());
     StructLike partitionData = ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
     fromSequence.put(partitionData, 1L);
@@ -83,37 +86,37 @@ public class TestChangeTableBasicIncrementalScan extends TableDataTestBase {
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence)
             .fromLegacyTransaction(fromLegacyTxId);
-    CloseableIterable<ContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
-
-    assertFiles(files, 1, 2, 2);
+    try(CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
+      assertFilesSequence(tasks, 1, 2, 2);
+    }
   }
 
   @Test
-  public void testUseLegacyId() {
+  public void testUseLegacyId() throws IOException {
     StructLikeMap<Long> fromLegacyTxId = StructLikeMap.create(getArcticTable().spec().partitionType());
     StructLike partitionData1 = ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
     fromLegacyTxId.put(partitionData1, 2L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan()
             .fromLegacyTransaction(fromLegacyTxId);
-    CloseableIterable<ContentFile<?>> files = changeTableIncrementalScan.planFilesWithSequence();
-
-    int cnt = 0;
-    for (ContentFile<?> file : files) {
-      cnt++;
-      Assert.assertTrue(FileNameRules.parseTransactionId(file.path().toString()) > 2L);
+    try(CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
+      assertFiles(tasks, 1, task-> FileNameRules.parseTransactionId(task.file().path().toString()) > 2L);
     }
-    Assert.assertEquals(1, cnt);
   }
 
-  private void assertFiles(CloseableIterable<ContentFile<?>> files, int fileCnt,
-                           long minSequence, long maxSequence) {
-    int cnt = 0;
-    for (ContentFile<?> file : files) {
-      cnt++;
-      Assert.assertTrue(file.dataSequenceNumber() >= minSequence);
-      Assert.assertTrue(file.dataSequenceNumber() <= maxSequence);
+  private void assertFiles(CloseableIterable<FileScanTask> tasks, int fileCnt, Predicate<FileScanTask> validator) {
+    int taskCount = 0;
+    for (FileScanTask task : tasks) {
+      taskCount++;
+      Assert.assertTrue(task instanceof BasicArcticFileScanTask);
+      Assert.assertTrue(validator.test(task));
     }
-    Assert.assertEquals(fileCnt, cnt);
+    Assert.assertEquals(fileCnt, taskCount);
+  }
+
+  private void assertFilesSequence(CloseableIterable<FileScanTask> tasks, int fileCnt,
+                           long minSequence, long maxSequence) {
+    assertFiles(tasks, fileCnt, task ->
+        (task.file().dataSequenceNumber() >= minSequence) && (task.file().dataSequenceNumber() <= maxSequence));
   }
 }

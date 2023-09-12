@@ -211,8 +211,7 @@ public class FlinkSplitPlanner {
             continue;
           }
           greaterThanCount++;
-          DefaultKeyedFile keyedFile =
-              DefaultKeyedFile.parseChange((DataFile) entry.getFile(), entry.getSequenceNumber());
+          DefaultKeyedFile keyedFile = DefaultKeyedFile.parseChange((DataFile) entry.getFile());
           BasicArcticFileScanTask task = new BasicArcticFileScanTask(keyedFile, null, spec, null);
 
           if (task.fileType().equals(DataFileType.INSERT_FILE)) {

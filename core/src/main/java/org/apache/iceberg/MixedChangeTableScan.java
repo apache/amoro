@@ -23,33 +23,34 @@ import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.util.StructLikeMap;
 
-import java.util.List;
-
-public class ArcticChangeTableScan extends DataTableScan implements ChangeTableIncrementalScan {
+/**
+ * Table scan for {@link com.netease.arctic.table.ChangeTable}, support filter files with data sequence number
+ * and return {@link BasicArcticFileScanTask}.
+ */
+public class MixedChangeTableScan extends DataTableScan implements ChangeTableIncrementalScan {
   private StructLikeMap<Long> fromPartitionSequence;
   private StructLikeMap<Long> fromPartitionLegacyTransactionId;
   private Long toSequence;
 
-  public ArcticChangeTableScan(Table table, Schema schema) {
+  public MixedChangeTableScan(Table table, Schema schema) {
     super(table, schema, ImmutableTableScanContext.builder().build());
   }
 
-  protected ArcticChangeTableScan(Table table, Schema schema, TableScanContext context) {
+  protected MixedChangeTableScan(Table table, Schema schema, TableScanContext context) {
     super(table, schema, context);
   }
 
   @Override
-  public ArcticChangeTableScan useSnapshot(long scanSnapshotId) {
+  public MixedChangeTableScan useSnapshot(long scanSnapshotId) {
     TableScan scan = super.useSnapshot(scanSnapshotId);
     return newRefinedScan(table(), scan.schema(), context().useSnapshotId(scanSnapshotId));
   }
 
   @Override
-  protected ArcticChangeTableScan newRefinedScan(Table table, Schema schema, TableScanContext context) {
-    ArcticChangeTableScan scan = new ArcticChangeTableScan(table, schema, context);
+  protected MixedChangeTableScan newRefinedScan(Table table, Schema schema, TableScanContext context) {
+    MixedChangeTableScan scan = new MixedChangeTableScan(table, schema, context);
     scan.fromPartitionSequence = this.fromPartitionSequence;
     scan.fromPartitionLegacyTransactionId = this.fromPartitionLegacyTransactionId;
     scan.toSequence = this.toSequence;
@@ -58,76 +59,44 @@ public class ArcticChangeTableScan extends DataTableScan implements ChangeTableI
 
   @Override
   public ChangeTableIncrementalScan fromSequence(StructLikeMap<Long> partitionSequence) {
-    ArcticChangeTableScan scan = newRefinedScan(table(), schema(), context());
+    MixedChangeTableScan scan = newRefinedScan(table(), schema(), context());
     scan.fromPartitionSequence = partitionSequence;
     return scan;
   }
 
   @Override
   public ChangeTableIncrementalScan toSequence(long sequence) {
-    ArcticChangeTableScan scan = newRefinedScan(table(), schema(), context());
+    MixedChangeTableScan scan = newRefinedScan(table(), schema(), context());
     scan.toSequence = sequence;
     return scan;
   }
 
   @Override
   public ChangeTableIncrementalScan fromLegacyTransaction(StructLikeMap<Long> partitionTransactionId) {
-    ArcticChangeTableScan scan = newRefinedScan(table(), schema(), context());
+    MixedChangeTableScan scan = newRefinedScan(table(), schema(), context());
     scan.fromPartitionLegacyTransactionId = partitionTransactionId;
     return scan;
   }
 
   @Override
-  public CloseableIterable<ContentFile<?>> planFilesWithSequence() {
-    Snapshot snapshot = snapshot();
-
-    FileIO io = table().io();
-    List<ManifestFile> dataManifests = snapshot.dataManifests(io);
-    List<ManifestFile> deleteManifests = snapshot.deleteManifests(io);
-    scanMetrics().totalDataManifests().increment((long) dataManifests.size());
-    scanMetrics().totalDeleteManifests().increment((long) deleteManifests.size());
-    ArcticChangeManifestGroup manifestGroup =
-        new ArcticChangeManifestGroup(io, dataManifests, deleteManifests)
-            .caseSensitive(isCaseSensitive())
-            .select(scanColumns())
-            .filterData(filter())
-            .specsById(table().specs())
-            .scanMetrics(scanMetrics())
-            .ignoreDeleted();
-
-    if (shouldIgnoreResiduals()) {
-      manifestGroup.ignoreResiduals();
-    }
-
-    if (dataManifests.size() > 1 && shouldPlanWithExecutor()) {
-      manifestGroup.planWith(planExecutor());
-    }
-    CloseableIterable<ArcticChangeManifestGroup.ChangeFileScanTask>
-        files = manifestGroup.planFilesWithSequence();
-
-    files = CloseableIterable.filter(files, f -> {
-      StructLike partition = f.file().partition();
-      long sequenceNumber = f.getDataSequenceNumber();
-      Boolean shouldKeep = shouldKeepFile(partition, sequenceNumber);
-      if (shouldKeep == null) {
-        String filePath = f.file().path().toString();
-        return shouldKeepFileWithLegacyTxId(partition,
-            FileNameRules.parseChange(filePath, sequenceNumber).transactionId());
-      } else {
-        return shouldKeep;
-      }
-    });
-    return CloseableIterable
-        .transform(files, f -> f.file());
-  }
-
-  @Override
   public CloseableIterable<FileScanTask> doPlanFiles() {
-    return CloseableIterable.transform(planFilesWithSequence(), fileWithSequence ->
-        new BasicArcticFileScanTask(DefaultKeyedFile.parseChange(
-            ((DataFile) fileWithSequence),
-            fileWithSequence.dataSequenceNumber()), null, table().spec(), null)
-    );
+    CloseableIterable<FileScanTask> filteredTasks = CloseableIterable.filter(
+        super.doPlanFiles(),
+        fileScanTask -> {
+          StructLike partition = fileScanTask.file().partition();
+          long sequenceNumber = fileScanTask.file().dataSequenceNumber();
+          Boolean shouldKeep = shouldKeepFile(partition, sequenceNumber);
+          if (shouldKeep == null) {
+            String filePath = fileScanTask.file().path().toString();
+            return shouldKeepFileWithLegacyTxId(partition,
+                FileNameRules.parseChange(filePath, sequenceNumber).transactionId());
+          } else {
+            return shouldKeep;
+          }
+        });
+    return CloseableIterable.transform(filteredTasks,
+        fileScanTask -> new BasicArcticFileScanTask(DefaultKeyedFile.parseChange(fileScanTask.file()),
+            null, table().spec(), null));
   }
 
 

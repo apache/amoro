@@ -46,9 +46,7 @@ public class TestBaseCombinedScanTask {
         );
     DefaultKeyedFile keyedFile =
         DefaultKeyedFile
-            .parseChange(
-                (DataFile) entry.getFile(),
-                entry.getSequenceNumber());
+            .parseChange((DataFile) entry.getFile());
     BasicArcticFileScanTask task =
         new BasicArcticFileScanTask(
             keyedFile,

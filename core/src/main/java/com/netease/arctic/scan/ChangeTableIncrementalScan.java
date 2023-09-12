@@ -53,14 +53,6 @@ public interface ChangeTableIncrementalScan extends TableScan {
    */
   ChangeTableIncrementalScan fromLegacyTransaction(StructLikeMap<Long> partitionTransactionId);
 
-  /**
-   * Plan the {@link ContentFile} that will be read by this scan.
-   * The sequence is the sequence for each file from iceberg metadata.
-   *
-   * @return an Iterable of files with sequence that are required by this scan
-   */
-  CloseableIterable<ContentFile<?>> planFilesWithSequence();
-
   @Override
   ChangeTableIncrementalScan useSnapshot(long snapshotId);
 }

@@ -32,7 +32,7 @@ import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.AppendFiles;
-import org.apache.iceberg.ArcticChangeTableScan;
+import org.apache.iceberg.MixedChangeTableScan;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -216,7 +216,7 @@ public class BasicKeyedTable implements KeyedTable {
 
     @Override
     public ChangeTableIncrementalScan newScan() {
-      return new ArcticChangeTableScan(this, schema());
+      return new MixedChangeTableScan(this, schema());
     }
   }
 }
