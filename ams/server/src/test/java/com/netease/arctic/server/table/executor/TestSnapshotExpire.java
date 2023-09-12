@@ -29,6 +29,7 @@ import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.BaseTable;
@@ -271,6 +272,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
         ServerTableIdentifier.of(AmsUtil.toTableIdentifier(testKeyedTable.id())));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
+    Mockito.when(tableRuntime.getTableConfiguration()).thenReturn(
+        TableConfiguration.parseConfig(testKeyedTable.properties()));
 
     Assert.assertEquals(5, Iterables.size(testKeyedTable.changeTable().snapshots()));
     SnapshotsExpiringExecutor.expireArcticTable(
@@ -315,6 +318,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
         ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id())));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
+    Mockito.when(tableRuntime.getTableConfiguration()).thenReturn(
+        TableConfiguration.parseConfig(table.properties()));
 
     Assert.assertEquals(4, Iterables.size(table.snapshots()));
     SnapshotsExpiringExecutor.expireArcticTable(
@@ -339,6 +344,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
         ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id())));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
+    Mockito.when(tableRuntime.getTableConfiguration()).thenReturn(
+        TableConfiguration.parseConfig(table.properties()));
     SnapshotsExpiringExecutor.expireArcticTable(table, tableRuntime);
     Assert.assertEquals(1, Iterables.size(table.snapshots()));
 

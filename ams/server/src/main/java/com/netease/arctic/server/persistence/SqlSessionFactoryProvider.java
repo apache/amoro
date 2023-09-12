@@ -125,15 +125,16 @@ public class SqlSessionFactoryProvider {
         query = "SELECT 1 FROM SYS.SYSTABLES WHERE TABLENAME = 'CATALOG_METADATA'";
       } else if (ArcticManagementConf.DB_TYPE_MYSQL.equals(dbTypeConfig)) {
         query = String.format(
-            "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'",
+            "SELECT 1 FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'",
             connection.getCatalog(), "CATALOG_METADATA");
       }
-      ResultSet rs = statement.executeQuery(query);
-      if (!rs.next()) {
-        ScriptRunner runner = new ScriptRunner(connection);
-        runner.runScript(new InputStreamReader(Files.newInputStream(
-            Paths.get(getInitSqlScriptPath(dbTypeConfig))),
-            StandardCharsets.UTF_8));
+      try (ResultSet rs = statement.executeQuery(query);) {
+        if (!rs.next()) {
+          ScriptRunner runner = new ScriptRunner(connection);
+          runner.runScript(new InputStreamReader(Files.newInputStream(
+              Paths.get(getInitSqlScriptPath(dbTypeConfig))),
+              StandardCharsets.UTF_8));
+        }
       }
     } catch (Exception e) {
       throw new IllegalStateException("Create tables failed", e);
