@@ -19,6 +19,7 @@
 package com.netease.arctic.trino.arctic;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
@@ -30,6 +31,7 @@ import com.netease.arctic.table.LocationKind;
 import io.trino.sql.query.QueryAssertions;
 import io.trino.testing.QueryRunner;
 import org.apache.iceberg.AppendFiles;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.Schema;
@@ -181,31 +183,43 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
 
   private void write(ArcticTable table, LocationKind locationKind, List<Record> records, ChangeAction changeAction) throws
       IOException {
-    AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
-        .builderFor(table)
-        .withChangeAction(changeAction)
-        .withTransactionId(table.isKeyedTable() ? txid++ : null);
 
-    TaskWriter<Record> changeWrite = builder.buildWriter(locationKind);
-    for (Record record : records) {
-      changeWrite.write(record);
+    List<AdaptHiveGenericTaskWriterBuilder> builders = genBuilder(table, FileFormat.PARQUET, FileFormat.ORC);
+    List<TaskWriter<Record>> writers = builders.stream().map(b -> b.withChangeAction(changeAction)
+        .withTransactionId(table.isKeyedTable() ? txid++ : null).buildWriter(locationKind)).toList();
+
+    for (int i = 0; i < records.size(); i++) {
+      writers.get(i % writers.size()).write(records.get(i));
     }
-    WriteResult complete = changeWrite.complete();
-    if (locationKind == ChangeLocationKind.INSTANT) {
-      AppendFiles appendFiles = table.asKeyedTable().changeTable().newAppend();
-      Arrays.stream(complete.dataFiles()).forEach(s -> appendFiles.appendFile(s));
-      appendFiles.commit();
-    } else {
-      if (table.isUnkeyedTable()) {
-        OverwriteFiles overwriteFiles = table.asUnkeyedTable().newOverwrite();
-        Arrays.stream(complete.dataFiles()).forEach(s -> overwriteFiles.addFile(s));
-        overwriteFiles.commit();
+    for (TaskWriter<Record> writer : writers) {
+      WriteResult complete = writer.complete();
+      if (locationKind == ChangeLocationKind.INSTANT) {
+        AppendFiles appendFiles = table.asKeyedTable().changeTable().newAppend();
+        Arrays.stream(complete.dataFiles()).forEach(appendFiles::appendFile);
+        appendFiles.commit();
       } else {
-        OverwriteFiles overwriteFiles = table.asKeyedTable().baseTable().newOverwrite();
-        Arrays.stream(complete.dataFiles()).forEach(s -> overwriteFiles.addFile(s));
-        overwriteFiles.commit();
+        if (table.isUnkeyedTable()) {
+          OverwriteFiles overwriteFiles = table.asUnkeyedTable().newOverwrite();
+          Arrays.stream(complete.dataFiles()).forEach(overwriteFiles::addFile);
+          overwriteFiles.commit();
+        } else {
+          OverwriteFiles overwriteFiles = table.asKeyedTable().baseTable().newOverwrite();
+          Arrays.stream(complete.dataFiles()).forEach(overwriteFiles::addFile);
+          overwriteFiles.commit();
+        }
       }
     }
+  }
+
+  private List<AdaptHiveGenericTaskWriterBuilder> genBuilder(ArcticTable table, FileFormat... fileFormat) {
+    List<AdaptHiveGenericTaskWriterBuilder> result = Lists.newArrayList();
+    for (FileFormat format : fileFormat) {
+      table.updateProperties().defaultFormat(format);
+      result.add(AdaptHiveGenericTaskWriterBuilder
+          .builderFor(table));
+    }
+
+    return result;
   }
 
   private CloseableIterable<Record> readParquet(Schema schema, String path) {
