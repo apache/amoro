@@ -61,12 +61,8 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
   @Override
   public void execute(TableRuntime tableRuntime) {
     try {
-      AmoroTable<?> amoroTable = loadTable(tableRuntime);
-      boolean needClean = CompatiblePropertyUtil.propertyAsBoolean(
-          amoroTable.properties(),
-          TableProperties.ENABLE_TABLE_EXPIRE,
-          TableProperties.ENABLE_TABLE_EXPIRE_DEFAULT);
-      if (!needClean) {
+      TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
+      if (!tableConfiguration.isExpireSnapshotEnabled()) {
         return;
       }
       TableMaintainer tableMaintainer = TableMaintainer.createMaintainer(amoroTable);

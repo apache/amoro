@@ -618,6 +618,32 @@
                     <groupId>com.diffplug.spotless</groupId>
                     <artifactId>spotless-maven-plugin</artifactId>
                     <version>${maven-spotless-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>spotless-check</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <java>
+                            <googleJavaFormat>
+                                <version>1.7</version>
+                            </googleJavaFormat>
+                            <removeUnusedImports />
+                            <importOrder>
+                                <order>,javax,java,\\#</order>
+                            </importOrder>
+                        </java>
+                        <scala>
+                            <scalafmt>
+                                <scalaMajorVersion>2.12</scalaMajorVersion>
+                                <file>.scalafmt.conf</file>
+                            </scalafmt>
+                        </scala>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

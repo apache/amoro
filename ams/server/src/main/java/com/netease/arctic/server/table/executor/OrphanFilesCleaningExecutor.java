@@ -20,6 +20,7 @@ package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.server.optimizing.maintainer.TableMaintainer;
+import com.netease.arctic.server.optimizing.maintainer.TableMaintainer;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
@@ -59,27 +60,19 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   public void execute(TableRuntime tableRuntime) {
     try {
       LOG.info("{} clean orphan files", tableRuntime.getTableIdentifier());
-      AmoroTable<?> amoroTable = loadTable(tableRuntime);
+      TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
 
-      boolean needOrphanClean = CompatiblePropertyUtil.propertyAsBoolean(
-          amoroTable.properties(),
-          TableProperties.ENABLE_ORPHAN_CLEAN,
-          TableProperties.ENABLE_ORPHAN_CLEAN_DEFAULT);
-
-      if (!needOrphanClean) {
+      if (!tableConfiguration.isCleanOrphanEnabled()) {
         return;
       }
 
-      long keepTime = CompatiblePropertyUtil.propertyAsLong(
-          amoroTable.properties(),
-          TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME,
-          TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT) * 60 * 1000;
+      long keepTime = tableConfiguration.getOrphanExistingMinutes() * 60 * 1000;
 
       LOG.info("{} clean orphan files, keepTime={}", tableRuntime.getTableIdentifier(), keepTime);
-
+      // clear data files
+      AmoroTable<?> amoroTable = loadTable(tableRuntime);
       TableMaintainer tableMaintainer = createMaintainer(amoroTable);
 
-      // clear data files
       tableMaintainer.cleanContentFiles(System.currentTimeMillis() - keepTime);
 
       //refresh
@@ -88,14 +81,13 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
       // clear metadata files
       tableMaintainer.cleanMetadata(System.currentTimeMillis() - keepTime);
 
-      boolean needCleanDanglingDeleteFiles = CompatiblePropertyUtil.propertyAsBoolean(
-          amoroTable.properties(),
-          TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN,
-          TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT);
-
-      if (!needCleanDanglingDeleteFiles) {
+      if (!tableConfiguration.isDeleteDanglingDeleteFilesEnabled()) {
         return;
       }
+
+      //refresh
+      tableMaintainer = createMaintainer(loadTable(tableRuntime));
+
       // clear dangling delete files
       tableMaintainer.cleanDanglingDeleteFiles();
     } catch (Throwable t) {

@@ -37,8 +37,8 @@ import org.apache.spark.sql.execution.command.CreateTableLikeCommand
 case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
   private def isCreateArcticTableLikeCommand(
-                                              targetTable: TableIdentifier,
-                                              provider: Option[String]): Boolean = {
+      targetTable: TableIdentifier,
+      provider: Option[String]): Boolean = {
     val (targetCatalog, _) = buildCatalogAndIdentifier(sparkSession, targetTable)
     isCreateArcticTable(targetCatalog, provider)
   }
@@ -63,8 +63,8 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
           if isArcticTable(r.table) =>
         TruncateArcticTable(t.child)
 
-      case c@CreateTableAsSelect(catalog, _, _, _, props, options, _)
-        if isCreateArcticTable(catalog, props.get(TableCatalog.PROP_PROVIDER)) =>
+      case c @ CreateTableAsSelect(catalog, _, _, _, props, options, _)
+          if isCreateArcticTable(catalog, props.get(TableCatalog.PROP_PROVIDER)) =>
         var propertiesMap: Map[String, String] = props
         var optionsMap: Map[String, String] = options
         if (options.contains("primary.keys")) {
@@ -72,14 +72,14 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
         }
         optionsMap += (WriteMode.WRITE_MODE_KEY -> WriteMode.OVERWRITE_DYNAMIC.mode)
         c.copy(properties = propertiesMap, writeOptions = optionsMap)
-      case c@CreateTableLikeCommand(
-      targetTable,
-      sourceTable,
-      storage,
-      provider,
-      properties,
-      ifNotExists)
-        if isCreateArcticTableLikeCommand(targetTable, provider) => {
+      case c @ CreateTableLikeCommand(
+            targetTable,
+            sourceTable,
+            storage,
+            provider,
+            properties,
+            ifNotExists)
+          if isCreateArcticTableLikeCommand(targetTable, provider) => {
         val (sourceCatalog, sourceIdentifier) = buildCatalogAndIdentifier(sparkSession, sourceTable)
         val (targetCatalog, targetIdentifier) = buildCatalogAndIdentifier(sparkSession, targetTable)
         val table = sourceCatalog.loadTable(sourceIdentifier)

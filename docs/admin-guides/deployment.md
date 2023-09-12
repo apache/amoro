@@ -110,33 +110,11 @@ make sure the port is not used before configuring it
 
 ### Configure system database
 
-Users can use MySQL as the system database instead of Derby. To do so, the system database must first be initialized in MySQL：
+Users can use MySQL as the system database instead of Derby. 
 
-```shell
-$ mysql -h{mysql-host-IP} -P{mysql-port} -u{username} -p
-Enter password: 
-'Welcome to the MySQL monitor.  Commands end with ; or \g.
-Your MySQL connection id is 41592724
-Server version: 5.7.20-v3-log Source distribution
+Create an empty database in MySQL, then AMS will automatically create table structures in this MySQL database when it first started.
 
-Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
-
-Oracle is a registered trademark of Oracle Corporation and/or its
-affiliates. Other names may be trademarks of their respective
-owners.
-
-Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
-
-mysql>
-mysql> create database amoro;
-Query OK, 1 row affected (0.01 sec)
-
-mysql> use amoro;
-Database changed
-mysql> source {ARCTIC_HOME}/conf/mysql/ams-mysql-init.sql
-```
-
-Add MySQL configuration under `ams`:
+One thing you need to do is Adding MySQL configuration under `config.yaml` of Ams:
 
 ```yaml
 ams:

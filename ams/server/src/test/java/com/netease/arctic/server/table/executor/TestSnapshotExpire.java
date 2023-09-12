@@ -30,6 +30,7 @@ import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.maintainer.MixedTableMaintainer;
 import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -171,6 +172,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
         ServerTableIdentifier.of(AmsUtil.toTableIdentifier(testKeyedTable.id())));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
+    Mockito.when(tableRuntime.getTableConfiguration()).thenReturn(
+        TableConfiguration.parseConfig(testKeyedTable.properties()));
 
     Assert.assertEquals(5, Iterables.size(testKeyedTable.changeTable().snapshots()));
 
@@ -208,6 +211,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
         ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id())));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
+    Mockito.when(tableRuntime.getTableConfiguration()).thenReturn(
+        TableConfiguration.parseConfig(table.properties()));
 
     Assert.assertEquals(4, Iterables.size(table.snapshots()));
 
@@ -233,6 +238,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
         ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id())));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
+    Mockito.when(tableRuntime.getTableConfiguration()).thenReturn(
+        TableConfiguration.parseConfig(table.properties()));
 
     new MixedTableMaintainer(table).expireSnapshots(tableRuntime);
     Assert.assertEquals(1, Iterables.size(table.snapshots()));
