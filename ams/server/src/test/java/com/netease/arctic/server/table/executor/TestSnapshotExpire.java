@@ -455,6 +455,57 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
   }
+  
+  @Test
+  public void testExpireStatisticsFiles() {
+    Assume.assumeTrue(isKeyedTable());
+    KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
+    BaseTable baseTable = testKeyedTable.baseTable();
+    // commit an empty snapshot and its statistic file
+    baseTable.newAppend().commit();
+    Snapshot s1 = baseTable.currentSnapshot();
+    StatisticsFile file1 = PuffinUtil.writer(baseTable, s1.snapshotId(), s1.sequenceNumber())
+        .addOptimizedSequence(StructLikeMap.create(baseTable.spec().partitionType()))
+        .write();
+    baseTable.updateStatistics().setStatistics(s1.snapshotId(), file1).commit();
+
+    // commit an empty snapshot and its statistic file
+    baseTable.newAppend().commit();
+    Snapshot s2 = baseTable.currentSnapshot();
+    StatisticsFile file2 = PuffinUtil.writer(baseTable, s2.snapshotId(), s2.sequenceNumber())
+        .addOptimizedSequence(StructLikeMap.create(baseTable.spec().partitionType()))
+        .write();
+    baseTable.updateStatistics().setStatistics(s2.snapshotId(), file2).commit();
+    
+    long tAfterS2 = waitUntilAfter(s2.timestampMillis());
+
+    // commit an empty snapshot and its statistic file
+    baseTable.newAppend().commit();
+    Snapshot s3 = baseTable.currentSnapshot();
+    // note: s2 ans s3 use the same statistics file
+    StatisticsFile file3 = PuffinUtil.copyToSnapshot(file2, s3.snapshotId());
+    baseTable.updateStatistics().setStatistics(s3.snapshotId(), file3).commit();
+
+    Assert.assertEquals(3, Iterables.size(baseTable.snapshots()));
+    Assert.assertTrue(baseTable.io().exists(file1.path()));
+    Assert.assertTrue(baseTable.io().exists(file2.path()));
+    Assert.assertTrue(baseTable.io().exists(file3.path()));
+    SnapshotsExpiringExecutor.expireSnapshots(baseTable, tAfterS2, new HashSet<>());
+
+    Assert.assertEquals(1, Iterables.size(baseTable.snapshots()));
+    Assert.assertFalse(baseTable.io().exists(file1.path()));
+    // file2 should not be removed, since it is used by s3
+    Assert.assertTrue(baseTable.io().exists(file2.path()));
+    Assert.assertTrue(baseTable.io().exists(file3.path()));
+  }
+
+  private long waitUntilAfter(long timestampMillis) {
+    long current = System.currentTimeMillis();
+    while (current <= timestampMillis) {
+      current = System.currentTimeMillis();
+    }
+    return current;
+  }
 
   private List<DataFile> insertChangeDataFiles(KeyedTable testKeyedTable, long transactionId) {
     List<DataFile> changeInsertFiles = writeAndCommitChangeStore(

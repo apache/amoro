@@ -239,6 +239,14 @@ public class PuffinUtil {
     }
   }
 
+  /**
+   * Copy a statistic file with a new snapshot id, and it points to the same file in the file system as the original
+   * file.
+   *
+   * @param statisticsFile - original statistic file
+   * @param snapshotId     - new snapshot id
+   * @return a new copied statistic file
+   */
   public static StatisticsFile copyToSnapshot(StatisticsFile statisticsFile, long snapshotId) {
     return new GenericStatisticsFile(
         snapshotId,
