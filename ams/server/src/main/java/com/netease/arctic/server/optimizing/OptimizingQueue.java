@@ -256,7 +256,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         .collect(Collectors.toList());
     suspendingTasks.forEach(task -> {
       LOG.info("Task {} is suspending, since it's optimizer is expired, put it to retry queue, optimizer {}",
-              task.getTaskId(), task.getOptimizingThread());
+          task.getTaskId(), task.getOptimizingThread());
       executingTaskMap.remove(task.getTaskId());
       try {
         //optimizing task of suspending optimizer would not be counted for retrying
