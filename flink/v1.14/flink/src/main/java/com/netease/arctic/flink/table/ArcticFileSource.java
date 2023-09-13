@@ -65,7 +65,7 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
   private int[] projectedFields;
   private long limit;
   private List<Expression> filters;
-  private ArcticTable table;
+  private final ArcticTable table;
   @Nullable
   protected WatermarkStrategy<RowData> watermarkStrategy;
 
@@ -82,6 +82,7 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
     this.filters = toCopy.filters;
     this.readableConfig = toCopy.readableConfig;
     this.table = toCopy.table;
+    this.watermarkStrategy = toCopy.watermarkStrategy;
     this.batchMode = toCopy.batchMode;
   }
 

@@ -35,7 +35,7 @@ import java.util.function.Function;
 /**
  * Flink data iterator that reads {@link ArcticFileScanTask} into a {@link CloseableIterator}
  *
- * @param <T> is the output data type returned by this iterator.
+ * @param <T> T is the output data type returned by this iterator.
  */
 @Internal
 public class DataIterator<T> implements CloseableIterator<T> {
@@ -73,14 +73,15 @@ public class DataIterator<T> implements CloseableIterator<T> {
     this.fileOffset = -1;
     // record offset points to the record that next() should return when called
     this.recordOffset = 0L;
-    // actual record offset in data file. it's incremental within insert and delete files in the same tree node group.
+    // actual record offset in data file.
+    // it's incremental within inserting and deleting files in the same tree node group.
     this.currentArcticFileOffset = 0L;
   }
 
   /**
-   * (startingFileOffset, startingRecordOffset) points to the next row that reader should resume from.
-   * E.g., if the seek position is (file=0, record=1), seek moves the iterator position to the 2nd row
-   * in file 0. When next() is called after seek, 2nd row from file 0 should be returned.
+   * (startingFileOffset, startingRecordOffset) points to the next row that the reader should resume from.
+   * E.g., if the seek position is (file=0, record=1), seek moves the iterator position to the second row
+   * in file 0. When next() is called after seek; the second row from file 0 should be returned.
    */
   public void seek(int startingFileOffset, long startingRecordOffset) {
     // It means file is empty.

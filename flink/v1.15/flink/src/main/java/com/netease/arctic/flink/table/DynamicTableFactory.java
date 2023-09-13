@@ -103,13 +103,10 @@ import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CON
 public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTableSinkFactory {
   private static final Logger LOG = LoggerFactory.getLogger(DynamicTableFactory.class);
   public static final String IDENTIFIER = "arctic";
-  private ArcticCatalog arcticCatalog;
   private InternalCatalogBuilder internalCatalogBuilder;
   private String internalCatalogName;
 
-  public DynamicTableFactory(
-      ArcticCatalog arcticCatalog) {
-    this.arcticCatalog = arcticCatalog;
+  public DynamicTableFactory(ArcticCatalog arcticCatalog) {
     this.internalCatalogBuilder = arcticCatalog.catalogBuilder();
     this.internalCatalogName = arcticCatalog.amsCatalogName();
   }
@@ -228,8 +225,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
 
   @Override
   public Set<ConfigOption<?>> requiredOptions() {
-    final Set<ConfigOption<?>> options = new HashSet<>();
-    return options;
+    return new HashSet<>();
   }
 
   @Override
@@ -359,7 +355,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
 
   /**
    * Return true only if {@link ArcticValidator#ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE} is true and
-   * {@link LOG_STORE_TYPE} is kafka.
+   * {@link TableProperties#LOG_STORE_TYPE} is kafka.
    */
   private static boolean adaptLegacySource(ArcticTable arcticTable) {
     boolean legacySourceEnabled = CompatibleFlinkPropertyUtil.propertyAsBoolean(arcticTable.properties(),

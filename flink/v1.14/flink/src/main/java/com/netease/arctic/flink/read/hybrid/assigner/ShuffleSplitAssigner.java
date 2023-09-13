@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
- * According to Mark,Index TreeNodes and subtaskId assigning a split to special subtask to read.
+ * According to Mark, Index TreeNodes and subtaskId assigning a split to special subtask to read.
  */
 public class ShuffleSplitAssigner implements SplitAssigner {
   private static final Logger LOG = LoggerFactory.getLogger(ShuffleSplitAssigner.class);

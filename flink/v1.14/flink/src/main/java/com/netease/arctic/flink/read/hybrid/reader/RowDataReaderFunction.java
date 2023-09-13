@@ -164,7 +164,7 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
    *
    * @param tableSchema     table schema
    * @param projectedSchema projected schema
-   * @return a new Schema on which include the identifier fields.
+   * @return a new Schema on which includes the identifier fields.
    */
   private static Schema fillUpReadSchema(Schema tableSchema, Schema projectedSchema, PrimaryKeySpec primaryKeySpec) {
     Preconditions.checkNotNull(tableSchema, "Table schema can't be null");

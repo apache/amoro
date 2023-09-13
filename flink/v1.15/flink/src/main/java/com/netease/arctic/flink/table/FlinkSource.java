@@ -80,7 +80,7 @@ public class FlinkSource {
     private TableSchema projectedSchema;
     private List<Expression> filters;
     private ReadableConfig flinkConf = new Configuration();
-    private Map<String, String> properties = new HashMap<>();
+    private final Map<String, String> properties = new HashMap<>();
     private long limit = -1L;
     private WatermarkStrategy<RowData> watermarkStrategy = WatermarkStrategy.noWatermarks();
     private final ArcticScanContext.Builder contextBuilder = ArcticScanContext.arcticBuilder();

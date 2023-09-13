@@ -40,8 +40,6 @@ import org.apache.flink.api.connector.source.SplitEnumerator;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Arctic Source based of Flip27.
@@ -52,8 +50,6 @@ import org.slf4j.LoggerFactory;
  */
 public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumState>, ResultTypeQueryable<T> {
   private static final long serialVersionUID = 1L;
-
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticSource.class);
   private final ArcticScanContext scanContext;
   private final ReaderFunction<T> readerFunction;
   private final TypeInformation<T> typeInformation;
@@ -81,13 +77,13 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
   }
 
   @Override
-  public SourceReader<T, ArcticSplit> createReader(SourceReaderContext readerContext) throws Exception {
+  public SourceReader<T, ArcticSplit> createReader(SourceReaderContext readerContext) {
     return new ArcticSourceReader<>(readerFunction, readerContext.getConfiguration(), readerContext, dimTable);
   }
 
   @Override
   public SplitEnumerator<ArcticSplit, ArcticSourceEnumState> createEnumerator(
-      SplitEnumeratorContext<ArcticSplit> enumContext) throws Exception {
+      SplitEnumeratorContext<ArcticSplit> enumContext) {
     return createEnumerator(enumContext, null);
   }
 
@@ -106,7 +102,7 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
   @Override
   public SplitEnumerator<ArcticSplit, ArcticSourceEnumState> restoreEnumerator(
       SplitEnumeratorContext<ArcticSplit> enumContext,
-      ArcticSourceEnumState checkpoint) throws Exception {
+      ArcticSourceEnumState checkpoint) {
     return createEnumerator(enumContext, checkpoint);
   }
 
