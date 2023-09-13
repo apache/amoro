@@ -126,9 +126,9 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
     }
     Long fromSequence;
     if (table().spec().isUnpartitioned()) {
-      fromSequence = fromSequence(TablePropertyUtil.EMPTY_STRUCT);
+      fromSequence = scanFromSequence(TablePropertyUtil.EMPTY_STRUCT);
     } else {
-      fromSequence = fromSequence(partition);
+      fromSequence = scanFromSequence(partition);
     }
     if (fromSequence != null) {
       return sequence > fromSequence;
@@ -137,7 +137,7 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
     }
   }
 
-  private Long fromSequence(StructLike partitionData) {
+  private Long scanFromSequence(StructLike partitionData) {
     Long fromSequence = null;
     if (fromPartitionSequence != null) {
       fromSequence = fromPartitionSequence.get(partitionData);
