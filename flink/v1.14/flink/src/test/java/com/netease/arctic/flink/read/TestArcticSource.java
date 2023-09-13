@@ -707,12 +707,12 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
       // TODO a more proper timeout strategy?
       long timeFlies = System.currentTimeMillis() - start;
       if (timeFlies / 1000 >= intervalOneSecond) {
-        LOG.info("time flies: {} ms.", timeFlies);
+        LOG.info("Time flies: {} ms.", timeFlies);
         intervalOneSecond++;
       }
       if (System.currentTimeMillis() - start > timeout) {
         LOG.error(
-            "this task [{}] try to collect records from unbounded stream but timeout {}. As of now, collect result:{}.",
+            "This task [{}] try to collect records from unbounded stream but timeout {}. As of now, collect result:{}.",
             client.client.getJobID().toString(),
             timeout,
             result.toArray());

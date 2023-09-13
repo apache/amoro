@@ -83,7 +83,7 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
       if (splitOpt.isAvailable()) {
         actual.add(splitOpt.split());
       } else {
-        LOG.info("subtask id {}, splits {}.\n {}", subtaskId, actual.size(), actual);
+        LOG.info("Subtask id {}, splits {}.\n {}", subtaskId, actual.size(), actual);
         --subtaskId;
       }
     }

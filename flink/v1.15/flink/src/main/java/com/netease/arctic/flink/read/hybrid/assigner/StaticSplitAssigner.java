@@ -70,13 +70,13 @@ public class StaticSplitAssigner implements SplitAssigner {
     try {
       arcticSplit = splitQueue.poll(POLL_TIMEOUT, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
-      LOG.warn("interruptedException", e);
+      LOG.warn("Interrupted when polling splits from the split queue", e);
     }
     if (arcticSplit == null) {
-      LOG.debug("couldn't retrieve arctic source split in the queue.");
+      LOG.debug("Couldn't retrieve arctic source split from the queue, as the queue is empty.");
       return Optional.empty();
     } else {
-      LOG.info("get next arctic split taskIndex {}, totalSplitNum {}, arcticSplit {}.",
+      LOG.info("Assigning the arctic split, task index is {}, total number of splits is {}, arctic split is {}.",
           arcticSplit.taskIndex(), totalSplitNum, arcticSplit);
       return Optional.of(arcticSplit);
     }

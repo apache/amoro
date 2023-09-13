@@ -162,7 +162,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     switch (readMode) {
       case ArcticValidator.ARCTIC_READ_FILE:
         boolean batchMode = context.getConfiguration().get(RUNTIME_MODE).equals(BATCH);
-        LOG.info("build file reader in {} runtime mode", batchMode ? "batch" : "streaming");
+        LOG.info("Building a file reader in {} runtime mode", batchMode ? "batch" : "streaming");
         arcticDynamicSource = new ArcticFileSource(tableLoader, tableSchema, arcticTable, confWithAll, batchMode);
         break;
       case ArcticValidator.ARCTIC_READ_LOG:
