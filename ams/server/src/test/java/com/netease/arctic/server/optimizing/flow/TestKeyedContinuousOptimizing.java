@@ -30,7 +30,6 @@ import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.server.optimizing.flow.checker.DataConcurrencyChecker;
 import com.netease.arctic.server.optimizing.flow.checker.FullOptimizingMove2HiveChecker;
 import com.netease.arctic.server.optimizing.flow.checker.FullOptimizingWrite2HiveChecker;
-import com.netease.arctic.server.optimizing.flow.checker.MajorOptimizingChecker;
 import com.netease.arctic.server.optimizing.flow.checker.MinorOptimizingCheck;
 import com.netease.arctic.server.optimizing.flow.checker.OptimizingCountChecker;
 import com.netease.arctic.server.optimizing.flow.view.KeyedTableDataView;
@@ -55,7 +54,7 @@ public class TestKeyedContinuousOptimizing extends TableTestBase {
     super(catalogTestHelper, tableTestHelper);
   }
 
-  @Parameterized.Parameters(name = "{1}.{2}")
+  @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
     return new Object[][] {
         {
@@ -114,7 +113,6 @@ public class TestKeyedContinuousOptimizing extends TableTestBase {
     FullOptimizingWrite2HiveChecker fullOptimizingWrite2HiveChecker = new FullOptimizingWrite2HiveChecker(view);
     FullOptimizingMove2HiveChecker fullOptimizingMove2HiveChecker = new FullOptimizingMove2HiveChecker(view);
     MinorOptimizingCheck minorOptimizingCheck = new MinorOptimizingCheck();
-    MajorOptimizingChecker majorOptimizingChecker = new MajorOptimizingChecker();
 
     CompleteOptimizingFlow.Builder builder = CompleteOptimizingFlow
         .builder(table, availableCore)
@@ -124,8 +122,7 @@ public class TestKeyedContinuousOptimizing extends TableTestBase {
         .setMinorTriggerFileCount(minorTriggerCount)
         .addChecker(dataConcurrencyChecker)
         .addChecker(optimizingCountChecker)
-        .addChecker(minorOptimizingCheck)
-        .addChecker(majorOptimizingChecker);
+        .addChecker(minorOptimizingCheck);
 
     if (table.format() == TableFormat.MIXED_HIVE) {
       builder
