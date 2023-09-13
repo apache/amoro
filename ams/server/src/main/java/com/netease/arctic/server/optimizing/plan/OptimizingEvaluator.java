@@ -87,7 +87,7 @@ public class OptimizingEvaluator {
     tableFileScanHelper.withPartitionFilter(getPartitionFilter());
     initPartitionPlans(tableFileScanHelper);
     isInitialized = true;
-    LOG.info("{} finish initEvaluator and get {} partitions necessary to optimize, cost {} ms",
+    LOG.info("{} finished evaluating, found {} partitions that need optimizing in {} ms",
         arcticTable.id(), partitionPlanMap.size(), System.currentTimeMillis() - startTime);
   }
 
@@ -97,18 +97,21 @@ public class OptimizingEvaluator {
 
   private void initPartitionPlans(TableFileScanHelper tableFileScanHelper) {
     PartitionSpec partitionSpec = arcticTable.spec();
-    // add partition properties before adding files
+    long startTime = System.currentTimeMillis();
+    long count = 0;
     try (CloseableIterable<TableFileScanHelper.FileScanResult> results = tableFileScanHelper.scan()) {
       for (TableFileScanHelper.FileScanResult fileScanResult : results) {
         StructLike partition = fileScanResult.file().partition();
         String partitionPath = partitionSpec.partitionToPath(partition);
         PartitionEvaluator evaluator = partitionPlanMap.computeIfAbsent(partitionPath, this::buildEvaluator);
         evaluator.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
+        count++;
       }
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
-
+    LOG.info("{} finished file scanning, scanning {} files in {} ms", arcticTable.id(), count,
+        System.currentTimeMillis() - startTime);
     partitionPlanMap.values().removeIf(plan -> !plan.isNecessary());
   }
 

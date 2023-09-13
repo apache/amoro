@@ -46,12 +46,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * optimize controller.
- *
- * @Description: optimizer is a task to compact small files in arctic table.
- * OptimizerController is the optimizer interface's controller,
- * through this interface, you can getRuntime the optimized table,
- * optimizer task, optimizer group information, scale out or release optimizer, etc.
+ * The controller that handles optimizer requests.
  */
 public class OptimizerController {
   private static final String ALL_GROUP = "all";
@@ -64,7 +59,7 @@ public class OptimizerController {
   }
 
   /**
-   * getRuntime optimize tables.
+   * Get optimize tables.
    * * @return List of {@link TableOptimizingInfo}
    */
   public void getOptimizerTables(Context ctx) {
@@ -101,7 +96,7 @@ public class OptimizerController {
   }
 
   /**
-   * getRuntime optimizers.
+   * get optimizers.
    */
   public void getOptimizers(Context ctx) {
     String optimizerGroup = ctx.pathParam("optimizerGroup");
@@ -135,7 +130,7 @@ public class OptimizerController {
   }
 
   /**
-   * getRuntime optimizerGroup: optimizerGroupId, optimizerGroupName
+   * get optimizerGroup: optimizerGroupId, optimizerGroupName
    * url = /optimizerGroups.
    */
   public void getOptimizerGroups(Context ctx) {
@@ -150,7 +145,7 @@ public class OptimizerController {
   }
 
   /**
-   * getRuntime optimizer info: occupationCore, occupationMemory
+   * get optimizer info: occupationCore, occupationMemory
    */
   public void getOptimizerGroupInfo(Context ctx) {
     String optimizerGroup = ctx.pathParam("optimizerGroup");

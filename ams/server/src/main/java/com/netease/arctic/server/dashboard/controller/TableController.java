@@ -91,7 +91,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * Table controller.
+ * The controller that handles table requests.
  */
 public class TableController {
   private static final Logger LOG = LoggerFactory.getLogger(TableController.class);
@@ -203,7 +203,7 @@ public class TableController {
         tableService.getServerCatalog(catalog) instanceof MixedHiveCatalogImpl,
         "catalog {} is not a mixed hive catalog, so not support load hive tables", catalog);
 
-    // getRuntime table from catalog
+    // get table from catalog
     MixedHiveCatalogImpl arcticHiveCatalog = (MixedHiveCatalogImpl) tableService.getServerCatalog(catalog);
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);

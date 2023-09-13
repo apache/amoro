@@ -61,9 +61,9 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
   @Override
   public void commit() throws OptimizingCommitException {
     if (tasks.isEmpty()) {
-      LOG.info("{} getRuntime no tasks to commit", table.id());
+      LOG.info("{} found no tasks to commit", table.id());
     }
-    LOG.info("{} getRuntime tasks to commit with from snapshot id = {}", table.id(),
+    LOG.info("{} found tasks to commit from snapshot {}", table.id(),
         fromSnapshotId);
 
     //In the scene of moving files to hive, the files will be renamed

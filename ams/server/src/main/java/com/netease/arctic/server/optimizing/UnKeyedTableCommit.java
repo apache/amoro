@@ -143,7 +143,7 @@ public class UnKeyedTableCommit {
   }
 
   public void commit() throws OptimizingCommitException {
-    LOG.info("{} getRuntime tasks to commit {}", table.id(), tasks);
+    LOG.info("{} get tasks to commit {}", table.id(), tasks);
 
     List<DataFile> hiveNewDataFiles = moveFile2HiveIfNeed();
     // collect files

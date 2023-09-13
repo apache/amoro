@@ -86,7 +86,7 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
   }
 
   /**
-   * once getRuntime location from iceberg property, should update hive table location,
+   * once get location from iceberg property, should update hive table location,
    * because only arctic update hive table location for unPartitioned table.
    */
   private static void syncNoPartitionTable(
@@ -106,7 +106,7 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
         return hiveTable.getSd().getLocation();
       });
     } catch (Exception e) {
-      LOG.error("{} getRuntime hive location failed", arcticTable.id(), e);
+      LOG.error("{} get hive location failed", arcticTable.id(), e);
       return;
     }
 

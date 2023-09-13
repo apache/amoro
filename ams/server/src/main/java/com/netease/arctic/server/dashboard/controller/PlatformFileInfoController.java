@@ -31,6 +31,9 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * The controller that handles file requests.
+ */
 public class PlatformFileInfoController {
 
   private PlatformFileManager platformFileInfoService;
@@ -40,13 +43,10 @@ public class PlatformFileInfoController {
   }
 
   /**
-   * upload file
-   *
-   * @param ctx
+   * Upload file.
    */
   public void uploadFile(Context ctx) throws IOException {
     InputStream bodyAsInputStream = ctx.uploadedFile("file").getContent();
-    //todo getRuntime file name
     String name = ctx.uploadedFile("file").getFilename();
     byte[] bytes = IOUtils.toByteArray(bodyAsInputStream);
     String content = Base64.getEncoder().encodeToString(bytes);
@@ -58,9 +58,7 @@ public class PlatformFileInfoController {
   }
 
   /**
-   * download file
-   *
-   * @param ctx
+   * Download file.
    */
   public void downloadFile(Context ctx) {
     String fileId = ctx.pathParam("fileId");
