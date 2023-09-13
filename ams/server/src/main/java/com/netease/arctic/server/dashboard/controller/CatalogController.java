@@ -36,6 +36,7 @@ import com.netease.arctic.table.TableProperties;
 import io.javalin.http.Context;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.CatalogProperties;
+import org.apache.paimon.options.CatalogOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -207,6 +208,8 @@ public class CatalogController {
    * Construct catalog meta through catalog register info.
    */
   private CatalogMeta constructCatalogMeta(CatalogRegisterInfo info, CatalogMeta oldCatalogMeta) {
+    checkPaimonCatalog(info);
+
     CatalogMeta catalogMeta = new CatalogMeta();
     catalogMeta.setCatalogName(info.getName());
     catalogMeta.setCatalogType(info.getType());
@@ -267,6 +270,22 @@ public class CatalogController {
     }
     catalogMeta.setStorageConfigs(metaStorageConfig);
     return catalogMeta;
+  }
+
+  private void checkPaimonCatalog(CatalogRegisterInfo info) {
+    if (!info.getTableFormatList().contains(TableFormat.PAIMON.name())) {
+      return;
+    }
+    Map<String, String> properties = info.getProperties();
+    if (!properties.containsKey(CatalogOptions.WAREHOUSE.key())) {
+      throw new IllegalArgumentException("Paimon catalog must have 'warehouse' property");
+    }
+
+    if ("hive".equalsIgnoreCase(info.getType())) {
+      if (!properties.containsKey(CatalogOptions.URI.key())) {
+        throw new IllegalArgumentException("Paimon hive catalog must have 'uri' property");
+      }
+    }
   }
 
   /**
