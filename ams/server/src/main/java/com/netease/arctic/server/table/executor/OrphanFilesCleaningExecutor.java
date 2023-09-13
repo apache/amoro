@@ -325,12 +325,14 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
           cnt,
           size);
     }
-    Stream.concat(
+    Stream.of(
             ReachableFileUtil.metadataFileLocations(internalTable, false).stream(),
-            ReachableFileUtil.statisticsFilesLocations(internalTable).stream())
+            ReachableFileUtil.statisticsFilesLocations(internalTable).stream(),
+            Stream.of(ReachableFileUtil.versionHintLocation(internalTable)))
+        .reduce(Stream::concat)
+        .orElse(Stream.empty())
         .map(TableFileUtil::getUriPath)
         .forEach(validFiles::add);
-    validFiles.add(TableFileUtil.getUriPath(ReachableFileUtil.versionHintLocation(internalTable)));
 
     return validFiles;
   }
