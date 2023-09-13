@@ -29,6 +29,7 @@ import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.utils.Configurations;
 import org.apache.commons.dbcp2.BasicDataSource;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.pool2.impl.BaseObjectPoolConfig;
 import org.apache.ibatis.jdbc.ScriptRunner;
 import org.apache.ibatis.mapping.Environment;
@@ -62,14 +63,16 @@ public class SqlSessionFactoryProvider {
     return INSTANCE;
   }
 
+  private static String dbType;
+
   private volatile SqlSessionFactory sqlSessionFactory;
 
   public void init(Configurations config) {
     BasicDataSource dataSource = new BasicDataSource();
     dataSource.setUrl(config.getString(ArcticManagementConf.DB_CONNECTION_URL));
     dataSource.setDriverClassName(config.getString(ArcticManagementConf.DB_DRIVER_CLASS_NAME));
-    if (ArcticManagementConf.DB_TYPE_MYSQL.equals(config.getString(ArcticManagementConf.DB_TYPE)) ||
-        ArcticManagementConf.DB_TYPE_POSTGRES.equals(config.getString(ArcticManagementConf.DB_TYPE))) {
+    dbType = config.getString(ArcticManagementConf.DB_TYPE);
+    if (ArcticManagementConf.DB_TYPE_MYSQL.equals(dbType) || ArcticManagementConf.DB_TYPE_POSTGRES.equals(dbType)) {
       dataSource.setUsername(config.getString(ArcticManagementConf.DB_USER_NAME));
       dataSource.setPassword(config.getString(ArcticManagementConf.DB_PASSWORD));
     }
@@ -167,5 +170,12 @@ public class SqlSessionFactoryProvider {
         sqlSessionFactory != null,
         "Persistent configuration is not initialized yet.");
     return sqlSessionFactory;
+  }
+
+  public static String getDbType() {
+    Preconditions.checkState(
+        StringUtils.isNotBlank(dbType),
+        "Persistent configuration is not initialized yet.");
+    return dbType;
   }
 }
