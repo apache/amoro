@@ -22,6 +22,9 @@ import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
+import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
 
@@ -33,6 +36,7 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
   private StructLikeMap<Long> fromPartitionSequence;
   private StructLikeMap<Long> fromPartitionLegacyTransactionId;
   private Long toSequence;
+  private Long fromSequence;
 
   public MixedChangeTableScan(Table table, Schema schema) {
     super(table, schema, ImmutableTableScanContext.builder().build());
@@ -49,6 +53,12 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
   }
 
   @Override
+  public MixedChangeTableScan filter(Expression expr) {
+    TableScan scan = super.filter(expr);
+    return newRefinedScan(table(), scan.schema(), context().filterRows(scan.filter()));
+  }
+
+  @Override
   protected MixedChangeTableScan newRefinedScan(Table table, Schema schema, TableScanContext context) {
     MixedChangeTableScan scan = new MixedChangeTableScan(table, schema, context);
     scan.fromPartitionSequence = this.fromPartitionSequence;
@@ -61,6 +71,13 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
   public ChangeTableIncrementalScan fromSequence(StructLikeMap<Long> partitionSequence) {
     MixedChangeTableScan scan = newRefinedScan(table(), schema(), context());
     scan.fromPartitionSequence = partitionSequence;
+    return scan;
+  }
+
+  @Override
+  public ChangeTableIncrementalScan fromSequence(long sequence) {
+    MixedChangeTableScan scan = newRefinedScan(table(), schema(), context());
+    scan.fromSequence = fromSequence;
     return scan;
   }
 
@@ -104,22 +121,32 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
     if (biggerThanToSequence(sequence)) {
       return false;
     }
-    if (fromPartitionSequence == null || fromPartitionSequence.isEmpty()) {
+    if (fromSequence == null && (fromPartitionSequence == null || fromPartitionSequence.isEmpty())) {
       // if fromPartitionSequence is not set or is empty, return null to check legacy transactionId
       return null;
     }
+    Long fromSequence;
     if (table().spec().isUnpartitioned()) {
-      Long fromSequence = fromPartitionSequence.entrySet().iterator().next().getValue();
+      fromSequence = fromSequence(TablePropertyUtil.EMPTY_STRUCT);
+    } else {
+      fromSequence = fromSequence(partition);
+    }
+    if (fromSequence != null) {
       return sequence > fromSequence;
     } else {
-      if (!fromPartitionSequence.containsKey(partition)) {
-        // return null to check legacy transactionId
-        return null;
-      } else {
-        Long fromSequence = fromPartitionSequence.get(partition);
-        return sequence > fromSequence;
-      }
+      return null;
     }
+  }
+
+  private Long fromSequence(StructLike partitionData) {
+    Long fromSequence = null;
+    if (fromPartitionSequence != null) {
+      fromSequence = fromPartitionSequence.get(partitionData);
+    }
+    if (fromSequence == null) {
+      fromSequence = this.fromSequence;
+    }
+    return fromSequence;
   }
 
   private boolean biggerThanToSequence(long sequence) {

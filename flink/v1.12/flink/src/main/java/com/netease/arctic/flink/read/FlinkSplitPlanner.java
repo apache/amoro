@@ -129,14 +129,14 @@ public class FlinkSplitPlanner {
   }
 
   public static List<ArcticSplit> planChangeTable(ChangeTableIncrementalScan tableIncrementalScan, Long fromSequence,
-                                                  AtomicInteger splitCount) {
-    CloseableIterable<FileScanTask> tasks = tableIncrementalScan.planFiles();
-    BaseAndChangeTask baseAndChangeTask = BaseAndChangeTask.ofIceberg(tasks, fromSequence);
+      AtomicInteger splitCount) {
+    CloseableIterable<FileScanTask> tasks = tableIncrementalScan.fromSequence(fromSequence).planFiles();
+    BaseAndChangeTask baseAndChangeTask = BaseAndChangeTask.ofIceberg(tasks);
     return planChangeTable(baseAndChangeTask.transactionTasks(), splitCount);
   }
 
-  private static List<ArcticSplit> planChangeTable(
-      Collection<TransactionTask> transactionTasks, AtomicInteger splitCount) {
+  private static List<ArcticSplit> planChangeTable(Collection<TransactionTask> transactionTasks,
+      AtomicInteger splitCount) {
     List<ArcticSplit> changeTasks = new ArrayList<>(transactionTasks.size());
     transactionTasks
         .forEach(transactionTask -> {
@@ -190,18 +190,14 @@ public class FlinkSplitPlanner {
       }
     }
 
-    public static BaseAndChangeTask ofIceberg(CloseableIterable<FileScanTask> tasks, Long fromSequence) {
+    public static BaseAndChangeTask ofIceberg(CloseableIterable<FileScanTask> tasks) {
       try (CloseableIterator<FileScanTask> tasksIterator = tasks.iterator()) {
         Map<Long, TransactionTask> transactionTasks = new HashMap<>();
         long startTime = System.currentTimeMillis();
-        int count = 0, greaterThanCount = 0;
+        int count = 0;
         while (tasksIterator.hasNext()) {
           count++;
           ArcticFileScanTask fileScanTask = (ArcticFileScanTask) tasksIterator.next();
-          if (fromSequence != null && fileScanTask.file().dataSequenceNumber() <= fromSequence) {
-            continue;
-          }
-          greaterThanCount++;
           if (fileScanTask.file().type().equals(DataFileType.INSERT_FILE)) {
             taskMap(Collections.singleton(fileScanTask), true, transactionTasks);
           } else if (fileScanTask.file().type().equals(DataFileType.EQ_DELETE_FILE)) {
@@ -213,8 +209,8 @@ public class FlinkSplitPlanner {
                     fileScanTask.file().type()));
           }
         }
-        LOG.info("Read change log from {} in {} ms, count: {}, greater than fromSequence {} count: {}.",
-            tasksIterator.getClass(), System.currentTimeMillis() - startTime, count, fromSequence, greaterThanCount);
+        LOG.info("Read {} change log from {} in {} ms", count, tasksIterator.getClass(),
+            System.currentTimeMillis() - startTime);
         return new BaseAndChangeTask(Collections.emptySet(), transactionTasks);
       } catch (IOException e) {
         throw new UncheckedIOException(e);

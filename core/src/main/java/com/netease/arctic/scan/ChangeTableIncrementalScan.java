@@ -19,13 +19,13 @@
 package com.netease.arctic.scan;
 
 import org.apache.iceberg.TableScan;
+import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.util.StructLikeMap;
 
 public interface ChangeTableIncrementalScan extends TableScan {
 
   /**
-   * Config this scan to read data from {@code partitionSequence} exclusive to
-   * the current sequence inclusive.
+   * Config this scan to read data from a particular sequence (exclusive) for each partition.
    *
    * @param partitionSequence - sequence for each partition
    * @return this for method chaining
@@ -33,9 +33,17 @@ public interface ChangeTableIncrementalScan extends TableScan {
   ChangeTableIncrementalScan fromSequence(StructLikeMap<Long> partitionSequence);
 
   /**
+   * Config this scan to read data from a particular sequence (exclusive).
+   *
+   * @param sequence - sequence (exclusive) scan from
+   * @return this for method chaining
+   */
+  ChangeTableIncrementalScan fromSequence(long sequence);
+
+  /**
    * Config this scan to read data up to a particular sequence (inclusive).
    *
-   * @param sequence - sequence (inclusive)
+   * @param sequence - sequence (inclusive) scan to
    * @return this for method chaining
    */
   ChangeTableIncrementalScan toSequence(long sequence);
@@ -53,4 +61,7 @@ public interface ChangeTableIncrementalScan extends TableScan {
 
   @Override
   ChangeTableIncrementalScan useSnapshot(long snapshotId);
+
+  @Override
+  ChangeTableIncrementalScan filter(Expression filter);
 }

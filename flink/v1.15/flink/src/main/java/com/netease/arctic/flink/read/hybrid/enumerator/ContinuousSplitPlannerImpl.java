@@ -83,7 +83,9 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
       long snapshotId = changeSnapshot.snapshotId();
       ChangeTableIncrementalScan changeTableScan = table.changeTable().newScan().useSnapshot(snapshotId);
       if (filters != null) {
-        filters.forEach(changeTableScan::filter);
+        for (Expression filter : filters) {
+          changeTableScan = changeTableScan.filter(filter);
+        }
       }
 
       Long fromSequence = null;
