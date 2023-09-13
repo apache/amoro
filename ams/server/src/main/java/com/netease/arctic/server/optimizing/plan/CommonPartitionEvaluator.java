@@ -159,7 +159,13 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     if (isFragmentFile(dataFile)) {
       return true;
     }
-    return getRecordCount(deletes) > dataFile.recordCount() * config.getMajorDuplicateRatio();
+    // When Upsert writing is enabled in the Flink engine, both INSERT and UPDATE_AFTER will generate deletes files
+    // (Most are eq-delete), and eq-delete file will be associated with the data file before the current snapshot.
+    // The eq-delete does not accurately reflect how much data has been deleted in the current segment file
+    // (That is, whether the segment file needs to be rewritten).
+    // And the eq-delete file will be converted to pos-delete during minor optimizing, so only pos-delete record
+    // count is calculated here.
+    return getPosDeletesRecordCount(deletes) > dataFile.recordCount() * config.getMajorDuplicateRatio();
   }
 
   public boolean segmentFileShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
@@ -182,8 +188,9 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     return reachFullInterval();
   }
 
-  private long getRecordCount(List<ContentFile<?>> files) {
-    return files.stream().mapToLong(ContentFile::recordCount).sum();
+  private long getPosDeletesRecordCount(List<ContentFile<?>> files) {
+    return files.stream().filter(file -> file.content() == FileContent.POSITION_DELETES)
+        .mapToLong(ContentFile::recordCount).sum();
   }
 
   private void addDelete(ContentFile<?> delete) {

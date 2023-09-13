@@ -15,6 +15,7 @@ public class TableConfiguration {
   private long changeDataTTLMinutes;
   private boolean cleanOrphanEnabled;
   private long orphanExistingMinutes;
+  private boolean deleteDanglingDeleteFilesEnabled;
   private OptimizingConfig optimizingConfig;
   private ExpiringDataConfig expiringDataConfig;
 
@@ -75,6 +76,15 @@ public class TableConfiguration {
     return this;
   }
 
+  public boolean isDeleteDanglingDeleteFilesEnabled() {
+    return deleteDanglingDeleteFilesEnabled;
+  }
+
+  public TableConfiguration setDeleteDanglingDeleteFilesEnabled(boolean deleteDanglingDeleteFilesEnabled) {
+    this.deleteDanglingDeleteFilesEnabled = deleteDanglingDeleteFilesEnabled;
+    return this;
+  }
+
   public ExpiringDataConfig getExpiringDataConfig() {
     return expiringDataConfig;
   }
@@ -89,15 +99,15 @@ public class TableConfiguration {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof TableConfiguration)) {
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
     TableConfiguration that = (TableConfiguration) o;
     return expireSnapshotEnabled == that.expireSnapshotEnabled && snapshotTTLMinutes == that.snapshotTTLMinutes &&
         changeDataTTLMinutes == that.changeDataTTLMinutes && cleanOrphanEnabled == that.cleanOrphanEnabled &&
         orphanExistingMinutes == that.orphanExistingMinutes &&
-        Objects.equal(optimizingConfig, that.optimizingConfig) &&
-        Objects.equal(expiringDataConfig, that.expiringDataConfig);
+        deleteDanglingDeleteFilesEnabled == that.deleteDanglingDeleteFilesEnabled &&
+        Objects.equal(optimizingConfig, that.optimizingConfig);
   }
 
   @Override
@@ -108,6 +118,7 @@ public class TableConfiguration {
         changeDataTTLMinutes,
         cleanOrphanEnabled,
         orphanExistingMinutes,
+        deleteDanglingDeleteFilesEnabled,
         optimizingConfig,
         expiringDataConfig);
   }
@@ -133,6 +144,10 @@ public class TableConfiguration {
             properties,
             TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME,
             TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT))
+        .setDeleteDanglingDeleteFilesEnabled(CompatiblePropertyUtil.propertyAsBoolean(
+            properties,
+            TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN,
+            TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT))
         .setOptimizingConfig(OptimizingConfig.parseOptimizingConfig(properties))
         .setExpiringDataConfig(ExpiringDataConfig.parse(properties));
   }

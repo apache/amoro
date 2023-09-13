@@ -21,6 +21,7 @@ package com.netease.arctic.server.optimizing;
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.hive.HMSClientPool;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
@@ -35,6 +36,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ContentFiles;
 import com.netease.arctic.utils.TableFileUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -49,6 +51,7 @@ import org.apache.iceberg.Transaction;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.SnapshotUtil;
+import org.apache.iceberg.util.StructLikeMap;
 import org.glassfish.jersey.internal.guava.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +66,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
+import static com.netease.arctic.hive.op.UpdateHiveFiles.SYNC_DATA_TO_HIVE;
 import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
 
 public class UnKeyedTableCommit {
@@ -105,39 +109,58 @@ public class UnKeyedTableCommit {
           .orElse(0L);
 
       for (DataFile targetFile : targetFiles) {
-        if (partitionPathMap.get(taskRuntime.getPartition()) == null) {
-          List<String> partitionValues =
-              HivePartitionUtil.partitionValuesAsList(targetFile.partition(), partitionSchema);
-          String partitionPath;
-          if (table.spec().isUnpartitioned()) {
-            try {
-              Table hiveTable = ((SupportHive) table).getHMSClient().run(client ->
-                  client.getTable(table.id().getDatabase(), table.id().getTableName()));
-              partitionPath = hiveTable.getSd().getLocation();
-            } catch (Exception e) {
-              LOG.error("Get hive table failed", e);
-              throw new RuntimeException(e);
-            }
-          } else {
-            String hiveSubdirectory = table.isKeyedTable() ?
-                HiveTableUtil.newHiveSubdirectory(maxTransactionId) : HiveTableUtil.newHiveSubdirectory();
+        String partitionPath = partitionPathMap.computeIfAbsent(taskRuntime.getPartition(),
+            key -> getPartitionPath(hiveClient, maxTransactionId, targetFile, partitionSchema));
 
-            Partition partition = HivePartitionUtil.getPartition(hiveClient, table, partitionValues);
-            if (partition == null) {
-              partitionPath = HiveTableUtil.newHiveDataLocation(((SupportHive) table).hiveLocation(),
-                  table.spec(), targetFile.partition(), hiveSubdirectory);
-            } else {
-              partitionPath = partition.getSd().getLocation();
-            }
-          }
-          partitionPathMap.put(taskRuntime.getPartition(), partitionPath);
-        }
-
-        DataFile finalDataFile = moveTargetFiles(targetFile, partitionPathMap.get(taskRuntime.getPartition()));
+        DataFile finalDataFile = moveTargetFiles(targetFile, partitionPath);
         newTargetFiles.add(finalDataFile);
       }
     }
     return newTargetFiles;
+  }
+
+  private String getPartitionPath(HMSClientPool hiveClient, long maxTransactionId, DataFile targetFile,
+                                  Types.StructType partitionSchema) {
+    // get iceberg partition path
+    String icebergPartitionLocation = getIcebergPartitionLocation(targetFile.partition());
+    if (icebergPartitionLocation != null) {
+      return icebergPartitionLocation;
+    }
+    // get hive partition path
+    if (table.spec().isUnpartitioned()) {
+      try {
+        Table hiveTable = ((SupportHive) table).getHMSClient().run(client ->
+            client.getTable(table.id().getDatabase(), table.id().getTableName()));
+        return hiveTable.getSd().getLocation();
+      } catch (Exception e) {
+        LOG.error("Get hive table failed", e);
+        throw new RuntimeException("Get hive table failed", e);
+      }
+    } else {
+      List<String> partitionValues = HivePartitionUtil.partitionValuesAsList(targetFile.partition(), partitionSchema);
+      String hiveSubdirectory = table.isKeyedTable() ?
+          HiveTableUtil.newHiveSubdirectory(maxTransactionId) : HiveTableUtil.newHiveSubdirectory();
+
+      Partition p = HivePartitionUtil.getPartition(hiveClient, table, partitionValues);
+      if (p == null) {
+        return HiveTableUtil.newHiveDataLocation(((SupportHive) table).hiveLocation(),
+            table.spec(), targetFile.partition(), hiveSubdirectory);
+      } else {
+        return p.getSd().getLocation();
+      }
+    }
+  }
+
+  private String getIcebergPartitionLocation(StructLike partitionData) {
+    UnkeyedTable baseTable = table.isKeyedTable() ?
+        table.asKeyedTable().baseTable() : table.asUnkeyedTable();
+    StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
+    Map<String, String> property =
+        partitionProperty.get(table.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : partitionData);
+    if (property == null) {
+      return null;
+    }
+    return property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
   }
 
   public void commit() throws OptimizingCommitException {
@@ -192,8 +215,11 @@ public class UnKeyedTableCommit {
           dataFileRewrite.rewriteFiles(removedDataFiles, addedDataFiles);
         }
         dataFileRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
-        if (TableTypeUtil.isHive(table) && !needMoveFile2Hive()) {
-          dataFileRewrite.set(DELETE_UNTRACKED_HIVE_FILE, "true");
+        if (TableTypeUtil.isHive(table)) {
+          if (!needMoveFile2Hive()) {
+            dataFileRewrite.set(DELETE_UNTRACKED_HIVE_FILE, "true");
+          }
+          dataFileRewrite.set(SYNC_DATA_TO_HIVE, "true");
         }
         dataFileRewrite.commit();
       }
