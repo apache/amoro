@@ -5,6 +5,7 @@ import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceContainer;
 import com.netease.arctic.ams.api.resource.ResourceStatus;
 import com.netease.arctic.optimizer.util.PropertyUtil;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,6 +16,9 @@ public abstract class AbstractResourceContainer implements ResourceContainer {
   private String containerName;
   private Map<String, String> containerProperties;
 
+  protected String amsHome;
+  protected String amsOptimizingUrl;
+
   @Override
   public String name() {
     return containerName;
@@ -24,6 +28,8 @@ public abstract class AbstractResourceContainer implements ResourceContainer {
   public void init(String name, Map<String, String> containerProperties) {
     this.containerName = name;
     this.containerProperties = containerProperties;
+    this.amsHome = PropertyUtil.getRequiredNotNull(containerProperties, PropertyNames.AMS_HOME);
+    this.amsOptimizingUrl = PropertyUtil.getRequiredNotNull(containerProperties, PropertyNames.AMS_OPTIMIZER_URI);
   }
 
   @Override
@@ -34,12 +40,12 @@ public abstract class AbstractResourceContainer implements ResourceContainer {
 
   protected abstract Map<String, String> doScaleOut(String startUpArgs);
 
-  protected String getAMSHome() {
-    return PropertyUtil.checkAndGetProperty(containerProperties, PropertyNames.AMS_HOME);
-  }
-
-  protected String getAMSUrl() {
-    return PropertyUtil.checkAndGetProperty(containerProperties, PropertyNames.OPTIMIZER_AMS_URL);
+  protected String getOptimizingUri(Map<String, String> resourceProperties) {
+    String optimizingUrl = resourceProperties.getOrDefault(PropertyNames.AMS_OPTIMIZER_URI, null);
+    if (StringUtils.isNotEmpty(optimizingUrl)) {
+      return optimizingUrl;
+    }
+    return amsOptimizingUrl;
   }
 
   public Map<String, String> getContainerProperties() {
@@ -49,7 +55,7 @@ public abstract class AbstractResourceContainer implements ResourceContainer {
   protected String buildOptimizerStartupArgsString(Resource resource) {
     StringBuilder stringBuilder = new StringBuilder();
     stringBuilder.append(" -a ")
-        .append(getAMSUrl())
+        .append(getOptimizingUri(resource.getProperties()))
         .append(" -p ")
         .append(resource.getThreadCount())
         .append(" -g ")
@@ -71,7 +77,7 @@ public abstract class AbstractResourceContainer implements ResourceContainer {
             .append(resource.getProperties().get(PropertyNames.OPTIMIZER_MEMORY_STORAGE_SIZE));
       }
     }
-    if (resource.getResourceId() != null && resource.getResourceId().length() > 0) {
+    if (StringUtils.isNotEmpty(resource.getResourceId())) {
       stringBuilder.append(" -id ").append(resource.getResourceId());
     }
     return stringBuilder.toString();

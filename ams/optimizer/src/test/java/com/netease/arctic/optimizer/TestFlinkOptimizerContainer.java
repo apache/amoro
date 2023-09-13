@@ -18,13 +18,24 @@
 
 package com.netease.arctic.optimizer;
 
+import com.netease.arctic.ams.api.PropertyNames;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class TestFlinkOptimizerContainer {
   FlinkOptimizerContainer container = new FlinkOptimizerContainer();
+
+  Map<String, String> containerProperties = Maps.newHashMap();
+
+  public TestFlinkOptimizerContainer() {
+    containerProperties.put(PropertyNames.AMS_HOME, "/home/ams");
+    containerProperties.put(FlinkOptimizerContainer.FLINK_HOME_PROPERTY, "/home/ams");
+    containerProperties.put(PropertyNames.AMS_OPTIMIZER_URI, "thrift://127.0.0.1:1261");
+  }
 
   @Test
   public void testParseMemorySize() {
@@ -41,18 +52,26 @@ public class TestFlinkOptimizerContainer {
     Assert.assertEquals(0, container.parseMemorySize("100kb"));
   }
 
+
   @Test
-  public void testBuildFlinkArgs() {
-    HashMap<String, String> prop = new HashMap<>();
-    prop.put("taskmanager.memory", "100");
-    prop.put("jobmanager.memory", "100");
-    prop.put("jobmanager.memory.process.size", "100");
-    prop.put("taskmanager.memory.process.size", "100");
-    prop.put("key1", "value1");
-    prop.put("key2", "value2");
-    prop.put("flink-conf.key3", "value3");
-    prop.put("flink-conf.key4", "value4");
-    Assert.assertEquals("-yD key4=value4 -yD key3=value3", container.buildFlinkArgs(prop));
+  public void testBuildFlinkOptions() {
+    FlinkOptimizerContainer container = new FlinkOptimizerContainer();
+    Map<String, String> containerProperties = Maps.newHashMap(this.containerProperties);
+    containerProperties.put("flink-conf.key1", "value1");
+    containerProperties.put("flink-conf.key2", "value2");
+    containerProperties.put("key3", "value3"); // non "flink-conf." property
+    container.init("flink", containerProperties);
+
+    // Create some optimizing group properties
+    Map<String, String> groupProperties = new HashMap<>();
+    groupProperties.put("flink-conf.key2", "value4");
+    groupProperties.put("flink-conf.key5", "value5");
+
+    String flinkOptions = container.buildFlinkOptions(groupProperties);
+    Assert.assertEquals(3, flinkOptions.split(" ").length);
+    Assert.assertTrue(flinkOptions.contains("-Dkey1=value1"));
+    Assert.assertTrue(flinkOptions.contains("-Dkey2=value4"));
+    Assert.assertTrue(flinkOptions.contains("-Dkey5=value5"));
   }
 
   @Test
