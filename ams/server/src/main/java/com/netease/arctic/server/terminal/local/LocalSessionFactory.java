@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 
 public class LocalSessionFactory implements TerminalSessionFactory {
 
@@ -114,6 +115,10 @@ public class LocalSessionFactory implements TerminalSessionFactory {
           String value = this.conf.getValue(ConfigOptions.key(key).stringType().noDefaultValue());
           sparkconf.set(key, value);
         }
+      }
+
+      if (sparkconf.contains("spark.sql.session.timeZone")) {
+        TimeZone.setDefault(TimeZone.getTimeZone(sparkconf.get("spark.sql.session.timeZone")));
       }
 
       context = SparkSession
