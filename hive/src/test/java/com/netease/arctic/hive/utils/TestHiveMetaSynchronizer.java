@@ -16,15 +16,16 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.table.executor;
+package com.netease.arctic.hive.utils;
 
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
+import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TableFileUtil;
@@ -33,9 +34,12 @@ import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.PrincipalPrivilegeSet;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.OutputFile;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -45,17 +49,18 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
 import static com.netease.arctic.utils.TablePropertyUtil.EMPTY_STRUCT;
 
 @RunWith(Parameterized.class)
-public class TestHiveCommitSync extends ExecutorTestBase {
+public class TestHiveMetaSynchronizer extends TableTestBase {
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
 
-  public TestHiveCommitSync(boolean ifKeyed, boolean ifPartitioned) {
+  public TestHiveMetaSynchronizer(boolean ifKeyed, boolean ifPartitioned) {
     super(new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
         new HiveTableTestHelper(ifKeyed, ifPartitioned));
   }
@@ -69,6 +74,10 @@ public class TestHiveCommitSync extends ExecutorTestBase {
         {false, false}};
   }
 
+  @Override
+  protected SupportHive getArcticTable() {
+    return (SupportHive) super.getArcticTable();
+  }
 
   @Test
   public void testUnPartitionTableSyncInIceberg() throws Exception {
@@ -80,21 +89,22 @@ public class TestHiveCommitSync extends ExecutorTestBase {
     String newLocation = createEmptyLocationForHive(getArcticTable());
     baseTable.updatePartitionProperties(null)
         .set(EMPTY_STRUCT, HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, newLocation).commit();
-    String hiveLocation = ((SupportHive) getArcticTable()).getHMSClient().run(client -> {
+    String hiveLocation = (getArcticTable()).getHMSClient().run(client -> {
       Table hiveTable = client.getTable(getArcticTable().id().getDatabase(),
           getArcticTable().id().getTableName());
       return hiveTable.getSd().getLocation();
     });
     Assert.assertNotEquals(newLocation, hiveLocation);
 
-    HiveCommitSyncExecutor.syncIcebergToHive(getArcticTable());
-    hiveLocation = ((SupportHive) getArcticTable()).getHMSClient().run(client -> {
+    HiveMetaSynchronizer.syncArcticDataToHive(getArcticTable());
+    hiveLocation = (getArcticTable()).getHMSClient().run(client -> {
       Table hiveTable = client.getTable(getArcticTable().id().getDatabase(),
           getArcticTable().id().getTableName());
       return hiveTable.getSd().getLocation();
     });
     Assert.assertEquals(newLocation, hiveLocation);
   }
+
 
   @Test
   public void testUnPartitionTableSyncNotInIceberg() throws Exception {
@@ -104,20 +114,21 @@ public class TestHiveCommitSync extends ExecutorTestBase {
     StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
     Assert.assertEquals(0, partitionProperty.size());
 
-    String oldHiveLocation = ((SupportHive) getArcticTable()).getHMSClient().run(client -> {
+    String oldHiveLocation = getArcticTable().getHMSClient().run(client -> {
       Table hiveTable = client.getTable(getArcticTable().id().getDatabase(),
           getArcticTable().id().getTableName());
       return hiveTable.getSd().getLocation();
     });
 
-    HiveCommitSyncExecutor.syncIcebergToHive(getArcticTable());
-    String newHiveLocation = ((SupportHive) getArcticTable()).getHMSClient().run(client -> {
+    HiveMetaSynchronizer.syncArcticDataToHive(getArcticTable());
+    String newHiveLocation = getArcticTable().getHMSClient().run(client -> {
       Table hiveTable = client.getTable(getArcticTable().id().getDatabase(),
           getArcticTable().id().getTableName());
       return hiveTable.getSd().getLocation();
     });
     Assert.assertEquals(oldHiveLocation, newHiveLocation);
   }
+
 
   @Test
   public void testSyncOnlyInIceberg() throws Exception {
@@ -135,12 +146,12 @@ public class TestHiveCommitSync extends ExecutorTestBase {
 
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(dataFiles.get(0).partition(), getArcticTable().spec().partitionType());
-    Assert.assertThrows(NoSuchObjectException.class, () -> ((SupportHive) getArcticTable()).getHMSClient().run(client ->
+    Assert.assertThrows(NoSuchObjectException.class, () -> getArcticTable().getHMSClient().run(client ->
         client.getPartition(getArcticTable().id().getDatabase(),
             getArcticTable().id().getTableName(), partitionValues)));
 
-    HiveCommitSyncExecutor.syncIcebergToHive(getArcticTable());
-    Partition hivePartition = ((SupportHive) getArcticTable()).getHMSClient().run(client ->
+    HiveMetaSynchronizer.syncArcticDataToHive(getArcticTable());
+    Partition hivePartition = getArcticTable().getHMSClient().run(client ->
         client.getPartition(getArcticTable().id().getDatabase(),
             getArcticTable().id().getTableName(), partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
@@ -186,14 +197,14 @@ public class TestHiveCommitSync extends ExecutorTestBase {
       return client.addPartition(p);
     });
 
-    Partition hivePartition = ((SupportHive) getArcticTable()).getHMSClient().run(client ->
+    Partition hivePartition = getArcticTable().getHMSClient().run(client ->
         client.getPartition(getArcticTable().id().getDatabase(),
             getArcticTable().id().getTableName(), partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
 
-    HiveCommitSyncExecutor.syncIcebergToHive(getArcticTable());
+    HiveMetaSynchronizer.syncArcticDataToHive(getArcticTable());
 
-    Assert.assertThrows(NoSuchObjectException.class, () -> ((SupportHive) getArcticTable()).getHMSClient().run(client ->
+    Assert.assertThrows(NoSuchObjectException.class, () -> getArcticTable().getHMSClient().run(client ->
         client.getPartition(getArcticTable().id().getDatabase(),
             getArcticTable().id().getTableName(), partitionValues)));
   }
@@ -237,14 +248,14 @@ public class TestHiveCommitSync extends ExecutorTestBase {
       return client.addPartition(p);
     });
 
-    Partition hivePartition = ((SupportHive) getArcticTable()).getHMSClient().run(client ->
+    Partition hivePartition = getArcticTable().getHMSClient().run(client ->
         client.getPartition(getArcticTable().id().getDatabase(),
             getArcticTable().id().getTableName(), partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
 
-    HiveCommitSyncExecutor.syncIcebergToHive(getArcticTable());
+    HiveMetaSynchronizer.syncArcticDataToHive(getArcticTable());
 
-    hivePartition = ((SupportHive) getArcticTable()).getHMSClient().run(client ->
+    hivePartition = getArcticTable().getHMSClient().run(client ->
         client.getPartition(getArcticTable().id().getDatabase(),
             getArcticTable().id().getTableName(), partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
@@ -262,7 +273,7 @@ public class TestHiveCommitSync extends ExecutorTestBase {
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(dataFiles.get(0).partition(), getArcticTable().spec().partitionType());
-    ((SupportHive) getArcticTable()).getHMSClient().run(client -> {
+    getArcticTable().getHMSClient().run(client -> {
       Table hiveTable = client.getTable(getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
       StorageDescriptor tableSd = hiveTable.getSd();
       PrincipalPrivilegeSet privilegeSet = hiveTable.getPrivileges();
@@ -289,7 +300,7 @@ public class TestHiveCommitSync extends ExecutorTestBase {
       return client.addPartition(p);
     });
 
-    Partition hivePartition = ((SupportHive) getArcticTable()).getHMSClient().run(client ->
+    Partition hivePartition = getArcticTable().getHMSClient().run(client ->
         client.getPartition(getArcticTable().id().getDatabase(),
             getArcticTable().id().getTableName(), partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
@@ -302,9 +313,9 @@ public class TestHiveCommitSync extends ExecutorTestBase {
         .commit();
     Assert.assertNotEquals(newPartitionLocation, hivePartition.getSd().getLocation());
 
-    HiveCommitSyncExecutor.syncIcebergToHive(getArcticTable());
+    HiveMetaSynchronizer.syncArcticDataToHive(getArcticTable());
 
-    hivePartition = ((SupportHive) getArcticTable()).getHMSClient().run(client ->
+    hivePartition = getArcticTable().getHMSClient().run(client ->
         client.getPartition(getArcticTable().id().getDatabase(),
             getArcticTable().id().getTableName(), partitionValues));
     Assert.assertEquals(newPartitionLocation, hivePartition.getSd().getLocation());
@@ -320,5 +331,28 @@ public class TestHiveCommitSync extends ExecutorTestBase {
       throw new RuntimeException(e);
     }
     return newLocation;
+  }
+
+  private List<DataFile> writeAndCommitBaseAndHive(
+      ArcticTable table, long txId, boolean writeHive) {
+    String hiveSubDir = HiveTableUtil.newHiveSubdirectory(txId);
+    List<DataFile> dataFiles = HiveDataTestHelpers.writeBaseStore(
+        table, txId, createRecords(1, 100), false, writeHive, hiveSubDir);
+    UnkeyedTable baseTable = table.isKeyedTable() ?
+        table.asKeyedTable().baseTable() : table.asUnkeyedTable();
+    AppendFiles baseAppend = baseTable.newAppend();
+    dataFiles.forEach(baseAppend::appendFile);
+    baseAppend.commit();
+    return dataFiles;
+  }
+
+  public List<Record> createRecords(int start, int length) {
+    ImmutableList.Builder<Record> builder = ImmutableList.builder();
+    for (int i = start; i < start + length; i++) {
+      builder.add(tableTestHelper().generateTestRecord(
+          i, "name" + i, 0L,
+          LocalDateTime.of(2022, 1, i % 2 + 1, 12, 0, 0).toString()));
+    }
+    return builder.build();
   }
 }
