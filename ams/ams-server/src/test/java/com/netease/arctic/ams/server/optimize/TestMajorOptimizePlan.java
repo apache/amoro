@@ -290,7 +290,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
     // set task_size to be 2.5 * file_size
     testNoPartitionTable.updateProperties()
         .set(TableProperties.BASE_FILE_INDEX_HASH_BUCKET, "4")
-        .set(TableProperties.SELF_OPTIMIZING_MAX_TASK_FILE_SIZE, fileSize * 5 / 2 + "")
+        .set(TableProperties.SELF_OPTIMIZING_MAX_TASK_SIZE, fileSize * 5 / 2 + "")
         .commit();
 
     List<FileScanTask> baseFiles = planBaseFiles(testNoPartitionTable);

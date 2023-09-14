@@ -197,8 +197,8 @@ public abstract class AbstractOptimizePlan {
 
   protected long getTaskSize() {
     return PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.SELF_OPTIMIZING_MAX_TASK_FILE_SIZE,
-        TableProperties.SELF_OPTIMIZING_MAX_TASK_FILE_SIZE_DEFAULT);
+        TableProperties.SELF_OPTIMIZING_MAX_TASK_SIZE,
+        TableProperties.SELF_OPTIMIZING_MAX_TASK_SIZE_DEFAULT);
   }
 
   protected interface PartitionWeight extends Comparable<PartitionWeight> {
