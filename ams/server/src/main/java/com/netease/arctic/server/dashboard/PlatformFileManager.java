@@ -27,8 +27,8 @@ public class PlatformFileManager extends PersistentBase {
   /**
    * getRuntime file content
    */
-  public String getFileContentById(Integer fileId) {
+  public byte[] getFileContentById(Integer fileId) {
     String fileContent = getAs(PlatformFileMapper.class, e -> e.getFileById(fileId));
-    return new String(Base64.getDecoder().decode(fileContent));
+    return Base64.getDecoder().decode(fileContent);
   }
 }

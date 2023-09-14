@@ -209,7 +209,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   @Override
   public boolean isNecessary() {
     if (necessary == null) {
-      necessary = isFullNecessary() || isMajorNecessary() || isMinorNecessary();
+      if (isFullOptimizing()) {
+        necessary = isFullNecessary();
+      } else {
+        necessary = isMajorNecessary() || isMinorNecessary();
+      }
       LOG.debug("{} necessary = {}, {}", name(), necessary, this);
     }
     return necessary;
