@@ -37,4 +37,9 @@ public interface UnifiedCatalog extends AmoroCatalog {
    * Refresh catalog meta
    */
   void refresh();
+
+  /**
+   * name of this catalog
+   */
+  String name();
 }

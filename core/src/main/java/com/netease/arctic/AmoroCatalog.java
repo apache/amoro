@@ -75,9 +75,4 @@ public interface AmoroCatalog {
    * @throws NoSuchTableException    when table not exists.
    */
   AmoroTable<?> loadTable(String database, String table);
-
-  /**
-   * name of this catalog
-   */
-  String name();
 }
