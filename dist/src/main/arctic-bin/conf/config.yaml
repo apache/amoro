@@ -47,25 +47,18 @@ ams:
     enabled: true
     thread-count: 10
 
-#  database:
-#    type: derby
-#    jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
-#    url: jdbc:derby:/tmp/amoro/derby;create=true
-
-  #  MySQL database configuration.
-  #  database:
-  #    type: mysql
-  #    jdbc-driver-class: com.mysql.cj.jdbc.Driver
-  #    url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
-  #    username: root
-  #    password: root
-
   database:
-    type: mysql
-    jdbc-driver-class: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://10.122.173.167:3306/arctic_opensource_v5_ocean_paimon?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false&zeroDateTimeBehavior=convertToNull
-    username: readwrite
-    password: 3221631
+    type: derby
+    jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
+    url: jdbc:derby:/tmp/amoro/derby;create=true
+
+#    MySQL database configuration.
+#    database:
+#      type: mysql
+#      jdbc-driver-class: com.mysql.cj.jdbc.Driver
+#      url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
+#      username: root
+#      password: root
 
   terminal:
     backend: local

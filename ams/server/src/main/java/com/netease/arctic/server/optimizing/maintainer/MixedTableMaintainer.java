@@ -58,8 +58,9 @@ public class MixedTableMaintainer implements TableMaintainer {
       changeFiles = IcebergTableUtil.getAllContentFilePath(arcticTable.asKeyedTable().changeTable());
       baseFiles = IcebergTableUtil.getAllContentFilePath(arcticTable.asKeyedTable().baseTable());
     } else {
-      changeFiles = new HashSet<>();
       baseMaintainer = new BaseTableMaintainer(arcticTable.asUnkeyedTable());
+      changeFiles = new HashSet<>();
+      baseFiles = IcebergTableUtil.getAllContentFilePath(arcticTable.asUnkeyedTable());
     }
 
     if (TableTypeUtil.isHive(arcticTable)) {
