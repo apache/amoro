@@ -65,7 +65,7 @@ public class PlatformFileInfoController {
   public void downloadFile(Context ctx) {
     String fileId = ctx.pathParam("fileId");
     Preconditions.checkArgument(StringUtils.isNumeric(fileId), "Invalid file id");
-    String content = platformFileInfoService.getFileContentById(Integer.valueOf(fileId));
+    byte[] content = platformFileInfoService.getFileContentById(Integer.valueOf(fileId));
     ctx.result(content);
   }
 }

@@ -22,6 +22,11 @@ metadata:
   labels:
     {{- include "amoro.labels" . | nindent 4 }}
 data:
+  {{- with .Values.amoroConf.amoroEnv }}
+  config.sh: |
+    #!/usr/bin/env bash
+    {{- tpl . $ | nindent 4 }}
+  {{- end }}
   ## Helm chart provided Amoro configurations
   config.yaml: |
     ams:
