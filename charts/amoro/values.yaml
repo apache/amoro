@@ -75,6 +75,14 @@ server:
 amoroDir: "/usr/local/ams"
 # AMS configurations files
 amoroConf:
+  # ams config.sh set env
+  amoroEnv: ~
+#  amoroEnv: |
+#    XMX_CONFIG="8196"
+#    XMS_CONFIG="8196"
+#    JMX_REMOTE_PORT_CONFIG=""
+#    JVM_EXTRA_CONFIG="-XX:NewRatio=1 -XX:SurvivorRatio=3"
+#    LANG_CONFIG="en_US.UTF-8"
   # ams database properties,default is derby. If production,suggest use mysql
   database:
     type: derby
