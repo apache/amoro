@@ -93,9 +93,4 @@ public class IcebergCatalog implements FormatCatalog {
         icebergTable
     );
   }
-
-  @Override
-  public String name() {
-    return name;
-  }
 }

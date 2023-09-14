@@ -70,11 +70,6 @@ public class PaimonCatalog implements FormatCatalog {
   }
 
   @Override
-  public String name() {
-    return name;
-  }
-
-  @Override
   public List<String> listTables(String database) {
     try {
       return catalog.listTables(database);
