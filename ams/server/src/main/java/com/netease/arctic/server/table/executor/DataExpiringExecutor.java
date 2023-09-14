@@ -37,9 +37,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -63,6 +61,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -83,22 +82,6 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       Type.TypeID.STRING,
       Type.TypeID.LONG
   );
-
-  @VisibleForTesting
-  public enum ExpireLevel {
-    PARTITION,
-    FILE;
-
-    public static ExpireLevel fromString(String level) {
-      Preconditions.checkArgument(null != level, "Invalid level type: null");
-      try {
-        return ExpireLevel.valueOf(level.toUpperCase(Locale.ENGLISH));
-      } catch (IllegalArgumentException e) {
-        throw new IllegalArgumentException(
-            String.format("Invalid level type: %s", level), e);
-      }
-    }
-  }
 
   public static final String  EXPIRE_TIMESTAMP_MS = "TIMESTAMP_MS";
   public static final String  EXPIRE_TIMESTAMP_S = "TIMESTAMP_S";
@@ -127,10 +110,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
   protected void execute(TableRuntime tableRuntime) {
     try {
       ArcticTable arcticTable = loadTable(tableRuntime);
-      if (!CompatiblePropertyUtil.propertyAsBoolean(
-          arcticTable.properties(),
-          TableProperties.ENABLE_DATA_EXPIRATION,
-          TableProperties.ENABLE_DATA_EXPIRATION_DEFAULT)) {
+      if (!tableRuntime.getTableConfiguration().getExpiringDataConfig().isEnabled()) {
         return;
       }
 
@@ -241,15 +221,30 @@ public class DataExpiringExecutor extends BaseTableExecutor {
   }
 
   private static Expression getPartitionExpression(DataExpirationConfig expirationConfig, long expireTimestamp) {
-    if (expirationConfig.expirationLevel.equals(ExpireLevel.PARTITION)) {
+    if (expirationConfig.expirationLevel.equals(DataExpirationConfig.ExpireLevel.PARTITION)) {
       return Expressions.alwaysTrue();
     }
 
     Type.TypeID typeID = expirationConfig.expirationField.type().typeId();
-    if (typeID == Type.TypeID.TIMESTAMP) {
-      return Expressions.lessThanOrEqual(expirationConfig.expirationField.name(), expireTimestamp * 1000);
+    switch (typeID) {
+      case TIMESTAMP:
+        return Expressions.lessThanOrEqual(expirationConfig.expirationField.name(), expireTimestamp * 1000);
+      case LONG:
+        if (expirationConfig.numberDateFormat.equals(EXPIRE_TIMESTAMP_MS)) {
+          return Expressions.lessThanOrEqual(expirationConfig.expirationField.name(), expireTimestamp);
+        } else if (expirationConfig.numberDateFormat.equals(EXPIRE_TIMESTAMP_S)) {
+          return Expressions.lessThanOrEqual(expirationConfig.expirationField.name(), expireTimestamp / 1000);
+        } else {
+          return Expressions.alwaysTrue();
+        }
+      case STRING:
+        String expireDateTime = LocalDateTime.ofInstant(
+            Instant.ofEpochMilli(expireTimestamp), getDefaultZoneId(expirationConfig.expirationField)
+            ).format(expirationConfig.dateFormatter);
+        return Expressions.lessThanOrEqual(expirationConfig.expirationField.name(), expireDateTime);
+      default:
+        return Expressions.alwaysTrue();
     }
-    return Expressions.alwaysTrue();
   }
 
   private static void expireFiles(UnkeyedTable table, long snapshotId, ExpireFiles expiredFiles, long expireTimestamp) {
@@ -437,6 +432,22 @@ public class DataExpiringExecutor extends BaseTableExecutor {
     long retentionTime;
     DateTimeFormatter dateFormatter;
     String numberDateFormat;
+
+    @VisibleForTesting
+    public enum ExpireLevel {
+      PARTITION,
+      FILE;
+
+      public static ExpireLevel fromString(String level) {
+        Preconditions.checkArgument(null != level, "Invalid level type: null");
+        try {
+          return ExpireLevel.valueOf(level.toUpperCase(Locale.ENGLISH));
+        } catch (IllegalArgumentException e) {
+          throw new IllegalArgumentException(
+              String.format("Invalid level type: %s", level), e);
+        }
+      }
+    }
 
     DataExpirationConfig(ArcticTable table, ExpiringDataConfig config) {
       String field = config.getField();

@@ -253,7 +253,7 @@ public class TestDataExpire extends ExecutorTestBase {
   public void testFileLevel() {
     ArcticTable table = getArcticTable();
     table.updateProperties()
-        .set(TableProperties.DATA_EXPIRATION_LEVEL, DataExpiringExecutor.ExpireLevel.FILE.name())
+        .set(TableProperties.DATA_EXPIRATION_LEVEL, DataExpiringExecutor.DataExpirationConfig.ExpireLevel.FILE.name())
         .commit();
     if (table.isUnkeyedTable()) {
       testUnKeyedFileLevel();
