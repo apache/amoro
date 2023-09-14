@@ -164,6 +164,7 @@ public class CompleteOptimizingFlow {
     table.refresh();
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
     Mockito.when(tableRuntime.getCurrentSnapshotId()).thenAnswer(f -> getCurrentSnapshotId());
+    Mockito.when(tableRuntime.getCurrentChangeSnapshotId()).thenAnswer(f -> getCurrentChangeSnapshotId());
     Mockito.when(tableRuntime.getNewestProcessId()).thenReturn(1L);
     Mockito.when(tableRuntime.getPendingInput()).thenReturn(null);
     Mockito.doCallRealMethod().when(tableRuntime).getLastMinorOptimizingTime();
