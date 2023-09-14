@@ -35,6 +35,7 @@ import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders;
 import org.apache.iceberg.io.CloseableIterable;
@@ -54,6 +55,9 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestHiveTable extends TestHiveTableBaseForTrino {
@@ -181,13 +185,9 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
     write(table, locationKind, records, ChangeAction.INSERT);
   }
 
-  private void write(ArcticTable table, LocationKind locationKind, List<Record> records, ChangeAction changeAction) throws
-      IOException {
-
-    List<AdaptHiveGenericTaskWriterBuilder> builders = genBuilder(table, FileFormat.PARQUET, FileFormat.ORC);
-    List<TaskWriter<Record>> writers = builders.stream().map(b -> b.withChangeAction(changeAction)
-        .withTransactionId(table.isKeyedTable() ? txid++ : null).buildWriter(locationKind)).toList();
-
+  private void write(ArcticTable table, LocationKind locationKind, List<Record> records,
+      ChangeAction changeAction) throws IOException {
+    List<TaskWriter<Record>> writers = genWriters(table,locationKind, changeAction, FileFormat.PARQUET, FileFormat.ORC);
     for (int i = 0; i < records.size(); i++) {
       writers.get(i % writers.size()).write(records.get(i));
     }
@@ -211,14 +211,22 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
     }
   }
 
-  private List<AdaptHiveGenericTaskWriterBuilder> genBuilder(ArcticTable table, FileFormat... fileFormat) {
-    List<AdaptHiveGenericTaskWriterBuilder> result = Lists.newArrayList();
+  private List<TaskWriter<Record>> genWriters(ArcticTable table,LocationKind locationKind,
+      ChangeAction changeAction, FileFormat... fileFormat) {
+    List<TaskWriter<Record>> result = Lists.newArrayList();
     for (FileFormat format : fileFormat) {
-      table.updateProperties().defaultFormat(format);
-      result.add(AdaptHiveGenericTaskWriterBuilder
-          .builderFor(table));
+      UpdateProperties updateProperties = table.updateProperties();
+      updateProperties.set(BASE_FILE_FORMAT, format.name());
+      updateProperties.set(CHANGE_FILE_FORMAT, format.name());
+      updateProperties.set(DEFAULT_FILE_FORMAT, format.name());
+      updateProperties.commit();
+      AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
+          .builderFor(table);
+      TaskWriter<Record> writer =
+          builder.withChangeAction(changeAction).withTransactionId(table.isKeyedTable() ? txid++ : null)
+              .buildWriter(locationKind);
+      result.add(writer);
     }
-
     return result;
   }
 
