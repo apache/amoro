@@ -44,6 +44,8 @@ CREATE TABLE optimizer
     properties text,
     PRIMARY KEY (token)
 );
+CREATE INDEX optimizer_resource_group_index ON optimizer (group_name);
+
 COMMENT ON TABLE optimizer IS 'Optimizer metadata';
 COMMENT ON COLUMN optimizer.resource_id IS 'Optimizer instance ID';
 COMMENT ON COLUMN optimizer.group_name IS 'Group/queue name';
@@ -65,6 +67,8 @@ CREATE TABLE resource
     start_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     properties TEXT
 );
+CREATE INDEX resource_resource_group_index ON resource (group_name);
+
 COMMENT ON TABLE resource IS 'Optimizer instance info';
 COMMENT ON COLUMN resource.resource_id IS 'Optimizer instance id';
 COMMENT ON COLUMN resource.resource_type IS 'Resource type like optimizer/ingestor';
@@ -82,8 +86,6 @@ CREATE TABLE resource_group
     properties TEXT,
     PRIMARY KEY (group_name)
 );
-CREATE INDEX resource_group_index ON resource_group (group_name);
-
 COMMENT ON TABLE resource_group IS 'Group to divide optimize resources';
 COMMENT ON COLUMN resource_group.group_name IS 'Optimize group name';
 COMMENT ON COLUMN resource_group.container_name IS 'Container name';
@@ -215,6 +217,8 @@ CREATE TABLE table_optimizing_process
     to_sequence TEXT,
     PRIMARY KEY (process_id)
 );
+CREATE INDEX process_index ON table_optimizing_process (table_id, plan_time);
+
 COMMENT ON TABLE table_optimizing_process IS 'History of optimizing after each commit';
 COMMENT ON COLUMN table_optimizing_process.process_id IS 'Optimizing procedure UUID';
 COMMENT ON COLUMN table_optimizing_process.table_id IS 'Table ID';
@@ -253,6 +257,8 @@ CREATE TABLE task_runtime
     properties TEXT,
     PRIMARY KEY (process_id, task_id)
 );
+CREATE INDEX task_runtime_index ON table_optimizing_process (table_id, process_id);
+
 COMMENT ON TABLE task_runtime IS 'Optimize task basic information';
 COMMENT ON COLUMN task_runtime.process_id IS 'Process ID';
 COMMENT ON COLUMN task_runtime.task_id IS 'Task ID';
@@ -282,6 +288,8 @@ CREATE TABLE optimizing_task_quota
     fail_reason VARCHAR(4096),
     PRIMARY KEY (process_id, task_id, retry_num)
 );
+CREATE INDEX quota_index ON table_optimizing_process (table_id);
+
 COMMENT ON TABLE optimizing_task_quota IS 'Optimize task basic information';
 COMMENT ON COLUMN optimizing_task_quota.process_id IS 'Optimizing procedure UUID';
 COMMENT ON COLUMN optimizing_task_quota.task_id IS 'Task ID';
@@ -331,6 +339,8 @@ CREATE TABLE table_blocker
     expiration_time TIMESTAMP,
     properties TEXT
 );
+CREATE INDEX blocker_index ON table_optimizing_process (catalog_name, db_name, table_name);
+
 COMMENT ON TABLE table_blocker IS 'Table blockers';
 COMMENT ON COLUMN table_blocker.blocker_id IS 'Blocker unique ID';
 COMMENT ON COLUMN table_blocker.catalog_name IS 'Catalog name';
