@@ -20,20 +20,24 @@ package com.netease.arctic.flink.read.hybrid.assigner;
 
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.PrimaryKeyedFile;
+import com.netease.arctic.flink.read.hybrid.enumerator.ArcticSourceEnumState;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
 import com.netease.arctic.scan.ArcticFileScanTask;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,7 +47,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
- * According to Mark,Index TreeNodes and subtaskId assigning a split to special subtask to read.
+ * According to Mark, Index TreeNodes and subtaskId assigning a split to special subtask to read.
  */
 public class ShuffleSplitAssigner implements SplitAssigner {
   private static final Logger LOG = LoggerFactory.getLogger(ShuffleSplitAssigner.class);
@@ -68,6 +72,7 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   private CompletableFuture<Void> availableFuture;
 
 
+  @VisibleForTesting
   public ShuffleSplitAssigner(
       SplitEnumeratorContext<ArcticSplit> enumeratorContext) {
     this.enumeratorContext = enumeratorContext;
@@ -77,14 +82,28 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   }
 
   public ShuffleSplitAssigner(
-      SplitEnumeratorContext<ArcticSplit> enumeratorContext, Collection<ArcticSplitState> splitStates,
-      long[] shuffleSplitRelation) {
+      SplitEnumeratorContext<ArcticSplit> enumeratorContext,
+      String tableName,
+      @Nullable ArcticSourceEnumState enumState) {
     this.enumeratorContext = enumeratorContext;
     this.partitionIndexSubtaskMap = new ConcurrentHashMap<>();
     this.subtaskSplitMap = new ConcurrentHashMap<>();
-    deserializePartitionIndex(shuffleSplitRelation);
-    splitStates.forEach(state -> onDiscoveredSplits(Collections.singleton(state.toSourceSplit())));
+    if (enumState == null) {
+      this.totalParallelism = enumeratorContext.currentParallelism();
+      LOG.info(
+          "Arctic source enumerator current parallelism is {} for table {}",
+          totalParallelism, tableName);
+    } else {
+      LOG.info("Arctic source restored {} splits from state for table {}",
+          enumState.pendingSplits().size(), tableName);
+      deserializePartitionIndex(
+          Objects.requireNonNull(
+              enumState.shuffleSplitRelation(),
+              "The partition index and subtask state couldn't be null."));
+      enumState.pendingSplits().forEach(state -> onDiscoveredSplits(Collections.singleton(state.toSourceSplit())));
+    }
   }
+
 
   @Override
   public Split getNext() {
