@@ -30,6 +30,8 @@ import com.netease.arctic.spark.test.utils.TestTableUtil;
 import com.netease.arctic.spark.test.utils.TestTables;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.MetadataColumns;
+import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -59,16 +61,24 @@ public class TestSelectSQL extends SparkTableTestBase {
         TestTables.MixedHive.PK_PT,
         TestTables.MixedHive.PK_NoPT
     );
-    return tests.stream().map(t -> Arguments.of(t.format, t));
+    return tests.stream().map(t -> Arguments.of(t.format, t)).flatMap(e -> {
+      List parquet = Lists.newArrayList(e.get());
+      parquet.add(FileFormat.PARQUET);
+      List orc = Lists.newArrayList(e.get());
+      orc.add(FileFormat.ORC);
+      return Stream.of(Arguments.of(parquet.toArray()), Arguments.of(orc.toArray()));
+    });
   }
 
   @ParameterizedTest
   @MethodSource
   public void testKeyedTableQuery(
-      TableFormat format, TestTable table
+      TableFormat format, TestTable table, FileFormat fileFormat
   ) {
     createTarget(table.schema, builder ->
-        builder.withPrimaryKeySpec(table.keySpec));
+        builder.withPrimaryKeySpec(table.keySpec)
+            .withProperty(TableProperties.CHANGE_FILE_FORMAT, fileFormat.name())
+            .withProperty(TableProperties.BASE_FILE_FORMAT, fileFormat.name()));
 
     KeyedTable tbl = loadTable().asKeyedTable();
     RecordGenerator dataGen = table.newDateGen();
@@ -77,10 +87,8 @@ public class TestSelectSQL extends SparkTableTestBase {
     TestTableUtil.writeToBase(tbl, base);
     LinkedList<Record> expects = Lists.newLinkedList(base);
 
-
     // insert some record in change
     List<Record> changeInsert = dataGen.records(5);
-
 
     // insert some delete in change(delete base records)
     List<Record> changeDelete = Lists.newArrayList();
@@ -90,7 +98,7 @@ public class TestSelectSQL extends SparkTableTestBase {
     // insert some delete in change(delete change records)
     expects.addAll(changeInsert);
 
-    IntStream.range(0,2).boxed()
+    IntStream.range(0, 2).boxed()
         .forEach(i -> changeDelete.add(expects.pollLast()));
 
     // insert some delete in change(delete non exists records)
@@ -101,7 +109,6 @@ public class TestSelectSQL extends SparkTableTestBase {
     // reload table;
     LinkedList<Record> expectChange = Lists.newLinkedList(changeInsert);
     expectChange.addAll(changeDelete);
-
 
     //Assert MOR
     Dataset<Row> ds = sql("SELECT * FROM " + target() + " ORDER BY id");
@@ -123,5 +130,4 @@ public class TestSelectSQL extends SparkTableTestBase {
           Assertions.assertTrue(((Long)r.getField(MetadataColumns.TRANSACTION_ID_FILED_NAME)) > 0);
         });
   }
-
 }

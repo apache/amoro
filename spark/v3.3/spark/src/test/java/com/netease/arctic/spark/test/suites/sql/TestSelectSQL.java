@@ -29,6 +29,8 @@ import com.netease.arctic.spark.test.utils.TestTableUtil;
 import com.netease.arctic.spark.test.utils.TestTables;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.MetadataColumns;
+import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -58,16 +60,24 @@ public class TestSelectSQL extends SparkTableTestBase {
         TestTables.MixedHive.PK_PT,
         TestTables.MixedHive.PK_NoPT
     );
-    return tests.stream().map(t -> Arguments.of(t.format, t));
+    return tests.stream().map(t -> Arguments.of(t.format, t)).flatMap(e -> {
+      List parquet = Lists.newArrayList(e.get());
+      parquet.add(FileFormat.PARQUET);
+      List orc = Lists.newArrayList(e.get());
+      orc.add(FileFormat.ORC);
+      return Stream.of(Arguments.of(parquet.toArray()), Arguments.of(orc.toArray()));
+    });
   }
 
   @ParameterizedTest
   @MethodSource
   public void testKeyedTableQuery(
-      TableFormat format, TestTable table
+      TableFormat format, TestTable table, FileFormat fileFormat
   ) {
     createTarget(table.schema, builder ->
-        builder.withPrimaryKeySpec(table.keySpec));
+        builder.withPrimaryKeySpec(table.keySpec)
+            .withProperty(TableProperties.CHANGE_FILE_FORMAT, fileFormat.name())
+            .withProperty(TableProperties.BASE_FILE_FORMAT, fileFormat.name()));
 
     KeyedTable tbl = loadTable().asKeyedTable();
     RecordGenerator dataGen = table.newDateGen();
