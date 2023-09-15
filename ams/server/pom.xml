@@ -40,6 +40,7 @@
         <junit5.version>5.9.1</junit5.version>
         <mybatis.version>3.5.6</mybatis.version>
         <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
+        <postgres-jdbc.version>42.5.1</postgres-jdbc.version>
         <derby-jdbc.version>10.13.1.1</derby-jdbc.version>
         <commons-dbcp2.version>2.9.0</commons-dbcp2.version>
         <snakeyaml.version>1.30</snakeyaml.version>
@@ -196,6 +197,12 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgres-jdbc.version}</version>
         </dependency>
 
         <dependency>
