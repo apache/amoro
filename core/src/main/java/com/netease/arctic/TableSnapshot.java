@@ -21,7 +21,7 @@ package com.netease.arctic;
 public interface TableSnapshot {
 
   /**
-   * Returns the watermark of this snapshot.
+   * Returns the watermark of this snapshot. Return -1 if the watermark does not exist.
    */
   long watermark();
 

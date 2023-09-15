@@ -38,17 +38,17 @@ public class MixedTableMaintainer implements TableMaintainer {
 
   private static final Logger LOG = LoggerFactory.getLogger(MixedTableMaintainer.class);
 
-  private ArcticTable arcticTable;
+  private final ArcticTable arcticTable;
 
   private ChangeTableMaintainer changeMaintainer;
 
-  private BaseTableMaintainer baseMaintainer;
+  private final BaseTableMaintainer baseMaintainer;
 
-  private Set<String> changeFiles;
+  private final Set<String> changeFiles;
 
-  private Set<String> baseFiles;
+  private final Set<String> baseFiles;
 
-  private Set<String> hiveFiles;
+  private final Set<String> hiveFiles;
 
   public MixedTableMaintainer(ArcticTable arcticTable) {
     this.arcticTable = arcticTable;
@@ -118,7 +118,8 @@ public class MixedTableMaintainer implements TableMaintainer {
     return baseMaintainer;
   }
 
-  private Set<String> mergeSets(Set<String>... sets) {
+  @SafeVarargs
+  private final Set<String> mergeSets(Set<String>... sets) {
     Set<String> result = new HashSet<>();
     for (Set<String> set : sets) {
       result.addAll(set);
@@ -130,7 +131,7 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     private static final int DATA_FILE_LIST_SPLIT = 3000;
 
-    private UnkeyedTable unkeyedTable;
+    private final UnkeyedTable unkeyedTable;
 
     public ChangeTableMaintainer(UnkeyedTable unkeyedTable) {
       super(unkeyedTable);
@@ -171,11 +172,10 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     private long getChangeDataTTL() {
-      long changeDataTTL = CompatiblePropertyUtil.propertyAsLong(
+      return CompatiblePropertyUtil.propertyAsLong(
           unkeyedTable.properties(),
           TableProperties.CHANGE_DATA_TTL,
           TableProperties.CHANGE_DATA_TTL_DEFAULT) * 60 * 1000;
-      return changeDataTTL;
     }
 
     private List<IcebergFileEntry> getExpiredDataFileEntries(long ttlPoint) {
@@ -269,11 +269,8 @@ public class MixedTableMaintainer implements TableMaintainer {
 
   public class BaseTableMaintainer extends IcebergTableMaintainer {
 
-    private UnkeyedTable unkeyedTable;
-
     public BaseTableMaintainer(UnkeyedTable unkeyedTable) {
       super(unkeyedTable);
-      this.unkeyedTable = unkeyedTable;
     }
 
     @Override

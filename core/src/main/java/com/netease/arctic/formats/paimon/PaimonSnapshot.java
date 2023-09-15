@@ -23,7 +23,7 @@ import org.apache.paimon.Snapshot;
 
 public class PaimonSnapshot implements TableSnapshot {
 
-  private Snapshot snapshot;
+  private final Snapshot snapshot;
 
   public PaimonSnapshot(Snapshot snapshot) {
     this.snapshot = snapshot;
@@ -31,7 +31,8 @@ public class PaimonSnapshot implements TableSnapshot {
 
   @Override
   public long watermark() {
-    return snapshot.watermark();
+    Long watermark = snapshot.watermark();
+    return watermark == null ? -1 : watermark;
   }
 
   @Override

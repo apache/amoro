@@ -33,11 +33,8 @@ public class IcebergCatalog implements FormatCatalog {
 
   private final Catalog icebergCatalog;
 
-  private final String name;
-
-  public IcebergCatalog(Catalog icebergCatalog, String name) {
+  public IcebergCatalog(Catalog icebergCatalog) {
     this.icebergCatalog = icebergCatalog;
-    this.name = name;
   }
 
   @Override

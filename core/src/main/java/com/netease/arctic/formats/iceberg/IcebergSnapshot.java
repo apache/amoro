@@ -29,8 +29,8 @@ public class IcebergSnapshot implements TableSnapshot {
   }
 
   @Override
-  public long watermark() {
-    return -1;
+  public Long watermark() {
+    return -1L;
   }
 
   @Override

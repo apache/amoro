@@ -30,7 +30,7 @@ import java.util.Optional;
 
 public class MixedIcebergTable implements AmoroTable<ArcticTable> {
 
-  private ArcticTable arcticTable;
+  private final ArcticTable arcticTable;
 
   public MixedIcebergTable(ArcticTable arcticTable) {
     this.arcticTable = arcticTable;

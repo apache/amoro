@@ -190,46 +190,38 @@ public class MixedTableDescriptor implements FormatTableDescriptor {
     }
     final long snapshotTime = snapshot.timestampMillis();
     String commitId = String.valueOf(transactionId);
-    snapshot.addedDataFiles(arcticTable.io()).forEach(f -> {
-      result.add(new PartitionFileBaseInfo(
-          commitId,
-          DataFileType.ofContentId(f.content().id()),
-          snapshotTime,
-          arcticTable.spec().partitionToPath(f.partition()),
-          f.path().toString(),
-          f.fileSizeInBytes(),
-          "add"));
-    });
-    snapshot.removedDataFiles(arcticTable.io()).forEach(f -> {
-      result.add(new PartitionFileBaseInfo(
-          commitId,
-          DataFileType.ofContentId(f.content().id()),
-          snapshotTime,
-          arcticTable.spec().partitionToPath(f.partition()),
-          f.path().toString(),
-          f.fileSizeInBytes(),
-          "remove"));
-    });
-    snapshot.addedDeleteFiles(arcticTable.io()).forEach(f -> {
-      result.add(new PartitionFileBaseInfo(
-          commitId,
-          DataFileType.ofContentId(f.content().id()),
-          snapshotTime,
-          arcticTable.spec().partitionToPath(f.partition()),
-          f.path().toString(),
-          f.fileSizeInBytes(),
-          "add"));
-    });
-    snapshot.removedDeleteFiles(arcticTable.io()).forEach(f -> {
-      result.add(new PartitionFileBaseInfo(
-          commitId,
-          DataFileType.ofContentId(f.content().id()),
-          snapshotTime,
-          arcticTable.spec().partitionToPath(f.partition()),
-          f.path().toString(),
-          f.fileSizeInBytes(),
-          "remove"));
-    });
+    snapshot.addedDataFiles(arcticTable.io()).forEach(f -> result.add(new PartitionFileBaseInfo(
+        commitId,
+        DataFileType.ofContentId(f.content().id()),
+        snapshotTime,
+        arcticTable.spec().partitionToPath(f.partition()),
+        f.path().toString(),
+        f.fileSizeInBytes(),
+        "add")));
+    snapshot.removedDataFiles(arcticTable.io()).forEach(f -> result.add(new PartitionFileBaseInfo(
+        commitId,
+        DataFileType.ofContentId(f.content().id()),
+        snapshotTime,
+        arcticTable.spec().partitionToPath(f.partition()),
+        f.path().toString(),
+        f.fileSizeInBytes(),
+        "remove")));
+    snapshot.addedDeleteFiles(arcticTable.io()).forEach(f -> result.add(new PartitionFileBaseInfo(
+        commitId,
+        DataFileType.ofContentId(f.content().id()),
+        snapshotTime,
+        arcticTable.spec().partitionToPath(f.partition()),
+        f.path().toString(),
+        f.fileSizeInBytes(),
+        "add")));
+    snapshot.removedDeleteFiles(arcticTable.io()).forEach(f -> result.add(new PartitionFileBaseInfo(
+        commitId,
+        DataFileType.ofContentId(f.content().id()),
+        snapshotTime,
+        arcticTable.spec().partitionToPath(f.partition()),
+        f.path().toString(),
+        f.fileSizeInBytes(),
+        "remove")));
     return result;
   }
 

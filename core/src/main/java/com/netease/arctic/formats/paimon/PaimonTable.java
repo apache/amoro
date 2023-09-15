@@ -30,9 +30,9 @@ import java.util.Map;
 
 public class PaimonTable implements AmoroTable<Table> {
 
-  private TableIdentifier tableIdentifier;
+  private final TableIdentifier tableIdentifier;
 
-  private Table table;
+  private final Table table;
 
   public PaimonTable(TableIdentifier tableIdentifier, Table table) {
     this.tableIdentifier = tableIdentifier;
