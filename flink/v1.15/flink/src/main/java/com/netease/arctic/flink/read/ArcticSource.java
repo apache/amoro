@@ -20,6 +20,7 @@ package com.netease.arctic.flink.read;
 
 import com.netease.arctic.flink.read.hybrid.assigner.ShuffleSplitAssigner;
 import com.netease.arctic.flink.read.hybrid.assigner.SplitAssigner;
+import com.netease.arctic.flink.read.hybrid.assigner.StaticSplitAssigner;
 import com.netease.arctic.flink.read.hybrid.enumerator.ArcticSourceEnumState;
 import com.netease.arctic.flink.read.hybrid.enumerator.ArcticSourceEnumStateSerializer;
 import com.netease.arctic.flink.read.hybrid.enumerator.ArcticSourceEnumerator;
@@ -39,8 +40,6 @@ import org.apache.flink.api.connector.source.SplitEnumerator;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Arctic Source based of Flip27.
@@ -51,8 +50,6 @@ import org.slf4j.LoggerFactory;
  */
 public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumState>, ResultTypeQueryable<T> {
   private static final long serialVersionUID = 1L;
-
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticSource.class);
   private final ArcticScanContext scanContext;
   private final ReaderFunction<T> readerFunction;
   private final TypeInformation<T> typeInformation;
@@ -65,7 +62,7 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
   private final boolean dimTable;
 
   public ArcticSource(ArcticTableLoader loader, ArcticScanContext scanContext, ReaderFunction<T> readerFunction,
-      TypeInformation<T> typeInformation, String tableName, boolean dimTable) {
+                      TypeInformation<T> typeInformation, String tableName, boolean dimTable) {
     this.loader = loader;
     this.scanContext = scanContext;
     this.readerFunction = readerFunction;
@@ -80,31 +77,24 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
   }
 
   @Override
-  public SourceReader<T, ArcticSplit> createReader(SourceReaderContext readerContext) throws Exception {
+  public SourceReader<T, ArcticSplit> createReader(SourceReaderContext readerContext) {
     return new ArcticSourceReader<>(readerFunction, readerContext.getConfiguration(), readerContext, dimTable);
   }
 
   @Override
   public SplitEnumerator<ArcticSplit, ArcticSourceEnumState> createEnumerator(
-      SplitEnumeratorContext<ArcticSplit> enumContext) throws Exception {
+      SplitEnumeratorContext<ArcticSplit> enumContext) {
     return createEnumerator(enumContext, null);
   }
 
   private SplitEnumerator<ArcticSplit, ArcticSourceEnumState> createEnumerator(
       SplitEnumeratorContext<ArcticSplit> enumContext, ArcticSourceEnumState enumState) {
     SplitAssigner splitAssigner;
-    if (enumState == null) {
-      splitAssigner = new ShuffleSplitAssigner(enumContext);
-    } else {
-      LOG.info("Arctic source restored {} splits from state for table {}",
-          enumState.pendingSplits().size(), tableName);
-      splitAssigner = new ShuffleSplitAssigner(enumContext, enumState.pendingSplits(),
-          enumState.shuffleSplitRelation());
-    }
-
     if (scanContext.isStreaming()) {
+      splitAssigner = new ShuffleSplitAssigner(enumContext, tableName, enumState);
       return new ArcticSourceEnumerator(enumContext, splitAssigner, loader, scanContext, enumState, dimTable);
     } else {
+      splitAssigner = new StaticSplitAssigner(enumState);
       return new StaticArcticSourceEnumerator(enumContext, splitAssigner, loader, scanContext, null);
     }
   }
@@ -112,7 +102,7 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
   @Override
   public SplitEnumerator<ArcticSplit, ArcticSourceEnumState> restoreEnumerator(
       SplitEnumeratorContext<ArcticSplit> enumContext,
-      ArcticSourceEnumState checkpoint) throws Exception {
+      ArcticSourceEnumState checkpoint) {
     return createEnumerator(enumContext, checkpoint);
   }
 
