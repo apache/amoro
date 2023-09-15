@@ -20,7 +20,7 @@ public class Resource {
   }
 
   private Resource(Builder builder) {
-    this.resourceId = UUID.randomUUID().toString();
+    this.resourceId = UUID.randomUUID().toString().replace("-", "");
     this.containerName = builder.containerName;
     this.groupName = builder.groupName;
     this.threadCount = builder.threadCount;
