@@ -80,10 +80,11 @@ public class FlinkSource {
     private TableSchema projectedSchema;
     private List<Expression> filters;
     private ReadableConfig flinkConf = new Configuration();
-    private Map<String, String> properties = new HashMap<>();
+    private final Map<String, String> properties = new HashMap<>();
     private long limit = -1L;
     private WatermarkStrategy<RowData> watermarkStrategy = WatermarkStrategy.noWatermarks();
     private final ArcticScanContext.Builder contextBuilder = ArcticScanContext.arcticBuilder();
+    private boolean batchMode = false;
 
     private Builder() {
     }
@@ -143,6 +144,11 @@ public class FlinkSource {
       return this;
     }
 
+    public Builder batchMode(boolean batchMode) {
+      this.batchMode = batchMode;
+      return this;
+    }
+
     public DataStream<RowData> build() {
       Preconditions.checkNotNull(env, "StreamExecutionEnvironment should not be null");
       loadTableIfNeeded();
@@ -167,8 +173,11 @@ public class FlinkSource {
           rowType = toRowType(filterWatermark(projectedSchema));
         }
       }
-      contextBuilder.fromProperties(properties);
-      ArcticScanContext scanContext = contextBuilder.build();
+      ArcticScanContext scanContext =
+          contextBuilder
+              .fromProperties(properties)
+              .batchMode(batchMode)
+              .build();
 
       RowDataReaderFunction rowDataReaderFunction = new RowDataReaderFunction(
           flinkConf,
