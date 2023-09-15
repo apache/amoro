@@ -118,7 +118,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
       }
 
       if (sparkconf.contains("spark.sql.session.timeZone")) {
-        TimeZone.setDefault(TimeZone.getTimeZone(sparkconf.get("spark.sql.session.timeZone")));
+        sparkconf.set("spark.sql.datetime.java8API.enabled", "true");
       }
 
       context = SparkSession
