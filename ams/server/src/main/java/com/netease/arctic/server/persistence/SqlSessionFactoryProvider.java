@@ -133,10 +133,19 @@ public class SqlSessionFactoryProvider {
             "SELECT 1 FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'",
             connection.getCatalog(), "CATALOG_METADATA");
       } else if (ArcticManagementConf.DB_TYPE_POSTGRES.equals(dbTypeConfig)) {
-        query = "SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = " +
-            "'catalog_metadata'";
+        try (ResultSet rs = statement.executeQuery("SELECT current_schema()")) {
+          String currentSchema = "public";
+          if (!rs.next()) {
+            currentSchema = rs.getString("current_schema");
+          }
+          query = String.format(
+              "SELECT 1 FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'",
+              currentSchema, "catalog_metadata");
+        } catch (Exception e) {
+          throw new IllegalStateException("Fail to get postgres current_schema", e);
+        }
       }
-      try (ResultSet rs = statement.executeQuery(query);) {
+      try (ResultSet rs = statement.executeQuery(query)) {
         if (!rs.next()) {
           ScriptRunner runner = new ScriptRunner(connection);
           runner.runScript(new InputStreamReader(Files.newInputStream(
