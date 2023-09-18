@@ -31,6 +31,9 @@ public class OptimizingConfig {
   //self-optimizing.target-size
   private long targetSize;
 
+  //self-optimizing.max-task-size-bytes
+  private long maxTaskSize;
+
   //self-optimizing.max-file-count
   private int maxFileCount;
 
@@ -109,6 +112,15 @@ public class OptimizingConfig {
 
   public OptimizingConfig setTargetSize(long targetSize) {
     this.targetSize = targetSize;
+    return this;
+  }
+
+  public long getMaxTaskSize() {
+    return maxTaskSize;
+  }
+
+  public OptimizingConfig setMaxTaskSize(long maxTaskSize) {
+    this.maxTaskSize = maxTaskSize;
     return this;
   }
 
@@ -226,9 +238,9 @@ public class OptimizingConfig {
     OptimizingConfig that = (OptimizingConfig) o;
     return enabled == that.enabled && Double.compare(that.targetQuota, targetQuota) == 0 &&
         maxExecuteRetryCount == that.maxExecuteRetryCount && maxCommitRetryCount == that.maxCommitRetryCount &&
-        targetSize == that.targetSize && maxFileCount == that.maxFileCount && openFileCost == that.openFileCost &&
-        fragmentRatio == that.fragmentRatio && minorLeastFileCount == that.minorLeastFileCount &&
-        minorLeastInterval == that.minorLeastInterval &&
+        targetSize == that.targetSize && maxTaskSize == that.maxTaskSize && maxFileCount == that.maxFileCount &&
+        openFileCost == that.openFileCost && fragmentRatio == that.fragmentRatio &&
+        minorLeastFileCount == that.minorLeastFileCount && minorLeastInterval == that.minorLeastInterval &&
         Double.compare(that.majorDuplicateRatio, majorDuplicateRatio) == 0 &&
         fullTriggerInterval == that.fullTriggerInterval && fullRewriteAllFiles == that.fullRewriteAllFiles &&
         baseHashBucket == that.baseHashBucket && baseRefreshInterval == that.baseRefreshInterval &&
@@ -239,7 +251,8 @@ public class OptimizingConfig {
   @Override
   public int hashCode() {
     return Objects.hashCode(enabled, targetQuota, optimizerGroup, maxExecuteRetryCount, maxCommitRetryCount, targetSize,
-        maxFileCount, openFileCost, fragmentRatio, minorLeastFileCount, minorLeastInterval, majorDuplicateRatio,
+        maxTaskSize, maxFileCount, openFileCost, fragmentRatio, minorLeastFileCount, minorLeastInterval,
+        majorDuplicateRatio,
         fullTriggerInterval, fullRewriteAllFiles, baseHashBucket, baseRefreshInterval, hiveRefreshInterval);
   }
 
@@ -252,6 +265,7 @@ public class OptimizingConfig {
         .add("maxExecuteRetryCount", maxExecuteRetryCount)
         .add("maxCommitRetryCount", maxCommitRetryCount)
         .add("targetSize", targetSize)
+        .add("maxTaskSize", maxTaskSize)
         .add("maxFileCount", maxFileCount)
         .add("openFileCost", openFileCost)
         .add("fragmentRatio", fragmentRatio)
@@ -295,6 +309,10 @@ public class OptimizingConfig {
             properties,
             TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
             TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT))
+        .setMaxTaskSize(CompatiblePropertyUtil.propertyAsLong(
+            properties,
+            TableProperties.SELF_OPTIMIZING_MAX_TASK_SIZE,
+            TableProperties.SELF_OPTIMIZING_MAX_TASK_SIZE_DEFAULT))
         .setTargetQuota(CompatiblePropertyUtil.propertyAsDouble(
             properties,
             TableProperties.SELF_OPTIMIZING_QUOTA,
