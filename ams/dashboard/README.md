@@ -16,22 +16,20 @@
  - limitations under the License.
 -->
 
+This is the Dashboard frontend for Amoro Management Service (AMS).
+
 ## Requirements
 
-- node `16.18.0`
-- yarn `1.22.19`
+- node `16.x`
+- yarn `1.x` (optional)
 
-## Installation
+## Installing Dependencies
 
 In the `ams/dashboard` directory, run `yarn install` or `npm install` to install all the dependencies.
 
-Then you can simply debug the code within fully install, compile and run the project on your native machine:
+## Running Locally
 
-- [Configure your machine to build and run](#building-and-running-the-project)
-
-## Building and running the project
-
-After completing the [installation](#installation) step, you're ready to start the project!
+After completing the [Installing Dependencies](#Installing Dependencies) step, you're ready to start the project!
 
 ### Configure the ams Server to connect to
 
@@ -41,19 +39,17 @@ After completing the [installation](#installation) step, you're ready to start t
 
 ```
 const ENV_HOST = {
-  DEV: 'http://192.168.3.10:1630/', // modify it
+  DEV: 'http://127.0.0.1:1630/', // Change it to the address of your development server
   TEST: '',
   ONLINE: ''
 }
 ```
 
-Then you can run below scripts:
+### Start a development server
 
-### `yarn serve` or `npm run serve`
+In the `ams/dashboard` directory, run `yarn serve` or `npm run serve` to start a development server for the dashboard app at `http://127.0.0.1:8080`.
 
-In the `ams/dashboard` directory, run `yarn serve` or `npm run serve` to start a development server for the dashboard app at `localhost:8080`.
-
-### `yarn build` or `npm run build`
+## Building Project
 
 In the `ams/dashboard` directory, run `yarn build` or `npm run build` to prepare the dashboard for deployment.
 
