@@ -17,6 +17,7 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 | self-optimizing.target-size                         | 134217728（128MB）| self-optimizing 的目标文件大小                                |
 | self-optimizing.max-file-count                      | 10000            | 一次 self-optimizing 最多处理的文件个数                           |               |
 | self-optimizing.max-file-size-bytes                 | 8589934592（8GB） | 一次 self-optimizing 最多处理的文件大小                           |               |
+| self-optimizing.max-task-size-bytes                 | 1073741824（1GB） | self-optimizing task 大小                           |               |
 | self-optimizing.fragment-ratio                      | 8                | fragment 文件大小阈值，实际计算时取倒数与  self-optimizing.target-size 的值相乘                         |
 | self-optimizing.minor.trigger.file-count            | 12               | 触发 minor optimizing 的 fragment 最少文件数量             |
 | self-optimizing.minor.trigger.interval              | 3600000（1小时）  | 触发 minor optimizing 的最长时间间隔                        |
