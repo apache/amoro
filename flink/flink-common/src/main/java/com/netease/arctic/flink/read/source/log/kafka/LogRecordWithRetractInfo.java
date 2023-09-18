@@ -55,7 +55,6 @@ public class LogRecordWithRetractInfo<T> extends ConsumerRecord<byte[], byte[]> 
         consumerRecord.offset(),
         consumerRecord.timestamp(),
         consumerRecord.timestampType(),
-        consumerRecord.checksum(),
         consumerRecord.serializedKeySize(),
         consumerRecord.serializedValueSize(),
         consumerRecord.key(),

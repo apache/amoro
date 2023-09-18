@@ -293,5 +293,18 @@
                 <flink.scala.suffix/>
             </properties>
         </profile>
+        <profile>
+            <id>optimizer.flink1.17</id>
+            <activation>
+                <property>
+                    <name>optimizer.flink</name>
+                    <value>1.17</value>
+                </property>
+            </activation>
+            <properties>
+                <optimizer-flink.version>1.17.1</optimizer-flink.version>
+                <flink.scala.suffix/>
+            </properties>
+        </profile>
     </profiles>
 </project>

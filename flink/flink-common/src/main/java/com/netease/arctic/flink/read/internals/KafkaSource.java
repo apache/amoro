@@ -33,6 +33,7 @@ import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.synchronization.FutureCompletingBlockingQueue;
+import org.apache.flink.connector.kafka.source.KafkaSourceBuilder;
 import org.apache.flink.connector.kafka.source.enumerator.KafkaSourceEnumState;
 import org.apache.flink.connector.kafka.source.enumerator.KafkaSourceEnumStateSerializer;
 import org.apache.flink.connector.kafka.source.enumerator.KafkaSourceEnumerator;
@@ -145,7 +146,7 @@ public class KafkaSource<OUT>
     return new KafkaSourceReader<>(
         elementsQueue,
         new KafkaSourceFetcherManager(
-            elementsQueue, splitReaderSupplier::get, splitFinishedHook),
+            elementsQueue, splitReaderSupplier::get, splitFinishedHook,readerContext.getConfiguration()),
         recordEmitter,
         toConfiguration(props),
         readerContext,

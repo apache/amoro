@@ -27,6 +27,7 @@ import org.apache.kafka.common.utils.Utils;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /**

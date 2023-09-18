@@ -528,7 +528,7 @@ public abstract class AbstractFetcher<T, K> {
               kafkaTopicPartition.getTopic() +
                   '-' +
                   kafkaTopicPartition.getPartition();
-          watermarkOutputMultiplexer.registerNewOutput(partitionId);
+          watermarkOutputMultiplexer.registerNewOutput(partitionId, watermark -> {});
           WatermarkOutput immediateOutput =
               watermarkOutputMultiplexer.getImmediateOutput(partitionId);
           WatermarkOutput deferredOutput =

@@ -115,7 +115,8 @@ public class LogKafkaSource extends KafkaSource<RowData> {
 
     return new LogKafkaSourceReader<>(
         elementsQueue,
-        new KafkaSourceFetcherManager(elementsQueue, splitReaderSupplier::get, (ignore) -> {}),
+        new KafkaSourceFetcherManager(elementsQueue, splitReaderSupplier::get, (ignore) -> {},
+                readerContext.getConfiguration()),
         recordEmitter,
         toConfiguration(props),
         readerContext,

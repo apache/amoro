@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink.read.internals;
 
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.SourceReaderBase;
 import org.apache.flink.connector.base.source.reader.fetcher.SingleThreadFetcherManager;
@@ -63,8 +64,9 @@ public class KafkaSourceFetcherManager
       elementsQueue,
       Supplier<SplitReader<ConsumerRecord<byte[], byte[]>, KafkaPartitionSplit>>
       splitReaderSupplier,
-      Consumer<Collection<String>> splitFinishedHook) {
-    super(elementsQueue, splitReaderSupplier, splitFinishedHook);
+      Consumer<Collection<String>> splitFinishedHook,
+      Configuration configuration) {
+    super(elementsQueue, splitReaderSupplier, configuration, splitFinishedHook);
   }
 
   public void commitOffsets(
