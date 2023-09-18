@@ -58,6 +58,7 @@ import org.apache.iceberg.UpdateLocation;
 import org.apache.iceberg.UpdatePartitionSpec;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
+import org.apache.iceberg.UpdateStatistics;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.util.StructLikeMap;
@@ -316,5 +317,10 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public UpdatePartitionProperties updatePartitionProperties(Transaction transaction) {
     return new PartitionPropertiesUpdate(this, transaction);
+  }
+
+  @Override
+  public UpdateStatistics updateStatistics() {
+    return icebergTable.updateStatistics();
   }
 }
