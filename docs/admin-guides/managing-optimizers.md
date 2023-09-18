@@ -90,6 +90,12 @@ The optimizer group supports the following properties:
 | flink-conf.*   | flink | No | N/A | Any configuration for `flink on yarn` mode, like `flink-conf.taskmanager.memory.process.size` or `flink-conf.jobmanager.memory.process.size`. The value in `conf/flink-conf.yaml` will be used if not setted here. You can find more supported property in [Flink Configuration](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/config/)                                                                                                                                                                                                                                     |
 | memory   | local | Yes | N/A | The memory size of the local optimizer Java process.                                                                                                                                                                                                                                                                                                                                                             |
 
+{{< hint info >}}
+To better utilize the resources of Flink Optimizer, it is recommended to add the following configuration to the Flink Optimizer Group:
+* Set `flink-conf.taskmanager.memory.managed.size` to `32mb` as Flink optimizer does not have any computation logic, it does not need to occupy managed memory.
+* Set `flink-conf.taskmanager.memory.netwrok.max` to `32mb` as there is no need for communication between operators in Flink Optimizer.
+{{< /hint >}}
+
 ### Edit optimizer group
 
 You can click the `edit` button on the `Optimizer Groups` page to modify the configuration of the Optimizer group.
@@ -124,8 +130,10 @@ You can submit optimizer in your own Flink task development platform or local Fl
 
 ```shell
 ./bin/flink run-application -t yarn-application \
- -Djobmanager.memory.process.size=1024m \
- -Dtaskmanager.memory.process.size=2048m \
+ -Djobmanager.memory.process.size=1024mb \
+ -Dtaskmanager.memory.process.size=2048mb \
+ -Dtaskmanager.memory.managed.size=32mb \
+ -Dtaskmanager.memory.network.max=32mb \
  -c com.netease.arctic.optimizer.flink.FlinkOptimizer \
  ${ARCTIC_HOME}/plugin/optimize/OptimizeJob.jar \
  -a 127.0.0.1:1261 \
