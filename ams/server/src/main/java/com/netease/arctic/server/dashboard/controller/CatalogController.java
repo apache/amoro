@@ -390,11 +390,11 @@ public class CatalogController {
     if (CONFIG_TYPE_STORAGE.equalsIgnoreCase(confType)) {
       Map<String, String> storageConfig = catalogMeta.getStorageConfigs();
       String key = configKey.replaceAll("-", "\\.");
-      ctx.result(new String(Base64.getDecoder().decode(storageConfig.get(key))));
+      ctx.result(Base64.getDecoder().decode(storageConfig.get(key)));
     } else if (CONFIG_TYPE_AUTH.equalsIgnoreCase(confType)) {
       Map<String, String> storageConfig = catalogMeta.getAuthConfigs();
       String key = configKey.replaceAll("-", "\\.");
-      ctx.result(new String(Base64.getDecoder().decode(storageConfig.get(key))));
+      ctx.result(Base64.getDecoder().decode(storageConfig.get(key)));
     } else {
       throw new RuntimeException("Invalid request for " + confType);
     }

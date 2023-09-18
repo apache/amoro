@@ -67,25 +67,28 @@ public class TestArcticSourceEnumStateSerializer extends TestShuffleSplitAssigne
         Objects.requireNonNull(actual.shuffleSplitRelation()).length);
 
     SplitEnumeratorContext<ArcticSplit> splitEnumeratorContext = new InternalSplitEnumeratorContext(3);
-    ShuffleSplitAssigner actualAssigner = new ShuffleSplitAssigner(splitEnumeratorContext,
-        actual.pendingSplits(), actual.shuffleSplitRelation());
+    try (ShuffleSplitAssigner actualAssigner =
+             new ShuffleSplitAssigner(
+                 splitEnumeratorContext,
+                 getArcticTable().name(),
+                 actual)) {
+      List<ArcticSplit> actualSplits = new ArrayList<>();
 
-    List<ArcticSplit> actualSplits = new ArrayList<>();
-
-    int subtaskId = 2;
-    while (subtaskId >= 0) {
-      Split splitOpt = actualAssigner.getNext(subtaskId);
-      if (splitOpt.isAvailable()) {
-        actualSplits.add(splitOpt.split());
-      } else {
-        LOG.info("subtask id {}, splits {}.\n {}", subtaskId, actualSplits.size(), actualSplits);
-        --subtaskId;
+      int subtaskId = 2;
+      while (subtaskId >= 0) {
+        Split splitOpt = actualAssigner.getNext(subtaskId);
+        if (splitOpt.isAvailable()) {
+          actualSplits.add(splitOpt.split());
+        } else {
+          LOG.info("subtask id {}, splits {}.\n {}", subtaskId, actualSplits.size(), actualSplits);
+          --subtaskId;
+        }
       }
+
+      Assert.assertEquals(splitList.size(), actualSplits.size());
+
+      TemporalJoinSplits temporalJoinSplits = actual.temporalJoinSplits();
+      Assert.assertEquals(expect.temporalJoinSplits(), temporalJoinSplits);
     }
-
-    Assert.assertEquals(splitList.size(), actualSplits.size());
-
-    TemporalJoinSplits temporalJoinSplits = actual.temporalJoinSplits();
-    Assert.assertEquals(expect.temporalJoinSplits(), temporalJoinSplits);
   }
 }

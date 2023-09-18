@@ -16,6 +16,7 @@ You can choose to download the stable release package from [download page](../..
 
 - Java 8 is required. Java 17 is required for Trino.
 - Optional: MySQL 5.5 or higher, or MySQL 8
+- Optional: PostgreSQL 14.x or higher
 - Optional: ZooKeeper 3.4.x or higher
 - Optional: Hive (2.x or 3.x)
 - Optional: Hadoop (2.9.x or 3.x)
@@ -110,13 +111,14 @@ make sure the port is not used before configuring it
 
 ### Configure system database
 
-Users can use MySQL as the system database instead of Derby. 
+Users can use MySQL/PostgreSQL as the system database instead of Derby. 
 
-Create an empty database in MySQL, then AMS will automatically create table structures in this MySQL database when it first started.
+Create an empty database in MySQL/PostgreSQL, then AMS will automatically create table structures in this MySQL/PostgreSQL database when it first started.
 
-One thing you need to do is Adding MySQL configuration under `config.yaml` of Ams:
+One thing you need to do is Adding MySQL/PostgreSQL configuration under `config.yaml` of Ams:
 
 ```yaml
+# MySQL
 ams:
   database:
     type: mysql
@@ -124,6 +126,14 @@ ams:
     url: jdbc:mysql://127.0.0.1:3306/amoro?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
     username: root
     password: root
+# PostgreSQL
+#ams:
+#  database:
+#    type: postgres
+#    jdbc-driver-class: org.postgresql.Driver
+#    url: jdbc:postgresql://127.0.0.1:5432/amoro
+#    username: user
+#    password: passwd
 ```
 
 ### Configure high availability

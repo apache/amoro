@@ -170,8 +170,8 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
       GenericRowData rowData = convert(row);
       actualResult.add(rowData);
     });
-    Assert.assertEquals(8, actualResult.size());
-    assertArrayEquals(excepts(), actualResult);
+    RowData[] expected = expectedAfterMOR();
+    assertArrayEquals(expected, actualResult);
   }
 
   @Test
@@ -185,7 +185,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
   }
 
   public void testArcticSource(FailoverType failoverType) throws Exception {
-    List<RowData> expected = new ArrayList<>(exceptsCollection());
+    List<RowData> expected = new ArrayList<>(expectedCollection());
     List<RowData> updated = updateRecords();
     writeUpdate(updated);
     List<RowData> records = generateRecords(2, 1);
@@ -205,8 +205,9 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
             "ArcticParallelSource")
         .setParallelism(PARALLELISM);
 
+    List<RowData> expectedAfterMoR = new ArrayList<>(mor(expected));
     DataStream<RowData> streamFailingInTheMiddleOfReading =
-        RecordCounterToFail.wrapWithFailureAfter(input, expected.size() / 2);
+        RecordCounterToFail.wrapWithFailureAfter(input, expectedAfterMoR.size() / 2);
 
     FlinkSink
         .forRowData(streamFailingInTheMiddleOfReading)
@@ -225,7 +226,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
         RecordCounterToFail::continueProcessing,
         miniClusterResource.getMiniCluster());
 
-    assertRecords(testFailoverTable, expected, Duration.ofMillis(10), 12000);
+    assertRecords(testFailoverTable, expectedAfterMoR, Duration.ofMillis(10), 12000);
   }
 
   @Test(timeout = 60000)
@@ -706,12 +707,12 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
       // TODO a more proper timeout strategy?
       long timeFlies = System.currentTimeMillis() - start;
       if (timeFlies / 1000 >= intervalOneSecond) {
-        LOG.info("time flies: {} ms.", timeFlies);
+        LOG.info("Time flies: {} ms.", timeFlies);
         intervalOneSecond++;
       }
       if (System.currentTimeMillis() - start > timeout) {
         LOG.error(
-            "this task [{}] try to collect records from unbounded stream but timeout {}. As of now, collect result:{}.",
+            "This task [{}] try to collect records from unbounded stream but timeout {}. As of now, collect result:{}.",
             client.client.getJobID().toString(),
             timeout,
             result.toArray());
