@@ -235,7 +235,7 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
         if (!excludes.contains(uriPath) &&
             !excludes.contains(parentUriPath) &&
             p.createdAtMillis() < lastTime) {
-          fio.deleteFile(uriPath);
+          fio.deleteFile(p.location());
           deleteCount += 1;
         }
       }
