@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.calcite;
+package com.netease.arctic.flink.planner.calcite;
 
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -40,7 +40,7 @@ import static org.apache.flink.table.planner.utils.ShortcutUtils.unwrapTypeFacto
 
 /**
  * Custom type system for Flink.
- * <p>Copied from flink-1.18.
+ * <p>Copied from flink-1.18.</p>
  */
 @Internal
 public class FlinkTypeSystem extends RelDataTypeSystemImpl {
