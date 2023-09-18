@@ -43,12 +43,21 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
   }
 
   @Test
-  public void testIncrementalScanFrom() throws IOException {
+  public void testIncrementalScanFromPartitionSequence() throws IOException {
     StructLikeMap<Long> fromSequence = StructLikeMap.create(getArcticTable().spec().partitionType());
     StructLike partitionData = ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
     fromSequence.put(partitionData, 1L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence);
+    try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
+      assertFilesSequence(tasks, 1, 2, 2);
+    }
+  }
+
+  @Test
+  public void testIncrementalScanFromSequence() throws IOException {
+    ChangeTableIncrementalScan changeTableIncrementalScan =
+        getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(1L);
     try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
       assertFilesSequence(tasks, 1, 2, 2);
     }

@@ -76,7 +76,7 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
   @Override
   public ChangeTableIncrementalScan fromSequence(long sequence) {
     MixedChangeTableScan scan = newRefinedScan(table(), schema(), context());
-    scan.fromSequence = fromSequence;
+    scan.fromSequence = sequence;
     return scan;
   }
 
