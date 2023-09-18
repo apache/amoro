@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.metrics;
 
+import com.netease.arctic.ams.api.metrics.MetricParser;
 import com.netease.arctic.ams.api.metrics.MetricsContent;
 import com.netease.arctic.ams.api.metrics.MetricsReporter;
 import org.apache.iceberg.metrics.MetricsReport;
@@ -28,17 +29,18 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class TestMetricsManager {
 
   private MetricsManager manager;
-  private TestAmoroReporter amoroReporter;
+  private TestAmoroMetricsReporterAms amoroReporter;
   private TestIcebergReporter icebergReporter;
 
   @Before
   public void before() {
     this.manager = new MetricsManager();
-    this.amoroReporter = new TestAmoroReporter();
+    this.amoroReporter = new TestAmoroMetricsReporterAms();
     this.icebergReporter = new TestIcebergReporter();
     manager.register("testAmoro", amoroReporter);
     manager.register("testIceberg", icebergReporter);
@@ -62,13 +64,28 @@ public class TestMetricsManager {
     Assert.assertEquals(icebergMetric, icebergReporter.getTestMetrics().get(0));
   }
 
-  private static class TestAmoroReporter implements MetricsReporter {
+  private static class TestAmoroMetricsReporterAms implements MetricsReporter<MetricsContent> {
 
     private final List<MetricsContent> testMetrics = new ArrayList<>();
 
     @Override
+    public MetricParser<MetricsContent> parser() {
+      return null;
+    }
+
+    @Override
+    public void open(Map<String, String> properties) {
+
+    }
+
+    @Override
     public void report(MetricsContent metricsContent) {
       this.testMetrics.add(metricsContent);
+    }
+
+    @Override
+    public void close() {
+
     }
 
     public List<MetricsContent> getTestMetrics() {
@@ -76,13 +93,28 @@ public class TestMetricsManager {
     }
   }
 
-  private static class TestIcebergReporter implements org.apache.iceberg.metrics.MetricsReporter {
+  private static class TestIcebergReporter implements MetricsReporter<MetricsReport> {
 
     private final List<MetricsReport> testMetrics = new ArrayList<>();
 
     @Override
+    public MetricParser<MetricsReport> parser() {
+      return null;
+    }
+
+    @Override
+    public void open(Map<String, String> properties) {
+
+    }
+
+    @Override
     public void report(MetricsReport report) {
       this.testMetrics.add(report);
+    }
+
+    @Override
+    public void close() {
+
     }
 
     public List<MetricsReport> getTestMetrics() {

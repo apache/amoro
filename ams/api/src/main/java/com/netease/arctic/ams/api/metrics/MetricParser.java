@@ -18,31 +18,6 @@
 
 package com.netease.arctic.ams.api.metrics;
 
-import java.util.Map;
-
-public interface MetricsReporter<T> {
-
-  MetricParser<T> parser();
-
-  /**
-   * A custom MetricsReporter implementation must have a no-arg constructor, which will be called
-   * first. {@link MetricsReporter#open(Map properties)} is called to complete the
-   * initialization.
-   *
-   * @param properties properties
-   */
-  void open(Map<String, String> properties);
-
-  /**
-   * Indicates that an operation is done by reporting a {@link T}. A {@link T} is usually directly derived from a
-   * {@link T} instance.
-   *
-   * @param metrics {@link T} to report.
-   */
-  void report(T metrics);
-
-  /**
-   * {@link MetricsReporter#close()} will be called when the reporter is deleted or closed..
-   */
-  void close();
+public interface MetricParser<T> {
+  T parse(Object metrics);
 }

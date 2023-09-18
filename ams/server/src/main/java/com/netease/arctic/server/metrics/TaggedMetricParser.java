@@ -16,33 +16,22 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.metrics;
+package com.netease.arctic.server.metrics;
 
-import java.util.Map;
+import com.netease.arctic.ams.api.metrics.MetricParser;
+import com.netease.arctic.ams.api.metrics.MetricsContent;
+import com.netease.arctic.ams.api.metrics.TaggedMetrics;
+import org.apache.iceberg.metrics.MetricsReport;
 
-public interface MetricsReporter<T> {
+public class TaggedMetricParser implements MetricParser<TaggedMetrics> {
 
-  MetricParser<T> parser();
+  @Override
+  public TaggedMetrics parse(Object metrics) {
+    if (metrics instanceof MetricsContent) {
+      return TaggedMetrics.from((MetricsContent) metrics);
+    }
+    throw new UnsupportedOperationException(String.format("%s %s %s", "not support parse",
+        metrics.getClass().getName(), "to TaggedMetrics"));
+  }
 
-  /**
-   * A custom MetricsReporter implementation must have a no-arg constructor, which will be called
-   * first. {@link MetricsReporter#open(Map properties)} is called to complete the
-   * initialization.
-   *
-   * @param properties properties
-   */
-  void open(Map<String, String> properties);
-
-  /**
-   * Indicates that an operation is done by reporting a {@link T}. A {@link T} is usually directly derived from a
-   * {@link T} instance.
-   *
-   * @param metrics {@link T} to report.
-   */
-  void report(T metrics);
-
-  /**
-   * {@link MetricsReporter#close()} will be called when the reporter is deleted or closed..
-   */
-  void close();
 }
