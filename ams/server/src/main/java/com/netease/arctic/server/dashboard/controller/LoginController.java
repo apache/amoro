@@ -27,8 +27,7 @@ import io.javalin.http.Context;
 import java.io.Serializable;
 
 /**
- * login controller.
-
+ * The controller that handles login requests.
  */
 public class LoginController {
 
@@ -41,7 +40,7 @@ public class LoginController {
   }
 
   /**
-   * getRuntime current user.
+   * Get current user.
    */
   public void getCurrent(Context ctx) {
     SessionInfo user = ctx.sessionAttribute("user");

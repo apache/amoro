@@ -57,7 +57,7 @@ public class TestUnkeyedTableFileScanHelper extends TableFileScanHelperTestBase 
 
   @Test
   public void testScanEmpty() {
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
     assertScanResult(scan, 0);
   }
 
@@ -66,7 +66,7 @@ public class TestUnkeyedTableFileScanHelper extends TableFileScanHelperTestBase 
     OptimizingTestHelpers.appendBase(getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), 0L, Collections.emptyList(), false));
 
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
     assertScanResult(scan, 0);
   }
 
@@ -83,7 +83,7 @@ public class TestUnkeyedTableFileScanHelper extends TableFileScanHelperTestBase 
     OptimizingTestHelpers.appendBase(getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), 0L, newRecords, false));
 
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
 
     if (isPartitionedTable()) {
       assertScanResult(scan, 4, null, 0);
@@ -92,13 +92,9 @@ public class TestUnkeyedTableFileScanHelper extends TableFileScanHelperTestBase 
     }
 
     // test partition filter
-    scan = buildFileScanHelper().withPartitionFilter(
-        partition -> getPartition().equals(partition)).scan();
-    if (isPartitionedTable()) {
-      assertScanResult(scan, 2, null, 0);
-    } else {
-      assertScanResult(scan, 2, null, 0);
-    }
+    scan = scanFiles(buildFileScanHelper().withPartitionFilter(
+        partition -> getPartition().equals(partition)));
+    assertScanResult(scan, 2, null, 0);
   }
 
   @Test
@@ -119,7 +115,7 @@ public class TestUnkeyedTableFileScanHelper extends TableFileScanHelperTestBase 
     }
     OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
 
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
 
     assertScanResult(scan, 1, null, 1);
   }

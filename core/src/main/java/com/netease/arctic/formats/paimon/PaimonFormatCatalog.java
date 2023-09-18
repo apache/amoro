@@ -22,6 +22,7 @@ import com.netease.arctic.FormatCatalog;
 import com.netease.arctic.FormatCatalogFactory;
 import com.netease.arctic.ams.api.TableFormat;
 import org.apache.hadoop.conf.Configuration;
+
 import java.util.Map;
 
 public class PaimonFormatCatalog implements FormatCatalogFactory {
