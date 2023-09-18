@@ -322,12 +322,26 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
       LOG.info("projectFields is null.");
       projectedSchema = arcticTable.schema();
     } else {
+      if (arcticTable.isUnkeyedTable()) {
+        throw new UnsupportedOperationException(
+            "Unkeyed table doesn't support lookup join.");
+      }
+      List<String> primaryKeys = arcticTable.asKeyedTable().primaryKeySpec().fieldNames();
+      List<Integer> projectFieldList = Arrays.stream(projectFields).boxed().collect(Collectors.toList());
+      List<Types.NestedField> columns = arcticTableSchema.columns();
+      for (int i = 0; i < arcticTableSchema.columns().size(); i++) {
+        if (primaryKeys.contains(columns.get(i).name()) && !projectFieldList.contains(i)) {
+          projectFieldList.add(i);
+          LOG.info(
+              "add identifier field [{}] to projected schema, due to this field is mismatched.",
+              columns.get(i).name());
+        }
+      }
+
       List<String> projectedFieldNames =
-          Arrays
-              .stream(projectFields)
-              .mapToObj(
-                  index ->
-                      arcticTable.schema().columns().get(index).name())
+          projectFieldList
+              .stream()
+              .map(index -> columns.get(index).name())
               .collect(Collectors.toList());
       projectedSchema = SchemaUtil.selectInOrder(arcticTableSchema, projectedFieldNames);
       LOG.info(
