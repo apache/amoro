@@ -24,10 +24,13 @@ import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
+import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.LocationKind;
+import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableProperties;
 import io.trino.sql.query.QueryAssertions;
 import io.trino.testing.QueryRunner;
 import org.apache.iceberg.AppendFiles;
@@ -79,7 +82,41 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
   private final String TEST_UN_PARTITION_HIVE_PK_TABLE_FULL_NAME_BASE =
       "arctic." + UN_PARTITION_HIVE_PK_TABLE_ID.getDatabase() + "." + "\"" + UN_PARTITION_HIVE_PK_TABLE_ID.getTableName() + "#base\"";
 
+  private static final TableIdentifier HIVE_PK_TABLE_ORC_ID =
+      TableIdentifier.of(TEST_CATALOG_NAME, HIVE_DB_NAME, "test_pk_hive_table_orc");
+
+  private static final TableIdentifier HIVE_PK_TABLE_PARQUET_ID =
+      TableIdentifier.of(TEST_CATALOG_NAME, HIVE_DB_NAME, "test_pk_hive_table_parquet");
+
+  private final String TEST_HIVE_PK_TABLE_ORC_FULL_NAME =
+      "arctic." + HIVE_PK_TABLE_ID.getDatabase() + "." + HIVE_PK_TABLE_ORC_ID.getTableName();
+
+  private final String TEST_HIVE_PK_TABLE_PARQUET_FULL_NAME =
+      "arctic." + HIVE_PK_TABLE_ID.getDatabase() + "." + HIVE_PK_TABLE_PARQUET_ID.getTableName();
+
+  private KeyedHiveTable testKeyedHiveTableOrc;
+  private KeyedHiveTable testKeyedHiveTableParquet;
+
   private long txid = 1;
+
+  @Override
+  protected void setupTables() throws Exception {
+    super.setupTables();
+    //added for test parquet and orc metrics
+    testKeyedHiveTableOrc = (KeyedHiveTable) hiveCatalog
+        .newTableBuilder(HIVE_PK_TABLE_ORC_ID, HIVE_TABLE_SCHEMA)
+        .withProperty(TableProperties.LOCATION, warehousePath() + "/pk_table_orc")
+        .withPartitionSpec(HIVE_SPEC)
+        .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+        .create().asKeyedTable();
+
+    testKeyedHiveTableParquet = (KeyedHiveTable) hiveCatalog
+        .newTableBuilder(HIVE_PK_TABLE_PARQUET_ID, HIVE_TABLE_SCHEMA)
+        .withProperty(TableProperties.LOCATION, warehousePath() + "/pk_table_parquet")
+        .withPartitionSpec(HIVE_SPEC)
+        .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+        .create().asKeyedTable();
+  }
 
   @Override
   protected QueryRunner createQueryRunner() throws Exception {
@@ -109,7 +146,21 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
     write(testUnPartitionKeyedHiveTable, ChangeLocationKind.INSTANT, HiveTestRecords.changeInsertRecords());
     write(testUnPartitionKeyedHiveTable, BaseLocationKind.INSTANT, HiveTestRecords.baseRecords());
     write(testUnPartitionKeyedHiveTable, HiveLocationKind.INSTANT, HiveTestRecords.hiveRecords());
-    write(testUnPartitionKeyedHiveTable, ChangeLocationKind.INSTANT, HiveTestRecords.changeDeleteRecords(), ChangeAction.DELETE);
+    write(testUnPartitionKeyedHiveTable, ChangeLocationKind.INSTANT, HiveTestRecords.changeDeleteRecords(),
+        ChangeAction.DELETE);
+
+    write(testKeyedHiveTableOrc, ChangeLocationKind.INSTANT, HiveTestRecords.changeInsertRecords(), FileFormat.ORC);
+    write(testKeyedHiveTableOrc, BaseLocationKind.INSTANT, HiveTestRecords.baseRecords(), FileFormat.ORC);
+    write(testKeyedHiveTableOrc, HiveLocationKind.INSTANT, HiveTestRecords.hiveRecords(), FileFormat.ORC);
+    write(testKeyedHiveTableOrc, ChangeLocationKind.INSTANT, HiveTestRecords.changeDeleteRecords(),
+        ChangeAction.DELETE, FileFormat.ORC);
+
+    write(testKeyedHiveTableParquet, ChangeLocationKind.INSTANT, HiveTestRecords.changeInsertRecords(),
+        FileFormat.PARQUET);
+    write(testKeyedHiveTableParquet, BaseLocationKind.INSTANT, HiveTestRecords.baseRecords(), FileFormat.PARQUET);
+    write(testKeyedHiveTableParquet, HiveLocationKind.INSTANT, HiveTestRecords.hiveRecords(), FileFormat.PARQUET);
+    write(testKeyedHiveTableParquet, ChangeLocationKind.INSTANT, HiveTestRecords.changeDeleteRecords(),
+        ChangeAction.DELETE, FileFormat.PARQUET);
   }
 
   @Test
@@ -149,8 +200,8 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
   }
 
   @Test
-  public void testStats() {
-    assertThat(query("SHOW STATS FOR " + TEST_HIVE_PK_TABLE_FULL_NAME))
+  public void testParquetStats() {
+    assertThat(query("SHOW STATS FOR " + TEST_HIVE_PK_TABLE_PARQUET_FULL_NAME))
         .skippingTypesCheck()
         .matches("VALUES " +
             "('id', NULL, NULL, 0e0, NULL, '1', '6'), " +
@@ -161,6 +212,24 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
             "('array_name', NULL, NULL, NULL, NULL, NULL, NULL), " +
             "('struct_name', NULL, NULL, NULL, NULL, NULL, NULL), " +
             "('name', 618e0, NULL, 0e0, NULL, NULL, NULL), " +
+            "(NULL, NULL, NULL, NULL, 9e0, NULL, NULL)");
+  }
+
+  @Test
+  public void testOrcStats() {
+    assertThat(query("SHOW STATS FOR " + TEST_HIVE_PK_TABLE_ORC_FULL_NAME))
+        .skippingTypesCheck()
+        .matches("VALUES " +
+            "('id', NULL, NULL, 0e0, NULL, '1', '6'), " +
+            "('op_time', NULL, NULL, 0e0, NULL, '2022-01-01 12:00:00.000000',"
+            + " '2022-01-04 12:00:00.000000'), " +
+            "('op_time_with_zone', NULL, NULL, 0e0, NULL, "
+            + "'2022-01-01 12:00:00.000 UTC', '2022-01-04 12:00:00.000 UTC'), " +
+            "('d$d', NULL, NULL, 0e0, NULL, '100.0', '105.0'), " +
+            "('map_name', 27e0, NULL, 0e0, NULL, NULL, NULL), " +
+            "('array_name', 27e0, NULL, 0e0, NULL, NULL, NULL), " +
+            "('struct_name', 0e0, NULL, 0e0, NULL, NULL, NULL), " +
+            "('name', 156e0, NULL, 0e0, NULL, NULL, NULL), " +
             "(NULL, NULL, NULL, NULL, 9e0, NULL, NULL)");
   }
 
@@ -182,12 +251,29 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
 
   private void write(ArcticTable table, LocationKind locationKind, List<Record> records) throws
       IOException {
-    write(table, locationKind, records, ChangeAction.INSERT);
+    write(table, locationKind, records, ChangeAction.INSERT, null);
   }
 
   private void write(ArcticTable table, LocationKind locationKind, List<Record> records,
-      ChangeAction changeAction) throws IOException {
-    List<TaskWriter<Record>> writers = genWriters(table,locationKind, changeAction, FileFormat.PARQUET, FileFormat.ORC);
+      ChangeAction changeAction) throws
+      IOException {
+    write(table, locationKind, records, changeAction, null);
+  }
+
+  private void write(ArcticTable table, LocationKind locationKind, List<Record> records, FileFormat fileFormat) throws
+      IOException {
+    write(table, locationKind, records, ChangeAction.INSERT, fileFormat);
+  }
+
+  private void write(ArcticTable table, LocationKind locationKind, List<Record> records,
+      ChangeAction changeAction, FileFormat fileFormat) throws IOException {
+    List<TaskWriter<Record>> writers;
+    if (fileFormat == null) {
+      writers = genWriters(table, locationKind, changeAction, FileFormat.PARQUET, FileFormat.ORC);
+    } else {
+      writers = genWriters(table,locationKind, changeAction, fileFormat);
+    }
+
     for (int i = 0; i < records.size(); i++) {
       writers.get(i % writers.size()).write(records.get(i));
     }
