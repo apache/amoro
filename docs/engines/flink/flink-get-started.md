@@ -66,7 +66,7 @@ tar -zxvf flink-${FLINK_VERSION}-bin-scala_2.12.tgz
 cd flink-${FLINK_VERSION}
 # Download Flink Hadoop dependency
 wget ${FLINK_CONNECTOR_URL}/flink-shaded-hadoop-2-uber/${HADOOP_VERSION}-10.0/flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar
-# Download Flink Aoro Connector
+# Download Flink Amoro Connector
 wget ${AMORO_CONNECTOR_URL}/amoro-flink-runtime-${FLINK_MAJOR_VERSION}/${AMORO_VERSION}/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
 
 # Copy the necessary JAR files to the lib directory
