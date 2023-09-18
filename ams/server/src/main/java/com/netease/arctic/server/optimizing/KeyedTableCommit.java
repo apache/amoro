@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
+import static com.netease.arctic.hive.op.UpdateHiveFiles.SYNC_DATA_TO_HIVE;
 import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
 
 public class KeyedTableCommit extends UnKeyedTableCommit {
@@ -141,6 +142,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
     removedDataFiles.forEach(overwriteBaseFiles::deleteFile);
     if (TableTypeUtil.isHive(table) && !needMoveFile2Hive()) {
       overwriteBaseFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
+      overwriteBaseFiles.set(SYNC_DATA_TO_HIVE, "true");
     }
     overwriteBaseFiles.skipEmptyCommit().commit();
 

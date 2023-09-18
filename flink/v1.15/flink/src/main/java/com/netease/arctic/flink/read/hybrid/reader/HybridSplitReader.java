@@ -20,6 +20,7 @@ package com.netease.arctic.flink.read.hybrid.reader;
 
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ChangelogSplit;
+import com.netease.arctic.flink.read.hybrid.split.MergeOnReadSplit;
 import com.netease.arctic.flink.read.hybrid.split.SnapshotSplit;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.connector.base.source.reader.RecordsBySplits;
@@ -91,7 +92,9 @@ public class HybridSplitReader<T> implements SplitReader<ArcticRecordWithOffset<
     LOG.info("Handling a split change {}.", splitsChange);
 
     splitsChange.splits().forEach(arcticSplit -> {
-      if (arcticSplit instanceof SnapshotSplit || arcticSplit instanceof ChangelogSplit) {
+      if (arcticSplit instanceof SnapshotSplit ||
+          arcticSplit instanceof ChangelogSplit ||
+          arcticSplit instanceof MergeOnReadSplit) {
         splits.add(arcticSplit);
       } else {
         throw new IllegalArgumentException(

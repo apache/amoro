@@ -61,6 +61,9 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
 
   @Override
   public void close() throws IOException {
+    if (loader != null) {
+      loader.close();
+    }
   }
 
   @Override
@@ -109,6 +112,9 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
 
   protected ContinuousEnumerationResult discoverInitialSplits(List<Expression> filters) {
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
+    // todo ShuffleSplitAssigner doesn't support MergeOnReadSplit right now,
+    //  because it doesn't implement the dataTreeNode() method
+    //  fix AMORO-1950 in the future.
     List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(table, filters, splitCount);
 
     long changeStartSnapshotId = changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;

@@ -64,6 +64,11 @@
             <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
+            <directory>../ams/server/src/main/resources/postgres</directory>
+            <outputDirectory>conf/postgres</outputDirectory>
+            <fileMode>0644</fileMode>
+        </fileSet>
+        <fileSet>
             <directory>../ams/server/src/main/resources/derby</directory>
             <outputDirectory>conf/derby</outputDirectory>
             <fileMode>0644</fileMode>

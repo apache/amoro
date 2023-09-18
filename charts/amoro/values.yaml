@@ -1,0 +1,161 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+image:
+  repository: arctic163/ams
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: [ ]
+#nameOverride: ""
+#fullnameOverride: ""
+
+# Role-based access control
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+  # RBAC rules
+  rules:
+    - apiGroups: [ "" ]
+      resources: [ "pods" ]
+      verbs: [ "create", "list", "delete" ]
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: { }
+  # Specifies ServiceAccount name to be used (created if `create: true`)
+  name: ~
+
+server:
+  # AMS REST Service
+  rest:
+    enabled: true
+    port: 1630
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.rest.port }}"
+      nodePort: ~
+      annotations: { }
+  # AMS Thrift Server For table services
+  table:
+    enabled: true
+    port: 1260
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.table.port }}"
+      nodePort: ~
+      annotations: { }
+  # AMS Thrift Server For optimizing services
+  optimizing:
+    enabled: true
+    port: 1261
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.optimizing.port }}"
+      nodePort: ~
+      annotations: { }
+
+# amoro Base Dir
+amoroDir: "/usr/local/ams"
+# AMS configurations files
+amoroConf:
+  # ams config.sh set env
+  amoroEnv: ~
+#  amoroEnv: |
+#    XMX_CONFIG="8196"
+#    XMS_CONFIG="8196"
+#    JMX_REMOTE_PORT_CONFIG=""
+#    JVM_EXTRA_CONFIG="-XX:NewRatio=1 -XX:SurvivorRatio=3"
+#    LANG_CONFIG="en_US.UTF-8"
+  # ams database properties,default is derby. If production,suggest use mysql
+  database:
+    type: derby
+    driver: org.apache.derby.jdbc.EmbeddedDriver
+    url: jdbc:derby:/tmp/amoro/derby;create=true
+  #    type: mysql
+  #    jdbc-driver-class: com.mysql.cj.jdbc.Driver
+  #    url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
+  #    username: admin
+  #    password: admin
+
+  # The value (templated string) is used for conf.yaml file
+  # See https://github.com/NetEase/amoro/blob/master/dist/src/main/arctic-bin/conf/config.yaml for more details
+  #
+  amoroDefaults: ~
+
+  # The value (templated string) is used for conf/log4j2.xml file
+  # See example at conf/log4j2.xml.template https://github.com/NetEase/amoro/blob/master/dist/src/main/arctic-bin/conf/log4j2.xml for more details
+  log4j2: ~
+
+# Command to launch AMS server (templated)
+command: ~
+# Arguments to launch AMS server (templated)
+args: ~
+
+# Environment variables (templated)
+env: [ ]
+# Environment variables from ConfigMaps and Secrets (templated)
+envFrom: [ ]
+
+# Additional volumes for AMS pod (templated)
+volumes: [ ]
+# Additional volumeMounts for AMS container (templated)
+volumeMounts: [ ]
+
+# Additional init containers for AMS pod (templated)
+initContainers: [ ]
+# Additional containers for AMS pod (templated)
+containers: [ ]
+
+# Liveness probe
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 40
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 10
+  successThreshold: 1
+
+# Readiness probe
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 10
+  successThreshold: 1
+
+# Resource requests and limits for Amoro pods
+resources: { }
+#  resources:
+#    requests:
+#      cpu: 2
+#      memory: 4Gi
+#    limits:
+#      cpu: 4
+#      memory: 10Gi
+
+# Constrain Amoro pods to nodes with specific node labels
+nodeSelector: { }
+# Allow to schedule Amoro pods on nodes with matching taints
+tolerations: [ ]
+# Constrain Amoro pods to nodes by complex affinity/anti-affinity rules
+affinity: { }
+# Amoro pods security context
+securityContext: { }
