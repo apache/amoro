@@ -88,13 +88,12 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
         }
       }
 
-      Long fromSequence = null;
       if (fromChangeSnapshotId != Long.MIN_VALUE) {
         Snapshot snapshot = table.changeTable().snapshot(fromChangeSnapshotId);
-        fromSequence = snapshot.sequenceNumber();
+        changeTableScan = changeTableScan.fromSequence(snapshot.sequenceNumber());
       }
 
-      List<ArcticSplit> arcticChangeSplit = planChangeTable(changeTableScan, fromSequence, splitCount);
+      List<ArcticSplit> arcticChangeSplit = planChangeTable(changeTableScan, splitCount);
       return new ContinuousEnumerationResult(
           arcticChangeSplit,
           lastPosition,

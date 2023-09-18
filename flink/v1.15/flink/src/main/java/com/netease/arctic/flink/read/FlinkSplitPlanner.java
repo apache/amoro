@@ -128,11 +128,8 @@ public class FlinkSplitPlanner {
     return morSplits;
   }
 
-  public static List<ArcticSplit> planChangeTable(ChangeTableIncrementalScan tableIncrementalScan, Long fromSequence,
+  public static List<ArcticSplit> planChangeTable(ChangeTableIncrementalScan tableIncrementalScan,
       AtomicInteger splitCount) {
-    if (fromSequence != null) {
-      tableIncrementalScan = tableIncrementalScan.fromSequence(fromSequence);
-    }
     CloseableIterable<FileScanTask> tasks = tableIncrementalScan.planFiles();
     BaseAndChangeTask baseAndChangeTask = BaseAndChangeTask.ofIceberg(tasks);
     return planChangeTable(baseAndChangeTask.transactionTasks(), splitCount);
