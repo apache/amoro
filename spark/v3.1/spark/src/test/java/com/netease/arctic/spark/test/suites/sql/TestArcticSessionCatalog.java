@@ -115,6 +115,11 @@ public class TestArcticSessionCatalog extends SparkTableTestBase {
       RecordGenerator.newRecord(schema, 6, "666", "EEE")
   );
 
+  List<Record> change = Lists.newArrayList(
+      RecordGenerator.newRecord(schema, 7, "555", "EEE"),
+      RecordGenerator.newRecord(schema, 8, "666", "EEE")
+  );
+
   public static Stream<Arguments> testCreateTableAsSelect() {
     return Stream.of(
         Arguments.arguments("arctic", true, "", true),
@@ -157,6 +162,7 @@ public class TestArcticSessionCatalog extends SparkTableTestBase {
     Table hiveTable = loadHiveTable();
     Assertions.assertNotNull(hiveTable);
   }
+
 
 
   @Test

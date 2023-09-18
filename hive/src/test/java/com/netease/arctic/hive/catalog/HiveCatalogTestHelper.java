@@ -45,8 +45,10 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
   }
 
   public HiveCatalogTestHelper(TableFormat tableFormat, Configuration hiveConf) {
-    Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG) ||
-        tableFormat.equals(TableFormat.MIXED_HIVE), "Cannot support table format:" + tableFormat);
+    Preconditions.checkArgument(
+        tableFormat.equals(TableFormat.ICEBERG) ||
+            tableFormat.equals(TableFormat.MIXED_HIVE) || tableFormat.equals(TableFormat.MIXED_ICEBERG),
+        "Cannot support table format:" + tableFormat);
     this.tableFormat = tableFormat;
     this.hiveConf = hiveConf;
   }
@@ -64,6 +66,9 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
   @Override
   public CatalogMeta buildCatalogMeta(String baseDir) {
     Map<String, String> properties = Maps.newHashMap();
+    if (TableFormat.MIXED_ICEBERG == tableFormat) {
+      properties.put("uri", hiveConf.get("hive.metastore.uris"));
+    }
     return CatalogTestHelpers.buildHiveCatalogMeta(TEST_CATALOG_NAME,
         properties, hiveConf, tableFormat);
   }
