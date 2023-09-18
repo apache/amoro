@@ -252,8 +252,8 @@ public class OptimizingConfig {
   public int hashCode() {
     return Objects.hashCode(enabled, targetQuota, optimizerGroup, maxExecuteRetryCount, maxCommitRetryCount, targetSize,
         maxTaskSize, maxFileCount, openFileCost, fragmentRatio, minorLeastFileCount, minorLeastInterval,
-        majorDuplicateRatio,
-        fullTriggerInterval, fullRewriteAllFiles, baseHashBucket, baseRefreshInterval, hiveRefreshInterval);
+        majorDuplicateRatio, fullTriggerInterval, fullRewriteAllFiles, baseHashBucket, baseRefreshInterval,
+        hiveRefreshInterval);
   }
 
   @Override
