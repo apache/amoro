@@ -57,8 +57,7 @@ The supported parameters for bounded reads of non-primary-key tables in BaseStor
 
 ### Batch mode (primary key table)
 ```sql
--- Read the current full amount and possibly unmerged ChangeStore data
--- TODO: In the future, bounded full amount data will be read using the MOR method.
+-- Merge on Read the current mixed-format table and return append-only data.
 SELECT * FROM keyed /*+ OPTIONS('streaming'='false', 'scan.startup.mode'='earliest')*/;
 ```
 

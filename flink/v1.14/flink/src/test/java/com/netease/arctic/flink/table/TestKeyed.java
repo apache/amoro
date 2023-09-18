@@ -113,30 +113,30 @@ public class TestKeyed extends FlinkTestBase {
   public static Collection parameters() {
     return Arrays.asList(
         new Object[][]{
-          {
-            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new HiveTableTestHelper(true, true),
-            true,
-            true
-          },
-          {
-            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new HiveTableTestHelper(true, true),
-            true,
-            false
-          },
-          {
-            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, true),
-            false,
-            true
-          },
-          {
-            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, true),
-            false,
-            false
-          }
+            {
+                new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+                new HiveTableTestHelper(true, true),
+                true,
+                true
+            },
+            {
+                new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+                new HiveTableTestHelper(true, true),
+                true,
+                false
+            },
+            {
+                new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+                new BasicTableTestHelper(true, true),
+                false,
+                true
+            },
+            {
+                new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+                new BasicTableTestHelper(true, true),
+                false,
+                false
+            }
         });
   }
 
@@ -239,9 +239,7 @@ public class TestKeyed extends FlinkTestBase {
     List<Object[]> expected = new LinkedList<>();
     expected.add(new Object[]{RowKind.INSERT, 1000004, LocalDateTime.parse("2022-06-17T10:10:11.0"),
         LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
-    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, LocalDateTime.parse("2022-06-17T10:11:11.0"),
-        LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
-    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, LocalDateTime.parse("2022-06-17T10:11:11.0"),
+    expected.add(new Object[]{RowKind.INSERT, 1000021, LocalDateTime.parse("2022-06-17T10:11:11.0"),
         LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
     expected.add(new Object[]{RowKind.INSERT, 1000015, LocalDateTime.parse("2022-06-17T10:10:11.0"),
         LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
@@ -457,28 +455,28 @@ public class TestKeyed extends FlinkTestBase {
     List<ApiExpression> rows = DataUtil.toRows(data);
 
     Table input = getTableEnv().fromValues(DataTypes.ROW(
-        DataTypes.FIELD("id", DataTypes.INT()),
-        DataTypes.FIELD("name", DataTypes.STRING()),
-        DataTypes.FIELD("op_time", DataTypes.TIMESTAMP())
-      ),
-      rows
+            DataTypes.FIELD("id", DataTypes.INT()),
+            DataTypes.FIELD("name", DataTypes.STRING()),
+            DataTypes.FIELD("op_time", DataTypes.TIMESTAMP())
+        ),
+        rows
     );
     getTableEnv().createTemporaryView("input", input);
 
     sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
 
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
-      " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
-      ") WITH ('connector' = 'arctic')");
+        " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
+        ") WITH ('connector' = 'arctic')");
 
     sql("insert into arcticCatalog." + db + "." + TABLE +
-      "/*+ OPTIONS(" +
-      "'arctic.emit.mode'='file'" +
-      ")*/" + " select * from input");
+        "/*+ OPTIONS(" +
+        "'arctic.emit.mode'='file'" +
+        ")*/" + " select * from input");
 
     TableResult result = exec("select name, op_time from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
-      "'streaming'='false'" +
-      ") */");
+        "'streaming'='false'" +
+        ") */");
     LinkedList<Row> actual = new LinkedList<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
       while (iterator.hasNext()) {
@@ -496,7 +494,7 @@ public class TestKeyed extends FlinkTestBase {
     expected.add(new Object[]{"e", LocalDateTime.parse("2022-06-18T10:10:11.0")});
 
     Assert.assertEquals(DataUtil.toRowSet(expected),
-      new HashSet<>(actual));
+        new HashSet<>(actual));
   }
 
   @Test
@@ -540,19 +538,8 @@ public class TestKeyed extends FlinkTestBase {
 
     List<Object[]> expected = new LinkedList<>();
     expected.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.DELETE, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "d", LocalDateTime.parse("2022-06-17T10:11:11.0")});
-    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
-    expected.add(new Object[]{RowKind.DELETE, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
+    // key = 1000021 locate in two partitions.
     expected.add(new Object[]{RowKind.INSERT, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
-    expected.add(new Object[]{RowKind.DELETE, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.DELETE, 1000021, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.INSERT, 1000021, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "d", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.DELETE, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.DELETE, 1000021, "f", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     expected.add(new Object[]{RowKind.INSERT, 1000021, "f", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     Assert.assertEquals(DataUtil.toRowSet(expected),
         new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
@@ -605,22 +592,13 @@ public class TestKeyed extends FlinkTestBase {
         ")*/" + " select * from input");
 
     List<Object[]> expected = new LinkedList<>();
+    // upsert is disEnabled, key=1000021 locate in two diff partitions.
     expected.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "d", LocalDateTime.parse("2022-06-17T10:11:11.0")});
-    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
     expected.add(new Object[]{RowKind.INSERT, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
-    expected.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.INSERT, 1000021, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "d", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.DELETE, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.INSERT, 1000021, "d", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     expected.add(new Object[]{RowKind.INSERT, 1000021, "f", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.INSERT, 1000031, "g", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.INSERT, 1000032, "h", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.DELETE, 1000031, "g", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000032, "h", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     expected.add(new Object[]{RowKind.INSERT, 1000031, "f", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000032, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.INSERT, 1000032, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     Assert.assertEquals(DataUtil.toRowSet(expected),
         new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
             "'streaming'='false'" +
@@ -672,13 +650,7 @@ public class TestKeyed extends FlinkTestBase {
 
     LinkedList<Object[]> expected = new LinkedList<>();
 
-    expected.add(new Object[]{RowKind.DELETE, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.DELETE, 1000004, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     expected.add(new Object[]{RowKind.INSERT, 1000004, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.DELETE, 1000011, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.INSERT, 1000011, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.DELETE, 1000011, "f", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     expected.add(new Object[]{RowKind.INSERT, 1000011, "f", LocalDateTime.parse("2022-06-17T10:10:11.0")});
 
     Map<Object, List<Row>> actualMap = DataUtil.groupByPrimaryKey(actual, 0);
