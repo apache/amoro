@@ -357,7 +357,7 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
 
     @Override
     protected void doDispose() {
-      if (!Objects.isNull(optimizerMonitorTimer)) {
+      if (Objects.nonNull(optimizerMonitorTimer)) {
         optimizerMonitorTimer.cancel();
       }
     }
