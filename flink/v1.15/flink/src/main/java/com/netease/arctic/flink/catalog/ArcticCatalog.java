@@ -51,26 +51,36 @@ import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.catalog.exceptions.FunctionNotExistException;
 import org.apache.flink.table.catalog.exceptions.TableAlreadyExistException;
 import org.apache.flink.table.catalog.exceptions.TableNotExistException;
+import org.apache.flink.table.catalog.exceptions.TableNotPartitionedException;
 import org.apache.flink.table.catalog.stats.CatalogColumnStatistics;
 import org.apache.flink.table.catalog.stats.CatalogTableStatistics;
 import org.apache.flink.table.expressions.Expression;
 import org.apache.flink.table.factories.Factory;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.types.logical.RowType;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.util.FlinkCompatibilityUtil;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
+import java.io.IOException;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /** Catalogs for arctic data lake. */
@@ -349,10 +359,40 @@ public class ArcticCatalog extends AbstractCatalog {
   }
 
   @Override
-  public List<CatalogPartitionSpec> listPartitions(ObjectPath tablePath) throws CatalogException {
-    throw new UnsupportedOperationException();
-  }
+  public List<CatalogPartitionSpec> listPartitions(ObjectPath tablePath) throws CatalogException, TableNotPartitionedException {
+    TableIdentifier tableIdentifier = getTableIdentifier(tablePath);
+    ArcticTable arcticTable = internalCatalog.loadTable(tableIdentifier);
 
+    if (arcticTable.spec().isUnpartitioned()) {
+      throw new TableNotPartitionedException(internalCatalog.name(), tablePath);
+    }
+    Set<CatalogPartitionSpec> set = Sets.newHashSet();
+    List<Table> tables = new LinkedList<>();
+
+    if (arcticTable.isKeyedTable()) {
+      tables.add(arcticTable.asKeyedTable().changeTable());
+      tables.add(arcticTable.asKeyedTable().baseTable());
+    } else {
+      tables.add(arcticTable.asUnkeyedTable());
+    }
+    for (Table table : tables) {
+      try (CloseableIterable<FileScanTask> tasks = table.newScan().planFiles()) {
+        for (DataFile dataFile : CloseableIterable.transform(tasks, FileScanTask::file)) {
+          Map<String, String> map = Maps.newHashMap();
+          StructLike structLike = dataFile.partition();
+          PartitionSpec spec = table.specs().get(dataFile.specId());
+          for (int i = 0; i < structLike.size(); i++) {
+            map.put(spec.fields().get(i).name(), String.valueOf(structLike.get(i, Object.class)));
+          }
+          set.add(new CatalogPartitionSpec(map));
+        }
+      } catch (IOException e) {
+        throw new CatalogException(
+            String.format("Failed to list partitions of table %s", tablePath), e);
+      }
+    }
+    return Lists.newArrayList(set);
+  }
   @Override
   public List<CatalogPartitionSpec> listPartitions(
       ObjectPath tablePath, CatalogPartitionSpec partitionSpec) throws CatalogException {
