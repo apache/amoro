@@ -36,10 +36,7 @@ jobs:
           cache: maven
 
       - name: Build all module with Maven
-        run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp -X
-
-      - name: Print jvm error log
-        run: ls ./spark/v3.1/spark | grep *.log | xargs cat
+        run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
