@@ -34,6 +34,7 @@ import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.shaded.guava30.com.google.common.collect.Maps;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
@@ -56,6 +57,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -66,7 +68,7 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
 
   public TestRowDataReaderFunction() {
     super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-      new BasicTableTestHelper(true, true));
+        new BasicTableTestHelper(true, true));
   }
 
   @Test
@@ -172,7 +174,7 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
       }
     });
 
-    List<RowData> excepts = exceptsCollection();
+    List<RowData> excepts = expectedCollection();
     excepts.addAll(generateRecords());
     RowData[] array = excepts.stream().sorted(Comparator.comparing(RowData::toString))
         .collect(Collectors.toList())
@@ -254,14 +256,37 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   }
 
   protected RowData[] excepts() {
-    List<RowData> excepts = exceptsCollection();
+    List<RowData> excepts = expectedCollection();
 
     return excepts.stream().sorted(Comparator.comparing(RowData::toString))
         .collect(Collectors.toList())
         .toArray(new RowData[excepts.size()]);
   }
 
-  protected List<RowData> exceptsCollection() {
+  protected RowData[] expectedAfterMOR() {
+    List<RowData> expected = expectedCollection();
+    return mor(expected).stream().sorted(Comparator.comparing(RowData::toString)).toArray(RowData[]::new);
+  }
+
+  protected Collection<RowData> mor(final Collection<RowData> changelog) {
+    Map<Integer, RowData> map = Maps.newHashMap();
+
+    changelog.forEach(rowData -> {
+      int key = rowData.getInt(0);
+      RowKind kind = rowData.getRowKind();
+
+      if ((kind == RowKind.INSERT || kind == RowKind.UPDATE_AFTER) && !map.containsKey(key)) {
+        rowData.setRowKind(RowKind.INSERT);
+        map.put(key, rowData);
+      } else if ((kind == RowKind.DELETE || kind == RowKind.UPDATE_BEFORE)) {
+        map.remove(key);
+      }
+    });
+
+    return map.values();
+  }
+
+  protected List<RowData> expectedCollection() {
     List<RowData> excepts = new ArrayList<>();
     excepts.add(GenericRowData.ofKind(RowKind.INSERT, 1, StringData.fromString("john"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
     excepts.add(GenericRowData.ofKind(RowKind.INSERT, 2, StringData.fromString("lily"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));

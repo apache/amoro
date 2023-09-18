@@ -83,7 +83,7 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
       if (splitOpt.isAvailable()) {
         actual.add(splitOpt.split());
       } else {
-        LOG.info("subtask id {}, splits {}.\n {}", subtaskId, actual.size(), actual);
+        LOG.info("Subtask id {}, splits {}.\n {}", subtaskId, actual.size(), actual);
         --subtaskId;
       }
     }
@@ -183,7 +183,7 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
     } while (subtaskId < totalParallelism);
 
 
-    List<RowData> excepts = exceptsCollection();
+    List<RowData> excepts = expectedCollection();
     excepts.addAll(generateRecords());
     RowData[] array = excepts.stream().sorted(Comparator.comparing(RowData::toString))
         .collect(Collectors.toList())

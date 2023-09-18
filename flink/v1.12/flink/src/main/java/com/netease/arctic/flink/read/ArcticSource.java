@@ -80,13 +80,13 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
   }
 
   @Override
-  public SourceReader<T, ArcticSplit> createReader(SourceReaderContext readerContext) throws Exception {
+  public SourceReader<T, ArcticSplit> createReader(SourceReaderContext readerContext) {
     return new ArcticSourceReader<>(readerFunction, readerContext.getConfiguration(), readerContext, dimTable);
   }
 
   @Override
   public SplitEnumerator<ArcticSplit, ArcticSourceEnumState> createEnumerator(
-      SplitEnumeratorContext<ArcticSplit> enumContext) throws Exception {
+      SplitEnumeratorContext<ArcticSplit> enumContext) {
     return createEnumerator(enumContext, null);
   }
 
@@ -112,7 +112,7 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
   @Override
   public SplitEnumerator<ArcticSplit, ArcticSourceEnumState> restoreEnumerator(
       SplitEnumeratorContext<ArcticSplit> enumContext,
-      ArcticSourceEnumState checkpoint) throws Exception {
+      ArcticSourceEnumState checkpoint) {
     return createEnumerator(enumContext, checkpoint);
   }
 
