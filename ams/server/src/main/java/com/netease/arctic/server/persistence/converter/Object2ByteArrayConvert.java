@@ -1,5 +1,7 @@
 package com.netease.arctic.server.persistence.converter;
 
+import com.netease.arctic.server.ArcticManagementConf;
+import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
 import com.netease.arctic.server.utils.CompressUtil;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.ibatis.type.JdbcType;
@@ -17,7 +19,11 @@ public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
   @Override
   public void setParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType) throws SQLException {
     if (parameter == null) {
-      ps.setNull(i, Types.BLOB);
+      if (SqlSessionFactoryProvider.getDbType().equals(ArcticManagementConf.DB_TYPE_POSTGRES)) {
+        ps.setNull(i, Types.BINARY);
+      } else {
+        ps.setNull(i, Types.BLOB);
+      }
       return;
     }
 

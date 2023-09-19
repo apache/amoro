@@ -122,7 +122,8 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
   protected KeyedTable testFailoverTable;
   protected static final String sinkTableName = "test_sink_exactly_once";
   protected static final TableIdentifier FAIL_TABLE_ID =
-      TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, sinkTableName);
+      TableIdentifier.of(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME, sinkTableName);
+  ;
 
   @Before
   public void testSetup() throws IOException {
@@ -170,8 +171,8 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
       GenericRowData rowData = convert(row);
       actualResult.add(rowData);
     });
-    Assert.assertEquals(8, actualResult.size());
-    assertArrayEquals(excepts(), actualResult);
+    RowData[] expected = expectedAfterMOR();
+    assertArrayEquals(expected, actualResult);
   }
 
   @Test
@@ -185,7 +186,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
   }
 
   public void testArcticSource(FailoverType failoverType) throws Exception {
-    List<RowData> expected = new ArrayList<>(exceptsCollection());
+    List<RowData> expected = new ArrayList<>(expectedCollection());
     List<RowData> updated = updateRecords();
     writeUpdate(updated);
     List<RowData> records = generateRecords(2, 1);
@@ -205,8 +206,9 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
             "ArcticParallelSource")
         .setParallelism(PARALLELISM);
 
+    List<RowData> expectedAfterMoR = new ArrayList<>(mor(expected));
     DataStream<RowData> streamFailingInTheMiddleOfReading =
-        RecordCounterToFail.wrapWithFailureAfter(input, expected.size() / 2);
+        RecordCounterToFail.wrapWithFailureAfter(input, expectedAfterMoR.size() / 2);
 
     FlinkSink
         .forRowData(streamFailingInTheMiddleOfReading)
@@ -226,7 +228,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
         RecordCounterToFail::continueProcessing,
         miniClusterResource.getMiniCluster());
 
-    assertRecords(testFailoverTable, expected, Duration.ofMillis(10), 12000);
+    assertRecords(testFailoverTable, expectedAfterMoR, Duration.ofMillis(10), 12000);
   }
 
   @Test(timeout = 60000)
@@ -690,15 +692,13 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
   }
 
   private List<RowData> collectRecordsFromUnboundedStream(
-      final ClientAndIterator<RowData> client, final int numElements) throws InterruptedException {
+      final ClientAndIterator<RowData> client, final int numElements) {
 
     checkNotNull(client, "client");
     checkArgument(numElements > 0, "numElement must be > 0");
 
     final ArrayList<RowData> result = new ArrayList<>(numElements);
     final Iterator<RowData> iterator = client.iterator;
-
-    LOG.info("begin collect records by the UT {}, ", name.getMethodName());
 
     CollectTask collectTask = new CollectTask(result, iterator, numElements);
     new Thread(collectTask).start();
@@ -710,13 +710,12 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
       // TODO a more proper timeout strategy?
       long timeFlies = System.currentTimeMillis() - start;
       if (timeFlies / 1000 >= intervalOneSecond) {
-        LOG.info("time flies: {} ms.", timeFlies);
+        LOG.info("Time flies: {} ms.", timeFlies);
         intervalOneSecond++;
       }
-      Thread.sleep(10);
-      if (timeFlies > timeout) {
+      if (System.currentTimeMillis() - start > timeout) {
         LOG.error(
-            "this task [{}] try to collect records from unbounded stream but timeout {}. As of now, collect result:{}.",
+            "This task [{}] try to collect records from unbounded stream but timeout {}. As of now, collect result:{}.",
             client.client.getJobID().toString(),
             timeout,
             result.toArray());
@@ -751,7 +750,6 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     public void run() {
       while (iterator.hasNext()) {
         result.add(convert(iterator.next()));
-        LOG.info("collected records size:{}.", result.size());
         if (result.size() == limit) {
           running = false;
           return;

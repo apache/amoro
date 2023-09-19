@@ -24,6 +24,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
+
 import java.util.function.Supplier;
 
 /**

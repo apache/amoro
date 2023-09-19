@@ -60,11 +60,11 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.netease.arctic.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.getPropertiesByTopic;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;
+import static com.netease.arctic.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
 import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.createLogDataDeserialization;
 import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.userSchema;
 import static com.netease.arctic.flink.write.hidden.kafka.TestHiddenLogOperators.createRowData;
