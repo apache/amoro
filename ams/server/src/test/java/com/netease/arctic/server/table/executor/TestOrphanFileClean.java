@@ -274,7 +274,7 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     unkeyedTable.updateStatistics().setStatistics(snapshot.snapshotId(), file).commit();
 
     Assert.assertTrue(unkeyedTable.io().exists(file.path()));
-    OrphanFilesCleaningExecutor.cleanMetadata(unkeyedTable, System.currentTimeMillis() + 1);
+    new MixedTableMaintainer(getArcticTable()).cleanMetadata(System.currentTimeMillis() + 1);
     Assert.assertTrue(unkeyedTable.io().exists(file.path()));
   }
 

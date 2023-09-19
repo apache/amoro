@@ -269,7 +269,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
         if (!excludes.contains(uriPath) &&
             !excludes.contains(parentUriPath) &&
             p.createdAtMillis() < lastTime) {
-          fio.deleteFile(uriPath);
+          fio.deleteFile(p.location());
           deleteCount += 1;
         }
       }
@@ -320,9 +320,12 @@ public class IcebergTableMaintainer implements TableMaintainer {
           cnt,
           size);
     }
-    Stream.concat(
+    Stream.of(
             ReachableFileUtil.metadataFileLocations(internalTable, false).stream(),
+            ReachableFileUtil.statisticsFilesLocations(internalTable).stream(),
             Stream.of(ReachableFileUtil.versionHintLocation(internalTable)))
+        .reduce(Stream::concat)
+        .orElse(Stream.empty())
         .map(TableFileUtil::getUriPath)
         .forEach(validFiles::add);
 
