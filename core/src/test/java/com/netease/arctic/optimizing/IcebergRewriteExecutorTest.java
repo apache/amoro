@@ -63,7 +63,7 @@ import java.util.List;
 import java.util.Map;
 
 @RunWith(Parameterized.class)
-public class IcebergFormatRewriteFilesExecutorTest extends TableTestBase {
+public class IcebergRewriteExecutorTest extends TableTestBase {
 
   private final FileFormat fileFormat;
 
@@ -76,7 +76,7 @@ public class IcebergFormatRewriteFilesExecutorTest extends TableTestBase {
       MetadataColumns.ROW_POSITION
   );
 
-  public IcebergFormatRewriteFilesExecutorTest(
+  public IcebergRewriteExecutorTest(
       boolean partitionedTable, FileFormat fileFormat) {
     super(
         new BasicCatalogTestHelper(TableFormat.ICEBERG),
