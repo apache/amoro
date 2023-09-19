@@ -54,7 +54,7 @@ Data-cleaning configurations are applicable to both Iceberg Format and Mixed str
 | snapshot.base.keep.minutes                  | 720(12 hours) | Table-Expiration keeps the latest snapshots of BaseStore within a specified time in minutes                |
 | clean-orphan-file.enabled                   | false     | Enables periodically clean orphan files                       |
 | clean-orphan-file.min-existing-time-minutes | 2880(2 days)  | Cleaning orphan files keeps the files modified within a specified time in minutes |
-| clean-dangling-delete-files.enabled      | true      | Whether to enable cleaning of dangling delete files |
+| clean-dangling-delete-files.enabled         | true      | Whether to enable cleaning of dangling delete files |
 
 ## Mixed Format configurations
 
