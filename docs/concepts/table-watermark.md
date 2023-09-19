@@ -18,7 +18,7 @@ However, in high-freshness streaming data warehouses, massive small files and fr
 freshness, the greater the impact on performance. To achieve the required performance, users must incur higher costs. Thus, for streaming data
 warehouses, data freshness, query performance, and cost form a tripartite paradox.
 
-<img src="../images/concepts/fressness_cost_performance.png" alt="Fressness, cost and performance" width="60%" height="60%">
+<img src="../images/concepts/freshness_cost_performance.png" alt="Freshness, cost and performance" width="60%" height="60%">
 
 Amoro offers a resolution to the tripartite paradox for users by utilizing AMS management functionality and a self-optimizing mechanism. Unlike
 traditional data warehouses, Lakehouse tables are utilized in a multitude of data pipelines, AI, and BI scenarios. Measuring data freshness is
@@ -58,4 +58,4 @@ greater flexibility:
 SHOW TBLPROPERTIES test_db.test_log_store ('watermark.base');
 ```
 
-You can learn about how to use Watermark in detail by referring to [Managing tables](../managing-tables/).
+You can learn about how to use Watermark in detail by referring to [Managing tables](../using-tables/).
