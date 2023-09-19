@@ -66,7 +66,7 @@ public class ParamSignatureCalculator {
     try {
       result = getMD5(value.getBytes("UTF-8"));
     } catch (Exception e) {
-      LOG.error("getRuntime MD5 Error!!", e);
+      LOG.error("get MD5 Error!!", e);
     }
     return result;
   }

@@ -19,6 +19,7 @@
 package com.netease.arctic.server.dashboard.model;
 
 import com.google.common.base.Objects;
+
 import java.util.Map;
 
 public class AMSTransactionsOfTable {

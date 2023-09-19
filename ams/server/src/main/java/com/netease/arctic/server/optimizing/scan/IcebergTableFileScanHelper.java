@@ -19,23 +19,14 @@
 package com.netease.arctic.server.optimizing.scan;
 
 import com.netease.arctic.server.ArcticServiceConstants;
-import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class IcebergTableFileScanHelper implements TableFileScanHelper {
-  private static final Logger LOG = LoggerFactory.getLogger(IcebergTableFileScanHelper.class);
   private final Table table;
   private PartitionFilter partitionFilter;
   private final long snapshotId;
@@ -46,33 +37,26 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
   }
 
   @Override
-  public List<FileScanResult> scan() {
-    List<FileScanResult> results = Lists.newArrayList();
-    LOG.info("{} start scan files with snapshotId = {}", table.name(), snapshotId);
+  public CloseableIterable<FileScanResult> scan() {
     if (snapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
-      return results;
+      return CloseableIterable.empty();
     }
-    long startTime = System.currentTimeMillis();
     PartitionSpec partitionSpec = table.spec();
-    try (CloseableIterable<FileScanTask> filesIterable =
-        table.newScan().useSnapshot(snapshotId).planFiles()) {
-      for (FileScanTask task : filesIterable) {
-        if (partitionFilter != null) {
-          StructLike partition = task.file().partition();
-          String partitionPath = partitionSpec.partitionToPath(partition);
-          if (!partitionFilter.test(partitionPath)) {
-            continue;
-          }
-        }
-        List<ContentFile<?>> deleteFiles = new ArrayList<>(task.deletes());
-        results.add(new FileScanResult(task.file(), deleteFiles));
-      }
-    } catch (IOException e) {
-      throw new UncheckedIOException("Failed to close table scan of " + table.name(), e);
-    }
-    long endTime = System.currentTimeMillis();
-    LOG.info("{} finish scan files, cost {} ms, get {} files", table.name(), endTime - startTime, results.size());
-    return results;
+    return CloseableIterable.transform(
+        CloseableIterable.filter(
+            table.newScan().useSnapshot(snapshotId).planFiles(),
+            fileScanTask -> {
+              if (partitionFilter != null) {
+                StructLike partition = fileScanTask.file().partition();
+                String partitionPath = partitionSpec.partitionToPath(partition);
+                return partitionFilter.test(partitionPath);
+              }
+              return true;
+            }), this::buildFileScanResult);
+  }
+
+  protected FileScanResult buildFileScanResult(FileScanTask fileScanTask) {
+    return new FileScanResult(fileScanTask.file(), Lists.newArrayList(fileScanTask.deletes()));
   }
 
   @Override
