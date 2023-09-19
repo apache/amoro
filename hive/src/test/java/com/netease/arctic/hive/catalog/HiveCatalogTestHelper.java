@@ -25,6 +25,8 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.catalog.MixedTables;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -67,7 +69,7 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
   public CatalogMeta buildCatalogMeta(String baseDir) {
     Map<String, String> properties = Maps.newHashMap();
     if (TableFormat.MIXED_ICEBERG == tableFormat) {
-      properties.put("uri", hiveConf.get("hive.metastore.uris"));
+      properties.put(CatalogProperties.URI, hiveConf.get(HiveConf.ConfVars.METASTOREURIS.name()));
     }
     return CatalogTestHelpers.buildHiveCatalogMeta(TEST_CATALOG_NAME,
         properties, hiveConf, tableFormat);
