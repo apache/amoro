@@ -367,10 +367,6 @@ public class TableRuntime extends StatedPersistentBase {
     return optimizerGroup;
   }
 
-  public long getTargetSize() {
-    return tableConfiguration.getOptimizingConfig().getTargetSize();
-  }
-
   public void setCurrentChangeSnapshotId(long currentChangeSnapshotId) {
     this.currentChangeSnapshotId = currentChangeSnapshotId;
   }

@@ -19,30 +19,27 @@
 package com.netease.arctic.flink.read.hybrid.reader;
 
 import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.enumerator.TestContinuousSplitPlannerImpl;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ChangelogSplit;
 import com.netease.arctic.flink.read.source.DataIterator;
 import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.BasicArcticFileScanTask;
-import com.netease.arctic.scan.TableEntriesScan;
+import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.shaded.guava30.com.google.common.collect.Maps;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.types.RowKind;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.FileContent;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.io.CloseableIterator;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.TaskWriter;
 import org.junit.Assert;
 import org.junit.Test;
@@ -56,6 +53,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -66,7 +64,7 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
 
   public TestRowDataReaderFunction() {
     super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-      new BasicTableTestHelper(true, true));
+        new BasicTableTestHelper(true, true));
   }
 
   @Test
@@ -102,48 +100,39 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
 
     testKeyedTable.changeTable().refresh();
     long nowSnapshotId = testKeyedTable.changeTable().currentSnapshot().snapshotId();
+    ChangeTableIncrementalScan changeTableScan = testKeyedTable.changeTable().newScan().useSnapshot(nowSnapshotId);
 
-    TableEntriesScan entriesScan = TableEntriesScan.builder(testKeyedTable.changeTable())
-        .useSnapshot(nowSnapshotId)
-        .includeFileContent(FileContent.DATA)
-        .build();
     Snapshot snapshot = testKeyedTable.changeTable().snapshot(snapshotId);
     long fromSequence = snapshot.sequenceNumber();
 
-    CloseableIterator<IcebergFileEntry> iterator = entriesScan.entries().iterator();
     Set<ArcticFileScanTask> appendLogTasks = new HashSet<>();
     Set<ArcticFileScanTask> deleteLogTasks = new HashSet<>();
-    while (iterator.hasNext()) {
-      IcebergFileEntry entry = iterator.next();
-      if (entry.getSequenceNumber() <= fromSequence) {
-        continue;
-      }
-      DefaultKeyedFile keyedFile =
-          DefaultKeyedFile.parseChange((DataFile) entry.getFile(), entry.getSequenceNumber());
-      BasicArcticFileScanTask task =
-          new BasicArcticFileScanTask(keyedFile, null, testKeyedTable.changeTable().spec(), null);
-      if (task.fileType().equals(DataFileType.INSERT_FILE)) {
-        appendLogTasks.add(task);
-      } else if (task.fileType().equals(DataFileType.EQ_DELETE_FILE)) {
-        deleteLogTasks.add(task);
-      } else {
-        throw new IllegalArgumentException(
-            String.format(
-                "DataFileType %s is not supported during change log reading period.",
-                task.fileType()));
+    try (CloseableIterable<FileScanTask> tasks = changeTableScan.planFiles()) {
+      for (FileScanTask fileScanTask : tasks) {
+        if (fileScanTask.file().dataSequenceNumber() <= fromSequence) {
+          continue;
+        }
+        ArcticFileScanTask arcticFileScanTask = (ArcticFileScanTask) fileScanTask;
+        if (arcticFileScanTask.fileType().equals(DataFileType.INSERT_FILE)) {
+          appendLogTasks.add(arcticFileScanTask);
+        } else if (arcticFileScanTask.fileType().equals(DataFileType.EQ_DELETE_FILE)) {
+          deleteLogTasks.add(arcticFileScanTask);
+        } else {
+          throw new IllegalArgumentException(
+              String.format(
+                  "DataFileType %s is not supported during change log reading period.",
+                  arcticFileScanTask.fileType()));
+        }
       }
     }
     ChangelogSplit changelogSplit = new ChangelogSplit(appendLogTasks, deleteLogTasks, splitCount.incrementAndGet());
-    LOG.info("ArcticSplit {}.", changelogSplit);
     actual.clear();
     DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(changelogSplit);
     while (dataIterator.hasNext()) {
       RowData rowData = dataIterator.next();
-      LOG.info("{}", rowData);
       actual.add(rowData);
     }
     assertArrayEquals(excepts2(), actual);
-
   }
 
   @Test
@@ -172,7 +161,7 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
       }
     });
 
-    List<RowData> excepts = exceptsCollection();
+    List<RowData> excepts = expectedCollection();
     excepts.addAll(generateRecords());
     RowData[] array = excepts.stream().sorted(Comparator.comparing(RowData::toString))
         .collect(Collectors.toList())
@@ -254,14 +243,37 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   }
 
   protected RowData[] excepts() {
-    List<RowData> excepts = exceptsCollection();
+    List<RowData> excepts = expectedCollection();
 
     return excepts.stream().sorted(Comparator.comparing(RowData::toString))
         .collect(Collectors.toList())
         .toArray(new RowData[excepts.size()]);
   }
 
-  protected List<RowData> exceptsCollection() {
+  protected RowData[] expectedAfterMOR() {
+    List<RowData> expected = expectedCollection();
+    return mor(expected).stream().sorted(Comparator.comparing(RowData::toString)).toArray(RowData[]::new);
+  }
+
+  protected Collection<RowData> mor(final Collection<RowData> changelog) {
+    Map<Integer, RowData> map = Maps.newHashMap();
+
+    changelog.forEach(rowData -> {
+      int key = rowData.getInt(0);
+      RowKind kind = rowData.getRowKind();
+
+      if ((kind == RowKind.INSERT || kind == RowKind.UPDATE_AFTER) && !map.containsKey(key)) {
+        rowData.setRowKind(RowKind.INSERT);
+        map.put(key, rowData);
+      } else if ((kind == RowKind.DELETE || kind == RowKind.UPDATE_BEFORE)) {
+        map.remove(key);
+      }
+    });
+
+    return map.values();
+  }
+
+  protected List<RowData> expectedCollection() {
     List<RowData> excepts = new ArrayList<>();
     excepts.add(GenericRowData.ofKind(RowKind.INSERT, 1, StringData.fromString("john"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
     excepts.add(GenericRowData.ofKind(RowKind.INSERT, 2, StringData.fromString("lily"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));

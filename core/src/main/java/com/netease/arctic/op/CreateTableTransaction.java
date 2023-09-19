@@ -38,6 +38,7 @@ import org.apache.iceberg.UpdatePartitionSpec;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;

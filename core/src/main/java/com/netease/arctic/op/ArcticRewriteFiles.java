@@ -24,6 +24,7 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
+
 import java.util.Set;
 import java.util.function.Supplier;
 

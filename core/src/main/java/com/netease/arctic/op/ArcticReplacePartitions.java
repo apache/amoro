@@ -23,6 +23,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
+
 import java.util.function.Supplier;
 
 public class ArcticReplacePartitions extends ArcticUpdate<ReplacePartitions> implements ReplacePartitions {

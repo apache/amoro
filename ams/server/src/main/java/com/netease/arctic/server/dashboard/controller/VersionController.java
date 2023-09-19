@@ -27,14 +27,14 @@ import org.slf4j.LoggerFactory;
 import java.io.InputStream;
 import java.util.Properties;
 
-/** optimize controller.
- * @Description: getRuntime version and commitTime
+/**
+ * The controller that handles project version requests.
  */
 public class VersionController {
   private static final Logger LOG = LoggerFactory.getLogger(VersionController.class);
 
   /**
-   * getRuntime versionInfo.
+   * Get project version information.
    */
   public void getVersionInfo(Context ctx) {
     Properties prop = new Properties();
