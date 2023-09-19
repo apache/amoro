@@ -31,7 +31,6 @@ import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
-import java.util.List;
 
 public abstract class CatalogTestBase {
 
@@ -63,20 +62,7 @@ public abstract class CatalogTestBase {
   }
 
   @After
-  public void dropTable() {
-    ArcticCatalog catalog = getCatalog();
-    List<String> databases = catalog.listDatabases();
-    databases.stream().flatMap(s -> catalog.listTables(s).stream())
-        .forEach(table -> catalog.dropTable(table, true));
-  }
-
-  @After
   public void dropCatalog() {
-    getCatalog();
-    List<String> databases = catalog.listDatabases();
-    databases.stream().flatMap(s -> catalog.listTables(s).stream())
-        .forEach(table -> catalog.dropTable(table, true));
-
     if (catalogMeta != null) {
       getAmsHandler().dropCatalog(catalogMeta.getCatalogName());
       catalog = null;

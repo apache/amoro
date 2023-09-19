@@ -25,6 +25,7 @@ import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.CatalogUtil;
+import org.junit.After;
 import org.junit.Before;
 
 public abstract class TableTestBase extends CatalogTestBase {
@@ -77,6 +78,11 @@ public abstract class TableTestBase extends CatalogTestBase {
         tableTestHelper.partitionSpec(),
         tableTestHelper.tableProperties());
     arcticTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
+  }
+
+  @After
+  public void dropTable() {
+    getCatalog().dropTable(tableTestHelper.id(), true);
   }
 
   protected ArcticTable getArcticTable() {
