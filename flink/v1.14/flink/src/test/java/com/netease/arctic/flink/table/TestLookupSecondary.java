@@ -165,9 +165,9 @@ public class TestLookupSecondary extends CatalogITCaseBase implements FlinkTaskW
     RowType rowType = FlinkSchemaUtil.convert(arcticTable.schema());
     for (RowData rowData : expected) {
       try (TaskWriter<RowData> taskWriter =
-               writeToBaseStore
-                   ? createBaseTaskWriter(arcticTable, rowType)
-                   : createTaskWriter(arcticTable, rowType)) {
+           writeToBaseStore
+               ? createBaseTaskWriter(arcticTable, rowType)
+               : createTaskWriter(arcticTable, rowType)) {
         if (writeToBaseStore) {
           writeAndCommit(rowData, taskWriter, arcticTable);
         } else {

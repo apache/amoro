@@ -319,7 +319,7 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
     Schema arcticTableSchema = arcticTable.schema();
     Schema projectedSchema;
     if (projectFields == null) {
-      LOG.info("projectFields is null.");
+      LOG.info("The projected fields is null.");
       projectedSchema = arcticTable.schema();
     } else {
       if (arcticTable.isUnkeyedTable()) {
@@ -333,7 +333,7 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
         if (primaryKeys.contains(columns.get(i).name()) && !projectFieldList.contains(i)) {
           projectFieldList.add(i);
           LOG.info(
-              "add identifier field {} to projected schema, due to this field is mismatched.",
+              "Add identifier field {} to projected schema, due to this field is mismatched.",
               columns.get(i).name());
         }
       }
@@ -345,7 +345,7 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
               .collect(Collectors.toList());
       projectedSchema = SchemaUtil.selectInOrder(arcticTableSchema, projectedFieldNames);
       LOG.info(
-          "projected schema {}.\n table schema {}.",
+          "The projected schema {}.\n table schema {}.",
           projectedSchema,
           arcticTable.schema());
     }
