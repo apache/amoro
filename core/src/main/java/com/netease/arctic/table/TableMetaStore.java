@@ -350,7 +350,8 @@ public class TableMetaStore implements Serializable {
         if (TableMetaStore.AUTH_METHOD_KERBEROS.equals(authMethod)) {
           // re-construct
           if (!ugi.getAuthenticationMethod().toString().equals(authMethod) ||
-              !ugi.getUserName().equals(krbPrincipal)) {
+              (!ugi.getUserName().equals(krbPrincipal) &&
+                  !StringUtils.substringBefore(ugi.getUserName(),"@").equals(krbPrincipal))) {
             try {
               constructKerberosUgi();
               LOG.info("Completed to re-build ugi {}", authInformation());

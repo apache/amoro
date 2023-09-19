@@ -23,6 +23,7 @@ import com.netease.arctic.Snapshot;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.Table;
+
 import java.util.Map;
 
 public class IcebergTable implements AmoroTable<Table> {

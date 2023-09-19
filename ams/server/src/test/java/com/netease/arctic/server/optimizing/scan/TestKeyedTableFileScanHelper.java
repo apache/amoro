@@ -64,7 +64,7 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
 
   @Test
   public void testScanEmpty() {
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
     assertScanResult(scan, 0);
   }
 
@@ -74,7 +74,7 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
     OptimizingTestHelpers.appendBase(getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), transactionId, Collections.emptyList(), false));
 
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
     assertScanResult(scan, 0);
   }
 
@@ -90,7 +90,7 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
     OptimizingTestHelpers.appendBase(getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
 
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
 
     assertScanResult(scan, 4, transactionId, 0);
   }
@@ -108,7 +108,7 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
         newRecords, false));
     long sequenceNumber = getArcticTable().changeTable().currentSnapshot().sequenceNumber();
 
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
 
     assertScanResult(scan, 4, sequenceNumber, 0);
   }
@@ -141,13 +141,13 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
     appendChange(tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
         newRecords, false));
 
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
 
     assertScanResult(scan, 8, 1);
 
     // test partition filter
-    scan = buildFileScanHelper().withPartitionFilter(
-        partition -> getPartition().equals(partition)).scan();
+    scan = scanFiles(buildFileScanHelper().withPartitionFilter(
+        partition -> getPartition().equals(partition)));
     if (isPartitionedTable()) {
       assertScanResult(scan, 4, 1);
     } else {
@@ -174,7 +174,7 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
     }
     OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
 
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
 
     assertScanResult(scan, 4, transactionId, 1);
   }
@@ -199,21 +199,21 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
         newRecords, false));
 
     // check all files
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
 
     assertScanResult(scan, 12, 0);
 
     // keep at most 5 files, actually 4 files
     getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "5").commit();
 
-    scan = buildFileScanHelper().scan();
+    scan = scanFiles();
 
     assertScanResult(scan, 4, sequenceNumber, 0);
 
     // keep at most 3 files, actually 0 files
     getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "3").commit();
 
-    scan = buildFileScanHelper().scan();
+    scan = scanFiles();
 
     assertScanResult(scan, 0);
   }

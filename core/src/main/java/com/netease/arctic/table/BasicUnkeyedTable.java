@@ -62,6 +62,7 @@ import org.apache.iceberg.UpdateStatistics;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.util.StructLikeMap;
+
 import java.util.List;
 import java.util.Map;
 

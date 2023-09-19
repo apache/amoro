@@ -36,8 +36,6 @@ import com.netease.arctic.table.TableProperties;
 import io.javalin.http.Context;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.CatalogProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,8 +63,10 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAG
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.TABLE_FORMATS;
 
+/**
+ * The controller that handles catalog requests.
+ */
 public class CatalogController {
-  private static final Logger LOG = LoggerFactory.getLogger(CatalogController.class);
   private final PlatformFileManager platformFileInfoService;
 
   private static final String CONFIG_TYPE_STORAGE = "storage-config";
@@ -375,8 +375,8 @@ public class CatalogController {
   }
 
   /**
-   * getRuntime file content of authconfig/storageconfig config file
-   * getRuntime("/catalogs/{catalogName}/config/{type}/{key}
+   * Get the config file content
+   * uri("/catalogs/{catalogName}/config/{type}/{key}
    */
   public void getCatalogConfFileContent(Context ctx) {
     String catalogName = ctx.pathParam("catalogName");
@@ -386,7 +386,6 @@ public class CatalogController {
         StringUtils.isNotEmpty(catalogName) && StringUtils.isNotEmpty(confType) && StringUtils.isNotEmpty(configKey),
         "Catalog name or auth type or config key is null!");
 
-    // getRuntime file content from catlaog.
     CatalogMeta catalogMeta = tableService.getCatalogMeta(catalogName);
     if (CONFIG_TYPE_STORAGE.equalsIgnoreCase(confType)) {
       Map<String, String> storageConfig = catalogMeta.getStorageConfigs();

@@ -45,7 +45,7 @@ public class TestDefaultKeyedFile extends TableTestBase {
         ChangeAction.INSERT, writeRecords(), false);
 
     Assert.assertEquals(1, writeFiles.size());
-    DefaultKeyedFile defaultKeyedFile = DefaultKeyedFile.parseChange(writeFiles.get(0), 0L);
+    DefaultKeyedFile defaultKeyedFile = DefaultKeyedFile.parseChange(writeFiles.get(0));
     Assert.assertEquals(DataFileType.INSERT_FILE, defaultKeyedFile.type());
     Assert.assertEquals(3, defaultKeyedFile.node().mask());
     Assert.assertEquals(0, defaultKeyedFile.node().index());

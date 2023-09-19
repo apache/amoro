@@ -311,7 +311,7 @@ public class DashboardServer {
           ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "need login before request", ""));
         }
       } catch (Exception fe) {
-        LOG.error("Failed to getRuntime index.html {}", fe.getMessage(), fe);
+        LOG.error("Failed to handle request", fe);
       }
     } else if (e instanceof SignatureCheckException) {
       ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Signature Exception  before request", ""));
@@ -372,7 +372,6 @@ public class DashboardServer {
     long receive = System.currentTimeMillis();
     APITokenManager apiTokenService = new APITokenManager();
     try {
-      //getRuntime secret
       String secrete = apiTokenService.getSecretByKey(apiKey);
 
       if (secrete == null) {
