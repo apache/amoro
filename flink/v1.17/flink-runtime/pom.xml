@@ -37,7 +37,7 @@
     <dependencies>
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>flink-common</artifactId>
+            <artifactId>amoro-flink-1.17</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
