@@ -34,11 +34,11 @@ public abstract class AbstractResourceContainer implements ResourceContainer {
 
   @Override
   public void requestResource(Resource resource) {
-    Map<String, String> startupStats = doScaleOut(buildOptimizerStartupArgsString(resource));
+    Map<String, String> startupStats = doScaleOut(resource);
     resource.getProperties().putAll(startupStats);
   }
 
-  protected abstract Map<String, String> doScaleOut(String startUpArgs);
+  protected abstract Map<String, String> doScaleOut(Resource resource);
 
   protected String getOptimizingUri(Map<String, String> resourceProperties) {
     String optimizingUrl = resourceProperties.getOrDefault(PropertyNames.AMS_OPTIMIZER_URI, null);

@@ -27,7 +27,8 @@ FLINK_VERSION=1.15.3
 HADOOP_VERSION=2.10.2
 DEBIAN_MIRROR=http://deb.debian.org
 APACHE_ARCHIVE=https://archive.apache.org/dist
-
+OPTIMIZER_TARGET=${AMORO_HOME}/ams/optimizer/target
+OPTIMIZER_JOB=${OPTIMIZER_TARGET}/amoro-ams-optimizer-${AMORO_VERSION}-jar-with-dependencies.jar
 
 function usage() {
     cat <<EOF
@@ -46,6 +47,7 @@ Options:
     --hadoop-version        Hadoop binary release version, default is 2.10.2, format must be x.y.z
     --apache-archive        Apache Archive url, default is https://archive.apache.org/dist
     --debian-mirror         Mirror url of debian, default is http://deb.debian.org
+    --optimizer-job         Location of optimizer job
 EOF
 }
 
@@ -95,6 +97,11 @@ while [ $i -le $j ]; do
     shift 1
     ;;
 
+    "--optimizer-job")
+    shift 1
+    OPTIMIZER_JOB=$1
+    i=$((i+2))
+    ;;
 
     *)
       echo "Unknown args of $1"
@@ -191,13 +198,12 @@ function build_optimizer_flink() {
     echo "=============================================="
     echo "Start Build ${IMAGE_REF}:${IMAGE_TAG} Image"
 
-    FLINK_OPTIMIZER_MODULE_TARGET=${AMORO_HOME}/ams/optimizer/target
-    FLINK_OPTIMIZER_JOB=${FLINK_OPTIMIZER_MODULE_TARGET}/amoro-ams-optimizer-${AMORO_VERSION}-jar-with-dependencies.jar
+    FLINK_OPTIMIZER_JOB=${OPTIMIZER_JOB}
 
     if [ ! -f "${FLINK_OPTIMIZER_JOB}" ]; then
       BUILD_CMD="mvn clean package -pl ams/optimizer -am -e -DskipTests"
       echo "flink optimizer job not exists in ${FLINK_OPTIMIZER_JOB}"
-      echo "run '${BUILD_CMD}' first. "
+      echo "please check the file or run '${BUILD_CMD}' first. "
       exit  1
     fi
 

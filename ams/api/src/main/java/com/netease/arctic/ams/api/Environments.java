@@ -15,7 +15,7 @@ public class Environments {
     if (arcticHome != null) {
       return arcticHome;
     }
-    return System.getProperty(AMORO_HOME);
+    return System.getProperty("user.dir");
   }
 
   public static String getConfigPath() {

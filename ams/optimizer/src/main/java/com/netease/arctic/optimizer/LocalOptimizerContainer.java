@@ -37,7 +37,8 @@ public class LocalOptimizerContainer extends AbstractResourceContainer {
 
 
   @Override
-  protected Map<String, String> doScaleOut(String startUpArgs) {
+  protected Map<String, String> doScaleOut(Resource resource) {
+    String startUpArgs = this.buildOptimizerStartupArgsString(resource);
     try {
       String[] cmd = {"/bin/sh", "-c", startUpArgs};
       LOG.info("Starting local optimizer using command : {}", startUpArgs);

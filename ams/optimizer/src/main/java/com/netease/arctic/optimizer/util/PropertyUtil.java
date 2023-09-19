@@ -16,7 +16,7 @@ public class PropertyUtil {
     Preconditions.checkState(properties != null && properties.containsKey(key),
         "Cannot find %s in properties", key);
     String value = properties.get(key);
-    Preconditions.checkNotNull(value, "Value of key:%s is null");
+    Preconditions.checkNotNull(value, "Value of key:%s is null", key);
     return value;
   }
 }
