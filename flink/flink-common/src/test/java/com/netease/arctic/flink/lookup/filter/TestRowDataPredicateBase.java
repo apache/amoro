@@ -64,8 +64,8 @@ public abstract class TestRowDataPredicateBase {
     CatalogManager catMan = tbImpl.getCatalogManager();
     FunctionCatalog funCat = ctx.getFunctionCatalog();
     RowType sourceType = (RowType) schema.toSourceRowDataType().getLogicalType();
-
-    FlinkTypeFactory typeFactory = new FlinkTypeFactory(FlinkTypeSystem.INSTANCE);
+    ClassLoader classLoader = tEnv.getClass().getClassLoader();
+    FlinkTypeFactory typeFactory = new FlinkTypeFactory(classLoader, FlinkTypeSystem.INSTANCE);
     RexNodeToExpressionConverter converter =
         new RexNodeToExpressionConverter(
             new RexBuilder(typeFactory),
@@ -91,6 +91,7 @@ public abstract class TestRowDataPredicateBase {
     ExpressionResolver resolver =
         ExpressionResolver.resolverFor(
             tEnv.getConfig(),
+            classLoader,
             name -> Optional.empty(),
             funCat.asLookup(
                 str -> {

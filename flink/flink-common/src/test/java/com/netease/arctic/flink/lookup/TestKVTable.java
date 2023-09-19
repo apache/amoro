@@ -40,6 +40,7 @@ import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.memory.DataInputDeserializer;
 import org.apache.flink.core.memory.DataOutputSerializer;
+import org.apache.flink.metrics.groups.UnregisteredMetricsGroup;
 import org.apache.flink.shaded.guava30.com.google.common.cache.Cache;
 import org.apache.flink.shaded.guava30.com.google.common.cache.CacheBuilder;
 import org.apache.flink.shaded.guava30.com.google.common.collect.Lists;
@@ -51,7 +52,6 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.binary.BinaryRowData;
 import org.apache.flink.table.expressions.ResolvedExpression;
-import org.apache.flink.table.functions.ConstantFunctionContext;
 import org.apache.flink.table.runtime.typeutils.BinaryRowDataSerializer;
 import org.apache.flink.table.runtime.typeutils.RowDataSerializer;
 import org.apache.flink.table.types.DataType;
@@ -471,7 +471,7 @@ public class TestKVTable extends TestRowDataPredicateBase {
   private KVTable<RowData> createTable(List<String> joinKeys, Optional<RowDataPredicate> rowDataPredicate,
                                        boolean isDisorderPK) {
     return KVTableFactory.INSTANCE.create(
-        new RowDataStateFactory(dbPath, new ConstantFunctionContext(new Configuration()).getMetricGroup()),
+        new RowDataStateFactory(dbPath, new UnregisteredMetricsGroup()),
         isDisorderPK ? primaryKeysDisorder : primaryKeys,
         joinKeys,
         arcticSchema,

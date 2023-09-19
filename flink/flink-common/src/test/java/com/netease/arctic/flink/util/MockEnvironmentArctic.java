@@ -21,6 +21,7 @@ package com.netease.arctic.flink.util;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.runtime.checkpoint.channel.ChannelStateWriteRequestExecutorFactory;
 import org.apache.flink.runtime.externalresource.ExternalResourceInfoProvider;
 import org.apache.flink.runtime.io.disk.iomanager.IOManager;
 import org.apache.flink.runtime.jobgraph.JobVertexID;
@@ -41,7 +42,8 @@ public class MockEnvironmentArctic extends MockEnvironment {
       TaskStateManager taskStateManager, GlobalAggregateManager aggregateManager, int maxParallelism, int parallelism,
       int subtaskIndex, UserCodeClassLoader userCodeClassLoader, TaskMetricGroup taskMetricGroup,
       TaskManagerRuntimeInfo taskManagerRuntimeInfo, MemoryManager memManager,
-      ExternalResourceInfoProvider externalResourceInfoProvider) {
+      ExternalResourceInfoProvider externalResourceInfoProvider,
+      ChannelStateWriteRequestExecutorFactory channelStateExecutorFactory) {
     super(
         jobID,
         jobVertexID,
@@ -60,6 +62,7 @@ public class MockEnvironmentArctic extends MockEnvironment {
         taskMetricGroup,
         taskManagerRuntimeInfo,
         memManager,
-        externalResourceInfoProvider);
+        externalResourceInfoProvider,
+        channelStateExecutorFactory);
   }
 }
