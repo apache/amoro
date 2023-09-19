@@ -35,6 +35,9 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Validate checkstyle first
+        run: mvn validate
+
       - name: Build all module with Maven
         run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp
 
