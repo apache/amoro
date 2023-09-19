@@ -22,6 +22,7 @@ import com.netease.arctic.TestAms;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.TableFormat;
+import java.util.List;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.iceberg.catalog.Catalog;
 import org.junit.After;
@@ -62,7 +63,20 @@ public abstract class CatalogTestBase {
   }
 
   @After
+  public void dropTable() {
+    ArcticCatalog catalog = getCatalog();
+    List<String> databases = catalog.listDatabases();
+    databases.stream().flatMap(s -> catalog.listTables(s).stream())
+        .forEach(table -> catalog.dropTable(table, true));
+  }
+
+  @After
   public void dropCatalog() {
+    getCatalog();
+    List<String> databases = catalog.listDatabases();
+    databases.stream().flatMap(s -> catalog.listTables(s).stream())
+        .forEach(table -> catalog.dropTable(table, true));
+
     if (catalogMeta != null) {
       getAmsHandler().dropCatalog(catalogMeta.getCatalogName());
       catalog = null;
