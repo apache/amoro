@@ -35,7 +35,7 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: checkstyle first
+      - name: Validate checkstyle first
         run: mvn validate
 
       - name: Build all module with Maven
