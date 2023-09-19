@@ -29,7 +29,7 @@ Unzip it to create the amoro-x.y.z directory in the same directory, and then go 
 
 ## Source code compilation
 
-You can build based on the master branch without compiling Trino. The compilation method and the directory of results is described below
+You can build based on the master branch without compiling Trino. The compilation method and the directory of results are described below:
 
 ```shell
 git clone https://github.com/NetEase/amoro.git
