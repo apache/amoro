@@ -20,7 +20,7 @@ package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.ArcticHadoopFileIO;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -133,7 +133,7 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
     List<String> files = filesInLocation(location);
     List<Record> records = new ArrayList<>();
     for (String file : files) {
-      records.addAll(DataTestHelpers.readDataFile(FileFormat.PARQUET, arcticTable.schema(), file));
+      records.addAll(MixedDataTestHelpers.readDataFile(FileFormat.PARQUET, arcticTable.schema(), file));
     }
     return records;
   }

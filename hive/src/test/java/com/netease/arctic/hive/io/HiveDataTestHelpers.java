@@ -25,7 +25,7 @@ import com.netease.arctic.hive.io.reader.GenericAdaptHiveIcebergDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.CombinedScanTask;
@@ -79,7 +79,7 @@ public class HiveDataTestHelpers {
       builder.withOrdered();
     }
     try (TaskWriter<Record> writer = builder.buildWriter(ChangeLocationKind.INSTANT)) {
-      return DataTestHelpers.writeRecords(writer, records);
+      return MixedDataTestHelpers.writeRecords(writer, records);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
@@ -106,7 +106,7 @@ public class HiveDataTestHelpers {
     }
     LocationKind writeLocationKind = writeHiveLocation ? HiveLocationKind.INSTANT : BaseLocationKind.INSTANT;
     try (TaskWriter<Record> writer = builder.buildWriter(writeLocationKind)) {
-      return DataTestHelpers.writeRecords(writer, records);
+      return MixedDataTestHelpers.writeRecords(writer, records);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
@@ -142,7 +142,7 @@ public class HiveDataTestHelpers {
       );
     }
 
-    return DataTestHelpers.readKeyedTable(keyedTable, reader, expression, projectSchema, readDeletedData);
+    return MixedDataTestHelpers.readKeyedTable(keyedTable, reader, expression, projectSchema, readDeletedData);
   }
 
   public static List<Record> readChangeStore(
@@ -177,7 +177,7 @@ public class HiveDataTestHelpers {
       );
     }
 
-    return DataTestHelpers.readChangeStore(keyedTable, reader, expression);
+    return MixedDataTestHelpers.readChangeStore(keyedTable, reader, expression);
   }
 
   public static List<Record> readBaseStore(
@@ -210,7 +210,7 @@ public class HiveDataTestHelpers {
       );
     }
 
-    return DataTestHelpers.readBaseStore(table, reader, expression);
+    return MixedDataTestHelpers.readBaseStore(table, reader, expression);
   }
 
   public static void testWrite(ArcticTable table, LocationKind locationKind, List<Record> records, String pathFeature)

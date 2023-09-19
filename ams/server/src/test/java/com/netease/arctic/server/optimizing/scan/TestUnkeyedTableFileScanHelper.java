@@ -23,7 +23,7 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.UnkeyedTable;
@@ -114,7 +114,7 @@ public class TestUnkeyedTableFileScanHelper extends TableFileScanHelperTestBase 
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
-          DataTestHelpers.writeBaseStorePosDelete(getArcticTable(), 0L, dataFile,
+          MixedDataTestHelpers.writeBaseStorePosDelete(getArcticTable(), 0L, dataFile,
               Collections.singletonList(0L)));
     }
     OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);

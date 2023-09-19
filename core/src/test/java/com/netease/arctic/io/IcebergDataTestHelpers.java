@@ -1,4 +1,22 @@
-package com.netease.arctic.common;
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.netease.arctic.io;
 
 import com.google.common.collect.Lists;
 import com.netease.arctic.data.ChangeAction;
@@ -16,45 +34,56 @@ import org.apache.iceberg.io.BaseTaskWriter;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFileFactory;
+import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.ArrayUtil;
+import org.apache.iceberg.util.PropertyUtil;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class IcebergWrite {
+import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;
+import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT;
 
-  private final Schema primary;
+public class IcebergDataTestHelpers {
 
-  private final Table table;
-
-  private final Schema schema;
-
-  private final long targetFileSize;
-
-  public IcebergWrite(Schema primary, Table table, long targetFileSize) {
-    this.primary = primary;
-    this.table = table;
-    this.targetFileSize = targetFileSize;
-    this.schema = table.schema();
+  private IcebergDataTestHelpers() {
   }
 
-  public WriteResult write(List<RecordWithAction> records) throws IOException {
-    Schema eqDeleteSchema = primary == null ? schema : primary;
+  public static WriteResult insert(Table table, List<Record> records) throws IOException {
+    try (TaskWriter<Record> writer = IcebergTaskWriters.buildFor(table)) {
+      return writeRecords(writer, records);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static WriteResult delta(Table table, List<RecordWithAction> records) throws IOException {
+    long targetFileSize = PropertyUtil.propertyAsLong(
+        table.properties(),
+        WRITE_TARGET_FILE_SIZE_BYTES,
+        WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+    return delta(table, records, targetFileSize);
+  }
+
+  public static WriteResult delta(Table table, List<RecordWithAction> records, long targetFileSize) throws IOException {
+    Schema eqDeleteSchema = table.schema().select(table.schema().identifierFieldNames());
     GenericTaskDeltaWriter deltaWriter = createTaskWriter(
         eqDeleteSchema
             .columns()
             .stream()
             .map(Types.NestedField::fieldId).collect(Collectors.toList()),
-        schema,
+        table.schema(),
         table,
         FileFormat.PARQUET,
         OutputFileFactory.builderFor(
             table,
             1,
-            1).format(FileFormat.PARQUET).build()
+            1).format(FileFormat.PARQUET).build(),
+        targetFileSize
     );
     for (RecordWithAction record : records) {
       if (record.getAction() == ChangeAction.DELETE || record.getAction() == ChangeAction.UPDATE_BEFORE) {
@@ -66,12 +95,30 @@ public class IcebergWrite {
     return deltaWriter.complete();
   }
 
-  private GenericTaskDeltaWriter createTaskWriter(
+  public static WriteResult writeRecords(
+      TaskWriter<Record> taskWriter, List<Record> records) {
+    try {
+      records.forEach(d -> {
+        try {
+          taskWriter.write(d);
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+      });
+
+      return taskWriter.complete();
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  private static GenericTaskDeltaWriter createTaskWriter(
       List<Integer> equalityFieldIds,
       Schema eqDeleteRowSchema,
       Table table,
       FileFormat format,
-      OutputFileFactory fileFactory) {
+      OutputFileFactory fileFactory,
+      long targetFileSize) {
     FileAppenderFactory<Record> appenderFactory =
         new GenericAppenderFactory(
             table.schema(),
@@ -86,7 +133,7 @@ public class IcebergWrite {
     }
     Schema deleteSchema = table.schema().select(columns);
 
-    PartitionKey partitionKey = new PartitionKey(table.spec(), schema);
+    PartitionKey partitionKey = new PartitionKey(table.spec(), table.schema());
 
     return new GenericTaskDeltaWriter(
         table.schema(),

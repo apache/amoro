@@ -21,7 +21,7 @@ package com.netease.arctic.hive.catalog;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.HiveDataTestHelpers;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -79,7 +79,7 @@ public class HiveTableTestHelper extends BasicTableTestHelper {
 
   @Override
   public Record generateTestRecord(int id, String name, long ts, String opTime) {
-    return DataTestHelpers.createRecord(HIVE_TABLE_SCHEMA, id, name, ts, opTime,
+    return MixedDataTestHelpers.createRecord(HIVE_TABLE_SCHEMA, id, name, ts, opTime,
         opTime + "Z", new BigDecimal("0"), opTime.substring(0, 10));
   }
 

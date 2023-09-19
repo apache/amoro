@@ -22,7 +22,6 @@ import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.common.IcebergWrite;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
 import com.netease.arctic.io.writer.RecordWithAction;
@@ -44,6 +43,7 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.jetbrains.annotations.NotNull;
@@ -80,28 +80,22 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
 
     Schema decimalSchema = getSchema(Types.DecimalType.of(5, 2));
 
-    Types.StructType structType = Types.StructType.of(
-        Types.NestedField.of(4, true, "struct1", Types.DateType.get()),
-        Types.NestedField.of(5, true, "struct2", Types.TimeType.get()));
-    Schema structSchema = getSchema(structType);
-
     return new Object[] {
         dateSchema,
         timeSchema,
         timestampWithoutZoneSchema,
         timestampWithZoneSchema,
-        decimalSchema,
-        structSchema};
+        decimalSchema};
   }
 
   @NotNull
   private static Schema getSchema(Type type) {
     return new Schema(
         com.google.common.collect.Lists.newArrayList(
-            Types.NestedField.of(1, true, "pk1", type),
+            Types.NestedField.of(1, false, "pk1", type),
             Types.NestedField.of(2, false, "pk2", Types.StringType.get()),
             Types.NestedField.of(3, true, "v1", Types.StringType.get())
-        ));
+        ), Sets.newHashSet(1, 2));
   }
 
   private static Map<String, String> buildTableProperties() {
@@ -115,14 +109,13 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
   @Test
   public void valid() throws IOException {
     UnkeyedTable table = getArcticTable().asUnkeyedTable();
-    Schema primary = table.schema().select("pk1", "pk2");
     Record record = RandomGenericData.generate(table.schema(), 1, 1).get(0);
 
     List<RecordWithAction> list = new ArrayList<>();
     list.add(new RecordWithAction(record, ChangeAction.DELETE));
     list.add(new RecordWithAction(record, ChangeAction.INSERT));
-    write(primary, table, list);
-    write(primary, table, list);
+    write(table, list);
+    write(table, list);
 
     List<DataFile> dataFileList = new ArrayList<>();
     List<DeleteFile> deleteFileList = new ArrayList<>();
@@ -158,10 +151,9 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
     Assert.assertEquals(Iterables.size(readData), 1);
   }
 
-  private static void write(Schema primary, UnkeyedTable table, List<RecordWithAction> list)
+  private static void write(UnkeyedTable table, List<RecordWithAction> list)
       throws IOException {
-    IcebergWrite write = new IcebergWrite(primary, table, 1024);
-    WriteResult result = write.write(list);
+    WriteResult result = IcebergDataTestHelpers.delta(table, list);
 
     RowDelta rowDelta = table.newRowDelta();
     Arrays.stream(result.dataFiles()).forEach(rowDelta::addRows);

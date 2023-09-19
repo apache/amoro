@@ -22,7 +22,7 @@ import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -115,9 +115,9 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
     DataFile dataFile = FileHelpers.writeDataFile(getArcticTable().asUnkeyedTable(),
         outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData,
         Arrays.asList(
-            DataTestHelpers.createRecord(1, "john", 0, "1970-01-01T08:00:00"),
-            DataTestHelpers.createRecord(2, "lily", 1, "1970-01-01T08:00:00"),
-            DataTestHelpers.createRecord(3, "sam", 2, "1970-01-01T08:00:00")));
+            MixedDataTestHelpers.createRecord(1, "john", 0, "1970-01-01T08:00:00"),
+            MixedDataTestHelpers.createRecord(2, "lily", 1, "1970-01-01T08:00:00"),
+            MixedDataTestHelpers.createRecord(3, "sam", 2, "1970-01-01T08:00:00")));
 
     Schema idSchema = TypeUtil.select(BasicTableTestHelper.TABLE_SCHEMA, Sets.newHashSet(1));
     GenericRecord idRecord = GenericRecord.create(idSchema);
@@ -131,16 +131,16 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
         outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData, deletes).first();
 
     scanTask = new RewriteFilesInput(
-        new DataFile[] {DataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
-        new DataFile[] {DataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
-        new DeleteFile[] {DataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile,2L),
-                                 DataTestHelpers.wrapIcebergDeleteFile(posDeleteFile,3L)},
+        new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
+        new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
+        new DeleteFile[] {MixedDataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile,2L),
+                          MixedDataTestHelpers.wrapIcebergDeleteFile(posDeleteFile,3L)},
         new DeleteFile[] {},
         getArcticTable());
 
     dataScanTask = new RewriteFilesInput(
-        new DataFile[] {DataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
-        new DataFile[] {DataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
+        new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
+        new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
         new DeleteFile[] {},
         new DeleteFile[] {},
         getArcticTable());
