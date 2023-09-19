@@ -56,7 +56,7 @@ import java.util.List;
 import java.util.Map;
 
 @RunWith(Parameterized.class)
-public class TestGenericCombinedIcebergDataReader extends TableTestBase {
+public class TestIcebergCombinedReader extends TableTestBase {
 
   private final FileFormat fileFormat;
 
@@ -64,7 +64,7 @@ public class TestGenericCombinedIcebergDataReader extends TableTestBase {
 
   private RewriteFilesInput dataScanTask;
 
-  public TestGenericCombinedIcebergDataReader(
+  public TestIcebergCombinedReader(
       boolean partitionedTable, FileFormat fileFormat) {
     super(
         new BasicCatalogTestHelper(TableFormat.ICEBERG),

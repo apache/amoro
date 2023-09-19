@@ -22,7 +22,6 @@ import com.netease.arctic.TestAms;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.TableFormat;
-import java.util.List;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.iceberg.catalog.Catalog;
 import org.junit.After;
@@ -32,6 +31,7 @@ import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
+import java.util.List;
 
 public abstract class CatalogTestBase {
 
