@@ -22,6 +22,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
 import com.netease.arctic.table.ArcticTable;
+
 import java.util.List;
 import java.util.stream.Collectors;
 

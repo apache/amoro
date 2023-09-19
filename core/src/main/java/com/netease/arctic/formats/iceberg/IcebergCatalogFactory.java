@@ -30,6 +30,7 @@ import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.rest.RESTCatalog;
+
 import java.util.Map;
 
 public class IcebergCatalogFactory implements FormatCatalogFactory {
