@@ -15,6 +15,10 @@ public class Environments {
     if (arcticHome != null) {
       return arcticHome;
     }
+    arcticHome = System.getProperty(AMORO_HOME);
+    if (arcticHome != null) {
+      return arcticHome;
+    }
     return System.getProperty("user.dir");
   }
 
