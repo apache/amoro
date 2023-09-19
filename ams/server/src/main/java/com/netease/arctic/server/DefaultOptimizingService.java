@@ -54,6 +54,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -356,7 +357,9 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
 
     @Override
     protected void doDispose() {
-      optimizerMonitorTimer.cancel();
+      if (Objects.nonNull(optimizerMonitorTimer)) {
+        optimizerMonitorTimer.cancel();
+      }
     }
   }
 

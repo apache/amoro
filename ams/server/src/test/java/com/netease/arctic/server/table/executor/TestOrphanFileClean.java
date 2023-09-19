@@ -32,7 +32,14 @@ import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.GenericBlobMetadata;
+import org.apache.iceberg.GenericStatisticsFile;
+import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.io.OutputFile;
+import org.apache.iceberg.puffin.BlobMetadata;
+import org.apache.iceberg.puffin.Puffin;
+import org.apache.iceberg.puffin.PuffinWriter;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -44,6 +51,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer.DATA_FOLDER_NAME;
 import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer.FLINK_JOB_ID;
@@ -250,6 +258,48 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     }
 
     ExecutorTestBase.assertMetadataExists(getArcticTable());
+  }
+
+  @Test
+  public void notDeleteStatisticsFile() {
+    UnkeyedTable unkeyedTable;
+    if (isKeyedTable()) {
+      unkeyedTable = getArcticTable().asKeyedTable().baseTable();
+    } else {
+      unkeyedTable = getArcticTable().asUnkeyedTable();
+    }
+    unkeyedTable.newAppend().commit();
+    Snapshot snapshot = unkeyedTable.currentSnapshot();
+    StatisticsFile file = writeStatisticsFile(unkeyedTable, snapshot);
+    unkeyedTable.updateStatistics().setStatistics(snapshot.snapshotId(), file).commit();
+
+    Assert.assertTrue(unkeyedTable.io().exists(file.path()));
+    OrphanFilesCleaningExecutor.cleanMetadata(unkeyedTable, System.currentTimeMillis() + 1);
+    Assert.assertTrue(unkeyedTable.io().exists(file.path()));
+  }
+
+  private StatisticsFile writeStatisticsFile(UnkeyedTable table, Snapshot snapshot) {
+    OutputFile outputFile =
+        table.io().newOutputFile(table.location() + "/metadata/" + snapshot.snapshotId() + ".puffin");
+    List<BlobMetadata> blobMetadata;
+    long fileSize;
+    long footerSize;
+    try (PuffinWriter puffinWriter = Puffin.write(outputFile).build()) {
+      puffinWriter.finish();
+      blobMetadata = puffinWriter.writtenBlobsMetadata();
+      fileSize = puffinWriter.fileSize();
+      footerSize = puffinWriter.footerSize();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    List<org.apache.iceberg.BlobMetadata> collect =
+        blobMetadata.stream().map(GenericBlobMetadata::from).collect(Collectors.toList());
+    return new GenericStatisticsFile(
+        snapshot.snapshotId(),
+        outputFile.location(),
+        fileSize,
+        footerSize,
+        collect);
   }
 
 }

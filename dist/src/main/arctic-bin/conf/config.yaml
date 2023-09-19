@@ -60,6 +60,14 @@ ams:
 #      username: root
 #      password: root
 
+  #  Postgres database configuration.
+  #  database:
+  #    type: postgres
+  #    jdbc-driver-class: org.postgresql.Driver
+  #    url: jdbc:postgresql://127.0.0.1:5432/db
+  #    username: user
+  #    password: passwd
+
   terminal:
     backend: local
     local.spark.sql.iceberg.handle-timestamp-without-timezone: false
