@@ -21,6 +21,7 @@ package com.netease.arctic.io;
 import com.google.common.collect.Lists;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.RecordWithAction;
+import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
@@ -34,7 +35,9 @@ import org.apache.iceberg.io.BaseTaskWriter;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFileFactory;
+import org.apache.iceberg.io.PartitionedWriter;
 import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.io.UnpartitionedWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.ArrayUtil;
@@ -54,7 +57,7 @@ public class IcebergDataTestHelpers {
   }
 
   public static WriteResult insert(Table table, List<Record> records) throws IOException {
-    try (TaskWriter<Record> writer = IcebergTaskWriters.buildFor(table)) {
+    try (TaskWriter<Record> writer = createInsertWrite(table)) {
       return writeRecords(writer, records);
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -71,7 +74,7 @@ public class IcebergDataTestHelpers {
 
   public static WriteResult delta(Table table, List<RecordWithAction> records, long targetFileSize) throws IOException {
     Schema eqDeleteSchema = table.schema().select(table.schema().identifierFieldNames());
-    GenericTaskDeltaWriter deltaWriter = createTaskWriter(
+    try (GenericTaskDeltaWriter deltaWriter = createDeltaWriter(
         eqDeleteSchema
             .columns()
             .stream()
@@ -83,16 +86,16 @@ public class IcebergDataTestHelpers {
             table,
             1,
             1).format(FileFormat.PARQUET).build(),
-        targetFileSize
-    );
-    for (RecordWithAction record : records) {
-      if (record.getAction() == ChangeAction.DELETE || record.getAction() == ChangeAction.UPDATE_BEFORE) {
-        deltaWriter.delete(record);
-      } else {
-        deltaWriter.write(record);
+        targetFileSize)) {
+      for (RecordWithAction record : records) {
+        if (record.getAction() == ChangeAction.DELETE || record.getAction() == ChangeAction.UPDATE_BEFORE) {
+          deltaWriter.delete(record);
+        } else {
+          deltaWriter.write(record);
+        }
       }
+      return deltaWriter.complete();
     }
-    return deltaWriter.complete();
   }
 
   public static WriteResult writeRecords(
@@ -112,7 +115,7 @@ public class IcebergDataTestHelpers {
     }
   }
 
-  private static GenericTaskDeltaWriter createTaskWriter(
+  private static GenericTaskDeltaWriter createDeltaWriter(
       List<Integer> equalityFieldIds,
       Schema eqDeleteRowSchema,
       Table table,
@@ -204,6 +207,51 @@ public class IcebergDataTestHelpers {
       protected StructLike asStructLikeKey(Record data) {
         return keyWrapper.copyFor(data);
       }
+    }
+  }
+
+  public static TaskWriter<Record> createInsertWrite(Table table) {
+    long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
+        TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+    if (table.spec().isPartitioned()) {
+      return new GenericPartitionedWriter(
+          table.schema(), table.spec(), FileFormat.PARQUET,
+          new GenericAppenderFactory(table.schema(), table.spec()),
+          OutputFileFactory.builderFor(table, 0, 0)
+              .build(),
+          table.io(), fileSizeBytes
+      );
+    } else {
+      return new UnpartitionedWriter<>(
+          table.spec(), FileFormat.PARQUET,
+          new GenericAppenderFactory(table.schema(), table.spec()),
+          OutputFileFactory.builderFor(table, 0, 0)
+              .build(),
+          table.io(), fileSizeBytes
+      );
+    }
+  }
+
+  public static class GenericPartitionedWriter extends PartitionedWriter<Record> {
+
+    final PartitionKey partitionKey;
+    final InternalRecordWrapper wrapper;
+
+    protected GenericPartitionedWriter(
+        Schema schema, PartitionSpec spec, FileFormat format,
+        FileAppenderFactory<Record> appenderFactory,
+        OutputFileFactory fileFactory,
+        FileIO io, long targetFileSize) {
+      super(spec, format, appenderFactory, fileFactory, io, targetFileSize);
+      this.partitionKey = new PartitionKey(spec, schema);
+      this.wrapper = new InternalRecordWrapper(schema.asStruct());
+    }
+
+    @Override
+    protected PartitionKey partition(Record row) {
+      StructLike structLike = wrapper.wrap(row);
+      partitionKey.partition(structLike);
+      return partitionKey.copy();
     }
   }
 }
