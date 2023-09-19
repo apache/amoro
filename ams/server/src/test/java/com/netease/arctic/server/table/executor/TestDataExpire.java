@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.table.executor;
 
+import com.google.common.collect.Lists;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -47,7 +48,7 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
@@ -201,7 +202,7 @@ public class TestDataExpire extends ExecutorTestBase {
         ChangeAction.INSERT,
         newRecords, false));
 
-    List<TableFileScanHelper.FileScanResult> scan = buildKeyedFileScanHelper().scan();
+    CloseableIterable<TableFileScanHelper.FileScanResult> scan = buildKeyedFileScanHelper().scan();
     assertScanResult(scan, 4, 0);
 
     // expire partitions that order than 2022-01-02 18:00:00.000
@@ -213,7 +214,7 @@ public class TestDataExpire extends ExecutorTestBase {
             .atZone(DataExpiringExecutor.getDefaultZoneId(config.expirationField))
             .toInstant());
 
-    List<TableFileScanHelper.FileScanResult> scanAfterExpire = buildKeyedFileScanHelper().scan();
+    CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire = buildKeyedFileScanHelper().scan();
     if (tableTestHelper().partitionSpec().isPartitioned()) {
       if (expireByStringDate()) {
         assertScanResult(scanAfterExpire, 1, 0);
@@ -279,7 +280,7 @@ public class TestDataExpire extends ExecutorTestBase {
         ChangeAction.INSERT,
         newRecords, false));
 
-    List<TableFileScanHelper.FileScanResult> scan = buildKeyedFileScanHelper().scan();
+    CloseableIterable<TableFileScanHelper.FileScanResult> scan = buildKeyedFileScanHelper().scan();
     assertScanResult(scan, 4, 0);
 
     // expire partitions that order than 2022-01-02 18:00:00.000
@@ -291,7 +292,7 @@ public class TestDataExpire extends ExecutorTestBase {
             .atZone(DataExpiringExecutor.getDefaultZoneId(config.expirationField))
             .toInstant());
 
-    List<TableFileScanHelper.FileScanResult> scanAfterExpire = buildKeyedFileScanHelper().scan();
+    CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire = buildKeyedFileScanHelper().scan();
     assertScanResult(scanAfterExpire, 1, 0);
 
     List<Record> records = readSortedKeyedRecords(keyedTable);
@@ -311,7 +312,7 @@ public class TestDataExpire extends ExecutorTestBase {
     records.forEach(r -> OptimizingTestHelpers.appendBase(
         getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), 0, Lists.newArrayList(r), false)));
-    List<TableFileScanHelper.FileScanResult> scan = getTableFileScanHelper().scan();
+    CloseableIterable<TableFileScanHelper.FileScanResult> scan = getTableFileScanHelper().scan();
     assertScanResult(scan, 4, 0);
 
     // expire partitions that order than 2022-01-02 18:00:00.000
@@ -389,11 +390,12 @@ public class TestDataExpire extends ExecutorTestBase {
   }
 
   protected void assertScanResult(
-      List<TableFileScanHelper.FileScanResult> result,
+      CloseableIterable<TableFileScanHelper.FileScanResult> result,
       int size,
       Integer deleteCnt) {
-    Assert.assertEquals(size, result.size());
+    int scanCnt = 0;
     for (TableFileScanHelper.FileScanResult fileScanResult : result) {
+      ++scanCnt;
       if (deleteCnt != null) {
         Assert.assertEquals(deleteCnt.intValue(), fileScanResult.deleteFiles().size());
       }
@@ -407,6 +409,8 @@ public class TestDataExpire extends ExecutorTestBase {
         }
       }
     }
+
+    Assert.assertEquals(size, scanCnt);
   }
 
   protected List<Record> readSortedKeyedRecords(KeyedTable keyedTable) {
