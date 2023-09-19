@@ -94,6 +94,7 @@ The optimizer group supports the following properties:
 To better utilize the resources of Flink Optimizer, it is recommended to add the following configuration to the Flink Optimizer Group:
 * Set `flink-conf.taskmanager.memory.managed.size` to `32mb` as Flink optimizer does not have any computation logic, it does not need to occupy managed memory.
 * Set `flink-conf.taskmanager.memory.netwrok.max` to `32mb` as there is no need for communication between operators in Flink Optimizer.
+* Set `flink-conf.taskmanager.memory.netwrok.nin` to `32mb` as there is no need for communication between operators in Flink Optimizer.
 {{< /hint >}}
 
 ### Edit optimizer group
@@ -134,6 +135,7 @@ You can submit optimizer in your own Flink task development platform or local Fl
  -Dtaskmanager.memory.process.size=2048mb \
  -Dtaskmanager.memory.managed.size=32mb \
  -Dtaskmanager.memory.network.max=32mb \
+ -Dtaskmanager.memory.network.min=32mb \
  -c com.netease.arctic.optimizer.flink.FlinkOptimizer \
  ${ARCTIC_HOME}/plugin/optimize/OptimizeJob.jar \
  -a 127.0.0.1:1261 \
