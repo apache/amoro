@@ -24,6 +24,7 @@ import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
+
 import java.util.function.Supplier;
 
 public class ArcticDeleteFiles extends ArcticUpdate<DeleteFiles> implements DeleteFiles {

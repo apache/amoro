@@ -34,7 +34,7 @@ public class HiveLocationUtil {
   private static final Logger LOG = LoggerFactory.getLogger(HiveLocationUtil.class);
 
   /**
-   * getRuntime table hive table/partition location
+   * Get table hive table/partition location
    * @param table target table
    * @return hive table/partition location
    */
@@ -47,8 +47,7 @@ public class HiveLocationUtil {
               client.getTable(table.id().getDatabase(), table.id().getTableName()));
           hiveLocations.add(hiveTable.getSd().getLocation());
         } catch (Exception e) {
-          LOG.error("{} getRuntime hive table error", table.id(), e);
-          throw new IllegalStateException("getRuntime hive table error", e);
+          throw new IllegalStateException("Failed to get hive table location", e);
         }
       } else {
         try {
@@ -58,8 +57,7 @@ public class HiveLocationUtil {
             hiveLocations.add(partition.getSd().getLocation());
           }
         } catch (Exception e) {
-          LOG.error("{} getRuntime hive partitions error", table.id(), e);
-          throw new IllegalStateException("getRuntime hive partitions error", e);
+          throw new IllegalStateException("Failed to get hive partition locations", e);
         }
       }
     }
