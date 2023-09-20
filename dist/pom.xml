@@ -29,11 +29,6 @@
     <name>Amoro Project Dist</name>
     <url>https://amoro.netease.com</url>
 
-    <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>com.netease.amoro</groupId>

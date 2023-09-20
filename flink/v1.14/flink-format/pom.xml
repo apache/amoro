@@ -39,12 +39,6 @@
             <groupId>com.netease.amoro</groupId>
             <artifactId>amoro-core</artifactId>
             <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.ow2.asm</groupId>
-                    <artifactId>asm</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>

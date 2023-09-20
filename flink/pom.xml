@@ -48,8 +48,4 @@
         <module>v1.15/arctic-flink-1.15-iceberg-bridge</module>
     </modules>
 
-    <properties>
-        <kafka.version>2.4.1</kafka.version>
-    </properties>
-
 </project>

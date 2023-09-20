@@ -31,16 +31,11 @@
     <url>https://amoro.netease.com</url>
 
     <properties>
-        <kafka.version>2.4.1</kafka.version>
-        <pulsar.version>2.10.0</pulsar.version>
-        <protoc.version>3.17.3</protoc.version>
-        <assertj.version>3.21.0</assertj.version>
-        <testcontainers.version>1.17.6</testcontainers.version>
         <flink.version>1.12.7</flink.version>
-        <pulsar-commons-lang3.version>3.11</pulsar-commons-lang3.version>
         <pulsar-zookeeper.version>3.6.3</pulsar-zookeeper.version>
         <pulsar-netty.version>4.1.72.Final</pulsar-netty.version>
         <pulsar-grpc.version>1.33.0</pulsar-grpc.version>
+        <curator-test.version>2.12.0</curator-test.version>
     </properties>
 
     <dependencyManagement>
@@ -70,44 +65,11 @@
         <dependency>
             <groupId>com.netease.amoro</groupId>
             <artifactId>amoro-core</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.ow2.asm</groupId>
-                    <artifactId>asm</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.jersey</groupId>
-                    <artifactId>jersey-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>com.netease.amoro</groupId>
             <artifactId>amoro-hive</artifactId>
-            <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.eclipse.jetty.aggregate</groupId>
-                    <artifactId>jetty-all</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.eclipse.jetty.orbit</groupId>
-                    <artifactId>javax.servlet</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.jersey</groupId>
-                    <artifactId>jersey-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.jersey</groupId>
-                    <artifactId>jersey-server</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.servlet</groupId>
-                    <artifactId>servlet-api</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -123,36 +85,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-flink-1.15</artifactId>
-            <version>${iceberg.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.parquet</groupId>
-                    <artifactId>parquet-column</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
             <groupId>com.netease.amoro</groupId>
             <artifactId>amoro-flink-format-1.12</artifactId>
             <version>${project.parent.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>cglib</groupId>
-            <artifactId>cglib</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.9.0</version>
         </dependency>
 
         <!--flink-->
@@ -244,34 +179,32 @@
         </dependency>
 
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.10.2</version>
-            <scope>provided</scope>
+            <groupId>cglib</groupId>
+            <artifactId>cglib</artifactId>
         </dependency>
 
-        <!-- Protobuf & Protobuf Native Schema support. Add it to your pom if you need protobuf -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>${protoc.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
 
-        <!-- Pulsar use a newer commons-lang3 in broker. -->
-        <!-- Bump the version only for testing. -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>${pulsar-commons-lang3.version}</version>
-        </dependency>
-
-        <!--        test-->
+        <!-- test -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -368,6 +301,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -419,7 +353,7 @@
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-test</artifactId>
-            <version>2.12.0</version>
+            <version>${curator-test.version}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -446,7 +380,6 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>${assertj.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -461,7 +394,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_2.12</artifactId>
-            <version>2.4.1</version>
+            <version>${kafka.version}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -476,7 +409,6 @@
         </dependency>
 
         <!-- Pulsar testing environment -->
-
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>pulsar</artifactId>
@@ -551,53 +483,6 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-1.2-api</artifactId>
             <scope>test</scope>
-        </dependency>
-
-        <!-- Add Pulsar 2.x as a dependency. -->
-        <!-- Move this to button for avoiding class conflicts with pulsar-broker. -->
-
-        <dependency>
-            <groupId>org.apache.pulsar</groupId>
-            <artifactId>pulsar-client-all</artifactId>
-            <version>${pulsar.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.sun.activation</groupId>
-                    <artifactId>javax.activation</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>jakarta.activation</groupId>
-                    <artifactId>jakarta.activation-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>jakarta.ws.rs</groupId>
-                    <artifactId>jakarta.ws.rs-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>jakarta.xml.bind</groupId>
-                    <artifactId>jakarta.xml.bind-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.validation</groupId>
-                    <artifactId>validation-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.xml.bind</groupId>
-                    <artifactId>jaxb-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>net.jcip</groupId>
-                    <artifactId>jcip-annotations</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.pulsar</groupId>
-                    <artifactId>pulsar-package-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.beust</groupId>
-                    <artifactId>jcommander</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
     </dependencies>
 

@@ -31,10 +31,8 @@
     <url>https://amoro.netease.com</url>
 
     <properties>
-        <kafka.version>2.4.1</kafka.version>
-        <assertj.version>3.21.0</assertj.version>
-        <testcontainers.version>1.16.2</testcontainers.version>
         <flink.version>1.14.6</flink.version>
+        <curator-test.version>2.12.0</curator-test.version>
     </properties>
 
     <dependencies>
@@ -42,44 +40,17 @@
         <dependency>
             <groupId>com.netease.amoro</groupId>
             <artifactId>amoro-core</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.ow2.asm</groupId>
-                    <artifactId>asm</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>com.netease.amoro</groupId>
             <artifactId>amoro-hive</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.netease.amoro</groupId>
             <artifactId>amoro-flink-1.14-iceberg-bridge</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-flink-1.15</artifactId>
-            <version>${iceberg.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.parquet</groupId>
-                    <artifactId>parquet-column</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.parquet</groupId>
-                    <artifactId>parquet-avro</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -96,7 +67,6 @@
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.9.0</version>
         </dependency>
 
         <!--flink-->
@@ -187,15 +157,12 @@
             </exclusions>
         </dependency>
 
-        <!--   exclude jackson-databind   -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.10.2</version>
-            <scope>provided</scope>
         </dependency>
 
-        <!--        test-->
+        <!-- test -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -319,6 +286,7 @@
             <version>${flink.version}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-runtime-web_${scala.binary.version}</artifactId>
@@ -345,7 +313,7 @@
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-test</artifactId>
-            <version>2.12.0</version>
+            <version>${curator-test.version}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -399,7 +367,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_2.12</artifactId>
-            <version>2.4.1</version>
+            <version>${kafka.version}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
