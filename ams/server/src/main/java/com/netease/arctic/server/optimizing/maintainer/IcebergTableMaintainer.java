@@ -77,7 +77,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   public void expireSnapshots(TableRuntime tableRuntime) {
-    expireSnapshots(olderThanSnapshotNeedToExpire(tableRuntime));
+    expireSnapshots(olderThanSnapshotNeedToExpire(tableRuntime), expireSnapshotNeedToExcludeFiles());
   }
 
   public void expireSnapshots(long mustOlderThan) {

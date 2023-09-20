@@ -143,6 +143,7 @@ public class MixedTableMaintainer implements TableMaintainer {
       return mergeSets(changeFiles, baseFiles, hiveFiles);
     }
 
+    @Override
     public void expireSnapshots(TableRuntime tableRuntime) {
       expireSnapshots(Long.MAX_VALUE);
     }
@@ -150,15 +151,15 @@ public class MixedTableMaintainer implements TableMaintainer {
     @Override
     public void expireSnapshots(long mustOlderThan) {
       long changeDataTTL = getChangeDataTTL();
-      expireFiles(Longs.min(System.currentTimeMillis() - changeDataTTL, mustOlderThan));
-      super.expireSnapshots(mustOlderThan);
+      long changeTTLPoint = System.currentTimeMillis() - changeDataTTL;
+      expireFiles(Longs.min(changeTTLPoint, mustOlderThan));
+      super.expireSnapshots(changeTTLPoint);
     }
 
+    @Override
     protected long olderThanSnapshotNeedToExpire(long mustOlderThan) {
-      long changeDataTTL = getChangeDataTTL();
       long latestChangeFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(unkeyedTable);
-      long changeTTLPoint = System.currentTimeMillis() - changeDataTTL;
-      return Longs.min(latestChangeFlinkCommitTime, mustOlderThan, changeTTLPoint);
+      return Longs.min(latestChangeFlinkCommitTime, mustOlderThan);
     }
 
     @Override
