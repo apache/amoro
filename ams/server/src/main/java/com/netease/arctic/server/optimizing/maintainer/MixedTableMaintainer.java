@@ -150,10 +150,9 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     @Override
     public void expireSnapshots(long mustOlderThan) {
-      long changeDataTTL = getChangeDataTTL();
-      long changeTTLPoint = System.currentTimeMillis() - changeDataTTL;
-      expireFiles(Longs.min(changeTTLPoint, mustOlderThan));
-      super.expireSnapshots(changeTTLPoint);
+      long changeTTLPoint = getChangeTTLPoint();
+      expireFiles(Longs.min(getChangeTTLPoint(), mustOlderThan));
+      super.expireSnapshots(Longs.min(changeTTLPoint, mustOlderThan));
     }
 
     @Override
@@ -172,8 +171,8 @@ public class MixedTableMaintainer implements TableMaintainer {
       deleteChangeFile(expiredDataFileEntries);
     }
 
-    private long getChangeDataTTL() {
-      return CompatiblePropertyUtil.propertyAsLong(
+    private long getChangeTTLPoint() {
+      return System.currentTimeMillis() - CompatiblePropertyUtil.propertyAsLong(
           unkeyedTable.properties(),
           TableProperties.CHANGE_DATA_TTL,
           TableProperties.CHANGE_DATA_TTL_DEFAULT) * 60 * 1000;
