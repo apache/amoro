@@ -50,15 +50,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     return Math.min(tableRuntime.getOptimizingConfig().getMinorLeastInterval() * 4L / 5, interval);
   }
 
-  @Override
-  public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
-    if (originalStatus != null && originalStatus.equals(OptimizingStatus.COMMITTING) &&
-        tableRuntime.getOptimizingStatus().equals(OptimizingStatus.IDLE)) {
-      tryEvaluatingPendingInput(tableRuntime, loadTable(tableRuntime));
-    }
-  }
-
-  private void tryEvaluatingPendingInput(TableRuntime tableRuntime, AmoroTable<?> table) {
+  private void tryEvaluatingPendingInput(TableRuntime tableRuntime, ArcticTable table) {
     if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
       OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, (ArcticTable) table.originalTable());
       if (evaluator.isNecessary()) {

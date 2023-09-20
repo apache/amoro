@@ -55,6 +55,7 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.glassfish.jersey.internal.guava.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -65,6 +66,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
 import static com.netease.arctic.hive.op.UpdateHiveFiles.SYNC_DATA_TO_HIVE;
 import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
@@ -164,7 +166,7 @@ public class UnKeyedTableCommit {
   }
 
   public void commit() throws OptimizingCommitException {
-    LOG.info("{} getRuntime tasks to commit {}", table.id(), tasks);
+    LOG.info("{} get tasks to commit {}", table.id(), tasks);
 
     List<DataFile> hiveNewDataFiles = moveFile2HiveIfNeed();
     // collect files

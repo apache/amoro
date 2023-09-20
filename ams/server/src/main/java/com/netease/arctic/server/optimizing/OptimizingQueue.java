@@ -168,6 +168,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   @Override
   public OptimizingTask pollTask(String authToken, int threadId) {
+    getAuthenticatedOptimizer(authToken);
     TaskRuntime task = Optional.ofNullable(retryQueue.poll())
         .orElseGet(this::pollOrPlan);
 
@@ -195,6 +196,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   @Override
   public void ackTask(String authToken, int threadId, OptimizingTaskId taskId) {
+    getAuthenticatedOptimizer(authToken);
     Optional.ofNullable(executingTaskMap.get(taskId))
         .orElseThrow(() -> new TaskNotFoundException(taskId))
         .ack(new OptimizingThread(authToken, threadId));
@@ -202,6 +204,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
 
   @Override
   public void completeTask(String authToken, OptimizingTaskResult taskResult) {
+    getAuthenticatedOptimizer(authToken);
     OptimizingThread thread = new OptimizingThread(authToken, taskResult.getThreadId());
     TaskRuntime task = executingTaskMap.remove(taskResult.getTaskId());
     try {
@@ -246,6 +249,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     });
 
     List<TaskRuntime> suspendingTasks = executingTaskMap.values().stream()
+        .filter(task -> task.getStatus().equals(TaskRuntime.Status.SCHEDULED) ||
+            task.getStatus().equals(TaskRuntime.Status.ACKED))
         .filter(task -> task.isSuspending(currentTime, taskAckTimeout) ||
             expiredOptimizers.contains(task.getOptimizingThread().getToken()) ||
             !authOptimizers.containsKey(task.getOptimizingThread().getToken()))
@@ -259,8 +264,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         retryTask(task, false);
       } catch (Throwable t) {
         LOG.error("Retry task {} failed, put it back to executing tasks", task.getTaskId(), t);
-        executingTaskMap.put(task.getTaskId(), task);
         // retry next task, not throw exception
+        executingTaskMap.put(task.getTaskId(), task);
       }
     });
     return expiredOptimizers;

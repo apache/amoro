@@ -10,7 +10,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.optimizing.TableOptimizing;
 import com.netease.arctic.server.persistence.PersistentBase;
@@ -58,7 +58,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     TableRuntimeMeta tableRuntimeMeta = buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
     OptimizingQueue queue = new OptimizingQueue(tableService(), defaultResourceGroup(),
         Collections.singletonList(tableRuntimeMeta), Collections.emptyList(), 60000, 3000);
-    OptimizingTask optimizingTask = queue.pollTask("", 1);
+    String authToken = queue.authenticate(buildRegisterInfo());
+    OptimizingTask optimizingTask = queue.pollTask(authToken, 1);
     Assert.assertNull(optimizingTask);
   }
 
@@ -156,7 +157,9 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
     // 3.poll again
     Assert.assertEquals(0, queue.getExecutingTaskMap().size());
-    OptimizingTask task2 = pollTaskAndCheck(authToken, thread, queue);
+    String newAuthToken = queue.authenticate(buildRegisterInfo());
+    OptimizingQueue.OptimizingThread newThread = new OptimizingQueue.OptimizingThread(newAuthToken, 1);
+    OptimizingTask task2 = pollTaskAndCheck(newAuthToken, newThread, queue);
     Assert.assertEquals(task1, task2);
 
   }
@@ -178,7 +181,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     List<TableRuntimeMeta> tableRuntimeMetas = persistency.selectTableRuntimeMetas();
     Assert.assertEquals(1, tableRuntimeMetas.size());
     tableRuntimeMetas.get(0).constructTableRuntime(tableService());
-    queue = new OptimizingQueue(tableService(), defaultResourceGroup(), tableRuntimeMetas, Collections.emptyList(),
+    queue = new OptimizingQueue(tableService(), defaultResourceGroup(), tableRuntimeMetas, queue.getOptimizers(),
         60000, 3000);
 
     Assert.assertEquals(1, queue.getExecutingTaskMap().size());
@@ -212,7 +215,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     List<TableRuntimeMeta> tableRuntimeMetas = persistency.selectTableRuntimeMetas();
     Assert.assertEquals(1, tableRuntimeMetas.size());
     tableRuntimeMetas.get(0).constructTableRuntime(tableService());
-    queue = new OptimizingQueue(tableService(), defaultResourceGroup(), tableRuntimeMetas, Collections.emptyList(),
+    queue = new OptimizingQueue(tableService(), defaultResourceGroup(), tableRuntimeMetas, queue.getOptimizers(),
         60000, 3000);
 
     Assert.assertEquals(1, queue.getExecutingTaskMap().size());
@@ -275,7 +278,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     List<TableRuntimeMeta> tableRuntimeMetas = persistency.selectTableRuntimeMetas();
     Assert.assertEquals(1, tableRuntimeMetas.size());
     tableRuntimeMetas.get(0).constructTableRuntime(tableService());
-    queue = new OptimizingQueue(tableService(), defaultResourceGroup(), tableRuntimeMetas, Collections.emptyList(),
+    queue = new OptimizingQueue(tableService(), defaultResourceGroup(), tableRuntimeMetas, queue.getOptimizers(),
         60000, 3000);
 
     Assert.assertEquals(0, queue.getExecutingTaskMap().size());
@@ -401,8 +404,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   private List<DataFile> appendData(UnkeyedTable table, int id) {
     ArrayList<Record> newRecords = Lists.newArrayList(
-        DataTestHelpers.createRecord(table.schema(), id, "111", 0L, "2022-01-01T12:00:00"));
-    List<DataFile> dataFiles = DataTestHelpers.writeBaseStore(table, 0L, newRecords, false);
+        MixedDataTestHelpers.createRecord(table.schema(), id, "111", 0L, "2022-01-01T12:00:00"));
+    List<DataFile> dataFiles = MixedDataTestHelpers.writeBaseStore(table, 0L, newRecords, false);
     AppendFiles appendFiles = table.newAppend();
     dataFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
