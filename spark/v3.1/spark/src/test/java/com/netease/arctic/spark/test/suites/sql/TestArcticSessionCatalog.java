@@ -159,6 +159,7 @@ public class TestArcticSessionCatalog extends SparkTableTestBase {
   }
 
 
+
   @Test
   public void testLoadLegacyTable() {
     createTarget(schema,
