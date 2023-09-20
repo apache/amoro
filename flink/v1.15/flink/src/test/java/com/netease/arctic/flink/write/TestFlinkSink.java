@@ -25,7 +25,7 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.DataUtil;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.flink.streaming.api.CheckpointingMode;
@@ -96,7 +96,7 @@ public class TestFlinkSink extends FlinkTestBase {
     env.execute();
 
     testKeyedTable.changeTable().refresh();
-    List<Record> actual = DataTestHelpers.readKeyedTable(testKeyedTable, null);
+    List<Record> actual = MixedDataTestHelpers.readKeyedTable(testKeyedTable, null);
 
     Set<Record> expected = toRecords(DataUtil.toRowSet(data));
     Assert.assertEquals(expected, new HashSet<>(actual));
