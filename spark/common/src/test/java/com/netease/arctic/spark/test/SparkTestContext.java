@@ -47,9 +47,10 @@ public class SparkTestContext {
   public static final String SQL_EXTENSIONS_IMPL = "com.netease.arctic.spark.ArcticSparkExtensions";
 
   final TemporaryFolder warehouse = new TemporaryFolder();
-  public static final String INTERNAL_CATALOG_NAME = "arctic_catalog";
   public static final String EXTERNAL_HIVE_CATALOG_NAME = "hive_catalog";
   public static final String EXTERNAL_HADOOP_CATALOG_NAME = "hadoop_catalog";
+
+  public static final String EXTERNAL_MIXED_ICEBERG_HIVE = "mixed_iceberg_hive_catalog";
 
   final TestAms ams = new TestAms();
 
@@ -113,6 +114,12 @@ public class SparkTestContext {
             .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
     hiveCatalogMeta.setCatalogName(EXTERNAL_HIVE_CATALOG_NAME);
     ams.getAmsHandler().createCatalog(hiveCatalogMeta);
+
+
+    CatalogMeta mixedIcebergHiveCatalogMeta = HiveCatalogTestHelper.build(hiveConf, TableFormat.MIXED_ICEBERG)
+        .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
+    mixedIcebergHiveCatalogMeta.setCatalogName(EXTERNAL_MIXED_ICEBERG_HIVE);
+    ams.getAmsHandler().createCatalog(mixedIcebergHiveCatalogMeta);
     catalogSet = true;
   }
 
@@ -151,7 +158,7 @@ public class SparkTestContext {
     configs.put("hive.metastore.uris", this.hiveMetastoreUri());
     configs.put("spark.sql.catalogImplementation", "hive");
     configs.put("spark.sql.hive.metastore.version", this.hiveVersion());
-    configs.put("spark.sql.hive.metastore.jars", "maven");
+    configs.put("spark.sql.hive.metastore.jars", "builtin");
     configs.put("hive.metastore.client.capability.check", "false");
 
     configs.put("spark.executor.heartbeatInterval", "500s");
