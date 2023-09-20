@@ -27,7 +27,7 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
@@ -386,7 +386,7 @@ public class TestDataExpire extends ExecutorTestBase {
         time = opTime;
     }
 
-    return DataTestHelpers.createRecord(getArcticTable().schema(), id, name, ts, time);
+    return MixedDataTestHelpers.createRecord(getArcticTable().schema(), id, name, ts, time);
   }
 
   protected void assertScanResult(

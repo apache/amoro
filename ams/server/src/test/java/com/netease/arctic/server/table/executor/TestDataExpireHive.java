@@ -26,7 +26,7 @@ import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.hive.utils.HiveTableUtil;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
@@ -64,7 +64,7 @@ public class TestDataExpireHive extends TestDataExpire {
 
   @Override
   protected Record createRecord(int id, String name, long ts, String opTime) {
-    return DataTestHelpers.createRecord(getArcticTable().schema(), id, name, ts, opTime,
+    return MixedDataTestHelpers.createRecord(getArcticTable().schema(), id, name, ts, opTime,
         opTime + "Z", new BigDecimal("0"), opTime.substring(0, 10));
   }
 
