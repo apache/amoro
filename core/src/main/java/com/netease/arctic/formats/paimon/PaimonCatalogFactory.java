@@ -38,9 +38,7 @@ public class PaimonCatalogFactory implements FormatCatalogFactory {
     String type;
     if ("hadoop".equalsIgnoreCase(metastoreType)) {
       type = "filesystem";
-    } else if ("hive".equalsIgnoreCase(metastoreType)) {
-      type = "hive";
-    } else {
+    } else  {
       type = metastoreType;
     }
     options.set(CatalogOptions.METASTORE, type);

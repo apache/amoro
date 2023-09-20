@@ -16,24 +16,19 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.formats.paimon;
+package com.netease.arctic.formats.mixed;
 
-import com.netease.arctic.FormatCatalog;
-import com.netease.arctic.FormatCatalogFactory;
 import com.netease.arctic.ams.api.TableFormat;
-import org.apache.hadoop.conf.Configuration;
-import java.util.Map;
+import com.netease.arctic.table.ArcticTable;
 
-public class PaimonFormatCatalog implements FormatCatalogFactory {
-  @Override
-  public FormatCatalog create(
-      String name, String metastoreType, Map<String, String> properties, Configuration configuration) {
-    // TODO: implement this method
-    return null;
+public class MixedHiveTable extends MixedIcebergTable {
+
+  public MixedHiveTable(ArcticTable arcticTable) {
+    super(arcticTable);
   }
 
   @Override
   public TableFormat format() {
-    return TableFormat.PAIMON;
+    return TableFormat.MIXED_HIVE;
   }
 }

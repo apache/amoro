@@ -20,7 +20,6 @@ package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
@@ -52,7 +51,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   private void tryEvaluatingPendingInput(TableRuntime tableRuntime, ArcticTable table) {
     if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
-      OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, (ArcticTable) table.originalTable());
+      OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, table);
       if (evaluator.isNecessary()) {
         OptimizingEvaluator.PendingInput pendingInput = evaluator.getPendingInput();
         logger.debug("{} optimizing is necessary and get pending input {}", tableRuntime.getTableIdentifier(),
@@ -71,7 +70,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
       tableRuntime.refresh(table);
       if (lastOptimizedSnapshotId != tableRuntime.getCurrentSnapshotId() ||
           lastOptimizedChangeSnapshotId != tableRuntime.getCurrentChangeSnapshotId()) {
-        tryEvaluatingPendingInput(tableRuntime, table);
+        tryEvaluatingPendingInput(tableRuntime, (ArcticTable) table.originalTable());
       }
     } catch (Throwable throwable) {
       logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);
