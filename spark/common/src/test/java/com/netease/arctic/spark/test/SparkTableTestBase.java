@@ -41,6 +41,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.connector.catalog.Identifier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -231,6 +232,10 @@ public class SparkTableTestBase extends SparkTestBase {
 
     public TableIdentifier toArcticIdentifier() {
       return TableIdentifier.of(catalog, database, table);
+    }
+
+    public org.apache.spark.sql.connector.catalog.Identifier toSparkIdentifier() {
+      return org.apache.spark.sql.connector.catalog.Identifier.of(new String[]{database}, table);
     }
 
     @Override

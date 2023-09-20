@@ -18,8 +18,7 @@
 
 package com.netease.arctic.spark;
 
-import com.netease.arctic.hive.HiveTableProperties;
-import com.netease.arctic.hive.utils.CompatibleHivePropertyUtil;
+import com.netease.arctic.spark.utils.MixedFormatSparkUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchFunctionException;
@@ -122,7 +121,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
     Table table = getSessionCatalog().loadTable(ident);
-    if (isArcticTable(table)) {
+    if (MixedFormatSparkUtil.isMixedFormatTable(table)) {
       return getArcticCatalog().loadTable(ident);
     }
     return table;
@@ -145,7 +144,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   @Override
   public Table alterTable(Identifier ident, TableChange... changes) throws NoSuchTableException {
     Table table = getSessionCatalog().loadTable(ident);
-    if (isArcticTable(table)) {
+    if (MixedFormatSparkUtil.isMixedFormatTable(table)) {
       return getArcticCatalog().alterTable(ident, changes);
     } else {
       return getSessionCatalog().alterTable(ident, changes);
@@ -158,7 +157,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
     // required to return false.
     try {
       Table table = getSessionCatalog().loadTable(ident);
-      if (isArcticTable(table)) {
+      if (MixedFormatSparkUtil.isMixedFormatTable(table)) {
         return getArcticCatalog().dropTable(ident) || getSessionCatalog().dropTable(ident);
       } else {
         return getSessionCatalog().dropTable(ident);
@@ -173,7 +172,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
     // rename is not supported by HadoopCatalog. to avoid UnsupportedOperationException for session catalog tables,
     // check table existence first to ensure that the table belongs to the Iceberg catalog.
     Table table = getSessionCatalog().loadTable(from);
-    if (isArcticTable(table)) {
+    if (MixedFormatSparkUtil.isMixedFormatTable(table)) {
       getArcticCatalog().renameTable(from, to);
     } else {
       getSessionCatalog().renameTable(from, to);
@@ -222,12 +221,6 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
     }
     return this.arcticCatalog;
 
-  }
-
-  private boolean isArcticTable(Table table) {
-    return table.properties() != null &&
-        CompatibleHivePropertyUtil.propertyAsBoolean(
-            table.properties(), HiveTableProperties.ARCTIC_TABLE_FLAG, false);
   }
 
   @Override
