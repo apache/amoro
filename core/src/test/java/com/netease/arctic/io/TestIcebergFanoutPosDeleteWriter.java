@@ -121,7 +121,8 @@ public class TestIcebergFanoutPosDeleteWriter extends TableTestBase {
             record.copy("file_path", dataFile1Path, "pos", 0L),
             record.copy("file_path", dataFile1Path, "pos", 1L),
             record.copy("file_path", dataFile1Path, "pos", 3L));
-    Assert.assertEquals(expectedDeletes, DataTestHelpers.readDataFile(fileFormat, pathPosSchema, deleteFile1.path()));
+    Assert.assertEquals(expectedDeletes,
+        MixedDataTestHelpers.readDataFile(fileFormat, pathPosSchema, deleteFile1.path()));
 
     DeleteFile deleteFile2 = deleteFileMap.get(
         new Path(TableFileUtil.getNewFilePath(dataDir, fileFormat.addExtension("data-2-delete-suffix"))).toString());
@@ -138,6 +139,6 @@ public class TestIcebergFanoutPosDeleteWriter extends TableTestBase {
             record.copy("file_path", dataFile2Path, "pos", 10L));
     Assert.assertEquals(
         expectedDeletes,
-        DataTestHelpers.readDataFile(fileFormat, pathPosSchema, deleteFile2.path()));
+        MixedDataTestHelpers.readDataFile(fileFormat, pathPosSchema, deleteFile2.path()));
   }
 }

@@ -20,7 +20,7 @@ package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.server.AmsEnvironment;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -229,7 +229,7 @@ public abstract class AbstractOptimizingTest {
 
   protected static void writeChangeWithTxId(KeyedTable table, List<Record> insertRows, List<Record> deleteRows,
                                             long txId) {
-    DataTestHelpers.writeChangeStore(table, txId, ChangeAction.INSERT, insertRows, false);
+    MixedDataTestHelpers.writeChangeStore(table, txId, ChangeAction.INSERT, insertRows, false);
     // DataTestHelpers.writeChangeStore(table, txId, ChangeAction.DELETE, deleteRows, false);
     List<DataFile> insertFiles = write(insertRows, table, ChangeAction.INSERT, txId);
     List<DataFile> deleteFiles = write(deleteRows, table, ChangeAction.DELETE, txId);
@@ -307,7 +307,7 @@ public abstract class AbstractOptimizingTest {
   }
 
   protected static List<Record> readRecords(KeyedTable keyedTable) {
-    return DataTestHelpers.readKeyedTable(keyedTable, null);
+    return MixedDataTestHelpers.readKeyedTable(keyedTable, null);
   }
 
   protected static void assertIds(List<Record> actualRows, Object... expectIds) {

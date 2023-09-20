@@ -10,7 +10,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.optimizing.TableOptimizing;
 import com.netease.arctic.server.ArcticServiceConstants;
@@ -409,8 +409,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   private List<DataFile> appendData(UnkeyedTable table, int id) {
     ArrayList<Record> newRecords = Lists.newArrayList(
-        DataTestHelpers.createRecord(table.schema(), id, "111", 0L, "2022-01-01T12:00:00"));
-    List<DataFile> dataFiles = DataTestHelpers.writeBaseStore(table, 0L, newRecords, false);
+        MixedDataTestHelpers.createRecord(table.schema(), id, "111", 0L, "2022-01-01T12:00:00"));
+    List<DataFile> dataFiles = MixedDataTestHelpers.writeBaseStore(table, 0L, newRecords, false);
     AppendFiles appendFiles = table.newAppend();
     dataFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
