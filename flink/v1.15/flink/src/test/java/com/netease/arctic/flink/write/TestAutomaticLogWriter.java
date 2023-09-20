@@ -33,7 +33,7 @@ import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.flink.util.TestGlobalAggregateManager;
 import com.netease.arctic.flink.util.TestOneInputStreamOperatorIntern;
 import com.netease.arctic.flink.write.hidden.kafka.HiddenKafkaFactory;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.log.LogDataJsonDeserialization;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.utils.IdGenerator;
@@ -181,7 +181,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     env.execute();
 
     testKeyedTable.changeTable().refresh();
-    List<Record> actual = DataTestHelpers.readKeyedTable(testKeyedTable, null);
+    List<Record> actual = MixedDataTestHelpers.readKeyedTable(testKeyedTable, null);
 
     Set<Record> expected = toRecords(DataUtil.toRowSet(expects));
     Assert.assertEquals(expected, new HashSet<>(actual));

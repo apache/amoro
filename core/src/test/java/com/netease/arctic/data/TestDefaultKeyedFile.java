@@ -22,7 +22,7 @@ import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
@@ -41,7 +41,7 @@ public class TestDefaultKeyedFile extends TableTestBase {
   @Test
   public void testDefaultKeyedFile() {
     Long txId = getArcticTable().asKeyedTable().beginTransaction("begin");
-    List<DataFile> writeFiles = DataTestHelpers.writeChangeStore(getArcticTable().asKeyedTable(), txId,
+    List<DataFile> writeFiles = MixedDataTestHelpers.writeChangeStore(getArcticTable().asKeyedTable(), txId,
         ChangeAction.INSERT, writeRecords(), false);
 
     Assert.assertEquals(1, writeFiles.size());
@@ -56,8 +56,8 @@ public class TestDefaultKeyedFile extends TableTestBase {
   private List<Record> writeRecords() {
 
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(DataTestHelpers.createRecord(1, "john", 0, "2022-08-30T12:00:00"));
-    builder.add(DataTestHelpers.createRecord(1, "lily", 0, "2022-08-30T12:00:00"));
+    builder.add(MixedDataTestHelpers.createRecord(1, "john", 0, "2022-08-30T12:00:00"));
+    builder.add(MixedDataTestHelpers.createRecord(1, "lily", 0, "2022-08-30T12:00:00"));
 
     return builder.build();
   }

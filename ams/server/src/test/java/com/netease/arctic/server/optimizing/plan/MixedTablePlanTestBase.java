@@ -25,7 +25,7 @@ import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
@@ -161,7 +161,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
-          DataTestHelpers.writeBaseStorePosDelete(getArcticTable(), transactionId, dataFile,
+          MixedDataTestHelpers.writeBaseStorePosDelete(getArcticTable(), transactionId, dataFile,
               Collections.singletonList(0L)));
     }
     List<DeleteFile> deleteFiles = OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
@@ -270,7 +270,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     }
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
-          DataTestHelpers.writeBaseStorePosDelete(getArcticTable(), transactionId, dataFile, pos));
+          MixedDataTestHelpers.writeBaseStorePosDelete(getArcticTable(), transactionId, dataFile, pos));
     }
     return OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
   }
