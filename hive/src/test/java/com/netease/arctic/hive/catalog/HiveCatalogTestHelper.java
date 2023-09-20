@@ -69,7 +69,7 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
   public CatalogMeta buildCatalogMeta(String baseDir) {
     Map<String, String> properties = Maps.newHashMap();
     if (TableFormat.MIXED_ICEBERG == tableFormat) {
-      properties.put(CatalogProperties.URI, hiveConf.get(HiveConf.ConfVars.METASTOREURIS.name()));
+      properties.put(CatalogProperties.URI, hiveConf.get(HiveConf.ConfVars.METASTOREURIS.varname));
     }
     return CatalogTestHelpers.buildHiveCatalogMeta(TEST_CATALOG_NAME,
         properties, hiveConf, tableFormat);
