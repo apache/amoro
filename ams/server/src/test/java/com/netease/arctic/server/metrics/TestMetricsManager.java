@@ -18,13 +18,13 @@
 
 package com.netease.arctic.server.metrics;
 
-import com.netease.arctic.ams.api.metrics.MetricParser;
+import com.netease.arctic.ams.api.metrics.MetricDomain;
+import com.netease.arctic.ams.api.metrics.MetricEmitter;
 import com.netease.arctic.ams.api.metrics.MetricsContent;
-import com.netease.arctic.ams.api.metrics.MetricsReporter;
+import com.netease.arctic.ams.api.metrics.PayloadMetrics;
+import com.netease.arctic.server.metrics.reporters.IcebergReporterWrapper;
 import org.apache.iceberg.metrics.MetricsReport;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -33,45 +33,31 @@ import java.util.Map;
 
 public class TestMetricsManager {
 
-  private MetricsManager manager;
-  private TestAmoroMetricsReporterAms amoroReporter;
-  private TestIcebergReporter icebergReporter;
-
-  @Before
-  public void before() {
-    this.manager = new MetricsManager();
-    this.amoroReporter = new TestAmoroMetricsReporterAms();
-    this.icebergReporter = new TestIcebergReporter();
-    manager.register("testAmoro", amoroReporter);
-    manager.register("testIceberg", icebergReporter);
-  }
-
-  @After
-  public void after() {
-    this.manager.shutdown();
-  }
-
   @Test
   public void report() {
-    MetricsContent amoroMetric = () -> "test-metrics";
+    MetricsManager manager = new MetricsManager();
+    TestAmoroMetricEmitter amoroReporter = new TestAmoroMetricEmitter();
+    TestIcebergReporter icebergReporter = new TestIcebergReporter();
+    manager.register(MetricDomain.AMORO, "testAmoro", amoroReporter);
+    manager.register(MetricDomain.ICEBERG, "testIceberg", new IcebergReporterWrapper(icebergReporter));
+    MetricsContent metricsContent = () -> "test";
+    PayloadMetrics<MetricsContent> amoroMetric = AmoroPayloadMetrics.wrap(metricsContent);
     manager.report(amoroMetric);
     Assert.assertEquals(1, amoroReporter.getTestMetrics().size());
-    Assert.assertEquals(amoroMetric, amoroReporter.getTestMetrics().get(0));
+    Assert.assertEquals(metricsContent, amoroReporter.getTestMetrics().get(0));
 
-    MetricsReport icebergMetric = new MetricsReport() {};
+    MetricsReport metricsReport = new MetricsReport() {
+
+    };
+    PayloadMetrics<MetricsReport> icebergMetric = IcebergPayloadMetrics.wrap(metricsReport);
     manager.report(icebergMetric);
     Assert.assertEquals(1, icebergReporter.getTestMetrics().size());
-    Assert.assertEquals(icebergMetric, icebergReporter.getTestMetrics().get(0));
+    Assert.assertEquals(metricsReport, icebergReporter.getTestMetrics().get(0));
   }
 
-  private static class TestAmoroMetricsReporterAms implements MetricsReporter<MetricsContent> {
+  private static class TestAmoroMetricEmitter implements MetricEmitter<MetricsContent> {
 
     private final List<MetricsContent> testMetrics = new ArrayList<>();
-
-    @Override
-    public MetricParser<MetricsContent> parser() {
-      return null;
-    }
 
     @Override
     public void open(Map<String, String> properties) {
@@ -79,8 +65,8 @@ public class TestMetricsManager {
     }
 
     @Override
-    public void report(MetricsContent metricsContent) {
-      this.testMetrics.add(metricsContent);
+    public void report(PayloadMetrics<MetricsContent> payloadMetrics) {
+      this.testMetrics.add(payloadMetrics.metrics());
     }
 
     @Override
@@ -93,32 +79,17 @@ public class TestMetricsManager {
     }
   }
 
-  private static class TestIcebergReporter implements MetricsReporter<MetricsReport> {
+  private static class TestIcebergReporter implements org.apache.iceberg.metrics.MetricsReporter {
 
     private final List<MetricsReport> testMetrics = new ArrayList<>();
 
-    @Override
-    public MetricParser<MetricsReport> parser() {
-      return null;
-    }
-
-    @Override
-    public void open(Map<String, String> properties) {
-
+    public List<MetricsReport> getTestMetrics() {
+      return this.testMetrics;
     }
 
     @Override
     public void report(MetricsReport report) {
       this.testMetrics.add(report);
-    }
-
-    @Override
-    public void close() {
-
-    }
-
-    public List<MetricsReport> getTestMetrics() {
-      return this.testMetrics;
     }
   }
 }

@@ -18,14 +18,12 @@
 
 package com.netease.arctic.ams.api.metrics;
 
+
+import com.codahale.metrics.Metric;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.lang.annotation.Annotation;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -33,18 +31,18 @@ import java.util.Map;
 
 /**
  * This is a simple data structure that separates tags and metrics, making it easier for reporters to write to popular
- * monitoring systems when processing {@link MetricsContent}
+ * monitoring systems.
  */
 public class TaggedMetrics {
   private final Map<String, Object> tags;
-  private final Map<String, com.codahale.metrics.Metric> metrics;
+  private final Map<String, Metric> metrics;
 
-  private TaggedMetrics(Map<String, Object> tags, Map<String, com.codahale.metrics.Metric> metrics) {
+  private TaggedMetrics(Map<String, Object> tags, Map<String, Metric> metrics) {
     this.tags = tags;
     this.metrics = metrics;
   }
 
-  public static TaggedMetrics of(Map<String, Object> tags, Map<String, com.codahale.metrics.Metric> metrics) {
+  public static TaggedMetrics of(Map<String, Object> tags, Map<String, Metric> metrics) {
     return new TaggedMetrics(tags, metrics);
   }
 
@@ -56,17 +54,17 @@ public class TaggedMetrics {
     return tags;
   }
 
-  public Map<String, com.codahale.metrics.Metric> metrics() {
+  public Map<String, Metric> metrics() {
     return metrics;
   }
 
-  private static Map<String, Object> parseTags(MetricsContent metricsContent) {
-    List<Method> tagMethods = getAnnotationMethods(metricsContent, TaggedMetrics.Tag.class);
+  private static Map<String, Object> parseTags(MetricsContent payloadMetrics) {
+    List<Method> tagMethods = getAnnotationMethods(payloadMetrics, MetricAnnotation.Tag.class);
     Map<String, Object> tags = Maps.newHashMap();
     tagMethods.forEach(method -> {
-      TaggedMetrics.Tag tag = method.getAnnotation(TaggedMetrics.Tag.class);
+      MetricAnnotation.Tag tag = method.getAnnotation(MetricAnnotation.Tag.class);
       try {
-        tags.put(tag.name(), method.invoke(metricsContent));
+        tags.put(tag.name(), method.invoke(payloadMetrics));
       } catch (IllegalAccessException | InvocationTargetException e) {
         throw new RuntimeException(e);
       }
@@ -74,14 +72,14 @@ public class TaggedMetrics {
     return tags;
   }
 
-  private static Map<String, com.codahale.metrics.Metric> parseMetrics(MetricsContent metricsContent) {
-    List<Method> tagMethods = getAnnotationMethods(metricsContent, TaggedMetrics.Metric.class);
-    Map<String, com.codahale.metrics.Metric> metrics = Maps.newHashMap();
+  private static Map<String, Metric> parseMetrics(MetricsContent payloadMetrics) {
+    List<Method> tagMethods = getAnnotationMethods(payloadMetrics, MetricAnnotation.Metric.class);
+    Map<String, Metric> metrics = Maps.newHashMap();
     tagMethods.forEach(method -> {
-      TaggedMetrics.Metric metric = method.getAnnotation(TaggedMetrics.Metric.class);
+      MetricAnnotation.Metric metric = method.getAnnotation(MetricAnnotation.Metric.class);
       try {
-        if (method.invoke(metricsContent) != null) {
-          metrics.put(metric.name(), (com.codahale.metrics.Metric) method.invoke(metricsContent));
+        if (method.invoke(payloadMetrics) != null) {
+          metrics.put(metric.name(), (Metric) method.invoke(payloadMetrics));
         }
       } catch (IllegalAccessException | InvocationTargetException e) {
         throw new RuntimeException(e);
@@ -99,17 +97,5 @@ public class TaggedMetrics {
       }
     }
     return methods;
-  }
-
-  @Target(ElementType.METHOD)
-  @Retention(RetentionPolicy.RUNTIME)
-  public @interface Tag {
-    String name();
-  }
-
-  @Target(ElementType.METHOD)
-  @Retention(RetentionPolicy.RUNTIME)
-  public @interface Metric {
-    String name();
   }
 }

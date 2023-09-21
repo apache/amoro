@@ -18,8 +18,12 @@
 
 package com.netease.arctic.server.metrics;
 
-import com.netease.arctic.ams.api.metrics.MetricsReporter;
+import com.netease.arctic.ams.api.metrics.MetricDomain;
+import com.netease.arctic.ams.api.metrics.MetricEmitter;
+import com.netease.arctic.ams.api.metrics.PayloadMetrics;
+import com.netease.arctic.server.metrics.reporters.ReporterFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,14 +33,17 @@ import java.util.concurrent.ConcurrentHashMap;
  * Register reporter by adding the following configuration in the system configuration:
  * reporters:
  *   - name: report1
+ *     domain: AMORO
  *     impl: {reporter class}
  *     properties:
  *       host: 127.0.0.1
  *       port: 8080
  */
 public class MetricsManager {
+
+  private final ReporterFactory factory = new ReporterFactory();
   @SuppressWarnings("rawtypes")
-  private final Map<String, MetricsReporter> reporters = new ConcurrentHashMap<>();
+  private final Map<MetricDomain, Map<String, MetricEmitter>> reporters = new ConcurrentHashMap<>();
 
   public MetricsManager() {
   }
@@ -45,37 +52,36 @@ public class MetricsManager {
     metas.forEach(this::register);
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
   public void register(ReporterMeta meta) {
-    try {
-      Class<?> clazz = Class.forName(meta.getImpl());
-        MetricsReporter reporter = (MetricsReporter) clazz.newInstance();
-        reporter.open(meta.getProperties());
-        register(meta.getName(), reporter);
-    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-      throw new RuntimeException("can not find reporter " + meta.getImpl(), e);
-    }
+    MetricDomain domain = MetricDomain.valueOf(meta.getDomain());
+    register(domain, meta.getName(), this.factory.create(meta));
   }
 
   @SuppressWarnings("rawtypes")
-  public void register(String name, MetricsReporter reporter) {
-    this.reporters.put(name, reporter);
+  public void register(MetricDomain domain, String name, MetricEmitter reporter) {
+    reporters.computeIfAbsent(domain, k -> new HashMap<>()).put(name, reporter);
   }
 
   public void unregister(String name) {
-    if (this.reporters.containsKey(name)) {
-      this.reporters.remove(name).close();
-    }
+    reporters.values().forEach(namedReporters -> {
+      if (namedReporters.containsKey(name)) {
+        namedReporters.remove(name).close();
+      }
+    });
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  public void report(Object metrics) {
-    for (MetricsReporter reporter : reporters.values()) {
-      reporter.report(reporter.parser().parse(metrics));
+  public void report(PayloadMetrics metrics) {
+    Map<String, MetricEmitter> domainReports = this.reporters.get(metrics.domain());
+    if (domainReports == null) {
+      return;
+    }
+    for (MetricEmitter reporter : domainReports.values()) {
+      reporter.report(metrics);
     }
   }
 
   public void shutdown() {
-    this.reporters.keySet().forEach(this::unregister);
+    this.reporters.values().forEach(namedReporters -> namedReporters.keySet().forEach(this::unregister));
   }
 }

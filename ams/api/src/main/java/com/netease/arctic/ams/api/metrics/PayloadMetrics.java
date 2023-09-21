@@ -18,35 +18,12 @@
 
 package com.netease.arctic.ams.api.metrics;
 
-import com.codahale.metrics.Counter;
-import org.junit.Assert;
-import org.junit.Test;
+/**
+ * Abstracting metrics from different domains.
+ */
+public interface PayloadMetrics<T> {
 
-public class TestTaggedMetrics {
+  MetricDomain domain();
 
-  @Test
-  public void from() {
-    MetricsContent payloadMetrics = new MetricsContent() {
-
-      @Override
-      public String name() {
-        return "test-metric";
-      }
-
-      @MetricAnnotation.Tag(name = "test-tag")
-      public String testTag() {
-        return "testTag";
-      }
-
-      @MetricAnnotation.Metric(name = "test-metric")
-      public Counter testMetric() {
-        Counter test = new Counter();
-        test.inc(5);
-        return test;
-      }
-    };
-    TaggedMetrics taggedMetrics = TaggedMetrics.from(payloadMetrics);
-    Assert.assertEquals(taggedMetrics.tags().get("test-tag"), "testTag");
-    Assert.assertEquals(((Counter) taggedMetrics.metrics().get("test-metric")).getCount(), 5);
-  }
+  T metrics();
 }

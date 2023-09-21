@@ -16,33 +16,31 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.metrics;
+package com.netease.arctic.server.metrics;
 
-import java.util.Map;
+import com.netease.arctic.ams.api.metrics.MetricDomain;
+import com.netease.arctic.ams.api.metrics.PayloadMetrics;
+import org.apache.iceberg.metrics.MetricsReport;
 
-public interface MetricsReporter<T> {
+public class IcebergPayloadMetrics implements PayloadMetrics<MetricsReport> {
 
-  MetricParser<T> parser();
+  private final MetricsReport metrics;
 
-  /**
-   * A custom MetricsReporter implementation must have a no-arg constructor, which will be called
-   * first. {@link MetricsReporter#open(Map properties)} is called to complete the
-   * initialization.
-   *
-   * @param properties properties
-   */
-  void open(Map<String, String> properties);
+  public IcebergPayloadMetrics(MetricsReport metrics) {
+    this.metrics = metrics;
+  }
 
-  /**
-   * Indicates that an operation is done by reporting a {@link T}. A {@link T} is usually directly derived from a
-   * {@link T} instance.
-   *
-   * @param metrics {@link T} to report.
-   */
-  void report(T metrics);
+  public static IcebergPayloadMetrics wrap(MetricsReport metrics) {
+    return new IcebergPayloadMetrics(metrics);
+  }
 
-  /**
-   * {@link MetricsReporter#close()} will be called when the reporter is deleted or closed..
-   */
-  void close();
+  @Override
+  public MetricDomain domain() {
+    return MetricDomain.ICEBERG;
+  }
+
+  @Override
+  public MetricsReport metrics() {
+    return this.metrics;
+  }
 }

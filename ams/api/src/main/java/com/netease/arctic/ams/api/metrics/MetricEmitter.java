@@ -18,35 +18,28 @@
 
 package com.netease.arctic.ams.api.metrics;
 
-import com.codahale.metrics.Counter;
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.Map;
 
-public class TestTaggedMetrics {
+public interface MetricEmitter<T> {
 
-  @Test
-  public void from() {
-    MetricsContent payloadMetrics = new MetricsContent() {
+  /**
+   * A custom MetricsReporter implementation must have a no-arg constructor, which will be called
+   * first. {@link MetricEmitter#open(Map properties)} is called to complete the initialization.
+   *
+   * @param properties properties
+   */
+  void open(Map<String, String> properties);
 
-      @Override
-      public String name() {
-        return "test-metric";
-      }
+  /**
+   * Indicates that an operation is done by reporting a {@link T}. A {@link T} is usually directly derived from a
+   * {@link T} instance.
+   *
+   * @param metrics {@link T} to report.
+   */
+  void report(PayloadMetrics<T> metrics);
 
-      @MetricAnnotation.Tag(name = "test-tag")
-      public String testTag() {
-        return "testTag";
-      }
-
-      @MetricAnnotation.Metric(name = "test-metric")
-      public Counter testMetric() {
-        Counter test = new Counter();
-        test.inc(5);
-        return test;
-      }
-    };
-    TaggedMetrics taggedMetrics = TaggedMetrics.from(payloadMetrics);
-    Assert.assertEquals(taggedMetrics.tags().get("test-tag"), "testTag");
-    Assert.assertEquals(((Counter) taggedMetrics.metrics().get("test-metric")).getCount(), 5);
-  }
+  /**
+   * Close this reporter.
+   */
+  void close();
 }

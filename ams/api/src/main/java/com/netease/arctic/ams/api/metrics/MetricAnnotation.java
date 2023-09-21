@@ -16,22 +16,23 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.metrics;
+package com.netease.arctic.ams.api.metrics;
 
-import com.netease.arctic.ams.api.metrics.MetricParser;
-import com.netease.arctic.ams.api.metrics.MetricsContent;
-import com.netease.arctic.ams.api.metrics.TaggedMetrics;
-import org.apache.iceberg.metrics.MetricsReport;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public class TaggedMetricParser implements MetricParser<TaggedMetrics> {
-
-  @Override
-  public TaggedMetrics parse(Object metrics) {
-    if (metrics instanceof MetricsContent) {
-      return TaggedMetrics.from((MetricsContent) metrics);
-    }
-    throw new UnsupportedOperationException(String.format("%s %s %s", "not support parse",
-        metrics.getClass().getName(), "to TaggedMetrics"));
+public class MetricAnnotation {
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface Tag {
+    String name();
   }
 
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface Metric {
+    String name();
+  }
 }

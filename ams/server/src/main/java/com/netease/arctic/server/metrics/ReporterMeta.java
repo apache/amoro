@@ -22,8 +22,18 @@ import java.util.Map;
 
 public class ReporterMeta {
   private String name;
+  private String domain;
   private String impl;
   private Map<String, String> properties;
+
+  public static ReporterMeta of(String name, String domain, String impl, Map<String, String> properties) {
+    ReporterMeta meta = new ReporterMeta();
+    meta.setName(name);
+    meta.setDomain(domain);
+    meta.setImpl(impl);
+    meta.setProperties(properties);
+    return meta;
+  }
 
   public String getName() {
     return name;
@@ -31,6 +41,14 @@ public class ReporterMeta {
 
   public void setName(String name) {
     this.name = name;
+  }
+
+  public String getDomain() {
+    return domain;
+  }
+
+  public void setDomain(String domain) {
+    this.domain = domain;
   }
 
   public String getImpl() {

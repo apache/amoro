@@ -16,8 +16,35 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.metrics;
+package com.netease.arctic.server.metrics.reporters;
 
-public interface MetricParser<T> {
-  T parse(Object metrics);
+import com.netease.arctic.ams.api.metrics.MetricEmitter;
+import com.netease.arctic.ams.api.metrics.PayloadMetrics;
+import org.apache.iceberg.metrics.MetricsReport;
+import org.apache.iceberg.metrics.MetricsReporter;
+
+import java.util.Map;
+
+public class IcebergReporterWrapper implements MetricEmitter<MetricsReport> {
+
+  private final MetricsReporter reporter;
+
+  public IcebergReporterWrapper(MetricsReporter reporter) {
+    this.reporter = reporter;
+  }
+
+  @Override
+  public void open(Map<String, String> properties) {
+    this.reporter.initialize(properties);
+  }
+
+  @Override
+  public void report(PayloadMetrics<MetricsReport> metrics) {
+    this.reporter.report(metrics.metrics());
+  }
+
+  @Override
+  public void close() {
+
+  }
 }
