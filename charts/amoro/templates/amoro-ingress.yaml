@@ -17,7 +17,7 @@
 
 {{ if .Values.ingress.enabled }}
 apiVersion: {{ template "common.capabilities.ingress.apiVersion" . }}
-Kind: Ingress
+kind: Ingress
 metadata:
   name:  {{ include "common.names.fullname" . }}
   namespace: {{ include "common.names.namespace" . | quote }}
