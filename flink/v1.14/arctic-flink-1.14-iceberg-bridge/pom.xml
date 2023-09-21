@@ -14,6 +14,10 @@
     <name>Amoro Project Flink 1.14 Iceberg Bridge</name>
     <url>https://amoro.netease.com</url>
 
+    <properties>
+        <flink.version>1.14.6</flink.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.iceberg</groupId>
@@ -35,6 +39,23 @@
             </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-hive</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-table-api-java-bridge_${scala.binary.version}</artifactId>
+            <version>${flink.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 
 </project>

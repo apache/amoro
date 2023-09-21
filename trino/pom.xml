@@ -635,6 +635,8 @@
                     <verbose>true</verbose>
                     <fork>true</fork>
                     <compilerVersion>17</compilerVersion>
+                    <source>16</source>
+                    <target>16</target>
                 </configuration>
             </plugin>
 
