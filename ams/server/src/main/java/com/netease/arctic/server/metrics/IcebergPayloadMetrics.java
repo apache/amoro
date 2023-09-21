@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.metrics;
 
-import com.netease.arctic.ams.api.metrics.MetricDomain;
+import com.netease.arctic.ams.api.metrics.MetricsDomain;
 import com.netease.arctic.ams.api.metrics.PayloadMetrics;
 import org.apache.iceberg.metrics.MetricsReport;
 
@@ -35,8 +35,8 @@ public class IcebergPayloadMetrics implements PayloadMetrics<MetricsReport> {
   }
 
   @Override
-  public MetricDomain domain() {
-    return MetricDomain.ICEBERG;
+  public MetricsDomain domain() {
+    return MetricsDomain.ICEBERG;
   }
 
   @Override

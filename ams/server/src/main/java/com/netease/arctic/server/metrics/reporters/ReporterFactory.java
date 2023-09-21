@@ -18,21 +18,21 @@
 
 package com.netease.arctic.server.metrics.reporters;
 
-import com.netease.arctic.ams.api.metrics.MetricDomain;
-import com.netease.arctic.ams.api.metrics.MetricEmitter;
+import com.netease.arctic.ams.api.metrics.MetricsDomain;
+import com.netease.arctic.ams.api.metrics.MetricsEmitter;
 import com.netease.arctic.server.metrics.ReporterMeta;
 import org.apache.iceberg.metrics.MetricsReporter;
 
 public class ReporterFactory {
 
   @SuppressWarnings({"rawtypes"})
-  public MetricEmitter create(ReporterMeta meta) {
-    MetricDomain domain = MetricDomain.valueOf(meta.getDomain());
+  public MetricsEmitter create(ReporterMeta meta) {
+    MetricsDomain domain = MetricsDomain.valueOf(meta.getDomain());
     switch (domain) {
       case ICEBERG:
         return new IcebergReporterWrapper((MetricsReporter) createInstance(meta.getImpl()));
       case AMORO:
-        return (MetricEmitter) createInstance(meta.getImpl());
+        return (MetricsEmitter) createInstance(meta.getImpl());
       default:
         throw new RuntimeException("Unsupported domain: " + domain);
     }

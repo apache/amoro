@@ -23,7 +23,7 @@ package com.netease.arctic.ams.api.metrics;
  */
 public interface PayloadMetrics<T> {
 
-  MetricDomain domain();
+  MetricsDomain domain();
 
   T metrics();
 }

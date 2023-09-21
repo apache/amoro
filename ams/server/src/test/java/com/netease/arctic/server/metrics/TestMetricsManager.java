@@ -18,9 +18,9 @@
 
 package com.netease.arctic.server.metrics;
 
-import com.netease.arctic.ams.api.metrics.MetricDomain;
-import com.netease.arctic.ams.api.metrics.MetricEmitter;
 import com.netease.arctic.ams.api.metrics.MetricsContent;
+import com.netease.arctic.ams.api.metrics.MetricsDomain;
+import com.netease.arctic.ams.api.metrics.MetricsEmitter;
 import com.netease.arctic.ams.api.metrics.PayloadMetrics;
 import com.netease.arctic.server.metrics.reporters.IcebergReporterWrapper;
 import org.apache.iceberg.metrics.MetricsReport;
@@ -36,10 +36,10 @@ public class TestMetricsManager {
   @Test
   public void report() {
     MetricsManager manager = new MetricsManager();
-    TestAmoroMetricEmitter amoroReporter = new TestAmoroMetricEmitter();
+    TestAmoroMetricsEmitter amoroReporter = new TestAmoroMetricsEmitter();
     TestIcebergReporter icebergReporter = new TestIcebergReporter();
-    manager.register(MetricDomain.AMORO, "testAmoro", amoroReporter);
-    manager.register(MetricDomain.ICEBERG, "testIceberg", new IcebergReporterWrapper(icebergReporter));
+    manager.register(MetricsDomain.AMORO, "testAmoro", amoroReporter);
+    manager.register(MetricsDomain.ICEBERG, "testIceberg", new IcebergReporterWrapper(icebergReporter));
     MetricsContent metricsContent = () -> "test";
     PayloadMetrics<MetricsContent> amoroMetric = AmoroPayloadMetrics.wrap(metricsContent);
     manager.report(amoroMetric);
@@ -55,7 +55,7 @@ public class TestMetricsManager {
     Assert.assertEquals(metricsReport, icebergReporter.getTestMetrics().get(0));
   }
 
-  private static class TestAmoroMetricEmitter implements MetricEmitter<MetricsContent> {
+  private static class TestAmoroMetricsEmitter implements MetricsEmitter<MetricsContent> {
 
     private final List<MetricsContent> testMetrics = new ArrayList<>();
 

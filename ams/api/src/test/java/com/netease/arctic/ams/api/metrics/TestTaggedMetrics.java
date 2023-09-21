@@ -33,12 +33,12 @@ public class TestTaggedMetrics {
         return "test-metric";
       }
 
-      @MetricAnnotation.Tag(name = "test-tag")
+      @MetricsAnnotation.Tag(name = "test-tag")
       public String testTag() {
         return "testTag";
       }
 
-      @MetricAnnotation.Metric(name = "test-metric")
+      @MetricsAnnotation.Metric(name = "test-metric")
       public Counter testMetric() {
         Counter test = new Counter();
         test.inc(5);

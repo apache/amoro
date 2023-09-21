@@ -20,11 +20,11 @@ package com.netease.arctic.ams.api.metrics;
 
 import java.util.Map;
 
-public interface MetricEmitter<T> {
+public interface MetricsEmitter<T> {
 
   /**
    * A custom MetricsReporter implementation must have a no-arg constructor, which will be called
-   * first. {@link MetricEmitter#open(Map properties)} is called to complete the initialization.
+   * first. {@link MetricsEmitter#open(Map properties)} is called to complete the initialization.
    *
    * @param properties properties
    */

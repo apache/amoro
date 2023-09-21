@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.metrics;
 
-import com.netease.arctic.ams.api.metrics.MetricDomain;
-import com.netease.arctic.ams.api.metrics.MetricEmitter;
+import com.netease.arctic.ams.api.metrics.MetricsDomain;
+import com.netease.arctic.ams.api.metrics.MetricsEmitter;
 import com.netease.arctic.ams.api.metrics.PayloadMetrics;
 import com.netease.arctic.server.metrics.reporters.ReporterFactory;
 
@@ -43,7 +43,7 @@ public class MetricsManager {
 
   private final ReporterFactory factory = new ReporterFactory();
   @SuppressWarnings("rawtypes")
-  private final Map<MetricDomain, Map<String, MetricEmitter>> reporters = new ConcurrentHashMap<>();
+  private final Map<MetricsDomain, Map<String, MetricsEmitter>> reporters = new ConcurrentHashMap<>();
 
   public MetricsManager() {
   }
@@ -53,12 +53,12 @@ public class MetricsManager {
   }
 
   public void register(ReporterMeta meta) {
-    MetricDomain domain = MetricDomain.valueOf(meta.getDomain());
+    MetricsDomain domain = MetricsDomain.valueOf(meta.getDomain());
     register(domain, meta.getName(), this.factory.create(meta));
   }
 
   @SuppressWarnings("rawtypes")
-  public void register(MetricDomain domain, String name, MetricEmitter reporter) {
+  public void register(MetricsDomain domain, String name, MetricsEmitter reporter) {
     reporters.computeIfAbsent(domain, k -> new HashMap<>()).put(name, reporter);
   }
 
@@ -72,11 +72,11 @@ public class MetricsManager {
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   public void report(PayloadMetrics metrics) {
-    Map<String, MetricEmitter> domainReports = this.reporters.get(metrics.domain());
+    Map<String, MetricsEmitter> domainReports = this.reporters.get(metrics.domain());
     if (domainReports == null) {
       return;
     }
-    for (MetricEmitter reporter : domainReports.values()) {
+    for (MetricsEmitter reporter : domainReports.values()) {
       reporter.report(metrics);
     }
   }

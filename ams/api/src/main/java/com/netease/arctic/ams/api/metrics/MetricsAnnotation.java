@@ -18,10 +18,21 @@
 
 package com.netease.arctic.ams.api.metrics;
 
-/**
- * Differentiating metrics among different domains.
- */
-public enum MetricDomain {
-  AMORO,
-  ICEBERG
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+public class MetricsAnnotation {
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface Tag {
+    String name();
+  }
+
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface Metric {
+    String name();
+  }
 }

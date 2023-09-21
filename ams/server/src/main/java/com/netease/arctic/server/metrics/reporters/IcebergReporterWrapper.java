@@ -18,14 +18,14 @@
 
 package com.netease.arctic.server.metrics.reporters;
 
-import com.netease.arctic.ams.api.metrics.MetricEmitter;
+import com.netease.arctic.ams.api.metrics.MetricsEmitter;
 import com.netease.arctic.ams.api.metrics.PayloadMetrics;
 import org.apache.iceberg.metrics.MetricsReport;
 import org.apache.iceberg.metrics.MetricsReporter;
 
 import java.util.Map;
 
-public class IcebergReporterWrapper implements MetricEmitter<MetricsReport> {
+public class IcebergReporterWrapper implements MetricsEmitter<MetricsReport> {
 
   private final MetricsReporter reporter;
 

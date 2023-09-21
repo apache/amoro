@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.metrics;
 
-import com.netease.arctic.ams.api.metrics.MetricDomain;
 import com.netease.arctic.ams.api.metrics.MetricsContent;
+import com.netease.arctic.ams.api.metrics.MetricsDomain;
 import com.netease.arctic.ams.api.metrics.PayloadMetrics;
 
 public class AmoroPayloadMetrics implements PayloadMetrics<MetricsContent> {
@@ -35,8 +35,8 @@ public class AmoroPayloadMetrics implements PayloadMetrics<MetricsContent> {
   }
 
   @Override
-  public MetricDomain domain() {
-    return MetricDomain.AMORO;
+  public MetricsDomain domain() {
+    return MetricsDomain.AMORO;
   }
 
   @Override
