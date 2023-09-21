@@ -17,10 +17,10 @@ The optimizer is the execution unit for performing self-optimizing tasks on a ta
 * Optimizer: The specific unit that performs optimizing tasks, usually with multiple concurrent units.
 
 ## Optimizer container
-Before using self-optimizing, you need to configure the container information in the configuration file. Opimizer container represents a specific set of runtime environment configuration, and the scheduling scheme of optimizer in that runtime environment. container includes three types: flink, local, and external.
+Before using self-optimizing, you need to configure the container information in the configuration file. Optimizer container represents a specific set of runtime environment configuration, and the scheduling scheme of optimizer in that runtime environment. container includes three types: flink, local, and external.
 
 ### Local container
-Local conatiner is a way to start Optimizer by local process and supports multi-threaded execution of Optimizer tasks. It is recommended to be used only in demo or local deployment scenarios. If the environment variable for jdk is not configured, the user can configure java_home to point to the jdk root directory. If already configured, this configuration item can be ignored.
+Local container is a way to start Optimizer by local process and supports multi-threaded execution of Optimizer tasks. It is recommended to be used only in demo or local deployment scenarios. If the environment variable for jdk is not configured, the user can configure java_home to point to the jdk root directory. If already configured, this configuration item can be ignored.
 
 ```yaml
 containers:
@@ -128,6 +128,13 @@ Tips, the following properties of OptimizerContainer could be overwritten by gro
 | ams-optimizing-uri | all  |                                               | 
 | flink-conf.\<key\> | flink | Any flink config options could be overwritten | 
 
+{{< hint info >}}
+To better utilize the resources of Flink Optimizer, it is recommended to add the following configuration to the Flink Optimizer Group:
+* Set `flink-conf.taskmanager.memory.managed.size` to `32mb` as Flink optimizer does not have any computation logic, it does not need to occupy managed memory.
+* Set `flink-conf.taskmanager.memory.netwrok.max` to `32mb` as there is no need for communication between operators in Flink Optimizer.
+* Set `flink-conf.taskmanager.memory.netwrok.nin` to `32mb` as there is no need for communication between operators in Flink Optimizer.
+{{< /hint >}}
+
 ### Edit optimizer group
 
 You can click the `edit` button on the `Optimizer Groups` page to modify the configuration of the Optimizer group.
@@ -153,7 +160,7 @@ You can click the `Release` button on the `Optimizer` page to release the optimi
 ![release optimizer](../images/admin/optimizer_release.png)
 
 {{< hint info >}}
-Currently, only pptimizer scaled through the dashboard can be released on dashboard.
+Currently, only optimizer scaled through the dashboard can be released on dashboard.
 {{< /hint >}}
 
 ### Deploy external optimizer
@@ -162,8 +169,11 @@ You can submit optimizer in your own Flink task development platform or local Fl
 
 ```shell
 ./bin/flink run-application -t yarn-application \
- -Djobmanager.memory.process.size=1024m \
- -Dtaskmanager.memory.process.size=2048m \
+ -Djobmanager.memory.process.size=1024mb \
+ -Dtaskmanager.memory.process.size=2048mb \
+ -Dtaskmanager.memory.managed.size=32mb \
+ -Dtaskmanager.memory.network.max=32mb \
+ -Dtaskmanager.memory.network.min=32mb \
  -c com.netease.arctic.optimizer.flink.FlinkOptimizer \
  ${ARCTIC_HOME}/plugin/optimize/OptimizeJob.jar \
  -a 127.0.0.1:1261 \

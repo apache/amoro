@@ -189,16 +189,16 @@ Not supported at the moment
 | BIGINT          | BIGINT         |
 | FLOAT           | FLOAT          |
 | DOUBLE          | DOUBLE         |
-| DECIAML(p, s)   | DECIAML(p, s)  |
+| DECIMAL(p, s)   | DECIMAL(p, s)  |
 | DATE            | DATE           |
 | TIMESTAMP(6)    | TIMESTAMP      |
-| VARBINARY       | BYNARY         |
+| VARBINARY       | BINARY         |
 | ARRAY<T>        | ARRAY<T>       |
 | MAP<K, V>       | MAP<K, V>      |
 | ROW             | STRUCT         |
 
 
-### Mixed-Iceberg daata types
+### Mixed-Iceberg data types
 | Flink Data Type                   | Mixed-Iceberg Data Type |
 |-----------------------------------|-------------------------|
 | CHAR(p)                           | STRING                  |
@@ -211,13 +211,13 @@ Not supported at the moment
 | BIGINT                            | LONG                    |
 | FLOAT                             | FLOAT                   |
 | DOUBLE                            | DOUBLE                  |
-| DECIAML(p, s)                     | DECIAML(p, s)           |
+| DECIMAL(p, s)                     | DECIMAL(p, s)           |
 | DATE                              | DATE                    |
 | TIMESTAMP(6)                      | TIMESTAMP               |
-| TIMESTAMP(6) WITH LCOAL TIME ZONE | TIMESTAMPTZ             |
+| TIMESTAMP(6) WITH LOCAL TIME ZONE | TIMESTAMPTZ             |
 | BINARY(p)                         | FIXED(p)                |
 | BINARY(16)                        | UUID                    |
-| VARBINARY                         | BYNARY                  |
+| VARBINARY                         | BINARY                  |
 | ARRAY<T>                          | ARRAY<T>                |
 | MAP<K, V>                         | MAP<K, V>               |
 | ROW                               | STRUCT                  |
