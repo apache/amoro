@@ -25,7 +25,9 @@ import java.util.Optional;
 
 /**
  * This Handler contains the topic offsets of upstream job id, epicNo, topic.
+ *
  * <p>
+ *
  * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Deprecated
@@ -34,9 +36,9 @@ public class LogEpicStateHandler implements Serializable {
   private static final long serialVersionUID = 203036690144637883L;
 
   /**
-   * Key: combine upstream job id + "_" + epicNo + "_" + topic partition with
-   * {@link #combineEpicNoAndPartition(String, long, int)}
-   * Value: {@link EpicPartitionOffsets} offset detail information.
+   * Key: combine upstream job id + "_" + epicNo + "_" + topic partition with {@link
+   * #combineEpicNoAndPartition(String, long, int)} Value: {@link EpicPartitionOffsets} offset
+   * detail information.
    */
   private final Map<String, EpicPartitionOffsets> currentUpStreamEpicOffsets;
 
@@ -44,11 +46,12 @@ public class LogEpicStateHandler implements Serializable {
     currentUpStreamEpicOffsets = upstreamEpicOffsets;
   }
 
-  public Optional<EpicPartitionOffsets> getEpicNoFlip(String upstreamId, long epicNo, int partition) {
+  public Optional<EpicPartitionOffsets> getEpicNoFlip(
+      String upstreamId, long epicNo, int partition) {
     String key = combineEpicNoAndPartition(upstreamId, epicNo, partition);
-    return currentUpStreamEpicOffsets.containsKey(key) ?
-        Optional.ofNullable(currentUpStreamEpicOffsets.get(key)) :
-        Optional.empty();
+    return currentUpStreamEpicOffsets.containsKey(key)
+        ? Optional.ofNullable(currentUpStreamEpicOffsets.get(key))
+        : Optional.empty();
   }
 
   public Map<String, EpicPartitionOffsets> getAll() {
@@ -56,26 +59,17 @@ public class LogEpicStateHandler implements Serializable {
   }
 
   public void registerEpicPartitionStartOffset(
-      String upstreamId,
-      long epicNo,
-      int partition,
-      final Long startOffset) {
+      String upstreamId, long epicNo, int partition, final Long startOffset) {
     registerEpicPartitionOffset(upstreamId, epicNo, partition, startOffset, null, false);
   }
 
   public void registerEpicPartitionStartOffsetForce(
-      String upstreamId,
-      long epicNo,
-      int partition,
-      final Long startOffset) {
+      String upstreamId, long epicNo, int partition, final Long startOffset) {
     registerEpicPartitionOffset(upstreamId, epicNo, partition, startOffset, null, true);
   }
 
   public void registerEpicPartitionRetractedOffset(
-      String upstreamId,
-      long epicNo,
-      int partition,
-      final Long retractedOffset) {
+      String upstreamId, long epicNo, int partition, final Long retractedOffset) {
     registerEpicPartitionOffset(upstreamId, epicNo, partition, null, retractedOffset, false);
   }
 
@@ -93,8 +87,8 @@ public class LogEpicStateHandler implements Serializable {
       epicPartitionOffsets = new EpicPartitionOffsets(epicNo, partition);
       shouldUpdate = true;
     }
-    if (forceUpdateStartOffset ||
-        (startOffset != null && epicPartitionOffsets.startOffset == null)) {
+    if (forceUpdateStartOffset
+        || (startOffset != null && epicPartitionOffsets.startOffset == null)) {
       epicPartitionOffsets.startOffset = startOffset;
       shouldUpdate = true;
     }
@@ -120,17 +114,13 @@ public class LogEpicStateHandler implements Serializable {
       String keyUpstreamId = keys[0];
       long keyEpicNo = Long.parseLong(keys[1]);
       int keyPartition = Integer.parseInt(keys[2]);
-      if (keyUpstreamId.equals(upstreamId) &&
-          keyEpicNo > epicNo &&
-          keyPartition == partition) {
+      if (keyUpstreamId.equals(upstreamId) && keyEpicNo > epicNo && keyPartition == partition) {
         keyIterator.remove();
       }
     }
   }
 
-  /**
-   * explain epicNo and topic partition relate to start offset and retracted offset.
-   */
+  /** explain epicNo and topic partition relate to start offset and retracted offset. */
   static class EpicPartitionOffsets implements Serializable {
     private static final long serialVersionUID = -6227903241361894539L;
     long epicNo;

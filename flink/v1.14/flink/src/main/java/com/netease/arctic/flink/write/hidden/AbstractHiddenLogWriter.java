@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.write.hidden;
 
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
+
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
@@ -43,14 +45,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Properties;
 
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
-
 /**
- * This is an abstract log queue writer.
- * Sending flip message to the kafka topic when the operator occurs restoring, through the {@link GlobalFlipCommitter}
- * commit {@link GlobalFlipCommitter.CommitRequest} to the jobMaster.
- * {@link this#processElement(StreamRecord)} will process records after all operators has sent flip message to the
- * jobMaster and the jobMaster has finished handling these requests.
+ * This is an abstract log queue writer. Sending flip message to the kafka topic when the operator
+ * occurs restoring, through the {@link GlobalFlipCommitter} commit {@link
+ * GlobalFlipCommitter.CommitRequest} to the jobMaster. {@link this#processElement(StreamRecord)}
+ * will process records after all operators has sent flip message to the jobMaster and the jobMaster
+ * has finished handling these requests.
  */
 public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
   public static final Logger LOG = LoggerFactory.getLogger(AbstractHiddenLogWriter.class);
@@ -104,15 +104,15 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
     subtaskId = getRuntimeContext().getIndexOfThisSubtask();
 
     hiddenLogJobIdentifyState =
-        context.getOperatorStateStore()
+        context
+            .getOperatorStateStore()
             .getListState(
                 new ListStateDescriptor<>(
-                    "hidden-wal-writer-job-identify",
-                    StringSerializer.INSTANCE
-                ));
+                    "hidden-wal-writer-job-identify", StringSerializer.INSTANCE));
 
     parallelismState =
-        context.getOperatorStateStore()
+        context
+            .getOperatorStateStore()
             .getListState(
                 new ListStateDescriptor<>(
                     "job-" + Arrays.toString(jobIdentify) + "-parallelism",
@@ -134,18 +134,14 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
     if (context.isRestored() && parallelismSame(parallelism)) {
       ckpComplete = context.getRestoredCheckpointId().getAsLong();
 
-      jobIdentify = hiddenLogJobIdentifyState.get().iterator().next().getBytes(StandardCharsets.UTF_8);
+      jobIdentify =
+          hiddenLogJobIdentifyState.get().iterator().next().getBytes(StandardCharsets.UTF_8);
 
       epicNo = ckpComplete;
 
-      logFlip = new LogRecordV1(
-          logVersion,
-          jobIdentify,
-          epicNo,
-          true,
-          ChangeAction.INSERT,
-          new GenericRowData(0)
-      );
+      logFlip =
+          new LogRecordV1(
+              logVersion, jobIdentify, epicNo, true, ChangeAction.INSERT, new GenericRowData(0));
       // signal flip topic
       shouldCheckFlipSent = true;
       flipSentSucceed = flipCommitter.commit(subtaskId, logFlip);
@@ -154,19 +150,14 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
       epicNo++;
     } else {
       hiddenLogJobIdentifyState.clear();
-      hiddenLogJobIdentifyState.add(new String(jobIdentify, 0, jobIdentify.length, StandardCharsets.UTF_8));
+      hiddenLogJobIdentifyState.add(
+          new String(jobIdentify, 0, jobIdentify.length, StandardCharsets.UTF_8));
     }
 
-    logDataJsonSerialization = new LogDataJsonSerialization<>(
-        checkNotNull(schema),
-        checkNotNull(fieldGetterFactory));
+    logDataJsonSerialization =
+        new LogDataJsonSerialization<>(checkNotNull(schema), checkNotNull(fieldGetterFactory));
 
-    producer =
-        factory.createProducer(
-            producerConfig,
-            topic,
-            logDataJsonSerialization,
-            helper);
+    producer = factory.createProducer(producerConfig, topic, logDataJsonSerialization, helper);
 
     parallelismState.clear();
     parallelismState.add(parallelism);
@@ -179,24 +170,20 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
   }
 
   private boolean parallelismSame(int parallelism) throws Exception {
-    if (parallelismState == null ||
-        parallelismState.get() == null ||
-        !parallelismState.get().iterator().hasNext()) {
+    if (parallelismState == null
+        || parallelismState.get() == null
+        || !parallelismState.get().iterator().hasNext()) {
       LOG.info("Can't find out parallelism state, ignore sending flips.");
       return false;
     }
-    int beforeParallelism =
-        parallelismState
-            .get()
-            .iterator()
-            .next();
+    int beforeParallelism = parallelismState.get().iterator().next();
     if (beforeParallelism != parallelism) {
       LOG.warn(
-          "This job restored from state, but has changed parallelism, before:{}, now:{}," +
-              " So ignore sending flips now.",
-          beforeParallelism, parallelism);
+          "This job restored from state, but has changed parallelism, before:{}, now:{},"
+              + " So ignore sending flips now.",
+          beforeParallelism,
+          parallelism);
       return false;
-
     }
     return true;
   }
@@ -212,8 +199,10 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
     while (shouldCheckFlip() && !alreadySentFlip()) {
       Thread.sleep(100);
       if (waitCount++ % 100 == 0) {
-        LOG.info("Still waiting for sending flip," +
-            " while the other subtasks have committed to Global State. this subtask is {}.", subtaskId);
+        LOG.info(
+            "Still waiting for sending flip,"
+                + " while the other subtasks have committed to Global State. this subtask is {}.",
+            subtaskId);
       }
     }
   }
@@ -232,21 +221,14 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
   @Override
   public void prepareSnapshotPreBarrier(long checkpointId) throws Exception {
     super.prepareSnapshotPreBarrier(checkpointId);
-    LOG.info(
-        "prepareSnapshotPreBarrier subtaskId={}, checkpointId={}.",
-        subtaskId,
-        checkpointId);
-
+    LOG.info("prepareSnapshotPreBarrier subtaskId={}, checkpointId={}.", subtaskId, checkpointId);
   }
 
   @Override
   public void snapshotState(StateSnapshotContext context) throws Exception {
     super.snapshotState(context);
     producer.flush();
-    LOG.info(
-        "snapshotState subtaskId={}, checkpointId={}.",
-        subtaskId,
-        context.getCheckpointId());
+    LOG.info("snapshotState subtaskId={}, checkpointId={}.", subtaskId, context.getCheckpointId());
     epicNo++;
   }
 

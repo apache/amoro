@@ -19,6 +19,10 @@
 
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
+import static com.netease.arctic.flink.read.FlinkSplitPlanner.planChangeTable;
+import static com.netease.arctic.flink.read.hybrid.enumerator.ArcticEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
+import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
+
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ChangelogSplit;
@@ -37,14 +41,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.netease.arctic.flink.read.FlinkSplitPlanner.planChangeTable;
-import static com.netease.arctic.flink.read.hybrid.enumerator.ArcticEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
-import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
-
 /**
- * Continuous planning {@link KeyedTable} by {@link ArcticEnumeratorOffset} and generate a
- * {@link ContinuousEnumerationResult}.
- * <p> {@link ContinuousEnumerationResult#splits()} includes the {@link SnapshotSplit}s and {@link ChangelogSplit}s.
+ * Continuous planning {@link KeyedTable} by {@link ArcticEnumeratorOffset} and generate a {@link
+ * ContinuousEnumerationResult}.
+ *
+ * <p>{@link ContinuousEnumerationResult#splits()} includes the {@link SnapshotSplit}s and {@link
+ * ChangelogSplit}s.
  */
 @Internal
 public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
@@ -59,11 +61,11 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
   }
 
   @Override
-  public void close() throws IOException {
-  }
+  public void close() throws IOException {}
 
   @Override
-  public ContinuousEnumerationResult planSplits(ArcticEnumeratorOffset lastOffset, List<Expression> filters) {
+  public ContinuousEnumerationResult planSplits(
+      ArcticEnumeratorOffset lastOffset, List<Expression> filters) {
     if (table == null) {
       table = loadArcticTable(loader).asKeyedTable();
     }
@@ -81,7 +83,8 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
     if (changeSnapshot != null && changeSnapshot.snapshotId() != fromChangeSnapshotId) {
       long snapshotId = changeSnapshot.snapshotId();
-      ChangeTableIncrementalScan changeTableScan = table.changeTable().newScan().useSnapshot(snapshotId);
+      ChangeTableIncrementalScan changeTableScan =
+          table.changeTable().newScan().useSnapshot(snapshotId);
       if (filters != null) {
         for (Expression filter : filters) {
           changeTableScan = changeTableScan.filter(filter);
@@ -95,9 +98,7 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
 
       List<ArcticSplit> arcticChangeSplit = planChangeTable(changeTableScan, splitCount);
       return new ContinuousEnumerationResult(
-          arcticChangeSplit,
-          lastPosition,
-          ArcticEnumeratorOffset.of(snapshotId, null));
+          arcticChangeSplit, lastPosition, ArcticEnumeratorOffset.of(snapshotId, null));
     }
     return ContinuousEnumerationResult.EMPTY;
   }
@@ -106,15 +107,14 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
     List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(table, filters, splitCount);
 
-    long changeStartSnapshotId = changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;
+    long changeStartSnapshotId =
+        changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;
     if (changeSnapshot == null && CollectionUtils.isEmpty(arcticSplits)) {
       LOG.info("There have no change snapshot, and no base splits in table: {}.", table);
       return ContinuousEnumerationResult.EMPTY;
     }
 
     return new ContinuousEnumerationResult(
-        arcticSplits,
-        null,
-        ArcticEnumeratorOffset.of(changeStartSnapshotId, null));
+        arcticSplits, null, ArcticEnumeratorOffset.of(changeStartSnapshotId, null));
   }
 }

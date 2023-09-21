@@ -18,6 +18,13 @@
 
 package com.netease.arctic.flink.write.hidden.kafka;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getProperties;
+import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getPropertiesWithByteArray;
+import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.util.kafka.KafkaTestBase;
@@ -46,13 +53,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Properties;
 import java.util.UUID;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getProperties;
-import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getPropertiesWithByteArray;
-import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 
 public class TestHiddenKafkaProducer extends TestBaseLog {
   private static final Logger LOG = LoggerFactory.getLogger(TestHiddenKafkaProducer.class);
@@ -111,17 +111,13 @@ public class TestHiddenKafkaProducer extends TestBaseLog {
     int numPartitions = 3;
     kafkaTestBase.createTopics(numPartitions, topic);
     LogData.FieldGetterFactory<RowData> fieldGetterFactory = LogRecordV1.fieldGetterFactory;
-    LogDataJsonSerialization<RowData> logDataJsonSerialization = new LogDataJsonSerialization<>(
-        checkNotNull(userSchema),
-        checkNotNull(fieldGetterFactory));
+    LogDataJsonSerialization<RowData> logDataJsonSerialization =
+        new LogDataJsonSerialization<>(checkNotNull(userSchema), checkNotNull(fieldGetterFactory));
 
     Properties properties = getPropertiesWithByteArray(kafkaTestBase.getProperties());
     LogMsgFactory.Producer<RowData> producer =
-        new HiddenKafkaFactory<RowData>().createProducer(
-            properties,
-            topic,
-            logDataJsonSerialization,
-            null);
+        new HiddenKafkaFactory<RowData>()
+            .createProducer(properties, topic, logDataJsonSerialization, null);
     producer.open(null);
 
     int recoverNum = 3;
@@ -138,7 +134,7 @@ public class TestHiddenKafkaProducer extends TestBaseLog {
   public void testLogDataNullValueSerialize() throws IOException {
 
     LogDataJsonSerialization<RowData> logDataJsonSerialization =
-      new LogDataJsonSerialization<>(userSchemaWithAllDataType, LogRecordV1.fieldGetterFactory);
+        new LogDataJsonSerialization<>(userSchemaWithAllDataType, LogRecordV1.fieldGetterFactory);
 
     GenericRowData rowData = new GenericRowData(17);
     rowData.setRowKind(RowKind.INSERT);
@@ -160,21 +156,22 @@ public class TestHiddenKafkaProducer extends TestBaseLog {
     rowData.setField(15, null);
     rowData.setField(16, null);
 
-    LogData<RowData> logData = new LogRecordV1(
-      FormatVersion.FORMAT_VERSION_V1,
-      IdGenerator.generateUpstreamId(),
-      1L,
-      false,
-      ChangeAction.INSERT,
-      rowData
-    );
+    LogData<RowData> logData =
+        new LogRecordV1(
+            FormatVersion.FORMAT_VERSION_V1,
+            IdGenerator.generateUpstreamId(),
+            1L,
+            false,
+            ChangeAction.INSERT,
+            rowData);
 
     byte[] bytes = logDataJsonSerialization.serialize(logData);
 
     Assert.assertNotNull(bytes);
     String actualJson = new String(Bytes.subByte(bytes, 18, bytes.length - 18));
 
-    String expected = "{\"f_boolean\":null,\"f_int\":null,\"f_date\":null,\"f_long\":null,\"f_time\":null,\"f_float\":null,\"f_double\":null,\"f_timestamp_local\":null,\"f_timestamp_tz\":null,\"f_string\":null,\"f_uuid\":null,\"f_fixed\":null,\"f_binary\":null,\"f_decimal\":null,\"f_list\":null,\"f_map\":null,\"f_struct\":null}";
+    String expected =
+        "{\"f_boolean\":null,\"f_int\":null,\"f_date\":null,\"f_long\":null,\"f_time\":null,\"f_float\":null,\"f_double\":null,\"f_timestamp_local\":null,\"f_timestamp_tz\":null,\"f_string\":null,\"f_uuid\":null,\"f_fixed\":null,\"f_binary\":null,\"f_decimal\":null,\"f_list\":null,\"f_map\":null,\"f_struct\":null}";
     assertEquals(expected, actualJson);
 
     LogDataJsonDeserialization<RowData> logDataDeserialization = createLogDataDeserialization();
@@ -183,11 +180,13 @@ public class TestHiddenKafkaProducer extends TestBaseLog {
   }
 
   @Test
-  public void testLogDataJsonSerializationClassSerialize() throws IOException, ClassNotFoundException {
+  public void testLogDataJsonSerializationClassSerialize()
+      throws IOException, ClassNotFoundException {
     LogDataJsonSerialization<RowData> actual =
-      new LogDataJsonSerialization<>(userSchema, LogRecordV1.fieldGetterFactory);
+        new LogDataJsonSerialization<>(userSchema, LogRecordV1.fieldGetterFactory);
     byte[] bytes = InstantiationUtil.serializeObject(actual);
-    LogDataJsonSerialization<RowData> result = InstantiationUtil.deserializeObject(bytes, actual.getClass().getClassLoader());
+    LogDataJsonSerialization<RowData> result =
+        InstantiationUtil.deserializeObject(bytes, actual.getClass().getClassLoader());
     Assert.assertNotNull(result);
   }
 }

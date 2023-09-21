@@ -23,40 +23,26 @@ import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplitState;
 import org.apache.flink.table.data.RowData;
 
 import javax.annotation.Nullable;
+
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
 public class LogKafkaPartitionSplitState extends KafkaPartitionSplitState {
 
   /**
-   * Denote reader is in retracting read mode.
-   * In this mode, data would be read in reverse order and opposite RowKind.
+   * Denote reader is in retracting read mode. In this mode, data would be read in reverse order and
+   * opposite RowKind.
    */
   private boolean retracting;
-  /**
-   * @see LogKafkaPartitionSplit#retractStopOffset
-   */
-  @Nullable
-  private Long retractStopOffset;
-  /**
-   * @see LogKafkaPartitionSplit#revertStartOffset
-   */
-  @Nullable
-  private Long revertStartOffset;
-  /**
-   * @see LogKafkaPartitionSplit#retractingEpicNo
-   */
-  @Nullable
-  private Long retractingEpicNo;
-  /**
-   * @see LogKafkaPartitionSplit#retractingUpstreamId
-   */
-  @Nullable
-  private String retractingUpstreamId;
-  /**
-   * Key: upstream job id + "_" + epicNo
-   * Value: epic start offset
-   */
+  /** @see LogKafkaPartitionSplit#retractStopOffset */
+  @Nullable private Long retractStopOffset;
+  /** @see LogKafkaPartitionSplit#revertStartOffset */
+  @Nullable private Long revertStartOffset;
+  /** @see LogKafkaPartitionSplit#retractingEpicNo */
+  @Nullable private Long retractingEpicNo;
+  /** @see LogKafkaPartitionSplit#retractingUpstreamId */
+  @Nullable private String retractingUpstreamId;
+  /** Key: upstream job id + "_" + epicNo Value: epic start offset */
   private final NavigableMap<String, Long> upstreamEpicStartOffsets;
 
   public LogKafkaPartitionSplitState(KafkaPartitionSplit s) {
@@ -91,9 +77,9 @@ public class LogKafkaPartitionSplitState extends KafkaPartitionSplitState {
     } else {
       setCurrentOffset(record.offset() + 1);
     }
-    initEpicStartOffsetIfEmpty(record.getLogData().getUpstreamId(), record.getLogData().getEpicNo(),
-        record.offset());
-    
+    initEpicStartOffsetIfEmpty(
+        record.getLogData().getUpstreamId(), record.getLogData().getEpicNo(), record.offset());
+
     // todo: clear useless epic start offset in state
     retracting = record.isRetracting();
   }

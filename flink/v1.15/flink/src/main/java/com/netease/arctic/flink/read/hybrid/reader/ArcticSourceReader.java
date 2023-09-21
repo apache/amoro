@@ -47,17 +47,15 @@ import java.util.Map;
 /**
  * Arctic source reader that is created by a {@link ArcticSource#createReader(SourceReaderContext)}.
  */
-public class ArcticSourceReader<T> extends
-    SingleThreadMultiplexSourceReaderBase<ArcticRecordWithOffset<T>, T, ArcticSplit, ArcticSplitState> {
+public class ArcticSourceReader<T>
+    extends SingleThreadMultiplexSourceReaderBase<
+        ArcticRecordWithOffset<T>, T, ArcticSplit, ArcticSplitState> {
 
   public static final Logger LOGGER = LoggerFactory.getLogger(ArcticSourceReader.class);
 
   public ReaderOutput<T> output;
-  /**
-   * SourceEvents may be received before this#pollNext.
-   */
+  /** SourceEvents may be received before this#pollNext. */
   private volatile boolean maxWatermarkToBeEmitted = false;
-
 
   public ArcticSourceReader(
       ReaderFunction<T> readerFunction,
@@ -65,10 +63,7 @@ public class ArcticSourceReader<T> extends
       SourceReaderContext context,
       boolean populateRowTime) {
     super(
-        () -> new HybridSplitReader<>(
-            readerFunction,
-            context
-        ),
+        () -> new HybridSplitReader<>(readerFunction, context),
         new ArcticRecordEmitter<T>(populateRowTime),
         config,
         context);
@@ -137,20 +132,23 @@ public class ArcticSourceReader<T> extends
   }
 
   /**
-   * There is a case that the watermark in {@link WatermarkOutputMultiplexer.OutputState} has
-   * been updated, but watermark has not been emitted for that when {@link WatermarkOutputMultiplexer#onPeriodicEmit}
-   * called, the outputState has been removed by {@link WatermarkOutputMultiplexer#unregisterOutput(String)} after
-   * split finished.
-   * Wrap {@link ReaderOutput} to call
-   * {@link ProgressiveTimestampsAndWatermarks.SplitLocalOutputs#emitPeriodicWatermark()} when split finishes.
+   * There is a case that the watermark in {@link WatermarkOutputMultiplexer.OutputState} has been
+   * updated, but watermark has not been emitted for that when {@link
+   * WatermarkOutputMultiplexer#onPeriodicEmit} called, the outputState has been removed by {@link
+   * WatermarkOutputMultiplexer#unregisterOutput(String)} after split finished. Wrap {@link
+   * ReaderOutput} to call {@link
+   * ProgressiveTimestampsAndWatermarks.SplitLocalOutputs#emitPeriodicWatermark()} when split
+   * finishes.
    */
   static class ArcticReaderOutput<T> implements ReaderOutput<T> {
 
     private final ReaderOutput<T> internal;
 
     public ArcticReaderOutput(ReaderOutput<T> readerOutput) {
-      Preconditions.checkArgument(readerOutput instanceof SourceOutputWithWatermarks,
-          "readerOutput should be SourceOutputWithWatermarks, but was %s", readerOutput.getClass());
+      Preconditions.checkArgument(
+          readerOutput instanceof SourceOutputWithWatermarks,
+          "readerOutput should be SourceOutputWithWatermarks, but was %s",
+          readerOutput.getClass());
       this.internal = readerOutput;
     }
 
@@ -191,5 +189,4 @@ public class ArcticSourceReader<T> extends
       internal.releaseOutputForSplit(splitId);
     }
   }
-
 }

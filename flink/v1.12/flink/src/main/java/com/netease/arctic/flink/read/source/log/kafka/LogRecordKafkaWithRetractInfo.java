@@ -24,33 +24,30 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 public class LogRecordKafkaWithRetractInfo<T> extends ConsumerRecord<byte[], byte[]> {
 
   /**
-   * Denote reader is in retracting read mode.
-   * In this mode, data would be read in reverse order and opposite RowKind.
+   * Denote reader is in retracting read mode. In this mode, data would be read in reverse order and
+   * opposite RowKind.
    */
   private final boolean retracting;
-  /**
-   * @see LogKafkaPartitionSplit#retractStopOffset
-   */
+  /** @see LogKafkaPartitionSplit#retractStopOffset */
   private final Long retractStoppingOffset;
-  /**
-   * @see LogKafkaPartitionSplit#revertStartOffset
-   */
+  /** @see LogKafkaPartitionSplit#revertStartOffset */
   private final Long revertStartingOffset;
-  /**
-   * @see LogKafkaPartitionSplit#retractingEpicNo
-   */
+  /** @see LogKafkaPartitionSplit#retractingEpicNo */
   private final Long retractingEpicNo;
+
   private final LogData<T> logData;
   private final T actualValue;
 
-  public LogRecordKafkaWithRetractInfo(ConsumerRecord<byte[], byte[]> consumerRecord,
-                                       boolean retracting,
-                                       Long retractStoppingOffset,
-                                       Long revertStartingOffset,
-                                       Long retractingEpicNo,
-                                       LogData<T> logData,
-                                       T actualValue) {
-    super(consumerRecord.topic(),
+  public LogRecordKafkaWithRetractInfo(
+      ConsumerRecord<byte[], byte[]> consumerRecord,
+      boolean retracting,
+      Long retractStoppingOffset,
+      Long revertStartingOffset,
+      Long retractingEpicNo,
+      LogData<T> logData,
+      T actualValue) {
+    super(
+        consumerRecord.topic(),
         consumerRecord.partition(),
         consumerRecord.offset(),
         consumerRecord.timestamp(),
@@ -70,20 +67,27 @@ public class LogRecordKafkaWithRetractInfo<T> extends ConsumerRecord<byte[], byt
     this.actualValue = actualValue;
   }
 
-  public static <T> LogRecordKafkaWithRetractInfo<T> ofRetract(ConsumerRecord<byte[], byte[]> consumerRecord,
-                                                               Long retractStoppingOffset,
-                                                               Long revertStartingOffset,
-                                                               Long retractingEpicNo,
-                                                               LogData<T> logData,
-                                                               T actualValue) {
-    return new LogRecordKafkaWithRetractInfo<>(consumerRecord, true, retractStoppingOffset,
-        revertStartingOffset, retractingEpicNo, logData, actualValue);
+  public static <T> LogRecordKafkaWithRetractInfo<T> ofRetract(
+      ConsumerRecord<byte[], byte[]> consumerRecord,
+      Long retractStoppingOffset,
+      Long revertStartingOffset,
+      Long retractingEpicNo,
+      LogData<T> logData,
+      T actualValue) {
+    return new LogRecordKafkaWithRetractInfo<>(
+        consumerRecord,
+        true,
+        retractStoppingOffset,
+        revertStartingOffset,
+        retractingEpicNo,
+        logData,
+        actualValue);
   }
 
-  public static <T> LogRecordKafkaWithRetractInfo<T> of(ConsumerRecord<byte[], byte[]> consumerRecord,
-                                                        LogData<T> logData) {
-    return new LogRecordKafkaWithRetractInfo<>(consumerRecord, false, null,
-        null, null, logData, logData.getActualValue());
+  public static <T> LogRecordKafkaWithRetractInfo<T> of(
+      ConsumerRecord<byte[], byte[]> consumerRecord, LogData<T> logData) {
+    return new LogRecordKafkaWithRetractInfo<>(
+        consumerRecord, false, null, null, null, logData, logData.getActualValue());
   }
 
   public boolean isRetracting() {

@@ -23,17 +23,13 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * An util for reflection.
- */
+/** An util for reflection. */
 public class ReflectionUtil {
 
-  /**
-   * get interfaces of class and its parent
-   */
+  /** get interfaces of class and its parent */
   public static Class<?>[] getAllInterface(Class clazz) {
     if (clazz.equals(Object.class)) {
-      return new Class[]{};
+      return new Class[] {};
     }
     Class<?>[] current = clazz.getInterfaces();
     Class superClass = clazz.getSuperclass();

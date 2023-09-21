@@ -34,15 +34,16 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Objects;
 
-/**
- * Serializer that serializes and deserializes arctic enumerator {@link ArcticSourceEnumState}.
- */
-public class ArcticSourceEnumStateSerializer implements SimpleVersionedSerializer<ArcticSourceEnumState> {
+/** Serializer that serializes and deserializes arctic enumerator {@link ArcticSourceEnumState}. */
+public class ArcticSourceEnumStateSerializer
+    implements SimpleVersionedSerializer<ArcticSourceEnumState> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ArcticSourceEnumStateSerializer.class);
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(ArcticSourceEnumStateSerializer.class);
   private static final int VERSION = 1;
   private final ArcticSplitSerializer splitSerializer = ArcticSplitSerializer.INSTANCE;
-  private final ArcticEnumeratorOffsetSerializer offsetSerializer = ArcticEnumeratorOffsetSerializer.INSTANCE;
+  private final ArcticEnumeratorOffsetSerializer offsetSerializer =
+      ArcticEnumeratorOffsetSerializer.INSTANCE;
 
   private static final ThreadLocal<DataOutputSerializer> SERIALIZER_CACHE =
       ThreadLocal.withInitial(() -> new DataOutputSerializer(1024));
@@ -142,12 +143,14 @@ public class ArcticSourceEnumStateSerializer implements SimpleVersionedSerialize
       byte[] bytes = new byte[in.readInt()];
       in.read(bytes);
       try {
-        temporalJoinSplits = InstantiationUtil.deserializeObject(bytes, TemporalJoinSplits.class.getClassLoader());
+        temporalJoinSplits =
+            InstantiationUtil.deserializeObject(bytes, TemporalJoinSplits.class.getClassLoader());
       } catch (ClassNotFoundException e) {
         throw new RuntimeException("deserialize FirstSplit error", e);
       }
     }
 
-    return new ArcticSourceEnumState(pendingSplits, enumeratorOffset, shuffleSplitRelation, temporalJoinSplits);
+    return new ArcticSourceEnumState(
+        pendingSplits, enumeratorOffset, shuffleSplitRelation, temporalJoinSplits);
   }
 }

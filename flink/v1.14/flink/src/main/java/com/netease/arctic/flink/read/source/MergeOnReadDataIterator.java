@@ -26,11 +26,10 @@ import org.apache.iceberg.io.CloseableIterator;
 
 import java.io.IOException;
 
-
 /**
- * Iterator for reading data in a Merge on Read (MOR) way.
- * This iterator handles reading data from an Amoro mix-format table
- * while keeping track of file and record offsets for efficient data retrieval.
+ * Iterator for reading data in a Merge on Read (MOR) way. This iterator handles reading data from
+ * an Amoro mix-format table while keeping track of file and record offsets for efficient data
+ * retrieval.
  */
 public class MergeOnReadDataIterator extends DataIterator<RowData> {
   private int fileOffset;
@@ -43,9 +42,7 @@ public class MergeOnReadDataIterator extends DataIterator<RowData> {
       ArcticFileIO io) {
     super();
     this.iterator =
-        IteratorWithIO.of(
-            io,
-            io.doAs(() -> flinkArcticMORDataReader.readData(keyedTableScanTask)));
+        IteratorWithIO.of(io, io.doAs(() -> flinkArcticMORDataReader.readData(keyedTableScanTask)));
   }
 
   @Override
@@ -57,9 +54,10 @@ public class MergeOnReadDataIterator extends DataIterator<RowData> {
       if (hasNext()) {
         next();
       } else {
-        throw new IllegalStateException(String.format(
-            "Invalid starting record offset %d for file %d from KeyedTableScanTask.",
-            startingRecordOffset, startingFileOffset));
+        throw new IllegalStateException(
+            String.format(
+                "Invalid starting record offset %d for file %d from KeyedTableScanTask.",
+                startingRecordOffset, startingFileOffset));
       }
     }
     this.fileOffset = startingFileOffset;
@@ -114,10 +112,11 @@ public class MergeOnReadDataIterator extends DataIterator<RowData> {
 
     @Override
     public void close() throws IOException {
-      io.doAs(() -> {
-        iterator.close();
-        return null;
-      });
+      io.doAs(
+          () -> {
+            iterator.close();
+            return null;
+          });
     }
 
     @Override

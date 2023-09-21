@@ -26,8 +26,9 @@ import org.apache.iceberg.io.CloseableIterator;
 import java.io.Serializable;
 
 /**
- * Batcher converts iterator of T into iterator of batched {@code RecordsWithSplitIds<RecordAndPosition<T>>},
- * as FLIP-27's {@link SplitReader#fetch()} returns batched records.
+ * Batcher converts iterator of T into iterator of batched {@code
+ * RecordsWithSplitIds<RecordAndPosition<T>>}, as FLIP-27's {@link SplitReader#fetch()} returns
+ * batched records.
  */
 @FunctionalInterface
 public interface DataIteratorBatcher<T> extends Serializable {

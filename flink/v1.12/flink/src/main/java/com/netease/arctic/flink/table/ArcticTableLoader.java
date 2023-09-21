@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.table;
 
+import static com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator.METASTORE_URL;
+
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.flink.InternalCatalogBuilder;
 import com.netease.arctic.flink.interceptor.FlinkTablePropertiesInvocationHandler;
@@ -31,11 +33,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator.METASTORE_URL;
-
-/**
- * load a proxy table contains both arctic table properties and flink table properties
- */
+/** load a proxy table contains both arctic table properties and flink table properties */
 public class ArcticTableLoader implements TableLoader {
 
   private static final long serialVersionUID = 1L;
@@ -44,43 +42,56 @@ public class ArcticTableLoader implements TableLoader {
   protected final TableIdentifier tableIdentifier;
   protected final Map<String, String> flinkTableProperties;
   /**
-   * The mark of loading internal table, base or change table. For compatible with iceberg committer.
+   * The mark of loading internal table, base or change table. For compatible with iceberg
+   * committer.
    */
   protected boolean loadBaseForKeyedTable;
+
   protected transient ArcticCatalog arcticCatalog;
 
-  public static ArcticTableLoader of(TableIdentifier tableIdentifier, InternalCatalogBuilder catalogBuilder) {
+  public static ArcticTableLoader of(
+      TableIdentifier tableIdentifier, InternalCatalogBuilder catalogBuilder) {
     return of(tableIdentifier, catalogBuilder, new HashMap<>());
   }
 
-  public static ArcticTableLoader of(TableIdentifier tableIdentifier, InternalCatalogBuilder catalogBuilder,
-                                     Map<String, String> flinkTableProperties) {
+  public static ArcticTableLoader of(
+      TableIdentifier tableIdentifier,
+      InternalCatalogBuilder catalogBuilder,
+      Map<String, String> flinkTableProperties) {
     return new ArcticTableLoader(tableIdentifier, catalogBuilder, flinkTableProperties);
   }
 
-  public static ArcticTableLoader of(TableIdentifier tableIdentifier, Map<String, String> flinkTableProperties) {
+  public static ArcticTableLoader of(
+      TableIdentifier tableIdentifier, Map<String, String> flinkTableProperties) {
     String metastoreUrl = flinkTableProperties.get(METASTORE_URL);
-    return new ArcticTableLoader(tableIdentifier,
-        InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl), flinkTableProperties);
+    return new ArcticTableLoader(
+        tableIdentifier,
+        InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl),
+        flinkTableProperties);
   }
 
-  public static ArcticTableLoader of(TableIdentifier tableIdentifier,
-                                     String metastoreUrl,
-                                     Map<String, String> flinkTableProperties) {
-    return new ArcticTableLoader(tableIdentifier,
-        InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl), flinkTableProperties);
+  public static ArcticTableLoader of(
+      TableIdentifier tableIdentifier,
+      String metastoreUrl,
+      Map<String, String> flinkTableProperties) {
+    return new ArcticTableLoader(
+        tableIdentifier,
+        InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl),
+        flinkTableProperties);
   }
 
-  protected ArcticTableLoader(TableIdentifier tableIdentifier,
-                              InternalCatalogBuilder catalogBuilder,
-                              Map<String, String> flinkTableProperties) {
+  protected ArcticTableLoader(
+      TableIdentifier tableIdentifier,
+      InternalCatalogBuilder catalogBuilder,
+      Map<String, String> flinkTableProperties) {
     this(tableIdentifier, catalogBuilder, flinkTableProperties, null);
   }
 
-  protected ArcticTableLoader(TableIdentifier tableIdentifier,
-                              InternalCatalogBuilder catalogBuilder,
-                              Map<String, String> flinkTableProperties,
-                              Boolean loadBaseForKeyedTable) {
+  protected ArcticTableLoader(
+      TableIdentifier tableIdentifier,
+      InternalCatalogBuilder catalogBuilder,
+      Map<String, String> flinkTableProperties,
+      Boolean loadBaseForKeyedTable) {
     this.catalogBuilder = catalogBuilder;
     this.tableIdentifier = tableIdentifier;
     this.flinkTableProperties = flinkTableProperties;
@@ -93,8 +104,10 @@ public class ArcticTableLoader implements TableLoader {
   }
 
   public ArcticTable loadArcticTable() {
-    return ((ArcticTable) new FlinkTablePropertiesInvocationHandler(flinkTableProperties,
-        arcticCatalog.loadTable(tableIdentifier)).getProxy());
+    return ((ArcticTable)
+        new FlinkTablePropertiesInvocationHandler(
+                flinkTableProperties, arcticCatalog.loadTable(tableIdentifier))
+            .getProxy());
   }
 
   public void switchLoadInternalTableForKeyedTable(boolean loadBaseForKeyedTable) {
@@ -113,24 +126,23 @@ public class ArcticTableLoader implements TableLoader {
       }
     }
     if (!(table instanceof Table)) {
-      throw new UnsupportedOperationException(String.format("table type mismatched. It's %s", table.getClass()));
+      throw new UnsupportedOperationException(
+          String.format("table type mismatched. It's %s", table.getClass()));
     }
     return (Table) table;
   }
 
   @Override
   public TableLoader clone() {
-    return new ArcticTableLoader(tableIdentifier, catalogBuilder, flinkTableProperties, loadBaseForKeyedTable);
+    return new ArcticTableLoader(
+        tableIdentifier, catalogBuilder, flinkTableProperties, loadBaseForKeyedTable);
   }
 
   @Override
-  public void close() throws IOException {
-  }
+  public void close() throws IOException {}
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("tableIdentifier", tableIdentifier)
-        .toString();
+    return MoreObjects.toStringHelper(this).add("tableIdentifier", tableIdentifier).toString();
   }
 }

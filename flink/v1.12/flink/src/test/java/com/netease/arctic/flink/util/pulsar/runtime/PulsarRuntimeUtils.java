@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.util.pulsar.runtime;
 
+import static org.apache.pulsar.common.naming.NamespaceName.SYSTEM_NAMESPACE;
+import static org.apache.pulsar.common.naming.TopicName.TRANSACTION_COORDINATOR_ASSIGN;
+
 import org.apache.pulsar.broker.ServiceConfiguration;
 import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.admin.PulsarAdminException;
@@ -30,21 +33,14 @@ import org.apache.pulsar.common.policies.data.TenantInfoImpl;
 import java.util.Collections;
 import java.util.List;
 
-import static org.apache.pulsar.common.naming.NamespaceName.SYSTEM_NAMESPACE;
-import static org.apache.pulsar.common.naming.TopicName.TRANSACTION_COORDINATOR_ASSIGN;
-
-/**
- * This class is used to create the basic topics for a standalone Pulsar instance.
- */
+/** This class is used to create the basic topics for a standalone Pulsar instance. */
 public final class PulsarRuntimeUtils {
 
   private PulsarRuntimeUtils() {
     // No public constructor
   }
 
-  /**
-   * Create the system topics.
-   */
+  /** Create the system topics. */
   public static void initializePulsarEnvironment(
       ServiceConfiguration config, String serviceUrl, String adminUrl)
       throws PulsarAdminException, PulsarClientException {
@@ -62,21 +58,20 @@ public final class PulsarRuntimeUtils {
           TopicName.PUBLIC_TENANT + "/" + TopicName.DEFAULT_NAMESPACE);
 
       // Create Pulsar system namespace
-      createNameSpace(
-          admin, cluster, SYSTEM_NAMESPACE.getTenant(), SYSTEM_NAMESPACE.toString());
+      createNameSpace(admin, cluster, SYSTEM_NAMESPACE.getTenant(), SYSTEM_NAMESPACE.toString());
       // Enable transaction
       if (config.isTransactionCoordinatorEnabled()
-          && !admin.namespaces()
-          .getTopics(SYSTEM_NAMESPACE.toString())
-          .contains(TRANSACTION_COORDINATOR_ASSIGN.getPartition(0).toString())) {
+          && !admin
+              .namespaces()
+              .getTopics(SYSTEM_NAMESPACE.toString())
+              .contains(TRANSACTION_COORDINATOR_ASSIGN.getPartition(0).toString())) {
         admin.topics().createPartitionedTopic(TRANSACTION_COORDINATOR_ASSIGN.toString(), 1);
       }
     }
   }
 
   private static void createSampleNameSpace(
-      PulsarAdmin admin, ClusterData clusterData, String cluster)
-      throws PulsarAdminException {
+      PulsarAdmin admin, ClusterData clusterData, String cluster) throws PulsarAdminException {
     // Create a sample namespace
     String tenant = "sample";
     String globalCluster = "global";
@@ -94,11 +89,10 @@ public final class PulsarRuntimeUtils {
     }
 
     if (!admin.tenants().getTenants().contains(tenant)) {
-      admin.tenants()
+      admin
+          .tenants()
           .createTenant(
-              tenant,
-              new TenantInfoImpl(
-                  Collections.emptySet(), Collections.singleton(cluster)));
+              tenant, new TenantInfoImpl(Collections.emptySet(), Collections.singleton(cluster)));
     }
 
     if (!admin.namespaces().getNamespaces(tenant).contains(namespace)) {
@@ -110,7 +104,8 @@ public final class PulsarRuntimeUtils {
       PulsarAdmin admin, String cluster, String publicTenant, String defaultNamespace)
       throws PulsarAdminException {
     if (!admin.tenants().getTenants().contains(publicTenant)) {
-      admin.tenants()
+      admin
+          .tenants()
           .createTenant(
               publicTenant,
               TenantInfo.builder()
@@ -120,9 +115,9 @@ public final class PulsarRuntimeUtils {
     }
     if (!admin.namespaces().getNamespaces(publicTenant).contains(defaultNamespace)) {
       admin.namespaces().createNamespace(defaultNamespace);
-      admin.namespaces()
-          .setNamespaceReplicationClusters(
-              defaultNamespace, Collections.singleton(cluster));
+      admin
+          .namespaces()
+          .setNamespaceReplicationClusters(defaultNamespace, Collections.singleton(cluster));
     }
   }
 }

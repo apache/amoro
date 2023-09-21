@@ -37,14 +37,15 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class FlinkArcticMORDataReader extends AbstractAdaptHiveArcticDataReader<RowData> {
-  public FlinkArcticMORDataReader(ArcticFileIO fileIO,
-                                  Schema tableSchema,
-                                  Schema projectedSchema,
-                                  PrimaryKeySpec primaryKeySpec,
-                                  String nameMapping,
-                                  boolean caseSensitive,
-                                  BiFunction<Type, Object, Object> convertConstant,
-                                  boolean reuseContainer) {
+  public FlinkArcticMORDataReader(
+      ArcticFileIO fileIO,
+      Schema tableSchema,
+      Schema projectedSchema,
+      PrimaryKeySpec primaryKeySpec,
+      String nameMapping,
+      boolean caseSensitive,
+      BiFunction<Type, Object, Object> convertConstant,
+      boolean reuseContainer) {
     super(
         fileIO,
         tableSchema,
@@ -57,26 +58,18 @@ public class FlinkArcticMORDataReader extends AbstractAdaptHiveArcticDataReader<
   }
 
   @Override
-  protected Function<MessageType,
-      ParquetValueReader<?>> getNewReaderFunction(
-      Schema projectSchema,
-      Map<Integer, ?> idToConstant) {
-    return
-        fileSchema ->
-            AdaptHiveFlinkParquetReaders.buildReader(
-                projectSchema,
-                fileSchema,
-                idToConstant);
+  protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
+      Schema projectSchema, Map<Integer, ?> idToConstant) {
+    return fileSchema ->
+        AdaptHiveFlinkParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
   }
 
   @Override
-  protected Function<Schema,
-      Function<RowData, StructLike>> toStructLikeFunction() {
-    return
-        schema -> {
-          RowType requiredRowType = FlinkSchemaUtil.convert(schema);
-          RowDataWrapper asStructLike = new RowDataWrapper(requiredRowType, schema.asStruct());
-          return asStructLike::wrap;
-        };
+  protected Function<Schema, Function<RowData, StructLike>> toStructLikeFunction() {
+    return schema -> {
+      RowType requiredRowType = FlinkSchemaUtil.convert(schema);
+      RowDataWrapper asStructLike = new RowDataWrapper(requiredRowType, schema.asStruct());
+      return asStructLike::wrap;
+    };
   }
 }

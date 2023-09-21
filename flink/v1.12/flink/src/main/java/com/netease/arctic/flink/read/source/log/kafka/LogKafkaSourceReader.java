@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -45,9 +46,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
 
-/**
- * The source reader for Kafka partitions.
- */
+/** The source reader for Kafka partitions. */
 public class LogKafkaSourceReader<T> extends KafkaSourceReader<T> {
 
   private static final Logger LOG = LoggerFactory.getLogger(LogKafkaSourceReader.class);
@@ -56,11 +55,11 @@ public class LogKafkaSourceReader<T> extends KafkaSourceReader<T> {
   // and the split fetcher thread in the callback.
   private final SortedMap<Long, Map<TopicPartition, OffsetAndMetadata>> offsetsToCommit;
   private final ConcurrentMap<TopicPartition, OffsetAndMetadata> offsetsOfFinishedSplits;
-  @Nullable
-  private final LogSourceHelper logReadHelper;
+  @Nullable private final LogSourceHelper logReadHelper;
 
   public LogKafkaSourceReader(
-      FutureCompletingBlockingQueue<RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>>> elementsQueue,
+      FutureCompletingBlockingQueue<RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>>>
+          elementsQueue,
       Supplier<LogKafkaPartitionSplitReader> splitReaderSupplier,
       RecordEmitter<ConsumerRecord<byte[], byte[]>, T, KafkaPartitionSplitState> recordEmitter,
       Configuration config,
@@ -104,8 +103,7 @@ public class LogKafkaSourceReader<T> extends KafkaSourceReader<T> {
         // is retrieved, do not commit the offsets for those partitions.
         if (split.getStartingOffset() >= 0) {
           offsetsMap.put(
-              split.getTopicPartition(),
-              new OffsetAndMetadata(split.getStartingOffset()));
+              split.getTopicPartition(), new OffsetAndMetadata(split.getStartingOffset()));
         }
       }
       // Put offsets of all the finished splits.
@@ -126,5 +124,4 @@ public class LogKafkaSourceReader<T> extends KafkaSourceReader<T> {
   protected KafkaPartitionSplit toSplitType(String splitId, KafkaPartitionSplitState splitState) {
     return ((LogKafkaPartitionSplitState) splitState).toLogKafkaPartitionSplit();
   }
-
 }

@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.util;
 
+import static org.apache.flink.table.types.logical.LogicalTypeRoot.ROW;
+
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.FieldsDataType;
@@ -35,8 +37,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.apache.flink.table.types.logical.LogicalTypeRoot.ROW;
-
 /**
  * {@link Projection} represents a list of (possibly nested) indexes that can be used to project
  * data types. A row projection includes both reducing the accessible fields and reordering them.
@@ -46,8 +46,7 @@ import static org.apache.flink.table.types.logical.LogicalTypeRoot.ROW;
 public abstract class Projection {
 
   // sealed class
-  private Projection() {
-  }
+  private Projection() {}
 
   /**
    * Projects a (possibly nested) row data type by returning a new data type that only includes
@@ -56,29 +55,25 @@ public abstract class Projection {
    * <p>When extracting nested fields, the name of the resulting fields is the full path of the
    * field separated by {@code _}. For example, the field {@code b} inside the row field {@code a}
    * of the root {@link DataType} is named {@code a_b} in the result {@link DataType}. In case of
-   * naming conflicts the postfix notation '_$%d' is used, where {@code %d} is an arbitrary
-   * number, in order to generate a unique field name. For example if the root {@link DataType}
-   * includes both a field {@code a_b} and a nested row {@code a} with field {@code b}, the result
-   * {@link DataType} will contain one field named {@code a_b} and the other named {@code a_b_1}.
+   * naming conflicts the postfix notation '_$%d' is used, where {@code %d} is an arbitrary number,
+   * in order to generate a unique field name. For example if the root {@link DataType} includes
+   * both a field {@code a_b} and a nested row {@code a} with field {@code b}, the result {@link
+   * DataType} will contain one field named {@code a_b} and the other named {@code a_b_1}.
    */
   public abstract DataType project(DataType dataType);
 
-  /**
-   * Same as {@link #project(DataType)}, but accepting and returning {@link LogicalType}.
-   */
+  /** Same as {@link #project(DataType)}, but accepting and returning {@link LogicalType}. */
   public LogicalType project(LogicalType logicalType) {
     return this.project(TypeConversions.fromLogicalToDataType(logicalType)).getLogicalType();
   }
 
-  /**
-   * @return {@code true} whether this projection is nested or not.
-   */
+  /** @return {@code true} whether this projection is nested or not. */
   public abstract boolean isNested();
 
   /**
-   * Perform a difference of this {@link Projection} with another {@link Projection}. The result
-   * of this operation is a new {@link Projection} retaining the same ordering of this instance
-   * but with the indexes from {@code other} removed. For example:
+   * Perform a difference of this {@link Projection} with another {@link Projection}. The result of
+   * this operation is a new {@link Projection} retaining the same ordering of this instance but
+   * with the indexes from {@code other} removed. For example:
    *
    * <pre>
    * <code>
@@ -109,16 +104,14 @@ public abstract class Projection {
    */
   public abstract Projection complement(int fieldsNumber);
 
-  /**
-   * Like {@link #complement(int)}, using the {@code dataType} fields count.
-   */
+  /** Like {@link #complement(int)}, using the {@code dataType} fields count. */
   public Projection complement(DataType dataType) {
     return complement(dataType.getLogicalType().getChildren().size());
   }
 
   /**
-   * Convert this instance to a projection of top level indexes. The array represents the mapping
-   * of the fields of the original {@link DataType}. For example, {@code [0, 2, 1]} specifies to
+   * Convert this instance to a projection of top level indexes. The array represents the mapping of
+   * the fields of the original {@link DataType}. For example, {@code [0, 2, 1]} specifies to
    * include in the following order the 1st field, the 3rd field and the 2nd field of the row.
    *
    * @throws IllegalStateException if this projection is nested.
@@ -127,15 +120,15 @@ public abstract class Projection {
 
   /**
    * Convert this instance to a nested projection index paths. The array represents the mapping of
-   * the fields of the original {@link DataType}, including nested rows. For example, {@code [[0,
-   * 2, 1], ...]} specifies to include the 2nd field of the 3rd field of the 1st field in the
-   * top-level row.
+   * the fields of the original {@link DataType}, including nested rows. For example, {@code [[0, 2,
+   * 1], ...]} specifies to include the 2nd field of the 3rd field of the 1st field in the top-level
+   * row.
    */
   public abstract int[][] toNestedIndexes();
 
   /**
-   * Create an empty {@link Projection}, that is a projection that projects no fields, returning
-   * an empty {@link DataType}.
+   * Create an empty {@link Projection}, that is a projection that projects no fields, returning an
+   * empty {@link DataType}.
    */
   public static Projection empty() {
     return EmptyProjection.INSTANCE;
@@ -165,9 +158,7 @@ public abstract class Projection {
     return new NestedProjection(indexes);
   }
 
-  /**
-   * Create a {@link Projection} of a field range.
-   */
+  /** Create a {@link Projection} of a field range. */
   public static Projection range(int startInclusive, int endExclusive) {
     return new TopLevelProjection(IntStream.range(startInclusive, endExclusive).toArray());
   }
@@ -207,8 +198,7 @@ public abstract class Projection {
 
     static final EmptyProjection INSTANCE = new EmptyProjection();
 
-    private EmptyProjection() {
-    }
+    private EmptyProjection() {}
 
     @Override
     public DataType project(DataType dataType) {
@@ -262,9 +252,7 @@ public abstract class Projection {
         LogicalType fieldLogicalType = fieldType.getLogicalType();
         StringBuilder builder =
             new StringBuilder(
-                ((RowType) dataType.getLogicalType())
-                    .getFieldNames()
-                    .get(indexPath[0]));
+                ((RowType) dataType.getLogicalType()).getFieldNames().get(indexPath[0]));
         for (int index = 1; index < indexPath.length; index++) {
           Preconditions.checkArgument(
               fieldLogicalType.getTypeRoot() == ROW, "Row data type expected.");
@@ -393,9 +381,7 @@ public abstract class Projection {
       Arrays.sort(indexesToExclude);
 
       List<Integer> resultProjection =
-          Arrays.stream(projection)
-              .boxed()
-              .collect(Collectors.toCollection(ArrayList::new));
+          Arrays.stream(projection).boxed().collect(Collectors.toCollection(ArrayList::new));
 
       ListIterator<Integer> resultProjectionIterator = resultProjection.listIterator();
       while (resultProjectionIterator.hasNext()) {

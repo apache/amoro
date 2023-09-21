@@ -27,9 +27,10 @@ import java.io.Serializable;
 import java.util.function.Function;
 
 /**
- * This function that accepts one {@link ArcticSplit} and produces an iterator of {@link ArcticRecordWithOffset<T>}.
+ * This function that accepts one {@link ArcticSplit} and produces an iterator of {@link
+ * ArcticRecordWithOffset<T>}.
  */
 @FunctionalInterface
-public interface ReaderFunction<T> extends Serializable,
-    Function<ArcticSplit, CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>>> {
-}
+public interface ReaderFunction<T>
+    extends Serializable,
+        Function<ArcticSplit, CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>>> {}

@@ -27,9 +27,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.Collection;
 
-/**
- * A snapshot split generated during planning base table.
- */
+/** A snapshot split generated during planning base table. */
 public class SnapshotSplit extends ArcticSplit {
   private static final long serialVersionUID = 1L;
   private final int taskIndex;
@@ -38,9 +36,7 @@ public class SnapshotSplit extends ArcticSplit {
   private long insertRecordOffset;
   private DataTreeNode dataTreeNode;
 
-  public SnapshotSplit(
-      Collection<ArcticFileScanTask> insertScanTasks,
-      int taskIndex) {
+  public SnapshotSplit(Collection<ArcticFileScanTask> insertScanTasks, int taskIndex) {
     Preconditions.checkArgument(insertScanTasks.size() > 0);
     this.insertScanTasks = insertScanTasks;
     this.taskIndex = taskIndex;
@@ -109,9 +105,9 @@ public class SnapshotSplit extends ArcticSplit {
       return false;
     }
     SnapshotSplit other = (SnapshotSplit) obj;
-    return splitId().equals(other.splitId()) &&
-        insertFileOffset == other.insertFileOffset &&
-        insertRecordOffset == other.insertRecordOffset &&
-        taskIndex == other.taskIndex;
+    return splitId().equals(other.splitId())
+        && insertFileOffset == other.insertFileOffset
+        && insertRecordOffset == other.insertRecordOffset
+        && taskIndex == other.taskIndex;
   }
 }

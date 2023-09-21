@@ -39,10 +39,10 @@ import java.util.Set;
 @RunWith(Parameterized.class)
 public class TestRoundRobinShuffleRulePolicy extends FlinkTestBase {
 
-  public TestRoundRobinShuffleRulePolicy(boolean keyedTable,
-                                         boolean partitionedTable) {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-      new BasicTableTestHelper(keyedTable, partitionedTable));
+  public TestRoundRobinShuffleRulePolicy(boolean keyedTable, boolean partitionedTable) {
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(keyedTable, partitionedTable));
   }
 
   @Parameterized.Parameters(name = "keyedTable = {0}, partitionedTable = {1}")
@@ -51,40 +51,47 @@ public class TestRoundRobinShuffleRulePolicy extends FlinkTestBase {
       {true, true},
       {true, false},
       {false, true},
-      {false, false}};
+      {false, false}
+    };
   }
 
   @Test
   public void testPrimaryKeyPartitionedTable() throws Exception {
     Assume.assumeTrue(isKeyedTable());
     Assume.assumeTrue(isPartitionedTable());
-    ShuffleHelper helper = ShuffleHelper.build(getArcticTable(), getArcticTable().schema(), FLINK_ROW_TYPE);
-    RoundRobinShuffleRulePolicy policy =
-        new RoundRobinShuffleRulePolicy(helper, 5, 2);
+    ShuffleHelper helper =
+        ShuffleHelper.build(getArcticTable(), getArcticTable().schema(), FLINK_ROW_TYPE);
+    RoundRobinShuffleRulePolicy policy = new RoundRobinShuffleRulePolicy(helper, 5, 2);
     Map<Integer, Set<DataTreeNode>> subTaskTreeNodes = policy.getSubtaskTreeNodes();
     Assert.assertEquals(subTaskTreeNodes.size(), 5);
-    subTaskTreeNodes.values().forEach(nodes -> {
-      Assert.assertEquals(nodes.size(), 2);
-      Assert.assertTrue(nodes.contains(DataTreeNode.of(1, 0)));
-      Assert.assertTrue(nodes.contains(DataTreeNode.of(1, 1)));
-    });
+    subTaskTreeNodes
+        .values()
+        .forEach(
+            nodes -> {
+              Assert.assertEquals(nodes.size(), 2);
+              Assert.assertTrue(nodes.contains(DataTreeNode.of(1, 0)));
+              Assert.assertTrue(nodes.contains(DataTreeNode.of(1, 1)));
+            });
 
     KeySelector<RowData, ShuffleKey> keySelector = policy.generateKeySelector();
     Partitioner<ShuffleKey> partitioner = policy.generatePartitioner();
-    Assert.assertEquals(partitioner.partition(keySelector.getKey(
-            createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
-        partitioner.partition(keySelector.getKey(
-            createRowData(1, "hello2", "2022-10-11T10:10:11.0")), 5));
+    Assert.assertEquals(
+        partitioner.partition(
+            keySelector.getKey(createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
+        partitioner.partition(
+            keySelector.getKey(createRowData(1, "hello2", "2022-10-11T10:10:11.0")), 5));
 
-    Assert.assertNotEquals(partitioner.partition(keySelector.getKey(
-            createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
-        partitioner.partition(keySelector.getKey(
-            createRowData(1, "hello2", "2022-10-12T10:10:11.0")), 5));
+    Assert.assertNotEquals(
+        partitioner.partition(
+            keySelector.getKey(createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
+        partitioner.partition(
+            keySelector.getKey(createRowData(1, "hello2", "2022-10-12T10:10:11.0")), 5));
 
-    Assert.assertNotEquals(partitioner.partition(keySelector.getKey(
-            createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
-        partitioner.partition(keySelector.getKey(
-            createRowData(2, "hello2", "2022-10-11T10:10:11.0")), 5));
+    Assert.assertNotEquals(
+        partitioner.partition(
+            keySelector.getKey(createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
+        partitioner.partition(
+            keySelector.getKey(createRowData(2, "hello2", "2022-10-11T10:10:11.0")), 5));
   }
 
   @Test
@@ -93,37 +100,37 @@ public class TestRoundRobinShuffleRulePolicy extends FlinkTestBase {
     Assume.assumeFalse(isPartitionedTable());
     ShuffleHelper helper =
         ShuffleHelper.build(getArcticTable(), getArcticTable().schema(), FLINK_ROW_TYPE);
-    RoundRobinShuffleRulePolicy policy =
-        new RoundRobinShuffleRulePolicy(helper, 5, 2);
+    RoundRobinShuffleRulePolicy policy = new RoundRobinShuffleRulePolicy(helper, 5, 2);
     Map<Integer, Set<DataTreeNode>> subTaskTreeNodes = policy.getSubtaskTreeNodes();
     Assert.assertEquals(subTaskTreeNodes.size(), 5);
-    Assert.assertEquals(subTaskTreeNodes.get(0), Sets.newHashSet(
-        DataTreeNode.of(7, 0), DataTreeNode.of(7, 5)));
-    Assert.assertEquals(subTaskTreeNodes.get(1), Sets.newHashSet(
-        DataTreeNode.of(7, 1), DataTreeNode.of(7, 6)));
-    Assert.assertEquals(subTaskTreeNodes.get(2), Sets.newHashSet(
-        DataTreeNode.of(7, 2), DataTreeNode.of(7, 7)));
-    Assert.assertEquals(subTaskTreeNodes.get(3), Sets.newHashSet(
-        DataTreeNode.of(7, 3)));
-    Assert.assertEquals(subTaskTreeNodes.get(4), Sets.newHashSet(
-        DataTreeNode.of(7, 4)));
+    Assert.assertEquals(
+        subTaskTreeNodes.get(0), Sets.newHashSet(DataTreeNode.of(7, 0), DataTreeNode.of(7, 5)));
+    Assert.assertEquals(
+        subTaskTreeNodes.get(1), Sets.newHashSet(DataTreeNode.of(7, 1), DataTreeNode.of(7, 6)));
+    Assert.assertEquals(
+        subTaskTreeNodes.get(2), Sets.newHashSet(DataTreeNode.of(7, 2), DataTreeNode.of(7, 7)));
+    Assert.assertEquals(subTaskTreeNodes.get(3), Sets.newHashSet(DataTreeNode.of(7, 3)));
+    Assert.assertEquals(subTaskTreeNodes.get(4), Sets.newHashSet(DataTreeNode.of(7, 4)));
 
     KeySelector<RowData, ShuffleKey> keySelector = policy.generateKeySelector();
     Partitioner<ShuffleKey> partitioner = policy.generatePartitioner();
-    Assert.assertEquals(partitioner.partition(keySelector.getKey(
-            createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
-        partitioner.partition(keySelector.getKey(
-            createRowData(1, "hello2", "2022-10-11T10:10:11.0")), 5));
+    Assert.assertEquals(
+        partitioner.partition(
+            keySelector.getKey(createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
+        partitioner.partition(
+            keySelector.getKey(createRowData(1, "hello2", "2022-10-11T10:10:11.0")), 5));
 
-    Assert.assertEquals(partitioner.partition(keySelector.getKey(
-            createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
-        partitioner.partition(keySelector.getKey(
-            createRowData(1, "hello2", "2022-10-12T10:10:11.0")), 5));
+    Assert.assertEquals(
+        partitioner.partition(
+            keySelector.getKey(createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
+        partitioner.partition(
+            keySelector.getKey(createRowData(1, "hello2", "2022-10-12T10:10:11.0")), 5));
 
-    Assert.assertNotEquals(partitioner.partition(keySelector.getKey(
-            createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
-        partitioner.partition(keySelector.getKey(
-            createRowData(2, "hello2", "2022-10-11T10:10:11.0")), 5));
+    Assert.assertNotEquals(
+        partitioner.partition(
+            keySelector.getKey(createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
+        partitioner.partition(
+            keySelector.getKey(createRowData(2, "hello2", "2022-10-11T10:10:11.0")), 5));
   }
 
   @Test
@@ -132,30 +139,35 @@ public class TestRoundRobinShuffleRulePolicy extends FlinkTestBase {
     Assume.assumeTrue(isPartitionedTable());
     ShuffleHelper helper =
         ShuffleHelper.build(getArcticTable(), getArcticTable().schema(), FLINK_ROW_TYPE);
-    RoundRobinShuffleRulePolicy policy =
-        new RoundRobinShuffleRulePolicy(helper, 5, 2);
+    RoundRobinShuffleRulePolicy policy = new RoundRobinShuffleRulePolicy(helper, 5, 2);
     Map<Integer, Set<DataTreeNode>> subTaskTreeNodes = policy.getSubtaskTreeNodes();
     Assert.assertEquals(subTaskTreeNodes.size(), 5);
-    subTaskTreeNodes.values().forEach(nodes -> {
-      Assert.assertEquals(nodes.size(), 1);
-      Assert.assertTrue(nodes.contains(DataTreeNode.of(0, 0)));
-    });
+    subTaskTreeNodes
+        .values()
+        .forEach(
+            nodes -> {
+              Assert.assertEquals(nodes.size(), 1);
+              Assert.assertTrue(nodes.contains(DataTreeNode.of(0, 0)));
+            });
 
     KeySelector<RowData, ShuffleKey> keySelector = policy.generateKeySelector();
     Partitioner<ShuffleKey> partitioner = policy.generatePartitioner();
-    Assert.assertEquals(partitioner.partition(keySelector.getKey(
-            createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
-        partitioner.partition(keySelector.getKey(
-            createRowData(1, "hello2", "2022-10-11T10:10:11.0")), 5));
+    Assert.assertEquals(
+        partitioner.partition(
+            keySelector.getKey(createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
+        partitioner.partition(
+            keySelector.getKey(createRowData(1, "hello2", "2022-10-11T10:10:11.0")), 5));
 
-    Assert.assertEquals(partitioner.partition(keySelector.getKey(
-            createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
-        partitioner.partition(keySelector.getKey(
-            createRowData(2, "hello2", "2022-10-11T10:10:11.0")), 5));
+    Assert.assertEquals(
+        partitioner.partition(
+            keySelector.getKey(createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
+        partitioner.partition(
+            keySelector.getKey(createRowData(2, "hello2", "2022-10-11T10:10:11.0")), 5));
 
-    Assert.assertNotEquals(partitioner.partition(keySelector.getKey(
-            createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
-        partitioner.partition(keySelector.getKey(
-            createRowData(1, "hello2", "2022-10-12T10:10:11.0")), 5));
+    Assert.assertNotEquals(
+        partitioner.partition(
+            keySelector.getKey(createRowData(1, "hello", "2022-10-11T10:10:11.0")), 5),
+        partitioner.partition(
+            keySelector.getKey(createRowData(1, "hello2", "2022-10-12T10:10:11.0")), 5));
   }
 }

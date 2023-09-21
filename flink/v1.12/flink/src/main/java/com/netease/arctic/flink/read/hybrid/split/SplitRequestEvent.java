@@ -24,9 +24,7 @@ import org.apache.flink.api.connector.source.SourceEvent;
 import java.util.Collection;
 import java.util.Collections;
 
-/**
- * We can remove this class once FLINK-21364 is resolved.
- */
+/** We can remove this class once FLINK-21364 is resolved. */
 @Internal
 public class SplitRequestEvent implements SourceEvent {
   private static final long serialVersionUID = 1L;

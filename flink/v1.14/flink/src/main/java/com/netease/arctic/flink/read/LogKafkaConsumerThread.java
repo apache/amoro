@@ -34,9 +34,11 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * This thread is an extent of {@link KafkaConsumerThread} added an abstract method
- * {@link KafkaConsumerThread#reSeekPartitionOffsets()} to reSeek the offset of kafka topic partitions.
+ * This thread is an extent of {@link KafkaConsumerThread} added an abstract method {@link
+ * KafkaConsumerThread#reSeekPartitionOffsets()} to reSeek the offset of kafka topic partitions.
+ *
  * <p>
+ *
  * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Deprecated
@@ -63,13 +65,13 @@ public class LogKafkaConsumerThread<T> extends KafkaConsumerThread<T> {
         pollTimeout,
         useMetrics,
         consumerMetricGroup,
-        subtaskMetricGroup
-    );
+        subtaskMetricGroup);
     this.unReSeekPartitionsQueue = new ClosableBlockingQueue<>();
   }
 
   /**
-   * setting the consumer and seeking topic partition offsets to make sure log consumer consistency guarantee.
+   * setting the consumer and seeking topic partition offsets to make sure log consumer consistency
+   * guarantee.
    *
    * @throws Exception
    */
@@ -98,20 +100,19 @@ public class LogKafkaConsumerThread<T> extends KafkaConsumerThread<T> {
     final Map<TopicPartition, Long> oldPartitionAssignmentsToPosition = new HashMap<>();
     try {
       for (TopicPartition oldPartition : consumerTmp.assignment()) {
-        oldPartitionAssignmentsToPosition.put(
-            oldPartition, consumerTmp.position(oldPartition));
+        oldPartitionAssignmentsToPosition.put(oldPartition, consumerTmp.position(oldPartition));
       }
 
       // reassign with the new partitions
       reassignmentStarted = true;
 
       // old partitions should be seeked to their previous position
-      for (KafkaTopicPartitionState<T, TopicPartition> kafkaTopicPartitionState : kafkaTopicPartitionStates) {
+      for (KafkaTopicPartitionState<T, TopicPartition> kafkaTopicPartitionState :
+          kafkaTopicPartitionStates) {
         TopicPartition topicPartition = kafkaTopicPartitionState.getKafkaPartitionHandle();
         long seekOffset = kafkaTopicPartitionState.getOffset();
 
         consumerTmp.seek(topicPartition, seekOffset);
-
       }
 
     } catch (WakeupException e) {
@@ -125,7 +126,8 @@ public class LogKafkaConsumerThread<T> extends KafkaConsumerThread<T> {
         // if reassignment had already started and affected the consumer,
         // we do a full roll back so that it is as if it was left untouched
         if (reassignmentStarted) {
-          for (KafkaTopicPartitionState<T, TopicPartition> kafkaTopicPartitionState : kafkaTopicPartitionStates) {
+          for (KafkaTopicPartitionState<T, TopicPartition> kafkaTopicPartitionState :
+              kafkaTopicPartitionStates) {
             TopicPartition topicPartition = kafkaTopicPartitionState.getKafkaPartitionHandle();
             long oldOffset = oldPartitionAssignmentsToPosition.get(topicPartition);
             this.consumer.seek(topicPartition, oldOffset);
@@ -135,7 +137,6 @@ public class LogKafkaConsumerThread<T> extends KafkaConsumerThread<T> {
         // no need to restore the wakeup state in this case,
         // since only the last wakeup call is effective anyways
         hasBufferedWakeup = false;
-
 
         // this signals the main fetch loop to continue through the loop
         throw new AbortedReassignmentException();
