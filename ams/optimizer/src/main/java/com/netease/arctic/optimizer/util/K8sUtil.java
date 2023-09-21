@@ -17,10 +17,8 @@
  */
 package com.netease.arctic.optimizer.util;
 
-import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.ContainerBuilder;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.StatusDetails;
+import com.google.common.collect.ImmutableMap;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
@@ -40,22 +38,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class K8sUtil {
-  public static void runJob(String namespace, String name, KubernetesClient client, String image, String cmd, Logger logger) {
-    // delete job
-    logger.info("delete job if need ,job name: " + name);
-    List<StatusDetails> statusDetailsList = client.batch().v1().jobs()
-        .inNamespace(namespace)
-        .withName(name)
-        .delete();
+  public static void runJob(String namespace, String name, KubernetesClient client, String image, String cmd, Logger logger,String memory ,String cpu) {
 
-    // Polling loop to wait for deletion
-    long timeout = 300; // Timeout in seconds
-    long startTime = System.currentTimeMillis();
-
-    waitForDeleteJob(namespace, name, client, timeout, startTime, logger);
-
-    submitJob(namespace, name, client, image, cmd);
-
+    submitJob(namespace, name, client, image, cmd,memory,cpu);
 
     // Polling loop to wait for deletion
     long waitPodTimeout = 300; // Timeout in seconds
@@ -65,96 +50,19 @@ public class K8sUtil {
     podName = waitForCreatePodOfJob(namespace, name, client, logger, podName, waitPodStartTime, waitPodTimeout);
     logger.info("Pod name: " + podName);
 
-    CountDownLatch jobCompletionLatch = new CountDownLatch(1);
-
-    AtomicBoolean isJobEndSuccess = new AtomicBoolean(false);
-    Watcher<Job> watcher = new Watcher<Job>() {
-      @Override
-      public void eventReceived(Action action, Job job) {
-
-        if (action == Action.ADDED || action == Action.MODIFIED) {
-          JobStatus status = job.getStatus();
-          if (status != null) {
-            boolean isJobSuccessful = status.getSucceeded() != null && status.getSucceeded() > 0;
-            boolean isJobFailed = status.getFailed() != null && status.getFailed() > 0;
-
-            if (isJobSuccessful) {
-              isJobEndSuccess.set(true);
-              jobCompletionLatch.countDown(); // Decrement the latch count
-            } else if (isJobFailed) {
-              isJobEndSuccess.set(false);
-              jobCompletionLatch.countDown(); // Decrement the latch count
-            }
-          }
-        }
-      }
-
-      @Override
-      public void onClose(WatcherException cause) {
-        logger.info("Watcher closed");
-        if (cause != null) {
-          logger.error(cause.getMessage(), cause);
-        }
-      }
-
-
-    };
-
-    Watch watch = client.batch().v1().jobs()
-        .inNamespace(namespace)
-        .withName(name)
-        .watch(watcher);
-
-
-    // Print pod logs
-    try (LogWatch logWatch = client.pods()
-        .inNamespace(namespace)
-        .withName(podName)
-        .watchLog()) {
-      try (BufferedReader reader = new BufferedReader(new InputStreamReader(logWatch.getOutput()))) {
-        String line;
-        while ((line = reader.readLine()) != null) {
-          logger.info("p> " + line);  // You can replace this with your desired logging mechanism
-        }
-      } catch (IOException e) {
-        logger.error(e.getMessage(), e);
-      } finally {
-        logWatch.close();
-      }
-
-      // Wait for the job to complete
-      logger.info("Waiting  for job to complete...");
-      jobCompletionLatch.await();
-
-    } catch (InterruptedException e) {
-      logger.error(e.getMessage(), e);
-    } finally {
-      watch.close();
-    }
-
-    boolean flag = isJobEndSuccess.get();
-    logger.info("Job completed with success status: " + flag);
-    if (!flag) {
-      throw new RuntimeException("Job failed.");
-    }
   }
 
   private static String waitForCreatePodOfJob(String namespace, String jobName, KubernetesClient client, Logger logger, String podName, long waitPodStartTime, long waitPodTimeout) {
-    // 循环等待创建pod成功
     while (true) {
-      // 需要考虑，有可能pod还没创建出来
-      //  正在创建也不行 {"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"container \"init\" in pod \"init-flinkdir-hdfs-6c9r5\" is waiting to start: ContainerCreating","reason":"BadRequest","code":400}
       // Get the pod name associated with the job
       List<Pod> pods = client.pods()
           .inNamespace(namespace)
           .withLabel("job-name", jobName)
           .list().getItems();
 
-
       if (!pods.isEmpty()) {
         Pod pod = pods.get(0);
         podName = pod.getMetadata().getName();
-        // 检查pod是否正在创建
         String phase = pod.getStatus().getPhase();
         if (phase.equals("Pending")) {
           logger.info("Pod {} is pending, waiting for it to be running...", podName);
@@ -163,7 +71,6 @@ public class K8sUtil {
           break;
         }
       }
-
 
       // Check timeout
       long elapsedTime = System.currentTimeMillis() - waitPodStartTime;
@@ -181,10 +88,14 @@ public class K8sUtil {
     return podName;
   }
 
+  public static void waitForDeleteJob(String namespace, String jobName, KubernetesClient client, Logger logger) {
+    long timeout = 300; // Timeout in seconds
+    long startTime = System.currentTimeMillis();
+    waitForDeleteJob(namespace, jobName, client, timeout, startTime, logger);
+  }
+
   private static void waitForDeleteJob(String namespace, String jobName, KubernetesClient client, long timeout, long startTime, Logger logger) {
 
-
-    // 循环等待删除成功
     while (true) {
       Job deletedJob = client.batch().v1().jobs()
           .inNamespace(namespace)
@@ -201,7 +112,6 @@ public class K8sUtil {
         return;
       }
 
-
       // Check timeout
       long elapsedTime = System.currentTimeMillis() - startTime;
       if (TimeUnit.MILLISECONDS.toSeconds(elapsedTime) > timeout) {
@@ -217,13 +127,16 @@ public class K8sUtil {
     }
   }
 
-  private static void submitJob(String namespace, String name, KubernetesClient client, String image, String cmd) {
-
+  private static void submitJob(String namespace, String name, KubernetesClient client, String image, String cmd,String memory ,String cpu) {
 
     Container container = new ContainerBuilder()
         .withName("init")
         .withImage(image)
         .withCommand("sh", "-c", cmd)
+        .withResources(new ResourceRequirementsBuilder()
+            .withLimits(ImmutableMap.of("memory", new Quantity(memory), "cpu", new Quantity(cpu)))
+            .withRequests(ImmutableMap.of("memory", new Quantity(memory), "cpu", new Quantity(cpu)))
+            .build())
         .build();
 
     Job job = new JobBuilder()
@@ -234,7 +147,8 @@ public class K8sUtil {
         .withBackoffLimit(0)
         .withNewTemplate()
         .withNewSpec()
-        .withContainers(container).withHostNetwork(true)
+        .withContainers(container)
+        .withHostNetwork(true)
         .withRestartPolicy("Never")
         .endSpec()
         .endTemplate()
