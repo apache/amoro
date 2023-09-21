@@ -293,7 +293,7 @@ public class IcebergRestCatalogService extends PersistentBase {
       );
       ServerTableIdentifier identifier = ServerTableIdentifier.of(catalog.name(), database, tableName);
       String newMetadataFileLocation = IcebergTableUtil.genNewMetadataFileLocation(null, tableMetadata);
-      FileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(getTableMetaStore(catalog), newIcebergFileIo(catalog.getMetadata()));
+      FileIO io = newIcebergFileIo(catalog.getMetadata());
       try {
         com.netease.arctic.server.table.TableMetadata amsTableMeta = IcebergTableUtil.createTableInternal(
             identifier, catalog.getMetadata(), tableMetadata, newMetadataFileLocation, io
@@ -311,19 +311,13 @@ public class IcebergRestCatalogService extends PersistentBase {
       }
     });
   }
-
-  private TableMetaStore getTableMetaStore(ServerCatalog catalog) {
-    CatalogMeta catalogMeta = tableService.getCatalogMeta(catalog.name());
-    return CatalogUtil.buildMetaStore(catalogMeta);
-  }
-
   /**
    * GET PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}
    */
   public void loadTable(Context ctx) {
     handleTable(ctx, (catalog, tableMeta) -> {
       TableMetadata tableMetadata = null;
-      try (FileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(getTableMetaStore(catalog), newIcebergFileIo(catalog.getMetadata()))) {
+      try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
         tableMetadata = IcebergTableUtil.loadIcebergTableMetadata(io, tableMeta);
       }
       if (tableMetadata == null) {
@@ -341,7 +335,7 @@ public class IcebergRestCatalogService extends PersistentBase {
   public void commitTable(Context ctx) {
     handleTable(ctx, (catalog, tableMeta) -> {
       UpdateTableRequest request = bodyAsClass(ctx, UpdateTableRequest.class);
-      try (FileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(getTableMetaStore(catalog), newIcebergFileIo(catalog.getMetadata()))) {
+      try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
         TableOperations ops = InternalTableOperations.buildForLoad(tableMeta, io);
         TableMetadata base = ops.current();
         if (base == null) {
@@ -370,7 +364,7 @@ public class IcebergRestCatalogService extends PersistentBase {
       boolean purge = Boolean.parseBoolean(
           Optional.ofNullable(ctx.req.getParameter("purgeRequested")).orElse("false"));
       TableMetadata current = null;
-      try (FileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(getTableMetaStore(catalog), newIcebergFileIo(catalog.getMetadata()))) {
+      try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
         try {
           current = IcebergTableUtil.loadIcebergTableMetadata(io, tableMetadata);
         } catch (Exception e) {
