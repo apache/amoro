@@ -54,8 +54,16 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
   public static final String FLINK_CONFIG_YAML = "/flink-conf.yaml";
   public static final String ENV_FLINK_CONF_DIR = "FLINK_CONF_DIR";
 
+  /**
+   * this will be removed in 0.7.0, using flink properties `flink-conf.taskmanager.memory.process.size`
+   */
+  @Deprecated
   public static final String TASK_MANAGER_MEMORY_PROPERTY = "taskmanager.memory";
 
+  /**
+   * this will be removed in 0.7.0, using flink properties `flink-conf.jobmanager.memory.process.size`
+   */
+  @Deprecated
   public static final String JOB_MANAGER_MEMORY_PROPERTY = "jobmanager.memory";
   public static final String FLINK_RUN_TARGET = "target";
   public static final String FLINK_JOB_URI = "job-uri";
