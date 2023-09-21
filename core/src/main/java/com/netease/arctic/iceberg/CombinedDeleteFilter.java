@@ -210,7 +210,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     }
 
     Predicate<StructForDelete<T>> isInDeleteSet = structForDelete -> {
-      StructLike dataPk = structForDelete.getPk();
+      StructLike dataPk = internalRecordWrapper.copyFor(structForDelete.getPk());
       Long dataLSN = structForDelete.getLsn();
       Long deleteLsn = structLikeMap.get(dataPk);
       if (deleteLsn == null) {

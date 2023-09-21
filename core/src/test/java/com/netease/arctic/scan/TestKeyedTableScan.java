@@ -18,7 +18,7 @@
 
 package com.netease.arctic.scan;
 
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.io.TableDataTestBase;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
@@ -68,8 +68,8 @@ public class TestKeyedTableScan extends TableDataTestBase {
 
   private void writeInsertFileIntoBaseStore() throws IOException {
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(DataTestHelpers.createRecord(7, "mary", 0, "2022-01-01T12:00:00"));
-    builder.add(DataTestHelpers.createRecord(8, "mack", 0, "2022-01-01T12:00:00"));
+    builder.add(MixedDataTestHelpers.createRecord(7, "mary", 0, "2022-01-01T12:00:00"));
+    builder.add(MixedDataTestHelpers.createRecord(8, "mack", 0, "2022-01-01T12:00:00"));
     ImmutableList<Record> records = builder.build();
 
     GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())

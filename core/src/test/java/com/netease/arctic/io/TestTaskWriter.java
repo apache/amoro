@@ -181,10 +181,18 @@ public class TestTaskWriter extends TableTestBase {
         Expressions.alwaysTrue(), null, false);
     List<Record> expectRecord = Lists.newArrayList();
     for (int i = 0; i < insertRecords.size(); i++) {
-      expectRecord.add(DataTestHelpers.appendMetaColumnValues(insertRecords.get(i), 1L, i + 1, ChangeAction.INSERT));
+      expectRecord.add(
+          MixedDataTestHelpers.appendMetaColumnValues(insertRecords.get(i),
+              1L,
+              i + 1,
+              ChangeAction.INSERT));
     }
     for (int i = 0; i < deleteRecords.size(); i++) {
-      expectRecord.add(DataTestHelpers.appendMetaColumnValues(deleteRecords.get(i), 2L, i + 1, ChangeAction.DELETE));
+      expectRecord.add(
+          MixedDataTestHelpers.appendMetaColumnValues(deleteRecords.get(i),
+              2L,
+              i + 1,
+              ChangeAction.DELETE));
     }
     Assert.assertEquals(Sets.newHashSet(expectRecord), Sets.newHashSet(readChangeRecords));
   }
