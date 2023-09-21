@@ -359,7 +359,8 @@ public class ArcticCatalog extends AbstractCatalog {
   }
 
   @Override
-  public List<CatalogPartitionSpec> listPartitions(ObjectPath tablePath) throws CatalogException, TableNotPartitionedException {
+  public List<CatalogPartitionSpec> listPartitions(ObjectPath tablePath)
+      throws CatalogException, TableNotPartitionedException {
     TableIdentifier tableIdentifier = getTableIdentifier(tablePath);
     ArcticTable arcticTable = internalCatalog.loadTable(tableIdentifier);
 
@@ -393,6 +394,7 @@ public class ArcticCatalog extends AbstractCatalog {
     }
     return Lists.newArrayList(set);
   }
+
   @Override
   public List<CatalogPartitionSpec> listPartitions(
       ObjectPath tablePath, CatalogPartitionSpec partitionSpec) throws CatalogException {
