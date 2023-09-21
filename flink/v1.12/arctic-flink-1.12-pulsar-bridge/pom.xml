@@ -19,6 +19,7 @@
         <pulsar-commons-lang3.version>3.11</pulsar-commons-lang3.version>
         <pulsar-netty.version>4.1.72.Final</pulsar-netty.version>
         <pulsar-grpc.version>1.33.0</pulsar-grpc.version>
+        <guava.version>30.1.1-jre</guava.version>
     </properties>
 
     <dependencyManagement>
@@ -44,6 +45,26 @@
     </dependencyManagement>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.apache.pulsar</groupId>
+            <artifactId>pulsar-client-all</artifactId>
+        </dependency>
+
+        <!-- Pulsar use a newer commons-lang3 in broker. -->
+        <!-- Bump the version only for testing. -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${pulsar-commons-lang3.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+            <scope>provided</scope>
+        </dependency>
         <!--flink-->
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -129,19 +150,6 @@
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.pulsar</groupId>
-            <artifactId>pulsar-client-all</artifactId>
-        </dependency>
-
-        <!-- Pulsar use a newer commons-lang3 in broker. -->
-        <!-- Bump the version only for testing. -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>${pulsar-commons-lang3.version}</version>
         </dependency>
     </dependencies>
 

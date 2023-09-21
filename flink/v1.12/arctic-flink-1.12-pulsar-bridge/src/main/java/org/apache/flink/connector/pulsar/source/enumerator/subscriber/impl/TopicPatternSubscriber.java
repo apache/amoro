@@ -36,7 +36,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import static java.util.stream.Collectors.toSet;
-import static org.apache.iceberg.relocated.com.google.common.base.Predicates.not;
+import static com.google.common.base.Predicates.not;
 
 /**
  * Subscribe to matching topics based on topic pattern.
