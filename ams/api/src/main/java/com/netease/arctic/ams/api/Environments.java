@@ -7,17 +7,17 @@ public class Environments {
   public static final String AMORO_HOME = "AMORO_HOME";
 
   public static String getHomePath() {
-    String arcticHome = System.getenv(SYSTEM_ARCTIC_HOME);
-    if (arcticHome != null) {
-      return arcticHome;
+    String amoroHome = System.getenv(SYSTEM_ARCTIC_HOME);
+    if (amoroHome != null) {
+      return amoroHome;
     }
-    arcticHome = System.getenv(AMORO_HOME);
-    if (arcticHome != null) {
-      return arcticHome;
+    amoroHome = System.getenv(AMORO_HOME);
+    if (amoroHome != null) {
+      return amoroHome;
     }
-    arcticHome = System.getProperty(AMORO_HOME);
-    if (arcticHome != null) {
-      return arcticHome;
+    amoroHome = System.getProperty(AMORO_HOME);
+    if (amoroHome != null) {
+      return amoroHome;
     }
     return System.getProperty("user.dir");
   }
