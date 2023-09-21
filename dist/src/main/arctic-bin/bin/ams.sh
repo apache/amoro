@@ -175,6 +175,7 @@ case "$1" in
     start)
         status;
         status_return=$?
+
         if [ $status_return -eq 2 ]; then
             echo 'starting app server.'
             start
