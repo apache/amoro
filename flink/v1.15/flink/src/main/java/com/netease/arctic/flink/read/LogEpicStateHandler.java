@@ -26,8 +26,6 @@ import java.util.Optional;
 /**
  * This Handler contains the topic offsets of upstream job id, epicNo, topic.
  *
- * <p>
- *
  * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Deprecated

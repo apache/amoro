@@ -83,10 +83,17 @@ public class LogSourceHelper implements Serializable {
   }
 
   /**
-   * turn row kind of a row. +I -> -D -D -> +I -U -> +U +U -> -U
+   * Turn row kind of a row.
    *
-   * @param rowData before reset row
-   * @return after reset row kind.
+   * <pre>
+   * +I -> -D
+   * -D -> +I
+   * -U -> +U
+   * +U -> -U
+   * </pre>
+   *
+   * @param rowData Before reset row
+   * @return After reset row kind.
    */
   public RowData turnRowKind(RowData rowData) {
     switch (rowData.getRowKind()) {

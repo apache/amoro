@@ -43,7 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Arctic Source based of Flip27.
+ * Arctic Source based of FLIP-27.
  *
  * <p>If ArcticSource is used as a build table in lookup join, it will be implemented by temporal
  * join. Two source should use processing time as watermark. ArcticSource will generate watermark

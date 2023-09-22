@@ -53,7 +53,6 @@ import java.util.Queue;
  * A fetcher that fetches data from Kafka brokers via the Kafka consumer API.
  *
  * @param <T> The type of elements produced by the fetcher.
- *     <p>
  * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Internal

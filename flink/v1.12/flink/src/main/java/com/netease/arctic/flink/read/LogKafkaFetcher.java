@@ -57,8 +57,6 @@ import java.util.Queue;
  * The fetcher runs in {@link LogKafkaConsumer} and fetches messages from kafka, and retracts
  * message as handling a Flip message that {@link LogData#getFlip()} is true.
  *
- * <p>
- *
  * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Deprecated

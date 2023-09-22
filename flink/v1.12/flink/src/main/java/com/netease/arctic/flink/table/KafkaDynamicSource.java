@@ -85,8 +85,6 @@ import java.util.stream.Stream;
 /**
  * A version-agnostic Kafka {@link ScanTableSource}.
  *
- * <p>
- *
  * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Internal

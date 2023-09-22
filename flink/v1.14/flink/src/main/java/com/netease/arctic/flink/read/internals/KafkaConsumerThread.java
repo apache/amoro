@@ -63,8 +63,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * KafkaConsumer. Because Kafka is not maintaining binary compatibility, we use a "call bridge" as
  * an indirection to the KafkaConsumer calls that change signature.
  *
- * <p>
- *
  * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Internal

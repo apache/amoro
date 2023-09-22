@@ -42,7 +42,7 @@ import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 
 /**
- * Arctic Source based of Flip27.
+ * Arctic Source based of FLIP-27.
  *
  * <p>If ArcticSource is used as a build table in lookup join, it will be implemented by temporal
  * join. Two source should use processing time as watermark. ArcticSource will generate watermark

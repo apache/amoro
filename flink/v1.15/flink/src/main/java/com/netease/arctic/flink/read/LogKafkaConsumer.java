@@ -49,8 +49,6 @@ import java.util.regex.Pattern;
 /**
  * An arctic log consumer that consume arctic log data from kafka.
  *
- * <p>
- *
  * @deprecated since 0.4.1, will be removed in 0.7.0; use {@link LogKafkaSource} instead.
  */
 @Deprecated

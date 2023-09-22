@@ -67,8 +67,6 @@ import java.util.regex.Pattern;
  * <p>Please refer to Kafka's documentation for the available configuration properties:
  * http://kafka.apache.org/documentation.html#newconsumerconfigs
  *
- * <p>
- *
  * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Deprecated
@@ -76,7 +74,7 @@ public class FlinkKafkaConsumer<T> extends FlinkKafkaConsumerBase<T> {
 
   private static final long serialVersionUID = 1L;
 
-  /** Configuration key to change the polling timeout. * */
+  /** Configuration key to change the polling timeout. */
   public static final String KEY_POLL_TIMEOUT = "flink.poll-timeout";
 
   /**
@@ -87,7 +85,7 @@ public class FlinkKafkaConsumer<T> extends FlinkKafkaConsumerBase<T> {
 
   // ------------------------------------------------------------------------
 
-  /** User-supplied properties for Kafka. * */
+  /** User-supplied properties for Kafka. */
   protected final Properties properties;
 
   /**

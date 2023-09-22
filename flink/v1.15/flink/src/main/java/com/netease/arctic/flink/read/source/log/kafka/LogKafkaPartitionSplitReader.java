@@ -59,29 +59,34 @@ import java.util.Set;
  * job failovers several times, so it's necessary to retract these data to guarantee the consistency
  * with file-store.
  *
- * <p>The data in log-store with Flip like: 1 2 3 4 5 6 7 8 9 Flip 6 7 8 9 10 11 12 13 14 ckp-1
- * |ckp-2 | | ckp-2 | ckp-3 The data reads like: 1 2 3 4 5 6 7 8 9 -9 -8 -7 -6 6 7 8 9 10 11 12 13
- * 14
+ * <pre>
+ * The data in log-store with Flip like: 1 2 3 4 5   6 7 8 9  Flip  6 7 8 9 10 11 12   13 14
+ *                                       ckp-1     |ckp-2   |     | ckp-2            | ckp-3
+ * The data reads like: 1 2 3 4 5 6 7 8 9 -9 -8 -7 -6 6 7 8 9 10 11 12 13 14
  *
- * <p>The implementation of reading consistently lists below: 1. read data normally {@link
- * #readNormal()} - convert data to {@link LogRecordWithRetractInfo} in {@link
- * #convertToLogRecord(ConsumerRecords)}. If it comes to Flip, the data would be cut. - save
- * retracting info {@link LogSourceHelper.EpicRetractingInfo} in {@link
- * LogSourceHelper#startRetracting(TopicPartition, String, long, long)}. - record the epic start
- * offsets {@link LogSourceHelper#initialEpicStartOffsetIfEmpty(TopicPartition, String, long, long)}
- * in - handle normal data like {@link KafkaPartitionSplitReader} 2. read data reversely {@link
- * #readReversely} if some topic partitions come into Flip, i.e. {@link
- * LogSourceHelper#getRetractTopicPartitions()} - record the offsets that consumer's current
- * positions, stoppingOffsetsFromConsumer. - reset consumer to the offset: current position -
- * batchSize - poll data until stoppingOffsetsFromConsumer {@link #pollToDesignatedPositions} -
- * locate the stop offset in the batch data {@link #findIndexOfOffset(List, long)}, and start from
- * it to read reversely, stop at {@link
- * LogSourceHelper.EpicRetractingInfo#getRetractStoppingOffset()} - suspend retract {@link
- * LogSourceHelper#suspendRetracting(TopicPartition)} when it comes to {@link
- * LogSourceHelper.EpicRetractingInfo#getRetractStoppingOffset()}, else repeat {@link
- * #readReversely} in next {@link #fetch()} 3. write offset and retract info into splitState in
- * {@link LogKafkaPartitionSplitState#updateState(LogRecordWithRetractInfo)} 4. initialize state
- * from state {@link LogSourceHelper#initializedState}
+ * The implementation of reading consistently lists below:
+ * 1. read data normally {@link #readNormal()}
+ *    - convert data to {@link LogRecordWithRetractInfo} in {@link #convertToLogRecord(ConsumerRecords)}. If it comes to
+ *    Flip, the data would be cut.
+ *    - save retracting info {@link LogSourceHelper.EpicRetractingInfo} in
+ *    {@link LogSourceHelper#startRetracting(TopicPartition, String, long, long)}.
+ *    - record the epic start offsets
+ *    {@link LogSourceHelper#initialEpicStartOffsetIfEmpty(TopicPartition, String, long, long)} in
+ *    - handle normal data like {@link KafkaPartitionSplitReader}
+ * 2. read data reversely {@link #readReversely} if some topic partitions come into Flip,
+ *  i.e. {@link LogSourceHelper#getRetractTopicPartitions()}
+ *    - record the offsets that consumer's current positions, stoppingOffsetsFromConsumer.
+ *    - reset consumer to the offset: current position - batchSize
+ *    - poll data until stoppingOffsetsFromConsumer {@link #pollToDesignatedPositions}
+ *    - locate the stop offset in the batch data {@link #findIndexOfOffset(List, long)}, and start from it to read
+ *    reversely, stop at {@link LogSourceHelper.EpicRetractingInfo#getRetractStoppingOffset()}
+ *    - suspend retract {@link LogSourceHelper#suspendRetracting(TopicPartition)} when it comes to
+ *    {@link LogSourceHelper.EpicRetractingInfo#getRetractStoppingOffset()}, else repeat {@link #readReversely} in next
+ *    {@link #fetch()}
+ * 3. write offset and retract info into splitState in
+ * {@link LogKafkaPartitionSplitState#updateState(LogRecordWithRetractInfo)}
+ * 4. initialize state from state {@link LogSourceHelper#initializedState}
+ * </pre>
  */
 public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
 

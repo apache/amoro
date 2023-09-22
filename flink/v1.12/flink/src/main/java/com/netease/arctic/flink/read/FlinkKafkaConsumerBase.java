@@ -89,7 +89,6 @@ import java.util.regex.Pattern;
  * AbstractFetcher}.
  *
  * @param <T> The type of records produced by this data source
- *     <p>
  * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Internal
@@ -110,7 +109,7 @@ public abstract class FlinkKafkaConsumerBase<T> extends RichParallelSourceFuncti
    */
   public static final long PARTITION_DISCOVERY_DISABLED = Long.MIN_VALUE;
 
-  /** Boolean configuration key to disable metrics tracking. * */
+  /** Boolean configuration key to disable metrics tracking. */
   public static final String KEY_DISABLE_METRICS = "flink.disable-metrics";
 
   /** Configuration key to define the consumer's partition discovery interval, in milliseconds. */
