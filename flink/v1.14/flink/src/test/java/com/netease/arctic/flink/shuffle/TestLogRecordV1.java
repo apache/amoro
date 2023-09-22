@@ -19,8 +19,8 @@
 package com.netease.arctic.flink.shuffle;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.log.FormatTestBase;
 import com.netease.arctic.log.Bytes;
+import com.netease.arctic.log.FormatTestBase;
 import com.netease.arctic.log.FormatVersion;
 import com.netease.arctic.log.LogData;
 import com.netease.arctic.log.LogDataJsonDeserialization;

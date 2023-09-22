@@ -166,6 +166,9 @@
                                 <relocation>
                                     <pattern>org.apache.thrift</pattern>
                                     <shadedPattern>com.netease.arctic.shade.org.apache.thrift</shadedPattern>
+                                    <excludes>
+                                        <exclude>org.apache.thrift.TException</exclude>
+                                    </excludes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.parquet.avro</pattern>
@@ -221,6 +224,9 @@
                                 <relocation>
                                     <pattern>org.apache.iceberg</pattern>
                                     <shadedPattern>com.netease.arctic.shade.org.apache.iceberg</shadedPattern>
+                                    <excludes>
+                                        <exclude>org.apache.iceberg.mr.hive.*</exclude>
+                                    </excludes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.connector.iceberg</pattern>

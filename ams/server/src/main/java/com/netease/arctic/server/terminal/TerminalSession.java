@@ -60,7 +60,7 @@ public interface TerminalSession {
   }
 
   /**
-   * getRuntime current session configs for logs
+   * get current session configs for logs
    */
   Map<String, String> configs();
 

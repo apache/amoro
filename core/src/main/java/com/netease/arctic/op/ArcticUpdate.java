@@ -31,6 +31,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;

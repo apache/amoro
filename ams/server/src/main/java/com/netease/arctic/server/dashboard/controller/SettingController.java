@@ -36,6 +36,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * The controller that handles setting requests.
+ */
 public class SettingController {
   private static final String MASK_STRING = "******";
   private static final Set<String> MASK_CONFIGURATION_SET = Sets.newHashSet();
@@ -54,7 +57,7 @@ public class SettingController {
   }
 
   /**
-   * getRuntime system settings.
+   * Get system settings.
    */
   public void getSystemSetting(Context ctx) {
     LinkedHashMap<String, String> result = new LinkedHashMap<>();
@@ -74,7 +77,7 @@ public class SettingController {
   }
 
   /**
-   * getRuntime container settings.
+   * Get container settings.
    */
   public void getContainerSetting(Context ctx) {
     List<ContainerMetadata> containerMetas = ResourceContainers.getMetadataList();

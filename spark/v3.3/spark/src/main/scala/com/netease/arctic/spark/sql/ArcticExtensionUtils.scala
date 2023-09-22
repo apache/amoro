@@ -80,8 +80,8 @@ object ArcticExtensionUtils {
     plan.collectLeaves().exists {
       case p: DataSourceV2Relation => isArcticKeyedTable(p)
       case s: SubqueryAlias => s.child.children.exists { case p: DataSourceV2Relation =>
-        isArcticKeyedTable(p)
-      }
+          isArcticKeyedTable(p)
+        }
       case _ => false
     }
   }

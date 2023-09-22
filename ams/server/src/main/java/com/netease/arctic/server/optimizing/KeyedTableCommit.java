@@ -23,12 +23,15 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.glassfish.jersey.internal.guava.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
 import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
+import static com.netease.arctic.hive.op.UpdateHiveFiles.SYNC_DATA_TO_HIVE;
 import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
 
 public class KeyedTableCommit extends UnKeyedTableCommit {
@@ -59,9 +62,9 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
   @Override
   public void commit() throws OptimizingCommitException {
     if (tasks.isEmpty()) {
-      LOG.info("{} getRuntime no tasks to commit", table.id());
+      LOG.info("{} found no tasks to commit", table.id());
     }
-    LOG.info("{} getRuntime tasks to commit with from snapshot id = {}", table.id(),
+    LOG.info("{} found tasks to commit from snapshot {}", table.id(),
         fromSnapshotId);
 
     //In the scene of moving files to hive, the files will be renamed
@@ -141,6 +144,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
     removedDataFiles.forEach(overwriteBaseFiles::deleteFile);
     if (TableTypeUtil.isHive(table) && !needMoveFile2Hive()) {
       overwriteBaseFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
+      overwriteBaseFiles.set(SYNC_DATA_TO_HIVE, "true");
     }
     overwriteBaseFiles.skipEmptyCommit().commit();
 

@@ -21,6 +21,7 @@ package com.netease.arctic.io;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.SupportsPrefixOperations;
+
 import java.util.concurrent.Callable;
 
 /**

@@ -49,8 +49,6 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-
 @RunWith(Parameterized.class)
 public class TestUnkeyedOverwrite extends FlinkTestBase {
 

@@ -18,10 +18,10 @@
 
 package org.apache.flink.connector.pulsar.source.config;
 
-import org.apache.flink.connector.pulsar.source.PulsarSourceOptions;
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.pulsar.common.config.PulsarConfigValidator;
 import org.apache.flink.connector.pulsar.common.config.PulsarOptions;
-import org.apache.flink.annotation.Internal;
+import org.apache.flink.connector.pulsar.source.PulsarSourceOptions;
 import org.apache.pulsar.client.api.BatchReceivePolicy;
 import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.ConsumerBuilder;

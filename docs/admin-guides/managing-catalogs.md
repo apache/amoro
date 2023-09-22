@@ -54,7 +54,7 @@ Common properties include:
 We recommend users to create a Catalog following the guidelines below：
 
 - If you want to use it in conjunction with HMS, choose `External Catalog` for the `Type` and `Hive Metastore` for the `Metastore`, and choose the table format based on your needs, Mixed-Hive or Iceberg.
-- If you want to use Mixed-Iceberg provided by amoro, choose `Internal Catalog` for the `Type` and `Mixed-Iceberg` for the table format.
+- If you want to use Mixed-Iceberg provided by Amoro, choose `Internal Catalog` for the `Type` and `Mixed-Iceberg` for the table format.
 
 ## Delete catalog
 When a user needs to delete a Catalog, they can go to the details page of the Catalog and click the Remove button at the bottom of the page to perform the deletion.

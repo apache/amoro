@@ -20,6 +20,7 @@ package com.netease.arctic;
 
 import com.netease.arctic.ams.api.TableFormat;
 import org.apache.hadoop.conf.Configuration;
+
 import java.util.Map;
 
 /**
