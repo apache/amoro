@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
+import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.table.BasicTableSnapshot;
@@ -169,7 +170,8 @@ public class IcebergTableUtil {
     TableMetaStore store = CatalogUtil.buildMetaStore(meta);
     Configuration conf = store.getConfiguration();
     String ioImpl = catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, DEFAULT_FILE_IO_IMPL);
-    return org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
+    FileIO fileIO = org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
+    return ArcticFileIOs.buildAdaptIcebergFileIO(store, fileIO);
   }
 
 
