@@ -115,6 +115,14 @@
         <dropwizard.metrics.version>4.2.19</dropwizard.metrics.version>
         <thrift.version>0.13.0</thrift.version>
         <caffeine.version>2.8.4</caffeine.version>
+        <snakeyaml.version>1.30</snakeyaml.version>
+        <mybatis.version>3.5.6</mybatis.version>
+        <postgres-jdbc.version>42.5.1</postgres-jdbc.version>
+        <derby-jdbc.version>10.13.1.1</derby-jdbc.version>
+        <commons-dbcp2.version>2.9.0</commons-dbcp2.version>
+        <netty.version>4.1.56.Final</netty.version>
+        <javalin.version>4.6.1</javalin.version>
+        <kyuubi-hive-jdbc-shaded.version>1.6.0-incubating</kyuubi-hive-jdbc-shaded.version>
     </properties>
 
     <dependencyManagement>
@@ -258,7 +266,7 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>${slf4j.version}</version>
+                <version>${log4jslf4j.version}</version>
             </dependency>
 
             <dependency>
@@ -393,6 +401,60 @@
                 <groupId>com.alibaba</groupId>
                 <artifactId>fastjson</artifactId>
                 <version>${fastjson.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mybatis</groupId>
+                <artifactId>mybatis</artifactId>
+                <version>${mybatis.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${postgres-jdbc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.derby</groupId>
+                <artifactId>derby</artifactId>
+                <version>${derby-jdbc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-dbcp2</artifactId>
+                <version>${commons-dbcp2.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.javalin</groupId>
+                <artifactId>javalin</artifactId>
+                <version>${javalin.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-all</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.kyuubi</groupId>
+                <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
+                <version>${kyuubi-hive-jdbc-shaded.version}</version>
             </dependency>
 
             <dependency>
