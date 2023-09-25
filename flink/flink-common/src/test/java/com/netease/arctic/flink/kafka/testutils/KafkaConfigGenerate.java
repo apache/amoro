@@ -71,4 +71,12 @@ public interface KafkaConfigGenerate {
     properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
     return properties;
   }
+
+  static Properties getStandardProperties(Properties properties) {
+    properties.put(ConsumerConfig.GROUP_ID_CONFIG, "arctic-tests");
+    properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+    properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"); // read from the beginning.
+    properties.put("max.partition.fetch.bytes", "256");
+    return properties;
+  }
 }

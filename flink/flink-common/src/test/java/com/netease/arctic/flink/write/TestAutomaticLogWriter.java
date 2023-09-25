@@ -34,6 +34,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
+import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
@@ -44,6 +45,7 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
+import com.netease.arctic.flink.kafka.testutils.KafkaContainerTest;
 import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
 import com.netease.arctic.flink.metric.MetricsGenerator;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
@@ -115,12 +117,12 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
 
   @BeforeClass
   public static void prepare() throws Exception {
-    kafkaTestBase.prepare();
+    KAFKA_CONTAINER.start();
   }
 
   @AfterClass
   public static void shutdown() throws Exception {
-    kafkaTestBase.shutDownServices();
+    KAFKA_CONTAINER.close();
   }
 
   @Before
@@ -156,7 +158,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
 
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
     UpdateProperties up = testKeyedTable.updateProperties();
-    up.set(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
+    up.set(LOG_STORE_ADDRESS, KAFKA_CONTAINER.getBootstrapServers());
     up.set(LOG_STORE_MESSAGE_TOPIC, topic);
     if (logstoreEnabled) {
       up.set(ENABLE_LOG_STORE, "true");
@@ -197,7 +199,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     Duration gap;
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
     UpdateProperties up = testKeyedTable.updateProperties();
-    up.set(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
+    up.set(LOG_STORE_ADDRESS, KAFKA_CONTAINER.getBootstrapServers());
     up.set(LOG_STORE_MESSAGE_TOPIC, topic);
     up.set(ENABLE_LOG_STORE, "true");
     if (!isGapNone){
@@ -268,7 +270,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
             LogRecordV1.arrayFactory,
             LogRecordV1.mapFactory
         );
-    ConsumerRecords<byte[], byte[]> consumerRecords = kafkaTestBase.readRecordsBytes(topic);
+    ConsumerRecords<byte[], byte[]> consumerRecords = KafkaContainerTest.readRecordsBytes(topic);
     Assertions.assertEquals(expects.size(), consumerRecords.count());
     List<RowData> actual = new ArrayList<>();
     consumerRecords.forEach(consumerRecord -> {

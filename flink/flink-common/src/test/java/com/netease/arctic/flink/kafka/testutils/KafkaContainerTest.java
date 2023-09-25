@@ -50,11 +50,13 @@ public class KafkaContainerTest {
   private static Logger LOG = LoggerFactory.getLogger(KafkaContainerTest.class);
   public static String INTER_CONTAINER_KAFKA_ALIAS = "kafka";
   public static Network NETWORK = Network.newNetwork();
-  public static String KAFKA = "confluentinc/cp-kafka:6.2.2";
+  public static String KAFKA = "confluentinc/cp-kafka:7.2.6";
 
   @Container
   public static KafkaContainer KAFKA_CONTAINER =
       createKafkaContainer(KAFKA, LOG)
+          .withStartupTimeout(Duration.ofSeconds(120L))
+          .withSharedMemorySize(134217728L)
           .withEmbeddedZookeeper()
           .withNetwork(NETWORK)
           .withNetworkAliases(INTER_CONTAINER_KAFKA_ALIAS);
@@ -84,6 +86,11 @@ public class KafkaContainerTest {
             .collect(Collectors.toSet()));
     consumer.seekToBeginning(consumer.assignment());
     return consumer.poll(Duration.ofMillis(1000));
+  }
+
+  public static Integer countAllRecords(String topic, Properties properties) {
+    properties.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
+    return KafkaUtil.drainAllRecordsFromTopic(topic, properties).size();
   }
 
   public static void createTopics(int numPartitions, int replicationFactor, String... topics) {

@@ -24,12 +24,15 @@ import java.util.Properties;
 import java.util.UUID;
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getProperties;
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
+import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
+import com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate;
+import com.netease.arctic.flink.kafka.testutils.KafkaContainerTest;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.write.hidden.LogMsgFactory;
 import com.netease.arctic.log.Bytes;
@@ -53,28 +56,30 @@ import org.slf4j.LoggerFactory;
 
 public class TestHiddenKafkaProducer extends TestBaseLog {
   private static final Logger LOG = LoggerFactory.getLogger(TestHiddenKafkaProducer.class);
-  private static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
 
   @BeforeClass
   public static void prepare() throws Exception {
-    kafkaTestBase.prepare();
+    KAFKA_CONTAINER.start();
   }
 
   @AfterClass
   public static void shutdown() throws Exception {
-    kafkaTestBase.shutDownServices();
+    KAFKA_CONTAINER.close();
   }
 
   @Test
   public void testInitTransactionId() {
     final String topic = "test-init-transactions";
-    kafkaTestBase.createTestTopic(topic, 1, 1);
+    KafkaContainerTest.createTopics(1, 1, topic);
     FlinkKafkaInternalProducer<String, String> reuse = null;
     final String transactionalIdPrefix = UUID.randomUUID().toString();
     try {
       int numTransactions = 20;
       for (int i = 1; i <= numTransactions; i++) {
-        Properties properties = getProperties(kafkaTestBase.getProperties());
+        Properties properties = new Properties();
+        properties.put(
+            BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
+        properties = getProperties(KafkaConfigGenerate.getStandardProperties(properties));
         properties.put(TRANSACTIONAL_ID_CONFIG, transactionalIdPrefix + i);
         reuse = new FlinkKafkaInternalProducer<>(properties);
         reuse.initTransactions();
@@ -86,8 +91,7 @@ public class TestHiddenKafkaProducer extends TestBaseLog {
           reuse.flush();
           reuse.abortTransaction();
         }
-
-        int count = kafkaTestBase.countAllRecords(topic);
+        int count = KafkaContainerTest.countAllRecords(topic, properties);
         LOG.info("consumption = {}", count);
         assertThat(count).isEqualTo(i / 2);
       }
@@ -106,13 +110,15 @@ public class TestHiddenKafkaProducer extends TestBaseLog {
   public void testLogProducerSendFlip() throws Exception {
     final String topic = "test-recover-transactions";
     int numPartitions = 3;
-    kafkaTestBase.createTopics(numPartitions, topic);
+    KafkaContainerTest.createTopics(numPartitions, 1, topic);
     LogData.FieldGetterFactory<RowData> fieldGetterFactory = LogRecordV1.fieldGetterFactory;
     LogDataJsonSerialization<RowData> logDataJsonSerialization = new LogDataJsonSerialization<>(
         checkNotNull(userSchema),
         checkNotNull(fieldGetterFactory));
-
-    Properties properties = getPropertiesWithByteArray(kafkaTestBase.getProperties());
+    Properties properties = new Properties();
+    properties.put(
+        BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
+    properties = getPropertiesWithByteArray(KafkaConfigGenerate.getStandardProperties(properties));
     LogMsgFactory.Producer<RowData> producer =
         new HiddenKafkaFactory<RowData>().createProducer(
             properties,
@@ -126,8 +132,7 @@ public class TestHiddenKafkaProducer extends TestBaseLog {
       producer.sendToAllPartitions(FLIP_LOG);
     }
     producer.close();
-
-    int count = kafkaTestBase.countAllRecords(topic);
+    int count = KafkaContainerTest.countAllRecords(topic, properties);
     assertThat(count).isEqualTo(numPartitions * recoverNum);
   }
 

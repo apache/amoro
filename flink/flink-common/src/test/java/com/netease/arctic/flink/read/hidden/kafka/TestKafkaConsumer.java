@@ -28,9 +28,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getProperties;
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
+import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static com.netease.arctic.flink.write.hidden.kafka.TestHiddenLogOperators.topic;
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
+import com.netease.arctic.flink.kafka.testutils.KafkaContainerTest;
 import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
 import com.netease.arctic.flink.write.hidden.kafka.TestBaseLog;
 import org.apache.flink.streaming.connectors.kafka.internals.FlinkKafkaInternalProducer;
@@ -52,12 +54,12 @@ public class TestKafkaConsumer extends TestBaseLog {
 
   @BeforeClass
   public static void prepare() throws Exception {
-    kafkaTestBase.prepare();
+    KAFKA_CONTAINER.start();
   }
 
   @AfterClass
   public static void shutdown() throws Exception {
-    kafkaTestBase.shutDownServices();
+    KAFKA_CONTAINER.close();
   }
 
   @Test
@@ -76,7 +78,7 @@ public class TestKafkaConsumer extends TestBaseLog {
         reuse.send(new ProducerRecord<>(topic, "test-value-" + i));
       }
       reuse.commitTransaction();
-      int count = kafkaTestBase.countAllRecords(topic);
+      int count = KafkaContainerTest.countAllRecords(topic, properties);
       LOG.info("consumption = {}", count);
       assertThat(count).isEqualTo(numCount);
     } catch (Throwable e) {
