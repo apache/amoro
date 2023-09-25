@@ -42,12 +42,4 @@ public class NoSuchDatabaseException extends RuntimeException {
   public NoSuchDatabaseException(Throwable cause) {
     super(cause);
   }
-
-  public NoSuchDatabaseException(
-      String message,
-      Throwable cause,
-      boolean enableSuppression,
-      boolean writableStackTrace) {
-    super(message, cause, enableSuppression, writableStackTrace);
-  }
 }
