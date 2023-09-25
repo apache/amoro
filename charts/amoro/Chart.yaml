@@ -30,4 +30,4 @@ dependencies:
     repository: oci://registry-1.docker.io/bitnamicharts
     tags:
       - bitnami-common
-    version: 2.9.2
+    version: 2.11.1
