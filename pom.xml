@@ -112,6 +112,7 @@
         <terminal.spark.version>3.3.2</terminal.spark.version>
         <terminal.spark.major.version>3.3</terminal.spark.major.version>
         <dropwizard.metrics.version>4.2.19</dropwizard.metrics.version>
+        <paimon.version>0.5.0-incubating</paimon.version>
     </properties>
 
     <dependencyManagement>
@@ -411,6 +412,12 @@
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.paimon</groupId>
+                <artifactId>paimon-bundle</artifactId>
+                <version>${paimon.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -31,9 +31,6 @@ public class NoSuchDatabaseException extends RuntimeException {
     super(String.format(message, args), e);
   }
 
-  public NoSuchDatabaseException() {
-  }
-
   public NoSuchDatabaseException(String message) {
     super(message);
   }

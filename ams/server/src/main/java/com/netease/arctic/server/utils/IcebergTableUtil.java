@@ -32,7 +32,6 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableSnapshot;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -76,8 +75,8 @@ public class IcebergTableUtil {
   public static final String PROPERTIES_METADATA_LOCATION = "iceberg.metadata.location";
   public static final String PROPERTIES_PREV_METADATA_LOCATION = "iceberg.metadata.prev-location";
 
-  public static long getSnapshotId(UnkeyedTable internalTable, boolean refresh) {
-    Snapshot currentSnapshot = getSnapshot(internalTable, refresh);
+  public static long getSnapshotId(Table table, boolean refresh) {
+    Snapshot currentSnapshot = getSnapshot(table, refresh);
     if (currentSnapshot == null) {
       return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
     } else {
@@ -100,11 +99,11 @@ public class IcebergTableUtil {
     }
   }
 
-  public static Snapshot getSnapshot(UnkeyedTable internalTable, boolean refresh) {
+  public static Snapshot getSnapshot(Table table, boolean refresh) {
     if (refresh) {
-      internalTable.refresh();
+      table.refresh();
     }
-    return internalTable.currentSnapshot();
+    return table.currentSnapshot();
   }
 
   public static Set<String> getAllContentFilePath(Table internalTable) {

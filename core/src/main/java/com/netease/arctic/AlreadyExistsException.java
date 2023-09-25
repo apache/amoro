@@ -23,10 +23,6 @@ public class AlreadyExistsException extends RuntimeException {
     super(message);
   }
 
-  public AlreadyExistsException() {
-    super();
-  }
-
   public AlreadyExistsException(String message, Throwable cause) {
     super(message, cause);
   }

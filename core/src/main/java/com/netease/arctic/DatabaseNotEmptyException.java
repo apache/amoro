@@ -20,9 +20,6 @@ package com.netease.arctic;
 
 public class DatabaseNotEmptyException extends RuntimeException {
 
-  public DatabaseNotEmptyException() {
-  }
-
   public DatabaseNotEmptyException(String message) {
     super(message);
   }

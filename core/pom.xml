@@ -36,7 +36,6 @@
         <rocksdb.version>7.10.2</rocksdb.version>
         <kryo.version>2.24.0</kryo.version>
         <jol.version>0.16</jol.version>
-        <paimon.version>0.5.0-incubating</paimon.version>
     </properties>
 
     <dependencies>
@@ -202,11 +201,9 @@
             <scope>test</scope>
         </dependency>
 
-        <!--    paimon    -->
         <dependency>
             <groupId>org.apache.paimon</groupId>
             <artifactId>paimon-bundle</artifactId>
-            <version>${paimon.version}</version>
         </dependency>
     </dependencies>
 

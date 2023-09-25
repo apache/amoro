@@ -26,13 +26,13 @@ import java.util.Optional;
 
 public class MixedSnapshot implements TableSnapshot {
 
-  private Optional<Snapshot> changeSnapshot;
+  private final Snapshot changeSnapshot;
 
-  private Optional<Snapshot> baseSnapshot;
+  private final Snapshot baseSnapshot;
 
   public MixedSnapshot(
-      Optional<org.apache.iceberg.Snapshot> changeSnapshot,
-      Optional<org.apache.iceberg.Snapshot> baseSnapshot) {
+      Snapshot changeSnapshot,
+      Snapshot baseSnapshot) {
     this.changeSnapshot = changeSnapshot;
     this.baseSnapshot = baseSnapshot;
   }
@@ -44,29 +44,29 @@ public class MixedSnapshot implements TableSnapshot {
 
   @Override
   public long commitTime() {
-    Long changCommit = changeSnapshot.map(org.apache.iceberg.Snapshot::timestampMillis).orElse(-1L);
-    Long baseCommit = baseSnapshot.map(org.apache.iceberg.Snapshot::timestampMillis).orElse(-1L);
+    Long changCommit = Optional.ofNullable(changeSnapshot).map(Snapshot::timestampMillis).orElse(-1L);
+    Long baseCommit = Optional.ofNullable(baseSnapshot).map(Snapshot::timestampMillis).orElse(-1L);
     return Longs.max(changCommit, baseCommit);
   }
 
-  public Optional<Snapshot> getChangeSnapshot() {
+  public Snapshot getChangeSnapshot() {
     return changeSnapshot;
   }
 
-  public Optional<Snapshot> getBaseSnapshot() {
+  public Snapshot getBaseSnapshot() {
     return baseSnapshot;
   }
 
   public long getChangeSnapshotId() {
-    return changeSnapshot.map(Snapshot::snapshotId).orElse(-1L);
+    return Optional.ofNullable(changeSnapshot).map(Snapshot::snapshotId).orElse(-1L);
   }
 
   public long getBaseSnapshotId() {
-    return baseSnapshot.map(Snapshot::snapshotId).orElse(-1L);
+    return Optional.ofNullable(baseSnapshot).map(Snapshot::snapshotId).orElse(-1L);
   }
 
   @Override
   public String id() {
-    return changeSnapshot.orElse(null) + "_" + baseSnapshot.orElse(null);
+    return changeSnapshot + "_" + baseSnapshot;
   }
 }

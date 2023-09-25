@@ -47,7 +47,9 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
-    return tableRuntime.getFormat() != TableFormat.PAIMON &&
+    return tableRuntime.getFormat() == TableFormat.ICEBERG &&
+        tableRuntime.getFormat() == TableFormat.MIXED_ICEBERG &&
+        tableRuntime.getFormat() == TableFormat.MIXED_HIVE &&
         tableRuntime.getTableConfiguration().isExpireSnapshotEnabled();
   }
 
