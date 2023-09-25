@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
@@ -40,6 +41,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
+import com.netease.arctic.flink.kafka.testutils.KafkaContainerTest;
 import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.flink.util.TestUtil;
 import com.netease.arctic.hive.TestHMS;
@@ -119,12 +121,12 @@ public class TestUnkeyed extends FlinkTestBase {
 
   @BeforeClass
   public static void beforeClass() throws Exception {
-    FlinkTestBase.prepare();
+    KAFKA_CONTAINER.start();
   }
 
   @AfterClass
   public static void afterClass() throws Exception {
-    FlinkTestBase.shutdown();
+    KAFKA_CONTAINER.close();
   }
 
   @Before
@@ -339,7 +341,7 @@ public class TestUnkeyed extends FlinkTestBase {
   @Test
   public void testLogSinkSource() throws Exception {
     String topic = this.topic + "testLogSinkSource";
-    kafkaTestBase.createTopics(KAFKA_PARTITION_NUMS, topic);
+    KafkaContainerTest.createTopics(KAFKA_PARTITION_NUMS, 1, topic);
 
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{1000004, "a"});
@@ -362,7 +364,7 @@ public class TestUnkeyed extends FlinkTestBase {
 
     Map<String, String> tableProperties = new HashMap<>();
     tableProperties.put(ENABLE_LOG_STORE, "true");
-    tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
+    tableProperties.put(LOG_STORE_ADDRESS, KafkaContainerTest.KAFKA_CONTAINER.getBootstrapServers());
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING) WITH %s", toWithClause(tableProperties));
@@ -389,7 +391,7 @@ public class TestUnkeyed extends FlinkTestBase {
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
 
     result.getJobClient().ifPresent(TestUtil::cancelJob);
-    kafkaTestBase.deleteTestTopic(topic);
+    KafkaContainerTest.deleteTopics(topic);
   }
 
   @Test
@@ -417,7 +419,7 @@ public class TestUnkeyed extends FlinkTestBase {
 
     Map<String, String> tableProperties = new HashMap<>();
     tableProperties.put(ENABLE_LOG_STORE, "true");
-    tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
+    tableProperties.put(LOG_STORE_ADDRESS, KafkaContainerTest.KAFKA_CONTAINER.getBootstrapServers());
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
       " id INT, name STRING, op_time TIMESTAMP) WITH %s", toWithClause(tableProperties));
@@ -459,7 +461,7 @@ public class TestUnkeyed extends FlinkTestBase {
   @Test
   public void testUnPartitionDoubleSink() throws Exception {
     String topic = this.topic + "testUnPartitionDoubleSink";
-    kafkaTestBase.createTopics(KAFKA_PARTITION_NUMS, topic);
+    KafkaContainerTest.createTopics(KAFKA_PARTITION_NUMS, 1, topic);
 
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{1000004, "a"});
@@ -481,7 +483,7 @@ public class TestUnkeyed extends FlinkTestBase {
 
     Map<String, String> tableProperties = new HashMap<>();
     tableProperties.put(ENABLE_LOG_STORE, "true");
-    tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
+    tableProperties.put(LOG_STORE_ADDRESS, KafkaContainerTest.KAFKA_CONTAINER.getBootstrapServers());
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING) WITH %s", toWithClause(tableProperties));
@@ -506,7 +508,7 @@ public class TestUnkeyed extends FlinkTestBase {
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
     result.getJobClient().ifPresent(TestUtil::cancelJob);
-    kafkaTestBase.deleteTestTopic(topic);
+    KafkaContainerTest.deleteTopics(topic);
   }
 
   @Test
@@ -631,7 +633,7 @@ public class TestUnkeyed extends FlinkTestBase {
   @Test
   public void testPartitionLogSinkSource() throws Exception {
     String topic = this.topic + "testUnKeyedPartitionLogSinkSource";
-    kafkaTestBase.createTopics(KAFKA_PARTITION_NUMS, topic);
+    KafkaContainerTest.createTopics(KAFKA_PARTITION_NUMS, 1, topic);
 
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{1000004, "a", "2022-05-17"});
@@ -656,7 +658,7 @@ public class TestUnkeyed extends FlinkTestBase {
 
     Map<String, String> tableProperties = new HashMap<>();
     tableProperties.put(ENABLE_LOG_STORE, "true");
-    tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
+    tableProperties.put(LOG_STORE_ADDRESS, KAFKA_CONTAINER.getBootstrapServers());
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, dt STRING) PARTITIONED BY (dt) WITH %s", toWithClause(tableProperties));
@@ -683,13 +685,13 @@ public class TestUnkeyed extends FlinkTestBase {
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
 
     result.getJobClient().ifPresent(TestUtil::cancelJob);
-    kafkaTestBase.deleteTestTopic(topic);
+    KafkaContainerTest.deleteTopics(topic);
   }
 
   @Test
   public void testPartitionLogSinkSourceWithSelectedFields() throws Exception {
     String topic = this.topic + "testPartitionLogSinkSourceWithSelectedFields";
-    kafkaTestBase.createTopics(KAFKA_PARTITION_NUMS, topic);
+    KafkaContainerTest.createTopics(KAFKA_PARTITION_NUMS, 1, topic);
 
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -714,7 +716,7 @@ public class TestUnkeyed extends FlinkTestBase {
 
     Map<String, String> tableProperties = new HashMap<>();
     tableProperties.put(ENABLE_LOG_STORE, "true");
-    tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
+    tableProperties.put(LOG_STORE_ADDRESS, KAFKA_CONTAINER.getBootstrapServers());
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
       " id INT, name STRING, op_time TIMESTAMP) PARTITIONED BY (op_time) WITH %s", toWithClause(tableProperties));
@@ -751,13 +753,13 @@ public class TestUnkeyed extends FlinkTestBase {
     Assert.assertEquals(DataUtil.toRowSet(expected), actual);
 
     result.getJobClient().ifPresent(TestUtil::cancelJob);
-    kafkaTestBase.deleteTestTopic(topic);
+    KafkaContainerTest.deleteTopics(topic);
   }
 
   @Test
   public void testPartitionDoubleSink() throws Exception {
     String topic = this.topic + "testUnkeyedPartitionDoubleSink";
-    kafkaTestBase.createTopics(KAFKA_PARTITION_NUMS, topic);
+    KafkaContainerTest.createTopics(KAFKA_PARTITION_NUMS, 1, topic);
 
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{1000004, "a", "2022-05-17"});
@@ -781,7 +783,7 @@ public class TestUnkeyed extends FlinkTestBase {
 
     Map<String, String> tableProperties = new HashMap<>();
     tableProperties.put(ENABLE_LOG_STORE, "true");
-    tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
+    tableProperties.put(LOG_STORE_ADDRESS, KAFKA_CONTAINER.getBootstrapServers());
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, dt STRING) PARTITIONED BY (dt) WITH %s", toWithClause(tableProperties));
@@ -803,7 +805,7 @@ public class TestUnkeyed extends FlinkTestBase {
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
     result.getJobClient().ifPresent(TestUtil::cancelJob);
-    kafkaTestBase.deleteTestTopic(topic);
+    KafkaContainerTest.deleteTopics(topic);
   }
 
 }

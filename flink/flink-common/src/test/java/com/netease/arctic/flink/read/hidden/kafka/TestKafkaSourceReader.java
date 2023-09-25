@@ -94,7 +94,7 @@ public class TestKafkaSourceReader {
   @Before
   public void initData() throws Exception {
     topic = TestUtil.getUtMethodName(testName);
-    KafkaContainerTest.createTopics(KAFKA_PARTITION_NUMS, topic);
+    KafkaContainerTest.createTopics(KAFKA_PARTITION_NUMS,1, topic);
     write(topic, TOTAL_NUM_RECORDS);
   }
 

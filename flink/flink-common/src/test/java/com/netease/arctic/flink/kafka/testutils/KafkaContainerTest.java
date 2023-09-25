@@ -86,10 +86,10 @@ public class KafkaContainerTest {
     return consumer.poll(Duration.ofMillis(1000));
   }
 
-  public static void createTopics(int numPartitions, String... topics) {
+  public static void createTopics(int numPartitions, int replicationFactor, String... topics) {
     List<NewTopic> newTopics =
         Arrays.stream(topics)
-            .map(topic -> new NewTopic(topic, numPartitions, (short) 1))
+            .map(topic -> new NewTopic(topic, numPartitions, (short) replicationFactor))
             .collect(Collectors.toList());
     Map<String, Object> params = new HashMap<>();
     params.put(BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
