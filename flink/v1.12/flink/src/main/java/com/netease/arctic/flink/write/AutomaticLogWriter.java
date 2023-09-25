@@ -37,9 +37,10 @@ import java.time.Duration;
 import java.util.Properties;
 
 /**
- * This is an automatic logstore writer util class.
- * It will write logstore when the system current timestamp is greater than the watermark of all subtasks plus the
- * {@link com.netease.arctic.flink.table.descriptors.ArcticValidator#AUTO_EMIT_LOGSTORE_WATERMARK_GAP} value.
+ * This is an automatic logstore writer util class. It will write logstore when the system current
+ * timestamp is greater than the watermark of all subtasks plus the {@link
+ * com.netease.arctic.flink.table.descriptors.ArcticValidator#AUTO_EMIT_LOGSTORE_WATERMARK_GAP}
+ * value.
  */
 public class AutomaticLogWriter extends ArcticLogWriter {
   private final AutomaticDoubleWriteStatus status;
@@ -56,12 +57,14 @@ public class AutomaticLogWriter extends ArcticLogWriter {
       ArcticTableLoader tableLoader,
       Duration writeLogstoreWatermarkGap) {
     this.arcticLogWriter =
-        new HiddenLogWriter(schema, producerConfig, topic, factory, fieldGetterFactory, jobId, helper);
+        new HiddenLogWriter(
+            schema, producerConfig, topic, factory, fieldGetterFactory, jobId, helper);
     this.status = new AutomaticDoubleWriteStatus(tableLoader, writeLogstoreWatermarkGap);
   }
 
   @Override
-  public void setup(StreamTask<?, ?> containingTask, StreamConfig config, Output<StreamRecord<RowData>> output) {
+  public void setup(
+      StreamTask<?, ?> containingTask, StreamConfig config, Output<StreamRecord<RowData>> output) {
     super.setup(containingTask, config, output);
     arcticLogWriter.setup(containingTask, config, output);
     status.setup(getRuntimeContext().getIndexOfThisSubtask());

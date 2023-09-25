@@ -18,19 +18,17 @@
 
 package com.netease.arctic.flink.util.pulsar.runtime.mock;
 
+import static com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntimeUtils.initializePulsarEnvironment;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
+import static org.apache.flink.util.Preconditions.checkNotNull;
+
 import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntime;
 import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntimeOperator;
 import org.apache.pulsar.broker.ServiceConfiguration;
 
 import java.util.Optional;
 
-import static com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntimeUtils.initializePulsarEnvironment;
-import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
-import static org.apache.flink.util.Preconditions.checkNotNull;
-
-/**
- * Providing a mocked pulsar server.
- */
+/** Providing a mocked pulsar server. */
 public class PulsarMockRuntime implements PulsarRuntime {
 
   private static final String CLUSTER_NAME = "mock-pulsar-" + randomAlphanumeric(6);

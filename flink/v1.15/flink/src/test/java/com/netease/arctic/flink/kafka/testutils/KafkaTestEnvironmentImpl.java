@@ -16,6 +16,12 @@
  */
 package com.netease.arctic.flink.kafka.testutils;
 
+import static java.nio.file.Files.createTempDirectory;
+import static java.nio.file.attribute.PosixFilePermissions.asFileAttribute;
+import static java.nio.file.attribute.PosixFilePermissions.fromString;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
 import org.apache.commons.collections.list.UnmodifiableList;
@@ -53,15 +59,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static java.nio.file.Files.createTempDirectory;
-import static java.nio.file.attribute.PosixFilePermissions.asFileAttribute;
-import static java.nio.file.attribute.PosixFilePermissions.fromString;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-/**
- * An implementation of the KafkaServerProvider.
- */
+/** An implementation of the KafkaServerProvider. */
 public class KafkaTestEnvironmentImpl extends KafkaTestEnvironment {
 
   protected static final Logger LOG = LoggerFactory.getLogger(KafkaTestEnvironmentImpl.class);
@@ -77,7 +75,6 @@ public class KafkaTestEnvironmentImpl extends KafkaTestEnvironment {
   private int zkTimeout = 30000;
   private Config config;
   private static final int DELETE_TIMEOUT_SECONDS = 30;
-
 
   @Override
   public void prepare(Config config) throws Exception {
@@ -96,9 +93,11 @@ public class KafkaTestEnvironmentImpl extends KafkaTestEnvironment {
       tmpKafkaParent = createTempDirectory("kafkaITcase-kafka-dir-").toFile();
     } else {
       tmpZkDir =
-          createTempDirectory("kafkaITcase-zk-dir-", asFileAttribute(fromString("rwxrwxrwx"))).toFile();
+          createTempDirectory("kafkaITcase-zk-dir-", asFileAttribute(fromString("rwxrwxrwx")))
+              .toFile();
       tmpKafkaParent =
-          createTempDirectory("kafkaITcase-kafka-dir-", asFileAttribute(fromString("rwxrwxrwx"))).toFile();
+          createTempDirectory("kafkaITcase-kafka-dir-", asFileAttribute(fromString("rwxrwxrwx")))
+              .toFile();
     }
 
     tmpKafkaDirs = new ArrayList<>(config.getKafkaServersNumber());
@@ -113,16 +112,13 @@ public class KafkaTestEnvironmentImpl extends KafkaTestEnvironment {
 
     zookeeper = new TestingServer(-1, tmpZkDir);
     zookeeperConnectionString = zookeeper.getConnectString();
-    LOG.info(
-        "Starting Zookeeper with zookeeperConnectionString: {}", zookeeperConnectionString);
+    LOG.info("Starting Zookeeper with zookeeperConnectionString: {}", zookeeperConnectionString);
 
     LOG.info("Starting KafkaServer");
 
     ListenerName listenerName =
         ListenerName.forSecurityProtocol(
-            config.isSecureMode()
-                ? SecurityProtocol.SASL_PLAINTEXT
-                : SecurityProtocol.PLAINTEXT);
+            config.isSecureMode() ? SecurityProtocol.SASL_PLAINTEXT : SecurityProtocol.PLAINTEXT);
     for (int i = 0; i < config.getKafkaServersNumber(); i++) {
       KafkaServer kafkaServer = getKafkaServer(i, tmpKafkaDirs.get(i));
       brokers.add(kafkaServer);
@@ -140,18 +136,15 @@ public class KafkaTestEnvironmentImpl extends KafkaTestEnvironment {
     standardProps.setProperty("zookeeper.connection.timeout.ms", String.valueOf(zkTimeout));
     standardProps.setProperty("auto.offset.reset", "earliest"); // read from the beginning.
     standardProps.setProperty(
-        "max.partition.fetch.bytes",
-        "256"); // make a lot of fetches (MESSAGES MUST BE SMALLER!)
-    standardProps.setProperty("key.serializer",
-        "org.apache.kafka.common.serialization.StringSerializer");
-    standardProps.setProperty("value.serializer",
-        "org.apache.kafka.common.serialization.StringSerializer");
+        "max.partition.fetch.bytes", "256"); // make a lot of fetches (MESSAGES MUST BE SMALLER!)
     standardProps.setProperty(
-        "key.deserializer",
-        "org.apache.kafka.common.serialization.StringDeserializer");
+        "key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
     standardProps.setProperty(
-        "value.deserializer",
-        "org.apache.kafka.common.serialization.StringDeserializer");
+        "value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+    standardProps.setProperty(
+        "key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+    standardProps.setProperty(
+        "value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
     LOG.info("ZK and KafkaServer started.");
   }
 
@@ -373,8 +366,7 @@ public class KafkaTestEnvironmentImpl extends KafkaTestEnvironment {
       // to support secure kafka cluster
       if (config.isSecureMode()) {
         LOG.info("Adding Kafka secure configurations");
-        kafkaProperties.put(
-            "listeners", "SASL_PLAINTEXT://" + KAFKA_HOST + ":" + kafkaPort);
+        kafkaProperties.put("listeners", "SASL_PLAINTEXT://" + KAFKA_HOST + ":" + kafkaPort);
         kafkaProperties.put(
             "advertised.listeners", "SASL_PLAINTEXT://" + KAFKA_HOST + ":" + kafkaPort);
         kafkaProperties.putAll(getSecureProperties());
@@ -384,12 +376,7 @@ public class KafkaTestEnvironmentImpl extends KafkaTestEnvironment {
 
       try {
         scala.Option<String> stringNone = scala.Option.apply(null);
-        KafkaServer server =
-            new KafkaServer(
-                kafkaConfig,
-                Time.SYSTEM,
-                stringNone,
-                false);
+        KafkaServer server = new KafkaServer(kafkaConfig, Time.SYSTEM, stringNone, false);
         server.startup();
         return server;
       } catch (KafkaException e) {
@@ -414,11 +401,9 @@ public class KafkaTestEnvironmentImpl extends KafkaTestEnvironment {
       Properties props = new Properties();
       props.putAll(standardProps);
       props.setProperty(
-          "key.deserializer",
-          "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+          "key.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
       props.setProperty(
-          "value.deserializer",
-          "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+          "value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer");
 
       offsetClient = new KafkaConsumer<>(props);
     }

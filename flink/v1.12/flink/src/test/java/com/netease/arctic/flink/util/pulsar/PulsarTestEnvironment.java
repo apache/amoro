@@ -55,9 +55,7 @@ public class PulsarTestEnvironment implements BeforeAllCallback, AfterAllCallbac
     this.runtime = runtime;
   }
 
-  /**
-   * JUnit 4 Rule based test logic.
-   */
+  /** JUnit 4 Rule based test logic. */
   @Override
   public Statement apply(Statement base, Description description) {
     return new Statement() {
@@ -82,25 +80,19 @@ public class PulsarTestEnvironment implements BeforeAllCallback, AfterAllCallbac
     };
   }
 
-  /**
-   * JUnit 5 Extension setup method.
-   */
+  /** JUnit 5 Extension setup method. */
   @Override
   public void beforeAll(ExtensionContext context) {
     runtime.startUp();
   }
 
-  /**
-   * JUnit 5 Extension shutdown method.
-   */
+  /** JUnit 5 Extension shutdown method. */
   @Override
   public void afterAll(ExtensionContext context) {
     runtime.tearDown();
   }
 
-  /**
-   * Get a common supported set of method for operating pulsar which is in container.
-   */
+  /** Get a common supported set of method for operating pulsar which is in container. */
   public PulsarRuntimeOperator operator() {
     return runtime.operator();
   }

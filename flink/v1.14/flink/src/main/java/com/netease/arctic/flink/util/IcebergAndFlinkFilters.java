@@ -28,14 +28,14 @@ public class IcebergAndFlinkFilters {
   List<Expression> expressions;
   List<ResolvedExpression> acceptedFilters;
 
-  private IcebergAndFlinkFilters(List<Expression> expressions, List<ResolvedExpression> acceptedFilters) {
+  private IcebergAndFlinkFilters(
+      List<Expression> expressions, List<ResolvedExpression> acceptedFilters) {
     this.expressions = expressions;
     this.acceptedFilters = acceptedFilters;
   }
 
   public static IcebergAndFlinkFilters of(
-      List<Expression> expressions,
-      List<ResolvedExpression> acceptedFilters) {
+      List<Expression> expressions, List<ResolvedExpression> acceptedFilters) {
     return new IcebergAndFlinkFilters(expressions, acceptedFilters);
   }
 

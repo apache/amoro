@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.write.hidden.pulsar;
 
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ENABLE_TRANSACTION;
+
 import com.google.common.collect.Lists;
 import com.netease.arctic.flink.write.hidden.ArcticLogPartitioner;
 import com.netease.arctic.flink.write.hidden.LogMsgFactory;
@@ -43,16 +45,13 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ENABLE_TRANSACTION;
-
 /**
- * This is hidden log queue pulsar producer that serializes {@link LogData<T>} and emits to the pulsar topic.
+ * This is hidden log queue pulsar producer that serializes {@link LogData<T>} and emits to the
+ * pulsar topic.
  */
 public class HiddenPulsarProducer<T> implements LogMsgFactory.Producer<T> {
   private static final Logger LOG = LoggerFactory.getLogger(HiddenPulsarProducer.class);
-  /**
-   * User defined properties for the Pulsar Producer.
-   */
+  /** User defined properties for the Pulsar Producer. */
   protected final SinkConfiguration configuration;
 
   private final LogDataJsonSerialization<T> logDataJsonSerialization;
@@ -77,9 +76,10 @@ public class HiddenPulsarProducer<T> implements LogMsgFactory.Producer<T> {
 
   @Override
   public void open(StreamingRuntimeContext context) throws Exception {
-    metadataListener.open(configuration, context == null ? null : context.getProcessingTimeService());
+    metadataListener.open(
+        configuration, context == null ? null : context.getProcessingTimeService());
     producerRegister = new TopicProducerRegister(configuration);
-    
+
     // enable transaction forcibly to support send Flip messages in transaction
     Configuration conf = new Configuration(configuration);
     conf.set(PULSAR_ENABLE_TRANSACTION, true);
@@ -107,16 +107,15 @@ public class HiddenPulsarProducer<T> implements LogMsgFactory.Producer<T> {
   private void enqueueMessageSending(String topic, TypedMessageBuilder<?> builder)
       throws ExecutionException, InterruptedException {
     // Block the mailbox executor for yield method.
-    builder.sendAsync()
+    builder
+        .sendAsync()
         .whenComplete(
             (id, ex) -> {
               releasePermits();
               if (ex != null) {
-                throw new FlinkRuntimeException(
-                    "Failed to send data to Pulsar " + topic, ex);
+                throw new FlinkRuntimeException("Failed to send data to Pulsar " + topic, ex);
               } else {
-                LOG.debug(
-                    "Sent message to Pulsar {} with message id {}", topic, id);
+                LOG.debug("Sent message to Pulsar {} with message id {}", topic, id);
               }
             })
         .get();
@@ -129,16 +128,19 @@ public class HiddenPulsarProducer<T> implements LogMsgFactory.Producer<T> {
 
     LOG.info("sending {} partitions with flip message={}.", availableTopics.size(), logData);
     long start = System.currentTimeMillis();
-    Transaction tx = pulsarClient.newTransaction()
-        .withTransactionTimeout(30, TimeUnit.SECONDS).build().get();
+    Transaction tx =
+        pulsarClient.newTransaction().withTransactionTimeout(30, TimeUnit.SECONDS).build().get();
 
     try {
       for (String topic : availableTopics) {
-        pulsarClient.newProducer(Schema.BYTES)
+        pulsarClient
+            .newProducer(Schema.BYTES)
             // disable timeout to support transaction
             .sendTimeout(0, TimeUnit.SECONDS)
-            .topic(topic).create()
-            .newMessage(tx).value(message)
+            .topic(topic)
+            .create()
+            .newMessage(tx)
+            .value(message)
             .send();
       }
       tx.commit();
@@ -176,9 +178,9 @@ public class HiddenPulsarProducer<T> implements LogMsgFactory.Producer<T> {
     pendingMessages -= 1;
   }
 
-  private TypedMessageBuilder<?> createMessageBuilder(
-      String topic, byte[] logData) {
-    TypedMessageBuilder<byte[]> builder = producerRegister.createMessageBuilder(topic, Schema.BYTES);
+  private TypedMessageBuilder<?> createMessageBuilder(String topic, byte[] logData) {
+    TypedMessageBuilder<byte[]> builder =
+        producerRegister.createMessageBuilder(topic, Schema.BYTES);
 
     // Schema evolution would serialize the message by Pulsar Schema in TypedMessageBuilder.
     // The type has been checked in PulsarMessageBuilder#value.
@@ -186,5 +188,4 @@ public class HiddenPulsarProducer<T> implements LogMsgFactory.Producer<T> {
 
     return builder;
   }
-
 }

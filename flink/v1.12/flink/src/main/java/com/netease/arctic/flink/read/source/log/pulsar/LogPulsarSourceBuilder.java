@@ -18,6 +18,26 @@
 
 package com.netease.arctic.flink.read.source.log.pulsar;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.fetchLogstorePrefixProperties;
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
+import static java.lang.Boolean.FALSE;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ENABLE_TRANSACTION;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_CONSUMER_NAME;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_ENABLE_AUTO_ACKNOWLEDGE_MESSAGE;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_PARTITION_DISCOVERY_INTERVAL_MS;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_READ_TRANSACTION_TIMEOUT;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_NAME;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_TYPE;
+import static org.apache.flink.connector.pulsar.source.config.PulsarSourceConfigUtils.SOURCE_CONFIG_VALIDATOR;
+import static org.apache.flink.util.InstantiationUtil.isSerializable;
+import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.apache.flink.util.Preconditions.checkState;
+
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
@@ -41,34 +61,15 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
-import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.fetchLogstorePrefixProperties;
-import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
-import static java.lang.Boolean.FALSE;
-import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ENABLE_TRANSACTION;
-import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_CONSUMER_NAME;
-import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_ENABLE_AUTO_ACKNOWLEDGE_MESSAGE;
-import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_PARTITION_DISCOVERY_INTERVAL_MS;
-import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_READ_TRANSACTION_TIMEOUT;
-import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_NAME;
-import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_TYPE;
-import static org.apache.flink.connector.pulsar.source.config.PulsarSourceConfigUtils.SOURCE_CONFIG_VALIDATOR;
-import static org.apache.flink.util.InstantiationUtil.isSerializable;
-import static org.apache.flink.util.Preconditions.checkNotNull;
-import static org.apache.flink.util.Preconditions.checkState;
-
 /**
- * The builder class for {@link LogPulsarSource} to make it easier for the users to construct a {@link
- * LogPulsarSource}.
+ * The builder class for {@link LogPulsarSource} to make it easier for the users to construct a
+ * {@link LogPulsarSource}.
  *
- * <p>The following example shows the minimum setup to create a LogPulsarSource that reads the String
- * values from a Pulsar topic.
+ * <p>The following example shows the minimum setup to create a LogPulsarSource that reads the
+ * String values from a Pulsar topic.
  *
- * <p>The service url, admin url, subscription name, topics to consume are required fields that must be set.
+ * <p>The service url, admin url, subscription name, topics to consume are required fields that must
+ * be set.
  *
  * <p>To specify the starting position of LogPulsarSource, one can call {@link
  * #setStartCursor(StartCursor)}.
@@ -94,7 +95,7 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
   private Map<String, String> tableProperties;
 
   /**
-   * @param schema          read schema, only contains the selected fields
+   * @param schema read schema, only contains the selected fields
    * @param tableProperties Arctic table properties
    */
   LogPulsarSourceBuilder(Schema schema, Map<String, String> tableProperties) {
@@ -122,14 +123,19 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
   }
 
   private void setupStartupMode() {
-    String startupMode = CompatiblePropertyUtil.propertyAsString(tableProperties, SCAN_STARTUP_MODE.key(),
-        SCAN_STARTUP_MODE.defaultValue()).toLowerCase();
+    String startupMode =
+        CompatiblePropertyUtil.propertyAsString(
+                tableProperties, SCAN_STARTUP_MODE.key(), SCAN_STARTUP_MODE.defaultValue())
+            .toLowerCase();
     long startupTimestampMillis = 0L;
     if (Objects.equals(startupMode.toLowerCase(), SCAN_STARTUP_MODE_TIMESTAMP)) {
-      startupTimestampMillis = Long.parseLong(Preconditions.checkNotNull(
-          tableProperties.get(SCAN_STARTUP_TIMESTAMP_MILLIS.key()),
-          String.format("'%s' should be set in '%s' mode",
-              SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP)));
+      startupTimestampMillis =
+          Long.parseLong(
+              Preconditions.checkNotNull(
+                  tableProperties.get(SCAN_STARTUP_TIMESTAMP_MILLIS.key()),
+                  String.format(
+                      "'%s' should be set in '%s' mode",
+                      SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP)));
     }
     switch (startupMode) {
       case SCAN_STARTUP_MODE_EARLIEST:
@@ -142,9 +148,14 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
         this.setStartCursor(StartCursor.fromPublishTime(startupTimestampMillis));
         break;
       default:
-        throw new ValidationException(String.format(
-            "%s only support '%s', '%s', '%s'. But input is '%s'", ArcticValidator.SCAN_STARTUP_MODE,
-            SCAN_STARTUP_MODE_LATEST, SCAN_STARTUP_MODE_EARLIEST, SCAN_STARTUP_MODE_TIMESTAMP, startupMode));
+        throw new ValidationException(
+            String.format(
+                "%s only support '%s', '%s', '%s'. But input is '%s'",
+                ArcticValidator.SCAN_STARTUP_MODE,
+                SCAN_STARTUP_MODE_LATEST,
+                SCAN_STARTUP_MODE_EARLIEST,
+                SCAN_STARTUP_MODE_TIMESTAMP,
+                startupMode));
     }
   }
 
@@ -160,7 +171,10 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
     // If subscription name is not set, set a random value.
     if (!configBuilder.contains(PULSAR_SUBSCRIPTION_NAME)) {
       String uuid = UUID.randomUUID().toString();
-      LOG.warn("properties.{} has not set, using random subscription name: {}", PULSAR_SUBSCRIPTION_NAME.key(), uuid);
+      LOG.warn(
+          "properties.{} has not set, using random subscription name: {}",
+          PULSAR_SUBSCRIPTION_NAME.key(),
+          uuid);
       configBuilder.set(PULSAR_SUBSCRIPTION_NAME, uuid);
     }
     // Check builder configuration.
@@ -179,9 +193,7 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
         tableProperties);
   }
 
-  /**
-   * copy from org.apache.flink.connector.pulsar.source.PulsarSourceBuilder#build
-   */
+  /** copy from org.apache.flink.connector.pulsar.source.PulsarSourceBuilder#build */
   private void buildOfficial() {
     // Ensure the topic subscriber for pulsar.
     checkNotNull(subscriber, "No topic names or topic pattern are provided.");
@@ -190,8 +202,8 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
     if (subscriptionType == SubscriptionType.Key_Shared) {
       if (rangeGenerator == null) {
         LOG.warn(
-            "No range generator provided for key_shared subscription," +
-                " we would use the UniformRangeGenerator as the default range generator.");
+            "No range generator provided for key_shared subscription,"
+                + " we would use the UniformRangeGenerator as the default range generator.");
         this.rangeGenerator = new SplitRangeGenerator();
       }
     } else {
@@ -203,7 +215,8 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
       LOG.warn("No boundedness was set, mark it as a endless stream.");
       this.boundedness = Boundedness.CONTINUOUS_UNBOUNDED;
     }
-    if (boundedness == Boundedness.BOUNDED && configBuilder.get(PULSAR_PARTITION_DISCOVERY_INTERVAL_MS) >= 0) {
+    if (boundedness == Boundedness.BOUNDED
+        && configBuilder.get(PULSAR_PARTITION_DISCOVERY_INTERVAL_MS) >= 0) {
       LOG.warn(
           "{} property is overridden to -1 because the source is bounded.",
           PULSAR_PARTITION_DISCOVERY_INTERVAL_MS);
@@ -211,22 +224,23 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
     }
 
     // Enable transaction if the cursor auto commit is disabled for Key_Shared & Shared.
-    if (FALSE.equals(configBuilder.get(PULSAR_ENABLE_AUTO_ACKNOWLEDGE_MESSAGE)) &&
-        (subscriptionType == SubscriptionType.Key_Shared || subscriptionType == SubscriptionType.Shared)) {
+    if (FALSE.equals(configBuilder.get(PULSAR_ENABLE_AUTO_ACKNOWLEDGE_MESSAGE))
+        && (subscriptionType == SubscriptionType.Key_Shared
+            || subscriptionType == SubscriptionType.Shared)) {
       LOG.info(
-          "Pulsar cursor auto commit is disabled, make sure checkpoint is enabled " +
-              "and your pulsar cluster is support the transaction.");
+          "Pulsar cursor auto commit is disabled, make sure checkpoint is enabled "
+              + "and your pulsar cluster is support the transaction.");
       configBuilder.override(PULSAR_ENABLE_TRANSACTION, true);
 
       if (!configBuilder.contains(PULSAR_READ_TRANSACTION_TIMEOUT)) {
         LOG.warn(
-            "The default pulsar transaction timeout is 3 hours, " +
-                "make sure it was greater than your checkpoint interval.");
+            "The default pulsar transaction timeout is 3 hours, "
+                + "make sure it was greater than your checkpoint interval.");
       } else {
         Long timeout = configBuilder.get(PULSAR_READ_TRANSACTION_TIMEOUT);
         LOG.warn(
-            "The configured transaction timeout is {} mille seconds, " +
-                "make sure it was greater than your checkpoint interval.",
+            "The configured transaction timeout is {} mille seconds, "
+                + "make sure it was greater than your checkpoint interval.",
             timeout);
       }
     }

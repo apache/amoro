@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
+import static com.netease.arctic.flink.read.hybrid.enumerator.ArcticEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
+
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ChangelogSplit;
@@ -31,12 +33,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-import static com.netease.arctic.flink.read.hybrid.enumerator.ArcticEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
-
 /**
- * A planner for merge-on-read scanning by {@link this#discoverInitialSplits}
- * and incremental scanning by {@link this#discoverIncrementalSplits(ArcticEnumeratorOffset, List)}.
- * <p> {@link ContinuousEnumerationResult#splits()} includes the {@link MergeOnReadSplit}s and {@link ChangelogSplit}s.
+ * A planner for merge-on-read scanning by {@link this#discoverInitialSplits} and incremental
+ * scanning by {@link this#discoverIncrementalSplits(ArcticEnumeratorOffset, List)}.
+ *
+ * <p>{@link ContinuousEnumerationResult#splits()} includes the {@link MergeOnReadSplit}s and {@link
+ * ChangelogSplit}s.
  */
 public class MergeOnReadIncrementalPlanner extends ContinuousSplitPlannerImpl {
   private static final Logger LOG = LoggerFactory.getLogger(MergeOnReadIncrementalPlanner.class);
@@ -51,15 +53,14 @@ public class MergeOnReadIncrementalPlanner extends ContinuousSplitPlannerImpl {
 
     List<ArcticSplit> arcticSplits = FlinkSplitPlanner.mergeOnReadPlan(table, filters, splitCount);
 
-    long changeStartSnapshotId = changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;
+    long changeStartSnapshotId =
+        changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;
     if (changeSnapshot == null && CollectionUtils.isEmpty(arcticSplits)) {
       LOG.info("There have no change snapshot, and no base splits in table: {}.", table);
       return ContinuousEnumerationResult.EMPTY;
     }
 
     return new ContinuousEnumerationResult(
-        arcticSplits,
-        null,
-        ArcticEnumeratorOffset.of(changeStartSnapshotId, null));
+        arcticSplits, null, ArcticEnumeratorOffset.of(changeStartSnapshotId, null));
   }
 }

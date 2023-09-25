@@ -28,6 +28,7 @@ import java.util.function.Function;
  * Provides a thread local cache with a maximum cache size per thread.
  *
  * <p>Note: Values must not be null.
+ *
  * <p>Copied from flink-1.18
  */
 @Internal

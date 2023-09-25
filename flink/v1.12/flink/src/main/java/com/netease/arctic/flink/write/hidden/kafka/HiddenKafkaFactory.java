@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.write.hidden.kafka;
 
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
+
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.write.hidden.ArcticLogPartitioner;
 import com.netease.arctic.flink.write.hidden.LogMsgFactory;
@@ -25,11 +27,7 @@ import com.netease.arctic.log.LogDataJsonSerialization;
 
 import java.util.Properties;
 
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
-
-/**
- * A factory creates kafka log queue producers or consumers.
- */
+/** A factory creates kafka log queue producers or consumers. */
 public class HiddenKafkaFactory<T> implements LogMsgFactory<T> {
   private static final long serialVersionUID = -1L;
 
@@ -41,12 +39,7 @@ public class HiddenKafkaFactory<T> implements LogMsgFactory<T> {
       ShuffleHelper helper) {
     checkNotNull(topic);
     return new HiddenKafkaProducer<>(
-        producerConfig,
-        topic,
-        logDataJsonSerialization,
-        new ArcticLogPartitioner<>(
-            helper
-        ));
+        producerConfig, topic, logDataJsonSerialization, new ArcticLogPartitioner<>(helper));
   }
 
   @Override

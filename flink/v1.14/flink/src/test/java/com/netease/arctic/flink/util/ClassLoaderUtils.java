@@ -21,6 +21,7 @@ package com.netease.arctic.flink.util;
 import javax.annotation.Nullable;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -38,9 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Utilities to create class loaders.
- */
+/** Utilities to create class loaders. */
 public class ClassLoaderUtils {
   public static URLClassLoader compileAndLoadJava(File root, String filename, String source)
       throws IOException {
@@ -49,7 +48,7 @@ public class ClassLoaderUtils {
 
   private static URLClassLoader createClassLoader(File root) throws MalformedURLException {
     return new URLClassLoader(
-        new URL[]{root.toURI().toURL()}, Thread.currentThread().getContextClassLoader());
+        new URL[] {root.toURI().toURL()}, Thread.currentThread().getContextClassLoader());
   }
 
   private static void writeAndCompile(File root, String filename, String source)
@@ -176,14 +175,14 @@ public class ClassLoaderUtils {
   }
 
   /**
-   * Creates a new ClassLoader and a new {@link Serializable} class inside that ClassLoader. This
-   * is useful when unit testing the class loading behavior of code, and needing a class that is
+   * Creates a new ClassLoader and a new {@link Serializable} class inside that ClassLoader. This is
+   * useful when unit testing the class loading behavior of code, and needing a class that is
    * outside the system class path.
    *
    * <p>NOTE: Even though this method may throw IOExceptions, we do not declare those and rather
    * wrap them in Runtime Exceptions. While this is generally discouraged, we do this here because
-   * it is merely a test utility and not production code, and it makes it easier to use this
-   * method during the initialization of variables and especially static variables.
+   * it is merely a test utility and not production code, and it makes it easier to use this method
+   * during the initialization of variables and especially static variables.
    */
   public static ObjectAndClassLoader<Serializable> createSerializableObjectFromNewClassLoader() {
 
@@ -221,8 +220,8 @@ public class ClassLoaderUtils {
    *
    * <p>NOTE: Even though this method may throw IOExceptions, we do not declare those and rather
    * wrap them in Runtime Exceptions. While this is generally discouraged, we do this here because
-   * it is merely a test utility and not production code, and it makes it easier to use this
-   * method during the initialization of variables and especially static variables.
+   * it is merely a test utility and not production code, and it makes it easier to use this method
+   * during the initialization of variables and especially static variables.
    */
   public static ObjectAndClassLoader<Exception> createExceptionObjectFromNewClassLoader() {
 
@@ -235,8 +234,7 @@ public class ClassLoaderUtils {
   private static <T> ObjectAndClassLoader<T> createObjectFromNewClassLoader(
       String testClassName, Class<T> testClass, String source) {
     final Path classDirPath =
-        new File(System.getProperty("java.io.tmpdir"), UUID.randomUUID().toString())
-            .toPath();
+        new File(System.getProperty("java.io.tmpdir"), UUID.randomUUID().toString()).toPath();
 
     URLClassLoader classLoader = null;
     try {
@@ -282,8 +280,7 @@ public class ClassLoaderUtils {
           }
 
           @Override
-          public FileVisitResult postVisitDirectory(Path dir, IOException exc)
-              throws IOException {
+          public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
             Files.delete(dir);
             return FileVisitResult.CONTINUE;
           }

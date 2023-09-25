@@ -25,9 +25,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Utility class for serializing and deserializing a set of ByteArrayWrapper objects.
- */
+/** Utility class for serializing and deserializing a set of ByteArrayWrapper objects. */
 public class ByteArraySetSerializer {
 
   /**

@@ -44,8 +44,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class PulsarTestSuiteBase {
 
-  @RegisterExtension
-  final PulsarTestEnvironment environment = new PulsarTestEnvironment(runtime());
+  @RegisterExtension final PulsarTestEnvironment environment = new PulsarTestEnvironment(runtime());
 
   /**
    * Choose the desired pulsar runtime as the test backend. The default test backend is a mocked
@@ -55,9 +54,7 @@ public abstract class PulsarTestSuiteBase {
     return PulsarRuntime.container();
   }
 
-  /**
-   * Operate pulsar by acquiring a runtime operator.
-   */
+  /** Operate pulsar by acquiring a runtime operator. */
   protected PulsarRuntimeOperator operator() {
     return environment.operator();
   }

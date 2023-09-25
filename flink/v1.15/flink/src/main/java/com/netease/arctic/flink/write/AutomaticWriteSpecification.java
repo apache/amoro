@@ -18,18 +18,17 @@
 
 package com.netease.arctic.flink.write;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
 import java.io.Serializable;
 import java.time.Duration;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
-
-/**
- * Automatic write specification.
- */
+/** Automatic write specification. */
 public class AutomaticWriteSpecification implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(AutomaticWriteSpecification.class);
 
@@ -47,22 +46,30 @@ public class AutomaticWriteSpecification implements Serializable {
    * @return true: double write, false: single write.
    */
   public boolean shouldDoubleWrite(long watermark) {
-    // The writeLogstoreWatermarkGap is null, which means that the logstore writer is enabled immediately once the job
+    // The writeLogstoreWatermarkGap is null, which means that the logstore writer is enabled
+    // immediately once the job
     // is launched.
     if (writeLogstoreWatermarkGap == null) {
-      LOG.info("The logstore writer is enabled and the {} is null," +
-              " so double write immediately once the job is launched.",
+      LOG.info(
+          "The logstore writer is enabled and the {} is null,"
+              + " so double write immediately once the job is launched.",
           AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key());
       return true;
     }
     long now = System.currentTimeMillis();
     boolean result = watermark >= now - writeLogstoreWatermarkGap.toMillis();
     if (result) {
-      LOG.info("The logstore writer is enabled and the {} is {}, the watermark has caught up, {}.",
-          AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key(), writeLogstoreWatermarkGap, watermark);
+      LOG.info(
+          "The logstore writer is enabled and the {} is {}, the watermark has caught up, {}.",
+          AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key(),
+          writeLogstoreWatermarkGap,
+          watermark);
     } else {
-      LOG.debug("The logstore writer is enabled and the {} is {}, the watermark has not caught up, {}.",
-          AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key(), writeLogstoreWatermarkGap, watermark);
+      LOG.debug(
+          "The logstore writer is enabled and the {} is {}, the watermark has not caught up, {}.",
+          AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key(),
+          writeLogstoreWatermarkGap,
+          watermark);
     }
     return result;
   }

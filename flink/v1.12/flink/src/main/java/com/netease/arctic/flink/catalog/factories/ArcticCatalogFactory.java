@@ -18,6 +18,11 @@
 
 package com.netease.arctic.flink.catalog.factories;
 
+import static com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator.METASTORE_URL;
+import static com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator.PROPERTIES_PREFIX;
+import static org.apache.flink.table.descriptors.CatalogDescriptorValidator.CATALOG_DEFAULT_DATABASE;
+import static org.apache.flink.table.descriptors.CatalogDescriptorValidator.CATALOG_PROPERTY_VERSION;
+import static org.apache.flink.table.descriptors.CatalogDescriptorValidator.CATALOG_TYPE;
 
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.flink.InternalCatalogBuilder;
@@ -34,15 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator.METASTORE_URL;
-import static com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator.PROPERTIES_PREFIX;
-import static org.apache.flink.table.descriptors.CatalogDescriptorValidator.CATALOG_DEFAULT_DATABASE;
-import static org.apache.flink.table.descriptors.CatalogDescriptorValidator.CATALOG_PROPERTY_VERSION;
-import static org.apache.flink.table.descriptors.CatalogDescriptorValidator.CATALOG_TYPE;
-
-/**
- * Factory for {@link ArcticCatalog}
- */
+/** Factory for {@link ArcticCatalog} */
 public class ArcticCatalogFactory implements CatalogFactory {
 
   private static final Logger LOG = LoggerFactory.getLogger(ArcticCatalogFactory.class);
@@ -51,13 +48,20 @@ public class ArcticCatalogFactory implements CatalogFactory {
   public Catalog createCatalog(String name, Map<String, String> properties) {
     final DescriptorProperties descriptorProperties = getValidatedProperties(properties);
 
-    final String defaultDatabase = descriptorProperties.getOptionalString(CATALOG_DEFAULT_DATABASE)
-        .orElse(ArcticCatalog.DEFAULT_DB);
+    final String defaultDatabase =
+        descriptorProperties
+            .getOptionalString(CATALOG_DEFAULT_DATABASE)
+            .orElse(ArcticCatalog.DEFAULT_DB);
     String metastoreUrl = descriptorProperties.getString(METASTORE_URL);
-    Map<String, String> arcticCatalogProperties = descriptorProperties.getPropertiesWithPrefix(PROPERTIES_PREFIX);
+    Map<String, String> arcticCatalogProperties =
+        descriptorProperties.getPropertiesWithPrefix(PROPERTIES_PREFIX);
 
-    return new ArcticCatalog(name, defaultDatabase,
-        InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl).properties(arcticCatalogProperties));
+    return new ArcticCatalog(
+        name,
+        defaultDatabase,
+        InternalCatalogBuilder.builder()
+            .metastoreUrl(metastoreUrl)
+            .properties(arcticCatalogProperties));
   }
 
   private static DescriptorProperties getValidatedProperties(Map<String, String> properties) {
@@ -88,7 +92,8 @@ public class ArcticCatalogFactory implements CatalogFactory {
 
     // storage config and authorization config
     properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.LOAD_AUTH_FROM_AMS);
-    properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
+    properties.add(
+        PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
     properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
     properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB_PATH);
     properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB_ENCODE);

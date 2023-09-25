@@ -25,9 +25,7 @@ import com.netease.arctic.flink.read.source.DataIterator;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.iceberg.io.CloseableIterator;
 
-/**
- * A {@link ReaderFunction} implementation that uses {@link DataIterator}.
- */
+/** A {@link ReaderFunction} implementation that uses {@link DataIterator}. */
 public abstract class DataIteratorReaderFunction<T> implements ReaderFunction<T> {
   private final DataIteratorBatcher<T> batcher;
 
@@ -38,7 +36,8 @@ public abstract class DataIteratorReaderFunction<T> implements ReaderFunction<T>
   public abstract DataIterator<T> createDataIterator(ArcticSplit split);
 
   @Override
-  public CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> apply(ArcticSplit split) {
+  public CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> apply(
+      ArcticSplit split) {
     DataIterator<T> inputIterator = createDataIterator(split);
     if (inputIterator instanceof ChangeLogDataIterator) {
       ChangeLogDataIterator<T> changelogInputIterator = (ChangeLogDataIterator<T>) inputIterator;
@@ -47,10 +46,10 @@ public abstract class DataIteratorReaderFunction<T> implements ReaderFunction<T>
           changelogSplit.insertFileOffset(),
           changelogSplit.deleteFileOffset(),
           changelogSplit.insertRecordOffset(),
-          changelogSplit.deleteRecordOffset()
-      );
+          changelogSplit.deleteRecordOffset());
     } else {
-      inputIterator.seek(split.asSnapshotSplit().insertFileOffset(), split.asSnapshotSplit().insertRecordOffset());
+      inputIterator.seek(
+          split.asSnapshotSplit().insertFileOffset(), split.asSnapshotSplit().insertRecordOffset());
     }
     return batcher.batch(split.splitId(), inputIterator);
   }

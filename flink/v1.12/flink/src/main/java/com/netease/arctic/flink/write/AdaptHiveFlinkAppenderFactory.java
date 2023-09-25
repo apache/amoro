@@ -60,14 +60,19 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
   private RowType eqDeleteFlinkSchema = null;
   private RowType posDeleteFlinkSchema = null;
 
-  public AdaptHiveFlinkAppenderFactory(Schema schema, RowType flinkSchema,
-      Map<String, String> props, PartitionSpec spec) {
+  public AdaptHiveFlinkAppenderFactory(
+      Schema schema, RowType flinkSchema, Map<String, String> props, PartitionSpec spec) {
     this(schema, flinkSchema, props, spec, null, null, null);
   }
 
-  public AdaptHiveFlinkAppenderFactory(Schema schema, RowType flinkSchema, Map<String, String> props,
-      PartitionSpec spec, int[] equalityFieldIds,
-      Schema eqDeleteRowSchema, Schema posDeleteRowSchema) {
+  public AdaptHiveFlinkAppenderFactory(
+      Schema schema,
+      RowType flinkSchema,
+      Map<String, String> props,
+      PartitionSpec spec,
+      int[] equalityFieldIds,
+      Schema eqDeleteRowSchema,
+      Schema posDeleteRowSchema) {
     this.schema = schema;
     this.flinkSchema = flinkSchema;
     this.props = props;
@@ -109,7 +114,8 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
 
         case ORC:
           return ORC.write(outputFile)
-              .createWriterFunc((schema, typDesc) -> FlinkOrcWriter.buildWriter(flinkSchema, schema))
+              .createWriterFunc(
+                  (schema, typDesc) -> FlinkOrcWriter.buildWriter(flinkSchema, schema))
               .setAll(props)
               .metricsConfig(metricsConfig)
               .schema(schema)
@@ -118,7 +124,8 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
 
         case PARQUET:
           return AdaptHiveParquet.write(outputFile)
-              .createWriterFunc(msgType -> AdaptHiveFlinkParquetWriters.buildWriter(flinkSchema, msgType))
+              .createWriterFunc(
+                  msgType -> AdaptHiveFlinkParquetWriters.buildWriter(flinkSchema, msgType))
               .setAll(props)
               .metricsConfig(metricsConfig)
               .schema(schema)
@@ -134,18 +141,25 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
   }
 
   @Override
-  public DataWriter<RowData> newDataWriter(EncryptedOutputFile file, FileFormat format, StructLike partition) {
+  public DataWriter<RowData> newDataWriter(
+      EncryptedOutputFile file, FileFormat format, StructLike partition) {
     return new DataWriter<>(
-        newAppender(file.encryptingOutputFile(), format), format,
-        file.encryptingOutputFile().location(), spec, partition, file.keyMetadata());
+        newAppender(file.encryptingOutputFile(), format),
+        format,
+        file.encryptingOutputFile().location(),
+        spec,
+        partition,
+        file.keyMetadata());
   }
 
   @Override
-  public EqualityDeleteWriter<RowData> newEqDeleteWriter(EncryptedOutputFile outputFile, FileFormat format,
-      StructLike partition) {
-    Preconditions.checkState(equalityFieldIds != null && equalityFieldIds.length > 0,
+  public EqualityDeleteWriter<RowData> newEqDeleteWriter(
+      EncryptedOutputFile outputFile, FileFormat format, StructLike partition) {
+    Preconditions.checkState(
+        equalityFieldIds != null && equalityFieldIds.length > 0,
         "Equality field ids shouldn't be null or empty when creating equality-delete writer");
-    Preconditions.checkNotNull(eqDeleteRowSchema,
+    Preconditions.checkNotNull(
+        eqDeleteRowSchema,
         "Equality delete row schema shouldn't be null when creating equality-delete writer");
 
     MetricsConfig metricsConfig = MetricsConfig.fromProperties(props);
@@ -165,7 +179,9 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
 
         case PARQUET:
           return AdaptHiveParquet.writeDeletes(outputFile.encryptingOutputFile())
-              .createWriterFunc(msgType -> AdaptHiveFlinkParquetWriters.buildWriter(lazyEqDeleteFlinkSchema(), msgType))
+              .createWriterFunc(
+                  msgType ->
+                      AdaptHiveFlinkParquetWriters.buildWriter(lazyEqDeleteFlinkSchema(), msgType))
               .withPartition(partition)
               .overwrite()
               .setAll(props)
@@ -186,8 +202,8 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
   }
 
   @Override
-  public PositionDeleteWriter<RowData> newPosDeleteWriter(EncryptedOutputFile outputFile, FileFormat format,
-      StructLike partition) {
+  public PositionDeleteWriter<RowData> newPosDeleteWriter(
+      EncryptedOutputFile outputFile, FileFormat format, StructLike partition) {
     MetricsConfig metricsConfig = MetricsConfig.fromProperties(props);
     try {
       switch (format) {
@@ -203,9 +219,12 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
               .buildPositionWriter();
 
         case PARQUET:
-          RowType flinkPosDeleteSchema = FlinkSchemaUtil.convert(DeleteSchemaUtil.posDeleteSchema(posDeleteRowSchema));
+          RowType flinkPosDeleteSchema =
+              FlinkSchemaUtil.convert(DeleteSchemaUtil.posDeleteSchema(posDeleteRowSchema));
           return AdaptHiveParquet.writeDeletes(outputFile.encryptingOutputFile())
-              .createWriterFunc(msgType -> AdaptHiveFlinkParquetWriters.buildWriter(flinkPosDeleteSchema, msgType))
+              .createWriterFunc(
+                  msgType ->
+                      AdaptHiveFlinkParquetWriters.buildWriter(flinkPosDeleteSchema, msgType))
               .withPartition(partition)
               .overwrite()
               .setAll(props)
@@ -217,7 +236,8 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
               .buildPositionWriter();
 
         default:
-          throw new UnsupportedOperationException("Cannot write pos-deletes for unsupported file format: " + format);
+          throw new UnsupportedOperationException(
+              "Cannot write pos-deletes for unsupported file format: " + format);
       }
     } catch (IOException e) {
       throw new UncheckedIOException(e);

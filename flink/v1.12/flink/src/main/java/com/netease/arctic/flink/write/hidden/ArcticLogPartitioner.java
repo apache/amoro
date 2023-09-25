@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.write.hidden;
 
+import static org.apache.flink.util.Preconditions.checkArgument;
+import static org.apache.flink.util.Preconditions.checkNotNull;
+
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.log.LogData;
 import org.apache.commons.collections.CollectionUtils;
@@ -28,12 +31,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.apache.flink.util.Preconditions.checkArgument;
-import static org.apache.flink.util.Preconditions.checkNotNull;
-
-/**
- * This is a log message partitioner that makes sure the record is without out-of-order.
- */
+/** This is a log message partitioner that makes sure the record is without out-of-order. */
 public class ArcticLogPartitioner<T> implements Serializable {
   private static final long serialVersionUID = 9184708069203854226L;
   private final AtomicInteger counter = new AtomicInteger(0);
@@ -43,12 +41,11 @@ public class ArcticLogPartitioner<T> implements Serializable {
     this.helper = shuffleHelper;
   }
 
-  /**
-   * @param <P> Partition type, which is int for Kafka, but String for Pulsar
-   */
+  /** @param <P> Partition type, which is int for Kafka, but String for Pulsar */
   public <P> P partition(LogData<T> logData, List<P> partitions) {
     checkNotNull(logData, "record is null");
-    checkArgument(CollectionUtils.isNotEmpty(partitions), "Partitions of the target topic is empty.");
+    checkArgument(
+        CollectionUtils.isNotEmpty(partitions), "Partitions of the target topic is empty.");
 
     P partition;
     if (helper == null || !helper.isPrimaryKeyExist()) {
