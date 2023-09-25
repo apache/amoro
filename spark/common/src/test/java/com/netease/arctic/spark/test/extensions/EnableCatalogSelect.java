@@ -34,7 +34,7 @@ public @interface EnableCatalogSelect {
   @Retention(RetentionPolicy.RUNTIME)
   @interface SelectCatalog {
     String use() default "";
+
     boolean byTableFormat() default false;
   }
-
 }
