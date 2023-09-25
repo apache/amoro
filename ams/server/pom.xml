@@ -280,11 +280,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.zookeeper</groupId>
-            <artifactId>zookeeper</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
             <version>1.6.0-incubating</version>
