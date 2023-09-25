@@ -18,6 +18,10 @@
 
 package com.netease.arctic.flink.table;
 
+import static com.netease.arctic.flink.FlinkSchemaUtil.filterWatermark;
+import static com.netease.arctic.flink.FlinkSchemaUtil.toRowType;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.DIM_TABLE_ENABLE;
+
 import com.netease.arctic.flink.interceptor.ProxyFactory;
 import com.netease.arctic.flink.read.ArcticSource;
 import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunction;
@@ -53,16 +57,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.netease.arctic.flink.FlinkSchemaUtil.filterWatermark;
-import static com.netease.arctic.flink.FlinkSchemaUtil.toRowType;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.DIM_TABLE_ENABLE;
-
-/**
- * An util class create arctic source data stream.
- */
+/** An util class create arctic source data stream. */
 public class FlinkSource {
-  private FlinkSource() {
-  }
+  private FlinkSource() {}
 
   public static Builder forRowData() {
     return new Builder();
@@ -81,8 +78,7 @@ public class FlinkSource {
     private boolean batchMode = false;
     private final ArcticScanContext.Builder contextBuilder = ArcticScanContext.arcticBuilder();
 
-    private Builder() {
-    }
+    private Builder() {}
 
     public Builder env(StreamExecutionEnvironment env) {
       this.env = env;
@@ -147,15 +143,17 @@ public class FlinkSource {
         return buildUnkeyedTableSource();
       }
 
-      boolean dimTable = CompatibleFlinkPropertyUtil.propertyAsBoolean(properties, DIM_TABLE_ENABLE.key(),
-          DIM_TABLE_ENABLE.defaultValue());
+      boolean dimTable =
+          CompatibleFlinkPropertyUtil.propertyAsBoolean(
+              properties, DIM_TABLE_ENABLE.key(), DIM_TABLE_ENABLE.defaultValue());
       RowType rowType;
 
       if (projectedSchema == null) {
         contextBuilder.project(arcticTable.schema());
         rowType = FlinkSchemaUtil.convert(arcticTable.schema());
       } else {
-        contextBuilder.project(FlinkSchemaUtil.convert(arcticTable.schema(), filterWatermark(projectedSchema)));
+        contextBuilder.project(
+            FlinkSchemaUtil.convert(arcticTable.schema(), filterWatermark(projectedSchema)));
         // If dim table is enabled, we reserve a RowTime field in Emitter.
         if (dimTable) {
           rowType = toRowType(projectedSchema);
@@ -164,25 +162,28 @@ public class FlinkSource {
         }
       }
       ArcticScanContext scanContext =
-          contextBuilder
-              .fromProperties(properties)
-              .batchMode(batchMode)
-              .build();
+          contextBuilder.fromProperties(properties).batchMode(batchMode).build();
 
-      RowDataReaderFunction rowDataReaderFunction = new RowDataReaderFunction(
-          flinkConf,
-          arcticTable.schema(),
-          scanContext.project(),
-          arcticTable.asKeyedTable().primaryKeySpec(),
-          scanContext.nameMapping(),
-          scanContext.caseSensitive(),
-          arcticTable.io()
-      );
+      RowDataReaderFunction rowDataReaderFunction =
+          new RowDataReaderFunction(
+              flinkConf,
+              arcticTable.schema(),
+              scanContext.project(),
+              arcticTable.asKeyedTable().primaryKeySpec(),
+              scanContext.nameMapping(),
+              scanContext.caseSensitive(),
+              arcticTable.io());
 
       return env.fromSource(
-          new ArcticSource<>(tableLoader, scanContext, rowDataReaderFunction,
-              InternalTypeInfo.of(rowType), arcticTable.name(), dimTable),
-          watermarkStrategy, ArcticSource.class.getName());
+          new ArcticSource<>(
+              tableLoader,
+              scanContext,
+              rowDataReaderFunction,
+              InternalTypeInfo.of(rowType),
+              arcticTable.name(),
+              dimTable),
+          watermarkStrategy,
+          ArcticSource.class.getName());
     }
 
     private void loadTableIfNeeded() {
@@ -194,33 +195,34 @@ public class FlinkSource {
     }
 
     public DataStream<RowData> buildUnkeyedTableSource() {
-      DataStream<RowData> origin = org.apache.iceberg.flink.source.FlinkSource.forRowData()
-          .env(env)
-          .project(filterWatermark(projectedSchema))
-          .tableLoader(tableLoader)
-          .filters(filters)
-          .properties(properties)
-          .flinkConf(flinkConf)
-          .limit(limit)
-          .build();
+      DataStream<RowData> origin =
+          org.apache.iceberg.flink.source.FlinkSource.forRowData()
+              .env(env)
+              .project(filterWatermark(projectedSchema))
+              .tableLoader(tableLoader)
+              .filters(filters)
+              .properties(properties)
+              .flinkConf(flinkConf)
+              .limit(limit)
+              .build();
       return wrapKrb(origin).assignTimestampsAndWatermarks(watermarkStrategy);
     }
 
-    /**
-     * extract op from dataStream, and wrap krb support
-     */
+    /** extract op from dataStream, and wrap krb support */
     private DataStream<RowData> wrapKrb(DataStream<RowData> ds) {
       IcebergClassUtil.clean(env);
       Transformation origin = ds.getTransformation();
 
       if (origin instanceof OneInputTransformation) {
-        OneInputTransformation<RowData, RowData> tf = (OneInputTransformation<RowData, RowData>) ds.getTransformation();
+        OneInputTransformation<RowData, RowData> tf =
+            (OneInputTransformation<RowData, RowData>) ds.getTransformation();
         OneInputStreamOperatorFactory op = (OneInputStreamOperatorFactory) tf.getOperatorFactory();
-        ProxyFactory<FlinkInputFormat> inputFormatProxyFactory
-            = IcebergClassUtil.getInputFormatProxyFactory(op, arcticTable.io(), arcticTable.schema());
+        ProxyFactory<FlinkInputFormat> inputFormatProxyFactory =
+            IcebergClassUtil.getInputFormatProxyFactory(op, arcticTable.io(), arcticTable.schema());
 
         if (tf.getInputs().isEmpty()) {
-          return env.addSource(new UnkeyedInputFormatSourceFunction(inputFormatProxyFactory, tf.getOutputType()))
+          return env.addSource(
+                  new UnkeyedInputFormatSourceFunction(inputFormatProxyFactory, tf.getOutputType()))
               .setParallelism(tf.getParallelism());
         }
 
@@ -228,19 +230,24 @@ public class FlinkSource {
         StreamSource source = tfSource.getOperator();
         SourceFunction function = IcebergClassUtil.getSourceFunction(source);
 
-        SourceFunction functionProxy = (SourceFunction) ProxyUtil.getProxy(function, arcticTable.io());
+        SourceFunction functionProxy =
+            (SourceFunction) ProxyUtil.getProxy(function, arcticTable.io());
         return env.addSource(functionProxy, tfSource.getName(), tfSource.getOutputType())
-            .transform(tf.getName(), tf.getOutputType(),
+            .transform(
+                tf.getName(),
+                tf.getOutputType(),
                 new UnkeyedInputFormatOperatorFactory(inputFormatProxyFactory));
       }
 
       LegacySourceTransformation tfSource = (LegacySourceTransformation) origin;
       StreamSource source = tfSource.getOperator();
-      InputFormatSourceFunction function = (InputFormatSourceFunction) IcebergClassUtil.getSourceFunction(source);
+      InputFormatSourceFunction function =
+          (InputFormatSourceFunction) IcebergClassUtil.getSourceFunction(source);
 
-      InputFormat inputFormatProxy = (InputFormat) ProxyUtil.getProxy(function.getFormat(), arcticTable.io());
-      return env.createInput(inputFormatProxy, tfSource.getOutputType()).setParallelism(origin.getParallelism());
+      InputFormat inputFormatProxy =
+          (InputFormat) ProxyUtil.getProxy(function.getFormat(), arcticTable.io());
+      return env.createInput(inputFormatProxy, tfSource.getOutputType())
+          .setParallelism(origin.getParallelism());
     }
   }
-
 }

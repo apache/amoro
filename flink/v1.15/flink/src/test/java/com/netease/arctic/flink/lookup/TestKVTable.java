@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.lookup;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOOKUP_CACHE_TTL_AFTER_WRITE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ROCKSDB_WRITING_THREADS;
+import static org.junit.Assert.assertEquals;
 
 import com.netease.arctic.flink.lookup.filter.RowDataPredicate;
 import com.netease.arctic.flink.lookup.filter.RowDataPredicateExpressionVisitor;
@@ -71,36 +74,29 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOOKUP_CACHE_TTL_AFTER_WRITE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ROCKSDB_WRITING_THREADS;
-import static org.junit.Assert.assertEquals;
-
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @RunWith(value = Parameterized.class)
 public class TestKVTable extends TestRowDataPredicateBase {
   private static final Logger LOG = LoggerFactory.getLogger(TestKVTable.class);
-  @Rule
-  public TemporaryFolder temp = new TemporaryFolder();
-  @Rule
-  public TestName name = new TestName();
+  @Rule public TemporaryFolder temp = new TemporaryFolder();
+  @Rule public TestName name = new TestName();
   private final Configuration config = new Configuration();
   private final List<String> primaryKeys = Lists.newArrayList("id", "grade");
   private final List<String> primaryKeysDisorder = Lists.newArrayList("grade", "num", "id");
 
   private final boolean guavaCacheEnabled;
 
-  private final Schema arcticSchema = new Schema(
-      Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "grade", Types.StringType.get()),
-      Types.NestedField.required(3, "num", Types.IntegerType.get()));
+  private final Schema arcticSchema =
+      new Schema(
+          Types.NestedField.required(1, "id", Types.IntegerType.get()),
+          Types.NestedField.required(2, "grade", Types.StringType.get()),
+          Types.NestedField.required(3, "num", Types.IntegerType.get()));
 
   private String dbPath;
 
   @Parameterized.Parameters(name = "guavaCacheEnabled = {0}")
   public static Object[][] parameters() {
-    return new Object[][]{
-        {true},
-        {false}};
+    return new Object[][] {{true}, {false}};
   }
 
   public TestKVTable(boolean guavaCacheEnabled) {
@@ -128,7 +124,8 @@ public class TestKVTable extends TestRowDataPredicateBase {
     binaryRowDataSerializer.serialize(record, view);
     System.out.println(Arrays.toString(view.getCopyOfBuffer()));
 
-    BinaryRowData desRowData = binaryRowDataSerializer.deserialize(new DataInputDeserializer(view.getCopyOfBuffer()));
+    BinaryRowData desRowData =
+        binaryRowDataSerializer.deserialize(new DataInputDeserializer(view.getCopyOfBuffer()));
     Assert.assertNotNull(desRowData);
     Assert.assertEquals(record.getInt(0), desRowData.getInt(0));
     Assert.assertEquals(record.getInt(1), desRowData.getInt(1));
@@ -140,8 +137,8 @@ public class TestKVTable extends TestRowDataPredicateBase {
     Schema keySchema = arcticSchema.select(keys);
     rowType = FlinkSchemaUtil.convert(keySchema);
     rowDataSerializer = new RowDataSerializer(rowType);
-    KeyRowData keyRowData = new KeyRowData(new int[]{0, 1}, row(2, "3", 4));
-    KeyRowData keyRowData1 = new KeyRowData(new int[]{0, 1}, row(2, "3", 4));
+    KeyRowData keyRowData = new KeyRowData(new int[] {0, 1}, row(2, "3", 4));
+    KeyRowData keyRowData1 = new KeyRowData(new int[] {0, 1}, row(2, "3", 4));
 
     BinaryRowData binaryRowData = rowDataSerializer.toBinaryRow(keyRowData);
     view.clear();
@@ -153,7 +150,6 @@ public class TestKVTable extends TestRowDataPredicateBase {
     binaryRowDataSerializer.serialize(binaryRowData1, view);
     byte[] rowBytes1 = view.getCopyOfBuffer();
     Assert.assertArrayEquals(rowBytes1, rowBytes);
-
   }
 
   @Test
@@ -181,12 +177,16 @@ public class TestKVTable extends TestRowDataPredicateBase {
 
       assertTable(
           uniqueIndexTable,
-          row(1, "1"), row(1, "1", 1),
-          row(2, "2"), row(2, "2", 2),
-          row(2, "3"), row(2, "3", 3),
-          row(2, "4"), row(2, "4", 4),
-          row(2, "5"), row(2, "5", 5)
-      );
+          row(1, "1"),
+          row(1, "1", 1),
+          row(2, "2"),
+          row(2, "2", 2),
+          row(2, "3"),
+          row(2, "3", 3),
+          row(2, "4"),
+          row(2, "4", 4),
+          row(2, "5"),
+          row(2, "5", 5));
 
       // upsert table
       upsertTable(
@@ -199,11 +199,16 @@ public class TestKVTable extends TestRowDataPredicateBase {
               row(RowKind.UPDATE_AFTER, 3, "3", 5),
               row(RowKind.INSERT, 4, "4", 4)));
 
-      assertTable(uniqueIndexTable,
-          row(1, "1"), null,
-          row(2, "2"), null,
-          row(3, "3"), row(3, "3", 5),
-          row(4, "4"), row(4, "4", 4));
+      assertTable(
+          uniqueIndexTable,
+          row(1, "1"),
+          null,
+          row(2, "2"),
+          null,
+          row(3, "3"),
+          row(3, "3", 5),
+          row(4, "4"),
+          row(4, "4", 4));
     }
   }
 
@@ -211,7 +216,8 @@ public class TestKVTable extends TestRowDataPredicateBase {
   public void testSecondaryKeysMapping() throws IOException {
     // primary keys are id and grade.
     List<String> joinKeys = Lists.newArrayList("grade", "id");
-    try (SecondaryIndexTable secondaryIndexTable = (SecondaryIndexTable) createTableWithDisorderPK(joinKeys)) {
+    try (SecondaryIndexTable secondaryIndexTable =
+        (SecondaryIndexTable) createTableWithDisorderPK(joinKeys)) {
       secondaryIndexTable.open();
 
       initTable(
@@ -227,12 +233,8 @@ public class TestKVTable extends TestRowDataPredicateBase {
         secondaryIndexTable.waitInitializationCompleted();
       }
 
-      assertTableSet(
-          secondaryIndexTable,
-          row("1", 1), row(1, "1", 1));
-      assertTableSet(
-          secondaryIndexTable,
-          row("2", 2), row(2, "2", 2));
+      assertTableSet(secondaryIndexTable, row("1", 1), row(1, "1", 1));
+      assertTableSet(secondaryIndexTable, row("2", 2), row(2, "2", 2));
 
       upsertTable(
           secondaryIndexTable,
@@ -244,16 +246,9 @@ public class TestKVTable extends TestRowDataPredicateBase {
               row(RowKind.UPDATE_AFTER, 3, "3", 5),
               row(RowKind.INSERT, 3, "4", 4)));
 
-
-      assertTableSet(
-          secondaryIndexTable,
-          row("1", 1), null);
-      assertTableSet(
-          secondaryIndexTable,
-          row("3", 2), row(2, "3", 3), row(2, "3", 4));
-      assertTableSet(
-          secondaryIndexTable,
-          row("4", 3), row(3, "4", 4));
+      assertTableSet(secondaryIndexTable, row("1", 1), null);
+      assertTableSet(secondaryIndexTable, row("3", 2), row(2, "3", 3), row(2, "3", 4));
+      assertTableSet(secondaryIndexTable, row("4", 3), row(3, "4", 4));
     }
   }
 
@@ -284,9 +279,7 @@ public class TestKVTable extends TestRowDataPredicateBase {
       secondaryIndexTable.waitInitializationCompleted();
     }
 
-    assertTableSet(
-        secondaryIndexTable,
-        row(1), row(1, "1", 1));
+    assertTableSet(secondaryIndexTable, row(1), row(1, "1", 1));
     assertTableSet(
         secondaryIndexTable,
         row(2),
@@ -305,28 +298,26 @@ public class TestKVTable extends TestRowDataPredicateBase {
             row(RowKind.UPDATE_AFTER, 3, "3", 5),
             row(RowKind.INSERT, 3, "4", 4)));
 
-
-    assertTableSet(
-        secondaryIndexTable,
-        row(1), null);
-    assertTableSet(
-        secondaryIndexTable,
-        row(2), row(2, "3", 3), row(2, "4", 4), row(2, "5", 5));
-    assertTableSet(
-        secondaryIndexTable,
-        row(3), row(3, "3", 5), row(3, "4", 4));
+    assertTableSet(secondaryIndexTable, row(1), null);
+    assertTableSet(secondaryIndexTable, row(2), row(2, "3", 3), row(2, "4", 4), row(2, "5", 5));
+    assertTableSet(secondaryIndexTable, row(3), row(3, "3", 5), row(3, "4", 4));
   }
 
   @Test
   public void testCacheExpired() throws InterruptedException {
-    Cache<Integer, Integer> cache = CacheBuilder.newBuilder().expireAfterWrite(Duration.ofSeconds(1)).build();
+    Cache<Integer, Integer> cache =
+        CacheBuilder.newBuilder().expireAfterWrite(Duration.ofSeconds(1)).build();
     cache.put(1, 1);
-    cache.asMap().compute(2, (k, v) -> {
-      if (v == null) {
-        return k;
-      }
-      return v;
-    });
+    cache
+        .asMap()
+        .compute(
+            2,
+            (k, v) -> {
+              if (v == null) {
+                return k;
+              }
+              return v;
+            });
     Assert.assertEquals(new Integer(1), cache.getIfPresent(1));
     Assert.assertEquals(new Integer(2), cache.getIfPresent(2));
     Thread.sleep(1001);
@@ -345,10 +336,11 @@ public class TestKVTable extends TestRowDataPredicateBase {
     String filter = "id >= 2 and num < 5 and num > 2";
     Optional<RowDataPredicate> rowDataPredicate = generatePredicate(filter);
 
-    KVTable<RowData> uniqueIndexTable = createTable(
-        Lists.newArrayList("id", "grade"), rowDataPredicate);
+    KVTable<RowData> uniqueIndexTable =
+        createTable(Lists.newArrayList("id", "grade"), rowDataPredicate);
     uniqueIndexTable.open();
-    initTable(uniqueIndexTable,
+    initTable(
+        uniqueIndexTable,
         upsertStream(
             row(RowKind.INSERT, 1, "1", 1),
             row(RowKind.INSERT, 2, "2", 2),
@@ -362,11 +354,16 @@ public class TestKVTable extends TestRowDataPredicateBase {
 
     assertTable(
         uniqueIndexTable,
-        row(1, "1"), null,
-        row(2, "2"), null,
-        row(2, "3"), row(2, "3", 3),
-        row(3, "4"), row(3, "4", 4),
-        row(3, "5"), null);
+        row(1, "1"),
+        null,
+        row(2, "2"),
+        null,
+        row(2, "3"),
+        row(2, "3", 3),
+        row(3, "4"),
+        row(3, "4", 4),
+        row(3, "5"),
+        null);
 
     // upsert table
     upsertTable(
@@ -379,11 +376,16 @@ public class TestKVTable extends TestRowDataPredicateBase {
             row(RowKind.UPDATE_AFTER, 2, "3", 5),
             row(RowKind.INSERT, 4, "4", 4)));
 
-    assertTable(uniqueIndexTable,
-        row(1, "1"), null,
-        row(2, "2"), null,
-        row(2, "3"), null,
-        row(4, "4"), row(4, "4", 4));
+    assertTable(
+        uniqueIndexTable,
+        row(1, "1"),
+        null,
+        row(2, "2"),
+        null,
+        row(2, "3"),
+        null,
+        row(4, "4"),
+        row(4, "4", 4));
   }
 
   @Test
@@ -393,7 +395,8 @@ public class TestKVTable extends TestRowDataPredicateBase {
 
     // primary keys are id and grade.
     List<String> joinKeys = Lists.newArrayList("id");
-    try (SecondaryIndexTable secondaryIndexTable = (SecondaryIndexTable) createTable(joinKeys, rowDataPredicate)) {
+    try (SecondaryIndexTable secondaryIndexTable =
+        (SecondaryIndexTable) createTable(joinKeys, rowDataPredicate)) {
       secondaryIndexTable.open();
 
       initTable(
@@ -409,14 +412,8 @@ public class TestKVTable extends TestRowDataPredicateBase {
         secondaryIndexTable.waitInitializationCompleted();
       }
 
-      assertTableSet(
-          secondaryIndexTable,
-          row(1), null);
-      assertTableSet(
-          secondaryIndexTable,
-          row(2),
-          row(2, "3", 3),
-          row(2, "4", 4));
+      assertTableSet(secondaryIndexTable, row(1), null);
+      assertTableSet(secondaryIndexTable, row(2), row(2, "3", 3), row(2, "4", 4));
 
       upsertTable(
           secondaryIndexTable,
@@ -428,15 +425,9 @@ public class TestKVTable extends TestRowDataPredicateBase {
               row(RowKind.UPDATE_AFTER, 3, "3", 5),
               row(RowKind.INSERT, 3, "4", 4)));
 
-      assertTableSet(
-          secondaryIndexTable,
-          row(1), null);
-      assertTableSet(
-          secondaryIndexTable,
-          row(2), row(2, "3", 3), row(2, "4", 4));
-      assertTableSet(
-          secondaryIndexTable,
-          row(3), row(3, "4", 4));
+      assertTableSet(secondaryIndexTable, row(1), null);
+      assertTableSet(secondaryIndexTable, row(2), row(2, "3", 3), row(2, "4", 4));
+      assertTableSet(secondaryIndexTable, row(3), row(3, "4", 4));
     }
   }
 
@@ -447,13 +438,15 @@ public class TestKVTable extends TestRowDataPredicateBase {
     List<Column> columns = new ArrayList<>(fields.size());
     for (int i = 0; i < fields.size(); i++) {
       String name = fields.get(i).name();
-      DataType dataType = TypeConversions.fromLogicalToDataType(FlinkSchemaUtil.convert(fields.get(i).type()));
+      DataType dataType =
+          TypeConversions.fromLogicalToDataType(FlinkSchemaUtil.convert(fields.get(i).type()));
       fieldIndexMap.put(name, i);
       fieldTypeMap.put(name, dataType);
       columns.add(i, Column.physical(name, dataType));
     }
-    ResolvedSchema schema = new ResolvedSchema(
-        columns, Collections.emptyList(), UniqueConstraint.primaryKey("", primaryKeys));
+    ResolvedSchema schema =
+        new ResolvedSchema(
+            columns, Collections.emptyList(), UniqueConstraint.primaryKey("", primaryKeys));
 
     RowDataPredicateExpressionVisitor rowDataPredicateExpressionVisitor =
         new RowDataPredicateExpressionVisitor(fieldIndexMap, fieldTypeMap);
@@ -467,14 +460,16 @@ public class TestKVTable extends TestRowDataPredicateBase {
     return createTable(joinKeys, Optional.empty(), true);
   }
 
-  private KVTable<RowData> createTable(List<String> joinKeys, Optional<RowDataPredicate> rowDataPredicate) {
+  private KVTable<RowData> createTable(
+      List<String> joinKeys, Optional<RowDataPredicate> rowDataPredicate) {
     return createTable(joinKeys, rowDataPredicate, false);
   }
 
-  private KVTable<RowData> createTable(List<String> joinKeys, Optional<RowDataPredicate> rowDataPredicate,
-                                       boolean isDisorderPK) {
+  private KVTable<RowData> createTable(
+      List<String> joinKeys, Optional<RowDataPredicate> rowDataPredicate, boolean isDisorderPK) {
     return KVTableFactory.INSTANCE.create(
-        new RowDataStateFactory(dbPath, new ConstantFunctionContext(new Configuration()).getMetricGroup()),
+        new RowDataStateFactory(
+            dbPath, new ConstantFunctionContext(new Configuration()).getMetricGroup()),
         isDisorderPK ? primaryKeysDisorder : primaryKeys,
         joinKeys,
         arcticSchema,
@@ -486,15 +481,14 @@ public class TestKVTable extends TestRowDataPredicateBase {
     return createTable(joinKeys, Optional.empty());
   }
 
-  private void initTable(
-      KVTable<RowData> table, Iterator<RowData> initStream) throws IOException {
+  private void initTable(KVTable<RowData> table, Iterator<RowData> initStream) throws IOException {
     if (initStream != null) {
       table.initialize(initStream);
     }
   }
 
-  private void upsertTable(
-      KVTable<RowData> table, Iterator<RowData> upsertStream, RowData... rows) throws IOException {
+  private void upsertTable(KVTable<RowData> table, Iterator<RowData> upsertStream, RowData... rows)
+      throws IOException {
     if (upsertStream != null) {
       table.upsert(upsertStream);
     }
@@ -518,7 +512,8 @@ public class TestKVTable extends TestRowDataPredicateBase {
     }
   }
 
-  private void assertTableSet(KVTable<RowData> table, RowData key, RowData... expects) throws IOException {
+  private void assertTableSet(KVTable<RowData> table, RowData key, RowData... expects)
+      throws IOException {
     List<RowData> values = table.get(key);
     if (expects == null) {
       Assert.assertEquals(0, values.size());
@@ -537,8 +532,7 @@ public class TestKVTable extends TestRowDataPredicateBase {
   }
 
   private Comparator<RowData> compare() {
-    return Comparator
-        .comparingInt((RowData o) -> o.getInt(0))
+    return Comparator.comparingInt((RowData o) -> o.getInt(0))
         .thenComparing(o -> o.getString(1))
         .thenComparingInt(o -> o.getInt(2));
   }

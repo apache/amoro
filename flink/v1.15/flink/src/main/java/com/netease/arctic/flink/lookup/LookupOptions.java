@@ -23,9 +23,7 @@ import org.apache.flink.util.Preconditions;
 import java.io.Serializable;
 import java.time.Duration;
 
-/**
- * This class is used to configure lookup options.
- */
+/** This class is used to configure lookup options. */
 public class LookupOptions implements Serializable {
   private static final long serialVersionUID = -1L;
 
@@ -69,13 +67,18 @@ public class LookupOptions implements Serializable {
 
   @Override
   public String toString() {
-    return "LookupOptions{" +
-        "lruMaximumSize=" + lruMaximumSize +
-        ", writeRecordThreadNum=" + writeRecordThreadNum +
-        ", ttlAfterWrite=" + ttlAfterWrite +
-        ", blockCacheCapacity=" + blockCacheCapacity +
-        ", blockCacheNumShardBits=" + blockCacheNumShardBits +
-        "}";
+    return "LookupOptions{"
+        + "lruMaximumSize="
+        + lruMaximumSize
+        + ", writeRecordThreadNum="
+        + writeRecordThreadNum
+        + ", ttlAfterWrite="
+        + ttlAfterWrite
+        + ", blockCacheCapacity="
+        + blockCacheCapacity
+        + ", blockCacheNumShardBits="
+        + blockCacheNumShardBits
+        + "}";
   }
 
   public static class Builder {
@@ -85,18 +88,14 @@ public class LookupOptions implements Serializable {
     private long blockCacheCapacity;
     private int blockCacheNumShardBits;
 
-    /**
-     * LRU cache max size.
-     */
+    /** LRU cache max size. */
     public Builder lruMaximumSize(long lruMaximumSize) {
       Preconditions.checkArgument(lruMaximumSize >= 0, "lruMaximumSize must not be negative");
       this.lruMaximumSize = lruMaximumSize;
       return this;
     }
 
-    /**
-     * Write record thread num.
-     */
+    /** Write record thread num. */
     public Builder writeRecordThreadNum(int writeRecordThreadNum) {
       Preconditions.checkArgument(
           writeRecordThreadNum > 0, "writeRecordThreadNum must be greater than 0");
@@ -104,17 +103,17 @@ public class LookupOptions implements Serializable {
       return this;
     }
 
-    /**
-     * Clean expired records after write.
-     */
+    /** Clean expired records after write. */
     public Builder ttlAfterWrite(Duration ttlAfterWrite) {
-      Preconditions.checkArgument(!ttlAfterWrite.isNegative(), "ttlAfterWrite must not be negative");
+      Preconditions.checkArgument(
+          !ttlAfterWrite.isNegative(), "ttlAfterWrite must not be negative");
       this.ttlAfterWrite = ttlAfterWrite;
       return this;
     }
 
     public Builder blockCacheCapacity(long blockCacheCapacity) {
-      Preconditions.checkArgument(blockCacheCapacity > 0, "blockCacheCapacity must be greater than 0");
+      Preconditions.checkArgument(
+          blockCacheCapacity > 0, "blockCacheCapacity must be greater than 0");
       this.blockCacheCapacity = blockCacheCapacity;
       return this;
     }

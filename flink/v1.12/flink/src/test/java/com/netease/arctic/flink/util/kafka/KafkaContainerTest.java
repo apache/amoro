@@ -18,6 +18,12 @@
 
 package com.netease.arctic.flink.util.kafka;
 
+import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getProperties;
+import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getPropertiesWithByteArray;
+import static com.netease.arctic.flink.util.kafka.KafkaUtil.createKafkaContainer;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
+import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
+
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -41,12 +47,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getProperties;
-import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getPropertiesWithByteArray;
-import static com.netease.arctic.flink.util.kafka.KafkaUtil.createKafkaContainer;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
-import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
-
 @Testcontainers
 public class KafkaContainerTest {
   private static Logger LOG = LoggerFactory.getLogger(KafkaContainerTest.class);
@@ -60,7 +60,7 @@ public class KafkaContainerTest {
           .withEmbeddedZookeeper()
           .withNetwork(NETWORK)
           .withNetworkAliases(INTER_CONTAINER_KAFKA_ALIAS);
-  
+
   public static ConsumerRecords<String, String> readRecords(String topic) {
     Properties properties = getProperties();
     properties.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");

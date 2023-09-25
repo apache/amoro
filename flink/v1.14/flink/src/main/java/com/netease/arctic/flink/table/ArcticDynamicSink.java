@@ -35,11 +35,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-
-/**
- * Flink table api that generates sink operators.
- */
-public class ArcticDynamicSink implements DynamicTableSink, SupportsPartitioning, SupportsOverwrite {
+/** Flink table api that generates sink operators. */
+public class ArcticDynamicSink
+    implements DynamicTableSink, SupportsPartitioning, SupportsOverwrite {
 
   public static final Logger LOG = LoggerFactory.getLogger(ArcticDynamicSink.class);
 
@@ -49,9 +47,7 @@ public class ArcticDynamicSink implements DynamicTableSink, SupportsPartitioning
   private boolean overwrite = false;
 
   ArcticDynamicSink(
-      CatalogTable flinkTable,
-      ArcticTableLoader tableLoader,
-      boolean primaryKeyExisted) {
+      CatalogTable flinkTable, ArcticTableLoader tableLoader, boolean primaryKeyExisted) {
     this.tableLoader = tableLoader;
     this.flinkTable = flinkTable;
     this.primaryKeyExisted = primaryKeyExisted;
@@ -61,7 +57,8 @@ public class ArcticDynamicSink implements DynamicTableSink, SupportsPartitioning
   public ChangelogMode getChangelogMode(ChangelogMode changelogMode) {
     ChangelogMode.Builder builder = ChangelogMode.newBuilder().addContainedKind(RowKind.INSERT);
     if (primaryKeyExisted) {
-      builder.addContainedKind(RowKind.UPDATE_BEFORE)
+      builder
+          .addContainedKind(RowKind.UPDATE_BEFORE)
           .addContainedKind(RowKind.UPDATE_AFTER)
           .addContainedKind(RowKind.DELETE);
     }
@@ -72,18 +69,19 @@ public class ArcticDynamicSink implements DynamicTableSink, SupportsPartitioning
   public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
     ArcticTable table = ArcticUtils.loadArcticTable(tableLoader);
 
-    return (DataStreamSinkProvider) dataStream -> {
-      DataStreamSink<?> ds = FlinkSink
-          .forRowData(dataStream)
-          .table(table)
-          .flinkSchema(flinkTable.getSchema())
-          .tableLoader(tableLoader)
-          .overwrite(overwrite)
-          .build();
-      UserGroupInformation.reset();
-      LOG.info("ugi reset");
-      return ds;
-    };
+    return (DataStreamSinkProvider)
+        dataStream -> {
+          DataStreamSink<?> ds =
+              FlinkSink.forRowData(dataStream)
+                  .table(table)
+                  .flinkSchema(flinkTable.getSchema())
+                  .tableLoader(tableLoader)
+                  .overwrite(overwrite)
+                  .build();
+          UserGroupInformation.reset();
+          LOG.info("ugi reset");
+          return ds;
+        };
   }
 
   @Override
@@ -98,12 +96,11 @@ public class ArcticDynamicSink implements DynamicTableSink, SupportsPartitioning
 
   @Override
   public void applyStaticPartition(Map<String, String> map) {
-    //ignore
+    // ignore
   }
 
   @Override
   public void applyOverwrite(boolean newOverwrite) {
     this.overwrite = newOverwrite;
   }
-
 }

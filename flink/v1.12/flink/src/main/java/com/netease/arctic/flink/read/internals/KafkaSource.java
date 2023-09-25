@@ -45,6 +45,7 @@ import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplitSerializ
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 
 import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.util.Properties;
 import java.util.function.Supplier;
@@ -70,8 +71,7 @@ import java.util.function.Supplier;
  * @param <OUT> the output type of the source.
  */
 public class KafkaSource<OUT>
-    implements Source<OUT, KafkaPartitionSplit, KafkaSourceEnumState>,
-    ResultTypeQueryable<OUT> {
+    implements Source<OUT, KafkaPartitionSplit, KafkaSourceEnumState>, ResultTypeQueryable<OUT> {
   private static final long serialVersionUID = -8755372893283732098L;
   // Users can choose only one of the following ways to specify the topics to consume from.
   protected final KafkaSubscriber subscriber;
@@ -115,28 +115,19 @@ public class KafkaSource<OUT>
     KafkaRecordEmitter<OUT> recordEmitter = new KafkaRecordEmitter<>();
 
     return new KafkaSourceReader<>(
-        elementsQueue,
-        splitReaderSupplier,
-        recordEmitter,
-        toConfiguration(props),
-        readerContext);
+        elementsQueue, splitReaderSupplier, recordEmitter, toConfiguration(props), readerContext);
   }
 
   @Override
   public SplitEnumerator<KafkaPartitionSplit, KafkaSourceEnumState> createEnumerator(
       SplitEnumeratorContext<KafkaPartitionSplit> enumContext) {
     return new KafkaSourceEnumerator(
-        subscriber,
-        startingOffsetsInitializer,
-        stoppingOffsetsInitializer,
-        props,
-        enumContext);
+        subscriber, startingOffsetsInitializer, stoppingOffsetsInitializer, props, enumContext);
   }
 
   @Override
   public SplitEnumerator<KafkaPartitionSplit, KafkaSourceEnumState> restoreEnumerator(
-      SplitEnumeratorContext<KafkaPartitionSplit> enumContext,
-      KafkaSourceEnumState checkpoint)
+      SplitEnumeratorContext<KafkaPartitionSplit> enumContext, KafkaSourceEnumState checkpoint)
       throws IOException {
     return new KafkaSourceEnumerator(
         subscriber,

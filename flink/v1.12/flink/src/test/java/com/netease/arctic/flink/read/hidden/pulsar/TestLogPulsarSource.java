@@ -18,6 +18,17 @@
 
 package com.netease.arctic.flink.read.hidden.pulsar;
 
+import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
+import static com.netease.arctic.flink.read.TestArcticSource.tableRecords;
+import static com.netease.arctic.flink.util.FailoverTestUtil.triggerFailover;
+import static com.netease.arctic.flink.write.hidden.TestBaseLog.FLINK_USER_SCHEMA;
+import static com.netease.arctic.flink.write.hidden.TestBaseLog.userSchema;
+import static com.netease.arctic.flink.write.hidden.TestHiddenLogOperators.DATA_INDEX;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_MAX_FETCH_TIME;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_NAME;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
@@ -68,23 +79,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
-import static com.netease.arctic.flink.read.TestArcticSource.tableRecords;
-import static com.netease.arctic.flink.util.FailoverTestUtil.triggerFailover;
-import static com.netease.arctic.flink.write.hidden.TestBaseLog.FLINK_USER_SCHEMA;
-import static com.netease.arctic.flink.write.hidden.TestBaseLog.userSchema;
-import static com.netease.arctic.flink.write.hidden.TestHiddenLogOperators.DATA_INDEX;
-import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
-import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_MAX_FETCH_TIME;
-import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_NAME;
-
 public class TestLogPulsarSource extends TableTestBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(TestLogPulsarSource.class);
 
   @ClassRule
-  public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.container());
+  public static PulsarTestEnvironment environment =
+      new PulsarTestEnvironment(PulsarRuntime.container());
+
   public String TOPIC = "LogPulsarSourceTest_";
   public static final int PARALLELISM = 3;
   private List<LogData<RowData>> dataInPulsar;
@@ -95,9 +97,8 @@ public class TestLogPulsarSource extends TableTestBase {
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, RESULT_TABLE);
   private static KeyedTable result;
   public static InternalCatalogBuilder catalogBuilder;
-  @Rule
-  public TestName testName = new TestName();
-  
+  @Rule public TestName testName = new TestName();
+
   @Rule
   public final MiniClusterWithClientResource miniClusterResource =
       new MiniClusterWithClientResource(
@@ -109,8 +110,9 @@ public class TestLogPulsarSource extends TableTestBase {
               .build());
 
   public TestLogPulsarSource() {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-      new BasicTableTestHelper(true, true));
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true));
   }
 
   @Before
@@ -121,10 +123,12 @@ public class TestLogPulsarSource extends TableTestBase {
     // |0 1 2 3 4 5 6 7 8 9 Flip 10 11 12 13 14| 15 16 17 18 19
     dataInPulsar = logPulsarHelper.write(TOPIC, 0);
 
-    result = getCatalog()
-        .newTableBuilder(RESULT_TABLE_ID, userSchema)
-        .withPrimaryKeySpec(TestBaseLog.PRIMARY_KEY_SPEC)
-        .create().asKeyedTable();
+    result =
+        getCatalog()
+            .newTableBuilder(RESULT_TABLE_ID, userSchema)
+            .withPrimaryKeySpec(TestBaseLog.PRIMARY_KEY_SPEC)
+            .create()
+            .asKeyedTable();
     catalogBuilder = InternalCatalogBuilder.builder().metastoreUrl(getCatalogUrl());
   }
 
@@ -144,7 +148,8 @@ public class TestLogPulsarSource extends TableTestBase {
     testArcticSource(FailoverTestUtil.FailoverType.JM, false);
   }
 
-  public void testArcticSource(FailoverTestUtil.FailoverType failoverType, boolean logRetractionEnabled) throws Exception {
+  public void testArcticSource(
+      FailoverTestUtil.FailoverType failoverType, boolean logRetractionEnabled) throws Exception {
     LogPulsarSource source = createSource(null, logRetractionEnabled, logPulsarHelper, TOPIC);
     List<RowData> excepted = getExcepted(logRetractionEnabled);
 
@@ -153,17 +158,14 @@ public class TestLogPulsarSource extends TableTestBase {
     env.enableCheckpointing(1000);
     env.setRestartStrategy(RestartStrategies.fixedDelayRestart(1, 0));
 
-    DataStream<RowData> input = env.fromSource(
-            source,
-            WatermarkStrategy.noWatermarks(),
-            "LogPulsarSource")
-        .setParallelism(PARALLELISM);
+    DataStream<RowData> input =
+        env.fromSource(source, WatermarkStrategy.noWatermarks(), "LogPulsarSource")
+            .setParallelism(PARALLELISM);
 
     DataStream<RowData> streamFailingInTheMiddleOfReading =
         FailoverTestUtil.RecordCounterToFail.wrapWithFailureAfter(input, excepted.size() / 2);
 
-    FlinkSink
-        .forRowData(streamFailingInTheMiddleOfReading)
+    FlinkSink.forRowData(streamFailingInTheMiddleOfReading)
         .table(result)
         .tableLoader(ArcticTableLoader.of(RESULT_TABLE_ID, catalogBuilder))
         .flinkSchema(FlinkSchemaUtil.toSchema(FLINK_USER_SCHEMA))
@@ -183,7 +185,10 @@ public class TestLogPulsarSource extends TableTestBase {
   }
 
   public static void assertRecords(
-      KeyedTable testFailoverTable, List<RowData> expected, Duration checkInterval, int maxCheckCount)
+      KeyedTable testFailoverTable,
+      List<RowData> expected,
+      Duration checkInterval,
+      int maxCheckCount)
       throws InterruptedException {
     for (int i = 0; i < maxCheckCount; ++i) {
       if (equalsRecords(expected, tableRecords(testFailoverTable))) {
@@ -208,7 +213,9 @@ public class TestLogPulsarSource extends TableTestBase {
   }
 
   private static Integer[] extractAndSortData(List<RowData> records) {
-    return records.stream().map(rowData -> rowData.getInt(DATA_INDEX)).sorted()
+    return records.stream()
+        .map(rowData -> rowData.getInt(DATA_INDEX))
+        .sorted()
         .collect(Collectors.toList())
         .toArray(new Integer[records.size()]);
   }
@@ -227,11 +234,15 @@ public class TestLogPulsarSource extends TableTestBase {
     return excepted;
   }
 
-  public static LogPulsarSource createSource(Properties conf, boolean logRetractionEnabled,
-                                             LogPulsarHelper logPulsarHelper, String topic) {
+  public static LogPulsarSource createSource(
+      Properties conf,
+      boolean logRetractionEnabled,
+      LogPulsarHelper logPulsarHelper,
+      String topic) {
     Map<String, String> tableProperties = new HashMap<>();
     tableProperties.put(TableProperties.LOG_STORE_ADDRESS, logPulsarHelper.op().serviceUrl());
-    tableProperties.put(ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(),
+    tableProperties.put(
+        ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(),
         String.valueOf(logRetractionEnabled));
 
     Properties properties = new Properties();
@@ -242,13 +253,11 @@ public class TestLogPulsarSource extends TableTestBase {
     properties.put(PULSAR_SUBSCRIPTION_NAME.key(), "source-test");
     properties.put(PULSAR_MAX_FETCH_TIME.key(), Duration.ofSeconds(1).toMillis());
 
-    return (LogPulsarSource) LogPulsarSource.builder(userSchema, tableProperties)
-        .setProperties(properties)
-        .setTopics(topic)
-        .setStartCursor(StartCursor.earliest())
-        .build();
+    return (LogPulsarSource)
+        LogPulsarSource.builder(userSchema, tableProperties)
+            .setProperties(properties)
+            .setTopics(topic)
+            .setStartCursor(StartCursor.earliest())
+            .build();
   }
-
 }
-
-

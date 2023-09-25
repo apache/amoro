@@ -33,17 +33,35 @@ import org.apache.iceberg.flink.RowDataWrapper;
 import org.apache.iceberg.io.FileAppenderFactory;
 
 /**
- * task writer for {@link KeyedTable#baseTable()}. Dev should make sure outputFileFactory write to base table's location
+ * task writer for {@link KeyedTable#baseTable()}. Dev should make sure outputFileFactory write to
+ * base table's location
  */
 public class FlinkBaseTaskWriter extends BaseTaskWriter<RowData> {
 
   private final RowDataWrapper wrapper;
 
-  public FlinkBaseTaskWriter(FileFormat format, FileAppenderFactory<RowData> appenderFactory,
-                             OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize,
-                             long mask, Schema schema, RowType flinkSchema, PartitionSpec spec,
-                             PrimaryKeySpec primaryKeySpec) {
-    super(format, appenderFactory, outputFileFactory, io, targetFileSize, mask, schema, spec, primaryKeySpec, false);
+  public FlinkBaseTaskWriter(
+      FileFormat format,
+      FileAppenderFactory<RowData> appenderFactory,
+      OutputFileFactory outputFileFactory,
+      ArcticFileIO io,
+      long targetFileSize,
+      long mask,
+      Schema schema,
+      RowType flinkSchema,
+      PartitionSpec spec,
+      PrimaryKeySpec primaryKeySpec) {
+    super(
+        format,
+        appenderFactory,
+        outputFileFactory,
+        io,
+        targetFileSize,
+        mask,
+        schema,
+        spec,
+        primaryKeySpec,
+        false);
     this.wrapper = new RowDataWrapper(flinkSchema, schema.asStruct());
   }
 

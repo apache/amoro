@@ -27,13 +27,10 @@ import org.apache.pulsar.broker.namespace.NamespaceService;
 
 import java.util.function.Supplier;
 
-/**
- * A Mock pulsar service which would use the mocked zookeeper and bookkeeper.
- */
+/** A Mock pulsar service which would use the mocked zookeeper and bookkeeper. */
 public class MockPulsarService extends PulsarService {
 
-  private final SameThreadOrderedSafeExecutor orderedExecutor =
-      new SameThreadOrderedSafeExecutor();
+  private final SameThreadOrderedSafeExecutor orderedExecutor = new SameThreadOrderedSafeExecutor();
 
   public MockPulsarService(ServiceConfiguration config) {
     super(config);

@@ -28,9 +28,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import java.util.Collection;
 import java.util.Optional;
 
-/**
- * A changelog split generated during planning change table.
- */
+/** A changelog split generated during planning change table. */
 public class ChangelogSplit extends ArcticSplit {
   private static final long serialVersionUID = 1L;
   private final int taskIndex;
@@ -51,7 +49,8 @@ public class ChangelogSplit extends ArcticSplit {
     this.insertScanTasks = insertScanTasks;
     this.deleteScanTasks = deleteScanTasks;
     Optional<ArcticFileScanTask> task = insertScanTasks.stream().findFirst();
-    PrimaryKeyedFile file = task.isPresent() ? task.get().file() : deleteScanTasks.stream().findFirst().get().file();
+    PrimaryKeyedFile file =
+        task.isPresent() ? task.get().file() : deleteScanTasks.stream().findFirst().get().file();
     this.dataTreeNode = file.node();
   }
 
@@ -108,12 +107,12 @@ public class ChangelogSplit extends ArcticSplit {
       return false;
     }
     ChangelogSplit other = (ChangelogSplit) obj;
-    return splitId().equals(other.splitId()) &&
-        insertFileOffset == other.insertFileOffset &&
-        insertRecordOffset == other.insertRecordOffset &&
-        deleteFileOffset == other.deleteFileOffset &&
-        deleteRecordOffset == other.deleteRecordOffset &&
-        taskIndex == other.taskIndex;
+    return splitId().equals(other.splitId())
+        && insertFileOffset == other.insertFileOffset
+        && insertRecordOffset == other.insertRecordOffset
+        && deleteFileOffset == other.deleteFileOffset
+        && deleteRecordOffset == other.deleteRecordOffset
+        && taskIndex == other.taskIndex;
   }
 
   public int insertFileOffset() {

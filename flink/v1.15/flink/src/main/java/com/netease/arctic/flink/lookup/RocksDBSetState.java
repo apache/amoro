@@ -29,8 +29,8 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Guava cache structure: key -> list, the elements of this list are rocksdb keys.
- * RocksDB structure: element -> empty.
+ * Guava cache structure: key -> list, the elements of this list are rocksdb keys. RocksDB
+ * structure: element -> empty.
  */
 public class RocksDBSetState extends RocksDBCacheState<List<byte[]>> {
 
@@ -59,9 +59,9 @@ public class RocksDBSetState extends RocksDBCacheState<List<byte[]>> {
 
   /**
    * Retrieve the elements of the key.
-   * <p>Fetch the Collection from guava cache,
-   * if not present, fetch from rocksDB continuously, via prefix key scanning the rocksDB;
-   * if present, just return the result.
+   *
+   * <p>Fetch the Collection from guava cache, if not present, fetch from rocksDB continuously, via
+   * prefix key scanning the rocksDB; if present, just return the result.
    *
    * @return not null, but may be empty.
    */
@@ -71,12 +71,13 @@ public class RocksDBSetState extends RocksDBCacheState<List<byte[]>> {
     List<byte[]> result = guavaCache.getIfPresent(keyWrap);
     if (result == null) {
       try (RocksDBBackend.ValueIterator iterator =
-               (RocksDBBackend.ValueIterator) rocksDB.values(columnFamilyName, keyBytes)) {
+          (RocksDBBackend.ValueIterator) rocksDB.values(columnFamilyName, keyBytes)) {
         result = Lists.newArrayList();
         while (iterator.hasNext()) {
           byte[] targetKeyBytes = iterator.key();
           if (isPrefixKey(targetKeyBytes, keyBytes)) {
-            byte[] value = Arrays.copyOfRange(targetKeyBytes, keyBytes.length, targetKeyBytes.length);
+            byte[] value =
+                Arrays.copyOfRange(targetKeyBytes, keyBytes.length, targetKeyBytes.length);
             result.add(value);
           }
           iterator.next();
@@ -87,7 +88,6 @@ public class RocksDBSetState extends RocksDBCacheState<List<byte[]>> {
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
-
     }
     return result;
   }
@@ -101,9 +101,7 @@ public class RocksDBSetState extends RocksDBCacheState<List<byte[]>> {
     return true;
   }
 
-  /**
-   * Merge key and element into guava cache and rocksdb.
-   */
+  /** Merge key and element into guava cache and rocksdb. */
   public void merge(RowData joinKey, byte[] uniqueKeyBytes) throws IOException {
     byte[] joinKeyBytes = serializeKey(joinKey);
     byte[] joinKeyAndPrimaryKeyBytes = Bytes.mergeByte(joinKeyBytes, uniqueKeyBytes);

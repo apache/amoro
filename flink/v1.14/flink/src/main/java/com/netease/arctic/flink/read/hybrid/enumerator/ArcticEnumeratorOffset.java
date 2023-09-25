@@ -27,10 +27,9 @@ import org.apache.iceberg.relocated.com.google.common.base.Objects;
 public class ArcticEnumeratorOffset {
   private static final ArcticEnumeratorOffset EMPTY = of(Long.MIN_VALUE, Long.MIN_VALUE);
 
-  /**
-   * use Long.MIN_VALUE to indicate the earliest offset
-   */
+  /** use Long.MIN_VALUE to indicate the earliest offset */
   public static final long EARLIEST_SNAPSHOT_ID = Long.MIN_VALUE;
+
   private Long changeSnapshotId;
   private Long snapshotTimestampMs;
 
@@ -69,10 +68,7 @@ public class ArcticEnumeratorOffset {
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(
-        changeSnapshotId,
-        snapshotTimestampMs
-    );
+    return Objects.hashCode(changeSnapshotId, snapshotTimestampMs);
   }
 
   @Override
@@ -92,7 +88,7 @@ public class ArcticEnumeratorOffset {
       return false;
     }
     ArcticEnumeratorOffset other = (ArcticEnumeratorOffset) o;
-    return Objects.equal(changeSnapshotId, other.changeSnapshotId()) &&
-        Objects.equal(snapshotTimestampMs, other.snapshotTimestampMs());
+    return Objects.equal(changeSnapshotId, other.changeSnapshotId())
+        && Objects.equal(snapshotTimestampMs, other.snapshotTimestampMs());
   }
 }

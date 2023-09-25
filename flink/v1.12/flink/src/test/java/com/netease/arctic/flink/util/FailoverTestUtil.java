@@ -38,7 +38,7 @@ public class FailoverTestUtil {
     private static AtomicInteger records;
     public static CompletableFuture<Void> fail;
     private static CompletableFuture<Void> continueProcessing;
-    
+
     public static <T> DataStream<T> wrapWithFailureAfter(DataStream<T> stream, int failAfter) {
       records = new AtomicInteger();
       fail = new CompletableFuture<>();
@@ -105,5 +105,4 @@ public class FailoverTestUtil {
     afterFailAction.run();
     miniCluster.startTaskManager();
   }
-
 }
