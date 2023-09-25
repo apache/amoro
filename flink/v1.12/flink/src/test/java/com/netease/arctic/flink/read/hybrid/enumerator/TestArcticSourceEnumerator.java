@@ -1,5 +1,7 @@
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
+import static org.apache.flink.util.Preconditions.checkState;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -43,8 +45,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
-import static org.apache.flink.util.Preconditions.checkState;
-
 public class TestArcticSourceEnumerator extends FlinkTestBase {
 
   protected KeyedTable testKeyedTable;
@@ -54,32 +54,56 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
   public static final String SCAN_STARTUP_MODE_EARLIEST = "earliest";
 
   protected static final LocalDateTime ldt =
-    LocalDateTime.of(
-      LocalDate.of(2022, 1, 1),
-      LocalTime.of(0, 0, 0, 0));
+      LocalDateTime.of(LocalDate.of(2022, 1, 1), LocalTime.of(0, 0, 0, 0));
 
   public TestArcticSourceEnumerator() {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-      new BasicTableTestHelper(true, true));
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true));
   }
 
   @Before
   public void init() throws IOException {
     testKeyedTable = getArcticTable().asKeyedTable();
 
-    //write change insert
+    // write change insert
     {
-      TaskWriter<RowData> taskWriter = createKeyedTaskWriter(testKeyedTable, FlinkSchemaUtil.convert(BasicTableTestHelper.TABLE_SCHEMA), false);
-      List<RowData> insert = new ArrayList<RowData>() {{
-        add(GenericRowData.ofKind(
-          RowKind.INSERT, 1, StringData.fromString("john"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-        add(GenericRowData.ofKind(
-          RowKind.INSERT, 2, StringData.fromString("lily"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
-        add(GenericRowData.ofKind(
-          RowKind.INSERT, 3, StringData.fromString("jake"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt.plusDays(2))));
-        add(GenericRowData.ofKind(
-          RowKind.INSERT, 4, StringData.fromString("sam"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt.plusDays(3))));
-      }};
+      TaskWriter<RowData> taskWriter =
+          createKeyedTaskWriter(
+              testKeyedTable, FlinkSchemaUtil.convert(BasicTableTestHelper.TABLE_SCHEMA), false);
+      List<RowData> insert =
+          new ArrayList<RowData>() {
+            {
+              add(
+                  GenericRowData.ofKind(
+                      RowKind.INSERT,
+                      1,
+                      StringData.fromString("john"),
+                      ldt.toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(ldt)));
+              add(
+                  GenericRowData.ofKind(
+                      RowKind.INSERT,
+                      2,
+                      StringData.fromString("lily"),
+                      ldt.toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+              add(
+                  GenericRowData.ofKind(
+                      RowKind.INSERT,
+                      3,
+                      StringData.fromString("jake"),
+                      ldt.toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(ldt.plusDays(2))));
+              add(
+                  GenericRowData.ofKind(
+                      RowKind.INSERT,
+                      4,
+                      StringData.fromString("sam"),
+                      ldt.toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(ldt.plusDays(3))));
+            }
+          };
       for (RowData record : insert) {
         taskWriter.write(record);
       }
@@ -89,25 +113,28 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
 
   @Test
   public void testReadersNumGreaterThanSplits() throws Exception {
-    TestingSplitEnumeratorContext splitEnumeratorContext = instanceSplitEnumeratorContext(parallelism);
+    TestingSplitEnumeratorContext splitEnumeratorContext =
+        instanceSplitEnumeratorContext(parallelism);
     ShuffleSplitAssigner shuffleSplitAssigner = instanceSplitAssigner(splitEnumeratorContext);
     ArcticScanContext scanContext =
-      ArcticScanContext.arcticBuilder()
-        .streaming(true)
-        .scanStartupMode(SCAN_STARTUP_MODE_EARLIEST)
-        .build();
+        ArcticScanContext.arcticBuilder()
+            .streaming(true)
+            .scanStartupMode(SCAN_STARTUP_MODE_EARLIEST)
+            .build();
 
-    List<ArcticSplit> splitList = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
+    List<ArcticSplit> splitList =
+        FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
     shuffleSplitAssigner.onDiscoveredSplits(splitList);
     assertSnapshot(shuffleSplitAssigner, splitCount);
 
-    ArcticSourceEnumerator enumerator = new ArcticSourceEnumerator(
-      splitEnumeratorContext,
-      shuffleSplitAssigner,
-      ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder),
-      scanContext,
-      null,
-      false);
+    ArcticSourceEnumerator enumerator =
+        new ArcticSourceEnumerator(
+            splitEnumeratorContext,
+            shuffleSplitAssigner,
+            ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder),
+            scanContext,
+            null,
+            false);
 
     Collection<ArcticSplitState> pendingSplitsEmpty = enumerator.snapshotState().pendingSplits();
     Assert.assertEquals(splitCount, pendingSplitsEmpty.size());
@@ -115,23 +142,23 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
     // register readers, and let them request a split
     // 4 split, 5 subtask, one or more subtask will fetch empty split
     // subtask 0
-    splitEnumeratorContext.registerReader(0,"host0");
+    splitEnumeratorContext.registerReader(0, "host0");
     enumerator.addReader(0);
     enumerator.handleSourceEvent(0, new SplitRequestEvent());
     // subtask 1
-    splitEnumeratorContext.registerReader(1,"host1");
+    splitEnumeratorContext.registerReader(1, "host1");
     enumerator.addReader(1);
     enumerator.handleSourceEvent(1, new SplitRequestEvent());
     // subtask 2
-    splitEnumeratorContext.registerReader(2,"host2");
+    splitEnumeratorContext.registerReader(2, "host2");
     enumerator.addReader(2);
     enumerator.handleSourceEvent(2, new SplitRequestEvent());
     // subtask 3
-    splitEnumeratorContext.registerReader(3,"host3");
+    splitEnumeratorContext.registerReader(3, "host3");
     enumerator.addReader(3);
     enumerator.handleSourceEvent(3, new SplitRequestEvent());
     // subtask 4
-    splitEnumeratorContext.registerReader(4,"host4");
+    splitEnumeratorContext.registerReader(4, "host4");
     enumerator.addReader(4);
     enumerator.handleSourceEvent(4, new SplitRequestEvent());
 
@@ -144,7 +171,8 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
     Assert.assertEquals(splitCount, stateBeforeGet.size());
   }
 
-  private ShuffleSplitAssigner instanceSplitAssigner(TestingSplitEnumeratorContext splitEnumeratorContext) {
+  private ShuffleSplitAssigner instanceSplitAssigner(
+      TestingSplitEnumeratorContext splitEnumeratorContext) {
     return new ShuffleSplitAssigner(splitEnumeratorContext);
   }
 
@@ -152,10 +180,12 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
     return new TestingSplitEnumeratorContext(parallelism);
   }
 
-  protected static class TestingSplitEnumeratorContext implements SplitEnumeratorContext<ArcticSplit> {
+  protected static class TestingSplitEnumeratorContext
+      implements SplitEnumeratorContext<ArcticSplit> {
     private final int parallelism;
 
-    private final HashMap<Integer, SplitAssignmentState<ArcticSplit>> splitAssignments = new HashMap<>();
+    private final HashMap<Integer, SplitAssignmentState<ArcticSplit>> splitAssignments =
+        new HashMap<>();
 
     private final HashMap<Integer, List<SourceEvent>> events = new HashMap<>();
 
@@ -186,7 +216,7 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
     @Override
     public void sendEventToSourceReader(int subtaskId, SourceEvent event) {
       final List<SourceEvent> eventsForSubTask =
-        events.computeIfAbsent(subtaskId, (key) -> new ArrayList<>());
+          events.computeIfAbsent(subtaskId, (key) -> new ArrayList<>());
       eventsForSubTask.add(event);
     }
 
@@ -203,10 +233,9 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
     @Override
     public void assignSplits(SplitsAssignment<ArcticSplit> newSplitAssignments) {
       for (final Map.Entry<Integer, List<ArcticSplit>> entry :
-        newSplitAssignments.assignment().entrySet()) {
+          newSplitAssignments.assignment().entrySet()) {
         final SplitAssignmentState<ArcticSplit> assignment =
-          splitAssignments.computeIfAbsent(
-            entry.getKey(), (key) -> new SplitAssignmentState<>());
+            splitAssignments.computeIfAbsent(entry.getKey(), (key) -> new SplitAssignmentState<>());
 
         assignment.getAssignedSplits().addAll(entry.getValue());
       }
@@ -220,24 +249,19 @@ public class TestArcticSourceEnumerator extends FlinkTestBase {
     @Override
     public void signalNoMoreSplits(int subtask) {
       final SplitAssignmentState assignment =
-        splitAssignments.computeIfAbsent(subtask, (key) -> new SplitAssignmentState<>());
+          splitAssignments.computeIfAbsent(subtask, (key) -> new SplitAssignmentState<>());
       assignment.noMoreSplits = true;
     }
 
     @Override
-    public <T> void callAsync(Callable<T> callable, BiConsumer<T, Throwable> handler, long initialDelay, long period) {
-
-    }
-
-    @Override
-    public <T> void callAsync(Callable<T> callable, BiConsumer<T, Throwable> handler) {
-
-    }
+    public <T> void callAsync(
+        Callable<T> callable, BiConsumer<T, Throwable> handler, long initialDelay, long period) {}
 
     @Override
-    public void runInCoordinatorThread(Runnable runnable) {
+    public <T> void callAsync(Callable<T> callable, BiConsumer<T, Throwable> handler) {}
 
-    }
+    @Override
+    public void runInCoordinatorThread(Runnable runnable) {}
   }
 
   public static final class SplitAssignmentState<T> {

@@ -20,9 +20,7 @@ package com.netease.arctic.flink.read.hybrid.reader;
 
 import org.apache.flink.api.connector.source.SourceEvent;
 
-/**
- * It denotes {@link ArcticSourceReader} is starting.
- */
+/** It denotes {@link ArcticSourceReader} is starting. */
 public class ReaderStartedEvent implements SourceEvent {
   private static final long serialVersionUID = 1L;
 

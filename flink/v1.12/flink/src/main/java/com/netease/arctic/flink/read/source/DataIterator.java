@@ -68,14 +68,15 @@ public class DataIterator<T> implements CloseableIterator<T> {
     this.fileOffset = -1;
     // record offset points to the record that next() should return when called
     this.recordOffset = 0L;
-    // actual record offset in data file. it's incremental within insert and delete files in the same tree node group.
+    // actual record offset in data file. it's incremental within insert and delete files in the
+    // same tree node group.
     this.currentArcticFileOffset = 0L;
   }
 
   /**
-   * (startingFileOffset, startingRecordOffset) points to the next row that reader should resume from.
-   * E.g., if the seek position is (file=0, record=1), seek moves the iterator position to the 2nd row
-   * in file 0. When next() is called after seek, 2nd row from file 0 should be returned.
+   * (startingFileOffset, startingRecordOffset) points to the next row that reader should resume
+   * from. E.g., if the seek position is (file=0, record=1), seek moves the iterator position to the
+   * 2nd row in file 0. When next() is called after seek, 2nd row from file 0 should be returned.
    */
   public void seek(int startingFileOffset, long startingRecordOffset) {
     // It means file is empty.
@@ -83,12 +84,13 @@ public class DataIterator<T> implements CloseableIterator<T> {
       return;
     }
     Preconditions.checkState(
-        fileOffset == -1,
-        "Seek should be called before any other iterator actions");
+        fileOffset == -1, "Seek should be called before any other iterator actions");
     // skip files
-    Preconditions.checkState(startingFileOffset < taskSize,
+    Preconditions.checkState(
+        startingFileOffset < taskSize,
         "Invalid starting file offset %s for combined scan task with %s files.",
-        startingFileOffset, taskSize);
+        startingFileOffset,
+        taskSize);
     for (long i = 0L; i < startingFileOffset; ++i) {
       tasks.next();
     }
@@ -99,9 +101,10 @@ public class DataIterator<T> implements CloseableIterator<T> {
       if (currentFileHasNext() && hasNext()) {
         next();
       } else {
-        throw new IllegalStateException(String.format(
-            "Invalid starting record offset %d for file %d from FileScanTask List.",
-            startingRecordOffset, startingFileOffset));
+        throw new IllegalStateException(
+            String.format(
+                "Invalid starting record offset %d for file %d from FileScanTask List.",
+                startingRecordOffset, startingFileOffset));
       }
     }
 
@@ -128,10 +131,7 @@ public class DataIterator<T> implements CloseableIterator<T> {
     return currentIterator.hasNext();
   }
 
-  /**
-   * Updates the current iterator field to ensure that the current Iterator
-   * is not exhausted.
-   */
+  /** Updates the current iterator field to ensure that the current Iterator is not exhausted. */
   private void updateCurrentIterator() {
     try {
       while (!currentIterator.hasNext() && tasks.hasNext()) {
@@ -189,7 +189,6 @@ public class DataIterator<T> implements CloseableIterator<T> {
     }
 
     @Override
-    public void seek(int startingFileOffset, long startingRecordOffset) {
-    }
+    public void seek(int startingFileOffset, long startingRecordOffset) {}
   }
 }

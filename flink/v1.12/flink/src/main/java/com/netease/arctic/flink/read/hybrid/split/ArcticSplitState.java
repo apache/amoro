@@ -20,9 +20,7 @@ package com.netease.arctic.flink.read.hybrid.split;
 
 import org.apache.flink.util.FlinkRuntimeException;
 
-/**
- * This is the mutable state for per arctic source split.
- */
+/** This is the mutable state for per arctic source split. */
 public class ArcticSplitState {
   private final ArcticSplit arcticSplit;
 
@@ -38,21 +36,23 @@ public class ArcticSplitState {
   public ArcticSplit toSourceSplit() {
     if (arcticSplit.isSnapshotSplit()) {
       SnapshotSplit snapshotSplit = (SnapshotSplit) arcticSplit;
-      snapshotSplit.updateOffset(new Object[]{currentInsertFileOffset, currentInsertRecordOffset});
+      snapshotSplit.updateOffset(new Object[] {currentInsertFileOffset, currentInsertRecordOffset});
       return snapshotSplit;
     } else if (arcticSplit.isChangelogSplit()) {
       ChangelogSplit changelogSplit = (ChangelogSplit) arcticSplit;
-      changelogSplit.updateOffset(new Object[]{
-          currentInsertFileOffset,
-          currentInsertRecordOffset,
-          currentDeleteFileOffset,
-          currentDeleteRecordOffset
-      });
+      changelogSplit.updateOffset(
+          new Object[] {
+            currentInsertFileOffset,
+            currentInsertRecordOffset,
+            currentDeleteFileOffset,
+            currentDeleteRecordOffset
+          });
       return changelogSplit;
     }
 
     throw new FlinkRuntimeException(
-        String.format("As of now this source split is unsupported %s, available split are %s, %s",
+        String.format(
+            "As of now this source split is unsupported %s, available split are %s, %s",
             arcticSplit.getClass().getSimpleName(),
             SnapshotSplit.class.getSimpleName(),
             ChangelogSplit.class.getSimpleName()));

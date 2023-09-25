@@ -18,6 +18,12 @@
 
 package com.netease.arctic.flink.util.pulsar.runtime.container;
 
+import static org.apache.flink.util.Preconditions.checkArgument;
+import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.testcontainers.containers.PulsarContainer.BROKER_HTTP_PORT;
+import static org.testcontainers.containers.PulsarContainer.BROKER_PORT;
+import static org.testcontainers.containers.wait.strategy.Wait.forHttp;
+
 import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntime;
 import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntimeOperator;
 import org.slf4j.Logger;
@@ -29,12 +35,6 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.apache.flink.util.Preconditions.checkArgument;
-import static org.apache.flink.util.Preconditions.checkNotNull;
-import static org.testcontainers.containers.PulsarContainer.BROKER_HTTP_PORT;
-import static org.testcontainers.containers.PulsarContainer.BROKER_PORT;
-import static org.testcontainers.containers.wait.strategy.Wait.forHttp;
 
 /**
  * {@link PulsarRuntime} implementation, use the TestContainers as the backend. We would start a
@@ -54,9 +54,7 @@ public class PulsarContainerRuntime implements PulsarRuntime {
   private static final DockerImageName PULSAR_IMAGE =
       DockerImageName.parse("apachepulsar/pulsar:2.10.2");
 
-  /**
-   * Create a pulsar container provider by a predefined version.
-   */
+  /** Create a pulsar container provider by a predefined version. */
   private final PulsarContainer container = new PulsarContainer(PULSAR_IMAGE);
 
   private final AtomicBoolean started = new AtomicBoolean(false);
@@ -99,8 +97,7 @@ public class PulsarContainerRuntime implements PulsarRuntime {
         "/pulsar/bin/apply-config-from-env.py /pulsar/conf/standalone.conf && /pulsar/bin/pulsar standalone --no-functions-worker -nss");
     // Waiting for the Pulsar broker and the transaction is ready after the container started.
     container.waitingFor(
-        forHttp(
-            "/admin/v2/persistent/pulsar/system/transaction_coordinator_assign/partitions")
+        forHttp("/admin/v2/persistent/pulsar/system/transaction_coordinator_assign/partitions")
             .forPort(BROKER_HTTP_PORT)
             .forStatusCode(200)
             .withStartupTimeout(Duration.ofMinutes(5)));
@@ -120,8 +117,7 @@ public class PulsarContainerRuntime implements PulsarRuntime {
               PULSAR_ADMIN_URL);
     } else {
       this.operator =
-          new PulsarRuntimeOperator(
-              container.getPulsarBrokerUrl(), container.getHttpServiceUrl());
+          new PulsarRuntimeOperator(container.getPulsarBrokerUrl(), container.getHttpServiceUrl());
     }
   }
 

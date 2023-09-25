@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.write.hidden;
 
+import static com.netease.arctic.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
+
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.log.LogData;
@@ -27,11 +29,7 @@ import org.apache.iceberg.Schema;
 
 import java.util.Properties;
 
-import static com.netease.arctic.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
-
-/**
- * This is a hidden log writer.
- */
+/** This is a hidden log writer. */
 public class HiddenLogWriter extends AbstractHiddenLogWriter {
   private static final long serialVersionUID = 1L;
 
@@ -58,14 +56,14 @@ public class HiddenLogWriter extends AbstractHiddenLogWriter {
 
     // continue process element
     RowData rowData = element.getValue();
-    LogData<RowData> logData = new LogRecordV1(
-        logVersion,
-        jobIdentify,
-        epicNo,
-        false,
-        transformFromFlinkRowKind(rowData.getRowKind()),
-        rowData
-    );
+    LogData<RowData> logData =
+        new LogRecordV1(
+            logVersion,
+            jobIdentify,
+            epicNo,
+            false,
+            transformFromFlinkRowKind(rowData.getRowKind()),
+            rowData);
     producer.send(logData);
     output.collect(new StreamRecord<>(rowData));
   }

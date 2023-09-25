@@ -26,9 +26,7 @@ import org.apache.pulsar.common.api.proto.BaseCommand;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
-/**
- * No operation for this BrokerInterceptor implementation.
- */
+/** No operation for this BrokerInterceptor implementation. */
 public class BlankBrokerInterceptor implements BrokerInterceptor {
 
   @Override

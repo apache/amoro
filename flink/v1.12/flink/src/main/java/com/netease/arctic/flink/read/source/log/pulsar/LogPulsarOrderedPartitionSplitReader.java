@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.read.source.log.pulsar;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
+
 import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
@@ -46,15 +48,15 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.TimeoutException;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
-
 /**
  * The split reader a given {@link PulsarPartitionSplit}, it would be closed once the {@link
  * LogPulsarOrderedSourceReader} is closed.
  */
 @Internal
-public class LogPulsarOrderedPartitionSplitReader extends PulsarOrderedPartitionSplitReader<RowData> {
-  private static final Logger LOG = LoggerFactory.getLogger(LogPulsarOrderedPartitionSplitReader.class);
+public class LogPulsarOrderedPartitionSplitReader
+    extends PulsarOrderedPartitionSplitReader<RowData> {
+  private static final Logger LOG =
+      LoggerFactory.getLogger(LogPulsarOrderedPartitionSplitReader.class);
 
   private final LogDataJsonDeserialization<RowData> logDataJsonDeserialization;
   private final boolean logRetractionEnable;
@@ -71,19 +73,19 @@ public class LogPulsarOrderedPartitionSplitReader extends PulsarOrderedPartition
       String logConsumerChangelogMode) {
     super(pulsarClient, pulsarAdmin, sourceConfiguration, deserializationSchema);
 
-    this.logDataJsonDeserialization = new LogDataJsonDeserialization<>(
-        schema,
-        LogRecordV1.factory,
-        LogRecordV1.arrayFactory,
-        LogRecordV1.mapFactory
-    );
+    this.logDataJsonDeserialization =
+        new LogDataJsonDeserialization<>(
+            schema, LogRecordV1.factory, LogRecordV1.arrayFactory, LogRecordV1.mapFactory);
     this.logRetractionEnable = logRetractionEnable;
-    this.logConsumerAppendOnly = LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY.equalsIgnoreCase(logConsumerChangelogMode);
+    this.logConsumerAppendOnly =
+        LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY.equalsIgnoreCase(logConsumerChangelogMode);
   }
 
   @Override
   public RecordsWithSplitIds<PulsarMessage<RowData>> fetch() throws IOException {
-    // ---- copy from org.apache.flink.connector.pulsar.source.reader.split.PulsarPartitionSplitReaderBase start ----
+    // ---- copy from
+    // org.apache.flink.connector.pulsar.source.reader.split.PulsarPartitionSplitReaderBase start
+    // ----
     RecordsBySplits.Builder<PulsarMessage<RowData>> builder = new RecordsBySplits.Builder<>();
 
     // Return when no split registered to this reader.
@@ -97,15 +99,17 @@ public class LogPulsarOrderedPartitionSplitReader extends PulsarOrderedPartition
 
     // Consume message from pulsar until it was woke up by flink reader.
     for (int messageNum = 0;
-         messageNum < sourceConfiguration.getMaxFetchRecords() && deadline.hasTimeLeft();
-         messageNum++) {
+        messageNum < sourceConfiguration.getMaxFetchRecords() && deadline.hasTimeLeft();
+        messageNum++) {
       try {
         Duration timeout = deadline.timeLeftIfAny();
         Message<byte[]> message = pollMessage(timeout);
         if (message == null) {
           break;
         }
-        // ---- copy from org.apache.flink.connector.pulsar.source.reader.split.PulsarPartitionSplitReaderBase end ----
+        // ---- copy from
+        // org.apache.flink.connector.pulsar.source.reader.split.PulsarPartitionSplitReaderBase end
+        // ----
         LogData<RowData> logData = logDataJsonDeserialization.deserialize(message.getData());
         if (!logData.getFlip() && filterByRowKind(logData.getActualValue())) {
           LOG.debug(
@@ -115,7 +119,8 @@ public class LogPulsarOrderedPartitionSplitReader extends PulsarOrderedPartition
         }
         StopCursor.StopCondition condition = stopCursor.shouldStop(message);
 
-        if (condition == StopCursor.StopCondition.CONTINUE || condition == StopCursor.StopCondition.EXACTLY) {
+        if (condition == StopCursor.StopCondition.CONTINUE
+            || condition == StopCursor.StopCondition.EXACTLY) {
           if (logData.getFlip()) {
             if (logRetractionEnable) {
               break;
@@ -125,14 +130,17 @@ public class LogPulsarOrderedPartitionSplitReader extends PulsarOrderedPartition
               continue;
             }
           }
-          builder.add(splitId,
-              LogRecordPulsarWithRetractInfo.of(message.getMessageId(), message.getEventTime(), logData));
+          builder.add(
+              splitId,
+              LogRecordPulsarWithRetractInfo.of(
+                  message.getMessageId(), message.getEventTime(), logData));
 
           // Acknowledge message if need.
           finishedPollMessage(message);
         }
 
-        if (condition == StopCursor.StopCondition.EXACTLY || condition == StopCursor.StopCondition.TERMINATE) {
+        if (condition == StopCursor.StopCondition.EXACTLY
+            || condition == StopCursor.StopCondition.TERMINATE) {
           builder.addFinishedSplit(splitId);
           break;
         }
@@ -147,15 +155,17 @@ public class LogPulsarOrderedPartitionSplitReader extends PulsarOrderedPartition
   }
 
   /**
-   * filter the rowData only works during {@link ArcticValidator#ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE}
-   * is false and {@link ArcticValidator#ARCTIC_LOG_CONSUMER_CHANGELOG_MODE}
-   * is {@link ArcticValidator#LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY} and rowData.rowKind != INSERT
+   * filter the rowData only works during {@link
+   * ArcticValidator#ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE} is false and {@link
+   * ArcticValidator#ARCTIC_LOG_CONSUMER_CHANGELOG_MODE} is {@link
+   * ArcticValidator#LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY} and rowData.rowKind != INSERT
    *
    * @param rowData the judged data
    * @return true means should be filtered.
    */
   boolean filterByRowKind(RowData rowData) {
-    return !logRetractionEnable && logConsumerAppendOnly && !rowData.getRowKind().equals(RowKind.INSERT);
+    return !logRetractionEnable
+        && logConsumerAppendOnly
+        && !rowData.getRowKind().equals(RowKind.INSERT);
   }
-
 }

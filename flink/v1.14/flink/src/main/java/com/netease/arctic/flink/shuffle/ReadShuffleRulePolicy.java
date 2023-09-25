@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.shuffle;
 
+import static org.apache.flink.util.Preconditions.checkNotNull;
+
 import com.netease.arctic.table.DistributionHashMode;
 import org.apache.flink.api.common.functions.Partitioner;
 import org.apache.flink.api.java.functions.KeySelector;
@@ -29,11 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Objects;
 import java.util.Random;
 
-import static org.apache.flink.util.Preconditions.checkNotNull;
-
-/**
- * Shuffle RowData with same key to same subtask, to make sure cdc data with same key in order.
- */
+/** Shuffle RowData with same key to same subtask, to make sure cdc data with same key in order. */
 public class ReadShuffleRulePolicy implements ShuffleRulePolicy<RowData, ShuffleKey> {
   private static final Logger LOG = LoggerFactory.getLogger(ReadShuffleRulePolicy.class);
 
@@ -42,11 +40,12 @@ public class ReadShuffleRulePolicy implements ShuffleRulePolicy<RowData, Shuffle
   private final DistributionHashMode distributionHashMode;
 
   public ReadShuffleRulePolicy(ShuffleHelper helper) {
-    this(helper, DistributionHashMode.autoSelect(helper.isPrimaryKeyExist(), helper.isPartitionKeyExist()));
+    this(
+        helper,
+        DistributionHashMode.autoSelect(helper.isPrimaryKeyExist(), helper.isPartitionKeyExist()));
   }
 
-  public ReadShuffleRulePolicy(ShuffleHelper helper,
-                               DistributionHashMode distributionHashMode) {
+  public ReadShuffleRulePolicy(ShuffleHelper helper, DistributionHashMode distributionHashMode) {
     this.helper = helper;
     this.distributionHashMode = distributionHashMode;
     Preconditions.checkArgument(distributionHashMode != DistributionHashMode.AUTO);
@@ -67,9 +66,7 @@ public class ReadShuffleRulePolicy implements ShuffleRulePolicy<RowData, Shuffle
     return distributionHashMode;
   }
 
-  /**
-   * return ShuffleKey
-   */
+  /** return ShuffleKey */
   static class PrimaryKeySelector implements KeySelector<RowData, ShuffleKey> {
     @Override
     public ShuffleKey getKey(RowData value) throws Exception {
@@ -77,9 +74,7 @@ public class ReadShuffleRulePolicy implements ShuffleRulePolicy<RowData, Shuffle
     }
   }
 
-  /**
-   * Circular polling feed a streamRecord into a special factor node
-   */
+  /** Circular polling feed a streamRecord into a special factor node */
   static class RoundRobinPartitioner implements Partitioner<ShuffleKey> {
     private final ShuffleHelper helper;
     private final DistributionHashMode distributionHashMode;
@@ -88,7 +83,8 @@ public class ReadShuffleRulePolicy implements ShuffleRulePolicy<RowData, Shuffle
     RoundRobinPartitioner(DistributionHashMode distributionHashMode, ShuffleHelper helper) {
       this.distributionHashMode = distributionHashMode;
       this.helper = helper;
-      if (!distributionHashMode.isSupportPartition() && !distributionHashMode.isSupportPrimaryKey()) {
+      if (!distributionHashMode.isSupportPartition()
+          && !distributionHashMode.isSupportPrimaryKey()) {
         random = new Random();
       }
     }

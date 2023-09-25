@@ -24,11 +24,11 @@ import org.apache.flink.core.memory.DataOutputSerializer;
 
 import java.io.IOException;
 
-/**
- * Serializer that serializes and deserializes arctic enumerator {@link ArcticEnumeratorOffset}.
- */
-class ArcticEnumeratorOffsetSerializer implements SimpleVersionedSerializer<ArcticEnumeratorOffset> {
-  public static final ArcticEnumeratorOffsetSerializer INSTANCE = new ArcticEnumeratorOffsetSerializer();
+/** Serializer that serializes and deserializes arctic enumerator {@link ArcticEnumeratorOffset}. */
+class ArcticEnumeratorOffsetSerializer
+    implements SimpleVersionedSerializer<ArcticEnumeratorOffset> {
+  public static final ArcticEnumeratorOffsetSerializer INSTANCE =
+      new ArcticEnumeratorOffsetSerializer();
 
   private static final int VERSION = 1;
 

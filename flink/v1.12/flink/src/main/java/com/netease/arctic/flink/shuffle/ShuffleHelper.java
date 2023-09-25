@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.shuffle;
 
+import static org.apache.iceberg.IcebergSchemaUtil.projectPartition;
+
 import com.netease.arctic.data.PrimaryKeyData;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -31,11 +33,7 @@ import org.apache.iceberg.types.Types;
 
 import java.io.Serializable;
 
-import static org.apache.iceberg.IcebergSchemaUtil.projectPartition;
-
-/**
- * This helper operates to one arctic table and the data of the table.
- */
+/** This helper operates to one arctic table and the data of the table. */
 public class ShuffleHelper implements Serializable {
   private static final long serialVersionUID = 1L;
 
@@ -62,14 +60,19 @@ public class ShuffleHelper implements Serializable {
 
     KeyedTable keyedTable = table.asKeyedTable();
     PrimaryKeyData primaryKeyData = new PrimaryKeyData(keyedTable.primaryKeySpec(), schema);
-    return new ShuffleHelper(keyedTable.primaryKeySpec().primaryKeyExisted(),
-        primaryKeyData, partitionKey, rowType, schema.asStruct());
+    return new ShuffleHelper(
+        keyedTable.primaryKeySpec().primaryKeyExisted(),
+        primaryKeyData,
+        partitionKey,
+        rowType,
+        schema.asStruct());
   }
 
   /**
-   * If using arctic table as build table, there will be an additional implicit field, valuing process time.
+   * If using arctic table as build table, there will be an additional implicit field, valuing
+   * process time.
    *
-   * @param schema  The physical schema in Arctic table.
+   * @param schema The physical schema in Arctic table.
    * @param rowType Flink RowData type.
    * @return the Arctic Schema with additional implicit field.
    */
@@ -82,16 +85,16 @@ public class ShuffleHelper implements Serializable {
       if ((nestedField = schema.findField(field.getName())) != null) {
         nestedFields[i] = nestedField;
       } else {
-        // for now, there is only one case that virtual watermark exist in RowData, but not in Arctic table schema.
-        nestedFields[i] = Types.NestedField.optional(-1, field.getName(), Types.TimestampType.withoutZone());
+        // for now, there is only one case that virtual watermark exist in RowData, but not in
+        // Arctic table schema.
+        nestedFields[i] =
+            Types.NestedField.optional(-1, field.getName(), Types.TimestampType.withoutZone());
       }
     }
     return new Schema(nestedFields);
   }
 
-  /**
-   * Should open firstly to initial RowDataWrapper, because it cannot be serialized.
-   */
+  /** Should open firstly to initial RowDataWrapper, because it cannot be serialized. */
   public void open() {
     if (rowDataWrapper != null) {
       return;
@@ -101,25 +104,28 @@ public class ShuffleHelper implements Serializable {
     }
   }
 
-  public ShuffleHelper() {
-  }
+  public ShuffleHelper() {}
 
-  public ShuffleHelper(RowType rowType, Types.StructType structType,
-                       PartitionKey partitionKey) {
+  public ShuffleHelper(RowType rowType, Types.StructType structType, PartitionKey partitionKey) {
     this(false, null, partitionKey, rowType, structType);
   }
 
-  public ShuffleHelper(boolean primaryKeyExist, PrimaryKeyData primaryKeyData,
-                       PartitionKey partitionKey, RowType rowType, Types.StructType structType) {
+  public ShuffleHelper(
+      boolean primaryKeyExist,
+      PrimaryKeyData primaryKeyData,
+      PartitionKey partitionKey,
+      RowType rowType,
+      Types.StructType structType) {
     this(primaryKeyExist, primaryKeyData, null, partitionKey, rowType, structType);
   }
 
-  public ShuffleHelper(boolean primaryKeyExist,
-                       PrimaryKeyData primaryKeyData,
-                       RowDataWrapper rowDataWrapper,
-                       PartitionKey partitionKey,
-                       RowType rowType,
-                       Types.StructType structType) {
+  public ShuffleHelper(
+      boolean primaryKeyExist,
+      PrimaryKeyData primaryKeyData,
+      RowDataWrapper rowDataWrapper,
+      PartitionKey partitionKey,
+      RowType rowType,
+      Types.StructType structType) {
     this.primaryKeyExist = primaryKeyExist;
     this.primaryKeyData = primaryKeyData;
     this.rowDataWrapper = rowDataWrapper;

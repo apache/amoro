@@ -45,9 +45,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-/**
- * This is arctic table includes writing file data to un keyed table and keyed table.
- */
+/** This is arctic table includes writing file data to un keyed table and keyed table. */
 public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     implements OneInputStreamOperator<RowData, WriteResult>, BoundedOneInput {
 
@@ -65,8 +63,9 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   private transient int attemptId;
   /**
    * Load table in runtime, because that table's refresh method will be invoked in serialization.
-   * And it will set {@link org.apache.hadoop.security.UserGroupInformation#authenticationMethod} to KERBEROS
-   * if Arctic's table is KERBEROS enabled. It will cause ugi relevant exception when deploy to yarn cluster.
+   * And it will set {@link org.apache.hadoop.security.UserGroupInformation#authenticationMethod} to
+   * KERBEROS if Arctic's table is KERBEROS enabled. It will cause ugi relevant exception when
+   * deploy to yarn cluster.
    */
   private transient ArcticTable table;
 
@@ -82,8 +81,11 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     this.minFileSplitCount = minFileSplitCount;
     this.tableLoader = tableLoader;
     this.submitEmptySnapshot = submitEmptySnapshot;
-    LOG.info("ArcticFileWriter is created with minFileSplitCount: {}, upsert: {}, submitEmptySnapshot: {}",
-        minFileSplitCount, upsert, submitEmptySnapshot);
+    LOG.info(
+        "ArcticFileWriter is created with minFileSplitCount: {}, upsert: {}, submitEmptySnapshot: {}",
+        minFileSplitCount,
+        upsert,
+        submitEmptySnapshot);
   }
 
   @Override
@@ -122,8 +124,10 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
       initRootNodes = shuffleRule.getSubtaskTreeNodes().get(subTaskId);
     } else {
       if (table.isKeyedTable()) {
-        initRootNodes = IntStream.range(0, minFileSplitCount).mapToObj(index ->
-            DataTreeNode.of(minFileSplitCount - 1, index)).collect(Collectors.toSet());
+        initRootNodes =
+            IntStream.range(0, minFileSplitCount)
+                .mapToObj(index -> DataTreeNode.of(minFileSplitCount - 1, index))
+                .collect(Collectors.toSet());
       } else {
         initRootNodes = Sets.newHashSet();
         initRootNodes.add(DataTreeNode.of(0, 0));
@@ -135,24 +139,31 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
 
   @Override
   public void prepareSnapshotPreBarrier(long checkpointId) throws Exception {
-    table.io().doAs(() -> {
-      completeAndEmitFiles();
+    table
+        .io()
+        .doAs(
+            () -> {
+              completeAndEmitFiles();
 
-      this.writer = null;
-      return null;
-    });
+              this.writer = null;
+              return null;
+            });
   }
 
   @Override
   public void endInput() throws Exception {
-    table.io().doAs(() -> {
-      completeAndEmitFiles();
-      return null;
-    });
+    table
+        .io()
+        .doAs(
+            () -> {
+              completeAndEmitFiles();
+              return null;
+            });
   }
 
   private void completeAndEmitFiles() throws IOException {
-    // For bounded stream, it may don't enable the checkpoint mechanism so we'd better to emit the remaining
+    // For bounded stream, it may don't enable the checkpoint mechanism so we'd better to emit the
+    // remaining
     // completed files to downstream before closing the writer so that we won't miss any of them.
     if (writer != null) {
       emit(writer.complete());
@@ -162,30 +173,37 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   @Override
   public void processElement(StreamRecord<RowData> element) throws Exception {
     RowData row = element.getValue();
-    table.io().doAs(() -> {
-      if (writer == null) {
-        this.writer = taskWriterFactory.create();
-      }
-      writer.write(row);
-      return null;
-    });
+    table
+        .io()
+        .doAs(
+            () -> {
+              if (writer == null) {
+                this.writer = taskWriterFactory.create();
+              }
+              writer.write(row);
+              return null;
+            });
   }
 
   @Override
   public void dispose() throws Exception {
     super.dispose();
     if (writer != null) {
-      table.io().doAs(() -> {
-        writer.close();
-        return null;
-      });
+      table
+          .io()
+          .doAs(
+              () -> {
+                writer.close();
+                return null;
+              });
       writer = null;
     }
   }
 
   private void emit(WriteResult writeResult) {
     if (shouldEmit(writeResult)) {
-      // Only emit a non-empty WriteResult to committer operator, thus avoiding submitting too much empty snapshots.
+      // Only emit a non-empty WriteResult to committer operator, thus avoiding submitting too much
+      // empty snapshots.
       output.collect(new StreamRecord<>(writeResult));
     }
   }
@@ -194,14 +212,15 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
    * Whether to emit the WriteResult.
    *
    * @param writeResult the WriteResult to emit
-   * @return true if the WriteResult should be emitted, or the WriteResult isn't empty,
-   * false only if the WriteResult is empty and the submitEmptySnapshot is false.
+   * @return true if the WriteResult should be emitted, or the WriteResult isn't empty, false only
+   *     if the WriteResult is empty and the submitEmptySnapshot is false.
    */
   private boolean shouldEmit(WriteResult writeResult) {
-    return submitEmptySnapshot || (writeResult != null &&
-        (!ArrayUtils.isEmpty(writeResult.dataFiles()) ||
-            !ArrayUtils.isEmpty(writeResult.deleteFiles()) ||
-            !ArrayUtils.isEmpty(writeResult.referencedDataFiles())));
+    return submitEmptySnapshot
+        || (writeResult != null
+            && (!ArrayUtils.isEmpty(writeResult.dataFiles())
+                || !ArrayUtils.isEmpty(writeResult.deleteFiles())
+                || !ArrayUtils.isEmpty(writeResult.referencedDataFiles())));
   }
 
   @VisibleForTesting

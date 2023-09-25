@@ -21,9 +21,7 @@ package com.netease.arctic.flink.shuffle;
 import com.netease.arctic.data.ChangeAction;
 import org.apache.flink.types.RowKind;
 
-/**
- * An util that converts between {@link RowKind} and {@link ChangeAction}.
- */
+/** An util that converts between {@link RowKind} and {@link ChangeAction}. */
 public class RowKindUtil {
 
   public static RowKind convertToFlinkRowKind(ChangeAction changeAction) {

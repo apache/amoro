@@ -18,6 +18,12 @@
 
 package com.netease.arctic.flink.kafka.testutils;
 
+import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getProperties;
+import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
+import static com.netease.arctic.flink.kafka.testutils.KafkaUtil.createKafkaContainer;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
+import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
+
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -40,12 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
-
-import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getProperties;
-import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
-import static com.netease.arctic.flink.kafka.testutils.KafkaUtil.createKafkaContainer;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
-import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
 @Testcontainers
 public class KafkaContainerTest {

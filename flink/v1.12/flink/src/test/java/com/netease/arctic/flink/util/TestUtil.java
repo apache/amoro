@@ -39,9 +39,7 @@ public class TestUtil {
 
   public static final Logger LOG = LoggerFactory.getLogger(TestUtil.class);
 
-  /**
-   * get ut method name without parameters.
-   */
+  /** get ut method name without parameters. */
   public static String getUtMethodName(TestName testName) {
     int i = testName.getMethodName().indexOf("[");
     if (i == -1) {
@@ -84,15 +82,11 @@ public class TestUtil {
 
   public static void cancelAllJobs(MiniCluster miniCluster) {
     try {
-      final Deadline jobCancellationDeadline =
-          Deadline.fromNow(Duration.ofSeconds(10));
+      final Deadline jobCancellationDeadline = Deadline.fromNow(Duration.ofSeconds(10));
 
       final List<CompletableFuture<Acknowledge>> jobCancellationFutures =
           miniCluster.listJobs()
-              .get(
-                  jobCancellationDeadline.timeLeft().toMillis(),
-                  TimeUnit.MILLISECONDS)
-              .stream()
+              .get(jobCancellationDeadline.timeLeft().toMillis(), TimeUnit.MILLISECONDS).stream()
               .filter(status -> !status.getJobState().isGloballyTerminalState())
               .map(status -> miniCluster.cancelJob(status.getJobId()))
               .collect(Collectors.toList());
@@ -104,14 +98,9 @@ public class TestUtil {
           () -> {
             final long unfinishedJobs =
                 miniCluster.listJobs()
-                    .get(
-                        jobCancellationDeadline.timeLeft().toMillis(),
-                        TimeUnit.MILLISECONDS)
+                    .get(jobCancellationDeadline.timeLeft().toMillis(), TimeUnit.MILLISECONDS)
                     .stream()
-                    .filter(
-                        status ->
-                            !status.getJobState()
-                                .isGloballyTerminalState())
+                    .filter(status -> !status.getJobState().isGloballyTerminalState())
                     .count();
             return unfinishedJobs == 0;
           },
@@ -120,5 +109,4 @@ public class TestUtil {
       LOG.warn("Exception while shutting down remaining jobs.", e);
     }
   }
-
 }

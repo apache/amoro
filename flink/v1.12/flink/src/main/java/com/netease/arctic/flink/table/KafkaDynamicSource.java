@@ -18,6 +18,15 @@
 
 package com.netease.arctic.flink.table;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_ALL_KINDS;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
+import static org.apache.flink.table.connector.ChangelogMode.insertOnly;
+
 import com.netease.arctic.flink.read.FlinkKafkaConsumer;
 import com.netease.arctic.flink.read.LogKafkaConsumer;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
@@ -57,6 +66,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 
 import javax.annotation.Nullable;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -72,60 +82,46 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_ALL_KINDS;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
-import static org.apache.flink.table.connector.ChangelogMode.insertOnly;
-
 /**
  * A version-agnostic Kafka {@link ScanTableSource}.
- * <p>
+ *
  * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Internal
 public class KafkaDynamicSource
-    implements ScanTableSource, SupportsReadingMetadata, SupportsProjectionPushDown, SupportsWatermarkPushDown {
+    implements ScanTableSource,
+        SupportsReadingMetadata,
+        SupportsProjectionPushDown,
+        SupportsWatermarkPushDown {
 
   private final Schema schema;
   private final ReadableConfig tableOptions;
   private final String consumerChangelogMode;
   private final boolean logRetractionEnable;
 
-  private static final ChangelogMode ALL_KINDS = ChangelogMode.newBuilder()
-      .addContainedKind(RowKind.INSERT)
-      .addContainedKind(RowKind.UPDATE_BEFORE)
-      .addContainedKind(RowKind.UPDATE_AFTER)
-      .addContainedKind(RowKind.DELETE)
-      .build();
-  
+  private static final ChangelogMode ALL_KINDS =
+      ChangelogMode.newBuilder()
+          .addContainedKind(RowKind.INSERT)
+          .addContainedKind(RowKind.UPDATE_BEFORE)
+          .addContainedKind(RowKind.UPDATE_AFTER)
+          .addContainedKind(RowKind.DELETE)
+          .build();
+
   // --------------------------------------------------------------------------------------------
   // Mutable attributes
   // --------------------------------------------------------------------------------------------
 
-  /**
-   * Data type that describes the final output of the source.
-   */
+  /** Data type that describes the final output of the source. */
   protected DataType producedDataType;
 
-  /**
-   * Metadata that is appended at the end of a physical source row.
-   */
+  /** Metadata that is appended at the end of a physical source row. */
   protected List<String> metadataKeys;
 
-  /**
-   * Field index paths of all fields that must be present in the physically produced data.
-   */
+  /** Field index paths of all fields that must be present in the physically produced data. */
   protected int[] projectedFields;
 
-  /**
-   * Watermark strategy that is used to generate per-partition watermark.
-   */
-  @Nullable
-  protected WatermarkStrategy<RowData> watermarkStrategy;
+  /** Watermark strategy that is used to generate per-partition watermark. */
+  @Nullable protected WatermarkStrategy<RowData> watermarkStrategy;
 
   // --------------------------------------------------------------------------------------------
   // Format attributes
@@ -133,60 +129,38 @@ public class KafkaDynamicSource
 
   private static final String VALUE_METADATA_PREFIX = "value.";
 
-  /**
-   * Data type to configure the formats.
-   */
+  /** Data type to configure the formats. */
   protected final DataType physicalDataType;
 
-  /**
-   * Optional format for decoding keys from Kafka.
-   */
-  @Nullable
-  protected final DecodingFormat<DeserializationSchema<RowData>> keyDecodingFormat;
+  /** Optional format for decoding keys from Kafka. */
+  @Nullable protected final DecodingFormat<DeserializationSchema<RowData>> keyDecodingFormat;
 
-  /**
-   * Format for decoding values from Kafka.
-   */
+  /** Format for decoding values from Kafka. */
   protected final DecodingFormat<DeserializationSchema<RowData>> valueDecodingFormat;
 
-  /**
-   * Indices that determine the key fields and the target position in the produced row.
-   */
+  /** Indices that determine the key fields and the target position in the produced row. */
   protected final int[] keyProjection;
 
-  /**
-   * Indices that determine the value fields and the target position in the produced row.
-   */
+  /** Indices that determine the value fields and the target position in the produced row. */
   protected final int[] valueProjection;
 
-  /**
-   * Prefix that needs to be removed from fields when constructing the physical data type.
-   */
-  @Nullable
-  protected final String keyPrefix;
+  /** Prefix that needs to be removed from fields when constructing the physical data type. */
+  @Nullable protected final String keyPrefix;
 
   // --------------------------------------------------------------------------------------------
   // Kafka-specific attributes
   // --------------------------------------------------------------------------------------------
 
-  /**
-   * The Kafka topics to consume.
-   */
+  /** The Kafka topics to consume. */
   protected final List<String> topics;
 
-  /**
-   * The Kafka topic pattern to consume.
-   */
+  /** The Kafka topic pattern to consume. */
   protected final Pattern topicPattern;
 
-  /**
-   * Properties for the Kafka consumer.
-   */
+  /** Properties for the Kafka consumer. */
   protected final Properties properties;
 
-  /**
-   * The startup mode for the contained consumer (default is {@link StartupMode#GROUP_OFFSETS}).
-   */
+  /** The startup mode for the contained consumer (default is {@link StartupMode#GROUP_OFFSETS}). */
   protected final StartupMode startupMode;
 
   /**
@@ -201,10 +175,9 @@ public class KafkaDynamicSource
    */
   protected final long startupTimestampMillis;
 
-  /**
-   * Flag to determine source mode. In upsert mode, it will keep the tombstone message. *
-   */
+  /** Flag to determine source mode. In upsert mode, it will keep the tombstone message. * */
   protected final boolean upsertMode;
+
   protected final String sourceName;
 
   public KafkaDynamicSource(
@@ -239,8 +212,7 @@ public class KafkaDynamicSource
         upsertMode,
         sourceName,
         schema,
-        tableOptions
-    );
+        tableOptions);
   }
 
   public static StartupMode toInternal(String startupMode) {
@@ -253,12 +225,16 @@ public class KafkaDynamicSource
       case SCAN_STARTUP_MODE_TIMESTAMP:
         return StartupMode.TIMESTAMP;
       default:
-        throw new ValidationException(String.format(
-            "%s only support '%s', '%s'. But input is '%s'", ArcticValidator.SCAN_STARTUP_MODE,
-            SCAN_STARTUP_MODE_LATEST, SCAN_STARTUP_MODE_EARLIEST, startupMode));
+        throw new ValidationException(
+            String.format(
+                "%s only support '%s', '%s'. But input is '%s'",
+                ArcticValidator.SCAN_STARTUP_MODE,
+                SCAN_STARTUP_MODE_LATEST,
+                SCAN_STARTUP_MODE_EARLIEST,
+                startupMode));
     }
   }
-  
+
   public KafkaDynamicSource(
       DataType physicalDataType,
       @Nullable DecodingFormat<DeserializationSchema<RowData>> keyDecodingFormat,
@@ -278,12 +254,10 @@ public class KafkaDynamicSource
       ReadableConfig tableOptions) {
     // Format attributes
     this.physicalDataType =
-        Preconditions.checkNotNull(
-            physicalDataType, "Physical data type must not be null.");
+        Preconditions.checkNotNull(physicalDataType, "Physical data type must not be null.");
     this.keyDecodingFormat = keyDecodingFormat;
     this.valueDecodingFormat =
-        Preconditions.checkNotNull(
-            valueDecodingFormat, "Value decoding format must not be null.");
+        Preconditions.checkNotNull(valueDecodingFormat, "Value decoding format must not be null.");
     this.keyProjection =
         Preconditions.checkNotNull(keyProjection, "Key projection must not be null.");
     this.valueProjection =
@@ -296,17 +270,14 @@ public class KafkaDynamicSource
     this.watermarkStrategy = null;
     // Kafka-specific attributes
     Preconditions.checkArgument(
-        (topics != null && topicPattern == null) ||
-            (topics == null && topicPattern != null),
+        (topics != null && topicPattern == null) || (topics == null && topicPattern != null),
         "Either Topic or Topic Pattern must be set for source.");
     this.topics = topics;
     this.topicPattern = topicPattern;
     this.properties = Preconditions.checkNotNull(properties, "Properties must not be null.");
-    this.startupMode =
-        Preconditions.checkNotNull(startupMode, "Startup mode must not be null.");
+    this.startupMode = Preconditions.checkNotNull(startupMode, "Startup mode must not be null.");
     this.specificStartupOffsets =
-        Preconditions.checkNotNull(
-            specificStartupOffsets, "Specific offsets must not be null.");
+        Preconditions.checkNotNull(specificStartupOffsets, "Specific offsets must not be null.");
     this.startupTimestampMillis = startupTimestampMillis;
     this.upsertMode = upsertMode;
     this.sourceName = sourceName;
@@ -314,8 +285,9 @@ public class KafkaDynamicSource
     this.schema = schema;
     this.tableOptions = tableOptions;
     this.consumerChangelogMode = tableOptions.get(ARCTIC_LOG_CONSUMER_CHANGELOG_MODE);
-    this.logRetractionEnable = CompatibleFlinkPropertyUtil.propertyAsBoolean(tableOptions,
-        ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE);
+    this.logRetractionEnable =
+        CompatibleFlinkPropertyUtil.propertyAsBoolean(
+            tableOptions, ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE);
   }
 
   @Override
@@ -337,9 +309,7 @@ public class KafkaDynamicSource
         throw new UnsupportedOperationException(
             String.format(
                 "As of now, %s can't support this option %s.",
-                ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.key(),
-                consumerChangelogMode
-            ));
+                ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.key(), consumerChangelogMode));
     }
   }
 
@@ -352,9 +322,11 @@ public class KafkaDynamicSource
         createDeserialization(context, valueDecodingFormat, valueProjection, null);
 
     final TypeInformation<RowData> producedTypeInfo =
-        context.createTypeInformation(Optional.ofNullable(projectedFields)
-            .map(Projection::of)
-            .map(p -> p.project(producedDataType)).orElse(producedDataType));
+        context.createTypeInformation(
+            Optional.ofNullable(projectedFields)
+                .map(Projection::of)
+                .map(p -> p.project(producedDataType))
+                .orElse(producedDataType));
 
     final FlinkKafkaConsumer<RowData> kafkaConsumer =
         createKafkaConsumer(keyDeserialization, valueDeserialization, producedTypeInfo);
@@ -427,8 +399,7 @@ public class KafkaDynamicSource
     this.projectedFields = new int[projectFields.length];
     for (int i = 0; i < projectFields.length; i++) {
       Preconditions.checkArgument(
-          projectFields[i].length == 1,
-          "Don't support nested projection now.");
+          projectFields[i].length == 1, "Don't support nested projection now.");
       this.projectedFields[i] = projectFields[i][0];
     }
   }
@@ -479,23 +450,23 @@ public class KafkaDynamicSource
       return false;
     }
     final KafkaDynamicSource that = (KafkaDynamicSource) o;
-    return Objects.equals(producedDataType, that.producedDataType) &&
-        Objects.equals(metadataKeys, that.metadataKeys) &&
-        Objects.equals(physicalDataType, that.physicalDataType) &&
-        Objects.equals(keyDecodingFormat, that.keyDecodingFormat) &&
-        Objects.equals(valueDecodingFormat, that.valueDecodingFormat) &&
-        Arrays.equals(keyProjection, that.keyProjection) &&
-        Arrays.equals(valueProjection, that.valueProjection) &&
-        Objects.equals(keyPrefix, that.keyPrefix) &&
-        Objects.equals(topics, that.topics) &&
-        Objects.equals(String.valueOf(topicPattern), String.valueOf(that.topicPattern)) &&
-        Objects.equals(properties, that.properties) &&
-        startupMode == that.startupMode &&
-        Objects.equals(specificStartupOffsets, that.specificStartupOffsets) &&
-        startupTimestampMillis == that.startupTimestampMillis &&
-        Objects.equals(upsertMode, that.upsertMode) &&
-        Arrays.equals(projectedFields, that.projectedFields) &&
-        Objects.equals(watermarkStrategy, that.watermarkStrategy);
+    return Objects.equals(producedDataType, that.producedDataType)
+        && Objects.equals(metadataKeys, that.metadataKeys)
+        && Objects.equals(physicalDataType, that.physicalDataType)
+        && Objects.equals(keyDecodingFormat, that.keyDecodingFormat)
+        && Objects.equals(valueDecodingFormat, that.valueDecodingFormat)
+        && Arrays.equals(keyProjection, that.keyProjection)
+        && Arrays.equals(valueProjection, that.valueProjection)
+        && Objects.equals(keyPrefix, that.keyPrefix)
+        && Objects.equals(topics, that.topics)
+        && Objects.equals(String.valueOf(topicPattern), String.valueOf(that.topicPattern))
+        && Objects.equals(properties, that.properties)
+        && startupMode == that.startupMode
+        && Objects.equals(specificStartupOffsets, that.specificStartupOffsets)
+        && startupTimestampMillis == that.startupTimestampMillis
+        && Objects.equals(upsertMode, that.upsertMode)
+        && Arrays.equals(projectedFields, that.projectedFields)
+        && Objects.equals(watermarkStrategy, that.watermarkStrategy);
   }
 
   @Override
@@ -533,16 +504,14 @@ public class KafkaDynamicSource
     Schema projectedSchema = schema;
     if (projectedFields != null) {
       final List<Types.NestedField> columns = schema.columns();
-      projectedSchema = new Schema(Arrays.stream(projectedFields).mapToObj(columns::get).collect(Collectors.toList()));
+      projectedSchema =
+          new Schema(
+              Arrays.stream(projectedFields).mapToObj(columns::get).collect(Collectors.toList()));
     }
     if (topics != null) {
       kafkaConsumer =
           new LogKafkaConsumer(
-              topics,
-              deserializationSchemaWrapper,
-              properties,
-              projectedSchema,
-              tableOptions);
+              topics, deserializationSchemaWrapper, properties, projectedSchema, tableOptions);
     } else {
       kafkaConsumer =
           new LogKafkaConsumer(
@@ -588,8 +557,7 @@ public class KafkaDynamicSource
     if (format == null) {
       return null;
     }
-    DataType physicalFormatDataType =
-        DataTypeUtils.projectRow(this.physicalDataType, projection);
+    DataType physicalFormatDataType = DataTypeUtils.projectRow(this.physicalDataType, projection);
     if (prefix != null) {
       physicalFormatDataType = DataTypeUtils.stripRowPrefix(physicalFormatDataType, prefix);
     }
@@ -628,8 +596,7 @@ public class KafkaDynamicSource
     HEADERS(
         "headers",
         // key and value of the map are nullable to make handling easier in queries
-        DataTypes.MAP(DataTypes.STRING().nullable(), DataTypes.BYTES().nullable())
-            .notNull(),
+        DataTypes.MAP(DataTypes.STRING().nullable(), DataTypes.BYTES().nullable()).notNull(),
         new MetadataConverter() {
           private static final long serialVersionUID = 1L;
 
@@ -707,5 +674,4 @@ public class KafkaDynamicSource
   interface MetadataConverter extends Serializable {
     Object read(ConsumerRecord<?, ?> record);
   }
-
 }

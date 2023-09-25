@@ -174,10 +174,11 @@ function stop() {
 case "$1" in
     start)
         status;
-        if [ $? -eq 2 ]; then
+        status_return=$?;
+        if [ $status_return -eq 2 ]; then
             echo 'starting app server.'
             start
-        elif [ $? -eq 0 ]; then
+        elif [ $status_return -eq 0 ]; then
             echo "alreadly running. start app failed." 
         else 
             echo "the pid file exists but porc is down; will delete ths pidfile ${PID} and starting app server."

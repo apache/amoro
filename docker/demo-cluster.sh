@@ -18,7 +18,7 @@
 #
 
 
-PROJECT_VERSION=0.5.0-SNAPSHOT
+PROJECT_VERSION=latest
 
 
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
@@ -130,9 +130,7 @@ services:
       - 1260:1260
       - 8081:8081
     networks:
-        amoro_network:
-          aliases:
-            - amsAlias
+      - amoro_network
     tty: true
     stdin_open: true
 

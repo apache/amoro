@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.read.source.log.pulsar;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE;
+
 import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -41,12 +44,9 @@ import org.apache.iceberg.flink.FlinkSchemaUtil;
 
 import java.util.Map;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE;
-
 /**
- * The Source implementation of Log Pulsar. Please use a {@link LogPulsarSourceBuilder} to construct a
- * {@link LogPulsarSource}. The following example shows how to create a LogPulsarSource.
+ * The Source implementation of Log Pulsar. Please use a {@link LogPulsarSourceBuilder} to construct
+ * a {@link LogPulsarSource}. The following example shows how to create a LogPulsarSource.
  *
  * <pre>{@code
  * LogPulsarSource<String> source = LogPulsarSource
@@ -63,10 +63,9 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_
 @PublicEvolving
 public final class LogPulsarSource extends PulsarSource<RowData> {
 
-  /**
-   * read schema, only contains the selected fields
-   */
+  /** read schema, only contains the selected fields */
   private final Schema schema;
+
   private final boolean logRetractionEnable;
   private final String logConsumerChangelogMode;
 
@@ -80,20 +79,33 @@ public final class LogPulsarSource extends PulsarSource<RowData> {
       PulsarDeserializationSchema<RowData> deserializationSchema,
       Schema schema,
       Map<String, String> tableProperties) {
-    super(sourceConfiguration, subscriber, rangeGenerator, startCursor, stopCursor, boundedness, deserializationSchema);
-    logRetractionEnable = CompatibleFlinkPropertyUtil.propertyAsBoolean(tableProperties,
-        ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(), ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.defaultValue());
-    Preconditions.checkArgument(!logRetractionEnable, 
-        "log-store.consistency-guarantee.enabled is not supported for now");
-    logConsumerChangelogMode = CompatibleFlinkPropertyUtil.propertyAsString(tableProperties,
-        ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.key(), ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.defaultValue());
+    super(
+        sourceConfiguration,
+        subscriber,
+        rangeGenerator,
+        startCursor,
+        stopCursor,
+        boundedness,
+        deserializationSchema);
+    logRetractionEnable =
+        CompatibleFlinkPropertyUtil.propertyAsBoolean(
+            tableProperties,
+            ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(),
+            ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.defaultValue());
+    Preconditions.checkArgument(
+        !logRetractionEnable, "log-store.consistency-guarantee.enabled is not supported for now");
+    logConsumerChangelogMode =
+        CompatibleFlinkPropertyUtil.propertyAsString(
+            tableProperties,
+            ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.key(),
+            ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.defaultValue());
     this.schema = schema;
   }
 
   /**
    * Get a LogPulsarSourceBuilder to builder a {@link LogPulsarSource}.
    *
-   * @param schema          read schema, only contains the selected fields
+   * @param schema read schema, only contains the selected fields
    * @param tableProperties Arctic table properties
    * @return a Log Pulsar source builder.
    */
@@ -103,7 +115,8 @@ public final class LogPulsarSource extends PulsarSource<RowData> {
   }
 
   @Override
-  public SourceReader<RowData, PulsarPartitionSplit> createReader(SourceReaderContext readerContext) {
+  public SourceReader<RowData, PulsarPartitionSplit> createReader(
+      SourceReaderContext readerContext) {
     return LogPulsarSourceReaderFactory.create(
         readerContext, sourceConfiguration, schema, logRetractionEnable, logConsumerChangelogMode);
   }

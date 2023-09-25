@@ -24,9 +24,7 @@ import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.table.descriptors.CatalogDescriptorValidator;
 import org.apache.flink.table.descriptors.DescriptorProperties;
 
-/**
- * Validator for {@link ArcticCatalog}
- */
+/** Validator for {@link ArcticCatalog} */
 public class ArcticCatalogValidator extends CatalogDescriptorValidator {
   public static final String CATALOG_TYPE_VALUE_ARCTIC = "arctic";
   public static final String METASTORE_URL = "metastore.url";
