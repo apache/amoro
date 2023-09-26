@@ -43,6 +43,12 @@
         <dependency>
             <groupId>com.netease.amoro</groupId>
             <artifactId>amoro-hive</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.eclipse.jetty.orbit</groupId>
+                    <artifactId>javax.servlet</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
