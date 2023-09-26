@@ -37,25 +37,27 @@ you need to add a new container configuration. with container-impl as `com.netea
 
 FlinkOptimizerContainer support the following properties:
 
-| Property Name | Required | Default Value | Description                                                                                                                                                              |
-|---------------|----------|------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| flink-home    | true     | N/A        | Flink installation location                                                                                                                                              |
-| target        | true     | yarn-pre-job | flink job deployed target, available values `yarn-pre-job`, `yarn-application`, `kubernetes-application`                                                                 |
-| job-uri       | false    | N/A      | The jar uri of flink optimizer job. This is required if target is application mode.                                                                                      |
-| ams-optimizing-uri| false | N/A       | uri of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available                                                            |
-| export.\<key\> | false | N/A     | environment variables will be exported during job submit                                                                                                                 |
-| flink-conf.\<key\> | false | N/A     | [Flink Configuration Options](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/config/) will be passed to cli by `-Dkey=value`, |
+| Property Name             | Required | Default Value | Description                                                                                                                                                                                                                                                                          |
+|---------------------------|----------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| flink-home                | true     | N/A           | Flink installation location                                                                                                                                                                                                                                                          |
+| target                    | true     | yarn-pre-job  | flink job deployed target, available values `yarn-pre-job`, `yarn-application`, `kubernetes-application`                                                                                                                                                                             |
+| job-uri                   | false    | N/A           | The jar uri of flink optimizer job. This is required if target is application mode.                                                                                                                                                                                                  |
+| ams-optimizing-uri        | false | N/A           | uri of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available                                                                                                                                                                        |
+| export.\<key\>            | false | N/A           | environment variables will be exported during job submit                                                                                                                                                                                                                             |
+| export.JAVA_HOME          | false | N/A           | Java runtime location                                                                                                                                                                                                                                                                |
+| export.HADOOP_CONF_DIR    | false | N/A           | Direction which holds the configuration files for the hadoop cluster (including hdfs-site.xml, core-site.xml, yarn-site.xml ). If the hadoop cluster has kerberos authentication enabled, you need to prepare an additional krb5.conf and a keytab file for the user to submit tasks |
+| export.JVM_ARGS           | false | N/A           | you can configure flink to run additional configuration parameters, here is an example of configuring krb5.conf, specify the address of krb5.conf to be used by Flink when committing via `-Djava.security.krb5.conf=/opt/krb5.conf`                                                 |
+| export.HADOOP_USER_NAME   | false | N/A           | the username used to submit tasks to yarn, used for simple authentication                                                                                                                                                                                                            |
+| export.FLINK_CONF_DIR     | false | N/A           | the directory where flink_conf.yaml is located                                                                                                                                                                                         |
+| flink-conf.\<key\>        | false | N/A           | [Flink Configuration Options](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/config/) will be passed to cli by `-Dkey=value`,                                                                                                                                  |
 
-Environment variables:
+{{< hint info >}}
+To better utilize the resources of Flink Optimizer, it is recommended to add the following configuration to the Flink Optimizer Group:
+* Set `flink-conf.taskmanager.memory.managed.size` to `32mb` as Flink optimizer does not have any computation logic, it does not need to occupy managed memory.
+* Set `flink-conf.taskmanager.memory.netwrok.max` to `32mb` as there is no need for communication between operators in Flink Optimizer.
+* Set `flink-conf.taskmanager.memory.netwrok.nin` to `32mb` as there is no need for communication between operators in Flink Optimizer.
+{{< /hint >}}
 
-- export.JAVA_HOME: Java runtime location
-- export.HADOOP_CONF_DIR: Direction which holds the configuration files for the hadoop cluster 
-(including hdfs-site.xml, core-site.xml, yarn-site.xml ). If the hadoop cluster has kerberos authentication enabled, 
-you need to prepare an additional krb5.conf and a keytab file for the user to submit tasks
-- export.JVM_ARGS, you can configure flink to run additional configuration parameters, here is an example of configuring krb5.conf, 
-specify the address of krb5.conf to be used by Flink when committing via `-Djava.security.krb5.conf=/opt/krb5.conf`
-- export.HADOOP_USER_NAME, the username used to submit tasks to yarn
-- export.FLINK_CONF_DIR, the directory where flink_conf.yaml is located, **this environment variable must be setup**
 
 An example for yarn-pre-job mode:
 
@@ -114,18 +116,13 @@ The following configuration needs to be filled in:
 
 The optimizer group supports the following properties:
 
-| Property            | Container type | Required | Default               | Description                                                                                                                                                                                                                                                                                                                                                                                                      |
-|---------------------|----------------|----------|-----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| scheduling-policy   | All | No       | quota                 | The scheduler group scheduling policy, the default value is `quota`, it will be scheduled according to the quota resources configured for each table, the larger the table quota is, the more optimizer resources it can take. There is also a configuration `balanced` that will balance the scheduling of each table, the longer the table has not been optimized, the higher the scheduling priority will be. |
-| memory   | local | Yes      | N/A                   | The memory size of the local optimizer Java process.                                                                                                                                                                                                                                                                                                                                                             |
+| Property           | Container type | Required | Default                                                                               | Description                                                                                                                                                                                                                                                                                                                                                                                                      |
+|--------------------|----------------|----------|---------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| scheduling-policy  | All            | No       | quota                                                                                 | The scheduler group scheduling policy, the default value is `quota`, it will be scheduled according to the quota resources configured for each table, the larger the table quota is, the more optimizer resources it can take. There is also a configuration `balanced` that will balance the scheduling of each table, the longer the table has not been optimized, the higher the scheduling priority will be. |
+| memory             | local          | Yes      | N/A                                                                                   | The memory size of the local optimizer Java process.                                                                                                                                                                                                                                                                                                                                                             |
+| ams-optimizing-uri | all            | No       | thrift://{ams.server-expose-host}:{ams.thrift-server.optimizing-service.binding-port} |                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| flink-conf.\<key\> | flink          | No       |                                                                                       | Any flink config options could be overwritten, priority is optimizing-group > optimizing-container > flink-conf.yaml.                                                                                                                                                                                                                                                                                            |
 
-
-Tips, the following properties of OptimizerContainer could be overwritten by group properties.
-
-| Properties         | Container Type | Description                                   |
-|--------------------|------|-----------------------------------------------|
-| ams-optimizing-uri | all  |                                               | 
-| flink-conf.\<key\> | flink | Any flink config options could be overwritten | 
 
 {{< hint info >}}
 To better utilize the resources of Flink Optimizer, it is recommended to add the following configuration to the Flink Optimizer Group:
