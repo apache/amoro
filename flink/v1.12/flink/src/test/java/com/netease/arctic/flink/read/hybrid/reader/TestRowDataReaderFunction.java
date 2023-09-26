@@ -61,35 +61,38 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   private static final AtomicInteger splitCount = new AtomicInteger();
 
   public TestRowDataReaderFunction() {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-      new BasicTableTestHelper(true, true));
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true));
   }
 
   @Test
   public void testReadChangelog() throws IOException {
 
-    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
+    List<ArcticSplit> arcticSplits =
+        FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
 
-    RowDataReaderFunction rowDataReaderFunction = new RowDataReaderFunction(
-        new Configuration(),
-        testKeyedTable.schema(),
-        testKeyedTable.schema(),
-        testKeyedTable.primaryKeySpec(),
-        null,
-        true,
-        testKeyedTable.io()
-    );
+    RowDataReaderFunction rowDataReaderFunction =
+        new RowDataReaderFunction(
+            new Configuration(),
+            testKeyedTable.schema(),
+            testKeyedTable.schema(),
+            testKeyedTable.primaryKeySpec(),
+            null,
+            true,
+            testKeyedTable.io());
 
     List<RowData> actual = new ArrayList<>();
-    arcticSplits.forEach(split -> {
-      LOG.info("ArcticSplit {}.", split);
-      DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
-      while (dataIterator.hasNext()) {
-        RowData rowData = dataIterator.next();
-        LOG.info("{}", rowData);
-        actual.add(rowData);
-      }
-    });
+    arcticSplits.forEach(
+        split -> {
+          LOG.info("ArcticSplit {}.", split);
+          DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
+          while (dataIterator.hasNext()) {
+            RowData rowData = dataIterator.next();
+            LOG.info("{}", rowData);
+            actual.add(rowData);
+          }
+        });
 
     assertArrayEquals(excepts(), actual);
 
@@ -98,7 +101,8 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
 
     testKeyedTable.changeTable().refresh();
     long nowSnapshotId = testKeyedTable.changeTable().currentSnapshot().snapshotId();
-    ChangeTableIncrementalScan changeTableScan = testKeyedTable.changeTable().newScan().useSnapshot(nowSnapshotId);
+    ChangeTableIncrementalScan changeTableScan =
+        testKeyedTable.changeTable().newScan().useSnapshot(nowSnapshotId);
 
     Snapshot snapshot = testKeyedTable.changeTable().snapshot(snapshotId);
     long fromSequence = snapshot.sequenceNumber();
@@ -123,7 +127,8 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
         }
       }
     }
-    ChangelogSplit changelogSplit = new ChangelogSplit(appendLogTasks, deleteLogTasks, splitCount.incrementAndGet());
+    ChangelogSplit changelogSplit =
+        new ChangelogSplit(appendLogTasks, deleteLogTasks, splitCount.incrementAndGet());
     actual.clear();
     DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(changelogSplit);
     while (dataIterator.hasNext()) {
@@ -136,34 +141,38 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   @Test
   public void testReadNodesUpMoved() throws IOException {
     writeUpdateWithSpecifiedMaskOne();
-    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
+    List<ArcticSplit> arcticSplits =
+        FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
 
-    RowDataReaderFunction rowDataReaderFunction = new RowDataReaderFunction(
-        new Configuration(),
-        testKeyedTable.schema(),
-        testKeyedTable.schema(),
-        testKeyedTable.primaryKeySpec(),
-        null,
-        true,
-        testKeyedTable.io()
-    );
+    RowDataReaderFunction rowDataReaderFunction =
+        new RowDataReaderFunction(
+            new Configuration(),
+            testKeyedTable.schema(),
+            testKeyedTable.schema(),
+            testKeyedTable.primaryKeySpec(),
+            null,
+            true,
+            testKeyedTable.io());
 
     List<RowData> actual = new ArrayList<>();
-    arcticSplits.forEach(split -> {
-      LOG.info("ArcticSplit {}.", split);
-      DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
-      while (dataIterator.hasNext()) {
-        RowData rowData = dataIterator.next();
-        LOG.info("{}", rowData);
-        actual.add(rowData);
-      }
-    });
+    arcticSplits.forEach(
+        split -> {
+          LOG.info("ArcticSplit {}.", split);
+          DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
+          while (dataIterator.hasNext()) {
+            RowData rowData = dataIterator.next();
+            LOG.info("{}", rowData);
+            actual.add(rowData);
+          }
+        });
 
     List<RowData> excepts = exceptsCollection();
     excepts.addAll(generateRecords());
-    RowData[] array = excepts.stream().sorted(Comparator.comparing(RowData::toString))
-        .collect(Collectors.toList())
-        .toArray(new RowData[excepts.size()]);
+    RowData[] array =
+        excepts.stream()
+            .sorted(Comparator.comparing(RowData::toString))
+            .collect(Collectors.toList())
+            .toArray(new RowData[excepts.size()]);
     assertArrayEquals(array, actual);
   }
 
@@ -172,16 +181,14 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   }
 
   public static RowData[] sortRowDataCollection(Collection<RowData> records) {
-    return records.stream().sorted(
-            Comparator
-                .comparing(
-                    RowData::toString))
+    return records.stream()
+        .sorted(Comparator.comparing(RowData::toString))
         .collect(Collectors.toList())
         .toArray(new RowData[records.size()]);
   }
 
   protected void writeUpdate() throws IOException {
-    //write change update
+    // write change update
     writeUpdate(updateRecords());
   }
 
@@ -195,7 +202,8 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
     writeUpdateWithSpecifiedMask(excepts, testKeyedTable, 1);
   }
 
-  protected void writeUpdateWithSpecifiedMask(List<RowData> input, KeyedTable table, long mask) throws IOException {
+  protected void writeUpdateWithSpecifiedMask(List<RowData> input, KeyedTable table, long mask)
+      throws IOException {
     // write change update
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(table, ROW_TYPE, false, mask);
 
@@ -206,7 +214,7 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   }
 
   protected void writeUpdate(List<RowData> input, KeyedTable table) throws IOException {
-    //write change update
+    // write change update
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(table, ROW_TYPE, false);
 
     for (RowData record : input) {
@@ -217,25 +225,68 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
 
   protected List<RowData> generateRecords() {
     List<RowData> excepts = new ArrayList<>();
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 7, StringData.fromString("syan"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_BEFORE, 2, StringData.fromString("lily"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_AFTER, 2, StringData.fromString("daniel"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_BEFORE, 7, StringData.fromString("syan"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_AFTER, 7, StringData.fromString("syan2"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.INSERT,
+            7,
+            StringData.fromString("syan"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.UPDATE_BEFORE,
+            2,
+            StringData.fromString("lily"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.UPDATE_AFTER,
+            2,
+            StringData.fromString("daniel"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.UPDATE_BEFORE,
+            7,
+            StringData.fromString("syan"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.UPDATE_AFTER,
+            7,
+            StringData.fromString("syan2"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
     return excepts;
   }
 
   protected List<RowData> updateRecords() {
     List<RowData> excepts = new ArrayList<>();
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_BEFORE, 5, StringData.fromString("lind"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_AFTER, 5, StringData.fromString("lina"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.UPDATE_BEFORE,
+            5,
+            StringData.fromString("lind"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.UPDATE_AFTER,
+            5,
+            StringData.fromString("lina"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
     return excepts;
   }
 
   protected RowData[] excepts2() {
     List<RowData> excepts = updateRecords();
 
-    return updateRecords().stream().sorted(Comparator.comparing(RowData::toString))
+    return updateRecords().stream()
+        .sorted(Comparator.comparing(RowData::toString))
         .collect(Collectors.toList())
         .toArray(new RowData[excepts.size()]);
   }
@@ -243,21 +294,70 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   protected RowData[] excepts() {
     List<RowData> excepts = exceptsCollection();
 
-    return excepts.stream().sorted(Comparator.comparing(RowData::toString))
+    return excepts.stream()
+        .sorted(Comparator.comparing(RowData::toString))
         .collect(Collectors.toList())
         .toArray(new RowData[excepts.size()]);
   }
 
   protected List<RowData> exceptsCollection() {
     List<RowData> excepts = new ArrayList<>();
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 1, StringData.fromString("john"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 2, StringData.fromString("lily"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 3, StringData.fromString("jake"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 4, StringData.fromString("sam"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 5, StringData.fromString("mary"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 6, StringData.fromString("mack"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.DELETE, 5, StringData.fromString("mary"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 5, StringData.fromString("lind"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.INSERT,
+            1,
+            StringData.fromString("john"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.INSERT,
+            2,
+            StringData.fromString("lily"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.INSERT,
+            3,
+            StringData.fromString("jake"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.INSERT,
+            4,
+            StringData.fromString("sam"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.INSERT,
+            5,
+            StringData.fromString("mary"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.INSERT,
+            6,
+            StringData.fromString("mack"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.DELETE,
+            5,
+            StringData.fromString("mary"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.INSERT,
+            5,
+            StringData.fromString("lind"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
     return excepts;
   }
 }

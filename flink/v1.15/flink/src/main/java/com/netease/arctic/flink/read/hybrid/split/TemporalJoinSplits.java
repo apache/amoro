@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.read.hybrid.split;
 
+import static com.netease.arctic.flink.metric.MetricConstant.TEMPORAL_TABLE_INITIALIZATION_END_TIMESTAMP;
+import static com.netease.arctic.flink.metric.MetricConstant.TEMPORAL_TABLE_INITIALIZATION_START_TIMESTAMP;
+
 import org.apache.flink.api.connector.source.SourceSplit;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.util.CollectionUtil;
@@ -32,11 +35,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.flink.metric.MetricConstant.TEMPORAL_TABLE_INITIALIZATION_END_TIMESTAMP;
-import static com.netease.arctic.flink.metric.MetricConstant.TEMPORAL_TABLE_INITIALIZATION_START_TIMESTAMP;
-
 /**
- * If using arctic table as build-table, TemporalJoinSplits can record the first splits planned by Enumerator.
+ * If using arctic table as build-table, TemporalJoinSplits can record the first splits planned by
+ * Enumerator.
  */
 public class TemporalJoinSplits implements Serializable {
 
@@ -47,14 +48,13 @@ public class TemporalJoinSplits implements Serializable {
   private final long startTimeMs = System.currentTimeMillis();
   private Map<String, Boolean> splits;
   private long unfinishedCount;
-  /**
-   * transient because it is necessary to notify reader again after failover.
-   */
+  /** transient because it is necessary to notify reader again after failover. */
   private transient boolean hasNotifiedReader = false;
 
   public TemporalJoinSplits(Collection<ArcticSplit> splits, MetricGroup metricGroup) {
     Preconditions.checkNotNull(splits, "plan splits should not be null");
-    this.splits = splits.stream().map(SourceSplit::splitId).collect(Collectors.toMap((k) -> k, (i) -> false));
+    this.splits =
+        splits.stream().map(SourceSplit::splitId).collect(Collectors.toMap((k) -> k, (i) -> false));
 
     unfinishedCount = this.splits.size();
     LOGGER.info("init splits at {}, size:{}", LocalDateTime.now(), unfinishedCount);
@@ -72,15 +72,16 @@ public class TemporalJoinSplits implements Serializable {
     if (this.splits == null || CollectionUtil.isNullOrEmpty(splits)) {
       return;
     }
-    splits.forEach((p) -> {
-      Boolean finished = this.splits.get(p.splitId());
-      if (finished == null || !finished) {
-        return;
-      }
-      unfinishedCount++;
-      LOGGER.debug("add back split:{} at {}", p, LocalDateTime.now());
-      this.splits.put(p.splitId(), false);
-    });
+    splits.forEach(
+        (p) -> {
+          Boolean finished = this.splits.get(p.splitId());
+          if (finished == null || !finished) {
+            return;
+          }
+          unfinishedCount++;
+          LOGGER.debug("add back split:{} at {}", p, LocalDateTime.now());
+          this.splits.put(p.splitId(), false);
+        });
   }
 
   /**
@@ -96,15 +97,16 @@ public class TemporalJoinSplits implements Serializable {
       return unfinishedCount == 0;
     }
 
-    finishedSplitIds.forEach((p) -> {
-      Boolean finished = this.splits.get(p);
-      if (finished == null || finished) {
-        return;
-      }
-      unfinishedCount--;
-      this.splits.put(p, true);
-      LOGGER.debug("finish split:{} at {}", p, LocalDateTime.now());
-    });
+    finishedSplitIds.forEach(
+        (p) -> {
+          Boolean finished = this.splits.get(p);
+          if (finished == null || finished) {
+            return;
+          }
+          unfinishedCount--;
+          this.splits.put(p, true);
+          LOGGER.debug("finish split:{} at {}", p, LocalDateTime.now());
+        });
     if (unfinishedCount == 0) {
       LOGGER.info("finish all splits at {}", LocalDateTime.now());
       if (metricGroup != null) {
@@ -134,16 +136,15 @@ public class TemporalJoinSplits implements Serializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     TemporalJoinSplits that = (TemporalJoinSplits) o;
-    return startTimeMs == that.startTimeMs &&
-        unfinishedCount == that.unfinishedCount &&
-        hasNotifiedReader == that.hasNotifiedReader &&
-        Objects.equals(metricGroup, that.metricGroup) &&
-        Objects.equals(splits, that.splits);
+    return startTimeMs == that.startTimeMs
+        && unfinishedCount == that.unfinishedCount
+        && hasNotifiedReader == that.hasNotifiedReader
+        && Objects.equals(metricGroup, that.metricGroup)
+        && Objects.equals(splits, that.splits);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(metricGroup, startTimeMs, splits, unfinishedCount, hasNotifiedReader);
   }
-
 }

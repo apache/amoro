@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.shuffle;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.log.Bytes;
 import com.netease.arctic.log.FormatTestBase;
@@ -38,25 +41,21 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-
-/**
- * This is a {@link LogRecordV1} log data test, include all data types.
- */
+/** This is a {@link LogRecordV1} log data test, include all data types. */
 public class TestLogRecordV1 extends FormatTestBase {
 
-  public final Schema userSchema = new Schema(
-      new ArrayList<Types.NestedField>() {
-        {
-          add(Types.NestedField.optional(0, "f_boolean", Types.BooleanType.get()));
-          add(Types.NestedField.optional(1, "f_int", Types.IntegerType.get()));
-          add(Types.NestedField.optional(2, "f_long", Types.LongType.get()));
-          add(Types.NestedField.optional(3, "f_list_string", Types.ListType.ofOptional(
-              4, Types.StringType.get()
-          )));
-        }
-      });
+  public final Schema userSchema =
+      new Schema(
+          new ArrayList<Types.NestedField>() {
+            {
+              add(Types.NestedField.optional(0, "f_boolean", Types.BooleanType.get()));
+              add(Types.NestedField.optional(1, "f_int", Types.IntegerType.get()));
+              add(Types.NestedField.optional(2, "f_long", Types.LongType.get()));
+              add(
+                  Types.NestedField.optional(
+                      3, "f_list_string", Types.ListType.ofOptional(4, Types.StringType.get())));
+            }
+          });
 
   @Test
   public void testLogDataSerialize() throws IOException {
@@ -67,22 +66,20 @@ public class TestLogRecordV1 extends FormatTestBase {
     rowData.setField(0, true);
     rowData.setField(1, 1);
     rowData.setField(2, 123456789L);
-    rowData.setField(3,
+    rowData.setField(
+        3,
         new GenericArrayData(
             new StringData[] {
-                null,
-                StringData.fromString("b"),
-                null,
-                StringData.fromString("c"),
-                null}));
-    LogData<RowData> logData = new LogRecordV1(
-        FormatVersion.FORMAT_VERSION_V1,
-        IdGenerator.generateUpstreamId(),
-        123455L,
-        false,
-        ChangeAction.INSERT,
-        rowData
-    );
+              null, StringData.fromString("b"), null, StringData.fromString("c"), null
+            }));
+    LogData<RowData> logData =
+        new LogRecordV1(
+            FormatVersion.FORMAT_VERSION_V1,
+            IdGenerator.generateUpstreamId(),
+            123455L,
+            false,
+            ChangeAction.INSERT,
+            rowData);
 
     byte[] bytes = logDataJsonSerialization.serialize(logData);
 
@@ -94,10 +91,7 @@ public class TestLogRecordV1 extends FormatTestBase {
 
     LogDataJsonDeserialization<RowData> logDataJsonDeserialization =
         new LogDataJsonDeserialization<>(
-            userSchema,
-            LogRecordV1.factory,
-            LogRecordV1.arrayFactory,
-            LogRecordV1.mapFactory);
+            userSchema, LogRecordV1.factory, LogRecordV1.arrayFactory, LogRecordV1.mapFactory);
     LogData<RowData> result = logDataJsonDeserialization.deserialize(bytes);
     Assert.assertNotNull(result);
     check(logData, result);
@@ -112,20 +106,15 @@ public class TestLogRecordV1 extends FormatTestBase {
     rowData.setField(0, true);
     rowData.setField(1, 1);
     rowData.setField(2, 123456789L);
-    rowData.setField(3,
-        new GenericArrayData(
-            new StringData[] {
-                null,
-                null,
-                null}));
-    LogData<RowData> logData = new LogRecordV1(
-        FormatVersion.FORMAT_VERSION_V1,
-        IdGenerator.generateUpstreamId(),
-        123455L,
-        false,
-        ChangeAction.INSERT,
-        rowData
-    );
+    rowData.setField(3, new GenericArrayData(new StringData[] {null, null, null}));
+    LogData<RowData> logData =
+        new LogRecordV1(
+            FormatVersion.FORMAT_VERSION_V1,
+            IdGenerator.generateUpstreamId(),
+            123455L,
+            false,
+            ChangeAction.INSERT,
+            rowData);
 
     byte[] bytes = logDataJsonSerialization.serialize(logData);
 
@@ -137,10 +126,7 @@ public class TestLogRecordV1 extends FormatTestBase {
 
     LogDataJsonDeserialization<RowData> logDataJsonDeserialization =
         new LogDataJsonDeserialization<>(
-            userSchema,
-            LogRecordV1.factory,
-            LogRecordV1.arrayFactory,
-            LogRecordV1.mapFactory);
+            userSchema, LogRecordV1.factory, LogRecordV1.arrayFactory, LogRecordV1.mapFactory);
     LogData<RowData> result = logDataJsonDeserialization.deserialize(bytes);
     Assert.assertNotNull(result);
     check(logData, result);

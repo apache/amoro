@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Properties;
 
 /**
- * It's used for converting Arctic log-store related properties in {@link com.netease.arctic.table.TableProperties}
- * to Flink official pulsar configuration.
+ * It's used for converting Arctic log-store related properties in {@link
+ * com.netease.arctic.table.TableProperties} to Flink official pulsar configuration.
  */
 public class PulsarConfigurationConverter {
 
@@ -39,11 +39,13 @@ public class PulsarConfigurationConverter {
    */
   public static SinkConfiguration toSinkConf(Properties arcticProperties) {
     Configuration conf = new Configuration();
-    arcticProperties.stringPropertyNames().forEach(k -> {
-      String v = (String) arcticProperties.get(k);
-      conf.setString(k, v);
-    });
+    arcticProperties
+        .stringPropertyNames()
+        .forEach(
+            k -> {
+              String v = (String) arcticProperties.get(k);
+              conf.setString(k, v);
+            });
     return new SinkConfiguration(conf);
   }
-
 }

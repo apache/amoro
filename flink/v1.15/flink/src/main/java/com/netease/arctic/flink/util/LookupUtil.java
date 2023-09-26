@@ -33,5 +33,4 @@ public class LookupUtil {
         .blockCacheNumShardBits(config.get(ArcticValidator.ROCKSDB_BLOCK_CACHE_NUM_SHARD_BITS))
         .build();
   }
-
 }

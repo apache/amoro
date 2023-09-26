@@ -57,16 +57,18 @@ public class ArcticWriter<OUT> extends AbstractStreamOperator<OUT>
 
   private static final String INFLUXDB_TAG_NAME = "arctic_task_id";
 
-  public ArcticWriter(ArcticLogWriter logWriter,
-                      AbstractStreamOperator fileWriter,
-                      MetricsGenerator metricsGenerator) {
+  public ArcticWriter(
+      ArcticLogWriter logWriter,
+      AbstractStreamOperator fileWriter,
+      MetricsGenerator metricsGenerator) {
     this.logWriter = logWriter;
     this.fileWriter = fileWriter;
     this.metricsGenerator = metricsGenerator;
   }
 
   @Override
-  public void setup(StreamTask<?, ?> containingTask, StreamConfig config, Output<StreamRecord<OUT>> output) {
+  public void setup(
+      StreamTask<?, ?> containingTask, StreamConfig config, Output<StreamRecord<OUT>> output) {
     super.setup(containingTask, config, output);
     if (logWriter != null) {
       logWriter.setup(containingTask, config, EMPTY_OUTPUT);
@@ -80,8 +82,10 @@ public class ArcticWriter<OUT> extends AbstractStreamOperator<OUT>
   public void open() throws Exception {
     ExecutionConfig.GlobalJobParameters globalJobParameters =
         getRuntimeContext().getExecutionConfig().getGlobalJobParameters();
-    String taskId = Objects.nonNull(globalJobParameters.toMap().get(INFLUXDB_TAG_NAME)) ?
-        globalJobParameters.toMap().get(INFLUXDB_TAG_NAME) : "null";
+    String taskId =
+        Objects.nonNull(globalJobParameters.toMap().get(INFLUXDB_TAG_NAME))
+            ? globalJobParameters.toMap().get(INFLUXDB_TAG_NAME)
+            : "null";
     // latency
     if (metricsGenerator.enable()) {
       getRuntimeContext()
@@ -92,14 +96,18 @@ public class ArcticWriter<OUT> extends AbstractStreamOperator<OUT>
     }
     if (metricsGenerator.isMetricEnable()) {
       // speed
-      meterFlowRate = getRuntimeContext().getMetricGroup()
-          .addGroup(INFLUXDB_TAG_NAME, taskId)
-          .meter("record-meter", new MeterView(60));
+      meterFlowRate =
+          getRuntimeContext()
+              .getMetricGroup()
+              .addGroup(INFLUXDB_TAG_NAME, taskId)
+              .meter("record-meter", new MeterView(60));
       LOG.info("add metrics record-meter");
       // rate of flow
-      meterSpeed = getRuntimeContext().getMetricGroup()
-          .addGroup(INFLUXDB_TAG_NAME, taskId)
-          .meter("record-count", new MeterView(60));
+      meterSpeed =
+          getRuntimeContext()
+              .getMetricGroup()
+              .addGroup(INFLUXDB_TAG_NAME, taskId)
+              .meter("record-count", new MeterView(60));
       LOG.info("add metrics record-count");
     }
     if (logWriter != null) {
@@ -196,30 +204,21 @@ public class ArcticWriter<OUT> extends AbstractStreamOperator<OUT>
     }
   }
 
-  private static final Output<StreamRecord<RowData>> EMPTY_OUTPUT = new Output<StreamRecord<RowData>>() {
-    @Override
-    public void emitWatermark(Watermark watermark) {
+  private static final Output<StreamRecord<RowData>> EMPTY_OUTPUT =
+      new Output<StreamRecord<RowData>>() {
+        @Override
+        public void emitWatermark(Watermark watermark) {}
 
-    }
+        @Override
+        public <X> void collect(OutputTag<X> outputTag, StreamRecord<X> streamRecord) {}
 
-    @Override
-    public <X> void collect(OutputTag<X> outputTag, StreamRecord<X> streamRecord) {
+        @Override
+        public void collect(StreamRecord<RowData> rowDataStreamRecord) {}
 
-    }
+        @Override
+        public void emitLatencyMarker(LatencyMarker latencyMarker) {}
 
-    @Override
-    public void collect(StreamRecord<RowData> rowDataStreamRecord) {
-
-    }
-
-    @Override
-    public void emitLatencyMarker(LatencyMarker latencyMarker) {
-
-    }
-
-    @Override
-    public void close() {
-
-    }
-  };
+        @Override
+        public void close() {}
+      };
 }

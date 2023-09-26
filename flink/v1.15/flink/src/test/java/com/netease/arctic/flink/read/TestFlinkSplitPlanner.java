@@ -35,7 +35,8 @@ public class TestFlinkSplitPlanner extends TestRowDataReaderFunction {
   public void testPlanSplitFromKeyedTable() {
     testKeyedTable.baseTable().refresh();
     testKeyedTable.changeTable().refresh();
-    List<ArcticSplit> splitList = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
+    List<ArcticSplit> splitList =
+        FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
     Assert.assertEquals(7, splitList.size());
   }
 
@@ -43,7 +44,8 @@ public class TestFlinkSplitPlanner extends TestRowDataReaderFunction {
   public void testIncrementalChangelog() throws IOException {
     testKeyedTable.baseTable().refresh();
     testKeyedTable.changeTable().refresh();
-    List<ArcticSplit> splitList = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
+    List<ArcticSplit> splitList =
+        FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
 
     Assert.assertEquals(7, splitList.size());
 
@@ -55,13 +57,16 @@ public class TestFlinkSplitPlanner extends TestRowDataReaderFunction {
     long fromSequence = snapshot.sequenceNumber();
 
     long nowSnapshotId = testKeyedTable.changeTable().currentSnapshot().snapshotId();
-    ChangeTableIncrementalScan changeTableScan = testKeyedTable.changeTable().newScan().useSnapshot(nowSnapshotId)
-        .fromSequence(fromSequence);
+    ChangeTableIncrementalScan changeTableScan =
+        testKeyedTable
+            .changeTable()
+            .newScan()
+            .useSnapshot(nowSnapshotId)
+            .fromSequence(fromSequence);
 
     List<ArcticSplit> changeSplits =
         FlinkSplitPlanner.planChangeTable(changeTableScan, new AtomicInteger());
 
     Assert.assertEquals(1, changeSplits.size());
   }
-
 }

@@ -34,9 +34,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * This is a mixed-format table(mixed iceberg, mixed-hive) incremental loader.
- */
+/** This is a mixed-format table(mixed iceberg, mixed-hive) incremental loader. */
 public class MixedIncrementalLoader<T> implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(MixedIncrementalLoader.class);
   private final ContinuousSplitPlanner continuousSplitPlanner;
@@ -81,7 +79,10 @@ public class MixedIncrementalLoader<T> implements AutoCloseable {
       if (!planResult.toOffset().isEmpty()) {
         enumeratorPosition.set(planResult.toOffset());
       }
-      LOG.info("Currently, queue contain {} splits, scan position is {}.", splitQueue.size(), enumeratorPosition.get());
+      LOG.info(
+          "Currently, queue contain {} splits, scan position is {}.",
+          splitQueue.size(),
+          enumeratorPosition.get());
       return !splitQueue.isEmpty();
     }
     return true;

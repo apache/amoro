@@ -37,16 +37,17 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A class that stores the secondary index in the cache. For {@link SecondaryIndexTable}.
+ *
  * <p>Support update the secondary index in the cache.
  */
 public class RocksDBSetSpilledState extends RocksDBCacheState<Set<ByteArrayWrapper>> {
   private static final Logger LOG = LoggerFactory.getLogger(RocksDBSetSpilledState.class);
   protected BinaryRowDataSerializerWrapper joinKeySerializer;
-  /**
-   * Multi-threads would put and delete the joinKeys and Set<ByteArrayWrapper> in the rocksdb.
-   */
+  /** Multi-threads would put and delete the joinKeys and Set<ByteArrayWrapper> in the rocksdb. */
   private final Object rocksDBLock = new Object();
-  private final Map<ByteArrayWrapper, Set<ByteArrayWrapper>> tmpInitializationMap = new ConcurrentHashMap<>();
+
+  private final Map<ByteArrayWrapper, Set<ByteArrayWrapper>> tmpInitializationMap =
+      new ConcurrentHashMap<>();
 
   public RocksDBSetSpilledState(
       RocksDBBackend rocksDB,
@@ -81,7 +82,7 @@ public class RocksDBSetSpilledState extends RocksDBCacheState<Set<ByteArrayWrapp
   /**
    * Serialize join key to bytes and put the join key bytes and unique key bytes in the cache.
    *
-   * @param joinKey        the join key
+   * @param joinKey the join key
    * @param uniqueKeyBytes the unique key bytes
    * @throws IOException if serialize the RowData variable failed.
    */
@@ -93,7 +94,7 @@ public class RocksDBSetSpilledState extends RocksDBCacheState<Set<ByteArrayWrapp
   /**
    * Delete the secondary index in the cache.
    *
-   * @param joinKey        the join key
+   * @param joinKey the join key
    * @param uniqueKeyBytes the unique key bytes
    * @throws IOException if serialize the RowData variable failed.
    */
@@ -104,9 +105,9 @@ public class RocksDBSetSpilledState extends RocksDBCacheState<Set<ByteArrayWrapp
 
   /**
    * Retrieve the elements of the key.
-   * <p>Fetch the Collection from guava cache,
-   * if not present, fetch the result from RocksDB.
-   * if present, just return the result.
+   *
+   * <p>Fetch the Collection from guava cache, if not present, fetch the result from RocksDB. if
+   * present, just return the result.
    *
    * @return not null, but may be empty.
    */
@@ -130,8 +131,10 @@ public class RocksDBSetSpilledState extends RocksDBCacheState<Set<ByteArrayWrapp
   }
 
   @Override
-  public void putCacheValue(Cache<ByteArrayWrapper, Set<ByteArrayWrapper>> cache,
-                            ByteArrayWrapper keyWrap, ByteArrayWrapper valueWrap) {
+  public void putCacheValue(
+      Cache<ByteArrayWrapper, Set<ByteArrayWrapper>> cache,
+      ByteArrayWrapper keyWrap,
+      ByteArrayWrapper valueWrap) {
     if (initialized()) {
       byte[] joinKeyBytes = keyWrap.bytes;
       synchronized (rocksDBLock) {
@@ -152,19 +155,22 @@ public class RocksDBSetSpilledState extends RocksDBCacheState<Set<ByteArrayWrapp
       }
       return;
     }
-    tmpInitializationMap.compute(keyWrap, (keyWrapper, oldSet) -> {
-      if (oldSet == null) {
-        oldSet = Sets.newHashSet();
-      }
-      oldSet.add(valueWrap);
-      return oldSet;
-    });
-
+    tmpInitializationMap.compute(
+        keyWrap,
+        (keyWrapper, oldSet) -> {
+          if (oldSet == null) {
+            oldSet = Sets.newHashSet();
+          }
+          oldSet.add(valueWrap);
+          return oldSet;
+        });
   }
 
   @Override
   public void removeValue(
-      Cache<ByteArrayWrapper, Set<ByteArrayWrapper>> cache, ByteArrayWrapper keyWrap, ByteArrayWrapper valueWrap) {
+      Cache<ByteArrayWrapper, Set<ByteArrayWrapper>> cache,
+      ByteArrayWrapper keyWrap,
+      ByteArrayWrapper valueWrap) {
     if (initialized()) {
       byte[] joinKeyBytes = keyWrap.bytes;
       synchronized (rocksDBLock) {
@@ -183,17 +189,18 @@ public class RocksDBSetSpilledState extends RocksDBCacheState<Set<ByteArrayWrapp
       }
       return;
     }
-    tmpInitializationMap.compute(keyWrap, (keyWrapper, oldSet) -> {
-      if (oldSet == null) {
-        return null;
-      }
-      oldSet.remove(valueWrap);
-      if (oldSet.isEmpty()) {
-        return null;
-      }
-      return oldSet;
-    });
-
+    tmpInitializationMap.compute(
+        keyWrap,
+        (keyWrapper, oldSet) -> {
+          if (oldSet == null) {
+            return null;
+          }
+          oldSet.remove(valueWrap);
+          if (oldSet.isEmpty()) {
+            return null;
+          }
+          return oldSet;
+        });
   }
 
   public void bulkIntoRocksDB() {
@@ -201,14 +208,16 @@ public class RocksDBSetSpilledState extends RocksDBCacheState<Set<ByteArrayWrapp
     int[] count = {0};
     long start = System.currentTimeMillis();
 
-    tmpInitializationMap.forEach((byteArrayWrapper, set) -> {
-      rocksDB.put(columnFamilyHandle, byteArrayWrapper.bytes, ByteArraySetSerializer.serialize(set));
-      set = null;
-      count[0] = count[0] + 1;
-      if (count[0] % 100000 == 0) {
-        LOG.info("Ingested {} into rocksdb.", count[0]);
-      }
-    });
+    tmpInitializationMap.forEach(
+        (byteArrayWrapper, set) -> {
+          rocksDB.put(
+              columnFamilyHandle, byteArrayWrapper.bytes, ByteArraySetSerializer.serialize(set));
+          set = null;
+          count[0] = count[0] + 1;
+          if (count[0] % 100000 == 0) {
+            LOG.info("Ingested {} into rocksdb.", count[0]);
+          }
+        });
     tmpInitializationMap.clear();
 
     LOG.info("Ingested {} completely, cost:{} ms.", count, System.currentTimeMillis() - start);

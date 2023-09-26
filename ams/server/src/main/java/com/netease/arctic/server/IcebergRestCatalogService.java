@@ -289,7 +289,6 @@ public class IcebergRestCatalogService extends PersistentBase {
           location, request.properties()
       );
       ServerTableIdentifier identifier = ServerTableIdentifier.of(catalog.name(), database, tableName);
-
       String newMetadataFileLocation = IcebergTableUtil.genNewMetadataFileLocation(null, tableMetadata);
       FileIO io = newIcebergFileIo(catalog.getMetadata());
       try {

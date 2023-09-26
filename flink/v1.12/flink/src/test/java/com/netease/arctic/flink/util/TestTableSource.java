@@ -26,6 +26,7 @@ import org.apache.flink.table.sources.TableSource;
 import org.apache.flink.table.types.DataType;
 
 import javax.annotation.Nullable;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,9 +38,7 @@ public class TestTableSource
   private final String proctimeAttribute;
 
   private TestTableSource(
-      DataType producedDataType,
-      List<String> rowtimeAttributes,
-      String proctimeAttribute) {
+      DataType producedDataType, List<String> rowtimeAttributes, String proctimeAttribute) {
     this.producedDataType = producedDataType;
     this.rowtimeAttributes = rowtimeAttributes;
     this.proctimeAttribute = proctimeAttribute;

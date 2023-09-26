@@ -28,7 +28,8 @@ import java.util.Optional;
 
 public class FilterUtil {
 
-  public static IcebergAndFlinkFilters convertFlinkExpressToIceberg(List<ResolvedExpression> flinkFilters) {
+  public static IcebergAndFlinkFilters convertFlinkExpressToIceberg(
+      List<ResolvedExpression> flinkFilters) {
     List<ResolvedExpression> acceptedFilters = Lists.newArrayList();
     List<Expression> expressions = Lists.newArrayList();
 

@@ -18,6 +18,18 @@
 
 package com.netease.arctic.flink.read.hidden.pulsar;
 
+import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
+import static com.netease.arctic.flink.write.hidden.TestBaseLog.userSchema;
+import static com.netease.arctic.flink.write.hidden.TestHiddenLogOperators.DATA_INDEX;
+import static java.util.Collections.singletonList;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_MAX_FETCH_TIME;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_NAME;
+import static org.apache.flink.connector.pulsar.source.config.PulsarSourceConfigUtils.SOURCE_CONFIG_VALIDATOR;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+
 import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import com.netease.arctic.flink.read.source.log.pulsar.LogPulsarOrderedPartitionSplitReader;
 import com.netease.arctic.flink.read.source.log.pulsar.LogRecordPulsarWithRetractInfo;
@@ -50,23 +62,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
-import static com.netease.arctic.flink.write.hidden.TestBaseLog.userSchema;
-import static com.netease.arctic.flink.write.hidden.TestHiddenLogOperators.DATA_INDEX;
-import static java.util.Collections.singletonList;
-import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
-import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
-import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_MAX_FETCH_TIME;
-import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_NAME;
-import static org.apache.flink.connector.pulsar.source.config.PulsarSourceConfigUtils.SOURCE_CONFIG_VALIDATOR;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-
 public class TestLogPulsarPartitionSplitReader {
 
-  private static final Logger LOG = LoggerFactory.getLogger(TestLogPulsarPartitionSplitReader.class);
+  private static final Logger LOG =
+      LoggerFactory.getLogger(TestLogPulsarPartitionSplitReader.class);
+
   @ClassRule
-  public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.container());
+  public static PulsarTestEnvironment environment =
+      new PulsarTestEnvironment(PulsarRuntime.container());
+
   public static final String TOPIC = "splitReaderTest";
   public LogPulsarHelper logPulsarHelper;
 
@@ -86,8 +90,7 @@ public class TestLogPulsarPartitionSplitReader {
 
   protected List<PulsarMessage<RowData>> fetchedMessages(
       LogPulsarOrderedPartitionSplitReader splitReader, int expectedCount, boolean verify) {
-    return fetchedMessages(
-        splitReader, expectedCount, verify, Boundedness.CONTINUOUS_UNBOUNDED);
+    return fetchedMessages(splitReader, expectedCount, verify, Boundedness.CONTINUOUS_UNBOUNDED);
   }
 
   private List<PulsarMessage<RowData>> fetchedMessages(
@@ -104,8 +107,11 @@ public class TestLogPulsarPartitionSplitReader {
           // Collect the records in this split.
           PulsarMessage<RowData> record;
           while ((record = recordsBySplitIds.nextRecordFromSplit()) != null) {
-            LOG.info("read msg: {}, msgId: {}, idx: {}",
-                ((LogRecordPulsarWithRetractInfo) record).getValueToBeSent(), record.getId(), messages.size());
+            LOG.info(
+                "read msg: {}, msgId: {}, idx: {}",
+                ((LogRecordPulsarWithRetractInfo) record).getValueToBeSent(),
+                record.getId(),
+                messages.size());
             messages.add(record);
           }
           finishedSplits.addAll(recordsBySplitIds.finishedSplits());
@@ -157,7 +163,8 @@ public class TestLogPulsarPartitionSplitReader {
     reader.handleSplitsChanges(addition);
   }
 
-  private LogPulsarOrderedPartitionSplitReader createReader(Configuration conf, boolean logRetractionEnable) {
+  private LogPulsarOrderedPartitionSplitReader createReader(
+      Configuration conf, boolean logRetractionEnable) {
     PulsarClient pulsarClient = logPulsarHelper.op().client();
     PulsarAdmin pulsarAdmin = logPulsarHelper.op().admin();
     PulsarConfigBuilder configBuilder = new PulsarConfigBuilder();
@@ -186,5 +193,4 @@ public class TestLogPulsarPartitionSplitReader {
         logReadHelper,
         logConsumerChangelogMode);
   }
-
 }

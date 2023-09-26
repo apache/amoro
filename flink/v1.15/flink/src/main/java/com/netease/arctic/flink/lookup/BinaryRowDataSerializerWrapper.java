@@ -32,7 +32,8 @@ import java.io.IOException;
 import java.io.Serializable;
 
 /**
- * This is a wrapper for {@link BinaryRowDataSerializer}. It is used to serialize and deserialize RowData.
+ * This is a wrapper for {@link BinaryRowDataSerializer}. It is used to serialize and deserialize
+ * RowData.
  */
 public class BinaryRowDataSerializerWrapper implements Serializable {
 

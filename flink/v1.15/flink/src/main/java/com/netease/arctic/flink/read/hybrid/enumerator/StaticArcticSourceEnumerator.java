@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
+import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
+
 import com.netease.arctic.flink.read.hybrid.assigner.SplitAssigner;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.source.ArcticScanContext;
@@ -29,13 +31,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
 import java.util.Collection;
 
-import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
-
 /**
- * This is a static arctic source enumerator, used for bounded source scan.
- * Working enabled only just {@link ScanContext#STREAMING} is equal to false.
+ * This is a static arctic source enumerator, used for bounded source scan. Working enabled only
+ * just {@link ScanContext#STREAMING} is equal to false.
  */
 public class StaticArcticSourceEnumerator extends AbstractArcticEnumerator {
   private static final Logger LOG = LoggerFactory.getLogger(StaticArcticSourceEnumerator.class);
@@ -70,10 +71,13 @@ public class StaticArcticSourceEnumerator extends AbstractArcticEnumerator {
     if (shouldEnumerate) {
       keyedTable.baseTable().refresh();
       keyedTable.changeTable().refresh();
-      Collection<ArcticSplit> splits = splitPlanner.planSplits(null, scanContext.filters()).splits();
+      Collection<ArcticSplit> splits =
+          splitPlanner.planSplits(null, scanContext.filters()).splits();
       assigner.onDiscoveredSplits(splits);
-      LOG.info("Discovered {} splits from table {} during job initialization",
-          splits.size(), keyedTable.name());
+      LOG.info(
+          "Discovered {} splits from table {} during job initialization",
+          splits.size(),
+          keyedTable.name());
     }
   }
 

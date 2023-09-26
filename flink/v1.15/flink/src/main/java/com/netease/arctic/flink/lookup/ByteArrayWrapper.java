@@ -22,18 +22,14 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Locale;
 
-/**
- * This byte array wrapper utility class.
- * copied from com.ibm.icu.util.ByteArrayWrapper.
- */
+/** This byte array wrapper utility class. copied from com.ibm.icu.util.ByteArrayWrapper. */
 public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializable {
   private static final long serialVersionUID = -6697944376117365645L;
   public byte[] bytes;
 
   /**
-   * Size of the internal byte array used.
-   * Different from bytes.length, size will be &lt;= bytes.length.
-   * Semantics of size is similar to java.util.Vector.size().
+   * Size of the internal byte array used. Different from bytes.length, size will be &lt;=
+   * bytes.length. Semantics of size is similar to java.util.Vector.size().
    */
   public int size;
 
@@ -41,12 +37,14 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
    * Construct a new ByteArrayWrapper from a byte array and size.
    *
    * @param bytesToAdopt the byte array to adopt
-   * @param size         the length of valid data in the byte array
-   * @throws IndexOutOfBoundsException if bytesToAdopt == null and size != 0, or
-   *                                   size &lt; 0, or size &gt; bytesToAdopt.length.
+   * @param size the length of valid data in the byte array
+   * @throws IndexOutOfBoundsException if bytesToAdopt == null and size != 0, or size &lt; 0, or
+   *     size &gt; bytesToAdopt.length.
    */
   public ByteArrayWrapper(byte[] bytesToAdopt, int size) {
-    if ((bytesToAdopt == null && size != 0) || size < 0 || (bytesToAdopt != null && size > bytesToAdopt.length)) {
+    if ((bytesToAdopt == null && size != 0)
+        || size < 0
+        || (bytesToAdopt != null && size > bytesToAdopt.length)) {
       throw new IndexOutOfBoundsException("illegal size: " + size);
     }
     this.bytes = bytesToAdopt;
@@ -65,10 +63,9 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
   }
 
   /**
-   * Ensure that the internal byte array is at least of length capacity.
-   * If the byte array is null or its length is less than capacity, a new
-   * byte array of length capacity will be allocated.
-   * The contents of the array (between 0 and size) remain unchanged.
+   * Ensure that the internal byte array is at least of length capacity. If the byte array is null
+   * or its length is less than capacity, a new byte array of length capacity will be allocated. The
+   * contents of the array (between 0 and size) remain unchanged.
    *
    * @param capacity minimum length of internal byte array.
    * @return this ByteArrayWrapper
@@ -85,12 +82,12 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
   }
 
   /**
-   * Set the internal byte array from offset 0 to (limit - start) with the
-   * contents of src from offset start to limit. If the byte array is null or its length is less than capacity, a new
-   * byte array of length (limit - start) will be allocated.
-   * This resets the size of the internal byte array to (limit - start).
+   * Set the internal byte array from offset 0 to (limit - start) with the contents of src from
+   * offset start to limit. If the byte array is null or its length is less than capacity, a new
+   * byte array of length (limit - start) will be allocated. This resets the size of the internal
+   * byte array to (limit - start).
    *
-   * @param src   source byte array to copy from
+   * @param src source byte array to copy from
    * @param start start offset of src to copy from
    * @param limit end + 1 offset of src to copy from
    * @return this ByteArrayWrapper
@@ -102,11 +99,10 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
   }
 
   /**
-   * Appends the internal byte array from offset size with the
-   * contents of src from offset start to limit. This increases the size of
-   * the internal byte array to (size + limit - start).
+   * Appends the internal byte array from offset size with the contents of src from offset start to
+   * limit. This increases the size of the internal byte array to (size + limit - start).
    *
-   * @param src   source byte array to copy from
+   * @param src source byte array to copy from
    * @param start start offset of src to copy from
    * @param limit end + 1 offset of src to copy from
    * @return this ByteArrayWrapper
@@ -120,8 +116,8 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
   }
 
   /**
-   * Releases the internal byte array to the caller, resets the internal
-   * byte array to null and its size to 0.
+   * Releases the internal byte array to the caller, resets the internal byte array to null and its
+   * size to 0.
    *
    * @return internal byte array.
    */
@@ -132,9 +128,7 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
     return result;
   }
 
-  /**
-   * Returns string value for debugging.
-   */
+  /** Returns string value for debugging. */
   @Override
   public String toString() {
     StringBuilder result = new StringBuilder();
@@ -213,8 +207,7 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
    * Compare this object to another ByteArrayWrapper, which must not be null.
    *
    * @param other the object to compare to.
-   * @return a value &lt;0, 0, or &gt;0 as this compares less than, equal to, or
-   * greater than other.
+   * @return a value &lt;0, 0, or &gt;0 as this compares less than, equal to, or greater than other.
    * @throws ClassCastException if the other object is not a ByteArrayWrapper
    */
   @Override
@@ -231,19 +224,17 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
     return size - other.size;
   }
 
-
   /**
-   * Copies the contents of src byte array from offset srcOff to the
-   * target of target byte array at the offset targetOff.
+   * Copies the contents of src byte array from offset srcOff to the target of target byte array at
+   * the offset targetOff.
    *
-   * @param src       source byte array to copy from
-   * @param srcOff    start offset of src to copy from
-   * @param target    target byte array to copy to
+   * @param src source byte array to copy from
+   * @param srcOff start offset of src to copy from
+   * @param target target byte array to copy to
    * @param targetOff start offset of target to copy to
-   * @param length    size of contents to copy
+   * @param length size of contents to copy
    */
-  private static void copyBytes(byte[] src, int srcOff, byte[] target,
-                                int targetOff, int length) {
+  private static void copyBytes(byte[] src, int srcOff, byte[] target, int targetOff, int length) {
     if (length < 64) {
       for (int i = srcOff, n = targetOff; --length >= 0; ++i, ++n) {
         target[n] = src[i];

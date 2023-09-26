@@ -32,17 +32,15 @@ import java.io.IOException;
 public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
   Logger LOG = LoggerFactory.getLogger(FlinkTaskWriterBaseTest.class);
 
-  /**
-   * For asserting unkeyed table records.
-   */
+  /** For asserting unkeyed table records. */
   String getMetastoreUrl();
 
-  /**
-   * For asserting unkeyed table records.
-   */
+  /** For asserting unkeyed table records. */
   String getCatalogName();
 
-  default void writeAndCommit(RowData expected, TaskWriter<RowData> taskWriter, ArcticTable arcticTable) throws IOException {
+  default void writeAndCommit(
+      RowData expected, TaskWriter<RowData> taskWriter, ArcticTable arcticTable)
+      throws IOException {
     taskWriter.write(expected);
     WriteResult writerResult = taskWriter.complete();
     boolean writeToBase = arcticTable.isUnkeyedTable();

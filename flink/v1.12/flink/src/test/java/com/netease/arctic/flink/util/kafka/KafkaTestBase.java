@@ -17,6 +17,8 @@
  */
 package com.netease.arctic.flink.util.kafka;
 
+import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getPropertiesWithByteArray;
+
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -33,8 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
-
-import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getPropertiesWithByteArray;
 
 /**
  * The base for the Kafka tests. It brings up:
@@ -105,16 +105,14 @@ public class KafkaTestBase {
         KafkaTestEnvironment.createConfig().setKafkaServersNumber(NUMBER_OF_KAFKA_SERVERS));
   }
 
-  public void startClusters(boolean secureMode)
-      throws Exception {
+  public void startClusters(boolean secureMode) throws Exception {
     startClusters(
         KafkaTestEnvironment.createConfig()
             .setKafkaServersNumber(NUMBER_OF_KAFKA_SERVERS)
             .setSecureMode(secureMode));
   }
 
-  public void startClusters(KafkaTestEnvironment.Config environmentConfig)
-      throws Exception {
+  public void startClusters(KafkaTestEnvironment.Config environmentConfig) throws Exception {
     kafkaServer = new KafkaTestEnvironmentImpl();
 
     LOG.info("Starting KafkaTestBase.prepare() for Kafka " + kafkaServer.getVersion());
@@ -144,8 +142,7 @@ public class KafkaTestBase {
     }
   }
 
-  public void createTestTopic(
-      String topic, int numberOfPartitions, int replicationFactor) {
+  public void createTestTopic(String topic, int numberOfPartitions, int replicationFactor) {
     kafkaServer.createTestTopic(topic, numberOfPartitions, replicationFactor);
   }
 
@@ -170,15 +167,18 @@ public class KafkaTestBase {
   }
 
   public ConsumerRecords<byte[], byte[]> readRecordsBytes(String topic) {
-    Collection<ConsumerRecords<?, ?>> records = readAllRecords(topic, getPropertiesWithByteArray(getProperties()));
+    Collection<ConsumerRecords<?, ?>> records =
+        readAllRecords(topic, getPropertiesWithByteArray(getProperties()));
     Map<TopicPartition, List<ConsumerRecord<byte[], byte[]>>> data = new HashMap<>();
-    records.forEach(consumerRecords -> {
-      ConsumerRecord<?, ?> consumerRecord = consumerRecords.iterator().next();
-      TopicPartition tp = new TopicPartition(consumerRecord.topic(), consumerRecord.partition());
-      List<ConsumerRecord<byte[], byte[]>> list = data.getOrDefault(tp, new ArrayList<>());
-      list.add((ConsumerRecord<byte[], byte[]>) consumerRecord);
-      data.put(tp, list);
-    });
+    records.forEach(
+        consumerRecords -> {
+          ConsumerRecord<?, ?> consumerRecord = consumerRecords.iterator().next();
+          TopicPartition tp =
+              new TopicPartition(consumerRecord.topic(), consumerRecord.partition());
+          List<ConsumerRecord<byte[], byte[]>> list = data.getOrDefault(tp, new ArrayList<>());
+          list.add((ConsumerRecord<byte[], byte[]>) consumerRecord);
+          data.put(tp, list);
+        });
     return new ConsumerRecords<>(data);
   }
 

@@ -18,9 +18,7 @@
 
 package com.netease.arctic.flink.metric;
 
-/**
- * metric constant
- */
+/** metric constant */
 public class MetricConstant {
 
   /**
@@ -28,9 +26,7 @@ public class MetricConstant {
    */
   public static final String TEMPORAL_TABLE_INITIALIZATION_START_TIMESTAMP =
       "temporalTableInitializationStartTimestamp";
-  /**
-   * The end time of arctic table's initialization when it used as build table in temporal join.
-   */
-  public static final String TEMPORAL_TABLE_INITIALIZATION_END_TIMESTAMP = "temporalTableInitializationEndTimestamp";
-
+  /** The end time of arctic table's initialization when it used as build table in temporal join. */
+  public static final String TEMPORAL_TABLE_INITIALIZATION_END_TIMESTAMP =
+      "temporalTableInitializationEndTimestamp";
 }

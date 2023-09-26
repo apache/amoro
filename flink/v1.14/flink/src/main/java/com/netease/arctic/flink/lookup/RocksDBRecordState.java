@@ -29,9 +29,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Optional;
 
-/**
- * A class used to store the state of a lookup record. For {@link UniqueIndexTable}.
- */
+/** A class used to store the state of a lookup record. For {@link UniqueIndexTable}. */
 public class RocksDBRecordState extends RocksDBCacheState<byte[]> {
   private static final Logger LOG = LoggerFactory.getLogger(RocksDBRecordState.class);
 
@@ -55,7 +53,7 @@ public class RocksDBRecordState extends RocksDBCacheState<byte[]> {
   /**
    * Writes a key-value pair to the sst file.
    *
-   * @param key   The key of the pair.
+   * @param key The key of the pair.
    * @param value The value of the pair.
    */
   public void asyncWrite(RowData key, RowData value) throws IOException {
@@ -70,7 +68,8 @@ public class RocksDBRecordState extends RocksDBCacheState<byte[]> {
   }
 
   /**
-   * Retrieve the RowData from guava cache firstly, if value is null, fetch the value from the rocksDB.
+   * Retrieve the RowData from guava cache firstly, if value is null, fetch the value from the
+   * rocksDB.
    *
    * @param key try to find the record via this key.
    * @throws IOException if serialize the RowData variable <code>key</code> failed.

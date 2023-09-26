@@ -29,24 +29,16 @@ import org.testcontainers.containers.GenericContainer;
  */
 public interface PulsarRuntime {
 
-  /**
-   * Start up this pulsar runtime, block the thread until everytime is ready for this runtime.
-   */
+  /** Start up this pulsar runtime, block the thread until everytime is ready for this runtime. */
   void startUp();
 
-  /**
-   * Shutdown this pulsar runtime.
-   */
+  /** Shutdown this pulsar runtime. */
   void tearDown();
 
-  /**
-   * Return a operator for operating this pulsar runtime.
-   */
+  /** Return a operator for operating this pulsar runtime. */
   PulsarRuntimeOperator operator();
 
-  /**
-   * Create a Pulsar instance which would mock all the backends.
-   */
+  /** Create a Pulsar instance which would mock all the backends. */
   static PulsarRuntime mock() {
     return new PulsarMockRuntime();
   }
