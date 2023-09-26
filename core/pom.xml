@@ -36,6 +36,7 @@
         <rocksdb.version>7.10.2</rocksdb.version>
         <kryo.version>2.24.0</kryo.version>
         <jol.version>0.16</jol.version>
+        <kerby.version>2.0.3</kerby.version>
     </properties>
 
     <dependencies>
@@ -127,7 +128,16 @@
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-databind</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.kerby</groupId>
+                    <artifactId>kerb-simplekdc</artifactId>
+                </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kerby</groupId>
+            <artifactId>kerb-simplekdc</artifactId>
+            <version>${kerby.version}</version>
         </dependency>
 
         <dependency>
