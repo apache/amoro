@@ -248,6 +248,10 @@
                         <groupId>log4j</groupId>
                         <artifactId>log4j</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.kerby</groupId>
+                        <artifactId>kerb-simplekdc</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -292,7 +296,17 @@
                         <groupId>log4j</groupId>
                         <artifactId>log4j</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.kerby</groupId>
+                        <artifactId>kerb-simplekdc</artifactId>
+                    </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.kerby</groupId>
+                <artifactId>kerb-simplekdc</artifactId>
+                <version>${kerby.version}</version>
             </dependency>
 
             <dependency>
@@ -971,6 +985,7 @@
                 <hadoop.version>3.2.2</hadoop.version>
                 <terminal.spark.version>3.3.2</terminal.spark.version>
                 <terminal.spark.major.version>3.3</terminal.spark.major.version>
+                <kerby.version>2.0.3</kerby.version>
             </properties>
         </profile>
         <profile>
