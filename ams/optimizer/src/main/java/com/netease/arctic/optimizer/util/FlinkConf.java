@@ -18,8 +18,6 @@ public class FlinkConf {
     public static final String KUBERNETES_CLUSTER_ID = "kubernetes.cluster-id";
     public static final String KUBERNETES_TASKMANAGER_LABLES = "kubernetes.taskmanager.labels";
     public static final String KUBERNETES_JOBMANAGER_LABLES = "kubernetes.jobmanager.labels";
-
-    public static final String KUBERNETES_NAMESPACE = "kubernetes.namespace";
   }
 
   final Map<String, String> flinkConf;

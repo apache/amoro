@@ -113,7 +113,8 @@ public class Resource {
       return this;
     }
 
-    // In some cases, shorter strings are needed for UUIDs.
+    // In some cases(such as kubernetes resource name has length limit less than 45),
+    // shorter strings are needed for UUIDs.
     private String generateShortUuid() {
       String uuid = UUID.randomUUID().toString().replace("-", "");
       BigInteger bigInteger = new BigInteger(uuid, 16);
