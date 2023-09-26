@@ -96,7 +96,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     this.flinkConfDir = getFlinkConfDir();
 
     String runTarget = Optional.ofNullable(containerProperties.get(FLINK_RUN_TARGET))
-        .orElse(Target.YarnPerJob.getValue());
+        .orElse(Target.YARN_PER_JOB.getValue());
     this.target = Target.valueToEnum(runTarget);
     String jobUri = containerProperties.get(FLINK_JOB_URI);
     if (target.isApplicationMode()) {
@@ -109,7 +109,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     }
     this.jobUri = jobUri;
 
-    if (Target.KubernetesApplication == target) {
+    if (Target.KUBERNETES_APPLICATION == target) {
       FlinkConf flinkConf = FlinkConf.buildFor(
           loadFlinkConfig(),
           containerProperties
@@ -136,13 +136,13 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
       Map<String, String> startUpStatesMap = Maps.newHashMap();
       String applicationId = fetchCommandOutput(exec, yarnApplicationIdReader);
       switch (target) {
-        case YarnPerJob:
-        case YarnApplication:
+        case YARN_PER_JOB:
+        case YARN_APPLICATION:
           if (applicationId != null) {
             startUpStatesMap.put(YARN_APPLICATION_ID_PROPERTY, applicationId);
           }
           break;
-        case KubernetesApplication:
+        case KUBERNETES_APPLICATION:
           startUpStatesMap.put(KUBERNETES_CLUSTER_ID_PROPERTY, kubernetesClusterId(resource));
           break;
       }
@@ -178,7 +178,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     );
 
     String flinkAction = target.isApplicationMode() ? "run-application" : "run";
-    if (Target.KubernetesApplication == target) {
+    if (Target.KUBERNETES_APPLICATION == target) {
       addKubernetesProperties(resource, resourceFlinkConf);
     }
     String flinkOptions = resourceFlinkConf.toCliOptions();
@@ -292,11 +292,11 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
   public void releaseOptimizer(Resource resource) {
     String releaseCommand;
     switch (target) {
-      case YarnApplication:
-      case YarnPerJob:
+      case YARN_APPLICATION:
+      case YARN_PER_JOB:
         releaseCommand = buildReleaseYarnCommand(resource);
         break;
-      case KubernetesApplication:
+      case KUBERNETES_APPLICATION:
         releaseCommand = buildReleaseKubernetesCommand(resource);
         break;
       default:
@@ -363,9 +363,9 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
   }
 
   private enum Target {
-    YarnPerJob("yarn-per-job", false),
-    YarnApplication("yarn-application", true),
-    KubernetesApplication("kubernetes-application", true);
+    YARN_PER_JOB("yarn-per-job", false),
+    YARN_APPLICATION("yarn-application", true),
+    KUBERNETES_APPLICATION("kubernetes-application", true);
 
     private final String value;
     private final boolean applicationMode;
