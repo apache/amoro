@@ -194,7 +194,9 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
 
         case ORC:
           return ORC.writeDeletes(outputFile.encryptingOutputFile())
-              .createWriterFunc((schema, typDesc) -> FlinkOrcWriter.buildWriter(lazyEqDeleteFlinkSchema(), schema))
+              .createWriterFunc(
+                  (schema, typDesc) ->
+                      FlinkOrcWriter.buildWriter(lazyEqDeleteFlinkSchema(), schema))
               .withPartition(partition)
               .overwrite()
               .setAll(props)
@@ -252,7 +254,8 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
           RowType orcPosDeleteSchema =
               FlinkSchemaUtil.convert(DeleteSchemaUtil.posDeleteSchema(posDeleteRowSchema));
           return ORC.writeDeletes(outputFile.encryptingOutputFile())
-              .createWriterFunc((schema, typDesc) -> FlinkOrcWriter.buildWriter(orcPosDeleteSchema, schema))
+              .createWriterFunc(
+                  (schema, typDesc) -> FlinkOrcWriter.buildWriter(orcPosDeleteSchema, schema))
               .withPartition(partition)
               .overwrite()
               .setAll(props)
