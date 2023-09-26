@@ -40,13 +40,14 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STO
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
+import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
+import com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate;
 import com.netease.arctic.flink.kafka.testutils.KafkaContainerTest;
-import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
 import com.netease.arctic.flink.metric.MetricsGenerator;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
@@ -93,7 +94,6 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(TestAutomaticLogWriter.class);
   public ArcticTableLoader tableLoader;
   public static final TestGlobalAggregateManager globalAggregateManger = new TestGlobalAggregateManager();
-  private static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
 
   private final boolean isGapNone;
   private final boolean logstoreEnabled;
@@ -351,7 +351,10 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
   }
 
   private static Properties getPropertiesByTopic(String topic) {
-    Properties properties = getPropertiesWithByteArray(kafkaTestBase.getProperties());
+    Properties properties = new Properties();
+    properties.put(
+        BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
+    properties = getPropertiesWithByteArray(KafkaConfigGenerate.getStandardProperties(properties));
     properties.put(LOG_STORE_MESSAGE_TOPIC, topic);
     properties.put(ProducerConfig.ACKS_CONFIG, "all");
     properties.put(ProducerConfig.BATCH_SIZE_CONFIG, "0");
