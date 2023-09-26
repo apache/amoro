@@ -6,9 +6,11 @@ import com.netease.arctic.optimizer.util.PropertyUtil;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Map;
 
 public class KubernetesOptimizerContainer extends AbstractResourceContainer {
@@ -19,7 +21,7 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
   public static final String CPU_PROPERTY = "cpu";
   public static final String NAMESPACE = "namespace";
   public static final String IMAGE = "image";
-  public static final String KUBE_CONFIG = "kube-config";
+  public static final String KUBE_CONFIG_PATH = "kube-config-path";
 
   public static final String NAME = "amoro-optimizer";
   @Override
@@ -34,7 +36,8 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
     String[] cmd = { startUpArgs};
     LOG.info("Starting k8s optimizer using k8s client with start command : {}", startUpArgs);
     // start k8s job using k8s client
-    String kubeConfig = PropertyUtil.checkAndGetProperty(getContainerProperties(), KUBE_CONFIG);
+    String kubeConfigPath = PropertyUtil.checkAndGetProperty(getContainerProperties(), KUBE_CONFIG_PATH);
+    String kubeConfig = getKubeConfigContent(kubeConfigPath);
     String namespace = PropertyUtil.checkAndGetProperty(resource.getProperties(),
         NAMESPACE);
     String image = PropertyUtil.checkAndGetProperty(resource.getProperties(),
@@ -57,8 +60,8 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
   public void releaseOptimizer(Resource resource) {
     String namespace = PropertyUtil.checkAndGetProperty(resource.getProperties(),
         NAMESPACE);
-    String kubeConfig = PropertyUtil.checkAndGetProperty(getContainerProperties(), KUBE_CONFIG);
-
+    String kubeConfigPath = PropertyUtil.checkAndGetProperty(getContainerProperties(), KUBE_CONFIG_PATH);
+    String kubeConfig = getKubeConfigContent(kubeConfigPath);
     try {
       LOG.info("Stopping optimizer using k8s client." );
       Config config = Config.fromKubeconfig(kubeConfig);
@@ -69,7 +72,16 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
     }
   }
 
-  private static String getResourceName(Resource resource) {
+  private  String getResourceName(Resource resource) {
     return NAME + "-" + resource.getResourceId();
+  }
+
+  private  String getKubeConfigContent(String path) {
+    try {
+     String content= IOUtils.toString(new FileInputStream(path), "UTF-8");
+      return content;
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
