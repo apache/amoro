@@ -244,6 +244,12 @@
             <artifactId>zookeeper</artifactId>
             <version>${pulsar-zookeeper.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Add Pulsar 2.x as a dependency. -->
