@@ -32,37 +32,45 @@ public class SortOrderToSpark implements SortOrderVisitor<Expression> {
   }
 
   @Override
-  public Expression field(String sourceName, int sourceId, SortDirection direction, NullOrder nullOrder) {
+  public Expression field(
+      String sourceName, int sourceId, SortDirection direction, NullOrder nullOrder) {
     return expressionHelper.sort(Expressions.column(sourceName), ascending(direction));
   }
 
   @Override
-  public Expression bucket(String sourceName, int sourceId, int width, SortDirection direction, NullOrder nullOrder) {
+  public Expression bucket(
+      String sourceName, int sourceId, int width, SortDirection direction, NullOrder nullOrder) {
     return expressionHelper.sort(Expressions.bucket(width, sourceName), ascending(direction));
   }
 
   @Override
-  public Expression truncate(String sourceName, int sourceId, int width, SortDirection direction, NullOrder nullOrder) {
-    return expressionHelper.sort(expressionHelper.truncate(sourceName, width), ascending(direction));
+  public Expression truncate(
+      String sourceName, int sourceId, int width, SortDirection direction, NullOrder nullOrder) {
+    return expressionHelper.sort(
+        expressionHelper.truncate(sourceName, width), ascending(direction));
   }
 
   @Override
-  public Expression year(String sourceName, int sourceId, SortDirection direction, NullOrder nullOrder) {
+  public Expression year(
+      String sourceName, int sourceId, SortDirection direction, NullOrder nullOrder) {
     return expressionHelper.sort(Expressions.years(sourceName), ascending(direction));
   }
 
   @Override
-  public Expression month(String sourceName, int sourceId, SortDirection direction, NullOrder nullOrder) {
+  public Expression month(
+      String sourceName, int sourceId, SortDirection direction, NullOrder nullOrder) {
     return expressionHelper.sort(Expressions.months(sourceName), ascending(direction));
   }
 
   @Override
-  public Expression day(String sourceName, int sourceId, SortDirection direction, NullOrder nullOrder) {
+  public Expression day(
+      String sourceName, int sourceId, SortDirection direction, NullOrder nullOrder) {
     return expressionHelper.sort(Expressions.days(sourceName), ascending(direction));
   }
 
   @Override
-  public Expression hour(String sourceName, int sourceId, SortDirection direction, NullOrder nullOrder) {
+  public Expression hour(
+      String sourceName, int sourceId, SortDirection direction, NullOrder nullOrder) {
     return expressionHelper.sort(Expressions.hours(sourceName), ascending(direction));
   }
 

@@ -40,23 +40,19 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
-
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
 public class TestUnKeyedTableDataFrameAPI extends SparkTableTestBase {
 
-  final Schema schema = new Schema(
-      Types.NestedField.of(1, false, "id", Types.IntegerType.get()),
-      Types.NestedField.of(2, false, "data", Types.StringType.get()),
-      Types.NestedField.of(3, false, "day", Types.StringType.get())
-  );
+  final Schema schema =
+      new Schema(
+          Types.NestedField.of(1, false, "id", Types.IntegerType.get()),
+          Types.NestedField.of(2, false, "data", Types.StringType.get()),
+          Types.NestedField.of(3, false, "day", Types.StringType.get()));
   Dataset<Row> df;
 
   public static Stream<Arguments> testV2ApiUnkeyedTable() {
-    return Stream.of(
-        Arguments.of(TableFormat.MIXED_HIVE),
-        Arguments.of(TableFormat.MIXED_ICEBERG)
-    );
+    return Stream.of(Arguments.of(TableFormat.MIXED_HIVE), Arguments.of(TableFormat.MIXED_ICEBERG));
   }
 
   @DisplayName("Test `test V2 Api for UnkeyedTable`")
@@ -67,54 +63,47 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTableTestBase {
     StructType structType = SparkSchemaUtil.convert(schema);
 
     // create test
-    df = spark().createDataFrame(
-        Lists.newArrayList(
-            RowFactory.create(1, "aaa", "aaa"),
-            RowFactory.create(2, "bbb", "bbb"),
-            RowFactory.create(3, "ccc", "ccc")
-        ), structType
-    );
-    df.writeTo(tablePath)
-        .partitionedBy(new Column("day"))
-        .create();
-    df = spark().read()
-        .table(tablePath);
+    df =
+        spark()
+            .createDataFrame(
+                Lists.newArrayList(
+                    RowFactory.create(1, "aaa", "aaa"),
+                    RowFactory.create(2, "bbb", "bbb"),
+                    RowFactory.create(3, "ccc", "ccc")),
+                structType);
+    df.writeTo(tablePath).partitionedBy(new Column("day")).create();
+    df = spark().read().table(tablePath);
     Assert.assertEquals(3, df.count());
 
     // append test
-    df = spark().createDataFrame(
-        Lists.newArrayList(
-            RowFactory.create(4, "aaa", "aaa"),
-            RowFactory.create(5, "bbb", "bbb"),
-            RowFactory.create(6, "ccc", "ccc")
-        ), structType
-    );
-    df.writeTo(tablePath)
-        .append();
-    df = spark().read()
-        .table(tablePath);
+    df =
+        spark()
+            .createDataFrame(
+                Lists.newArrayList(
+                    RowFactory.create(4, "aaa", "aaa"),
+                    RowFactory.create(5, "bbb", "bbb"),
+                    RowFactory.create(6, "ccc", "ccc")),
+                structType);
+    df.writeTo(tablePath).append();
+    df = spark().read().table(tablePath);
     Assertions.assertEquals(6, df.count());
 
     // overwritePartition test
-    df = spark().createDataFrame(
-        Lists.newArrayList(
-            RowFactory.create(10, "ccc", "ccc"),
-            RowFactory.create(11, "ddd", "ddd"),
-            RowFactory.create(12, "eee", "eee")
-        ), structType
-    );
-    df.writeTo(tablePath)
-        .overwritePartitions();
-    df = spark().read()
-        .table(tablePath);
+    df =
+        spark()
+            .createDataFrame(
+                Lists.newArrayList(
+                    RowFactory.create(10, "ccc", "ccc"),
+                    RowFactory.create(11, "ddd", "ddd"),
+                    RowFactory.create(12, "eee", "eee")),
+                structType);
+    df.writeTo(tablePath).overwritePartitions();
+    df = spark().read().table(tablePath);
     Assertions.assertEquals(7, df.count());
   }
 
   public static Stream<Arguments> testV1ApiUnkeyedTable() {
-    return Stream.of(
-        Arguments.of(TableFormat.MIXED_HIVE),
-        Arguments.of(TableFormat.MIXED_ICEBERG)
-    );
+    return Stream.of(Arguments.of(TableFormat.MIXED_HIVE), Arguments.of(TableFormat.MIXED_ICEBERG));
   }
 
   @DisplayName("Test `test V1 Api for UnkeyedTable`")
@@ -125,28 +114,29 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTableTestBase {
     StructType structType = SparkSchemaUtil.convert(schema);
 
     // test create
-    df = spark().createDataFrame(
-        Lists.newArrayList(
-            RowFactory.create(1, "aaa", "aaa"),
-            RowFactory.create(2, "bbb", "bbb"),
-            RowFactory.create(3, "ccc", "ccc")
-        ), structType
-    );
-    df.write().format("arctic")
-        .partitionBy("day")
-        .save(tablePath);
+    df =
+        spark()
+            .createDataFrame(
+                Lists.newArrayList(
+                    RowFactory.create(1, "aaa", "aaa"),
+                    RowFactory.create(2, "bbb", "bbb"),
+                    RowFactory.create(3, "ccc", "ccc")),
+                structType);
+    df.write().format("arctic").partitionBy("day").save(tablePath);
     df = spark().read().format("arctic").load(tablePath);
     Assertions.assertEquals(3, df.count());
 
     // test overwrite dynamic
-    df = spark().createDataFrame(
-        Lists.newArrayList(
-            RowFactory.create(4, "aaa", "ccc"),
-            RowFactory.create(5, "bbb", "ccc"),
-            RowFactory.create(6, "ccc", "ccc")
-        ), structType
-    );
-    df.write().format("arctic")
+    df =
+        spark()
+            .createDataFrame(
+                Lists.newArrayList(
+                    RowFactory.create(4, "aaa", "ccc"),
+                    RowFactory.create(5, "bbb", "ccc"),
+                    RowFactory.create(6, "ccc", "ccc")),
+                structType);
+    df.write()
+        .format("arctic")
         .partitionBy("day")
         .option("overwrite-mode", "dynamic")
         .mode(SaveMode.Overwrite)
@@ -154,5 +144,4 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTableTestBase {
     df = spark().read().format("arctic").load(tablePath);
     Assertions.assertEquals(5, df.count());
   }
-
 }

@@ -43,18 +43,15 @@ import java.util.stream.Stream;
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
 public class TestKeyedTableDataFrameAPI extends SparkTableTestBase {
-  final Schema schema = new Schema(
-      Types.NestedField.of(1, false, "id", Types.IntegerType.get()),
-      Types.NestedField.of(2, false, "data", Types.StringType.get()),
-      Types.NestedField.of(3, false, "day", Types.StringType.get())
-  );
+  final Schema schema =
+      new Schema(
+          Types.NestedField.of(1, false, "id", Types.IntegerType.get()),
+          Types.NestedField.of(2, false, "data", Types.StringType.get()),
+          Types.NestedField.of(3, false, "day", Types.StringType.get()));
   Dataset<Row> df;
 
   public static Stream<Arguments> testV2ApiKeyedTable() {
-    return Stream.of(
-        Arguments.of(TableFormat.MIXED_HIVE),
-        Arguments.of(TableFormat.MIXED_ICEBERG)
-    );
+    return Stream.of(Arguments.of(TableFormat.MIXED_HIVE), Arguments.of(TableFormat.MIXED_ICEBERG));
   }
 
   @DisplayName("Test `test V2 Api for KeyedTable`")
@@ -62,43 +59,46 @@ public class TestKeyedTableDataFrameAPI extends SparkTableTestBase {
   @MethodSource
   public void testV2ApiKeyedTable(TableFormat format) throws Exception {
     String tablePath = target().catalog + "." + target().database + "." + target().table;
-    String sqlText = "CREATE TABLE " + target() + " ( \n" +
-        "id int, data string, day string , primary key (id)) using " +
-        provider(format) + " partitioned by (day)";
+    String sqlText =
+        "CREATE TABLE "
+            + target()
+            + " ( \n"
+            + "id int, data string, day string , primary key (id)) using "
+            + provider(format)
+            + " partitioned by (day)";
 
     sql(sqlText);
 
     // test overwrite partitions
     StructType structType = SparkSchemaUtil.convert(schema);
-    df = spark().createDataFrame(
-        Lists.newArrayList(
-            RowFactory.create(1, "aaa", "aaa"),
-            RowFactory.create(2, "bbb", "bbb"),
-            RowFactory.create(3, "ccc", "ccc")
-        ), structType
-    );
+    df =
+        spark()
+            .createDataFrame(
+                Lists.newArrayList(
+                    RowFactory.create(1, "aaa", "aaa"),
+                    RowFactory.create(2, "bbb", "bbb"),
+                    RowFactory.create(3, "ccc", "ccc")),
+                structType);
     df.writeTo(tablePath).overwritePartitions();
 
     df = spark().read().table(tablePath);
     Assertions.assertEquals(3, df.count());
 
-    df = spark().createDataFrame(
-        Lists.newArrayList(
-            RowFactory.create(4, "aaa", "ccc"),
-            RowFactory.create(5, "bbb", "ddd"),
-            RowFactory.create(6, "ccc", "eee")
-        ), structType
-    );
+    df =
+        spark()
+            .createDataFrame(
+                Lists.newArrayList(
+                    RowFactory.create(4, "aaa", "ccc"),
+                    RowFactory.create(5, "bbb", "ddd"),
+                    RowFactory.create(6, "ccc", "eee")),
+                structType);
     df.writeTo(tablePath).overwritePartitions();
     df = spark().read().table(tablePath);
     Assertions.assertEquals(5, df.count());
   }
 
   public static Stream<Arguments> testKeyedTableDataFrameApi() {
-    return Stream.of(
-        Arguments.of(TableFormat.MIXED_HIVE),
-        Arguments.of(TableFormat.MIXED_ICEBERG)
-    );
+    return Stream.of(Arguments.of(TableFormat.MIXED_HIVE), Arguments.of(TableFormat.MIXED_ICEBERG));
   }
 
   @DisplayName("Test `test DataFrameApi for KeyedTable`")
@@ -108,14 +108,16 @@ public class TestKeyedTableDataFrameAPI extends SparkTableTestBase {
     String tablePath = target().catalog + "." + target().database + "." + target().table;
     StructType structType = SparkSchemaUtil.convert(schema);
     // test create
-    df = spark().createDataFrame(
-        Lists.newArrayList(
-            RowFactory.create(1, "aaa", "aaa"),
-            RowFactory.create(2, "bbb", "bbb"),
-            RowFactory.create(3, "ccc", "ccc")
-        ), structType
-    );
-    df.write().format(provider(format))
+    df =
+        spark()
+            .createDataFrame(
+                Lists.newArrayList(
+                    RowFactory.create(1, "aaa", "aaa"),
+                    RowFactory.create(2, "bbb", "bbb"),
+                    RowFactory.create(3, "ccc", "ccc")),
+                structType);
+    df.write()
+        .format(provider(format))
         .partitionBy("day")
         .option("primary.keys", "id")
         .save(tablePath);
@@ -125,14 +127,16 @@ public class TestKeyedTableDataFrameAPI extends SparkTableTestBase {
     Assertions.assertEquals(3, df.count());
 
     // test overwrite dynamic
-    df = spark().createDataFrame(
-        Lists.newArrayList(
-            RowFactory.create(4, "aaa", "aaa"),
-            RowFactory.create(5, "aaa", "bbb"),
-            RowFactory.create(6, "aaa", "ccc")
-        ), structType
-    );
-    df.write().format(provider(format))
+    df =
+        spark()
+            .createDataFrame(
+                Lists.newArrayList(
+                    RowFactory.create(4, "aaa", "aaa"),
+                    RowFactory.create(5, "aaa", "bbb"),
+                    RowFactory.create(6, "aaa", "ccc")),
+                structType);
+    df.write()
+        .format(provider(format))
         .partitionBy("day")
         .option("overwrite-mode", "dynamic")
         .mode(SaveMode.Overwrite)
@@ -140,13 +144,14 @@ public class TestKeyedTableDataFrameAPI extends SparkTableTestBase {
     df = spark().read().format("arctic").load(tablePath);
     Assert.assertEquals(3, df.count());
 
-    df = spark().createDataFrame(
-        Lists.newArrayList(
-            RowFactory.create(4, "aaa", "ccc"),
-            RowFactory.create(5, "bbb", "ddd"),
-            RowFactory.create(6, "ccc", "eee")
-        ), structType
-    );
+    df =
+        spark()
+            .createDataFrame(
+                Lists.newArrayList(
+                    RowFactory.create(4, "aaa", "ccc"),
+                    RowFactory.create(5, "bbb", "ddd"),
+                    RowFactory.create(6, "ccc", "eee")),
+                structType);
     df.writeTo(tablePath).overwritePartitions();
     df = spark().read().table(tablePath);
     Assertions.assertEquals(5, df.count());

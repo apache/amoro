@@ -5,6 +5,7 @@ import scala.Option;
 
 public class Exceptions {
   public static Exception analysisException(String message) {
-    return new AnalysisException(message, Option.empty(), Option.empty(), Option.empty(), Option.empty());
+    return new AnalysisException(
+        message, Option.empty(), Option.empty(), Option.empty(), Option.empty());
   }
 }

@@ -40,9 +40,8 @@ public class ArcticSparkChangeTable extends SparkTable {
 
   private SparkSession lazySpark = null;
 
-  private static final Set<TableCapability> CAPABILITIES = ImmutableSet.of(
-      TableCapability.BATCH_READ
-  );
+  private static final Set<TableCapability> CAPABILITIES =
+      ImmutableSet.of(TableCapability.BATCH_READ);
 
   public ArcticSparkChangeTable(BasicUnkeyedTable basicUnkeyedTable, boolean refreshEagerly) {
     super(basicUnkeyedTable, refreshEagerly);
@@ -63,7 +62,8 @@ public class ArcticSparkChangeTable extends SparkTable {
 
   @Override
   public ScanBuilder newScanBuilder(CaseInsensitiveStringMap options) {
-    return new SparkScanBuilder(sparkSession(), basicUnkeyedTable, options, buildSchema(basicUnkeyedTable));
+    return new SparkScanBuilder(
+        sparkSession(), basicUnkeyedTable, options, buildSchema(basicUnkeyedTable));
   }
 
   public Schema buildSchema(UnkeyedTable table) {
