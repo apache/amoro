@@ -16,17 +16,17 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.metrics.reporters;
+package com.netease.arctic.server.metrics.emitters;
 
 import com.netease.arctic.ams.api.metrics.MetricsDomain;
 import com.netease.arctic.ams.api.metrics.MetricsEmitter;
-import com.netease.arctic.server.metrics.ReporterMeta;
+import com.netease.arctic.server.metrics.EmitterConfig;
 import org.apache.iceberg.metrics.MetricsReporter;
 
-public class ReporterFactory {
+public class EmitterFactory {
 
   @SuppressWarnings({"rawtypes"})
-  public MetricsEmitter create(ReporterMeta meta) {
+  public MetricsEmitter create(EmitterConfig meta) {
     MetricsDomain domain = MetricsDomain.valueOf(meta.getDomain());
     switch (domain) {
       case ICEBERG:

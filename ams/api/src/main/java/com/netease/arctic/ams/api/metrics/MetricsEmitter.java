@@ -36,7 +36,7 @@ public interface MetricsEmitter<T> {
    *
    * @param metrics {@link T} to report.
    */
-  void report(PayloadMetrics<T> metrics);
+  void emit(MetricsPayload<T> metrics);
 
   /**
    * Close this reporter.

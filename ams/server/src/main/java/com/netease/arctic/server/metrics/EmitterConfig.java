@@ -20,14 +20,14 @@ package com.netease.arctic.server.metrics;
 
 import java.util.Map;
 
-public class ReporterMeta {
+public class EmitterConfig {
   private String name;
   private String domain;
   private String impl;
   private Map<String, String> properties;
 
-  public static ReporterMeta of(String name, String domain, String impl, Map<String, String> properties) {
-    ReporterMeta meta = new ReporterMeta();
+  public static EmitterConfig of(String name, String domain, String impl, Map<String, String> properties) {
+    EmitterConfig meta = new EmitterConfig();
     meta.setName(name);
     meta.setDomain(domain);
     meta.setImpl(impl);

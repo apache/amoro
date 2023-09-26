@@ -16,31 +16,14 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.metrics;
+package com.netease.arctic.ams.api.metrics;
 
-import com.netease.arctic.ams.api.metrics.MetricsContent;
-import com.netease.arctic.ams.api.metrics.MetricsDomain;
-import com.netease.arctic.ams.api.metrics.PayloadMetrics;
+/**
+ * Abstracting metrics from different domains.
+ */
+public interface MetricsPayload<T> {
 
-public class AmoroPayloadMetrics implements PayloadMetrics<MetricsContent> {
+  MetricsDomain domain();
 
-  private final MetricsContent metrics;
-
-  public AmoroPayloadMetrics(MetricsContent metrics) {
-    this.metrics = metrics;
-  }
-
-  public static AmoroPayloadMetrics wrap(MetricsContent metrics) {
-    return new AmoroPayloadMetrics(metrics);
-  }
-
-  @Override
-  public MetricsDomain domain() {
-    return MetricsDomain.AMORO;
-  }
-
-  @Override
-  public MetricsContent metrics() {
-    return metrics;
-  }
+  T payload();
 }

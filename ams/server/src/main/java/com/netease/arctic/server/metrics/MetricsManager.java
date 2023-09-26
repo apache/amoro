@@ -20,8 +20,10 @@ package com.netease.arctic.server.metrics;
 
 import com.netease.arctic.ams.api.metrics.MetricsDomain;
 import com.netease.arctic.ams.api.metrics.MetricsEmitter;
-import com.netease.arctic.ams.api.metrics.PayloadMetrics;
-import com.netease.arctic.server.metrics.reporters.ReporterFactory;
+import com.netease.arctic.ams.api.metrics.MetricsPayload;
+import com.netease.arctic.server.metrics.emitters.EmitterFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -29,59 +31,63 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manage metrics and metrics reporter
- * Register reporter by adding the following configuration in the system configuration:
- * reporters:
- *   - name: report1
+ * Manage metrics and metrics emitter
+ * Register emitter by adding the following configuration in the system configuration:
+ * emitters:
+ *   - name: emitter1
  *     domain: AMORO
- *     impl: {reporter class}
+ *     impl: {emitter class}
  *     properties:
  *       host: 127.0.0.1
  *       port: 8080
  */
 public class MetricsManager {
 
-  private final ReporterFactory factory = new ReporterFactory();
-  @SuppressWarnings("rawtypes")
-  private final Map<MetricsDomain, Map<String, MetricsEmitter>> reporters = new ConcurrentHashMap<>();
+  private static final Logger LOG = LoggerFactory.getLogger(MetricsManager.class);
 
-  public MetricsManager() {
-  }
+  private final MetricsPayloadWrapper metricsWrapper;
+  private final EmitterFactory factory = new EmitterFactory();
+  private final Map<MetricsDomain, Map<String, MetricsEmitter<?>>> emitters = new ConcurrentHashMap<>();
 
-  public MetricsManager(List<ReporterMeta> metas) {
+  public MetricsManager(List<EmitterConfig> metas, Map<String, String> domainToClass) {
     metas.forEach(this::register);
+    this.metricsWrapper = new MetricsPayloadWrapper(domainToClass);
   }
 
-  public void register(ReporterMeta meta) {
+  public void register(EmitterConfig meta) {
     MetricsDomain domain = MetricsDomain.valueOf(meta.getDomain());
     register(domain, meta.getName(), this.factory.create(meta));
   }
 
-  @SuppressWarnings("rawtypes")
-  public void register(MetricsDomain domain, String name, MetricsEmitter reporter) {
-    reporters.computeIfAbsent(domain, k -> new HashMap<>()).put(name, reporter);
+  public void register(MetricsDomain domain, String name, MetricsEmitter<?> emitter) {
+    emitters.computeIfAbsent(domain, k -> new HashMap<>()).put(name, emitter);
   }
 
   public void unregister(String name) {
-    reporters.values().forEach(namedReporters -> {
-      if (namedReporters.containsKey(name)) {
-        namedReporters.remove(name).close();
+    emitters.values().forEach(namedEmitters -> {
+      if (namedEmitters.containsKey(name)) {
+        namedEmitters.remove(name).close();
       }
     });
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  public void report(PayloadMetrics metrics) {
-    Map<String, MetricsEmitter> domainReports = this.reporters.get(metrics.domain());
-    if (domainReports == null) {
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public <T> void emit(T metrics) {
+    MetricsPayload<T> payload = metricsWrapper.wrap(metrics);
+    Map<String, MetricsEmitter<?>> domainEmitter = this.emitters.get(payload.domain());
+    if (domainEmitter == null) {
       return;
     }
-    for (MetricsEmitter reporter : domainReports.values()) {
-      reporter.report(metrics);
+    for (MetricsEmitter emitter : domainEmitter.values()) {
+      try {
+        emitter.emit(payload);
+      } catch (Exception e) {
+        LOG.error("Failed to emit metrics", e);
+      }
     }
   }
 
   public void shutdown() {
-    this.reporters.values().forEach(namedReporters -> namedReporters.keySet().forEach(this::unregister));
+    this.emitters.values().forEach(namedEmitters -> namedEmitters.keySet().forEach(this::unregister));
   }
 }

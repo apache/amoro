@@ -58,13 +58,13 @@ public class TaggedMetrics {
     return metrics;
   }
 
-  private static Map<String, Object> parseTags(MetricsContent payloadMetrics) {
-    List<Method> tagMethods = getAnnotationMethods(payloadMetrics, MetricsAnnotation.Tag.class);
+  private static Map<String, Object> parseTags(MetricsContent metricsContent) {
+    List<Method> tagMethods = getAnnotationMethods(metricsContent, MetricsAnnotation.Tag.class);
     Map<String, Object> tags = Maps.newHashMap();
     tagMethods.forEach(method -> {
       MetricsAnnotation.Tag tag = method.getAnnotation(MetricsAnnotation.Tag.class);
       try {
-        tags.put(tag.name(), method.invoke(payloadMetrics));
+        tags.put(tag.name(), method.invoke(metricsContent));
       } catch (IllegalAccessException | InvocationTargetException e) {
         throw new RuntimeException(e);
       }
@@ -72,14 +72,14 @@ public class TaggedMetrics {
     return tags;
   }
 
-  private static Map<String, Metric> parseMetrics(MetricsContent payloadMetrics) {
-    List<Method> tagMethods = getAnnotationMethods(payloadMetrics, MetricsAnnotation.Metric.class);
+  private static Map<String, Metric> parseMetrics(MetricsContent metricsContent) {
+    List<Method> tagMethods = getAnnotationMethods(metricsContent, MetricsAnnotation.Metric.class);
     Map<String, Metric> metrics = Maps.newHashMap();
     tagMethods.forEach(method -> {
       MetricsAnnotation.Metric metric = method.getAnnotation(MetricsAnnotation.Metric.class);
       try {
-        if (method.invoke(payloadMetrics) != null) {
-          metrics.put(metric.name(), (Metric) method.invoke(payloadMetrics));
+        if (method.invoke(metricsContent) != null) {
+          metrics.put(metric.name(), (Metric) method.invoke(metricsContent));
         }
       } catch (IllegalAccessException | InvocationTargetException e) {
         throw new RuntimeException(e);

@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.metrics.reporters;
+package com.netease.arctic.server.metrics.emitters;
 
 import com.netease.arctic.ams.api.metrics.MetricsEmitter;
-import com.netease.arctic.ams.api.metrics.PayloadMetrics;
+import com.netease.arctic.ams.api.metrics.MetricsPayload;
 import org.apache.iceberg.metrics.MetricsReport;
 import org.apache.iceberg.metrics.MetricsReporter;
 
@@ -39,8 +39,8 @@ public class IcebergReporterWrapper implements MetricsEmitter<MetricsReport> {
   }
 
   @Override
-  public void report(PayloadMetrics<MetricsReport> metrics) {
-    this.reporter.report(metrics.metrics());
+  public void emit(MetricsPayload<MetricsReport> metrics) {
+    this.reporter.report(metrics.payload());
   }
 
   @Override

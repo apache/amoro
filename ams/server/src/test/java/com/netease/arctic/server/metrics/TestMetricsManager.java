@@ -21,13 +21,14 @@ package com.netease.arctic.server.metrics;
 import com.netease.arctic.ams.api.metrics.MetricsContent;
 import com.netease.arctic.ams.api.metrics.MetricsDomain;
 import com.netease.arctic.ams.api.metrics.MetricsEmitter;
-import com.netease.arctic.ams.api.metrics.PayloadMetrics;
-import com.netease.arctic.server.metrics.reporters.IcebergReporterWrapper;
+import com.netease.arctic.ams.api.metrics.MetricsPayload;
+import com.netease.arctic.server.metrics.emitters.IcebergReporterWrapper;
 import org.apache.iceberg.metrics.MetricsReport;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,27 +36,35 @@ public class TestMetricsManager {
 
   @Test
   public void report() {
-    MetricsManager manager = new MetricsManager();
+    EmitterConfig emitterConfig =
+        EmitterConfig.of("test", "AMORO", TestAmoroMetricsEmitter.class.getName(), new HashMap<>());
+    EmitterConfig emitterConfig2 =
+        EmitterConfig.of("test2", "ICEBERG", TestIcebergReporter.class.getName(), new HashMap<>());
+    List<EmitterConfig> emitterConfigs = new ArrayList<>();
+    emitterConfigs.add(emitterConfig);
+    emitterConfigs.add(emitterConfig2);
+    Map<String, String> domainToClass = new HashMap<>();
+    domainToClass.put("AMORO", "com.netease.arctic.ams.api.metrics.MetricsContent");
+    domainToClass.put("ICEBERG", "org.apache.iceberg.metrics.MetricsReport");
+    MetricsManager manager = new MetricsManager(emitterConfigs, domainToClass);
     TestAmoroMetricsEmitter amoroReporter = new TestAmoroMetricsEmitter();
     TestIcebergReporter icebergReporter = new TestIcebergReporter();
     manager.register(MetricsDomain.AMORO, "testAmoro", amoroReporter);
     manager.register(MetricsDomain.ICEBERG, "testIceberg", new IcebergReporterWrapper(icebergReporter));
     MetricsContent metricsContent = () -> "test";
-    PayloadMetrics<MetricsContent> amoroMetric = AmoroPayloadMetrics.wrap(metricsContent);
-    manager.report(amoroMetric);
+    manager.emit(metricsContent);
     Assert.assertEquals(1, amoroReporter.getTestMetrics().size());
     Assert.assertEquals(metricsContent, amoroReporter.getTestMetrics().get(0));
 
     MetricsReport metricsReport = new MetricsReport() {
 
     };
-    PayloadMetrics<MetricsReport> icebergMetric = IcebergPayloadMetrics.wrap(metricsReport);
-    manager.report(icebergMetric);
+    manager.emit(metricsReport);
     Assert.assertEquals(1, icebergReporter.getTestMetrics().size());
     Assert.assertEquals(metricsReport, icebergReporter.getTestMetrics().get(0));
   }
 
-  private static class TestAmoroMetricsEmitter implements MetricsEmitter<MetricsContent> {
+  public static class TestAmoroMetricsEmitter implements MetricsEmitter<MetricsContent> {
 
     private final List<MetricsContent> testMetrics = new ArrayList<>();
 
@@ -65,8 +74,8 @@ public class TestMetricsManager {
     }
 
     @Override
-    public void report(PayloadMetrics<MetricsContent> payloadMetrics) {
-      this.testMetrics.add(payloadMetrics.metrics());
+    public void emit(MetricsPayload<MetricsContent> metricsPayload) {
+      this.testMetrics.add(metricsPayload.payload());
     }
 
     @Override
@@ -79,7 +88,7 @@ public class TestMetricsManager {
     }
   }
 
-  private static class TestIcebergReporter implements org.apache.iceberg.metrics.MetricsReporter {
+  public static class TestIcebergReporter implements org.apache.iceberg.metrics.MetricsReporter {
 
     private final List<MetricsReport> testMetrics = new ArrayList<>();
 
