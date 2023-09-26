@@ -102,8 +102,7 @@ public class MixedTables {
     PrimaryKeySpec keySpec = getPrimaryKeySpec(base);
     if (!keySpec.primaryKeyExisted()) {
       return new BasicUnkeyedTable(tableIdentifier,
-          CatalogUtil.useArcticTableOperations(
-              base, base.location(), io, tableMetaStore.getConfiguration()),
+          useArcticTableOperation(base, io),
           io, catalogMeta.getCatalogProperties());
     }
     Table changeIcebergTable = loadChangeStore(base);
