@@ -40,7 +40,7 @@ FlinkOptimizerContainer support the following properties:
 | Property Name             | Required | Default Value | Description                                                                                                                                                                                                                                                                          |
 |---------------------------|----------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | flink-home                | true     | N/A           | Flink installation location                                                                                                                                                                                                                                                          |
-| target                    | true     | yarn-pre-job  | flink job deployed target, available values `yarn-pre-job`, `yarn-application`, `kubernetes-application`                                                                                                                                                                             |
+| target                    | true     | yarn-per-job  | flink job deployed target, available values `yarn-per-job`, `yarn-application`, `kubernetes-application`                                                                                                                                                                             |
 | job-uri                   | false    | N/A           | The jar uri of flink optimizer job. This is required if target is application mode.                                                                                                                                                                                                  |
 | ams-optimizing-uri        | false | N/A           | uri of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available                                                                                                                                                                        |
 | export.\<key\>            | false | N/A           | environment variables will be exported during job submit                                                                                                                                                                                                                             |
@@ -59,7 +59,7 @@ To better utilize the resources of Flink Optimizer, it is recommended to add the
 {{< /hint >}}
 
 
-An example for yarn-pre-job mode:
+An example for yarn-per-job mode:
 
 ```yaml
 containers:
@@ -84,7 +84,7 @@ containers:
       target: kubernetes-application                                                 #flink run as native kubernetes
       job-uri: "local:///opt/flink/usrlib/OptimizeJob.jar"                           #optimizer job location in image
       ams-optimizing-uri: thrift://ams.amoro.service.local:1261                      #AMS optimizing uri 
-      export.FLINK_CONF_DIR: /etc/hadoop/conf/                                       #flink config dir
+      export.FLINK_CONF_DIR: /opt/flink/conf/                                        #flink config dir
       flink-conf.kubernetes.container.image: "arctic163/optimizer-flink1.14:latest"  #image ref
       flink-conf.kubernetes.service-account: flink                                   #kubernetes service account
 ```

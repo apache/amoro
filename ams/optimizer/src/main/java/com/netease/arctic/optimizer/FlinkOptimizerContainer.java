@@ -96,7 +96,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     this.flinkConfDir = getFlinkConfDir();
 
     String runTarget = Optional.ofNullable(containerProperties.get(FLINK_RUN_TARGET))
-        .orElse(Target.YarnPreJob.getValue());
+        .orElse(Target.YarnPerJob.getValue());
     this.target = Target.valueToEnum(runTarget);
     String jobUri = containerProperties.get(FLINK_JOB_URI);
     if (target.isApplicationMode()) {
@@ -136,7 +136,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
       Map<String, String> startUpStatesMap = Maps.newHashMap();
       String applicationId = fetchCommandOutput(exec, yarnApplicationIdReader);
       switch (target) {
-        case YarnPreJob:
+        case YarnPerJob:
         case YarnApplication:
           if (applicationId != null) {
             startUpStatesMap.put(YARN_APPLICATION_ID_PROPERTY, applicationId);
@@ -293,7 +293,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     String releaseCommand;
     switch (target) {
       case YarnApplication:
-      case YarnPreJob:
+      case YarnPerJob:
         releaseCommand = buildReleaseYarnCommand(resource);
         break;
       case KubernetesApplication:
@@ -363,7 +363,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
   }
 
   private enum Target {
-    YarnPreJob("yarn-per-job", false),
+    YarnPerJob("yarn-per-job", false),
     YarnApplication("yarn-application", true),
     KubernetesApplication("kubernetes-application", true);
 
