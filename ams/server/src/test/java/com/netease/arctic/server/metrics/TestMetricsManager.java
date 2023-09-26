@@ -22,7 +22,7 @@ import com.netease.arctic.ams.api.metrics.MetricsContent;
 import com.netease.arctic.ams.api.metrics.MetricsDomain;
 import com.netease.arctic.ams.api.metrics.MetricsEmitter;
 import com.netease.arctic.ams.api.metrics.MetricsPayload;
-import com.netease.arctic.server.metrics.emitters.IcebergReporterWrapper;
+import com.netease.arctic.server.metrics.emitters.IcebergEmitterWrapper;
 import org.apache.iceberg.metrics.MetricsReport;
 import org.junit.Assert;
 import org.junit.Test;
@@ -50,7 +50,7 @@ public class TestMetricsManager {
     TestAmoroMetricsEmitter amoroReporter = new TestAmoroMetricsEmitter();
     TestIcebergReporter icebergReporter = new TestIcebergReporter();
     manager.register(MetricsDomain.AMORO, "testAmoro", amoroReporter);
-    manager.register(MetricsDomain.ICEBERG, "testIceberg", new IcebergReporterWrapper(icebergReporter));
+    manager.register(MetricsDomain.ICEBERG, "testIceberg", new IcebergEmitterWrapper(icebergReporter));
     MetricsContent metricsContent = () -> "test";
     manager.emit(metricsContent);
     Assert.assertEquals(1, amoroReporter.getTestMetrics().size());

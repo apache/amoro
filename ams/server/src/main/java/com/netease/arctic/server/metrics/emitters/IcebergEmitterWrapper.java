@@ -25,11 +25,11 @@ import org.apache.iceberg.metrics.MetricsReporter;
 
 import java.util.Map;
 
-public class IcebergReporterWrapper implements MetricsEmitter<MetricsReport> {
+public class IcebergEmitterWrapper implements MetricsEmitter<MetricsReport> {
 
   private final MetricsReporter reporter;
 
-  public IcebergReporterWrapper(MetricsReporter reporter) {
+  public IcebergEmitterWrapper(MetricsReporter reporter) {
     this.reporter = reporter;
   }
 

@@ -30,7 +30,7 @@ public class EmitterFactory {
     MetricsDomain domain = MetricsDomain.valueOf(meta.getDomain());
     switch (domain) {
       case ICEBERG:
-        return new IcebergReporterWrapper((MetricsReporter) createInstance(meta.getImpl()));
+        return new IcebergEmitterWrapper((MetricsReporter) createInstance(meta.getImpl()));
       case AMORO:
         return (MetricsEmitter) createInstance(meta.getImpl());
       default:
