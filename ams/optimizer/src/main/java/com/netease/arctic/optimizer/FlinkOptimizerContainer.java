@@ -102,7 +102,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     if (target.isApplicationMode()) {
       Preconditions.checkArgument(
           StringUtils.isNotEmpty(jobUri),
-          "The property: %s  is required if running target in application mode.",  FLINK_JOB_URI);
+          "The property: %s  is required if running target in application mode.", FLINK_JOB_URI);
     }
     if (StringUtils.isEmpty(jobUri)) {
       jobUri = amsHome + DEFAULT_JOB_URI;
@@ -119,7 +119,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
       Preconditions.checkArgument(
           StringUtils.isNotEmpty(imageRef),
           "The flink-conf: %s is required if running target is %s",
-          FlinkConf.PropertyKeys.KUBERNETES_IMAGE_REF , target.getValue());
+          FlinkConf.PropertyKeys.KUBERNETES_IMAGE_REF, target.getValue());
     }
   }
 
