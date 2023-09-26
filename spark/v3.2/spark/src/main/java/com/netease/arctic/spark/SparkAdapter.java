@@ -21,15 +21,16 @@ package com.netease.arctic.spark;
 import com.netease.arctic.spark.util.ExpressionHelper;
 
 /**
- * This interface will provider some util or helper object to shield api differences in different spark versions.
+ * This interface will provider some util or helper object to shield api differences in different
+ * spark versions.
  */
 public interface SparkAdapter {
 
   /**
-   * A helper object to help build spark expressions
-   * {@link org.apache.spark.sql.connector.expressions.Expression},
-   * and provider a covert method to help covert {@link org.apache.spark.sql.connector.expressions.Expression}
-   * to {@link org.apache.spark.sql.catalyst.expressions.Expression}
+   * A helper object to help build spark expressions {@link
+   * org.apache.spark.sql.connector.expressions.Expression}, and provider a covert method to help
+   * covert {@link org.apache.spark.sql.connector.expressions.Expression} to {@link
+   * org.apache.spark.sql.catalyst.expressions.Expression}
    *
    * @return expression helper object
    */
