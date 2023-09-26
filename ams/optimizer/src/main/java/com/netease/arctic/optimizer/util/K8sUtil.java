@@ -19,26 +19,17 @@ package com.netease.arctic.optimizer.util;
 
 import com.google.common.collect.ImmutableMap;
 import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
-import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
-import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.WatcherException;
-import io.fabric8.kubernetes.client.dsl.LogWatch;
 import org.slf4j.Logger;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class K8sUtil {
-  public static void runJob(String namespace, String name, KubernetesClient client, String image, String cmd, Logger logger,String memory ,String cpu) {
+  public static void runDeployment(String namespace, String name, KubernetesClient client, String image, String cmd, Logger logger, String memory , String cpu) {
 
     submitJob(namespace, name, client, image, cmd,memory,cpu);
 
@@ -47,17 +38,24 @@ public class K8sUtil {
     long waitPodStartTime = System.currentTimeMillis();
 
     String podName = "";
-    podName = waitForCreatePodOfJob(namespace, name, client, logger, podName, waitPodStartTime, waitPodTimeout);
+    podName = waitForCreatePodOfDeployment(namespace, name, client, logger, podName, waitPodStartTime, waitPodTimeout);
     logger.info("Pod name: " + podName);
-
   }
 
-  private static String waitForCreatePodOfJob(String namespace, String jobName, KubernetesClient client, Logger logger, String podName, long waitPodStartTime, long waitPodTimeout) {
+  public static void deleteDeployment(String namespace, String name, KubernetesClient client, Logger logger) {
+    client.apps().deployments()
+        .inNamespace(namespace)
+        .withName(name)
+        .delete();
+    waitForDeleteDeployment(namespace, name, client, logger);
+  }
+
+  private static String waitForCreatePodOfDeployment(String namespace, String name, KubernetesClient client, Logger logger, String podName, long waitPodStartTime, long waitPodTimeout) {
     while (true) {
       // Get the pod name associated with the job
       List<Pod> pods = client.pods()
           .inNamespace(namespace)
-          .withLabel("job-name", jobName)
+          .withLabel("app", name)
           .list().getItems();
 
       if (!pods.isEmpty()) {
@@ -75,7 +73,7 @@ public class K8sUtil {
       // Check timeout
       long elapsedTime = System.currentTimeMillis() - waitPodStartTime;
       if (TimeUnit.MILLISECONDS.toSeconds(elapsedTime) > waitPodTimeout) {
-        throw new RuntimeException("Timeout reached. Job Pod create failed.");
+        throw new RuntimeException("Timeout reached. Deployment Pod create failed.");
       }
 
       // Polling interval
@@ -88,34 +86,34 @@ public class K8sUtil {
     return podName;
   }
 
-  public static void waitForDeleteJob(String namespace, String jobName, KubernetesClient client, Logger logger) {
+  public static void waitForDeleteDeployment(String namespace, String name, KubernetesClient client, Logger logger) {
     long timeout = 300; // Timeout in seconds
     long startTime = System.currentTimeMillis();
-    waitForDeleteJob(namespace, jobName, client, timeout, startTime, logger);
+    waitForDeleteDeployment(namespace, name, client, timeout, startTime, logger);
   }
 
-  private static void waitForDeleteJob(String namespace, String jobName, KubernetesClient client, long timeout, long startTime, Logger logger) {
+  private static void waitForDeleteDeployment(String namespace, String name, KubernetesClient client, long timeout, long startTime, Logger logger) {
 
     while (true) {
-      Job deletedJob = client.batch().v1().jobs()
+      Deployment deletedDeployment = client.apps().deployments()
           .inNamespace(namespace)
-          .withName(jobName)
+          .withName(name)
           .get();
 
       List<Pod> podList = client.pods()
           .inNamespace(namespace)
-          .withLabel("job-name", jobName)
+          .withLabel("app", name)
           .list().getItems();
 
-      if (deletedJob == null && podList.isEmpty()) {
-        logger.info("Job {} has been deleted.", jobName);
+      if (deletedDeployment == null && podList.isEmpty()) {
+        logger.info("Deployment {} has been deleted.", name);
         return;
       }
 
       // Check timeout
       long elapsedTime = System.currentTimeMillis() - startTime;
       if (TimeUnit.MILLISECONDS.toSeconds(elapsedTime) > timeout) {
-        throw new RuntimeException("Timeout reached. Job deletion failed.");
+        throw new RuntimeException("Timeout reached. Deployment deletion failed.");
       }
 
       // Polling interval
@@ -129,34 +127,34 @@ public class K8sUtil {
 
   private static void submitJob(String namespace, String name, KubernetesClient client, String image, String cmd,String memory ,String cpu) {
 
-    Container container = new ContainerBuilder()
-        .withName("init")
+    Deployment deployment = new DeploymentBuilder()
+        .withNewMetadata()
+        .withName(name)
+        .endMetadata()
+        .withNewSpec()
+        .withReplicas(1)
+        .withNewTemplate()
+        .withNewMetadata()
+        .addToLabels("app", name)
+        .endMetadata()
+        .withNewSpec()
+        .addNewContainer()
+        .withName("optimizer")
         .withImage(image)
         .withCommand("sh", "-c", cmd)
         .withResources(new ResourceRequirementsBuilder()
             .withLimits(ImmutableMap.of("memory", new Quantity(memory), "cpu", new Quantity(cpu)))
             .withRequests(ImmutableMap.of("memory", new Quantity(memory), "cpu", new Quantity(cpu)))
             .build())
-        .build();
-
-    Job job = new JobBuilder()
-        .withNewMetadata()
-        .withName(name)
-        .endMetadata()
-        .withNewSpec()
-        .withBackoffLimit(0)
-        .withNewTemplate()
-        .withNewSpec()
-        .withContainers(container)
-        .withHostNetwork(true)
-        .withRestartPolicy("Never")
+        .endContainer()
         .endSpec()
         .endTemplate()
+        .withNewSelector()
+        .addToMatchLabels("app", name)
+        .endSelector()
         .endSpec()
         .build();
 
-    client.batch().v1().jobs()
-        .inNamespace(namespace)
-        .resource(job).create();
+    client.apps().deployments().inNamespace(namespace).createOrReplace(deployment);
   }
 }

@@ -15,18 +15,18 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
 
   private static final Logger LOG = LoggerFactory.getLogger(KubernetesOptimizerContainer.class);
 
-  public static final String JOB_MEMORY_PROPERTY = "memory";
-  public static final String JOB_CPU_PROPERTY = "cpu";
-  public static final String JOB_NAMESPACE = "namespace";
-  public static final String JOB_IMAGE = "image";
-  public static final String JOB_KUBE_CONFIG = "kube-config";
+  public static final String MEMORY_PROPERTY = "memory";
+  public static final String CPU_PROPERTY = "cpu";
+  public static final String NAMESPACE = "namespace";
+  public static final String IMAGE = "image";
+  public static final String KUBE_CONFIG = "kube-config";
 
-  public static final String JOB_NAME = "amoro-optimizer";
+  public static final String NAME = "amoro-optimizer";
   @Override
   public void requestResource(Resource resource) {
     // generate pod start args
     long memoryPerThread = Long.parseLong(PropertyUtil.checkAndGetProperty(resource.getProperties(),
-        JOB_MEMORY_PROPERTY));
+        MEMORY_PROPERTY));
     long memory = memoryPerThread * resource.getThreadCount();
     // point at amoro home in docker image
     String startUpArgs = String.format("/usr/local/amoro/bin/localOptimize.sh %s %s", memory,
@@ -34,16 +34,16 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
     String[] cmd = { startUpArgs};
     LOG.info("Starting k8s optimizer using k8s client with start command : {}", startUpArgs);
     // start k8s job using k8s client
-    String kubeConfig = PropertyUtil.checkAndGetProperty(getContainerProperties(), JOB_KUBE_CONFIG);
+    String kubeConfig = PropertyUtil.checkAndGetProperty(getContainerProperties(), KUBE_CONFIG);
     String namespace = PropertyUtil.checkAndGetProperty(resource.getProperties(),
-        JOB_NAMESPACE);
+        NAMESPACE);
     String image = PropertyUtil.checkAndGetProperty(resource.getProperties(),
-        JOB_IMAGE);
+        IMAGE);
     String cpu = PropertyUtil.checkAndGetProperty(resource.getProperties(),
-        JOB_CPU_PROPERTY);
+        CPU_PROPERTY);
     Config config = Config.fromKubeconfig(kubeConfig);
     KubernetesClient client = new KubernetesClientBuilder().withConfig(config).build();
-    K8sUtil.runJob(namespace, JOB_NAME+"-"+resource.getResourceId(),
+    K8sUtil.runDeployment(namespace, getResourceName(resource),
         client, image,String.join(" ",cmd),LOG,memory+"Mi",cpu);
     LOG.info("Started k8s optimizer. ");
   }
@@ -56,20 +56,20 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
   @Override
   public void releaseOptimizer(Resource resource) {
     String namespace = PropertyUtil.checkAndGetProperty(resource.getProperties(),
-        JOB_NAMESPACE);
-    String kubeConfig = PropertyUtil.checkAndGetProperty(getContainerProperties(), JOB_KUBE_CONFIG);
+        NAMESPACE);
+    String kubeConfig = PropertyUtil.checkAndGetProperty(getContainerProperties(), KUBE_CONFIG);
 
     try {
       LOG.info("Stopping optimizer using k8s client." );
       Config config = Config.fromKubeconfig(kubeConfig);
       KubernetesClient client = new KubernetesClientBuilder().withConfig(config).build();
-      client.batch().v1().jobs()
-          .inNamespace(namespace)
-          .withName(JOB_NAME+"-"+resource.getResourceId())
-          .delete();
-      K8sUtil.waitForDeleteJob(namespace, JOB_NAME, client, LOG);
+      K8sUtil.deleteDeployment(namespace, getResourceName(resource), client, LOG);
     } catch (Exception e) {
       throw new RuntimeException("Failed to release optimizer.", e);
     }
+  }
+
+  private static String getResourceName(Resource resource) {
+    return NAME + "-" + resource.getResourceId();
   }
 }
