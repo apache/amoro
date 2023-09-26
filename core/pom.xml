@@ -32,12 +32,6 @@
     <name>Amoro Project Core</name>
     <url>https://amoro.netease.com</url>
 
-    <properties>
-        <rocksdb.version>7.10.2</rocksdb.version>
-        <kryo.version>2.24.0</kryo.version>
-        <jol.version>0.16</jol.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>com.netease.amoro</groupId>
