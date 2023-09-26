@@ -1,5 +1,8 @@
 package com.netease.arctic.flink.table;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP_TIMESTAMP;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -21,38 +24,33 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP_TIMESTAMP;
-
 @RunWith(Parameterized.class)
 public class TestTableRefresh extends FlinkTestBase {
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
-  public TestTableRefresh(
-    CatalogTestHelper catalogTestHelper,
-    TableTestHelper tableTestHelper) {
+  public TestTableRefresh(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Collection parameters() {
     return Arrays.asList(
-      new Object[][]{
-        {
-          new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-          new HiveTableTestHelper(true, true)
-        },
-        {
-          new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-          new BasicTableTestHelper(true, true)
-        }
-      });
+        new Object[][] {
+          {
+            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(true, true)
+          },
+          {
+            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(true, true)
+          }
+        });
   }
 
   @Test
   public void testRefresh() {
-    ArcticTableLoader tableLoader = ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
+    ArcticTableLoader tableLoader =
+        ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
 
     tableLoader.open();
     ArcticTable arcticTable = tableLoader.loadArcticTable();

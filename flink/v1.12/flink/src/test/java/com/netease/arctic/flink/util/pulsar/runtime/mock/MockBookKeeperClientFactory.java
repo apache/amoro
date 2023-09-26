@@ -31,9 +31,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * A BookKeeperClientFactory implementation which returns a mocked bookkeeper.
- */
+/** A BookKeeperClientFactory implementation which returns a mocked bookkeeper. */
 public class MockBookKeeperClientFactory implements BookKeeperClientFactory {
 
   private final OrderedExecutor executor =

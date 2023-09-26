@@ -34,8 +34,8 @@ public class ProxyFactory<T> implements Serializable {
   private final Class[] argumentTypes;
   private final Object[] arguments;
 
-  public ProxyFactory(Class<T> clazz, KerberosInterceptor interceptor,
-                      Class[] argumentTypes, Object[] arguments) {
+  public ProxyFactory(
+      Class<T> clazz, KerberosInterceptor interceptor, Class[] argumentTypes, Object[] arguments) {
     this.clazz = clazz;
     this.interceptor = interceptor;
     this.argumentTypes = argumentTypes;

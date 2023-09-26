@@ -19,7 +19,7 @@
 package com.netease.arctic;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -109,39 +109,39 @@ public class BasicTableTestHelper implements TableTestHelper {
 
   @Override
   public Record generateTestRecord(int id, String name, long ts, String opTime) {
-    return DataTestHelpers.createRecord(TABLE_SCHEMA, id, name, ts, opTime);
+    return MixedDataTestHelpers.createRecord(TABLE_SCHEMA, id, name, ts, opTime);
   }
 
   @Override
   public List<DataFile> writeChangeStore(
       KeyedTable keyedTable, Long txId, ChangeAction action, List<Record> records, boolean orderedWrite) {
-    return DataTestHelpers.writeChangeStore(keyedTable, txId, action, records, orderedWrite);
+    return MixedDataTestHelpers.writeChangeStore(keyedTable, txId, action, records, orderedWrite);
   }
 
   @Override
   public List<DataFile> writeBaseStore(
       ArcticTable table, long txId, List<Record> records, boolean orderedWrite) {
-    return DataTestHelpers.writeBaseStore(table, txId, records, orderedWrite);
+    return MixedDataTestHelpers.writeBaseStore(table, txId, records, orderedWrite);
   }
 
   @Override
   public List<Record> readKeyedTable(
       KeyedTable keyedTable, Expression expression,
       Schema projectSchema, boolean useDiskMap, boolean readDeletedData) {
-    return DataTestHelpers.readKeyedTable(keyedTable, expression, projectSchema, useDiskMap, readDeletedData);
+    return MixedDataTestHelpers.readKeyedTable(keyedTable, expression, projectSchema, useDiskMap, readDeletedData);
   }
 
   @Override
   public List<Record> readChangeStore(
       KeyedTable keyedTable, Expression expression, Schema projectSchema, boolean useDiskMap) {
-    return DataTestHelpers.readChangeStore(keyedTable, expression, projectSchema, useDiskMap);
+    return MixedDataTestHelpers.readChangeStore(keyedTable, expression, projectSchema, useDiskMap);
   }
 
   @Override
   public List<Record> readBaseStore(
       ArcticTable table, Expression expression, Schema projectSchema,
       boolean useDiskMap) {
-    return DataTestHelpers.readBaseStore(table, expression, projectSchema, useDiskMap);
+    return MixedDataTestHelpers.readBaseStore(table, expression, projectSchema, useDiskMap);
   }
 
   @Override

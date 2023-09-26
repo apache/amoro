@@ -47,6 +47,7 @@ public class LookupRecord {
   }
 
   enum OpType {
-    PUT_BYTES, DELETE_BYTES
+    PUT_BYTES,
+    DELETE_BYTES
   }
 }

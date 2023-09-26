@@ -18,9 +18,7 @@
 
 package com.netease.arctic.flink.read.hybrid.reader;
 
-/**
- * A record along with the reader position to be stored in the checkpoint.
- */
+/** A record along with the reader position to be stored in the checkpoint. */
 public class ArcticRecordWithOffset<T> {
   private T record;
 

@@ -20,6 +20,7 @@ package com.netease.arctic.flink.read.hybrid.reader;
 
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ChangelogSplit;
+import com.netease.arctic.flink.read.hybrid.split.MergeOnReadSplit;
 import com.netease.arctic.flink.read.hybrid.split.SnapshotSplit;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.connector.base.source.reader.RecordsBySplits;
@@ -50,8 +51,7 @@ public class HybridSplitReader<T> implements SplitReader<ArcticRecordWithOffset<
   private CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> currentReader;
   private String currentSplitId;
 
-  public HybridSplitReader(ReaderFunction<T> openSplitFunction,
-                           SourceReaderContext context) {
+  public HybridSplitReader(ReaderFunction<T> openSplitFunction, SourceReaderContext context) {
     this.openSplitFunction = openSplitFunction;
     this.indexOfSubtask = context.getIndexOfSubtask();
     this.splits = new ArrayDeque<>();
@@ -84,29 +84,31 @@ public class HybridSplitReader<T> implements SplitReader<ArcticRecordWithOffset<
   public void handleSplitsChanges(SplitsChange<ArcticSplit> splitsChange) {
     if (!(splitsChange instanceof SplitsAddition)) {
       throw new UnsupportedOperationException(
-          String.format(
-              "The SplitChange type of %s is not supported.",
-              splitsChange.getClass()));
+          String.format("The SplitChange type of %s is not supported.", splitsChange.getClass()));
     }
     LOG.info("Handling a split change {}.", splitsChange);
 
-    splitsChange.splits().forEach(arcticSplit -> {
-      if (arcticSplit instanceof SnapshotSplit || arcticSplit instanceof ChangelogSplit) {
-        splits.add(arcticSplit);
-      } else {
-        throw new IllegalArgumentException(
-            String.format(
-                "As of now, The %s of SourceSplit type is unsupported, available source splits are %s, %s.",
-                arcticSplit.getClass().getSimpleName(),
-                SnapshotSplit.class.getSimpleName(),
-                ChangelogSplit.class.getSimpleName()));
-      }
-    });
+    splitsChange
+        .splits()
+        .forEach(
+            arcticSplit -> {
+              if (arcticSplit instanceof SnapshotSplit
+                  || arcticSplit instanceof ChangelogSplit
+                  || arcticSplit instanceof MergeOnReadSplit) {
+                splits.add(arcticSplit);
+              } else {
+                throw new IllegalArgumentException(
+                    String.format(
+                        "As of now, The %s of SourceSplit type is unsupported, available source splits are %s, %s.",
+                        arcticSplit.getClass().getSimpleName(),
+                        SnapshotSplit.class.getSimpleName(),
+                        ChangelogSplit.class.getSimpleName()));
+              }
+            });
   }
 
   @Override
-  public void wakeUp() {
-  }
+  public void wakeUp() {}
 
   @Override
   public void close() throws Exception {

@@ -36,9 +36,7 @@ import org.apache.iceberg.flink.source.FlinkInputSplit;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-/**
- * Copy from {@link InputFormatSourceFunction}
- */
+/** Copy from {@link InputFormatSourceFunction} */
 public class UnkeyedInputFormatSourceFunction extends RichParallelSourceFunction<RowData> {
   private static final long serialVersionUID = 1L;
 
@@ -54,8 +52,9 @@ public class UnkeyedInputFormatSourceFunction extends RichParallelSourceFunction
   private volatile boolean isRunning = true;
 
   @SuppressWarnings("unchecked")
-  public UnkeyedInputFormatSourceFunction(ProxyFactory<org.apache.iceberg.flink.source.FlinkInputFormat> formatFactory,
-                                          TypeInformation<RowData> typeInfo) {
+  public UnkeyedInputFormatSourceFunction(
+      ProxyFactory<org.apache.iceberg.flink.source.FlinkInputFormat> formatFactory,
+      TypeInformation<RowData> typeInfo) {
     this.formatFactory = formatFactory;
     this.typeInfo = typeInfo;
   }
@@ -158,9 +157,7 @@ public class UnkeyedInputFormatSourceFunction extends RichParallelSourceFunction
 
         final InputSplit split;
         try {
-          split =
-              provider.getNextInputSplit(
-                  getRuntimeContext().getUserCodeClassLoader());
+          split = provider.getNextInputSplit(getRuntimeContext().getUserCodeClassLoader());
         } catch (InputSplitProviderException e) {
           throw new RuntimeException("Could not retrieve next input split.", e);
         }

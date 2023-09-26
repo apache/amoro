@@ -54,7 +54,8 @@ public class MockEnvironmentBuilder {
   private UserCodeClassLoader userCodeClassLoader = TestingUserCodeClassLoader.newBuilder().build();
   private JobID jobID = new JobID();
   private JobVertexID jobVertexID = new JobVertexID();
-  private TaskMetricGroup taskMetricGroup = UnregisteredMetricGroups.createUnregisteredTaskMetricGroup();
+  private TaskMetricGroup taskMetricGroup =
+      UnregisteredMetricGroups.createUnregisteredTaskMetricGroup();
   private TaskManagerRuntimeInfo taskManagerRuntimeInfo = new TestingTaskManagerRuntimeInfo();
   private IOManager ioManager;
   private MemoryManager memoryManager = this.buildMemoryManager(33554432L);
@@ -109,7 +110,8 @@ public class MockEnvironmentBuilder {
     return this;
   }
 
-  public MockEnvironmentBuilder setTaskManagerRuntimeInfo(TaskManagerRuntimeInfo taskManagerRuntimeInfo) {
+  public MockEnvironmentBuilder setTaskManagerRuntimeInfo(
+      TaskManagerRuntimeInfo taskManagerRuntimeInfo) {
     this.taskManagerRuntimeInfo = taskManagerRuntimeInfo;
     return this;
   }
@@ -130,7 +132,8 @@ public class MockEnvironmentBuilder {
   }
 
   public MockEnvironmentBuilder setUserCodeClassLoader(ClassLoader userCodeClassLoader) {
-    this.userCodeClassLoader = TestingUserCodeClassLoader.newBuilder().setClassLoader(userCodeClassLoader).build();
+    this.userCodeClassLoader =
+        TestingUserCodeClassLoader.newBuilder().setClassLoader(userCodeClassLoader).build();
     return this;
   }
 
@@ -159,12 +162,14 @@ public class MockEnvironmentBuilder {
     return this;
   }
 
-  public MockEnvironmentBuilder setExternalResourceInfoProvider(ExternalResourceInfoProvider externalResourceInfoProvider) {
+  public MockEnvironmentBuilder setExternalResourceInfoProvider(
+      ExternalResourceInfoProvider externalResourceInfoProvider) {
     this.externalResourceInfoProvider = externalResourceInfoProvider;
     return this;
   }
 
-  public MockEnvironmentBuilder setGlobalAggregateManager(GlobalAggregateManager globalAggregateManager) {
+  public MockEnvironmentBuilder setGlobalAggregateManager(
+      GlobalAggregateManager globalAggregateManager) {
     this.aggregateManager = globalAggregateManager;
     return this;
   }

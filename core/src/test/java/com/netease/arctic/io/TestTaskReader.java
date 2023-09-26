@@ -152,9 +152,9 @@ public class TestTaskReader extends TableDataTestBase {
         Expressions.alwaysTrue(), null, useDiskMap));
     //expect: +(id=5),+(id=6),-(id=5)
     Set<Record> expectRecords = Sets.newHashSet();
-    expectRecords.add(DataTestHelpers.appendMetaColumnValues(allRecords.get(4), 2, 1, ChangeAction.INSERT));
-    expectRecords.add(DataTestHelpers.appendMetaColumnValues(allRecords.get(5), 2, 2, ChangeAction.INSERT));
-    expectRecords.add(DataTestHelpers.appendMetaColumnValues(allRecords.get(4), 3, 1, ChangeAction.DELETE));
+    expectRecords.add(MixedDataTestHelpers.appendMetaColumnValues(allRecords.get(4), 2, 1, ChangeAction.INSERT));
+    expectRecords.add(MixedDataTestHelpers.appendMetaColumnValues(allRecords.get(5), 2, 2, ChangeAction.INSERT));
+    expectRecords.add(MixedDataTestHelpers.appendMetaColumnValues(allRecords.get(4), 3, 1, ChangeAction.DELETE));
     Assert.assertEquals(expectRecords, records);
   }
 

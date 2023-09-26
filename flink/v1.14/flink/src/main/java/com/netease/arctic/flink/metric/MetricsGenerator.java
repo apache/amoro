@@ -44,11 +44,12 @@ public class MetricsGenerator implements Serializable {
   private RowData.FieldGetter modifyTimeGetter;
   private boolean findColumn = false;
 
-  private MetricsGenerator(boolean latencyEnable,
-                           Schema schema,
-                           RowType flinkSchema,
-                           String modifyTimeColumn,
-                           boolean metricEnable) {
+  private MetricsGenerator(
+      boolean latencyEnable,
+      Schema schema,
+      RowType flinkSchema,
+      String modifyTimeColumn,
+      boolean metricEnable) {
     this.latencyEnable = latencyEnable;
     this.schema = schema;
     this.metricEnable = metricEnable;
@@ -67,7 +68,11 @@ public class MetricsGenerator implements Serializable {
       findColumn = true;
       int modifyTimeColumnIndex = flinkSchema.getFieldIndex(modifyTimeColumn);
       LogicalType type = flinkSchema.getTypeAt(modifyTimeColumnIndex);
-      LOG.info("event latency with column {}, index {}, type {}", modifyTimeColumn, modifyTimeColumnIndex, type);
+      LOG.info(
+          "event latency with column {}, index {}, type {}",
+          modifyTimeColumn,
+          modifyTimeColumnIndex,
+          type);
       modifyTimeGetter = RowData.createFieldGetter(type, modifyTimeColumnIndex);
     }
   }
@@ -76,17 +81,14 @@ public class MetricsGenerator implements Serializable {
     return new MetricsGenerator(false, null, null, null, metricEnable);
   }
 
-  public static MetricsGenerator newGenerator(Schema schema,
-                                              RowType flinkSchema,
-                                              String modifyTimeColumn,
-                                              boolean metricEnable) {
+  public static MetricsGenerator newGenerator(
+      Schema schema, RowType flinkSchema, String modifyTimeColumn, boolean metricEnable) {
     return new MetricsGenerator(true, schema, flinkSchema, modifyTimeColumn, metricEnable);
   }
 
   public boolean enable() {
     return latencyEnable;
   }
-
 
   public boolean isMetricEnable() {
     return metricEnable;
@@ -96,7 +98,8 @@ public class MetricsGenerator implements Serializable {
     if (latencyEnable) {
       if (findColumn) {
         RowData rowData = element.getValue();
-        if (rowData.getRowKind() == RowKind.UPDATE_BEFORE || rowData.getRowKind() == RowKind.DELETE) {
+        if (rowData.getRowKind() == RowKind.UPDATE_BEFORE
+            || rowData.getRowKind() == RowKind.DELETE) {
           return;
         }
 
@@ -106,8 +109,7 @@ public class MetricsGenerator implements Serializable {
         }
         if (value instanceof LocalDateTime) {
           LocalDateTime localDateTime = (LocalDateTime) value;
-          long eventTime =
-              localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+          long eventTime = localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
           this.currentLatency = System.currentTimeMillis() - eventTime;
         } else if (value instanceof Long) {
           this.currentLatency = System.currentTimeMillis() - (Long) value;
@@ -123,5 +125,4 @@ public class MetricsGenerator implements Serializable {
   public long getCurrentLatency() {
     return currentLatency;
   }
-
 }

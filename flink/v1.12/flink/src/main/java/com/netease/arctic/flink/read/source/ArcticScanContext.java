@@ -18,6 +18,13 @@
 
 package com.netease.arctic.flink.read.source;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_READ_FILE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_READ_MODE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
+import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
+
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.TimeUtils;
@@ -34,16 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_READ_FILE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_READ_MODE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
-import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
-
-/**
- * This is an arctic source scan context.
- */
+/** This is an arctic source scan context. */
 public class ArcticScanContext extends ScanContext implements Serializable {
 
   private static final long serialVersionUID = 1L;
@@ -77,7 +75,8 @@ public class ArcticScanContext extends ScanContext implements Serializable {
       String tag,
       String startTag,
       String endTag) {
-    super(caseSensitive,
+    super(
+        caseSensitive,
         snapshotId,
         startingStrategy,
         startSnapshotTimestamp,
@@ -153,9 +152,7 @@ public class ArcticScanContext extends ScanContext implements Serializable {
     return schema;
   }
 
-  /**
-   * Only working for base store right now.
-   */
+  /** Only working for base store right now. */
   public List<Expression> filters() {
     return filters;
   }
@@ -211,8 +208,7 @@ public class ArcticScanContext extends ScanContext implements Serializable {
 
     private String endTag = FlinkReadOptions.END_TAG.defaultValue();
 
-    private Builder() {
-    }
+    private Builder() {}
 
     public Builder caseSensitive(boolean newCaseSensitive) {
       this.caseSensitive = newCaseSensitive;
@@ -371,16 +367,21 @@ public class ArcticScanContext extends ScanContext implements Serializable {
     }
 
     public ArcticScanContext build() {
-      Preconditions.checkArgument(Objects.isNull(startSnapshotId),
-          "keyed table doesn't support start-snapshot-id now");
-      Preconditions.checkArgument(Objects.isNull(endSnapshotId),
-          "keyed table doesn't support end-snapshot-id now");
+      Preconditions.checkArgument(
+          Objects.isNull(startSnapshotId), "keyed table doesn't support start-snapshot-id now");
+      Preconditions.checkArgument(
+          Objects.isNull(endSnapshotId), "keyed table doesn't support end-snapshot-id now");
       scanStartupMode = scanStartupMode == null ? null : scanStartupMode.toLowerCase();
-      Preconditions.checkArgument(Objects.isNull(scanStartupMode) ||
-              Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_EARLIEST) ||
-              Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_LATEST),
-          String.format("only support %s, %s when %s is %s",
-              SCAN_STARTUP_MODE_EARLIEST, SCAN_STARTUP_MODE_LATEST, ARCTIC_READ_MODE, ARCTIC_READ_FILE));
+      Preconditions.checkArgument(
+          Objects.isNull(scanStartupMode)
+              || Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_EARLIEST)
+              || Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_LATEST),
+          String.format(
+              "only support %s, %s when %s is %s",
+              SCAN_STARTUP_MODE_EARLIEST,
+              SCAN_STARTUP_MODE_LATEST,
+              ARCTIC_READ_MODE,
+              ARCTIC_READ_FILE));
       return new ArcticScanContext(
           caseSensitive,
           snapshotId,
@@ -407,8 +408,7 @@ public class ArcticScanContext extends ScanContext implements Serializable {
           branch,
           tag,
           startTag,
-          endTag
-        );
+          endTag);
     }
   }
 }

@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -39,10 +40,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * The abstract arctic source enumerator.
- */
-public abstract class AbstractArcticEnumerator implements SplitEnumerator<ArcticSplit, ArcticSourceEnumState> {
+/** The abstract arctic source enumerator. */
+public abstract class AbstractArcticEnumerator
+    implements SplitEnumerator<ArcticSplit, ArcticSourceEnumState> {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractArcticEnumerator.class);
   private final SplitEnumeratorContext<ArcticSplit> enumeratorContext;
   private final SplitAssigner assigner;
@@ -50,8 +50,7 @@ public abstract class AbstractArcticEnumerator implements SplitEnumerator<Arctic
   private final AtomicReference<CompletableFuture<Void>> availableFuture;
 
   AbstractArcticEnumerator(
-      SplitEnumeratorContext<ArcticSplit> enumeratorContext,
-      SplitAssigner assigner) {
+      SplitEnumeratorContext<ArcticSplit> enumeratorContext, SplitAssigner assigner) {
     this.enumeratorContext = enumeratorContext;
     this.assigner = assigner;
     this.readersAwaitingSplit = new ConcurrentHashMap<>();
@@ -59,9 +58,7 @@ public abstract class AbstractArcticEnumerator implements SplitEnumerator<Arctic
   }
 
   @Override
-  public void start() {
-
-  }
+  public void start() {}
 
   @Override
   public void close() throws IOException {
@@ -70,15 +67,17 @@ public abstract class AbstractArcticEnumerator implements SplitEnumerator<Arctic
 
   @Override
   public void handleSplitRequest(int subtaskId, @Nullable String requesterHostname) {
-    throw new UnsupportedOperationException(String.format("Received invalid default split request event " +
-        "from subtask %d as Arctic source uses custom split request event", subtaskId));
+    throw new UnsupportedOperationException(
+        String.format(
+            "Received invalid default split request event "
+                + "from subtask %d as Arctic source uses custom split request event",
+            subtaskId));
   }
 
   @Override
   public void handleSourceEvent(int subtaskId, SourceEvent sourceEvent) {
     if (sourceEvent instanceof SplitRequestEvent) {
-      SplitRequestEvent splitRequestEvent =
-          (SplitRequestEvent) sourceEvent;
+      SplitRequestEvent splitRequestEvent = (SplitRequestEvent) sourceEvent;
       LOG.info("Received request split event from subtask {}", subtaskId);
       assigner.onCompletedSplits(splitRequestEvent.finishedSplitIds());
       readersAwaitingSplit.put(subtaskId, String.valueOf(splitRequestEvent.requesterHostname()));
@@ -86,8 +85,10 @@ public abstract class AbstractArcticEnumerator implements SplitEnumerator<Arctic
     } else if (sourceEvent instanceof ReaderStartedEvent) {
       LOG.info("Received ReaderStartEvent from subtask {}", subtaskId);
     } else {
-      throw new IllegalArgumentException(String.format("Received unknown event from subtask %d: %s",
-          subtaskId, sourceEvent.getClass().getCanonicalName()));
+      throw new IllegalArgumentException(
+          String.format(
+              "Received unknown event from subtask %d: %s",
+              subtaskId, sourceEvent.getClass().getCanonicalName()));
     }
   }
 
@@ -102,10 +103,7 @@ public abstract class AbstractArcticEnumerator implements SplitEnumerator<Arctic
     assigner.onUnassignedSplits(splits);
   }
 
-  /**
-   * return true if enumerator should wait for splits
-   * like in the continuous enumerator case.
-   */
+  /** return true if enumerator should wait for splits like in the continuous enumerator case. */
   protected abstract boolean shouldWaitForMoreSplits();
 
   protected void assignSplits() {
@@ -122,8 +120,8 @@ public abstract class AbstractArcticEnumerator implements SplitEnumerator<Arctic
       // it from the list of waiting readers
       if (!enumeratorContext.registeredReaders().containsKey(nextAwaiting.getKey())) {
         LOG.info(
-            "Due to this reader doesn't registered in the enumerator context any more, so remove this subtask reader" +
-                " [{}] from the awaiting reader map.",
+            "Due to this reader doesn't registered in the enumerator context any more, so remove this subtask reader"
+                + " [{}] from the awaiting reader map.",
             nextAwaiting.getKey());
         awaitingReader.remove();
         continue;
@@ -133,8 +131,11 @@ public abstract class AbstractArcticEnumerator implements SplitEnumerator<Arctic
       final Split nextSplit = assigner.getNext(awaitingSubtask);
       if (nextSplit.isAvailable()) {
         ArcticSplit arcticSplit = nextSplit.split();
-        LOG.info("assign a arctic split to subtaskId {}, taskIndex {}, arcticSplit {}.",
-            awaitingSubtask, arcticSplit.taskIndex(), arcticSplit);
+        LOG.info(
+            "assign a arctic split to subtaskId {}, taskIndex {}, arcticSplit {}.",
+            awaitingSubtask,
+            arcticSplit.taskIndex(),
+            arcticSplit);
         enumeratorContext.assignSplit(arcticSplit, awaitingSubtask);
         awaitingReader.remove();
       } else if (nextSplit.isUnavailable()) {

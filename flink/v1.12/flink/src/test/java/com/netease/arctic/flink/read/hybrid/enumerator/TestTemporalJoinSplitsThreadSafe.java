@@ -41,7 +41,8 @@ public class TestTemporalJoinSplitsThreadSafe {
       allSplit.add(UUID.randomUUID().toString());
     }
 
-    Collection<ArcticSplit> arcticSplits = allSplit.stream().map(TestArcticSplit::of).collect(Collectors.toList());
+    Collection<ArcticSplit> arcticSplits =
+        allSplit.stream().map(TestArcticSplit::of).collect(Collectors.toList());
 
     for (int i = 0; i < 2; i++) {
       round(allSplit, arcticSplits);
@@ -62,14 +63,14 @@ public class TestTemporalJoinSplitsThreadSafe {
     int an = as.size();
     List<ArcticSplit> as1 = new ArrayList<>(as.subList(0, (int) (2.0 / 3 * an)));
     List<ArcticSplit> as2 = new ArrayList<>(as.subList((int) (1.0 / 3 * an), an));
-    CompletableFuture<Void> f1 = CompletableFuture.runAsync(() ->
-        temporalJoinSplits.removeAndReturnIfAllFinished(s1)
-    );
-    CompletableFuture<Void> f2 = CompletableFuture.runAsync(() ->
-        temporalJoinSplits.addSplitsBack(as1)
-    );
-    CompletableFuture<Void> f3 = CompletableFuture.runAsync(() -> temporalJoinSplits.removeAndReturnIfAllFinished(s2));
-    CompletableFuture<Void> f4 = CompletableFuture.runAsync(() -> temporalJoinSplits.addSplitsBack(as2));
+    CompletableFuture<Void> f1 =
+        CompletableFuture.runAsync(() -> temporalJoinSplits.removeAndReturnIfAllFinished(s1));
+    CompletableFuture<Void> f2 =
+        CompletableFuture.runAsync(() -> temporalJoinSplits.addSplitsBack(as1));
+    CompletableFuture<Void> f3 =
+        CompletableFuture.runAsync(() -> temporalJoinSplits.removeAndReturnIfAllFinished(s2));
+    CompletableFuture<Void> f4 =
+        CompletableFuture.runAsync(() -> temporalJoinSplits.addSplitsBack(as2));
     CompletableFuture.allOf(f1, f2, f3, f4).join();
     Assert.assertTrue(temporalJoinSplits.removeAndReturnIfAllFinished(allSplit));
   }
@@ -91,8 +92,7 @@ public class TestTemporalJoinSplitsThreadSafe {
     }
 
     @Override
-    public void updateOffset(Object[] recordOffsets) {
-    }
+    public void updateOffset(Object[] recordOffsets) {}
 
     @Override
     public ArcticSplit copy() {

@@ -34,6 +34,9 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Validate checkstyle first
+        run: mvn validate
+
       - name: Install dependency with Maven
         run: mvn clean install -DskipTests -pl 'ams/api,core,hive' -Dhadoop=v2 -am -B
 

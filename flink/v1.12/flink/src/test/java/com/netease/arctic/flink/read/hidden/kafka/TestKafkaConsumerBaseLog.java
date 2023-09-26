@@ -18,6 +18,11 @@
 
 package com.netease.arctic.flink.read.hidden.kafka;
 
+import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getProperties;
+import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getPropertiesWithByteArray;
+import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.netease.arctic.flink.util.TestUtil;
 import com.netease.arctic.flink.util.kafka.KafkaTestBase;
 import com.netease.arctic.flink.write.hidden.TestBaseLog;
@@ -46,16 +51,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getProperties;
-import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getPropertiesWithByteArray;
-import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
-import static org.assertj.core.api.Assertions.assertThat;
-
 public class TestKafkaConsumerBaseLog extends TestBaseLog {
   private static final Logger LOG = LoggerFactory.getLogger(TestKafkaConsumerBaseLog.class);
   private static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
-  @Rule
-  public TestName testName = new TestName();
+  @Rule public TestName testName = new TestName();
   private static String topic;
 
   @BeforeClass
@@ -125,9 +124,10 @@ public class TestKafkaConsumerBaseLog extends TestBaseLog {
     // read all
     properties.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
     KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(properties);
-    Set<TopicPartition> topicPartitionList = consumer.partitionsFor(topicIntern).stream()
-        .map(partitionInfo -> new TopicPartition(topicIntern, partitionInfo.partition()))
-        .collect(Collectors.toSet());
+    Set<TopicPartition> topicPartitionList =
+        consumer.partitionsFor(topicIntern).stream()
+            .map(partitionInfo -> new TopicPartition(topicIntern, partitionInfo.partition()))
+            .collect(Collectors.toSet());
     TopicPartition partition0 = topicPartitionList.stream().iterator().next();
     consumer.assign(topicPartitionList);
     consumer.seekToBeginning(consumer.assignment());

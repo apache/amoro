@@ -18,6 +18,10 @@
 
 package com.netease.arctic.flink.write;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP_TIMESTAMP;
+
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.table.ArcticTable;
@@ -30,13 +34,7 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.util.Map;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP_TIMESTAMP;
-
-/**
- * This is an automatic logstore writer util class.
- */
+/** This is an automatic logstore writer util class. */
 public class AutomaticDoubleWriteStatus implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(AutomaticDoubleWriteStatus.class);
 
@@ -47,7 +45,8 @@ public class AutomaticDoubleWriteStatus implements Serializable {
   private transient boolean shouldDoubleWrite = false;
   private int subtaskId;
 
-  public AutomaticDoubleWriteStatus(ArcticTableLoader tableLoader, Duration writeLogstoreWatermarkGap) {
+  public AutomaticDoubleWriteStatus(
+      ArcticTableLoader tableLoader, Duration writeLogstoreWatermarkGap) {
     this.tableLoader = tableLoader;
     this.specification = new AutomaticWriteSpecification(writeLogstoreWatermarkGap);
   }
@@ -71,11 +70,13 @@ public class AutomaticDoubleWriteStatus implements Serializable {
     }
     if (specification.shouldDoubleWrite(mark.getTimestamp())) {
       shouldDoubleWrite = true;
-      LOG.info("processWatermark {}, subTaskId is {}, should double write is true.", mark, subtaskId);
+      LOG.info(
+          "processWatermark {}, subTaskId is {}, should double write is true.", mark, subtaskId);
       LOG.info("begin update arctic table, set {} to true", LOG_STORE_CATCH_UP.key());
       UpdateProperties updateProperties = table.updateProperties();
       updateProperties.set(LOG_STORE_CATCH_UP.key(), String.valueOf(true));
-      updateProperties.set(LOG_STORE_CATCH_UP_TIMESTAMP.key(), String.valueOf(System.currentTimeMillis()));
+      updateProperties.set(
+          LOG_STORE_CATCH_UP_TIMESTAMP.key(), String.valueOf(System.currentTimeMillis()));
       updateProperties.remove(AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key());
       updateProperties.commit();
       LOG.info("end update arctic table.");
@@ -85,8 +86,10 @@ public class AutomaticDoubleWriteStatus implements Serializable {
   public void sync() {
     table.refresh();
     Map<String, String> properties = table.properties();
-    shouldDoubleWrite =
-        !properties.containsKey(AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key());
-    LOG.info("AutomaticDoubleWriteStatus sync, subTaskId: {}, should double write: {}", subtaskId, shouldDoubleWrite);
+    shouldDoubleWrite = !properties.containsKey(AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key());
+    LOG.info(
+        "AutomaticDoubleWriteStatus sync, subTaskId: {}, should double write: {}",
+        subtaskId,
+        shouldDoubleWrite);
   }
 }

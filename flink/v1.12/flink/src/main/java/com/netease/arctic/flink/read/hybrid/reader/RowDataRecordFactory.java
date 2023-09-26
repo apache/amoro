@@ -25,9 +25,7 @@ import org.apache.flink.table.runtime.typeutils.InternalSerializers;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.flink.data.RowDataUtil;
 
-/**
- * A factory create a batch of empty {@link RowData}s.
- */
+/** A factory create a batch of empty {@link RowData}s. */
 class RowDataRecordFactory implements RecordFactory<RowData> {
   private final RowType rowType;
   private final TypeSerializer[] fieldSerializers;

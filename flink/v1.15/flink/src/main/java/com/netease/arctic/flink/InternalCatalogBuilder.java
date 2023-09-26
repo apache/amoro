@@ -33,9 +33,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Build {@link ArcticCatalog}.
- */
+/** Build {@link ArcticCatalog}. */
 public class InternalCatalogBuilder implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(InternalCatalogBuilder.class);
 
@@ -43,7 +41,8 @@ public class InternalCatalogBuilder implements Serializable {
   private Map<String, String> properties = new HashMap<>(0);
 
   private ArcticCatalog createBaseArcticCatalog() {
-    Preconditions.checkArgument(StringUtils.isNotBlank(metastoreUrl),
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(metastoreUrl),
         "metastoreUrl can not be empty. e.g: thrift://127.0.0.1:port/catalogName");
     return CatalogLoader.load(metastoreUrl, properties);
   }
@@ -56,8 +55,7 @@ public class InternalCatalogBuilder implements Serializable {
     return properties;
   }
 
-  public InternalCatalogBuilder() {
-  }
+  public InternalCatalogBuilder() {}
 
   public static InternalCatalogBuilder builder() {
     return new InternalCatalogBuilder();
@@ -68,7 +66,8 @@ public class InternalCatalogBuilder implements Serializable {
   }
 
   public InternalCatalogBuilder metastoreUrl(String metastoreUrl) {
-    Preconditions.checkArgument(StringUtils.isNotBlank(metastoreUrl),
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(metastoreUrl),
         "metastore url can not be empty e.g: thrift://127.0.0.1:port/catalogName");
     this.metastoreUrl = metastoreUrl;
     return this;
@@ -82,7 +81,8 @@ public class InternalCatalogBuilder implements Serializable {
       switch (key) {
         case CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB_PATH:
           try {
-            finalProperties.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB,
+            finalProperties.put(
+                CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB,
                 ConfigurationFileUtil.encodeConfigurationFileWithBase64(value));
           } catch (IOException e) {
             LOG.error("encode keytab file failed", e);
@@ -94,7 +94,8 @@ public class InternalCatalogBuilder implements Serializable {
           break;
         case CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB_PATH:
           try {
-            finalProperties.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5,
+            finalProperties.put(
+                CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5,
                 ConfigurationFileUtil.encodeConfigurationFileWithBase64(value));
           } catch (IOException e) {
             LOG.error("encode krb5 file failed", e);

@@ -52,8 +52,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * This is an abstract state backed by RocksDB and Guava cache for storing and retrieving key-value pairs of
- * byte arrays.
+ * This is an abstract state backed by RocksDB and Guava cache for storing and retrieving key-value
+ * pairs of byte arrays.
  *
  * @param <V> the type of the cache's values, which are not permitted to be null
  */
@@ -114,11 +114,14 @@ public abstract class RocksDBCacheState<V> {
 
     lookupRecordsQueue = new ConcurrentLinkedQueue<>();
     writeRocksDBThreadFutures =
-        IntStream.range(0, writeRocksDBThreadNum).mapToObj(value ->
-                writeRocksDBService.submit(
-                    new WriteRocksDBTask(
-                        String.format("writing-rocksDB-cf_%s-thread-%d", columnFamilyName, value),
-                        secondaryIndexMemoryMapEnabled)))
+        IntStream.range(0, writeRocksDBThreadNum)
+            .mapToObj(
+                value ->
+                    writeRocksDBService.submit(
+                        new WriteRocksDBTask(
+                            String.format(
+                                "writing-rocksDB-cf_%s-thread-%d", columnFamilyName, value),
+                            secondaryIndexMemoryMapEnabled)))
             .collect(Collectors.toList());
   }
 
@@ -128,9 +131,8 @@ public abstract class RocksDBCacheState<V> {
   }
 
   @VisibleForTesting
-  public byte[] serializeKey(
-      BinaryRowDataSerializerWrapper keySerializer,
-      RowData key) throws IOException {
+  public byte[] serializeKey(BinaryRowDataSerializerWrapper keySerializer, RowData key)
+      throws IOException {
     // key has a different RowKind would serialize different byte[], so unify the RowKind as INSERT.
     byte[] result;
     if (key.getRowKind() != RowKind.INSERT) {
@@ -153,9 +155,7 @@ public abstract class RocksDBCacheState<V> {
     lookupRecordsQueue.add(lookupRecord);
   }
 
-  /**
-   * Waiting for the writing threads completed.
-   */
+  /** Waiting for the writing threads completed. */
   public void waitWriteRocksDBDone() {
     long every5SecondsPrint = Long.MIN_VALUE;
 
@@ -202,7 +202,9 @@ public abstract class RocksDBCacheState<V> {
 
   /**
    * Closes the RocksDB instance and cleans up the Guava cache.
-   * <p>Additionally, it shuts down the write-service and clears the RocksDB record queue if they exist.
+   *
+   * <p>Additionally, it shuts down the write-service and clears the RocksDB record queue if they
+   * exist.
    */
   public void close() {
     rocksDB.close();
@@ -222,9 +224,7 @@ public abstract class RocksDBCacheState<V> {
     try {
       rocksDB.getDB().enableAutoCompaction(Collections.singletonList(columnFamilyHandle));
       MutableColumnFamilyOptions mutableColumnFamilyOptions =
-          MutableColumnFamilyOptions.builder()
-              .setDisableAutoCompactions(false)
-              .build();
+          MutableColumnFamilyOptions.builder().setDisableAutoCompactions(false).build();
       rocksDB.setOptions(columnFamilyHandle, mutableColumnFamilyOptions);
     } catch (RocksDBException e) {
       throw new ArcticIOException(e);
@@ -245,12 +245,15 @@ public abstract class RocksDBCacheState<V> {
   }
 
   /**
-   * This task is running during the initialization phase to write data{@link LookupRecord} to RocksDB.
-   * <p>During the initialization phase, the Merge-on-Read approach is used to retrieve data,
-   * which will only return INSERT data.
-   * When there are multiple entries with the same primary key, only one entry will be returned.
-   * <p>During the initialization phase, the incremental pull approach is also used to retrieve data that include
-   * four {@link RowKind} rowKinds, -D, +I, -U, and +U.
+   * This task is running during the initialization phase to write data{@link LookupRecord} to
+   * RocksDB.
+   *
+   * <p>During the initialization phase, the Merge-on-Read approach is used to retrieve data, which
+   * will only return INSERT data. When there are multiple entries with the same primary key, only
+   * one entry will be returned.
+   *
+   * <p>During the initialization phase, the incremental pull approach is also used to retrieve data
+   * that include four {@link RowKind} rowKinds, -D, +I, -U, and +U.
    */
   class WriteRocksDBTask implements Runnable {
 
@@ -277,7 +280,8 @@ public abstract class RocksDBCacheState<V> {
                 delete(record);
                 break;
               default:
-                throw new IllegalArgumentException(String.format("Not support this OpType %s", record.opType()));
+                throw new IllegalArgumentException(
+                    String.format("Not support this OpType %s", record.opType()));
             }
           }
         }
@@ -321,9 +325,9 @@ public abstract class RocksDBCacheState<V> {
     removeValue(guavaCache, keyWrap, valueWrap);
   }
 
-  void putCacheValue(Cache<ByteArrayWrapper, V> cache, ByteArrayWrapper keyWrap, ByteArrayWrapper valueWrap) {
-  }
+  void putCacheValue(
+      Cache<ByteArrayWrapper, V> cache, ByteArrayWrapper keyWrap, ByteArrayWrapper valueWrap) {}
 
-  void removeValue(Cache<ByteArrayWrapper, V> cache, ByteArrayWrapper keyWrap, ByteArrayWrapper valueWrap) {
-  }
+  void removeValue(
+      Cache<ByteArrayWrapper, V> cache, ByteArrayWrapper keyWrap, ByteArrayWrapper valueWrap) {}
 }

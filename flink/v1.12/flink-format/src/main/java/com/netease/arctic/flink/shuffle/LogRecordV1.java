@@ -18,6 +18,10 @@
 
 package com.netease.arctic.flink.shuffle;
 
+import static com.netease.arctic.flink.shuffle.RowKindUtil.convertToFlinkRowKind;
+import static org.apache.flink.shaded.guava18.com.google.common.base.Preconditions.checkArgument;
+import static org.apache.flink.shaded.guava18.com.google.common.base.Preconditions.checkNotNull;
+
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.log.FormatVersion;
 import com.netease.arctic.log.LogData;
@@ -43,13 +47,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import static com.netease.arctic.flink.shuffle.RowKindUtil.convertToFlinkRowKind;
-import static org.apache.flink.shaded.guava18.com.google.common.base.Preconditions.checkArgument;
-import static org.apache.flink.shaded.guava18.com.google.common.base.Preconditions.checkNotNull;
-
-/**
- * An implement of {@link LogData<RowData>} in flink application.
- */
+/** An implement of {@link LogData<RowData>} in flink application. */
 public class LogRecordV1 implements LogData<RowData>, Serializable {
   private static final long serialVersionUID = -3884886938053319336L;
   FormatVersion formatVersion;
@@ -134,13 +132,19 @@ public class LogRecordV1 implements LogData<RowData>, Serializable {
 
   @Override
   public String toString() {
-    return "LogData = {version = " + getVersion() +
-        ", upstreamId = " + getUpstreamId() +
-        ", epicNo = " + epicNo +
-        ", flip = " + flip +
-        ", changeAction = " + changeAction.toString() +
-        ", actualValue = " + actualValue +
-        "}";
+    return "LogData = {version = "
+        + getVersion()
+        + ", upstreamId = "
+        + getUpstreamId()
+        + ", epicNo = "
+        + epicNo
+        + ", flip = "
+        + flip
+        + ", changeAction = "
+        + changeAction.toString()
+        + ", actualValue = "
+        + actualValue
+        + "}";
   }
 
   public static class LogFlinkMapData implements LogMapData {
@@ -300,32 +304,35 @@ public class LogRecordV1 implements LogData<RowData>, Serializable {
               fieldGetter = RowData::getBinary;
               break;
             case DECIMAL:
-              fieldGetter = ((row, fieldPos) -> {
-                Types.DecimalType decimalType = (Types.DecimalType) type;
-                int precision = decimalType.precision();
-                int scale = decimalType.scale();
-                DecimalData decimalData = row.getDecimal(fieldPos, precision, scale);
-                return decimalData == null ? null : decimalData.toBigDecimal();
-              });
+              fieldGetter =
+                  ((row, fieldPos) -> {
+                    Types.DecimalType decimalType = (Types.DecimalType) type;
+                    int precision = decimalType.precision();
+                    int scale = decimalType.scale();
+                    DecimalData decimalData = row.getDecimal(fieldPos, precision, scale);
+                    return decimalData == null ? null : decimalData.toBigDecimal();
+                  });
               break;
             case LIST:
-              fieldGetter = ((row, fieldPos) -> {
-                ArrayData arrayData = row.getArray(fieldPos);
-                // check arrayData is null or not. arrayData could be nullable.
-                if (arrayData == null) {
-                  return null;
-                }
-                return new LogFlinkArrayData(arrayData);
-              });
+              fieldGetter =
+                  ((row, fieldPos) -> {
+                    ArrayData arrayData = row.getArray(fieldPos);
+                    // check arrayData is null or not. arrayData could be nullable.
+                    if (arrayData == null) {
+                      return null;
+                    }
+                    return new LogFlinkArrayData(arrayData);
+                  });
               break;
             case MAP:
-              fieldGetter = ((row, fieldPos) -> {
-                MapData mapData = row.getMap(pos);
-                if (mapData == null) {
-                  return null;
-                }
-                return new LogFlinkMapData(mapData);
-              });
+              fieldGetter =
+                  ((row, fieldPos) -> {
+                    MapData mapData = row.getMap(pos);
+                    if (mapData == null) {
+                      return null;
+                    }
+                    return new LogFlinkMapData(mapData);
+                  });
               break;
             case STRUCT:
               fieldGetter = ((row, fieldPos) -> row.getRow(fieldPos, 0));
@@ -333,113 +340,114 @@ public class LogRecordV1 implements LogData<RowData>, Serializable {
             default:
               throw new UnsupportedOperationException("not supported type:" + type);
           }
-          return (row,fieldPos) -> {
+          return (row, fieldPos) -> {
             if (row.isNullAt(fieldPos)) {
               return null;
             }
-            return fieldGetter.getFieldOrNull(row,fieldPos);
+            return fieldGetter.getFieldOrNull(row, fieldPos);
           };
         }
       };
 
-  public static LogData.Factory<RowData> factory = new Factory<RowData>() {
-    private static final long serialVersionUID = 2395276763978332852L;
+  public static LogData.Factory<RowData> factory =
+      new Factory<RowData>() {
+        private static final long serialVersionUID = 2395276763978332852L;
 
-    @Override
-    public RowData createActualValue(Object[] objects, Type[] fieldTypes) {
-      checkNotNull(objects);
-      checkArgument(objects.length > 0, "can't construct a instance used by GenericRowData.");
-      GenericRowData row = new GenericRowData(objects.length);
-      for (int i = 0; i < objects.length; i++) {
-        Object obj = objects[i];
-        Type type = fieldTypes[i];
-        obj = convertIfNecessary(type, obj);
-        row.setField(i, obj);
-      }
-      return row;
-    }
-
-    public Object convertIfNecessary(Type primitiveType, Object obj) {
-      if (obj == null) {
-        return null;
-      }
-      switch (primitiveType.typeId()) {
-        case STRING:
-          obj = StringData.fromString(obj.toString());
-          break;
-        case TIME:
-          obj = (int) (((long) obj) / 1000_1000);
-          break;
-        case TIMESTAMP:
-          Types.TimestampType timestamp = (Types.TimestampType) primitiveType;
-          if (timestamp.shouldAdjustToUTC()) {
-            obj = TimestampData.fromInstant((Instant) obj);
-          } else {
-            obj = TimestampData.fromLocalDateTime((LocalDateTime) obj);
+        @Override
+        public RowData createActualValue(Object[] objects, Type[] fieldTypes) {
+          checkNotNull(objects);
+          checkArgument(objects.length > 0, "can't construct a instance used by GenericRowData.");
+          GenericRowData row = new GenericRowData(objects.length);
+          for (int i = 0; i < objects.length; i++) {
+            Object obj = objects[i];
+            Type type = fieldTypes[i];
+            obj = convertIfNecessary(type, obj);
+            row.setField(i, obj);
           }
-          break;
-        case DECIMAL:
-          Types.DecimalType decimalType = (Types.DecimalType) primitiveType;
-          int precision = decimalType.precision();
-          int scale = decimalType.scale();
-          obj = DecimalData.fromBigDecimal((BigDecimal) obj, precision, scale);
-          break;
-        case LIST:
-          assert obj instanceof LogFlinkArrayData;
-          LogFlinkArrayData list = (LogFlinkArrayData) obj;
-          obj = list.arrayData;
-          break;
-        case MAP:
-          assert obj instanceof LogFlinkMapData;
-          LogFlinkMapData map = (LogFlinkMapData) obj;
-          obj = map.mapData;
-          break;
-      }
-      return obj;
-    }
+          return row;
+        }
 
-    @Override
-    public LogData<RowData> create(RowData rowData, Object... headers) {
-      FormatVersion formatVersion = FormatVersion.fromBytes((byte[]) headers[0]);
-      if (formatVersion == null) {
-        throw new FlinkRuntimeException(
-            String.format("this is illegal format version, %s.", headers[0]));
-      }
+        public Object convertIfNecessary(Type primitiveType, Object obj) {
+          if (obj == null) {
+            return null;
+          }
+          switch (primitiveType.typeId()) {
+            case STRING:
+              obj = StringData.fromString(obj.toString());
+              break;
+            case TIME:
+              obj = (int) (((long) obj) / 1000_1000);
+              break;
+            case TIMESTAMP:
+              Types.TimestampType timestamp = (Types.TimestampType) primitiveType;
+              if (timestamp.shouldAdjustToUTC()) {
+                obj = TimestampData.fromInstant((Instant) obj);
+              } else {
+                obj = TimestampData.fromLocalDateTime((LocalDateTime) obj);
+              }
+              break;
+            case DECIMAL:
+              Types.DecimalType decimalType = (Types.DecimalType) primitiveType;
+              int precision = decimalType.precision();
+              int scale = decimalType.scale();
+              obj = DecimalData.fromBigDecimal((BigDecimal) obj, precision, scale);
+              break;
+            case LIST:
+              assert obj instanceof LogFlinkArrayData;
+              LogFlinkArrayData list = (LogFlinkArrayData) obj;
+              obj = list.arrayData;
+              break;
+            case MAP:
+              assert obj instanceof LogFlinkMapData;
+              LogFlinkMapData map = (LogFlinkMapData) obj;
+              obj = map.mapData;
+              break;
+          }
+          return obj;
+        }
 
-      return new LogRecordV1(
-          formatVersion,
-          (byte[]) headers[1],
-          (long) headers[2],
-          (boolean) headers[3],
-          ChangeAction.fromByteValue((byte) headers[4]),
-          rowData
-      );
-    }
+        @Override
+        public LogData<RowData> create(RowData rowData, Object... headers) {
+          FormatVersion formatVersion = FormatVersion.fromBytes((byte[]) headers[0]);
+          if (formatVersion == null) {
+            throw new FlinkRuntimeException(
+                String.format("this is illegal format version, %s.", headers[0]));
+          }
 
-    @Override
-    public Class<?> getActualValueClass() {
-      return RowData.class;
-    }
-  };
+          return new LogRecordV1(
+              formatVersion,
+              (byte[]) headers[1],
+              (long) headers[2],
+              (boolean) headers[3],
+              ChangeAction.fromByteValue((byte) headers[4]),
+              rowData);
+        }
 
-  public static LogArrayData.Factory arrayFactory = new LogArrayData.Factory() {
-    private static final long serialVersionUID = 1L;
+        @Override
+        public Class<?> getActualValueClass() {
+          return RowData.class;
+        }
+      };
 
-    @Override
-    public LogArrayData create(Object[] array) {
-      ArrayData flinkArrayData = new GenericArrayData(array);
-      return new LogFlinkArrayData(flinkArrayData);
-    }
-  };
+  public static LogArrayData.Factory arrayFactory =
+      new LogArrayData.Factory() {
+        private static final long serialVersionUID = 1L;
 
-  public static LogMapData.Factory mapFactory = new LogMapData.Factory() {
-    private static final long serialVersionUID = 1L;
+        @Override
+        public LogArrayData create(Object[] array) {
+          ArrayData flinkArrayData = new GenericArrayData(array);
+          return new LogFlinkArrayData(flinkArrayData);
+        }
+      };
 
-    @Override
-    public LogMapData create(Map<Object, Object> result) {
-      MapData flinkMapData = new GenericMapData(result);
-      return new LogFlinkMapData(flinkMapData);
-    }
-  };
+  public static LogMapData.Factory mapFactory =
+      new LogMapData.Factory() {
+        private static final long serialVersionUID = 1L;
 
+        @Override
+        public LogMapData create(Map<Object, Object> result) {
+          MapData flinkMapData = new GenericMapData(result);
+          return new LogFlinkMapData(flinkMapData);
+        }
+      };
 }

@@ -66,7 +66,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <root.dir>${project.basedir}</root.dir>
-        <maven.scalastyle.skip>false</maven.scalastyle.skip>
         <jacoco.flink.skip>false</jacoco.flink.skip>
 
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
@@ -85,7 +84,6 @@
         <maven-antrun-plugin.version>3.0.0</maven-antrun-plugin.version>
         <maven-jacoco-plugin.version>0.8.7</maven-jacoco-plugin.version>
         <maven-spotless-plugin.version>2.27.2</maven-spotless-plugin.version>
-        <maven-scalastyle-plugin.version>1.0.0</maven-scalastyle-plugin.version>
 
         <iceberg.version>1.3.0</iceberg.version>
         <hive.version>3.1.1</hive.version>
@@ -589,35 +587,35 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>org.scalastyle</groupId>
-                    <artifactId>scalastyle-maven-plugin</artifactId>
-                    <version>${maven-scalastyle-plugin.version}</version>
-                    <configuration>
-                        <verbose>false</verbose>
-                        <failOnViolation>true</failOnViolation>
-                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                        <failOnWarning>false</failOnWarning>
-                        <sourceDirectory>${project.basedir}/src/main/scala</sourceDirectory>
-                        <testSourceDirectory>${project.basedir}/src/test/scala</testSourceDirectory>
-                        <configLocation>style/scalastyle-config.xml</configLocation>
-                        <outputFile>${project.build.directory}/scalastyle-output.xml</outputFile>
-                        <outputEncoding>UTF-8</outputEncoding>
-                        <skip>${maven.scalastyle.skip}</skip>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>validate</id>
-                            <goals>
-                                <goal>check</goal>
-                            </goals>
-                            <phase>validate</phase>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
                     <groupId>com.diffplug.spotless</groupId>
                     <artifactId>spotless-maven-plugin</artifactId>
                     <version>${maven-spotless-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>spotless-check</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <java>
+                            <googleJavaFormat>
+                                <version>1.7</version>
+                            </googleJavaFormat>
+                            <removeUnusedImports />
+                            <importOrder>
+                                <order>,javax,java,\\#</order>
+                            </importOrder>
+                        </java>
+                        <scala>
+                            <scalafmt>
+                                <scalaMajorVersion>2.12</scalaMajorVersion>
+                                <file>.scalafmt.conf</file>
+                            </scalafmt>
+                        </scala>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

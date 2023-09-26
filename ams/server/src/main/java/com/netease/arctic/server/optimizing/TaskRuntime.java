@@ -34,6 +34,7 @@ import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.utils.SerializationUtil;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -270,6 +271,24 @@ public class TaskRuntime extends StatedPersistentBase {
 
   public long getTableId() {
     return tableId;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("tableId", tableId)
+        .add("partition", partition)
+        .add("taskId", taskId.getTaskId())
+        .add("status", status)
+        .add("retry", retry)
+        .add("startTime", startTime)
+        .add("endTime", endTime)
+        .add("costTime", costTime)
+        .add("optimizingThread", optimizingThread)
+        .add("failReason", failReason)
+        .add("summary", summary)
+        .add("properties", properties)
+        .toString();
   }
 
   private void validThread(OptimizingQueue.OptimizingThread thread) {

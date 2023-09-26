@@ -22,6 +22,7 @@ import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
 import com.netease.arctic.flink.read.hybrid.split.TemporalJoinSplits;
 
 import javax.annotation.Nullable;
+
 import java.util.Collection;
 
 /**
@@ -29,13 +30,10 @@ import java.util.Collection;
  * {@link ArcticSourceEnumerator}.
  */
 public class ArcticSourceEnumState {
-  @Nullable
-  private final ArcticEnumeratorOffset lastEnumeratedOffset;
+  @Nullable private final ArcticEnumeratorOffset lastEnumeratedOffset;
   private final Collection<ArcticSplitState> pendingSplits;
-  @Nullable
-  private final long[] shuffleSplitRelation;
-  @Nullable
-  private final TemporalJoinSplits temporalJoinSplits;
+  @Nullable private final long[] shuffleSplitRelation;
+  @Nullable private final TemporalJoinSplits temporalJoinSplits;
 
   public ArcticSourceEnumState(
       Collection<ArcticSplitState> pendingSplits,

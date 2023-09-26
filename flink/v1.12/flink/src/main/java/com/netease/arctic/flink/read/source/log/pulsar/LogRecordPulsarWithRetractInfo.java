@@ -25,36 +25,36 @@ import org.apache.pulsar.client.api.MessageId;
 public class LogRecordPulsarWithRetractInfo<T> extends PulsarMessage<T> {
 
   /**
-   * Denote reader is in retracting read mode.
-   * In this mode, data would be read in reverse order and opposite RowKind.
+   * Denote reader is in retracting read mode. In this mode, data would be read in reverse order and
+   * opposite RowKind.
    */
   private final boolean retracting;
-  /**
-   * The offset where job retract stops, i.e. Read reversely ends.
-   */
+  /** The offset where job retract stops, i.e. Read reversely ends. */
   private final MessageId retractStoppingOffset;
   /**
-   *  The offset where job revert to normal read starts from. It should skip the flip which has been read.
+   * The offset where job revert to normal read starts from. It should skip the flip which has been
+   * read.
    */
   private final MessageId revertStartingOffset;
   /**
-   * The epic No. which has finished checkpoint. The data whose epic No. larger than it should be retracted.
+   * The epic No. which has finished checkpoint. The data whose epic No. larger than it should be
+   * retracted.
    */
   private final Long retractingEpicNo;
-  /**
-   * Data in source, whose {@link LogData#getActualValue()} is the value in log-store.
-   */
+  /** Data in source, whose {@link LogData#getActualValue()} is the value in log-store. */
   private final LogData<T> logData;
+
   private final T valueToBeSent;
 
-  public LogRecordPulsarWithRetractInfo(MessageId id,
-                                        long eventTime,
-                                        boolean retracting,
-                                        MessageId retractStoppingOffset,
-                                        MessageId revertStartingOffset,
-                                        Long retractingEpicNo,
-                                        LogData<T> logData,
-                                        T valueToBeSent) {
+  public LogRecordPulsarWithRetractInfo(
+      MessageId id,
+      long eventTime,
+      boolean retracting,
+      MessageId retractStoppingOffset,
+      MessageId revertStartingOffset,
+      Long retractingEpicNo,
+      LogData<T> logData,
+      T valueToBeSent) {
     super(id, null, eventTime);
     this.retracting = retracting;
     this.retractStoppingOffset = retractStoppingOffset;
@@ -64,22 +64,29 @@ public class LogRecordPulsarWithRetractInfo<T> extends PulsarMessage<T> {
     this.valueToBeSent = valueToBeSent;
   }
 
-  public static <T> LogRecordPulsarWithRetractInfo<T> ofRetract(MessageId id,
-                                                                long eventTime,
-                                                                MessageId retractStoppingOffset,
-                                                                MessageId revertStartingOffset,
-                                                                Long retractingEpicNo,
-                                                                LogData<T> logData,
-                                                                T valueToBeSent) {
-    return new LogRecordPulsarWithRetractInfo<>(id, eventTime, true, retractStoppingOffset,
-        revertStartingOffset, retractingEpicNo, logData, valueToBeSent);
+  public static <T> LogRecordPulsarWithRetractInfo<T> ofRetract(
+      MessageId id,
+      long eventTime,
+      MessageId retractStoppingOffset,
+      MessageId revertStartingOffset,
+      Long retractingEpicNo,
+      LogData<T> logData,
+      T valueToBeSent) {
+    return new LogRecordPulsarWithRetractInfo<>(
+        id,
+        eventTime,
+        true,
+        retractStoppingOffset,
+        revertStartingOffset,
+        retractingEpicNo,
+        logData,
+        valueToBeSent);
   }
 
-  public static <T> LogRecordPulsarWithRetractInfo<T> of(MessageId id,
-                                                         long eventTime,
-                                                         LogData<T> logData) {
-    return new LogRecordPulsarWithRetractInfo<>(id, eventTime, false, null,
-        null, null, logData, logData.getActualValue());
+  public static <T> LogRecordPulsarWithRetractInfo<T> of(
+      MessageId id, long eventTime, LogData<T> logData) {
+    return new LogRecordPulsarWithRetractInfo<>(
+        id, eventTime, false, null, null, null, logData, logData.getActualValue());
   }
 
   public boolean isRetracting() {
@@ -108,13 +115,19 @@ public class LogRecordPulsarWithRetractInfo<T> extends PulsarMessage<T> {
 
   @Override
   public String toString() {
-    return "LogMsgWithRetractInfo{" +
-        "retracting=" + retracting +
-        ", retractStoppingOffset=" + retractStoppingOffset +
-        ", revertStartingOffset=" + revertStartingOffset +
-        ", retractingEpicNo=" + retractingEpicNo +
-        ", logData=" + logData +
-        ", actualValue=" + valueToBeSent +
-        '}';
+    return "LogMsgWithRetractInfo{"
+        + "retracting="
+        + retracting
+        + ", retractStoppingOffset="
+        + retractStoppingOffset
+        + ", revertStartingOffset="
+        + revertStartingOffset
+        + ", retractingEpicNo="
+        + retractingEpicNo
+        + ", logData="
+        + logData
+        + ", actualValue="
+        + valueToBeSent
+        + '}';
   }
 }

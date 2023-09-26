@@ -32,28 +32,48 @@ public class TestArcticSplitSerializer extends TestRowDataReaderFunction {
 
   @Test
   public void testSerAndDes() {
-    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
+    List<ArcticSplit> arcticSplits =
+        FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
+    assertSerializedSplitEquals(arcticSplits);
+  }
 
+  @Test
+  public void testSerAndDesMoRSplit() {
+    List<ArcticSplit> arcticSplits =
+        FlinkSplitPlanner.mergeOnReadPlan(testKeyedTable, null, new AtomicInteger(0));
+    assertSerializedSplitEquals(arcticSplits);
+  }
+
+  private void assertSerializedSplitEquals(List<ArcticSplit> expected) {
     ArcticSplitSerializer serializer = new ArcticSplitSerializer();
-    List<byte[]> contents = arcticSplits.stream().map(split -> {
-      try {
-        return serializer.serialize(split);
-      } catch (IOException e) {
-        e.printStackTrace();
-        return new byte[0];
-      }
-    }).collect(Collectors.toList());
+    List<byte[]> contents =
+        expected.stream()
+            .map(
+                split -> {
+                  try {
+                    return serializer.serialize(split);
+                  } catch (IOException e) {
+                    e.printStackTrace();
+                    return new byte[0];
+                  }
+                })
+            .collect(Collectors.toList());
 
-    Assert.assertArrayEquals(arcticSplits.toArray(new ArcticSplit[0]), contents.stream().map(data -> {
-      if (data.length == 0) {
-        throw new FlinkRuntimeException("failed cause data length is 0.");
-      }
-      try {
-        return serializer.deserialize(1, data);
-      } catch (IOException e) {
-        throw new FlinkRuntimeException(e);
-      }
-    }).toArray(ArcticSplit[]::new));
+    Assert.assertArrayEquals(
+        expected.toArray(new ArcticSplit[0]),
+        contents.stream()
+            .map(
+                data -> {
+                  if (data.length == 0) {
+                    throw new FlinkRuntimeException("failed cause data length is 0.");
+                  }
+                  try {
+                    return serializer.deserialize(1, data);
+                  } catch (IOException e) {
+                    throw new FlinkRuntimeException(e);
+                  }
+                })
+            .toArray(ArcticSplit[]::new));
   }
 
   @Test
@@ -65,5 +85,4 @@ public class TestArcticSplitSerializer extends TestRowDataReaderFunction {
 
     Assert.assertNull(actual);
   }
-
 }

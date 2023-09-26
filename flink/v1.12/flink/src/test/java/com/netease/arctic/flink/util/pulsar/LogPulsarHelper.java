@@ -18,6 +18,11 @@
 
 package com.netease.arctic.flink.util.pulsar;
 
+import static com.netease.arctic.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
+import static com.netease.arctic.flink.write.hidden.TestBaseLog.createLogDataDeserialization;
+import static com.netease.arctic.flink.write.hidden.TestBaseLog.userSchema;
+import static com.netease.arctic.flink.write.hidden.TestHiddenLogOperators.createRowData;
+
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntimeOperator;
 import com.netease.arctic.log.FormatVersion;
@@ -36,11 +41,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.netease.arctic.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
-import static com.netease.arctic.flink.write.hidden.TestBaseLog.createLogDataDeserialization;
-import static com.netease.arctic.flink.write.hidden.TestBaseLog.userSchema;
-import static com.netease.arctic.flink.write.hidden.TestHiddenLogOperators.createRowData;
-
 public class LogPulsarHelper {
 
   private static final Logger LOG = LoggerFactory.getLogger(LogPulsarHelper.class);
@@ -57,17 +57,17 @@ public class LogPulsarHelper {
     return environment.operator();
   }
 
-  private static byte[] createLogData(int i, int epicNo, boolean flip,
-                                      LogDataJsonSerialization<RowData> serialization) {
+  private static byte[] createLogData(
+      int i, int epicNo, boolean flip, LogDataJsonSerialization<RowData> serialization) {
     RowData rowData = createRowData(i);
-    LogData<RowData> logData = new LogRecordV1(
-        FormatVersion.FORMAT_VERSION_V1,
-        jobId,
-        epicNo,
-        flip,
-        transformFromFlinkRowKind(rowData.getRowKind()),
-        rowData
-    );
+    LogData<RowData> logData =
+        new LogRecordV1(
+            FormatVersion.FORMAT_VERSION_V1,
+            jobId,
+            epicNo,
+            flip,
+            transformFromFlinkRowKind(rowData.getRowKind()),
+            rowData);
     return serialization.serialize(logData);
   }
 
@@ -106,21 +106,22 @@ public class LogPulsarHelper {
   }
 
   public List<LogData<RowData>> printDataInTopic(String topic) {
-    List<Message<byte[]>> consumerRecords = op().receiveAllMessages(topic, Schema.BYTES, Duration.ofSeconds(10));
+    List<Message<byte[]>> consumerRecords =
+        op().receiveAllMessages(topic, Schema.BYTES, Duration.ofSeconds(10));
     List<LogData<RowData>> actual = new ArrayList<>(consumerRecords.size());
 
     LOG.info("data in topic: {}", topic);
     LogDataJsonDeserialization<RowData> deserialization = createLogDataDeserialization();
-    consumerRecords.forEach(consumerRecord -> {
-      try {
-        LogData<RowData> logData = deserialization.deserialize(consumerRecord.getData());
-        LOG.info("data in pulsar: {}, msgId: {}", logData, consumerRecord.getMessageId());
-        actual.add(logData);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    });
+    consumerRecords.forEach(
+        consumerRecord -> {
+          try {
+            LogData<RowData> logData = deserialization.deserialize(consumerRecord.getData());
+            LOG.info("data in pulsar: {}, msgId: {}", logData, consumerRecord.getMessageId());
+            actual.add(logData);
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+        });
     return actual;
   }
-
 }

@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.write.hidden.pulsar;
 
+import static com.netease.arctic.flink.table.descriptors.PulsarConfigurationConverter.toSinkConf;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
+
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.write.hidden.ArcticLogPartitioner;
 import com.netease.arctic.flink.write.hidden.LogMsgFactory;
@@ -26,17 +29,11 @@ import org.apache.flink.connector.pulsar.sink.config.SinkConfiguration;
 
 import java.util.Properties;
 
-import static com.netease.arctic.flink.table.descriptors.PulsarConfigurationConverter.toSinkConf;
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
-
-/**
- * A factory creates Pulsar log queue producers or consumers.
- */
+/** A factory creates Pulsar log queue producers or consumers. */
 public class HiddenPulsarFactory<T> implements LogMsgFactory<T> {
   private static final long serialVersionUID = -1L;
 
-  public HiddenPulsarFactory() {
-  }
+  public HiddenPulsarFactory() {}
 
   @Override
   public Producer<T> createProducer(
@@ -48,12 +45,7 @@ public class HiddenPulsarFactory<T> implements LogMsgFactory<T> {
     SinkConfiguration conf = toSinkConf(producerConfig);
 
     return new HiddenPulsarProducer<>(
-        conf,
-        topic,
-        logDataJsonSerialization,
-        new ArcticLogPartitioner<>(
-            helper
-        ));
+        conf, topic, logDataJsonSerialization, new ArcticLogPartitioner<>(helper));
   }
 
   @Override

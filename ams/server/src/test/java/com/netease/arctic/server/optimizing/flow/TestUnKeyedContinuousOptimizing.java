@@ -55,7 +55,7 @@ public class TestUnKeyedContinuousOptimizing extends TableTestBase {
     super(catalogTestHelper, tableTestHelper);
   }
 
-  @Parameterized.Parameters(name = "{1}.{2}")
+  @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
     return new Object[][] {
         {

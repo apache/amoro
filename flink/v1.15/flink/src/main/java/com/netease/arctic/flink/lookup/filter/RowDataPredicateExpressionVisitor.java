@@ -18,6 +18,21 @@
 
 package com.netease.arctic.flink.lookup.filter;
 
+import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.AND;
+import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.DIVIDE;
+import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.EQUALS;
+import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.GREATER_THAN;
+import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.GREATER_THAN_OR_EQUAL;
+import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.IS_NOT_NULL;
+import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.IS_NULL;
+import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.LESS_THAN;
+import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.LESS_THAN_OR_EQUAL;
+import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.MINUS;
+import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.NOT_EQUALS;
+import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.OR;
+import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.PLUS;
+import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.TIMES;
+
 import org.apache.flink.table.expressions.CallExpression;
 import org.apache.flink.table.expressions.Expression;
 import org.apache.flink.table.expressions.ExpressionDefaultVisitor;
@@ -40,41 +55,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.AND;
-import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.DIVIDE;
-import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.EQUALS;
-import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.GREATER_THAN;
-import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.GREATER_THAN_OR_EQUAL;
-import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.IS_NOT_NULL;
-import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.IS_NULL;
-import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.LESS_THAN;
-import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.LESS_THAN_OR_EQUAL;
-import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.MINUS;
-import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.NOT_EQUALS;
-import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.OR;
-import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.PLUS;
-import static com.netease.arctic.flink.lookup.filter.RowDataPredicate.Opt.TIMES;
-
 /**
- * This class implements the visitor pattern for traversing expressions and building a {@link RowDataPredicate}
- * out of them.
- * <p>It supports a limited set of built-in functions, such as EQUALS, LESS_THAN, GREATER_THAN, NOT_EQUALS, etc.
+ * This class implements the visitor pattern for traversing expressions and building a {@link
+ * RowDataPredicate} out of them.
+ *
+ * <p>It supports a limited set of built-in functions, such as EQUALS, LESS_THAN, GREATER_THAN,
+ * NOT_EQUALS, etc.
  */
-public class RowDataPredicateExpressionVisitor extends ExpressionDefaultVisitor<Optional<RowDataPredicate>> {
+public class RowDataPredicateExpressionVisitor
+    extends ExpressionDefaultVisitor<Optional<RowDataPredicate>> {
 
   /**
    * A map from field names to their respective indices in the input row.
+   *
    * <p>Start from 0.
    */
   private final Map<String, Integer> fieldIndexMap;
-  /**
-   * A map from field names to their respective data types
-   */
+  /** A map from field names to their respective data types */
   private final Map<String, DataType> fieldDataTypeMap;
 
   public RowDataPredicateExpressionVisitor(
-      Map<String, Integer> fieldIndexMap,
-      Map<String, DataType> fieldDataTypeMap) {
+      Map<String, Integer> fieldIndexMap, Map<String, DataType> fieldDataTypeMap) {
     this.fieldIndexMap = fieldIndexMap;
     this.fieldDataTypeMap = fieldDataTypeMap;
   }
@@ -135,8 +136,7 @@ public class RowDataPredicateExpressionVisitor extends ExpressionDefaultVisitor<
     throw new IllegalArgumentException(
         String.format(
             "Not supported build-in function: %s, CallExpression: %s, for RowDataPredicateExpressionVisitor",
-            call.getFunctionDefinition(),
-            call));
+            call.getFunctionDefinition(), call));
   }
 
   @Override
@@ -173,10 +173,8 @@ public class RowDataPredicateExpressionVisitor extends ExpressionDefaultVisitor<
         params[0] = valueLiteralExpression.getValueAs(Double.class).orElse(null);
         return Optional.of(new RowDataPredicate(params));
       case DATE:
-        params[0] = valueLiteralExpression
-            .getValueAs(LocalDate.class)
-            .map(Date::valueOf)
-            .orElse(null);
+        params[0] =
+            valueLiteralExpression.getValueAs(LocalDate.class).map(Date::valueOf).orElse(null);
         return Optional.of(new RowDataPredicate(params));
       case TIME_WITHOUT_TIME_ZONE:
         params[0] = valueLiteralExpression.getValueAs(java.sql.Time.class).orElse(null);
@@ -198,11 +196,7 @@ public class RowDataPredicateExpressionVisitor extends ExpressionDefaultVisitor<
     String fieldName = fieldReferenceExpression.getName();
     int fieldIndex = fieldIndexMap.get(fieldName);
     DataType dataType = fieldDataTypeMap.get(fieldName);
-    return Optional.of(
-        new RowDataPredicate(
-            fieldName,
-            fieldIndex,
-            dataType));
+    return Optional.of(new RowDataPredicate(fieldName, fieldIndex, dataType));
   }
 
   @Override
@@ -235,16 +229,14 @@ public class RowDataPredicateExpressionVisitor extends ExpressionDefaultVisitor<
         default:
           throw new IllegalArgumentException(
               String.format(
-                  "Not supported arithmetic opt: %s, call expression: %s",
-                  arithmeticOpt, call));
+                  "Not supported arithmetic opt: %s, call expression: %s", arithmeticOpt, call));
       }
-      return Optional.of(new RowDataPredicate(new Serializable[]{result}));
+      return Optional.of(new RowDataPredicate(new Serializable[] {result}));
     }
     throw new IllegalArgumentException(
         String.format(
             "arithmetic operator: %s only supported numerical parameters, call expression: %s",
-            arithmeticOpt,
-            call));
+            arithmeticOpt, call));
   }
 
   protected Optional<RowDataPredicate> castOperator(CallExpression call) {
@@ -253,25 +245,20 @@ public class RowDataPredicateExpressionVisitor extends ExpressionDefaultVisitor<
     if (resolvedChildren.size() != 2) {
       throw new IllegalArgumentException(
           String.format(
-              "cast operator's children expressions should be 2. call expression: %s",
-              call));
+              "cast operator's children expressions should be 2. call expression: %s", call));
     }
     if (resolvedChildren.get(1) instanceof TypeLiteralExpression) {
       Class<?> type = resolvedChildren.get(1).getOutputDataType().getConversionClass();
       Serializable se = (Serializable) type.cast(leftPredicate.get().parameters()[0]);
-      return Optional.of(
-          new RowDataPredicate(new Serializable[]{se})
-      );
+      return Optional.of(new RowDataPredicate(new Serializable[] {se}));
     }
     throw new IllegalArgumentException(
         String.format(
-            "cast operator's children expressions should be 2. call expression: %s",
-            call));
+            "cast operator's children expressions should be 2. call expression: %s", call));
   }
 
   protected Optional<RowDataPredicate> renderUnaryOperator(
-      RowDataPredicate.Opt opt,
-      ResolvedExpression resolvedExpression) {
+      RowDataPredicate.Opt opt, ResolvedExpression resolvedExpression) {
     if (resolvedExpression instanceof FieldReferenceExpression) {
       Optional<RowDataPredicate> leftPredicate = resolvedExpression.accept(this);
       return leftPredicate.map(rowDataPredicate -> rowDataPredicate.combine(opt, null));
@@ -280,8 +267,7 @@ public class RowDataPredicateExpressionVisitor extends ExpressionDefaultVisitor<
   }
 
   protected Optional<RowDataPredicate> renderBinaryOperator(
-      RowDataPredicate.Opt opt,
-      List<ResolvedExpression> resolvedExpressions) {
+      RowDataPredicate.Opt opt, List<ResolvedExpression> resolvedExpressions) {
     Optional<RowDataPredicate> leftPredicate = resolvedExpressions.get(0).accept(this);
 
     Optional<RowDataPredicate> rightPredicate = resolvedExpressions.get(1).accept(this);
@@ -289,10 +275,11 @@ public class RowDataPredicateExpressionVisitor extends ExpressionDefaultVisitor<
     if (AND.equals(opt) || OR.equals(opt)) {
       Preconditions.checkArgument(leftPredicate.isPresent());
       Preconditions.checkArgument(rightPredicate.isPresent());
-      return Optional.of(new RowDataPredicate(
-          opt,
-          new RowDataPredicate[]{leftPredicate.get()},
-          new RowDataPredicate[]{rightPredicate.get()}));
+      return Optional.of(
+          new RowDataPredicate(
+              opt,
+              new RowDataPredicate[] {leftPredicate.get()},
+              new RowDataPredicate[] {rightPredicate.get()}));
     }
 
     return leftPredicate.flatMap(left -> rightPredicate.map(right -> left.combine(opt, right)));

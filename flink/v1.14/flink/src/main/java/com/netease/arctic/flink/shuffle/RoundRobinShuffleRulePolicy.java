@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.shuffle;
 
+import static org.apache.flink.util.Preconditions.checkArgument;
+import static org.apache.flink.util.Preconditions.checkNotNull;
+
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.table.DistributionHashMode;
 import org.apache.flink.api.common.functions.Partitioner;
@@ -36,12 +39,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.apache.flink.util.Preconditions.checkArgument;
-import static org.apache.flink.util.Preconditions.checkNotNull;
-
 /**
- * After the primary key value hash is modulated based on concurrency,
- * the row is routed to different subtask write
+ * After the primary key value hash is modulated based on concurrency, the row is routed to
+ * different subtask write
+ *
  * <p>
  */
 public class RoundRobinShuffleRulePolicy implements ShuffleRulePolicy<RowData, ShuffleKey> {
@@ -59,21 +60,24 @@ public class RoundRobinShuffleRulePolicy implements ShuffleRulePolicy<RowData, S
 
   private final DistributionHashMode distributionHashMode;
 
-  public RoundRobinShuffleRulePolicy(int downStreamOperatorParallelism,
-                                     int fileSplit) {
+  public RoundRobinShuffleRulePolicy(int downStreamOperatorParallelism, int fileSplit) {
     this(null, downStreamOperatorParallelism, fileSplit);
   }
 
-  public RoundRobinShuffleRulePolicy(ShuffleHelper helper,
-                                     int downStreamOperatorParallelism,
-                                     int fileSplit) {
-    this(helper, downStreamOperatorParallelism, fileSplit,
+  public RoundRobinShuffleRulePolicy(
+      ShuffleHelper helper, int downStreamOperatorParallelism, int fileSplit) {
+    this(
+        helper,
+        downStreamOperatorParallelism,
+        fileSplit,
         DistributionHashMode.autoSelect(helper.isPrimaryKeyExist(), helper.isPartitionKeyExist()));
   }
 
-  public RoundRobinShuffleRulePolicy(ShuffleHelper helper,
-                                     int downStreamOperatorParallelism,
-                                     int fileSplit, DistributionHashMode distributionHashMode) {
+  public RoundRobinShuffleRulePolicy(
+      ShuffleHelper helper,
+      int downStreamOperatorParallelism,
+      int fileSplit,
+      DistributionHashMode distributionHashMode) {
     this.helper = helper;
     this.downStreamOperatorParallelism = downStreamOperatorParallelism;
     this.fileSplit = fileSplit;
@@ -90,7 +94,8 @@ public class RoundRobinShuffleRulePolicy implements ShuffleRulePolicy<RowData, S
   @Override
   public Partitioner<ShuffleKey> generatePartitioner() {
     getSubtaskTreeNodes();
-    return new RoundRobinPartitioner(downStreamOperatorParallelism, factor, distributionHashMode, helper);
+    return new RoundRobinPartitioner(
+        downStreamOperatorParallelism, factor, distributionHashMode, helper);
   }
 
   @Override
@@ -108,9 +113,7 @@ public class RoundRobinShuffleRulePolicy implements ShuffleRulePolicy<RowData, S
   }
 
   /**
-   * get factor sequence and writer subtask id mapping relationship
-   * Key：subtask id
-   * Value：treeNodes
+   * get factor sequence and writer subtask id mapping relationship Key：subtask id Value：treeNodes
    *
    * @return
    */
@@ -120,10 +123,15 @@ public class RoundRobinShuffleRulePolicy implements ShuffleRulePolicy<RowData, S
       factor = fileSplit;
       // every writer may accept all node data for partitioned table
       if (distributionHashMode.isSupportPartition()) {
-        IntStream.range(0, writerParallelism).forEach(subtaskId -> {
-          subtaskTreeNodes.put(subtaskId, IntStream.range(0, factor).mapToObj(index ->
-              DataTreeNode.of(factor - 1, index)).collect(Collectors.toSet()));
-        });
+        IntStream.range(0, writerParallelism)
+            .forEach(
+                subtaskId -> {
+                  subtaskTreeNodes.put(
+                      subtaskId,
+                      IntStream.range(0, factor)
+                          .mapToObj(index -> DataTreeNode.of(factor - 1, index))
+                          .collect(Collectors.toSet()));
+                });
       } else {
         if (factor < writerParallelism) {
           int actualDepth = getActualDepth(writerParallelism);
@@ -131,21 +139,25 @@ public class RoundRobinShuffleRulePolicy implements ShuffleRulePolicy<RowData, S
         }
         final int finalMask = factor - 1;
 
-        IntStream.range(0, factor).forEach(sequence -> {
-          int subtaskId = getSubtaskId(sequence, writerParallelism);
-          if (!subtaskTreeNodes.containsKey(subtaskId)) {
-            Set<DataTreeNode> treeNodes = new HashSet<>();
-            treeNodes.add(DataTreeNode.of(finalMask, sequence));
-            subtaskTreeNodes.put(subtaskId, treeNodes);
-          } else {
-            subtaskTreeNodes.get(subtaskId).add(DataTreeNode.of(finalMask, sequence));
-          }
-        });
+        IntStream.range(0, factor)
+            .forEach(
+                sequence -> {
+                  int subtaskId = getSubtaskId(sequence, writerParallelism);
+                  if (!subtaskTreeNodes.containsKey(subtaskId)) {
+                    Set<DataTreeNode> treeNodes = new HashSet<>();
+                    treeNodes.add(DataTreeNode.of(finalMask, sequence));
+                    subtaskTreeNodes.put(subtaskId, treeNodes);
+                  } else {
+                    subtaskTreeNodes.get(subtaskId).add(DataTreeNode.of(finalMask, sequence));
+                  }
+                });
       }
     } else {
-      IntStream.range(0, writerParallelism).forEach(subtaskId -> {
-        subtaskTreeNodes.put(subtaskId, Sets.newHashSet(DataTreeNode.of(0, 0)));
-      });
+      IntStream.range(0, writerParallelism)
+          .forEach(
+              subtaskId -> {
+                subtaskTreeNodes.put(subtaskId, Sets.newHashSet(DataTreeNode.of(0, 0)));
+              });
     }
     subtaskTreeNodes.forEach(
         (subtaskId, treeNodes) -> LOG.info("subtaskId={}, treeNodes={}.", subtaskId, treeNodes));
@@ -160,9 +172,7 @@ public class RoundRobinShuffleRulePolicy implements ShuffleRulePolicy<RowData, S
     return sequence % parallelism;
   }
 
-  /**
-   * return ShuffleKey
-   */
+  /** return ShuffleKey */
   static class PrimaryKeySelector implements KeySelector<RowData, ShuffleKey> {
     @Override
     public ShuffleKey getKey(RowData value) throws Exception {
@@ -170,17 +180,18 @@ public class RoundRobinShuffleRulePolicy implements ShuffleRulePolicy<RowData, S
     }
   }
 
-  /**
-   * Circular polling feed a streamRecord into a special factor node
-   */
+  /** Circular polling feed a streamRecord into a special factor node */
   static class RoundRobinPartitioner implements Partitioner<ShuffleKey> {
     private final int downStreamOperatorParallelism;
     private final int factor;
     private final ShuffleHelper helper;
     private final DistributionHashMode distributionHashMode;
 
-    RoundRobinPartitioner(int downStreamOperatorParallelism, int factor,
-                          DistributionHashMode distributionHashMode, ShuffleHelper helper) {
+    RoundRobinPartitioner(
+        int downStreamOperatorParallelism,
+        int factor,
+        DistributionHashMode distributionHashMode,
+        ShuffleHelper helper) {
       this.downStreamOperatorParallelism = downStreamOperatorParallelism;
       this.factor = factor;
       this.distributionHashMode = distributionHashMode;
@@ -199,8 +210,7 @@ public class RoundRobinShuffleRulePolicy implements ShuffleRulePolicy<RowData, S
           numPartitions == this.downStreamOperatorParallelism,
           String.format(
               "shuffle arctic record numPartition:%s is diff with writer parallelism:%s.",
-              numPartitions,
-              this.downStreamOperatorParallelism));
+              numPartitions, this.downStreamOperatorParallelism));
       Integer factorIndex = null;
       if (distributionHashMode.isSupportPrimaryKey()) {
         long pkHashCode = helper.hashKeyValue(row);

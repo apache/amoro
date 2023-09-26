@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -56,8 +57,8 @@ import java.util.stream.Collectors;
 
 /**
  * Copy From Flink. To support overwrite in this module.
- * <p>
- * A {@link SplitReader} implementation that reads records from Kafka partitions.
+ *
+ * <p>A {@link SplitReader} implementation that reads records from Kafka partitions.
  *
  * <p>The returned type are in the format of {@code tuple3(record, offset and timestamp}.
  *
@@ -108,8 +109,7 @@ public class KafkaPartitionSplitReader<T>
     List<TopicPartition> finishedPartitions = new ArrayList<>();
     for (TopicPartition tp : consumerRecords.partitions()) {
       long stoppingOffset = getStoppingOffset(tp);
-      final List<ConsumerRecord<byte[], byte[]>> recordsFromPartition =
-          consumerRecords.records(tp);
+      final List<ConsumerRecord<byte[], byte[]>> recordsFromPartition = consumerRecords.records(tp);
 
       if (recordsFromPartition.size() > 0) {
         final ConsumerRecord<byte[], byte[]> lastRecord =
@@ -121,11 +121,7 @@ public class KafkaPartitionSplitReader<T>
         if (lastRecord.offset() >= stoppingOffset - 1) {
           recordsBySplits.setPartitionStoppingOffset(tp, stoppingOffset);
           finishSplitAtRecord(
-              tp,
-              stoppingOffset,
-              lastRecord.offset(),
-              finishedPartitions,
-              recordsBySplits);
+              tp, stoppingOffset, lastRecord.offset(), finishedPartitions, recordsBySplits);
         }
       }
     }
@@ -154,9 +150,7 @@ public class KafkaPartitionSplitReader<T>
     // Get all the partition assignments and stopping offsets.
     if (!(splitsChange instanceof SplitsAddition)) {
       throw new UnsupportedOperationException(
-          String.format(
-              "The SplitChange type of %s is not supported.",
-              splitsChange.getClass()));
+          String.format("The SplitChange type of %s is not supported.", splitsChange.getClass()));
     }
 
     // Assignment.
@@ -180,8 +174,7 @@ public class KafkaPartitionSplitReader<T>
                   partitionsStartingFromEarliest,
                   partitionsStartingFromLatest,
                   partitionsStartingFromSpecifiedOffsets);
-              parseStoppingOffsets(
-                  s, partitionsStoppingAtLatest, partitionsStoppingAtCommitted);
+              parseStoppingOffsets(s, partitionsStoppingAtLatest, partitionsStoppingAtCommitted);
             });
 
     // Assign new partitions.
@@ -246,7 +239,8 @@ public class KafkaPartitionSplitReader<T>
       List<TopicPartition> partitionsStoppingAtLatest,
       Set<TopicPartition> partitionsStoppingAtCommitted) {
     TopicPartition tp = split.getTopicPartition();
-    split.getStoppingOffset()
+    split
+        .getStoppingOffset()
         .ifPresent(
             stoppingOffset -> {
               if (stoppingOffset >= 0) {
@@ -259,8 +253,7 @@ public class KafkaPartitionSplitReader<T>
                 // This should not happen.
                 throw new FlinkRuntimeException(
                     String.format(
-                        "Invalid stopping offset %d for partition %s",
-                        stoppingOffset, tp));
+                        "Invalid stopping offset %d for partition %s", stoppingOffset, tp));
               }
             });
   }
@@ -295,15 +288,15 @@ public class KafkaPartitionSplitReader<T>
     stoppingOffsets.putAll(endOffset);
     if (!partitionsStoppingAtCommitted.isEmpty()) {
       retryOnWakeup(
-          () -> consumer.committed(partitionsStoppingAtCommitted),
-          "getting committed offset as stopping offsets")
+              () -> consumer.committed(partitionsStoppingAtCommitted),
+              "getting committed offset as stopping offsets")
           .forEach(
               (tp, offsetAndMetadata) -> {
                 Preconditions.checkNotNull(
                     offsetAndMetadata,
                     String.format(
-                        "Partition %s should stop at committed offset. " +
-                            "But there is no committed offset of this partition for group %s",
+                        "Partition %s should stop at committed offset. "
+                            + "But there is no committed offset of this partition for group %s",
                         tp, groupId));
                 stoppingOffsets.put(tp, offsetAndMetadata.offset());
               });
@@ -315,8 +308,8 @@ public class KafkaPartitionSplitReader<T>
     // If none of the partitions have any records,
     for (TopicPartition tp : consumer.assignment()) {
       if (retryOnWakeup(
-          () -> consumer.position(tp),
-          "getting starting offset to check if split is empty") >= getStoppingOffset(tp)) {
+              () -> consumer.position(tp), "getting starting offset to check if split is empty")
+          >= getStoppingOffset(tp)) {
         emptyPartitions.add(tp);
       }
     }
@@ -326,23 +319,19 @@ public class KafkaPartitionSplitReader<T>
           emptyPartitions);
       // Add empty partitions to empty split set for later cleanup in fetch()
       emptySplits.addAll(
-          emptyPartitions.stream()
-              .map(KafkaPartitionSplit::toSplitId)
-              .collect(Collectors.toSet()));
+          emptyPartitions.stream().map(KafkaPartitionSplit::toSplitId).collect(Collectors.toSet()));
       // Un-assign partitions from Kafka consumer
       unassignPartitions(emptyPartitions);
     }
   }
 
-  private void maybeLogSplitChangesHandlingResult(
-      SplitsChange<KafkaPartitionSplit> splitsChange) {
+  private void maybeLogSplitChangesHandlingResult(SplitsChange<KafkaPartitionSplit> splitsChange) {
     if (LOG.isDebugEnabled()) {
       StringJoiner splitsInfo = new StringJoiner(",");
       for (KafkaPartitionSplit split : splitsChange.splits()) {
         long startingOffset =
             retryOnWakeup(
-                () -> consumer.position(split.getTopicPartition()),
-                "logging starting position");
+                () -> consumer.position(split.getTopicPartition()), "logging starting position");
         long stoppingOffset = getStoppingOffset(split.getTopicPartition());
         splitsInfo.add(
             String.format(
@@ -390,11 +379,11 @@ public class KafkaPartitionSplitReader<T>
    *
    * <ol>
    *   <li>Fetcher thread finishes a {@link KafkaConsumer#poll(Duration)} call
-   *   <li>Task thread assigns new splits so invokes {@link #wakeUp()}, then the wakeup is
-   *       recorded and held by the consumer
-   *   <li>Later fetcher thread invokes {@link #handleSplitsChanges(SplitsChange)}, and
-   *       interactions with consumer will throw {@link WakeupException} because of the previously
-   *       held wakeup in the consumer
+   *   <li>Task thread assigns new splits so invokes {@link #wakeUp()}, then the wakeup is recorded
+   *       and held by the consumer
+   *   <li>Later fetcher thread invokes {@link #handleSplitsChanges(SplitsChange)}, and interactions
+   *       with consumer will throw {@link WakeupException} because of the previously held wakeup in
+   *       the consumer
    * </ol>
    *
    * <p>Under this case we need to catch the {@link WakeupException} and retry the operation.
@@ -423,14 +412,12 @@ public class KafkaPartitionSplitReader<T>
     private TopicPartition currentTopicPartition;
     private Long currentSplitStoppingOffset;
 
-    public KafkaPartitionSplitRecords(
-        ConsumerRecords<byte[], byte[]> consumerRecords) {
+    public KafkaPartitionSplitRecords(ConsumerRecords<byte[], byte[]> consumerRecords) {
       this.consumerRecords = consumerRecords;
       this.splitIterator = consumerRecords.partitions().iterator();
     }
 
-    public void setPartitionStoppingOffset(
-        TopicPartition topicPartition, long stoppingOffset) {
+    public void setPartitionStoppingOffset(TopicPartition topicPartition, long stoppingOffset) {
       stoppingOffsets.put(topicPartition, stoppingOffset);
     }
 

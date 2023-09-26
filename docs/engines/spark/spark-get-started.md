@@ -31,8 +31,8 @@ spark-shell --packages com.netease.amoro:amoro-spark-3.3-runtime:0.5.0
 
 ```
 ${SPARK_HOME}/bin/spark-sql \
-    --conf spark.sql.extensions=com.netease.arctic.spark.AmoroSparkExtensions \
-    --conf spark.sql.catalog.local_catalog=com.netease.arctic.spark.AmoroSparkCatalog \
+    --conf spark.sql.extensions=com.netease.arctic.spark.ArcticSparkExtensions \
+    --conf spark.sql.catalog.local_catalog=com.netease.arctic.spark.ArcticSparkCatalog \
     --conf spark.sql.catalog.local_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}
 ```
 
