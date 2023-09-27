@@ -1,5 +1,6 @@
-package com.netease.arctic.ams.api.plugin;
+package com.netease.arctic.server.manager;
 
+import com.netease.arctic.ams.api.AmoroPlugin;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +28,7 @@ public class TestSpiPluginMananger {
   @Test
   public void testInstall() {
     pluginManager.install("plugin1");
-    Plugin plugin = pluginManager.get("plugin1");
+    AmoroPlugin plugin = pluginManager.get("plugin1");
     Assertions.assertNotNull(plugin);
     Assertions.assertEquals("plugin1", plugin.name());
   }
@@ -36,7 +37,7 @@ public class TestSpiPluginMananger {
   public void testUninstall() {
     pluginManager.install("plugin1");
     pluginManager.uninstall("plugin1");
-    Plugin plugin = pluginManager.get("plugin1");
+    AmoroPlugin plugin = pluginManager.get("plugin1");
     Assertions.assertNull(plugin);
   }
 
@@ -52,7 +53,7 @@ public class TestSpiPluginMananger {
   @Test
   public void testGet() {
     pluginManager.install("plugin1");
-    Plugin plugin = pluginManager.get("plugin1");
+    AmoroPlugin plugin = pluginManager.get("plugin1");
     Assertions.assertNotNull(plugin);
     Assertions.assertEquals("plugin1", plugin.name());
   }

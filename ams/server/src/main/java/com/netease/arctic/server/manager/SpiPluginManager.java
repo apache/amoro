@@ -1,4 +1,7 @@
-package com.netease.arctic.ams.api.plugin;
+package com.netease.arctic.server.manager;
+
+import com.netease.arctic.ams.api.AmoroPlugin;
+import com.netease.arctic.ams.api.PluginManager;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -8,7 +11,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
-public abstract class SpiPluginManager<T extends Plugin> implements PluginManager<T> {
+public abstract class SpiPluginManager<T extends AmoroPlugin> implements PluginManager<T> {
 
   private final Map<String, T> installedPlugins = new ConcurrentHashMap<>();
   private final ServiceLoader<T> pluginLoader;
@@ -24,9 +27,9 @@ public abstract class SpiPluginManager<T extends Plugin> implements PluginManage
       ParameterizedType parameterizedType = (ParameterizedType) type;
       Type[] typeArguments = parameterizedType.getActualTypeArguments();
       return (Class<T>) typeArguments[0];
-    } catch (Throwable e) {
-      throw new IllegalStateException("Cannot determine service type for "
-          + getClass().getName());
+    } catch (Throwable throwable) {
+      throw new IllegalStateException("Cannot determine service type for " +
+          getClass().getName(), throwable);
     }
   }
 
