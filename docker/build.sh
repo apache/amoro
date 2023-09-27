@@ -27,7 +27,8 @@ FLINK_VERSION=1.15.3
 HADOOP_VERSION=2.10.2
 DEBIAN_MIRROR=http://deb.debian.org
 APACHE_ARCHIVE=https://archive.apache.org/dist
-
+OPTIMIZER_TARGET=${AMORO_HOME}/ams/optimizer/target
+OPTIMIZER_JOB=${OPTIMIZER_TARGET}/amoro-ams-optimizer-${AMORO_VERSION}-jar-with-dependencies.jar
 
 function usage() {
     cat <<EOF
@@ -38,6 +39,7 @@ Images:
     ams                     Build Amoro management service and a Flink container with Amoro flink connector and Iceberg connector.
     namenode                Build a hadoop namenode container for quick start demo
     datanode                Build a hadoop datanode container for quick start demo
+    optimizer-flink         Build a optimizer deployed with flink engine.
     all                     Build all of image above.
 
 Options:
@@ -45,6 +47,7 @@ Options:
     --hadoop-version        Hadoop binary release version, default is 2.10.2, format must be x.y.z
     --apache-archive        Apache Archive url, default is https://archive.apache.org/dist
     --debian-mirror         Mirror url of debian, default is http://deb.debian.org
+    --optimizer-job         Location of optimizer job
 EOF
 }
 
@@ -60,7 +63,7 @@ i=1;
 j=$#;
 while [ $i -le $j ]; do
   case $1 in
-    ams|namenode|datanode|all)
+    ams|namenode|datanode|optimizer-flink|all)
     ACTION=$1;
     i=$((i+1))
     shift 1
@@ -94,6 +97,11 @@ while [ $i -le $j ]; do
     shift 1
     ;;
 
+    "--optimizer-job")
+    shift 1
+    OPTIMIZER_JOB=$1
+    i=$((i+2))
+    ;;
 
     *)
       echo "Unknown args of $1"
@@ -103,8 +111,11 @@ while [ $i -le $j ]; do
   esac
 done
 
+FLINK_MAJOR_VERSION=${FLINK_VERSION%.*}
+
 function print_env() {
   echo "SET FLINK_VERSION=${FLINK_VERSION}"
+  echo "SET FLINK_MAJOR_VERSION=${FLINK_MAJOR_VERSION}"
   echo "SET HADOOP_VERSION=${HADOOP_VERSION}"
   echo "SET APACHE_ARCHIVE=${APACHE_ARCHIVE}"
   echo "SET DEBIAN_MIRROR=${DEBIAN_MIRROR}"
@@ -117,7 +128,6 @@ function build_ams() {
   echo "               arctic163/ams                "
   echo "=============================================="
   echo "Start Build arctic163/ams Image, Amoro Version: ${AMORO_VERSION}"
-  FLINK_MAJOR_VERSION=`echo $FLINK_VERSION| grep -oE '[0-9]+.[0-9]+'`
   FLINK_CONNECTOR_BINARY=${AMORO_HOME}/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
 
   if [ ! -f "${AMORO_BINARY_PACKAGE}" ]; then
@@ -180,6 +190,28 @@ function build_datanode() {
     datanode/.
 }
 
+function build_optimizer_flink() {
+    IMAGE_REF=arctic163/optimizer-flink${FLINK_MAJOR_VERSION}
+    IMAGE_TAG=$AMORO_VERSION
+    echo "=============================================="
+    echo "           arctic163/optimizer-flink     "
+    echo "=============================================="
+    echo "Start Build ${IMAGE_REF}:${IMAGE_TAG} Image"
+
+    FLINK_OPTIMIZER_JOB=${OPTIMIZER_JOB}
+
+    if [ ! -f "${FLINK_OPTIMIZER_JOB}" ]; then
+      BUILD_CMD="mvn clean package -pl ams/optimizer -am -e -DskipTests"
+      echo "flink optimizer job not exists in ${FLINK_OPTIMIZER_JOB}"
+      echo "please check the file or run '${BUILD_CMD}' first. "
+      exit  1
+    fi
+
+    cp $FLINK_OPTIMIZER_JOB $CURRENT_DIR/optimizer-flink/OptimizeJob.jar
+    docker build -t ${IMAGE_REF}:${IMAGE_TAG} \
+      --build-arg FLINK_VERSION=$FLINK_VERSION \
+      optimizer-flink/.
+}
 
 
 case "$ACTION" in
@@ -200,6 +232,11 @@ case "$ACTION" in
     build_ams
     build_namenode
     build_datanode
+    build_optimizer_flink
+    ;;
+  optimizer-flink)
+    print_env
+    build_optimizer_flink
     ;;
   *)
     echo "Unknown image type: $ACTION"
