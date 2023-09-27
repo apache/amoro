@@ -34,16 +34,13 @@ public class ExpressionHelper {
   }
 
   public Transform truncate(String column, int width) {
-    return Expressions.apply(
-        "truncate",
-        Expressions.column(column),
-        Expressions.literal(width)
-    );
+    return Expressions.apply("truncate", Expressions.column(column), Expressions.literal(width));
   }
 
   public Expression sort(final Expression expr, boolean ascending) {
     final SortDirection direction = ascending ? SortDirection.ASCENDING : SortDirection.DESCENDING;
-    final NullOrdering nullOrdering = ascending ? NullOrdering.NULLS_FIRST : NullOrdering.NULLS_LAST;
+    final NullOrdering nullOrdering =
+        ascending ? NullOrdering.NULLS_FIRST : NullOrdering.NULLS_LAST;
     return new SortOrder() {
       @Override
       public Expression expression() {
@@ -73,8 +70,7 @@ public class ExpressionHelper {
   }
 
   public org.apache.spark.sql.catalyst.expressions.Expression toCatalyst(
-      Expression expr, LogicalPlan plan
-  ) {
+      Expression expr, LogicalPlan plan) {
     return ArcticSpark33Helper.toCatalyst(expr, plan);
   }
 }

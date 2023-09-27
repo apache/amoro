@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark;
 
-
 import java.util.Locale;
 
 public enum ArcticTableStoreType {
