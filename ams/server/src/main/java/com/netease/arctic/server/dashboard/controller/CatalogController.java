@@ -25,12 +25,14 @@ import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.ams.api.utils.CatalogPropertyUtil;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.dashboard.PlatformFileManager;
 import com.netease.arctic.server.dashboard.model.CatalogRegisterInfo;
 import com.netease.arctic.server.dashboard.model.CatalogSettingInfo;
 import com.netease.arctic.server.dashboard.model.CatalogSettingInfo.ConfigFileItem;
 import com.netease.arctic.server.dashboard.response.OkResponse;
+import com.netease.arctic.server.dashboard.utils.PropertiesUtil;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.table.TableProperties;
 import io.javalin.http.Context;
@@ -53,6 +55,7 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_C
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.KEY_WAREHOUSE;
@@ -60,7 +63,7 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAG
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.TABLE_FORMATS;
 
 /**
@@ -101,6 +104,7 @@ public class CatalogController {
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_AMS, displayKey, "Arctic Metastore"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HIVE, displayKey, "Hive Metastore"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HADOOP, displayKey, "Hadoop"));
+    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_GLUE, displayKey, "Glue"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_CUSTOM, displayKey, "Custom"));
     ctx.json(OkResponse.of(catalogTypes));
   }
@@ -199,7 +203,7 @@ public class CatalogController {
         constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_STORAGE,
             STORAGE_CONFIGS_KEY_HIVE_SITE.replace("\\.", "-"))));
 
-    storageConfig.put(STORAGE_CONFIGS_KEY_TYPE, config.get(STORAGE_CONFIGS_KEY_TYPE));
+    storageConfig.put(STORAGE_CONFIGS_KEY_TYPE, CatalogPropertyUtil.getCompatibleStorageType(config));
     return storageConfig;
   }
 
@@ -210,7 +214,8 @@ public class CatalogController {
     CatalogMeta catalogMeta = new CatalogMeta();
     catalogMeta.setCatalogName(info.getName());
     catalogMeta.setCatalogType(info.getType());
-    catalogMeta.setCatalogProperties(info.getProperties());
+    catalogMeta.setCatalogProperties(
+        PropertiesUtil.unionCatalogProperties(info.getTableProperties(), info.getProperties()));
     catalogMeta.getCatalogProperties()
         .put(
             CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.SELF_OPTIMIZING_GROUP,
@@ -240,7 +245,7 @@ public class CatalogController {
     Map<String, String> metaStorageConfig = new HashMap<>();
     metaStorageConfig.put(
         STORAGE_CONFIGS_KEY_TYPE,
-        info.getStorageConfig().getOrDefault(STORAGE_CONFIGS_KEY_TYPE, STORAGE_CONFIGS_VALUE_TYPE_HDFS));
+        info.getStorageConfig().getOrDefault(STORAGE_CONFIGS_KEY_TYPE, STORAGE_CONFIGS_VALUE_TYPE_HADOOP));
 
     List<String> metaKeyList = Arrays.asList(
         STORAGE_CONFIGS_KEY_HDFS_SITE,
@@ -277,6 +282,7 @@ public class CatalogController {
     Preconditions.checkNotNull(info.getAuthConfig(), "catalog auth config must not be null");
     Preconditions.checkNotNull(info.getStorageConfig(), "catalog storage config must not be null");
     Preconditions.checkNotNull(info.getProperties(), "catalog properties must not be null");
+    Preconditions.checkNotNull(info.getTableProperties(), "catalog table properties must not be null");
     if (tableService.catalogExist(info.getName())) {
       throw new RuntimeException("Duplicate catalog name!");
     }
@@ -315,9 +321,9 @@ public class CatalogController {
         }
       }
       info.setTableFormatList(Arrays.asList(tableFormat.split(",")));
-      info.setProperties(Maps.newHashMap(catalogMeta.getCatalogProperties()));
-      info.setOptimizerGroup(info.getProperties().getOrDefault(
-          CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.SELF_OPTIMIZING_GROUP,
+      info.setProperties(PropertiesUtil.extractCatalogMetaProperties(catalogMeta.getCatalogProperties()));
+      info.setTableProperties(PropertiesUtil.extractTableProperties(catalogMeta.getCatalogProperties()));
+      info.setOptimizerGroup(info.getTableProperties().getOrDefault(TableProperties.SELF_OPTIMIZING_GROUP,
           TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT));
       info.getProperties().remove(CatalogMetaProperties.TABLE_FORMATS);
       ctx.json(OkResponse.of(info));

@@ -22,6 +22,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.ams.api.utils.CatalogPropertyUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BasicIcebergCatalog;
 import com.netease.arctic.io.ArcticFileIO;
@@ -101,9 +102,8 @@ public class CatalogUtil {
     TableMetaStore.Builder builder = TableMetaStore.builder();
     if (catalogMeta.getStorageConfigs() != null) {
       Map<String, String> storageConfigs = catalogMeta.getStorageConfigs();
-      if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS
-          .equalsIgnoreCase(
-              storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE))) {
+      if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP
+          .equalsIgnoreCase(CatalogPropertyUtil.getCompatibleStorageType(storageConfigs))) {
         String coreSite = storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE);
         String hdfsSite = storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE);
         String hiveSite = storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE);

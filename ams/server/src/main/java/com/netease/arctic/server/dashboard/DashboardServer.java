@@ -343,18 +343,19 @@ public class DashboardServer {
   };
 
   private static boolean needLoginCheck(String uri) {
-    for (String item : urlWhiteList) {
-      if (item.endsWith("*")) {
-        if (uri.startsWith(item.substring(0, item.length() - 1))) {
-          return false;
-        }
-      } else {
-        if (uri.equals(item)) {
-          return false;
-        }
-      }
-    }
-    return true;
+    // for (String item : urlWhiteList) {
+    //   if (item.endsWith("*")) {
+    //     if (uri.startsWith(item.substring(0, item.length() - 1))) {
+    //       return false;
+    //     }
+    //   } else {
+    //     if (uri.equals(item)) {
+    //       return false;
+    //     }
+    //   }
+    // }
+    // return true;
+    return false;
   }
 
   private boolean needApiKeyCheck(String uri) {

@@ -26,7 +26,10 @@ public class CatalogMetaProperties {
   public static final String STORAGE_CONFIGS_KEY_CORE_SITE = "hadoop.core.site";
   public static final String STORAGE_CONFIGS_KEY_HIVE_SITE = "hive.site";
 
+  @Deprecated
   public static final String STORAGE_CONFIGS_VALUE_TYPE_HDFS = "hdfs";
+  public static final String STORAGE_CONFIGS_VALUE_TYPE_HADOOP = "Hadoop";
+  public static final String STORAGE_CONFIGS_VALUE_TYPE_S3 = "S3";
 
   public static final String AUTH_CONFIGS_KEY_TYPE = "auth.type";
   public static final String AUTH_CONFIGS_KEY_PRINCIPAL = "auth.kerberos.principal";
@@ -51,6 +54,7 @@ public class CatalogMetaProperties {
   public static final String CATALOG_TYPE_HADOOP = "hadoop";
   public static final String CATALOG_TYPE_HIVE = "hive";
   public static final String CATALOG_TYPE_AMS = "ams";
+  public static final String CATALOG_TYPE_GLUE = "glue";
   public static final String CATALOG_TYPE_CUSTOM = "custom";
 
   public static final String TABLE_FORMATS = "table-formats";
