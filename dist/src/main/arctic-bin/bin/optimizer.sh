@@ -28,9 +28,6 @@ if [ -z $(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -) ]; then
   exit 1
 fi
 
-
-
-
 ARGS=${@:2}
 
 if [ -z "$OPTIMIZER_LOG_DIR_NAME" ]; then
@@ -47,7 +44,7 @@ if [ ! -f $STDERR_LOG ];then
     touch $STDERR_LOG
 fi
 
-JAVA_OPTS="-Xmx$1m -Dlog.dir=${OPTIMIZER_LOG_DIR}"
+JAVA_OPTS="-Xmx$1m -Dlog.home=${OPTIMIZER_LOG_DIR}"
 RUN_SERVER="com.netease.arctic.optimizer.local.LocalOptimizer"
 CMDS="$JAVA_RUN $JAVA_OPTS $RUN_SERVER $ARGS"
 nohup ${CMDS} >/dev/null 2>${STDERR_LOG} &

@@ -19,7 +19,7 @@
 
 <Configuration monitorInterval="10">
     <properties>
-        <property name="LOG_DIR">${sys:log.dir}</property>
+        <property name="LOG_DIR">${sys:log.home}</property>
     </properties>
 
     <Appenders>
