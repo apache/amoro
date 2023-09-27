@@ -22,9 +22,6 @@ CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 . $CURRENT_DIR/load-config.sh
 
 LIB_PATH=$AMORO_HOME/lib
-STDERR_LOG=${AMORO_LOG_DIR}/optimizer.log.err
-
-
 export CLASSPATH=$CLASSPATH:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -):$AMORO_CONF_DIR/optimize
 if [ -z $(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -) ]; then
   echo "Launching the localOptimize task lacks relevant jars, please check" >&2
@@ -32,9 +29,7 @@ if [ -z $(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -) ]; then
 fi
 
 
-if [ ! -f $STDERR_LOG ];then
-    touch $STDERR_LOG
-fi
+
 
 ARGS=${@:2}
 
@@ -43,8 +38,13 @@ if [ -z "$OPTIMIZER_LOG_DIR_NAME" ]; then
 else
   OPTIMIZER_LOG_DIR=$AMORO_LOG_DIR/$OPTIMIZER_LOG_DIR_NAME
 fi
+STDERR_LOG=${OPTIMIZER_LOG_DIR}/optimizer.log.err
+
 if [ ! -f "${OPTIMIZER_LOG_DIR}" ]; then
   mkdir -p "${OPTIMIZER_LOG_DIR}"
+fi
+if [ ! -f $STDERR_LOG ];then
+    touch $STDERR_LOG
 fi
 
 JAVA_OPTS="-Xmx$1m -Dlog.dir=${OPTIMIZER_LOG_DIR}"
