@@ -188,6 +188,28 @@ ams:
     local.using-session-catalog-for-hive: true
 ```
 
+### Environments variables
+
+The following environment variables take effect during the startup process of AMS, 
+you can set up those environments to overwrite the default value.
+
+| Environments variable name | Default value      | Description                                | 
+|----------------------------|--------------------|--------------------------------------------|
+| AMORO_CONF_DIR             | ${AMORO_HOME}/conf | location where Amoro loading config files. |
+| AMORO_LOG_DIR              | ${AMORO_HOME}/logs | location where the logs files output       | 
+
+Note: `$AMORO_HOME` can't be overwritten from environment variable. It always points to the parent dir of `ams.sh`.
+
+### Configure AMS JVM
+
+The parameters related to JVM can be set in `${AMORO_CONF_DIR}/env.sh`, 
+and if there are other environment variables that need to be configured, 
+they can also be added to this file. 
+AMS will call `source ${AMORO_CONF_DIR}/env.sh` before starting to make the configuration effective.
+
+In addition, the parameters related to JVM in `${AMORO_CONF_DIR}/env.sh` can also be set directly through environment variables, 
+which have a higher priority than the configuration in `${AMORO_CONF_DIR}/env.sh`.
+
 ## Start AMS
 
 Enter the directory amoro-x.y.z and execute bin/ams.sh start to start AMS.
