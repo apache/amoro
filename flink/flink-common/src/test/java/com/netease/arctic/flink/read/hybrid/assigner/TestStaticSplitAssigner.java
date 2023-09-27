@@ -18,11 +18,6 @@
 
 package com.netease.arctic.flink.read.hybrid.assigner;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.reader.TestRowDataReaderFunction;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
@@ -31,14 +26,21 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class TestStaticSplitAssigner extends TestRowDataReaderFunction {
   private static final Logger LOG = LoggerFactory.getLogger(TestStaticSplitAssigner.class);
 
   @Test
   public void testSingleParallelism() throws IOException {
     try (StaticSplitAssigner staticSplitAssigner = instanceStaticSplitAssigner()) {
-      List<ArcticSplit> splitList = FlinkSplitPlanner.mergeOnReadPlan(testKeyedTable, Collections.emptyList(),
-          new AtomicInteger());
+      List<ArcticSplit> splitList =
+          FlinkSplitPlanner.mergeOnReadPlan(
+              testKeyedTable, Collections.emptyList(), new AtomicInteger());
       staticSplitAssigner.onDiscoveredSplits(splitList);
       List<ArcticSplit> actual = new ArrayList<>();
 
@@ -58,8 +60,9 @@ public class TestStaticSplitAssigner extends TestRowDataReaderFunction {
   @Test
   public void testMultiParallelism() throws IOException {
     try (StaticSplitAssigner staticSplitAssigner = instanceStaticSplitAssigner()) {
-      List<ArcticSplit> splitList = FlinkSplitPlanner.mergeOnReadPlan(testKeyedTable, Collections.emptyList(),
-          new AtomicInteger());
+      List<ArcticSplit> splitList =
+          FlinkSplitPlanner.mergeOnReadPlan(
+              testKeyedTable, Collections.emptyList(), new AtomicInteger());
       staticSplitAssigner.onDiscoveredSplits(splitList);
       List<ArcticSplit> actual = new ArrayList<>();
 

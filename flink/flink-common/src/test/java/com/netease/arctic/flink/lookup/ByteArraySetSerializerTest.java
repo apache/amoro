@@ -18,12 +18,13 @@
 
 package com.netease.arctic.flink.lookup;
 
-import java.util.HashSet;
-import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class ByteArraySetSerializerTest {
   private static final Logger LOG = LoggerFactory.getLogger(ByteArraySetSerializerTest.class);
@@ -62,7 +63,8 @@ public class ByteArraySetSerializerTest {
     long cost = System.currentTimeMillis() - start;
     assert serialized != null;
     Assert.assertEquals(totalSize, serialized.length);
-    LOG.info("serialized cost: {}, num= {}, result byte array size={}.", cost, num, serialized.length);
+    LOG.info(
+        "serialized cost: {}, num= {}, result byte array size={}.", cost, num, serialized.length);
 
     start = System.currentTimeMillis();
     Set<ByteArrayWrapper> actualSet = ByteArraySetSerializer.deserialize(serialized);
@@ -81,6 +83,5 @@ public class ByteArraySetSerializerTest {
     }
     long end = System.currentTimeMillis();
     LOG.info("contains process time:" + (end - start));
-
   }
 }

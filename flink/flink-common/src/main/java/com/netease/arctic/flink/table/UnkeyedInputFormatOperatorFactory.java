@@ -32,7 +32,8 @@ import org.apache.iceberg.flink.source.FlinkInputSplit;
 import org.apache.iceberg.flink.source.StreamingReaderOperator;
 
 public class UnkeyedInputFormatOperatorFactory extends AbstractStreamOperatorFactory<RowData>
-    implements YieldingOperatorFactory<RowData>, OneInputStreamOperatorFactory<FlinkInputSplit, RowData> {
+    implements YieldingOperatorFactory<RowData>,
+        OneInputStreamOperatorFactory<FlinkInputSplit, RowData> {
 
   private final ProxyFactory<FlinkInputFormat> factory;
 
@@ -49,10 +50,13 @@ public class UnkeyedInputFormatOperatorFactory extends AbstractStreamOperatorFac
 
   @SuppressWarnings("unchecked")
   @Override
-  public <O extends StreamOperator<RowData>> O createStreamOperator(StreamOperatorParameters<RowData> parameters) {
-    StreamingReaderOperator operator = IcebergClassUtil.newStreamingReaderOperator(factory.getInstance(),
-        processingTimeService, mailboxExecutor);
-    operator.setup(parameters.getContainingTask(), parameters.getStreamConfig(), parameters.getOutput());
+  public <O extends StreamOperator<RowData>> O createStreamOperator(
+      StreamOperatorParameters<RowData> parameters) {
+    StreamingReaderOperator operator =
+        IcebergClassUtil.newStreamingReaderOperator(
+            factory.getInstance(), processingTimeService, mailboxExecutor);
+    operator.setup(
+        parameters.getContainingTask(), parameters.getStreamConfig(), parameters.getOutput());
     return (O) operator;
   }
 

@@ -18,13 +18,6 @@
 
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.List;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -44,67 +37,124 @@ import org.junit.Before;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
+
 public class TestContinuousSplitPlannerImpl extends FlinkTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(TestContinuousSplitPlannerImpl.class);
   protected static final RowType ROW_TYPE = FlinkSchemaUtil.convert(TABLE_SCHEMA);
   protected KeyedTable testKeyedTable;
 
   protected static final LocalDateTime ldt =
-      LocalDateTime.of(
-          LocalDate.of(2022, 1, 1),
-          LocalTime.of(0, 0, 0, 0));
+      LocalDateTime.of(LocalDate.of(2022, 1, 1), LocalTime.of(0, 0, 0, 0));
 
-  public TestContinuousSplitPlannerImpl(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-      new BasicTableTestHelper(true, true));
+  public TestContinuousSplitPlannerImpl(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true));
   }
 
   @Before
   public void init() throws IOException {
     testKeyedTable = getArcticTable().asKeyedTable();
-    //write base
+    // write base
     {
       TaskWriter<RowData> taskWriter = createTaskWriter(true);
-      List<RowData> baseData = new ArrayList<RowData>() {{
-        add(GenericRowData.ofKind(
-            RowKind.INSERT, 1, StringData.fromString("john"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-        add(GenericRowData.ofKind(
-            RowKind.INSERT, 2, StringData.fromString("lily"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-        add(GenericRowData.ofKind(
-            RowKind.INSERT, 3, StringData.fromString("jake"), ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
-        add(GenericRowData.ofKind(
-            RowKind.INSERT, 4, StringData.fromString("sam"), ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
-      }};
+      List<RowData> baseData =
+          new ArrayList<RowData>() {
+            {
+              add(
+                  GenericRowData.ofKind(
+                      RowKind.INSERT,
+                      1,
+                      StringData.fromString("john"),
+                      ldt.toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(ldt)));
+              add(
+                  GenericRowData.ofKind(
+                      RowKind.INSERT,
+                      2,
+                      StringData.fromString("lily"),
+                      ldt.toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(ldt)));
+              add(
+                  GenericRowData.ofKind(
+                      RowKind.INSERT,
+                      3,
+                      StringData.fromString("jake"),
+                      ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+              add(
+                  GenericRowData.ofKind(
+                      RowKind.INSERT,
+                      4,
+                      StringData.fromString("sam"),
+                      ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+            }
+          };
       for (RowData record : baseData) {
         taskWriter.write(record);
       }
       commit(testKeyedTable, taskWriter.complete(), true);
     }
 
-    //write change insert
+    // write change insert
     {
       TaskWriter<RowData> taskWriter = createTaskWriter(false);
-      List<RowData> insert = new ArrayList<RowData>() {{
-        add(GenericRowData.ofKind(
-            RowKind.INSERT, 5, StringData.fromString("mary"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-        add(GenericRowData.ofKind(
-            RowKind.INSERT, 6, StringData.fromString("mack"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-      }};
+      List<RowData> insert =
+          new ArrayList<RowData>() {
+            {
+              add(
+                  GenericRowData.ofKind(
+                      RowKind.INSERT,
+                      5,
+                      StringData.fromString("mary"),
+                      ldt.toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(ldt)));
+              add(
+                  GenericRowData.ofKind(
+                      RowKind.INSERT,
+                      6,
+                      StringData.fromString("mack"),
+                      ldt.toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(ldt)));
+            }
+          };
       for (RowData record : insert) {
         taskWriter.write(record);
       }
       commit(testKeyedTable, taskWriter.complete(), true);
     }
 
-    //write change delete
+    // write change delete
     {
       TaskWriter<RowData> taskWriter = createTaskWriter(false);
-      List<RowData> update = new ArrayList<RowData>() {{
-        add(GenericRowData.ofKind(
-            RowKind.DELETE, 5, StringData.fromString("mary"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-        add(GenericRowData.ofKind(
-            RowKind.INSERT, 5, StringData.fromString("lind"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-      }};
+      List<RowData> update =
+          new ArrayList<RowData>() {
+            {
+              add(
+                  GenericRowData.ofKind(
+                      RowKind.DELETE,
+                      5,
+                      StringData.fromString("mary"),
+                      ldt.toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(ldt)));
+              add(
+                  GenericRowData.ofKind(
+                      RowKind.INSERT,
+                      5,
+                      StringData.fromString("lind"),
+                      ldt.toEpochSecond(ZoneOffset.UTC),
+                      TimestampData.fromLocalDateTime(ldt)));
+            }
+          };
 
       for (RowData record : update) {
         taskWriter.write(record);

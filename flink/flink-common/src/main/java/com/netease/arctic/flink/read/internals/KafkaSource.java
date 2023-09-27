@@ -40,8 +40,11 @@ import org.apache.flink.connector.kafka.source.enumerator.KafkaSourceEnumerator;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.connector.kafka.source.enumerator.subscriber.KafkaSubscriber;
 import org.apache.flink.connector.kafka.source.metrics.KafkaSourceReaderMetrics;
+import org.apache.flink.connector.kafka.source.reader.KafkaPartitionSplitReader;
 import org.apache.flink.connector.kafka.source.reader.KafkaRecordEmitter;
+import org.apache.flink.connector.kafka.source.reader.KafkaSourceReader;
 import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializationSchema;
+import org.apache.flink.connector.kafka.source.reader.fetcher.KafkaSourceFetcherManager;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplitSerializer;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
@@ -50,6 +53,7 @@ import org.apache.flink.util.UserCodeClassLoader;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Properties;
@@ -76,8 +80,7 @@ import java.util.function.Supplier;
  */
 @PublicEvolving
 public class KafkaSource<OUT>
-    implements Source<OUT, KafkaPartitionSplit, KafkaSourceEnumState>,
-    ResultTypeQueryable<OUT> {
+    implements Source<OUT, KafkaPartitionSplit, KafkaSourceEnumState>, ResultTypeQueryable<OUT> {
   private static final long serialVersionUID = -8755372893283732098L;
   // Users can choose only one of the following ways to specify the topics to consume from.
   private final KafkaSubscriber subscriber;
@@ -114,8 +117,7 @@ public class KafkaSource<OUT>
   @Override
   public SourceReader<OUT, KafkaPartitionSplit> createReader(SourceReaderContext readerContext)
       throws Exception {
-    return createReader(readerContext, (ignore) -> {
-    });
+    return createReader(readerContext, (ignore) -> {});
   }
 
   @VisibleForTesting
@@ -145,8 +147,7 @@ public class KafkaSource<OUT>
 
     return new KafkaSourceReader<>(
         elementsQueue,
-        new KafkaSourceFetcherManager(
-            elementsQueue, splitReaderSupplier::get, splitFinishedHook,readerContext.getConfiguration()),
+        new KafkaSourceFetcherManager(elementsQueue, splitReaderSupplier::get, splitFinishedHook),
         recordEmitter,
         toConfiguration(props),
         readerContext,
@@ -169,8 +170,7 @@ public class KafkaSource<OUT>
   @Internal
   @Override
   public SplitEnumerator<KafkaPartitionSplit, KafkaSourceEnumState> restoreEnumerator(
-      SplitEnumeratorContext<KafkaPartitionSplit> enumContext,
-      KafkaSourceEnumState checkpoint)
+      SplitEnumeratorContext<KafkaPartitionSplit> enumContext, KafkaSourceEnumState checkpoint)
       throws IOException {
     return new KafkaSourceEnumerator(
         subscriber,

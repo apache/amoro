@@ -18,9 +18,9 @@
 
 package com.netease.arctic.flink.write;
 
-import java.time.Duration;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -33,12 +33,15 @@ import org.apache.iceberg.UpdateProperties;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.time.Duration;
+
 public class TestAutomaticDoubleWriteStatus extends FlinkTestBase {
   public ArcticTableLoader tableLoader;
 
   public TestAutomaticDoubleWriteStatus() {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-      new BasicTableTestHelper(true, true));
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true));
   }
 
   @Test
@@ -49,22 +52,20 @@ public class TestAutomaticDoubleWriteStatus extends FlinkTestBase {
     UpdateProperties up = arcticTable.updateProperties();
     up.set(AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key(), "10");
     up.commit();
-    AutomaticDoubleWriteStatus status = new AutomaticDoubleWriteStatus(tableLoader, Duration.ofSeconds(10));
+    AutomaticDoubleWriteStatus status =
+        new AutomaticDoubleWriteStatus(tableLoader, Duration.ofSeconds(10));
     status.open();
 
     Assert.assertFalse(status.isDoubleWrite());
     status.processWatermark(new Watermark(System.currentTimeMillis() - 11 * 1000));
     Assert.assertFalse(status.isDoubleWrite());
     Assert.assertFalse(
-        Boolean.parseBoolean(arcticTable.properties()
-            .get(LOG_STORE_CATCH_UP.key())));
+        Boolean.parseBoolean(arcticTable.properties().get(LOG_STORE_CATCH_UP.key())));
     status.processWatermark(new Watermark(System.currentTimeMillis() - 9 * 1000));
     Assert.assertTrue(status.isDoubleWrite());
     Assert.assertTrue(status.isDoubleWrite());
 
     arcticTable.refresh();
-    Assert.assertTrue(
-        Boolean.parseBoolean(arcticTable.properties()
-            .get(LOG_STORE_CATCH_UP.key())));
+    Assert.assertTrue(Boolean.parseBoolean(arcticTable.properties().get(LOG_STORE_CATCH_UP.key())));
   }
 }

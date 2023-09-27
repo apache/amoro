@@ -25,10 +25,12 @@ import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.flink.write.FlinkTaskWriterBaseTest;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.types.Row;
+import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.io.TaskWriter;
@@ -39,16 +41,17 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBaseTest {
+public class TestLookupSecondary extends CatalogITCaseBase implements FlinkTaskWriterBaseTest {
   private String db;
 
-  public LookupITCase() {
+  public TestLookupSecondary() {
     super(
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(true, false));
@@ -69,56 +72,52 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
             + "with ('scan.startup.mode'='earliest', 'monitor-interval'='1 s')",
         db);
     exec(
-        "create table arctic.%s.DIM (id int, name string, primary key(id) not enforced) "
+        "create table arctic.%s.DIM_2 (id int, name string, cls bigint, primary key(id, name) not enforced) "
             + "with ('write.upsert.enabled'='true', 'lookup.reloading.interval'='1 s')",
         db);
     exec("create view vi as select *, PROCTIME() as proc from arctic.%s.L", db);
 
     writeAndCommit(
-        TableIdentifier.of(getCatalogName(), db, "DIM"),
-        Lists.newArrayList(DataUtil.toRowData(1, "a"), DataUtil.toRowData(2, "b")));
-    writeAndCommit(
-        TableIdentifier.of(getCatalogName(), db, "L"), Lists.newArrayList(DataUtil.toRowData(1)));
+        TableIdentifier.of(getCatalogName(), db, "L"),
+        Lists.newArrayList(
+            DataUtil.toRowData(1),
+            DataUtil.toRowData(2),
+            DataUtil.toRowData(3),
+            DataUtil.toRowData(4)));
+    writeToChangeAndCommit(
+        TableIdentifier.of(getCatalogName(), db, "DIM_2"),
+        Lists.newArrayList(
+            DataUtil.toRowData(1, "a", 1L),
+            DataUtil.toRowData(1, "b", 1L),
+            DataUtil.toRowData(2, "c", 2L),
+            DataUtil.toRowData(3, "d", 3L)),
+        true);
   }
 
   @After
   public void drop() {
     exec("drop table arctic.%s.L", db);
-    exec("drop table arctic.%s.DIM", db);
+    exec("drop table arctic.%s.DIM_2", db);
   }
 
   @Test()
   public void testLookup() throws Exception {
     TableResult tableResult =
         exec(
-            "select L.id, D.name from vi L LEFT JOIN arctic.%s.DIM "
+            "select L.id, D.cls from vi L LEFT JOIN arctic.%s.DIM_2 "
                 + "for system_time as of L.proc AS D ON L.id = D.id",
             db);
 
     tableResult.await(1, TimeUnit.MINUTES); // wait for the first row.
 
-    writeToChangeAndCommit(
-        TableIdentifier.of(getCatalogName(), db, "DIM"),
-        Lists.newArrayList(
-            DataUtil.toRowData(2, "c"),
-            DataUtil.toRowData(3, "d"),
-            DataUtil.toRowData(4, "e"),
-            DataUtil.toRowData(5, "f")),
-        true);
-    Thread.sleep(2000); // wait dim table commit and reload
-
-    writeToChangeAndCommit(
-        TableIdentifier.of(getCatalogName(), db, "L"),
-        Lists.newArrayList(
-            DataUtil.toRowData(2),
-            DataUtil.toRowData(3),
-            DataUtil.toRowData(4),
-            DataUtil.toRowData(5),
-            DataUtil.toRowData(6)),
-        false);
-
-    int expected = 6, count = 0;
-    Set<Row> actual = new HashSet<>();
+    List<Object[]> expects = new LinkedList<>();
+    expects.add(new Object[] {1, 1L});
+    expects.add(new Object[] {1, 1L});
+    expects.add(new Object[] {2, 2L});
+    expects.add(new Object[] {3, 3L});
+    expects.add(new Object[] {4, null});
+    int expected = expects.size(), count = 0;
+    List<Row> actual = new ArrayList<>();
     try (CloseableIterator<Row> rows = tableResult.collect()) {
       while (count < expected && rows.hasNext()) {
         Row row = rows.next();
@@ -128,14 +127,17 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
     }
 
     Assert.assertEquals(expected, actual.size());
-    List<Object[]> expects = new LinkedList<>();
-    expects.add(new Object[] {1, "a"});
-    expects.add(new Object[] {2, "c"});
-    expects.add(new Object[] {3, "d"});
-    expects.add(new Object[] {4, "e"});
-    expects.add(new Object[] {5, "f"});
-    expects.add(new Object[] {6, null});
-    Assert.assertEquals(DataUtil.toRowSet(expects), actual);
+    List<Row> rows =
+        expects.stream()
+            .map(
+                r ->
+                    r[0] instanceof RowKind
+                        ? Row.ofKind((RowKind) r[0], ArrayUtils.subarray(r, 1, r.length))
+                        : Row.of(r))
+            .collect(Collectors.toList());
+    Assert.assertEquals(
+        rows.stream().sorted(Comparator.comparing(Row::toString)).collect(Collectors.toList()),
+        actual.stream().sorted(Comparator.comparing(Row::toString)).collect(Collectors.toList()));
   }
 
   @Override

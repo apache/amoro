@@ -18,9 +18,9 @@
 
 package com.netease.arctic.flink.kafka.testutils;
 
-import java.util.Properties;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
+
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
@@ -28,13 +28,13 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 
+import java.util.Properties;
+
 public interface KafkaConfigGenerate {
 
   static Properties getProperties() {
     Properties properties = new Properties();
-    properties.put(
-        BOOTSTRAP_SERVERS_CONFIG,
-        KAFKA_CONTAINER.getBootstrapServers());
+    properties.put(BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
     properties.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");
     properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
     properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -53,9 +53,7 @@ public interface KafkaConfigGenerate {
 
   static Properties getPropertiesWithByteArray() {
     Properties properties = new Properties();
-    properties.put(
-        BOOTSTRAP_SERVERS_CONFIG,
-        KAFKA_CONTAINER.getBootstrapServers());
+    properties.put(BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
     properties.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");
     properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
     properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);

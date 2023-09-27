@@ -18,16 +18,8 @@
 
 package com.netease.arctic.flink.table;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import static org.apache.flink.table.planner.factories.TestValuesTableFactory.registerData;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -61,21 +53,31 @@ import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 public class TestJoin extends FlinkTestBase {
 
   public static final Logger LOG = LoggerFactory.getLogger(TestJoin.class);
 
-  @Rule
-  public TemporaryFolder tempFolder = new TemporaryFolder();
+  @Rule public TemporaryFolder tempFolder = new TemporaryFolder();
 
   private static final String DB = TableTestHelper.TEST_DB_NAME;
   private static final String TABLE = "test_keyed";
   private static final TableIdentifier TABLE_ID =
-    TableIdentifier.of(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME, TABLE);
+      TableIdentifier.of(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME, TABLE);
 
   public TestJoin() {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-      new BasicTableTestHelper(false, false));
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(false, false));
   }
 
   @Before
@@ -93,36 +95,45 @@ public class TestJoin extends FlinkTestBase {
   public void testRightEmptyLookupJoin() throws Exception {
     getEnv().getCheckpointConfig().disableCheckpointing();
     List<Object[]> data = new LinkedList<>();
-    data.add(new Object[]{RowKind.INSERT, 1000004L, "a", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.INSERT, 1000015L, "b", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.INSERT, 1000011L, "c", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.INSERT, 1000022L, "d", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.INSERT, 1000021L, "e", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.INSERT, 1000016L, "e", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 1000004L, "a", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 1000015L, "b", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 1000011L, "c", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 1000022L, "d", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 1000021L, "e", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 1000016L, "e", LocalDateTime.now()});
     String id = registerData(DataUtil.toRowList(data));
-    sql("CREATE TABLE `user` (id bigint, name string, op_time timestamp(3), watermark for op_time as op_time) " +
-        "with (" +
-        " 'connector' = 'values'," +
-        " 'bounded' = 'false'," +
-        " 'data-id' = '" + id + "' " +
-        " )");
+    sql(
+        "CREATE TABLE `user` (id bigint, name string, op_time timestamp(3), watermark for op_time as op_time) "
+            + "with ("
+            + " 'connector' = 'values',"
+            + " 'bounded' = 'false',"
+            + " 'data-id' = '"
+            + id
+            + "' "
+            + " )");
 
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
     String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
 
-    String sql = String.format("CREATE TABLE IF NOT EXISTS %s (" +
-        " info int, id bigint, name STRING" +
-        ", PRIMARY KEY (id) NOT ENFORCED) WITH %s", table, toWithClause(tableProperties));
+    String sql =
+        String.format(
+            "CREATE TABLE IF NOT EXISTS %s ("
+                + " info int, id bigint, name STRING"
+                + ", PRIMARY KEY (id) NOT ENFORCED) WITH %s",
+            table, toWithClause(tableProperties));
     sql(sql);
 
     sql("create table d (op_time timestamp(3), watermark for op_time as op_time) like %s", table);
 
-    TableResult result = exec("select u.name, u.id, dim.info, dim.name dname from `user` as u left join d " +
-        "/*+OPTIONS('streaming'='true', 'dim-table.enabled'='true')*/ for system_time as of u.op_time as dim" +
-        " on u.id = dim.id");
+    TableResult result =
+        exec(
+            "select u.name, u.id, dim.info, dim.name dname from `user` as u left join d "
+                + "/*+OPTIONS('streaming'='true', 'dim-table.enabled'='true')*/ for system_time as of u.op_time as dim"
+                + " on u.id = dim.id");
 
-    CommonTestUtils.waitForJobStatus(result.getJobClient().get(), Lists.newArrayList(JobStatus.RUNNING));
+    CommonTestUtils.waitForJobStatus(
+        result.getJobClient().get(), Lists.newArrayList(JobStatus.RUNNING));
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
       for (Object[] datum : data) {
@@ -133,12 +144,12 @@ public class TestJoin extends FlinkTestBase {
     result.getJobClient().ifPresent(TestUtil::cancelJob);
 
     List<Object[]> expected = new LinkedList<>();
-    expected.add(new Object[]{"a", 1000004L, null, null});
-    expected.add(new Object[]{"b", 1000015L, null, null});
-    expected.add(new Object[]{"c", 1000011L, null, null});
-    expected.add(new Object[]{"d", 1000022L, null, null});
-    expected.add(new Object[]{"e", 1000021L, null, null});
-    expected.add(new Object[]{"e", 1000016L, null, null});
+    expected.add(new Object[] {"a", 1000004L, null, null});
+    expected.add(new Object[] {"b", 1000015L, null, null});
+    expected.add(new Object[] {"c", 1000011L, null, null});
+    expected.add(new Object[] {"d", 1000022L, null, null});
+    expected.add(new Object[] {"e", 1000021L, null, null});
+    expected.add(new Object[] {"e", 1000016L, null, null});
     Assert.assertEquals(DataUtil.toRowSet(expected), actual);
   }
 
@@ -146,51 +157,57 @@ public class TestJoin extends FlinkTestBase {
   public void testLookupJoin() throws Exception {
     getEnv().getCheckpointConfig().disableCheckpointing();
     List<Object[]> data = new LinkedList<>();
-    data.add(new Object[]{RowKind.INSERT, 1L, "a", LocalDateTime.now().minusDays(3)});
-    data.add(new Object[]{RowKind.INSERT, 2L, "b", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.INSERT, 3L, "c", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.INSERT, 4L, "d", LocalDateTime.now().plusDays(3)});
-    data.add(new Object[]{RowKind.INSERT, 5L, "e", LocalDateTime.now().plusDays(3)});
-    data.add(new Object[]{RowKind.INSERT, 3L, "e", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.INSERT, 6L, "f", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.INSERT, 8L, "g", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.INSERT, 9L, "h", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 1L, "a", LocalDateTime.now().minusDays(3)});
+    data.add(new Object[] {RowKind.INSERT, 2L, "b", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 3L, "c", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 4L, "d", LocalDateTime.now().plusDays(3)});
+    data.add(new Object[] {RowKind.INSERT, 5L, "e", LocalDateTime.now().plusDays(3)});
+    data.add(new Object[] {RowKind.INSERT, 3L, "e", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 6L, "f", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 8L, "g", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 9L, "h", LocalDateTime.now()});
     String id = registerData(DataUtil.toRowList(data));
-    sql("CREATE TABLE `user` (id bigint, name string, op_time timestamp(3), watermark for op_time as op_time) " +
-        "with (" +
-        " 'connector' = 'values'," +
-        " 'bounded' = 'false'," +
-        " 'data-id' = '" + id + "' " +
-        " )");
+    sql(
+        "CREATE TABLE `user` (id bigint, name string, op_time timestamp(3), watermark for op_time as op_time) "
+            + "with ("
+            + " 'connector' = 'values',"
+            + " 'bounded' = 'false',"
+            + " 'data-id' = '"
+            + id
+            + "' "
+            + " )");
 
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
     String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
 
-    String sql = String.format("CREATE TABLE IF NOT EXISTS %s (" +
-        " info int, id bigint, name STRING" +
-        ", PRIMARY KEY (id) NOT ENFORCED) WITH %s", table, toWithClause(tableProperties));
+    String sql =
+        String.format(
+            "CREATE TABLE IF NOT EXISTS %s ("
+                + " info int, id bigint, name STRING"
+                + ", PRIMARY KEY (id) NOT ENFORCED) WITH %s",
+            table, toWithClause(tableProperties));
     sql(sql);
 
-    TableSchema flinkSchema = TableSchema.builder()
-        .field("info", DataTypes.INT())
-        .field("id", DataTypes.BIGINT())
-        .field("name", DataTypes.STRING())
-        .build();
+    TableSchema flinkSchema =
+        TableSchema.builder()
+            .field("info", DataTypes.INT())
+            .field("id", DataTypes.BIGINT())
+            .field("name", DataTypes.STRING())
+            .build();
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
-    KeyedTable keyedTable = (KeyedTable) ArcticUtils.loadArcticTable(
-        ArcticTableLoader.of(TABLE_ID, catalogBuilder));
+    KeyedTable keyedTable =
+        (KeyedTable) ArcticUtils.loadArcticTable(ArcticTableLoader.of(TABLE_ID, catalogBuilder));
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, true);
-    List<RowData> baseData = new ArrayList<RowData>() {{
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 123, 1L, StringData.fromString("a")));
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 324, 2L, StringData.fromString("b")));
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 456, 3L, StringData.fromString("c")));
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 463, 4L, StringData.fromString("d")));
-    }};
+    List<RowData> baseData =
+        new ArrayList<RowData>() {
+          {
+            add(GenericRowData.ofKind(RowKind.INSERT, 123, 1L, StringData.fromString("a")));
+            add(GenericRowData.ofKind(RowKind.INSERT, 324, 2L, StringData.fromString("b")));
+            add(GenericRowData.ofKind(RowKind.INSERT, 456, 3L, StringData.fromString("c")));
+            add(GenericRowData.ofKind(RowKind.INSERT, 463, 4L, StringData.fromString("d")));
+          }
+        };
     for (RowData record : baseData) {
       taskWriter.write(record);
     }
@@ -200,11 +217,14 @@ public class TestJoin extends FlinkTestBase {
 
     sql("create table d (op_time timestamp(3), watermark for op_time as op_time) like %s", table);
 
-    TableResult result = exec("select u.name, u.id, dim.info, dim.name dname from `user` as u left join d " +
-        "/*+OPTIONS('streaming'='true', 'dim-table.enabled'='true')*/ for system_time as of u.op_time as dim" +
-        " on u.id = dim.id");
+    TableResult result =
+        exec(
+            "select u.name, u.id, dim.info, dim.name dname from `user` as u left join d "
+                + "/*+OPTIONS('streaming'='true', 'dim-table.enabled'='true')*/ for system_time as of u.op_time as dim"
+                + " on u.id = dim.id");
 
-    CommonTestUtils.waitForJobStatus(result.getJobClient().get(), Lists.newArrayList(JobStatus.RUNNING));
+    CommonTestUtils.waitForJobStatus(
+        result.getJobClient().get(), Lists.newArrayList(JobStatus.RUNNING));
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
       for (Object[] datum : data) {
@@ -215,15 +235,15 @@ public class TestJoin extends FlinkTestBase {
     result.getJobClient().ifPresent(TestUtil::cancelJob);
 
     List<Object[]> expected = new LinkedList<>();
-    expected.add(new Object[]{"a", 1L, 123, "a"});
-    expected.add(new Object[]{"b", 2L, 324, "b"});
-    expected.add(new Object[]{"c", 3L, null, null});
-    expected.add(new Object[]{"d", 4L, 463, "d"});
-    expected.add(new Object[]{"e", 5L, 324, "john"});
-    expected.add(new Object[]{"e", 3L, null, null});
-    expected.add(new Object[]{"f", 6L, 324, "lily"});
-    expected.add(new Object[]{"g", 8L, null, null});
-    expected.add(new Object[]{"h", 9L, null, null});
+    expected.add(new Object[] {"a", 1L, 123, "a"});
+    expected.add(new Object[] {"b", 2L, 324, "b"});
+    expected.add(new Object[] {"c", 3L, null, null});
+    expected.add(new Object[] {"d", 4L, 463, "d"});
+    expected.add(new Object[] {"e", 5L, 324, "john"});
+    expected.add(new Object[] {"e", 3L, null, null});
+    expected.add(new Object[] {"f", 6L, 324, "lily"});
+    expected.add(new Object[] {"g", 8L, null, null});
+    expected.add(new Object[] {"h", 9L, null, null});
     Assert.assertEquals(DataUtil.toRowSet(expected), actual);
   }
 
@@ -231,51 +251,57 @@ public class TestJoin extends FlinkTestBase {
   public void testLookupJoinWithPartialFields() throws Exception {
     getEnv().getCheckpointConfig().disableCheckpointing();
     List<Object[]> data = new LinkedList<>();
-    data.add(new Object[]{RowKind.INSERT, 1L, "a", LocalDateTime.now().minusDays(3)});
-    data.add(new Object[]{RowKind.INSERT, 2L, "b", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.INSERT, 3L, "c", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.INSERT, 4L, "d", LocalDateTime.now().plusDays(3)});
-    data.add(new Object[]{RowKind.INSERT, 5L, "e", LocalDateTime.now().plusDays(3)});
-    data.add(new Object[]{RowKind.INSERT, 3L, "e", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.INSERT, 6L, "f", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.INSERT, 8L, "g", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.INSERT, 9L, "h", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 1L, "a", LocalDateTime.now().minusDays(3)});
+    data.add(new Object[] {RowKind.INSERT, 2L, "b", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 3L, "c", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 4L, "d", LocalDateTime.now().plusDays(3)});
+    data.add(new Object[] {RowKind.INSERT, 5L, "e", LocalDateTime.now().plusDays(3)});
+    data.add(new Object[] {RowKind.INSERT, 3L, "e", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 6L, "f", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 8L, "g", LocalDateTime.now()});
+    data.add(new Object[] {RowKind.INSERT, 9L, "h", LocalDateTime.now()});
     String id = registerData(DataUtil.toRowList(data));
-    sql("CREATE TABLE `user` (id bigint, name string, op_time timestamp(3), watermark for op_time as op_time) " +
-      "with (" +
-      " 'connector' = 'values'," +
-      " 'bounded' = 'false'," +
-      " 'data-id' = '" + id + "' " +
-      " )");
+    sql(
+        "CREATE TABLE `user` (id bigint, name string, op_time timestamp(3), watermark for op_time as op_time) "
+            + "with ("
+            + " 'connector' = 'values',"
+            + " 'bounded' = 'false',"
+            + " 'data-id' = '"
+            + id
+            + "' "
+            + " )");
 
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
     String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
 
-    String sql = String.format("CREATE TABLE IF NOT EXISTS %s (" +
-      " info int, id bigint, name STRING" +
-      ", PRIMARY KEY (id) NOT ENFORCED) WITH %s", table, toWithClause(tableProperties));
+    String sql =
+        String.format(
+            "CREATE TABLE IF NOT EXISTS %s ("
+                + " info int, id bigint, name STRING"
+                + ", PRIMARY KEY (id) NOT ENFORCED) WITH %s",
+            table, toWithClause(tableProperties));
     sql(sql);
 
-    TableSchema flinkSchema = TableSchema.builder()
-      .field("info", DataTypes.INT())
-      .field("id", DataTypes.BIGINT())
-      .field("name", DataTypes.STRING())
-      .build();
+    TableSchema flinkSchema =
+        TableSchema.builder()
+            .field("info", DataTypes.INT())
+            .field("id", DataTypes.BIGINT())
+            .field("name", DataTypes.STRING())
+            .build();
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
-    KeyedTable keyedTable = (KeyedTable) ArcticUtils.loadArcticTable(
-      ArcticTableLoader.of(TABLE_ID, catalogBuilder));
+    KeyedTable keyedTable =
+        (KeyedTable) ArcticUtils.loadArcticTable(ArcticTableLoader.of(TABLE_ID, catalogBuilder));
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, true);
-    List<RowData> baseData = new ArrayList<RowData>() {{
-      add(GenericRowData.ofKind(
-        RowKind.INSERT, 123, 1L, StringData.fromString("a")));
-      add(GenericRowData.ofKind(
-        RowKind.INSERT, 324, 2L, StringData.fromString("b")));
-      add(GenericRowData.ofKind(
-        RowKind.INSERT, 456, 3L, StringData.fromString("c")));
-      add(GenericRowData.ofKind(
-        RowKind.INSERT, 463, 4L, StringData.fromString("d")));
-    }};
+    List<RowData> baseData =
+        new ArrayList<RowData>() {
+          {
+            add(GenericRowData.ofKind(RowKind.INSERT, 123, 1L, StringData.fromString("a")));
+            add(GenericRowData.ofKind(RowKind.INSERT, 324, 2L, StringData.fromString("b")));
+            add(GenericRowData.ofKind(RowKind.INSERT, 456, 3L, StringData.fromString("c")));
+            add(GenericRowData.ofKind(RowKind.INSERT, 463, 4L, StringData.fromString("d")));
+          }
+        };
     for (RowData record : baseData) {
       taskWriter.write(record);
     }
@@ -285,12 +311,15 @@ public class TestJoin extends FlinkTestBase {
 
     sql("create table d (op_time timestamp(3), watermark for op_time as op_time) like %s", table);
 
-    //schema fields:[info, id, name], now only use [id, name]
-    TableResult result = exec("select u.name, u.id, dim.name dname from `user` as u left join d " +
-      "/*+OPTIONS('streaming'='true', 'dim-table.enabled'='true')*/ for system_time as of u.op_time as dim" +
-      " on u.id = dim.id");
+    // schema fields:[info, id, name], now only use [id, name]
+    TableResult result =
+        exec(
+            "select u.name, u.id, dim.name dname from `user` as u left join d "
+                + "/*+OPTIONS('streaming'='true', 'dim-table.enabled'='true')*/ for system_time as of u.op_time as dim"
+                + " on u.id = dim.id");
 
-    CommonTestUtils.waitForJobStatus(result.getJobClient().get(), Lists.newArrayList(JobStatus.RUNNING));
+    CommonTestUtils.waitForJobStatus(
+        result.getJobClient().get(), Lists.newArrayList(JobStatus.RUNNING));
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
       for (Object[] datum : data) {
@@ -301,28 +330,28 @@ public class TestJoin extends FlinkTestBase {
     result.getJobClient().ifPresent(TestUtil::cancelJob);
 
     List<Object[]> expected = new LinkedList<>();
-    expected.add(new Object[]{"a", 1L, "a"});
-    expected.add(new Object[]{"b", 2L, "b"});
-    expected.add(new Object[]{"c", 3L, null});
-    expected.add(new Object[]{"d", 4L, "d"});
-    expected.add(new Object[]{"e", 5L, "john"});
-    expected.add(new Object[]{"e", 3L, null});
-    expected.add(new Object[]{"f", 6L, "lily"});
-    expected.add(new Object[]{"g", 8L, null});
-    expected.add(new Object[]{"h", 9L, null});
+    expected.add(new Object[] {"a", 1L, "a"});
+    expected.add(new Object[] {"b", 2L, "b"});
+    expected.add(new Object[] {"c", 3L, null});
+    expected.add(new Object[] {"d", 4L, "d"});
+    expected.add(new Object[] {"e", 5L, "john"});
+    expected.add(new Object[] {"e", 3L, null});
+    expected.add(new Object[] {"f", 6L, "lily"});
+    expected.add(new Object[] {"g", 8L, null});
+    expected.add(new Object[] {"h", 9L, null});
     Assert.assertEquals(DataUtil.toRowSet(expected), actual);
   }
 
   private void writeChange(KeyedTable keyedTable, RowType rowType) {
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, false);
-    List<RowData> data = new ArrayList<RowData>() {{
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 324, 5L, StringData.fromString("john")));
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 324, 6L, StringData.fromString("lily")));
-      add(GenericRowData.ofKind(
-          RowKind.DELETE, 324, 3L, StringData.fromString("jake1")));
-    }};
+    List<RowData> data =
+        new ArrayList<RowData>() {
+          {
+            add(GenericRowData.ofKind(RowKind.INSERT, 324, 5L, StringData.fromString("john")));
+            add(GenericRowData.ofKind(RowKind.INSERT, 324, 6L, StringData.fromString("lily")));
+            add(GenericRowData.ofKind(RowKind.DELETE, 324, 3L, StringData.fromString("jake1")));
+          }
+        };
     try {
       for (RowData record : data) {
         taskWriter.write(record);

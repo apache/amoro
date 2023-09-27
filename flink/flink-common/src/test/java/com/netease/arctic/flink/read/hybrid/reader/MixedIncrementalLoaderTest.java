@@ -18,10 +18,6 @@
 
 package com.netease.arctic.flink.read.hybrid.reader;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import com.google.common.collect.Lists;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -52,6 +48,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 @RunWith(value = Parameterized.class)
 public class MixedIncrementalLoaderTest extends TableTestBase implements FlinkTaskWriterBaseTest {
 
@@ -64,43 +65,43 @@ public class MixedIncrementalLoaderTest extends TableTestBase implements FlinkTa
   @Parameterized.Parameters(name = "partitionedTable = {0}")
   public static Object[][] parameters() {
     // todo mix hive test
-    return new Object[][]{
-        {true},
-        {false}};
+    return new Object[][] {{true}, {false}};
   }
 
   @Before
   public void before() throws IOException {
     ArcticTable arcticTable = getArcticTable();
-    TableSchema flinkPartialSchema = TableSchema.builder()
-        .field("id", DataTypes.INT())
-        .field("name", DataTypes.STRING())
-        .field("ts", DataTypes.BIGINT())
-        .field("op_time", DataTypes.TIMESTAMP())
-        .build();
+    TableSchema flinkPartialSchema =
+        TableSchema.builder()
+            .field("id", DataTypes.INT())
+            .field("name", DataTypes.STRING())
+            .field("ts", DataTypes.BIGINT())
+            .field("op_time", DataTypes.TIMESTAMP())
+            .build();
     RowType rowType = (RowType) flinkPartialSchema.toRowDataType().getLogicalType();
 
-    List<RowData> expected = Lists.newArrayList(
-        DataUtil.toRowData(1000011, "a", 1010L, LocalDateTime.parse("2022-06-18T10:10:11.0")),
-        DataUtil.toRowData(1000012, "b", 1011L, LocalDateTime.parse("2022-06-18T10:10:11.0")),
-        DataUtil.toRowData(1000013, "c", 1012L, LocalDateTime.parse("2022-06-18T10:10:11.0")),
-        DataUtil.toRowData(1000014, "d", 1013L, LocalDateTime.parse("2022-06-21T10:10:11.0")),
-        DataUtil.toRowData(1000015, "e", 1014L, LocalDateTime.parse("2022-06-21T10:10:11.0"))
-    );
+    List<RowData> expected =
+        Lists.newArrayList(
+            DataUtil.toRowData(1000011, "a", 1010L, LocalDateTime.parse("2022-06-18T10:10:11.0")),
+            DataUtil.toRowData(1000012, "b", 1011L, LocalDateTime.parse("2022-06-18T10:10:11.0")),
+            DataUtil.toRowData(1000013, "c", 1012L, LocalDateTime.parse("2022-06-18T10:10:11.0")),
+            DataUtil.toRowData(1000014, "d", 1013L, LocalDateTime.parse("2022-06-21T10:10:11.0")),
+            DataUtil.toRowData(1000015, "e", 1014L, LocalDateTime.parse("2022-06-21T10:10:11.0")));
     for (RowData rowData : expected) {
       try (TaskWriter<RowData> taskWriter = createBaseTaskWriter(arcticTable, rowType)) {
         writeAndCommit(rowData, taskWriter, arcticTable);
       }
     }
 
-    expected = Lists.newArrayList(
-        DataUtil.toRowDataWithKind(RowKind.DELETE, 1000015, "e", 1014L, LocalDateTime.parse("2022-06-21T10:10:11.0")),
-        DataUtil.toRowData(1000021, "a", 1020L, LocalDateTime.parse("2022-06-28T10:10:11.0")),
-        DataUtil.toRowData(1000022, "b", 1021L, LocalDateTime.parse("2022-06-28T10:10:11.0")),
-        DataUtil.toRowData(1000023, "c", 1022L, LocalDateTime.parse("2022-06-28T10:10:11.0")),
-        DataUtil.toRowData(1000024, "d", 1023L, LocalDateTime.parse("2022-06-28T10:10:11.0")),
-        DataUtil.toRowData(1000025, "e", 1024L, LocalDateTime.parse("2022-06-28T10:10:11.0"))
-    );
+    expected =
+        Lists.newArrayList(
+            DataUtil.toRowDataWithKind(
+                RowKind.DELETE, 1000015, "e", 1014L, LocalDateTime.parse("2022-06-21T10:10:11.0")),
+            DataUtil.toRowData(1000021, "a", 1020L, LocalDateTime.parse("2022-06-28T10:10:11.0")),
+            DataUtil.toRowData(1000022, "b", 1021L, LocalDateTime.parse("2022-06-28T10:10:11.0")),
+            DataUtil.toRowData(1000023, "c", 1022L, LocalDateTime.parse("2022-06-28T10:10:11.0")),
+            DataUtil.toRowData(1000024, "d", 1023L, LocalDateTime.parse("2022-06-28T10:10:11.0")),
+            DataUtil.toRowData(1000025, "e", 1024L, LocalDateTime.parse("2022-06-28T10:10:11.0")));
     for (RowData rowData : expected) {
       try (TaskWriter<RowData> taskWriter = createTaskWriter(arcticTable, rowType)) {
         writeAndCommit(rowData, taskWriter, arcticTable);
@@ -112,22 +113,21 @@ public class MixedIncrementalLoaderTest extends TableTestBase implements FlinkTa
   public void testMOR() {
     KeyedTable keyedTable = getArcticTable().asKeyedTable();
     List<Expression> expressions =
-        Lists.newArrayList(
-            Expressions.greaterThan("op_time", "2022-06-20T10:10:11.0")
-        );
-    ContinuousSplitPlanner morPlanner = new MergeOnReadIncrementalPlanner(
-        getTableLoader(getCatalogName(), getMetastoreUrl(), keyedTable));
+        Lists.newArrayList(Expressions.greaterThan("op_time", "2022-06-20T10:10:11.0"));
+    ContinuousSplitPlanner morPlanner =
+        new MergeOnReadIncrementalPlanner(
+            getTableLoader(getCatalogName(), getMetastoreUrl(), keyedTable));
 
-    FlinkArcticMORDataReader flinkArcticMORDataReader = new FlinkArcticMORDataReader(
-        keyedTable.io(),
-        keyedTable.schema(),
-        keyedTable.schema(),
-        keyedTable.primaryKeySpec(),
-        null,
-        true,
-        RowDataUtil::convertConstant,
-        true
-    );
+    FlinkArcticMORDataReader flinkArcticMORDataReader =
+        new FlinkArcticMORDataReader(
+            keyedTable.io(),
+            keyedTable.schema(),
+            keyedTable.schema(),
+            keyedTable.primaryKeySpec(),
+            null,
+            true,
+            RowDataUtil::convertConstant,
+            true);
 
     MixedIncrementalLoader<RowData> incrementalLoader =
         new MixedIncrementalLoader<>(
@@ -142,8 +142,7 @@ public class MixedIncrementalLoaderTest extends TableTestBase implements FlinkTa
                 true,
                 keyedTable.io(),
                 true),
-            expressions
-        );
+            expressions);
 
     List<RowData> actuals = new ArrayList<>();
     while (incrementalLoader.hasNext()) {

@@ -19,6 +19,7 @@
 package com.netease.arctic.flink.table;
 
 import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
+
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
@@ -42,11 +43,11 @@ public abstract class CatalogITCaseBase extends TableTestBase {
   @ClassRule
   public static final MiniClusterWithClientResource MINI_CLUSTER_RESOURCE =
       MiniClusterResource.createWithClassloaderCheckDisabled();
+
   private volatile StreamTableEnvironment tEnv = null;
   private volatile StreamExecutionEnvironment env = null;
 
-  public CatalogITCaseBase(CatalogTestHelper catalogTestHelper,
-                           TableTestHelper tableTestHelper) {
+  public CatalogITCaseBase(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
@@ -62,9 +63,9 @@ public abstract class CatalogITCaseBase extends TableTestBase {
     if (tEnv == null) {
       synchronized (this) {
         if (tEnv == null) {
-          this.tEnv = StreamTableEnvironment.create(getEnv(), EnvironmentSettings
-              .newInstance()
-              .inStreamingMode().build());
+          this.tEnv =
+              StreamTableEnvironment.create(
+                  getEnv(), EnvironmentSettings.newInstance().inStreamingMode().build());
           Configuration configuration = tEnv.getConfig().getConfiguration();
           // set low-level key-value options
           configuration.setString(TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED.key(), "true");
@@ -78,15 +79,18 @@ public abstract class CatalogITCaseBase extends TableTestBase {
     if (env == null) {
       synchronized (this) {
         if (env == null) {
-          StateBackend backend = new FsStateBackend(
-              "file:///" + System.getProperty("java.io.tmpdir") + "/flink/backend");
+          StateBackend backend =
+              new FsStateBackend(
+                  "file:///" + System.getProperty("java.io.tmpdir") + "/flink/backend");
           env =
-              StreamExecutionEnvironment.getExecutionEnvironment(MiniClusterResource.DISABLE_CLASSLOADER_CHECK_CONFIG);
+              StreamExecutionEnvironment.getExecutionEnvironment(
+                  MiniClusterResource.DISABLE_CLASSLOADER_CHECK_CONFIG);
           env.setParallelism(defaultParallelism());
           env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
           env.getCheckpointConfig().setCheckpointInterval(300);
-          env.getCheckpointConfig().enableExternalizedCheckpoints(
-              CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
+          env.getCheckpointConfig()
+              .enableExternalizedCheckpoints(
+                  CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
           env.setStateBackend(backend);
           env.setRestartStrategy(RestartStrategies.noRestart());
         }

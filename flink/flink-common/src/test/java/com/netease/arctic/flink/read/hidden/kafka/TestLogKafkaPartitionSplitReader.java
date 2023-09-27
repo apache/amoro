@@ -18,15 +18,6 @@
 
 package com.netease.arctic.flink.read.hidden.kafka;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;
 import static com.netease.arctic.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
@@ -34,6 +25,7 @@ import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.createLogD
 import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.userSchema;
 import static com.netease.arctic.flink.write.hidden.kafka.TestHiddenLogOperators.createRowData;
 import static org.junit.Assert.assertEquals;
+
 import com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate;
 import com.netease.arctic.flink.kafka.testutils.KafkaContainerTest;
 import com.netease.arctic.flink.read.source.log.LogSourceHelper;
@@ -66,6 +58,16 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 public class TestLogKafkaPartitionSplitReader {
 
@@ -108,17 +110,21 @@ public class TestLogKafkaPartitionSplitReader {
     assignSplitsAndFetchUntilFinish(reader, 1, 20);
   }
 
-  private ProducerRecord<byte[], byte[]> createLogData(String topic, int i, int epicNo, boolean flip,
-                                                       LogDataJsonSerialization<RowData> serialization) {
+  private ProducerRecord<byte[], byte[]> createLogData(
+      String topic,
+      int i,
+      int epicNo,
+      boolean flip,
+      LogDataJsonSerialization<RowData> serialization) {
     RowData rowData = createRowData(i);
-    LogData<RowData> logData = new LogRecordV1(
-        FormatVersion.FORMAT_VERSION_V1,
-        JOB_ID,
-        epicNo,
-        flip,
-        transformFromFlinkRowKind(rowData.getRowKind()),
-        rowData
-    );
+    LogData<RowData> logData =
+        new LogRecordV1(
+            FormatVersion.FORMAT_VERSION_V1,
+            JOB_ID,
+            epicNo,
+            flip,
+            transformFromFlinkRowKind(rowData.getRowKind()),
+            rowData);
     byte[] message = serialization.serialize(logData);
     int partition = 0;
     ProducerRecord<byte[], byte[]> producerRecord =
@@ -161,19 +167,20 @@ public class TestLogKafkaPartitionSplitReader {
   public static void printDataInTopic(String topic) {
     ConsumerRecords<byte[], byte[]> consumerRecords = readRecordsBytes(topic);
     LogDataJsonDeserialization<RowData> deserialization = createLogDataDeserialization();
-    consumerRecords.forEach(consumerRecord -> {
-      try {
-        LOG.info("data in kafka: {}", deserialization.deserialize(consumerRecord.value()));
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    });
+    consumerRecords.forEach(
+        consumerRecord -> {
+          try {
+            LOG.info("data in kafka: {}", deserialization.deserialize(consumerRecord.value()));
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+        });
   }
 
   private void assignSplitsAndFetchUntilFinish(
-      LogKafkaPartitionSplitReader reader, int readerId, int expectedRecordCount) throws IOException {
-    Map<String, KafkaPartitionSplit> splits =
-        assignSplits(reader, splitsByOwners.get(readerId));
+      LogKafkaPartitionSplitReader reader, int readerId, int expectedRecordCount)
+      throws IOException {
+    Map<String, KafkaPartitionSplit> splits = assignSplits(reader, splitsByOwners.get(readerId));
 
     Map<String, Integer> numConsumedRecords = new HashMap<>();
     Set<String> finishedSplits = new HashSet<>();
@@ -187,7 +194,9 @@ public class TestLogKafkaPartitionSplitReader {
         ConsumerRecord<byte[], byte[]> record;
         boolean hasFlip = false;
         while ((record = recordsBySplitIds.nextRecordFromSplit()) != null) {
-          LOG.info("read: {}, offset: {}", ((LogRecordWithRetractInfo) record).getLogData().getActualValue(),
+          LOG.info(
+              "read: {}, offset: {}",
+              ((LogRecordWithRetractInfo) record).getLogData().getActualValue(),
               record.offset());
           if (((LogRecordWithRetractInfo<?>) record).isRetracting()) {
             hasFlip = true;
@@ -204,9 +213,7 @@ public class TestLogKafkaPartitionSplitReader {
         numConsumedRecords.compute(
             splitId,
             (ignored, recordCount) ->
-                recordCount == null
-                    ? splitFetch.size()
-                    : recordCount + splitFetch.size());
+                recordCount == null ? splitFetch.size() : recordCount + splitFetch.size());
         splitId = recordsBySplitIds.nextSplit();
       }
     }
@@ -215,9 +222,7 @@ public class TestLogKafkaPartitionSplitReader {
     numConsumedRecords.forEach(
         (splitId, recordCount) -> {
           assertEquals(
-              String.format(
-                  "%s should have %d records.",
-                  splits.get(splitId), expectedRecordCount),
+              String.format("%s should have %d records.", splits.get(splitId), expectedRecordCount),
               expectedRecordCount,
               (long) recordCount);
         });
@@ -226,14 +231,26 @@ public class TestLogKafkaPartitionSplitReader {
   public static Map<Integer, Map<String, KafkaPartitionSplit>> getSplitsByOwners(
       Map<TopicPartition, Long> earliestOffsets) {
     final Map<Integer, Map<String, KafkaPartitionSplit>> splitsByOwners = new HashMap<>();
-    splitsByOwners.put(0, new HashMap<String, KafkaPartitionSplit>() {{
-      TopicPartition tp = new TopicPartition(TOPIC1, 0);
-      put(KafkaPartitionSplit.toSplitId(tp), new KafkaPartitionSplit(tp, earliestOffsets.get(tp), TOPIC1_STOP_OFFSET));
-    }});
-    splitsByOwners.put(1, new HashMap<String, KafkaPartitionSplit>() {{
-      TopicPartition tp = new TopicPartition(TOPIC2, 0);
-      put(KafkaPartitionSplit.toSplitId(tp), new KafkaPartitionSplit(tp, earliestOffsets.get(tp), TOPIC2_STOP_OFFSET));
-    }});
+    splitsByOwners.put(
+        0,
+        new HashMap<String, KafkaPartitionSplit>() {
+          {
+            TopicPartition tp = new TopicPartition(TOPIC1, 0);
+            put(
+                KafkaPartitionSplit.toSplitId(tp),
+                new KafkaPartitionSplit(tp, earliestOffsets.get(tp), TOPIC1_STOP_OFFSET));
+          }
+        });
+    splitsByOwners.put(
+        1,
+        new HashMap<String, KafkaPartitionSplit>() {
+          {
+            TopicPartition tp = new TopicPartition(TOPIC2, 0);
+            put(
+                KafkaPartitionSplit.toSplitId(tp),
+                new KafkaPartitionSplit(tp, earliestOffsets.get(tp), TOPIC2_STOP_OFFSET));
+          }
+        });
     return splitsByOwners;
   }
 
@@ -245,15 +262,15 @@ public class TestLogKafkaPartitionSplitReader {
     return splits;
   }
 
-  private LogKafkaPartitionSplitReader createReader(
-      Properties additionalProperties) {
+  private LogKafkaPartitionSplitReader createReader(Properties additionalProperties) {
     Properties props = KafkaConfigGenerate.getPropertiesWithByteArray();
     props.put("group.id", "test");
     props.put("auto.offset.reset", "earliest");
     if (!additionalProperties.isEmpty()) {
       props.putAll(additionalProperties);
     }
-    SourceReaderMetricGroup sourceReaderMetricGroup = UnregisteredMetricsGroup.createSourceReaderMetricGroup();
+    SourceReaderMetricGroup sourceReaderMetricGroup =
+        UnregisteredMetricsGroup.createSourceReaderMetricGroup();
     return new LogKafkaPartitionSplitReader(
         props,
         new TestingReaderContext(new Configuration(), sourceReaderMetricGroup),
@@ -261,8 +278,7 @@ public class TestLogKafkaPartitionSplitReader {
         userSchema,
         true,
         new LogSourceHelper(),
-        "all-kinds"
-    );
+        "all-kinds");
   }
 
   private boolean verifyConsumed(
@@ -275,8 +291,8 @@ public class TestLogKafkaPartitionSplitReader {
       if (record.isRetracting()) {
         assertEquals(record.offset(), record.getActualValue().getInt(1));
       } else {
-        assertEquals(record.offset(),
-            record.getActualValue().getInt(1) + valueOffsetDiffInOrderedRead);
+        assertEquals(
+            record.offset(), record.getActualValue().getInt(1) + valueOffsetDiffInOrderedRead);
       }
 
       currentOffset = Math.max(currentOffset, record.offset());
@@ -287,5 +303,4 @@ public class TestLogKafkaPartitionSplitReader {
       return false;
     }
   }
-
 }

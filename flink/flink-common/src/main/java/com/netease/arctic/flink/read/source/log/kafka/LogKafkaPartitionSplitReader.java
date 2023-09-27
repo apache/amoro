@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.read.source.log.kafka;
 
+import static com.netease.arctic.flink.read.source.log.LogSourceHelper.checkMagicNum;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
+
 import com.netease.arctic.flink.read.internals.KafkaPartitionSplitReader;
 import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
@@ -49,28 +52,26 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.netease.arctic.flink.read.source.log.LogSourceHelper.checkMagicNum;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
-
 /**
- * This reader supports read log data in log-store.
- * If {@link ArcticValidator#ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE} values true, reader would read data consistently
+ * This reader supports read log data in log-store. If {@link
+ * ArcticValidator#ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE} values true, reader would read data
+ * consistently with file-store. Some data would be written into log-store repeatedly if upstream
+ * job failovers several times, so it's necessary to retract these data to guarantee the consistency
  * with file-store.
- * Some data would be written into log-store repeatedly if upstream job failovers several times, so it's necessary to 
- * retract these data to guarantee the consistency with file-store.
- * <p> 
- * The data in log-store with Flip like: 1 2 3 4 5   6 7 8 9  Flip  6 7 8 9 10 11 12   13 14          
+ *
+ * <pre>
+ * The data in log-store with Flip like: 1 2 3 4 5   6 7 8 9  Flip  6 7 8 9 10 11 12   13 14
  *                                       ckp-1     |ckp-2   |     | ckp-2            | ckp-3
  * The data reads like: 1 2 3 4 5 6 7 8 9 -9 -8 -7 -6 6 7 8 9 10 11 12 13 14
- * <p> 
+ *
  * The implementation of reading consistently lists below:
  * 1. read data normally {@link #readNormal()}
  *    - convert data to {@link LogRecordWithRetractInfo} in {@link #convertToLogRecord(ConsumerRecords)}. If it comes to
  *    Flip, the data would be cut.
  *    - save retracting info {@link LogSourceHelper.EpicRetractingInfo} in
  *    {@link LogSourceHelper#startRetracting(TopicPartition, String, long, long)}.
- *    - record the epic start offsets 
- *    {@link LogSourceHelper#initialEpicStartOffsetIfEmpty(TopicPartition, String, long, long)} in 
+ *    - record the epic start offsets
+ *    {@link LogSourceHelper#initialEpicStartOffsetIfEmpty(TopicPartition, String, long, long)} in
  *    - handle normal data like {@link KafkaPartitionSplitReader}
  * 2. read data reversely {@link #readReversely} if some topic partitions come into Flip,
  *  i.e. {@link LogSourceHelper#getRetractTopicPartitions()}
@@ -79,12 +80,13 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CON
  *    - poll data until stoppingOffsetsFromConsumer {@link #pollToDesignatedPositions}
  *    - locate the stop offset in the batch data {@link #findIndexOfOffset(List, long)}, and start from it to read
  *    reversely, stop at {@link LogSourceHelper.EpicRetractingInfo#getRetractStoppingOffset()}
- *    - suspend retract {@link LogSourceHelper#suspendRetracting(TopicPartition)} when it comes to 
+ *    - suspend retract {@link LogSourceHelper#suspendRetracting(TopicPartition)} when it comes to
  *    {@link LogSourceHelper.EpicRetractingInfo#getRetractStoppingOffset()}, else repeat {@link #readReversely} in next
  *    {@link #fetch()}
  * 3. write offset and retract info into splitState in
  * {@link LogKafkaPartitionSplitState#updateState(LogRecordWithRetractInfo)}
  * 4. initialize state from state {@link LogSourceHelper#initializedState}
+ * </pre>
  */
 public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
 
@@ -95,23 +97,23 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
   private final boolean logRetractionEnable;
   private final boolean logConsumerAppendOnly;
 
-  public LogKafkaPartitionSplitReader(Properties props, SourceReaderContext context,
-                                      KafkaSourceReaderMetrics kafkaSourceReaderMetrics,
-                                      Schema schema,
-                                      boolean logRetractionEnable,
-                                      LogSourceHelper logReadHelper,
-                                      String logConsumerChangelogMode) {
+  public LogKafkaPartitionSplitReader(
+      Properties props,
+      SourceReaderContext context,
+      KafkaSourceReaderMetrics kafkaSourceReaderMetrics,
+      Schema schema,
+      boolean logRetractionEnable,
+      LogSourceHelper logReadHelper,
+      String logConsumerChangelogMode) {
     super(props, context, kafkaSourceReaderMetrics);
 
-    this.logDataJsonDeserialization = new LogDataJsonDeserialization<>(
-        schema,
-        LogRecordV1.factory,
-        LogRecordV1.arrayFactory,
-        LogRecordV1.mapFactory
-    );
+    this.logDataJsonDeserialization =
+        new LogDataJsonDeserialization<>(
+            schema, LogRecordV1.factory, LogRecordV1.arrayFactory, LogRecordV1.mapFactory);
     this.logRetractionEnable = logRetractionEnable;
     this.logReadHelper = logReadHelper;
-    this.logConsumerAppendOnly = LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY.equalsIgnoreCase(logConsumerChangelogMode);
+    this.logConsumerAppendOnly =
+        LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY.equalsIgnoreCase(logConsumerChangelogMode);
   }
 
   public static int RETRACT_SIZE = 500;
@@ -121,7 +123,8 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
   public RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>> fetch() throws IOException {
     KafkaPartitionSplitRecords recordsBySplits;
     Set<TopicPartition> retractTps;
-    if (logRetractionEnable && !(retractTps = logReadHelper.getRetractTopicPartitions()).isEmpty()) {
+    if (logRetractionEnable
+        && !(retractTps = logReadHelper.getRetractTopicPartitions()).isEmpty()) {
       recordsBySplits = readReversely(retractTps);
     } else {
       recordsBySplits = readNormal();
@@ -140,21 +143,19 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
       // stopping offset). We just mark empty partitions as finished and return an empty
       // record container, and this consumer will be closed by SplitFetcherManager.
       KafkaPartitionSplitRecords recordsBySplits =
-          new KafkaPartitionSplitRecords(
-              ConsumerRecords.empty(), kafkaSourceReaderMetrics);
+          new KafkaPartitionSplitRecords(ConsumerRecords.empty(), kafkaSourceReaderMetrics);
       markEmptySplitsAsFinished(recordsBySplits);
       return recordsBySplits;
     }
 
     ConsumerRecords<byte[], byte[]> logRecords = convertToLogRecord(consumerRecords);
-    KafkaPartitionSplitRecords recordsBySplits = new KafkaPartitionSplitRecords(
-        logRecords, kafkaSourceReaderMetrics);
+    KafkaPartitionSplitRecords recordsBySplits =
+        new KafkaPartitionSplitRecords(logRecords, kafkaSourceReaderMetrics);
 
     List<TopicPartition> finishedPartitions = new ArrayList<>();
     for (TopicPartition tp : logRecords.partitions()) {
       long stoppingOffset = getStoppingOffset(tp);
-      final List<ConsumerRecord<byte[], byte[]>> recordsFromPartition =
-          logRecords.records(tp);
+      final List<ConsumerRecord<byte[], byte[]>> recordsFromPartition = logRecords.records(tp);
 
       if (recordsFromPartition.size() > 0) {
         final ConsumerRecord<byte[], byte[]> lastRecord =
@@ -166,11 +167,7 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
         if (lastRecord.offset() >= stoppingOffset - 1) {
           recordsBySplits.setPartitionStoppingOffset(tp, stoppingOffset);
           finishSplitAtRecord(
-              tp,
-              stoppingOffset,
-              lastRecord.offset(),
-              finishedPartitions,
-              recordsBySplits);
+              tp, stoppingOffset, lastRecord.offset(), finishedPartitions, recordsBySplits);
         }
       }
       // Track this partition's record lag if it never appears before
@@ -191,8 +188,8 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
     return recordsBySplits;
   }
 
-  private ConsumerRecords<byte[], byte[]> convertToLogRecord(ConsumerRecords<byte[], byte[]> consumerRecords)
-      throws IOException {
+  private ConsumerRecords<byte[], byte[]> convertToLogRecord(
+      ConsumerRecords<byte[], byte[]> consumerRecords) throws IOException {
     Map<TopicPartition, List<ConsumerRecord<byte[], byte[]>>> records = new HashMap<>();
 
     for (TopicPartition tp : consumerRecords.partitions()) {
@@ -220,8 +217,8 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
 
         if (logData.getFlip()) {
           if (logRetractionEnable) {
-            logReadHelper.startRetracting(tp, logData.getUpstreamId(), logData.getEpicNo(),
-                currentOffset + 1);
+            logReadHelper.startRetracting(
+                tp, logData.getUpstreamId(), logData.getEpicNo(), currentOffset + 1);
             break;
           } else {
             continue;
@@ -229,7 +226,8 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
         }
 
         if (logRetractionEnable) {
-          logReadHelper.initialEpicStartOffsetIfEmpty(tp, logData.getUpstreamId(), logData.getEpicNo(), currentOffset);
+          logReadHelper.initialEpicStartOffsetIfEmpty(
+              tp, logData.getUpstreamId(), logData.getEpicNo(), currentOffset);
         }
         recordsForSplit.add(LogRecordWithRetractInfo.of(consumerRecord, logData));
       }
@@ -237,10 +235,9 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
     return new ConsumerRecords<>(records);
   }
 
-  /**
-   * read reversely in retracting mode
-   */
-  private KafkaPartitionSplitRecords readReversely(Set<TopicPartition> retractTps) throws IOException {
+  /** read reversely in retracting mode */
+  private KafkaPartitionSplitRecords readReversely(Set<TopicPartition> retractTps)
+      throws IOException {
     Set<TopicPartition> origin = consumer.assignment();
     consumer.assign(retractTps);
 
@@ -260,19 +257,24 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
     Map<TopicPartition, List<ConsumerRecord<byte[], byte[]>>> logRecords = new HashMap<>();
 
     Set<TopicPartition> finishRetract = new HashSet<>();
-    for (Map.Entry<TopicPartition, List<ConsumerRecord<byte[], byte[]>>> entry : records.entrySet()) {
+    for (Map.Entry<TopicPartition, List<ConsumerRecord<byte[], byte[]>>> entry :
+        records.entrySet()) {
       TopicPartition tp = entry.getKey();
       List<ConsumerRecord<byte[], byte[]>> consumerRecords = entry.getValue();
 
-      List<ConsumerRecord<byte[], byte[]>> recordsForSplit = new ArrayList<>(consumerRecords.size());
+      List<ConsumerRecord<byte[], byte[]>> recordsForSplit =
+          new ArrayList<>(consumerRecords.size());
       logRecords.put(tp, recordsForSplit);
 
       long stoppingOffsetFromConsumer = stoppingOffsetsFromConsumer.get(tp);
       LogSourceHelper.EpicRetractingInfo retractingInfo = logReadHelper.getRetractInfo(tp);
-      // stoppingOffsetFromConsumer is the offset queried from consumer, it may be larger than flip offset because 
+      // stoppingOffsetFromConsumer is the offset queried from consumer, it may be larger than flip
+      // offset because
       // kafka poll batch records every time.
-      // revertStartingOffset is the offset after flip, so it should minus 2 to get the offset before flip.
-      long stoppingOffset = Math.min(stoppingOffsetFromConsumer, retractingInfo.getRevertStartingOffset() - 2);
+      // revertStartingOffset is the offset after flip, so it should minus 2 to get the offset
+      // before flip.
+      long stoppingOffset =
+          Math.min(stoppingOffsetFromConsumer, retractingInfo.getRevertStartingOffset() - 2);
       int startIndex = findIndexOfOffset(consumerRecords, stoppingOffset);
 
       for (int i = startIndex; i >= 0; i--) {
@@ -284,16 +286,22 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
         }
         LogData<RowData> logData = logDataJsonDeserialization.deserialize(r.value());
 
-        if (!Objects.equals(logData.getUpstreamId(), retractingInfo.getUpstreamId()) ||
-            logData.getEpicNo() <= retractingInfo.getEpicNo()) {
-          LOG.debug("won't retract other job or the success ckp epic data, upstreamId: {}, epicNo: {}",
-              logData.getUpstreamId(), logData.getEpicNo());
+        if (!Objects.equals(logData.getUpstreamId(), retractingInfo.getUpstreamId())
+            || logData.getEpicNo() <= retractingInfo.getEpicNo()) {
+          LOG.debug(
+              "won't retract other job or the success ckp epic data, upstreamId: {}, epicNo: {}",
+              logData.getUpstreamId(),
+              logData.getEpicNo());
         } else {
           RowData actualValue = logReadHelper.turnRowKind(logData.getActualValue());
-          recordsForSplit.add(LogRecordWithRetractInfo.ofRetract(
-              r, retractingInfo.getRetractStoppingOffset(), retractingInfo.getRevertStartingOffset(),
-              retractingInfo.getEpicNo(), logData, actualValue
-          ));
+          recordsForSplit.add(
+              LogRecordWithRetractInfo.ofRetract(
+                  r,
+                  retractingInfo.getRetractStoppingOffset(),
+                  retractingInfo.getRevertStartingOffset(),
+                  retractingInfo.getEpicNo(),
+                  logData,
+                  actualValue));
         }
 
         if (r.offset() == retractingInfo.getRetractStoppingOffset()) {
@@ -306,8 +314,8 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
     suspendRetracting(finishRetract);
     consumer.assign(origin);
 
-    return new KafkaPartitionSplitRecords(new ConsumerRecords<>(logRecords),
-        kafkaSourceReaderMetrics);
+    return new KafkaPartitionSplitRecords(
+        new ConsumerRecords<>(logRecords), kafkaSourceReaderMetrics);
   }
 
   private void suspendRetracting(Set<TopicPartition> finishRetract) {
@@ -315,9 +323,7 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
     logReadHelper.suspendRetracting(finishRetract);
   }
 
-  /**
-   * revert consumer to original offset after flip
-   */
+  /** revert consumer to original offset after flip */
   public void revertConsumer(Set<TopicPartition> finishRetract) {
     for (TopicPartition tp : finishRetract) {
       LogSourceHelper.EpicRetractingInfo retractingInfo = logReadHelper.getRetractInfo(tp);
@@ -328,7 +334,7 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
 
   /**
    * @param records should be in order of kafka.
-   * @param offset  Kafka offset
+   * @param offset Kafka offset
    * @return the index in records
    */
   private int findIndexOfOffset(List<ConsumerRecord<byte[], byte[]>> records, long offset) {
@@ -347,9 +353,13 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
       LOG.debug("start index is: {}", idx);
       return idx;
     }
-    LOG.info("topic: {}, partition: {}, records' offset range: [{}, {}], need to find: {}",
-        records.get(0).topic(), records.get(0).partition(),
-        records.get(0).offset(), records.get(last).offset(), offset);
+    LOG.info(
+        "topic: {}, partition: {}, records' offset range: [{}, {}], need to find: {}",
+        records.get(0).topic(),
+        records.get(0).partition(),
+        records.get(0).offset(),
+        records.get(last).offset(),
+        offset);
     throw new IllegalStateException("can not find offset in records");
   }
 
@@ -385,7 +395,10 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
         long stoppingOffset = stoppingOffsets.get(tp);
         if (records.get(records.size() - 1).offset() >= stoppingOffset) {
           unfinished--;
-          LOG.info("reach the stopping offset. stopping offset: {}, tp: {}. data size:{}", stoppingOffset, tp,
+          LOG.info(
+              "reach the stopping offset. stopping offset: {}, tp: {}. data size:{}",
+              stoppingOffset,
+              tp,
               records.size());
         } else {
           unfinishedTps.add(tp);
@@ -401,7 +414,10 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
       LOG.error("can not poll msg to designated positions. unfinished: {}", unfinishedTps);
       for (TopicPartition tp : unfinishedTps) {
         List<ConsumerRecord<byte[], byte[]>> records = recordsForTps.get(tp);
-        LOG.info("tp: {}, polled offset:{}, stopping offset: {}", tp, records.get(records.size() - 1).offset(),
+        LOG.info(
+            "tp: {}, polled offset:{}, stopping offset: {}",
+            tp,
+            records.get(records.size() - 1).offset(),
             stoppingOffsets.get(tp));
       }
       throw new UnsupportedOperationException("poll msg reversely error");
@@ -411,18 +427,17 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
   }
 
   /**
-   * filter the rowData only works during
-   * {@link ArcticValidator#ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE}
-   * is false and
-   * {@link ArcticValidator#ARCTIC_LOG_CONSUMER_CHANGELOG_MODE}
-   * is {@link ArcticValidator#LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY} and
-   * rowData.rowKind != INSERT
+   * filter the rowData only works during {@link
+   * ArcticValidator#ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE} is false and {@link
+   * ArcticValidator#ARCTIC_LOG_CONSUMER_CHANGELOG_MODE} is {@link
+   * ArcticValidator#LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY} and rowData.rowKind != INSERT
    *
    * @param rowData the judged data
    * @return true means should be filtered.
    */
   boolean filterByRowKind(RowData rowData) {
-    return !logRetractionEnable && logConsumerAppendOnly && !rowData.getRowKind().equals(RowKind.INSERT);
+    return !logRetractionEnable
+        && logConsumerAppendOnly
+        && !rowData.getRowKind().equals(RowKind.INSERT);
   }
-
 }

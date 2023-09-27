@@ -18,9 +18,6 @@
 
 package com.netease.arctic.flink.util;
 
-import javax.annotation.Nonnull;
-import java.util.Collections;
-import java.util.List;
 import org.apache.flink.runtime.checkpoint.OperatorSubtaskState;
 import org.apache.flink.runtime.checkpoint.PrioritizedOperatorSubtaskState;
 import org.apache.flink.runtime.checkpoint.TaskStateSnapshot;
@@ -30,14 +27,21 @@ import org.apache.flink.runtime.state.TestTaskStateManager;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 
-public class TestOneInputStreamOperatorIntern<IN, OUT> extends OneInputStreamOperatorTestHarness<IN, OUT> {
+import javax.annotation.Nonnull;
+
+import java.util.Collections;
+import java.util.List;
+
+public class TestOneInputStreamOperatorIntern<IN, OUT>
+    extends OneInputStreamOperatorTestHarness<IN, OUT> {
   public TestOneInputStreamOperatorIntern(
       OneInputStreamOperator<IN, OUT> operator,
       int maxParallelism,
       int parallelism,
       int subtaskIndex,
       Long restoredCheckpointId,
-      TestGlobalAggregateManager testGlobalAggregateManager) throws Exception {
+      TestGlobalAggregateManager testGlobalAggregateManager)
+      throws Exception {
     super(
         operator,
         (new MockEnvironmentBuilder())
@@ -50,8 +54,7 @@ public class TestOneInputStreamOperatorIntern<IN, OUT> extends OneInputStreamOpe
             .setMaxParallelism(maxParallelism)
             .setParallelism(parallelism)
             .setSubtaskIndex(subtaskIndex)
-            .build()
-    );
+            .build());
   }
 
   public void notifyOfAbortedCheckpoint(long checkpointId) throws Exception {
@@ -77,24 +80,26 @@ public class TestOneInputStreamOperatorIntern<IN, OUT> extends OneInputStreamOpe
       if (jmTaskStateSnapshot == null) {
         return PrioritizedOperatorSubtaskState.emptyNotRestored();
       } else {
-        OperatorSubtaskState jmOpState = jmTaskStateSnapshot.getSubtaskStateByOperatorID(operatorID);
+        OperatorSubtaskState jmOpState =
+            jmTaskStateSnapshot.getSubtaskStateByOperatorID(operatorID);
         if (jmOpState == null) {
           return PrioritizedOperatorSubtaskState.emptyNotRestored();
         } else {
           List<OperatorSubtaskState> tmStateCollection = Collections.emptyList();
           if (tmTaskStateSnapshot != null) {
-            OperatorSubtaskState tmOpState = tmTaskStateSnapshot.getSubtaskStateByOperatorID(operatorID);
+            OperatorSubtaskState tmOpState =
+                tmTaskStateSnapshot.getSubtaskStateByOperatorID(operatorID);
             if (tmOpState != null) {
               tmStateCollection = Collections.singletonList(tmOpState);
             }
           }
 
           PrioritizedOperatorSubtaskState.Builder builder =
-              new PrioritizedOperatorSubtaskState.Builder(jmOpState, tmStateCollection, this.reportedCheckpointId);
+              new PrioritizedOperatorSubtaskState.Builder(
+                  jmOpState, tmStateCollection, this.reportedCheckpointId);
           return builder.build();
         }
       }
     }
   }
-
 }

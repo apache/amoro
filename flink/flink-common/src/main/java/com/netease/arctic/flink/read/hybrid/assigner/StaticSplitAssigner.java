@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -34,9 +35,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-/**
- * This is a static split assigner which is used for batch mode.
- */
+/** This is a static split assigner which is used for batch mode. */
 public class StaticSplitAssigner implements SplitAssigner {
   private static final Logger LOG = LoggerFactory.getLogger(StaticSplitAssigner.class);
 
@@ -51,7 +50,8 @@ public class StaticSplitAssigner implements SplitAssigner {
     this.splitQueue = new PriorityBlockingQueue<>();
     if (enumState != null) {
       Collection<ArcticSplitState> splitStates = enumState.pendingSplits();
-      splitStates.forEach(state -> onDiscoveredSplits(Collections.singleton(state.toSourceSplit())));
+      splitStates.forEach(
+          state -> onDiscoveredSplits(Collections.singleton(state.toSourceSplit())));
     }
   }
 
@@ -76,8 +76,11 @@ public class StaticSplitAssigner implements SplitAssigner {
       LOG.debug("Couldn't retrieve arctic source split from the queue, as the queue is empty.");
       return Optional.empty();
     } else {
-      LOG.info("Assigning the arctic split, task index is {}, total number of splits is {}, arctic split is {}.",
-          arcticSplit.taskIndex(), totalSplitNum, arcticSplit);
+      LOG.info(
+          "Assigning the arctic split, task index is {}, total number of splits is {}, arctic split is {}.",
+          arcticSplit.taskIndex(),
+          totalSplitNum,
+          arcticSplit);
       return Optional.of(arcticSplit);
     }
   }

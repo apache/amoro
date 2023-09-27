@@ -18,14 +18,6 @@
 
 package com.netease.arctic.flink.read.hidden.kafka;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.getPropertiesByTopic;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;
@@ -35,6 +27,7 @@ import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.createLogD
 import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.userSchema;
 import static com.netease.arctic.flink.write.hidden.kafka.TestHiddenLogOperators.createRowData;
 import static org.junit.Assert.assertEquals;
+
 import com.netease.arctic.flink.kafka.testutils.KafkaContainerTest;
 import com.netease.arctic.flink.read.source.log.kafka.LogKafkaPartitionSplit;
 import com.netease.arctic.flink.read.source.log.kafka.LogKafkaPartitionSplitState;
@@ -68,6 +61,15 @@ import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+
 public class TestKafkaSourceReader {
   private static final Logger LOG = LoggerFactory.getLogger(TestKafkaSourceReader.class);
   private static String topic;
@@ -76,8 +78,7 @@ public class TestKafkaSourceReader {
   private static final int NUM_RECORDS_PER_SPLIT = 10;
   private static final int TOTAL_NUM_RECORDS = NUM_RECORDS_PER_SPLIT * NUM_SPLITS;
 
-  @Rule
-  public TestName testName = new TestName();
+  @Rule public TestName testName = new TestName();
 
   private static final byte[] JOB_ID = IdGenerator.generateUpstreamId();
 
@@ -94,7 +95,7 @@ public class TestKafkaSourceReader {
   @Before
   public void initData() throws Exception {
     topic = TestUtil.getUtMethodName(testName);
-    KafkaContainerTest.createTopics(KAFKA_PARTITION_NUMS,1, topic);
+    KafkaContainerTest.createTopics(KAFKA_PARTITION_NUMS, 1, topic);
     write(topic, TOTAL_NUM_RECORDS);
   }
 
@@ -124,28 +125,32 @@ public class TestKafkaSourceReader {
     currentSplitList.forEach(s -> assertEquals(TOTAL_NUM_RECORDS, s.getStartingOffset()));
   }
 
-  private ProducerRecord<byte[], byte[]> createLogData(String topic, int i, int epicNo, boolean flip,
-                                                       LogDataJsonSerialization<RowData> serialization) {
+  private ProducerRecord<byte[], byte[]> createLogData(
+      String topic,
+      int i,
+      int epicNo,
+      boolean flip,
+      LogDataJsonSerialization<RowData> serialization) {
     RowData rowData = createRowData(i);
-    LogData<RowData> logData = new LogRecordV1(
-      FormatVersion.FORMAT_VERSION_V1,
-      JOB_ID,
-      epicNo,
-      flip,
-      transformFromFlinkRowKind(rowData.getRowKind()),
-      rowData
-    );
+    LogData<RowData> logData =
+        new LogRecordV1(
+            FormatVersion.FORMAT_VERSION_V1,
+            JOB_ID,
+            epicNo,
+            flip,
+            transformFromFlinkRowKind(rowData.getRowKind()),
+            rowData);
     byte[] message = serialization.serialize(logData);
     int partition = 0;
     ProducerRecord<byte[], byte[]> producerRecord =
-      new ProducerRecord<>(topic, partition, null, null, message);
+        new ProducerRecord<>(topic, partition, null, null, message);
     return producerRecord;
   }
 
   private void write(String topic, int numRecords) throws Exception {
     KafkaProducer producer = KafkaContainerTest.getProducer();
     LogDataJsonSerialization<RowData> serialization =
-      new LogDataJsonSerialization<>(userSchema, LogRecordV1.fieldGetterFactory);
+        new LogDataJsonSerialization<>(userSchema, LogRecordV1.fieldGetterFactory);
     for (int i = 0; i < numRecords; i++) {
       producer.send(createLogData(topic, 0, 1, false, serialization));
     }
@@ -155,13 +160,14 @@ public class TestKafkaSourceReader {
   public static void printDataInTopic(String topic) {
     ConsumerRecords<byte[], byte[]> consumerRecords = readRecordsBytes(topic);
     LogDataJsonDeserialization<RowData> deserialization = createLogDataDeserialization();
-    consumerRecords.forEach(consumerRecord -> {
-      try {
-        LOG.info("data in kafka: {}", deserialization.deserialize(consumerRecord.value()));
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    });
+    consumerRecords.forEach(
+        consumerRecord -> {
+          try {
+            LOG.info("data in kafka: {}", deserialization.deserialize(consumerRecord.value()));
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+        });
   }
 
   private SourceReader<RowData, KafkaPartitionSplit> createReader(String groupId) {
@@ -180,10 +186,10 @@ public class TestKafkaSourceReader {
     configuration.put(ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(), String.valueOf(retract));
 
     return LogKafkaSource.builder(userSchema, configuration)
-      .setTopics(topics)
-      .setStartingOffsets(OffsetsInitializer.earliest())
-      .setProperties(properties)
-      .build();
+        .setTopics(topics)
+        .setStartingOffsets(OffsetsInitializer.earliest())
+        .setProperties(properties)
+        .build();
   }
 
   protected List<LogKafkaPartitionSplit> getSplits(int numRecordsPerSplit) {
@@ -196,7 +202,8 @@ public class TestKafkaSourceReader {
 
   protected LogKafkaPartitionSplit getSplit(int splitId, int numRecords) {
     long stoppingOffset = KafkaPartitionSplit.NO_STOPPING_OFFSET;
-    KafkaPartitionSplit kafkaPartitionSplit = new KafkaPartitionSplit(new TopicPartition(topic, splitId), 0L, stoppingOffset);
+    KafkaPartitionSplit kafkaPartitionSplit =
+        new KafkaPartitionSplit(new TopicPartition(topic, splitId), 0L, stoppingOffset);
     return new LogKafkaPartitionSplit(new LogKafkaPartitionSplitState(kafkaPartitionSplit));
   }
 
@@ -221,23 +228,20 @@ public class TestKafkaSourceReader {
     }
 
     @Override
-    public void emitWatermark(Watermark watermark) {
-    }
+    public void emitWatermark(Watermark watermark) {}
 
     public void validate() {
       assertEquals(
-        String.format("Should be %d distinct elements in total", TOTAL_NUM_RECORDS),
-        TOTAL_NUM_RECORDS,
-        consumedValues.size());
+          String.format("Should be %d distinct elements in total", TOTAL_NUM_RECORDS),
+          TOTAL_NUM_RECORDS,
+          consumedValues.size());
       assertEquals(
-        String.format("Should be %d elements in total", TOTAL_NUM_RECORDS),
-        TOTAL_NUM_RECORDS,
-        count);
+          String.format("Should be %d elements in total", TOTAL_NUM_RECORDS),
+          TOTAL_NUM_RECORDS,
+          count);
       assertEquals("The min value should be 0", 0, min);
       assertEquals(
-        "The max value should be " + (TOTAL_NUM_RECORDS - 1),
-        TOTAL_NUM_RECORDS - 1,
-        max);
+          "The max value should be " + (TOTAL_NUM_RECORDS - 1), TOTAL_NUM_RECORDS - 1, max);
     }
 
     public int count() {
@@ -248,8 +252,7 @@ public class TestKafkaSourceReader {
     public void markIdle() {}
 
     @Override
-    public void markActive() {
-    }
+    public void markActive() {}
 
     @Override
     public SourceOutput<RowData> createOutputForSplit(String splitId) {

@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.read.source.log.kafka;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE;
+
 import com.netease.arctic.flink.read.internals.KafkaSource;
 import com.netease.arctic.flink.read.internals.KafkaSourceFetcherManager;
 import com.netease.arctic.flink.read.source.log.LogSourceHelper;
@@ -42,12 +45,10 @@ import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import javax.annotation.Nullable;
+
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Supplier;
-
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE;
 
 /**
  * The Source implementation of LogKafka.
@@ -65,10 +66,9 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_
 public class LogKafkaSource extends KafkaSource<RowData> {
   private static final long serialVersionUID = 1L;
 
-  /**
-   * read schema, only contains the selected fields
-   */
+  /** read schema, only contains the selected fields */
   private final Schema schema;
+
   private final boolean logRetractionEnable;
   private final String logConsumerChangelogMode;
 
@@ -81,13 +81,24 @@ public class LogKafkaSource extends KafkaSource<RowData> {
       Properties props,
       Schema schema,
       Map<String, String> tableProperties) {
-    super(subscriber, startingOffsetsInitializer, stoppingOffsetsInitializer, boundedness, deserializationSchema,
+    super(
+        subscriber,
+        startingOffsetsInitializer,
+        stoppingOffsetsInitializer,
+        boundedness,
+        deserializationSchema,
         props);
     this.schema = schema;
-    logRetractionEnable = CompatibleFlinkPropertyUtil.propertyAsBoolean(tableProperties,
-        ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(), ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.defaultValue());
-    logConsumerChangelogMode = CompatibleFlinkPropertyUtil.propertyAsString(tableProperties,
-        ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.key(), ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.defaultValue());
+    logRetractionEnable =
+        CompatibleFlinkPropertyUtil.propertyAsBoolean(
+            tableProperties,
+            ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(),
+            ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.defaultValue());
+    logConsumerChangelogMode =
+        CompatibleFlinkPropertyUtil.propertyAsString(
+            tableProperties,
+            ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.key(),
+            ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.defaultValue());
   }
 
   /**
@@ -100,23 +111,33 @@ public class LogKafkaSource extends KafkaSource<RowData> {
   }
 
   @Override
-  public SourceReader<RowData, KafkaPartitionSplit> createReader(SourceReaderContext readerContext) {
-    FutureCompletingBlockingQueue<RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>>> elementsQueue =
-        new FutureCompletingBlockingQueue<>();
+  public SourceReader<RowData, KafkaPartitionSplit> createReader(
+      SourceReaderContext readerContext) {
+    FutureCompletingBlockingQueue<RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>>>
+        elementsQueue = new FutureCompletingBlockingQueue<>();
     LogSourceHelper logReadHelper = logRetractionEnable ? new LogSourceHelper() : null;
 
-    final KafkaSourceReaderMetrics kafkaSourceReaderMetrics = new KafkaSourceReaderMetrics(readerContext.metricGroup());
+    final KafkaSourceReaderMetrics kafkaSourceReaderMetrics =
+        new KafkaSourceReaderMetrics(readerContext.metricGroup());
     Supplier<LogKafkaPartitionSplitReader> splitReaderSupplier =
         () ->
             new LogKafkaPartitionSplitReader(
-                props, readerContext, kafkaSourceReaderMetrics, schema, logRetractionEnable,
-                logReadHelper, logConsumerChangelogMode);
+                props,
+                readerContext,
+                kafkaSourceReaderMetrics,
+                schema,
+                logRetractionEnable,
+                logReadHelper,
+                logConsumerChangelogMode);
     LogKafkaRecordEmitter recordEmitter = new LogKafkaRecordEmitter(null);
 
     return new LogKafkaSourceReader<>(
         elementsQueue,
-        new KafkaSourceFetcherManager(elementsQueue, splitReaderSupplier::get, (ignore) -> {},
-                readerContext.getConfiguration()),
+        new KafkaSourceFetcherManager(
+            elementsQueue,
+            splitReaderSupplier::get,
+            (ignore) -> {},
+            readerContext.getConfiguration()),
         recordEmitter,
         toConfiguration(props),
         readerContext,

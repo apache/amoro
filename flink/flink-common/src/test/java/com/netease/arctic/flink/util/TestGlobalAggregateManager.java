@@ -18,25 +18,25 @@
 
 package com.netease.arctic.flink.util;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.runtime.taskexecutor.GlobalAggregateManager;
 import org.apache.flink.runtime.taskexecutor.rpc.RpcGlobalAggregateManager;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * An util class of global aggregate manager that simulates action as {@link RpcGlobalAggregateManager}
- * in the jobMaster.
+ * An util class of global aggregate manager that simulates action as {@link
+ * RpcGlobalAggregateManager} in the jobMaster.
  */
 public class TestGlobalAggregateManager implements GlobalAggregateManager {
   private Map<String, Object> accumulators = new HashMap<>();
 
   @Override
   public <IN, ACC, OUT> OUT updateGlobalAggregate(
-      String aggregateName,
-      Object aggregand,
-      AggregateFunction<IN, ACC, OUT> aggregateFunction) throws IOException {
+      String aggregateName, Object aggregand, AggregateFunction<IN, ACC, OUT> aggregateFunction)
+      throws IOException {
 
     Object accumulator = accumulators.get(aggregateName);
     if (null == accumulator) {

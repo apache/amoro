@@ -18,14 +18,6 @@
 
 package com.netease.arctic.flink.read.hidden.kafka;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getProperties;
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
@@ -33,6 +25,7 @@ import static com.netease.arctic.flink.write.hidden.kafka.TestHiddenLogOperators
 import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
+
 import com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate;
 import com.netease.arctic.flink.kafka.testutils.KafkaContainerTest;
 import com.netease.arctic.flink.write.hidden.kafka.TestBaseLog;
@@ -48,6 +41,15 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class TestKafkaConsumer extends TestBaseLog {
   private static final Logger LOG = LoggerFactory.getLogger(TestKafkaConsumer.class);
@@ -70,8 +72,7 @@ public class TestKafkaConsumer extends TestBaseLog {
     try {
       int numCount = 20;
       Properties properties = new Properties();
-      properties.put(
-          BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
+      properties.put(BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
       properties = getProperties(KafkaConfigGenerate.getStandardProperties(properties));
       properties.put(TRANSACTIONAL_ID_CONFIG, transactionalIdPrefix + "flip");
       reuse = new FlinkKafkaInternalProducer<>(properties);
@@ -100,8 +101,7 @@ public class TestKafkaConsumer extends TestBaseLog {
     final int countNum = 20;
     String topicIntern = topic;
     Properties properties = new Properties();
-    properties.put(
-        BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
+    properties.put(BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
     properties = getPropertiesWithByteArray(KafkaConfigGenerate.getStandardProperties(properties));
     // send
     properties.put(TRANSACTIONAL_ID_CONFIG, "transactionalId1");
@@ -119,9 +119,10 @@ public class TestKafkaConsumer extends TestBaseLog {
     // read all
     properties.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
     KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(properties);
-    Set<TopicPartition> topicPartitionList = consumer.partitionsFor(topicIntern).stream()
-        .map(partitionInfo -> new TopicPartition(topicIntern, partitionInfo.partition()))
-        .collect(Collectors.toSet());
+    Set<TopicPartition> topicPartitionList =
+        consumer.partitionsFor(topicIntern).stream()
+            .map(partitionInfo -> new TopicPartition(topicIntern, partitionInfo.partition()))
+            .collect(Collectors.toSet());
     TopicPartition partition0 = topicPartitionList.stream().iterator().next();
     consumer.assign(topicPartitionList);
     consumer.seekToBeginning(consumer.assignment());

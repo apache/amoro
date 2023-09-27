@@ -18,7 +18,7 @@
         <kafka.version>3.2.3</kafka.version>
         <assertj.version>3.21.0</assertj.version>
         <testcontainers.version>1.17.2</testcontainers.version>
-        <flink.version>1.17.1</flink.version>
+        <flink.version>1.17.0</flink.version>
     </properties>
 
     <dependencies>

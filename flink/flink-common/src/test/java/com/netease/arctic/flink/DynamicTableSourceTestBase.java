@@ -18,7 +18,6 @@
 
 package com.netease.arctic.flink;
 
-import java.io.Serializable;
 import org.apache.flink.api.common.eventtime.Watermark;
 import org.apache.flink.api.common.eventtime.WatermarkGenerator;
 import org.apache.flink.api.common.eventtime.WatermarkOutput;
@@ -30,8 +29,10 @@ import org.apache.flink.table.connector.source.abilities.SupportsWatermarkPushDo
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.planner.factories.TableFactoryHarness;
 
-public abstract class DynamicTableSourceTestBase extends TableFactoryHarness.ScanSourceBase implements
-    SupportsWatermarkPushDown, Serializable {
+import java.io.Serializable;
+
+public abstract class DynamicTableSourceTestBase extends TableFactoryHarness.ScanSourceBase
+    implements SupportsWatermarkPushDown, Serializable {
 
   public static final long serialVersionUID = 1L;
   private WatermarkStrategy<RowData> watermarkStrategy;
@@ -55,15 +56,17 @@ public abstract class DynamicTableSourceTestBase extends TableFactoryHarness.Sca
           }
 
           @Override
-          public void cancel() {
-          }
+          public void cancel() {}
         },
         false);
   }
+
   public void init() {};
 
-  public abstract void doRun(WatermarkGenerator<RowData> generator, WatermarkOutput output,
-                             SourceFunction.SourceContext<RowData> ctx);
+  public abstract void doRun(
+      WatermarkGenerator<RowData> generator,
+      WatermarkOutput output,
+      SourceFunction.SourceContext<RowData> ctx);
 
   @Override
   public void applyWatermark(WatermarkStrategy<RowData> watermarkStrategy) {
@@ -81,16 +84,13 @@ public abstract class DynamicTableSourceTestBase extends TableFactoryHarness.Sca
     @Override
     public void emitWatermark(Watermark watermark) {
       ctx.emitWatermark(
-          new org.apache.flink.streaming.api.watermark.Watermark(
-              watermark.getTimestamp()));
+          new org.apache.flink.streaming.api.watermark.Watermark(watermark.getTimestamp()));
     }
 
     @Override
-    public void markIdle() {
-    }
+    public void markIdle() {}
 
     @Override
-    public void markActive() {
-    }
+    public void markActive() {}
   }
 }

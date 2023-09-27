@@ -27,6 +27,7 @@ import static org.apache.flink.table.api.DataTypes.ROW;
 import static org.apache.flink.table.api.DataTypes.STRING;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import org.apache.flink.table.types.DataType;
 import org.junit.jupiter.api.Test;
 
@@ -35,12 +36,8 @@ class TestProjection {
   @Test
   void testTopLevelProject() {
     assertThat(
-        Projection.of(new int[] {2, 1})
-            .project(
-                ROW(
-                    FIELD("f0", BIGINT()),
-                    FIELD("f1", STRING()),
-                    FIELD("f2", INT()))))
+            Projection.of(new int[] {2, 1})
+                .project(ROW(FIELD("f0", BIGINT()), FIELD("f1", STRING()), FIELD("f2", INT()))))
         .isEqualTo(ROW(FIELD("f2", INT()), FIELD("f1", STRING())));
   }
 
@@ -57,9 +54,7 @@ class TestProjection {
         .isEqualTo(ROW(FIELD("a0", INT()), FIELD("a1_b1_c0", BOOLEAN())));
     assertThat(Projection.of(new int[][] {{1, 1}, {0}}).project(topLevelRow))
         .isEqualTo(ROW(FIELD("a1_b1", thirdLevelRow), FIELD("a0", INT())));
-    assertThat(
-        Projection.of(new int[][] {{1, 1, 2}, {1, 1, 1}, {1, 1, 0}})
-            .project(topLevelRow))
+    assertThat(Projection.of(new int[][] {{1, 1, 2}, {1, 1, 1}, {1, 1, 0}}).project(topLevelRow))
         .isEqualTo(
             ROW(
                 FIELD("a1_b1_c2", INT()),
@@ -74,40 +69,31 @@ class TestProjection {
     assertThat(Projection.of(new int[] {2, 1}).isNested()).isFalse();
     assertThat(Projection.of(new int[][] {new int[] {1}, new int[] {3}}).isNested()).isFalse();
     assertThat(
-        Projection.of(new int[][] {new int[] {1}, new int[] {1, 2}, new int[] {3}})
-            .isNested())
+            Projection.of(new int[][] {new int[] {1}, new int[] {1, 2}, new int[] {3}}).isNested())
         .isTrue();
   }
 
   @Test
   void testDifference() {
-    assertThat(
-        Projection.of(new int[] {4, 1, 0, 3, 2})
-            .difference(Projection.of(new int[] {4, 2})))
+    assertThat(Projection.of(new int[] {4, 1, 0, 3, 2}).difference(Projection.of(new int[] {4, 2})))
         .isEqualTo(Projection.of(new int[] {1, 0, 2}));
 
     assertThat(
-        Projection.of(
-                new int[][] {
-                    new int[] {4},
-                    new int[] {1, 3},
-                    new int[] {0},
-                    new int[] {3, 1},
-                    new int[] {2}
-                })
-            .difference(Projection.of(new int[] {4, 2})))
-        .isEqualTo(
             Projection.of(
-                new int[][] {new int[] {1, 3}, new int[] {0}, new int[] {2, 1}}));
+                    new int[][] {
+                      new int[] {4},
+                      new int[] {1, 3},
+                      new int[] {0},
+                      new int[] {3, 1},
+                      new int[] {2}
+                    })
+                .difference(Projection.of(new int[] {4, 2})))
+        .isEqualTo(Projection.of(new int[][] {new int[] {1, 3}, new int[] {0}, new int[] {2, 1}}));
 
     assertThatThrownBy(
-        () ->
-            Projection.of(new int[] {1, 2, 3, 4})
-                .difference(
-                    Projection.of(
-                        new int[][] {
-                            new int[] {2}, new int[] {3, 4}
-                        })))
+            () ->
+                Projection.of(new int[] {1, 2, 3, 4})
+                    .difference(Projection.of(new int[][] {new int[] {2}, new int[] {3, 4}})))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -117,17 +103,13 @@ class TestProjection {
         .isEqualTo(Projection.of(new int[] {0, 3}));
 
     assertThat(
-        Projection.of(new int[][] {new int[] {4}, new int[] {1}, new int[] {2}})
-            .complement(5))
+            Projection.of(new int[][] {new int[] {4}, new int[] {1}, new int[] {2}}).complement(5))
         .isEqualTo(Projection.of(new int[] {0, 3}));
 
     assertThatThrownBy(
-        () ->
-            Projection.of(
-                    new int[][] {
-                        new int[] {4}, new int[] {1, 3}, new int[] {2}
-                    })
-                .complement(10))
+            () ->
+                Projection.of(new int[][] {new int[] {4}, new int[] {1, 3}, new int[] {2}})
+                    .complement(10))
         .isInstanceOf(IllegalStateException.class);
   }
 
@@ -137,28 +119,24 @@ class TestProjection {
         .isEqualTo(new int[] {1, 2, 3, 4});
 
     assertThat(
-        Projection.of(new int[][] {new int[] {4}, new int[] {1}, new int[] {2}})
-            .toTopLevelIndexes())
+            Projection.of(new int[][] {new int[] {4}, new int[] {1}, new int[] {2}})
+                .toTopLevelIndexes())
         .isEqualTo(new int[] {4, 1, 2});
 
     assertThatThrownBy(
-        () ->
-            Projection.of(
-                    new int[][] {
-                        new int[] {4}, new int[] {1, 3}, new int[] {2}
-                    })
-                .toTopLevelIndexes())
+            () ->
+                Projection.of(new int[][] {new int[] {4}, new int[] {1, 3}, new int[] {2}})
+                    .toTopLevelIndexes())
         .isInstanceOf(IllegalStateException.class);
   }
 
   @Test
   void testToNestedIndexes() {
     assertThat(Projection.of(new int[] {1, 2, 3, 4}).toNestedIndexes())
-        .isEqualTo(
-            new int[][] {new int[] {1}, new int[] {2}, new int[] {3}, new int[] {4}});
+        .isEqualTo(new int[][] {new int[] {1}, new int[] {2}, new int[] {3}, new int[] {4}});
     assertThat(
-        Projection.of(new int[][] {new int[] {4}, new int[] {1, 3}, new int[] {2}})
-            .toNestedIndexes())
+            Projection.of(new int[][] {new int[] {4}, new int[] {1, 3}, new int[] {2}})
+                .toNestedIndexes())
         .isEqualTo(new int[][] {new int[] {4}, new int[] {1, 3}, new int[] {2}});
   }
 

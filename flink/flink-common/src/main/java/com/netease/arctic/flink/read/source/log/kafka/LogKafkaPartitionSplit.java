@@ -25,30 +25,25 @@ import java.util.NavigableMap;
 public class LogKafkaPartitionSplit extends KafkaPartitionSplit {
 
   /**
-   * Denote reader is in retracting read mode.
-   * In this mode, data would be read in reverse order and opposite RowKind.
+   * Denote reader is in retracting read mode. In this mode, data would be read in reverse order and
+   * opposite RowKind.
    */
   private final boolean retracting;
-  /**
-   * The offset where job retract stops, i.e. Read reversely ends.
-   */
+  /** The offset where job retract stops, i.e. Read reversely ends. */
   private final Long retractStopOffset;
   /**
-   * The offset where job revert to normal read starts from. It should skip the flip which has been read.
+   * The offset where job revert to normal read starts from. It should skip the flip which has been
+   * read.
    */
   private final Long revertStartOffset;
   /**
-   * The epic No. which has finished checkpoint. The data whose epic No. larger than it should be retracted.
+   * The epic No. which has finished checkpoint. The data whose epic No. larger than it should be
+   * retracted.
    */
   private final Long retractingEpicNo;
-  /**
-   * The upstream JobId which should be retracted.
-   */
+  /** The upstream JobId which should be retracted. */
   private final String retractingUpstreamId;
-  /**
-   * Key: upstream job id + "_" + epicNo
-   * Value: epic start offset
-   */
+  /** Key: upstream job id + "_" + epicNo Value: epic start offset */
   private final NavigableMap<String, Long> upStreamEpicStartOffsets;
 
   public boolean isRetracting() {
@@ -76,7 +71,9 @@ public class LogKafkaPartitionSplit extends KafkaPartitionSplit {
   }
 
   public LogKafkaPartitionSplit(LogKafkaPartitionSplitState splitState) {
-    super(splitState.getTopicPartition(), splitState.getCurrentOffset(),
+    super(
+        splitState.getTopicPartition(),
+        splitState.getCurrentOffset(),
         splitState.getStoppingOffset().orElse(NO_STOPPING_OFFSET));
     retracting = splitState.isRetracting();
     retractStopOffset = splitState.getRetractStopOffset();

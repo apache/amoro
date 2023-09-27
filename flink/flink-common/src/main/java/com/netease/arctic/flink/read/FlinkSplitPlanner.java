@@ -18,21 +18,17 @@
 
 package com.netease.arctic.flink.read;
 
-import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ChangelogSplit;
 import com.netease.arctic.flink.read.hybrid.split.MergeOnReadSplit;
 import com.netease.arctic.flink.read.hybrid.split.SnapshotSplit;
 import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.BasicArcticFileScanTask;
+import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScan;
-import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.table.KeyedTable;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
@@ -55,13 +51,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
- * An util class that plans arctic table(base and change) or just plans change table. invoked by arctic enumerator.
+ * An util class that plans arctic table(base and change) or just plans change table. invoked by
+ * arctic enumerator.
  */
 public class FlinkSplitPlanner {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkSplitPlanner.class);
 
-  private FlinkSplitPlanner() {
-  }
+  private FlinkSplitPlanner() {}
 
   public static List<ArcticSplit> planFullTable(KeyedTable keyedTable, AtomicInteger splitCount) {
     CloseableIterable<CombinedScanTask> combinedScanTasks = keyedTable.newScan().planTasks();
@@ -70,12 +66,14 @@ public class FlinkSplitPlanner {
   }
 
   /**
-   * Plans full table scanning for a {@link KeyedTable} with optional filters and a specified split count.
+   * Plans full table scanning for a {@link KeyedTable} with optional filters and a specified split
+   * count.
    *
    * @param keyedTable The {@link KeyedTable} to scan.
-   * @param filters    Optional list of filters to apply to the scan.
+   * @param filters Optional list of filters to apply to the scan.
    * @param splitCount The atomic integer to track the split count.
-   * @return The list of planned {@link ArcticSplit} included {@link SnapshotSplit}, {@link ChangelogSplit}.
+   * @return The list of planned {@link ArcticSplit} included {@link SnapshotSplit}, {@link
+   *     ChangelogSplit}.
    */
   public static List<ArcticSplit> planFullTable(
       KeyedTable keyedTable, List<Expression> filters, AtomicInteger splitCount) {
@@ -91,10 +89,13 @@ public class FlinkSplitPlanner {
   private static List<ArcticSplit> planFullTable(
       BaseAndChangeTask baseAndChangeTask, AtomicInteger splitCount) {
     Collection<ArcticFileScanTask> baseTasks = baseAndChangeTask.allBaseTasks();
-    List<ArcticSplit> allSplits = baseTasks.stream()
-        .map(arcticFileScanTask -> new SnapshotSplit(
-            Collections.singleton(arcticFileScanTask),
-            splitCount.incrementAndGet())).collect(Collectors.toList());
+    List<ArcticSplit> allSplits =
+        baseTasks.stream()
+            .map(
+                arcticFileScanTask ->
+                    new SnapshotSplit(
+                        Collections.singleton(arcticFileScanTask), splitCount.incrementAndGet()))
+            .collect(Collectors.toList());
 
     Collection<TransactionTask> changeTasks = baseAndChangeTask.transactionTasks();
     List<ArcticSplit> changeSplits = planChangeTable(changeTasks, splitCount);
@@ -104,10 +105,11 @@ public class FlinkSplitPlanner {
   }
 
   /**
-   * Plans full table scanning for a {@link KeyedTable} with optional filters and a specified split count.
+   * Plans full table scanning for a {@link KeyedTable} with optional filters and a specified split
+   * count.
    *
    * @param keyedTable The {@link KeyedTable} to scan.
-   * @param filters    Optional list of filters to apply to the scan.
+   * @param filters Optional list of filters to apply to the scan.
    * @param splitCount The atomic integer to track the split count.
    * @return The list of planned {@link ArcticSplit} included {@link MergeOnReadSplit}.
    */
@@ -123,8 +125,11 @@ public class FlinkSplitPlanner {
 
       while (initTasks.hasNext()) {
         CombinedScanTask combinedScanTask = initTasks.next();
-        combinedScanTask.tasks().forEach(
-            keyedTableScanTask -> morSplits.add(new MergeOnReadSplit(splitCount.get(), keyedTableScanTask)));
+        combinedScanTask
+            .tasks()
+            .forEach(
+                keyedTableScanTask ->
+                    morSplits.add(new MergeOnReadSplit(splitCount.get(), keyedTableScanTask)));
       }
     } catch (IOException e) {
       throw new UncheckedIOException(e);
@@ -132,20 +137,18 @@ public class FlinkSplitPlanner {
     return morSplits;
   }
 
-  public static List<ArcticSplit> planChangeTable(TableEntriesScan tableEntriesScan, Long fromSequence,
-                                                  PartitionSpec spec, AtomicInteger splitCount) {
-    CloseableIterable<IcebergFileEntry> entries = tableEntriesScan.entries();
-
-    BaseAndChangeTask baseAndChangeTask = BaseAndChangeTask.ofIceberg(entries, spec, fromSequence);
-
+  public static List<ArcticSplit> planChangeTable(
+      ChangeTableIncrementalScan tableIncrementalScan, AtomicInteger splitCount) {
+    CloseableIterable<FileScanTask> tasks = tableIncrementalScan.planFiles();
+    BaseAndChangeTask baseAndChangeTask = BaseAndChangeTask.ofIceberg(tasks);
     return planChangeTable(baseAndChangeTask.transactionTasks(), splitCount);
   }
 
   private static List<ArcticSplit> planChangeTable(
       Collection<TransactionTask> transactionTasks, AtomicInteger splitCount) {
     List<ArcticSplit> changeTasks = new ArrayList<>(transactionTasks.size());
-    transactionTasks
-        .forEach(transactionTask -> {
+    transactionTasks.forEach(
+        transactionTask -> {
           PartitionAndNodeGroup partitionAndNodeGroup =
               new PartitionAndNodeGroup()
                   .insertFileScanTask(transactionTask.insertTasks)
@@ -153,7 +156,6 @@ public class FlinkSplitPlanner {
                   .splitCount(splitCount);
           changeTasks.addAll(partitionAndNodeGroup.planSplits());
         });
-
     return changeTasks;
   }
 
@@ -192,42 +194,37 @@ public class FlinkSplitPlanner {
       if (changeTableTaskMap == null || changeTableTaskMap.isEmpty()) {
         this.changeTableTasks = Collections.emptyList();
       } else {
-        this.changeTableTasks = changeTableTaskMap.values().stream()
-            .sorted(Comparator.comparing(o -> o.transactionId)).collect(Collectors.toList());
+        this.changeTableTasks =
+            changeTableTaskMap.values().stream()
+                .sorted(Comparator.comparing(o -> o.transactionId))
+                .collect(Collectors.toList());
       }
     }
 
-    public static BaseAndChangeTask ofIceberg(CloseableIterable<IcebergFileEntry> entries, PartitionSpec spec,
-                                              Long fromSequence) {
-      try (CloseableIterator<IcebergFileEntry> entriesIterator = entries.iterator()) {
+    public static BaseAndChangeTask ofIceberg(CloseableIterable<FileScanTask> tasks) {
+      try (CloseableIterator<FileScanTask> tasksIterator = tasks.iterator()) {
         Map<Long, TransactionTask> transactionTasks = new HashMap<>();
         long startTime = System.currentTimeMillis();
-        int count = 0, greaterThanCount = 0;
-        LOG.info("Reading change log from {}", entriesIterator.getClass());
-        while (entriesIterator.hasNext()) {
+        int count = 0;
+        while (tasksIterator.hasNext()) {
           count++;
-          IcebergFileEntry entry = entriesIterator.next();
-          if (fromSequence != null && entry.getSequenceNumber() <= fromSequence) {
-            continue;
-          }
-          greaterThanCount++;
-          DefaultKeyedFile keyedFile =
-              DefaultKeyedFile.parseChange((DataFile) entry.getFile());
-          BasicArcticFileScanTask task = new BasicArcticFileScanTask(keyedFile, null, spec, null);
-
-          if (task.fileType().equals(DataFileType.INSERT_FILE)) {
-            taskMap(Collections.singleton(task), true, transactionTasks);
-          } else if (task.fileType().equals(DataFileType.EQ_DELETE_FILE)) {
-            taskMap(Collections.singleton(task), false, transactionTasks);
+          ArcticFileScanTask fileScanTask = (ArcticFileScanTask) tasksIterator.next();
+          if (fileScanTask.file().type().equals(DataFileType.INSERT_FILE)) {
+            taskMap(Collections.singleton(fileScanTask), true, transactionTasks);
+          } else if (fileScanTask.file().type().equals(DataFileType.EQ_DELETE_FILE)) {
+            taskMap(Collections.singleton(fileScanTask), false, transactionTasks);
           } else {
             throw new IllegalArgumentException(
                 String.format(
                     "DataFileType %s is not supported during change log reading period.",
-                    task.fileType()));
+                    fileScanTask.file().type()));
           }
         }
-        LOG.info("Read change log from {} in {} ms, count: {}, greater than fromSequence {} count: {}.",
-            entriesIterator.getClass(), System.currentTimeMillis() - startTime, count, fromSequence, greaterThanCount);
+        LOG.info(
+            "Read {} change log from {} in {} ms",
+            count,
+            tasksIterator.getClass(),
+            System.currentTimeMillis() - startTime);
         return new BaseAndChangeTask(Collections.emptySet(), transactionTasks);
       } catch (IOException e) {
         throw new UncheckedIOException(e);
@@ -241,15 +238,20 @@ public class FlinkSplitPlanner {
 
         while (initTasks.hasNext()) {
           CombinedScanTask combinedScanTask = initTasks.next();
-          combinedScanTask.tasks().forEach(keyedTableScanTask -> {
-            allBaseTasks.addAll(keyedTableScanTask.baseTasks());
+          combinedScanTask
+              .tasks()
+              .forEach(
+                  keyedTableScanTask -> {
+                    allBaseTasks.addAll(keyedTableScanTask.baseTasks());
 
-            taskMap(keyedTableScanTask.insertTasks(), true, transactionTasks);
-            taskMap(keyedTableScanTask.arcticEquityDeletes(), false, transactionTasks);
-          });
+                    taskMap(keyedTableScanTask.insertTasks(), true, transactionTasks);
+                    taskMap(keyedTableScanTask.arcticEquityDeletes(), false, transactionTasks);
+                  });
         }
-        List<ArcticFileScanTask> baseTasks = allBaseTasks.stream()
-            .sorted(Comparator.comparing(t -> t.file().transactionId())).collect(Collectors.toList());
+        List<ArcticFileScanTask> baseTasks =
+            allBaseTasks.stream()
+                .sorted(Comparator.comparing(t -> t.file().transactionId()))
+                .collect(Collectors.toList());
 
         return new BaseAndChangeTask(baseTasks, transactionTasks);
       } catch (IOException e) {
@@ -258,18 +260,21 @@ public class FlinkSplitPlanner {
     }
 
     private static void taskMap(
-        Collection<ArcticFileScanTask> tasks, boolean insert, Map<Long, TransactionTask> transactionTaskMap) {
-      tasks.forEach(task -> {
-        long transactionId = task.file().transactionId();
-        TransactionTask tasksInSingleTransaction =
-            transactionTaskMap.getOrDefault(transactionId, new TransactionTask(transactionId));
-        if (insert) {
-          tasksInSingleTransaction.putInsertTask(task);
-        } else {
-          tasksInSingleTransaction.putDeleteTask(task);
-        }
-        transactionTaskMap.put(transactionId, tasksInSingleTransaction);
-      });
+        Collection<ArcticFileScanTask> tasks,
+        boolean insert,
+        Map<Long, TransactionTask> transactionTaskMap) {
+      tasks.forEach(
+          task -> {
+            long transactionId = task.file().transactionId();
+            TransactionTask tasksInSingleTransaction =
+                transactionTaskMap.getOrDefault(transactionId, new TransactionTask(transactionId));
+            if (insert) {
+              tasksInSingleTransaction.putInsertTask(task);
+            } else {
+              tasksInSingleTransaction.putDeleteTask(task);
+            }
+            transactionTaskMap.put(transactionId, tasksInSingleTransaction);
+          });
     }
 
     public Collection<ArcticFileScanTask> allBaseTasks() {

@@ -18,13 +18,6 @@
 
 package com.netease.arctic.flink.kafka.testutils;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.flink.util.StringUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -39,23 +32,28 @@ import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
-/**
- * Collection of methods to interact with a Kafka cluster.
- */
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+/** Collection of methods to interact with a Kafka cluster. */
 public class KafkaUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(KafkaUtil.class);
   private static final Duration CONSUMER_POLL_DURATION = Duration.ofSeconds(1);
 
-  private KafkaUtil() {
-  }
+  private KafkaUtil() {}
 
   /**
    * This method helps to set commonly used Kafka configurations and aligns the internal Kafka log
    * levels with the ones used by the capturing logger.
    *
    * @param dockerImageVersion describing the Kafka image
-   * @param logger             to derive the log level from
+   * @param logger to derive the log level from
    * @return configured Kafka container
    */
   public static KafkaContainer createKafkaContainer(String dockerImageVersion, Logger logger) {
@@ -96,9 +94,7 @@ public class KafkaUtil {
         .withEnv("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "1")
         .withEnv("KAFKA_TRANSACTION_STATE_LOG_MIN_ISR", "1")
         .withEnv("KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE", "false")
-        .withEnv(
-            "KAFKA_TRANSACTION_MAX_TIMEOUT_MS",
-            String.valueOf(Duration.ofHours(2).toMillis()))
+        .withEnv("KAFKA_TRANSACTION_MAX_TIMEOUT_MS", String.valueOf(Duration.ofHours(2).toMillis()))
         .withEnv("KAFKA_LOG4J_TOOLS_ROOT_LOGLEVEL", logLevel)
         .withLogConsumer(logConsumer);
   }
@@ -110,10 +106,10 @@ public class KafkaUtil {
    * <p>This method will fetch the latest offsets for the partitions once and only return records
    * until that point.
    *
-   * @param topic      to fetch from
+   * @param topic to fetch from
    * @param properties used to configure the created {@link KafkaConsumer}
-   * @param committed  determines the mode {@link ConsumerConfig#ISOLATION_LEVEL_CONFIG} with which
-   *                   the consumer reads the records.
+   * @param committed determines the mode {@link ConsumerConfig#ISOLATION_LEVEL_CONFIG} with which
+   *     the consumer reads the records.
    * @return all {@link ConsumerRecord} in the topic
    * @throws KafkaException
    */
@@ -122,8 +118,7 @@ public class KafkaUtil {
     final Properties consumerConfig = new Properties();
     consumerConfig.putAll(properties);
     consumerConfig.put(
-        ConsumerConfig.ISOLATION_LEVEL_CONFIG,
-        committed ? "read_committed" : "read_uncommitted");
+        ConsumerConfig.ISOLATION_LEVEL_CONFIG, committed ? "read_committed" : "read_uncommitted");
     return drainAllRecordsFromTopic(topic, consumerConfig);
   }
 
@@ -134,7 +129,7 @@ public class KafkaUtil {
    * <p>This method will fetch the latest offsets for the partitions once and only return records
    * until that point.
    *
-   * @param topic      to fetch from
+   * @param topic to fetch from
    * @param properties used to configure the created {@link KafkaConsumer}
    * @return all {@link ConsumerRecord} in the topic
    * @throws KafkaException

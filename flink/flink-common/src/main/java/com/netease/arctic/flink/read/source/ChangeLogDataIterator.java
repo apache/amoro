@@ -18,6 +18,11 @@
 
 package com.netease.arctic.flink.read.source;
 
+import static com.netease.arctic.data.ChangeAction.DELETE;
+import static com.netease.arctic.data.ChangeAction.INSERT;
+import static com.netease.arctic.data.ChangeAction.UPDATE_AFTER;
+import static com.netease.arctic.data.ChangeAction.UPDATE_BEFORE;
+
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.scan.ArcticFileScanTask;
 
@@ -26,17 +31,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.function.Function;
 
-import static com.netease.arctic.data.ChangeAction.DELETE;
-import static com.netease.arctic.data.ChangeAction.INSERT;
-import static com.netease.arctic.data.ChangeAction.UPDATE_AFTER;
-import static com.netease.arctic.data.ChangeAction.UPDATE_BEFORE;
-
 /**
- * This is a change log data iterator that replays the change log data appended to arctic change table with ordered.
+ * This is a change log data iterator that replays the change log data appended to arctic change
+ * table with ordered.
  */
 public class ChangeLogDataIterator<T> extends DataIterator<T> {
   private final DataIterator<T> insertDataIterator;
-  private DataIterator<T> deleteDataIterator = DataIterator.empty();
+  private DataIterator<T> deleteDataIterator = empty();
 
   private final Function<T, T> arcticMetaColumnRemover;
   private final Function<ChangeActionTrans<T>, T> changeActionTransformer;
@@ -51,12 +52,18 @@ public class ChangeLogDataIterator<T> extends DataIterator<T> {
       Function<T, Long> arcticFileOffsetGetter,
       Function<T, T> arcticMetaColumnRemover,
       Function<ChangeActionTrans<T>, T> changeActionTransformer) {
-    super(fileScanTaskReader, Collections.emptyList(), arcticFileOffsetGetter, arcticMetaColumnRemover);
+    super(
+        fileScanTaskReader,
+        Collections.emptyList(),
+        arcticFileOffsetGetter,
+        arcticMetaColumnRemover);
     this.insertDataIterator =
-        new DataIterator<>(fileScanTaskReader, insertTasks, arcticFileOffsetGetter, arcticMetaColumnRemover);
+        new DataIterator<>(
+            fileScanTaskReader, insertTasks, arcticFileOffsetGetter, arcticMetaColumnRemover);
     if (deleteTasks != null && !deleteTasks.isEmpty()) {
       this.deleteDataIterator =
-          new DataIterator<>(fileScanTaskReader, deleteTasks, arcticFileOffsetGetter, arcticMetaColumnRemover);
+          new DataIterator<>(
+              fileScanTaskReader, deleteTasks, arcticFileOffsetGetter, arcticMetaColumnRemover);
     }
     this.arcticMetaColumnRemover = arcticMetaColumnRemover;
     this.changeActionTransformer = changeActionTransformer;
@@ -73,7 +80,8 @@ public class ChangeLogDataIterator<T> extends DataIterator<T> {
 
   @Override
   public void seek(int startingFileOffset, long startingRecordOffset) {
-    throw new UnsupportedOperationException("This operation is not supported in change log data iterator.");
+    throw new UnsupportedOperationException(
+        "This operation is not supported in change log data iterator.");
   }
 
   private void loadQueueHolder(boolean insert) {
@@ -88,7 +96,6 @@ public class ChangeLogDataIterator<T> extends DataIterator<T> {
   }
 
   @Override
-
   public boolean hasNext() {
     loadQueueHolder(false);
     loadQueueHolder(true);
@@ -98,33 +105,39 @@ public class ChangeLogDataIterator<T> extends DataIterator<T> {
 
   @Override
   public boolean currentFileHasNext() {
-    return deleteDataIterator.currentFileHasNext() || insertDataIterator.currentFileHasNext() ||
-        deleteHolder.isNotEmpty() || insertHolder.isNotEmpty();
+    return deleteDataIterator.currentFileHasNext()
+        || insertDataIterator.currentFileHasNext()
+        || deleteHolder.isNotEmpty()
+        || insertHolder.isNotEmpty();
   }
 
   @Override
   public T next() {
     T row;
     if (deleteHolder.isEmpty() && insertHolder.isNotEmpty()) {
-      row = changeActionTransformer.apply(
-          ChangeActionTrans.of(insertHolder.nextRow, insertHolder.changeAction));
+      row =
+          changeActionTransformer.apply(
+              ChangeActionTrans.of(insertHolder.nextRow, insertHolder.changeAction));
       insertHolder.clean();
     } else if (deleteHolder.isNotEmpty() && insertHolder.isEmpty()) {
-      row = changeActionTransformer.apply(
-          ChangeActionTrans.of(deleteHolder.nextRow, deleteHolder.changeAction));
+      row =
+          changeActionTransformer.apply(
+              ChangeActionTrans.of(deleteHolder.nextRow, deleteHolder.changeAction));
       deleteHolder.clean();
     } else if (deleteHolder.equalTo(insertHolder)) {
-      row = changeActionTransformer.apply(
-          ChangeActionTrans.of(deleteHolder.nextRow, UPDATE_BEFORE));
+      row =
+          changeActionTransformer.apply(ChangeActionTrans.of(deleteHolder.nextRow, UPDATE_BEFORE));
       insertHolder.changeAction = UPDATE_AFTER;
       deleteHolder.clean();
     } else if (deleteHolder.lesser(insertHolder)) {
-      row = changeActionTransformer.apply(
-          ChangeActionTrans.of(deleteHolder.nextRow, deleteHolder.changeAction));
+      row =
+          changeActionTransformer.apply(
+              ChangeActionTrans.of(deleteHolder.nextRow, deleteHolder.changeAction));
       deleteHolder.clean();
     } else {
-      row = changeActionTransformer.apply(
-          ChangeActionTrans.of(insertHolder.nextRow, insertHolder.changeAction));
+      row =
+          changeActionTransformer.apply(
+              ChangeActionTrans.of(insertHolder.nextRow, insertHolder.changeAction));
       insertHolder.clean();
     }
 
@@ -158,8 +171,7 @@ public class ChangeLogDataIterator<T> extends DataIterator<T> {
     ChangeAction changeAction;
     Long nextOffset;
 
-    public QueueHolder() {
-    }
+    public QueueHolder() {}
 
     boolean isEmpty() {
       return nextRow == null;

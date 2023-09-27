@@ -18,10 +18,6 @@
 
 package com.netease.arctic.flink.lookup.filter;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.TimeZone;
 import com.netease.arctic.flink.planner.calcite.FlinkTypeSystem;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -42,6 +38,11 @@ import org.apache.flink.table.planner.plan.utils.RexNodeToExpressionConverter;
 import org.apache.flink.table.types.logical.RowType;
 import org.junit.Before;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.TimeZone;
+
 public abstract class TestRowDataPredicateBase {
   public static StreamExecutionEnvironment env;
   public static TableEnvironment tEnv;
@@ -53,8 +54,8 @@ public abstract class TestRowDataPredicateBase {
   }
 
   /**
-   * This method takes in an SQL filter expression and a ResolvedSchema object,
-   * and returns a List of ResolvedExpression objects.
+   * This method takes in an SQL filter expression and a ResolvedSchema object, and returns a List
+   * of ResolvedExpression objects.
    */
   protected List<ResolvedExpression> resolveSQLFilterToExpression(
       String sqlExp, ResolvedSchema schema) {
@@ -77,7 +78,8 @@ public abstract class TestRowDataPredicateBase {
     RexNodeExpression rexExp =
         (RexNodeExpression) tbImpl.getParser().parseSqlExpression(sqlExp, sourceType, null);
     ResolvedExpression resolvedExp =
-        rexExp.getRexNode()
+        rexExp
+            .getRexNode()
             .accept(converter)
             .getOrElse(
                 () -> {
@@ -90,20 +92,20 @@ public abstract class TestRowDataPredicateBase {
                 });
     ExpressionResolver resolver =
         ExpressionResolver.resolverFor(
-            tEnv.getConfig(),
-            classLoader,
-            name -> Optional.empty(),
-            funCat.asLookup(
-                str -> {
+                tEnv.getConfig(),
+                classLoader,
+                name -> Optional.empty(),
+                funCat.asLookup(
+                    str -> {
+                      throw new TableException(
+                          "We should not need to lookup any expressions at this point");
+                    }),
+                catMan.getDataTypeFactory(),
+                (sqlExpression, inputRowType, outputType) -> {
                   throw new TableException(
-                      "We should not need to lookup any expressions at this point");
-                }),
-            catMan.getDataTypeFactory(),
-            (sqlExpression, inputRowType, outputType) -> {
-              throw new TableException(
-                  "SQL expression parsing is not supported at this location.");
-            }
-        ).build();
+                      "SQL expression parsing is not supported at this location.");
+                })
+            .build();
     return resolver.resolve(Collections.singletonList(resolvedExp));
   }
 }

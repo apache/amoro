@@ -1,13 +1,9 @@
 package com.netease.arctic.flink.lookup.filter;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.catalog.Column;
 import org.apache.flink.table.catalog.ResolvedSchema;
@@ -18,9 +14,13 @@ import org.apache.flink.table.types.DataType;
 import org.junit.Before;
 import org.junit.Test;
 
-/**
- * This class contains unit tests for the {@link RowDataPredicateExpressionVisitor} class.
- */
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/** This class contains unit tests for the {@link RowDataPredicateExpressionVisitor} class. */
 public class TestRowDataPredicateExpressionVisitor extends TestRowDataPredicateBase {
 
   RowDataPredicateExpressionVisitor visitor;
@@ -66,9 +66,8 @@ public class TestRowDataPredicateExpressionVisitor extends TestRowDataPredicateB
   @Test
   public void testVisitCallExpressionGreaterThanOrEqual() {
     String greaterThanOrEqualExpr = "age >= 5";
-    List<ResolvedExpression> resolved = resolveSQLFilterToExpression(
-        greaterThanOrEqualExpr,
-        schema);
+    List<ResolvedExpression> resolved =
+        resolveSQLFilterToExpression(greaterThanOrEqualExpr, schema);
     assertEquals(1, resolved.size());
     RowDataPredicate rowDataPredicate = resolved.get(0).accept(visitor).get();
     assertTrue(rowDataPredicate.test(GenericRowData.of(null, StringData.fromString("1"), 5)));
@@ -88,9 +87,7 @@ public class TestRowDataPredicateExpressionVisitor extends TestRowDataPredicateB
   @Test
   public void testVisitCallExpressionLessThanOrEqual() {
     String lessThanOrEqualExpr = "age <= 5";
-    List<ResolvedExpression> resolved = resolveSQLFilterToExpression(
-        lessThanOrEqualExpr,
-        schema);
+    List<ResolvedExpression> resolved = resolveSQLFilterToExpression(lessThanOrEqualExpr, schema);
     assertEquals(1, resolved.size());
     RowDataPredicate rowDataPredicate = resolved.get(0).accept(visitor).get();
     assertTrue(rowDataPredicate.test(GenericRowData.of(null, StringData.fromString("1"), 5)));

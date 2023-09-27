@@ -18,6 +18,15 @@
 
 package com.netease.arctic.flink.read.internals;
 
+import static com.netease.arctic.flink.read.internals.metrics.KafkaConsumerMetricConstants.KAFKA_LATENCY_METRIC_NAME;
+import static org.apache.flink.streaming.connectors.kafka.internals.metrics.KafkaConsumerMetricConstants.COMMITTED_OFFSETS_METRICS_GAUGE;
+import static org.apache.flink.streaming.connectors.kafka.internals.metrics.KafkaConsumerMetricConstants.CURRENT_OFFSETS_METRICS_GAUGE;
+import static org.apache.flink.streaming.connectors.kafka.internals.metrics.KafkaConsumerMetricConstants.LEGACY_COMMITTED_OFFSETS_METRICS_GROUP;
+import static org.apache.flink.streaming.connectors.kafka.internals.metrics.KafkaConsumerMetricConstants.LEGACY_CURRENT_OFFSETS_METRICS_GROUP;
+import static org.apache.flink.streaming.connectors.kafka.internals.metrics.KafkaConsumerMetricConstants.OFFSETS_BY_PARTITION_METRICS_GROUP;
+import static org.apache.flink.streaming.connectors.kafka.internals.metrics.KafkaConsumerMetricConstants.OFFSETS_BY_TOPIC_METRICS_GROUP;
+import static org.apache.flink.util.Preconditions.checkNotNull;
+
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.eventtime.WatermarkOutput;
 import org.apache.flink.api.common.eventtime.WatermarkOutputMultiplexer;
@@ -39,6 +48,7 @@ import org.apache.flink.streaming.runtime.tasks.ProcessingTimeService;
 import org.apache.flink.util.SerializedValue;
 
 import javax.annotation.Nonnull;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -48,15 +58,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.flink.read.internals.metrics.KafkaConsumerMetricConstants.KAFKA_LATENCY_METRIC_NAME;
-import static org.apache.flink.streaming.connectors.kafka.internals.metrics.KafkaConsumerMetricConstants.COMMITTED_OFFSETS_METRICS_GAUGE;
-import static org.apache.flink.streaming.connectors.kafka.internals.metrics.KafkaConsumerMetricConstants.CURRENT_OFFSETS_METRICS_GAUGE;
-import static org.apache.flink.streaming.connectors.kafka.internals.metrics.KafkaConsumerMetricConstants.LEGACY_COMMITTED_OFFSETS_METRICS_GROUP;
-import static org.apache.flink.streaming.connectors.kafka.internals.metrics.KafkaConsumerMetricConstants.LEGACY_CURRENT_OFFSETS_METRICS_GROUP;
-import static org.apache.flink.streaming.connectors.kafka.internals.metrics.KafkaConsumerMetricConstants.OFFSETS_BY_PARTITION_METRICS_GROUP;
-import static org.apache.flink.streaming.connectors.kafka.internals.metrics.KafkaConsumerMetricConstants.OFFSETS_BY_TOPIC_METRICS_GROUP;
-import static org.apache.flink.util.Preconditions.checkNotNull;
-
 /**
  * Base class for all fetchers, which implement the connections to Kafka brokers and pull records
  * from Kafka partitions.
@@ -65,9 +66,9 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * well as around the optional timestamp assignment and watermark generation.
  *
  * @param <T> The type of elements deserialized from Kafka's byte records, and emitted into the
- *            Flink data streams.
+ *     Flink data streams.
  * @param <K> The type of topic/partition identifier used by Kafka in the specific version.
- * <p>
+ *     <p>
  * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Internal
@@ -79,21 +80,16 @@ public abstract class AbstractFetcher<T, K> {
 
   // ------------------------------------------------------------------------
 
-  /**
-   * The source context to emit records and watermarks to.
-   */
+  /** The source context to emit records and watermarks to. */
   protected final SourceContext<T> sourceContext;
 
   /**
    * Wrapper around our SourceContext for allowing the {@link
-   * org.apache.flink.api.common.eventtime.WatermarkGenerator} to emit watermarks and mark
-   * idleness.
+   * org.apache.flink.api.common.eventtime.WatermarkGenerator} to emit watermarks and mark idleness.
    */
   protected final WatermarkOutput watermarkOutput;
 
-  /**
-   * {@link WatermarkOutputMultiplexer} for supporting per-partition watermark generation.
-   */
+  /** {@link WatermarkOutputMultiplexer} for supporting per-partition watermark generation. */
   private final WatermarkOutputMultiplexer watermarkOutputMultiplexer;
 
   /**
@@ -102,37 +98,30 @@ public abstract class AbstractFetcher<T, K> {
    */
   protected final Object checkpointLock;
 
-  /**
-   * All partitions (and their state) that this fetcher is subscribed to.
-   */
+  /** All partitions (and their state) that this fetcher is subscribed to. */
   private final List<KafkaTopicPartitionState<T, K>> subscribedPartitionStates;
 
   /**
    * Queue of partitions that are not yet assigned to any Kafka clients for consuming. Kafka
-   * version-specific implementations of {@link AbstractFetcher#runFetchLoop()} should
-   * continuously poll this queue for unassigned partitions, and start consuming them accordingly.
+   * version-specific implementations of {@link AbstractFetcher#runFetchLoop()} should continuously
+   * poll this queue for unassigned partitions, and start consuming them accordingly.
    *
    * <p>All partitions added to this queue are guaranteed to have been added to {@link
    * #subscribedPartitionStates} already.
    */
-  protected final ClosableBlockingQueue<KafkaTopicPartitionState<T, K>>
-      unassignedPartitionsQueue;
+  protected final ClosableBlockingQueue<KafkaTopicPartitionState<T, K>> unassignedPartitionsQueue;
 
-  /**
-   * The mode describing whether the fetcher also generates timestamps and watermarks.
-   */
+  /** The mode describing whether the fetcher also generates timestamps and watermarks. */
   private final int timestampWatermarkMode;
 
   /**
    * Optional watermark strategy that will be run per Kafka partition, to exploit per-partition
-   * timestamp characteristics. The watermark strategy is kept in serialized form, to deserialize
-   * it into multiple copies.
+   * timestamp characteristics. The watermark strategy is kept in serialized form, to deserialize it
+   * into multiple copies.
    */
   private final SerializedValue<WatermarkStrategy<T>> watermarkStrategy;
 
-  /**
-   * User class loader used to deserialize watermark assigners.
-   */
+  /** User class loader used to deserialize watermark assigners. */
   private final ClassLoader userCodeClassLoader;
 
   // ------------------------------------------------------------------------
@@ -140,21 +129,21 @@ public abstract class AbstractFetcher<T, K> {
   // ------------------------------------------------------------------------
 
   /**
-   * Flag indicating whether or not metrics should be exposed. If {@code true}, offset metrics
-   * (e.g. current offset, committed offset) and Kafka-shipped metrics will be registered.
+   * Flag indicating whether or not metrics should be exposed. If {@code true}, offset metrics (e.g.
+   * current offset, committed offset) and Kafka-shipped metrics will be registered.
    */
   private final boolean useMetrics;
 
   /**
-   * The metric group which all metrics for the consumer should be registered to. This metric
-   * group is defined under the user scope {@link
+   * The metric group which all metrics for the consumer should be registered to. This metric group
+   * is defined under the user scope {@link
    * KafkaConsumerMetricConstants#KAFKA_CONSUMER_METRICS_GROUP}.
    */
   private final MetricGroup consumerMetricGroup;
 
   /**
-   * The sloth kafka latency gauge which is the gauge for kafka latency metric.
-   * This gauge is {@link Gauge}
+   * The sloth kafka latency gauge which is the gauge for kafka latency metric. This gauge is {@link
+   * Gauge}
    */
   protected final KafkaLatency kafkaLatency = new KafkaLatency();
 
@@ -319,9 +308,9 @@ public abstract class AbstractFetcher<T, K> {
    * Adds a list of newly discovered partitions to the fetcher for consuming.
    *
    * <p>This method creates the partition state holder for each new partition, using {@link
-   * KafkaTopicPartitionStateSentinel#EARLIEST_OFFSET} as the starting offset. It uses the
-   * earliest offset because there may be delay in discovering a partition after it was created
-   * and started receiving records.
+   * KafkaTopicPartitionStateSentinel#EARLIEST_OFFSET} as the starting offset. It uses the earliest
+   * offset because there may be delay in discovering a partition after it was created and started
+   * receiving records.
    *
    * <p>After the state representation for a partition is created, it is added to the unassigned
    * partitions queue to await to be consumed.
@@ -385,10 +374,10 @@ public abstract class AbstractFetcher<T, K> {
    * contract that the given offsets must be incremented by 1 before committing them, so that
    * committed offsets to Kafka represent "the next record to process".
    *
-   * @param offsets        The offsets to commit to Kafka (implementations must increment offsets by 1
-   *                       before committing).
-   * @param commitCallback The callback that the user should trigger when a commit request
-   *                       completes or fails.
+   * @param offsets The offsets to commit to Kafka (implementations must increment offsets by 1
+   *     before committing).
+   * @param commitCallback The callback that the user should trigger when a commit request completes
+   *     or fails.
    * @throws Exception This method forwards exceptions.
    */
   public final void commitInternalOffsetsToKafka(
@@ -448,9 +437,9 @@ public abstract class AbstractFetcher<T, K> {
   /**
    * Emits a record attaching a timestamp to it.
    *
-   * @param records             The records to emit
-   * @param partitionState      The state of the Kafka partition from which the record was fetched
-   * @param offset              The offset of the corresponding Kafka record
+   * @param records The records to emit
+   * @param partitionState The state of the Kafka partition from which the record was fetched
+   * @param offset The offset of the corresponding Kafka record
    * @param kafkaEventTimestamp The timestamp of the Kafka record
    */
   protected void emitRecordsWithTimestamps(
@@ -498,60 +487,59 @@ public abstract class AbstractFetcher<T, K> {
     List<KafkaTopicPartitionState<T, K>> partitionStates = new CopyOnWriteArrayList<>();
 
     switch (timestampWatermarkMode) {
-      case NO_TIMESTAMPS_WATERMARKS: {
-        for (Map.Entry<KafkaTopicPartition, Long> partitionEntry :
-            partitionsToInitialOffsets.entrySet()) {
-          // create the kafka version specific partition handle
-          K kafkaHandle = createKafkaPartitionHandle(partitionEntry.getKey());
+      case NO_TIMESTAMPS_WATERMARKS:
+        {
+          for (Map.Entry<KafkaTopicPartition, Long> partitionEntry :
+              partitionsToInitialOffsets.entrySet()) {
+            // create the kafka version specific partition handle
+            K kafkaHandle = createKafkaPartitionHandle(partitionEntry.getKey());
 
-          KafkaTopicPartitionState<T, K> partitionState =
-              new KafkaTopicPartitionState<>(
-                  partitionEntry.getKey(), kafkaHandle);
-          partitionState.setOffset(partitionEntry.getValue());
+            KafkaTopicPartitionState<T, K> partitionState =
+                new KafkaTopicPartitionState<>(partitionEntry.getKey(), kafkaHandle);
+            partitionState.setOffset(partitionEntry.getValue());
 
-          partitionStates.add(partitionState);
+            partitionStates.add(partitionState);
+          }
+
+          return partitionStates;
         }
 
-        return partitionStates;
-      }
+      case WITH_WATERMARK_GENERATOR:
+        {
+          for (Map.Entry<KafkaTopicPartition, Long> partitionEntry :
+              partitionsToInitialOffsets.entrySet()) {
+            final KafkaTopicPartition kafkaTopicPartition = partitionEntry.getKey();
+            K kafkaHandle = createKafkaPartitionHandle(kafkaTopicPartition);
+            WatermarkStrategy<T> deserializedWatermarkStrategy =
+                watermarkStrategy.deserializeValue(userCodeClassLoader);
 
-      case WITH_WATERMARK_GENERATOR: {
-        for (Map.Entry<KafkaTopicPartition, Long> partitionEntry :
-            partitionsToInitialOffsets.entrySet()) {
-          final KafkaTopicPartition kafkaTopicPartition = partitionEntry.getKey();
-          K kafkaHandle = createKafkaPartitionHandle(kafkaTopicPartition);
-          WatermarkStrategy<T> deserializedWatermarkStrategy =
-              watermarkStrategy.deserializeValue(userCodeClassLoader);
+            // the format of the ID does not matter, as long as it is unique
+            final String partitionId =
+                kafkaTopicPartition.getTopic() + '-' + kafkaTopicPartition.getPartition();
+            watermarkOutputMultiplexer.registerNewOutput(partitionId, watermark -> {});
+            WatermarkOutput immediateOutput =
+                watermarkOutputMultiplexer.getImmediateOutput(partitionId);
+            WatermarkOutput deferredOutput =
+                watermarkOutputMultiplexer.getDeferredOutput(partitionId);
 
-          // the format of the ID does not matter, as long as it is unique
-          final String partitionId =
-              kafkaTopicPartition.getTopic() +
-                  '-' +
-                  kafkaTopicPartition.getPartition();
-          watermarkOutputMultiplexer.registerNewOutput(partitionId, watermark -> {});
-          WatermarkOutput immediateOutput =
-              watermarkOutputMultiplexer.getImmediateOutput(partitionId);
-          WatermarkOutput deferredOutput =
-              watermarkOutputMultiplexer.getDeferredOutput(partitionId);
+            KafkaTopicPartitionStateWithWatermarkGenerator<T, K> partitionState =
+                new KafkaTopicPartitionStateWithWatermarkGenerator<>(
+                    partitionEntry.getKey(),
+                    kafkaHandle,
+                    deserializedWatermarkStrategy.createTimestampAssigner(
+                        () -> consumerMetricGroup),
+                    deserializedWatermarkStrategy.createWatermarkGenerator(
+                        () -> consumerMetricGroup),
+                    immediateOutput,
+                    deferredOutput);
 
-          KafkaTopicPartitionStateWithWatermarkGenerator<T, K> partitionState =
-              new KafkaTopicPartitionStateWithWatermarkGenerator<>(
-                  partitionEntry.getKey(),
-                  kafkaHandle,
-                  deserializedWatermarkStrategy.createTimestampAssigner(
-                      () -> consumerMetricGroup),
-                  deserializedWatermarkStrategy.createWatermarkGenerator(
-                      () -> consumerMetricGroup),
-                  immediateOutput,
-                  deferredOutput);
+            partitionState.setOffset(partitionEntry.getValue());
 
-          partitionState.setOffset(partitionEntry.getValue());
+            partitionStates.add(partitionState);
+          }
 
-          partitionStates.add(partitionState);
+          return partitionStates;
         }
-
-        return partitionStates;
-      }
 
       default:
         // cannot happen, add this as a guard for the future
@@ -577,10 +565,7 @@ public abstract class AbstractFetcher<T, K> {
     }
 
     return createPartitionStateHolders(
-        partitionsToInitialOffset,
-        timestampWatermarkMode,
-        watermarkStrategy,
-        userCodeClassLoader);
+        partitionsToInitialOffset, timestampWatermarkMode, watermarkStrategy, userCodeClassLoader);
   }
 
   // ------------------------- Metrics ----------------------------------
@@ -591,32 +576,27 @@ public abstract class AbstractFetcher<T, K> {
    * KafkaConsumerMetricConstants#OFFSETS_BY_TOPIC_METRICS_GROUP} and {@link
    * KafkaConsumerMetricConstants#OFFSETS_BY_PARTITION_METRICS_GROUP}.
    *
-   * <p>Note: this method also registers gauges for deprecated offset metrics, to maintain
-   * backwards compatibility.
+   * <p>Note: this method also registers gauges for deprecated offset metrics, to maintain backwards
+   * compatibility.
    *
-   * @param consumerMetricGroup   The consumer metric group
+   * @param consumerMetricGroup The consumer metric group
    * @param partitionOffsetStates The partition offset state holders, whose values will be used to
-   *                              update metrics
+   *     update metrics
    */
   private void registerOffsetMetrics(
-      MetricGroup consumerMetricGroup,
-      List<KafkaTopicPartitionState<T, K>> partitionOffsetStates) {
+      MetricGroup consumerMetricGroup, List<KafkaTopicPartitionState<T, K>> partitionOffsetStates) {
     consumerMetricGroup.gauge(KAFKA_LATENCY_METRIC_NAME, kafkaLatency);
 
     for (KafkaTopicPartitionState<T, K> ktp : partitionOffsetStates) {
       MetricGroup topicPartitionGroup =
           consumerMetricGroup
               .addGroup(OFFSETS_BY_TOPIC_METRICS_GROUP, ktp.getTopic())
-              .addGroup(
-                  OFFSETS_BY_PARTITION_METRICS_GROUP,
-                  Integer.toString(ktp.getPartition()));
+              .addGroup(OFFSETS_BY_PARTITION_METRICS_GROUP, Integer.toString(ktp.getPartition()));
 
       topicPartitionGroup.gauge(
-          CURRENT_OFFSETS_METRICS_GAUGE,
-          new OffsetGauge(ktp, OffsetGaugeType.CURRENT_OFFSET));
+          CURRENT_OFFSETS_METRICS_GAUGE, new OffsetGauge(ktp, OffsetGaugeType.CURRENT_OFFSET));
       topicPartitionGroup.gauge(
-          COMMITTED_OFFSETS_METRICS_GAUGE,
-          new OffsetGauge(ktp, OffsetGaugeType.COMMITTED_OFFSET));
+          COMMITTED_OFFSETS_METRICS_GAUGE, new OffsetGauge(ktp, OffsetGaugeType.COMMITTED_OFFSET));
 
       legacyCurrentOffsetsMetricGroup.gauge(
           getLegacyOffsetsMetricsGaugeName(ktp),
@@ -631,17 +611,13 @@ public abstract class AbstractFetcher<T, K> {
     return ktp.getTopic() + "-" + ktp.getPartition();
   }
 
-  /**
-   * Gauge types.
-   */
+  /** Gauge types. */
   private enum OffsetGaugeType {
     CURRENT_OFFSET,
     COMMITTED_OFFSET
   }
 
-  /**
-   * Gauge for getting the offset of a KafkaTopicPartitionState.
-   */
+  /** Gauge for getting the offset of a KafkaTopicPartitionState. */
   private static class OffsetGauge implements Gauge<Long> {
 
     private final KafkaTopicPartitionState<?, ?> ktp;
@@ -665,15 +641,12 @@ public abstract class AbstractFetcher<T, K> {
     }
   }
 
-  /**
-   * Gauge for getting the latency of a messsage.
-   */
+  /** Gauge for getting the latency of a messsage. */
   private static class KafkaLatency implements Gauge<Long> {
 
     private final AtomicLong value = new AtomicLong(-1L);
 
-    public KafkaLatency() {
-    }
+    public KafkaLatency() {}
 
     public void setValue(Long timestamp) {
       if (null != timestamp && -1L != timestamp) {
@@ -689,8 +662,8 @@ public abstract class AbstractFetcher<T, K> {
   // ------------------------------------------------------------------------
 
   /**
-   * The periodic watermark emitter. In its given interval, it checks all partitions for the
-   * current event time watermark, and possibly emits the next watermark.
+   * The periodic watermark emitter. In its given interval, it checks all partitions for the current
+   * event time watermark, and possibly emits the next watermark.
    */
   private static class PeriodicWatermarkEmitter<T, K> implements ProcessingTimeCallback {
 

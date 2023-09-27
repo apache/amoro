@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.planner.calcite;
 
+import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
+import static org.apache.flink.table.planner.utils.ShortcutUtils.unwrapTypeFactory;
+
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeFactoryImpl;
@@ -35,12 +38,10 @@ import org.apache.flink.util.function.QuadFunction;
 
 import javax.annotation.Nullable;
 
-import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
-import static org.apache.flink.table.planner.utils.ShortcutUtils.unwrapTypeFactory;
-
 /**
  * Custom type system for Flink.
- * <p>Copied from flink-1.18.</p>
+ *
+ * <p>Copied from flink-1.18.
  */
 @Internal
 public class FlinkTypeSystem extends RelDataTypeSystemImpl {
@@ -49,8 +50,7 @@ public class FlinkTypeSystem extends RelDataTypeSystemImpl {
   public static final DecimalType DECIMAL_SYSTEM_DEFAULT =
       new DecimalType(DecimalType.MAX_PRECISION, 18);
 
-  private FlinkTypeSystem() {
-  }
+  private FlinkTypeSystem() {}
 
   @Override
   public int getMaxNumericPrecision() {
@@ -113,8 +113,7 @@ public class FlinkTypeSystem extends RelDataTypeSystemImpl {
   }
 
   @Override
-  public RelDataType deriveAvgAggType(
-      RelDataTypeFactory typeFactory, RelDataType argRelDataType) {
+  public RelDataType deriveAvgAggType(RelDataTypeFactory typeFactory, RelDataType argRelDataType) {
     LogicalType argType = FlinkTypeFactory.toLogicalType(argRelDataType);
     LogicalType resultType = LogicalTypeMerging.findAvgAggType(argType);
     return unwrapTypeFactory(typeFactory).createFieldTypeFromLogicalType(resultType);
@@ -146,8 +145,7 @@ public class FlinkTypeSystem extends RelDataTypeSystemImpl {
             return type2;
           }
           DecimalType result = LogicalTypeMerging.findModuloDecimalType(p1, s1, p2, s2);
-          return typeFactory.createSqlType(
-              DECIMAL, result.getPrecision(), result.getScale());
+          return typeFactory.createSqlType(DECIMAL, result.getPrecision(), result.getScale());
         });
   }
 
@@ -165,9 +163,7 @@ public class FlinkTypeSystem extends RelDataTypeSystemImpl {
         typeFactory, type1, type2, LogicalTypeMerging::findMultiplicationDecimalType);
   }
 
-  /**
-   * Use derivation from {@link LogicalTypeMerging} to derive decimal type.
-   */
+  /** Use derivation from {@link LogicalTypeMerging} to derive decimal type. */
   private @Nullable RelDataType deriveDecimalType(
       RelDataTypeFactory typeFactory,
       RelDataType type1,
@@ -179,8 +175,7 @@ public class FlinkTypeSystem extends RelDataTypeSystemImpl {
         type2,
         (p1, s1, p2, s2) -> {
           DecimalType result = deriveImpl.apply(p1, s1, p2, s2);
-          return typeFactory.createSqlType(
-              DECIMAL, result.getPrecision(), result.getScale());
+          return typeFactory.createSqlType(DECIMAL, result.getPrecision(), result.getScale());
         });
   }
 
@@ -203,18 +198,18 @@ public class FlinkTypeSystem extends RelDataTypeSystemImpl {
   }
 
   /**
-   * Java numeric will always have invalid precision/scale, use its default decimal
-   * precision/scale instead.
+   * Java numeric will always have invalid precision/scale, use its default decimal precision/scale
+   * instead.
    */
   private RelDataType adjustType(RelDataTypeFactory typeFactory, RelDataType relDataType) {
-    return RelDataTypeFactoryImpl.isJavaType(relDataType) ?
-        typeFactory.decimalOf(relDataType)
+    return RelDataTypeFactoryImpl.isJavaType(relDataType)
+        ? typeFactory.decimalOf(relDataType)
         : relDataType;
   }
 
   private boolean canDeriveDecimal(RelDataType type1, RelDataType type2) {
-    return SqlTypeUtil.isExactNumeric(type1) &&
-        SqlTypeUtil.isExactNumeric(type2) &&
-        (SqlTypeUtil.isDecimal(type1) || SqlTypeUtil.isDecimal(type2));
+    return SqlTypeUtil.isExactNumeric(type1)
+        && SqlTypeUtil.isExactNumeric(type2)
+        && (SqlTypeUtil.isDecimal(type1) || SqlTypeUtil.isDecimal(type2));
   }
 }
