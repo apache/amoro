@@ -17,8 +17,13 @@
 # limitations under the License.
 #
 
-XMX_CONFIG="8196"
-XMS_CONFIG="8196"
-JMX_REMOTE_PORT_CONFIG=""
-JVM_EXTRA_CONFIG="-XX:NewRatio=1 -XX:SurvivorRatio=3"
+# This file is sourced when running various Amoro programs.
+# Edit it to configure your Amoro instance.
+
+# Options for jvm options
+JVM_XMX="8196"
+JVM_XMS="8196"
+JMX_REMOTE_PORT=""
+JVM_EXTRA="-XX:NewRatio=1 -XX:SurvivorRatio=3"
 LANG_CONFIG="en_US.UTF-8"
+

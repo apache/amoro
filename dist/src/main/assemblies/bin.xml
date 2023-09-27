@@ -59,6 +59,11 @@
             <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
+            <directory>src/main/arctic-bin/conf/*.sh</directory>
+            <outputDirectory>conf</outputDirectory>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
             <directory>../ams/server/src/main/resources/mysql</directory>
             <outputDirectory>conf/mysql</outputDirectory>
             <fileMode>0644</fileMode>
