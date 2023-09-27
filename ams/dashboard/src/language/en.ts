@@ -50,6 +50,7 @@ export default {
   changeTableMetrics: 'Change Table Metrics',
   baseTableMetrics: 'Base Table Metrics',
   properties: 'Properties',
+  tableProperties: 'Table Properties',
   sourceField: 'Source Field',
   transform: 'Transform',
   description: 'Description',
