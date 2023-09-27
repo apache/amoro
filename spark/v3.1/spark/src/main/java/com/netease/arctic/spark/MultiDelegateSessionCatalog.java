@@ -51,9 +51,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * this catalog is used for spark_catalog when multi session catalog is need.
- */
+/** this catalog is used for spark_catalog when multi session catalog is need. */
 public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamespaces>
     implements StagingTableCatalog, SupportsNamespaces, CatalogExtension, ProcedureCatalog {
 
@@ -71,8 +69,7 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
         "spark_catalog".equalsIgnoreCase(name),
         MultiDelegateSessionCatalog.class.getName() + " can only be used for spark_catalog");
     Preconditions.checkArgument(
-        options.containsKey(PARAM_DELEGATES),
-        "lack require parameter " + PARAM_DELEGATES);
+        options.containsKey(PARAM_DELEGATES), "lack require parameter " + PARAM_DELEGATES);
     this.options = options;
   }
 
@@ -86,9 +83,7 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
     }
 
     List<CatalogHolder> delegates = getCatalogs(this.options);
-    Preconditions.checkArgument(
-        delegates.size() > 0,
-        "delegates can not be empty");
+    Preconditions.checkArgument(delegates.size() > 0, "delegates can not be empty");
 
     Iterator<CatalogHolder> iterator = delegates.iterator();
     CatalogHolder delegateCatalog = iterator.next();
@@ -105,28 +100,22 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
 
   @Override
   public StagedTable stageCreate(
-      Identifier ident,
-      StructType schema,
-      Transform[] partitions,
-      Map<String, String> properties) throws TableAlreadyExistsException, NoSuchNamespaceException {
+      Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
+      throws TableAlreadyExistsException, NoSuchNamespaceException {
     return this.delegateCatalog.stageCreate(ident, schema, partitions, properties);
   }
 
   @Override
   public StagedTable stageReplace(
-      Identifier ident,
-      StructType schema,
-      Transform[] partitions,
-      Map<String, String> properties) throws NoSuchNamespaceException, NoSuchTableException {
+      Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
+      throws NoSuchNamespaceException, NoSuchTableException {
     return this.delegateCatalog.stageReplace(ident, schema, partitions, properties);
   }
 
   @Override
   public StagedTable stageCreateOrReplace(
-      Identifier ident,
-      StructType schema,
-      Transform[] partitions,
-      Map<String, String> properties) throws NoSuchNamespaceException {
+      Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
+      throws NoSuchNamespaceException {
     return this.delegateCatalog.stageCreateOrReplace(ident, schema, partitions, properties);
   }
 
@@ -146,17 +135,20 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
   }
 
   @Override
-  public Map<String, String> loadNamespaceMetadata(String[] namespace) throws NoSuchNamespaceException {
+  public Map<String, String> loadNamespaceMetadata(String[] namespace)
+      throws NoSuchNamespaceException {
     return this.delegateCatalog.loadNamespaceMetadata(namespace);
   }
 
   @Override
-  public void createNamespace(String[] namespace, Map<String, String> metadata) throws NamespaceAlreadyExistsException {
+  public void createNamespace(String[] namespace, Map<String, String> metadata)
+      throws NamespaceAlreadyExistsException {
     this.delegateCatalog.createNamespace(namespace, metadata);
   }
 
   @Override
-  public void alterNamespace(String[] namespace, NamespaceChange... changes) throws NoSuchNamespaceException {
+  public void alterNamespace(String[] namespace, NamespaceChange... changes)
+      throws NoSuchNamespaceException {
     this.delegateCatalog.alterNamespace(namespace, changes);
   }
 
@@ -186,7 +178,8 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
   }
 
   @Override
-  public Table createTable(Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
+  public Table createTable(
+      Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
       throws TableAlreadyExistsException, NoSuchNamespaceException {
     return this.delegateCatalog.createTable(ident, schema, partitions, properties);
   }
@@ -236,8 +229,7 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
       catalogOptions.put(catalog, Maps.newHashMap());
       String className = options.get(catalog);
       Preconditions.checkArgument(
-          className != null,
-          "lack implement class for catalog: " + catalog);
+          className != null, "lack implement class for catalog: " + catalog);
       catalogClassName.put(catalog, className);
     }
 
@@ -248,49 +240,62 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
         String catalog = key.split("\\.")[0];
         String property = key.substring(key.indexOf(".") + 1);
         Preconditions.checkArgument(
-            catalogOptions.containsKey(catalog),
-            "catalog " + catalog + " is not defined");
+            catalogOptions.containsKey(catalog), "catalog " + catalog + " is not defined");
         catalogOptions.get(catalog).put(property, options.get(key));
       }
     }
 
     return catalogs.stream()
-        .map(catalog -> {
-          Map<String, String> option = catalogOptions.get(catalog);
-          String className = catalogClassName.get(catalog);
-          return loadCatalog(catalog, className, option);
-        })
+        .map(
+            catalog -> {
+              Map<String, String> option = catalogOptions.get(catalog);
+              String className = catalogClassName.get(catalog);
+              return loadCatalog(catalog, className, option);
+            })
         .map(CatalogHolder::new)
         .collect(Collectors.toList());
   }
 
-  private CatalogExtension loadCatalog(String catalogName, String className, Map<String, String> options) {
+  private CatalogExtension loadCatalog(
+      String catalogName, String className, Map<String, String> options) {
     ClassLoader loader = getClassLoader();
     try {
       Class<?> pluginClass = Class.forName(className, true, loader);
       if (!CatalogExtension.class.isAssignableFrom(pluginClass)) {
         throw new IllegalStateException(
-            String.format("Plugin class for %s does not implement CatalogExtension: %s",
+            String.format(
+                "Plugin class for %s does not implement CatalogExtension: %s",
                 catalogName, className));
       }
-      CatalogExtension catalog = (CatalogExtension) pluginClass.getDeclaredConstructor().newInstance();
+      CatalogExtension catalog =
+          (CatalogExtension) pluginClass.getDeclaredConstructor().newInstance();
       catalog.initialize(this.name(), new CaseInsensitiveStringMap(options));
       return catalog;
     } catch (ClassNotFoundException e) {
-      throw new IllegalStateException("Cannot find delegate catalog plugin class for catalog " + catalogName +
-          ": " + className, e);
+      throw new IllegalStateException(
+          "Cannot find delegate catalog plugin class for catalog " + catalogName + ": " + className,
+          e);
     } catch (NoSuchMethodException e) {
       throw new IllegalStateException(
-          "Cannot find a no-arg constructor for delegate catalog plugin class for catalog " +
-              catalogName + ": " + className, e);
+          "Cannot find a no-arg constructor for delegate catalog plugin class for catalog "
+              + catalogName
+              + ": "
+              + className,
+          e);
     } catch (InvocationTargetException e) {
       throw new IllegalStateException(
-          "Failed during call to no-arg constructor for delegate catalog plugin class for catalog " +
-              catalogName + ": " + className, e);
+          "Failed during call to no-arg constructor for delegate catalog plugin class for catalog "
+              + catalogName
+              + ": "
+              + className,
+          e);
     } catch (InstantiationException | IllegalAccessException e) {
       throw new IllegalStateException(
-          "Failed to call public no-arg constructor for delegate catalog plugin class for catalog " +
-              catalogName + ": " + className, e);
+          "Failed to call public no-arg constructor for delegate catalog plugin class for catalog "
+              + catalogName
+              + ": "
+              + className,
+          e);
     }
   }
 
@@ -313,8 +318,7 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
     @Override
     public void setDelegateCatalog(CatalogPlugin delegate) {
       Preconditions.checkArgument(
-          delegate instanceof CatalogHolder,
-          "delegate catalog must be CatalogHolder");
+          delegate instanceof CatalogHolder, "delegate catalog must be CatalogHolder");
       ((CatalogExtension) holder).setDelegateCatalog(delegate);
       this.delegate = (CatalogHolder<T>) delegate;
     }
@@ -335,7 +339,8 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
     }
 
     @Override
-    public Map<String, String> loadNamespaceMetadata(String[] namespace) throws NoSuchNamespaceException {
+    public Map<String, String> loadNamespaceMetadata(String[] namespace)
+        throws NoSuchNamespaceException {
       return holder.loadNamespaceMetadata(namespace);
     }
 
@@ -346,7 +351,8 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
     }
 
     @Override
-    public void alterNamespace(String[] namespace, NamespaceChange... changes) throws NoSuchNamespaceException {
+    public void alterNamespace(String[] namespace, NamespaceChange... changes)
+        throws NoSuchNamespaceException {
       holder.alterNamespace(namespace, changes);
     }
 
@@ -377,10 +383,8 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
 
     @Override
     public Table createTable(
-        Identifier ident,
-        StructType schema,
-        Transform[] partitions,
-        Map<String, String> properties) throws TableAlreadyExistsException, NoSuchNamespaceException {
+        Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
+        throws TableAlreadyExistsException, NoSuchNamespaceException {
       return holder.createTable(ident, schema, partitions, properties);
     }
 
@@ -394,7 +398,8 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
       boolean holderDrop = holder.dropTable(ident);
       boolean delegateDrop = false;
       if (delegate != null) {
-        delegateDrop = delegate.dropTable(ident);;
+        delegateDrop = delegate.dropTable(ident);
+        ;
       }
       return holderDrop || delegateDrop;
     }
@@ -429,10 +434,8 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
 
     @Override
     public StagedTable stageCreate(
-        Identifier ident,
-        StructType schema,
-        Transform[] partitions,
-        Map<String, String> properties) throws TableAlreadyExistsException, NoSuchNamespaceException {
+        Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
+        throws TableAlreadyExistsException, NoSuchNamespaceException {
       if (holder instanceof StagingTableCatalog) {
         return ((StagingTableCatalog) holder).stageCreate(ident, schema, partitions, properties);
       } else if (delegate != null) {
@@ -444,10 +447,8 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
 
     @Override
     public StagedTable stageReplace(
-        Identifier ident,
-        StructType schema,
-        Transform[] partitions,
-        Map<String, String> properties) throws NoSuchNamespaceException, NoSuchTableException {
+        Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
+        throws NoSuchNamespaceException, NoSuchTableException {
       if (holder instanceof StagingTableCatalog) {
         return ((StagingTableCatalog) holder).stageReplace(ident, schema, partitions, properties);
       } else if (delegate != null) {
@@ -459,12 +460,11 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
 
     @Override
     public StagedTable stageCreateOrReplace(
-        Identifier ident,
-        StructType schema,
-        Transform[] partitions,
-        Map<String, String> properties) throws NoSuchNamespaceException {
+        Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
+        throws NoSuchNamespaceException {
       if (holder instanceof StagingTableCatalog) {
-        return ((StagingTableCatalog) holder).stageCreateOrReplace(ident, schema, partitions, properties);
+        return ((StagingTableCatalog) holder)
+            .stageCreateOrReplace(ident, schema, partitions, properties);
       } else if (delegate != null) {
         return delegate.stageCreateOrReplace(ident, schema, partitions, properties);
       } else {

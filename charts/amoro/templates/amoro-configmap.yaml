@@ -84,7 +84,6 @@ data:
         jdbc-driver-class: {{ .Values.amoroConf.database.driver | quote }}
         {{- if eq .Values.amoroConf.database.type "mysql" }}
         username: {{ .Values.amoroConf.database.username | quote }}
-        password: {{ .Values.amoroConf.database.password | quote }}
         {{- end }}
 
       #  MySQL database configuration.

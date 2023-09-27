@@ -41,14 +41,19 @@ public class ArcticSparkUnkeyedDataReader extends AbstractAdaptHiveIcebergDataRe
       Schema projectedSchema,
       String nameMapping,
       boolean caseSensitive) {
-    super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive,
-        ArcticSparkUtils::convertConstant, true);
+    super(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        nameMapping,
+        caseSensitive,
+        ArcticSparkUtils::convertConstant,
+        true);
   }
 
   @Override
   protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
-      Schema projectedSchema,
-      Map<Integer, ?> idToConstant) {
+      Schema projectedSchema, Map<Integer, ?> idToConstant) {
     return fileSchema -> SparkParquetReaders.buildReader(projectedSchema, fileSchema, idToConstant);
   }
 

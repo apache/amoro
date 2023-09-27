@@ -48,26 +48,34 @@ public class TestUpdateSQL extends SparkTableTestBase {
         Arguments.of(TableFormat.MIXED_ICEBERG, ", PRIMARY KEY(id)", " where day = 'c'"),
         Arguments.of(TableFormat.MIXED_ICEBERG, ", PRIMARY KEY(id)", ""),
         Arguments.of(TableFormat.MIXED_ICEBERG, "", " where id = 3"),
-        Arguments.of(TableFormat.MIXED_ICEBERG, "", "")
-    );
+        Arguments.of(TableFormat.MIXED_ICEBERG, "", ""));
   }
 
   @DisplayName("Test `test update table`")
   @ParameterizedTest
   @MethodSource
   public void testUpdate(TableFormat format, String primaryKeyDDL, String filter) {
-    String sqlText = "CREATE TABLE " + target() + " ( \n" +
-        "id int, data string, day string " + primaryKeyDDL + " ) using " +
-        provider(format) + " PARTITIONED BY (day)";
+    String sqlText =
+        "CREATE TABLE "
+            + target()
+            + " ( \n"
+            + "id int, data string, day string "
+            + primaryKeyDDL
+            + " ) using "
+            + provider(format)
+            + " PARTITIONED BY (day)";
     sql(sqlText);
-    sql("insert into " +
-        target().database + "." + target().table +
-        " values (1, 'a', 'a'), (2, 'b', 'b'), (3, 'c', 'c')");
+    sql(
+        "insert into "
+            + target().database
+            + "."
+            + target().table
+            + " values (1, 'a', 'a'), (2, 'b', 'b'), (3, 'c', 'c')");
 
     sql("update " + target().database + "." + target().table + " set data = 'd'" + filter);
 
-    Dataset<Row> sql = sql("select id, data from " +
-        target().database + "." + target().table + filter);
+    Dataset<Row> sql =
+        sql("select id, data from " + target().database + "." + target().table + filter);
 
     if (filter.isEmpty()) {
       Assertions.assertEquals(3, sql.collectAsList().size());
@@ -83,26 +91,34 @@ public class TestUpdateSQL extends SparkTableTestBase {
         Arguments.of(TableFormat.MIXED_HIVE, ", PRIMARY KEY(id)", " where id = 3"),
         Arguments.of(TableFormat.MIXED_HIVE, "", " where id = 3"),
         Arguments.of(TableFormat.MIXED_ICEBERG, ", PRIMARY KEY(id)", " where id = 3"),
-        Arguments.of(TableFormat.MIXED_ICEBERG, "", " where id = 3")
-    );
+        Arguments.of(TableFormat.MIXED_ICEBERG, "", " where id = 3"));
   }
 
   @DisplayName("Test `test update partition field`")
   @ParameterizedTest
   @MethodSource
   public void testUpdatePartitionField(TableFormat format, String primaryKeyDDL, String filter) {
-    String sqlText = "CREATE TABLE " + target() + " ( \n" +
-        "id int, data string, day string " + primaryKeyDDL + " ) using " +
-        provider(format) + " PARTITIONED BY (day)";
+    String sqlText =
+        "CREATE TABLE "
+            + target()
+            + " ( \n"
+            + "id int, data string, day string "
+            + primaryKeyDDL
+            + " ) using "
+            + provider(format)
+            + " PARTITIONED BY (day)";
     sql(sqlText);
-    sql("insert into " +
-        target().database + "." + target().table +
-        " values (1, 'a', 'a'), (2, 'b', 'b'), (3, 'c', 'c')");
+    sql(
+        "insert into "
+            + target().database
+            + "."
+            + target().table
+            + " values (1, 'a', 'a'), (2, 'b', 'b'), (3, 'c', 'c')");
 
     sql("update " + target().database + "." + target().table + " set day = 'd'" + filter);
 
-    Dataset<Row> sql = sql("select id, day from " +
-        target().database + "." + target().table + filter);
+    Dataset<Row> sql =
+        sql("select id, day from " + target().database + "." + target().table + filter);
 
     Assertions.assertEquals(1, sql.collectAsList().size());
     Assertions.assertEquals("d", sql.collectAsList().get(0).get(1));
@@ -111,23 +127,32 @@ public class TestUpdateSQL extends SparkTableTestBase {
   public static Stream<Arguments> testUpdatePrimaryField() {
     return Stream.of(
         Arguments.of(TableFormat.MIXED_HIVE, ", PRIMARY KEY(id)", " where data = 'c'"),
-        Arguments.of(TableFormat.MIXED_ICEBERG, ", PRIMARY KEY(id)", " where data = 'c'")
-    );
+        Arguments.of(TableFormat.MIXED_ICEBERG, ", PRIMARY KEY(id)", " where data = 'c'"));
   }
 
   @DisplayName("Test `test update primary field`")
   @ParameterizedTest
   @MethodSource
   public void testUpdatePrimaryField(TableFormat format, String primaryKeyDDL, String filter) {
-    String sqlText = "CREATE TABLE " + target() + " ( \n" +
-        "id int, data string, day string " + primaryKeyDDL + " ) using " +
-        provider(format) + " PARTITIONED BY (day)";
+    String sqlText =
+        "CREATE TABLE "
+            + target()
+            + " ( \n"
+            + "id int, data string, day string "
+            + primaryKeyDDL
+            + " ) using "
+            + provider(format)
+            + " PARTITIONED BY (day)";
     sql(sqlText);
-    sql("insert into " +
-        target().database + "." + target().table +
-        " values (1, 'a', 'a'), (2, 'b', 'b'), (3, 'c', 'c')");
+    sql(
+        "insert into "
+            + target().database
+            + "."
+            + target().table
+            + " values (1, 'a', 'a'), (2, 'b', 'b'), (3, 'c', 'c')");
 
-    Assert.assertThrows(UnsupportedOperationException.class, () ->
-        sql("update " + target().database + "." + target().table + " set id = 1" + filter));
+    Assert.assertThrows(
+        UnsupportedOperationException.class,
+        () -> sql("update " + target().database + "." + target().table + " set id = 1" + filter));
   }
 }

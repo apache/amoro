@@ -52,29 +52,45 @@ import java.util.stream.Stream;
 public class TestCreateTableAsSelect extends SparkTableTestBase {
 
   public static final Schema simpleSourceSchema = TestTables.MixedIceberg.NoPK_PT.schema;
-  public static final List<Record> simpleSourceData = TestTables.MixedIceberg.PK_PT.newDateGen().records(10);
+  public static final List<Record> simpleSourceData =
+      TestTables.MixedIceberg.PK_PT.newDateGen().records(10);
 
   public static Stream<Arguments> testTimestampZoneHandle() {
     return Stream.of(
-        Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id, pt)", true, Types.TimestampType.withoutZone()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            "PRIMARY KEY(id, pt)",
+            true,
+            Types.TimestampType.withoutZone()),
         Arguments.of(TableFormat.MIXED_ICEBERG, "", false, Types.TimestampType.withZone()),
-        Arguments.of(TableFormat.MIXED_HIVE, "PRIMARY KEY(id, pt)", true, Types.TimestampType.withoutZone()),
-        Arguments.of(TableFormat.MIXED_HIVE, "", false, Types.TimestampType.withoutZone())
-    );
+        Arguments.of(
+            TableFormat.MIXED_HIVE, "PRIMARY KEY(id, pt)", true, Types.TimestampType.withoutZone()),
+        Arguments.of(TableFormat.MIXED_HIVE, "", false, Types.TimestampType.withoutZone()));
   }
 
   @ParameterizedTest
   @MethodSource
   public void testTimestampZoneHandle(
-      TableFormat format, String primaryKeyDDL, boolean timestampWithoutZone, Types.TimestampType expectType) {
+      TableFormat format,
+      String primaryKeyDDL,
+      boolean timestampWithoutZone,
+      Types.TimestampType expectType) {
     createViewSource(simpleSourceSchema, simpleSourceData);
 
-    spark().conf().set(
-        SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, timestampWithoutZone
-    );
+    spark()
+        .conf()
+        .set(
+            SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, timestampWithoutZone);
 
-    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL +
-        " USING " + provider(format) + " AS SELECT * FROM " + source();
+    String sqlText =
+        "CREATE TABLE "
+            + target()
+            + " "
+            + primaryKeyDDL
+            + " USING "
+            + provider(format)
+            + " AS SELECT * FROM "
+            + source();
     sql(sqlText);
 
     ArcticTable table = loadTable();
@@ -87,63 +103,122 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
   }
 
   public static Stream<Arguments> testSchemaAndData() {
-    PrimaryKeySpec keyIdPtSpec = PrimaryKeySpec.builderFor(simpleSourceSchema)
-        .addColumn("id")
-        .addColumn("pt")
-        .build();
-    PrimaryKeySpec keyIdSpec = PrimaryKeySpec.builderFor(simpleSourceSchema)
-        .addColumn("id")
-        .build();
+    PrimaryKeySpec keyIdPtSpec =
+        PrimaryKeySpec.builderFor(simpleSourceSchema).addColumn("id").addColumn("pt").build();
+    PrimaryKeySpec keyIdSpec =
+        PrimaryKeySpec.builderFor(simpleSourceSchema).addColumn("id").build();
 
     return Stream.of(
-        Arguments.of(TableFormat.MIXED_HIVE, "PRIMARY KEY(id, pt)", "PARTITIONED BY(pt)",
-            keyIdPtSpec, ptBuilder().identity("pt").build()),
-        Arguments.of(TableFormat.MIXED_HIVE, "PRIMARY KEY(id, pt)", "",
-            keyIdPtSpec, PartitionSpec.unpartitioned()),
-        Arguments.of(TableFormat.MIXED_HIVE, "", "PARTITIONED BY(pt)",
+        Arguments.of(
+            TableFormat.MIXED_HIVE,
+            "PRIMARY KEY(id, pt)",
+            "PARTITIONED BY(pt)",
+            keyIdPtSpec,
+            ptBuilder().identity("pt").build()),
+        Arguments.of(
+            TableFormat.MIXED_HIVE,
+            "PRIMARY KEY(id, pt)",
+            "",
+            keyIdPtSpec,
+            PartitionSpec.unpartitioned()),
+        Arguments.of(
+            TableFormat.MIXED_HIVE,
+            "",
+            "PARTITIONED BY(pt)",
             PrimaryKeySpec.noPrimaryKey(),
             ptBuilder().identity("pt").build()),
-        Arguments.of(TableFormat.MIXED_HIVE, "", "",
-            PrimaryKeySpec.noPrimaryKey(), PartitionSpec.unpartitioned()),
-
-        Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id, pt)", "",
-            keyIdPtSpec, PartitionSpec.unpartitioned()),
-        Arguments.of(TableFormat.MIXED_ICEBERG, "", "PARTITIONED BY(pt,id)",
+        Arguments.of(
+            TableFormat.MIXED_HIVE,
+            "",
+            "",
+            PrimaryKeySpec.noPrimaryKey(),
+            PartitionSpec.unpartitioned()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            "PRIMARY KEY(id, pt)",
+            "",
+            keyIdPtSpec,
+            PartitionSpec.unpartitioned()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            "",
+            "PARTITIONED BY(pt,id)",
             PrimaryKeySpec.noPrimaryKey(),
             ptBuilder().identity("pt").identity("id").build()),
-        Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id)", "PARTITIONED BY(years(ts))",
-            keyIdSpec, ptBuilder().year("ts").build()),
-        Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id)", "PARTITIONED BY(months(ts))",
-            keyIdSpec, ptBuilder().month("ts").build()),
-        Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id)", "PARTITIONED BY(days(ts))",
-            keyIdSpec, ptBuilder().day("ts").build()),
-        Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id)", "PARTITIONED BY(date(ts))",
-            keyIdSpec, ptBuilder().day("ts").build()),
-        Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id)", "PARTITIONED BY(hours(ts))",
-            keyIdSpec, ptBuilder().hour("ts").build()),
-        Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id)", "PARTITIONED BY(date_hour(ts))",
-            keyIdSpec, ptBuilder().hour("ts").build()),
-        Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id)", "PARTITIONED BY(bucket(10, id))",
-            keyIdSpec, ptBuilder().bucket("id", 10).build()),
-        Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id)", "PARTITIONED BY(truncate(10, data))",
-            keyIdSpec, ptBuilder().truncate("data", 10).build())
-    );
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            "PRIMARY KEY(id)",
+            "PARTITIONED BY(years(ts))",
+            keyIdSpec,
+            ptBuilder().year("ts").build()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            "PRIMARY KEY(id)",
+            "PARTITIONED BY(months(ts))",
+            keyIdSpec,
+            ptBuilder().month("ts").build()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            "PRIMARY KEY(id)",
+            "PARTITIONED BY(days(ts))",
+            keyIdSpec,
+            ptBuilder().day("ts").build()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            "PRIMARY KEY(id)",
+            "PARTITIONED BY(date(ts))",
+            keyIdSpec,
+            ptBuilder().day("ts").build()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            "PRIMARY KEY(id)",
+            "PARTITIONED BY(hours(ts))",
+            keyIdSpec,
+            ptBuilder().hour("ts").build()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            "PRIMARY KEY(id)",
+            "PARTITIONED BY(date_hour(ts))",
+            keyIdSpec,
+            ptBuilder().hour("ts").build()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            "PRIMARY KEY(id)",
+            "PARTITIONED BY(bucket(10, id))",
+            keyIdSpec,
+            ptBuilder().bucket("id", 10).build()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            "PRIMARY KEY(id)",
+            "PARTITIONED BY(truncate(10, data))",
+            keyIdSpec,
+            ptBuilder().truncate("data", 10).build()));
   }
 
   @ParameterizedTest
   @MethodSource
   public void testSchemaAndData(
-      TableFormat format, String primaryKeyDDL, String partitionDDL,
-      PrimaryKeySpec keySpec, PartitionSpec ptSpec
-  ) {
+      TableFormat format,
+      String primaryKeyDDL,
+      String partitionDDL,
+      PrimaryKeySpec keySpec,
+      PartitionSpec ptSpec) {
     spark().conf().set("spark.sql.session.timeZone", "UTC");
     createViewSource(simpleSourceSchema, simpleSourceData);
 
     spark().conf().set(SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, true);
 
-    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL +
-        " USING " + provider(format) + " " + partitionDDL +
-        " AS SELECT * FROM " + source();
+    String sqlText =
+        "CREATE TABLE "
+            + target()
+            + " "
+            + primaryKeyDDL
+            + " USING "
+            + provider(format)
+            + " "
+            + partitionDDL
+            + " AS SELECT * FROM "
+            + source();
     sql(sqlText);
 
     Schema expectSchema = TestTableUtil.toSchemaWithPrimaryKey(simpleSourceSchema, keySpec);
@@ -181,24 +256,31 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
         Arguments.of(TableFormat.MIXED_ICEBERG, simpleSourceData, "", false),
         Arguments.of(TableFormat.MIXED_ICEBERG, duplicateSource, "", false),
         Arguments.of(TableFormat.MIXED_ICEBERG, duplicateSource, "PRIMARY KEY(id, pt)", true),
-
         Arguments.of(TableFormat.MIXED_HIVE, simpleSourceData, "PRIMARY KEY(id, pt)", false),
         Arguments.of(TableFormat.MIXED_HIVE, simpleSourceData, "", false),
         Arguments.of(TableFormat.MIXED_HIVE, duplicateSource, "", false),
-        Arguments.of(TableFormat.MIXED_HIVE, duplicateSource, "PRIMARY KEY(id, pt)", true)
-    );
+        Arguments.of(TableFormat.MIXED_HIVE, duplicateSource, "PRIMARY KEY(id, pt)", true));
   }
 
   @ParameterizedTest(name = "{index} {0} {2} {3}")
   @MethodSource
   public void testSourceDuplicateCheck(
-      TableFormat format, List<Record> sourceData, String primaryKeyDDL, boolean duplicateCheckFailed
-  ) {
+      TableFormat format,
+      List<Record> sourceData,
+      String primaryKeyDDL,
+      boolean duplicateCheckFailed) {
     spark().conf().set(SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE, "true");
     createViewSource(simpleSourceSchema, sourceData);
-    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL +
-        " USING " + provider(format) + " " +
-        " AS SELECT * FROM " + source();
+    String sqlText =
+        "CREATE TABLE "
+            + target()
+            + " "
+            + primaryKeyDDL
+            + " USING "
+            + provider(format)
+            + " "
+            + " AS SELECT * FROM "
+            + source();
 
     boolean exceptionCatched = false;
     try {
@@ -216,24 +298,34 @@ public class TestCreateTableAsSelect extends SparkTableTestBase {
     Map<String, String> emptyProperties = Collections.emptyMap();
     return Stream.of(
         Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id, pt)", "", emptyProperties),
-        Arguments.of(TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id, pt)", propertiesDDL, expectProperties),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG, "PRIMARY KEY(id, pt)", propertiesDDL, expectProperties),
         Arguments.of(TableFormat.MIXED_ICEBERG, "", propertiesDDL, expectProperties),
-
         Arguments.of(TableFormat.MIXED_HIVE, "PRIMARY KEY(id, pt)", "", emptyProperties),
-        Arguments.of(TableFormat.MIXED_HIVE, "PRIMARY KEY(id, pt)", propertiesDDL, expectProperties),
-        Arguments.of(TableFormat.MIXED_HIVE, "", propertiesDDL, expectProperties)
-    );
+        Arguments.of(
+            TableFormat.MIXED_HIVE, "PRIMARY KEY(id, pt)", propertiesDDL, expectProperties),
+        Arguments.of(TableFormat.MIXED_HIVE, "", propertiesDDL, expectProperties));
   }
 
   @ParameterizedTest
   @MethodSource
   public void testAdditionProperties(
-      TableFormat format, String primaryKeyDDL, String propertiesDDL, Map<String, String> expectProperties
-  ) {
+      TableFormat format,
+      String primaryKeyDDL,
+      String propertiesDDL,
+      Map<String, String> expectProperties) {
     createViewSource(simpleSourceSchema, simpleSourceData);
-    String sqlText = "CREATE TABLE " + target() + " " + primaryKeyDDL +
-        " USING " + provider(format) + " PARTITIONED BY (pt) " + propertiesDDL +
-        " AS SELECT * FROM " + source();
+    String sqlText =
+        "CREATE TABLE "
+            + target()
+            + " "
+            + primaryKeyDDL
+            + " USING "
+            + provider(format)
+            + " PARTITIONED BY (pt) "
+            + propertiesDDL
+            + " AS SELECT * FROM "
+            + source();
     sql(sqlText);
     ArcticTable table = loadTable();
     Map<String, String> tableProperties = table.properties();
