@@ -47,8 +47,17 @@ public class ArcticSparkBaseTaskWriter extends BaseTaskWriter<InternalRow> {
       PartitionSpec spec,
       PrimaryKeySpec primaryKeySpec,
       boolean orderedWriter) {
-    super(format, appenderFactory, outputFileFactory, io, targetFileSize,
-        mask, schema, spec, primaryKeySpec, orderedWriter);
+    super(
+        format,
+        appenderFactory,
+        outputFileFactory,
+        io,
+        targetFileSize,
+        mask,
+        schema,
+        spec,
+        primaryKeySpec,
+        orderedWriter);
     this.structType = SparkSchemaUtil.convert(schema);
   }
 

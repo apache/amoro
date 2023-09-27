@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark.test;
 
-
 import com.netease.arctic.SingletonResourceUtil;
 import com.netease.arctic.TestAms;
 import com.netease.arctic.TestedCatalogs;
@@ -42,7 +41,8 @@ import java.util.Map;
 
 public class SparkTestContext {
 
-  public static final String SESSION_CATALOG_IMPL = "com.netease.arctic.spark.ArcticSparkSessionCatalog";
+  public static final String SESSION_CATALOG_IMPL =
+      "com.netease.arctic.spark.ArcticSparkSessionCatalog";
   public static final String CATALOG_IMPL = "com.netease.arctic.spark.ArcticSparkCatalog";
   public static final String SQL_EXTENSIONS_IMPL = "com.netease.arctic.spark.ArcticSparkExtensions";
 
@@ -104,20 +104,22 @@ public class SparkTestContext {
         return;
       }
     }
-    CatalogMeta arcticCatalogMeta = TestedCatalogs.internalCatalog(TableFormat.MIXED_ICEBERG)
-        .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
+    CatalogMeta arcticCatalogMeta =
+        TestedCatalogs.internalCatalog(TableFormat.MIXED_ICEBERG)
+            .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
     arcticCatalogMeta.setCatalogName(EXTERNAL_HADOOP_CATALOG_NAME);
     ams.getAmsHandler().createCatalog(arcticCatalogMeta);
 
     HiveConf hiveConf = hms.getHiveConf();
-    CatalogMeta hiveCatalogMeta = HiveCatalogTestHelper.build(hiveConf, TableFormat.MIXED_HIVE)
+    CatalogMeta hiveCatalogMeta =
+        HiveCatalogTestHelper.build(hiveConf, TableFormat.MIXED_HIVE)
             .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
     hiveCatalogMeta.setCatalogName(EXTERNAL_HIVE_CATALOG_NAME);
     ams.getAmsHandler().createCatalog(hiveCatalogMeta);
 
-
-    CatalogMeta mixedIcebergHiveCatalogMeta = HiveCatalogTestHelper.build(hiveConf, TableFormat.MIXED_ICEBERG)
-        .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
+    CatalogMeta mixedIcebergHiveCatalogMeta =
+        HiveCatalogTestHelper.build(hiveConf, TableFormat.MIXED_ICEBERG)
+            .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
     mixedIcebergHiveCatalogMeta.setCatalogName(EXTERNAL_MIXED_ICEBERG_HIVE);
     ams.getAmsHandler().createCatalog(mixedIcebergHiveCatalogMeta);
     catalogSet = true;
@@ -129,7 +131,8 @@ public class SparkTestContext {
 
   private String hiveVersion() {
     try {
-      return SparkTestContext.class.getClassLoader()
+      return SparkTestContext.class
+          .getClassLoader()
           .loadClass("org.apache.hadoop.hive.metastore.HiveMetaStoreClient")
           .getPackage()
           .getImplementationVersion();
@@ -149,10 +152,12 @@ public class SparkTestContext {
   public SparkSession getSparkSession(Map<String, String> externalConfigs) {
     Map<String, String> configs = Maps.newHashMap();
     configs.put("spark.sql.catalog." + EXTERNAL_HADOOP_CATALOG_NAME, CATALOG_IMPL);
-    configs.put("spark.sql.catalog." + EXTERNAL_HADOOP_CATALOG_NAME + ".url",
+    configs.put(
+        "spark.sql.catalog." + EXTERNAL_HADOOP_CATALOG_NAME + ".url",
         this.ams.getServerUrl() + "/" + EXTERNAL_HADOOP_CATALOG_NAME);
     configs.put("spark.sql.catalog." + EXTERNAL_HIVE_CATALOG_NAME, CATALOG_IMPL);
-    configs.put("spark.sql.catalog." + EXTERNAL_HIVE_CATALOG_NAME + ".url",
+    configs.put(
+        "spark.sql.catalog." + EXTERNAL_HIVE_CATALOG_NAME + ".url",
         this.ams.getServerUrl() + "/" + EXTERNAL_HIVE_CATALOG_NAME);
 
     configs.put("hive.metastore.uris", this.hiveMetastoreUri());
@@ -210,14 +215,10 @@ public class SparkTestContext {
     if (create) {
       cleanLocalSparkContext();
 
-      SparkConf sparkconf = new SparkConf()
-          .setAppName("arctic-spark-unit-tests")
-          .setMaster("local[*]");
+      SparkConf sparkconf =
+          new SparkConf().setAppName("arctic-spark-unit-tests").setMaster("local[*]");
       sparkConf.forEach(sparkconf::set);
-      spark = SparkSession
-          .builder()
-          .config(sparkconf)
-          .getOrCreate();
+      spark = SparkSession.builder().config(sparkconf).getOrCreate();
       spark.sparkContext().setLogLevel("WARN");
       this.sparkConf = sparkConf;
     }

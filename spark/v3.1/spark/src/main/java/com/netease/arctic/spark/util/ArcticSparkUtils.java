@@ -41,13 +41,17 @@ import java.util.List;
 public class ArcticSparkUtils {
   private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkUtils.class);
 
-  public static TableCatalogAndIdentifier tableCatalogAndIdentifier(SparkSession spark, List<String> nameParts) {
-    Spark3Util.CatalogAndIdentifier catalogAndIdentifier = Spark3Util.catalogAndIdentifier(
-        spark, nameParts, spark.sessionState().catalogManager().currentCatalog());
+  public static TableCatalogAndIdentifier tableCatalogAndIdentifier(
+      SparkSession spark, List<String> nameParts) {
+    Spark3Util.CatalogAndIdentifier catalogAndIdentifier =
+        Spark3Util.catalogAndIdentifier(
+            spark, nameParts, spark.sessionState().catalogManager().currentCatalog());
     CatalogPlugin catalog = catalogAndIdentifier.catalog();
-    Preconditions.checkArgument(catalog instanceof TableCatalog,
+    Preconditions.checkArgument(
+        catalog instanceof TableCatalog,
         "Cannot resolver name-parts %s to catalog and identifier, %s is not a table catalog",
-        Joiner.on(',').join(nameParts), catalog.name());
+        Joiner.on(',').join(nameParts),
+        catalog.name());
     return new TableCatalogAndIdentifier((TableCatalog) catalog, catalogAndIdentifier.identifier());
   }
 

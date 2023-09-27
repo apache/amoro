@@ -41,15 +41,16 @@ public class DataComparator {
     this.expectRecords = expectRecords;
     this.actualRecords = actualRecords;
 
-    this.fieldValueTrans = x -> {
-      if (x instanceof LocalDateTime) {
-        // TODO: there are something wrong in timestamp handle for mixed-iceberg.
-        return 0;
-      } else if (x instanceof OffsetDateTime) {
-        return 0;
-      }
-      return x;
-    };
+    this.fieldValueTrans =
+        x -> {
+          if (x instanceof LocalDateTime) {
+            // TODO: there are something wrong in timestamp handle for mixed-iceberg.
+            return 0;
+          } else if (x instanceof OffsetDateTime) {
+            return 0;
+          }
+          return x;
+        };
   }
 
   public DataComparator ignoreOrder(Comparator<Record> comparator) {
@@ -70,7 +71,8 @@ public class DataComparator {
   }
 
   public void assertRecordsEqual() {
-    Assert.assertEquals("records size is not expected.", expectRecords.size(), actualRecords.size());
+    Assert.assertEquals(
+        "records size is not expected.", expectRecords.size(), actualRecords.size());
     if (comparator != null) {
       expectRecords.sort(comparator);
       actualRecords.sort(comparator);
@@ -80,11 +82,12 @@ public class DataComparator {
   }
 
   private void assertRecord(Record expectRecord, Record actualRecord) {
-    Assert.assertEquals("The record has different schema",
-        expectRecord.struct().fields().size(), actualRecord.struct().fields().size());
+    Assert.assertEquals(
+        "The record has different schema",
+        expectRecord.struct().fields().size(),
+        actualRecord.struct().fields().size());
     Types.StructType structType = expectRecord.struct();
     for (int i = 0; i < structType.fields().size(); i++) {
-
 
       Object expectValue = expectRecord.get(i);
       Object actualValue = actualRecord.get(i);
@@ -95,7 +98,6 @@ public class DataComparator {
       Assert.assertEquals("field values are different", transExpectValue, transActualValue);
     }
   }
-
 
   public static DataComparator build(List<Record> expectRecords, List<Record> actualRecords) {
     return new DataComparator(expectRecords, actualRecords);

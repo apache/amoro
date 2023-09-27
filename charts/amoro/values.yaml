@@ -89,7 +89,7 @@ amoroConf:
     driver: org.apache.derby.jdbc.EmbeddedDriver
     url: jdbc:derby:/tmp/amoro/derby;create=true
   #    type: mysql
-  #    jdbc-driver-class: com.mysql.cj.jdbc.Driver
+  #    driver: com.mysql.cj.jdbc.Driver
   #    url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
   #    username: admin
   #    password: admin
