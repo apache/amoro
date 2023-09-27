@@ -20,9 +20,15 @@
 <Configuration monitorInterval="10">
     <properties>
         <property name="LOG_HOME">${sys:log.home}</property>
+        <property name="CONSOLE_LEVEL">${env:CONSOLE_LEVEL:-off}</property>
     </properties>
 
     <Appenders>
+        <Console name="consoleAppender" target="SYSTEM_OUT">
+            <!--Set log format and color-->
+            <PatternLayout
+                    pattern="%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n"/>
+        </Console>
         <!--*********************File Log***********************-->
         <!--Logs with a grade of debug-->
         <RollingFile name="debugFileAppender"
@@ -112,6 +118,7 @@
 <!--            <AppenderRef ref="debugFileAppender" level="debug"/>-->
             <AppenderRef ref="infoFileAppender" level="info"/>
             <AppenderRef ref="errorFileAppender" level="error"/>
+            <AppenderRef ref="consoleAppender" level="${CONSOLE_LEVEL}" />
         </Root>
 
     </Loggers>

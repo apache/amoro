@@ -48,7 +48,6 @@ RUN find ./bin -name "*.sh" | xargs dos2unix
 RUN mkdir -p ./logs && touch ./logs/ams-info.log
 RUN ln -s /usr/local/ams/amoro-${AMORO_VERSION} /usr/local/amoro
 
-WORKDIR /usr/local
 CMD ["bash","-c","./amoro/bin/ams.sh start && tail -f ./amoro/logs/ams-info.log"]
 
 
