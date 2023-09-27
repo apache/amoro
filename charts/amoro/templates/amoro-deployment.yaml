@@ -37,10 +37,16 @@ spec:
           args: {{- tpl (toYaml .) $ | nindent 12 }}
             {{- end }}
           env:
+            {{- if eq .Values.amoroConf.database.type "mysql" }}
+            - name: "AMS_DATABASE_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}
+                  key: password
+            {{- end }}
            {{- with .Values.env }}
            {{- tpl (toYaml .) $ | nindent 12 }}
             {{- end }}
-          envFrom:
            {{- with .Values.envFrom }}
           {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}
