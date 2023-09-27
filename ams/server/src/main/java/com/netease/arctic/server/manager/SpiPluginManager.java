@@ -11,6 +11,10 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Plugin manager based on SPI
+ * @param <T> plugin type
+ */
 public abstract class SpiPluginManager<T extends AmoroPlugin> implements PluginManager<T> {
 
   private final Map<String, T> installedPlugins = new ConcurrentHashMap<>();

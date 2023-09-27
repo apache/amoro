@@ -6,5 +6,8 @@ package com.netease.arctic.ams.api;
  */
 public interface AmoroPlugin {
 
+  /**
+   * @return plugin name
+   */
   String name();
 }
