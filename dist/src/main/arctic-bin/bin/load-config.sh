@@ -50,16 +50,16 @@ export JVM_EXTRA_CONFIG=$JVM_EXTRA
 . "$AMORO_ENV_SH"
 
 # User-set environment variables have higher priority.
-if [ -n "$JVM_XMX_CONFIG" ]; then
+if [ -z "$JVM_XMX_CONFIG" ]; then
   export JVM_XMX_CONFIG=$JVM_XMX
 fi
-if [ -n "$JVM_XMS_CONFIG" ]; then
+if [ -z "$JVM_XMS_CONFIG" ]; then
   export JVM_XMS_CONFIG=$JVM_XMS
 fi
-if [ -n "$JMX_REMOTE_PORT_CONFIG" ]; then
+if [ -z "$JMX_REMOTE_PORT_CONFIG" ]; then
   export JMX_REMOTE_PORT_CONFIG=$JMX_REMOTE_PORT
 fi
-if [ -n "$JVM_EXTRA_CONFIG" ]; then
+if [ -z "$JVM_EXTRA_CONFIG" ]; then
   export JVM_EXTRA_CONFIG=$JVM_EXTRA
 fi
 
