@@ -22,7 +22,7 @@ CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 . $CURRENT_DIR/load-config.sh
 
 LIB_PATH=$AMORO_HOME/lib
-export CLASSPATH=$CLASSPATH:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -):$AMORO_CONF_DIR/optimize
+export CLASSPATH=$AMORO_CONF_DIR/optimize:$LIB_PATH/:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -)
 if [ -z $(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -) ]; then
   echo "Launching the localOptimize task lacks relevant jars, please check" >&2
   exit 1
