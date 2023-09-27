@@ -17,32 +17,34 @@ import java.util.stream.Stream;
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
 public class TestSparkCatalog extends SparkTableTestBase {
 
-
   public static Stream<Arguments> testTableFormats() {
-    return Stream.of(
-        Arguments.of(MIXED_HIVE),
-        Arguments.of(MIXED_ICEBERG),
-        Arguments.of(ICEBERG)
-    );
+    return Stream.of(Arguments.of(MIXED_HIVE), Arguments.of(MIXED_ICEBERG), Arguments.of(ICEBERG));
   }
 
   @ParameterizedTest
   @MethodSource
   public void testTableFormats(TableFormat format) {
-    String sqlText = "CREATE TABLE " + target() + " ( " +
-        "id int, " +
-        "data string, " +
-        "pt string" +
-        ") USING " + provider(format) + " PARTITIONED BY (pt) ";
+    String sqlText =
+        "CREATE TABLE "
+            + target()
+            + " ( "
+            + "id int, "
+            + "data string, "
+            + "pt string"
+            + ") USING "
+            + provider(format)
+            + " PARTITIONED BY (pt) ";
 
     sql(sqlText);
     tableExists();
     ArcticTable table = loadTable();
     Assertions.assertEquals(format, table.format());
 
-    sqlText = "INSERT INTO " + target() +
-        " VALUES " +
-        "(1, 'a', '2020-01-01'), (2, 'b', '2020-01-02'), (3, 'c', '2020-01-03')";
+    sqlText =
+        "INSERT INTO "
+            + target()
+            + " VALUES "
+            + "(1, 'a', '2020-01-01'), (2, 'b', '2020-01-02'), (3, 'c', '2020-01-03')";
     sql(sqlText);
 
     sqlText = "SELECT * FROM " + target();

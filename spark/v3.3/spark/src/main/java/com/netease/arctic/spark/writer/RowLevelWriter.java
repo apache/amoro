@@ -23,9 +23,7 @@ import org.apache.spark.sql.connector.write.DataWriter;
 
 import java.io.IOException;
 
-/**
- * A data writer responsible for writing a delta of rows.
- */
+/** A data writer responsible for writing a delta of rows. */
 public interface RowLevelWriter<T> extends DataWriter<T> {
   void delete(T row) throws IOException;
 

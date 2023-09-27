@@ -35,9 +35,11 @@ public class SimpleRowLevelDataWriter implements RowLevelWriter<InternalRow> {
   private final StructType schema;
   private final boolean isKeyedTable;
 
-  public SimpleRowLevelDataWriter(TaskWriter<InternalRow> insertWriter,
-                                  TaskWriter<InternalRow> deleteWrite,
-                                  StructType schema, boolean isKeyedTable) {
+  public SimpleRowLevelDataWriter(
+      TaskWriter<InternalRow> insertWriter,
+      TaskWriter<InternalRow> deleteWrite,
+      StructType schema,
+      boolean isKeyedTable) {
     this.insertWriter = insertWriter;
     this.deleteWrite = deleteWrite;
     this.schema = schema;
