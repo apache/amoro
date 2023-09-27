@@ -32,12 +32,15 @@ import com.netease.arctic.utils.TablePropertyUtil;
 import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -84,7 +87,7 @@ public class OptimizingEvaluator {
     tableFileScanHelper.withPartitionFilter(getPartitionFilter());
     initPartitionPlans(tableFileScanHelper);
     isInitialized = true;
-    LOG.info("{} finish initEvaluator and get {} partitions necessary to optimize, cost {} ms",
+    LOG.info("{} finished evaluating, found {} partitions that need optimizing in {} ms",
         arcticTable.id(), partitionPlanMap.size(), System.currentTimeMillis() - startTime);
   }
 
@@ -94,13 +97,21 @@ public class OptimizingEvaluator {
 
   private void initPartitionPlans(TableFileScanHelper tableFileScanHelper) {
     PartitionSpec partitionSpec = arcticTable.spec();
-    // add partition properties before adding files
-    for (TableFileScanHelper.FileScanResult fileScanResult : tableFileScanHelper.scan()) {
-      StructLike partition = fileScanResult.file().partition();
-      String partitionPath = partitionSpec.partitionToPath(partition);
-      PartitionEvaluator evaluator = partitionPlanMap.computeIfAbsent(partitionPath, this::buildEvaluator);
-      evaluator.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
+    long startTime = System.currentTimeMillis();
+    long count = 0;
+    try (CloseableIterable<TableFileScanHelper.FileScanResult> results = tableFileScanHelper.scan()) {
+      for (TableFileScanHelper.FileScanResult fileScanResult : results) {
+        StructLike partition = fileScanResult.file().partition();
+        String partitionPath = partitionSpec.partitionToPath(partition);
+        PartitionEvaluator evaluator = partitionPlanMap.computeIfAbsent(partitionPath, this::buildEvaluator);
+        evaluator.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
+        count++;
+      }
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
     }
+    LOG.info("{} finished file scanning, scanning {} files in {} ms", arcticTable.id(), count,
+        System.currentTimeMillis() - startTime);
     partitionPlanMap.values().removeIf(plan -> !plan.isNecessary());
   }
 

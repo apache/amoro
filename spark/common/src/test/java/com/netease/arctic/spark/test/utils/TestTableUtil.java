@@ -22,7 +22,7 @@ import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.hive.io.reader.GenericAdaptHiveIcebergDataReader;
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.io.reader.GenericIcebergDataReader;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.scan.CombinedScanTask;
@@ -196,7 +196,7 @@ public class TestTableUtil {
       if (table instanceof SupportHive) {
         records = readKeyedTable(table.asKeyedTable(), expression);
       } else {
-        records = DataTestHelpers.readKeyedTable(table.asKeyedTable(), expression);
+        records = MixedDataTestHelpers.readKeyedTable(table.asKeyedTable(), expression);
       }
     } else {
       records = unkeyedTableRecords(table.asUnkeyedTable(), expression);

@@ -19,19 +19,16 @@
 package com.netease.arctic.flink.read.hybrid.reader;
 
 import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.enumerator.TestContinuousSplitPlannerImpl;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ChangelogSplit;
 import com.netease.arctic.flink.read.source.DataIterator;
 import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.BasicArcticFileScanTask;
-import com.netease.arctic.scan.TableEntriesScan;
+import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.data.GenericRowData;
@@ -39,10 +36,9 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.types.RowKind;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.FileContent;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.io.CloseableIterator;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.TaskWriter;
 import org.junit.Assert;
 import org.junit.Test;
@@ -65,35 +61,38 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   private static final AtomicInteger splitCount = new AtomicInteger();
 
   public TestRowDataReaderFunction() {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-      new BasicTableTestHelper(true, true));
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true));
   }
 
   @Test
   public void testReadChangelog() throws IOException {
 
-    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
+    List<ArcticSplit> arcticSplits =
+        FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
 
-    RowDataReaderFunction rowDataReaderFunction = new RowDataReaderFunction(
-        new Configuration(),
-        testKeyedTable.schema(),
-        testKeyedTable.schema(),
-        testKeyedTable.primaryKeySpec(),
-        null,
-        true,
-        testKeyedTable.io()
-    );
+    RowDataReaderFunction rowDataReaderFunction =
+        new RowDataReaderFunction(
+            new Configuration(),
+            testKeyedTable.schema(),
+            testKeyedTable.schema(),
+            testKeyedTable.primaryKeySpec(),
+            null,
+            true,
+            testKeyedTable.io());
 
     List<RowData> actual = new ArrayList<>();
-    arcticSplits.forEach(split -> {
-      LOG.info("ArcticSplit {}.", split);
-      DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
-      while (dataIterator.hasNext()) {
-        RowData rowData = dataIterator.next();
-        LOG.info("{}", rowData);
-        actual.add(rowData);
-      }
-    });
+    arcticSplits.forEach(
+        split -> {
+          LOG.info("ArcticSplit {}.", split);
+          DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
+          while (dataIterator.hasNext()) {
+            RowData rowData = dataIterator.next();
+            LOG.info("{}", rowData);
+            actual.add(rowData);
+          }
+        });
 
     assertArrayEquals(excepts(), actual);
 
@@ -102,81 +101,78 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
 
     testKeyedTable.changeTable().refresh();
     long nowSnapshotId = testKeyedTable.changeTable().currentSnapshot().snapshotId();
+    ChangeTableIncrementalScan changeTableScan =
+        testKeyedTable.changeTable().newScan().useSnapshot(nowSnapshotId);
 
-    TableEntriesScan entriesScan = TableEntriesScan.builder(testKeyedTable.changeTable())
-        .useSnapshot(nowSnapshotId)
-        .includeFileContent(FileContent.DATA)
-        .build();
     Snapshot snapshot = testKeyedTable.changeTable().snapshot(snapshotId);
     long fromSequence = snapshot.sequenceNumber();
-    
-    CloseableIterator<IcebergFileEntry> iterator = entriesScan.entries().iterator();
+
     Set<ArcticFileScanTask> appendLogTasks = new HashSet<>();
     Set<ArcticFileScanTask> deleteLogTasks = new HashSet<>();
-    while (iterator.hasNext()) {
-      IcebergFileEntry entry = iterator.next();
-      if (entry.getSequenceNumber() <= fromSequence) {
-        continue;
-      }
-      DefaultKeyedFile keyedFile =
-          DefaultKeyedFile.parseChange((DataFile) entry.getFile(), entry.getSequenceNumber());
-      BasicArcticFileScanTask task =
-          new BasicArcticFileScanTask(keyedFile, null, testKeyedTable.changeTable().spec(), null);
-      if (task.fileType().equals(DataFileType.INSERT_FILE)) {
-        appendLogTasks.add(task);
-      } else if (task.fileType().equals(DataFileType.EQ_DELETE_FILE)) {
-        deleteLogTasks.add(task);
-      } else {
-        throw new IllegalArgumentException(
-            String.format(
-                "DataFileType %s is not supported during change log reading period.",
-                task.fileType()));
+    try (CloseableIterable<FileScanTask> tasks = changeTableScan.planFiles()) {
+      for (FileScanTask fileScanTask : tasks) {
+        if (fileScanTask.file().dataSequenceNumber() <= fromSequence) {
+          continue;
+        }
+        ArcticFileScanTask arcticFileScanTask = (ArcticFileScanTask) fileScanTask;
+        if (arcticFileScanTask.fileType().equals(DataFileType.INSERT_FILE)) {
+          appendLogTasks.add(arcticFileScanTask);
+        } else if (arcticFileScanTask.fileType().equals(DataFileType.EQ_DELETE_FILE)) {
+          deleteLogTasks.add(arcticFileScanTask);
+        } else {
+          throw new IllegalArgumentException(
+              String.format(
+                  "DataFileType %s is not supported during change log reading period.",
+                  arcticFileScanTask.fileType()));
+        }
       }
     }
-    ChangelogSplit changelogSplit = new ChangelogSplit(appendLogTasks, deleteLogTasks, splitCount.incrementAndGet());
-    LOG.info("ArcticSplit {}.", changelogSplit);
+    ChangelogSplit changelogSplit =
+        new ChangelogSplit(appendLogTasks, deleteLogTasks, splitCount.incrementAndGet());
     actual.clear();
     DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(changelogSplit);
     while (dataIterator.hasNext()) {
       RowData rowData = dataIterator.next();
-      LOG.info("{}", rowData);
       actual.add(rowData);
     }
     assertArrayEquals(excepts2(), actual);
-
   }
 
   @Test
   public void testReadNodesUpMoved() throws IOException {
     writeUpdateWithSpecifiedMaskOne();
-    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
+    List<ArcticSplit> arcticSplits =
+        FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
 
-    RowDataReaderFunction rowDataReaderFunction = new RowDataReaderFunction(
-        new Configuration(),
-        testKeyedTable.schema(),
-        testKeyedTable.schema(),
-        testKeyedTable.primaryKeySpec(),
-        null,
-        true,
-        testKeyedTable.io()
-    );
+    RowDataReaderFunction rowDataReaderFunction =
+        new RowDataReaderFunction(
+            new Configuration(),
+            testKeyedTable.schema(),
+            testKeyedTable.schema(),
+            testKeyedTable.primaryKeySpec(),
+            null,
+            true,
+            testKeyedTable.io());
 
     List<RowData> actual = new ArrayList<>();
-    arcticSplits.forEach(split -> {
-      LOG.info("ArcticSplit {}.", split);
-      DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
-      while (dataIterator.hasNext()) {
-        RowData rowData = dataIterator.next();
-        LOG.info("{}", rowData);
-        actual.add(rowData);
-      }
-    });
+    arcticSplits.forEach(
+        split -> {
+          LOG.info("ArcticSplit {}.", split);
+          DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
+          while (dataIterator.hasNext()) {
+            RowData rowData = dataIterator.next();
+            LOG.info("{}", rowData);
+            actual.add(rowData);
+          }
+        });
 
     List<RowData> excepts = exceptsCollection();
     excepts.addAll(generateRecords());
-    RowData[] array = excepts.stream().sorted(Comparator.comparing(RowData::toString))
-        .collect(Collectors.toList())
-        .toArray(new RowData[excepts.size()]);
+    RowData[] array =
+        excepts.stream()
+            .sorted(Comparator.comparing(RowData::toString))
+            .collect(Collectors.toList())
+            .toArray(new RowData[excepts.size()]);
     assertArrayEquals(array, actual);
   }
 
@@ -185,16 +181,14 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   }
 
   public static RowData[] sortRowDataCollection(Collection<RowData> records) {
-    return records.stream().sorted(
-            Comparator
-                .comparing(
-                    RowData::toString))
+    return records.stream()
+        .sorted(Comparator.comparing(RowData::toString))
         .collect(Collectors.toList())
         .toArray(new RowData[records.size()]);
   }
 
   protected void writeUpdate() throws IOException {
-    //write change update
+    // write change update
     writeUpdate(updateRecords());
   }
 
@@ -208,7 +202,8 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
     writeUpdateWithSpecifiedMask(excepts, testKeyedTable, 1);
   }
 
-  protected void writeUpdateWithSpecifiedMask(List<RowData> input, KeyedTable table, long mask) throws IOException {
+  protected void writeUpdateWithSpecifiedMask(List<RowData> input, KeyedTable table, long mask)
+      throws IOException {
     // write change update
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(table, ROW_TYPE, false, mask);
 
@@ -219,7 +214,7 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   }
 
   protected void writeUpdate(List<RowData> input, KeyedTable table) throws IOException {
-    //write change update
+    // write change update
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(table, ROW_TYPE, false);
 
     for (RowData record : input) {
@@ -230,25 +225,68 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
 
   protected List<RowData> generateRecords() {
     List<RowData> excepts = new ArrayList<>();
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 7, StringData.fromString("syan"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_BEFORE, 2, StringData.fromString("lily"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_AFTER, 2, StringData.fromString("daniel"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_BEFORE, 7, StringData.fromString("syan"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_AFTER, 7, StringData.fromString("syan2"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.INSERT,
+            7,
+            StringData.fromString("syan"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.UPDATE_BEFORE,
+            2,
+            StringData.fromString("lily"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.UPDATE_AFTER,
+            2,
+            StringData.fromString("daniel"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.UPDATE_BEFORE,
+            7,
+            StringData.fromString("syan"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.UPDATE_AFTER,
+            7,
+            StringData.fromString("syan2"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
     return excepts;
   }
 
   protected List<RowData> updateRecords() {
     List<RowData> excepts = new ArrayList<>();
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_BEFORE, 5, StringData.fromString("lind"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.UPDATE_AFTER, 5, StringData.fromString("lina"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.UPDATE_BEFORE,
+            5,
+            StringData.fromString("lind"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.UPDATE_AFTER,
+            5,
+            StringData.fromString("lina"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
     return excepts;
   }
 
   protected RowData[] excepts2() {
     List<RowData> excepts = updateRecords();
 
-    return updateRecords().stream().sorted(Comparator.comparing(RowData::toString))
+    return updateRecords().stream()
+        .sorted(Comparator.comparing(RowData::toString))
         .collect(Collectors.toList())
         .toArray(new RowData[excepts.size()]);
   }
@@ -256,21 +294,70 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   protected RowData[] excepts() {
     List<RowData> excepts = exceptsCollection();
 
-    return excepts.stream().sorted(Comparator.comparing(RowData::toString))
+    return excepts.stream()
+        .sorted(Comparator.comparing(RowData::toString))
         .collect(Collectors.toList())
         .toArray(new RowData[excepts.size()]);
   }
 
   protected List<RowData> exceptsCollection() {
     List<RowData> excepts = new ArrayList<>();
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 1, StringData.fromString("john"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 2, StringData.fromString("lily"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 3, StringData.fromString("jake"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 4, StringData.fromString("sam"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 5, StringData.fromString("mary"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 6, StringData.fromString("mack"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.DELETE, 5, StringData.fromString("mary"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
-    excepts.add(GenericRowData.ofKind(RowKind.INSERT, 5, StringData.fromString("lind"), ldt.toEpochSecond(ZoneOffset.UTC), TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.INSERT,
+            1,
+            StringData.fromString("john"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.INSERT,
+            2,
+            StringData.fromString("lily"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.INSERT,
+            3,
+            StringData.fromString("jake"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.INSERT,
+            4,
+            StringData.fromString("sam"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.INSERT,
+            5,
+            StringData.fromString("mary"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.INSERT,
+            6,
+            StringData.fromString("mack"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.DELETE,
+            5,
+            StringData.fromString("mary"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
+    excepts.add(
+        GenericRowData.ofKind(
+            RowKind.INSERT,
+            5,
+            StringData.fromString("lind"),
+            ldt.toEpochSecond(ZoneOffset.UTC),
+            TimestampData.fromLocalDateTime(ldt)));
     return excepts;
   }
 }

@@ -26,22 +26,19 @@ import org.apache.iceberg.expressions.Expression;
 import java.io.Closeable;
 import java.util.List;
 
-/**
- * This interface is introduced so that we can plug in a different split planner for unit test
- */
+/** This interface is introduced so that we can plug in a different split planner for unit test */
 @Internal
 public interface ContinuousSplitPlanner extends Closeable {
 
-  /**
-   * Discover the files appended between {@code lastPosition} and current table snapshot
-   */
+  /** Discover the files appended between {@code lastPosition} and current table snapshot */
   default ContinuousEnumerationResult planSplits(ArcticEnumeratorOffset lastPosition) {
     return planSplits(lastPosition, Lists.newArrayList());
   }
 
   /**
-   * Discover the files appended between {@code lastPosition} and current table snapshot,
-   * filter the data with expressions.
+   * Discover the files appended between {@code lastPosition} and current table snapshot, filter the
+   * data with expressions.
    */
-  ContinuousEnumerationResult planSplits(ArcticEnumeratorOffset lastPosition, List<Expression> filters);
+  ContinuousEnumerationResult planSplits(
+      ArcticEnumeratorOffset lastPosition, List<Expression> filters);
 }

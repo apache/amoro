@@ -39,8 +39,7 @@ import java.util.function.Supplier;
 
 /**
  * The SplitFetcherManager for Kafka source. This class is needed to help commit the offsets to
- * Kafka using the KafkaConsumer inside the {@link
- * KafkaPartitionSplitReader}.
+ * Kafka using the KafkaConsumer inside the {@link KafkaPartitionSplitReader}.
  */
 public class KafkaSourceFetcherManager
     extends SingleThreadFetcherManager<ConsumerRecord<byte[], byte[]>, KafkaPartitionSplit> {
@@ -49,11 +48,10 @@ public class KafkaSourceFetcherManager
   /**
    * Creates a new SplitFetcherManager with a single I/O threads.
    *
-   * @param elementsQueue       The queue that is used to hand over data from the I/O thread (the
-   *                            fetchers) to the reader (which emits the records and book-keeps the state. This must be
-   *                            the same queue instance that is also passed to the {@link SourceReaderBase}.
-   * @param splitReaderSupplier The factory for the split reader that connects to the source
-   *                            system.
+   * @param elementsQueue The queue that is used to hand over data from the I/O thread (the
+   *     fetchers) to the reader (which emits the records and book-keeps the state. This must be the
+   *     same queue instance that is also passed to the {@link SourceReaderBase}.
+   * @param splitReaderSupplier The factory for the split reader that connects to the source system.
    */
   public KafkaSourceFetcherManager(
       FutureCompletingBlockingQueue<RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>>>
@@ -97,8 +95,7 @@ public class KafkaSourceFetcherManager
           }
 
           @Override
-          public void wakeUp() {
-          }
+          public void wakeUp() {}
         });
   }
 }

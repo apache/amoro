@@ -33,7 +33,8 @@ public class LogKafkaRecordEmitter
       SourceOutput<RowData> output,
       KafkaPartitionSplitState splitState)
       throws Exception {
-    LogRecordKafkaWithRetractInfo<RowData> record = ((LogRecordKafkaWithRetractInfo<RowData>) element);
+    LogRecordKafkaWithRetractInfo<RowData> record =
+        ((LogRecordKafkaWithRetractInfo<RowData>) element);
     output.collect(record.getActualValue(), record.timestamp());
     ((LogKafkaPartitionSplitState) splitState).updateState(record);
   }

@@ -19,16 +19,19 @@
 
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
+import static com.netease.arctic.flink.read.FlinkSplitPlanner.planChangeTable;
+import static com.netease.arctic.flink.read.hybrid.enumerator.ArcticEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
+import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
+
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ChangelogSplit;
 import com.netease.arctic.flink.read.hybrid.split.SnapshotSplit;
 import com.netease.arctic.flink.table.ArcticTableLoader;
-import com.netease.arctic.scan.TableEntriesScan;
+import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.annotation.Internal;
-import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.expressions.Expression;
 import org.slf4j.Logger;
@@ -38,14 +41,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.netease.arctic.flink.read.FlinkSplitPlanner.planChangeTable;
-import static com.netease.arctic.flink.read.hybrid.enumerator.ArcticEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
-import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
-
 /**
- * Continuous planning {@link KeyedTable} by {@link ArcticEnumeratorOffset} and generate a
- * {@link ContinuousEnumerationResult}.
- * <p> {@link ContinuousEnumerationResult#splits()} includes the {@link SnapshotSplit}s and {@link ChangelogSplit}s.
+ * Continuous planning {@link KeyedTable} by {@link ArcticEnumeratorOffset} and generate a {@link
+ * ContinuousEnumerationResult}.
+ *
+ * <p>{@link ContinuousEnumerationResult#splits()} includes the {@link SnapshotSplit}s and {@link
+ * ChangelogSplit}s.
  */
 @Internal
 public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
@@ -61,10 +62,14 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
 
   @Override
   public void close() throws IOException {
+    if (loader != null) {
+      loader.close();
+    }
   }
 
   @Override
-  public ContinuousEnumerationResult planSplits(ArcticEnumeratorOffset lastOffset, List<Expression> filters) {
+  public ContinuousEnumerationResult planSplits(
+      ArcticEnumeratorOffset lastOffset, List<Expression> filters) {
     if (table == null) {
       table = loadArcticTable(loader).asKeyedTable();
     }
@@ -81,45 +86,42 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
     long fromChangeSnapshotId = lastPosition.changeSnapshotId();
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
     if (changeSnapshot != null && changeSnapshot.snapshotId() != fromChangeSnapshotId) {
-      Long fromSequence = null;
+      long snapshotId = changeSnapshot.snapshotId();
+      ChangeTableIncrementalScan changeTableScan =
+          table.changeTable().newScan().useSnapshot(snapshotId);
+      if (filters != null) {
+        for (Expression filter : filters) {
+          changeTableScan = changeTableScan.filter(filter);
+        }
+      }
+
       if (fromChangeSnapshotId != Long.MIN_VALUE) {
         Snapshot snapshot = table.changeTable().snapshot(fromChangeSnapshotId);
-        fromSequence = snapshot.sequenceNumber();
+        changeTableScan = changeTableScan.fromSequence(snapshot.sequenceNumber());
       }
 
-      long snapshotId = changeSnapshot.snapshotId();
-      TableEntriesScan.Builder tableEntriesScanBuilder =
-          TableEntriesScan.builder(table.changeTable())
-              .useSnapshot(snapshotId)
-              .includeFileContent(FileContent.DATA);
-      if (filters != null) {
-        filters.forEach(tableEntriesScanBuilder::withDataFilter);
-      }
-      TableEntriesScan entriesScan = tableEntriesScanBuilder.build();
-
-      List<ArcticSplit> arcticChangeSplit =
-          planChangeTable(entriesScan, fromSequence, table.changeTable().spec(), splitCount);
+      List<ArcticSplit> arcticChangeSplit = planChangeTable(changeTableScan, splitCount);
       return new ContinuousEnumerationResult(
-          arcticChangeSplit,
-          lastPosition,
-          ArcticEnumeratorOffset.of(snapshotId, null));
+          arcticChangeSplit, lastPosition, ArcticEnumeratorOffset.of(snapshotId, null));
     }
     return ContinuousEnumerationResult.EMPTY;
   }
 
   protected ContinuousEnumerationResult discoverInitialSplits(List<Expression> filters) {
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
+    // todo ShuffleSplitAssigner doesn't support MergeOnReadSplit right now,
+    //  because it doesn't implement the dataTreeNode() method
+    //  fix AMORO-1950 in the future.
     List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(table, filters, splitCount);
 
-    long changeStartSnapshotId = changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;
+    long changeStartSnapshotId =
+        changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;
     if (changeSnapshot == null && CollectionUtils.isEmpty(arcticSplits)) {
       LOG.info("There have no change snapshot, and no base splits in table: {}.", table);
       return ContinuousEnumerationResult.EMPTY;
     }
 
     return new ContinuousEnumerationResult(
-        arcticSplits,
-        null,
-        ArcticEnumeratorOffset.of(changeStartSnapshotId, null));
+        arcticSplits, null, ArcticEnumeratorOffset.of(changeStartSnapshotId, null));
   }
 }

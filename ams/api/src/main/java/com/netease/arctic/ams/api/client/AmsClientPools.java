@@ -14,8 +14,9 @@ import org.apache.thrift.protocol.TProtocol;
  */
 public class AmsClientPools {
 
-  private static final int CLIENT_POOL_MIN = 0;
-  private static final int CLIENT_POOL_MAX = 5;
+  private static final int CLIENT_POOL_MIN_IDLE = 0;
+  private static final int CLIENT_POOL_MAX_IDLE = 5;
+  private static final int CLIENT_POOL_MAX_WAIT_MS = 5000;
 
   private static final LoadingCache<String, ThriftClientPool<ArcticTableMetastore.Client>> CLIENT_POOLS
       = Caffeine.newBuilder()
@@ -32,8 +33,9 @@ public class AmsClientPools {
   private static ThriftClientPool<ArcticTableMetastore.Client> buildClientPool(String url) {
     PoolConfig poolConfig = new PoolConfig();
     poolConfig.setFailover(true);
-    poolConfig.setMinIdle(CLIENT_POOL_MIN);
-    poolConfig.setMaxIdle(CLIENT_POOL_MAX);
+    poolConfig.setMinIdle(CLIENT_POOL_MIN_IDLE);
+    poolConfig.setMaxIdle(CLIENT_POOL_MAX_IDLE);
+    poolConfig.setMaxWaitMillis(CLIENT_POOL_MAX_WAIT_MS);
     return new ThriftClientPool<>(
         url,
         s -> {

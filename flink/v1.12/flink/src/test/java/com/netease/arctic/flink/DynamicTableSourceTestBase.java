@@ -32,8 +32,8 @@ import org.apache.flink.types.RowKind;
 
 import java.io.Serializable;
 
-public abstract class DynamicTableSourceTestBase implements ScanTableSource,
-    SupportsWatermarkPushDown, Serializable {
+public abstract class DynamicTableSourceTestBase
+    implements ScanTableSource, SupportsWatermarkPushDown, Serializable {
 
   public static final long serialVersionUID = 1L;
   private WatermarkStrategy<RowData> watermarkStrategy;
@@ -49,7 +49,8 @@ public abstract class DynamicTableSourceTestBase implements ScanTableSource,
   }
 
   @Override
-  public ScanTableSource.ScanRuntimeProvider getScanRuntimeProvider(ScanContext runtimeProviderContext) {
+  public ScanTableSource.ScanRuntimeProvider getScanRuntimeProvider(
+      ScanContext runtimeProviderContext) {
     init();
     return SourceFunctionProvider.of(
         new SourceFunction<RowData>() {
@@ -62,8 +63,7 @@ public abstract class DynamicTableSourceTestBase implements ScanTableSource,
           }
 
           @Override
-          public void cancel() {
-          }
+          public void cancel() {}
         },
         false);
   }
@@ -73,11 +73,12 @@ public abstract class DynamicTableSourceTestBase implements ScanTableSource,
     return this.getClass().getSimpleName();
   }
 
-  public void init() {
-  }
+  public void init() {}
 
-  public abstract void doRun(WatermarkGenerator<RowData> generator, WatermarkOutput output,
-                             SourceFunction.SourceContext<RowData> ctx);
+  public abstract void doRun(
+      WatermarkGenerator<RowData> generator,
+      WatermarkOutput output,
+      SourceFunction.SourceContext<RowData> ctx);
 
   @Override
   public void applyWatermark(WatermarkStrategy<RowData> watermarkStrategy) {
@@ -95,12 +96,10 @@ public abstract class DynamicTableSourceTestBase implements ScanTableSource,
     @Override
     public void emitWatermark(Watermark watermark) {
       ctx.emitWatermark(
-          new org.apache.flink.streaming.api.watermark.Watermark(
-              watermark.getTimestamp()));
+          new org.apache.flink.streaming.api.watermark.Watermark(watermark.getTimestamp()));
     }
 
     @Override
-    public void markIdle() {
-    }
+    public void markIdle() {}
   }
 }

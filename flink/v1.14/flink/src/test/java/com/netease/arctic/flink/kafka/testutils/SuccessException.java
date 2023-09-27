@@ -18,9 +18,7 @@
 
 package com.netease.arctic.flink.kafka.testutils;
 
-/**
- * Exception that is thrown to terminate a program and indicate success.
- */
+/** Exception that is thrown to terminate a program and indicate success. */
 public class SuccessException extends RuntimeException {
   private static final long serialVersionUID = -7011865671593955887L;
 }

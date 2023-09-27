@@ -18,6 +18,13 @@
 
 package com.netease.arctic.flink.read;
 
+import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
+import static org.apache.flink.util.Preconditions.checkArgument;
+import static org.apache.flink.util.Preconditions.checkNotNull;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.catalog.ArcticCatalog;
@@ -97,13 +104,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
-import static org.apache.flink.util.Preconditions.checkArgument;
-import static org.apache.flink.util.Preconditions.checkNotNull;
-
 public class TestArcticSource extends TestRowDataReaderFunction implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(TestArcticSource.class);
   private static final long serialVersionUID = 7418812854449034756L;
@@ -122,7 +122,8 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
   protected KeyedTable testFailoverTable;
   protected static final String sinkTableName = "test_sink_exactly_once";
   protected static final TableIdentifier FAIL_TABLE_ID =
-      TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, sinkTableName);
+      TableIdentifier.of(
+          TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME, sinkTableName);;
 
   @Before
   public void testSetup() throws IOException {
@@ -134,11 +135,13 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     }
 
     if (!testCatalog.tableExists(FAIL_TABLE_ID)) {
-      testFailoverTable = testCatalog
-          .newTableBuilder(FAIL_TABLE_ID, TABLE_SCHEMA)
-          .withPartitionSpec(BasicTableTestHelper.SPEC)
-          .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
-          .create().asKeyedTable();
+      testFailoverTable =
+          testCatalog
+              .newTableBuilder(FAIL_TABLE_ID, TABLE_SCHEMA)
+              .withPartitionSpec(BasicTableTestHelper.SPEC)
+              .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
+              .create()
+              .asKeyedTable();
     }
   }
 
@@ -158,20 +161,20 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     // enable checkpoint
     env.enableCheckpointing(3000);
     // set the source parallelism to 4
-    final CloseableIterator<RowData> resultIterator = env.fromSource(
-        arcticSource,
-        WatermarkStrategy.noWatermarks(),
-        "ArcticParallelSource"
-    ).setParallelism(PARALLELISM).executeAndCollect();
+    final CloseableIterator<RowData> resultIterator =
+        env.fromSource(arcticSource, WatermarkStrategy.noWatermarks(), "ArcticParallelSource")
+            .setParallelism(PARALLELISM)
+            .executeAndCollect();
 
     List<RowData> actualResult = new ArrayList<>();
 
-    resultIterator.forEachRemaining(row -> {
-      GenericRowData rowData = convert(row);
-      actualResult.add(rowData);
-    });
-    Assert.assertEquals(8, actualResult.size());
-    assertArrayEquals(excepts(), actualResult);
+    resultIterator.forEachRemaining(
+        row -> {
+          GenericRowData rowData = convert(row);
+          actualResult.add(rowData);
+        });
+    RowData[] expected = expectedAfterMOR();
+    assertArrayEquals(expected, actualResult);
   }
 
   @Test
@@ -185,7 +188,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
   }
 
   public void testArcticSource(FailoverType failoverType) throws Exception {
-    List<RowData> expected = new ArrayList<>(exceptsCollection());
+    List<RowData> expected = new ArrayList<>(expectedCollection());
     List<RowData> updated = updateRecords();
     writeUpdate(updated);
     List<RowData> records = generateRecords(2, 1);
@@ -199,17 +202,15 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     env.enableCheckpointing(1000);
     env.setRestartStrategy(RestartStrategies.fixedDelayRestart(1, 0));
 
-    DataStream<RowData> input = env.fromSource(
-            arcticSource,
-            WatermarkStrategy.noWatermarks(),
-            "ArcticParallelSource")
-        .setParallelism(PARALLELISM);
+    DataStream<RowData> input =
+        env.fromSource(arcticSource, WatermarkStrategy.noWatermarks(), "ArcticParallelSource")
+            .setParallelism(PARALLELISM);
 
+    List<RowData> expectedAfterMoR = new ArrayList<>(mor(expected));
     DataStream<RowData> streamFailingInTheMiddleOfReading =
-        RecordCounterToFail.wrapWithFailureAfter(input, expected.size() / 2);
+        RecordCounterToFail.wrapWithFailureAfter(input, expectedAfterMoR.size() / 2);
 
-    FlinkSink
-        .forRowData(streamFailingInTheMiddleOfReading)
+    FlinkSink.forRowData(streamFailingInTheMiddleOfReading)
         .context(Optional::of)
         .table(testFailoverTable)
         .tableLoader(ArcticTableLoader.of(FAIL_TABLE_ID, catalogBuilder))
@@ -226,7 +227,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
         RecordCounterToFail::continueProcessing,
         miniClusterResource.getMiniCluster());
 
-    assertRecords(testFailoverTable, expected, Duration.ofMillis(10), 12000);
+    assertRecords(testFailoverTable, expectedAfterMoR, Duration.ofMillis(10), 12000);
   }
 
   @Test(timeout = 60000)
@@ -242,11 +243,9 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     env.enableCheckpointing(1000);
     env.setRestartStrategy(RestartStrategies.fixedDelayRestart(10, 0));
 
-    DataStream<RowData> input = env.fromSource(
-            arcticSource,
-            WatermarkStrategy.noWatermarks(),
-            "ArcticParallelSource")
-        .setParallelism(PARALLELISM);
+    DataStream<RowData> input =
+        env.fromSource(arcticSource, WatermarkStrategy.noWatermarks(), "ArcticParallelSource")
+            .setParallelism(PARALLELISM);
 
     WatermarkAwareFailWrapper.wrapWithFailureAfter(input);
 
@@ -277,11 +276,13 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
 
     JobClient jobClient = clientAndIterator.client;
 
-    List<RowData> actualResult = collectRecordsFromUnboundedStream(clientAndIterator, excepts().length);
+    List<RowData> actualResult =
+        collectRecordsFromUnboundedStream(clientAndIterator, excepts().length);
 
     assertArrayEquals(excepts(), actualResult);
 
-    LOG.info("begin write update_before update_after data and commit new snapshot to change table.");
+    LOG.info(
+        "begin write update_before update_after data and commit new snapshot to change table.");
     writeUpdate();
 
     actualResult = collectRecordsFromUnboundedStream(clientAndIterator, excepts2().length);
@@ -292,34 +293,57 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
 
   @Test(timeout = 60000)
   public void testArcticContinuousSourceWithEmptyChangeInInit() throws Exception {
-    TableIdentifier tableId = TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_empty_change");
-    KeyedTable table = getCatalog()
-        .newTableBuilder(tableId, TABLE_SCHEMA)
-        .withPartitionSpec(BasicTableTestHelper.SPEC)
-        .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
-        .create().asKeyedTable();
+    TableIdentifier tableId =
+        TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_empty_change");
+    KeyedTable table =
+        getCatalog()
+            .newTableBuilder(tableId, TABLE_SCHEMA)
+            .withPartitionSpec(BasicTableTestHelper.SPEC)
+            .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
+            .create()
+            .asKeyedTable();
 
     TaskWriter<RowData> taskWriter = createTaskWriter(true);
-    List<RowData> baseData = new ArrayList<RowData>() {{
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 1, StringData.fromString("john"), ldt.toEpochSecond(ZoneOffset.UTC),
-          TimestampData.fromLocalDateTime(ldt)));
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 2, StringData.fromString("lily"), ldt.toEpochSecond(ZoneOffset.UTC),
-          TimestampData.fromLocalDateTime(ldt)));
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 3, StringData.fromString("jake"), ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-          TimestampData.fromLocalDateTime(ldt.plusDays(1))));
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 4, StringData.fromString("sam"), ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-          TimestampData.fromLocalDateTime(ldt.plusDays(1))));
-    }};
+    List<RowData> baseData =
+        new ArrayList<RowData>() {
+          {
+            add(
+                GenericRowData.ofKind(
+                    RowKind.INSERT,
+                    1,
+                    StringData.fromString("john"),
+                    ldt.toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(ldt)));
+            add(
+                GenericRowData.ofKind(
+                    RowKind.INSERT,
+                    2,
+                    StringData.fromString("lily"),
+                    ldt.toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(ldt)));
+            add(
+                GenericRowData.ofKind(
+                    RowKind.INSERT,
+                    3,
+                    StringData.fromString("jake"),
+                    ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+            add(
+                GenericRowData.ofKind(
+                    RowKind.INSERT,
+                    4,
+                    StringData.fromString("sam"),
+                    ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+          }
+        };
     for (RowData record : baseData) {
       taskWriter.write(record);
     }
     commit(table, taskWriter.complete(), true);
 
-    ArcticSource<RowData> arcticSource = initArcticSource(true, SCAN_STARTUP_MODE_EARLIEST, tableId);
+    ArcticSource<RowData> arcticSource =
+        initArcticSource(true, SCAN_STARTUP_MODE_EARLIEST, tableId);
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     // enable checkpoint
     env.enableCheckpointing(1000);
@@ -327,11 +351,13 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
 
     JobClient jobClient = clientAndIterator.client;
 
-    List<RowData> actualResult = collectRecordsFromUnboundedStream(clientAndIterator, baseData.size());
+    List<RowData> actualResult =
+        collectRecordsFromUnboundedStream(clientAndIterator, baseData.size());
 
     Assert.assertEquals(new HashSet<>(baseData), new HashSet<>(actualResult));
 
-    LOG.info("begin write update_before update_after data and commit new snapshot to change table.");
+    LOG.info(
+        "begin write update_before update_after data and commit new snapshot to change table.");
     writeUpdate(updateRecords(), table);
     writeUpdate(updateRecords(), table);
 
@@ -346,27 +372,48 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
   public void testArcticSourceEnumeratorWithChangeExpired() throws Exception {
     final String MAX_CONTINUOUS_EMPTY_COMMITS = "flink.max-continuous-empty-commits";
     TableIdentifier tableId = TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_keyed_tb");
-    KeyedTable table = getCatalog()
-        .newTableBuilder(tableId, TABLE_SCHEMA)
-        .withProperty(MAX_CONTINUOUS_EMPTY_COMMITS, "1")
-        .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
-        .create().asKeyedTable();
+    KeyedTable table =
+        getCatalog()
+            .newTableBuilder(tableId, TABLE_SCHEMA)
+            .withProperty(MAX_CONTINUOUS_EMPTY_COMMITS, "1")
+            .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
+            .create()
+            .asKeyedTable();
 
     TaskWriter<RowData> taskWriter = createTaskWriter(table, false);
-    List<RowData> changeData = new ArrayList<RowData>() {{
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 1, StringData.fromString("john"), ldt.toEpochSecond(ZoneOffset.UTC),
-          TimestampData.fromLocalDateTime(ldt)));
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 2, StringData.fromString("lily"), ldt.toEpochSecond(ZoneOffset.UTC),
-          TimestampData.fromLocalDateTime(ldt)));
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 3, StringData.fromString("jake"), ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-          TimestampData.fromLocalDateTime(ldt.plusDays(1))));
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 4, StringData.fromString("sam"), ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-          TimestampData.fromLocalDateTime(ldt.plusDays(1))));
-    }};
+    List<RowData> changeData =
+        new ArrayList<RowData>() {
+          {
+            add(
+                GenericRowData.ofKind(
+                    RowKind.INSERT,
+                    1,
+                    StringData.fromString("john"),
+                    ldt.toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(ldt)));
+            add(
+                GenericRowData.ofKind(
+                    RowKind.INSERT,
+                    2,
+                    StringData.fromString("lily"),
+                    ldt.toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(ldt)));
+            add(
+                GenericRowData.ofKind(
+                    RowKind.INSERT,
+                    3,
+                    StringData.fromString("jake"),
+                    ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+            add(
+                GenericRowData.ofKind(
+                    RowKind.INSERT,
+                    4,
+                    StringData.fromString("sam"),
+                    ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+          }
+        };
     for (RowData record : changeData) {
       taskWriter.write(record);
     }
@@ -382,7 +429,8 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
 
     final Duration monitorInterval = Duration.ofSeconds(1);
     ArcticSource<RowData> arcticSource =
-        initArcticSourceWithMonitorInterval(true, SCAN_STARTUP_MODE_EARLIEST, tableId, monitorInterval);
+        initArcticSourceWithMonitorInterval(
+            true, SCAN_STARTUP_MODE_EARLIEST, tableId, monitorInterval);
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     // enable checkpoint
     env.enableCheckpointing(1000);
@@ -390,7 +438,8 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
 
     JobClient jobClient = clientAndIterator.client;
 
-    List<RowData> actualResult = collectRecordsFromUnboundedStream(clientAndIterator, changeData.size());
+    List<RowData> actualResult =
+        collectRecordsFromUnboundedStream(clientAndIterator, changeData.size());
     Assert.assertEquals(new HashSet<>(changeData), new HashSet<>(actualResult));
 
     // expire changeTable snapshots
@@ -425,27 +474,48 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
   public void testArcticSourceEnumeratorWithBaseExpired() throws Exception {
     final String MAX_CONTINUOUS_EMPTY_COMMITS = "flink.max-continuous-empty-commits";
     TableIdentifier tableId = TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_keyed_tb");
-    KeyedTable table = getCatalog()
-        .newTableBuilder(tableId, TABLE_SCHEMA)
-        .withProperty(MAX_CONTINUOUS_EMPTY_COMMITS, "1")
-        .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
-        .create().asKeyedTable();
+    KeyedTable table =
+        getCatalog()
+            .newTableBuilder(tableId, TABLE_SCHEMA)
+            .withProperty(MAX_CONTINUOUS_EMPTY_COMMITS, "1")
+            .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
+            .create()
+            .asKeyedTable();
 
     TaskWriter<RowData> taskWriter = createTaskWriter(table, true);
-    List<RowData> baseData = new ArrayList<RowData>() {{
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 1, StringData.fromString("john"), ldt.toEpochSecond(ZoneOffset.UTC),
-          TimestampData.fromLocalDateTime(ldt)));
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 2, StringData.fromString("lily"), ldt.toEpochSecond(ZoneOffset.UTC),
-          TimestampData.fromLocalDateTime(ldt)));
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 3, StringData.fromString("jake"), ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-          TimestampData.fromLocalDateTime(ldt.plusDays(1))));
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 4, StringData.fromString("sam"), ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
-          TimestampData.fromLocalDateTime(ldt.plusDays(1))));
-    }};
+    List<RowData> baseData =
+        new ArrayList<RowData>() {
+          {
+            add(
+                GenericRowData.ofKind(
+                    RowKind.INSERT,
+                    1,
+                    StringData.fromString("john"),
+                    ldt.toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(ldt)));
+            add(
+                GenericRowData.ofKind(
+                    RowKind.INSERT,
+                    2,
+                    StringData.fromString("lily"),
+                    ldt.toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(ldt)));
+            add(
+                GenericRowData.ofKind(
+                    RowKind.INSERT,
+                    3,
+                    StringData.fromString("jake"),
+                    ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+            add(
+                GenericRowData.ofKind(
+                    RowKind.INSERT,
+                    4,
+                    StringData.fromString("sam"),
+                    ldt.plusDays(1).toEpochSecond(ZoneOffset.UTC),
+                    TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+          }
+        };
     for (RowData record : baseData) {
       taskWriter.write(record);
     }
@@ -461,7 +531,8 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
 
     final Duration monitorInterval = Duration.ofSeconds(1);
     ArcticSource<RowData> arcticSource =
-        initArcticSourceWithMonitorInterval(true, SCAN_STARTUP_MODE_EARLIEST, tableId, monitorInterval);
+        initArcticSourceWithMonitorInterval(
+            true, SCAN_STARTUP_MODE_EARLIEST, tableId, monitorInterval);
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     // enable checkpoint
     env.enableCheckpointing(1000);
@@ -469,7 +540,8 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
 
     JobClient jobClient = clientAndIterator.client;
 
-    List<RowData> actualResult = collectRecordsFromUnboundedStream(clientAndIterator, baseData.size());
+    List<RowData> actualResult =
+        collectRecordsFromUnboundedStream(clientAndIterator, baseData.size());
     Assert.assertEquals(new HashSet<>(baseData), new HashSet<>(actualResult));
 
     // expire baseTable snapshots
@@ -514,14 +586,16 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     while (true) {
       if (JobStatus.RUNNING == jobClient.getJobStatus().get()) {
         Thread.sleep(500);
-        LOG.info("begin write update_before update_after data and commit new snapshot to change table.");
+        LOG.info(
+            "begin write update_before update_after data and commit new snapshot to change table.");
         writeUpdate();
         break;
       }
       Thread.sleep(100);
     }
 
-    List<RowData> actualResult = collectRecordsFromUnboundedStream(clientAndIterator, excepts2().length);
+    List<RowData> actualResult =
+        collectRecordsFromUnboundedStream(clientAndIterator, excepts2().length);
 
     assertArrayEquals(excepts2(), actualResult);
     jobClient.cancel();
@@ -548,14 +622,11 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     env.enableCheckpointing(1000);
     //    env.setRestartStrategy(RestartStrategies.fixedDelayRestart(1, 0));
 
-    DataStream<RowData> input = env.fromSource(
-            arcticSource,
-            WatermarkStrategy.noWatermarks(),
-            "ArcticParallelSource")
-        .setParallelism(PARALLELISM);
+    DataStream<RowData> input =
+        env.fromSource(arcticSource, WatermarkStrategy.noWatermarks(), "ArcticParallelSource")
+            .setParallelism(PARALLELISM);
 
-    FlinkSink
-        .forRowData(input)
+    FlinkSink.forRowData(input)
         .context(Optional::of)
         .table(testFailoverTable)
         .tableLoader(ArcticTableLoader.of(FAIL_TABLE_ID, catalogBuilder))
@@ -571,8 +642,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
       expected.addAll(records);
       writeUpdate(records);
       if (i == 2) {
-        triggerFailover(failoverType, jobId, () -> {
-        }, miniClusterResource.getMiniCluster());
+        triggerFailover(failoverType, jobId, () -> {}, miniClusterResource.getMiniCluster());
       }
     }
 
@@ -583,7 +653,10 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
   }
 
   private void assertRecords(
-      KeyedTable testFailoverTable, List<RowData> expected, Duration checkInterval, int maxCheckCount)
+      KeyedTable testFailoverTable,
+      List<RowData> expected,
+      Duration checkInterval,
+      int maxCheckCount)
       throws InterruptedException {
     for (int i = 0; i < maxCheckCount; ++i) {
       if (equalsRecords(expected, tableRecords(testFailoverTable), testFailoverTable.schema())) {
@@ -609,28 +682,30 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
 
   public static List<RowData> tableRecords(final KeyedTable keyedTable) {
     keyedTable.refresh();
-    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(keyedTable, new AtomicInteger(0));
+    List<ArcticSplit> arcticSplits =
+        FlinkSplitPlanner.planFullTable(keyedTable, new AtomicInteger(0));
 
-    RowDataReaderFunction rowDataReaderFunction = new RowDataReaderFunction(
-        new Configuration(),
-        keyedTable.schema(),
-        keyedTable.schema(),
-        keyedTable.primaryKeySpec(),
-        null,
-        true,
-        keyedTable.io()
-    );
+    RowDataReaderFunction rowDataReaderFunction =
+        new RowDataReaderFunction(
+            new Configuration(),
+            keyedTable.schema(),
+            keyedTable.schema(),
+            keyedTable.primaryKeySpec(),
+            null,
+            true,
+            keyedTable.io());
 
     List<RowData> actual = new ArrayList<>();
-    arcticSplits.forEach(split -> {
-      LOG.info("ArcticSplit {}.", split);
-      DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
-      while (dataIterator.hasNext()) {
-        RowData rowData = dataIterator.next();
-        LOG.info("{}", rowData);
-        actual.add(rowData);
-      }
-    });
+    arcticSplits.forEach(
+        split -> {
+          LOG.info("ArcticSplit {}.", split);
+          DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split);
+          while (dataIterator.hasNext()) {
+            RowData rowData = dataIterator.next();
+            LOG.info("{}", rowData);
+            actual.add(rowData);
+          }
+        });
     return actual;
   }
 
@@ -638,12 +713,20 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     int pk = 100;
     List<RowData> records = new ArrayList<>(numRecords);
     for (int i = index; i < numRecords + index; i++) {
-      records.add(GenericRowData.ofKind(
-          RowKind.INSERT, pk + index, StringData.fromString("jo" + index + i), ldt.toEpochSecond(ZoneOffset.UTC),
-          TimestampData.fromLocalDateTime(ldt)));
-      records.add(GenericRowData.ofKind(
-          RowKind.DELETE, pk + index, StringData.fromString("jo" + index + i), ldt.toEpochSecond(ZoneOffset.UTC),
-          TimestampData.fromLocalDateTime(ldt)));
+      records.add(
+          GenericRowData.ofKind(
+              RowKind.INSERT,
+              pk + index,
+              StringData.fromString("jo" + index + i),
+              ldt.toEpochSecond(ZoneOffset.UTC),
+              TimestampData.fromLocalDateTime(ldt)));
+      records.add(
+          GenericRowData.ofKind(
+              RowKind.DELETE,
+              pk + index,
+              StringData.fromString("jo" + index + i),
+              ldt.toEpochSecond(ZoneOffset.UTC),
+              TimestampData.fromLocalDateTime(ldt)));
     }
     return records;
   }
@@ -690,15 +773,13 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
   }
 
   private List<RowData> collectRecordsFromUnboundedStream(
-      final ClientAndIterator<RowData> client, final int numElements) throws InterruptedException {
+      final ClientAndIterator<RowData> client, final int numElements) {
 
     checkNotNull(client, "client");
     checkArgument(numElements > 0, "numElement must be > 0");
 
     final ArrayList<RowData> result = new ArrayList<>(numElements);
     final Iterator<RowData> iterator = client.iterator;
-
-    LOG.info("begin collect records by the UT {}, ", name.getMethodName());
 
     CollectTask collectTask = new CollectTask(result, iterator, numElements);
     new Thread(collectTask).start();
@@ -710,13 +791,12 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
       // TODO a more proper timeout strategy?
       long timeFlies = System.currentTimeMillis() - start;
       if (timeFlies / 1000 >= intervalOneSecond) {
-        LOG.info("time flies: {} ms.", timeFlies);
+        LOG.info("Time flies: {} ms.", timeFlies);
         intervalOneSecond++;
       }
-      Thread.sleep(10);
-      if (timeFlies > timeout) {
+      if (System.currentTimeMillis() - start > timeout) {
         LOG.error(
-            "this task [{}] try to collect records from unbounded stream but timeout {}. As of now, collect result:{}.",
+            "This task [{}] try to collect records from unbounded stream but timeout {}. As of now, collect result:{}.",
             client.client.getJobID().toString(),
             timeout,
             result.toArray());
@@ -751,7 +831,6 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     public void run() {
       while (iterator.hasNext()) {
         result.add(convert(iterator.next()));
-        LOG.info("collected records size:{}.", result.size());
         if (result.size() == limit) {
           running = false;
           return;
@@ -763,10 +842,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
   private ClientAndIterator<RowData> executeAndCollectWithClient(
       StreamExecutionEnvironment env, ArcticSource<RowData> arcticSource) throws Exception {
     final DataStreamSource<RowData> source =
-        env.fromSource(
-                arcticSource,
-                WatermarkStrategy.noWatermarks(),
-                "ArcticParallelSource")
+        env.fromSource(arcticSource, WatermarkStrategy.noWatermarks(), "ArcticParallelSource")
             .setParallelism(PARALLELISM);
     return DataStreamUtils.collectWithClient(source, "job_" + name.getMethodName());
   }
@@ -781,32 +857,34 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
   }
 
   private static void expireSnapshots(
-      UnkeyedTable arcticInternalTable,
-      long olderThan,
-      Set<String> exclude) {
+      UnkeyedTable arcticInternalTable, long olderThan, Set<String> exclude) {
     LOG.debug("start expire snapshots, the exclude is {}", exclude);
     final AtomicInteger toDeleteFiles = new AtomicInteger(0);
     final AtomicInteger deleteFiles = new AtomicInteger(0);
     Set<String> parentDirectory = new HashSet<>();
-    arcticInternalTable.expireSnapshots()
+    arcticInternalTable
+        .expireSnapshots()
         .retainLast(1)
         .expireOlderThan(olderThan)
-        .deleteWith(file -> {
-          try {
-            if (!exclude.contains(file) && !exclude.contains(new Path(file).getParent().toString())) {
-              arcticInternalTable.io().deleteFile(file);
-            }
-            parentDirectory.add(new Path(file).getParent().toString());
-            deleteFiles.incrementAndGet();
-          } catch (Throwable t) {
-            LOG.warn("failed to delete file " + file, t);
-          } finally {
-            toDeleteFiles.incrementAndGet();
-          }
-        })
+        .deleteWith(
+            file -> {
+              try {
+                if (!exclude.contains(file)
+                    && !exclude.contains(new Path(file).getParent().toString())) {
+                  arcticInternalTable.io().deleteFile(file);
+                }
+                parentDirectory.add(new Path(file).getParent().toString());
+                deleteFiles.incrementAndGet();
+              } catch (Throwable t) {
+                LOG.warn("failed to delete file " + file, t);
+              } finally {
+                toDeleteFiles.incrementAndGet();
+              }
+            })
         .cleanExpiredFiles(true)
         .commit();
-    parentDirectory.forEach(parent -> TableFileUtil.deleteEmptyDirectory(arcticInternalTable.io(), parent, exclude));
+    parentDirectory.forEach(
+        parent -> TableFileUtil.deleteEmptyDirectory(arcticInternalTable.io(), parent, exclude));
     LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
   }
 
@@ -822,7 +900,8 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     ArcticTableLoader tableLoader = initLoader();
     ArcticScanContext arcticScanContext = initArcticScanContext(isStreaming, scanStartupMode);
     ReaderFunction<RowData> rowDataReaderFunction = initRowDataReadFunction();
-    TypeInformation<RowData> typeInformation = InternalTypeInfo.of(FlinkSchemaUtil.convert(testKeyedTable.schema()));
+    TypeInformation<RowData> typeInformation =
+        InternalTypeInfo.of(FlinkSchemaUtil.convert(testKeyedTable.schema()));
 
     return new ArcticSource<>(
         tableLoader,
@@ -839,10 +918,12 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
       TableIdentifier tableIdentifier,
       Duration monitorInterval) {
     ArcticTableLoader tableLoader = ArcticTableLoader.of(tableIdentifier, catalogBuilder);
-    ArcticScanContext arcticScanContext = initArcticScanContext(isStreaming, scanStartupMode, monitorInterval);
+    ArcticScanContext arcticScanContext =
+        initArcticScanContext(isStreaming, scanStartupMode, monitorInterval);
     ArcticTable table = ArcticUtils.loadArcticTable(tableLoader);
     ReaderFunction<RowData> rowDataReaderFunction = initRowDataReadFunction(table.asKeyedTable());
-    TypeInformation<RowData> typeInformation = InternalTypeInfo.of(FlinkSchemaUtil.convert(table.schema()));
+    TypeInformation<RowData> typeInformation =
+        InternalTypeInfo.of(FlinkSchemaUtil.convert(table.schema()));
 
     return new ArcticSource<>(
         tableLoader,
@@ -854,20 +935,23 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
   }
 
   private ArcticSource<RowData> initArcticSource(
-      boolean isStreaming, String scanStartupMode,
-      TableIdentifier tableIdentifier) {
-    return initArcticSourceWithMonitorInterval(isStreaming, scanStartupMode, tableIdentifier, Duration.ofMillis(500));
+      boolean isStreaming, String scanStartupMode, TableIdentifier tableIdentifier) {
+    return initArcticSourceWithMonitorInterval(
+        isStreaming, scanStartupMode, tableIdentifier, Duration.ofMillis(500));
   }
 
   private ArcticSource<RowData> initArcticDimSource(boolean isStreaming) {
     ArcticTableLoader tableLoader = initLoader();
-    ArcticScanContext arcticScanContext = initArcticScanContext(isStreaming, SCAN_STARTUP_MODE_EARLIEST);
+    ArcticScanContext arcticScanContext =
+        initArcticScanContext(isStreaming, SCAN_STARTUP_MODE_EARLIEST);
     ReaderFunction<RowData> rowDataReaderFunction = initRowDataReadFunction();
     Schema schema = testKeyedTable.schema();
-    Schema schemaWithWm = TypeUtil.join(
-        schema,
-        new Schema(Types.NestedField.of(-1, true, "opt", Types.TimestampType.withoutZone())));
-    TypeInformation<RowData> typeInformation = InternalTypeInfo.of(FlinkSchemaUtil.convert(schemaWithWm));
+    Schema schemaWithWm =
+        TypeUtil.join(
+            schema,
+            new Schema(Types.NestedField.of(-1, true, "opt", Types.TimestampType.withoutZone())));
+    TypeInformation<RowData> typeInformation =
+        InternalTypeInfo.of(FlinkSchemaUtil.convert(schemaWithWm));
 
     return new ArcticSource<>(
         tableLoader,
@@ -890,19 +974,24 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
         keyedTable.primaryKeySpec(),
         null,
         true,
-        keyedTable.io()
-    );
+        keyedTable.io());
   }
 
   private ArcticScanContext initArcticScanContext(
       boolean isStreaming, String scanStartupMode, Duration monitorInterval) {
-    return ArcticScanContext.arcticBuilder().streaming(isStreaming).scanStartupMode(scanStartupMode)
-        .monitorInterval(monitorInterval).build();
+    return ArcticScanContext.arcticBuilder()
+        .streaming(isStreaming)
+        .scanStartupMode(scanStartupMode)
+        .monitorInterval(monitorInterval)
+        .build();
   }
 
   private ArcticScanContext initArcticScanContext(boolean isStreaming, String scanStartupMode) {
-    return ArcticScanContext.arcticBuilder().streaming(isStreaming).scanStartupMode(scanStartupMode)
-        .monitorInterval(Duration.ofMillis(500)).build();
+    return ArcticScanContext.arcticBuilder()
+        .streaming(isStreaming)
+        .scanStartupMode(scanStartupMode)
+        .monitorInterval(Duration.ofMillis(500))
+        .build();
   }
 
   private ArcticTableLoader initLoader() {

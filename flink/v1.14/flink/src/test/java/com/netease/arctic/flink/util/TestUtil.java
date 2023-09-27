@@ -28,9 +28,7 @@ public class TestUtil {
 
   public static final Logger LOG = LoggerFactory.getLogger(TestUtil.class);
 
-  /**
-   * get ut method name without parameters.
-   */
+  /** get ut method name without parameters. */
   public static String getUtMethodName(TestName testName) {
     int i = testName.getMethodName().indexOf("[");
     if (i == -1) {
@@ -70,5 +68,4 @@ public class TestUtil {
       return true;
     }
   }
-
 }

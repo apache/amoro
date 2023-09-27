@@ -23,9 +23,7 @@ import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.pulsar.shade.io.netty.util.concurrent.DefaultThreadFactory;
 
-/**
- * Override the default bookkeeper executor for executing in one thread executor.
- */
+/** Override the default bookkeeper executor for executing in one thread executor. */
 public class SameThreadOrderedSafeExecutor extends OrderedExecutor {
 
   public SameThreadOrderedSafeExecutor() {

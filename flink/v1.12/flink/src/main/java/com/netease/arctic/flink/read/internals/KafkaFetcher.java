@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.read.internals;
 
+import static org.apache.flink.util.Preconditions.checkState;
+
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.metrics.MetricGroup;
@@ -39,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.List;
@@ -46,13 +49,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Queue;
 
-import static org.apache.flink.util.Preconditions.checkState;
-
 /**
  * A fetcher that fetches data from Kafka brokers via the Kafka consumer API.
  *
  * @param <T> The type of elements produced by the fetcher.
- * <p>
  * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Internal
@@ -63,29 +63,19 @@ public class KafkaFetcher<T> extends AbstractFetcher<T, TopicPartition> {
 
   // ------------------------------------------------------------------------
 
-  /**
-   * The schema to convert between Kafka's byte messages, and Flink's objects.
-   */
+  /** The schema to convert between Kafka's byte messages, and Flink's objects. */
   private final KafkaDeserializationSchema<T> deserializer;
 
-  /**
-   * A collector to emit records in batch (bundle). *
-   */
+  /** A collector to emit records in batch (bundle). * */
   private final KafkaCollector kafkaCollector;
 
-  /**
-   * The handover of data and exceptions between the consumer thread and the task thread.
-   */
+  /** The handover of data and exceptions between the consumer thread and the task thread. */
   final Handover handover;
 
-  /**
-   * The thread that runs the actual KafkaConsumer and hand the record batches to this fetcher.
-   */
+  /** The thread that runs the actual KafkaConsumer and hand the record batches to this fetcher. */
   final KafkaConsumerThread consumerThread;
 
-  /**
-   * Flag to mark the main work loop as alive.
-   */
+  /** Flag to mark the main work loop as alive. */
   protected volatile boolean running = true;
 
   // ------------------------------------------------------------------------
@@ -148,8 +138,7 @@ public class KafkaFetcher<T> extends AbstractFetcher<T, TopicPartition> {
       boolean useMetrics,
       Handover handover,
       KafkaConsumerThread<T> consumerThread,
-      ClosableBlockingQueue<KafkaTopicPartitionState<T, TopicPartition>>
-          unassignedPartitionsQueue)
+      ClosableBlockingQueue<KafkaTopicPartitionState<T, TopicPartition>> unassignedPartitionsQueue)
       throws Exception {
     super(
         sourceContext,
@@ -185,8 +174,7 @@ public class KafkaFetcher<T> extends AbstractFetcher<T, TopicPartition> {
         final ConsumerRecords<byte[], byte[]> records = handover.pollNext();
 
         // get the records for each topic partition
-        for (KafkaTopicPartitionState<T, TopicPartition> partition :
-            subscribedPartitionStates()) {
+        for (KafkaTopicPartitionState<T, TopicPartition> partition : subscribedPartitionStates()) {
 
           List<ConsumerRecord<byte[], byte[]>> partitionRecords =
               records.records(partition.getKafkaPartitionHandle());
@@ -217,9 +205,7 @@ public class KafkaFetcher<T> extends AbstractFetcher<T, TopicPartition> {
     consumerThread.shutdown();
   }
 
-  /**
-   * Gets the name of this fetcher, for thread naming and logging purposes.
-   */
+  /** Gets the name of this fetcher, for thread naming and logging purposes. */
   protected String getFetcherName() {
     return "Kafka Fetcher";
   }
@@ -313,7 +299,6 @@ public class KafkaFetcher<T> extends AbstractFetcher<T, TopicPartition> {
     }
 
     @Override
-    public void close() {
-    }
+    public void close() {}
   }
 }

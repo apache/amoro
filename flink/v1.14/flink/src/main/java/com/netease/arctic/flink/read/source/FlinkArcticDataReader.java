@@ -44,34 +44,61 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * This is an arctic reader accepts a {@link FileScanTask} and produces a {@link CloseableIterator<RowData>}.
- * The RowData read from this reader may have more columns than the original schema.
- * The additional columns are added after the original columns,
- * see {@link DeleteFilter}.
- * It shall be projected before sent to downstream. This can be processed in {@link DataIterator#next()}
+ * This is an arctic reader accepts a {@link FileScanTask} and produces a {@link
+ * CloseableIterator<RowData>}. The RowData read from this reader may have more columns than the
+ * original schema. The additional columns are added after the original columns, see {@link
+ * DeleteFilter}. It shall be projected before sent to downstream. This can be processed in {@link
+ * DataIterator#next()}
  */
 public class FlinkArcticDataReader extends AbstractAdaptHiveIcebergDataReader<RowData>
     implements FileScanTaskReader<RowData> {
   private static final long serialVersionUID = -6773693031945244386L;
 
   public FlinkArcticDataReader(
-      ArcticFileIO fileIO, Schema tableSchema, Schema projectedSchema, String nameMapping, boolean caseSensitive,
-      BiFunction<Type, Object, Object> convertConstant, boolean reuseContainer) {
-    super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive, convertConstant, reuseContainer);
+      ArcticFileIO fileIO,
+      Schema tableSchema,
+      Schema projectedSchema,
+      String nameMapping,
+      boolean caseSensitive,
+      BiFunction<Type, Object, Object> convertConstant,
+      boolean reuseContainer) {
+    super(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        nameMapping,
+        caseSensitive,
+        convertConstant,
+        reuseContainer);
   }
 
   public FlinkArcticDataReader(
-      ArcticFileIO fileIO, Schema tableSchema, Schema projectedSchema, PrimaryKeySpec primaryKeySpec,
-      String nameMapping, boolean caseSensitive, BiFunction<Type, Object, Object> convertConstant,
-      Set<DataTreeNode> sourceNodes, boolean reuseContainer) {
-    super(fileIO, tableSchema, projectedSchema, primaryKeySpec, nameMapping, caseSensitive, convertConstant,
-        sourceNodes, reuseContainer);
+      ArcticFileIO fileIO,
+      Schema tableSchema,
+      Schema projectedSchema,
+      PrimaryKeySpec primaryKeySpec,
+      String nameMapping,
+      boolean caseSensitive,
+      BiFunction<Type, Object, Object> convertConstant,
+      Set<DataTreeNode> sourceNodes,
+      boolean reuseContainer) {
+    super(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        primaryKeySpec,
+        nameMapping,
+        caseSensitive,
+        convertConstant,
+        sourceNodes,
+        reuseContainer);
   }
 
   @Override
   protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
       Schema projectSchema, Map<Integer, ?> idToConstant) {
-    return fileSchema -> AdaptHiveFlinkParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
+    return fileSchema ->
+        AdaptHiveFlinkParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
   }
 
   @Override

@@ -25,8 +25,8 @@ import org.apache.flink.connector.pulsar.source.reader.message.PulsarMessage;
 import org.apache.flink.connector.pulsar.source.split.PulsarPartitionSplitState;
 
 /**
- * The {@link RecordEmitter} implementation for {@link LogPulsarOrderedSourceReader}.
- * We would always update the last consumed message id in this emitter.
+ * The {@link RecordEmitter} implementation for {@link LogPulsarOrderedSourceReader}. We would
+ * always update the last consumed message id in this emitter.
  */
 public class LogPulsarRecordEmitter<T> extends PulsarRecordEmitter<T> {
 
@@ -35,7 +35,8 @@ public class LogPulsarRecordEmitter<T> extends PulsarRecordEmitter<T> {
       PulsarMessage<T> element, SourceOutput<T> output, PulsarPartitionSplitState splitState)
       throws Exception {
     // Sink the record to source output.
-    output.collect(((LogRecordPulsarWithRetractInfo<T>) element).getValueToBeSent(), element.getEventTime());
+    output.collect(
+        ((LogRecordPulsarWithRetractInfo<T>) element).getValueToBeSent(), element.getEventTime());
     // Update the split state.
     splitState.setLatestConsumedId(element.getId());
   }

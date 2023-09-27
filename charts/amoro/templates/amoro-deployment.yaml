@@ -92,6 +92,14 @@ spec:
                 {{- tpl (toYaml .) $ | nindent 12 }}
               {{- end }}
             {{- end }}
+            {{- if or .Values.amoroConf.amoroEnv }}
+              mountPath: {{ .Values.amoroDir }}/amoro-{{ .Chart.AppVersion }}/bin/config.sh
+              readOnly: true
+              subPath: "config.sh"
+              {{- with .Values.volumeMounts }}
+                {{- tpl (toYaml .) $ | nindent 12 }}
+              {{- end }}
+            {{- end }}
           {{- with .Values.containers }}
             {{- tpl (toYaml .) $ | nindent 8 }}
           {{- end }}

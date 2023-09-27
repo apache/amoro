@@ -35,15 +35,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Flink table api that generates source operators.
- */
-public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushDown,
-    SupportsProjectionPushDown, SupportsLimitPushDown, SupportsWatermarkPushDown {
+/** Flink table api that generates source operators. */
+public class ArcticDynamicSource
+    implements ScanTableSource,
+        SupportsFilterPushDown,
+        SupportsProjectionPushDown,
+        SupportsLimitPushDown,
+        SupportsWatermarkPushDown {
 
   public static final Logger LOG = LoggerFactory.getLogger(ArcticDynamicSource.class);
 
@@ -53,19 +56,19 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
   private final ArcticTable arcticTable;
   private final Map<String, String> properties;
 
-  @Nullable
-  protected WatermarkStrategy<RowData> watermarkStrategy;
+  @Nullable protected WatermarkStrategy<RowData> watermarkStrategy;
 
   /**
-   * @param tableName           tableName
+   * @param tableName tableName
    * @param arcticDynamicSource underlying source
-   * @param arcticTable         arcticTable
-   * @param properties          With all ArcticTable properties and sql options
+   * @param arcticTable arcticTable
+   * @param properties With all ArcticTable properties and sql options
    */
-  public ArcticDynamicSource(String tableName,
-                             ScanTableSource arcticDynamicSource,
-                             ArcticTable arcticTable,
-                             Map<String, String> properties) {
+  public ArcticDynamicSource(
+      String tableName,
+      ScanTableSource arcticDynamicSource,
+      ArcticTable arcticTable,
+      Map<String, String> properties) {
     this.tableName = tableName;
     this.arcticDynamicSource = arcticDynamicSource;
     this.arcticTable = arcticTable;
@@ -80,9 +83,10 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
   @Override
   public ScanRuntimeProvider getScanRuntimeProvider(ScanContext scanContext) {
     ScanRuntimeProvider origin = arcticDynamicSource.getScanRuntimeProvider(scanContext);
-    Preconditions.checkArgument(origin instanceof DataStreamScanProvider,
-        "file or log ScanRuntimeProvider should be DataStreamScanProvider, but provided is " +
-            origin.getClass());
+    Preconditions.checkArgument(
+        origin instanceof DataStreamScanProvider,
+        "file or log ScanRuntimeProvider should be DataStreamScanProvider, but provided is "
+            + origin.getClass());
 
     return origin;
   }
@@ -119,8 +123,7 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
   public void applyProjection(int[][] projectedFields) {
     for (int[] projectedField : projectedFields) {
       Preconditions.checkArgument(
-          projectedField.length == 1,
-          "Don't support nested projection now.");
+          projectedField.length == 1, "Don't support nested projection now.");
     }
 
     if (arcticDynamicSource instanceof SupportsProjectionPushDown) {

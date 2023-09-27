@@ -26,9 +26,7 @@ import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
-/**
- * This is an Arctic table writer factory.
- */
+/** This is an Arctic table writer factory. */
 public class ArcticRowDataTaskWriterFactory implements TaskWriterFactory<RowData> {
 
   private final ArcticTable table;
@@ -41,9 +39,7 @@ public class ArcticRowDataTaskWriterFactory implements TaskWriterFactory<RowData
   private transient Integer taskId = null;
   private transient Integer attemptId = null;
 
-  public ArcticRowDataTaskWriterFactory(ArcticTable table,
-                                        RowType flinkSchema,
-                                        boolean overwrite) {
+  public ArcticRowDataTaskWriterFactory(ArcticTable table, RowType flinkSchema, boolean overwrite) {
     this.table = table;
     this.flinkSchema = flinkSchema;
     this.overwrite = overwrite;
@@ -61,19 +57,20 @@ public class ArcticRowDataTaskWriterFactory implements TaskWriterFactory<RowData
 
   @Override
   public TaskWriter<RowData> create() {
-    Preconditions.checkNotNull(mask, "Mask should be set first. Invoke setMask() before this method");
+    Preconditions.checkNotNull(
+        mask, "Mask should be set first. Invoke setMask() before this method");
 
-    FlinkTaskWriterBuilder builder = FlinkTaskWriterBuilder.buildFor(table)
-        .withTaskId(taskId)
-        .withMask(mask)
-        .withTransactionId(transactionId)
-        .withFlinkSchema(flinkSchema)
-        .withPartitionId(attemptId);
+    FlinkTaskWriterBuilder builder =
+        FlinkTaskWriterBuilder.buildFor(table)
+            .withTaskId(taskId)
+            .withMask(mask)
+            .withTransactionId(transactionId)
+            .withFlinkSchema(flinkSchema)
+            .withPartitionId(attemptId);
     if (overwrite) {
       return builder.buildWriter(WriteOperationKind.OVERWRITE);
     } else {
       return builder.buildWriter(WriteOperationKind.APPEND);
     }
   }
-
 }

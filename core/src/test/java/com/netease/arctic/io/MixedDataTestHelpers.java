@@ -46,7 +46,6 @@ import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.Table;
 import org.apache.iceberg.TestHelpers;
 import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.data.GenericRecord;
@@ -81,7 +80,7 @@ import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
 
-public class DataTestHelpers {
+public class MixedDataTestHelpers {
 
   public static Record createRecord(int id, String name, long ts, String opTime) {
     return createRecord(BasicTableTestHelper.TABLE_SCHEMA, id, name, ts, opTime);
@@ -161,14 +160,6 @@ public class DataTestHelpers {
       builder.withOrdered();
     }
     try (GenericBaseTaskWriter writer = builder.buildBaseWriter()) {
-      return writeRecords(writer, records);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static List<DataFile> writeIceberg(Table table, List<Record> records) {
-    try (TaskWriter<Record> writer = IcebergTaskWriters.buildFor(table)) {
       return writeRecords(writer, records);
     } catch (IOException e) {
       throw new RuntimeException(e);

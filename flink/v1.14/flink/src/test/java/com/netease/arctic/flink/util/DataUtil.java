@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.util;
 
+import static org.apache.flink.table.api.Expressions.row;
+
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.data.GenericRowData;
@@ -45,31 +47,41 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.apache.flink.table.api.Expressions.row;
-
 public class DataUtil {
 
   public static List<ApiExpression> toRows(Collection<Object[]> data) {
-    return data.stream().map(i -> {
-      int size = i.length;
-      return size == 1 ? row(i[0]) : row(i[0], ArrayUtils.subarray(i, 1, size));
-    }).collect(Collectors.toList());
+    return data.stream()
+        .map(
+            i -> {
+              int size = i.length;
+              return size == 1 ? row(i[0]) : row(i[0], ArrayUtils.subarray(i, 1, size));
+            })
+        .collect(Collectors.toList());
   }
 
   public static Set<Row> toRowSet(Collection<Object[]> data) {
-    return data.stream().map(r ->
-        r[0] instanceof RowKind ? Row.ofKind((RowKind) r[0], ArrayUtils.subarray(r, 1, r.length)) :
-            Row.of(r)).collect(Collectors.toSet());
+    return data.stream()
+        .map(
+            r ->
+                r[0] instanceof RowKind
+                    ? Row.ofKind((RowKind) r[0], ArrayUtils.subarray(r, 1, r.length))
+                    : Row.of(r))
+        .collect(Collectors.toSet());
   }
 
   public static List<Row> toRowList(Collection<Object[]> data) {
-    return data.stream().map(r ->
-        r[0] instanceof RowKind ? Row.ofKind((RowKind) r[0], ArrayUtils.subarray(r, 1, r.length)) :
-            Row.of(r)).collect(Collectors.toList());
+    return data.stream()
+        .map(
+            r ->
+                r[0] instanceof RowKind
+                    ? Row.ofKind((RowKind) r[0], ArrayUtils.subarray(r, 1, r.length))
+                    : Row.of(r))
+        .collect(Collectors.toList());
   }
 
   public static void assertEqual(Collection<Object[]> expected, Collection<Object[]> actual) {
-    Assert.assertEquals(CollectionUtil.isNullOrEmpty(expected), CollectionUtil.isNullOrEmpty(actual));
+    Assert.assertEquals(
+        CollectionUtil.isNullOrEmpty(expected), CollectionUtil.isNullOrEmpty(actual));
     if (expected == null) {
       return;
     }
@@ -98,11 +110,13 @@ public class DataUtil {
   }
 
   public static Collection<RowData> toRowData(List<Object[]> data) {
-    return data.stream().map(d ->
-        d[0] instanceof RowKind ?
-            toRowDataWithKind((RowKind) d[0], ArrayUtils.subarray(d, 1, d.length)) :
-            toRowData(d)
-    ).collect(Collectors.toList());
+    return data.stream()
+        .map(
+            d ->
+                d[0] instanceof RowKind
+                    ? toRowDataWithKind((RowKind) d[0], ArrayUtils.subarray(d, 1, d.length))
+                    : toRowData(d))
+        .collect(Collectors.toList());
   }
 
   public static RowData toRowData(Object... values) {
@@ -138,5 +152,4 @@ public class DataUtil {
     }
     return result;
   }
-
 }

@@ -33,7 +33,7 @@ import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
-import org.apache.iceberg.ArcticChangeTableScan;
+import org.apache.iceberg.MixedChangeTableScan;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.PropertyUtil;
@@ -141,7 +141,7 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
 
     @Override
     public ChangeTableIncrementalScan newScan() {
-      return new ArcticChangeTableScan(this, schema());
+      return new MixedChangeTableScan(this, schema());
     }
   }
 

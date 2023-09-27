@@ -22,22 +22,16 @@ import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.util.Preconditions;
 
-/**
- * This is a wrapper Split of {@link ArcticSplit} with split status.
- */
+/** This is a wrapper Split of {@link ArcticSplit} with split status. */
 public class Split {
 
   public enum Status {
     AVAILABLE,
 
-    /**
-     * Assigner has pending splits. But current subtask doesn't have pending splits.
-     */
+    /** Assigner has pending splits. But current subtask doesn't have pending splits. */
     SUBTASK_UNAVAILABLE,
 
-    /**
-     * Assigner doesn't have pending splits.
-     */
+    /** Assigner doesn't have pending splits. */
     UNAVAILABLE
   }
 
@@ -75,7 +69,6 @@ public class Split {
   private static final Split UNAVAILABLE = new Split(Status.UNAVAILABLE);
   private static final Split SUBTASK_UNAVAILABLE = new Split(Status.SUBTASK_UNAVAILABLE);
 
-
   public static Split unavailable() {
     return UNAVAILABLE;
   }
@@ -83,7 +76,6 @@ public class Split {
   public static Split subtaskUnavailable() {
     return SUBTASK_UNAVAILABLE;
   }
-
 
   public static Split of(ArcticSplit arcticSplit) {
     return new Split(arcticSplit);

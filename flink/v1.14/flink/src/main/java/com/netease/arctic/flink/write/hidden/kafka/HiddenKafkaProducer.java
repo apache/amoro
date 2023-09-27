@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.write.hidden.kafka;
 
+import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
+
 import com.netease.arctic.flink.write.hidden.ArcticLogPartitioner;
 import com.netease.arctic.flink.write.hidden.LogMsgFactory;
 import com.netease.arctic.log.LogData;
@@ -34,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -43,32 +46,23 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
-
 /**
- * This is hidden log queue kafka producer that serializes {@link LogData<T>} and emits to the kafka topic.
+ * This is hidden log queue kafka producer that serializes {@link LogData<T>} and emits to the kafka
+ * topic.
  */
 public class HiddenKafkaProducer<T> implements LogMsgFactory.Producer<T> {
   private static final Logger LOG = LoggerFactory.getLogger(HiddenKafkaProducer.class);
-  /**
-   * User defined properties for the Kafka Producer.
-   */
+  /** User defined properties for the Kafka Producer. */
   protected final Properties producerConfig;
 
   private final String topic;
 
   private final LogDataJsonSerialization<T> logDataJsonSerialization;
 
-  /**
-   * The callback than handles error propagation or logging callbacks.
-   */
-  @Nullable
-  protected transient Callback callback;
-  /**
-   * Errors encountered in the async producer are stored here.
-   */
-  @Nullable
-  protected transient volatile Exception asyncException;
+  /** The callback than handles error propagation or logging callbacks. */
+  @Nullable protected transient Callback callback;
+  /** Errors encountered in the async producer are stored here. */
+  @Nullable protected transient volatile Exception asyncException;
 
   private transient FlinkKafkaInternalProducer<byte[], byte[]> producer;
   private transient FlinkKafkaInternalProducer<byte[], byte[]> transactionalProducer;
@@ -89,12 +83,13 @@ public class HiddenKafkaProducer<T> implements LogMsgFactory.Producer<T> {
 
   @Override
   public void open() throws Exception {
-    callback = (metadata, exception) -> {
-      if (exception != null && asyncException == null) {
-        asyncException = exception;
-      }
-      acknowledgeMessage();
-    };
+    callback =
+        (metadata, exception) -> {
+          if (exception != null && asyncException == null) {
+            asyncException = exception;
+          }
+          acknowledgeMessage();
+        };
     producer = createProducer();
     transactionalProducer = createTransactionalProducer();
     transactionalProducer.initTransactions();
@@ -159,7 +154,8 @@ public class HiddenKafkaProducer<T> implements LogMsgFactory.Producer<T> {
   protected FlinkKafkaInternalProducer<byte[], byte[]> createTransactionalProducer() {
     Properties transactionalProperties = new Properties();
     transactionalProperties.putAll(producerConfig);
-    transactionalProperties.computeIfAbsent(TRANSACTIONAL_ID_CONFIG, o -> UUID.randomUUID().toString());
+    transactionalProperties.computeIfAbsent(
+        TRANSACTIONAL_ID_CONFIG, o -> UUID.randomUUID().toString());
     return new FlinkKafkaInternalProducer<>(transactionalProperties);
   }
 
@@ -167,11 +163,13 @@ public class HiddenKafkaProducer<T> implements LogMsgFactory.Producer<T> {
     return new FlinkKafkaInternalProducer<>(producerConfig);
   }
 
-  public static int[] getPartitionsByTopic(String topic, org.apache.kafka.clients.producer.Producer producer) {
+  public static int[] getPartitionsByTopic(
+      String topic, org.apache.kafka.clients.producer.Producer producer) {
     // the fetched list is immutable, so we're creating a mutable copy in order to sort it
     List<PartitionInfo> partitionsList = new ArrayList<>(producer.partitionsFor(topic));
 
-    // sort the partitions by partition id to make sure the fetched partition list is the same across subtasks
+    // sort the partitions by partition id to make sure the fetched partition list is the same
+    // across subtasks
     partitionsList.sort(Comparator.comparingInt(PartitionInfo::partition));
 
     return partitionsList.stream().mapToInt(PartitionInfo::partition).toArray();
@@ -183,17 +181,14 @@ public class HiddenKafkaProducer<T> implements LogMsgFactory.Producer<T> {
       // prevent double throwing
       asyncException = null;
       throw new FlinkKafkaException(
-          FlinkKafkaErrorCode.EXTERNAL_ERROR,
-          "Failed to send data to Kafka: " + e.getMessage(),
-          e);
+          FlinkKafkaErrorCode.EXTERNAL_ERROR, "Failed to send data to Kafka: " + e.getMessage(), e);
     }
   }
 
   /**
    * <b>ATTENTION to subclass implementors:</b> When overriding this method, please always call
-   * {@code super.acknowledgeMessage()} to keep the invariants of the internal bookkeeping of the producer.
-   * If not, be sure to know what you are doing.
+   * {@code super.acknowledgeMessage()} to keep the invariants of the internal bookkeeping of the
+   * producer. If not, be sure to know what you are doing.
    */
-  protected void acknowledgeMessage() {
-  }
+  protected void acknowledgeMessage() {}
 }

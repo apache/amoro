@@ -123,7 +123,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
         UnkeyedTable baseTable = keyedArcticTable.baseTable();
         UnkeyedTable changeTable = keyedArcticTable.changeTable();
 
-        // getRuntime valid files in the change store which shouldn't physically delete when expire the snapshot
+        // get valid files in the change store which shouldn't physically delete when expire the snapshot
         // in the base store
         Set<String> baseExcludePaths = IcebergTableUtil.getAllContentFilePath(changeTable);
         baseExcludePaths.addAll(finalHiveLocations);
@@ -144,7 +144,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
             changeTable, System.currentTimeMillis() - changeDataTTL);
         deleteChangeFile(keyedArcticTable, expiredDataFileEntries);
 
-        // getRuntime valid files in the base store which shouldn't physically delete when expire the snapshot
+        // get valid files in the base store which shouldn't physically delete when expire the snapshot
         // in the change store
         Set<String> changeExclude = IcebergTableUtil.getAllContentFilePath(baseTable);
         changeExclude.addAll(finalHiveLocations);

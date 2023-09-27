@@ -18,6 +18,25 @@
 
 package com.netease.arctic.flink.util.pulsar.runtime;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
+import static org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils.sneakyAdmin;
+import static org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils.sneakyClient;
+import static org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils.sneakyThrow;
+import static org.apache.flink.connector.pulsar.source.enumerator.topic.TopicNameUtils.topicName;
+import static org.apache.flink.connector.pulsar.source.enumerator.topic.TopicNameUtils.topicNameWithPartition;
+import static org.apache.flink.util.Preconditions.checkArgument;
+import static org.apache.pulsar.client.api.MessageId.earliest;
+import static org.apache.pulsar.client.api.ProducerAccessMode.Shared;
+import static org.apache.pulsar.client.api.SubscriptionMode.Durable;
+import static org.apache.pulsar.client.api.SubscriptionType.Exclusive;
+import static org.apache.pulsar.common.partition.PartitionedTopicMetadata.NON_PARTITIONED;
+
 import com.google.common.base.Strings;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.pulsar.common.config.PulsarConfiguration;
@@ -52,28 +71,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
-import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
-import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
-import static org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils.sneakyAdmin;
-import static org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils.sneakyClient;
-import static org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils.sneakyThrow;
-import static org.apache.flink.connector.pulsar.source.enumerator.topic.TopicNameUtils.topicName;
-import static org.apache.flink.connector.pulsar.source.enumerator.topic.TopicNameUtils.topicNameWithPartition;
-import static org.apache.flink.util.Preconditions.checkArgument;
-import static org.apache.pulsar.client.api.MessageId.earliest;
-import static org.apache.pulsar.client.api.ProducerAccessMode.Shared;
-import static org.apache.pulsar.client.api.SubscriptionMode.Durable;
-import static org.apache.pulsar.client.api.SubscriptionType.Exclusive;
-import static org.apache.pulsar.common.partition.PartitionedTopicMetadata.NON_PARTITIONED;
-
-/**
- * A pulsar cluster operator used for operating pulsar instance.
- */
+/** A pulsar cluster operator used for operating pulsar instance. */
 public class PulsarRuntimeOperator implements Closeable {
 
   public static final int DEFAULT_PARTITIONS = 3;
@@ -90,19 +88,12 @@ public class PulsarRuntimeOperator implements Closeable {
   }
 
   public PulsarRuntimeOperator(
-      String serviceUrl,
-      String containerServiceUrl,
-      String adminUrl,
-      String containerAdminUrl) {
+      String serviceUrl, String containerServiceUrl, String adminUrl, String containerAdminUrl) {
     this.serviceUrl = containerServiceUrl;
     this.adminUrl = containerAdminUrl;
     this.client =
         sneakyClient(
-            () ->
-                PulsarClient.builder()
-                    .serviceUrl(serviceUrl)
-                    .enableTransaction(true)
-                    .build());
+            () -> PulsarClient.builder().serviceUrl(serviceUrl).enableTransaction(true).build());
     this.admin = sneakyClient(() -> PulsarAdmin.builder().serviceHttpUrl(adminUrl).build());
   }
 
@@ -121,8 +112,8 @@ public class PulsarRuntimeOperator implements Closeable {
    * Create a topic with default {@link #DEFAULT_PARTITIONS} partitions and send a fixed number
    * {@link #NUM_RECORDS_PER_PARTITION} of records to this topic.
    *
-   * @param topic    Pulsar topic name, it couldn't be a name with partition index.
-   * @param schema   The Pulsar schema for serializing records into bytes.
+   * @param topic Pulsar topic name, it couldn't be a name with partition index.
+   * @param schema The Pulsar schema for serializing records into bytes.
    * @param supplier The supplier for providing the records which would be sent to Pulsar.
    */
   public <T> void setupTopic(String topic, Schema<T> schema, Supplier<T> supplier) {
@@ -133,9 +124,9 @@ public class PulsarRuntimeOperator implements Closeable {
    * Create a topic with default {@link #DEFAULT_PARTITIONS} partitions and send a fixed number of
    * records to this topic.
    *
-   * @param topic              Pulsar topic name, it couldn't be a name with partition index.
-   * @param schema             The Pulsar schema for serializing records into bytes.
-   * @param supplier           The supplier for providing the records which would be sent to Pulsar.
+   * @param topic Pulsar topic name, it couldn't be a name with partition index.
+   * @param schema The Pulsar schema for serializing records into bytes.
+   * @param supplier The supplier for providing the records which would be sent to Pulsar.
    * @param numRecordsPerSplit The number of records for a partition.
    */
   public <T> void setupTopic(
@@ -146,8 +137,7 @@ public class PulsarRuntimeOperator implements Closeable {
     // Make sure every topic partition has messages.
     for (int i = 0; i < DEFAULT_PARTITIONS; i++) {
       String partitionName = topicNameWithPartition(topic, i);
-      List<T> messages =
-          Stream.generate(supplier).limit(numRecordsPerSplit).collect(toList());
+      List<T> messages = Stream.generate(supplier).limit(numRecordsPerSplit).collect(toList());
 
       sendMessages(partitionName, schema, messages);
     }
@@ -157,8 +147,8 @@ public class PulsarRuntimeOperator implements Closeable {
    * Create a topic with default {@link #DEFAULT_PARTITIONS} partitions and send a fixed number of
    * records to this topic.
    *
-   * @param topic      Pulsar topic name, it couldn't be a name with partition index.
-   * @param schema     The Pulsar schema for serializing records into bytes.
+   * @param topic Pulsar topic name, it couldn't be a name with partition index.
+   * @param schema The Pulsar schema for serializing records into bytes.
    * @param collection The records in collection which would be sent to Pulsar.
    */
   public <T> void setupTopic(String topic, Schema<T> schema, Collection<T> collection) {
@@ -178,9 +168,9 @@ public class PulsarRuntimeOperator implements Closeable {
    * Create a pulsar topic with given partition number if the topic doesn't exist. We won't do
    * anything for the existing topic. Make sure correctly used in the testing code.
    *
-   * @param topic              The name of the topic.
-   * @param numberOfPartitions The number of partitions. We would create a non-partitioned topic
-   *                           if this number is zero.
+   * @param topic The name of the topic.
+   * @param numberOfPartitions The number of partitions. We would create a non-partitioned topic if
+   *     this number is zero.
    */
   public void createTopic(String topic, int numberOfPartitions) {
     checkArgument(numberOfPartitions >= 0);
@@ -192,12 +182,12 @@ public class PulsarRuntimeOperator implements Closeable {
   }
 
   /**
-   * Create a pulsar topic with given partition number.
-   * If the topic exists, it will be deleted. Make sure correctly used in the testing code.
+   * Create a pulsar topic with given partition number. If the topic exists, it will be deleted.
+   * Make sure correctly used in the testing code.
    *
-   * @param topic              The name of the topic.
-   * @param numberOfPartitions The number of partitions. We would create a non-partitioned topic
-   *                           if this number is zero.
+   * @param topic The name of the topic.
+   * @param numberOfPartitions The number of partitions. We would create a non-partitioned topic if
+   *     this number is zero.
    */
   public void reinitializeTopic(String topic, int numberOfPartitions) {
     deleteTopicByForce(topic);
@@ -211,7 +201,7 @@ public class PulsarRuntimeOperator implements Closeable {
   /**
    * Increase the partition number of the topic.
    *
-   * @param topic            The topic name.
+   * @param topic The topic name.
    * @param newPartitionsNum The new partition size which should exceed previous size.
    */
   public void increaseTopicPartitions(String topic, int newPartitionsNum) {
@@ -250,9 +240,7 @@ public class PulsarRuntimeOperator implements Closeable {
     }
   }
 
-  /**
-   * Convert the topic metadata into a list of topic partitions.
-   */
+  /** Convert the topic metadata into a list of topic partitions. */
   public List<TopicPartition> topicInfo(String topic) {
     try {
       return client().getPartitionsForTopic(topic).get().stream()
@@ -266,10 +254,10 @@ public class PulsarRuntimeOperator implements Closeable {
   /**
    * Send a single message to Pulsar, return the message id after the ack from Pulsar.
    *
-   * @param topic   The name of the topic.
-   * @param schema  The schema for serialization.
+   * @param topic The name of the topic.
+   * @param schema The schema for serialization.
    * @param message The record need to be sent.
-   * @param <T>     The type of the record.
+   * @param <T> The type of the record.
    * @return message id.
    */
   public <T> MessageId sendMessage(String topic, Schema<T> schema, T message) {
@@ -282,11 +270,11 @@ public class PulsarRuntimeOperator implements Closeable {
   /**
    * Send a single message to Pulsar, return the message id after the ack from Pulsar.
    *
-   * @param topic   The name of the topic.
-   * @param schema  The schema for serialization.
-   * @param key     The message key.
+   * @param topic The name of the topic.
+   * @param schema The schema for serialization.
+   * @param key The message key.
    * @param message The record need to be sent.
-   * @param <T>     The type of the record.
+   * @param <T> The type of the record.
    * @return message id.
    */
   public <T> MessageId sendMessage(String topic, Schema<T> schema, String key, T message) {
@@ -299,25 +287,24 @@ public class PulsarRuntimeOperator implements Closeable {
   /**
    * Send a list of messages to Pulsar, return the message id set after the ack from Pulsar.
    *
-   * @param topic    The name of the topic.
-   * @param schema   The schema for serialization.
+   * @param topic The name of the topic.
+   * @param schema The schema for serialization.
    * @param messages The records need to be sent.
-   * @param <T>      The type of the record.
+   * @param <T> The type of the record.
    * @return message id.
    */
-  public <T> List<MessageId> sendMessages(
-      String topic, Schema<T> schema, Collection<T> messages) {
+  public <T> List<MessageId> sendMessages(String topic, Schema<T> schema, Collection<T> messages) {
     return sendMessages(topic, schema, null, messages);
   }
 
   /**
    * Send a list messages to Pulsar, return the message id set after the ack from Pulsar.
    *
-   * @param topic    The name of the topic.
-   * @param schema   The schema for serialization.
-   * @param key      The message key.
+   * @param topic The name of the topic.
+   * @param schema The schema for serialization.
+   * @param key The message key.
    * @param messages The records need to be sent.
-   * @param <T>      The type of the record.
+   * @param <T> The type of the record.
    * @return message id.
    */
   public <T> List<MessageId> sendMessages(
@@ -362,8 +349,7 @@ public class PulsarRuntimeOperator implements Closeable {
    */
   public <T> Message<T> receiveMessage(String topic, Schema<T> schema, Duration timeout) {
     try (Consumer<T> consumer = createConsumer(topic, schema)) {
-      Message<T> message =
-          consumer.receive(Math.toIntExact(timeout.toMillis()), MILLISECONDS);
+      Message<T> message = consumer.receive(Math.toIntExact(timeout.toMillis()), MILLISECONDS);
       consumer.acknowledge(message.getMessageId());
 
       return message;
@@ -404,11 +390,10 @@ public class PulsarRuntimeOperator implements Closeable {
   }
 
   /**
-   * Drain all the messages from current topic. We will wait for all the messages has been
-   * consumed until the timeout.
+   * Drain all the messages from current topic. We will wait for all the messages has been consumed
+   * until the timeout.
    */
-  public <T> List<Message<T>> receiveAllMessages(
-      String topic, Schema<T> schema, Duration timeout) {
+  public <T> List<Message<T>> receiveAllMessages(String topic, Schema<T> schema, Duration timeout) {
     List<Message<T>> messages = new ArrayList<>();
     // delete sub to reset cursor to earliest
     deleteSubscription(topic);
@@ -424,14 +409,11 @@ public class PulsarRuntimeOperator implements Closeable {
   public void deleteSubscription(String topic) {
     List<String> subscriptions = sneakyAdmin(() -> admin().topics().getSubscriptions(topic));
     if (subscriptions.contains(SUBSCRIPTION_NAME)) {
-      sneakyAdmin(
-          () -> admin().topics().deleteSubscription(topic, SUBSCRIPTION_NAME));
+      sneakyAdmin(() -> admin().topics().deleteSubscription(topic, SUBSCRIPTION_NAME));
     }
   }
 
-  /**
-   * Return the transaction coordinator client for operating {@link TxnID}.
-   */
+  /** Return the transaction coordinator client for operating {@link TxnID}. */
   public TransactionCoordinatorClient coordinatorClient() {
     return ((PulsarClientImpl) client()).getTcClient();
   }
@@ -446,30 +428,23 @@ public class PulsarRuntimeOperator implements Closeable {
 
   /**
    * Return the broker http url for this Pulsar runtime. It's only used in flink environment. You
-   * can't create the {@link PulsarAdmin} by this broker http url, use the {@link #admin()}
-   * instead.
+   * can't create the {@link PulsarAdmin} by this broker http url, use the {@link #admin()} instead.
    */
   public String adminUrl() {
     return adminUrl;
   }
 
-  /**
-   * The client for creating producer and consumer. It's used in tests.
-   */
+  /** The client for creating producer and consumer. It's used in tests. */
   public PulsarClient client() {
     return client;
   }
 
-  /**
-   * The client for creating topics and query other metadata, etc. It's used in tests.
-   */
+  /** The client for creating topics and query other metadata, etc. It's used in tests. */
   public PulsarAdmin admin() {
     return admin;
   }
 
-  /**
-   * The configuration for constructing {@link PulsarConfiguration}.
-   */
+  /** The configuration for constructing {@link PulsarConfiguration}. */
   public Configuration config() {
     Configuration configuration = new Configuration();
     configuration.set(PULSAR_SERVICE_URL, serviceUrl());
@@ -477,9 +452,7 @@ public class PulsarRuntimeOperator implements Closeable {
     return configuration;
   }
 
-  /**
-   * This method is used for test framework. You can't close this operator manually.
-   */
+  /** This method is used for test framework. You can't close this operator manually. */
   @Override
   public void close() throws PulsarClientException {
     if (admin != null) {
@@ -496,8 +469,7 @@ public class PulsarRuntimeOperator implements Closeable {
     try {
       admin().topics().createNonPartitionedTopic(topic);
     } catch (PulsarAdminException e) {
-      if (!(e instanceof ConflictException
-          && e.getMessage().equals("This topic already exists"))) {
+      if (!(e instanceof ConflictException && e.getMessage().equals("This topic already exists"))) {
         sneakyThrow(e);
       }
     }
@@ -507,8 +479,7 @@ public class PulsarRuntimeOperator implements Closeable {
     try {
       admin().topics().createPartitionedTopic(topic, numberOfPartitions);
     } catch (PulsarAdminException e) {
-      if (!(e instanceof ConflictException
-          && e.getMessage().equals("This topic already exists"))) {
+      if (!(e instanceof ConflictException && e.getMessage().equals("This topic already exists"))) {
         sneakyThrow(e);
       }
     }
@@ -516,7 +487,8 @@ public class PulsarRuntimeOperator implements Closeable {
 
   private <T> Producer<T> createProducer(String topic, Schema<T> schema) {
     ProducerBuilder<T> builder =
-        client().newProducer(schema)
+        client()
+            .newProducer(schema)
             .topic(topic)
             .enableBatching(false)
             .enableMultiSchema(true)
@@ -529,13 +501,13 @@ public class PulsarRuntimeOperator implements Closeable {
     // Create the earliest subscription if it's not existed.
     List<String> subscriptions = sneakyAdmin(() -> admin().topics().getSubscriptions(topic));
     if (!subscriptions.contains(SUBSCRIPTION_NAME)) {
-      sneakyAdmin(
-          () -> admin().topics().createSubscription(topic, SUBSCRIPTION_NAME, earliest));
+      sneakyAdmin(() -> admin().topics().createSubscription(topic, SUBSCRIPTION_NAME, earliest));
     }
 
     // Create the consumer without the initial position.
     ConsumerBuilder<T> builder =
-        client().newConsumer(schema)
+        client()
+            .newConsumer(schema)
             .topic(topic)
             .subscriptionName(SUBSCRIPTION_NAME)
             .subscriptionMode(Durable)
