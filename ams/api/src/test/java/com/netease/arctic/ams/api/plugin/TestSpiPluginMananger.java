@@ -13,6 +13,7 @@ public class TestSpiPluginMananger {
   private SpiPluginManager<TestPlugin> pluginManager;
   private static final String pluginName1 = "plugin1";
   private static final String pluginName2 = "plugin2";
+
   @BeforeEach
   public void setup() {
     pluginManager = new SpiPluginManager<TestPlugin>() {};

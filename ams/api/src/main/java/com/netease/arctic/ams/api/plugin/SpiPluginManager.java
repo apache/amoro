@@ -10,10 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class SpiPluginManager<T extends Plugin> implements PluginManager<T> {
 
-  private final ServiceLoader<T> pluginLoader;
-
   private final Map<String, T> installedPlugins = new ConcurrentHashMap<>();
-
+  private final ServiceLoader<T> pluginLoader;
 
   public SpiPluginManager() {
     this.pluginLoader = ServiceLoader.load(getPluginClass());
@@ -53,7 +51,7 @@ public abstract class SpiPluginManager<T extends Plugin> implements PluginManage
 
   @Override
   public T get(String pluginName) {
-     return installedPlugins.get(pluginName);
+    return installedPlugins.get(pluginName);
   }
 
   @Override
