@@ -43,7 +43,7 @@
         <postgres-jdbc.version>42.5.1</postgres-jdbc.version>
         <derby-jdbc.version>10.13.1.1</derby-jdbc.version>
         <commons-dbcp2.version>2.9.0</commons-dbcp2.version>
-        <snakeyaml.version>1.30</snakeyaml.version>
+        <snakeyaml.version>2.2</snakeyaml.version>
         <javalin.version>4.6.1</javalin.version>
         <slf4j.version>1.7.30</slf4j.version>
         <log4j.version>2.17.2</log4j.version>

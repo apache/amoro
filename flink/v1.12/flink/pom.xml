@@ -527,6 +527,12 @@
             <artifactId>pulsar-broker</artifactId>
             <version>${pulsar.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.yaml</groupId>
+                    <artifactId>snakeyaml</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
