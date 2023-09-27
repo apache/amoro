@@ -101,6 +101,11 @@ function start() {
         echo "process start failed."; return 1
     fi
 }
+
+function startForeground() {
+  exec ${CMDS}
+}
+
 function stop() {
     status && kill $(cat ${PID})
     if ! status; then
@@ -142,6 +147,9 @@ case "$1" in
             start
         fi
         ;;
+    start-foreground)
+       startForeground
+       ;;
     stop)
         status;
         if [ $? -ne 0 ]; then

@@ -17,37 +17,33 @@
 
 FROM openjdk:8u332-jdk
 
-ARG AMORO_VERSION=0.5.0-SNAPSHOT
+ARG AMORO_VERSION=master-SNAPSHOT
 ARG APACHE_ARCHIVE=https://archive.apache.org/dist
-ARG MAVEN_URL=https://maven.aliyun.com/repository/central
+ARG MAVEN_URL=https://repo.maven.apache.org/maven2/
 ARG DEBIAN_MIRROR=http://deb.debian.org
 
-WORKDIR /usr/local/ams
-
-RUN sed -i "s#http://deb.debian.org#${DEBIAN_MIRROR}#g" /etc/apt/sources.list
-
-RUN apt update \
-    && apt-get install -y vim \
-    && apt-get install -y netcat \
-    && apt-get install -y net-tools \
-    && apt-get install -y telnet \
-    && apt-get install -y dos2unix \
-    && apt-get clean
-
 WORKDIR /usr/local
-
 ADD amoro-${AMORO_VERSION}-bin.zip /usr/local/amoro-${AMORO_VERSION}-bin.zip
 RUN unzip amoro-${AMORO_VERSION}-bin.zip \
-    && rm -f amoro-${AMORO_VERSION}-bin.zip \
-    && ln -s /usr/local/amoro-${AMORO_VERSION} /usr/local/ams
+    && rm /usr/local/amoro-${AMORO_VERSION}/plugin/optimize -rf
 
 
-WORKDIR /usr/local/ams
-COPY config.sh  ./bin/config.sh
-RUN find ./bin -name "*.sh" | xargs dos2unix
-RUN mkdir -p ./logs && touch ./logs/ams-info.log
-RUN ln -s /usr/local/ams/amoro-${AMORO_VERSION} /usr/local/amoro
 
-CMD ["bash","-c","./amoro/bin/ams.sh start && tail -f ./amoro/logs/ams-info.log"]
 
+FROM openjdk:8u332-slim-buster
+COPY entrypoint.sh /
+
+ARG AMORO_VERSION=master-SNAPSHOT
+
+
+COPY --from=0 "/usr/local/amoro-${AMORO_VERSION}" "/usr/local/amoro"
+RUN chmod +x /entrypoint.sh
+
+WORKDIR /usr/local/amoro
+
+ENV AMORO_HOME /usr/local/amoro
+ENV LOG_LEVEL info
+EXPOSE 1630 1260 1261
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["help"]
 

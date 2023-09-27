@@ -36,11 +36,11 @@ Usage: $0 [options] [image]
 Build for Amoro demo docker images.
 
 Images:
-    ams                     Build Amoro management service and a Flink container with Amoro flink connector and Iceberg connector.
-    namenode                Build a hadoop namenode container for quick start demo
-    datanode                Build a hadoop datanode container for quick start demo
-    optimizer-flink         Build a optimizer deployed with flink engine.
-    all                     Build all of image above.
+    quickstart              Build Amoro QuickStart Image, include a Flink container with Amoro flink connector and Iceberg connector.
+    namenode                Build a hadoop namenode container for quick start demo.
+    datanode                Build a hadoop datanode container for quick start demo.
+    optimizer-flink         Build official Amoro optimizer deployed with flink engine for production environments.
+    amoro                   Build official Amoro image used for production environments.
 
 Options:
     --flink-version         Flink binary release version, default is 1.15.3, format must be x.y.z
@@ -63,7 +63,7 @@ i=1;
 j=$#;
 while [ $i -le $j ]; do
   case $1 in
-    ams|namenode|datanode|optimizer-flink|all)
+    ams|namenode|datanode|optimizer-flink|amoro)
     ACTION=$1;
     i=$((i+1))
     shift 1
@@ -120,6 +120,16 @@ function print_env() {
   echo "SET APACHE_ARCHIVE=${APACHE_ARCHIVE}"
   echo "SET DEBIAN_MIRROR=${DEBIAN_MIRROR}"
   echo "SET AMORO_VERSION=${AMORO_VERSION}"
+}
+
+# print_image $IMAGE_NAME $TAG
+function print_image() {
+   IMAGE_REF=$1
+   IMAGE_TAG=$2
+   echo "=============================================="
+   echo "          $IMAGE_REF:$IMAGE_TAG               "
+   echo "=============================================="
+   echo "Start Build ${IMAGE_REF}:${IMAGE_TAG} Image"
 }
 
 
@@ -213,6 +223,25 @@ function build_optimizer_flink() {
       optimizer-flink/.
 }
 
+function build_amoro() {
+  IMAGE_REF=arctic163/amoro
+  IMAGE_TAG=$AMORO_VERSION
+  print_image $IMAGE_REF $IMAGE_TAG
+
+  DIST_FILE=${AMORO_HOME}/dist/target/amoro-${AMORO_VERSION}-bin.zip
+
+  if [ ! -f "${DIST_FILE}" ]; then
+    BUILD_CMD="mvn clean package -am -e -pl dist -DskipTests "
+    echo "Amoro dist package is not exists in ${DIST_FILE}"
+    echo "please check file or run '$BUILD_CMD' first"
+  fi
+
+  cp $DIST_FILE $CURRENT_DIR/amoro/amoro-${AMORO_VERSION}-bin.zip
+  docker build -t ${IMAGE_REF}:${IMAGE_TAG} \
+    --build-arg AMORO_VERSION=${AMORO_VERSION} \
+    amoro/.
+}
+
 
 case "$ACTION" in
   ams)
@@ -237,6 +266,10 @@ case "$ACTION" in
   optimizer-flink)
     print_env
     build_optimizer_flink
+    ;;
+  amoro)
+    print_env
+    build_amoro
     ;;
   *)
     echo "Unknown image type: $ACTION"

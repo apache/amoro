@@ -20,7 +20,7 @@
 <Configuration monitorInterval="10">
     <properties>
         <property name="LOG_HOME">${sys:log.home}</property>
-        <property name="CONSOLE_LEVEL">${env:CONSOLE_LEVEL:-off}</property>
+        <property name="CONSOLE_LEVEL">${env:CONSOLE_LOG_LEVEL:-off}</property>
     </properties>
 
     <Appenders>
@@ -118,6 +118,7 @@
 <!--            <AppenderRef ref="debugFileAppender" level="debug"/>-->
             <AppenderRef ref="infoFileAppender" level="info"/>
             <AppenderRef ref="errorFileAppender" level="error"/>
+            <!-- SET CONSOLE_LOG_LEVEL=info to print console logger in docker -->
             <AppenderRef ref="consoleAppender" level="${CONSOLE_LEVEL}" />
         </Root>
 

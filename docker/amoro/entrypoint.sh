@@ -19,17 +19,25 @@
 ###############################################################################
 
 args=("$@")
-if [ $1 == "help" ]; then
-    printf "Usage: $(basename $0) [ams|optimizer] [args]\n"
-    printf "   Or: $(basename $0) help \n\n"
-    exit 0
-elif [ "$1" == "ams" ]; then
-    args=("${args[@]:1}")
 
-    echo "Start Amoro Management Service"
-
-    exec "$AMORO_HOME/bin/ams.sh start"
-elif [ "$1" == "optimizer" ]; then
-
+if [ -z "$LOG_LEVEL" ]; then
+  # set log-level to console-log-level
+  export CONSOLE_LOG_LEVEL=$LOG_LEVEL
 fi
 
+if [ $1 == "help" ]; then
+  printf "Usage: $(basename $0) [ams|optimizer] [args]\n"
+  printf "   Or: $(basename $0) help \n\n"
+  exit 0
+elif [ "$1" == "ams" ]; then
+  args=("${args[@]:1}")
+  echo "Start Amoro Management Service"
+  exec "$AMORO_HOME/bin/ams.sh start-foreground"
+elif [ "$1" == "optimizer" ]; then
+  args=("${args[@]:1}")
+  echo "Start Amoro Optimizer"
+  exec "$AMORO_HOME/bin/optimizer.sh " "${args[@]}"
+fi
+
+# Running command in pass-through mode
+exec "${args[@]}"
