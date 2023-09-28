@@ -58,7 +58,9 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class AdaptHiveFlinkParquetReaders {
-  private AdaptHiveFlinkParquetReaders() {}
+  private AdaptHiveFlinkParquetReaders() {
+
+  }
 
   public static ParquetValueReader<RowData> buildReader(
       Schema expectedSchema, MessageType fileSchema) {

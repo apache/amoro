@@ -18,8 +18,6 @@
 
 package org.apache.iceberg.flink.data;
 
-import static org.apache.flink.table.types.logical.LogicalTypeRoot.TIMESTAMP_WITHOUT_TIME_ZONE;
-
 import org.apache.flink.table.data.ArrayData;
 import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.MapData;
@@ -60,12 +58,16 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
+import static org.apache.flink.table.types.logical.LogicalTypeRoot.TIMESTAMP_WITHOUT_TIME_ZONE;
+
 /**
  * Copy from iceberg {@link FlinkParquetWriters} to support int96 type and use {@link
  * AdaptHiveParquetWithFlinkSchemaVisitor}.
  */
 public class AdaptHiveFlinkParquetWriters {
-  private AdaptHiveFlinkParquetWriters() {}
+  private AdaptHiveFlinkParquetWriters() {
+
+  }
 
   @SuppressWarnings("unchecked")
   public static <T> ParquetValueWriter<T> buildWriter(LogicalType schema, MessageType type) {

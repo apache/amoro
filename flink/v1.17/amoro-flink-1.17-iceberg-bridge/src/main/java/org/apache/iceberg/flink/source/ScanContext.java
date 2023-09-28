@@ -467,7 +467,9 @@ public class ScanContext implements Serializable {
     private int maxAllowedPlanningFailures =
         FlinkReadOptions.MAX_ALLOWED_PLANNING_FAILURES_OPTION.defaultValue();
 
-    private Builder() {}
+    private Builder() {
+
+    }
 
     Builder caseSensitive(boolean newCaseSensitive) {
       this.caseSensitive = newCaseSensitive;
