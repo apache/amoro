@@ -72,7 +72,7 @@
 
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-ams-optimizer</artifactId>
+            <artifactId>amoro-ams-optimizer-container</artifactId>
             <version>${project.version}</version>
         </dependency>
 

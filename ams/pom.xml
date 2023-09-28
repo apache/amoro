@@ -33,7 +33,10 @@
 
     <modules>
         <module>api</module>
-        <module>optimizer</module>
+        <module>optimizer-common</module>
+        <module>optimizer-container</module>
+        <module>optimizer-job/flink-job</module>
+        <module>optimizer-job/standalone-job</module>
         <module>server</module>
         <module>dashboard</module>
     </modules>
