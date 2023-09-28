@@ -36,23 +36,25 @@ if [ -z "$AMORO_CONF_DIR" ]; then
 fi
 
 
-AMORO_ENV_SH="${AMORO_CONF_DIR}/env.sh"
-if [ ! -f ${AMORO_ENV_SH} ]; then
-   echo "no env.sh found in ${AMORO_CONF_DIR}"
-   exit 1
-fi
 
 JVM_PROPERTIES=${AMORO_CONF_DIR}/jvm.properties
+JVM_VALUE=
 parseJvmArgs() {
   ARG=$1
-  value=$(cat "$JVM_PROPERTIES" | grep "$ARG=" | sed -e "s/$ARG=\(.*\)/\1/")
-  return "$value"
+  JVM_VALUE=$(cat "$JVM_PROPERTIES" | grep "$ARG=" | sed -e "s/$ARG=\(.*\)/\1/")
 }
 
-JVM_XMX_CONFIG=$(parseJvmArgs "xmx")
-JVM_XMS_CONFIG=$(parseJvmArgs "xms")
-JMX_REMOTE_PORT_CONFIG=$(parseJvmArgs "jmx.remote.port")
-JVM_EXTRA_CONFIG=$(parseJvmArgs "extra.options")
+parseJvmArgs "xmx"
+JVM_XMX_CONFIG=${JVM_VALUE}
+
+parseJvmArgs "xms"
+JVM_XMS_CONFIG=${JVM_VALUE}
+
+parseJvmArgs "jmx.remote.port"
+JMX_REMOTE_PORT_CONFIG=${JVM_VALUE}
+
+parseJvmArgs "extra.options"
+JVM_EXTRA_CONFIG=${JVM_VALUE}
 
 export JVM_XMX_CONFIG
 export JVM_XMS_CONFIG
