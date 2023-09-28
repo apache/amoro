@@ -36,36 +36,29 @@ if [ -z "$AMORO_CONF_DIR" ]; then
 fi
 
 
-AMORO_ENV_SH="${AMORO_CONF_DIR}/env.sh"
-if [ ! -f ${AMORO_ENV_SH} ]; then
-   echo "no env.sh found in ${AMORO_CONF_DIR}"
-   exit 1
-fi
 
-export JVM_XMX_CONFIG=$JVM_XMX
-export JVM_XMS_CONFIG=$JVM_XMS
-export JMX_REMOTE_PORT_CONFIG=$JMX_REMOTE_PORT
-export JVM_EXTRA_CONFIG=$JVM_EXTRA
+JVM_PROPERTIES=${AMORO_CONF_DIR}/jvm.properties
+JVM_VALUE=
+parseJvmArgs() {
+  ARG=$1
+  value=$(cat "$JVM_PROPERTIES" | grep "$ARG=" | sed -e "s/$ARG=\(.*\)/\1/")
+  value=$(echo "$value" | sed 's/^"\(.*\)"$/\1/')
+  JVM_VALUE=$value
+}
 
-. "$AMORO_ENV_SH"
+parseJvmArgs "xmx"
+JVM_XMX_CONFIG=${JVM_VALUE}
 
-# User-set environment variables have higher priority.
-if [ -z "$JVM_XMX_CONFIG" ]; then
-  export JVM_XMX_CONFIG=$JVM_XMX
-fi
-if [ -z "$JVM_XMS_CONFIG" ]; then
-  export JVM_XMS_CONFIG=$JVM_XMS
-fi
-if [ -z "$JMX_REMOTE_PORT_CONFIG" ]; then
-  export JMX_REMOTE_PORT_CONFIG=$JMX_REMOTE_PORT
-fi
-if [ -z "$JVM_EXTRA_CONFIG" ]; then
-  export JVM_EXTRA_CONFIG=$JVM_EXTRA
-fi
+parseJvmArgs "xms"
+JVM_XMS_CONFIG=${JVM_VALUE}
 
-# LANG is a system environment variable with lower priority.
-if [ -n "${LANG_CONFIG}" ];then
-  export LANG=${LANG_CONFIG}
-fi
+parseJvmArgs "jmx.remote.port"
+JMX_REMOTE_PORT_CONFIG=${JVM_VALUE}
 
+parseJvmArgs "extra.options"
+JVM_EXTRA_CONFIG=${JVM_VALUE}
 
+export JVM_XMX_CONFIG
+export JVM_XMS_CONFIG
+export JMX_REMOTE_PORT_CONFIG
+export JVM_EXTRA_CONFIG
