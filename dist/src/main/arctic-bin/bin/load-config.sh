@@ -41,7 +41,9 @@ JVM_PROPERTIES=${AMORO_CONF_DIR}/jvm.properties
 JVM_VALUE=
 parseJvmArgs() {
   ARG=$1
-  JVM_VALUE=$(cat "$JVM_PROPERTIES" | grep "$ARG=" | sed -e "s/$ARG=\(.*\)/\1/")
+  value=$(cat "$JVM_PROPERTIES" | grep "$ARG=" | sed -e "s/$ARG=\(.*\)/\1/")
+  value=$(echo "$value" | sed 's/^"\(.*\)"$/\1/')
+  JVM_VALUE=$value
 }
 
 parseJvmArgs "xmx"
