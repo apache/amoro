@@ -180,7 +180,7 @@ case "$1" in
         fi
         ;;
     *)
-        echo "Usage $0 start|stop|restart|status|pid"
+        echo "Usage $0 start|start-foreground|stop|restart|status|pid"
         exit 1
         ;;
 esac

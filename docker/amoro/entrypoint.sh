@@ -32,7 +32,7 @@ if [ $1 == "help" ]; then
 elif [ "$1" == "ams" ]; then
   args=("${args[@]:1}")
   echo "Start Amoro Management Service"
-  exec "$AMORO_HOME/bin/ams.sh start-foreground"
+  exec "$AMORO_HOME/bin/ams.sh" "start-foreground"
 elif [ "$1" == "optimizer" ]; then
   args=("${args[@]:1}")
   echo "Start Amoro Optimizer"

@@ -40,6 +40,7 @@ Build for Amoro demo docker images.
 
 Images:
     quickstart              Build Amoro QuickStart Image, include a Flink container with Amoro flink connector and Iceberg connector.
+    quickdemo               Build Amoro QuickStart Image, for run flink ingestion job in quick-demo http://amoro.netease.com/quick-demo/
     namenode                Build a hadoop namenode container for quick start demo.
     datanode                Build a hadoop datanode container for quick start demo.
     optimizer-flink         Build official Amoro optimizer deployed with flink engine for production environments.
@@ -62,7 +63,7 @@ i=1;
 j=$#;
 while [ $i -le $j ]; do
   case $1 in
-    quickstart|namenode|datanode|optimizer-flink|amoro)
+    quickstart|quickdemo|namenode|datanode|optimizer-flink|amoro)
     ACTION=$1;
     i=$((i+1))
     shift 1
@@ -242,11 +243,40 @@ function build_amoro() {
     amoro/.
 }
 
+function build_quickdemo() {
+    IMAGE_REF=arctic163/quickdemo
+    IMAGE_TAG=$AMORO_VERSION
+
+    print_image $IMAGE_REF "$IMAGE_TAG"
+
+    FLINK_CONNECTOR_BINARY=${PROJECT_HOME}/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
+
+    if [ ! -f "${FLINK_CONNECTOR_BINARY}" ]; then
+        echo "amoro-flink-connector not exists in ${FLINK_CONNECTOR_BINARY}, run 'mvn clean package -pl !trino' first. "
+        exit  1
+    fi
+
+    set -x
+    FLINK_IMAGE_BINARY=${CURRENT_DIR}/quickdemo/amoro-flink-runtime-${FLINK_VERSION}-${AMORO_VERSION}.jar
+    cp ${FLINK_CONNECTOR_BINARY}  ${FLINK_IMAGE_BINARY}
+    # dos2unix ${CURRENT_DIR}/quickstart/config.sh
+    docker build -t $IMAGE_REF:$IMAGE_TAG \
+      --build-arg AMORO_VERSION=${AMORO_VERSION} \
+      --build-arg DEBIAN_MIRROR=${DEBIAN_MIRROR} \
+      --build-arg APACHE_ARCHIVE=${APACHE_ARCHIVE} \
+      --build-arg FLINK_VERSION=${FLINK_VERSION} \
+      quickdemo/.
+}
+
 
 case "$ACTION" in
   quickstart)
     print_env
     build_quickstart
+    ;;
+  quickdemo)
+    print_env
+    build_quickdemo
     ;;
   namenode)
     print_env

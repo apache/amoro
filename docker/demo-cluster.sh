@@ -22,11 +22,11 @@ AMORO_TAG=master-snapshot
 
 
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
-AMORO_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
-
-AMORO_POM=${AMORO_HOME}/pom.xml
 
 
+DOCKER_COMPOSE="${CURRENT_DIR}/docker-compose.yml"
+HADOOP_CONF="${CURRENT_DIR}/hadoop-config"
+VOLUMES_DIR="${CURRENT_DIR}/volumes"
 
 function usage() {
     cat <<EOF
@@ -35,7 +35,8 @@ Build for Amoro demo docker images.
 
 Commands:
     start                   Setup demo cluster
-    stop                    Stop demo cluster and clean dockers
+    stop                    Stop demo cluster and remove containers, volume data will be kept.
+    clean                   clean volume data.
 
 Options:
     -v    --version         Setup Amoro image version. default is ${AMORO_TAG}
@@ -50,7 +51,7 @@ i=1;
 j=$#;
 while [ $i -le $j ]; do
     case $1 in
-      start|stop)
+      start|stop|clean)
       COMMAND=$1;
       i=$((i+1))
       shift 1
@@ -73,9 +74,9 @@ done
 
 
 function create_docker_compose() {
-  if [ -f "docker-compose.yml" ]; then
+  if [ -f "$DOCKER_COMPOSE" ]; then
       echo "clean up older docker-compose.yml"
-      rm docker-compose.yml
+      rm $DOCKER_COMPOSE
   fi
 
   cat <<EOT >> docker-compose.yml
@@ -99,7 +100,8 @@ services:
       - 10070:50070
       - 8020:8020
     volumes:
-      - ./hadoop-config:/etc/hadoop
+      - ${HADOOP_CONF}:/etc/hadoop
+      - ${VOLUMES_DIR}/namenode:/hadoop/dfs/name
 
   datanode:
     image: arctic163/datanode
@@ -108,7 +110,8 @@ services:
       - CLUSTER_NAME=demo-cluster
     hostname: datanode
     volumes:
-      - ./hadoop-config:/etc/hadoop
+      - ${HADOOP_CONF}:/etc/hadoop
+      - ${VOLUMES_DIR}/datanode:/hadoop/dfs/data
     networks:
       - amoro_network
     ports:
@@ -118,11 +121,23 @@ services:
       - namenode 
 
   amoro:
-    image: arctic163/quickstart:${AMORO_TAG}
+    image: arctic163/amoro:${AMORO_TAG}
     container_name: amoro
     ports:
       - 1630:1630
       - 1260:1260
+    networks:
+      - amoro_network
+    volumes:
+      - ${VOLUMES_DIR}/amoro:/tmp/amoro
+    command: "ams"
+    tty: true
+    stdin_open: true
+
+  quickdemo:
+    image: arctic163/quickdemo:${AMORO_TAG}
+    container_name: quickdemo
+    ports:
       - 8081:8081
     networks:
       - amoro_network
@@ -151,6 +166,12 @@ function stop() {
   docker-compose down
 }
 
+function clean() {
+  test -f "$DOCKER_COMPOSE" && rm "$DOCKER_COMPOSE"
+  test -d "${HADOOP_CONF}" && rm "${HADOOP_CONF}" -rf
+  test -d "${VOLUMES_DIR}" && rm "${VOLUMES_DIR}" -rf
+}
+
 set +x
 
 case "$COMMAND" in
@@ -160,7 +181,9 @@ case "$COMMAND" in
   stop)
     stop
     ;;
-
+  clean)
+    clean
+    ;;
   none)
     usage
     exit 1
