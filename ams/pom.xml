@@ -45,6 +45,9 @@
         <thrift.version>0.13.0</thrift.version>
     </properties>
 
+    <dependencies>
+
+    </dependencies>
 
     <build>
         <plugins>
