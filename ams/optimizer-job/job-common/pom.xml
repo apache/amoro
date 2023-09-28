@@ -27,8 +27,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>amoro-ams-optimizer-common</artifactId>
-    <name>Amoro Project Optimizer Common</name>
+    <artifactId>optimize-job-common</artifactId>
+    <name>Amoro Project Optimize Job Common</name>
     <url>https://amoro.netease.com</url>
 
     <properties>

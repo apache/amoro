@@ -28,8 +28,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>amoro-ams-optimizer-standalone-job</artifactId>
-    <name>Amoro Project Optimizer Standalone Job</name>
+    <artifactId>standalone-optimize-job</artifactId>
+    <name>Amoro Project Standalone Optimize Job</name>
     <url>https://amoro.netease.com</url>
 
     <properties>
@@ -41,7 +41,7 @@
     <dependencies>
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-ams-optimizer-common</artifactId>
+            <artifactId>optimize-job-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 

@@ -27,8 +27,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>amoro-ams-optimizer-flink-job</artifactId>
-    <name>Amoro Project Optimizer Flink Job</name>
+    <artifactId>flink-optimize-job</artifactId>
+    <name>Amoro Project Flink Optimize Job</name>
     <url>https://amoro.netease.com</url>
 
     <properties>
@@ -42,7 +42,7 @@
     <dependencies>
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-ams-optimizer-common</artifactId>
+            <artifactId>optimize-job-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 

@@ -27,7 +27,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>amoro-ams-optimizer-container</artifactId>
+    <artifactId>optimizer-container</artifactId>
     <name>Amoro Project Optimizer Container</name>
     <url>https://amoro.netease.com</url>
 
@@ -40,7 +40,7 @@
     <dependencies>
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-ams-optimizer-common</artifactId>
+            <artifactId>optimize-job-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 
