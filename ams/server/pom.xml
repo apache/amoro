@@ -408,6 +408,13 @@
         </dependency>
 
         <dependency>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>standalone-optimize-job</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-test</artifactId>
             <version>${curator.version}</version>

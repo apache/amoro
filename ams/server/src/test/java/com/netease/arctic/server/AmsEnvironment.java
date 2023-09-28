@@ -10,7 +10,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.hive.HMSMockServer;
-import com.netease.arctic.optimizer.local.LocalOptimizer;
+import com.netease.arctic.optimizer.job.standalone.StandaloneOptimizer;
 import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.DefaultTableService;
@@ -252,7 +252,7 @@ public class AmsEnvironment {
     new Thread(() -> {
       String[] startArgs = {"-a", getOptimizingServiceUrl(), "-p", "1", "-g", "default"};
       try {
-        LocalOptimizer.main(startArgs);
+        StandaloneOptimizer.main(startArgs);
       } catch (CmdLineException e) {
         throw new RuntimeException(e);
       }

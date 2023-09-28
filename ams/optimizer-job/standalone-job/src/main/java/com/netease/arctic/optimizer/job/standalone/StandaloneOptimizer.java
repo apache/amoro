@@ -7,7 +7,7 @@ import org.kohsuke.args4j.CmdLineException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 
-public class LocalOptimizer {
+public class StandaloneOptimizer {
   public static void main(String[] args) throws CmdLineException {
     OptimizerConfig optimizerConfig = new OptimizerConfig(args);
     Optimizer optimizer = new Optimizer(optimizerConfig);
