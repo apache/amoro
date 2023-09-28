@@ -18,18 +18,13 @@
 #
 
 
-PROJECT_VERSION=latest
+AMORO_TAG=master-snapshot
 
 
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 AMORO_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
 
 AMORO_POM=${AMORO_HOME}/pom.xml
-
-if [ -f "${AMORO_POM}" ];then
-  echo "Current dir in Amoro project. parse version from ${AMORO_POM}"
-  PROJECT_VERSION=`cat ${AMORO_POM} | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'`
-fi
 
 
 
@@ -43,7 +38,7 @@ Commands:
     stop                    Stop demo cluster and clean dockers
 
 Options:
-    -v    --version         Setup Amoro image version. default is ${PROJECT_VERSION}
+    -v    --version         Setup Amoro image version. default is ${AMORO_TAG}
 
 EOF
 }
@@ -63,7 +58,7 @@ while [ $i -le $j ]; do
 
       "-v"|"--version")
       shift 1
-      PROJECT_VERSION=$1
+      AMORO_TAG=$1
       i=$((i+2))
       shift 1
       ;;
@@ -122,9 +117,9 @@ services:
     depends_on:
       - namenode 
 
-  ams:
-    image: arctic163/ams:${PROJECT_VERSION}
-    container_name: ams
+  amoro:
+    image: arctic163/quickstart:${AMORO_TAG}
+    container_name: amoro
     ports:
       - 1630:1630
       - 1260:1260
@@ -142,7 +137,7 @@ EOT
 
 
 function start() {
-  echo "SET AMORO_VERSION=${PROJECT_VERSION}"
+  echo "SET AMORO_VERSION=${AMORO_TAG}"
 
   echo "generate docker compose"
   create_docker_compose

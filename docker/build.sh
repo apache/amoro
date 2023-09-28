@@ -18,17 +18,20 @@
 #
 
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
-AMORO_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
-export AMORO_HOME
+PROJECT_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
+export PROJECT_HOME
 
-AMORO_VERSION=`cat $AMORO_HOME/pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'`
-AMORO_BINARY_PACKAGE=${AMORO_HOME}/dist/target/amoro-${AMORO_VERSION}-bin.zip
+cd $CURRENT_DIR
+
+AMORO_VERSION=`cat $PROJECT_HOME/pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'`
+AMORO_BINARY_PACKAGE=${PROJECT_HOME}/dist/target/amoro-${AMORO_VERSION}-bin.zip
 FLINK_VERSION=1.15.3
 HADOOP_VERSION=2.10.2
 DEBIAN_MIRROR=http://deb.debian.org
 APACHE_ARCHIVE=https://archive.apache.org/dist
-OPTIMIZER_TARGET=${AMORO_HOME}/ams/optimizer/target
+OPTIMIZER_TARGET=${PROJECT_HOME}/ams/optimizer/target
 OPTIMIZER_JOB=${OPTIMIZER_TARGET}/amoro-ams-optimizer-${AMORO_VERSION}-jar-with-dependencies.jar
+AMORO_TAG=$AMORO_VERSION
 
 function usage() {
     cat <<EOF
@@ -48,22 +51,18 @@ Options:
     --apache-archive        Apache Archive url, default is https://archive.apache.org/dist
     --debian-mirror         Mirror url of debian, default is http://deb.debian.org
     --optimizer-job         Location of optimizer job
+    --tag                   Tag for amoro/optimizer-flink/quickstart image.
 EOF
 }
 
-function debug() {
-    echo $1
-}
 
-
-
-ACTION=all
+ACTION=amoro
 
 i=1;
 j=$#;
 while [ $i -le $j ]; do
   case $1 in
-    ams|namenode|datanode|optimizer-flink|amoro)
+    quickstart|namenode|datanode|optimizer-flink|amoro)
     ACTION=$1;
     i=$((i+1))
     shift 1
@@ -103,6 +102,12 @@ while [ $i -le $j ]; do
     i=$((i+2))
     ;;
 
+    "--tag")
+    shift 1
+    AMORO_TAG=$1
+    i=$((i+2))
+    ;;
+
     *)
       echo "Unknown args of $1"
       usage
@@ -120,6 +125,7 @@ function print_env() {
   echo "SET APACHE_ARCHIVE=${APACHE_ARCHIVE}"
   echo "SET DEBIAN_MIRROR=${DEBIAN_MIRROR}"
   echo "SET AMORO_VERSION=${AMORO_VERSION}"
+  echo "SET AMORO_TAG=${AMORO_TAG}"
 }
 
 # print_image $IMAGE_NAME $TAG
@@ -133,12 +139,11 @@ function print_image() {
 }
 
 
-function build_ams() {
-  echo "=============================================="
-  echo "               arctic163/ams                "
-  echo "=============================================="
-  echo "Start Build arctic163/ams Image, Amoro Version: ${AMORO_VERSION}"
-  FLINK_CONNECTOR_BINARY=${AMORO_HOME}/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
+function build_quickstart() {
+  IMAGE_REF="arctic163/quickstart"
+  IMAGE_TAG=$AMORO_TAG
+  print_image "$IMAGE_REF" "$IMAGE_TAG"
+  FLINK_CONNECTOR_BINARY=${PROJECT_HOME}/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
 
   if [ ! -f "${AMORO_BINARY_PACKAGE}" ]; then
       echo "Amoro Binary Release ${AMORO_BINARY_PACKAGE} is not exists, run 'mvn clean package -pl !trino' first. "
@@ -150,22 +155,17 @@ function build_ams() {
   fi
 
   set -x
-  AMS_IMAGE_RELEASE_PACKAGE=${CURRENT_DIR}/ams/amoro-${AMORO_VERSION}-bin.zip
-  FLINK_IMAGE_BINARY=${CURRENT_DIR}/ams/amoro-flink-runtime-${FLINK_VERSION}-${AMORO_VERSION}.jar
+  AMS_IMAGE_RELEASE_PACKAGE=${CURRENT_DIR}/quickstart/amoro-${AMORO_VERSION}-bin.zip
+  FLINK_IMAGE_BINARY=${CURRENT_DIR}/quickstart/amoro-flink-runtime-${FLINK_VERSION}-${AMORO_VERSION}.jar
   cp ${AMORO_BINARY_PACKAGE} ${AMS_IMAGE_RELEASE_PACKAGE}
   cp ${FLINK_CONNECTOR_BINARY}  ${FLINK_IMAGE_BINARY}
-  # dos2unix ${CURRENT_DIR}/ams/config.sh
-  docker build -t arctic163/ams \
+  # dos2unix ${CURRENT_DIR}/quickstart/config.sh
+  docker build -t $IMAGE_REF:$IMAGE_TAG \
     --build-arg AMORO_VERSION=${AMORO_VERSION} \
     --build-arg DEBIAN_MIRROR=${DEBIAN_MIRROR} \
     --build-arg APACHE_ARCHIVE=${APACHE_ARCHIVE} \
     --build-arg FLINK_VERSION=${FLINK_VERSION} \
-    ams/.
-  
-  if [ $? == 0 ]; then
-      IMAGE_ID=`docker images |grep 'arctic163/ams' |grep 'latest' |awk '{print $3}' `
-      docker tag ${IMAGE_ID} arctic163/ams:${AMORO_VERSION}
-  fi
+    quickstart/.
 }
 
 function build_namenode() {
@@ -228,7 +228,7 @@ function build_amoro() {
   IMAGE_TAG=$AMORO_VERSION
   print_image $IMAGE_REF $IMAGE_TAG
 
-  DIST_FILE=${AMORO_HOME}/dist/target/amoro-${AMORO_VERSION}-bin.zip
+  DIST_FILE=${PROJECT_HOME}/dist/target/amoro-${AMORO_VERSION}-bin.zip
 
   if [ ! -f "${DIST_FILE}" ]; then
     BUILD_CMD="mvn clean package -am -e -pl dist -DskipTests "
@@ -244,9 +244,9 @@ function build_amoro() {
 
 
 case "$ACTION" in
-  ams)
+  quickstart)
     print_env
-    build_ams
+    build_quickstart
     ;;
   namenode)
     print_env
@@ -258,7 +258,7 @@ case "$ACTION" in
     ;;
   all)
     print_env
-    build_ams
+    build_quickstart
     build_namenode
     build_datanode
     build_optimizer_flink
