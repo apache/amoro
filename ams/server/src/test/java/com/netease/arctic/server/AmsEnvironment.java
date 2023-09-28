@@ -394,7 +394,7 @@ public class AmsEnvironment {
         "\n" +
         "containers:\n" +
         "  - name: localContainer\n" +
-        "    container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer\n" +
+        "    container-impl: com.netease.arctic.optimizer.container.LocalOptimizerContainer\n" +
         "    properties:\n" +
         "      memory: \"1024\"\n" +
         "      hadoop_home: /opt/hadoop\n" +
