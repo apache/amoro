@@ -202,13 +202,15 @@ Note: `$AMORO_HOME` can't be overwritten from environment variable. It always po
 
 ### Configure AMS JVM
 
-The parameters related to JVM can be set in `${AMORO_CONF_DIR}/env.sh`, 
-and if there are other environment variables that need to be configured, 
-they can also be added to this file. 
-AMS will call `source ${AMORO_CONF_DIR}/env.sh` before starting to make the configuration effective.
+The following JVM options could be set in `${AMORO_CONF_DIR}/jvm.properties`.
 
-In addition, the parameters related to JVM in `${AMORO_CONF_DIR}/env.sh` can also be set directly through environment variables, 
-which have a higher priority than the configuration in `${AMORO_CONF_DIR}/env.sh`.
+| Property Name   | Related Jvm option                             | Description              |
+|-----------------|------------------------------------------------|--------------------------|
+| xms             | "-Xms${value}m                                 | Xms config for jvm       |
+| xmx             | "-Xmx${value}m                                 | Xmx config for jvm       |
+| jmx.remote.port | "-Dcom.sun.management.jmxremote.port=${value}  | Enable remote debug      |
+| extra.options   | "JAVA_OPTS="${JAVA_OPTS} ${JVM_EXTRA_CONFIG}"  | The addition jvm options |
+ 
 
 ## Start AMS
 
