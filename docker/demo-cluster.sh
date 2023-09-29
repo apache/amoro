@@ -74,11 +74,7 @@ done
 
 
 function create_docker_compose() {
-  if [ -f "$DOCKER_COMPOSE" ]; then
-      echo "clean up older docker-compose.yml"
-      rm $DOCKER_COMPOSE
-  fi
-
+  echo "Write docker-compose file to $DOCKER_COMPOSE"
   cat <<EOT >> docker-compose.yml
 version: "3"
 services:
@@ -155,9 +151,10 @@ function start() {
   echo "SET AMORO_VERSION=${AMORO_TAG}"
 
   echo "generate docker compose"
-  create_docker_compose
+  if [ ! -f "$DOCKER_COMPOSE" ]; then
+    create_docker_compose
+  fi
 
-  test -d ./hadoop-config && rm -rf ./hadoop-config
   echo "start cluster"
   docker-compose up -d
 }
