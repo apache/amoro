@@ -24,11 +24,13 @@ spec:
       {{- if or .Values.serviceAccount.name .Values.serviceAccount.create }}
       serviceAccountName: {{ .Values.serviceAccount.name | default  (include "common.names.fullname" .) }}
       {{- end }}
+      initContainers:
+        {{- include "amoro.pod.initContainers" . | nindent 8 }}
       containers:
         - name: amoro-ams
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: {{include "amoro.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with .Values.command }}
           command: {{- tpl (toYaml .) $ | nindent 12 }}
@@ -67,8 +69,8 @@ spec:
             timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
             failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
             successThreshold: {{ .Values.livenessProbe.successThreshold }}
-              {{- end }}
-              {{- if .Values.readinessProbe.enabled }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
           readinessProbe:
             httpGet:
               path: /versionInfo

@@ -30,4 +30,21 @@ Selector labels
 {{- define "amoro.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "amoro.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
+{{- end -}}
+
+{{/*Amoro Image Tag*/}}
+{{- define "amoro.image.tag" -}}
+{{ .Values.image.tag | default .Chart.AppVersion }}
+{{- end -}}
+
+{{- define "amoro.image" -}}
+{{ .Values.image.repository }}:{{include "amoro.image.tag" .}}
+{{- end -}}
+
+{{- define "amoro.svc.optimizing.fullname" -}}
+{{include "common.names.fullname" . }}.{{.Release.Namespace}}.svc.{{.Values.clusterDomain}}
+{{- end -}}
+
+{{- define "amoro.svc.optimizing.uri" -}}
+thrift://{{ include "amoro.svc.optimizing.fullname" .}}:{{ .Values.server.optimizing.port }}
+{{- end -}}

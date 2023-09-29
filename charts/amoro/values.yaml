@@ -19,6 +19,7 @@
 ##
 kubeVersion: ""
 fullnameOverride: ""
+clusterDomain: cluster.local
 
 image:
   repository: arctic163/ams
@@ -26,8 +27,6 @@ image:
   tag: ""
 
 imagePullSecrets: [ ]
-#nameOverride: ""
-#fullnameOverride: ""
 
 # Role-based access control
 rbac:
@@ -108,6 +107,37 @@ amoroConf:
   # The value (templated string) is used for conf/log4j2.xml file
   # See example at conf/log4j2.xml.template https://github.com/NetEase/amoro/blob/master/dist/src/main/arctic-bin/conf/log4j2.xml for more details
   log4j2: ~
+
+
+## Configure the container of optimizer that allow you to submit optimizer by AMS
+optimizer:
+  # flink optimizer
+  flink:
+    ## enable the flink optimizer.
+    enabled: true
+    ## container name, default is flink
+    name: ~
+    ## image information of flink optimizer.
+    image:
+      ## the image repository
+      repository: arctic163/optimizer-flink
+      ## the image tag, if not set, the default value is same with amoro image tag.
+      tag: ~
+      jobUri: "local:///opt/flink/usrlib/OptimizeJob.jar"
+    properties: {
+      "flink-conf.taskmanager.memory.managed.size": "32mb",
+      "flink-conf.taskmanager.memory.netwrok.max": "32mb",
+      "flink-conf.taskmanager.memory.netwrok.nin": "32mb"
+    }
+  # local optimizer
+  local:
+    # enable the local optimizer container
+    enabled: true
+    # local optimizer container name. default is local
+    name: ~
+    # properties for optimizer container.
+    properties: ~
+  extra: []
 
 
 ## Configure the ingress resource that allows you to access the
@@ -230,10 +260,6 @@ volumes: [ ]
 # Additional volumeMounts for AMS container (templated)
 volumeMounts: [ ]
 
-# Additional init containers for AMS pod (templated)
-initContainers: [ ]
-# Additional containers for AMS pod (templated)
-containers: [ ]
 
 # Liveness probe
 livenessProbe:
