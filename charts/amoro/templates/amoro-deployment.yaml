@@ -31,12 +31,7 @@ spec: {{/* TODO If Support Replica can be use more than 1 */}}
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: {{include "amoro.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- with .Values.command }}
-          command: {{- tpl (toYaml .) $ | nindent 12 }}
-            {{- end }}
-            {{- with .Values.args }}
-          args: {{- tpl (toYaml .) $ | nindent 12 }}
-            {{- end }}
+          command: ["/entrypoint.sh", "ams"]
           env:
             {{- if eq .Values.amoroConf.database.type "mysql" }}
             - name: "AMS_DATABASE_PASSWORD"

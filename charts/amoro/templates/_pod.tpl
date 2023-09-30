@@ -18,9 +18,9 @@
 {{- define "amoro.pod.initContainer.flink" -}}
 - name: install-flink
   image: {{ include "amoro.optimizer.container.flink.image" .}}
-  command: ["cp", "/opt/flink/*", "/opt/flink_install/", "-R"]
+  command: ["cp", "/opt/flink/.", "/opt/flink_install/", "-R"]
   volumeMounts:
-    - name: flinkInstall
+    - name: flink-install
       mountPath: /opt/flink_install
 {{- end -}}
 
@@ -34,42 +34,45 @@
 
 
 {{- define "amoro.pod.container.mounts" }}
-{{- /* config.yaml from config-map*/ -}}
+- name: logs
+  mountPath: {{ include "amoro.home" . }}/logs
 - name: conf
-  mountPath: {{ .Values.amoroDir }}/amoro-{{ .Chart.AppVersion }}/conf/config.yaml
+  mountPath: {{ include "amoro.home" . }}/conf/config.yaml
   readOnly: true
   subPath: "config.yaml"
-  {{- with .Values.volumeMounts }}
-    {{- tpl (toYaml .) $ | nindent 12 }}
-  {{- end }}
 {{- if or .Values.amoroConf.log4j2 }}
 {{- /* log4j2.yaml from config-map*/ -}}
 - name: conf
-  mountPath: {{ .Values.amoroDir }}/amoro-{{ .Chart.AppVersion }}/conf/log4j2.xml
+  mountPath: {{ include "amoro.home" . }}/conf/log4j2.xml
   readOnly: true
   subPath: "log4j2.xml"
-  {{- with .Values.volumeMounts }}
-    {{- tpl (toYaml .) $ | nindent 12 }}
-  {{- end }}
 {{- end }}
+{{- if or .Values.jvmOptions }}
+- name: conf
+  mountPath: {{ include "amoro.home" . }}/conf/jvm.properties
+  readOnly: true
+  subPath: "jvm.properties"
+{{- end -}}
 {{- /* flink install dir. if flink optimizer container enabled.
 flink distribution package will be installed to here*/ -}}
 {{- if .Values.optimizer.flink.enabled }}
-- name: flinkInstall
+- name: flink-install
   mountPath: /opt/flink
 {{- end -}}
 {{- end -}}
 {{- /* define amoro.pod.container.mounts end */ -}}
+
 
 {{/* defined volumes for pod */}}
 {{- define "amoro.pod.volumes" -}}
 - name: conf
   configMap:
     name: {{ include "common.names.fullname" . }}
-
+- name: logs
+  emptyDir: {}
 {{- /* volume for flink distribution package install from init container. */ -}}
 {{- if .Values.optimizer.flink.enabled }}
-- name: flinkInstall
+- name: flink-install
   emptyDir: {}
 {{- end -}}
 {{- end -}}

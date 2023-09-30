@@ -20,7 +20,7 @@ name: amoro
 description: A Helm chart for Amoro
 type: application
 version: 0.1.0
-appVersion: "0.5.0"
+appVersion: "master-snapshot"
 home: https://amoro.netease.com/
 icon: https://amoro.netease.com/img/amoro-logo-icon.png
 sources:
