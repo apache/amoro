@@ -94,11 +94,11 @@ data:
     containers:
       {{- if .Values.optimizer.flink.enabled }}
       - name: {{ .Values.optimizer.flink.name | default "flink" }}
-        {{- include "amoro.optimizer.container.flink" ( dict "container" .Values.optimizer.flink "context" . ) | nindent 8 }}
+        {{- include "amoro.optimizer.container.flink" . | nindent 8 }}
       {{ end }}
       {{- if .Values.optimizer.local.enabled }}
       - name: {{ .Values.optimizer.local.name | default "local" }}
-        {{- include "amoro.optimizer.container.local" ( dict "container" .Values.optimizer.local "context" . ) | nindent 8 }}
+        {{- include "amoro.optimizer.container.local" . | nindent 8 }}
       {{ end }}
 
 

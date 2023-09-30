@@ -1,16 +1,16 @@
 
 {{/*Flink Optimizer Image Tag*/}}
 {{- define "amoro.optimizer.container.flink.tag" -}}
-{{- if .container.tag -}}
-  {{ .container.tag }}
+{{- if .Values.optimizer.flink.image.tag -}}
+  {{ .Values.optimizer.flink.image.tag }}
 {{- else -}}
-  {{ include "amoro.image.tag" .context }}
+  {{ include "amoro.image.tag" . }}
 {{- end -}}
 {{- end -}}
 
 {{/*Flink Optimizer Image repo*/}}
 {{- define "amoro.optimizer.container.flink.image" }}
-{{- .container.image.repository }}:{{ include "amoro.optimizer.container.flink.tag" . }}
+{{- .Values.optimizer.flink.image.repository }}:{{ include "amoro.optimizer.container.flink.tag" . }}
 {{- end -}}
 
 
@@ -19,10 +19,10 @@
 container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
 properties:
   target: kubernetes-application
-  job-uri: {{ .container.image.jobUri | quote }}
-  ams-optimizing-uri: {{include "amoro.svc.optimizing.uri" .context }}
+  job-uri: {{ .Values.optimizer.flink.image.jobUri | quote }}
+  ams-optimizing-uri: {{include "amoro.svc.optimizing.uri" . }}
   flink-conf.kubernetes.container.image: {{ include "amoro.optimizer.container.flink.image" .  | quote }}
-  {{- with .container.properties -}}
+  {{- with .Values.optimizer.flink.properties -}}
     {{- toYaml . | nindent 2 }}
   {{- end -}}
 {{- end -}}
@@ -31,16 +31,8 @@ properties:
 {{- define "amoro.optimizer.container.local" -}}
 container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer
 properties:
-  {{- with .container.properties -}}
+  {{- with .Values.optimizer.local.properties -}}
     {{- toYaml . | nindent 2 }}
   {{- end -}}
 {{- end -}}
 
-
-{{- define "amoro.optimizer.container.custom" -}}
-container-impl: {{ .impl }}
-properties:
-  {{- with .container.properties -}}
-    {{- toYaml . | nindent 2 }}
-  {{- end -}}
-{{- end -}}
