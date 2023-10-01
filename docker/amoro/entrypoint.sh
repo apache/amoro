@@ -20,7 +20,7 @@
 
 args=("$@")
 
-if [ -z "$LOG_LEVEL" ]; then
+if [ -n "$LOG_LEVEL" ]; then
   # set log-level to console-log-level
   export CONSOLE_LOG_LEVEL=$LOG_LEVEL
 fi
