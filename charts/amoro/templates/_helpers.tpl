@@ -48,9 +48,18 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
 {{- define "amoro.svc.optimizing.fullname" -}}
-{{include "common.names.fullname" . }}.{{.Release.Namespace}}.svc.{{.Values.clusterDomain}}
+{{include "common.names.fullname" . }}-optimizing.{{.Release.Namespace}}.svc.{{.Values.clusterDomain}}
 {{- end -}}
 
 {{- define "amoro.svc.optimizing.uri" -}}
 thrift://{{ include "amoro.svc.optimizing.fullname" .}}:{{ .Values.server.optimizing.port }}
+{{- end -}}
+
+
+{{- define "amoro.sa.name" -}}
+{{ if .Values.serviceAccount.create }}
+{{- include "common.names.fullname" . -}}
+{{- else -}}
+{{- .Values.serviceAccount.name -}}
+{{ end }}
 {{- end -}}

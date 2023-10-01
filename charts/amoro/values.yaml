@@ -28,23 +28,21 @@ image:
 
 imagePullSecrets: [ ]
 
-# Role-based access control
-rbac:
-  # Specifies whether RBAC resources should be created
-  create: true
-  # RBAC rules
-  rules:
-    - apiGroups: [ "" ]
-      resources: [ "pods" ]
-      verbs: [ "create", "list", "delete" ]
-
+# ServiceAccount of Amoro to schedule optimizer.
 serviceAccount:
-  # Specifies whether a service account should be created
+  # Specifies whether a service account should be created or using an existed account
   create: true
   # Annotations to add to the service account
   annotations: { }
-  # Specifies ServiceAccount name to be used (created if `create: true`)
+  # Specifies ServiceAccount name to be used if `create: false`
   name: ~
+  # if `serviceAccount.create` == true. role and role-bind will be created
+  rbac:
+    # create a role/role-bind if automatically create service account
+    create: true
+    # create a cluster-role and cluster-role-bind if cluster := true
+    cluster: false
+
 
 server:
   # AMS REST Service

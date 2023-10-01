@@ -20,9 +20,10 @@ container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
 properties:
   target: kubernetes-application
   job-uri: {{ .Values.optimizer.flink.image.jobUri | quote }}
-  ams-optimizing-uri: {{include "amoro.svc.optimizing.uri" . }}
+  ams-optimizing-uri: {{include "amoro.svc.optimizing.uri" . | quote}}
   flink-home: /opt/flink
   flink-conf.kubernetes.container.image: {{ include "amoro.optimizer.container.flink.image" .  | quote }}
+  flink-conf.kubernetes.service-account: {{ include "amoro.sa.name" . | quote }}
   {{- with .Values.optimizer.flink.properties -}}
     {{- toYaml . | nindent 2 }}
   {{- end -}}
@@ -32,7 +33,7 @@ properties:
 {{- define "amoro.optimizer.container.local" -}}
 container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer
 properties:
-  export.JAVA_HOME: /opt/java
+  export.JAVA_HOME: "/opt/java"   # JDK environment
   {{- with .Values.optimizer.local.properties -}}
     {{- toYaml . | nindent 2 }}
   {{- end -}}
