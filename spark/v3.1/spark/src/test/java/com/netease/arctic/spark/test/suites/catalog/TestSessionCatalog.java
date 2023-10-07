@@ -18,28 +18,31 @@ import java.util.Map;
 
 public class TestSessionCatalog extends SparkTableTestBase {
 
-  public static final Schema schema = new Schema(
-      Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "data", Types.StringType.get()),
-      Types.NestedField.required(3, "pt", Types.StringType.get())
-  );
-  public static final PrimaryKeySpec pkSpec = PrimaryKeySpec.builderFor(schema).addColumn("id").build();
-  public static final PartitionSpec ptSpec = PartitionSpec.builderFor(schema).identity("pt").build();
+  public static final Schema schema =
+      new Schema(
+          Types.NestedField.required(1, "id", Types.IntegerType.get()),
+          Types.NestedField.required(2, "data", Types.StringType.get()),
+          Types.NestedField.required(3, "pt", Types.StringType.get()));
+  public static final PrimaryKeySpec pkSpec =
+      PrimaryKeySpec.builderFor(schema).addColumn("id").build();
+  public static final PartitionSpec ptSpec =
+      PartitionSpec.builderFor(schema).identity("pt").build();
 
   @Override
   protected Map<String, String> sparkSessionConfig() {
     return ImmutableMap.of(
-        "spark.sql.catalog.spark_catalog", SparkTestContext.SESSION_CATALOG_IMPL,
-        "spark.sql.catalog.spark_catalog.url", context.catalogUrl(SparkTestContext.EXTERNAL_MIXED_ICEBERG_HIVE)
-    );
+        "spark.sql.catalog.spark_catalog",
+        SparkTestContext.SESSION_CATALOG_IMPL,
+        "spark.sql.catalog.spark_catalog.url",
+        context.catalogUrl(SparkTestContext.EXTERNAL_MIXED_ICEBERG_HIVE));
   }
 
   @Test
   public void testLoadTables() throws NoSuchTableException {
-    createTarget(schema,
-        builder -> builder.withPrimaryKeySpec(pkSpec).withPartitionSpec(ptSpec));
+    createTarget(schema, builder -> builder.withPrimaryKeySpec(pkSpec).withPartitionSpec(ptSpec));
 
-    TableCatalog sessionCatalog = (TableCatalog) spark().sessionState().catalogManager().catalog(SESSION_CATALOG);
+    TableCatalog sessionCatalog =
+        (TableCatalog) spark().sessionState().catalogManager().catalog(SESSION_CATALOG);
 
     Table table = sessionCatalog.loadTable(target().toSparkIdentifier());
     Assertions.assertTrue(table instanceof ArcticSparkTable);

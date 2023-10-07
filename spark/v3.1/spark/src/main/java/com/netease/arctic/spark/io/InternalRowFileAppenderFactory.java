@@ -52,8 +52,8 @@ import java.util.Map;
 
 /**
  * This InternalRowFileAppenderFactory file is forked from
- * org.apache.iceberg.spark.source.SparkAppenderFactory
- * for SparkAppenderFactory is package-private class
+ * org.apache.iceberg.spark.source.SparkAppenderFactory for SparkAppenderFactory is package-private
+ * class
  */
 public class InternalRowFileAppenderFactory implements FileAppenderFactory<InternalRow> {
 
@@ -70,15 +70,18 @@ public class InternalRowFileAppenderFactory implements FileAppenderFactory<Inter
   private final boolean writeHive;
 
   public static InternalRowFileAppenderFactory.Builder builderFor(
-      Table table,
-      Schema writeSchema,
-      StructType dsSchema) {
+      Table table, Schema writeSchema, StructType dsSchema) {
     return new InternalRowFileAppenderFactory.Builder(table, writeSchema, dsSchema);
   }
 
   protected InternalRowFileAppenderFactory(
-      Map<String, String> properties, Schema writeSchema, StructType dsSchema, PartitionSpec spec,
-      int[] equalityFieldIds, Schema eqDeleteRowSchema, Schema posDeleteRowSchema,
+      Map<String, String> properties,
+      Schema writeSchema,
+      StructType dsSchema,
+      PartitionSpec spec,
+      int[] equalityFieldIds,
+      Schema eqDeleteRowSchema,
+      Schema posDeleteRowSchema,
       boolean writeHive) {
     this.properties = properties;
     this.writeSchema = writeSchema;
@@ -122,12 +125,14 @@ public class InternalRowFileAppenderFactory implements FileAppenderFactory<Inter
       Preconditions.checkNotNull(writeSchema, "Write Schema must not be null");
       Preconditions.checkNotNull(dsSchema, "DS Schema must not be null");
       if (equalityFieldIds != null) {
-        Preconditions.checkNotNull(eqDeleteRowSchema, "Equality Field Ids and Equality Delete Row Schema" +
-            " must be set together");
+        Preconditions.checkNotNull(
+            eqDeleteRowSchema,
+            "Equality Field Ids and Equality Delete Row Schema" + " must be set together");
       }
       if (eqDeleteRowSchema != null) {
-        Preconditions.checkNotNull(equalityFieldIds, "Equality Field Ids and Equality Delete Row Schema" +
-            " must be set together");
+        Preconditions.checkNotNull(
+            equalityFieldIds,
+            "Equality Field Ids and Equality Delete Row Schema" + " must be set together");
       }
 
       return new InternalRowFileAppenderFactory(
@@ -152,13 +157,14 @@ public class InternalRowFileAppenderFactory implements FileAppenderFactory<Inter
 
   private StructType lazyPosDeleteSparkType() {
     if (posDeleteSparkType == null) {
-      Preconditions.checkNotNull(posDeleteRowSchema, "Position delete row schema shouldn't be null");
+      Preconditions.checkNotNull(
+          posDeleteRowSchema, "Position delete row schema shouldn't be null");
       this.posDeleteSparkType = SparkSchemaUtil.convert(posDeleteRowSchema);
     }
     return posDeleteSparkType;
   }
 
-  //todo control whether need adapt hive parquet
+  // todo control whether need adapt hive parquet
   @Override
   public FileAppender<InternalRow> newAppender(OutputFile file, FileFormat fileFormat) {
     MetricsConfig metricsConfig = MetricsConfig.fromProperties(properties);
@@ -167,7 +173,8 @@ public class InternalRowFileAppenderFactory implements FileAppenderFactory<Inter
         case PARQUET:
           if (writeHive) {
             return AdaptHiveParquet.write(file)
-                .createWriterFunc(msgType -> AdaptHiveSparkParquetWriters.buildWriter(dsSchema, msgType))
+                .createWriterFunc(
+                    msgType -> AdaptHiveSparkParquetWriters.buildWriter(dsSchema, msgType))
                 .setAll(properties)
                 .metricsConfig(metricsConfig)
                 .schema(writeSchema)
@@ -209,15 +216,20 @@ public class InternalRowFileAppenderFactory implements FileAppenderFactory<Inter
   }
 
   @Override
-  public DataWriter<InternalRow> newDataWriter(EncryptedOutputFile file, FileFormat format, StructLike partition) {
-    return new DataWriter<>(newAppender(file.encryptingOutputFile(), format), format,
-        file.encryptingOutputFile().location(), spec, partition, file.keyMetadata());
+  public DataWriter<InternalRow> newDataWriter(
+      EncryptedOutputFile file, FileFormat format, StructLike partition) {
+    return new DataWriter<>(
+        newAppender(file.encryptingOutputFile(), format),
+        format,
+        file.encryptingOutputFile().location(),
+        spec,
+        partition,
+        file.keyMetadata());
   }
 
   @Override
   public EqualityDeleteWriter<InternalRow> newEqDeleteWriter(
-      EncryptedOutputFile file, FileFormat format,
-      StructLike partition) {
+      EncryptedOutputFile file, FileFormat format, StructLike partition) {
     Preconditions.checkState(
         equalityFieldIds != null && equalityFieldIds.length > 0,
         "Equality field ids shouldn't be null or empty when creating equality-delete writer");
@@ -230,7 +242,9 @@ public class InternalRowFileAppenderFactory implements FileAppenderFactory<Inter
         case PARQUET:
           if (writeHive) {
             return AdaptHiveParquet.writeDeletes(file.encryptingOutputFile())
-                .createWriterFunc(msgType -> AdaptHiveSparkParquetWriters.buildWriter(lazyEqDeleteSparkType(), msgType))
+                .createWriterFunc(
+                    msgType ->
+                        AdaptHiveSparkParquetWriters.buildWriter(lazyEqDeleteSparkType(), msgType))
                 .overwrite()
                 .rowSchema(eqDeleteRowSchema)
                 .withSpec(spec)
@@ -240,7 +254,8 @@ public class InternalRowFileAppenderFactory implements FileAppenderFactory<Inter
                 .buildEqualityWriter();
           } else {
             return Parquet.writeDeletes(file.encryptingOutputFile())
-                .createWriterFunc(msgType -> SparkParquetWriters.buildWriter(lazyEqDeleteSparkType(), msgType))
+                .createWriterFunc(
+                    msgType -> SparkParquetWriters.buildWriter(lazyEqDeleteSparkType(), msgType))
                 .overwrite()
                 .rowSchema(eqDeleteRowSchema)
                 .withSpec(spec)
@@ -271,8 +286,7 @@ public class InternalRowFileAppenderFactory implements FileAppenderFactory<Inter
 
   @Override
   public PositionDeleteWriter<InternalRow> newPosDeleteWriter(
-      EncryptedOutputFile file, FileFormat format,
-      StructLike partition) {
+      EncryptedOutputFile file, FileFormat format, StructLike partition) {
     try {
       switch (format) {
         case PARQUET:
@@ -280,7 +294,9 @@ public class InternalRowFileAppenderFactory implements FileAppenderFactory<Inter
               SparkSchemaUtil.convert(DeleteSchemaUtil.posDeleteSchema(posDeleteRowSchema));
           if (writeHive) {
             return AdaptHiveParquet.writeDeletes(file.encryptingOutputFile())
-                .createWriterFunc(msgType -> AdaptHiveSparkParquetWriters.buildWriter(sparkPosDeleteSchema, msgType))
+                .createWriterFunc(
+                    msgType ->
+                        AdaptHiveSparkParquetWriters.buildWriter(sparkPosDeleteSchema, msgType))
                 .overwrite()
                 .rowSchema(posDeleteRowSchema)
                 .withSpec(spec)
@@ -290,7 +306,8 @@ public class InternalRowFileAppenderFactory implements FileAppenderFactory<Inter
                 .buildPositionWriter();
           } else {
             return Parquet.writeDeletes(file.encryptingOutputFile())
-                .createWriterFunc(msgType -> SparkParquetWriters.buildWriter(sparkPosDeleteSchema, msgType))
+                .createWriterFunc(
+                    msgType -> SparkParquetWriters.buildWriter(sparkPosDeleteSchema, msgType))
                 .overwrite()
                 .rowSchema(posDeleteRowSchema)
                 .withSpec(spec)

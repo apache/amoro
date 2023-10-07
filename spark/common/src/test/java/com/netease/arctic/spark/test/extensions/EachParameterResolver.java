@@ -30,14 +30,16 @@ import java.lang.reflect.Parameter;
 
 public class EachParameterResolver implements ParameterResolver {
   @Override
-  public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
+  public boolean supportsParameter(
+      ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
-    return isBeforeOrAfterEachMethod(parameterContext.getDeclaringExecutable()) &&
-        isParameterTypeSupported(parameterContext.getDeclaringExecutable());
+    return isBeforeOrAfterEachMethod(parameterContext.getDeclaringExecutable())
+        && isParameterTypeSupported(parameterContext.getDeclaringExecutable());
   }
 
   @Override
-  public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
+  public Object resolveParameter(
+      ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
     Class<?> type = parameterContext.getParameter().getType();
     if (type.isAssignableFrom(ExtensionContext.class)) {
@@ -47,8 +49,8 @@ public class EachParameterResolver implements ParameterResolver {
   }
 
   private boolean isBeforeOrAfterEachMethod(Executable executable) {
-    return executable.getAnnotation(BeforeEach.class) != null ||
-        executable.getAnnotation(AfterEach.class) != null;
+    return executable.getAnnotation(BeforeEach.class) != null
+        || executable.getAnnotation(AfterEach.class) != null;
   }
 
   private boolean isParameterTypeSupported(Executable executable) {
