@@ -39,7 +39,7 @@ jobs:
         run: mvn validate
 
       - name: Build all module with Maven
-        run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp
+        run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp -Diceberg.worker.num-threads=2
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
