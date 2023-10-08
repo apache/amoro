@@ -43,7 +43,8 @@ public class TestSplitAssignerAwaiting extends TestShuffleSplitAssigner {
   @Test
   public void testStaticAssign() {
     ShuffleSplitAssigner splitAssigner = instanceSplitAssigner(1);
-    List<ArcticSplit> splitList = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
+    List<ArcticSplit> splitList =
+        FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
 
     splitAssigner.onDiscoveredSplits(splitList);
     assertSnapshot(splitAssigner, 7);
@@ -59,7 +60,8 @@ public class TestSplitAssignerAwaiting extends TestShuffleSplitAssigner {
     ShuffleSplitAssigner assigner = instanceSplitAssigner(1);
     assertGetNext(assigner, Split.Status.UNAVAILABLE);
 
-    List<ArcticSplit> splitList = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
+    List<ArcticSplit> splitList =
+        FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
     List<ArcticSplit> splits1 = splitList.subList(0, 1);
     assertAvailableFuture(assigner, () -> assigner.onDiscoveredSplits(splits1));
     List<ArcticSplit> splits2 = splitList.subList(1, 2);
@@ -81,8 +83,7 @@ public class TestSplitAssignerAwaiting extends TestShuffleSplitAssigner {
     }
   }
 
-  private void assertAvailableFuture(
-      ShuffleSplitAssigner assigner, Runnable addSplitsRunnable) {
+  private void assertAvailableFuture(ShuffleSplitAssigner assigner, Runnable addSplitsRunnable) {
     // register callback
     AtomicBoolean futureCompleted = new AtomicBoolean();
     CompletableFuture<Void> future = assigner.isAvailable();

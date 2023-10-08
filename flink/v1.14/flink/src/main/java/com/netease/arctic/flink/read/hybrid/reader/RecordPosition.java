@@ -21,17 +21,14 @@ package com.netease.arctic.flink.read.hybrid.reader;
 import com.netease.arctic.flink.read.source.ChangeLogDataIterator;
 import com.netease.arctic.flink.read.source.DataIterator;
 
-/**
- * This class contains the file offset and record offset with actual record.
- */
+/** This class contains the file offset and record offset with actual record. */
 public class RecordPosition {
   private int currentInsertFileOffset;
   private int currentDeleteFileOffset;
   private long currentInsertRecordOffset;
   private long currentDeleteRecordOffset;
 
-  public RecordPosition() {
-  }
+  public RecordPosition() {}
 
   void set(DataIterator dataIterator) {
     if (dataIterator instanceof ChangeLogDataIterator) {

@@ -3,6 +3,7 @@ package com.netease.arctic.ams.api.resource;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -20,7 +21,7 @@ public class Resource {
   }
 
   private Resource(Builder builder) {
-    this.resourceId = UUID.randomUUID().toString();
+    this.resourceId = builder.resourceId;
     this.containerName = builder.containerName;
     this.groupName = builder.groupName;
     this.threadCount = builder.threadCount;
@@ -68,6 +69,7 @@ public class Resource {
   }
 
   public static class Builder {
+    private final String resourceId;
     private final String containerName;
     private final String groupName;
     private final ResourceType type;
@@ -80,15 +82,7 @@ public class Resource {
       this.containerName = containerName;
       this.groupName = groupName;
       this.type = type;
-    }
-
-    public Builder(OptimizerRegisterInfo optimizerRegisterInfo, String containerName) {
-      this.containerName = containerName;
-      this.groupName = optimizerRegisterInfo.getGroupName();
-      this.threadCount = optimizerRegisterInfo.getThreadCount();
-      this.memoryMb = optimizerRegisterInfo.getMemoryMb();
-      this.properties = optimizerRegisterInfo.getProperties();
-      this.type = ResourceType.OPTIMIZER;
+      this.resourceId = generateShortUuid();
     }
 
     public Builder setThreadCount(int threadCount) {
@@ -117,6 +111,14 @@ public class Resource {
     public Builder setProperties(Map<String, String> properties) {
       this.properties = properties;
       return this;
+    }
+
+    // In some cases(such as kubernetes resource name has length limit less than 45),
+    // shorter strings are needed for UUIDs.
+    private String generateShortUuid() {
+      String uuid = UUID.randomUUID().toString().replace("-", "");
+      BigInteger bigInteger = new BigInteger(uuid, 16);
+      return bigInteger.toString(32);
     }
   }
 }

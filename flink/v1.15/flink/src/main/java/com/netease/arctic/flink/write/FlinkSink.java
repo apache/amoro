@@ -18,6 +18,20 @@
 
 package com.netease.arctic.flink.write;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_EMIT_FILE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_EMIT_MODE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_THROUGHPUT_METRIC_ENABLE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_THROUGHPUT_METRIC_ENABLE_DEFAULT;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_WRITE_MAX_OPEN_FILE_SIZE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_WRITE_MAX_OPEN_FILE_SIZE_DEFAULT;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SUBMIT_EMPTY_SNAPSHOTS;
+import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE;
+import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE_DEFAULT;
+import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE;
+import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE_DEFAULT;
+import static org.apache.flink.table.factories.FactoryUtil.SINK_PARALLELISM;
+
 import com.netease.arctic.flink.metric.MetricsGenerator;
 import com.netease.arctic.flink.shuffle.RoundRobinShuffleRulePolicy;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
@@ -58,25 +72,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
 import java.time.Duration;
 import java.util.Properties;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_EMIT_FILE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_EMIT_MODE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_THROUGHPUT_METRIC_ENABLE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_THROUGHPUT_METRIC_ENABLE_DEFAULT;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_WRITE_MAX_OPEN_FILE_SIZE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_WRITE_MAX_OPEN_FILE_SIZE_DEFAULT;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SUBMIT_EMPTY_SNAPSHOTS;
-import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE;
-import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE_DEFAULT;
-import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE;
-import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE_DEFAULT;
-import static org.apache.flink.table.factories.FactoryUtil.SINK_PARALLELISM;
-
 /**
- * An util generates arctic sink operator including log writer, file writer and file committer operators.
+ * An util generates arctic sink operator including log writer, file writer and file committer
+ * operators.
  */
 public class FlinkSink {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkSink.class);
@@ -99,8 +101,7 @@ public class FlinkSink {
     private String branch = SnapshotRef.MAIN_BRANCH;
     private DistributionHashMode distributionMode = null;
 
-    private Builder() {
-    }
+    private Builder() {}
 
     private Builder forRowData(DataStream<RowData> newRowDataInput) {
       this.rowDataInput = newRowDataInput;
@@ -155,19 +156,25 @@ public class FlinkSink {
         int writeOperatorParallelism,
         MetricsGenerator metricsGenerator,
         String arcticEmitMode) {
-      SingleOutputStreamOperator writerStream = input
-          .transform(ArcticWriter.class.getName(), TypeExtractor.createTypeInfo(WriteResult.class),
-              new ArcticWriter<>(logWriter, fileWriter, metricsGenerator))
-          .name(String.format("ArcticWriter %s(%s)", table.name(), arcticEmitMode))
-          .setParallelism(writeOperatorParallelism);
+      SingleOutputStreamOperator writerStream =
+          input
+              .transform(
+                  ArcticWriter.class.getName(),
+                  TypeExtractor.createTypeInfo(WriteResult.class),
+                  new ArcticWriter<>(logWriter, fileWriter, metricsGenerator))
+              .name(String.format("ArcticWriter %s(%s)", table.name(), arcticEmitMode))
+              .setParallelism(writeOperatorParallelism);
 
       if (committer != null) {
-        writerStream = writerStream.transform(FILES_COMMITTER_NAME, Types.VOID, committer)
-            .setParallelism(1)
-            .setMaxParallelism(1);
+        writerStream =
+            writerStream
+                .transform(FILES_COMMITTER_NAME, Types.VOID, committer)
+                .setParallelism(1)
+                .setMaxParallelism(1);
       }
 
-      return writerStream.addSink(new DiscardingSink<>())
+      return writerStream
+          .addSink(new DiscardingSink<>())
           .name(String.format("ArcticSink %s", table.name()))
           .setParallelism(1);
     }
@@ -180,44 +187,66 @@ public class FlinkSink {
       table.properties().forEach(config::setString);
 
       RowType flinkSchemaRowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
-      Schema writeSchema = TypeUtil.reassignIds(FlinkSchemaUtil.convert(flinkSchema), table.schema());
+      Schema writeSchema =
+          TypeUtil.reassignIds(FlinkSchemaUtil.convert(flinkSchema), table.schema());
 
-      int writeOperatorParallelism = PropertyUtil.propertyAsInt(table.properties(), SINK_PARALLELISM.key(),
-          rowDataInput.getExecutionEnvironment().getParallelism());
+      int writeOperatorParallelism =
+          PropertyUtil.propertyAsInt(
+              table.properties(),
+              SINK_PARALLELISM.key(),
+              rowDataInput.getExecutionEnvironment().getParallelism());
 
       DistributionHashMode distributionMode = getDistributionHashMode();
       LOG.info("take effect distribute mode: {}", distributionMode);
       ShuffleHelper helper = ShuffleHelper.build(table, writeSchema, flinkSchemaRowType);
 
-      ShuffleRulePolicy<RowData, ShuffleKey>
-          shufflePolicy = buildShuffleRulePolicy(helper, writeOperatorParallelism, distributionMode, overwrite, table);
-      LOG.info("shuffle policy config={}, actual={}", distributionMode,
+      ShuffleRulePolicy<RowData, ShuffleKey> shufflePolicy =
+          buildShuffleRulePolicy(
+              helper, writeOperatorParallelism, distributionMode, overwrite, table);
+      LOG.info(
+          "shuffle policy config={}, actual={}",
+          distributionMode,
           shufflePolicy == null ? DistributionMode.NONE : distributionMode.getDesc());
 
-      String arcticEmitMode = table.properties().getOrDefault(ARCTIC_EMIT_MODE.key(), ARCTIC_EMIT_MODE.defaultValue());
-      final boolean metricsEventLatency = CompatibleFlinkPropertyUtil
-          .propertyAsBoolean(table.properties(), ArcticValidator.ARCTIC_LATENCY_METRIC_ENABLE,
+      String arcticEmitMode =
+          table.properties().getOrDefault(ARCTIC_EMIT_MODE.key(), ARCTIC_EMIT_MODE.defaultValue());
+      final boolean metricsEventLatency =
+          CompatibleFlinkPropertyUtil.propertyAsBoolean(
+              table.properties(),
+              ArcticValidator.ARCTIC_LATENCY_METRIC_ENABLE,
               ArcticValidator.ARCTIC_LATENCY_METRIC_ENABLE_DEFAULT);
 
-      final boolean metricsEnable = CompatibleFlinkPropertyUtil
-          .propertyAsBoolean(table.properties(), ARCTIC_THROUGHPUT_METRIC_ENABLE,
+      final boolean metricsEnable =
+          CompatibleFlinkPropertyUtil.propertyAsBoolean(
+              table.properties(),
+              ARCTIC_THROUGHPUT_METRIC_ENABLE,
               ARCTIC_THROUGHPUT_METRIC_ENABLE_DEFAULT);
 
       final Duration watermarkWriteGap = config.get(AUTO_EMIT_LOGSTORE_WATERMARK_GAP);
 
-      ArcticFileWriter fileWriter = createFileWriter(table, shufflePolicy, overwrite, flinkSchemaRowType,
-          arcticEmitMode, tableLoader);
+      ArcticFileWriter fileWriter =
+          createFileWriter(
+              table, shufflePolicy, overwrite, flinkSchemaRowType, arcticEmitMode, tableLoader);
 
-      ArcticLogWriter logWriter = ArcticUtils.buildArcticLogWriter(table.properties(),
-          producerConfig, topic, flinkSchema, arcticEmitMode, helper, tableLoader, watermarkWriteGap);
+      ArcticLogWriter logWriter =
+          ArcticUtils.buildArcticLogWriter(
+              table.properties(),
+              producerConfig,
+              topic,
+              flinkSchema,
+              arcticEmitMode,
+              helper,
+              tableLoader,
+              watermarkWriteGap);
 
-      MetricsGenerator metricsGenerator = ArcticUtils.getMetricsGenerator(metricsEventLatency,
-          metricsEnable, table, flinkSchemaRowType, writeSchema);
+      MetricsGenerator metricsGenerator =
+          ArcticUtils.getMetricsGenerator(
+              metricsEventLatency, metricsEnable, table, flinkSchemaRowType, writeSchema);
 
       if (shufflePolicy != null) {
-        rowDataInput = rowDataInput.partitionCustom(
-            shufflePolicy.generatePartitioner(),
-            shufflePolicy.generateKeySelector());
+        rowDataInput =
+            rowDataInput.partitionCustom(
+                shufflePolicy.generatePartitioner(), shufflePolicy.generateKeySelector());
       }
 
       return withEmit(
@@ -237,29 +266,34 @@ public class FlinkSink {
     }
 
     /**
-     * Transform {@link org.apache.iceberg.TableProperties#WRITE_DISTRIBUTION_MODE} to ShufflePolicyType
+     * Transform {@link org.apache.iceberg.TableProperties#WRITE_DISTRIBUTION_MODE} to
+     * ShufflePolicyType
      */
     private DistributionHashMode getDistributionHashMode() {
       if (distributionMode != null) {
         return distributionMode;
       }
 
-      String modeName = PropertyUtil.propertyAsString(
-          table.properties(),
-          WRITE_DISTRIBUTION_MODE,
-          WRITE_DISTRIBUTION_MODE_DEFAULT);
+      String modeName =
+          PropertyUtil.propertyAsString(
+              table.properties(), WRITE_DISTRIBUTION_MODE, WRITE_DISTRIBUTION_MODE_DEFAULT);
 
       DistributionMode mode = DistributionMode.fromName(modeName);
       switch (mode) {
         case NONE:
           return DistributionHashMode.NONE;
         case HASH:
-          String hashMode = PropertyUtil.propertyAsString(
-              table.properties(), WRITE_DISTRIBUTION_HASH_MODE, WRITE_DISTRIBUTION_HASH_MODE_DEFAULT);
+          String hashMode =
+              PropertyUtil.propertyAsString(
+                  table.properties(),
+                  WRITE_DISTRIBUTION_HASH_MODE,
+                  WRITE_DISTRIBUTION_HASH_MODE_DEFAULT);
           return DistributionHashMode.valueOfDesc(hashMode);
         case RANGE:
-          LOG.warn("Fallback to use 'none' distribution mode, because {}={} is not supported in flink now",
-              WRITE_DISTRIBUTION_MODE, DistributionMode.RANGE.modeName());
+          LOG.warn(
+              "Fallback to use 'none' distribution mode, because {}={} is not supported in flink now",
+              WRITE_DISTRIBUTION_MODE,
+              DistributionMode.RANGE.modeName());
           return DistributionHashMode.NONE;
         default:
           return DistributionHashMode.AUTO;
@@ -274,35 +308,42 @@ public class FlinkSink {
         boolean overwrite,
         ArcticTable table) {
       if (distributionHashMode == DistributionHashMode.AUTO) {
-        distributionHashMode = DistributionHashMode.autoSelect(
-            helper.isPrimaryKeyExist(), helper.isPartitionKeyExist());
+        distributionHashMode =
+            DistributionHashMode.autoSelect(
+                helper.isPrimaryKeyExist(), helper.isPartitionKeyExist());
       }
       if (distributionHashMode == DistributionHashMode.NONE) {
         return null;
       } else {
         if (distributionHashMode.mustByPrimaryKey() && !helper.isPrimaryKeyExist()) {
           throw new IllegalArgumentException(
-              "illegal shuffle policy " + distributionHashMode.getDesc() + " for table without primary key");
+              "illegal shuffle policy "
+                  + distributionHashMode.getDesc()
+                  + " for table without primary key");
         }
         if (distributionHashMode.mustByPartition() && !helper.isPartitionKeyExist()) {
           throw new IllegalArgumentException(
-              "illegal shuffle policy " + distributionHashMode.getDesc() + " for table without partition");
+              "illegal shuffle policy "
+                  + distributionHashMode.getDesc()
+                  + " for table without partition");
         }
         int writeFileSplit;
         if (ArcticUtils.isToBase(overwrite)) {
-          writeFileSplit = PropertyUtil.propertyAsInt(
-              table.properties(),
-              TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
-              TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
+          writeFileSplit =
+              PropertyUtil.propertyAsInt(
+                  table.properties(),
+                  TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
+                  TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
         } else {
-          writeFileSplit = PropertyUtil.propertyAsInt(
-              table.properties(),
-              TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
-              TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT);
+          writeFileSplit =
+              PropertyUtil.propertyAsInt(
+                  table.properties(),
+                  TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
+                  TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT);
         }
 
-        return new RoundRobinShuffleRulePolicy(helper, writeOperatorParallelism,
-            writeFileSplit, distributionHashMode);
+        return new RoundRobinShuffleRulePolicy(
+            helper, writeOperatorParallelism, writeFileSplit, distributionHashMode);
       }
     }
   }
@@ -313,8 +354,8 @@ public class FlinkSink {
       boolean overwrite,
       RowType flinkSchema,
       ArcticTableLoader tableLoader) {
-    return createFileWriter(arcticTable, shufflePolicy, overwrite, flinkSchema, ARCTIC_EMIT_FILE,
-        tableLoader);
+    return createFileWriter(
+        arcticTable, shufflePolicy, overwrite, flinkSchema, ARCTIC_EMIT_FILE, tableLoader);
   }
 
   public static ArcticFileWriter createFileWriter(
@@ -327,21 +368,32 @@ public class FlinkSink {
     if (!ArcticUtils.arcticFileWriterEnable(emitMode)) {
       return null;
     }
-    long maxOpenFilesSizeBytes = PropertyUtil
-        .propertyAsLong(arcticTable.properties(), ARCTIC_WRITE_MAX_OPEN_FILE_SIZE,
+    long maxOpenFilesSizeBytes =
+        PropertyUtil.propertyAsLong(
+            arcticTable.properties(),
+            ARCTIC_WRITE_MAX_OPEN_FILE_SIZE,
             ARCTIC_WRITE_MAX_OPEN_FILE_SIZE_DEFAULT);
     LOG.info(
         "with maxOpenFilesSizeBytes = {}MB, close biggest/earliest file to avoid OOM",
         maxOpenFilesSizeBytes >> 20);
 
-    int minFileSplitCount = PropertyUtil
-        .propertyAsInt(arcticTable.properties(), TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
+    int minFileSplitCount =
+        PropertyUtil.propertyAsInt(
+            arcticTable.properties(),
+            TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
             TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT);
 
-    boolean upsert = arcticTable.isKeyedTable() && PropertyUtil.propertyAsBoolean(arcticTable.properties(),
-        TableProperties.UPSERT_ENABLED, TableProperties.UPSERT_ENABLED_DEFAULT);
-    boolean submitEmptySnapshot = PropertyUtil.propertyAsBoolean(
-        arcticTable.properties(), SUBMIT_EMPTY_SNAPSHOTS.key(), SUBMIT_EMPTY_SNAPSHOTS.defaultValue());
+    boolean upsert =
+        arcticTable.isKeyedTable()
+            && PropertyUtil.propertyAsBoolean(
+                arcticTable.properties(),
+                TableProperties.UPSERT_ENABLED,
+                TableProperties.UPSERT_ENABLED_DEFAULT);
+    boolean submitEmptySnapshot =
+        PropertyUtil.propertyAsBoolean(
+            arcticTable.properties(),
+            SUBMIT_EMPTY_SNAPSHOTS.key(),
+            SUBMIT_EMPTY_SNAPSHOTS.defaultValue());
 
     return new ArcticFileWriter(
         shufflePolicy,
@@ -353,9 +405,7 @@ public class FlinkSink {
   }
 
   private static TaskWriterFactory<RowData> createTaskWriterFactory(
-      ArcticTable arcticTable,
-      boolean overwrite,
-      RowType flinkSchema) {
+      ArcticTable arcticTable, boolean overwrite, RowType flinkSchema) {
     return new ArcticRowDataTaskWriterFactory(arcticTable, flinkSchema, overwrite);
   }
 
@@ -379,8 +429,10 @@ public class FlinkSink {
       return null;
     }
     tableLoader.switchLoadInternalTableForKeyedTable(ArcticUtils.isToBase(overwrite));
-    return (OneInputStreamOperator) ProxyUtil.getProxy(
-        IcebergClassUtil.newIcebergFilesCommitter(tableLoader, overwrite, branch, spec, arcticTable.io()),
-        arcticTable.io());
+    return (OneInputStreamOperator)
+        ProxyUtil.getProxy(
+            IcebergClassUtil.newIcebergFilesCommitter(
+                tableLoader, overwrite, branch, spec, arcticTable.io()),
+            arcticTable.io());
   }
 }

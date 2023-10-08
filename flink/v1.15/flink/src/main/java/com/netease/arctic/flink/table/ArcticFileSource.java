@@ -18,6 +18,10 @@
 
 package com.netease.arctic.flink.table;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.DIM_TABLE_ENABLE;
+import static org.apache.flink.api.common.RuntimeExecutionMode.BATCH;
+import static org.apache.flink.configuration.ExecutionOptions.RUNTIME_MODE;
+
 import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import com.netease.arctic.flink.util.FilterUtil;
 import com.netease.arctic.flink.util.IcebergAndFlinkFilters;
@@ -48,18 +52,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
 import java.util.Arrays;
 import java.util.List;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.DIM_TABLE_ENABLE;
-import static org.apache.flink.api.common.RuntimeExecutionMode.BATCH;
-import static org.apache.flink.configuration.ExecutionOptions.RUNTIME_MODE;
-
-/**
- * Flink table api that generates arctic base/change file source operators.
- */
-public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown,
-    SupportsProjectionPushDown, SupportsLimitPushDown, SupportsWatermarkPushDown {
+/** Flink table api that generates arctic base/change file source operators. */
+public class ArcticFileSource
+    implements ScanTableSource,
+        SupportsFilterPushDown,
+        SupportsProjectionPushDown,
+        SupportsLimitPushDown,
+        SupportsWatermarkPushDown {
 
   private static final Logger LOG = LoggerFactory.getLogger(ArcticFileSource.class);
 
@@ -67,8 +70,7 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
   private long limit;
   private List<Expression> filters;
   private final ArcticTable table;
-  @Nullable
-  protected WatermarkStrategy<RowData> watermarkStrategy;
+  @Nullable protected WatermarkStrategy<RowData> watermarkStrategy;
 
   private final ArcticTableLoader loader;
   private final TableSchema tableSchema;
@@ -87,14 +89,15 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
     this.batchMode = toCopy.batchMode;
   }
 
-  public ArcticFileSource(ArcticTableLoader loader,
-                          TableSchema tableSchema,
-                          int[] projectedFields,
-                          ArcticTable table,
-                          long limit,
-                          List<Expression> filters,
-                          ReadableConfig readableConfig,
-                          boolean batchMode) {
+  public ArcticFileSource(
+      ArcticTableLoader loader,
+      TableSchema tableSchema,
+      int[] projectedFields,
+      ArcticTable table,
+      long limit,
+      List<Expression> filters,
+      ReadableConfig readableConfig,
+      boolean batchMode) {
     this.loader = loader;
     this.tableSchema = tableSchema;
     this.projectedFields = projectedFields;
@@ -118,13 +121,14 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
   public void applyProjection(int[][] projectFields) {
     this.projectedFields = new int[projectFields.length];
     for (int i = 0; i < projectFields.length; i++) {
-      Preconditions.checkArgument(projectFields[i].length == 1,
-          "Don't support nested projection now.");
+      Preconditions.checkArgument(
+          projectFields[i].length == 1, "Don't support nested projection now.");
       this.projectedFields[i] = projectFields[i][0];
     }
   }
 
-  private DataStream<RowData> createDataStream(ProviderContext providerContext, StreamExecutionEnvironment execEnv) {
+  private DataStream<RowData> createDataStream(
+      ProviderContext providerContext, StreamExecutionEnvironment execEnv) {
     return FlinkSource.forRowData()
         .context(providerContext)
         .env(execEnv)
@@ -146,12 +150,18 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
       String[] fullNames = tableSchema.getFieldNames();
       DataType[] fullTypes = tableSchema.getFieldDataTypes();
 
-      String[] projectedColumns = Arrays.stream(projectedFields).mapToObj(i -> fullNames[i]).toArray(String[]::new);
-      TableSchema.Builder builder = TableSchema.builder().fields(
-          projectedColumns,
-          Arrays.stream(projectedFields).mapToObj(i -> fullTypes[i]).toArray(DataType[]::new));
-      boolean dimTable = CompatibleFlinkPropertyUtil.propertyAsBoolean(table.properties(), DIM_TABLE_ENABLE.key(),
-          DIM_TABLE_ENABLE.defaultValue());
+      String[] projectedColumns =
+          Arrays.stream(projectedFields).mapToObj(i -> fullNames[i]).toArray(String[]::new);
+      TableSchema.Builder builder =
+          TableSchema.builder()
+              .fields(
+                  projectedColumns,
+                  Arrays.stream(projectedFields)
+                      .mapToObj(i -> fullTypes[i])
+                      .toArray(DataType[]::new));
+      boolean dimTable =
+          CompatibleFlinkPropertyUtil.propertyAsBoolean(
+              table.properties(), DIM_TABLE_ENABLE.key(), DIM_TABLE_ENABLE.defaultValue());
       if (dimTable) {
         builder.watermark(tableSchema.getWatermarkSpecs().get(0));
       }
@@ -169,7 +179,8 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
 
   @Override
   public Result applyFilters(List<ResolvedExpression> flinkFilters) {
-    IcebergAndFlinkFilters icebergAndFlinkFilters = FilterUtil.convertFlinkExpressToIceberg(flinkFilters);
+    IcebergAndFlinkFilters icebergAndFlinkFilters =
+        FilterUtil.convertFlinkExpressToIceberg(flinkFilters);
     this.filters = icebergAndFlinkFilters.expressions();
     return Result.of(icebergAndFlinkFilters.acceptedFilters(), flinkFilters);
   }
@@ -198,8 +209,7 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
     return new DataStreamScanProvider() {
       @Override
       public DataStream<RowData> produceDataStream(
-          ProviderContext providerContext,
-          StreamExecutionEnvironment execEnv) {
+          ProviderContext providerContext, StreamExecutionEnvironment execEnv) {
         return createDataStream(providerContext, execEnv);
       }
 

@@ -32,8 +32,8 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 /**
- * this class copied from iceberg  org.apache.iceberg.spark.source.InternalRowWrapper
- * for InternalRowWrapper is not public class
+ * this class copied from iceberg org.apache.iceberg.spark.source.InternalRowWrapper for
+ * InternalRowWrapper is not public class
  */
 public class SparkInternalRowWrapper implements StructLike {
   private final DataType[] types;
@@ -41,12 +41,8 @@ public class SparkInternalRowWrapper implements StructLike {
   private InternalRow row = null;
 
   public SparkInternalRowWrapper(StructType rowType) {
-    this.types = Stream.of(rowType.fields())
-        .map(StructField::dataType)
-        .toArray(DataType[]::new);
-    this.getters = Stream.of(types)
-        .map(SparkInternalRowWrapper::getter)
-        .toArray(BiFunction[]::new);
+    this.types = Stream.of(rowType.fields()).map(StructField::dataType).toArray(DataType[]::new);
+    this.getters = Stream.of(types).map(SparkInternalRowWrapper::getter).toArray(BiFunction[]::new);
   }
 
   @Override
@@ -69,7 +65,6 @@ public class SparkInternalRowWrapper implements StructLike {
   public <T> void set(int pos, T value) {
     row.update(pos, value);
   }
-
 
   public SparkInternalRowWrapper wrap(InternalRow internalRow) {
     this.row = internalRow;
@@ -94,4 +89,3 @@ public class SparkInternalRowWrapper implements StructLike {
     return null;
   }
 }
-

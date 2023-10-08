@@ -31,8 +31,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * This is a group of the partitions and nodes of the arctic table, it can plan different nodes and different partitions
- * into different {@link ArcticSplit}.
+ * This is a group of the partitions and nodes of the arctic table, it can plan different nodes and
+ * different partitions into different {@link ArcticSplit}.
  */
 public class PartitionAndNodeGroup {
   AtomicInteger splitCount = new AtomicInteger();
@@ -61,12 +61,17 @@ public class PartitionAndNodeGroup {
 
     List<ArcticSplit> splits = new ArrayList<>();
 
-    nodes.values()
-        .forEach(indexNodes ->
-            indexNodes.values()
-                .forEach(node ->
-                    splits.add(
-                        new ChangelogSplit(node.inserts, node.deletes, splitCount.incrementAndGet()))));
+    nodes
+        .values()
+        .forEach(
+            indexNodes ->
+                indexNodes
+                    .values()
+                    .forEach(
+                        node ->
+                            splits.add(
+                                new ChangelogSplit(
+                                    node.inserts, node.deletes, splitCount.incrementAndGet()))));
     return splits;
   }
 
@@ -74,8 +79,8 @@ public class PartitionAndNodeGroup {
    * Split the collection of {@link ArcticFileScanTask} into different groups.
    *
    * @param insert if plan insert files or not
-   * @param nodes  the key of nodes is partition info which the file located, the value of nodes is hashmap of
-   *               arctic tree node id and {@link Node}
+   * @param nodes the key of nodes is partition info which the file located, the value of nodes is
+   *     hashmap of arctic tree node id and {@link Node}
    */
   private void plan(boolean insert, Map<String, Map<Long, Node>> nodes) {
     Collection<ArcticFileScanTask> tasks = insert ? insertTasks : deleteTasks;
@@ -83,19 +88,20 @@ public class PartitionAndNodeGroup {
       return;
     }
 
-    tasks.forEach(task -> {
-      String partitionKey = task.file().partition().toString();
-      Long nodeId = task.file().node().getId();
-      Map<Long, Node> indexNodes = nodes.getOrDefault(partitionKey, new HashMap<>());
-      Node node = indexNodes.getOrDefault(nodeId, new Node());
-      if (insert) {
-        node.addInsert(task);
-      } else {
-        node.addDelete(task);
-      }
-      indexNodes.put(nodeId, node);
-      nodes.put(partitionKey, indexNodes);
-    });
+    tasks.forEach(
+        task -> {
+          String partitionKey = task.file().partition().toString();
+          Long nodeId = task.file().node().getId();
+          Map<Long, Node> indexNodes = nodes.getOrDefault(partitionKey, new HashMap<>());
+          Node node = indexNodes.getOrDefault(nodeId, new Node());
+          if (insert) {
+            node.addInsert(task);
+          } else {
+            node.addDelete(task);
+          }
+          indexNodes.put(nodeId, node);
+          nodes.put(partitionKey, indexNodes);
+        });
   }
 
   private static class Node {
@@ -110,5 +116,4 @@ public class PartitionAndNodeGroup {
       deletes.add(task);
     }
   }
-
 }

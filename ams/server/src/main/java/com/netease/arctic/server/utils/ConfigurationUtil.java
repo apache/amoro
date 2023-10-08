@@ -150,6 +150,23 @@ public class ConfigurationUtil {
     }
   }
 
+  /**
+   * Convert System Env key to Configuration key
+   * For Example :
+   * AMS_DATABASE_PASSWORD ---> ams.database.password
+   * AMS_SERVER__EXPOSE__HOST ---> ams.server-expose-host
+   */
+  public static Map<String, Object> convertConfigurationKeys(String prefix, Map<String, String> values) {
+    return values.entrySet()
+        .stream()
+        .filter(entry -> entry.getKey().startsWith(prefix))
+        .collect(Collectors.toMap(
+            entry -> entry.getKey().replaceFirst(prefix + "_", "")
+                .toLowerCase().replaceAll("(_{2,})", "-").replace("_", "."),
+            Map.Entry::getValue
+        ));
+  }
+
   @SuppressWarnings("unchecked")
   public static <E extends Enum<?>> E convertToEnum(Object o, Class<E> clazz) {
     if (o.getClass().equals(clazz)) {

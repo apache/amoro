@@ -170,8 +170,8 @@ public class IcebergTableUtil {
     TableMetaStore store = CatalogUtil.buildMetaStore(meta);
     Configuration conf = store.getConfiguration();
     String ioImpl = catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, DEFAULT_FILE_IO_IMPL);
-    FileIO fileIo = org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
-    return ArcticFileIOs.buildAdaptIcebergFileIO(store, fileIo);
+    FileIO fileIO = org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
+    return ArcticFileIOs.buildAdaptIcebergFileIO(store, fileIO);
   }
 
 

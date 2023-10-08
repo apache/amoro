@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.read;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE;
+
 import com.netease.arctic.flink.read.internals.AbstractFetcher;
 import com.netease.arctic.flink.read.source.log.kafka.LogKafkaSource;
 import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
@@ -43,12 +46,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE;
-
 /**
  * An arctic log consumer that consume arctic log data from kafka.
- * <p>
+ *
  * @deprecated since 0.4.1, will be removed in 0.7.0; use {@link LogKafkaSource} instead.
  */
 @Deprecated
@@ -70,8 +70,9 @@ public class LogKafkaConsumer extends FlinkKafkaConsumer<RowData> {
     super(topics, deserializer, props);
     this.logRecordDeserializationSchemaWrapper = deserializer;
     this.schema = schema;
-    this.logRetractionEnable = CompatibleFlinkPropertyUtil.propertyAsBoolean(tableOptions,
-        ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE);
+    this.logRetractionEnable =
+        CompatibleFlinkPropertyUtil.propertyAsBoolean(
+            tableOptions, ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE);
     this.logConsumerChangelogMode = tableOptions.get(ARCTIC_LOG_CONSUMER_CHANGELOG_MODE);
     this.logReadHelper = new LogReadHelper();
   }
@@ -84,8 +85,9 @@ public class LogKafkaConsumer extends FlinkKafkaConsumer<RowData> {
       ReadableConfig tableOptions) {
     super(subscriptionPattern, deserializer, props);
     this.schema = schema;
-    this.logRetractionEnable = CompatibleFlinkPropertyUtil.propertyAsBoolean(tableOptions,
-        ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE);
+    this.logRetractionEnable =
+        CompatibleFlinkPropertyUtil.propertyAsBoolean(
+            tableOptions, ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE);
     this.logConsumerChangelogMode = tableOptions.get(ARCTIC_LOG_CONSUMER_CHANGELOG_MODE);
     this.logReadHelper = new LogReadHelper();
   }
@@ -116,7 +118,8 @@ public class LogKafkaConsumer extends FlinkKafkaConsumer<RowData> {
       StreamingRuntimeContext runtimeContext,
       OffsetCommitMode offsetCommitMode,
       MetricGroup consumerMetricGroup,
-      boolean useMetrics) throws Exception {
+      boolean useMetrics)
+      throws Exception {
 
     // make sure that auto commit is disabled when our offset commit mode is ON_CHECKPOINTS;
     // this overwrites whatever setting the user configured in the properties
@@ -125,8 +128,8 @@ public class LogKafkaConsumer extends FlinkKafkaConsumer<RowData> {
     String taskNameWithSubtasks = runtimeContext.getTaskNameWithSubtasks();
     MetricGroup subtaskMetricGroup = runtimeContext.getMetricGroup();
     Handover handover = new Handover();
-    ClosableBlockingQueue<KafkaTopicPartitionState<RowData, TopicPartition>> unassignedPartitionsQueue =
-        new ClosableBlockingQueue<>();
+    ClosableBlockingQueue<KafkaTopicPartitionState<RowData, TopicPartition>>
+        unassignedPartitionsQueue = new ClosableBlockingQueue<>();
 
     return new LogKafkaFetcher(
         sourceContext,
@@ -156,8 +159,7 @@ public class LogKafkaConsumer extends FlinkKafkaConsumer<RowData> {
             pollTimeout,
             useMetrics,
             consumerMetricGroup,
-            subtaskMetricGroup
-        ),
+            subtaskMetricGroup),
         subtaskId,
         logConsumerChangelogMode);
   }

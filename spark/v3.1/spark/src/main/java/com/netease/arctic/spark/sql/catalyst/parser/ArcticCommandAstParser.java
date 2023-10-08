@@ -42,14 +42,12 @@ public class ArcticCommandAstParser extends ArcticSqlCommandBaseVisitor<Object>
   public LogicalPlan visitMigrateStatement(ArcticSqlCommandParser.MigrateStatementContext ctx) {
     Seq<String> source = multipartIdentifier(ctx.source);
     Seq<String> target = multipartIdentifier(ctx.target);
-    return new MigrateToArcticStatement(
-        source, target
-    );
+    return new MigrateToArcticStatement(source, target);
   }
 
   private Seq<String> multipartIdentifier(ArcticSqlCommandParser.MultipartIdentifierContext ctx) {
-    List<String> identifier = ctx.parts.stream().map(RuleContext::getText)
-        .map(String::trim).collect(Collectors.toList());
+    List<String> identifier =
+        ctx.parts.stream().map(RuleContext::getText).map(String::trim).collect(Collectors.toList());
     return JavaConverters.asScalaBuffer(identifier);
   }
 }
