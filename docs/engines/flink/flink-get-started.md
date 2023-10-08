@@ -45,7 +45,7 @@ The Flink Runtime Jar is located in the `flink/v1.14/flink-runtime/target` direc
 
 ## Environment preparation
 Download Flink and related dependencies, and download Flink 1.12/1.14/1.15 as needed. Taking Flink 1.12 as an example:
-
+Download Flink and related dependencies, and download Flink 1.14 and 1.15 as needed. Taking Flink 1.15 as an example:
 ```shell
 # Replace version value with the latest Amoro version if needed
 AMORO_VERSION=0.6.0
