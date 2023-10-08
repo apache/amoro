@@ -34,9 +34,8 @@ Version Description:
 
 | Connector Version | Flink Version | Dependent Iceberg Version                                                                                                                |
 | ----------------- |---------------|  ----------------- |
-| 0.5.0             | 1.12.x        | 1.3.0            |
-| 0.5.0             | 1.14.x        | 1.3.0            |
-| 0.5.0             | 1.15.x        | 1.3.0            |
+| 0.6.0             | 1.14.x        | 1.3.0            |
+| 0.6.0             | 1.15.x        | 1.3.0            |
 
 The Amoro project can be self-compiled to obtain the runtime jar.
 
@@ -49,7 +48,7 @@ Download Flink and related dependencies, and download Flink 1.12/1.14/1.15 as ne
 
 ```shell
 # Replace version value with the latest Amoro version if needed
-AMORO_VERSION=0.5.0
+AMORO_VERSION=0.6.0
 FLINK_VERSION=1.15.3
 FLINK_MAJOR_VERSION=1.15
 FLINK_HADOOP_SHADE_VERSION=2.7.5
