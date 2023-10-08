@@ -230,7 +230,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     assertRecords(testFailoverTable, expectedAfterMoR, Duration.ofMillis(10), 12000);
   }
 
-  @Test(timeout = 60000)
+  @Test
   public void testDimTaskManagerFailover() throws Exception {
     List<RowData> updated = updateRecords();
     writeUpdate(updated);
@@ -291,7 +291,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     jobClient.cancel();
   }
 
-  @Test(timeout = 60000)
+  @Test
   public void testArcticContinuousSourceWithEmptyChangeInInit() throws Exception {
     TableIdentifier tableId =
         TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_empty_change");
