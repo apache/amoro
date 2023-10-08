@@ -32,16 +32,13 @@
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <airlift.version>214</airlift.version>
-        <trino.version>406</trino.version>
-        <guava.version>31.1-jre</guava.version>
         <hive.version>2.1.1</hive.version>
+        <airlift.version>214</airlift.version>
         <airlift-units.version>1.6</airlift-units.version>
         <airlift-slice.version>0.44</airlift-slice.version>
         <jackson.version>2.13.1</jackson.version>
         <guice.version>5.1.0</guice.version>
         <inject.version>1</inject.version>
-        <jol.version>0.16</jol.version>
         <servlet-api.version>4.0.1</servlet-api.version>
         <commons-collections.version>3.2.1</commons-collections.version>
         <avro.version>1.10.1</avro.version>
@@ -54,12 +51,6 @@
     <dependencies>
 
         <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>concurrent</artifactId>
             <version>${airlift.version}</version>
@@ -68,12 +59,10 @@
                     <groupId>com.google.guava</groupId>
                     <artifactId>guava</artifactId>
                 </exclusion>
-
                 <exclusion>
                     <groupId>org.eclipse.jetty.orbit</groupId>
                     <artifactId>javax.servlet</artifactId>
                 </exclusion>
-
                 <exclusion>
                     <groupId>com.sun.jersey</groupId>
                     <artifactId>jersey-core</artifactId>
@@ -96,13 +85,11 @@
         <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-memory-context</artifactId>
-            <version>${trino.version}</version>
         </dependency>
 
         <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-plugin-toolkit</artifactId>
-            <version>${trino.version}</version>
         </dependency>
 
         <dependency>
@@ -209,13 +196,6 @@
         <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-hive</artifactId>
-            <version>${trino.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.trino.hive</groupId>
-                    <artifactId>hive-apache</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -239,17 +219,6 @@
         <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-parquet</artifactId>
-            <version>${trino.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.parquet</groupId>
-                    <artifactId>parquet-format</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.trino.hive</groupId>
-                    <artifactId>hive-apache</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -341,17 +310,6 @@
         <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-iceberg</artifactId>
-            <version>${trino.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.iceberg</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.trino.hive</groupId>
-                    <artifactId>hive-apache</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -375,7 +333,6 @@
         <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-spi</artifactId>
-            <version>${trino.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -396,7 +353,6 @@
         <dependency>
             <groupId>org.openjdk.jol</groupId>
             <artifactId>jol-core</artifactId>
-            <version>${jol.version}</version>
             <scope>provided</scope>
         </dependency>
 

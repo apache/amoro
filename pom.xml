@@ -127,6 +127,7 @@
         <rocksdb.version>7.10.2</rocksdb.version>
         <kryo.version>2.24.0</kryo.version>
         <jol.version>0.16</jol.version>
+        <trino.version>406</trino.version>
     </properties>
 
     <dependencyManagement>
@@ -551,6 +552,68 @@
                         <artifactId>parquet-hadoop-bundle</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>io.trino</groupId>
+                <artifactId>trino-memory-context</artifactId>
+                <version>${trino.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.trino</groupId>
+                <artifactId>trino-plugin-toolkit</artifactId>
+                <version>${trino.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.trino</groupId>
+                <artifactId>trino-hive</artifactId>
+                <version>${trino.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.trino.hive</groupId>
+                        <artifactId>hive-apache</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>io.trino</groupId>
+                <artifactId>trino-parquet</artifactId>
+                <version>${trino.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.parquet</groupId>
+                        <artifactId>parquet-format</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.trino.hive</groupId>
+                        <artifactId>hive-apache</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>io.trino</groupId>
+                <artifactId>trino-iceberg</artifactId>
+                <version>${trino.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.iceberg</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.trino.hive</groupId>
+                        <artifactId>hive-apache</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>io.trino</groupId>
+                <artifactId>trino-spi</artifactId>
+                <version>${trino.version}</version>
             </dependency>
 
             <dependency>
