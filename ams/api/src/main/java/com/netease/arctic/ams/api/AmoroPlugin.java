@@ -16,19 +16,16 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.metrics;
+package com.netease.arctic.ams.api;
 
-import com.netease.arctic.ams.api.metrics.MetricReport;
-import com.netease.arctic.ams.api.metrics.MetricReporter;
+/**
+ * Plugin interface for all pluggable services
+ * including MetricEmitter, TableProcessFactory, etc.
+ */
+public interface AmoroPlugin {
 
-import java.util.Set;
-
-public class MetricsReporters {
-  private Set<MetricReporter> metricReporters;
-
-  public void report(MetricReport report) {
-    for (MetricReporter reporter : metricReporters) {
-      reporter.report(report);
-    }
-  }
+  /**
+   * @return plugin name
+   */
+  String name();
 }
