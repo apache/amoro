@@ -61,7 +61,7 @@ public class ServerTableDescriptor extends PersistentBase {
     return formatTableDescriptor.getTransactionDetail(amoroTable, transactionId);
   }
 
-  public List<DDLInfo> getTableOperations(ServerTableIdentifier tableIdentifier) {
+  public List<DDLInfo> getTableOperations(ServerTableIdentifier tableIdentifier) throws Exception {
     AmoroTable<?> amoroTable = tableService.loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getTableOperations(amoroTable);

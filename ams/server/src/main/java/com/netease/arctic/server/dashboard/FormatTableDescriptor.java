@@ -36,7 +36,7 @@ public interface FormatTableDescriptor {
 
   List<PartitionFileBaseInfo> getTransactionDetail(AmoroTable<?> amoroTable, long transactionId);
 
-  List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable);
+  List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) throws Exception;
 
   List<PartitionBaseInfo> getTablePartition(AmoroTable<?> amoroTable);
 

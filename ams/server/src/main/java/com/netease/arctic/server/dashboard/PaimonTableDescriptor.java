@@ -20,6 +20,9 @@ package com.netease.arctic.server.dashboard;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.server.dashboard.component.reverser.DDLReverser;
+import com.netease.arctic.server.dashboard.component.reverser.PaimonTableMetaExtract;
+import com.netease.arctic.server.dashboard.component.reverser.SparkMetadataChangeHandler;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
@@ -28,6 +31,7 @@ import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
+import org.apache.paimon.table.DataTable;
 
 public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override
@@ -51,8 +55,12 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) {
-    return null;
+  public List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) throws Exception {
+    DataTable table = getTable(amoroTable);
+    PaimonTableMetaExtract extract = new PaimonTableMetaExtract();
+    SparkMetadataChangeHandler metadataChangeHandler = new SparkMetadataChangeHandler(table.name());
+    DDLReverser<DataTable> ddlReverser = new DDLReverser<>(extract, metadataChangeHandler);
+    return ddlReverser.reverse(table);
   }
 
   @Override
@@ -63,5 +71,9 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override
   public List<PartitionFileBaseInfo> getTableFile(AmoroTable<?> amoroTable, String partition) {
     return null;
+  }
+
+  private DataTable getTable(AmoroTable<?> amoroTable) {
+    return (DataTable) amoroTable.originalTable();
   }
 }

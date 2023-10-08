@@ -52,7 +52,7 @@ public class TestServerTableDescriptor extends AMSTableTestBase {
   }
 
   @Test
-  public void getTableOperations() {
+  public void getTableOperations() throws Exception {
     ServerTableDescriptor serverTableDescriptor = new ServerTableDescriptor(tableService());
     ArcticTable arcticTable = (ArcticTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     arcticTable.updateProperties().set("key", "value1").commit();
