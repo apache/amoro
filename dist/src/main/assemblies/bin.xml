@@ -29,9 +29,9 @@
 
     <files>
         <file>
-            <source>../ams/optimizer/target/amoro-ams-optimizer-${project.version}-jar-with-dependencies.jar</source>
-            <outputDirectory>plugin/optimize</outputDirectory>
-            <destName>OptimizeJob.jar</destName>
+            <source>../ams/optimizer/flink-optimizer/target/flink-optimizer-${project.version}-jar-with-dependencies.jar</source>
+            <outputDirectory>plugin/optimizer/flink</outputDirectory>
+            <destName>optimizer-job.jar</destName>
             <fileMode>0644</fileMode>
         </file>
         <file>
