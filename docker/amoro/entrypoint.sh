@@ -25,6 +25,26 @@ if [ -n "$LOG_LEVEL" ]; then
   export CONSOLE_LOG_LEVEL=$LOG_LEVEL
 fi
 
+configure_jvm_options() {
+  JVM_PROPERTIES_FILE="${AMORO_CONF_DIR}/jvm.properties"
+  for option in $(printenv | perl -sne 'print "$1 " if m/^JVM_(.+?)=.*/' ); do
+    key=$(echo "$option" | perl -pe 's/__/-/g; s/_/./g;')
+    var="JVM_$option"
+    value=${!var}
+    declare -l lowerKey=$key
+    if grep "$lowerKey" "$JVM_PROPERTIES_FILE" >/dev/null
+    then
+       sed -i "s/$lowerKey=.*$/$lowerKey=\"$value\"/g" "$JVM_PROPERTIES_FILE"
+    else
+       sed -i '$a/'"$lowerKey=\"$value\""  "$JVM_PROPERTIES_FILE"
+    fi
+  done
+}
+
+
+configure_jvm_options
+
+
 if [ $1 == "help" ]; then
   printf "Usage: $(basename $0) [ams|optimizer] [args]\n"
   printf "   Or: $(basename $0) help \n\n"

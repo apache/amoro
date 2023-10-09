@@ -123,6 +123,8 @@ services:
       - 8081:8081
       - 1630:1630
       - 1260:1260
+    environment:
+      - JVM_XMS=1024
     networks:
       - amoro_network
     volumes:
