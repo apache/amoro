@@ -127,6 +127,7 @@
             <groupId>com.netease.amoro</groupId>
             <artifactId>amoro-spark-${terminal.spark.major.version}</artifactId>
             <version>${project.version}</version>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
