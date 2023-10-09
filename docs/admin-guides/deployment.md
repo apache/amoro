@@ -198,7 +198,7 @@ you can set up those environments to overwrite the default value.
 | AMORO_CONF_DIR             | ${AMORO_HOME}/conf | location where Amoro loading config files. |
 | AMORO_LOG_DIR              | ${AMORO_HOME}/logs | location where the logs files output       | 
 
-Note: `$AMORO_HOME` can't be overwritten from environment variable. It always points to the parent dir of `ams.sh`.
+Note: `$AMORO_HOME` can't be overwritten from environment variable. It always points to the parent dir of `./bin`.
 
 ### Configure AMS JVM
 
