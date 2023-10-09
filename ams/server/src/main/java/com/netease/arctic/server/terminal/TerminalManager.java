@@ -269,6 +269,7 @@ public class TerminalManager {
             catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE))
         .withBase64HdfsSite(
             catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE));
+    // TODO
     if (catalogMeta.getAuthConfigs()
         .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE)
         .equalsIgnoreCase(CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE)) {

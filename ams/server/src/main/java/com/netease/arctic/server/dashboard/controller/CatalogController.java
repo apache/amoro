@@ -46,11 +46,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_ACCESS_KEY;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_SECRET_KEY;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_AK_SK;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_KERBEROS;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
@@ -60,10 +63,13 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALO
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.KEY_WAREHOUSE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_ENDPOINT;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_REGION;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_S3;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.TABLE_FORMATS;
 
 /**
@@ -150,6 +156,13 @@ public class CatalogController {
       metaAuthConfig.put(
           AUTH_CONFIGS_KEY_PRINCIPAL,
           serverAuthConfig.get(AUTH_CONFIGS_KEY_PRINCIPAL));
+    } else if (authType.equals(AUTH_CONFIGS_VALUE_TYPE_AK_SK)) {
+      metaAuthConfig.put(
+          AUTH_CONFIGS_KEY_ACCESS_KEY,
+          serverAuthConfig.get(AUTH_CONFIGS_KEY_ACCESS_KEY));
+      metaAuthConfig.put(
+          AUTH_CONFIGS_KEY_SECRET_KEY,
+          serverAuthConfig.get(AUTH_CONFIGS_KEY_SECRET_KEY));
     }
     return metaAuthConfig;
   }
@@ -243,33 +256,44 @@ public class CatalogController {
     catalogMeta.setAuthConfigs(authConvertFromServerToMeta(info.getAuthConfig(), oldCatalogMeta));
     // change fileId to base64Code
     Map<String, String> metaStorageConfig = new HashMap<>();
-    metaStorageConfig.put(
-        STORAGE_CONFIGS_KEY_TYPE,
-        info.getStorageConfig().getOrDefault(STORAGE_CONFIGS_KEY_TYPE, STORAGE_CONFIGS_VALUE_TYPE_HADOOP));
+    String storageType =
+        info.getStorageConfig().getOrDefault(STORAGE_CONFIGS_KEY_TYPE, STORAGE_CONFIGS_VALUE_TYPE_HADOOP);
+    metaStorageConfig.put(STORAGE_CONFIGS_KEY_TYPE, storageType);
+    if (storageType.equals(STORAGE_CONFIGS_VALUE_TYPE_HADOOP)) {
+      List<String> metaKeyList = Arrays.asList(
+          STORAGE_CONFIGS_KEY_HDFS_SITE,
+          STORAGE_CONFIGS_KEY_CORE_SITE,
+          STORAGE_CONFIGS_KEY_HIVE_SITE);
 
-    List<String> metaKeyList = Arrays.asList(
-        STORAGE_CONFIGS_KEY_HDFS_SITE,
-        STORAGE_CONFIGS_KEY_CORE_SITE,
-        STORAGE_CONFIGS_KEY_HIVE_SITE);
-
-    // when update catalog, fileId won't be post when file doesn't been changed!
-    int idx;
-    boolean fillUseOld = oldCatalogMeta != null;
-    for (idx = 0; idx < metaKeyList.size(); idx++) {
-      String fileId = info.getStorageConfig()
-          .get(metaKeyList.get(idx));
-      if (!StringUtils.isEmpty(fileId)) {
-        String fileSite = platformFileInfoService.getFileContentB64ById(Integer.valueOf(fileId));
-        metaStorageConfig.put(metaKeyList.get(idx), StringUtils.isEmpty(fileSite) ? EMPTY_XML_BASE64 : fileSite);
-      } else {
-        if (fillUseOld) {
-          String fileSite = oldCatalogMeta.getStorageConfigs().get(metaKeyList.get(idx));
+      // when update catalog, fileId won't be post when file doesn't been changed!
+      int idx;
+      boolean fillUseOld = oldCatalogMeta != null;
+      for (idx = 0; idx < metaKeyList.size(); idx++) {
+        String fileId = info.getStorageConfig()
+            .get(metaKeyList.get(idx));
+        if (!StringUtils.isEmpty(fileId)) {
+          String fileSite = platformFileInfoService.getFileContentB64ById(Integer.valueOf(fileId));
           metaStorageConfig.put(metaKeyList.get(idx), StringUtils.isEmpty(fileSite) ? EMPTY_XML_BASE64 : fileSite);
         } else {
-          metaStorageConfig.put(metaKeyList.get(idx), EMPTY_XML_BASE64);
+          if (fillUseOld) {
+            String fileSite = oldCatalogMeta.getStorageConfigs().get(metaKeyList.get(idx));
+            metaStorageConfig.put(metaKeyList.get(idx), StringUtils.isEmpty(fileSite) ? EMPTY_XML_BASE64 : fileSite);
+          } else {
+            metaStorageConfig.put(metaKeyList.get(idx), EMPTY_XML_BASE64);
+          }
         }
       }
+    } else if (storageType.equals(STORAGE_CONFIGS_VALUE_TYPE_S3)) {
+      if (info.getStorageConfig().containsKey(STORAGE_CONFIGS_KEY_REGION)) {
+        metaStorageConfig.put(STORAGE_CONFIGS_KEY_REGION, info.getStorageConfig().get(STORAGE_CONFIGS_KEY_REGION));
+      }
+      if (info.getStorageConfig().containsKey(STORAGE_CONFIGS_KEY_ENDPOINT)) {
+        metaStorageConfig.put(STORAGE_CONFIGS_KEY_ENDPOINT, info.getStorageConfig().get(STORAGE_CONFIGS_KEY_ENDPOINT));
+      }
+    } else {
+      throw new RuntimeException("Invalid storage type " + storageType);
     }
+
     catalogMeta.setStorageConfigs(metaStorageConfig);
     return catalogMeta;
   }

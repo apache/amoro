@@ -104,6 +104,7 @@ public class CatalogLoader {
           "Catalog support only one table format now.");
       TableFormat tableFormat = tableFormats.iterator().next();
       switch (type) {
+        // TODO
         case CATALOG_TYPE_HADOOP:
           Preconditions.checkArgument(
               TableFormat.ICEBERG == tableFormat || TableFormat.MIXED_ICEBERG == tableFormat,

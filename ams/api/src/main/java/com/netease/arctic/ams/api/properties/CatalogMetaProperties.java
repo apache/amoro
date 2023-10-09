@@ -25,6 +25,10 @@ public class CatalogMetaProperties {
   public static final String STORAGE_CONFIGS_KEY_HDFS_SITE = "hadoop.hdfs.site";
   public static final String STORAGE_CONFIGS_KEY_CORE_SITE = "hadoop.core.site";
   public static final String STORAGE_CONFIGS_KEY_HIVE_SITE = "hive.site";
+  public static final String STORAGE_CONFIGS_KEY_REGION = "storage.s3.region";
+  public static final String STORAGE_CONFIGS_KEY_ENDPOINT = "storage.s3.endpoint";
+  public static final String STORAGE_CONFIGS_KEY_S3_REGION = "client.region";
+  public static final String STORAGE_CONFIGS_KEY_S3_ENDPOINT = "s3.endpoint";
 
   @Deprecated
   public static final String STORAGE_CONFIGS_VALUE_TYPE_HDFS = "hdfs";
@@ -36,9 +40,15 @@ public class CatalogMetaProperties {
   public static final String AUTH_CONFIGS_KEY_KEYTAB = "auth.kerberos.keytab";
   public static final String AUTH_CONFIGS_KEY_KRB5 = "auth.kerberos.krb5";
   public static final String AUTH_CONFIGS_KEY_HADOOP_USERNAME = "auth.simple.hadoop_username";
+  public static final String AUTH_CONFIGS_KEY_ACCESS_KEY = "auth.ak_sk.access_key";
+  public static final String AUTH_CONFIGS_KEY_SECRET_KEY = "auth.ak_sk.secret_key";
+
+  public static final String AUTH_CONFIGS_KEY_S3_ACCESS_KEY = "s3.access-key-id";
+  public static final String AUTH_CONFIGS_KEY_S3_SECRET_KEY = "s3.secret-access-key";
 
   public static final String AUTH_CONFIGS_VALUE_TYPE_SIMPLE = "simple";
   public static final String AUTH_CONFIGS_VALUE_TYPE_KERBEROS = "kerberos";
+  public static final String AUTH_CONFIGS_VALUE_TYPE_AK_SK = "ak/sk";
 
   //Deprecated from version v0.4.0, use KEY_WAREHOUSE
   @Deprecated

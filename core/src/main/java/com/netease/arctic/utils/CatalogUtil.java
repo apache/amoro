@@ -51,6 +51,7 @@ import java.util.stream.Collectors;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
@@ -73,6 +74,7 @@ public class CatalogUtil {
           return Sets.newHashSet(TableFormat.MIXED_ICEBERG);
         case CATALOG_TYPE_CUSTOM:
         case CATALOG_TYPE_HADOOP:
+        case CATALOG_TYPE_GLUE:
           return Sets.newHashSet(TableFormat.ICEBERG);
         case CATALOG_TYPE_HIVE:
           return Sets.newHashSet(TableFormat.MIXED_HIVE);
