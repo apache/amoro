@@ -64,8 +64,11 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
   private List<CombinedScanTask> tasks = null;
 
   KeyedSparkBatchScan(
-      KeyedTable table, boolean caseSensitive,
-      Schema expectedSchema, List<Expression> filters, CaseInsensitiveStringMap options) {
+      KeyedTable table,
+      boolean caseSensitive,
+      Schema expectedSchema,
+      List<Expression> filters,
+      CaseInsensitiveStringMap options) {
     this.table = table;
     this.caseSensitive = caseSensitive;
     this.expectedSchema = expectedSchema;
@@ -90,8 +93,8 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
     List<CombinedScanTask> scanTasks = tasks();
     ArcticInputPartition[] readTasks = new ArcticInputPartition[scanTasks.size()];
     for (int i = 0; i < scanTasks.size(); i++) {
-      readTasks[i] = new ArcticInputPartition(scanTasks.get(i), table, expectedSchema,
-          caseSensitive);
+      readTasks[i] =
+          new ArcticInputPartition(scanTasks.get(i), table, expectedSchema, caseSensitive);
     }
     return readTasks;
   }
@@ -119,8 +122,7 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
 
   private List<CombinedScanTask> tasks() {
     if (tasks == null) {
-      KeyedTableScan scan = table
-          .newScan();
+      KeyedTableScan scan = table.newScan();
 
       if (filterExpressions != null) {
         for (Expression filter : filterExpressions) {
@@ -131,8 +133,10 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
       LOG.info("mor statistics plan task start");
       try (CloseableIterable<CombinedScanTask> tasksIterable = scan.planTasks()) {
         this.tasks = Lists.newArrayList(tasksIterable);
-        LOG.info("mor statistics plan task end, cost time {}, tasks num {}",
-            System.currentTimeMillis() - startTime, tasks.size());
+        LOG.info(
+            "mor statistics plan task end, cost time {}, tasks num {}",
+            System.currentTimeMillis() - startTime,
+            tasks.size());
       } catch (IOException e) {
         throw new UncheckedIOException("Failed to close table scan: %s", e);
       }
@@ -143,7 +147,8 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
   @Override
   public String description() {
     if (filterExpressions != null) {
-      String filters = filterExpressions.stream().map(Spark3Util::describe).collect(Collectors.joining(", "));
+      String filters =
+          filterExpressions.stream().map(Spark3Util::describe).collect(Collectors.joining(", "));
       return String.format("%s [filters=%s]", table, filters);
     }
     return "";
@@ -176,10 +181,14 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
     InternalRow current;
 
     RowReader(ArcticInputPartition task) {
-      reader = new ArcticSparkKeyedDataReader(
-          task.io, task.tableSchema, task.expectedSchema, task.keySpec,
-          task.nameMapping, task.caseSensitive
-      );
+      reader =
+          new ArcticSparkKeyedDataReader(
+              task.io,
+              task.tableSchema,
+              task.expectedSchema,
+              task.keySpec,
+              task.nameMapping,
+              task.caseSensitive);
       scanTasks = task.combinedScanTask.tasks().iterator();
     }
 

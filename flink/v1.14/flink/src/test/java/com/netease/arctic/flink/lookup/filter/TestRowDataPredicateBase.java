@@ -54,8 +54,8 @@ public abstract class TestRowDataPredicateBase {
   }
 
   /**
-   * This method takes in an SQL filter expression and a ResolvedSchema object,
-   * and returns a List of ResolvedExpression objects.
+   * This method takes in an SQL filter expression and a ResolvedSchema object, and returns a List
+   * of ResolvedExpression objects.
    */
   protected List<ResolvedExpression> resolveSQLFilterToExpression(
       String sqlExp, ResolvedSchema schema) {
@@ -78,7 +78,8 @@ public abstract class TestRowDataPredicateBase {
     RexNodeExpression rexExp =
         (RexNodeExpression) tbImpl.getParser().parseSqlExpression(sqlExp, sourceType, null);
     ResolvedExpression resolvedExp =
-        rexExp.getRexNode()
+        rexExp
+            .getRexNode()
             .accept(converter)
             .getOrElse(
                 () -> {
@@ -91,19 +92,19 @@ public abstract class TestRowDataPredicateBase {
                 });
     ExpressionResolver resolver =
         ExpressionResolver.resolverFor(
-            tEnv.getConfig(),
-            name -> Optional.empty(),
-            funCat.asLookup(
-                str -> {
+                tEnv.getConfig(),
+                name -> Optional.empty(),
+                funCat.asLookup(
+                    str -> {
+                      throw new TableException(
+                          "We should not need to lookup any expressions at this point");
+                    }),
+                catMan.getDataTypeFactory(),
+                (sqlExpression, inputRowType, outputType) -> {
                   throw new TableException(
-                      "We should not need to lookup any expressions at this point");
-                }),
-            catMan.getDataTypeFactory(),
-            (sqlExpression, inputRowType, outputType) -> {
-              throw new TableException(
-                  "SQL expression parsing is not supported at this location.");
-            }
-        ).build();
+                      "SQL expression parsing is not supported at this location.");
+                })
+            .build();
     return resolver.resolve(Collections.singletonList(resolvedExp));
   }
 }

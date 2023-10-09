@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.write;
 
+import static com.netease.arctic.flink.write.TestArcticFileWriter.createArcticStreamWriter;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -43,23 +45,24 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static com.netease.arctic.flink.write.TestArcticFileWriter.createArcticStreamWriter;
-
 public class TestArcticFileCommitter extends FlinkTestBase {
 
   public ArcticTableLoader tableLoader;
 
   public TestArcticFileCommitter() {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-      new BasicTableTestHelper(true, true));
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true));
   }
 
   public OneInputStreamOperatorTestHarness<WriteResult, Void> createArcticFileCommitter(
-      ArcticTableLoader tableLoader, ArcticTable table, OperatorSubtaskState operatorSubtaskState) throws Exception {
-    OneInputStreamOperator<WriteResult, Void> committer = FlinkSink.createFileCommitter(table, tableLoader, false, SnapshotRef.MAIN_BRANCH, table.spec());
+      ArcticTableLoader tableLoader, ArcticTable table, OperatorSubtaskState operatorSubtaskState)
+      throws Exception {
+    OneInputStreamOperator<WriteResult, Void> committer =
+        FlinkSink.createFileCommitter(
+            table, tableLoader, false, SnapshotRef.MAIN_BRANCH, table.spec());
     OneInputStreamOperatorTestHarness<WriteResult, Void> harness =
-        new OneInputStreamOperatorTestHarness<>(
-            committer, 1, 1, 0);
+        new OneInputStreamOperatorTestHarness<>(committer, 1, 1, 0);
 
     harness.setup();
     if (operatorSubtaskState == null) {
@@ -94,9 +97,8 @@ public class TestArcticFileCommitter extends FlinkTestBase {
     List<WriteResult> completedFiles = prepareChangeFiles();
     OperatorSubtaskState snapshot;
     long checkpoint = 1;
-    try (
-        OneInputStreamOperatorTestHarness<WriteResult, Void> testHarness = createArcticFileCommitter(
-            tableLoader, table, null)) {
+    try (OneInputStreamOperatorTestHarness<WriteResult, Void> testHarness =
+        createArcticFileCommitter(tableLoader, table, null)) {
 
       for (WriteResult completedFile : completedFiles) {
         testHarness.processElement(new StreamRecord<>(completedFile));
@@ -104,9 +106,8 @@ public class TestArcticFileCommitter extends FlinkTestBase {
       snapshot = testHarness.snapshot(checkpoint, System.currentTimeMillis());
     }
 
-    try (
-        OneInputStreamOperatorTestHarness<WriteResult, Void> testHarness = createArcticFileCommitter(
-            tableLoader, table, snapshot)) {
+    try (OneInputStreamOperatorTestHarness<WriteResult, Void> testHarness =
+        createArcticFileCommitter(tableLoader, table, snapshot)) {
       testHarness.notifyOfCompletedCheckpoint(checkpoint);
     }
 
@@ -116,9 +117,8 @@ public class TestArcticFileCommitter extends FlinkTestBase {
   private List<WriteResult> prepareChangeFiles() throws Exception {
     List<WriteResult> changeFiles;
     long checkpointId = 1L;
-    try (
-        OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness = createArcticStreamWriter(
-            tableLoader)) {
+    try (OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness =
+        createArcticStreamWriter(tableLoader)) {
       // The first checkpoint
       testHarness.processElement(createRowData(1, "hello", "2020-10-11T10:10:11.0"), 1);
       testHarness.processElement(createRowData(2, "hello", "2020-10-12T10:10:11.0"), 1);

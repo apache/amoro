@@ -214,8 +214,8 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
             LOG.warn("maybe server is restarting, wait a while");
             Thread.sleep(retryInterval);
           }
+          pool.invalidateObject(client);
           pool.clear();
-          client = pool.borrowObject();
         } else {
           break;
         }

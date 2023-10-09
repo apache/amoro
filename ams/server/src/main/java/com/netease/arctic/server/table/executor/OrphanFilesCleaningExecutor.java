@@ -57,35 +57,10 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   public void execute(TableRuntime tableRuntime) {
     try {
       LOG.info("{} start cleaning orphan files", tableRuntime.getTableIdentifier());
-      TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
-
-      if (!tableConfiguration.isCleanOrphanEnabled()) {
-        return;
-      }
-
-      long keepTime = tableConfiguration.getOrphanExistingMinutes() * 60 * 1000;
-
       // clear data files
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
       TableMaintainer tableMaintainer = createMaintainer(amoroTable);
-
-      tableMaintainer.cleanContentFiles(System.currentTimeMillis() - keepTime);
-
-      //refresh
-      tableMaintainer = createMaintainer(loadTable(tableRuntime));
-
-      // clear metadata files
-      tableMaintainer.cleanMetadata(System.currentTimeMillis() - keepTime);
-
-      if (!tableConfiguration.isDeleteDanglingDeleteFilesEnabled()) {
-        return;
-      }
-
-      //refresh
-      tableMaintainer = createMaintainer(loadTable(tableRuntime));
-
-      // clear dangling delete files
-      tableMaintainer.cleanDanglingDeleteFiles();
+      tableMaintainer.orphanFileClean(tableRuntime);
     } catch (Throwable t) {
       LOG.error("{} failed to clean orphan file", tableRuntime.getTableIdentifier(), t);
     }

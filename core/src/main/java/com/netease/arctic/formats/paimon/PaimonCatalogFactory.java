@@ -20,9 +20,12 @@ package com.netease.arctic.formats.paimon;
 
 import com.netease.arctic.FormatCatalogFactory;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.CatalogContext;
 import org.apache.paimon.catalog.CatalogFactory;
+import org.apache.paimon.catalog.FileSystemCatalogFactory;
 import org.apache.paimon.options.CatalogOptions;
 import org.apache.paimon.options.Options;
 
@@ -33,19 +36,25 @@ public class PaimonCatalogFactory implements FormatCatalogFactory {
   public PaimonCatalog create(
       String name, String metastoreType, Map<String, String> properties, Configuration configuration) {
 
+
+
+    return new PaimonCatalog(paimonCatalog(metastoreType, properties, configuration), name);
+  }
+
+  public static Catalog paimonCatalog(
+      String metastoreType, Map<String, String> properties, Configuration configuration) {
     Options options = Options.fromMap(properties);
 
     String type;
-    if ("hadoop".equalsIgnoreCase(metastoreType)) {
-      type = "filesystem";
-    } else  {
+    if (CatalogMetaProperties.CATALOG_TYPE_HADOOP.equalsIgnoreCase(metastoreType)) {
+      type = FileSystemCatalogFactory.IDENTIFIER;
+    } else {
       type = metastoreType;
     }
     options.set(CatalogOptions.METASTORE, type);
 
     CatalogContext catalogContext = CatalogContext.create(options, configuration);
-
-    return new PaimonCatalog(CatalogFactory.createCatalog(catalogContext), name);
+    return CatalogFactory.createCatalog(catalogContext);
   }
 
   @Override

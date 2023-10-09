@@ -12,17 +12,23 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and 
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
 package com.netease.arctic.optimizer;
 
-import com.google.common.collect.Maps;
+import com.netease.arctic.ams.api.PropertyNames;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.optimizer.flink.FlinkOptimizer;
+import com.netease.arctic.optimizer.util.FlinkConf;
 import com.netease.arctic.optimizer.util.PropertyUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
+import org.apache.iceberg.relocated.com.google.common.base.Function;
+import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -35,52 +41,91 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class FlinkOptimizerContainer extends AbstractResourceContainer {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkOptimizerContainer.class);
 
   public static final String FLINK_HOME_PROPERTY = "flink-home";
-  public static final String FLINK_CONFIG_PATH = "/conf/flink-conf.yaml";
+  public static final String FLINK_CONFIG_PATH = "/conf";
+  public static final String FLINK_CONFIG_YAML = "/flink-conf.yaml";
+  public static final String ENV_FLINK_CONF_DIR = "FLINK_CONF_DIR";
+
+  private static final String DEFAULT_JOB_URI = "/plugin/optimize/OptimizeJob.jar";
 
   /**
-   * @deprecated This parameter is deprecated and will be removed in version 0.7.0.
+   * This will be removed in 0.7.0, using flink properties `flink-conf.taskmanager.memory.process.size`.
    */
   @Deprecated
   public static final String TASK_MANAGER_MEMORY_PROPERTY = "taskmanager.memory";
 
   /**
-   * @deprecated This parameter is deprecated and will be removed in version 0.7.0.
+   * This will be removed in 0.7.0, using flink properties `flink-conf.jobmanager.memory.process.size`.
    */
   @Deprecated
   public static final String JOB_MANAGER_MEMORY_PROPERTY = "jobmanager.memory";
-  public static final String FLINK_PARAMETER_PREFIX = "flink-conf.";
-  public static final String JOB_MANAGER_TOTAL_PROCESS_MEMORY = "jobmanager.memory.process.size";
-  public static final String TASK_MANAGER_TOTAL_PROCESS_MEMORY = "taskmanager.memory.process.size";
+  public static final String FLINK_RUN_TARGET = "target";
+  public static final String FLINK_JOB_URI = "job-uri";
+
   public static final String YARN_APPLICATION_ID_PROPERTY = "yarn-application-id";
+  public static final String KUBERNETES_CLUSTER_ID_PROPERTY = "kubernetes-cluster-id";
 
   private static final Pattern APPLICATION_ID_PATTERN = Pattern.compile("(.*)application_(\\d+)_(\\d+)");
   private static final int MAX_READ_APP_ID_TIME = 600000; //10 min
-  private static final Set<String> KEYS_TO_FILTER = new HashSet<>(Arrays.asList(
-      FLINK_PARAMETER_PREFIX + JOB_MANAGER_TOTAL_PROCESS_MEMORY,
-      FLINK_PARAMETER_PREFIX + TASK_MANAGER_TOTAL_PROCESS_MEMORY
-  ));
 
+  private static final Function<String, String> yarnApplicationIdReader = readLine -> {
+    Matcher matcher = APPLICATION_ID_PATTERN.matcher(readLine);
+    if (matcher.matches()) {
+      return String.format("application_%s_%s", matcher.group(2), matcher.group(3));
+    }
+    return null;
+  };
 
-  public String getFlinkHome() {
-    return Optional.ofNullable(PropertyUtil.checkAndGetProperty(getContainerProperties(), FLINK_HOME_PROPERTY))
-        .map(flinkHome -> flinkHome.replaceAll("/$", ""))
-        .orElse(null);
+  private Target target;
+  private String flinkHome;
+  private String flinkConfDir;
+  private String jobUri;
+
+  @Override
+  public void init(String name, Map<String, String> containerProperties) {
+    super.init(name, containerProperties);
+    this.flinkHome = getFlinkHome();
+    this.flinkConfDir = getFlinkConfDir();
+
+    String runTarget = Optional.ofNullable(containerProperties.get(FLINK_RUN_TARGET))
+        .orElse(Target.YARN_PER_JOB.getValue());
+    this.target = Target.valueToEnum(runTarget);
+    String jobUri = containerProperties.get(FLINK_JOB_URI);
+    if (target.isApplicationMode()) {
+      Preconditions.checkArgument(
+          StringUtils.isNotEmpty(jobUri),
+          "The property: %s  is required if running target in application mode.", FLINK_JOB_URI);
+    }
+    if (StringUtils.isEmpty(jobUri)) {
+      jobUri = amsHome + DEFAULT_JOB_URI;
+    }
+    this.jobUri = jobUri;
+
+    if (Target.KUBERNETES_APPLICATION == target) {
+      FlinkConf flinkConf = FlinkConf.buildFor(
+          loadFlinkConfig(),
+          containerProperties
+      ).build();
+
+      String imageRef = flinkConf.configValue(FlinkConf.PropertyKeys.KUBERNETES_IMAGE_REF);
+      Preconditions.checkArgument(
+          StringUtils.isNotEmpty(imageRef),
+          "The flink-conf: %s is required if running target is %s",
+          FlinkConf.PropertyKeys.KUBERNETES_IMAGE_REF, target.getValue());
+    }
   }
 
   @Override
-  protected Map<String, String> doScaleOut(String startUpArgs) {
+  protected Map<String, String> doScaleOut(Resource resource) {
+    String startUpArgs = this.buildOptimizerStartupArgsString(resource);
     Runtime runtime = Runtime.getRuntime();
     try {
       String exportCmd = String.join(" && ", exportSystemProperties());
@@ -89,9 +134,17 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
       LOG.info("Starting flink optimizer using command : {}", startUpCmd);
       Process exec = runtime.exec(cmd);
       Map<String, String> startUpStatesMap = Maps.newHashMap();
-      String applicationId = readApplicationId(exec);
-      if (applicationId != null) {
-        startUpStatesMap.put(YARN_APPLICATION_ID_PROPERTY, applicationId);
+      String applicationId = fetchCommandOutput(exec, yarnApplicationIdReader);
+      switch (target) {
+        case YARN_PER_JOB:
+        case YARN_APPLICATION:
+          if (applicationId != null) {
+            startUpStatesMap.put(YARN_APPLICATION_ID_PROPERTY, applicationId);
+          }
+          break;
+        case KUBERNETES_APPLICATION:
+          startUpStatesMap.put(KUBERNETES_CLUSTER_ID_PROPERTY, kubernetesClusterId(resource));
+          break;
       }
       return startUpStatesMap;
     } catch (IOException e) {
@@ -103,63 +156,88 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
   protected String buildOptimizerStartupArgsString(Resource resource) {
     Map<String, String> properties = resource.getProperties();
     Map<String, String> flinkConfig = loadFlinkConfig();
-    Preconditions.checkState(properties != null && !flinkConfig.isEmpty(),
-        "resource properties is null or load flink-conf.yaml failed");
-    Long jobManagerMemory = getMemorySizeValue(properties, flinkConfig, JOB_MANAGER_MEMORY_PROPERTY,
-        JOB_MANAGER_TOTAL_PROCESS_MEMORY);
-    Long taskManagerMemory = getMemorySizeValue(properties, flinkConfig, TASK_MANAGER_MEMORY_PROPERTY,
-        TASK_MANAGER_TOTAL_PROCESS_MEMORY);
-    String jobPath = getAMSHome() + "/plugin/optimize/OptimizeJob.jar";
-    return String.format("%s/bin/flink run -m yarn-cluster -ytm %s -yjm %s %s -c %s %s %s",
-          getFlinkHome(), taskManagerMemory, jobManagerMemory, buildFlinkArgs(properties),
-          FlinkOptimizer.class.getName(), jobPath,
-          super.buildOptimizerStartupArgsString(resource));
+
+    FlinkConf resourceFlinkConf = FlinkConf.buildFor(flinkConfig, getContainerProperties())
+        .withGroupProperties(resource.getProperties())
+        .build();
+
+    long jobManagerMemory = getMemorySizeValue(properties, resourceFlinkConf,
+        JOB_MANAGER_MEMORY_PROPERTY,
+        FlinkConf.PropertyKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY);
+    long taskManagerMemory = getMemorySizeValue(properties, resourceFlinkConf,
+        TASK_MANAGER_MEMORY_PROPERTY,
+        FlinkConf.PropertyKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY);
+
+    resourceFlinkConf.putToOptions(
+        FlinkConf.PropertyKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY,
+        jobManagerMemory + "m"
+    );
+    resourceFlinkConf.putToOptions(
+        FlinkConf.PropertyKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY,
+        taskManagerMemory + "m"
+    );
+
+    String flinkAction = target.isApplicationMode() ? "run-application" : "run";
+    if (Target.KUBERNETES_APPLICATION == target) {
+      addKubernetesProperties(resource, resourceFlinkConf);
+    }
+    String flinkOptions = resourceFlinkConf.toCliOptions();
+
+    String jobArgs = super.buildOptimizerStartupArgsString(resource);
+    // ./bin/flink ACTION --target=TARGET OPTIONS -c <main-class> <job-file> <arguments>
+    //  options: -D<property=value>
+    return String.format("%s/bin/flink %s --target=%s %s -c %s %s %s",
+        flinkHome, flinkAction, target.getValue(), flinkOptions, FlinkOptimizer.class.getName(), jobUri, jobArgs);
   }
 
   private Map<String, String> loadFlinkConfig() {
     try {
-      return new Yaml().load(Files.newInputStream(Paths.get(getFlinkHome() + FLINK_CONFIG_PATH)));
+      return new Yaml().load(Files.newInputStream(Paths.get(flinkConfDir + FLINK_CONFIG_YAML)));
     } catch (IOException e) {
       LOG.error("load flink conf yaml failed: {}", e.getMessage());
       return Collections.emptyMap();
     }
   }
 
-  /**
-   * get jobManager and taskManager memory.
-   * An example of using Jobmanager memory parameters is as follows:
-   *    jobmanager.memory: 1024
-   *    flink-conf.jobmanager.memory.process.size: 1024M
-   *    flink-conf.yaml
-   * Prioritize from high to low.
-   *
-   */
-  protected long getMemorySizeValue(Map<String, String> properties, Map<String, String> flinkConfig,
-                                  String propertyKey, String finkConfigKey) {
-    return Optional.ofNullable(properties.get(propertyKey))
-        .map((v) -> parseMemorySize(v))
-        .orElseGet(() -> Optional.ofNullable(properties.get(FLINK_PARAMETER_PREFIX + finkConfigKey))
-            .map((v) -> parseMemorySize(v))
-            .orElseGet(() -> Optional.ofNullable(flinkConfig.get(finkConfigKey))
-                .map((v) -> parseMemorySize(v))
-                .orElse(0L)));
+  private void addKubernetesProperties(Resource resource, FlinkConf flinkConf) {
+    String clusterId = kubernetesClusterId(resource);
+    flinkConf.putToOptions(FlinkConf.PropertyKeys.KUBERNETES_CLUSTER_ID, clusterId);
+
+    String[] labels = {
+        "amoro.optimizing-group:" + resource.getGroupName(),
+        "amoro.optimizer-implement:flink-native-kubernetes",
+        "amoro.optimizer-id:" + resource.getResourceId()
+    };
+    String resourceLabel = Joiner.on(',').join(labels);
+    flinkConf.putToOptions(FlinkConf.PropertyKeys.KUBERNETES_TASKMANAGER_LABLES, resourceLabel);
+    flinkConf.putToOptions(FlinkConf.PropertyKeys.KUBERNETES_JOBMANAGER_LABLES, resourceLabel);
   }
 
   /**
-   * build user configured flink native parameters
+   * get jobManager and taskManager memory.
+   * An example of using Jobmanager memory parameters is as follows:
+   * jobmanager.memory: 1024
+   * flink-conf.jobmanager.memory.process.size: 1024M
+   * flink-conf.yaml
+   * Prioritize from high to low.
    */
-  protected String buildFlinkArgs(Map<String, String> properties) {
-    return properties.entrySet()
-        .stream().filter(entry -> !KEYS_TO_FILTER.contains(entry.getKey()))
-        .filter(entry -> entry.getKey().startsWith(FLINK_PARAMETER_PREFIX))
-        .map(entry -> "-yD " + entry.getKey().substring(FLINK_PARAMETER_PREFIX.length()) + "=" + entry.getValue())
-        .collect(Collectors.joining(" "));
+  @VisibleForTesting
+  protected long getMemorySizeValue(
+      Map<String, String> resourceProperties, FlinkConf conf,
+      String resourcePropertyKey, String flinkConfKey
+  ) {
+    String value = resourceProperties.get(resourcePropertyKey);
+    if (value == null) {
+      value = conf.configValue(flinkConfKey);
+    }
+    return parseMemorySize(value);
   }
 
   /**
    * memory conversion of units method, supporting m and g units
    */
-  public long parseMemorySize(String memoryStr) {
+  @VisibleForTesting
+  protected long parseMemorySize(String memoryStr) {
     if (memoryStr == null || memoryStr.isEmpty()) {
       return 0;
     }
@@ -187,9 +265,8 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     }
   }
 
-  private String readApplicationId(Process exec) {
-    StringBuilder outputBuilder = new StringBuilder();
-    String applicationId = null;
+  private <T> T fetchCommandOutput(Process exec, Function<String, T> commandReader) {
+    T value = null;
     try (InputStreamReader inputStreamReader = new InputStreamReader(exec.getInputStream())) {
       try (BufferedReader bufferedReader = new BufferedReader(inputStreamReader)) {
         long startTime = System.currentTimeMillis();
@@ -198,15 +275,12 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
           if (readLine == null) {
             break;
           }
-          outputBuilder.append(readLine).append("\n");
-          Matcher matcher = APPLICATION_ID_PATTERN.matcher(readLine);
-          if (matcher.matches()) {
-            applicationId = String.format("application_%s_%s", matcher.group(2), matcher.group(3));
-            break;
+          LOG.info("{}", readLine);
+          if (commandReader != null) {
+            value = commandReader.apply(readLine);
           }
         }
-        LOG.info("Started flink optimizer log:\n{}", outputBuilder);
-        return applicationId;
+        return value;
       }
     } catch (IOException e) {
       LOG.error("Read application id from output failed", e);
@@ -216,21 +290,102 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
 
   @Override
   public void releaseOptimizer(Resource resource) {
-    Preconditions.checkArgument(resource.getProperties().containsKey(YARN_APPLICATION_ID_PROPERTY),
-        "Cannot find {} from optimizer start up stats", YARN_APPLICATION_ID_PROPERTY);
-    Preconditions.checkArgument(resource.getProperties().containsKey(FlinkOptimizer.JOB_ID_PROPERTY),
-        "Cannot find {} from optimizer properties", FlinkOptimizer.JOB_ID_PROPERTY);
-    String applicationId = resource.getProperties().get(YARN_APPLICATION_ID_PROPERTY);
-    String jobId = resource.getProperties().get(FlinkOptimizer.JOB_ID_PROPERTY);
+    String releaseCommand;
+    switch (target) {
+      case YARN_APPLICATION:
+      case YARN_PER_JOB:
+        releaseCommand = buildReleaseYarnCommand(resource);
+        break;
+      case KUBERNETES_APPLICATION:
+        releaseCommand = buildReleaseKubernetesCommand(resource);
+        break;
+      default:
+        throw new IllegalStateException("Unsupported running target: " + target.getValue());
+    }
+
     try {
       String exportCmd = String.join(" && ", exportSystemProperties());
-      String releaseCmd = String.format("%s && %s/bin/flink cancel -t yarn-per-job -Dyarn.application.id=%s %s",
-          exportCmd, getFlinkHome(), applicationId, jobId);
+      String releaseCmd = exportCmd + " && " + releaseCommand;
       String[] cmd = {"/bin/sh", "-c", releaseCmd};
-      LOG.info("Releasing flink optimizer using command:" + releaseCmd);
-      Runtime.getRuntime().exec(cmd);
+      LOG.info("Releasing flink optimizer using command: " + releaseCmd);
+      Process exec = Runtime.getRuntime().exec(cmd);
+      fetchCommandOutput(exec, null);
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to release flink optimizer.", e);
+    }
+  }
+
+  private String buildReleaseYarnCommand(Resource resource) {
+    Preconditions.checkArgument(resource.getProperties().containsKey(YARN_APPLICATION_ID_PROPERTY),
+        "Cannot find {} from optimizer start up stats", YARN_APPLICATION_ID_PROPERTY);
+    String applicationId = resource.getProperties().get(YARN_APPLICATION_ID_PROPERTY);
+    String options = "-Dyarn.application.id=" + applicationId;
+
+    Preconditions.checkArgument(resource.getProperties().containsKey(FlinkOptimizer.JOB_ID_PROPERTY),
+        "Cannot find {} from optimizer properties", FlinkOptimizer.JOB_ID_PROPERTY);
+    String jobId = resource.getProperties().get(FlinkOptimizer.JOB_ID_PROPERTY);
+    return String.format("%s/bin/flink cancel -t %s %s %s",
+        flinkHome, target.getValue(), options, jobId);
+  }
+
+  private String buildReleaseKubernetesCommand(Resource resource) {
+    Preconditions.checkArgument(resource.getProperties().containsKey(KUBERNETES_CLUSTER_ID_PROPERTY),
+        "Cannot find {} from optimizer start up stats.", KUBERNETES_CLUSTER_ID_PROPERTY);
+    String clusterId = resource.getProperties().get(KUBERNETES_CLUSTER_ID_PROPERTY);
+
+    FlinkConf conf = FlinkConf.buildFor(loadFlinkConfig(), getContainerProperties())
+        .withGroupProperties(resource.getProperties()).build();
+    conf.putToOptions(FlinkConf.PropertyKeys.KUBERNETES_CLUSTER_ID, clusterId);
+
+    String options = conf.toCliOptions();
+
+    // job-manager rest api can't be visited from k8s cluster outside, so using kubernetes-session command to kill it
+    // echo 'stop' | $FLINK_HOME/bin/kubertnetes-session.sh
+    return String.format(" echo 'stop' | %s/bin/kubernetes-session.sh %s -Dexecution.attached=true",
+        this.flinkHome, options);
+  }
+
+  private String getFlinkHome() {
+    String flinkHome = PropertyUtil.getRequiredNotNull(getContainerProperties(), FLINK_HOME_PROPERTY);
+    return flinkHome.replaceAll("/$", "");
+  }
+
+  private String getFlinkConfDir() {
+    String flinkConfDir = getContainerProperties().get(PropertyNames.EXPORT_PROPERTY_PREFIX + ENV_FLINK_CONF_DIR);
+    if (StringUtils.isNotEmpty(flinkConfDir)) {
+      return flinkConfDir;
+    }
+    return this.flinkHome + FLINK_CONFIG_PATH;
+  }
+
+  private String kubernetesClusterId(Resource resource) {
+    return "amoro-optimizer-" + resource.getResourceId();
+  }
+
+  private enum Target {
+    YARN_PER_JOB("yarn-per-job", false),
+    YARN_APPLICATION("yarn-application", true),
+    KUBERNETES_APPLICATION("kubernetes-application", true);
+
+    private final String value;
+    private final boolean applicationMode;
+
+    Target(String value, boolean applicationMode) {
+      this.value = value;
+      this.applicationMode = applicationMode;
+    }
+
+    public static Target valueToEnum(String value) {
+      return Arrays.stream(values()).filter(t -> t.value.equalsIgnoreCase(value)).findFirst()
+          .orElseThrow(() -> new IllegalArgumentException("can't parse value: " + value));
+    }
+
+    public boolean isApplicationMode() {
+      return applicationMode;
+    }
+
+    public String getValue() {
+      return value;
     }
   }
 }

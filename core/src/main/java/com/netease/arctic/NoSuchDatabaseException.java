@@ -31,9 +31,6 @@ public class NoSuchDatabaseException extends RuntimeException {
     super(String.format(message, args), e);
   }
 
-  public NoSuchDatabaseException() {
-  }
-
   public NoSuchDatabaseException(String message) {
     super(message);
   }
@@ -44,13 +41,5 @@ public class NoSuchDatabaseException extends RuntimeException {
 
   public NoSuchDatabaseException(Throwable cause) {
     super(cause);
-  }
-
-  public NoSuchDatabaseException(
-      String message,
-      Throwable cause,
-      boolean enableSuppression,
-      boolean writableStackTrace) {
-    super(message, cause, enableSuppression, writableStackTrace);
   }
 }

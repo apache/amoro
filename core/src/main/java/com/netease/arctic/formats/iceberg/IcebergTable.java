@@ -22,14 +22,15 @@ import com.netease.arctic.AmoroTable;
 import com.netease.arctic.TableSnapshot;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 
 import java.util.Map;
 
 public class IcebergTable implements AmoroTable<Table> {
 
-  TableIdentifier identifier;
-  Table table;
+  private final TableIdentifier identifier;
+  private final Table table;
 
   public IcebergTable(TableIdentifier identifier, Table table) {
     this.table = table;
@@ -58,7 +59,7 @@ public class IcebergTable implements AmoroTable<Table> {
 
   @Override
   public TableSnapshot currentSnapshot() {
-    org.apache.iceberg.Snapshot snapshot = table.currentSnapshot();
+    Snapshot snapshot = table.currentSnapshot();
     return new IcebergSnapshot(snapshot);
   }
 }

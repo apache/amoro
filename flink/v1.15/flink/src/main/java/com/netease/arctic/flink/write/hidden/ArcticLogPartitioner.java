@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.write.hidden;
 
+import static org.apache.flink.util.Preconditions.checkArgument;
+import static org.apache.flink.util.Preconditions.checkNotNull;
+
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.log.LogData;
 import org.apache.commons.lang.ArrayUtils;
@@ -27,12 +30,7 @@ import org.apache.kafka.common.utils.Utils;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.apache.flink.util.Preconditions.checkArgument;
-import static org.apache.flink.util.Preconditions.checkNotNull;
-
-/**
- * This is a log message partitioner that makes sure the record is without out-of-order.
- */
+/** This is a log message partitioner that makes sure the record is without out-of-order. */
 public class ArcticLogPartitioner<T> implements Serializable {
   private static final long serialVersionUID = 9184708069203854226L;
   private final AtomicInteger counter = new AtomicInteger(0);

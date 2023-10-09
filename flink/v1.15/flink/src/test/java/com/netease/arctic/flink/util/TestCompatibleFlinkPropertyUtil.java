@@ -23,28 +23,35 @@ import org.apache.flink.configuration.Configuration;
 import org.junit.Assert;
 import org.junit.Test;
 
-
 public class TestCompatibleFlinkPropertyUtil {
   @Test
   public void testGetNewProperty() {
     Configuration config = new Configuration();
-    Assert.assertEquals(ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.defaultValue(),
-        CompatibleFlinkPropertyUtil.propertyAsBoolean(config, ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE));
+    Assert.assertEquals(
+        ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.defaultValue(),
+        CompatibleFlinkPropertyUtil.propertyAsBoolean(
+            config, ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE));
 
     config.setBoolean(ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE, true);
-    Assert.assertEquals(true,
-        CompatibleFlinkPropertyUtil.propertyAsBoolean(config, ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE));
+    Assert.assertEquals(
+        true,
+        CompatibleFlinkPropertyUtil.propertyAsBoolean(
+            config, ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE));
 
     config.setBoolean(ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY, false);
-    Assert.assertEquals(true,
-        CompatibleFlinkPropertyUtil.propertyAsBoolean(config, ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE));
+    Assert.assertEquals(
+        true,
+        CompatibleFlinkPropertyUtil.propertyAsBoolean(
+            config, ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE));
   }
 
   @Test
   public void testGetLegacyProperty() {
     Configuration config = new Configuration();
     config.setBoolean(ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY, true);
-    Assert.assertEquals(true,
-        CompatibleFlinkPropertyUtil.propertyAsBoolean(config, ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE));
+    Assert.assertEquals(
+        true,
+        CompatibleFlinkPropertyUtil.propertyAsBoolean(
+            config, ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE));
   }
 }

@@ -47,7 +47,9 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
-    return tableRuntime.getFormat() != TableFormat.PAIMON &&
+    return tableRuntime.getFormat() == TableFormat.ICEBERG &&
+        tableRuntime.getFormat() == TableFormat.MIXED_ICEBERG &&
+        tableRuntime.getFormat() == TableFormat.MIXED_HIVE &&
         tableRuntime.getTableConfiguration().isExpireSnapshotEnabled();
   }
 
@@ -59,11 +61,6 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
   @Override
   public void execute(TableRuntime tableRuntime) {
     try {
-      TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
-      if (!tableConfiguration.isExpireSnapshotEnabled()) {
-        return;
-      }
-
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
       TableMaintainer tableMaintainer = TableMaintainer.createMaintainer(amoroTable);
       tableMaintainer.expireSnapshots(tableRuntime);

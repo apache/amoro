@@ -37,24 +37,27 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestArcticSourceEnumStateSerializer extends TestShuffleSplitAssigner {
-  private final static Logger LOG = LoggerFactory.getLogger(TestArcticSourceEnumStateSerializer.class);
+  private static final Logger LOG =
+      LoggerFactory.getLogger(TestArcticSourceEnumStateSerializer.class);
 
   @Test
   public void testArcticEnumState() throws IOException {
     ShuffleSplitAssigner shuffleSplitAssigner = instanceSplitAssigner(3);
 
-    List<ArcticSplit> splitList = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
+    List<ArcticSplit> splitList =
+        FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
     shuffleSplitAssigner.onDiscoveredSplits(splitList);
     TemporalJoinSplits splits = new TemporalJoinSplits(splitList, null);
 
-    ArcticSourceEnumState expect = new ArcticSourceEnumState(
-        shuffleSplitAssigner.state(),
-        null,
-        shuffleSplitAssigner.serializePartitionIndex(),
-        splits
-    );
+    ArcticSourceEnumState expect =
+        new ArcticSourceEnumState(
+            shuffleSplitAssigner.state(),
+            null,
+            shuffleSplitAssigner.serializePartitionIndex(),
+            splits);
 
-    ArcticSourceEnumStateSerializer arcticSourceEnumStateSerializer = new ArcticSourceEnumStateSerializer();
+    ArcticSourceEnumStateSerializer arcticSourceEnumStateSerializer =
+        new ArcticSourceEnumStateSerializer();
     byte[] ser = arcticSourceEnumStateSerializer.serialize(expect);
 
     Assert.assertNotNull(ser);
@@ -66,12 +69,10 @@ public class TestArcticSourceEnumStateSerializer extends TestShuffleSplitAssigne
         Objects.requireNonNull(expect.shuffleSplitRelation()).length,
         Objects.requireNonNull(actual.shuffleSplitRelation()).length);
 
-    SplitEnumeratorContext<ArcticSplit> splitEnumeratorContext = new InternalSplitEnumeratorContext(3);
+    SplitEnumeratorContext<ArcticSplit> splitEnumeratorContext =
+        new InternalSplitEnumeratorContext(3);
     try (ShuffleSplitAssigner actualAssigner =
-             new ShuffleSplitAssigner(
-                 splitEnumeratorContext,
-                 getArcticTable().name(),
-                 actual)) {
+        new ShuffleSplitAssigner(splitEnumeratorContext, getArcticTable().name(), actual)) {
       List<ArcticSplit> actualSplits = new ArrayList<>();
 
       int subtaskId = 2;

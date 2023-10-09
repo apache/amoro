@@ -26,7 +26,8 @@ import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 
 /**
- * A proxy util wraps an object with the kerberos authenticate ability by {@link KerberosInvocationHandler}.
+ * A proxy util wraps an object with the kerberos authenticate ability by {@link
+ * KerberosInvocationHandler}.
  */
 public class ProxyUtil {
 
@@ -39,22 +40,22 @@ public class ProxyUtil {
     return getProxy(obj, handler);
   }
 
-  public static <T> T getProxy(Class<T> clazz, MethodInterceptor interceptor,
-                               Class[] argumentTypes, Object[] arguments) {
+  public static <T> T getProxy(
+      Class<T> clazz, MethodInterceptor interceptor, Class[] argumentTypes, Object[] arguments) {
     Enhancer enhancer = new Enhancer();
     enhancer.setSuperclass(clazz);
     enhancer.setCallback(interceptor);
     return (T) enhancer.create(argumentTypes, arguments);
   }
 
-  public static <T> T getProxy(Class<T> clazz, ArcticFileIO arcticFileIO,
-                               Class[] argumentTypes, Object[] arguments) {
+  public static <T> T getProxy(
+      Class<T> clazz, ArcticFileIO arcticFileIO, Class[] argumentTypes, Object[] arguments) {
     return getProxy(clazz, new KerberosInterceptor(arcticFileIO), argumentTypes, arguments);
   }
 
-  public static <T> ProxyFactory<T> getProxyFactory(Class<T> clazz, ArcticFileIO arcticFileIO,
-                                                    Class[] argumentTypes, Object[] arguments) {
-    return new ProxyFactory<T>(clazz, new KerberosInterceptor(arcticFileIO), argumentTypes, arguments);
+  public static <T> ProxyFactory<T> getProxyFactory(
+      Class<T> clazz, ArcticFileIO arcticFileIO, Class[] argumentTypes, Object[] arguments) {
+    return new ProxyFactory<T>(
+        clazz, new KerberosInterceptor(arcticFileIO), argumentTypes, arguments);
   }
-
 }

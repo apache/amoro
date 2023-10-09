@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
+import static com.netease.arctic.flink.read.hybrid.enumerator.ArcticEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
+import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
+
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.table.ArcticTableLoader;
@@ -32,12 +35,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.netease.arctic.flink.read.hybrid.enumerator.ArcticEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
-import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
-
-/**
- * Used for MergeOnRead, only for the bounded reading and return append stream.
- */
+/** Used for MergeOnRead, only for the bounded reading and return append stream. */
 public class MergeOnReadPlannerImpl implements ContinuousSplitPlanner {
   private static final Logger LOG = LoggerFactory.getLogger(MergeOnReadPlannerImpl.class);
 
@@ -64,16 +62,15 @@ public class MergeOnReadPlannerImpl implements ContinuousSplitPlanner {
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
     List<ArcticSplit> arcticSplits = FlinkSplitPlanner.mergeOnReadPlan(table, filters, splitCount);
 
-    long changeStartSnapshotId = changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;
+    long changeStartSnapshotId =
+        changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;
     if (changeSnapshot == null && CollectionUtils.isEmpty(arcticSplits)) {
       LOG.info("There have no change snapshot, and no base splits in table: {}.", table);
       return ContinuousEnumerationResult.EMPTY;
     }
 
     return new ContinuousEnumerationResult(
-        arcticSplits,
-        null,
-        ArcticEnumeratorOffset.of(changeStartSnapshotId, null));
+        arcticSplits, null, ArcticEnumeratorOffset.of(changeStartSnapshotId, null));
   }
 
   @Override

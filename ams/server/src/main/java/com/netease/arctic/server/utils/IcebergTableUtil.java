@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
+import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.table.BasicTableSnapshot;
@@ -32,7 +33,6 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableSnapshot;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -76,8 +76,8 @@ public class IcebergTableUtil {
   public static final String PROPERTIES_METADATA_LOCATION = "iceberg.metadata.location";
   public static final String PROPERTIES_PREV_METADATA_LOCATION = "iceberg.metadata.prev-location";
 
-  public static long getSnapshotId(UnkeyedTable internalTable, boolean refresh) {
-    Snapshot currentSnapshot = getSnapshot(internalTable, refresh);
+  public static long getSnapshotId(Table table, boolean refresh) {
+    Snapshot currentSnapshot = getSnapshot(table, refresh);
     if (currentSnapshot == null) {
       return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
     } else {
@@ -100,11 +100,11 @@ public class IcebergTableUtil {
     }
   }
 
-  public static Snapshot getSnapshot(UnkeyedTable internalTable, boolean refresh) {
+  public static Snapshot getSnapshot(Table table, boolean refresh) {
     if (refresh) {
-      internalTable.refresh();
+      table.refresh();
     }
-    return internalTable.currentSnapshot();
+    return table.currentSnapshot();
   }
 
   public static Set<String> getAllContentFilePath(Table internalTable) {
@@ -169,7 +169,8 @@ public class IcebergTableUtil {
     TableMetaStore store = CatalogUtil.buildMetaStore(meta);
     Configuration conf = store.getConfiguration();
     String ioImpl = catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, DEFAULT_FILE_IO_IMPL);
-    return org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
+    FileIO fileIO = org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
+    return ArcticFileIOs.buildAdaptIcebergFileIO(store, fileIO);
   }
 
 

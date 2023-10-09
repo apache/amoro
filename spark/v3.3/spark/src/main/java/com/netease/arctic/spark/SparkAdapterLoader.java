@@ -19,14 +19,15 @@
 package com.netease.arctic.spark;
 
 /**
- * A util class to load spark adapter via spark version.
- * This util class will move to spark3-common module if multi spark modules added.
+ * A util class to load spark adapter via spark version. This util class will move to spark3-common
+ * module if multi spark modules added.
  */
 public class SparkAdapterLoader {
   private static final SparkAdapter adapter = new Spark33Adapter();
 
   /**
    * This method will implement as SPI if multi spark modules added.
+   *
    * @return A SparkAdapter objects
    */
   public static SparkAdapter getOrLoad() {

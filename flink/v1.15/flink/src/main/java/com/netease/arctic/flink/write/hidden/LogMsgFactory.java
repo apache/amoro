@@ -27,8 +27,8 @@ import java.io.Serializable;
 import java.util.Properties;
 
 /**
- * A factory creates log queue producers or consumers, e.g. kafka or pulsar distributed event streaming
- * platform.
+ * A factory creates log queue producers or consumers, e.g. kafka or pulsar distributed event
+ * streaming platform.
  */
 public interface LogMsgFactory<T> extends Serializable {
 
@@ -54,10 +54,8 @@ public interface LogMsgFactory<T> extends Serializable {
 
   interface Consumer<T> {
 
-    default void open(Configuration parameters) throws Exception {
-    }
+    default void open(Configuration parameters) throws Exception {}
 
-    default void close() throws Exception {
-    }
+    default void close() throws Exception {}
   }
 }

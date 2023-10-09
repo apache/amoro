@@ -26,6 +26,11 @@ import java.util.List;
 public interface UnifiedCatalog extends AmoroCatalog {
 
   /**
+   * name of this catalog
+   */
+  String name();
+
+  /**
    * list tables with format
    *
    * @param database given database
@@ -37,9 +42,4 @@ public interface UnifiedCatalog extends AmoroCatalog {
    * Refresh catalog meta
    */
   void refresh();
-
-  /**
-   * name of this catalog
-   */
-  String name();
 }

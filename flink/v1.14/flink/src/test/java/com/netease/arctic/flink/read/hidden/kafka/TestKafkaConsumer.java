@@ -18,6 +18,12 @@
 
 package com.netease.arctic.flink.read.hidden.kafka;
 
+import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getProperties;
+import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
+import static com.netease.arctic.flink.write.hidden.kafka.TestHiddenLogOperators.topic;
+import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
 import com.netease.arctic.flink.write.hidden.kafka.TestBaseLog;
 import org.apache.flink.streaming.connectors.kafka.internals.FlinkKafkaInternalProducer;
@@ -41,12 +47,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getProperties;
-import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
-import static com.netease.arctic.flink.write.hidden.kafka.TestHiddenLogOperators.topic;
-import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestKafkaConsumer extends TestBaseLog {
   private static final Logger LOG = LoggerFactory.getLogger(TestKafkaConsumer.class);
@@ -114,9 +114,10 @@ public class TestKafkaConsumer extends TestBaseLog {
     // read all
     properties.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
     KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(properties);
-    Set<TopicPartition> topicPartitionList = consumer.partitionsFor(topicIntern).stream()
-        .map(partitionInfo -> new TopicPartition(topicIntern, partitionInfo.partition()))
-        .collect(Collectors.toSet());
+    Set<TopicPartition> topicPartitionList =
+        consumer.partitionsFor(topicIntern).stream()
+            .map(partitionInfo -> new TopicPartition(topicIntern, partitionInfo.partition()))
+            .collect(Collectors.toSet());
     TopicPartition partition0 = topicPartitionList.stream().iterator().next();
     consumer.assign(topicPartitionList);
     consumer.seekToBeginning(consumer.assignment());

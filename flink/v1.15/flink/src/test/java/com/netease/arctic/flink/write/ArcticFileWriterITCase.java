@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.write;
 
+import static com.netease.arctic.flink.read.TestArcticSource.tableRecords;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -73,8 +75,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
-import static com.netease.arctic.flink.read.TestArcticSource.tableRecords;
-
 public class ArcticFileWriterITCase extends FlinkTestBase {
 
   public static final Logger LOG = LoggerFactory.getLogger(ArcticFileWriterITCase.class);
@@ -86,8 +86,9 @@ public class ArcticFileWriterITCase extends FlinkTestBase {
   private int NUM_RECORDS = 10000;
 
   public ArcticFileWriterITCase() {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-      new BasicTableTestHelper(true, true));
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true));
   }
 
   @Before
@@ -111,8 +112,8 @@ public class ArcticFileWriterITCase extends FlinkTestBase {
     private final int numberOfRecords;
 
     /**
-     * Whether the test is executing in a scenario that induces a failover. This doesn't mean
-     * that this source induces the failover.
+     * Whether the test is executing in a scenario that induces a failover. This doesn't mean that
+     * this source induces the failover.
      */
     private final boolean isFailoverScenario;
 
@@ -138,7 +139,8 @@ public class ArcticFileWriterITCase extends FlinkTestBase {
     @Override
     public void initializeState(FunctionInitializationContext context) throws Exception {
       nextValueState =
-          context.getOperatorStateStore()
+          context
+              .getOperatorStateStore()
               .getListState(new ListStateDescriptor<>("nextValue", Integer.class));
 
       if (nextValueState.get() != null && nextValueState.get().iterator().hasNext()) {
@@ -183,12 +185,12 @@ public class ArcticFileWriterITCase extends FlinkTestBase {
     private void sendRecordsUntil(int targetNumber, SourceContext<RowData> ctx) {
       while (!isCanceled && nextValue < targetNumber) {
         synchronized (ctx.getCheckpointLock()) {
-          ctx.collect(GenericRowData.of(
-              nextValue++,
-              StringData.fromString(""),
-              LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli(),
-              TimestampData.fromLocalDateTime(LocalDateTime.now()))
-          );
+          ctx.collect(
+              GenericRowData.of(
+                  nextValue++,
+                  StringData.fromString(""),
+                  LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli(),
+                  TimestampData.fromLocalDateTime(LocalDateTime.now())));
         }
       }
     }
@@ -218,7 +220,8 @@ public class ArcticFileWriterITCase extends FlinkTestBase {
     }
   }
 
-  protected JobGraph createJobGraph(ArcticTableLoader tableLoader, TableSchema tableSchema, boolean triggerFailover) {
+  protected JobGraph createJobGraph(
+      ArcticTableLoader tableLoader, TableSchema tableSchema, boolean triggerFailover) {
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     Configuration config = new Configuration();
     config.set(ExecutionOptions.RUNTIME_MODE, RuntimeExecutionMode.STREAMING);
@@ -232,12 +235,11 @@ public class ArcticFileWriterITCase extends FlinkTestBase {
       env.setRestartStrategy(RestartStrategies.noRestart());
     }
 
-    DataStreamSource<RowData> source = env.addSource(
-            new StreamingExecutionTestSource(latchId, NUM_RECORDS, triggerFailover))
-        .setParallelism(4);
+    DataStreamSource<RowData> source =
+        env.addSource(new StreamingExecutionTestSource(latchId, NUM_RECORDS, triggerFailover))
+            .setParallelism(4);
     ArcticTable table = ArcticUtils.loadArcticTable(tableLoader);
-    FlinkSink
-        .forRowData(source)
+    FlinkSink.forRowData(source)
         .context(Optional::of)
         .table(table)
         .tableLoader(tableLoader)

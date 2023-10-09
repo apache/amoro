@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.write.hidden;
 
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
+
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.log.LogData;
 import com.netease.arctic.log.LogDataJsonSerialization;
@@ -39,11 +41,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
-
-/**
- * This is a global flip committer used by every log writer operator.
- */
+/** This is a global flip committer used by every log writer operator. */
 public class GlobalFlipCommitter {
   private static final Logger LOG = LoggerFactory.getLogger(GlobalFlipCommitter.class);
 
@@ -52,31 +50,27 @@ public class GlobalFlipCommitter {
   private final FlipCommitFunction flipCommitFunction;
 
   public GlobalFlipCommitter(
-      GlobalAggregateManager aggregateManager,
-      FlipCommitFunction flipCommitFunction) {
+      GlobalAggregateManager aggregateManager, FlipCommitFunction flipCommitFunction) {
     this.aggregateManager = aggregateManager;
     this.flipCommitFunction = flipCommitFunction;
   }
 
   public boolean commit(int subtaskId, LogData<RowData> logData) throws IOException {
-    Long committedEpicNo = aggregateManager.updateGlobalAggregate(
-        AGGREGATE_NAME,
-        new CommitRequest(subtaskId, logData),
-        flipCommitFunction
-    );
+    Long committedEpicNo =
+        aggregateManager.updateGlobalAggregate(
+            AGGREGATE_NAME, new CommitRequest(subtaskId, logData), flipCommitFunction);
     return committedEpicNo != null && committedEpicNo == logData.getEpicNo();
   }
 
   public boolean hasCommittedFlip(LogData<RowData> logData) throws IOException {
-    Long committedEpicNo = aggregateManager.updateGlobalAggregate(
-        AGGREGATE_NAME,
-        new CommitRequest(null, logData, true),
-        flipCommitFunction
-    );
+    Long committedEpicNo =
+        aggregateManager.updateGlobalAggregate(
+            AGGREGATE_NAME, new CommitRequest(null, logData, true), flipCommitFunction);
     return committedEpicNo != null && committedEpicNo == logData.getEpicNo();
   }
 
-  static class FlipCommitFunction implements AggregateFunction<CommitRequest, LogGlobalState, Long> {
+  static class FlipCommitFunction
+      implements AggregateFunction<CommitRequest, LogGlobalState, Long> {
     private static final long serialVersionUID = 6399278898504357412L;
     private final int numberOfTasks;
     private final LogDataJsonSerialization<RowData> logDataJsonSerialization;
@@ -96,10 +90,8 @@ public class GlobalFlipCommitter {
         ShuffleHelper helper) {
       this.numberOfTasks = numberOfTasks;
       this.factory = checkNotNull(factory);
-      this.logDataJsonSerialization = new LogDataJsonSerialization<>(
-          checkNotNull(schema),
-          checkNotNull(fieldGetterFactory)
-      );
+      this.logDataJsonSerialization =
+          new LogDataJsonSerialization<>(checkNotNull(schema), checkNotNull(fieldGetterFactory));
       this.producerConfig = producerConfig;
       this.topic = topic;
       this.helper = helper;
@@ -118,20 +110,24 @@ public class GlobalFlipCommitter {
       LOG.info("receive CommitRequest={}.", value);
       NavigableMap<Long, SubAccumulator> accumulator = globalState.accumulators;
       Long epicNo = value.logRecord.getEpicNo();
-      accumulator.compute(epicNo, (cpId, subAccumulator) -> {
-        subAccumulator = subAccumulator == null ? new SubAccumulator() : subAccumulator;
-        if (!subAccumulator.hasCommittedFlip) {
-          subAccumulator.add(value.subtaskId, value);
-        }
-        return subAccumulator;
-      });
+      accumulator.compute(
+          epicNo,
+          (cpId, subAccumulator) -> {
+            subAccumulator = subAccumulator == null ? new SubAccumulator() : subAccumulator;
+            if (!subAccumulator.hasCommittedFlip) {
+              subAccumulator.add(value.subtaskId, value);
+            }
+            return subAccumulator;
+          });
 
       SubAccumulator subAccumulator = globalState.accumulators.get(epicNo);
       if (subAccumulator.taskIds.size() == numberOfTasks) {
         // this sync step, wait for sent records to topic.
         try {
-          LOG.info("already receive {} commit requests. The last subtask received is {}.",
-              numberOfTasks, value.subtaskId);
+          LOG.info(
+              "already receive {} commit requests. The last subtask received is {}.",
+              numberOfTasks,
+              value.subtaskId);
           sendFlip(subAccumulator, value);
           LOG.info("sent flip messages success, cost {}ms.", subAccumulator.cost.time());
         } catch (Exception e) {
@@ -139,7 +135,8 @@ public class GlobalFlipCommitter {
           throw new RuntimeException(e);
         }
       } else {
-        LOG.info("As of now, global state has received a total of {} commit requests which are {}.",
+        LOG.info(
+            "As of now, global state has received a total of {} commit requests which are {}.",
             subAccumulator.taskIds.size(),
             Arrays.toString(subAccumulator.taskIds.toArray(new Integer[0])));
       }
@@ -148,12 +145,7 @@ public class GlobalFlipCommitter {
 
     private void sendFlip(SubAccumulator subAccumulator, CommitRequest value) throws Exception {
       if (null == producer) {
-        producer =
-            factory.createProducer(
-                producerConfig,
-                topic,
-                logDataJsonSerialization,
-                helper);
+        producer = factory.createProducer(producerConfig, topic, logDataJsonSerialization, helper);
         producer.open();
       }
 
@@ -164,25 +156,27 @@ public class GlobalFlipCommitter {
     @Override
     public Long getResult(LogGlobalState globalState) {
       // find the maximum epic number and has already committed flip message to log queue.
-      Optional<Long> result = globalState.accumulators
-          .descendingMap()
-          .entrySet()
-          .stream()
-          .filter(entry -> entry.getValue().hasCommittedFlip)
-          .findFirst()
-          .map(Map.Entry::getKey);
+      Optional<Long> result =
+          globalState.accumulators.descendingMap().entrySet().stream()
+              .filter(entry -> entry.getValue().hasCommittedFlip)
+              .findFirst()
+              .map(Map.Entry::getKey);
       return result.orElse(null);
     }
 
     @Override
     public LogGlobalState merge(LogGlobalState a, LogGlobalState b) {
-      b.accumulators.forEach((cpId, acc) -> a.accumulators.compute(cpId, (key, subAccumulator) -> {
-        subAccumulator = subAccumulator == null ? new SubAccumulator() : subAccumulator;
-        if (!subAccumulator.hasCommittedFlip) {
-          subAccumulator.merge(acc);
-        }
-        return subAccumulator;
-      }));
+      b.accumulators.forEach(
+          (cpId, acc) ->
+              a.accumulators.compute(
+                  cpId,
+                  (key, subAccumulator) -> {
+                    subAccumulator = subAccumulator == null ? new SubAccumulator() : subAccumulator;
+                    if (!subAccumulator.hasCommittedFlip) {
+                      subAccumulator.merge(acc);
+                    }
+                    return subAccumulator;
+                  }));
       return a;
     }
   }
@@ -208,11 +202,11 @@ public class GlobalFlipCommitter {
 
     @Override
     public String toString() {
-      return "CommitRequest{subtaskId=" +
-          subtaskId +
-          ", flip message=" +
-          logRecord.toString() +
-          "}";
+      return "CommitRequest{subtaskId="
+          + subtaskId
+          + ", flip message="
+          + logRecord.toString()
+          + "}";
     }
   }
 
