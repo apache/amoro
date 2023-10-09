@@ -45,10 +45,12 @@ public class TestActivePluginManager {
   private static final String PLUGIN_CLASS_2 =
       "com.netease.arctic.server.manager.TestDefaultPluginManager$TestPluginImpl2";
 
-  private static final Map<String, String> PLUGIN_CLASS_MAP = new HashMap<String, String>() {{
-    put(PLUGIN_NAME_1, PLUGIN_CLASS_1);
-    put(PLUGIN_NAME_2, PLUGIN_CLASS_2);
-  }};
+  private static final Map<String, String> PLUGIN_CLASS_MAP = new HashMap<String, String>() {
+    {
+      put(PLUGIN_NAME_1, PLUGIN_CLASS_1);
+      put(PLUGIN_NAME_2, PLUGIN_CLASS_2);
+    }
+  };
 
   private PluginManager<TestPlugin> pluginManager;
 
@@ -57,9 +59,11 @@ public class TestActivePluginManager {
     pluginManager = new ActivePluginManager<TestPlugin>() {
       @Override
       protected Map<String, String> loadProperties(String pluginName) {
-        return new HashMap<String, String>() {{
-          put(PUGIN_IMPLEMENTION_CLASS, PLUGIN_CLASS_MAP.get(pluginName));
-        }};
+        return new HashMap<String, String>() {
+          {
+            put(PUGIN_IMPLEMENTION_CLASS, PLUGIN_CLASS_MAP.get(pluginName));
+          }
+        };
       }
     };
   }
@@ -70,7 +74,7 @@ public class TestActivePluginManager {
   }
 
   @Test
-  void testInstall() throws Exception {
+  void testInstall() {
     assertEquals(0, pluginManager.list().size());
 
     pluginManager.install(PLUGIN_NAME_1);
@@ -143,18 +147,16 @@ public class TestActivePluginManager {
   @Test
   public void testDuplcateInstall() {
     pluginManager.install(PLUGIN_NAME_1);
-    Assertions.assertThrows(AlreadyExistsException.class, () -> {
-      pluginManager.install(PLUGIN_NAME_1);
-    });
+    Assertions.assertThrows(AlreadyExistsException.class, () ->
+        pluginManager.install(PLUGIN_NAME_1));
   }
 
   @Test
   public void testDuplcateUninstall() {
     pluginManager.install(PLUGIN_NAME_1);
     pluginManager.uninstall(PLUGIN_NAME_1);
-    Assertions.assertThrows(ObjectNotExistsException.class, () -> {
-      pluginManager.uninstall(PLUGIN_NAME_1);
-    });
+    Assertions.assertThrows(ObjectNotExistsException.class, () ->
+        pluginManager.uninstall(PLUGIN_NAME_1));
   }
 
   private abstract static class TestPlugin implements ActivePlugin {
