@@ -48,8 +48,11 @@ public class TestTable {
 
   public TestTable(
       TableFormat format,
-      Schema schema, PrimaryKeySpec keySpec, PartitionSpec ptSpec,
-      List<FieldSchema> hiveSchema, List<FieldSchema> hivePartitions,
+      Schema schema,
+      PrimaryKeySpec keySpec,
+      PartitionSpec ptSpec,
+      List<FieldSchema> hiveSchema,
+      List<FieldSchema> hivePartitions,
       RecordGenerator.Builder dataGenBuilder) {
     this.format = format;
     this.schema = schema;
@@ -80,27 +83,30 @@ public class TestTable {
     public Builder(TableFormat format, Types.NestedField... fields) {
       this.format = format;
       AtomicInteger id = new AtomicInteger(1);
-      List<Types.NestedField> cols = Arrays.stream(fields).map(f -> Types.NestedField.of(
-          id.getAndIncrement(),
-          f.isOptional(), f.name(),
-          f.type(),
-          f.doc())
-      ).collect(Collectors.toList());
+      List<Types.NestedField> cols =
+          Arrays.stream(fields)
+              .map(
+                  f ->
+                      Types.NestedField.of(
+                          id.getAndIncrement(), f.isOptional(), f.name(), f.type(), f.doc()))
+              .collect(Collectors.toList());
       this.schema = new Schema(cols);
       this.datagenBuilder = RecordGenerator.buildFor(schema);
     }
 
     public Builder pk(String... columns) {
       Set<String> pks = Sets.newHashSet(columns);
-      List<Types.NestedField> fields = this.schema.columns().stream().map(
-          f -> {
-            if (pks.contains(f.name())) {
-              return f.asRequired();
-            } else {
-              return f;
-            }
-          }
-      ).collect(Collectors.toList());
+      List<Types.NestedField> fields =
+          this.schema.columns().stream()
+              .map(
+                  f -> {
+                    if (pks.contains(f.name())) {
+                      return f.asRequired();
+                    } else {
+                      return f;
+                    }
+                  })
+              .collect(Collectors.toList());
       this.schema = new Schema(fields);
       PrimaryKeySpec.Builder builder = PrimaryKeySpec.builderFor(this.schema);
       Arrays.stream(columns).forEach(builder::addColumn);
@@ -108,18 +114,23 @@ public class TestTable {
       return this;
     }
 
-
     public Builder timestampWithoutZoneInCreateTable() {
-      List<Types.NestedField> fields = this.schema.columns().stream().map(
-          f -> {
-            if (f.type().equals(Types.TimestampType.withZone())) {
-              return Types.NestedField.of(
-                  f.fieldId(), f.isOptional(), f.name(), Types.TimestampType.withoutZone(), f.doc());
-            } else {
-              return f;
-            }
-          }
-      ).collect(Collectors.toList());
+      List<Types.NestedField> fields =
+          this.schema.columns().stream()
+              .map(
+                  f -> {
+                    if (f.type().equals(Types.TimestampType.withZone())) {
+                      return Types.NestedField.of(
+                          f.fieldId(),
+                          f.isOptional(),
+                          f.name(),
+                          Types.TimestampType.withoutZone(),
+                          f.doc());
+                    } else {
+                      return f;
+                    }
+                  })
+              .collect(Collectors.toList());
       this.schema = new Schema(fields);
       return this;
     }
@@ -131,7 +142,8 @@ public class TestTable {
       return this;
     }
 
-    public Builder transformPt(Function<PartitionSpec.Builder, PartitionSpec.Builder> partitionTransform) {
+    public Builder transformPt(
+        Function<PartitionSpec.Builder, PartitionSpec.Builder> partitionTransform) {
       PartitionSpec.Builder builder = PartitionSpec.builderFor(this.schema);
       builder = partitionTransform.apply(builder);
       this.ptSpec = builder.build();
@@ -147,14 +159,10 @@ public class TestTable {
         hivePartition = HiveSchemaUtil.hivePartitionFields(this.schema, this.ptSpec);
       }
 
-      RecordGenerator.Builder builder = RecordGenerator.buildFor(this.schema)
-          .withSequencePrimaryKey(keySpec);
+      RecordGenerator.Builder builder =
+          RecordGenerator.buildFor(this.schema).withSequencePrimaryKey(keySpec);
       return new TestTable(
-          format, this.schema, this.keySpec, this.ptSpec,
-          hiveSchemas, hivePartition, builder
-      );
+          format, this.schema, this.keySpec, this.ptSpec, hiveSchemas, hivePartition, builder);
     }
   }
-
-
 }

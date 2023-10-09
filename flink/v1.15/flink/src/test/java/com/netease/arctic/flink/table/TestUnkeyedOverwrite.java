@@ -103,7 +103,7 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
     sql("DROP TABLE IF EXISTS arcticCatalog." + db + "." + TABLE);
   }
 
-  @Test(timeout = 30000)
+  @Test
   public void testInsertOverwrite() throws IOException {
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a"});

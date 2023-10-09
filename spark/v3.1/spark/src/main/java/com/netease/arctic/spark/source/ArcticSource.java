@@ -60,13 +60,12 @@ public class ArcticSource implements DataSourceRegister, SupportsCatalogOptions 
     return null;
   }
 
-  private static ArcticSparkUtils.TableCatalogAndIdentifier catalogAndIdentifier(CaseInsensitiveStringMap options) {
-    Preconditions.checkArgument(
-        options.containsKey("path"),
-        "Cannot open table: path is not set");
+  private static ArcticSparkUtils.TableCatalogAndIdentifier catalogAndIdentifier(
+      CaseInsensitiveStringMap options) {
+    Preconditions.checkArgument(options.containsKey("path"), "Cannot open table: path is not set");
     String path = options.get("path");
-    Preconditions.checkArgument(!path.contains("/"),
-        "invalid table identifier %s, contain '/'", path);
+    Preconditions.checkArgument(
+        !path.contains("/"), "invalid table identifier %s, contain '/'", path);
     List<String> nameParts = Lists.newArrayList(path.split("\\."));
     SparkSession spark = SparkSession.active();
 

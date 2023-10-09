@@ -33,7 +33,8 @@ import org.apache.spark.sql.connector.write.WriteBuilder;
 import org.apache.spark.sql.sources.Filter;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOverwrite, SupportsOverwrite {
+public class ArcticSparkWriteBuilder
+    implements WriteBuilder, SupportsDynamicOverwrite, SupportsOverwrite {
 
   public interface ArcticWrite {
 
@@ -51,14 +52,12 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
   protected Expression overwriteExpr = null;
 
   private WriteMode writeMode = WriteMode.APPEND;
-  //private final ArcticWrite write;
+  // private final ArcticWrite write;
   private final ArcticTable table;
   private final LogicalWriteInfo info;
   private final ArcticCatalog catalog;
 
-  public ArcticSparkWriteBuilder(ArcticTable table,
-                                 LogicalWriteInfo info,
-                                 ArcticCatalog catalog) {
+  public ArcticSparkWriteBuilder(ArcticTable table, LogicalWriteInfo info, ArcticCatalog catalog) {
     this.options = info.options();
     if (options.containsKey(WriteMode.WRITE_MODE_KEY)) {
       this.writeMode = WriteMode.getWriteMode(options.get(WriteMode.WRITE_MODE_KEY));
@@ -70,7 +69,8 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
 
   @Override
   public WriteBuilder overwriteDynamicPartitions() {
-    Preconditions.checkState(overwriteExpr == null, "Cannot overwrite dynamically and by filter: %s", overwriteExpr);
+    Preconditions.checkState(
+        overwriteExpr == null, "Cannot overwrite dynamically and by filter: %s", overwriteExpr);
     writeMode = WriteMode.OVERWRITE_DYNAMIC;
     return this;
   }
