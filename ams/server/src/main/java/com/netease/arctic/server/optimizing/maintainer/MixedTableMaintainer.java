@@ -52,6 +52,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Table maintainer for mixed-iceberg and mixed-hive table.
+ */
 public class MixedTableMaintainer implements TableMaintainer {
 
   private static final Logger LOG = LoggerFactory.getLogger(MixedTableMaintainer.class);
@@ -89,11 +92,11 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void orphanFileClean(TableRuntime tableRuntime) {
+  public void cleanOrphanFiles(TableRuntime tableRuntime) {
     if (changeMaintainer != null) {
-      changeMaintainer.orphanFileClean(tableRuntime);
+      changeMaintainer.cleanOrphanFiles(tableRuntime);
     }
-    baseMaintainer.orphanFileClean(tableRuntime);
+    baseMaintainer.cleanOrphanFiles(tableRuntime);
   }
 
   @Override

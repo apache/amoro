@@ -57,6 +57,9 @@ import java.util.stream.Stream;
 
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
+/**
+ * Table maintainer for iceberg table.
+ */
 public class IcebergTableMaintainer implements TableMaintainer {
 
   private static final Logger LOG = LoggerFactory.getLogger(IcebergTableMaintainer.class);
@@ -74,7 +77,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void orphanFileClean(TableRuntime tableRuntime) {
+  public void cleanOrphanFiles(TableRuntime tableRuntime) {
     TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
 
     if (!tableConfiguration.isCleanOrphanEnabled()) {

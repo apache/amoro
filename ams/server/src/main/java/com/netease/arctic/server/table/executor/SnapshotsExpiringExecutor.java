@@ -62,7 +62,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
   public void execute(TableRuntime tableRuntime) {
     try {
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
-      TableMaintainer tableMaintainer = TableMaintainer.createMaintainer(amoroTable);
+      TableMaintainer tableMaintainer = TableMaintainer.createMaintainerForTable(amoroTable);
       tableMaintainer.expireSnapshots(tableRuntime);
     } catch (Throwable t) {
       LOG.error("unexpected expire error of table {} ", tableRuntime.getTableIdentifier(), t);

@@ -34,9 +34,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
-public class IcebergCatalogTest extends AmoroCatalogTestBase {
+public class TestIcebergAmoroCatalog extends TestAmoroCatalogBase {
 
-  public IcebergCatalogTest(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
+  public TestIcebergAmoroCatalog(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
     super(amoroCatalogTestHelper);
   }
 

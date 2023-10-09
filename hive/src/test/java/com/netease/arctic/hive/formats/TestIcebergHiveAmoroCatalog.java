@@ -19,7 +19,7 @@
 package com.netease.arctic.hive.formats;
 
 import com.netease.arctic.formats.AmoroCatalogTestHelper;
-import com.netease.arctic.formats.IcebergCatalogTest;
+import com.netease.arctic.formats.TestIcebergAmoroCatalog;
 import com.netease.arctic.hive.TestHMS;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
@@ -28,12 +28,12 @@ import org.junit.runners.Parameterized;
 import java.io.IOException;
 
 @RunWith(Parameterized.class)
-public class IcebergHiveCatalogTest extends IcebergCatalogTest {
+public class TestIcebergHiveAmoroCatalog extends TestIcebergAmoroCatalog {
 
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
 
-  public IcebergHiveCatalogTest(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
+  public TestIcebergHiveAmoroCatalog(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
     super(amoroCatalogTestHelper);
   }
 
