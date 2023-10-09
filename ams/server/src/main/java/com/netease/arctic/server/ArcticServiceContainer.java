@@ -20,6 +20,7 @@ package com.netease.arctic.server;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.Constants;
@@ -41,13 +42,13 @@ import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.table.executor.AsyncTableExecutors;
 import com.netease.arctic.server.terminal.TerminalManager;
 import com.netease.arctic.server.utils.ConfigOption;
+import com.netease.arctic.server.utils.ConfigurationUtil;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.ThriftServiceProxy;
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -199,6 +200,7 @@ public class ArcticServiceContainer {
       config.addStaticFiles(dashboardServer.configStaticFiles());
       config.sessionHandler(SessionHandler::new);
       config.enableCorsForAllOrigins();
+      config.showJavalinBanner = false;
     });
     httpServer.routes(() -> {
       dashboardServer.endpoints().addEndpoints();
@@ -237,7 +239,17 @@ public class ArcticServiceContainer {
   private void startHttpService() {
     int port = serviceConfig.getInteger(ArcticManagementConf.HTTP_SERVER_PORT);
     httpServer.start(port);
-    LOG.info("Http server start at {}!!!", port);
+
+    LOG.info("\n" +
+        "    ___     __  ___ ____   ____   ____ \n" +
+        "   /   |   /  |/  // __ \\ / __ \\ / __ \\\n" +
+        "  / /| |  / /|_/ // / / // /_/ // / / /\n" +
+        " / ___ | / /  / // /_/ // _, _// /_/ / \n" +
+        "/_/  |_|/_/  /_/ \\____//_/ |_| \\____/  \n" +
+        "                                       \n" +
+        "      https://amoro.netease.com/       \n");
+
+    LOG.info("Http server start at {}.", port);
   }
 
   private void initThriftService() throws TTransportException {
@@ -301,12 +313,13 @@ public class ArcticServiceContainer {
     private JSONObject yamlConfig;
 
     public void init() throws IOException {
-      initServiceConfig();
+      Map<String, Object> envConfig = initEnvConfig();
+      initServiceConfig(envConfig);
       initContainerConfig();
     }
 
     @SuppressWarnings("unchecked")
-    private void initServiceConfig() throws IOException {
+    private void initServiceConfig(Map<String, Object> envConfig) throws IOException {
       LOG.info("initializing service configuration...");
       String configPath = Environments.getConfigPath() + "/" + SERVER_CONFIG_FILENAME;
       LOG.info("load config from path: {}", configPath);
@@ -314,9 +327,17 @@ public class ArcticServiceContainer {
       JSONObject systemConfig = yamlConfig.getJSONObject(ArcticManagementConf.SYSTEM_CONFIG);
       Map<String, Object> expandedConfigurationMap = Maps.newHashMap();
       expandConfigMap(systemConfig, "", expandedConfigurationMap);
+      // If same configurations in files and environment variables, environment variables have higher priority.
+      expandedConfigurationMap.putAll(envConfig);
       validateConfig(expandedConfigurationMap);
       serviceConfig = Configurations.fromObjectMap(expandedConfigurationMap);
       SqlSessionFactoryProvider.getInstance().init(serviceConfig);
+    }
+
+    private Map<String, Object> initEnvConfig() {
+      LOG.info("initializing system env configuration...");
+      String prefix = ArcticManagementConf.SYSTEM_CONFIG.toUpperCase();
+      return ConfigurationUtil.convertConfigurationKeys(prefix, System.getenv());
     }
 
     private void validateConfig(Map<String, Object> systemConfig) {

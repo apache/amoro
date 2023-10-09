@@ -38,13 +38,13 @@ public class FileIndexBucket implements Transform {
   private final int mask;
   private final String[] primaryKeyColumns;
 
-
   public FileIndexBucket(Schema schema, PrimaryKeySpec keySpec, int mask) {
     this.primaryKeyData = new PrimaryKeyData(keySpec, schema);
     this.mask = mask;
-    this.primaryKeyColumns = keySpec.fields().stream()
-        .map(PrimaryKeySpec.PrimaryKeyField::fieldName)
-        .toArray(String[]::new);
+    this.primaryKeyColumns =
+        keySpec.fields().stream()
+            .map(PrimaryKeySpec.PrimaryKeyField::fieldName)
+            .toArray(String[]::new);
     this.schema = schema;
   }
 
@@ -67,9 +67,9 @@ public class FileIndexBucket implements Transform {
 
   @Override
   public NamedReference[] references() {
-    return Arrays.stream(this.primaryKeyColumns).map(
-        Expressions::column
-    ).toArray(NamedReference[]::new);
+    return Arrays.stream(this.primaryKeyColumns)
+        .map(Expressions::column)
+        .toArray(NamedReference[]::new);
   }
 
   @Override

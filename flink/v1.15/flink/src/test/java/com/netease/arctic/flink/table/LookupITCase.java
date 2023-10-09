@@ -66,7 +66,7 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
     exec("create catalog arctic with ('type'='arctic', 'metastore.url'='%s')", getCatalogUrl());
     exec(
         "create table arctic.%s.L (id int) "
-            + "with ('scan.startup.mode'='earliest', 'monitor-interval'='1 s')",
+            + "with ('scan.startup.mode'='earliest', 'monitor-interval'='1 s','streaming'='true')",
         db);
     exec(
         "create table arctic.%s.DIM (id int, name string, primary key(id) not enforced) "
