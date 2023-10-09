@@ -4,7 +4,6 @@ import com.netease.arctic.ams.api.ArcticException;
 import com.netease.arctic.ams.api.ErrorCodes;
 import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.client.OptimizingClientPools;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
