@@ -392,13 +392,15 @@ public class ArcticServiceContainer {
             containerConfig.getString(ArcticManagementConf.CONTAINER_NAME),
             containerConfig.getString(ArcticManagementConf.CONTAINER_IMPL));
         Map<String, String> containerProperties = new HashMap<>();
-        containerProperties.put(PropertyNames.AMS_HOME, Environments.getHomePath());
-        containerProperties.put(
-            PropertyNames.OPTIMIZER_AMS_URL,
-            AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
         if (containerConfig.containsKey(ArcticManagementConf.CONTAINER_PROPERTIES)) {
           containerProperties.putAll(containerConfig.getObject(ArcticManagementConf.CONTAINER_PROPERTIES, Map.class));
         }
+        // put properties in config.yaml first.
+        containerProperties.put(PropertyNames.AMS_HOME, Environments.getHomePath());
+        containerProperties.putIfAbsent(
+            PropertyNames.AMS_OPTIMIZER_URI,
+            AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
+        // put addition system properties
         container.setProperties(containerProperties);
         containerList.add(container);
       }
