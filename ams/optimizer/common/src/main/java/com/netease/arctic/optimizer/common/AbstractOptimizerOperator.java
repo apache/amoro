@@ -100,8 +100,7 @@ public class AbstractOptimizerOperator implements Serializable {
     return config;
   }
 
-  @VisibleForTesting
-  public String getToken() {
+  protected String getToken() {
     return token.get();
   }
 

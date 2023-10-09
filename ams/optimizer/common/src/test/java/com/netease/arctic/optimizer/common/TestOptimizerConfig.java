@@ -1,6 +1,5 @@
-package com.netease.arctic.optimizer.job;
+package com.netease.arctic.optimizer.common;
 
-import com.netease.arctic.optimizer.common.OptimizerConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.kohsuke.args4j.CmdLineException;

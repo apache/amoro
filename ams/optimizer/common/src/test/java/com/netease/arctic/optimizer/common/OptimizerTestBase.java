@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizer.job;
+package com.netease.arctic.optimizer.common;
 
 import com.netease.arctic.TestAms;
 import org.junit.Before;
