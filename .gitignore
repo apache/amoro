@@ -4,7 +4,9 @@
 *dependency-reduced-pom.xml
 
 # intellij files
-.idea
+.idea/*
+!.idea/vcs.xml
+!.idea/icon.svg
 .idea_modules/
 *.ipr
 *.iws
@@ -64,3 +66,4 @@ conf/
 *unit_test_base_tmp/
 
 */.gitignore
+*.tgz

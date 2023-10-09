@@ -21,16 +21,17 @@ package com.netease.arctic.spark;
 public class SparkSQLProperties {
 
   public static final String USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES =
-          "spark.sql.arctic.use-timestamp-without-timezone-in-new-tables";
+      "spark.sql.arctic.use-timestamp-without-timezone-in-new-tables";
 
-  public static final String USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT =
-          "false";
+  public static final String USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT = "false";
 
-  public static final String REFRESH_CATALOG_BEFORE_USAGE = "spark.sql.arctic.refresh-catalog-before-usage";
+  public static final String REFRESH_CATALOG_BEFORE_USAGE =
+      "spark.sql.arctic.refresh-catalog-before-usage";
 
   public static final String REFRESH_CATALOG_BEFORE_USAGE_DEFAULT = "false";
 
-  public static final String CHECK_SOURCE_DUPLICATES_ENABLE = "spark.sql.arctic.check-source-data-uniqueness.enabled";
+  public static final String CHECK_SOURCE_DUPLICATES_ENABLE =
+      "spark.sql.arctic.check-source-data-uniqueness.enabled";
 
   public static final String CHECK_SOURCE_DUPLICATES_ENABLE_DEFAULT = "false";
 
