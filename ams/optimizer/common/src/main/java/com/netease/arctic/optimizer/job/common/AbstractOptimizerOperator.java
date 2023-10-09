@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class AbstractOptimizerOperator implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractOptimizerOperator.class);
-  private static final long CALL_AMS_INTERVAL = 5000;//5s
+  private static long CALL_AMS_INTERVAL = 5000;//5s
 
   private final OptimizerConfig config;
   private final AtomicReference<String> token = new AtomicReference<>();

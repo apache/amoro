@@ -22,7 +22,7 @@ import org.apache.iceberg.common.DynFields;
 import org.kohsuke.args4j.CmdLineException;
 
 public class OptimizerTestHelpers {
-  public static final int CALL_AMS_INTERVAL = 500;
+  public static final long CALL_AMS_INTERVAL = 500;
 
   public static OptimizerConfig buildOptimizerConfig(String amsUrl) {
     String[] optimizerArgs = new String[]{"-a", amsUrl, "-p", "2", "-g", "g1",
