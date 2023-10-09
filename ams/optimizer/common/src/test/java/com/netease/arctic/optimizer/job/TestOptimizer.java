@@ -16,9 +16,11 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizer.job.common;
+package com.netease.arctic.optimizer.job;
 
 import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.optimizer.common.Optimizer;
+import com.netease.arctic.optimizer.common.OptimizerConfig;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,7 +37,7 @@ public class TestOptimizer extends OptimizerTestBase {
 
   @Test
   public void testStartOptimizer() throws InterruptedException {
-    OptimizerConfig  optimizerConfig = OptimizerTestHelpers.buildOptimizerConfig(TEST_AMS.getServerUrl());
+    OptimizerConfig optimizerConfig = OptimizerTestHelpers.buildOptimizerConfig(TEST_AMS.getServerUrl());
     Optimizer optimizer = new Optimizer(optimizerConfig);
     new Thread(optimizer::startOptimizing).start();
     TimeUnit.SECONDS.sleep(1);

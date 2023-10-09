@@ -92,7 +92,7 @@ containers:
 
 #containers:
 #  - name: flinkContainer
-#    container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
+#    container-impl: com.netease.arctic.optimizer.container.FlinkOptimizerContainer
 #    properties:
 #      flink-home: "/opt/flink/"                                     # Flink install home
 #      target: "yarn-per-job"                                        # Flink run target, (yarn-per-job, yarn-application, kubernetes-application)

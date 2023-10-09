@@ -29,14 +29,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>standalone-optimizer</artifactId>
-    <name>Amoro Project Standalone Optimizer Job</name>
+    <name>Amoro Project Standalone Optimizer</name>
     <url>https://amoro.netease.com</url>
 
-    <properties>
-        <fastjson.version>1.2.58</fastjson.version>
-        <avro.version>1.10.1</avro.version>
-        <snakeyaml.version>1.30</snakeyaml.version>
-    </properties>
 
     <dependencies>
         <dependency>
@@ -100,7 +95,6 @@
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>${snakeyaml.version}</version>
         </dependency>
     </dependencies>
 

@@ -117,7 +117,7 @@ data:
 
             #containers:
             #  - name: flinkContainer
-            #    container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
+            #    container-impl: com.netease.arctic.optimizer.container.FlinkOptimizerContainer
             #    properties:
             #      flink-home: "/opt/flink/"                                     # Flink install home
             #      export.JVM_ARGS: "-Djava.security.krb5.conf=/opt/krb5.conf"   # Flink launch jvm args, like kerberos config when ues kerberos

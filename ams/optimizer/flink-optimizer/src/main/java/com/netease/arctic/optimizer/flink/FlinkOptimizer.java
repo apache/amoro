@@ -1,7 +1,7 @@
-package com.netease.arctic.optimizer.job.flink;
+package com.netease.arctic.optimizer.flink;
 
-import com.netease.arctic.optimizer.job.common.Optimizer;
-import com.netease.arctic.optimizer.job.common.OptimizerConfig;
+import com.netease.arctic.optimizer.common.Optimizer;
+import com.netease.arctic.optimizer.common.OptimizerConfig;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.JobManagerOptions;

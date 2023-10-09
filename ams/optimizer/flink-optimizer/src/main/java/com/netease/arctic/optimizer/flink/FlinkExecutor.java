@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizer.job.flink;
+package com.netease.arctic.optimizer.flink;
 
-import com.netease.arctic.optimizer.job.common.OptimizerExecutor;
+import com.netease.arctic.optimizer.common.OptimizerExecutor;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;

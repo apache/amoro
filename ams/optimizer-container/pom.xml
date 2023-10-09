@@ -31,29 +31,21 @@
     <name>Amoro Project Optimizer Container</name>
     <url>https://amoro.netease.com</url>
 
-    <properties>
-        <fastjson.version>1.2.58</fastjson.version>
-        <avro.version>1.10.1</avro.version>
-        <snakeyaml.version>1.30</snakeyaml.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>com.netease.amoro</groupId>
             <artifactId>optimizer-common</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <version>${snakeyaml.version}</version>
         </dependency>
     </dependencies>
 

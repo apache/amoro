@@ -1,4 +1,4 @@
-package com.netease.arctic.optimizer.job.common;
+package com.netease.arctic.optimizer.common;
 
 import com.netease.arctic.ams.api.PropertyNames;
 import org.slf4j.Logger;

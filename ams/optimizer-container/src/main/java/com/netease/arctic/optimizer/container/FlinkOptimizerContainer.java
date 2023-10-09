@@ -20,7 +20,7 @@ package com.netease.arctic.optimizer.container;
 
 import com.netease.arctic.ams.api.PropertyNames;
 import com.netease.arctic.ams.api.resource.Resource;
-import com.netease.arctic.optimizer.job.common.Optimizer;
+import com.netease.arctic.optimizer.common.Optimizer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Function;

@@ -16,13 +16,15 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizer.job.common;
+package com.netease.arctic.optimizer.job;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.optimizer.common.OptimizerConfig;
+import com.netease.arctic.optimizer.common.OptimizerExecutor;
 import com.netease.arctic.optimizing.BaseOptimizingInput;
 import com.netease.arctic.optimizing.OptimizingExecutor;
 import com.netease.arctic.optimizing.OptimizingExecutorFactory;

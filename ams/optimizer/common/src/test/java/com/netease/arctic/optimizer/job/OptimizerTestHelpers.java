@@ -16,8 +16,10 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizer.job.common;
+package com.netease.arctic.optimizer.job;
 
+import com.netease.arctic.optimizer.common.AbstractOptimizerOperator;
+import com.netease.arctic.optimizer.common.OptimizerConfig;
 import org.apache.iceberg.common.DynFields;
 import org.kohsuke.args4j.CmdLineException;
 

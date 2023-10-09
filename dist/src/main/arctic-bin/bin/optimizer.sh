@@ -45,6 +45,6 @@ if [ ! -f $STDERR_LOG ];then
 fi
 
 JAVA_OPTS="-Xmx$1m -Dlog.home=${OPTIMIZER_LOG_DIR}"
-RUN_SERVER="com.netease.arctic.optimizer.job.standalone.StandaloneOptimizer"
+RUN_SERVER="com.netease.arctic.optimizer.standalone.StandaloneOptimizer"
 CMDS="$JAVA_RUN $JAVA_OPTS $RUN_SERVER $ARGS"
 nohup ${CMDS} >/dev/null 2>${STDERR_LOG} &

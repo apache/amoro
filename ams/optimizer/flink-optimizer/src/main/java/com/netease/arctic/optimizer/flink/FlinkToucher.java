@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizer.job.flink;
+package com.netease.arctic.optimizer.flink;
 
-import com.netease.arctic.optimizer.job.common.Optimizer;
-import com.netease.arctic.optimizer.job.common.OptimizerToucher;
+import com.netease.arctic.optimizer.common.Optimizer;
+import com.netease.arctic.optimizer.common.OptimizerToucher;
 import org.apache.flink.runtime.execution.Environment;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;

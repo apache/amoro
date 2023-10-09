@@ -1,7 +1,7 @@
-package com.netease.arctic.optimizer.job.standalone;
+package com.netease.arctic.optimizer.standalone;
 
-import com.netease.arctic.optimizer.job.common.Optimizer;
-import com.netease.arctic.optimizer.job.common.OptimizerConfig;
+import com.netease.arctic.optimizer.common.Optimizer;
+import com.netease.arctic.optimizer.common.OptimizerConfig;
 import org.kohsuke.args4j.CmdLineException;
 
 import java.lang.management.ManagementFactory;

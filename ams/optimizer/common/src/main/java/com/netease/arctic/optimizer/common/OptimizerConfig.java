@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizer.job.common;
+package com.netease.arctic.optimizer.common;
 
 import com.netease.arctic.ams.api.PropertyNames;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;

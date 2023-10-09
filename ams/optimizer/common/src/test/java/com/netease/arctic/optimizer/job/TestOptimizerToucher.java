@@ -1,6 +1,8 @@
-package com.netease.arctic.optimizer.job.common;
+package com.netease.arctic.optimizer.job;
 
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
+import com.netease.arctic.optimizer.common.OptimizerConfig;
+import com.netease.arctic.optimizer.common.OptimizerToucher;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;

@@ -19,7 +19,7 @@
 package com.netease.arctic.optimizer.container;
 
 import com.netease.arctic.ams.api.resource.Resource;
-import com.netease.arctic.optimizer.job.common.Optimizer;
+import com.netease.arctic.optimizer.common.Optimizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
