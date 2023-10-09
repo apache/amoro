@@ -18,12 +18,17 @@
 
 package com.netease.arctic.server.dashboard.reverser;
 
+import com.netease.arctic.formats.AmoroCatalogTestHelper;
+import com.netease.arctic.server.catalog.TableCatalogTestBase;
 import org.junit.Test;
 
-public class IcebergDDLReverserTest {
+public class IcebergDDLReverserTest extends TableCatalogTestBase {
+
+  public IcebergDDLReverserTest(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
+    super(amoroCatalogTestHelper);
+  }
 
   @Test
   public void iceberg() {
-
   }
 }

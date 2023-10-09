@@ -63,7 +63,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     PaimonTableMetaExtract extract = new PaimonTableMetaExtract();
     SparkMetadataChangeHandler metadataChangeHandler = new SparkMetadataChangeHandler(table.name());
     DDLReverser<DataTable> ddlReverser = new DDLReverser<>(extract, metadataChangeHandler);
-    return ddlReverser.reverse(table);
+    return ddlReverser.reverse(table, amoroTable.id());
   }
 
   @Override
