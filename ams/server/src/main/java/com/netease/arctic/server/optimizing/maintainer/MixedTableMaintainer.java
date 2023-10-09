@@ -53,7 +53,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Table maintainer for mixed-iceberg and mixed-hive table.
+ * Table maintainer for mixed-iceberg and mixed-hive tables.
  */
 public class MixedTableMaintainer implements TableMaintainer {
 

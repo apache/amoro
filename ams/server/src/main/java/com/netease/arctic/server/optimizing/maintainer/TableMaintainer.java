@@ -41,7 +41,7 @@ public interface TableMaintainer {
    */
   void expireSnapshots(TableRuntime tableRuntime);
 
-  static TableMaintainer createMaintainerForTable(AmoroTable<?> amoroTable) {
+  static TableMaintainer ofTable(AmoroTable<?> amoroTable) {
     TableFormat format = amoroTable.format();
     if (format == TableFormat.MIXED_HIVE || format == TableFormat.MIXED_ICEBERG) {
       return new MixedTableMaintainer((ArcticTable) amoroTable.originalTable());

@@ -58,7 +58,7 @@ import java.util.stream.Stream;
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
 /**
- * Table maintainer for iceberg table.
+ * Table maintainer for iceberg tables.
  */
 public class IcebergTableMaintainer implements TableMaintainer {
 
