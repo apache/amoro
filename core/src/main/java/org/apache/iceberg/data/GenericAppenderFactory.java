@@ -42,7 +42,8 @@ import java.io.UncheckedIOException;
 import java.util.Map;
 
 /** Copied from https://github.com/apache/iceberg
- * Line 223: add metricsConfig for ORC PositionDeleteWriter in newPosDeleteWriter method
+ * Line 224: add metricsConfig for ORC PositionDeleteWriter in newPosDeleteWriter method to ensure
+ * get metrics accurately,such as lowerBounds and upperBounds
  * Factory to create a new {@link FileAppender} to write {@link Record}s. */
 public class GenericAppenderFactory implements FileAppenderFactory<Record> {
 
