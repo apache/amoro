@@ -38,8 +38,11 @@ public class LocalOptimizerContainer extends AbstractResourceContainer {
   protected Map<String, String> doScaleOut(Resource resource) {
     String startUpArgs = this.buildOptimizerStartupArgsString(resource);
     try {
-      String[] cmd = {"/bin/sh", "-c", startUpArgs};
-      LOG.info("Starting local optimizer using command : {}", startUpArgs);
+      String exportCmd = String.format(" export OPTIMIZER_LOG_DIR_NAME=\"optimizer-%s-%s\" ",
+          resource.getGroupName(), resource.getResourceId());
+      String startUpCommand = exportCmd + " && " + startUpArgs;
+      String[] cmd = {"/bin/sh", "-c", startUpCommand};
+      LOG.info("Starting local optimizer using command : {}", startUpCommand);
       ExecUtil.exec(cmd, new ArrayList<>());
       return Collections.emptyMap();
     } catch (Exception e) {
@@ -52,7 +55,7 @@ public class LocalOptimizerContainer extends AbstractResourceContainer {
     long memoryPerThread = Long.parseLong(PropertyUtil.checkAndGetProperty(resource.getProperties(),
         JOB_MEMORY_PROPERTY));
     long memory = memoryPerThread * resource.getThreadCount();
-    return String.format("%s/bin/localOptimize.sh %s %s", amsHome, memory,
+    return String.format("%s/bin/optimizer.sh %s %s", amsHome, memory,
         super.buildOptimizerStartupArgsString(resource));
   }
 
