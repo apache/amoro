@@ -131,7 +131,7 @@ public class SqlSessionFactoryProvider {
       } else if (ArcticManagementConf.DB_TYPE_MYSQL.equals(dbTypeConfig)) {
         query = String.format(
             "SELECT 1 FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'",
-            connection.getCatalog(), "CATALOG_METADATA");
+            connection.getCatalog(), "catalog_metadata");
       } else if (ArcticManagementConf.DB_TYPE_POSTGRES.equals(dbTypeConfig)) {
         query = String.format(
             "SELECT 1 FROM information_schema.tables WHERE table_schema = %s AND table_name = '%s'",

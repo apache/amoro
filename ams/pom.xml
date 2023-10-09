@@ -41,14 +41,6 @@
         <module>dashboard</module>
     </modules>
 
-    <properties>
-        <thrift.version>0.13.0</thrift.version>
-    </properties>
-
-    <dependencies>
-
-    </dependencies>
-
     <build>
         <plugins>
             <plugin>

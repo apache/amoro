@@ -32,9 +32,7 @@
     <url>https://amoro.netease.com</url>
 
     <properties>
-        <root.dir>${project.basedir}</root.dir>
         <hive.version>2.3.7</hive.version>
-        <spark.mysql.version>5.1.40</spark.mysql.version>
         <spark.version>3.1.1</spark.version>
         <scala.version>2.12.15</scala.version>
     </properties>
@@ -238,7 +236,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -252,22 +249,18 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-launcher</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-suite-engine</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -277,7 +270,6 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-
 
         <dependency>
             <groupId>com.netease.amoro</groupId>
