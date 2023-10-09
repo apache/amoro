@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.table.executor;
+package com.netease.arctic.server.optimizing.maintainer;
 
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -25,7 +25,6 @@ import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.server.optimizing.maintainer.MixedTableMaintainer;
 import org.apache.iceberg.io.OutputFile;
 import org.junit.Assert;
 import org.junit.ClassRule;

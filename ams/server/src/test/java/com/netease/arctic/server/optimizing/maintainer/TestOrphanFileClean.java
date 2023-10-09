@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.table.executor;
+package com.netease.arctic.server.optimizing.maintainer;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
@@ -24,8 +24,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.server.optimizing.maintainer.MixedTableMaintainer;
-import com.netease.arctic.server.optimizing.maintainer.TableMaintainer;
+import com.netease.arctic.server.table.executor.ExecutorTestBase;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
@@ -61,15 +60,15 @@ public class TestOrphanFileClean extends ExecutorTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][]{
+    return new Object[][] {
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, true)},
+         new BasicTableTestHelper(true, true)},
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, false)},
+         new BasicTableTestHelper(true, false)},
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, true)},
+         new BasicTableTestHelper(false, true)},
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, false)}};
+         new BasicTableTestHelper(false, false)}};
   }
 
   public TestOrphanFileClean(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -247,7 +246,7 @@ public class TestOrphanFileClean extends ExecutorTestBase {
       Assert.assertTrue(getArcticTable().io().exists(changeInvalidMetadataJson));
     }
 
-    TableMaintainer tableMaintainer = new MixedTableMaintainer(getArcticTable());
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(getArcticTable());
     tableMaintainer.cleanMetadata(System.currentTimeMillis());
     Assert.assertFalse(getArcticTable().io().exists(baseOrphanFilePath));
     if (isKeyedTable()) {
@@ -301,5 +300,4 @@ public class TestOrphanFileClean extends ExecutorTestBase {
         footerSize,
         collect);
   }
-
 }

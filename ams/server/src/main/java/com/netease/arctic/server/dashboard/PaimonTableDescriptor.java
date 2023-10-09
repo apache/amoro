@@ -29,6 +29,9 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
 
+/**
+ * Descriptor for Paimon format.
+ */
 public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override
   public List<TableFormat> supportFormat() {
@@ -37,31 +40,31 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public ServerTableMeta getTableDetail(AmoroTable<?> amoroTable) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public List<TransactionsOfTable> getTransactions(AmoroTable<?> amoroTable) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public List<PartitionFileBaseInfo> getTransactionDetail(AmoroTable<?> amoroTable, long transactionId) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public List<PartitionBaseInfo> getTablePartition(AmoroTable<?> amoroTable) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public List<PartitionFileBaseInfo> getTableFile(AmoroTable<?> amoroTable, String partition) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 }

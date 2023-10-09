@@ -22,6 +22,7 @@ import com.google.common.base.Strings;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
 import com.netease.arctic.io.SupportsFileSystemOperations;
+import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.TableProperties;
@@ -62,7 +63,6 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   public static final String METADATA_FOLDER_NAME = "metadata";
   public static final String DATA_FOLDER_NAME = "data";
-
   public static final String FLINK_JOB_ID = "flink.job-id";
 
   public static final String FLINK_MAX_COMMITTED_CHECKPOINT_ID = "flink.max-committed-checkpoint-id";
@@ -73,28 +73,40 @@ public class IcebergTableMaintainer implements TableMaintainer {
     this.table = table;
   }
 
-  public void cleanContentFiles(long lastTime) {
-    // For clean data files, should getRuntime valid files in the base store and the change store, so acquire in advance
-    // to prevent repeated acquisition
-    Set<String> validFiles = orphanFileCleanNeedToExcludeFiles();
-    LOG.info("{} start clean content files of change store", table.name());
-    int deleteFilesCnt = clearInternalTableContentsFiles(lastTime, validFiles);
-    LOG.info("{} total delete {} files from change store", table.name(), deleteFilesCnt);
-  }
+  @Override
+  public void orphanFileClean(TableRuntime tableRuntime) {
+    TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
 
-  public void cleanMetadata(long lastTime) {
-    LOG.info("{} start clean metadata files", table.name());
-    int deleteFilesCnt = clearInternalTableMetadata(lastTime);
-    LOG.info("{} total delete {} metadata files", table.name(), deleteFilesCnt);
-  }
+    if (!tableConfiguration.isCleanOrphanEnabled()) {
+      return;
+    }
 
-  public void cleanDanglingDeleteFiles() {
-    LOG.info("{} start delete dangling delete files", table.name());
-    int danglingDeleteFilesCnt = clearInternalTableDanglingDeleteFiles();
-    LOG.info("{} total delete {} dangling delete files", table.name(), danglingDeleteFilesCnt);
+    long keepTime = tableConfiguration.getOrphanExistingMinutes() * 60 * 1000;
+
+    cleanContentFiles(System.currentTimeMillis() - keepTime);
+
+    //refresh
+    table.refresh();
+
+    // clear metadata files
+    cleanMetadata(System.currentTimeMillis() - keepTime);
+
+    if (!tableConfiguration.isDeleteDanglingDeleteFilesEnabled()) {
+      return;
+    }
+
+    //refresh
+    table.refresh();
+
+    // clear dangling delete files
+    cleanDanglingDeleteFiles();
   }
 
   public void expireSnapshots(TableRuntime tableRuntime) {
+    TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
+    if (!tableConfiguration.isExpireSnapshotEnabled()) {
+      return;
+    }
     expireSnapshots(olderThanSnapshotNeedToExpire(tableRuntime), expireSnapshotNeedToExcludeFiles());
   }
 
@@ -133,6 +145,27 @@ public class IcebergTableMaintainer implements TableMaintainer {
     LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
   }
 
+  protected void cleanContentFiles(long lastTime) {
+    // For clean data files, should getRuntime valid files in the base store and the change store, so acquire in advance
+    // to prevent repeated acquisition
+    Set<String> validFiles = orphanFileCleanNeedToExcludeFiles();
+    LOG.info("{} start clean content files of change store", table.name());
+    int deleteFilesCnt = clearInternalTableContentsFiles(lastTime, validFiles);
+    LOG.info("{} total delete {} files from change store", table.name(), deleteFilesCnt);
+  }
+
+  protected void cleanMetadata(long lastTime) {
+    LOG.info("{} start clean metadata files", table.name());
+    int deleteFilesCnt = clearInternalTableMetadata(lastTime);
+    LOG.info("{} total delete {} metadata files", table.name(), deleteFilesCnt);
+  }
+
+  protected void cleanDanglingDeleteFiles() {
+    LOG.info("{} start delete dangling delete files", table.name());
+    int danglingDeleteFilesCnt = clearInternalTableDanglingDeleteFiles();
+    LOG.info("{} total delete {} dangling delete files", table.name(), danglingDeleteFilesCnt);
+  }
+
   protected long olderThanSnapshotNeedToExpire(TableRuntime tableRuntime) {
     long optimizingSnapshotTime = fetchOptimizingSnapshotTime(table, tableRuntime);
     return olderThanSnapshotNeedToExpire(optimizingSnapshotTime);
@@ -154,11 +187,11 @@ public class IcebergTableMaintainer implements TableMaintainer {
     return Collections.emptySet();
   }
 
-  public Set<String> orphanFileCleanNeedToExcludeFiles() {
+  protected Set<String> orphanFileCleanNeedToExcludeFiles() {
     return IcebergTableUtil.getAllContentFilePath(table);
   }
 
-  public ArcticFileIO arcticFileIO() {
+  protected ArcticFileIO arcticFileIO() {
     return (ArcticFileIO) table.io();
   }
 

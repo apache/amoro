@@ -61,11 +61,6 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
   @Override
   public void execute(TableRuntime tableRuntime) {
     try {
-      TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
-      if (!tableConfiguration.isExpireSnapshotEnabled()) {
-        return;
-      }
-
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
       TableMaintainer tableMaintainer = TableMaintainer.createMaintainer(amoroTable);
       tableMaintainer.expireSnapshots(tableRuntime);

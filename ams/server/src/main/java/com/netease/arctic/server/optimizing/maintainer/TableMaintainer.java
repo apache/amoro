@@ -31,30 +31,15 @@ import org.apache.iceberg.Table;
 public interface TableMaintainer {
 
   /**
-   * Clean content files includes data files, delete files.
+   * Clean table orphan files. Includes: data files, metadata files, dangling delete files.
    */
-  void cleanContentFiles(long lastTime);
-
-  /**
-   * Clean metadata files includes manifest files, snapshot files, metadata files.
-   */
-  void cleanMetadata(long lastTime);
-
-  /**
-   * Clean dangling delete files.
-   */
-  void cleanDanglingDeleteFiles();
+  void orphanFileClean(TableRuntime tableRuntime);
 
   /**
    * Expire snapshots，The optimizing based on the snapshot that the current table relies
    * on will not expire according to TableRuntime.
    */
   void expireSnapshots(TableRuntime tableRuntime);
-
-  /**
-   * Expire snapshots，Will expire all snapshots that are older than the specified time.
-   */
-  void expireSnapshots(long mustOlderThan);
 
   static TableMaintainer createMaintainer(AmoroTable<?> amoroTable) {
     TableFormat format = amoroTable.format();

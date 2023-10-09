@@ -359,6 +359,12 @@
             </dependency>
 
             <dependency>
+                <groupId>org.apache.paimon</groupId>
+                <artifactId>paimon-bundle</artifactId>
+                <version>${paimon.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit4.version}</version>
@@ -412,12 +418,6 @@
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.paimon</groupId>
-                <artifactId>paimon-bundle</artifactId>
-                <version>${paimon.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

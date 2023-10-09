@@ -72,9 +72,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class MixedTableDescriptor implements FormatTableDescriptor {
+/**
+ * Descriptor for Mixed-Hive,Mixed-Iceberg, Iceberg format.
+ */
+public class MixedAndIcebergTableDescriptor implements FormatTableDescriptor {
 
-  private static final Logger LOG = LoggerFactory.getLogger(MixedTableDescriptor.class);
+  private static final Logger LOG = LoggerFactory.getLogger(MixedAndIcebergTableDescriptor.class);
 
   @Override
   public List<TableFormat> supportFormat() {

@@ -27,9 +27,10 @@ public class ServerTableDescriptor extends PersistentBase {
 
   private final TableService tableService;
 
-  {
+  public ServerTableDescriptor(TableService tableService) {
+    this.tableService = tableService;
     FormatTableDescriptor[] formatTableDescriptors = new FormatTableDescriptor[] {
-        new MixedTableDescriptor(),
+        new MixedAndIcebergTableDescriptor(),
         new PaimonTableDescriptor()
     };
     for (FormatTableDescriptor formatTableDescriptor : formatTableDescriptors) {
@@ -37,10 +38,6 @@ public class ServerTableDescriptor extends PersistentBase {
         formatDescriptorMap.put(format, formatTableDescriptor);
       }
     }
-  }
-
-  public ServerTableDescriptor(TableService tableService) {
-    this.tableService = tableService;
   }
 
   public ServerTableMeta getTableDetail(ServerTableIdentifier tableIdentifier) {
