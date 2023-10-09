@@ -49,15 +49,21 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import java.util.Map;
 import java.util.Set;
 
-public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
-    SupportsRowLevelOperator, SupportsPartitionManagement {
-  private static final Set<String> RESERVED_PROPERTIES = Sets.newHashSet("provider", "format", "current-snapshot-id");
-  private static final Set<TableCapability> CAPABILITIES = ImmutableSet.of(
-      TableCapability.BATCH_READ,
-      TableCapability.BATCH_WRITE,
-      TableCapability.STREAMING_WRITE,
-      TableCapability.OVERWRITE_BY_FILTER,
-      TableCapability.OVERWRITE_DYNAMIC);
+public class ArcticSparkTable
+    implements Table,
+        SupportsRead,
+        SupportsWrite,
+        SupportsRowLevelOperator,
+        SupportsPartitionManagement {
+  private static final Set<String> RESERVED_PROPERTIES =
+      Sets.newHashSet("provider", "format", "current-snapshot-id");
+  private static final Set<TableCapability> CAPABILITIES =
+      ImmutableSet.of(
+          TableCapability.BATCH_READ,
+          TableCapability.BATCH_WRITE,
+          TableCapability.STREAMING_WRITE,
+          TableCapability.OVERWRITE_BY_FILTER,
+          TableCapability.OVERWRITE_DYNAMIC);
 
   private final ArcticTable arcticTable;
   private final StructType requestedSchema;
@@ -79,10 +85,11 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
     this(arcticTable, null, refreshEagerly, catalog);
   }
 
-  public ArcticSparkTable(ArcticTable arcticTable,
-                          StructType requestedSchema,
-                          boolean refreshEagerly,
-                          ArcticCatalog catalog) {
+  public ArcticSparkTable(
+      ArcticTable arcticTable,
+      StructType requestedSchema,
+      boolean refreshEagerly,
+      ArcticCatalog catalog) {
     this.arcticTable = arcticTable;
     this.requestedSchema = requestedSchema;
     this.refreshEagerly = refreshEagerly;
@@ -136,10 +143,16 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
   public Map<String, String> properties() {
     ImmutableMap.Builder<String, String> propsBuilder = ImmutableMap.builder();
 
-    String baseFileFormat = arcticTable.properties()
-        .getOrDefault(TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT);
-    String deltaFileFormat = arcticTable.properties()
-        .getOrDefault(TableProperties.CHANGE_FILE_FORMAT, TableProperties.CHANGE_FILE_FORMAT_DEFAULT);
+    String baseFileFormat =
+        arcticTable
+            .properties()
+            .getOrDefault(
+                TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT);
+    String deltaFileFormat =
+        arcticTable
+            .properties()
+            .getOrDefault(
+                TableProperties.CHANGE_FILE_FORMAT, TableProperties.CHANGE_FILE_FORMAT_DEFAULT);
     propsBuilder.put("base.write.format", baseFileFormat);
     propsBuilder.put("delta.write.format", deltaFileFormat);
     propsBuilder.put("provider", "arctic");
@@ -196,7 +209,6 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
     return new ArcticSparkWriteBuilder(arcticTable, info, catalog);
   }
 
-
   @Override
   public SupportsExtendIdentColumns newUpsertScanBuilder(CaseInsensitiveStringMap options) {
     return new SparkScanBuilder(sparkSession(), arcticTable, options);
@@ -209,9 +221,9 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
 
   @Override
   public boolean appendAsUpsert() {
-    return arcticTable.isKeyedTable() &&
-        Boolean.parseBoolean(arcticTable.properties().getOrDefault(
-                TableProperties.UPSERT_ENABLED, "false"));
+    return arcticTable.isKeyedTable()
+        && Boolean.parseBoolean(
+            arcticTable.properties().getOrDefault(TableProperties.UPSERT_ENABLED, "false"));
   }
 
   @Override
@@ -237,7 +249,8 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
   }
 
   @Override
-  public Map<String, String> loadPartitionMetadata(InternalRow ident) throws UnsupportedOperationException {
+  public Map<String, String> loadPartitionMetadata(InternalRow ident)
+      throws UnsupportedOperationException {
     return null;
   }
 

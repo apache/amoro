@@ -27,6 +27,7 @@ public enum WriteMode {
   public static final String WRITE_MODE_KEY = "write-mode";
 
   public final String mode;
+
   WriteMode(String mode) {
     this.mode = mode;
   }

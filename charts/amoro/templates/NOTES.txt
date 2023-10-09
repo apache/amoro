@@ -19,7 +19,11 @@ The Amoro Helm chart has been installed!
 
 If you want to go ams web ui,you can use this cmd forward to local:
 
- $ kubectl --namespace {{ .Release.Namespace }} port-forward services/{{ .Release.Name }}-rest {{ .Values.server.rest.port}}:{{ .Values.server.rest.port}}
+{{ if .Values.ingress.enabled }}
+  http://{{ .Values.ingress.hostname }}{{ .Values.ingress.path }}
+{{ else }}
+  $ kubectl --namespace {{ .Release.Namespace }} port-forward services/{{ .Release.Name }}-rest {{ .Values.server.rest.port}}:{{ .Values.server.rest.port}}
+{{ end }}
 
 Additional Resources Docs
 
