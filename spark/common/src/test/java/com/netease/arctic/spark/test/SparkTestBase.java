@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-
 public class SparkTestBase {
   protected static final Logger LOG = LoggerFactory.getLogger(SparkTestBase.class);
   public static final SparkTestContext context = new SparkTestContext();
@@ -56,14 +55,13 @@ public class SparkTestBase {
   protected String currentCatalog = SESSION_CATALOG;
   protected QueryExecution qe;
 
-
   protected Map<String, String> sparkSessionConfig() {
     return ImmutableMap.of(
-        "spark.sql.catalog.spark_catalog", SparkTestContext.SESSION_CATALOG_IMPL,
-        "spark.sql.catalog.spark_catalog.url", context.catalogUrl(SparkTestContext.EXTERNAL_HIVE_CATALOG_NAME)
-    );
+        "spark.sql.catalog.spark_catalog",
+        SparkTestContext.SESSION_CATALOG_IMPL,
+        "spark.sql.catalog.spark_catalog.url",
+        context.catalogUrl(SparkTestContext.EXTERNAL_HIVE_CATALOG_NAME));
   }
-
 
   @AfterEach
   public void tearDownTestSession() {
@@ -79,8 +77,11 @@ public class SparkTestBase {
 
   protected ArcticCatalog catalog() {
     if (catalog == null) {
-      String catalogUrl = spark().sessionState().conf().getConfString(
-          "spark.sql.catalog." + currentCatalog + ".url");
+      String catalogUrl =
+          spark()
+              .sessionState()
+              .conf()
+              .getConfString("spark.sql.catalog." + currentCatalog + ".url");
       catalog = CatalogLoader.load(catalogUrl);
     }
     return catalog;
@@ -93,7 +94,6 @@ public class SparkTestBase {
     }
     return spark;
   }
-
 
   public Dataset<Row> sql(String sqlText) {
     long begin = System.currentTimeMillis();

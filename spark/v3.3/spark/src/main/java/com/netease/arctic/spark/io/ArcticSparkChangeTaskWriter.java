@@ -15,9 +15,7 @@ import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.catalyst.InternalRow;
 
-/**
- * change task writer
- */
+/** change task writer */
 public class ArcticSparkChangeTaskWriter extends ChangeTaskWriter<InternalRow> {
   private final Schema schema;
 
@@ -31,10 +29,18 @@ public class ArcticSparkChangeTaskWriter extends ChangeTaskWriter<InternalRow> {
       Schema schema,
       PartitionSpec spec,
       PrimaryKeySpec primaryKeySpec,
-      boolean orderedWriter
-  ) {
-    super(format, appenderFactory, outputFileFactory, io,
-        targetFileSize, mask, schema, spec, primaryKeySpec, orderedWriter);
+      boolean orderedWriter) {
+    super(
+        format,
+        appenderFactory,
+        outputFileFactory,
+        io,
+        targetFileSize,
+        mask,
+        schema,
+        spec,
+        primaryKeySpec,
+        orderedWriter);
     this.schema = schema;
   }
 
@@ -54,5 +60,4 @@ public class ArcticSparkChangeTaskWriter extends ChangeTaskWriter<InternalRow> {
     SparkInternalRowCastWrapper row = (SparkInternalRowCastWrapper) data;
     return row.getChangeAction();
   }
-
 }

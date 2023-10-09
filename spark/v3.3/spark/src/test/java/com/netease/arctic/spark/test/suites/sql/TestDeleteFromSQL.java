@@ -43,23 +43,30 @@ public class TestDeleteFromSQL extends SparkTableTestBase {
         Arguments.of(TableFormat.MIXED_ICEBERG, ", PRIMARY KEY(id)", " where id = 3"),
         Arguments.of(TableFormat.MIXED_ICEBERG, ", PRIMARY KEY(id)", ""),
         Arguments.of(TableFormat.MIXED_ICEBERG, "", ""),
-        Arguments.of(TableFormat.MIXED_ICEBERG, "", " where id = 3")
-    );
+        Arguments.of(TableFormat.MIXED_ICEBERG, "", " where id = 3"));
   }
 
   @DisplayName("Test `test delete`")
   @ParameterizedTest
   @MethodSource
   public void testDelete(TableFormat format, String primaryKeyDDL, String filter) {
-    String sqlText = "CREATE TABLE " + target() + " ( \n" +
-        "id int, data string " + primaryKeyDDL + " ) using " + provider(format);
+    String sqlText =
+        "CREATE TABLE "
+            + target()
+            + " ( \n"
+            + "id int, data string "
+            + primaryKeyDDL
+            + " ) using "
+            + provider(format);
     sql(sqlText);
-    sql("insert into " +
-        target().database + "." + target().table +
-        " values (1, 'a'), (2, 'b'), (3, 'c')");
+    sql(
+        "insert into "
+            + target().database
+            + "."
+            + target().table
+            + " values (1, 'a'), (2, 'b'), (3, 'c')");
     sql("delete from " + target().database + "." + target().table + filter);
-    Dataset<Row> sql = sql("select * from " +
-        target().database + "." + target().table);
+    Dataset<Row> sql = sql("select * from " + target().database + "." + target().table);
     if (filter.isEmpty()) {
       Assertions.assertEquals(0, sql.collectAsList().size());
     } else {
