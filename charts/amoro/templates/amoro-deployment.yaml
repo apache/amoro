@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $.Release.Name }}
+  name:  {{ include "common.names.fullname" . }}
   labels:
     {{- include "amoro.labels" . | nindent 4 }}
 spec:
@@ -22,7 +22,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- if or .Values.serviceAccount.name .Values.serviceAccount.create }}
-      serviceAccountName: {{ .Values.serviceAccount.name | default .Release.Name }}
+      serviceAccountName: {{ .Values.serviceAccount.name | default  (include "common.names.fullname" .) }}
       {{- end }}
       containers:
         - name: amoro-ams
@@ -112,7 +112,7 @@ spec:
       volumes:
         - name: conf
           configMap:
-            name: {{ .Release.Name }}
+            name: {{ include "common.names.fullname" . }}
         {{- with .Values.volumes }}
           {{- tpl (toYaml .) $ | nindent 8 }}
         {{- end }}

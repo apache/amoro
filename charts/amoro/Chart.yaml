@@ -25,3 +25,9 @@ home: https://amoro.netease.com/
 icon: https://amoro.netease.com/img/amoro-logo-icon.png
 sources:
   - https://github.com/NetEase/amoro
+dependencies:
+  - name: common
+    repository: oci://registry-1.docker.io/bitnamicharts
+    tags:
+      - bitnami-common
+    version: 2.11.1

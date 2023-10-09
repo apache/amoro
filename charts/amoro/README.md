@@ -40,6 +40,12 @@ When you want to test the template rendering, but not actually install anything.
 
 There are two ways to render templates. It will return the rendered template to you so you can see the output.
 
+First of all, you should rebuild the charts/ directory based on the Chart.lock file.
+
+```shell
+helm dependency build
+```
+
 - Local rendering chart templates
 ```shell
 helm template --debug ../amoro

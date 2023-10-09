@@ -32,11 +32,8 @@
     <url>https://amoro.netease.com</url>
 
     <properties>
-        <fastjson.version>1.2.58</fastjson.version>
-        <avro.version>1.10.1</avro.version>
         <optimizer-flink.version>1.14.6</optimizer-flink.version>
         <flink.scala.suffix>_2.12</flink.scala.suffix>
-        <snakeyaml.version>1.30</snakeyaml.version>
     </properties>
 
     <dependencies>
@@ -48,6 +45,16 @@
         <dependency>
             <groupId>com.netease.amoro</groupId>
             <artifactId>amoro-hive</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>args4j</groupId>
+            <artifactId>args4j</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
         </dependency>
 
         <!-- flink dependencies begin -->
@@ -172,18 +179,10 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- flink dependencies end -->
-
-        <dependency>
-            <groupId>args4j</groupId>
-            <artifactId>args4j</artifactId>
-            <version>${args4j.version}</version>
-        </dependency>
 
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -224,12 +223,6 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-1.2-api</artifactId>
             <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <version>${snakeyaml.version}</version>
         </dependency>
     </dependencies>
 
