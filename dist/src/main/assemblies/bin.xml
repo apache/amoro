@@ -29,21 +29,15 @@
 
     <files>
         <file>
-            <source>../ams/optimizer-job/flink-job/target/flink-optimize-job-${project.version}-jar-with-dependencies.jar</source>
+            <source>../ams/optimizer/flink-optimizer/target/flink-optimizer-${project.version}-jar-with-dependencies.jar</source>
             <outputDirectory>plugin/optimizer/flink</outputDirectory>
-            <destName>optimize-job.jar</destName>
+            <destName>optimizer-job.jar</destName>
             <fileMode>0644</fileMode>
         </file>
         <file>
             <source>../ams/server/target/amoro-ams-server-${project.version}.jar</source>
             <outputDirectory>lib/</outputDirectory>
             <destName>amoro-ams-server-${project.version}.jar</destName>
-            <fileMode>0644</fileMode>
-        </file>
-        <file>
-            <source>../ams/optimizer-job/standalone-job/target/standalone-optimize-job-${project.version}.jar</source>
-            <outputDirectory>lib/</outputDirectory>
-            <destName>standalone-optimize-job-${project.version}.jar</destName>
             <fileMode>0644</fileMode>
         </file>
         <file>

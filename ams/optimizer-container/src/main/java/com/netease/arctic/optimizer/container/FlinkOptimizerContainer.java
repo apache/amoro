@@ -52,7 +52,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
   public static final String FLINK_CONFIG_YAML = "/flink-conf.yaml";
   public static final String ENV_FLINK_CONF_DIR = "FLINK_CONF_DIR";
 
-  private static final String DEFAULT_JOB_URI = "/plugin/optimizer/flink/optimize-job.jar";
+  private static final String DEFAULT_JOB_URI = "/plugin/optimizer/flink/optimizer-job.jar";
   private static final String FLINK_JOB_MAIN_CLASS = "com.netease.arctic.optimizer.job.flink.FlinkOptimizer";
 
   /**
