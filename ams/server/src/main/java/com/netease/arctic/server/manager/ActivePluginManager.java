@@ -18,54 +18,44 @@
 
 package com.netease.arctic.server.manager;
 
-import com.netease.arctic.ams.api.AmoroPlugin;
+import com.netease.arctic.ams.api.ActivePlugin;
 import com.netease.arctic.ams.api.PluginManager;
+import com.netease.arctic.server.exception.LoadingPluginException;
 import com.netease.arctic.server.utils.PreconditionUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Plugin manager based on SPI
- * @param <T> plugin type
- */
-public abstract class SpiPluginManager<T extends AmoroPlugin> implements PluginManager<T> {
+public abstract class ActivePluginManager<T extends ActivePlugin>
+    implements PluginManager<T>, Iterable<T> {
+
+  protected static final String PUGIN_IMPLEMENTION_CLASS = "impl";
 
   private final Map<String, T> installedPlugins = new ConcurrentHashMap<>();
-  private final ServiceLoader<T> pluginLoader;
 
-  public SpiPluginManager() {
-    this.pluginLoader = ServiceLoader.load(getPluginClass());
+  protected ActivePluginManager() {
   }
+
+  protected abstract Map<String, String> loadProperties(String pluginName);
 
   @SuppressWarnings("unchecked")
-  private Class<T> getPluginClass() {
-    try {
-      Type type = getClass().getGenericSuperclass();
-      ParameterizedType parameterizedType = (ParameterizedType) type;
-      Type[] typeArguments = parameterizedType.getActualTypeArguments();
-      return (Class<T>) typeArguments[0];
-    } catch (Throwable throwable) {
-      throw new IllegalStateException("Cannot determine service type for " +
-          getClass().getName(), throwable);
-    }
-  }
-
   @Override
   public void install(String pluginName) {
     PreconditionUtils.checkNotExist(installedPlugins.containsKey(pluginName),
         "Plugin " + pluginName);
-    for (T plugin : pluginLoader) {
-      if (plugin.name().equals(pluginName)) {
-        installedPlugins.put(pluginName, plugin);
-      }
+    Map<String, String> properties = loadProperties(pluginName);
+    String pluginClass = properties.get(PUGIN_IMPLEMENTION_CLASS);
+    try {
+      Class<?> clazz = Class.forName(pluginClass);
+      T plugin = (T) clazz.newInstance();
+      installedPlugins.computeIfAbsent(pluginName, k -> {
+        plugin.open(properties);
+        return plugin;
+      });
+    } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+      throw new LoadingPluginException("Cannot load plugin " + pluginName, e);
     }
   }
 
@@ -73,7 +63,10 @@ public abstract class SpiPluginManager<T extends AmoroPlugin> implements PluginM
   public void uninstall(String pluginName) {
     PreconditionUtils.checkExist(installedPlugins.containsKey(pluginName),
         "Plugin " + pluginName);
-    installedPlugins.remove(pluginName);
+    T plugin = installedPlugins.remove(pluginName);
+    if (plugin != null) {
+      plugin.close();
+    }
   }
 
   @NotNull
@@ -101,6 +94,7 @@ public abstract class SpiPluginManager<T extends AmoroPlugin> implements PluginM
 
   @Override
   public void close() {
+    installedPlugins.values().forEach(ActivePlugin::close);
     installedPlugins.clear();
   }
 }

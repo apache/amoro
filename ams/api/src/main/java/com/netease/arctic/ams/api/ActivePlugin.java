@@ -16,9 +16,23 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.manager;
+package com.netease.arctic.ams.api;
 
-import com.netease.arctic.ams.api.AmoroPlugin;
+import java.util.Map;
 
-public interface TestPlugin extends AmoroPlugin {
+/**
+ * Plugins that need to initialize and close
+ */
+public interface ActivePlugin extends AmoroPlugin {
+
+  /**
+   * Initialize and open the plugin
+   * @param properties plugin properties
+   */
+  void open(Map<String, String> properties);
+
+  /**
+   * Close the plugin
+   */
+  void close();
 }
