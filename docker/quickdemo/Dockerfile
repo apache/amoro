@@ -15,7 +15,9 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM openjdk:8u332-jdk
+ARG AMORO_TAG=master-snapshot
+
+FROM arctic163/amoro:${AMORO_TAG}
 
 ARG FLINK_VERSION=1.15.3
 ARG FLINK_VERSION_PRE=1.15
@@ -53,6 +55,5 @@ ADD amoro-flink-runtime-*.jar ${FLINK_HOME}/lib/
 COPY flink-conf.yaml ${FLINK_HOME}/conf/flink-conf.yaml
 RUN ln -s ${FLINK_HOME} /usr/local/flink
 
-ENTRYPOINT ["/bin/bash"]
 
 

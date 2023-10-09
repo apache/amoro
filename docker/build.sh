@@ -32,6 +32,7 @@ APACHE_ARCHIVE=https://archive.apache.org/dist
 OPTIMIZER_TARGET=${PROJECT_HOME}/ams/optimizer/target
 OPTIMIZER_JOB=${OPTIMIZER_TARGET}/amoro-ams-optimizer-${AMORO_VERSION}-jar-with-dependencies.jar
 AMORO_TAG=$AMORO_VERSION
+ALSO_MAKE=true
 
 function usage() {
     cat <<EOF
@@ -39,7 +40,6 @@ Usage: $0 [options] [image]
 Build for Amoro demo docker images.
 
 Images:
-    quickstart              Build Amoro QuickStart Image, include a Flink container with Amoro flink connector and Iceberg connector.
     quickdemo               Build Amoro QuickStart Image, for run flink ingestion job in quick-demo http://amoro.netease.com/quick-demo/
     namenode                Build a hadoop namenode container for quick start demo.
     datanode                Build a hadoop datanode container for quick start demo.
@@ -53,6 +53,7 @@ Options:
     --debian-mirror         Mirror url of debian, default is http://deb.debian.org
     --optimizer-job         Location of optimizer job
     --tag                   Tag for amoro/optimizer-flink/quickstart image.
+    --also-make             Also make amoro when build quickdemo, if set to false, it will pull from hub or use exists dependency.
 EOF
 }
 
@@ -63,7 +64,7 @@ i=1;
 j=$#;
 while [ $i -le $j ]; do
   case $1 in
-    quickstart|quickdemo|namenode|datanode|optimizer-flink|amoro)
+    quickdemo|namenode|datanode|optimizer-flink|amoro)
     ACTION=$1;
     i=$((i+1))
     shift 1
@@ -106,6 +107,12 @@ while [ $i -le $j ]; do
     "--tag")
     shift 1
     AMORO_TAG=$1
+    i=$((i+2))
+    ;;
+
+    "--also-make")
+    shift 1
+    ALSO_MAKE=$1
     i=$((i+2))
     ;;
 
@@ -203,7 +210,7 @@ function build_datanode() {
 
 function build_optimizer_flink() {
     IMAGE_REF=arctic163/optimizer-flink${FLINK_MAJOR_VERSION}
-    IMAGE_TAG=$AMORO_VERSION
+    IMAGE_TAG=$AMORO_TAG
     echo "=============================================="
     echo "           arctic163/optimizer-flink     "
     echo "=============================================="
@@ -226,7 +233,7 @@ function build_optimizer_flink() {
 
 function build_amoro() {
   IMAGE_REF=arctic163/amoro
-  IMAGE_TAG=$AMORO_VERSION
+  IMAGE_TAG=$AMORO_TAG
   print_image $IMAGE_REF $IMAGE_TAG
 
   DIST_FILE=${PROJECT_HOME}/dist/target/amoro-${AMORO_VERSION}-bin.zip
@@ -241,13 +248,15 @@ function build_amoro() {
   docker build -t ${IMAGE_REF}:${IMAGE_TAG} \
     --build-arg AMORO_VERSION=${AMORO_VERSION} \
     amoro/.
+  return $?
 }
 
 function build_quickdemo() {
     IMAGE_REF=arctic163/quickdemo
-    IMAGE_TAG=$AMORO_VERSION
+    IMAGE_TAG=$AMORO_TAG
 
     print_image $IMAGE_REF "$IMAGE_TAG"
+
 
     FLINK_CONNECTOR_BINARY=${PROJECT_HOME}/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
 
@@ -256,11 +265,21 @@ function build_quickdemo() {
         exit  1
     fi
 
+    if [ "${ALSO_MAKE}" == "true" ]; then
+        echo "Build dependency Amoro image."
+        build_amoro
+        if [ "$?" -ne 0 ]; then
+          echo "Build required Amor image failed."
+          exit 1
+        fi
+    fi
+
     set -x
     FLINK_IMAGE_BINARY=${CURRENT_DIR}/quickdemo/amoro-flink-runtime-${FLINK_VERSION}-${AMORO_VERSION}.jar
     cp ${FLINK_CONNECTOR_BINARY}  ${FLINK_IMAGE_BINARY}
     # dos2unix ${CURRENT_DIR}/quickstart/config.sh
     docker build -t $IMAGE_REF:$IMAGE_TAG \
+      --build-arg AMORO_TAG=${AMORO_TAG} \
       --build-arg AMORO_VERSION=${AMORO_VERSION} \
       --build-arg DEBIAN_MIRROR=${DEBIAN_MIRROR} \
       --build-arg APACHE_ARCHIVE=${APACHE_ARCHIVE} \
@@ -270,10 +289,6 @@ function build_quickdemo() {
 
 
 case "$ACTION" in
-  quickstart)
-    print_env
-    build_quickstart
-    ;;
   quickdemo)
     print_env
     build_quickdemo
@@ -285,13 +300,6 @@ case "$ACTION" in
   datanode)
     print_env
     build_datanode
-    ;;
-  all)
-    print_env
-    build_quickstart
-    build_namenode
-    build_datanode
-    build_optimizer_flink
     ;;
   optimizer-flink)
     print_env
