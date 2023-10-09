@@ -24,7 +24,6 @@ export PROJECT_HOME
 cd $CURRENT_DIR
 
 AMORO_VERSION=`cat $PROJECT_HOME/pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'`
-AMORO_BINARY_PACKAGE=${PROJECT_HOME}/dist/target/amoro-${AMORO_VERSION}-bin.zip
 FLINK_VERSION=1.15.3
 HADOOP_VERSION=2.10.2
 DEBIAN_MIRROR=http://deb.debian.org
@@ -138,42 +137,12 @@ function print_env() {
 
 # print_image $IMAGE_NAME $TAG
 function print_image() {
-   IMAGE_REF=$1
-   IMAGE_TAG=$2
+   local image=$1
+   local tag=$2
    echo "=============================================="
-   echo "          $IMAGE_REF:$IMAGE_TAG               "
+   echo "          $image:$tag               "
    echo "=============================================="
-   echo "Start Build ${IMAGE_REF}:${IMAGE_TAG} Image"
-}
-
-
-function build_quickstart() {
-  IMAGE_REF="arctic163/quickstart"
-  IMAGE_TAG=$AMORO_TAG
-  print_image "$IMAGE_REF" "$IMAGE_TAG"
-  FLINK_CONNECTOR_BINARY=${PROJECT_HOME}/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
-
-  if [ ! -f "${AMORO_BINARY_PACKAGE}" ]; then
-      echo "Amoro Binary Release ${AMORO_BINARY_PACKAGE} is not exists, run 'mvn clean package -pl !trino' first. "
-      exit 1
-  fi
-  if [ ! -f "${FLINK_CONNECTOR_BINARY}" ]; then
-      echo "amoro-flink-connector not exists in ${FLINK_CONNECTOR_BINARY}, run 'mvn clean package -pl !trino' first. "
-      exit  1
-  fi
-
-  set -x
-  AMS_IMAGE_RELEASE_PACKAGE=${CURRENT_DIR}/quickstart/amoro-${AMORO_VERSION}-bin.zip
-  FLINK_IMAGE_BINARY=${CURRENT_DIR}/quickstart/amoro-flink-runtime-${FLINK_VERSION}-${AMORO_VERSION}.jar
-  cp ${AMORO_BINARY_PACKAGE} ${AMS_IMAGE_RELEASE_PACKAGE}
-  cp ${FLINK_CONNECTOR_BINARY}  ${FLINK_IMAGE_BINARY}
-  # dos2unix ${CURRENT_DIR}/quickstart/config.sh
-  docker build -t $IMAGE_REF:$IMAGE_TAG \
-    --build-arg AMORO_VERSION=${AMORO_VERSION} \
-    --build-arg DEBIAN_MIRROR=${DEBIAN_MIRROR} \
-    --build-arg APACHE_ARCHIVE=${APACHE_ARCHIVE} \
-    --build-arg FLINK_VERSION=${FLINK_VERSION} \
-    quickstart/.
+   echo "Start Build ${image}:${tag} Image"
 }
 
 function build_namenode() {
@@ -209,8 +178,8 @@ function build_datanode() {
 }
 
 function build_optimizer_flink() {
-    IMAGE_REF=arctic163/optimizer-flink${FLINK_MAJOR_VERSION}
-    IMAGE_TAG=$AMORO_TAG
+    local IMAGE_REF=arctic163/optimizer-flink${FLINK_MAJOR_VERSION}
+    local IMAGE_TAG=$AMORO_TAG
     echo "=============================================="
     echo "           arctic163/optimizer-flink     "
     echo "=============================================="
@@ -232,19 +201,20 @@ function build_optimizer_flink() {
 }
 
 function build_amoro() {
-  IMAGE_REF=arctic163/amoro
-  IMAGE_TAG=$AMORO_TAG
+  local IMAGE_REF=arctic163/amoro
+  local IMAGE_TAG=$AMORO_TAG
   print_image $IMAGE_REF $IMAGE_TAG
 
-  DIST_FILE=${PROJECT_HOME}/dist/target/amoro-${AMORO_VERSION}-bin.zip
+  local DIST_FILE=${PROJECT_HOME}/dist/target/amoro-${AMORO_VERSION}-bin.zip
 
   if [ ! -f "${DIST_FILE}" ]; then
-    BUILD_CMD="mvn clean package -am -e -pl dist -DskipTests "
+    local BUILD_CMD="mvn clean package -am -e -pl dist -DskipTests "
     echo "Amoro dist package is not exists in ${DIST_FILE}"
     echo "please check file or run '$BUILD_CMD' first"
   fi
 
   cp $DIST_FILE $CURRENT_DIR/amoro/amoro-${AMORO_VERSION}-bin.zip
+  set -x
   docker build -t ${IMAGE_REF}:${IMAGE_TAG} \
     --build-arg AMORO_VERSION=${AMORO_VERSION} \
     amoro/.
@@ -252,13 +222,13 @@ function build_amoro() {
 }
 
 function build_quickdemo() {
-    IMAGE_REF=arctic163/quickdemo
-    IMAGE_TAG=$AMORO_TAG
+    local IMAGE_REF=arctic163/quickdemo
+    local IMAGE_TAG=$AMORO_TAG
 
     print_image $IMAGE_REF "$IMAGE_TAG"
 
 
-    FLINK_CONNECTOR_BINARY=${PROJECT_HOME}/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
+    local FLINK_CONNECTOR_BINARY=${PROJECT_HOME}/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
 
     if [ ! -f "${FLINK_CONNECTOR_BINARY}" ]; then
         echo "amoro-flink-connector not exists in ${FLINK_CONNECTOR_BINARY}, run 'mvn clean package -pl !trino' first. "
@@ -275,7 +245,7 @@ function build_quickdemo() {
     fi
 
     set -x
-    FLINK_IMAGE_BINARY=${CURRENT_DIR}/quickdemo/amoro-flink-runtime-${FLINK_VERSION}-${AMORO_VERSION}.jar
+    local FLINK_IMAGE_BINARY=${CURRENT_DIR}/quickdemo/amoro-flink-runtime-${FLINK_VERSION}-${AMORO_VERSION}.jar
     cp ${FLINK_CONNECTOR_BINARY}  ${FLINK_IMAGE_BINARY}
     # dos2unix ${CURRENT_DIR}/quickstart/config.sh
     docker build -t $IMAGE_REF:$IMAGE_TAG \

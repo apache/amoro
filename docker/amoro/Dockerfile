@@ -18,9 +18,6 @@
 FROM openjdk:8u332-jdk
 
 ARG AMORO_VERSION=master-SNAPSHOT
-ARG APACHE_ARCHIVE=https://archive.apache.org/dist
-ARG MAVEN_URL=https://repo.maven.apache.org/maven2/
-ARG DEBIAN_MIRROR=http://deb.debian.org
 
 WORKDIR /usr/local
 ADD amoro-${AMORO_VERSION}-bin.zip /usr/local/amoro-${AMORO_VERSION}-bin.zip

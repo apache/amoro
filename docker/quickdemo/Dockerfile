@@ -20,18 +20,20 @@ ARG AMORO_TAG=master-snapshot
 FROM arctic163/amoro:${AMORO_TAG}
 
 ARG FLINK_VERSION=1.15.3
-ARG FLINK_VERSION_PRE=1.15
 ARG FLINK_HADOOP_VERSION=2.8.3-10.0
 ARG HIVE_VERSION=2.1.1
 ARG ICEBERG_VERSION=1.1.0
+ARG AMORO_VERSION=0.6.0
 ARG APACHE_ARCHIVE=https://archive.apache.org/dist
 ARG MAVEN_URL=https://maven.aliyun.com/repository/central
 ARG DEBIAN_MIRROR=http://deb.debian.org
 
+# ARG FLINK_MAJOR_VERSION=${FLINK_VERSION%.*}
 
 RUN sed -i "s#http://deb.debian.org#${DEBIAN_MIRROR}#g" /etc/apt/sources.list
 
-RUN apt update \
+RUN apt-get update \
+    && apt-get install -y wget \
     && apt-get install -y vim \
     && apt-get install -y netcat \
     && apt-get install -y net-tools \
@@ -47,11 +49,13 @@ ENV FLINK_HOME=/usr/local/flink-${FLINK_VERSION} \
     PATH=${PATH}:${FLINK_HOME}/bin
 WORKDIR ${FLINK_HOME}/lib
 RUN cp ../examples/table/ChangelogSocketExample.jar . \
+    && FLINK_VERSION=${FLINK_VERSION} \
+    && FLINK_MAJOR_VERSION="${FLINK_VERSION%.*}" \
     && wget ${MAVEN_URL}/org/apache/flink/flink-shaded-hadoop-2-uber/${FLINK_HADOOP_VERSION}/flink-shaded-hadoop-2-uber-${FLINK_HADOOP_VERSION}.jar \
     && wget ${MAVEN_URL}/org/apache/hive/hive-exec/${HIVE_VERSION}/hive-exec-${HIVE_VERSION}.jar \
-    && wget ${MAVEN_URL}/org/apache/iceberg/iceberg-flink-runtime-${FLINK_VERSION_PRE}/${ICEBERG_VERSION}/iceberg-flink-runtime-${FLINK_VERSION_PRE}-${ICEBERG_VERSION}.jar
+    && wget ${MAVEN_URL}/org/apache/iceberg/iceberg-flink-runtime-${FLINK_MAJOR_VERSION}/${ICEBERG_VERSION}/iceberg-flink-runtime-${FLINK_MAJOR_VERSION}-${ICEBERG_VERSION}.jar
 WORKDIR ${FLINK_HOME}
-ADD amoro-flink-runtime-*.jar ${FLINK_HOME}/lib/
+ADD amoro-flink-runtime-${FLINK_VERSION}-${AMORO_VERSION}.jar ${FLINK_HOME}/lib/
 COPY flink-conf.yaml ${FLINK_HOME}/conf/flink-conf.yaml
 RUN ln -s ${FLINK_HOME} /usr/local/flink
 

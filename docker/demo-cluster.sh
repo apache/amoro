@@ -114,12 +114,13 @@ services:
       - 10075:50075
       - 10010:50010
     depends_on:
-      - namenode 
+      - namenode
 
-  amoro:
-    image: arctic163/amoro:${AMORO_TAG}
-    container_name: amoro
+  quickdemo:
+    image: arctic163/quickdemo:${AMORO_TAG}
+    container_name: quickdemo
     ports:
+      - 8081:8081
       - 1630:1630
       - 1260:1260
     networks:
@@ -127,16 +128,6 @@ services:
     volumes:
       - ${VOLUMES_DIR}/amoro:/tmp/amoro
     command: "ams"
-    tty: true
-    stdin_open: true
-
-  quickdemo:
-    image: arctic163/quickdemo:${AMORO_TAG}
-    container_name: quickdemo
-    ports:
-      - 8081:8081
-    networks:
-      - amoro_network
     tty: true
     stdin_open: true
 
