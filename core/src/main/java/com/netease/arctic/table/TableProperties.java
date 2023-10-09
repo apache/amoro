@@ -180,20 +180,14 @@ public class TableProperties {
    * table write related properties
    */
   public static final String BASE_FILE_FORMAT = "base.write.format";
-  public static final String BASE_FILE_FORMAT_PARQUET = "parquet";
-  public static final String BASE_FILE_FORMAT_ORC = "orc";
-  public static final String BASE_FILE_FORMAT_DEFAULT = BASE_FILE_FORMAT_PARQUET;
+  public static final String BASE_FILE_FORMAT_DEFAULT = "parquet";
 
   public static final String CHANGE_FILE_FORMAT = "change.write.format";
-  public static final String CHANGE_FILE_FORMAT_PARQUET = "parquet";
-  public static final String CHANGE_FILE_FORMAT_ORC = "orc";
-  public static final String CHANGE_FILE_FORMAT_DEFAULT = CHANGE_FILE_FORMAT_PARQUET;
+  public static final String CHANGE_FILE_FORMAT_DEFAULT = "parquet";
 
   public static final String DEFAULT_FILE_FORMAT = org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
   public static final String DEFAULT_FILE_FORMAT_DEFAULT =
       org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
-  public static final String DEFAULT_FILE_FORMAT_PARQUET = "parquet";
-  public static final String DEFAULT_FILE_FORMAT_ORC = "orc";
 
   public static final String BASE_FILE_INDEX_HASH_BUCKET = "base.file-index.hash-bucket";
   public static final int BASE_FILE_INDEX_HASH_BUCKET_DEFAULT = 4;

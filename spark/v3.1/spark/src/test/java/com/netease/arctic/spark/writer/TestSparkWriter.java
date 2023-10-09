@@ -3,8 +3,6 @@ package com.netease.arctic.spark.writer;
 import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT;
 import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
 import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
-import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_ORC;
-import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_PARQUET;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.reader.SparkParquetReaders;
@@ -12,6 +10,7 @@ import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -62,112 +61,76 @@ public class TestSparkWriter extends SparkTableTestBase {
   public static Stream<Arguments> testWrite() {
     return Stream.of(
         Arguments.of(
-            MIXED_HIVE,
-            WriteMode.APPEND,
-            schema,
-            idPrimaryKeySpec,
-            ptSpec,
-            DEFAULT_FILE_FORMAT_PARQUET),
+            MIXED_HIVE, WriteMode.APPEND, schema, idPrimaryKeySpec, ptSpec, FileFormat.PARQUET),
         Arguments.of(
-            MIXED_HIVE,
-            WriteMode.APPEND,
-            schema,
-            noPrimaryKey,
-            ptSpec,
-            DEFAULT_FILE_FORMAT_PARQUET),
+            MIXED_HIVE, WriteMode.APPEND, schema, noPrimaryKey, ptSpec, FileFormat.PARQUET),
         Arguments.of(
             MIXED_HIVE,
             WriteMode.APPEND,
             schema,
             idPrimaryKeySpec,
             unpartitioned,
-            DEFAULT_FILE_FORMAT_PARQUET),
+            FileFormat.PARQUET),
         Arguments.of(
-            MIXED_HIVE,
-            WriteMode.APPEND,
-            schema,
-            noPrimaryKey,
-            unpartitioned,
-            DEFAULT_FILE_FORMAT_PARQUET),
+            MIXED_HIVE, WriteMode.APPEND, schema, noPrimaryKey, unpartitioned, FileFormat.PARQUET),
         Arguments.of(
-            MIXED_HIVE,
-            WriteMode.APPEND,
-            schema,
-            idPrimaryKeySpec,
-            ptSpec,
-            DEFAULT_FILE_FORMAT_ORC),
+            MIXED_HIVE, WriteMode.APPEND, schema, idPrimaryKeySpec, ptSpec, FileFormat.ORC),
+        Arguments.of(MIXED_HIVE, WriteMode.APPEND, schema, noPrimaryKey, ptSpec, FileFormat.ORC),
         Arguments.of(
-            MIXED_HIVE, WriteMode.APPEND, schema, noPrimaryKey, ptSpec, DEFAULT_FILE_FORMAT_ORC),
+            MIXED_HIVE, WriteMode.APPEND, schema, idPrimaryKeySpec, unpartitioned, FileFormat.ORC),
         Arguments.of(
-            MIXED_HIVE,
-            WriteMode.APPEND,
-            schema,
-            idPrimaryKeySpec,
-            unpartitioned,
-            DEFAULT_FILE_FORMAT_ORC),
-        Arguments.of(
-            MIXED_HIVE,
-            WriteMode.APPEND,
-            schema,
-            noPrimaryKey,
-            unpartitioned,
-            DEFAULT_FILE_FORMAT_ORC),
+            MIXED_HIVE, WriteMode.APPEND, schema, noPrimaryKey, unpartitioned, FileFormat.ORC),
         Arguments.of(
             MIXED_HIVE,
             WriteMode.OVERWRITE_DYNAMIC,
             schema,
             idPrimaryKeySpec,
             ptSpec,
-            DEFAULT_FILE_FORMAT_PARQUET),
+            FileFormat.PARQUET),
         Arguments.of(
             MIXED_HIVE,
             WriteMode.OVERWRITE_DYNAMIC,
             schema,
             noPrimaryKey,
             ptSpec,
-            DEFAULT_FILE_FORMAT_PARQUET),
+            FileFormat.PARQUET),
         Arguments.of(
             MIXED_HIVE,
             WriteMode.OVERWRITE_DYNAMIC,
             schema,
             idPrimaryKeySpec,
             unpartitioned,
-            DEFAULT_FILE_FORMAT_PARQUET),
+            FileFormat.PARQUET),
         Arguments.of(
             MIXED_HIVE,
             WriteMode.OVERWRITE_DYNAMIC,
             schema,
             noPrimaryKey,
             unpartitioned,
-            DEFAULT_FILE_FORMAT_PARQUET),
+            FileFormat.PARQUET),
         Arguments.of(
             MIXED_HIVE,
             WriteMode.OVERWRITE_DYNAMIC,
             schema,
             idPrimaryKeySpec,
             ptSpec,
-            DEFAULT_FILE_FORMAT_ORC),
+            FileFormat.ORC),
         Arguments.of(
-            MIXED_HIVE,
-            WriteMode.OVERWRITE_DYNAMIC,
-            schema,
-            noPrimaryKey,
-            ptSpec,
-            DEFAULT_FILE_FORMAT_ORC),
+            MIXED_HIVE, WriteMode.OVERWRITE_DYNAMIC, schema, noPrimaryKey, ptSpec, FileFormat.ORC),
         Arguments.of(
             MIXED_HIVE,
             WriteMode.OVERWRITE_DYNAMIC,
             schema,
             idPrimaryKeySpec,
             unpartitioned,
-            DEFAULT_FILE_FORMAT_ORC),
+            FileFormat.ORC),
         Arguments.of(
             MIXED_HIVE,
             WriteMode.OVERWRITE_DYNAMIC,
             schema,
             noPrimaryKey,
             unpartitioned,
-            DEFAULT_FILE_FORMAT_ORC));
+            FileFormat.ORC));
   }
 
   @DisplayName("Test write mix_hive Table")
@@ -179,7 +142,7 @@ public class TestSparkWriter extends SparkTableTestBase {
       Schema schema,
       PrimaryKeySpec keySpec,
       PartitionSpec ptSpec,
-      String fileFormat)
+      FileFormat fileFormat)
       throws IOException {
     ArcticTable table =
         createTarget(
@@ -187,9 +150,9 @@ public class TestSparkWriter extends SparkTableTestBase {
             tableBuilder ->
                 tableBuilder
                     .withPrimaryKeySpec(keySpec)
-                    .withProperty(CHANGE_FILE_FORMAT, fileFormat)
-                    .withProperty(BASE_FILE_FORMAT, fileFormat)
-                    .withProperty(DEFAULT_FILE_FORMAT, fileFormat)
+                    .withProperty(CHANGE_FILE_FORMAT, fileFormat.name())
+                    .withProperty(BASE_FILE_FORMAT, fileFormat.name())
+                    .withProperty(DEFAULT_FILE_FORMAT, fileFormat.name())
                     .withPartitionSpec(ptSpec));
     Map<String, String> map = new HashMap<>();
     map.put(WriteMode.WRITE_MODE_KEY, writeMode.mode);
