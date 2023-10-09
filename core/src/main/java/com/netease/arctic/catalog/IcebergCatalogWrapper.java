@@ -89,8 +89,12 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
         org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE,
         meta.getCatalogType());
     this.tableMetaStore = CatalogUtil.buildMetaStore(meta);
+    if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(meta.getCatalogType())) {
+      meta.getCatalogProperties()
+          .put(CatalogProperties.CATALOG_IMPL, CatalogMetaProperties.ICEBERG_CATALOG_TYPE_GLUE_IMPL);
+    }
     if (meta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
-      meta.getCatalogProperties().remove("type");
+      meta.getCatalogProperties().remove(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE);
     }
     icebergCatalog = tableMetaStore.doAs(() -> org.apache.iceberg.CatalogUtil.buildIcebergCatalog(name(),
         meta.getCatalogProperties(), tableMetaStore.getConfiguration()));

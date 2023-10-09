@@ -11,6 +11,7 @@ import java.util.Set;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
@@ -26,8 +27,7 @@ public class CatalogBuilder {
       case CATALOG_TYPE_HADOOP:
         if (TableFormat.ICEBERG == tableFormat) {
           return new IcebergCatalogImpl(catalogMeta);
-        }
-        if (TableFormat.MIXED_ICEBERG == tableFormat) {
+        } else if (TableFormat.MIXED_ICEBERG == tableFormat) {
           return new MixedIcebergCatalogImpl(catalogMeta);
         } else {
           throw new IllegalStateException("Hadoop catalog support iceberg/mixed-iceberg table only.");
@@ -51,14 +51,19 @@ public class CatalogBuilder {
         } else {
           throw new IllegalStateException("AMS catalog support iceberg/mixed-iceberg table only.");
         }
+      case CATALOG_TYPE_GLUE:
+        if (TableFormat.ICEBERG == tableFormat) {
+          return new IcebergCatalogImpl(catalogMeta);
+        } else {
+          throw new IllegalStateException("Glue catalog support iceberg table only.");
+        }
       case CATALOG_TYPE_CUSTOM:
         Preconditions.checkArgument(
             catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL),
             "Custom catalog properties must contains " + CatalogProperties.CATALOG_IMPL);
         if (TableFormat.ICEBERG == tableFormat) {
           return new IcebergCatalogImpl(catalogMeta);
-        }
-        if (TableFormat.MIXED_ICEBERG == tableFormat) {
+        } else if (TableFormat.MIXED_ICEBERG == tableFormat) {
           return new MixedIcebergCatalogImpl(catalogMeta);
         } else {
           throw new IllegalStateException("Custom catalog support iceberg/mixed-iceberg table only.");
