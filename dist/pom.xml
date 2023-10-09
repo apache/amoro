@@ -42,12 +42,12 @@
         </dependency>
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>standalone-optimize-job</artifactId>
+            <artifactId>standalone-optimizer</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>flink-optimize-job</artifactId>
+            <artifactId>flink-optimizer</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>

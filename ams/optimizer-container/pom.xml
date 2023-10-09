@@ -40,7 +40,7 @@
     <dependencies>
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>optimize-job-common</artifactId>
+            <artifactId>optimizer-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 
