@@ -34,6 +34,7 @@ import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ManifestEntryFields;
+import java.util.Set;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.ContentScanTask;
 import org.apache.iceberg.DataFile;
@@ -161,9 +162,9 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       tasks = tableScan.useSnapshot(snapshotId).planFiles();
     }
     CloseableIterable<DataFile> dataFiles = CloseableIterable.transform(tasks, ContentScanTask::file);
-    List<DeleteFile> deleteFiles = StreamSupport.stream(tasks.spliterator(), false)
+    Set<DeleteFile> deleteFiles = StreamSupport.stream(tasks.spliterator(), false)
         .flatMap(e -> e.deletes().stream())
-        .collect(Collectors.toList());
+        .collect(Collectors.toSet());
 
     return CloseableIterable.transform(CloseableIterable.withNoopClose(Iterables.concat(dataFiles, deleteFiles)),
         contentFile -> new IcebergFileEntry(
@@ -171,7 +172,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
   }
 
   private static void purgeTableData(ArcticTable table, DataExpirationConfig expirationConfig, long expireTimestamp) {
-    Expression partitionFilter = getPartitionExpression(table, expirationConfig, expireTimestamp);
+    Expression dataFilter = getDataExpression(table, expirationConfig, expireTimestamp);
     Map<StructLike, DataFileFreshness> partitionFreshness = Maps.newHashMap();
 
     if (table.isKeyedTable()) {
@@ -181,8 +182,8 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       Snapshot changeSnapshot = changeTable.currentSnapshot();
       Snapshot baseSnapshot = baseTable.currentSnapshot();
 
-      CloseableIterable<IcebergFileEntry> changeEntries = fileScan(changeTable, partitionFilter, changeSnapshot);
-      CloseableIterable<IcebergFileEntry> baseEntries = fileScan(baseTable, partitionFilter, baseSnapshot);
+      CloseableIterable<IcebergFileEntry> changeEntries = fileScan(changeTable, dataFilter, changeSnapshot);
+      CloseableIterable<IcebergFileEntry> baseEntries = fileScan(baseTable, dataFilter, baseSnapshot);
       ExpireFiles changeExpiredFiles = new ExpireFiles();
       ExpireFiles baseExpiredFiles = new ExpireFiles();
       CloseableIterable<FileEntry> changed = CloseableIterable.transform(changeEntries,
@@ -211,7 +212,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       UnkeyedTable unkeyedTable = table.asUnkeyedTable();
       Snapshot snapshot = unkeyedTable.currentSnapshot();
       ExpireFiles expiredFiles = new ExpireFiles();
-      try (CloseableIterable<IcebergFileEntry> entries = fileScan(unkeyedTable, partitionFilter, snapshot)) {
+      try (CloseableIterable<IcebergFileEntry> entries = fileScan(unkeyedTable, dataFilter, snapshot)) {
         CloseableIterable<IcebergFileEntry> mayExpiredFiles = CloseableIterable.withNoopClose(
             Lists.newArrayList(CloseableIterable.filter(entries,
                 e -> mayExpired(table, e, expirationConfig, partitionFreshness, expireTimestamp))));
@@ -234,7 +235,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
    * @param expireTimestamp expired timestamp
    * @return filter expression
    */
-  private static Expression getPartitionExpression(ArcticTable table, DataExpirationConfig expirationConfig,
+  private static Expression getDataExpression(ArcticTable table, DataExpirationConfig expirationConfig,
       long expireTimestamp) {
     if (expirationConfig.getExpirationLevel().equals(DataExpirationConfig.ExpireLevel.PARTITION)) {
       return Expressions.alwaysTrue();
@@ -400,8 +401,10 @@ public class DataExpiringExecutor extends BaseTableExecutor {
             partitionFreshness.get(contentFile.partition()).totalDataFileCount;
       case FILE:
         if (!contentFile.content().equals(FileContent.DATA)) {
-          long seqUpperBound = partitionFreshness.getOrDefault(contentFile.partition(),
-              new DataFileFreshness(Long.MIN_VALUE, Long.MAX_VALUE)).latestExpiredSeq;
+          long seqUpperBound = partitionFreshness.getOrDefault(
+              contentFile.partition(),
+              new DataFileFreshness(Long.MIN_VALUE, Long.MAX_VALUE)
+          ).latestExpiredSeq;
           // only expire delete files with sequence-number less or equal to expired data file
           // there may be some dangling delete files, they will be cleaned by OrphanFileCleaningExecutor
           return fileEntry.getSequenceNumber() <= seqUpperBound;
