@@ -25,8 +25,6 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.catalog.ArcticCatalog;
 import com.netease.arctic.flink.util.DataUtil;
-import java.util.LinkedList;
-import java.util.List;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.api.DataTypes;
@@ -41,6 +39,9 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.LinkedList;
+import java.util.List;
 
 public class TestArcticCatalogTablePartitions extends FlinkTestBase {
   private final String tableName = "test_partition_table";
