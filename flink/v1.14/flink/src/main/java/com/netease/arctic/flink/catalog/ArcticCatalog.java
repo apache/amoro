@@ -28,11 +28,16 @@ import com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions;
 import com.netease.arctic.flink.table.DynamicTableFactory;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.util.ArcticUtils;
+import com.netease.arctic.scan.ArcticFileScanTask;
+import com.netease.arctic.scan.CombinedScanTask;
+import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.WatermarkSpec;
@@ -81,7 +86,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /** Catalogs for arctic data lake. */
 public class ArcticCatalog extends AbstractCatalog {
@@ -368,15 +375,37 @@ public class ArcticCatalog extends AbstractCatalog {
       throw new TableNotPartitionedException(internalCatalog.name(), tablePath);
     }
     Set<CatalogPartitionSpec> set = Sets.newHashSet();
-    List<Table> tables = new LinkedList<>();
-
     if (arcticTable.isKeyedTable()) {
-      tables.add(arcticTable.asKeyedTable().changeTable());
-      tables.add(arcticTable.asKeyedTable().baseTable());
+      KeyedTable table = arcticTable.asKeyedTable();
+      try (CloseableIterable<CombinedScanTask> combinedScanTasks = table.newScan().planTasks()) {
+        for (CombinedScanTask combinedScanTask : combinedScanTasks) {
+          combinedScanTask.tasks().stream()
+              .flatMap(
+                  (Function<KeyedTableScanTask, Stream<ArcticFileScanTask>>)
+                      keyedTableScanTask ->
+                          Stream.of(
+                                  keyedTableScanTask.dataTasks(),
+                                  keyedTableScanTask.arcticEquityDeletes())
+                              .flatMap(List::stream))
+              .forEach(
+                  arcticFileScanTask -> {
+                    Map<String, String> map = Maps.newHashMap();
+                    StructLike structLike = arcticFileScanTask.partition();
+                    PartitionSpec spec = table.spec();
+                    for (int i = 0; i < structLike.size(); i++) {
+                      map.put(
+                          spec.fields().get(i).name(),
+                          String.valueOf(structLike.get(i, Object.class)));
+                    }
+                    set.add(new CatalogPartitionSpec(map));
+                  });
+        }
+      } catch (IOException e) {
+        throw new CatalogException(
+            String.format("Failed to list partitions of table %s", tablePath), e);
+      }
     } else {
-      tables.add(arcticTable.asUnkeyedTable());
-    }
-    for (Table table : tables) {
+      UnkeyedTable table = arcticTable.asUnkeyedTable();
       try (CloseableIterable<FileScanTask> tasks = table.newScan().planFiles()) {
         for (DataFile dataFile : CloseableIterable.transform(tasks, FileScanTask::file)) {
           Map<String, String> map = Maps.newHashMap();
