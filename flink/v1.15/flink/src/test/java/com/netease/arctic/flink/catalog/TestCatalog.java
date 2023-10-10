@@ -108,6 +108,7 @@ public class TestCatalog extends CatalogTestBase {
     sql("DROP DATABASE " + DB);
 
     Assert.assertTrue(CollectionUtil.isNullOrEmpty(getCatalog().listDatabases()));
+    sql("USE CATALOG default_catalog");
     sql("DROP CATALOG arcticCatalog");
   }
 
@@ -167,9 +168,11 @@ public class TestCatalog extends CatalogTestBase {
 
     sql("DROP TABLE " + DB + "." + TABLE);
     sql("DROP DATABASE " + DB);
-    sql("DROP CATALOG arcticCatalog");
-
     sql("DROP TABLE default_catalog.default_database." + TABLE);
+    sql("DROP DATABASE arcticCatalog");
+    sql("SHOW CATALOGS");
+    sql("USE CATALOG default_catalog");
+    sql("DROP CATALOG arcticCatalog");
   }
 
   protected List<Row> sql(String query, Object... args) {
