@@ -34,7 +34,6 @@ import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
@@ -50,6 +49,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT;
 import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
 import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.FILE_FORMAT_ORC;
+import static com.netease.arctic.table.TableProperties.FILE_FORMAT_PARQUET;
 
 public class UpgradeHiveTableUtil {
 
@@ -169,9 +170,9 @@ public class UpgradeHiveTableUtil {
           case HiveTableProperties.PARQUET_INPUT_FORMAT:
             if (storageDescriptor.getOutputFormat().equals(HiveTableProperties.PARQUET_OUTPUT_FORMAT) &&
                 serDeInfo.getSerializationLib().equals(HiveTableProperties.PARQUET_ROW_FORMAT_SERDE)) {
-              properties.put(DEFAULT_FILE_FORMAT, FileFormat.PARQUET.name());
-              properties.put(BASE_FILE_FORMAT, FileFormat.PARQUET.name());
-              properties.put(CHANGE_FILE_FORMAT, FileFormat.PARQUET.name());
+              properties.put(DEFAULT_FILE_FORMAT, FILE_FORMAT_PARQUET);
+              properties.put(BASE_FILE_FORMAT, FILE_FORMAT_PARQUET);
+              properties.put(CHANGE_FILE_FORMAT, FILE_FORMAT_PARQUET);
               isSupport.set(true);
             } else {
               throw new IllegalStateException("Please check your hive table storage format for parquet is right");
@@ -180,9 +181,9 @@ public class UpgradeHiveTableUtil {
           case HiveTableProperties.ORC_INPUT_FORMAT:
             if (storageDescriptor.getOutputFormat().equals(HiveTableProperties.ORC_OUTPUT_FORMAT) &&
                 serDeInfo.getSerializationLib().equals(HiveTableProperties.ORC_ROW_FORMAT_SERDE)) {
-              properties.put(DEFAULT_FILE_FORMAT, FileFormat.ORC.name());
-              properties.put(BASE_FILE_FORMAT, FileFormat.ORC.name());
-              properties.put(CHANGE_FILE_FORMAT, FileFormat.ORC.name());
+              properties.put(DEFAULT_FILE_FORMAT, FILE_FORMAT_ORC);
+              properties.put(BASE_FILE_FORMAT, FILE_FORMAT_ORC);
+              properties.put(CHANGE_FILE_FORMAT, FILE_FORMAT_ORC);
               isSupport.set(true);
             } else {
               throw new IllegalStateException("Please check your hive table storage format for orc is right");

@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.write;
 
+import static com.netease.arctic.table.TableProperties.FILE_FORMAT_ORC;
+
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
@@ -37,7 +39,6 @@ import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
-import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
@@ -97,19 +98,19 @@ public class TestAdaptHiveWriter extends TableTestBase {
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(true, true, FileFormat.ORC.name())
+        new HiveTableTestHelper(true, true, FILE_FORMAT_ORC)
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(true, false, FileFormat.ORC.name())
+        new HiveTableTestHelper(true, false, FILE_FORMAT_ORC)
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(false, true, FileFormat.ORC.name())
+        new HiveTableTestHelper(false, true, FILE_FORMAT_ORC)
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(false, false, FileFormat.ORC.name())
+        new HiveTableTestHelper(false, false, FILE_FORMAT_ORC)
       }
     };
   }

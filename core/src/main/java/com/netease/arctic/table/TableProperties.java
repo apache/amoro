@@ -179,11 +179,13 @@ public class TableProperties {
   /**
    * table write related properties
    */
+  public static final String FILE_FORMAT_PARQUET = "parquet";
+  public static final String FILE_FORMAT_ORC = "orc";
   public static final String BASE_FILE_FORMAT = "base.write.format";
-  public static final String BASE_FILE_FORMAT_DEFAULT = "parquet";
+  public static final String BASE_FILE_FORMAT_DEFAULT = FILE_FORMAT_PARQUET;
 
   public static final String CHANGE_FILE_FORMAT = "change.write.format";
-  public static final String CHANGE_FILE_FORMAT_DEFAULT = "parquet";
+  public static final String CHANGE_FILE_FORMAT_DEFAULT = FILE_FORMAT_PARQUET;
 
   public static final String DEFAULT_FILE_FORMAT = org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
   public static final String DEFAULT_FILE_FORMAT_DEFAULT =

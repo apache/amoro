@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import static com.netease.arctic.table.TableProperties.FILE_FORMAT_ORC;
 
 @RunWith(Parameterized.class)
 public class TestTaskWriter extends TableTestBase {
@@ -71,13 +72,13 @@ public class TestTaskWriter extends TableTestBase {
                            {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
                             new BasicTableTestHelper(false, false)},
                            {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(true, true, FileFormat.ORC.name())},
+                            new BasicTableTestHelper(true, true, FILE_FORMAT_ORC)},
                            {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(true, false, FileFormat.ORC.name())},
+                            new BasicTableTestHelper(true, false, FILE_FORMAT_ORC)},
                            {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(false, true, FileFormat.ORC.name())},
+                            new BasicTableTestHelper(false, true, FILE_FORMAT_ORC)},
                            {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(false, false, FileFormat.ORC.name())}
+                            new BasicTableTestHelper(false, false, FILE_FORMAT_ORC)}
     };
   }
 

@@ -27,7 +27,6 @@ import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.reader.BaseIcebergPosDeleteReader;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
-import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
@@ -48,6 +47,7 @@ import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import static com.netease.arctic.table.TableProperties.FILE_FORMAT_ORC;
 
 @RunWith(Parameterized.class)
 public class TestTaskReader extends TableDataTestBase {
@@ -62,9 +62,9 @@ public class TestTaskReader extends TableDataTestBase {
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
          new BasicTableTestHelper(true, true), true},
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(true, true, FileFormat.ORC.name()), false},
+         new BasicTableTestHelper(true, true, FILE_FORMAT_ORC), false},
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(true, true, FileFormat.ORC.name()), true}
+         new BasicTableTestHelper(true, true, FILE_FORMAT_ORC), true}
     };
   }
 
