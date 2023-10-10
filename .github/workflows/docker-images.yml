@@ -58,9 +58,6 @@ jobs:
       - name: Build and Push Amoro Docker Image
         uses: docker/build-push-action@v4
         with:
-          # build cache on Github Actions, See: https://docs.docker.com/build/cache/backends/gha/#using-dockerbuild-push-action
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           context: .
           file: docker/amoro/Dockerfile
           platforms: linux/amd64,linux/arm64
@@ -72,7 +69,6 @@ jobs:
       - name: Build and Push Amoro QuickDemo Docker Image
         uses: docker/build-push-action@v4
         with:
-          # build cache on Github Actions, See: https://docs.docker.com/build/cache/backends/gha/#using-dockerbuild-push-action
           cache-from: type=gha
           cache-to: type=gha,mode=max
           context: .
@@ -80,8 +76,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: arctic163/quickdemo:master-snapshot
-          build-args:
-            FLINK_VERSION: 1.15.3
-            AMORO_TAG: master-snapshot
+          build-args: |
+            FLINK_VERSION=1.15.3
+            AMORO_TAG=master-snapshot
 
       - run: docker images
