@@ -214,20 +214,16 @@ function build_amoro() {
     echo "please check file or run '$BUILD_CMD' first"
   fi
 
-  cp $DIST_FILE $CURRENT_DIR/amoro/amoro-${AMORO_VERSION}-bin.zip
   set -x
+  cd "$PROJECT_HOME" || exit
   docker build -t ${IMAGE_REF}:${IMAGE_TAG} \
-    --build-arg AMORO_VERSION=${AMORO_VERSION} \
-    amoro/.
+    -f docker/amoro/Dockerfile .
   return $?
 }
 
 function build_quickdemo() {
     local IMAGE_REF=arctic163/quickdemo
     local IMAGE_TAG=$AMORO_TAG
-
-    print_image $IMAGE_REF "$IMAGE_TAG"
-
 
     local FLINK_CONNECTOR_BINARY=${PROJECT_HOME}/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
 
@@ -245,17 +241,17 @@ function build_quickdemo() {
         fi
     fi
 
+    print_image $IMAGE_REF "$IMAGE_TAG"
+
     set -x
-    local FLINK_IMAGE_BINARY=${CURRENT_DIR}/quickdemo/amoro-flink-runtime-${FLINK_VERSION}-${AMORO_VERSION}.jar
-    cp ${FLINK_CONNECTOR_BINARY}  ${FLINK_IMAGE_BINARY}
+    cd "$PROJECT_HOME" || exit
     # dos2unix ${CURRENT_DIR}/quickstart/config.sh
     docker build -t $IMAGE_REF:$IMAGE_TAG \
       --build-arg AMORO_TAG=${AMORO_TAG} \
-      --build-arg AMORO_VERSION=${AMORO_VERSION} \
       --build-arg DEBIAN_MIRROR=${DEBIAN_MIRROR} \
       --build-arg APACHE_ARCHIVE=${APACHE_ARCHIVE} \
       --build-arg FLINK_VERSION=${FLINK_VERSION} \
-      quickdemo/.
+      -f docker/quickdemo/Dockerfile .
 }
 
 

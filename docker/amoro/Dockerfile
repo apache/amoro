@@ -15,33 +15,40 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM openjdk:8u332-jdk
 
-ARG AMORO_VERSION=master-SNAPSHOT
+# Usage:
+#   Run the docker command below under project dir.
+#      docker build \
+#        --file docker/amoro/Dockerfile \
+#        --tag arctic163/amoro:tagname
+#        .
 
-WORKDIR /usr/local
-ADD amoro-${AMORO_VERSION}-bin.zip /usr/local/amoro-${AMORO_VERSION}-bin.zip
-RUN unzip amoro-${AMORO_VERSION}-bin.zip \
-    && rm /usr/local/amoro-${AMORO_VERSION}/plugin/optimizer/flink -rf
+FROM openjdk:8u332 as builder
 
+ADD . /workspace/amoro
+WORKDIR /workspace/amoro
 
+RUN AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'` \
+    && cp dist/target/*.zip /usr/local \
+    && unzip /usr/local/amoro-${AMORO_VERSION}-bin.zip -d /usr/local \
+    && rm /usr/local/amoro-${AMORO_VERSION}/plugin/optimizer/flink -rf \
+    && mv /usr/local/amoro-${AMORO_VERSION} /usr/local/amoro \
+    && rm -rf /workspace/amoro
 
 
 FROM openjdk:8u332-slim-buster
-COPY entrypoint.sh /
-
-ARG AMORO_VERSION=master-SNAPSHOT
-
-
-COPY --from=0 "/usr/local/amoro-${AMORO_VERSION}" "/usr/local/amoro"
-RUN chmod +x /entrypoint.sh
-
-WORKDIR /usr/local/amoro
 
 ENV AMORO_HOME /usr/local/amoro
 ENV AMORO_CONF_DIR ${AMORO_HOME}/conf
 ENV LOG_LEVEL info
 EXPOSE 1630 1260 1261
+
+COPY ./docker/amoro/entrypoint.sh /
+RUN chmod +x /entrypoint.sh
+COPY --from=builder "/usr/local/amoro" "/usr/local/amoro"
+
+WORKDIR ${AMORO_HOME}
+
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["help"]
 

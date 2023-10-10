@@ -15,7 +15,29 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Usage:
+#   Run the docker command below under project dir.
+#      docker build \
+#        --file docker/amoro/Dockerfile \
+#        --tag arctic163/amoro:tagname \
+#        --build-arg AMORO_TAG=${AMORO_TAG} \
+#        --build-arg FLINK_VERSION=${FLINK_VERSION} \
+#        .
 ARG AMORO_TAG=master-snapshot
+
+FROM openjdk:8u332 as builder
+ARG FLINK_VERSION=1.15.3
+
+ADD . /workspace/amoro
+WORKDIR /workspace/amoro
+
+RUN AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'` \
+    && FLINK_VERSION=${FLINK_VERSION} \
+    && FLINK_MAJOR_VERSION="${FLINK_VERSION%.*}" \
+    && cp flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar \
+      /opt/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar \
+    && rm -rf /workspace/amoro
+
 
 FROM arctic163/amoro:${AMORO_TAG}
 
@@ -23,12 +45,10 @@ ARG FLINK_VERSION=1.15.3
 ARG FLINK_HADOOP_VERSION=2.8.3-10.0
 ARG HIVE_VERSION=2.1.1
 ARG ICEBERG_VERSION=1.1.0
-ARG AMORO_VERSION=0.6.0
 ARG APACHE_ARCHIVE=https://archive.apache.org/dist
 ARG MAVEN_URL=https://maven.aliyun.com/repository/central
 ARG DEBIAN_MIRROR=http://deb.debian.org
 
-# ARG FLINK_MAJOR_VERSION=${FLINK_VERSION%.*}
 
 RUN sed -i "s#http://deb.debian.org#${DEBIAN_MIRROR}#g" /etc/apt/sources.list
 
@@ -55,8 +75,9 @@ RUN cp ../examples/table/ChangelogSocketExample.jar . \
     && wget ${MAVEN_URL}/org/apache/hive/hive-exec/${HIVE_VERSION}/hive-exec-${HIVE_VERSION}.jar \
     && wget ${MAVEN_URL}/org/apache/iceberg/iceberg-flink-runtime-${FLINK_MAJOR_VERSION}/${ICEBERG_VERSION}/iceberg-flink-runtime-${FLINK_MAJOR_VERSION}-${ICEBERG_VERSION}.jar
 WORKDIR ${FLINK_HOME}
-ADD amoro-flink-runtime-${FLINK_VERSION}-${AMORO_VERSION}.jar ${FLINK_HOME}/lib/
-COPY flink-conf.yaml ${FLINK_HOME}/conf/flink-conf.yaml
+
+COPY --from=builder /opt/*.jar ${FLINK_HOME}/lib/
+COPY ./docker/quickdemo/flink-conf.yaml ${FLINK_HOME}/conf/flink-conf.yaml
 RUN ln -s ${FLINK_HOME} /usr/local/flink
 
 
