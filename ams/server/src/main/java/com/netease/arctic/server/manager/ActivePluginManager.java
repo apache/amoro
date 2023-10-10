@@ -35,8 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public abstract class ActivePluginManager<T extends ActivePlugin>
-    implements PluginManager<T>, Iterable<T> {
+public abstract class ActivePluginManager<T extends ActivePlugin> implements PluginManager<T> {
 
   protected static final String PLUGIN_IMPLEMENTATION_CLASS = "impl";
   protected static final String JAR_PATH = "jarPath";
