@@ -50,6 +50,8 @@
 
     <properties>
         <kafka.version>2.4.1</kafka.version>
+        <gson.version>2.9.0</gson.version>
+        <jackson.vesion>2.10.2</jackson.vesion>
     </properties>
 
     <build>
