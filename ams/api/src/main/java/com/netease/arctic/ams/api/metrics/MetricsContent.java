@@ -25,7 +25,6 @@ package com.netease.arctic.ams.api.metrics;
  */
 public interface MetricsContent<T> {
 
-
   /**
    * Get the name of the metrics type
    * @return metrics type name
