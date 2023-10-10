@@ -34,7 +34,6 @@ import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ManifestEntryFields;
-import java.util.Set;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.ContentScanTask;
 import org.apache.iceberg.DataFile;
@@ -68,6 +67,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -103,7 +103,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
   @Override
   protected void execute(TableRuntime tableRuntime) {
     try {
-      ArcticTable arcticTable = loadTable(tableRuntime);
+      ArcticTable arcticTable = (ArcticTable) loadTable(tableRuntime).originalTable();
       if (!tableRuntime.getTableConfiguration().getExpiringDataConfig().isEnabled()) {
         return;
       }
