@@ -26,34 +26,26 @@ import java.io.Closeable;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * An interface SplitAssigner for {@link ArcticSplit}
- */
+/** An interface SplitAssigner for {@link ArcticSplit} */
 public interface SplitAssigner extends Closeable {
 
-  default void open() {
-  }
+  default void open() {}
 
   Split getNext();
 
   Split getNext(int subtaskId);
 
-  /**
-   * Add new splits discovered by enumerator
-   */
+  /** Add new splits discovered by enumerator */
   void onDiscoveredSplits(Collection<ArcticSplit> splits);
 
-  /**
-   * Forward addSplitsBack event (for failed reader) to assigner
-   */
+  /** Forward addSplitsBack event (for failed reader) to assigner */
   void onUnassignedSplits(Collection<ArcticSplit> splits);
 
   /**
-   * Some assigner (like event time alignment) may rack in-progress splits
-   * to advance watermark upon completed splits
+   * Some assigner (like event time alignment) may rack in-progress splits to advance watermark upon
+   * completed splits
    */
-  default void onCompletedSplits(Collection<String> completedSplitIds) {
-  }
+  default void onCompletedSplits(Collection<String> completedSplitIds) {}
 
   Collection<ArcticSplitState> state();
 

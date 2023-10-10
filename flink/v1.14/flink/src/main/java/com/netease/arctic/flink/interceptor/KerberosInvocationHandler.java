@@ -27,8 +27,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
 /**
- * Proxy for iceberg-flink class. To support kerberos.
- * Using jdk proxy can surrogate an instance which already exists.
+ * Proxy for iceberg-flink class. To support kerberos. Using jdk proxy can surrogate an instance
+ * which already exists.
  *
  * @param <T> proxy class type
  */
@@ -44,22 +44,24 @@ public class KerberosInvocationHandler<T> implements InvocationHandler, Serializ
 
   public Object getProxy(T obj) {
     this.obj = obj;
-    return Proxy.newProxyInstance(obj.getClass().getClassLoader(),
-        ReflectionUtil.getAllInterface(obj.getClass()), this);
+    return Proxy.newProxyInstance(
+        obj.getClass().getClassLoader(), ReflectionUtil.getAllInterface(obj.getClass()), this);
   }
 
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     Object res;
     try {
-      res = arcticFileIO.doAs(() -> {
-        try {
-          method.setAccessible(true);
-          return method.invoke(obj, args);
-        } catch (Throwable e) {
-          throw new RuntimeException(e);
-        }
-      });
+      res =
+          arcticFileIO.doAs(
+              () -> {
+                try {
+                  method.setAccessible(true);
+                  return method.invoke(obj, args);
+                } catch (Throwable e) {
+                  throw new RuntimeException(e);
+                }
+              });
     } catch (RuntimeException e) {
       throw e.getCause();
     }

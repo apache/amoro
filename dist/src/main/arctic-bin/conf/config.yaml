@@ -91,16 +91,21 @@ ams:
 
 containers:
   - name: localContainer
-    container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer
+    container-impl: com.netease.arctic.optimizer.container.LocalOptimizerContainer
     properties:
       export.JAVA_HOME: "/opt/java"   # JDK environment
 
 #containers:
 #  - name: flinkContainer
-#    container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
+#    container-impl: com.netease.arctic.optimizer.container.FlinkOptimizerContainer
 #    properties:
 #      flink-home: "/opt/flink/"                                     # Flink install home
+#      target: "yarn-per-job"                                        # Flink run target, (yarn-per-job, yarn-application, kubernetes-application)
 #      export.JVM_ARGS: "-Djava.security.krb5.conf=/opt/krb5.conf"   # Flink launch jvm args, like kerberos config when ues kerberos
 #      export.HADOOP_CONF_DIR: "/etc/hadoop/conf/"                   # Hadoop config dir
 #      export.HADOOP_USER_NAME: "hadoop"                             # Hadoop user submit on yarn
-#      export.FLINK_CONF_DIR: "/etc/hadoop/conf/"                    # Flink config dir
+#      export.FLINK_CONF_DIR: "/opt/flink/conf/"                     # Flink config dir
+#      # flink kubernetes application properties.
+#      job-uri: "local:///opt/flink/usrlib/OptimizeJob.jar"          # optimizer job main jor for application mode
+#      flink-conf.kubernetes.container.image: "arctic163/optimizer-flink1.14"   #optimizer image ref
+#      flink-conf.kubernetes.service-account="flink"                 # service account to manager application job.

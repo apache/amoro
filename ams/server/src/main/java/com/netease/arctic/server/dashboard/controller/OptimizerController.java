@@ -176,7 +176,7 @@ public class OptimizerController {
         .stream()
         .filter(e -> resourceId.equals(e.getResourceId()))
         .collect(Collectors.toList());
-    Preconditions.checkState(optimizerInstances.size() > 0, String.format("The resource ID %s has not been indexed" +
+    Preconditions.checkState(!optimizerInstances.isEmpty(), String.format("The resource ID %s has not been indexed" +
         " to any optimizer.", resourceId));
     Resource resource = optimizerManager.getResource(resourceId);
     resource.getProperties().putAll(optimizerInstances.get(0).getProperties());

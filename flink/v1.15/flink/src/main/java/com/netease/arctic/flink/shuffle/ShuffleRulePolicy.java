@@ -27,9 +27,7 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Policy for shuffle a streamRecord by primary keys
- */
+/** Policy for shuffle a streamRecord by primary keys */
 public interface ShuffleRulePolicy<IN, KEY> extends Serializable {
 
   /**
@@ -54,9 +52,7 @@ public interface ShuffleRulePolicy<IN, KEY> extends Serializable {
   DistributionHashMode getPolicyType();
 
   /**
-   * Get factor sequence and writer subtask id mapping relationship
-   * Key：subtask id
-   * Value：treeNodes
+   * Get factor sequence and writer subtask id mapping relationship Key：subtask id Value：treeNodes
    *
    * @return
    */

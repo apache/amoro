@@ -18,20 +18,19 @@
 
 package com.netease.arctic.flink.util;
 
+import static com.netease.arctic.flink.util.ReflectionUtil.getField;
+
 import org.apache.flink.api.connector.source.ReaderOutput;
 import org.apache.flink.streaming.api.operators.source.ProgressiveTimestampsAndWatermarks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import static com.netease.arctic.flink.util.ReflectionUtil.getField;
-
-/**
- * A util class to handle the reflection operation of Flink class.
- */
+/** A util class to handle the reflection operation of Flink class. */
 public class FlinkClassReflectionUtil {
 
   public static final Logger LOG = LoggerFactory.getLogger(FlinkClassReflectionUtil.class);
@@ -43,7 +42,8 @@ public class FlinkClassReflectionUtil {
     try {
       return getField(
           (Class<ReaderOutput>) ProgressiveTimestampsAndWatermarks.class.getDeclaredClasses()[2],
-          readerOutput, "splitLocalOutputs");
+          readerOutput,
+          "splitLocalOutputs");
     } catch (Exception e) {
       LOG.warn("extract internal watermark error", e);
     }
@@ -55,13 +55,13 @@ public class FlinkClassReflectionUtil {
       return;
     }
     try {
-      Method method = ProgressiveTimestampsAndWatermarks.class.getDeclaredClasses()[1]
-          .getDeclaredMethod("emitPeriodicWatermark");
+      Method method =
+          ProgressiveTimestampsAndWatermarks.class.getDeclaredClasses()[1].getDeclaredMethod(
+              "emitPeriodicWatermark");
       method.setAccessible(true);
       method.invoke(splitLocalOutput);
     } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
       LOG.warn("no method found", e);
     }
   }
-
 }

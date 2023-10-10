@@ -18,6 +18,10 @@
 
 package com.netease.arctic.flink.lookup.filter;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.netease.arctic.flink.util.DateTimeUtils;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.catalog.Column;
@@ -41,13 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-/**
- * Test for {@link RowDataPredicate}.
- */
+/** Test for {@link RowDataPredicate}. */
 public class TestRowDataPredicateAllFieldTypes extends TestRowDataPredicateBase {
   protected RowDataPredicateExpressionVisitor visitor;
   protected final Map<String, Integer> fieldIndexMap = new HashMap<>();
@@ -138,10 +136,12 @@ public class TestRowDataPredicateAllFieldTypes extends TestRowDataPredicateBase 
     List<ResolvedExpression> resolved = resolveSQLFilterToExpression(equalExpr, schema);
     assertEquals(1, resolved.size());
     RowDataPredicate predicate = resolved.get(0).accept(visitor).get();
-    assertTrue(predicate.test(generateRowData(
-        "f6", DecimalData.fromBigDecimal(BigDecimal.valueOf(1.1d), 38, 1))));
-    assertFalse(predicate.test(generateRowData(
-        "f6", DecimalData.fromBigDecimal(BigDecimal.valueOf(1.2d), 38, 1))));
+    assertTrue(
+        predicate.test(
+            generateRowData("f6", DecimalData.fromBigDecimal(BigDecimal.valueOf(1.1d), 38, 1))));
+    assertFalse(
+        predicate.test(
+            generateRowData("f6", DecimalData.fromBigDecimal(BigDecimal.valueOf(1.2d), 38, 1))));
   }
 
   //    @Test
@@ -200,10 +200,14 @@ public class TestRowDataPredicateAllFieldTypes extends TestRowDataPredicateBase 
     List<ResolvedExpression> resolved = resolveSQLFilterToExpression(equalExpr, schema);
     assertEquals(1, resolved.size());
     RowDataPredicate predicate = resolved.get(0).accept(visitor).get();
-    assertTrue(predicate.test(generateRowData(
-        "f14", TimestampData.fromTimestamp(Timestamp.valueOf("2020-01-01 00:00:00")))));
-    assertFalse(predicate.test(generateRowData(
-        "f14", TimestampData.fromTimestamp(Timestamp.valueOf("2020-01-01 00:00:01")))));
+    assertTrue(
+        predicate.test(
+            generateRowData(
+                "f14", TimestampData.fromTimestamp(Timestamp.valueOf("2020-01-01 00:00:00")))));
+    assertFalse(
+        predicate.test(
+            generateRowData(
+                "f14", TimestampData.fromTimestamp(Timestamp.valueOf("2020-01-01 00:00:01")))));
   }
 
   //  @Test
@@ -213,14 +217,11 @@ public class TestRowDataPredicateAllFieldTypes extends TestRowDataPredicateBase 
     assertEquals(1, resolved.size());
     RowDataPredicate predicate = resolved.get(0).accept(visitor).get();
     String format = "yyyy-MM-dd";
-    String current = DateTimeUtils.formatUnixTimestamp(
-        System.currentTimeMillis() / 1000,
-        format,
-        TimeZone.getDefault());
-    assertTrue(predicate.test(generateRowData(
-        "f1", StringData.fromString(current))));
-    assertFalse(predicate.test(generateRowData(
-        "f1", StringData.fromString("2020-01-01-01"))));
+    String current =
+        DateTimeUtils.formatUnixTimestamp(
+            System.currentTimeMillis() / 1000, format, TimeZone.getDefault());
+    assertTrue(predicate.test(generateRowData("f1", StringData.fromString(current))));
+    assertFalse(predicate.test(generateRowData("f1", StringData.fromString("2020-01-01-01"))));
   }
 
   //  @Test
@@ -230,14 +231,11 @@ public class TestRowDataPredicateAllFieldTypes extends TestRowDataPredicateBase 
     assertEquals(1, resolved.size());
     RowDataPredicate predicate = resolved.get(0).accept(visitor).get();
     String format = "yyyy-MM-dd";
-    String current = DateTimeUtils.formatUnixTimestamp(
-        System.currentTimeMillis() / 1000 - 3 * 3600,
-        format,
-        TimeZone.getDefault());
-    assertTrue(predicate.test(generateRowData(
-        "f1", StringData.fromString(current))));
-    assertFalse(predicate.test(generateRowData(
-        "f1", StringData.fromString("2020-01-01-01"))));
+    String current =
+        DateTimeUtils.formatUnixTimestamp(
+            System.currentTimeMillis() / 1000 - 3 * 3600, format, TimeZone.getDefault());
+    assertTrue(predicate.test(generateRowData("f1", StringData.fromString(current))));
+    assertFalse(predicate.test(generateRowData("f1", StringData.fromString("2020-01-01-01"))));
   }
 
   @Test

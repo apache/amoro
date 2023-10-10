@@ -19,6 +19,8 @@
 
 package com.netease.arctic.flink.read.hybrid.reader;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SOURCE_READER_FETCH_BATCH_RECORD_COUNT;
+
 import com.netease.arctic.flink.read.source.DataIterator;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
@@ -30,11 +32,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import java.io.IOException;
 import java.util.NoSuchElementException;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SOURCE_READER_FETCH_BATCH_RECORD_COUNT;
-
-/**
- * This implementation stores record batch in array from recyclable pool
- */
+/** This implementation stores record batch in array from recyclable pool */
 class ArrayPoolDataIteratorBatcher<T> implements DataIteratorBatcher<T> {
   private final int batchSize;
   private final int handoverQueueSize;
@@ -69,7 +67,8 @@ class ArrayPoolDataIteratorBatcher<T> implements DataIteratorBatcher<T> {
     return poolOfBatches;
   }
 
-  private class ArrayPoolBatchIterator implements CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> {
+  private class ArrayPoolBatchIterator
+      implements CloseableIterator<RecordsWithSplitIds<ArcticRecordWithOffset<T>>> {
 
     private final String splitId;
     private final DataIterator<T> inputIterator;
@@ -97,7 +96,8 @@ class ArrayPoolDataIteratorBatcher<T> implements DataIteratorBatcher<T> {
 
       RecordPosition[] positions = initPositionArray();
       while (inputIterator.hasNext() && recordCount < batchSize) {
-        // The record produced by inputIterator can be reused like for the ArcticRecordWithOffset case.
+        // The record produced by inputIterator can be reused like for the ArcticRecordWithOffset
+        // case.
         // inputIterator.next() can't be called again until the copy is made
         // since the record is not consumed immediately.
         T nextRecord = inputIterator.next();

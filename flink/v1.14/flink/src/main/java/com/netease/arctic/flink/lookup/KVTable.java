@@ -27,14 +27,12 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * The KVTable interface is used for lookup join in Arctic on Flink.
- * It includes methods for initializing and updating the lookup table,
- * as well as getting results by key and cleaning up the cache.
+ * The KVTable interface is used for lookup join in Arctic on Flink. It includes methods for
+ * initializing and updating the lookup table, as well as getting results by key and cleaning up the
+ * cache.
  */
 public interface KVTable<T> extends Serializable, Closeable {
-  /**
-   * Initialize the lookup table
-   */
+  /** Initialize the lookup table */
   void open();
 
   /**
@@ -52,34 +50,31 @@ public interface KVTable<T> extends Serializable, Closeable {
   void upsert(Iterator<T> dataStream) throws IOException;
 
   /**
-   * Initial the {@link  KVTable} by the MoR dataStream.
+   * Initial the {@link KVTable} by the MoR dataStream.
    *
    * @param dataStream the data stream for loading into the {@link KVTable}.
    * @throws IOException Serialize the rowData failed.
    */
   void initialize(Iterator<T> dataStream) throws IOException;
 
-  /**
-   * @return if the rowData is filtered, return true.
-   */
+  /** @return if the rowData is filtered, return true. */
   boolean filter(T value);
 
-  /**
-   * @return if initialization is completed, return true.
-   */
+  /** @return if initialization is completed, return true. */
   boolean initialized();
 
   /**
-   * Waiting for the initialization completed, and enable auto compaction at the end of the initialization.
+   * Waiting for the initialization completed, and enable auto compaction at the end of the
+   * initialization.
    */
   void waitInitializationCompleted();
 
   /**
    * Try to clean up the cache manually, due to the lookup_cache.ttl-after-write configuration.
-   * <p>lookup_cache.ttl-after-writ</p> Only works in SecondaryIndexTable.
+   *
+   * <p>lookup_cache.ttl-after-writ Only works in SecondaryIndexTable.
    */
-  default void cleanUp() {
-  }
+  default void cleanUp() {}
 
   void close();
 }

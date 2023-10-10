@@ -19,6 +19,7 @@
 
 package org.apache.iceberg.parquet;
 
+import com.netease.arctic.hive.utils.TimeUtil;
 import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
@@ -34,7 +35,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -103,7 +103,7 @@ class AdaptHiveParquetConversions {
           // local time zone
           instant = LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toInstant(ZoneOffset.UTC);
         }
-        return ChronoUnit.MICROS.between(EPOCH, instant);
+        return TimeUtil.microsBetween(EPOCH, instant);
       };
     }
 

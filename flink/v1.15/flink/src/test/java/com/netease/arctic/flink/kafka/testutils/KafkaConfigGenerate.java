@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.kafka.testutils;
 
+import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
+import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
+
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
@@ -27,16 +30,11 @@ import org.apache.kafka.common.serialization.StringSerializer;
 
 import java.util.Properties;
 
-import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
-import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
-
 public interface KafkaConfigGenerate {
 
   static Properties getProperties() {
     Properties properties = new Properties();
-    properties.put(
-        BOOTSTRAP_SERVERS_CONFIG,
-        KAFKA_CONTAINER.getBootstrapServers());
+    properties.put(BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
     properties.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");
     properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
     properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -55,9 +53,7 @@ public interface KafkaConfigGenerate {
 
   static Properties getPropertiesWithByteArray() {
     Properties properties = new Properties();
-    properties.put(
-        BOOTSTRAP_SERVERS_CONFIG,
-        KAFKA_CONTAINER.getBootstrapServers());
+    properties.put(BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
     properties.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");
     properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
     properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
@@ -71,6 +67,14 @@ public interface KafkaConfigGenerate {
     properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
     properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
     properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
+    return properties;
+  }
+
+  static Properties getStandardProperties(Properties properties) {
+    properties.put(ConsumerConfig.GROUP_ID_CONFIG, "arctic-tests");
+    properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+    properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"); // read from the beginning.
+    properties.put("max.partition.fetch.bytes", "256");
     return properties;
   }
 }

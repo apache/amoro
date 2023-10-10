@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.lookup.filter;
 
+import static org.apache.flink.table.types.logical.utils.LogicalTypeChecks.getPrecision;
+
 import com.google.common.collect.Iterables;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.DataType;
@@ -31,14 +33,12 @@ import java.util.Arrays;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static org.apache.flink.table.types.logical.utils.LogicalTypeChecks.getPrecision;
-
 /**
  * A predicate to be used in a filter operation on a {@link RowData} object. It can be constructed
  * from various comparison operators on a field or from boolean operators with other predicates.
- * <p>
- * The {@code test} method will apply the predicate to a {@link RowData} object, returning true if the
- * predicate is satisfied by the given data.
+ *
+ * <p>The {@code test} method will apply the predicate to a {@link RowData} object, returning true
+ * if the predicate is satisfied by the given data.
  */
 public class RowDataPredicate implements Predicate<RowData>, Serializable {
   private static final long serialVersionUID = 1L;
@@ -50,9 +50,7 @@ public class RowDataPredicate implements Predicate<RowData>, Serializable {
   private final RowDataPredicate[] leftPredicates;
   private final RowDataPredicate[] rightPredicates;
 
-  /**
-   * Constructor used for testing purposes.
-   */
+  /** Constructor used for testing purposes. */
   public RowDataPredicate(
       Opt opt,
       String fieldName,
@@ -71,32 +69,25 @@ public class RowDataPredicate implements Predicate<RowData>, Serializable {
   }
 
   /**
-   * Constructor for logical operation, when left and right side of the operation is not a simple comparison.
+   * Constructor for logical operation, when left and right side of the operation is not a simple
+   * comparison.
    */
   public RowDataPredicate(
-      Opt opt,
-      RowDataPredicate[] leftPredicates,
-      RowDataPredicate[] rightPredicates) {
+      Opt opt, RowDataPredicate[] leftPredicates, RowDataPredicate[] rightPredicates) {
     this(opt, null, -1, null, null, leftPredicates, rightPredicates);
   }
 
-  /**
-   * Constructor for simple comparison operator.
-   */
+  /** Constructor for simple comparison operator. */
   public RowDataPredicate(String fieldName, int fieldIndex, DataType dataType) {
     this(null, fieldName, fieldIndex, dataType, null, null, null);
   }
 
-  /**
-   * Constructor for comparing value to a fixed value or NULL value.
-   */
+  /** Constructor for comparing value to a fixed value or NULL value. */
   public RowDataPredicate(Serializable[] parameters) {
     this(null, null, -1, null, parameters, null, null);
   }
 
-  /**
-   * Test if the RowData record satisfies this predicate.
-   */
+  /** Test if the RowData record satisfies this predicate. */
   @Override
   public boolean test(RowData rowData) {
     boolean result;
@@ -167,7 +158,7 @@ public class RowDataPredicate implements Predicate<RowData>, Serializable {
    * Combines this RowDataPredicate with another using the specified operator.
    *
    * @param operator the operator to use for the combination
-   * @param that     the other RowDataPredicate to combine with this one
+   * @param that the other RowDataPredicate to combine with this one
    * @return the combined RowDataPredicate
    */
   public RowDataPredicate combine(Opt operator, RowDataPredicate that) {
@@ -257,9 +248,7 @@ public class RowDataPredicate implements Predicate<RowData>, Serializable {
         return rowData.getTimestamp(pos, timestampPrecision).getMillisecond();
       default:
         throw new IllegalArgumentException(
-            String.format(
-                "Not supported datatype: %s, field: %s",
-                dataType, fieldName));
+            String.format("Not supported datatype: %s, field: %s", dataType, fieldName));
     }
   }
 
@@ -267,8 +256,7 @@ public class RowDataPredicate implements Predicate<RowData>, Serializable {
     if (v1 instanceof Comparable) {
       return ((Comparable<Object>) v1).compareTo(v2);
     } else {
-      throw new RuntimeException(
-          String.format("Unsupported type: %s, val: %s", type, v1));
+      throw new RuntimeException(String.format("Unsupported type: %s, val: %s", type, v1));
     }
   }
 
@@ -280,16 +268,22 @@ public class RowDataPredicate implements Predicate<RowData>, Serializable {
         .add("\n\tfieldIndex", fieldIndex)
         .add("\n\tdataType", dataType)
         .add("\n\tparameters", parameters)
-        .add("\n\tleftPredicates",
-            leftPredicates == null ? "[]" :
-                Iterables.toString(Arrays.stream(leftPredicates)
-                    .map(predicate -> predicate.toString().replaceAll("\n", "\n\t"))
-                    .collect(Collectors.toList())))
-        .add("\n\trightPredicates",
-            rightPredicates == null ? "[]" :
-                Iterables.toString(Arrays.stream(rightPredicates)
-                    .map(predicate -> predicate.toString().replaceAll("\n", "\n\t"))
-                    .collect(Collectors.toList())))
+        .add(
+            "\n\tleftPredicates",
+            leftPredicates == null
+                ? "[]"
+                : Iterables.toString(
+                    Arrays.stream(leftPredicates)
+                        .map(predicate -> predicate.toString().replaceAll("\n", "\n\t"))
+                        .collect(Collectors.toList())))
+        .add(
+            "\n\trightPredicates",
+            rightPredicates == null
+                ? "[]"
+                : Iterables.toString(
+                    Arrays.stream(rightPredicates)
+                        .map(predicate -> predicate.toString().replaceAll("\n", "\n\t"))
+                        .collect(Collectors.toList())))
         .toString();
   }
 

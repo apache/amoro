@@ -23,9 +23,7 @@ import org.apache.flink.api.connector.source.SourceSplit;
 
 import java.io.Serializable;
 
-/**
- * An abstract arctic source split.
- */
+/** An abstract arctic source split. */
 public abstract class ArcticSplit implements SourceSplit, Serializable, Comparable<ArcticSplit> {
   private static final long serialVersionUID = 1L;
 
@@ -39,16 +37,12 @@ public abstract class ArcticSplit implements SourceSplit, Serializable, Comparab
     throw new UnsupportedOperationException("This operation is not supported right now.");
   }
 
-  /**
-   * Checks whether this split is a snapshot split.
-   */
+  /** Checks whether this split is a snapshot split. */
   public final boolean isSnapshotSplit() {
     return getClass() == SnapshotSplit.class;
   }
 
-  /**
-   * Checks whether this split is a changelog split.
-   */
+  /** Checks whether this split is a changelog split. */
   public final boolean isChangelogSplit() {
     return getClass() == ChangelogSplit.class;
   }
@@ -57,16 +51,12 @@ public abstract class ArcticSplit implements SourceSplit, Serializable, Comparab
     return getClass() == MergeOnReadSplit.class;
   }
 
-  /**
-   * Casts this split into a {@link SnapshotSplit}.
-   */
+  /** Casts this split into a {@link SnapshotSplit}. */
   public final SnapshotSplit asSnapshotSplit() {
     return (SnapshotSplit) this;
   }
 
-  /**
-   * Casts this split into a {@link ChangelogSplit}.
-   */
+  /** Casts this split into a {@link ChangelogSplit}. */
   public final ChangelogSplit asChangelogSplit() {
     return (ChangelogSplit) this;
   }
@@ -76,10 +66,10 @@ public abstract class ArcticSplit implements SourceSplit, Serializable, Comparab
   }
 
   /**
-   * update split current file offset and record offset
-   * if this split is {@link SnapshotSplit} recordOffsets means [insertFileOffset, insertRecordOffset]
-   * if this split is {@link ChangelogSplit} recordOffsets means [insertFileOffset, insertRecordOffset,
-   * deleteFileOffset, deleteRecordOffset, ]
+   * update split current file offset and record offset if this split is {@link SnapshotSplit}
+   * recordOffsets means [insertFileOffset, insertRecordOffset] if this split is {@link
+   * ChangelogSplit} recordOffsets means [insertFileOffset, insertRecordOffset, deleteFileOffset,
+   * deleteRecordOffset, ]
    *
    * @param recordOffsets [insertFileOffset, insertRecordOffset]
    */
@@ -91,5 +81,4 @@ public abstract class ArcticSplit implements SourceSplit, Serializable, Comparab
   }
 
   public abstract ArcticSplit copy();
-
 }

@@ -25,9 +25,7 @@ import net.sf.cglib.proxy.MethodProxy;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 
-/**
- * Using cglib proxy to avoid proxy object having different class
- */
+/** Using cglib proxy to avoid proxy object having different class */
 public class KerberosInterceptor implements MethodInterceptor, Serializable {
 
   private static final long serialVersionUID = 1L;
@@ -38,20 +36,22 @@ public class KerberosInterceptor implements MethodInterceptor, Serializable {
   }
 
   @Override
-  public Object intercept(Object o, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+  public Object intercept(Object o, Method method, Object[] args, MethodProxy proxy)
+      throws Throwable {
     Object res;
     try {
-      res = arcticFileIO.doAs(() -> {
-        try {
-          return proxy.invokeSuper(o, args);
-        } catch (Throwable e) {
-          throw new RuntimeException(e);
-        }
-      });
+      res =
+          arcticFileIO.doAs(
+              () -> {
+                try {
+                  return proxy.invokeSuper(o, args);
+                } catch (Throwable e) {
+                  throw new RuntimeException(e);
+                }
+              });
     } catch (RuntimeException e) {
       throw e.getCause();
     }
     return res;
   }
-
 }

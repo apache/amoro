@@ -19,16 +19,15 @@
 
 <Configuration monitorInterval="10">
     <properties>
-        <property name="LOG_HOME">${sys:log.home}</property>
-        <property name="SUBDIR">${sys:log.subdir}</property>
+        <property name="LOG_DIR">${sys:log.home}</property>
     </properties>
 
     <Appenders>
         <!--*********************File Log***********************-->
         <!--Logs with a grade of debug-->
         <RollingFile name="debugFileAppender"
-                     fileName="${LOG_HOME}/${SUBDIR}/local_optimizer-debug.log"
-                     filePattern="${LOG_HOME}/${SUBDIR}/history/local_optimizer-debug-%i.log">
+                     fileName="${LOG_DIR}/optimizer-debug.log"
+                     filePattern="${LOG_DIR}/history/optimizer-debug-%i.log">
             <!--Set log format-->
             <PatternLayout>
                 <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
@@ -46,8 +45,8 @@
 
         <!--Logs with a grade of info-->
         <RollingFile name="infoFileAppender"
-                     fileName="${LOG_HOME}/${SUBDIR}/local_optimizer-info.log"
-                     filePattern="${LOG_HOME}/${SUBDIR}/history/local_optimizer-info-%d{yyyy-MM-dd}-%i.log.gz">
+                     fileName="${LOG_DIR}/optimizer-info.log"
+                     filePattern="${LOG_DIR}/history/optimizer-info-%d{yyyy-MM-dd}-%i.log.gz">
             <!--Set log format-->
             <PatternLayout>
                 <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
@@ -59,7 +58,7 @@
             <!--Set the maximum number of files in the log, the default is 7 if not set, it will be overwritten when
              it exceeds the size; depends on %i in filePattern-->
             <DefaultRolloverStrategy max="7">
-                <Delete basePath="${LOG_HOME}/${SUBDIR}/history" maxDepth="1">
+                <Delete basePath="${LOG_DIR}/history" maxDepth="1">
                     <IfFileName glob="*.log"/>
                     <IfLastModified age="7d"/>
                 </Delete>
@@ -68,8 +67,8 @@
 
         <!--Logs with a grade of warn and higher level-->
         <RollingFile name="errorFileAppender"
-                     fileName="${LOG_HOME}/${SUBDIR}/local_optimizer-error.log"
-                     filePattern="${LOG_HOME}/${SUBDIR}/history/local_optimizer-error-%i.log.gz">
+                     fileName="${LOG_DIR}/optimizer-error.log"
+                     filePattern="${LOG_DIR}/history/optimizer-error-%i.log.gz">
             <!--Set log format-->
             <PatternLayout>
                 <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
