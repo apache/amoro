@@ -22,7 +22,7 @@ ARG AMORO_VERSION=master-SNAPSHOT
 WORKDIR /usr/local
 ADD amoro-${AMORO_VERSION}-bin.zip /usr/local/amoro-${AMORO_VERSION}-bin.zip
 RUN unzip amoro-${AMORO_VERSION}-bin.zip \
-    && rm /usr/local/amoro-${AMORO_VERSION}/plugin/optimize -rf
+    && rm /usr/local/amoro-${AMORO_VERSION}/plugin/optimizer/flink -rf
 
 
 

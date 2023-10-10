@@ -24,6 +24,12 @@
     </properties>
 
     <Appenders>
+        <!--*********************Console Log***********************-->
+        <Console name="consoleAppender" target="SYSTEM_OUT">
+            <!--Set log format and color-->
+            <PatternLayout
+                    pattern="%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n"/>
+        </Console>
         <!--*********************File Log***********************-->
         <!--Logs with a grade of debug-->
         <RollingFile name="debugFileAppender"

@@ -28,8 +28,8 @@ FLINK_VERSION=1.15.3
 HADOOP_VERSION=2.10.2
 DEBIAN_MIRROR=http://deb.debian.org
 APACHE_ARCHIVE=https://archive.apache.org/dist
-OPTIMIZER_TARGET=${PROJECT_HOME}/ams/optimizer/target
-OPTIMIZER_JOB=${OPTIMIZER_TARGET}/amoro-ams-optimizer-${AMORO_VERSION}-jar-with-dependencies.jar
+OPTIMIZER_TARGET=${PROJECT_HOME}/ams/optimizer/flink-optimizer/target
+OPTIMIZER_JOB=${OPTIMIZER_TARGET}/flink-optimizer-${AMORO_VERSION}-jar-with-dependencies.jar
 AMORO_TAG=$AMORO_VERSION
 ALSO_MAKE=true
 
@@ -53,6 +53,7 @@ Options:
     --optimizer-job         Location of optimizer job
     --tag                   Tag for amoro/optimizer-flink/quickstart image.
     --also-make             Also make amoro when build quickdemo, if set to false, it will pull from hub or use exists dependency.
+    --dry-run               If this set to true, will not call 'docker build'
 EOF
 }
 
@@ -188,13 +189,13 @@ function build_optimizer_flink() {
     FLINK_OPTIMIZER_JOB=${OPTIMIZER_JOB}
 
     if [ ! -f "${FLINK_OPTIMIZER_JOB}" ]; then
-      BUILD_CMD="mvn clean package -pl ams/optimizer -am -e -DskipTests"
+      BUILD_CMD="mvn clean package -pl ams/optimizer/flink-optimizer -am -e -DskipTests"
       echo "flink optimizer job not exists in ${FLINK_OPTIMIZER_JOB}"
       echo "please check the file or run '${BUILD_CMD}' first. "
       exit  1
     fi
 
-    cp $FLINK_OPTIMIZER_JOB $CURRENT_DIR/optimizer-flink/OptimizeJob.jar
+    cp $FLINK_OPTIMIZER_JOB $CURRENT_DIR/optimizer-flink/optimizer-job.jar
     docker build -t ${IMAGE_REF}:${IMAGE_TAG} \
       --build-arg FLINK_VERSION=$FLINK_VERSION \
       optimizer-flink/.
