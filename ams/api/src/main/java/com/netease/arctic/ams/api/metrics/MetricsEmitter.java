@@ -18,37 +18,26 @@
 
 package com.netease.arctic.ams.api.metrics;
 
-import java.util.Map;
+import com.netease.arctic.ams.api.ActivePlugin;
 
 /**
  * This is an interface defining a reporter, which users can implement to notify metrics to a monitoring system.
  * The system calls the open method to initialize the reporter and the close method to shut it down when needed.
  * The report method is called to notify the reporter when a metric is generated.
  */
-public interface MetricReporter {
+public interface MetricsEmitter extends ActivePlugin {
 
   /**
-   * A custom MetricsReporter implementation must have a no-arg constructor, which will be called
-   * first. {@link MetricReporter#open(Map properties)} is called to complete the
-   * initialization.
-   *
-   * @param properties properties
+   * emit metrics to the monitoring system
+   * @param metrics {@link MetricsContent} to emit.
    */
-  default void open(Map<String, String> properties) {
-
-  }
+  void emit(MetricsContent<?> metrics);
 
   /**
-   * Indicates that an operation is done by reporting a {@link MetricReport}. A {@link
-   * MetricReport} is usually directly derived from a {@link MetricReport} instance.
-   *
-   * @param metricReport {@link MetricReport} to report.
+   * determine whether the emitter accepts the metrics according to
+   * {@link MetricsContent#type()} and {@link MetricsContent#name()}
+   * @param metrics metrics data
+   * @return true if the type and name is accepted by the emitter
    */
-  void report(MetricReport metricReport);
-
-  /**
-   * Indicates that an operation is done by reporting a {@link MetricReport}. A {@link
-   * MetricReport} is usually directly derived from a {@link MetricReport} instance.
-   */
-  void close();
+  boolean accept(MetricsContent<?> metrics);
 }
