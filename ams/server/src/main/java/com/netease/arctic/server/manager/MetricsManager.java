@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.Map;
@@ -42,9 +43,8 @@ public class MetricsManager extends ActivePluginManager<MetricsEmitter> {
   @Override
   protected Map<String, String> loadProperties(String pluginName) {
     try {
-      FileInputStream inputStream = new FileInputStream(configPath +
-          "/" + pluginName + ".yaml");
-      return new Yaml().load(inputStream);
+      return new Yaml().load(new FileInputStream(
+          new File(configPath, pluginName + ".yaml")));
     } catch (FileNotFoundException e) {
       throw new LoadingPluginException("Cannot load plugin " + pluginName, e);
     }
