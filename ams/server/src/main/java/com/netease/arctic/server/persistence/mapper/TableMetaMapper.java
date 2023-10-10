@@ -5,7 +5,7 @@ import com.netease.arctic.server.persistence.converter.Long2TsConverter;
 import com.netease.arctic.server.persistence.converter.Map2StringConverter;
 import com.netease.arctic.server.persistence.converter.MapLong2StringConverter;
 import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableMetadata;
+import com.netease.arctic.server.persistence.PersistentTableMeta;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import org.apache.ibatis.annotations.Delete;
@@ -68,7 +68,7 @@ public interface TableMetaMapper {
           typeHandler = Map2StringConverter.class),
       @Result(property = "metaVersion", column = "meta_version")
   })
-  List<TableMetadata> selectTableMetas();
+  List<PersistentTableMeta> selectTableMetas();
 
   @Select("SELECT table_identifier.table_id as table_id, table_identifier.catalog_name as catalog_name, " +
       "table_identifier.db_name as db_name, table_identifier.table_name as table_name, format, primary_key, " +
@@ -99,7 +99,7 @@ public interface TableMetaMapper {
           typeHandler = Map2StringConverter.class),
       @Result(property = "metaVersion", column = "meta_version")
   })
-  List<TableMetadata> selectTableMetasByDb(
+  List<PersistentTableMeta> selectTableMetasByDb(
       @Param("catalogName") String catalogName,
       @Param("database") String database);
 
@@ -127,7 +127,7 @@ public interface TableMetaMapper {
       " #{tableMeta.properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}," +
       " #{tableMeta.metaVersion}" +
       " )")
-  void insertTableMeta(@Param("tableMeta") TableMetadata tableMeta);
+  void insertTableMeta(@Param("tableMeta") PersistentTableMeta tableMeta);
 
   @Delete("DELETE FROM table_metadata WHERE table_id = #{tableId}")
   void deleteTableMetaById(@Param("tableId") long tableId);
@@ -136,7 +136,7 @@ public interface TableMetaMapper {
       " #{tableMeta.properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}," +
       " meta_version=meta_version + 1 " +
       " WHERE table_id = #{tableId} and meta_version = #{tableMeta.metaVersion} ")
-  int commitTableChange(@Param("tableId") long tableId, @Param("tableMeta") TableMetadata tableMeta);
+  int commitTableChange(@Param("tableId") long tableId, @Param("tableMeta") PersistentTableMeta tableMeta);
 
   @Select("SELECT table_id, table_name, db_name, catalog_name, format, primary_key, " +
       "table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, " +
@@ -164,7 +164,7 @@ public interface TableMetaMapper {
           typeHandler = Map2StringConverter.class),
       @Result(property = "metaVersion", column = "meta_version")
   })
-  TableMetadata selectTableMetaById(@Param("tableId") long tableId);
+  PersistentTableMeta selectTableMetaById(@Param("tableId") long tableId);
 
   @Select("SELECT table_identifier.table_id as table_id, table_identifier.catalog_name as catalog_name," +
       " table_identifier.db_name as db_name, table_identifier.table_name as table_name, format, primary_key," +
@@ -195,8 +195,8 @@ public interface TableMetaMapper {
           typeHandler = Map2StringConverter.class),
       @Result(property = "metaVersion", column = "meta_version")
   })
-  TableMetadata selectTableMetaByName(@Param("catalogName") String catalogName,
-                                      @Param("databaseName") String databaseName, @Param("tableName") String tableName);
+  PersistentTableMeta selectTableMetaByName(@Param("catalogName") String catalogName,
+                                            @Param("databaseName") String databaseName, @Param("tableName") String tableName);
 
   @Insert("INSERT INTO table_identifier(catalog_name, db_name, table_name) VALUES(" +
       " #{tableIdentifier.catalog}, #{tableIdentifier.database}, #{tableIdentifier.tableName})")

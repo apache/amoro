@@ -1,7 +1,26 @@
-package com.netease.arctic.server.iceberg;
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
+import com.netease.arctic.server.persistence.PersistentTableMeta;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import org.apache.iceberg.LocationProviders;
@@ -15,32 +34,30 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class InternalTableOperations extends PersistentBase implements TableOperations {
+public class IcebergTableOperations extends PersistentBase implements TableOperations {
 
   private final ServerTableIdentifier identifier;
 
   private TableMetadata current;
   private final FileIO io;
-  private com.netease.arctic.server.table.TableMetadata tableMetadata;
+  private PersistentTableMeta persistentTableMeta;
 
 
-  public static InternalTableOperations buildForLoad(
-      com.netease.arctic.server.table.TableMetadata tableMetadata,
-      FileIO io
-  ) {
-    return new InternalTableOperations(
-        tableMetadata.getTableIdentifier(),
-        tableMetadata,
+  public static IcebergTableOperations buildForLoad(
+      PersistentTableMeta persistentTableMeta,
+      FileIO io) {
+    return new IcebergTableOperations(
+        persistentTableMeta.getTableIdentifier(),
+        persistentTableMeta,
         io);
   }
 
-  public InternalTableOperations(
+  public IcebergTableOperations(
       ServerTableIdentifier identifier,
-      com.netease.arctic.server.table.TableMetadata tableMetadata,
-      FileIO io
-  ) {
+      PersistentTableMeta persistentTableMeta,
+      FileIO io) {
     this.io = io;
-    this.tableMetadata = tableMetadata;
+    this.persistentTableMeta = persistentTableMeta;
     this.identifier = identifier;
   }
 
@@ -55,13 +72,14 @@ public class InternalTableOperations extends PersistentBase implements TableOper
 
   @Override
   public TableMetadata refresh() {
-    if (this.tableMetadata == null) {
-      this.tableMetadata = getAs(TableMetaMapper.class, mapper -> mapper.selectTableMetaById(this.identifier.getId()));
+    if (this.persistentTableMeta == null) {
+      this.persistentTableMeta = getAs(TableMetaMapper.class,
+          mapper -> mapper.selectTableMetaById(this.identifier.getId()));
     }
-    if (this.tableMetadata == null) {
+    if (this.persistentTableMeta == null) {
       return null;
     }
-    this.current = IcebergTableUtil.loadIcebergTableMetadata(io, this.tableMetadata);
+    this.current = IcebergTableUtil.loadIcebergTableMetadata(io, this.persistentTableMeta);
     return this.current;
   }
 
@@ -80,13 +98,13 @@ public class InternalTableOperations extends PersistentBase implements TableOper
 
     try {
       IcebergTableUtil.commitTableInternal(
-          tableMetadata, base, metadata, newMetadataFileLocation, io);
-      com.netease.arctic.server.table.TableMetadata updatedMetadata = doCommit();
+          persistentTableMeta, base, metadata, newMetadataFileLocation, io);
+      PersistentTableMeta updatedMetadata = doCommit();
       IcebergTableUtil.checkCommitSuccess(updatedMetadata, newMetadataFileLocation);
     } catch (Exception e) {
       io.deleteFile(newMetadataFileLocation);
     } finally {
-      this.tableMetadata = null;
+      this.persistentTableMeta = null;
     }
     refresh();
   }
@@ -112,25 +130,25 @@ public class InternalTableOperations extends PersistentBase implements TableOper
     return TableOperations.super.temp(uncommittedMetadata);
   }
 
-  private com.netease.arctic.server.table.TableMetadata doCommit() {
-    ServerTableIdentifier tableIdentifier = tableMetadata.getTableIdentifier();
+  private PersistentTableMeta doCommit() {
+    ServerTableIdentifier tableIdentifier = persistentTableMeta.getTableIdentifier();
     AtomicInteger effectRows = new AtomicInteger();
-    AtomicReference<com.netease.arctic.server.table.TableMetadata> metadataRef = new AtomicReference<>();
+    AtomicReference<PersistentTableMeta> metadataRef = new AtomicReference<>();
     doAsTransaction(
         () -> {
           int effects = getAs(TableMetaMapper.class,
-              mapper -> mapper.commitTableChange(tableIdentifier.getId(), tableMetadata));
+              mapper -> mapper.commitTableChange(tableIdentifier.getId(), persistentTableMeta));
           effectRows.set(effects);
         },
         () -> {
-          com.netease.arctic.server.table.TableMetadata m = getAs(TableMetaMapper.class,
+          PersistentTableMeta m = getAs(TableMetaMapper.class,
               mapper -> mapper.selectTableMetaById(tableIdentifier.getId()));
           metadataRef.set(m);
         }
     );
     if (effectRows.get() == 0) {
       throw new CommitFailedException("commit failed for version: " +
-          tableMetadata.getMetaVersion() + " has been committed");
+          persistentTableMeta.getMetaVersion() + " has been committed");
     }
     return metadataRef.get();
   }

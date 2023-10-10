@@ -28,7 +28,7 @@ import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableMetadata;
+import com.netease.arctic.server.persistence.PersistentTableMeta;
 import com.netease.arctic.server.table.TableService;
 import org.apache.thrift.TException;
 
@@ -81,15 +81,15 @@ public class TableManagementService implements ArcticTableMetastore.Iface {
     }
     ServerTableIdentifier identifier = ServerTableIdentifier.of(tableMeta.getTableIdentifier());
     CatalogMeta catalogMeta = getCatalog(identifier.getCatalog());
-    TableMetadata tableMetadata = new TableMetadata(identifier, tableMeta, catalogMeta);
-    tableService.createTable(tableMeta.tableIdentifier.getCatalog(), tableMetadata);
+    PersistentTableMeta persistentTableMeta = new PersistentTableMeta(identifier, tableMeta, catalogMeta);
+    tableService.createTable(tableMeta.tableIdentifier.getCatalog(), persistentTableMeta);
   }
 
   @Override
   public List<TableMeta> listTables(String catalogName, String database) {
-    List<TableMetadata> tableMetadataList = tableService.listTableMetas(catalogName, database);
-    return tableMetadataList.stream()
-            .map(TableMetadata::buildTableMeta)
+    List<PersistentTableMeta> persistentTableMetaList = tableService.listTableMetas(catalogName, database);
+    return persistentTableMetaList.stream()
+            .map(PersistentTableMeta::buildTableMeta)
             .collect(Collectors.toList());
   }
 

@@ -28,6 +28,7 @@ import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.table.BasicTableSnapshot;
 import com.netease.arctic.server.table.KeyedTableSnapshot;
+import com.netease.arctic.server.persistence.PersistentTableMeta;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableSnapshot;
@@ -183,7 +184,7 @@ public class IcebergTableUtil {
    * @return iceberg table metadata object
    */
   public static TableMetadata loadIcebergTableMetadata(
-      FileIO io, com.netease.arctic.server.table.TableMetadata tableMeta) {
+      FileIO io, PersistentTableMeta tableMeta) {
     String metadataFileLocation = tableMeta.getProperties().get(PROPERTIES_METADATA_LOCATION);
     if (StringUtils.isBlank(metadataFileLocation)) {
       return null;
@@ -252,7 +253,7 @@ public class IcebergTableUtil {
    * @param io                   - iceberg table file io
    * @return AMS table metadata object
    */
-  public static com.netease.arctic.server.table.TableMetadata createTableInternal(
+  public static PersistentTableMeta createTableInternal(
       ServerTableIdentifier identifier,
       CatalogMeta catalogMeta,
       TableMetadata icebergTableMetadata,
@@ -268,7 +269,7 @@ public class IcebergTableUtil {
 
     meta.setFormat(TableFormat.ICEBERG.name());
     meta.putToProperties(PROPERTIES_METADATA_LOCATION, metadataFileLocation);
-    return new com.netease.arctic.server.table.TableMetadata(
+    return new PersistentTableMeta(
         identifier, meta, catalogMeta);
   }
 
@@ -295,14 +296,14 @@ public class IcebergTableUtil {
   /**
    * write iceberg table metadata and apply changes to AMS tableMetadata to commit.
    *
-   * @param amsTableMetadata         ams table metadata
+   * @param persistentTableMeta         ams table metadata
    * @param baseIcebergTableMetadata base iceberg table metadata
    * @param icebergTableMetadata     iceberg table metadata to commit
    * @param newMetadataFileLocation  new metadata file location
    * @param io                       iceberg file io
    */
   public static void commitTableInternal(
-      com.netease.arctic.server.table.TableMetadata amsTableMetadata,
+      PersistentTableMeta persistentTableMeta,
       TableMetadata baseIcebergTableMetadata,
       TableMetadata icebergTableMetadata,
       String newMetadataFileLocation,
@@ -314,16 +315,16 @@ public class IcebergTableUtil {
     OutputFile outputFile = io.newOutputFile(newMetadataFileLocation);
     TableMetadataParser.overwrite(icebergTableMetadata, outputFile);
 
-    Map<String, String> properties = amsTableMetadata.getProperties();
+    Map<String, String> properties = persistentTableMeta.getProperties();
     properties.put(PROPERTIES_PREV_METADATA_LOCATION, baseIcebergTableMetadata.metadataFileLocation());
     properties.put(PROPERTIES_METADATA_LOCATION, newMetadataFileLocation);
-    amsTableMetadata.setProperties(properties);
+    persistentTableMeta.setProperties(properties);
   }
 
   public static void checkCommitSuccess(
-      com.netease.arctic.server.table.TableMetadata updatedTableMetadata,
+      PersistentTableMeta updatedPersistentTableMeta,
       String metadataFileLocation) {
-    String metaLocationInDatabase = updatedTableMetadata.getProperties().get(PROPERTIES_METADATA_LOCATION);
+    String metaLocationInDatabase = updatedPersistentTableMeta.getProperties().get(PROPERTIES_METADATA_LOCATION);
     if (!Objects.equals(metaLocationInDatabase, metadataFileLocation)) {
       throw new CommitFailedException(
           "commit conflict, some other commit happened during this commit. ");

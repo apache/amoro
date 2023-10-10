@@ -6,9 +6,8 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOAdapter;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.IcebergRestCatalogService;
-import com.netease.arctic.server.iceberg.InternalTableOperations;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
-import com.netease.arctic.server.table.TableMetadata;
+import com.netease.arctic.server.persistence.PersistentTableMeta;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -55,14 +54,14 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
 
   @Override
   public ArcticTable loadTable(String database, String tableName) {
-    TableMetadata tableMetadata = getAs(TableMetaMapper.class, mapper ->
+    PersistentTableMeta persistentTableMeta = getAs(TableMetaMapper.class, mapper ->
         mapper.selectTableMetaByName(getMetadata().getCatalogName(), database, tableName));
-    if (tableMetadata == null) {
+    if (persistentTableMeta == null) {
       return null;
     }
     FileIO io = IcebergTableUtil.newIcebergFileIo(getMetadata());
     ArcticFileIO fileIO = new ArcticFileIOAdapter(io);
-    TableOperations ops = InternalTableOperations.buildForLoad(tableMetadata, io);
+    TableOperations ops = IcebergTableOperations.buildForLoad(persistentTableMeta, io);
     BaseTable table = new BaseTable(ops, TableIdentifier.of(database, tableName).toString());
     return new IcebergCatalogWrapper.BasicIcebergTable(
         com.netease.arctic.table.TableIdentifier.of(name(), database, tableName),

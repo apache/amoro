@@ -32,6 +32,7 @@ import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.BlockerConflictException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
+import com.netease.arctic.server.persistence.PersistentTableMeta;
 import com.netease.arctic.table.blocker.RenewableBlocker;
 import org.junit.Assert;
 import org.junit.Test;
@@ -78,13 +79,13 @@ public class TestTableService extends AMSTableTestBase {
     Assert.assertEquals(tableMeta().getTableIdentifier(), tableIdentifierList.get(0));
 
     // test list table metadata
-    List<TableMetadata> tableMetadataList = tableService().listTableMetas();
-    Assert.assertEquals(1, tableMetadataList.size());
-    Assert.assertEquals(tableMeta(), tableMetadataList.get(0).buildTableMeta());
+    List<PersistentTableMeta> persistentTableMetaList = tableService().listTableMetas();
+    Assert.assertEquals(1, persistentTableMetaList.size());
+    Assert.assertEquals(tableMeta(), persistentTableMetaList.get(0).buildTableMeta());
 
-    tableMetadataList = tableService().listTableMetas(TEST_CATALOG_NAME, TEST_DB_NAME);
-    Assert.assertEquals(1, tableMetadataList.size());
-    Assert.assertEquals(tableMeta(), tableMetadataList.get(0).buildTableMeta());
+    persistentTableMetaList = tableService().listTableMetas(TEST_CATALOG_NAME, TEST_DB_NAME);
+    Assert.assertEquals(1, persistentTableMetaList.size());
+    Assert.assertEquals(tableMeta(), persistentTableMetaList.get(0).buildTableMeta());
 
     // test table exist
     Assert.assertTrue(tableService().tableExist(tableMeta().getTableIdentifier()));
@@ -96,14 +97,14 @@ public class TestTableService extends AMSTableTestBase {
 
     // test create table with wrong catalog name
     Assert.assertThrows(ObjectNotExistsException.class, () -> {
-      TableMetadata copyMetadata = new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
+      PersistentTableMeta copyMetadata = new PersistentTableMeta(serverTableIdentifier(), tableMeta(), catalogMeta());
       copyMetadata.getTableIdentifier().setCatalog("unknown");
       tableService().createTable(TEST_CATALOG_NAME, copyMetadata);
     });
 
     // test create table in not existed catalog
     Assert.assertThrows(ObjectNotExistsException.class, () -> {
-      TableMetadata copyMetadata = new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
+      PersistentTableMeta copyMetadata = new PersistentTableMeta(serverTableIdentifier(), tableMeta(), catalogMeta());
       copyMetadata.getTableIdentifier().setCatalog("unknown");
       tableService().createTable("unknown", copyMetadata);
     });
@@ -113,7 +114,7 @@ public class TestTableService extends AMSTableTestBase {
       Assert.assertThrows(
           ObjectNotExistsException.class,
           () -> {
-            TableMetadata copyMetadata = new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
+            PersistentTableMeta copyMetadata = new PersistentTableMeta(serverTableIdentifier(), tableMeta(), catalogMeta());
             copyMetadata.getTableIdentifier().setDatabase("unknown");
             tableService().createTable(TEST_CATALOG_NAME, copyMetadata);
           });

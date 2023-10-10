@@ -9,7 +9,7 @@ import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
 import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.table.TableMetadata;
+import com.netease.arctic.server.persistence.PersistentTableMeta;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -79,12 +79,12 @@ public abstract class InternalCatalog extends ServerCatalog {
         .collect(Collectors.toList());
   }
 
-  public ServerTableIdentifier createTable(TableMetadata tableMetadata) {
-    validateTableIdentifier(tableMetadata.getTableIdentifier().getIdentifier());
-    ServerTableIdentifier tableIdentifier = tableMetadata.getTableIdentifier();
+  public ServerTableIdentifier createTable(PersistentTableMeta persistentTableMeta) {
+    validateTableIdentifier(persistentTableMeta.getTableIdentifier().getIdentifier());
+    ServerTableIdentifier tableIdentifier = persistentTableMeta.getTableIdentifier();
     doAsTransaction(
         () -> doAs(TableMetaMapper.class, mapper -> mapper.insertTable(tableIdentifier)),
-        () -> doAs(TableMetaMapper.class, mapper -> mapper.insertTableMeta(tableMetadata)),
+        () -> doAs(TableMetaMapper.class, mapper -> mapper.insertTableMeta(persistentTableMeta)),
         () -> doAsExisted(
             CatalogMetaMapper.class,
             mapper -> mapper.incTableCount(1, name()),

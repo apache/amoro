@@ -15,6 +15,7 @@ import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.IllegalMetadataException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
+import com.netease.arctic.server.persistence.PersistentTableMeta;
 import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
@@ -130,7 +131,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public TableMetadata loadTableMetadata(TableIdentifier tableIdentifier) {
+  public PersistentTableMeta loadTableMetadata(TableIdentifier tableIdentifier) {
     validateTableExists(tableIdentifier);
     return Optional.ofNullable(getAs(TableMetaMapper.class, mapper ->
             mapper.selectTableMetaByName(tableIdentifier.getCatalog(),
@@ -154,12 +155,12 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public void createTable(String catalogName, TableMetadata tableMetadata) {
+  public void createTable(String catalogName, PersistentTableMeta persistentTableMeta) {
     checkStarted();
-    validateTableNotExists(tableMetadata.getTableIdentifier().getIdentifier());
+    validateTableNotExists(persistentTableMeta.getTableIdentifier().getIdentifier());
 
     InternalCatalog catalog = getInternalCatalog(catalogName);
-    ServerTableIdentifier tableIdentifier = catalog.createTable(tableMetadata);
+    ServerTableIdentifier tableIdentifier = catalog.createTable(persistentTableMeta);
     ArcticTable table = catalog.loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
     TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
     tableRuntimeMap.put(tableIdentifier, tableRuntime);
@@ -212,13 +213,13 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public List<TableMetadata> listTableMetas() {
+  public List<PersistentTableMeta> listTableMetas() {
     checkStarted();
     return getAs(TableMetaMapper.class, TableMetaMapper::selectTableMetas);
   }
  
   @Override
-  public List<TableMetadata> listTableMetas(String catalogName, String database) {
+  public List<PersistentTableMeta> listTableMetas(String catalogName, String database) {
     checkStarted();
     return getAs(TableMetaMapper.class, mapper -> mapper.selectTableMetasByDb(catalogName, database));
   }

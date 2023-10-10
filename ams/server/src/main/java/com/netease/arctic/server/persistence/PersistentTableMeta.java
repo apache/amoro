@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.table;
+package com.netease.arctic.server.persistence;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.ams.api.CatalogMeta;
@@ -25,6 +25,7 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.server.dashboard.utils.PropertiesUtil;
+import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.commons.collections.CollectionUtils;
@@ -42,12 +43,12 @@ import java.util.stream.Collectors;
 
 import static com.netease.arctic.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DELIMITER;
 
-public class TableMetadata implements Serializable {
+public class PersistentTableMeta implements Serializable {
 
-  private TableMetadata() {
+  private PersistentTableMeta() {
   }
 
-  public TableMetadata(ServerTableIdentifier identifier, TableMeta tableMeta, CatalogMeta catalogMeta) {
+  public PersistentTableMeta(ServerTableIdentifier identifier, TableMeta tableMeta, CatalogMeta catalogMeta) {
     this.tableIdentifier = identifier;
     Map<String, String> properties = Maps.newHashMap(tableMeta.getProperties());
     Preconditions.checkNotNull(tableMeta.getFormat(), "lack require field: table format");

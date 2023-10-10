@@ -14,8 +14,9 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
-import com.netease.arctic.server.iceberg.InternalTableOperations;
+import com.netease.arctic.server.catalog.IcebergTableOperations;
 import com.netease.arctic.server.persistence.PersistentBase;
+import com.netease.arctic.server.persistence.PersistentTableMeta;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.IcebergTableUtil;
@@ -292,7 +293,7 @@ public class IcebergRestCatalogService extends PersistentBase {
       String newMetadataFileLocation = IcebergTableUtil.genNewMetadataFileLocation(null, tableMetadata);
       FileIO io = newIcebergFileIo(catalog.getMetadata());
       try {
-        com.netease.arctic.server.table.TableMetadata amsTableMeta = IcebergTableUtil.createTableInternal(
+        PersistentTableMeta amsTableMeta = IcebergTableUtil.createTableInternal(
             identifier, catalog.getMetadata(), tableMetadata, newMetadataFileLocation, io
         );
         tableService.createTable(catalog.name(), amsTableMeta);
@@ -334,7 +335,7 @@ public class IcebergRestCatalogService extends PersistentBase {
     handleTable(ctx, (catalog, tableMeta) -> {
       UpdateTableRequest request = bodyAsClass(ctx, UpdateTableRequest.class);
       try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
-        TableOperations ops = InternalTableOperations.buildForLoad(tableMeta, io);
+        TableOperations ops = IcebergTableOperations.buildForLoad(tableMeta, io);
         TableMetadata base = ops.current();
         if (base == null) {
           throw new CommitFailedException("table metadata lost.");
@@ -449,13 +450,13 @@ public class IcebergRestCatalogService extends PersistentBase {
 
   private void handleTable(
       Context ctx,
-      BiFunction<InternalCatalog, com.netease.arctic.server.table.TableMetadata, ? extends RESTResponse> handler) {
+      BiFunction<InternalCatalog, PersistentTableMeta, ? extends RESTResponse> handler) {
     handleNamespace(ctx, (catalog, database) -> {
       checkDatabaseExist(catalog.exist(database), database);
 
       String tableName = ctx.pathParam("table");
       Preconditions.checkNotNull(tableName, "table name is null");
-      com.netease.arctic.server.table.TableMetadata metadata = tableService.loadTableMetadata(
+      PersistentTableMeta metadata = tableService.loadTableMetadata(
           com.netease.arctic.table.TableIdentifier.of(catalog.name(), database, tableName).buildTableIdentifier()
       );
       Preconditions.checkArgument(

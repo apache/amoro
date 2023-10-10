@@ -22,6 +22,7 @@ import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.catalog.CatalogService;
+import com.netease.arctic.server.persistence.PersistentTableMeta;
 
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,7 @@ public interface TableService extends CatalogService, TableManager {
    *
    * @param tableMeta table metadata info
    */
-  void createTable(String catalogName, TableMetadata tableMeta);
+  void createTable(String catalogName, PersistentTableMeta tableMeta);
 
   /**
    * load the table metadata
@@ -43,7 +44,7 @@ public interface TableService extends CatalogService, TableManager {
    * @param tableIdentifier table id
    * @return table metadata info
    */
-  TableMetadata loadTableMetadata(TableIdentifier tableIdentifier);
+  PersistentTableMeta loadTableMetadata(TableIdentifier tableIdentifier);
 
   /**
    * delete the table metadata
@@ -98,14 +99,14 @@ public interface TableService extends CatalogService, TableManager {
    *
    * @return table metadata list
    */
-  List<TableMetadata> listTableMetas();
+  List<PersistentTableMeta> listTableMetas();
 
   /**
    * load arctic table metadata
    *
    * @return table metadata list
    */
-  List<TableMetadata> listTableMetas(String catalogName, String database);
+  List<PersistentTableMeta> listTableMetas(String catalogName, String database);
 
   /**
    * check the table is existed

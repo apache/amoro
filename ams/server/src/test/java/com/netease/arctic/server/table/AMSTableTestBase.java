@@ -28,6 +28,7 @@ import com.netease.arctic.catalog.IcebergCatalogWrapper;
 import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
+import com.netease.arctic.server.persistence.PersistentTableMeta;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
@@ -155,8 +156,8 @@ public class AMSTableTestBase extends TableServiceTestBase {
     if (externalCatalog == null) {
       mixedTables.createTableByMeta(tableMeta, tableTestHelper.tableSchema(), tableTestHelper.primaryKeySpec(),
           tableTestHelper.partitionSpec());
-      TableMetadata tableMetadata = tableMetadata();
-      tableService().createTable(catalogMeta.getCatalogName(), tableMetadata);
+      PersistentTableMeta persistentTableMeta = tableMetadata();
+      tableService().createTable(catalogMeta.getCatalogName(), persistentTableMeta);
     } else {
       externalCatalog.newTableBuilder(tableTestHelper.id(), tableTestHelper.tableSchema())
           .withPartitionSpec(tableTestHelper.partitionSpec())
@@ -195,8 +196,8 @@ public class AMSTableTestBase extends TableServiceTestBase {
     return catalogMeta;
   }
 
-  protected TableMetadata tableMetadata() {
-    return new TableMetadata(ServerTableIdentifier.of(tableMeta.getTableIdentifier()), tableMeta, catalogMeta);
+  protected PersistentTableMeta tableMetadata() {
+    return new PersistentTableMeta(ServerTableIdentifier.of(tableMeta.getTableIdentifier()), tableMeta, catalogMeta);
   }
 
   protected ServerTableIdentifier serverTableIdentifier() {
