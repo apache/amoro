@@ -30,4 +30,16 @@ public class NoSuchDatabaseException extends RuntimeException {
   public NoSuchDatabaseException(Throwable e, String message, Object... args) {
     super(String.format(message, args), e);
   }
+
+  public NoSuchDatabaseException(String message) {
+    super(message);
+  }
+
+  public NoSuchDatabaseException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public NoSuchDatabaseException(Throwable cause) {
+    super(cause);
+  }
 }
