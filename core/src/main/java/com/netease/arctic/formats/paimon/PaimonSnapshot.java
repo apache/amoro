@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,23 +18,30 @@
 
 package com.netease.arctic.formats.paimon;
 
-import com.netease.arctic.FormatCatalog;
-import com.netease.arctic.FormatCatalogFactory;
-import com.netease.arctic.ams.api.TableFormat;
-import org.apache.hadoop.conf.Configuration;
+import com.netease.arctic.TableSnapshot;
+import org.apache.paimon.Snapshot;
 
-import java.util.Map;
+public class PaimonSnapshot implements TableSnapshot {
 
-public class PaimonFormatCatalog implements FormatCatalogFactory {
-  @Override
-  public FormatCatalog create(
-      String name, String metastoreType, Map<String, String> properties, Configuration configuration) {
-    // TODO: implement this method
-    return null;
+  private final Snapshot snapshot;
+
+  public PaimonSnapshot(Snapshot snapshot) {
+    this.snapshot = snapshot;
   }
 
   @Override
-  public TableFormat format() {
-    return TableFormat.PAIMON;
+  public long watermark() {
+    Long watermark = snapshot.watermark();
+    return watermark == null ? -1 : watermark;
+  }
+
+  @Override
+  public long commitTime() {
+    return snapshot.timeMillis();
+  }
+
+  @Override
+  public String id() {
+    return String.valueOf(snapshot.id());
   }
 }
