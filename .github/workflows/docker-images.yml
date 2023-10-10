@@ -67,6 +67,8 @@ jobs:
           push: true
           tags: arctic163/amoro:master-snapshot
 
+      - run: docker images
+
       - name: Build and Push Amoro QuickDemo Docker Image
         uses: docker/build-push-action@v4
         with:
@@ -78,3 +80,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: arctic163/quickdemo:master-snapshot
+          build-args:
+            FLINK_VERSION: 1.15.3
+            AMORO_TAG: master-snapshot
+
+      - run: docker images
