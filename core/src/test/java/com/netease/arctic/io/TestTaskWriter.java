@@ -161,8 +161,13 @@ public class TestTaskWriter extends TableTestBase {
       String pathLowerBounds = new String(lowerBounds.get(MetadataColumns.DELETE_FILE_PATH.fieldId()).array());
       String pathUpperBounds = new String(upperBounds.get(MetadataColumns.DELETE_FILE_PATH.fieldId()).array());
 
-      Assert.assertEquals(dataFile.path().toString(), pathLowerBounds);
-      Assert.assertEquals(dataFile.path().toString(), pathUpperBounds);
+      // As ORC PositionDeleteWriter didn't add metricsConfig,
+      // here can't get lower bounds and upper bounds of file_path accurately for orc file format,
+      // do not check lower bounds and upper bounds for orc
+      if (!fileFormat.equals(FILE_FORMAT_ORC)) {
+        Assert.assertEquals(dataFile.path().toString(), pathLowerBounds);
+        Assert.assertEquals(dataFile.path().toString(), pathUpperBounds);
+      }
     });
     Assert.assertEquals(1, cnt.get());
   }
