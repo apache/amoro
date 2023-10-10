@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.table.executor;
+package com.netease.arctic.server.optimizing.maintainer;
 
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -35,7 +35,7 @@ import org.junit.runners.Parameterized;
 import java.io.File;
 import java.io.IOException;
 
-import static com.netease.arctic.server.table.executor.OrphanFilesCleaningExecutor.DATA_FOLDER_NAME;
+import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer.DATA_FOLDER_NAME;
 
 @RunWith(Parameterized.class)
 public class TestOrphanFileCleanHive extends TestOrphanFileClean {
@@ -67,7 +67,9 @@ public class TestOrphanFileCleanHive extends TestOrphanFileClean {
     OutputFile changeOrphanDataFile = getArcticTable().io().newOutputFile(hiveOrphanFilePath);
     changeOrphanDataFile.createOrOverwrite().close();
     Assert.assertTrue(getArcticTable().io().exists(hiveOrphanFilePath));
-    OrphanFilesCleaningExecutor.cleanContentFiles(getArcticTable(), System.currentTimeMillis());
+
+    MixedTableMaintainer maintainer = new MixedTableMaintainer(getArcticTable());
+    maintainer.cleanContentFiles(System.currentTimeMillis());
     Assert.assertTrue(getArcticTable().io().exists(hiveOrphanFilePath));
   }
 
