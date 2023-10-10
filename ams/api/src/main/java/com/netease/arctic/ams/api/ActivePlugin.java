@@ -18,45 +18,21 @@
 
 package com.netease.arctic.ams.api;
 
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-
-import java.util.List;
+import java.util.Map;
 
 /**
- * Plugin manager interface for all pluggable services
- * @param <T> plugin type
+ * Plugins that need to initialize and close
  */
-public interface PluginManager<T extends AmoroPlugin> extends Iterable<T> {
+public interface ActivePlugin extends AmoroPlugin {
 
   /**
-   * Install a plugin
-   * @param pluginName related to Plugin.name()
+   * Initialize and open the plugin
+   * @param properties plugin properties
    */
-  void install(String pluginName);
+  void open(Map<String, String> properties);
 
   /**
-   * Uninstall a plugin
-   * @param pluginName related to Plugin.name()
-   */
-  void uninstall(String pluginName);
-
-  /**
-   * Get a plugin by its name
-   * @param pluginName related to Plugin.name()
-   * @return plugin instance
-   */
-  T get(String pluginName);
-
-  /**
-   * Get all installed plugins
-   * @return all installed plugins
-   */
-  default List<T> list() {
-    return Lists.newArrayList(this);
-  }
-
-  /**
-   * Close the plugin manager and trigger all plugins to close if necessary
+   * Close the plugin
    */
   void close();
 }
