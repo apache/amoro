@@ -19,18 +19,21 @@
 package com.netease.arctic.flink.write;
 
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
+import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
+import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
-import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
+import com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate;
+import com.netease.arctic.flink.kafka.testutils.KafkaContainerTest;
 import com.netease.arctic.flink.metric.MetricsGenerator;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
@@ -94,7 +97,6 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
   public ArcticTableLoader tableLoader;
   public static final TestGlobalAggregateManager globalAggregateManger =
       new TestGlobalAggregateManager();
-  private static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
 
   private final boolean isGapNone;
   private final boolean logstoreEnabled;
@@ -119,12 +121,12 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
 
   @BeforeClass
   public static void prepare() throws Exception {
-    kafkaTestBase.prepare();
+    KAFKA_CONTAINER.start();
   }
 
   @AfterClass
   public static void shutdown() throws Exception {
-    kafkaTestBase.shutDownServices();
+    KAFKA_CONTAINER.close();
   }
 
   @Before
@@ -198,7 +200,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
 
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
     UpdateProperties up = testKeyedTable.updateProperties();
-    up.set(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
+    up.set(LOG_STORE_ADDRESS, KAFKA_CONTAINER.getBootstrapServers());
     up.set(LOG_STORE_MESSAGE_TOPIC, topic);
     if (logstoreEnabled) {
       up.set(ENABLE_LOG_STORE, "true");
@@ -239,7 +241,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     Duration gap;
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
     UpdateProperties up = testKeyedTable.updateProperties();
-    up.set(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
+    up.set(LOG_STORE_ADDRESS, KAFKA_CONTAINER.getBootstrapServers());
     up.set(LOG_STORE_MESSAGE_TOPIC, topic);
     up.set(ENABLE_LOG_STORE, "true");
     if (!isGapNone) {
@@ -326,7 +328,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     LogDataJsonDeserialization<RowData> logDataJsonDeserialization =
         new LogDataJsonDeserialization<>(
             TABLE_SCHEMA, LogRecordV1.factory, LogRecordV1.arrayFactory, LogRecordV1.mapFactory);
-    ConsumerRecords<byte[], byte[]> consumerRecords = kafkaTestBase.readRecordsBytes(topic);
+    ConsumerRecords<byte[], byte[]> consumerRecords = KafkaContainerTest.readRecordsBytes(topic);
     Assertions.assertEquals(expects.size(), consumerRecords.count());
     List<RowData> actual = new ArrayList<>();
     consumerRecords.forEach(
@@ -416,7 +418,9 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
   }
 
   private static Properties getPropertiesByTopic(String topic) {
-    Properties properties = getPropertiesWithByteArray(kafkaTestBase.getProperties());
+    Properties properties = new Properties();
+    properties.put(BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
+    getPropertiesWithByteArray(KafkaConfigGenerate.getStandardProperties(properties));
     properties.put(LOG_STORE_MESSAGE_TOPIC, topic);
     properties.put(ProducerConfig.ACKS_CONFIG, "all");
     properties.put(ProducerConfig.BATCH_SIZE_CONFIG, "0");
