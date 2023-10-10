@@ -43,9 +43,9 @@
         <module>v1.15/arctic-flink-1.15-iceberg-bridge</module>
         <module>v1.17/flink</module>
         <module>v1.17/flink-runtime</module>
-        <module>v1.17/amoro-flink-1.17-iceberg-bridge</module>
         <module>flink-common</module>
         <module>flink-common-format</module>
+        <module>flink-common-iceberg-bridge</module>
     </modules>
 
     <properties>

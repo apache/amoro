@@ -1,24 +1,22 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>amoro-parent</artifactId>
         <groupId>com.netease.amoro</groupId>
+        <artifactId>amoro-flink</artifactId>
         <version>0.6.0-SNAPSHOT</version>
-        <relativePath>../../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>amoro-flink-1.17-iceberg-bridge</artifactId>
-    <name>Amoro Project Flink 1.17 Iceberg Bridge</name>
+    <artifactId>flink-common-iceberg-bridge</artifactId>
+    <name>Amoro Project Flink Iceberg Bridge</name>
     <url>https://amoro.netease.com</url>
 
     <properties>
         <kafka.version>3.2.3</kafka.version>
         <assertj.version>3.21.0</assertj.version>
         <testcontainers.version>1.17.2</testcontainers.version>
-        <flink.version>1.17.0</flink.version>
+        <flink.version>1.17.1</flink.version>
     </properties>
 
     <dependencies>
@@ -358,30 +356,5 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka_2.12</artifactId>
-            <version>${kafka.version}</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-annotations</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.zookeeper</groupId>
-            <artifactId>zookeeper</artifactId>
-            <version>3.5.10</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
-
 </project>
