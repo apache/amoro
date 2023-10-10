@@ -25,6 +25,9 @@
 
 FROM openjdk:8u332 as builder
 
+# Add the entire project to the build container, unzip it,
+# and remove flink-optimizer to reduce the container size.
+
 ADD . /workspace/amoro
 WORKDIR /workspace/amoro
 
