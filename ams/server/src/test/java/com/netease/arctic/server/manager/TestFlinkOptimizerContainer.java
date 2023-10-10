@@ -52,14 +52,12 @@ public class TestFlinkOptimizerContainer {
     Assert.assertEquals(0, container.parseMemorySize("100kb"));
   }
 
-
   @Test
   public void testBuildFlinkOptions() {
     Map<String, String> containerProperties = Maps.newHashMap(this.containerProperties);
     containerProperties.put("flink-conf.key1", "value1");
     containerProperties.put("flink-conf.key2", "value2");
     containerProperties.put("key3", "value3"); // non "flink-conf." property
-
 
     // Create some optimizing group properties
     Map<String, String> groupProperties = new HashMap<>();
@@ -83,7 +81,8 @@ public class TestFlinkOptimizerContainer {
     prop.put("taskmanager.memory", "100");
     prop.put("jobmanager.memory", "100");
 
-    FlinkOptimizerContainer.FlinkConf conf = FlinkOptimizerContainer.FlinkConf.buildFor(prop, Maps.newHashMap()).build();
+    FlinkOptimizerContainer.FlinkConf conf =
+        FlinkOptimizerContainer.FlinkConf.buildFor(prop, Maps.newHashMap()).build();
 
     Assert.assertEquals(100L, container.getMemorySizeValue(prop, conf,
         "taskmanager.memory",
@@ -91,7 +90,6 @@ public class TestFlinkOptimizerContainer {
     Assert.assertEquals(100L, container.getMemorySizeValue(prop, conf,
         "jobmanager.memory",
         "jobmanager.memory.process.size"));
-
 
     Map<String, String> containerProperties = Maps.newHashMap();
     containerProperties.put("flink-conf.jobmanager.memory.process.size", "200 M");
