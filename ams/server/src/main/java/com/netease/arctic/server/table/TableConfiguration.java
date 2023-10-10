@@ -17,7 +17,7 @@ public class TableConfiguration {
   private long orphanExistingMinutes;
   private boolean deleteDanglingDeleteFilesEnabled;
   private OptimizingConfig optimizingConfig;
-  private ExpiringDataConfig expiringDataConfig;
+  private DataExpirationConfig expiringDataConfig;
 
   public TableConfiguration() {
   }
@@ -85,11 +85,11 @@ public class TableConfiguration {
     return this;
   }
 
-  public ExpiringDataConfig getExpiringDataConfig() {
+  public DataExpirationConfig getExpiringDataConfig() {
     return expiringDataConfig;
   }
 
-  public TableConfiguration setExpiringDataConfig(ExpiringDataConfig expiringDataConfig) {
+  public TableConfiguration setExpiringDataConfig(DataExpirationConfig expiringDataConfig) {
     this.expiringDataConfig = expiringDataConfig;
     return this;
   }
@@ -149,6 +149,6 @@ public class TableConfiguration {
             TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN,
             TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT))
         .setOptimizingConfig(OptimizingConfig.parseOptimizingConfig(properties))
-        .setExpiringDataConfig(ExpiringDataConfig.parse(properties));
+        .setExpiringDataConfig(DataExpirationConfig.parse(properties));
   }
 }

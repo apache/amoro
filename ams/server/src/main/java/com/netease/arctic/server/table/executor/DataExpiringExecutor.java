@@ -18,35 +18,33 @@
 
 package com.netease.arctic.server.table.executor;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.op.SnapshotSummary;
-import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.ArcticServiceConstants;
-import com.netease.arctic.server.table.ExpiringDataConfig;
+import com.netease.arctic.server.table.DataExpirationConfig;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.utils.ConfigurationUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
-import org.apache.commons.lang3.StringUtils;
+import com.netease.arctic.utils.ManifestEntryFields;
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.ContentScanTask;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.TableScan;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.expressions.Literal;
@@ -69,19 +67,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class DataExpiringExecutor extends BaseTableExecutor {
 
   private static final Logger LOG = LoggerFactory.getLogger(DataExpiringExecutor.class);
 
   private final Duration interval;
-  private static final Set<Type.TypeID> FIELD_TYPES = Sets.newHashSet(
-      Type.TypeID.TIMESTAMP,
-      Type.TypeID.STRING,
-      Type.TypeID.LONG
-  );
 
   public static final String  EXPIRE_TIMESTAMP_MS = "TIMESTAMP_MS";
   public static final String  EXPIRE_TIMESTAMP_S = "TIMESTAMP_S";
@@ -115,12 +108,14 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       }
 
       DataExpirationConfig expirationConfig =
-          new DataExpirationConfig(arcticTable, tableRuntime.getTableConfiguration().getExpiringDataConfig());
-      if (expirationConfig.retentionTime <= 0) {
+          new DataExpirationConfig(arcticTable);
+      if (expirationConfig.getRetentionTime() <= 0) {
         return;
       }
       purgeTableFrom(arcticTable, expirationConfig,
-          Instant.now().atZone(getDefaultZoneId(expirationConfig.expirationField)).toInstant());
+          Instant.now()
+              .atZone(getDefaultZoneId(arcticTable.schema().findField(expirationConfig.getExpirationField())))
+              .toInstant());
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
     }
@@ -133,9 +128,9 @@ public class DataExpiringExecutor extends BaseTableExecutor {
    * @param instant timestamp/timestampz/long field type uses UTC, others will use the local time zone
    */
   protected static void purgeTableFrom(ArcticTable table, DataExpirationConfig expirationConfig, Instant instant) {
-    long expireTimestamp = instant.minusMillis(expirationConfig.retentionTime).toEpochMilli();
+    long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
     LOG.info("Expiring Data older than {} in table {} ", Instant.ofEpochMilli(expireTimestamp)
-            .atZone(getDefaultZoneId(expirationConfig.expirationField))
+            .atZone(getDefaultZoneId(table.schema().findField(expirationConfig.getExpirationField())))
             .toLocalDateTime(),
         table.name());
 
@@ -150,21 +145,33 @@ public class DataExpiringExecutor extends BaseTableExecutor {
     return ZoneOffset.UTC;
   }
 
-  private static TableEntriesScan fileEntriesScan(UnkeyedTable table, Expression partitionFilter, Snapshot snapshot) {
-    TableEntriesScan.Builder builder = TableEntriesScan.builder(table)
-        .includeFileContent(FileContent.DATA, FileContent.EQUALITY_DELETES, FileContent.POSITION_DELETES)
-        .withDataFilter(partitionFilter)
+  private static CloseableIterable<IcebergFileEntry> fileScan(
+      UnkeyedTable table,
+      Expression partitionFilter,
+      Snapshot snapshot) {
+    TableScan tableScan = table.newScan()
+        .filter(partitionFilter)
         .includeColumnStats();
 
-    if (null == snapshot || snapshot.snapshotId() == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
-      return builder.build();
+    CloseableIterable<FileScanTask> tasks;
+    long snapshotId = null == snapshot ? ArcticServiceConstants.INVALID_SNAPSHOT_ID : snapshot.snapshotId();
+    if (snapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+      tasks = tableScan.planFiles();
     } else {
-      return builder.useSnapshot(snapshot.snapshotId()).build();
+      tasks = tableScan.useSnapshot(snapshotId).planFiles();
     }
+    CloseableIterable<DataFile> dataFiles = CloseableIterable.transform(tasks, ContentScanTask::file);
+    List<DeleteFile> deleteFiles = StreamSupport.stream(tasks.spliterator(), false)
+        .flatMap(e -> e.deletes().stream())
+        .collect(Collectors.toList());
+
+    return CloseableIterable.transform(CloseableIterable.withNoopClose(Iterables.concat(dataFiles, deleteFiles)),
+        contentFile -> new IcebergFileEntry(
+            snapshotId, contentFile.dataSequenceNumber(), ManifestEntryFields.Status.EXISTING, contentFile));
   }
 
   private static void purgeTableData(ArcticTable table, DataExpirationConfig expirationConfig, long expireTimestamp) {
-    Expression partitionFilter = getPartitionExpression(expirationConfig, expireTimestamp);
+    Expression partitionFilter = getPartitionExpression(table, expirationConfig, expireTimestamp);
     Map<StructLike, DataFileFreshness> partitionFreshness = Maps.newHashMap();
 
     if (table.isKeyedTable()) {
@@ -174,19 +181,19 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       Snapshot changeSnapshot = changeTable.currentSnapshot();
       Snapshot baseSnapshot = baseTable.currentSnapshot();
 
-      TableEntriesScan changeScan = fileEntriesScan(changeTable, partitionFilter, changeSnapshot);
-      TableEntriesScan baseScan = fileEntriesScan(baseTable, partitionFilter, baseSnapshot);
+      CloseableIterable<IcebergFileEntry> changeEntries = fileScan(changeTable, partitionFilter, changeSnapshot);
+      CloseableIterable<IcebergFileEntry> baseEntries = fileScan(baseTable, partitionFilter, baseSnapshot);
       ExpireFiles changeExpiredFiles = new ExpireFiles();
       ExpireFiles baseExpiredFiles = new ExpireFiles();
-      CloseableIterable<FileEntry> changed = CloseableIterable.transform(changeScan.entries(),
+      CloseableIterable<FileEntry> changed = CloseableIterable.transform(changeEntries,
           e -> new FileEntry(e, true));
-      CloseableIterable<FileEntry> based = CloseableIterable.transform(baseScan.entries(),
+      CloseableIterable<FileEntry> based = CloseableIterable.transform(baseEntries,
           e -> new FileEntry(e, false));
 
       try (CloseableIterable<FileEntry> entries = CloseableIterable.withNoopClose(Iterables.concat(changed, based))) {
         CloseableIterable<FileEntry> mayExpiredFiles = CloseableIterable.withNoopClose(
             Lists.newArrayList(CloseableIterable.filter(entries,
-                e -> mayExpired(e, expirationConfig, partitionFreshness, expireTimestamp))));
+                e -> mayExpired(table, e, expirationConfig, partitionFreshness, expireTimestamp))));
         CloseableIterable.filter(mayExpiredFiles, e -> willNotRetain(e, expirationConfig, partitionFreshness))
             .forEach(e -> {
               if (e.isChange) {
@@ -204,11 +211,10 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       UnkeyedTable unkeyedTable = table.asUnkeyedTable();
       Snapshot snapshot = unkeyedTable.currentSnapshot();
       ExpireFiles expiredFiles = new ExpireFiles();
-      try (CloseableIterable<IcebergFileEntry> entries
-          = fileEntriesScan(unkeyedTable, partitionFilter, snapshot).entries()) {
+      try (CloseableIterable<IcebergFileEntry> entries = fileScan(unkeyedTable, partitionFilter, snapshot)) {
         CloseableIterable<IcebergFileEntry> mayExpiredFiles = CloseableIterable.withNoopClose(
             Lists.newArrayList(CloseableIterable.filter(entries,
-                e -> mayExpired(e, expirationConfig, partitionFreshness, expireTimestamp))));
+                e -> mayExpired(table, e, expirationConfig, partitionFreshness, expireTimestamp))));
         CloseableIterable.filter(
                 mayExpiredFiles,
                 e -> willNotRetain(e, expirationConfig, partitionFreshness))
@@ -220,28 +226,38 @@ public class DataExpiringExecutor extends BaseTableExecutor {
     }
   }
 
-  private static Expression getPartitionExpression(DataExpirationConfig expirationConfig, long expireTimestamp) {
-    if (expirationConfig.expirationLevel.equals(DataExpirationConfig.ExpireLevel.PARTITION)) {
+  /**
+   * Create a filter expression for expired files for the `FILE` level. For the `PARTITION` level, we need to collect
+   * the oldest files to determine if the partition is obsolete, so we will not filter for expired files at the
+   * scanning stage
+   * @param expirationConfig expiration configuration
+   * @param expireTimestamp expired timestamp
+   * @return filter expression
+   */
+  private static Expression getPartitionExpression(ArcticTable table, DataExpirationConfig expirationConfig,
+      long expireTimestamp) {
+    if (expirationConfig.getExpirationLevel().equals(DataExpirationConfig.ExpireLevel.PARTITION)) {
       return Expressions.alwaysTrue();
     }
 
-    Type.TypeID typeID = expirationConfig.expirationField.type().typeId();
+    Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
+    Type.TypeID typeID = field.type().typeId();
     switch (typeID) {
       case TIMESTAMP:
-        return Expressions.lessThanOrEqual(expirationConfig.expirationField.name(), expireTimestamp * 1000);
+        return Expressions.lessThanOrEqual(field.name(), expireTimestamp * 1000);
       case LONG:
-        if (expirationConfig.numberDateFormat.equals(EXPIRE_TIMESTAMP_MS)) {
-          return Expressions.lessThanOrEqual(expirationConfig.expirationField.name(), expireTimestamp);
-        } else if (expirationConfig.numberDateFormat.equals(EXPIRE_TIMESTAMP_S)) {
-          return Expressions.lessThanOrEqual(expirationConfig.expirationField.name(), expireTimestamp / 1000);
+        if (expirationConfig.getNumberDateFormat().equals(EXPIRE_TIMESTAMP_MS)) {
+          return Expressions.lessThanOrEqual(field.name(), expireTimestamp);
+        } else if (expirationConfig.getNumberDateFormat().equals(EXPIRE_TIMESTAMP_S)) {
+          return Expressions.lessThanOrEqual(field.name(), expireTimestamp / 1000);
         } else {
           return Expressions.alwaysTrue();
         }
       case STRING:
         String expireDateTime = LocalDateTime.ofInstant(
-            Instant.ofEpochMilli(expireTimestamp), getDefaultZoneId(expirationConfig.expirationField)
-            ).format(expirationConfig.dateFormatter);
-        return Expressions.lessThanOrEqual(expirationConfig.expirationField.name(), expireDateTime);
+            Instant.ofEpochMilli(expireTimestamp), getDefaultZoneId(field)
+            ).format(DateTimeFormatter.ofPattern(expirationConfig.getDateTimePattern(), Locale.getDefault()));
+        return Expressions.lessThanOrEqual(field.name(), expireDateTime);
       default:
         return Expressions.alwaysTrue();
     }
@@ -277,7 +293,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
         deleteFiles.size(), deleteFiles.stream().map(ContentFile::path).collect(Collectors.joining(",")));
   }
 
-  static class ExpireFiles {
+  private static class ExpireFiles {
     List<DataFile>  dataFiles;
     List<DeleteFile> deleteFiles;
 
@@ -302,7 +318,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
     }
   }
 
-  static class DataFileFreshness {
+  private static class DataFileFreshness {
     long latestExpiredSeq;
     long latestUpdateMillis;
     long expiredDataFileCount;
@@ -335,6 +351,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
   }
 
   private static boolean mayExpired(
+      ArcticTable table,
       IcebergFileEntry fileEntry,
       DataExpirationConfig expirationConfig,
       Map<StructLike, DataFileFreshness> partitionFreshness,
@@ -343,11 +360,13 @@ public class DataExpiringExecutor extends BaseTableExecutor {
     StructLike partition = contentFile.partition();
 
     boolean expired = true;
+    Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
     if (contentFile.content().equals(FileContent.DATA)) {
       Literal<Long> literal = getExpireTimestampLiteral(
-          contentFile, expirationConfig.expirationField.type(),
-          expirationConfig.expirationField, expirationConfig.dateFormatter,
-          expirationConfig.numberDateFormat);
+          contentFile,
+          field,
+          DateTimeFormatter.ofPattern(expirationConfig.getDateTimePattern(), Locale.getDefault()),
+          expirationConfig.getNumberDateFormat());
       if (partitionFreshness.containsKey(partition)) {
         DataFileFreshness freshness = partitionFreshness.get(partition).incTotalCount();
         if (freshness.latestUpdateMillis <= literal.value()) {
@@ -373,7 +392,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       Map<StructLike, DataFileFreshness> partitionFreshness) {
     ContentFile<?> contentFile = fileEntry.getFile();
 
-    switch (expirationConfig.expirationLevel) {
+    switch (expirationConfig.getExpirationLevel()) {
       case PARTITION:
         // if only partial expired files in a partition, all the files in that partition should be preserved
         return partitionFreshness.containsKey(contentFile.partition()) &&
@@ -395,10 +414,10 @@ public class DataExpiringExecutor extends BaseTableExecutor {
 
   private static Literal<Long> getExpireTimestampLiteral(
       ContentFile<?> contentFile,
-      Type type,
       Types.NestedField field,
       DateTimeFormatter formatter,
       String numberDateFormatter) {
+    Type type = field.type();
     Object upperBound = Conversions.fromByteBuffer(type, contentFile.upperBounds().get(field.fieldId()));
     Literal<Long> literal = Literal.of(Long.MAX_VALUE);
     if (null == upperBound) {
@@ -424,47 +443,6 @@ public class DataExpiringExecutor extends BaseTableExecutor {
               .atZone(getDefaultZoneId(field)).toInstant().toEpochMilli());
     }
     return literal;
-  }
-
-  protected static class DataExpirationConfig {
-    Types.NestedField expirationField;
-    ExpireLevel expirationLevel;
-    long retentionTime;
-    DateTimeFormatter dateFormatter;
-    String numberDateFormat;
-
-    @VisibleForTesting
-    public enum ExpireLevel {
-      PARTITION,
-      FILE;
-
-      public static ExpireLevel fromString(String level) {
-        Preconditions.checkArgument(null != level, "Invalid level type: null");
-        try {
-          return ExpireLevel.valueOf(level.toUpperCase(Locale.ENGLISH));
-        } catch (IllegalArgumentException e) {
-          throw new IllegalArgumentException(
-              String.format("Invalid level type: %s", level), e);
-        }
-      }
-    }
-
-    DataExpirationConfig(ArcticTable table, ExpiringDataConfig config) {
-      String field = config.getField();
-      expirationField = table.schema().findField(field);
-      Preconditions.checkArgument(StringUtils.isNoneBlank(field) && null != expirationField,
-          String.format("Field(%s) used to determine data expiration is illegal for table(%s)", field, table.name()));
-      Type.TypeID typeID = expirationField.type().typeId();
-      Preconditions.checkArgument(FIELD_TYPES.contains(typeID),
-          String.format("The type(%s) of filed(%s) is incompatible for table(%s)", typeID.name(), field, table.name()));
-
-      expirationLevel = ExpireLevel.fromString(config.getLevel());
-      if (StringUtils.isNotBlank(config.getRetentionTime())) {
-        retentionTime = ConfigurationUtil.TimeUtils.parseDuration(config.getRetentionTime()).toMillis();
-      }
-      dateFormatter = DateTimeFormatter.ofPattern(config.getDateStringFormat(), Locale.getDefault());
-      numberDateFormat = config.getDateNumberFormat();
-    }
   }
 
   protected static class FileEntry extends IcebergFileEntry {

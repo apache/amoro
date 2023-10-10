@@ -32,7 +32,7 @@ import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
-import com.netease.arctic.server.table.ExpiringDataConfig;
+import com.netease.arctic.server.table.DataExpirationConfig;
 import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -152,12 +152,12 @@ public class TestDataExpire extends ExecutorTestBase {
         getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), 0, records, false));
 
-    DataExpiringExecutor.DataExpirationConfig config = new DataExpiringExecutor.DataExpirationConfig(
-        getArcticTable(),
-        ExpiringDataConfig.parse(getArcticTable().properties()));
+    DataExpirationConfig config = new DataExpirationConfig(getArcticTable());
     DataExpiringExecutor.purgeTableFrom(getArcticTable(), config,
         LocalDateTime.parse("2022-01-03T18:00:00.000")
-            .atZone(DataExpiringExecutor.getDefaultZoneId(config.expirationField)).toInstant());
+            .atZone(DataExpiringExecutor
+                .getDefaultZoneId(getArcticTable().schema().findField(config.getExpirationField())))
+            .toInstant());
 
     List<Record> result = readSortedBaseRecords(getArcticTable());
 
@@ -206,12 +206,10 @@ public class TestDataExpire extends ExecutorTestBase {
     assertScanResult(scan, 4, 0);
 
     // expire partitions that order than 2022-01-02 18:00:00.000
-    DataExpiringExecutor.DataExpirationConfig config = new DataExpiringExecutor.DataExpirationConfig(
-        keyedTable,
-        ExpiringDataConfig.parse(getArcticTable().properties()));
+    DataExpirationConfig config = new DataExpirationConfig(keyedTable);
     DataExpiringExecutor.purgeTableFrom(keyedTable, config,
         LocalDateTime.parse("2022-01-03T18:00:00.000")
-            .atZone(DataExpiringExecutor.getDefaultZoneId(config.expirationField))
+            .atZone(DataExpiringExecutor.getDefaultZoneId(keyedTable.schema().findField(config.getExpirationField())))
             .toInstant());
 
     CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire = buildKeyedFileScanHelper().scan();
@@ -254,7 +252,7 @@ public class TestDataExpire extends ExecutorTestBase {
   public void testFileLevel() {
     ArcticTable table = getArcticTable();
     table.updateProperties()
-        .set(TableProperties.DATA_EXPIRATION_LEVEL, DataExpiringExecutor.DataExpirationConfig.ExpireLevel.FILE.name())
+        .set(TableProperties.DATA_EXPIRATION_LEVEL, DataExpirationConfig.ExpireLevel.FILE.name())
         .commit();
     if (table.isUnkeyedTable()) {
       testUnKeyedFileLevel();
@@ -284,12 +282,10 @@ public class TestDataExpire extends ExecutorTestBase {
     assertScanResult(scan, 4, 0);
 
     // expire partitions that order than 2022-01-02 18:00:00.000
-    DataExpiringExecutor.DataExpirationConfig config = new DataExpiringExecutor.DataExpirationConfig(
-        keyedTable,
-        ExpiringDataConfig.parse(getArcticTable().properties()));
+    DataExpirationConfig config = new DataExpirationConfig(keyedTable);
     DataExpiringExecutor.purgeTableFrom(keyedTable, config,
         LocalDateTime.parse("2022-01-03T18:00:00.000")
-            .atZone(DataExpiringExecutor.getDefaultZoneId(config.expirationField))
+            .atZone(DataExpiringExecutor.getDefaultZoneId(keyedTable.schema().findField(config.getExpirationField())))
             .toInstant());
 
     CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire = buildKeyedFileScanHelper().scan();
@@ -316,12 +312,11 @@ public class TestDataExpire extends ExecutorTestBase {
     assertScanResult(scan, 4, 0);
 
     // expire partitions that order than 2022-01-02 18:00:00.000
-    DataExpiringExecutor.DataExpirationConfig config = new DataExpiringExecutor.DataExpirationConfig(
-        getArcticTable(),
-        ExpiringDataConfig.parse(getArcticTable().properties()));
+    DataExpirationConfig config = new DataExpirationConfig(getArcticTable());
     DataExpiringExecutor.purgeTableFrom(getArcticTable(), config,
         LocalDateTime.parse("2022-01-03T18:00:00.000")
-            .atZone(DataExpiringExecutor.getDefaultZoneId(config.expirationField))
+            .atZone(DataExpiringExecutor
+                .getDefaultZoneId(getArcticTable().schema().findField(config.getExpirationField())))
             .toInstant());
 
     List<Record> result = readSortedBaseRecords(getArcticTable());
