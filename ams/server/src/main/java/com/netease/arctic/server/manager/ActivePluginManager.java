@@ -47,19 +47,27 @@ public abstract class ActivePluginManager<T extends ActivePlugin> implements Plu
 
   protected abstract Map<String, String> loadProperties(String pluginName);
 
-  @SuppressWarnings("unchecked")
   @Override
   public void install(String pluginName) {
     PreconditionUtils.checkNotExist(installedPlugins.containsKey(pluginName),
         "Plugin " + pluginName);
     Map<String, String> properties = loadProperties(pluginName);
+    installedPlugins.computeIfAbsent(pluginName, k -> {
+      T plugin = loadPlugin(properties);
+      plugin.open(properties);
+      return plugin;
+    });
+  }
+
+  @SuppressWarnings("unchecked")
+  private T loadPlugin(Map<String, String> properties) {
     String pluginClass = properties.get(PLUGIN_IMPLEMENTATION_CLASS);
     String jarPath = properties.get(JAR_PATH);
     try {
       ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
       if (jarPath != null) {
         if (jarPath.endsWith("jar")) {
-          classLoader = new URLClassLoader(new URL[]{ new URL(jarPath) }, classLoader);
+          classLoader = new URLClassLoader(new URL[]{new URL(jarPath)}, classLoader);
         } else {
           URL[] jarFiles = Optional.ofNullable(new File(jarPath)
                   .listFiles((dir, name) -> name.endsWith(".jar")))
@@ -72,13 +80,9 @@ public abstract class ActivePluginManager<T extends ActivePlugin> implements Plu
         }
       }
       Class<?> clazz = classLoader.loadClass(pluginClass);
-      T plugin = (T) clazz.newInstance();
-      installedPlugins.computeIfAbsent(pluginName, k -> {
-        plugin.open(properties);
-        return plugin;
-      });
-    } catch (Exception e) {
-      throw new LoadingPluginException("Cannot load plugin " + pluginName, e);
+      return (T) clazz.newInstance();
+    } catch (Throwable throwable) {
+      throw new LoadingPluginException("Cannot load plugin " + pluginClass, throwable);
     }
   }
 
