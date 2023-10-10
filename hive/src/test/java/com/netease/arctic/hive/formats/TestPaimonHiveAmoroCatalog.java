@@ -19,7 +19,7 @@
 package com.netease.arctic.hive.formats;
 
 import com.netease.arctic.formats.AmoroCatalogTestHelper;
-import com.netease.arctic.formats.PaimonCatalogTest;
+import com.netease.arctic.formats.TestPaimonAmoroCatalog;
 import com.netease.arctic.hive.TestHMS;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
@@ -28,12 +28,12 @@ import org.junit.runners.Parameterized;
 import java.io.IOException;
 
 @RunWith(Parameterized.class)
-public class PaimonHiveCatalogTest extends PaimonCatalogTest {
+public class TestPaimonHiveAmoroCatalog extends TestPaimonAmoroCatalog {
 
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
 
-  public PaimonHiveCatalogTest(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
+  public TestPaimonHiveAmoroCatalog(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
     super(amoroCatalogTestHelper);
   }
 

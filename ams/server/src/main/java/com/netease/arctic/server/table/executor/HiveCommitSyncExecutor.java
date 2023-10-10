@@ -1,6 +1,5 @@
 package com.netease.arctic.server.table.executor;
 
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.hive.utils.TableTypeUtil;
@@ -28,7 +27,7 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
-    return tableRuntime.getFormat() == TableFormat.MIXED_HIVE;
+    return true;
   }
 
   @Override

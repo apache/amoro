@@ -33,7 +33,7 @@ public interface TableMaintainer {
   /**
    * Clean table orphan files. Includes: data files, metadata files, dangling delete files.
    */
-  void orphanFileClean(TableRuntime tableRuntime);
+  void cleanOrphanFiles(TableRuntime tableRuntime);
 
   /**
    * Expire snapshots，The optimizing based on the snapshot that the current table relies
@@ -41,7 +41,7 @@ public interface TableMaintainer {
    */
   void expireSnapshots(TableRuntime tableRuntime);
 
-  static TableMaintainer createMaintainer(AmoroTable<?> amoroTable) {
+  static TableMaintainer ofTable(AmoroTable<?> amoroTable) {
     TableFormat format = amoroTable.format();
     if (format == TableFormat.MIXED_HIVE || format == TableFormat.MIXED_ICEBERG) {
       return new MixedTableMaintainer((ArcticTable) amoroTable.originalTable());

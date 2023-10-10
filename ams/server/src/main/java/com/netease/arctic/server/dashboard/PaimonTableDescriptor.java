@@ -34,7 +34,7 @@ import java.util.List;
 import org.apache.paimon.table.DataTable;
 
 /**
- * Descriptor for Paimon format.
+ * Descriptor for Paimon format tables.
  */
 public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override

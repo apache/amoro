@@ -19,7 +19,6 @@
 package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.AmoroTable;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
@@ -40,9 +39,7 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
-    return tableRuntime.getFormat() == TableFormat.ICEBERG ||
-        tableRuntime.getFormat() == TableFormat.MIXED_ICEBERG ||
-        tableRuntime.getFormat() == TableFormat.MIXED_HIVE;
+    return true;
   }
 
   protected long getNextExecutingTime(TableRuntime tableRuntime) {

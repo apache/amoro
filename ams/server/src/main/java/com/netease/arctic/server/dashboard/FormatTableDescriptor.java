@@ -38,32 +38,32 @@ public interface FormatTableDescriptor {
   List<TableFormat> supportFormat();
 
   /**
-   * Get the table metadata information of the AmoroTable.
+   * Get the table metadata information of the {@link AmoroTable}.
    */
   ServerTableMeta getTableDetail(AmoroTable<?> amoroTable);
 
   /**
-   * Get the transaction information of the AmoroTable.
+   * Get the transaction information of the {@link AmoroTable}.
    */
   List<TransactionsOfTable> getTransactions(AmoroTable<?> amoroTable);
 
   /**
-   * Get the transaction detail information of the AmoroTable.
+   * Get the transaction detail information of the {@link AmoroTable}.
    */
   List<PartitionFileBaseInfo> getTransactionDetail(AmoroTable<?> amoroTable, long transactionId);
 
   /**
-   * Get the DDL information of the AmoroTable.
+   * Get the DDL information of the {@link AmoroTable}.
    */
   List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) throws Exception;
 
   /**
-   * Get the partition information of the AmoroTable.
+   * Get the partition information of the {@link AmoroTable}.
    */
   List<PartitionBaseInfo> getTablePartition(AmoroTable<?> amoroTable);
 
   /**
-   * Get the file information of the AmoroTable.
+   * Get the file information of the {@link AmoroTable}.
    */
   List<PartitionFileBaseInfo> getTableFile(AmoroTable<?> amoroTable, String partition);
 }

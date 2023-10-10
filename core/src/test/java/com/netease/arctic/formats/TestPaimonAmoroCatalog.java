@@ -29,9 +29,9 @@ import java.util.List;
 import java.util.Map;
 
 @RunWith(Parameterized.class)
-public class PaimonCatalogTest extends AmoroCatalogTestBase {
+public class TestPaimonAmoroCatalog extends TestAmoroCatalogBase {
 
-  public PaimonCatalogTest(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
+  public TestPaimonAmoroCatalog(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
     super(amoroCatalogTestHelper);
   }
 

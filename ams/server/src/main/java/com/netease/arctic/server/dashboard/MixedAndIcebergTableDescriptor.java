@@ -72,7 +72,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Descriptor for Mixed-Hive,Mixed-Iceberg, Iceberg format.
+ * Descriptor for Mixed-Hive, Mixed-Iceberg, Iceberg format tables.
  */
 public class MixedAndIcebergTableDescriptor implements FormatTableDescriptor {
 
