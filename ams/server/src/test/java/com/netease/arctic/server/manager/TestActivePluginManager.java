@@ -41,9 +41,9 @@ public class TestActivePluginManager {
   private static final String PLUGIN_NAME_1 = "plugin1";
   private static final String PLUGIN_NAME_2 = "plugin2";
   private static final String PLUGIN_CLASS_1 =
-      "com.netease.arctic.server.manager.TestDefaultPluginManager$TestPluginImpl1";
+      "com.netease.arctic.server.manager.TestActivePluginManager$TestPluginImpl1";
   private static final String PLUGIN_CLASS_2 =
-      "com.netease.arctic.server.manager.TestDefaultPluginManager$TestPluginImpl2";
+      "com.netease.arctic.server.manager.TestActivePluginManager$TestPluginImpl2";
 
   private static final Map<String, String> PLUGIN_CLASS_MAP = new HashMap<String, String>() {
     {
