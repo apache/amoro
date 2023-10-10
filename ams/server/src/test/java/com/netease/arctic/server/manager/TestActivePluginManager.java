@@ -61,7 +61,7 @@ public class TestActivePluginManager {
       protected Map<String, String> loadProperties(String pluginName) {
         return new HashMap<String, String>() {
           {
-            put(PUGIN_IMPLEMENTION_CLASS, PLUGIN_CLASS_MAP.get(pluginName));
+            put(PLUGIN_IMPLEMENTATION_CLASS, PLUGIN_CLASS_MAP.get(pluginName));
           }
         };
       }

@@ -21,17 +21,25 @@ package com.netease.arctic.server.manager;
 import com.netease.arctic.ams.api.ActivePlugin;
 import com.netease.arctic.ams.api.PluginManager;
 import com.netease.arctic.server.exception.LoadingPluginException;
+import com.netease.arctic.server.exception.UndefinedException;
 import com.netease.arctic.server.utils.PreconditionUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class ActivePluginManager<T extends ActivePlugin>
     implements PluginManager<T>, Iterable<T> {
 
-  protected static final String PUGIN_IMPLEMENTION_CLASS = "impl";
+  protected static final String PLUGIN_IMPLEMENTATION_CLASS = "impl";
+  protected static final String JAR_PATH = "jarPath";
 
   private final Map<String, T> installedPlugins = new ConcurrentHashMap<>();
 
@@ -46,16 +54,40 @@ public abstract class ActivePluginManager<T extends ActivePlugin>
     PreconditionUtils.checkNotExist(installedPlugins.containsKey(pluginName),
         "Plugin " + pluginName);
     Map<String, String> properties = loadProperties(pluginName);
-    String pluginClass = properties.get(PUGIN_IMPLEMENTION_CLASS);
+    String pluginClass = properties.get(PLUGIN_IMPLEMENTATION_CLASS);
+    String jarPath = properties.get(JAR_PATH);
     try {
-      Class<?> clazz = Class.forName(pluginClass);
+      ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+      if (jarPath != null) {
+        if (jarPath.endsWith("jar")) {
+          classLoader = new URLClassLoader(new URL[]{ new URL(jarPath) }, classLoader);
+        } else {
+          URL[] jarFiles = Optional.ofNullable(new File(jarPath)
+                  .listFiles((dir, name) -> name.endsWith(".jar")))
+              .map(Arrays::asList)
+              .map(files -> files.stream().map(this::fileToURL).toArray(URL[]::new))
+              .orElse(null);
+          if (jarFiles != null) {
+            classLoader = new URLClassLoader(jarFiles, classLoader);
+          }
+        }
+      }
+      Class<?> clazz = classLoader.loadClass(pluginClass);
       T plugin = (T) clazz.newInstance();
       installedPlugins.computeIfAbsent(pluginName, k -> {
         plugin.open(properties);
         return plugin;
       });
-    } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+    } catch (Exception e) {
       throw new LoadingPluginException("Cannot load plugin " + pluginName, e);
+    }
+  }
+
+  private URL fileToURL(File file) {
+    try {
+      return file.toURI().toURL();
+    } catch (MalformedURLException e) {
+      throw new UndefinedException(e);
     }
   }
 

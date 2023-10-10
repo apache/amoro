@@ -18,8 +18,7 @@
 
 package com.netease.arctic.ams.api;
 
-
-import com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
 
