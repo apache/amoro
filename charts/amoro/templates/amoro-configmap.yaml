@@ -18,7 +18,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}
+  name:  {{ include "common.names.fullname" . }}
   labels:
     {{- include "amoro.labels" . | nindent 4 }}
 data:
@@ -111,13 +111,13 @@ data:
 
     containers:
       - name: localContainer
-        container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer
+        container-impl: com.netease.arctic.optimizer.container.LocalOptimizerContainer
         properties:
           export.JAVA_HOME: "/opt/java"   # JDK environment
 
             #containers:
             #  - name: flinkContainer
-            #    container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
+            #    container-impl: com.netease.arctic.optimizer.container.FlinkOptimizerContainer
             #    properties:
             #      flink-home: "/opt/flink/"                                     # Flink install home
             #      export.JVM_ARGS: "-Djava.security.krb5.conf=/opt/krb5.conf"   # Flink launch jvm args, like kerberos config when ues kerberos

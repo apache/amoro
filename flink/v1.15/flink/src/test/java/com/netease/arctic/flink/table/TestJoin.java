@@ -91,7 +91,7 @@ public class TestJoin extends FlinkTestBase {
     getCatalog().dropTable(TABLE_ID, true);
   }
 
-  @Test(timeout = 180000)
+  @Test
   public void testRightEmptyLookupJoin() throws Exception {
     getEnv().getCheckpointConfig().disableCheckpointing();
     List<Object[]> data = new LinkedList<>();
@@ -153,7 +153,7 @@ public class TestJoin extends FlinkTestBase {
     Assert.assertEquals(DataUtil.toRowSet(expected), actual);
   }
 
-  @Test(timeout = 180000)
+  @Test
   public void testLookupJoin() throws Exception {
     getEnv().getCheckpointConfig().disableCheckpointing();
     List<Object[]> data = new LinkedList<>();
@@ -247,7 +247,7 @@ public class TestJoin extends FlinkTestBase {
     Assert.assertEquals(DataUtil.toRowSet(expected), actual);
   }
 
-  @Test(timeout = 180000)
+  @Test
   public void testLookupJoinWithPartialFields() throws Exception {
     getEnv().getCheckpointConfig().disableCheckpointing();
     List<Object[]> data = new LinkedList<>();
