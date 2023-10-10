@@ -53,7 +53,7 @@
 
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-ams-optimizer</artifactId>
+            <artifactId>amoro-optimizer-container</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -291,6 +291,13 @@
             <version>${project.version}</version>
             <scope>test</scope>
             <type>test-jar</type>
+        </dependency>
+
+        <dependency>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>standalone-optimizer</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
