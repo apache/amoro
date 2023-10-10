@@ -16,10 +16,9 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizer.container;
+package com.netease.arctic.server.manager;
 
 import com.netease.arctic.ams.api.resource.Resource;
-import com.netease.arctic.optimizer.common.Optimizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,8 +51,8 @@ public class LocalOptimizerContainer extends AbstractResourceContainer {
 
   @Override
   protected String buildOptimizerStartupArgsString(Resource resource) {
-    long memoryPerThread = Long.parseLong(PropertyUtil.checkAndGetProperty(resource.getProperties(),
-        JOB_MEMORY_PROPERTY));
+    long memoryPerThread = Long.parseLong(
+        resource.getRequiredProperty(JOB_MEMORY_PROPERTY));
     long memory = memoryPerThread * resource.getThreadCount();
     return String.format("%s/bin/optimizer.sh %s %s", amsHome, memory,
         super.buildOptimizerStartupArgsString(resource));
@@ -61,8 +60,7 @@ public class LocalOptimizerContainer extends AbstractResourceContainer {
 
   @Override
   public void releaseOptimizer(Resource resource) {
-    long jobId = Long.parseLong(PropertyUtil.checkAndGetProperty(resource.getProperties(),
-        Optimizer.PROPERTY_JOB_ID));
+    long jobId = Long.parseLong(resource.getRequiredProperty(Resource.PROPERTY_JOB_ID));
 
     String os = System.getProperty("os.name").toLowerCase();
     String cmd;

@@ -16,11 +16,10 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizer.container;
+package com.netease.arctic.server.manager;
 
 import com.netease.arctic.ams.api.PropertyNames;
 import com.netease.arctic.ams.api.resource.Resource;
-import com.netease.arctic.optimizer.common.Optimizer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.shaded.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Function;
@@ -43,6 +42,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class FlinkOptimizerContainer extends AbstractResourceContainer {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkOptimizerContainer.class);
@@ -114,11 +114,11 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
           containerProperties
       ).build();
 
-      String imageRef = flinkConf.configValue(FlinkConf.PropertyKeys.KUBERNETES_IMAGE_REF);
+      String imageRef = flinkConf.configValue(FlinkConfKeys.KUBERNETES_IMAGE_REF);
       Preconditions.checkArgument(
           StringUtils.isNotEmpty(imageRef),
           "The flink-conf: %s is required if running target is %s",
-          FlinkConf.PropertyKeys.KUBERNETES_IMAGE_REF, target.getValue());
+          FlinkConfKeys.KUBERNETES_IMAGE_REF, target.getValue());
     }
   }
 
@@ -162,17 +162,17 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
 
     long jobManagerMemory = getMemorySizeValue(properties, resourceFlinkConf,
         JOB_MANAGER_MEMORY_PROPERTY,
-        FlinkConf.PropertyKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY);
+        FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY);
     long taskManagerMemory = getMemorySizeValue(properties, resourceFlinkConf,
         TASK_MANAGER_MEMORY_PROPERTY,
-        FlinkConf.PropertyKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY);
+        FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY);
 
     resourceFlinkConf.putToOptions(
-        FlinkConf.PropertyKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY,
+        FlinkConfKeys.JOB_MANAGER_TOTAL_PROCESS_MEMORY,
         jobManagerMemory + "m"
     );
     resourceFlinkConf.putToOptions(
-        FlinkConf.PropertyKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY,
+        FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY,
         taskManagerMemory + "m"
     );
 
@@ -200,7 +200,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
 
   private void addKubernetesProperties(Resource resource, FlinkConf flinkConf) {
     String clusterId = kubernetesClusterId(resource);
-    flinkConf.putToOptions(FlinkConf.PropertyKeys.KUBERNETES_CLUSTER_ID, clusterId);
+    flinkConf.putToOptions(FlinkConfKeys.KUBERNETES_CLUSTER_ID, clusterId);
 
     String[] labels = {
         "amoro.optimizing-group:" + resource.getGroupName(),
@@ -208,8 +208,8 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
         "amoro.optimizer-id:" + resource.getResourceId()
     };
     String resourceLabel = Joiner.on(',').join(labels);
-    flinkConf.putToOptions(FlinkConf.PropertyKeys.KUBERNETES_TASKMANAGER_LABLES, resourceLabel);
-    flinkConf.putToOptions(FlinkConf.PropertyKeys.KUBERNETES_JOBMANAGER_LABLES, resourceLabel);
+    flinkConf.putToOptions(FlinkConfKeys.KUBERNETES_TASKMANAGER_LABLES, resourceLabel);
+    flinkConf.putToOptions(FlinkConfKeys.KUBERNETES_JOBMANAGER_LABLES, resourceLabel);
   }
 
   /**
@@ -320,9 +320,9 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     String applicationId = resource.getProperties().get(YARN_APPLICATION_ID_PROPERTY);
     String options = "-Dyarn.application.id=" + applicationId;
 
-    Preconditions.checkArgument(resource.getProperties().containsKey(Optimizer.PROPERTY_JOB_ID),
-        "Cannot find {} from optimizer properties", Optimizer.PROPERTY_JOB_ID);
-    String jobId = resource.getProperties().get(Optimizer.PROPERTY_JOB_ID);
+    Preconditions.checkArgument(resource.getProperties().containsKey(Resource.PROPERTY_JOB_ID),
+        "Cannot find {} from optimizer properties", Resource.PROPERTY_JOB_ID);
+    String jobId = resource.getProperties().get(Resource.PROPERTY_JOB_ID);
     return String.format("%s/bin/flink cancel -t %s %s %s",
         flinkHome, target.getValue(), options, jobId);
   }
@@ -334,7 +334,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
 
     FlinkConf conf = FlinkConf.buildFor(loadFlinkConfig(), getContainerProperties())
         .withGroupProperties(resource.getProperties()).build();
-    conf.putToOptions(FlinkConf.PropertyKeys.KUBERNETES_CLUSTER_ID, clusterId);
+    conf.putToOptions(FlinkConfKeys.KUBERNETES_CLUSTER_ID, clusterId);
 
     String options = conf.toCliOptions();
 
@@ -345,7 +345,8 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
   }
 
   private String getFlinkHome() {
-    String flinkHome = PropertyUtil.getRequiredNotNull(getContainerProperties(), FLINK_HOME_PROPERTY);
+    String flinkHome = getContainerProperties().get(FLINK_HOME_PROPERTY);
+    Preconditions.checkNotNull(flinkHome, "Container property: %s is required", FLINK_HOME_PROPERTY);
     return flinkHome.replaceAll("/$", "");
   }
 
@@ -385,6 +386,88 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
 
     public String getValue() {
       return value;
+    }
+  }
+
+  public static class FlinkConfKeys {
+    public static final String JOB_MANAGER_TOTAL_PROCESS_MEMORY = "jobmanager.memory.process.size";
+    public static final String TASK_MANAGER_TOTAL_PROCESS_MEMORY = "taskmanager.memory.process.size";
+    public static final String KUBERNETES_IMAGE_REF = "kubernetes.container.image";
+
+    public static final String KUBERNETES_CLUSTER_ID = "kubernetes.cluster-id";
+    public static final String KUBERNETES_TASKMANAGER_LABLES = "kubernetes.taskmanager.labels";
+    public static final String KUBERNETES_JOBMANAGER_LABLES = "kubernetes.jobmanager.labels";
+  }
+
+  public static class FlinkConf {
+
+    public static final String FLINK_PARAMETER_PREFIX = "flink-conf.";
+
+    final Map<String, String> flinkConf;
+    final Map<String, String> flinkOptions;
+
+    public FlinkConf(Map<String, String> flinkConf, Map<String, String> flinkOptions) {
+      this.flinkConf = flinkConf;
+      this.flinkOptions = flinkOptions;
+    }
+
+    public String configValue(String key) {
+      if (flinkOptions.containsKey(key)) {
+        return flinkOptions.get(key);
+      }
+      return flinkConf.get(key);
+    }
+
+    public void putToOptions(String key, String value) {
+      this.flinkOptions.put(key, value);
+    }
+
+    /**
+     * The properties with prefix "flink-conf." will be merged with the following priority
+     * and transformed into Flink options.
+     * 1. optimizing-group properties
+     * 2. optimizing-container properties
+     *
+     * @return flink options, format is `-Dkey1=value1 -Dkey2=value2`
+     */
+    public String toCliOptions() {
+      return flinkOptions.entrySet().stream()
+          .map(entry -> "-D" + entry.getKey() + "=" + entry.getValue())
+          .collect(Collectors.joining(" "));
+    }
+
+    public static Builder buildFor(Map<String, String> flinkConf, Map<String, String> containerProperties) {
+      return new Builder(flinkConf, containerProperties);
+    }
+
+    public static class Builder {
+      final Map<String, String> flinkConf;
+
+      Map<String, String> containerProperties;
+      Map<String, String> groupProperties = Collections.emptyMap();
+
+      public Builder(Map<String, String> flinkConf, Map<String, String> containerProperties) {
+        this.flinkConf = Maps.newHashMap(flinkConf);
+        this.containerProperties = containerProperties == null ? Collections.emptyMap() : containerProperties;
+      }
+
+      public Builder withGroupProperties(Map<String, String> groupProperties) {
+        this.groupProperties = groupProperties;
+        return this;
+      }
+
+      public FlinkConf build() {
+        Map<String, String> options = Maps.newHashMap();
+        this.containerProperties.entrySet().stream()
+            .filter(entry -> entry.getKey().startsWith(FLINK_PARAMETER_PREFIX))
+            .forEach(entry -> options.put(entry.getKey().substring(FLINK_PARAMETER_PREFIX.length()), entry.getValue()));
+
+        this.groupProperties.entrySet().stream()
+            .filter(entry -> entry.getKey().startsWith(FLINK_PARAMETER_PREFIX))
+            .forEach(entry -> options.put(entry.getKey().substring(FLINK_PARAMETER_PREFIX.length()), entry.getValue()));
+
+        return new FlinkConf(this.flinkConf, options);
+      }
     }
   }
 }
