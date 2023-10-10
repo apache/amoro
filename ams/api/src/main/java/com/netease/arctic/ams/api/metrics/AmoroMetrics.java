@@ -18,5 +18,9 @@
 
 package com.netease.arctic.ams.api.metrics;
 
+/**
+ * Metrics data of to {@link MetricType}.SERVICE
+ * the data related to Amoro process
+ */
 public interface AmoroMetrics {
 }
