@@ -2,6 +2,7 @@ package com.netease.arctic.server.table;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
@@ -20,7 +21,6 @@ import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.blocker.TableBlocker;
 import com.netease.arctic.server.utils.Configurations;
-import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
@@ -160,8 +160,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
     InternalCatalog catalog = getInternalCatalog(catalogName);
     ServerTableIdentifier tableIdentifier = catalog.createTable(tableMetadata);
-    ArcticTable table = catalog.loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
-    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
+    AmoroTable<?> table = catalog.loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
+    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, table.format(), this, table.properties());
     tableRuntimeMap.put(tableIdentifier, tableRuntime);
     if (headHandler != null) {
       headHandler.fireTableAdded(table, tableRuntime);
@@ -205,7 +205,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public ArcticTable loadTable(ServerTableIdentifier tableIdentifier) {
+  public AmoroTable<?> loadTable(ServerTableIdentifier tableIdentifier) {
     checkStarted();
     return getServerCatalog(tableIdentifier.getCatalog())
         .loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
@@ -454,10 +454,10 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private void handleTableRuntimeAdded(ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
     ServerTableIdentifier tableIdentifier =
         externalCatalog.getServerTableIdentifier(tableIdentity.getDatabase(), tableIdentity.getTableName());
-    ArcticTable table = externalCatalog.loadTable(
+    AmoroTable<?> table = externalCatalog.loadTable(
         tableIdentifier.getDatabase(),
         tableIdentifier.getTableName());
-    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
+    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, table.format(), this, table.properties());
     tableRuntimeMap.put(tableIdentifier, tableRuntime);
     if (headHandler != null) {
       headHandler.fireTableAdded(table, tableRuntime);

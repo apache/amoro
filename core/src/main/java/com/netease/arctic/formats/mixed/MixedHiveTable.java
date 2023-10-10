@@ -16,22 +16,19 @@
  * limitations under the License.
  */
 
-package com.netease.arctic;
+package com.netease.arctic.formats.mixed;
 
-public interface Snapshot {
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.table.ArcticTable;
 
-  /**
-   * Returns the watermark of this snapshot.
-   */
-  long watermark();
+public class MixedHiveTable extends MixedIcebergTable {
 
-  /**
-   * Returns the commit time of this snapshot.
-   */
-  long commitTime();
+  public MixedHiveTable(ArcticTable arcticTable) {
+    super(arcticTable);
+  }
 
-  /**
-   * Returns the id of this snapshot.
-   */
-  String id();
+  @Override
+  public TableFormat format() {
+    return TableFormat.MIXED_HIVE;
+  }
 }
