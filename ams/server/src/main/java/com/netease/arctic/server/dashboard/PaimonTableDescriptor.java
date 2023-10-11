@@ -22,7 +22,6 @@ import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.dashboard.component.reverser.DDLReverser;
 import com.netease.arctic.server.dashboard.component.reverser.PaimonTableMetaExtract;
-import com.netease.arctic.server.dashboard.component.reverser.SparkMetadataChangeHandler;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
@@ -61,8 +60,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   public List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) throws Exception {
     DataTable table = getTable(amoroTable);
     PaimonTableMetaExtract extract = new PaimonTableMetaExtract();
-    SparkMetadataChangeHandler metadataChangeHandler = new SparkMetadataChangeHandler(table.name());
-    DDLReverser<DataTable> ddlReverser = new DDLReverser<>(extract, metadataChangeHandler);
+    DDLReverser<DataTable> ddlReverser = new DDLReverser<>(extract);
     return ddlReverser.reverse(table, amoroTable.id());
   }
 

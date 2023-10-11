@@ -19,16 +19,18 @@
 package com.netease.arctic.server.dashboard.component.reverser;
 
 import com.google.common.collect.Lists;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.types.Type;
+import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * TableMetaExtract for iceberg table.
@@ -70,7 +72,7 @@ public class IcebergTableMetaExtract implements TableMetaExtract<Table> {
                 field.fieldId(),
                 parent,
                 formatName(name),
-                fieldType.toString(),
+                dateTypeToSparkString(fieldType),
                 field.doc(),
                 field.isRequired()
             ));
@@ -85,7 +87,7 @@ public class IcebergTableMetaExtract implements TableMetaExtract<Table> {
               type.asListType().elementId(),
               parent,
               formatName(name),
-              elementType.toString(),
+              dateTypeToSparkString(elementType),
               "",
               false
           )
@@ -100,7 +102,7 @@ public class IcebergTableMetaExtract implements TableMetaExtract<Table> {
           keyId,
           parent,
           formatName(keyName),
-          keyType.toString(),
+          dateTypeToSparkString(keyType),
           "",
           false
       ));
@@ -114,7 +116,7 @@ public class IcebergTableMetaExtract implements TableMetaExtract<Table> {
           valueId,
           parent,
           formatName(valueName),
-          valueType.toString(),
+          dateTypeToSparkString(valueType),
           "",
           false
       ));
@@ -125,6 +127,10 @@ public class IcebergTableMetaExtract implements TableMetaExtract<Table> {
 
   private String formatName(List<String> names) {
     return String.join(".", names);
+  }
+
+  private String dateTypeToSparkString(Type type) {
+    return TypeUtil.visit(type, new IcebergTypeToSparkType()).catalogString();
   }
 
   public static void main(String[] args) {

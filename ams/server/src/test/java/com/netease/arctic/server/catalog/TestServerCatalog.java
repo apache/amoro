@@ -30,13 +30,13 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
-public class ExternalCatalogTest extends TableCatalogTestBase {
+public class TestServerCatalog extends TableCatalogTestBase {
 
   private final String testDatabaseName = "test_database";
 
   private final String testTableName = "test_table";
 
-  public ExternalCatalogTest(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
+  public TestServerCatalog(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
     super(amoroCatalogTestHelper);
   }
 

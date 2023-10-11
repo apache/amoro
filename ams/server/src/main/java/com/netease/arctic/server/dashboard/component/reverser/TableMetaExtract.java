@@ -18,7 +18,8 @@
 
 package com.netease.arctic.server.dashboard.component.reverser;
 
-import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
+
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -115,12 +116,12 @@ interface TableMetaExtract<T> {
     }
 
     public String columnString() {
-      return String.format("%s %s %s", name, type, comment == null ? "" : comment);
+      return String.format("%s %s", name, type);
     }
 
     @Override
     public String toString() {
-      return MoreObjects.toStringHelper(this)
+      return Objects.toStringHelper(this)
           .add("id", id)
           .add("parentId", parentId)
           .add("name", name)

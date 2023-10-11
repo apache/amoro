@@ -29,6 +29,7 @@ import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.options.CatalogOptions;
 import org.apache.paimon.schema.Schema;
+import org.apache.paimon.schema.SchemaChange;
 import org.apache.paimon.types.DataTypes;
 
 import java.util.HashMap;
@@ -93,6 +94,30 @@ public class PaimonHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Cat
   @Override
   public String catalogName() {
     return catalogName;
+  }
+
+  @Override
+  public void setTableProperties(String db, String tableName, String key, String value) {
+    try {
+      originalCatalog().alterTable(
+          Identifier.create(db, tableName),
+          SchemaChange.setOption(key, value),
+          true);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void removeTableProperties(String db, String tableName, String key) {
+    try {
+      originalCatalog().alterTable(
+          Identifier.create(db, tableName),
+          SchemaChange.removeOption(key),
+          true);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

@@ -25,7 +25,6 @@ import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.op.SnapshotSummary;
 import com.netease.arctic.server.dashboard.component.reverser.DDLReverser;
 import com.netease.arctic.server.dashboard.component.reverser.IcebergTableMetaExtract;
-import com.netease.arctic.server.dashboard.component.reverser.SparkMetadataChangeHandler;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
 import com.netease.arctic.server.dashboard.model.AMSPartitionField;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
@@ -237,9 +236,8 @@ public class MixedAndIcebergTableDescriptor implements FormatTableDescriptor {
     }
 
     IcebergTableMetaExtract extract = new IcebergTableMetaExtract();
-    SparkMetadataChangeHandler metadataChangeHandler = new SparkMetadataChangeHandler(arcticTable.name());
-    DDLReverser<Table> ddlReverser = new DDLReverser<>(extract, metadataChangeHandler);
-    return ddlReverser.reverse(table);
+    DDLReverser<Table> ddlReverser = new DDLReverser<>(extract);
+    return ddlReverser.reverse(table, amoroTable.id());
   }
 
   @Override

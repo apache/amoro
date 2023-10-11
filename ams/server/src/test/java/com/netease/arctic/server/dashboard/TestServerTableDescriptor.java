@@ -18,51 +18,110 @@
 
 package com.netease.arctic.server.dashboard;
 
-import com.netease.arctic.BasicTableTestHelper;
-import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
-import com.netease.arctic.hive.catalog.HiveTableTestHelper;
+import com.netease.arctic.formats.AmoroCatalogTestHelper;
+import com.netease.arctic.server.catalog.TableCatalogTestBase;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
-import com.netease.arctic.server.table.AMSTableTestBase;
-import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.server.table.ServerTableIdentifier;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import java.util.List;
 
-@RunWith(Parameterized.class)
-public class TestServerTableDescriptor extends AMSTableTestBase {
+public abstract class TestServerTableDescriptor extends TableCatalogTestBase {
 
-  @Parameterized.Parameters(name = "{0}, {1}")
-  public static Object[] parameters() {
-    return new Object[][] {{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-        new BasicTableTestHelper(true, true)},
-        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new HiveTableTestHelper(true, true)}};
+  protected static final String TEST_DB = "test_db";
+
+  protected static final String TEST_TABLE = "test_table";
+
+  public TestServerTableDescriptor(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
+    super(amoroCatalogTestHelper);
   }
 
-  public TestServerTableDescriptor(CatalogTestHelper catalogTestHelper,
-                                   TableTestHelper tableTestHelper) {
-    super(catalogTestHelper, tableTestHelper, true);
+  @Before
+  public void before() {
+    getAmoroCatalog().createDatabase(TEST_DB);
+    try {
+      getAmoroCatalogTestHelper().createTable(TEST_DB, TEST_TABLE);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Test
-  public void getTableOperations() throws Exception {
+  public void tableOperations() throws Exception {
     ServerTableDescriptor serverTableDescriptor = new ServerTableDescriptor(tableService());
-    ArcticTable arcticTable = (ArcticTable) tableService().loadTable(serverTableIdentifier()).originalTable();
-    arcticTable.updateProperties().set("key", "value1").commit();
-    List<DDLInfo> tableOperations = serverTableDescriptor.getTableOperations(serverTableIdentifier());
-    Assert.assertEquals(1, tableOperations.size());
-    DDLInfo ddlInfo = tableOperations.get(0);
-    Assert.assertEquals(ddlInfo.getDdl(),
-        "ALTER TABLE test_catalog.test_db.test_table SET TBLPROPERTIES ('key'='value1')");
-    arcticTable.updateProperties().set("key", "value2").commit();
-    tableOperations = serverTableDescriptor.getTableOperations(serverTableIdentifier());
-    Assert.assertEquals(2, tableOperations.size());
+
+    //add properties
+    getAmoroCatalogTestHelper().setTableProperties(TEST_DB, TEST_TABLE, "k1", "v1");
+
+    //remove properties
+    getAmoroCatalogTestHelper().removeTableProperties(TEST_DB, TEST_TABLE, "k1");
+
+    //add columns
+    tableOperationsAddColumns();
+
+    //rename columns
+    tableOperationsRenameColumns();
+
+    //change columns type
+    tableOperationsChangeColumnType();
+
+    //change columns comment
+    tableOperationsChangeColumnComment();
+
+    //change columns nullable
+    tableOperationsChangeColumnRequired();
+
+    //change columns default value
+    tableOperationsDropColumn();
+
+    List<DDLInfo> tableOperations = serverTableDescriptor.getTableOperations(
+        ServerTableIdentifier.of(getAmoroCatalogTestHelper().catalogName(), TEST_DB, TEST_TABLE));
+
+    Assert.assertEquals(
+        tableOperations.get(0).getDdl(),
+        "ALTER TABLE test_table SET TBLPROPERTIES ('k1' = 'v1')");
+
+    Assert.assertEquals(
+        tableOperations.get(1).getDdl(),
+        "ALTER TABLE test_table UNSET TBLPROPERTIES ('k1')");
+
+    Assert.assertTrue(
+        tableOperations.get(2).getDdl()
+            .equalsIgnoreCase("ALTER TABLE test_table ADD COLUMNS (new_col int)"));
+
+    Assert.assertTrue(
+        tableOperations.get(3).getDdl()
+            .equalsIgnoreCase("ALTER TABLE test_table RENAME COLUMN new_col TO renamed_col"));
+
+    Assert.assertTrue(
+        tableOperations.get(4).getDdl()
+            .equalsIgnoreCase("ALTER TABLE test_table ALTER COLUMN renamed_col TYPE BIGINT"));
+
+    Assert.assertTrue(
+        tableOperations.get(5).getDdl()
+            .equalsIgnoreCase("ALTER TABLE test_table ALTER COLUMN renamed_col COMMENT 'new comment'"));
+
+    Assert.assertTrue(
+        tableOperations.get(6).getDdl()
+            .equalsIgnoreCase("ALTER TABLE test_table ALTER COLUMN renamed_col DROP NOT NULL"));
+
+    Assert.assertTrue(
+        tableOperations.get(7).getDdl()
+            .equalsIgnoreCase("ALTER TABLE test_table DROP COLUMN renamed_col")
+    );
   }
+
+  protected abstract void tableOperationsAddColumns();
+
+  protected abstract void tableOperationsRenameColumns();
+
+  protected abstract void tableOperationsChangeColumnType();
+
+  protected abstract void tableOperationsChangeColumnComment();
+
+  protected abstract void tableOperationsChangeColumnRequired();
+
+  protected abstract void tableOperationsDropColumn();
 }

@@ -21,6 +21,8 @@ package com.netease.arctic.server.dashboard.component.reverser;
 import com.google.common.collect.Maps;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,20 +30,21 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 public class DDLReverser<T> {
 
   private final TableMetaExtract<T> tableMetaExtract;
 
-  private final MetadataChangeHandler metadataChangeHandler;
-
-  public DDLReverser(TableMetaExtract<T> tableMetaExtract, MetadataChangeHandler metadataChangeHandler) {
+  public DDLReverser(TableMetaExtract<T> tableMetaExtract) {
     this.tableMetaExtract = tableMetaExtract;
-    this.metadataChangeHandler = metadataChangeHandler;
   }
 
   public List<DDLInfo> reverse(T table, TableIdentifier tableIdentifier) throws Exception {
+
+    //Currently only spark metadata change
+    SparkMetadataChangeHandler metadataChangeHandler =
+        new SparkMetadataChangeHandler(tableIdentifier.getTableName());
+
     List<TableMetaExtract.InternalTableMeta> internalTableMetas = tableMetaExtract.extractTable(table);
     if (internalTableMetas.isEmpty() || internalTableMetas.size() == 1) {
       return Collections.emptyList();
@@ -53,12 +56,12 @@ public class DDLReverser<T> {
       TableMetaExtract.InternalTableMeta pre = internalTableMetas.get(i - 1);
       TableMetaExtract.InternalTableMeta current = internalTableMetas.get(i);
 
-      compareProperties(pre.getProperties(), current.getProperties())
+      compareProperties(pre.getProperties(), current.getProperties(), metadataChangeHandler)
           .forEach(sql -> result.add(
               DDLInfo.of(tableIdentifier, sql, DDLInfo.DDLType.UPDATE_PROPERTIES, current.getTime()))
           );
 
-      compareSchemas(pre.getInternalSchema(), current.getInternalSchema())
+      compareSchemas(pre.getInternalSchema(), current.getInternalSchema(), metadataChangeHandler)
           .forEach(sql -> result.add(
               DDLInfo.of(tableIdentifier, sql, DDLInfo.DDLType.UPDATE_SCHEMA, current.getTime()))
           );
@@ -66,7 +69,7 @@ public class DDLReverser<T> {
     return result;
   }
 
-  private List<String> compareProperties(Map<String, String> pre, Map<String, String> current) {
+  private List<String> compareProperties(Map<String, String> pre, Map<String, String> current, MetadataChangeHandler metadataChangeHandler) {
     // Although only one SQL statement can be executed at a time,
     // using the Java API to make modifications can result in the effect of multiple SQL statements.
     List<String> result = new ArrayList<>();
@@ -97,7 +100,8 @@ public class DDLReverser<T> {
     return result;
   }
 
-  private List<String> compareSchemas(List<TableMetaExtract.InternalSchema> pre, List<TableMetaExtract.InternalSchema> current) {
+  private List<String> compareSchemas(List<TableMetaExtract.InternalSchema> pre,
+      List<TableMetaExtract.InternalSchema> current, MetadataChangeHandler metadataChangeHandler) {
     // Although only one SQL statement can be executed at a time,
     // using the Java API to make modifications can result in the effect of multiple SQL statements.
     List<String> result = new ArrayList<>();
