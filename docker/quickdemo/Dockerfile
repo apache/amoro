@@ -15,11 +15,33 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM openjdk:8u332-jdk
+# Usage:
+#   Run the docker command below under project dir.
+#      docker build \
+#        --file docker/amoro/Dockerfile \
+#        --tag arctic163/amoro:tagname \
+#        --build-arg AMORO_TAG=${AMORO_TAG} \
+#        --build-arg FLINK_VERSION=${FLINK_VERSION} \
+#        .
+ARG AMORO_TAG=master-snapshot
 
-ARG AMORO_VERSION=0.5.0-SNAPSHOT
+FROM eclipse-temurin:8-jdk-jammy as builder
 ARG FLINK_VERSION=1.15.3
-ARG FLINK_VERSION_PRE=1.15
+
+ADD . /workspace/amoro
+WORKDIR /workspace/amoro
+
+RUN AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'` \
+    && FLINK_VERSION=${FLINK_VERSION} \
+    && FLINK_MAJOR_VERSION="${FLINK_VERSION%.*}" \
+    && cp flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar \
+      /opt/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar \
+    && rm -rf /workspace/amoro
+
+
+FROM arctic163/amoro:${AMORO_TAG}
+
+ARG FLINK_VERSION=1.15.3
 ARG FLINK_HADOOP_VERSION=2.8.3-10.0
 ARG HIVE_VERSION=2.1.1
 ARG ICEBERG_VERSION=1.1.0
@@ -27,16 +49,9 @@ ARG APACHE_ARCHIVE=https://archive.apache.org/dist
 ARG MAVEN_URL=https://maven.aliyun.com/repository/central
 ARG DEBIAN_MIRROR=http://deb.debian.org
 
-WORKDIR /usr/local/ams
 
-RUN sed -i "s#http://deb.debian.org#${DEBIAN_MIRROR}#g" /etc/apt/sources.list
-
-RUN apt update \
-    && apt-get install -y vim \
+RUN apt-get update \
     && apt-get install -y netcat \
-    && apt-get install -y net-tools \
-    && apt-get install -y telnet \
-    && apt-get install -y dos2unix \
     && apt-get clean
 
 WORKDIR /usr/local
@@ -47,25 +62,16 @@ ENV FLINK_HOME=/usr/local/flink-${FLINK_VERSION} \
     PATH=${PATH}:${FLINK_HOME}/bin
 WORKDIR ${FLINK_HOME}/lib
 RUN cp ../examples/table/ChangelogSocketExample.jar . \
+    && FLINK_VERSION=${FLINK_VERSION} \
+    && FLINK_MAJOR_VERSION="${FLINK_VERSION%.*}" \
     && wget ${MAVEN_URL}/org/apache/flink/flink-shaded-hadoop-2-uber/${FLINK_HADOOP_VERSION}/flink-shaded-hadoop-2-uber-${FLINK_HADOOP_VERSION}.jar \
     && wget ${MAVEN_URL}/org/apache/hive/hive-exec/${HIVE_VERSION}/hive-exec-${HIVE_VERSION}.jar \
-    && wget ${MAVEN_URL}/org/apache/iceberg/iceberg-flink-runtime-${FLINK_VERSION_PRE}/${ICEBERG_VERSION}/iceberg-flink-runtime-${FLINK_VERSION_PRE}-${ICEBERG_VERSION}.jar
+    && wget ${MAVEN_URL}/org/apache/iceberg/iceberg-flink-runtime-${FLINK_MAJOR_VERSION}/${ICEBERG_VERSION}/iceberg-flink-runtime-${FLINK_MAJOR_VERSION}-${ICEBERG_VERSION}.jar
 WORKDIR ${FLINK_HOME}
-ADD amoro-flink-runtime-*.jar ${FLINK_HOME}/lib/
-COPY flink-conf.yaml ${FLINK_HOME}/conf/flink-conf.yaml
+
+COPY --from=builder /opt/*.jar ${FLINK_HOME}/lib/
+COPY ./docker/quickdemo/flink-conf.yaml ${FLINK_HOME}/conf/flink-conf.yaml
 RUN ln -s ${FLINK_HOME} /usr/local/flink
 
-WORKDIR /usr/local/ams
-ADD amoro-${AMORO_VERSION}-bin.zip /usr/local/ams/amoro-${AMORO_VERSION}-bin.zip
-RUN unzip amoro-${AMORO_VERSION}-bin.zip \
-    && rm -f amoro-${AMORO_VERSION}-bin.zip
-WORKDIR /usr/local/ams/amoro-${AMORO_VERSION}
-COPY config.sh  ./bin/config.sh
-RUN find ./bin -name "*.sh" | xargs dos2unix
-RUN mkdir -p ./logs && touch ./logs/ams-info.log
-RUN ln -s /usr/local/ams/amoro-${AMORO_VERSION} /usr/local/amoro
-
-WORKDIR /usr/local
-CMD ["bash","-c","./amoro/bin/ams.sh start && tail -f ./amoro/logs/ams-info.log"]
 
 

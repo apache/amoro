@@ -16,11 +16,29 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.metrics;
+package com.netease.arctic.server.manager;
 
-/**
- * Metrics report
- */
-public interface MetricReport {
-  String name();
+import java.io.Closeable;
+
+public class ClassLoaderContext implements Closeable {
+
+  private final ClassLoader originalClassLoader;
+
+  public ClassLoaderContext(Object object) {
+    ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+    ClassLoader targetClassLoader = object.getClass().getClassLoader();
+    if (currentClassLoader != targetClassLoader) {
+      this.originalClassLoader = currentClassLoader;
+      Thread.currentThread().setContextClassLoader(targetClassLoader);
+    } else {
+      this.originalClassLoader = null;
+    }
+  }
+
+  @Override
+  public void close() {
+    if (originalClassLoader != null) {
+      Thread.currentThread().setContextClassLoader(originalClassLoader);
+    }
+  }
 }
