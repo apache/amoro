@@ -20,9 +20,9 @@ package com.netease.arctic.server.dashboard.component.reverser;
 
 import com.google.common.base.Objects;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
 
 /**
  * An interface for returning the historical metadata of a table.
@@ -34,7 +34,7 @@ interface TableMetaExtract<T> {
   /**
    * Extract the historical metadata of a table.
    */
-  List<InternalTableMeta> extractTable(T table) throws Exception;
+  List<InternalTableMeta> extractTable(T table);
 
   class InternalTableMeta {
 

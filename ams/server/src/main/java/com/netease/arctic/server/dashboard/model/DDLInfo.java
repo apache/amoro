@@ -19,17 +19,6 @@
 package com.netease.arctic.server.dashboard.model;
 
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.TableMetadata;
-import org.apache.iceberg.types.Types;
-
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class DDLInfo {
   private TableIdentifier tableIdentifier;

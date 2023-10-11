@@ -39,7 +39,7 @@ public class DDLReverser<T> {
     this.tableMetaExtract = tableMetaExtract;
   }
 
-  public List<DDLInfo> reverse(T table, TableIdentifier tableIdentifier) throws Exception {
+  public List<DDLInfo> reverse(T table, TableIdentifier tableIdentifier) {
 
     //Currently only spark metadata change
     SparkMetadataChangeHandler metadataChangeHandler =
@@ -69,7 +69,10 @@ public class DDLReverser<T> {
     return result;
   }
 
-  private List<String> compareProperties(Map<String, String> pre, Map<String, String> current, MetadataChangeHandler metadataChangeHandler) {
+  private List<String> compareProperties(
+      Map<String, String> pre,
+      Map<String, String> current,
+      MetadataChangeHandler metadataChangeHandler) {
     // Although only one SQL statement can be executed at a time,
     // using the Java API to make modifications can result in the effect of multiple SQL statements.
     List<String> result = new ArrayList<>();
@@ -106,7 +109,8 @@ public class DDLReverser<T> {
     // using the Java API to make modifications can result in the effect of multiple SQL statements.
     List<String> result = new ArrayList<>();
 
-    Map<Integer, TableMetaExtract.InternalSchema> preMap = pre.stream().collect(Collectors.toMap(TableMetaExtract.InternalSchema::getId, v -> v));
+    Map<Integer, TableMetaExtract.InternalSchema> preMap = pre.stream().collect(
+        Collectors.toMap(TableMetaExtract.InternalSchema::getId, v -> v));
     Map<Integer, TableMetaExtract.InternalSchema> currentMap = current.stream().collect(Collectors.toMap(
         TableMetaExtract.InternalSchema::getId, v -> v));
     

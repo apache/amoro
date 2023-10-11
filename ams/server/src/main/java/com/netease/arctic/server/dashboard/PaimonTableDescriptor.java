@@ -28,9 +28,9 @@ import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.paimon.table.DataTable;
 
 import java.util.List;
-import org.apache.paimon.table.DataTable;
 
 /**
  * Descriptor for Paimon format tables.
@@ -57,7 +57,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) throws Exception {
+  public List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) {
     DataTable table = getTable(amoroTable);
     PaimonTableMetaExtract extract = new PaimonTableMetaExtract();
     DDLReverser<DataTable> ddlReverser = new DDLReverser<>(extract);

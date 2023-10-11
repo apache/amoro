@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package com.netease.arctic.server.dashboard.component.reverser;
 
 import org.apache.iceberg.Schema;
@@ -43,7 +44,8 @@ import org.apache.spark.sql.types.TimestampType$;
 import java.util.List;
 
 public class IcebergTypeToSparkType extends TypeUtil.SchemaVisitor<DataType> {
-  public IcebergTypeToSparkType() {}
+  public IcebergTypeToSparkType() {
+  }
 
   @Override
   public DataType schema(Schema schema, DataType structType) {

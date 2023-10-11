@@ -132,24 +132,4 @@ public class IcebergTableMetaExtract implements TableMetaExtract<Table> {
   private String dateTypeToSparkString(Type type) {
     return TypeUtil.visit(type, new IcebergTypeToSparkType()).catalogString();
   }
-
-  public static void main(String[] args) {
-    Schema schema = new Schema(
-      Types.NestedField.of(1, false, "a", Types.StringType.get()),
-        Types.NestedField.of(2, false, "b", Types.StructType.of(
-            Types.NestedField.of(3, false, "x", Types.StringType.get()),
-            Types.NestedField.of(4, false, "y", Types.StringType.get())
-        )),
-        Types.NestedField.of(5, false, "c", Types.ListType.ofOptional(6, Types.StringType.get())),
-        Types.NestedField.of(7, false, "d", Types.ListType.ofOptional(8, Types.StructType.of(
-            Types.NestedField.of(9, false, "x", Types.StringType.get()),
-            Types.NestedField.of(10, false, "y", Types.StringType.get())
-        ))),
-        Types.NestedField.of(11, false, "e", Types.MapType.ofOptional(12, 13,
-            Types.StringType.get(), Types.StringType.get()))
-    );
-
-    List<InternalSchema> transform = new IcebergTableMetaExtract().transform(schema);
-    System.out.println(transform);
-  }
 }

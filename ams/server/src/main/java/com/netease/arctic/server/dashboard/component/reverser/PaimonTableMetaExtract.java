@@ -25,11 +25,9 @@ import org.apache.paimon.table.DataTable;
 import org.apache.paimon.types.ArrayType;
 import org.apache.paimon.types.DataField;
 import org.apache.paimon.types.DataType;
-import org.apache.paimon.types.DataTypes;
 import org.apache.paimon.types.MapType;
 import org.apache.paimon.types.RowType;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,7 +38,7 @@ import java.util.stream.Collectors;
 public class PaimonTableMetaExtract implements TableMetaExtract<DataTable> {
 
   @Override
-  public List<InternalTableMeta> extractTable(DataTable table) throws IOException {
+  public List<InternalTableMeta> extractTable(DataTable table) {
     SchemaManager schemaManager = new SchemaManager(table.fileIO(), table.location());
     List<TableSchema> tableSchemas = schemaManager.listAll();
     return tableSchemas.stream()
@@ -102,26 +100,5 @@ public class PaimonTableMetaExtract implements TableMetaExtract<DataTable> {
 
   private String dateTypeToSparkString(DataType dataType) {
     return PaimonTypeToSparkType.fromPaimonType(dataType).catalogString();
-  }
-
-  public static void main(String[] args) {
-    RowType row = DataTypes.ROW(
-        DataTypes.FIELD(1, "id", DataTypes.INT()),
-        DataTypes.FIELD(2, "array", DataTypes.ARRAY(DataTypes.ROW(
-                DataTypes.FIELD(7, "id", DataTypes.INT()),
-                DataTypes.FIELD(8, "name", DataTypes.STRING())
-            )
-        )),
-        DataTypes.FIELD(3, "map", DataTypes.MAP(DataTypes.STRING(), DataTypes.INT())),
-        DataTypes.FIELD(4, "row", DataTypes.ROW(
-            DataTypes.FIELD(5, "id", DataTypes.INT()),
-            DataTypes.FIELD(6, "name", DataTypes.STRING())
-        ))
-    );
-
-    System.out.println(row);
-
-    List<InternalSchema> result = new PaimonTableMetaExtract().transform(null, new ArrayList<>(), row);
-    System.out.println(result);
   }
 }

@@ -96,7 +96,7 @@ public class TestPaimonServerTableDescriptor extends TestServerTableDescriptor {
     try {
       getCatalog().alterTable(
           Identifier.create(TEST_DB, TEST_TABLE),
-          SchemaChange.updateColumnNullability("renamed_col", true),
+          SchemaChange.updateColumnNullability("renamed_col", false),
           false);
     } catch (Exception e) {
       throw new RuntimeException(e);

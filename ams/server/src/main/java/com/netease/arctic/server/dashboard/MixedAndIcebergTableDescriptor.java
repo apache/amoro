@@ -226,7 +226,7 @@ public class MixedAndIcebergTableDescriptor implements FormatTableDescriptor {
     return result;
   }
 
-  public List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) throws Exception {
+  public List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) {
     ArcticTable arcticTable = getTable(amoroTable);
     Table table;
     if (arcticTable.isKeyedTable()) {
