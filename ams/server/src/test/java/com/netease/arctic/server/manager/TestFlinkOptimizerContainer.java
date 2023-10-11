@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizer.container;
+package com.netease.arctic.server.manager;
 
 import com.netease.arctic.ams.api.PropertyNames;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -52,7 +52,6 @@ public class TestFlinkOptimizerContainer {
     Assert.assertEquals(0, container.parseMemorySize("100kb"));
   }
 
-
   @Test
   public void testBuildFlinkOptions() {
     Map<String, String> containerProperties = Maps.newHashMap(this.containerProperties);
@@ -60,13 +59,13 @@ public class TestFlinkOptimizerContainer {
     containerProperties.put("flink-conf.key2", "value2");
     containerProperties.put("key3", "value3"); // non "flink-conf." property
 
-
     // Create some optimizing group properties
     Map<String, String> groupProperties = new HashMap<>();
     groupProperties.put("flink-conf.key2", "value4");
     groupProperties.put("flink-conf.key5", "value5");
 
-    FlinkConf conf = FlinkConf.buildFor(Maps.newHashMap(), containerProperties)
+    FlinkOptimizerContainer.FlinkConf
+        conf = FlinkOptimizerContainer.FlinkConf.buildFor(Maps.newHashMap(), containerProperties)
         .withGroupProperties(groupProperties)
         .build();
     String flinkOptions = conf.toCliOptions();
@@ -82,7 +81,8 @@ public class TestFlinkOptimizerContainer {
     prop.put("taskmanager.memory", "100");
     prop.put("jobmanager.memory", "100");
 
-    FlinkConf conf = FlinkConf.buildFor(prop, Maps.newHashMap()).build();
+    FlinkOptimizerContainer.FlinkConf conf =
+        FlinkOptimizerContainer.FlinkConf.buildFor(prop, Maps.newHashMap()).build();
 
     Assert.assertEquals(100L, container.getMemorySizeValue(prop, conf,
         "taskmanager.memory",
@@ -91,11 +91,10 @@ public class TestFlinkOptimizerContainer {
         "jobmanager.memory",
         "jobmanager.memory.process.size"));
 
-
     Map<String, String> containerProperties = Maps.newHashMap();
     containerProperties.put("flink-conf.jobmanager.memory.process.size", "200 M");
     containerProperties.put("flink-conf.taskmanager.memory.process.size", "200");
-    conf = FlinkConf.buildFor(prop, containerProperties).build();
+    conf = FlinkOptimizerContainer.FlinkConf.buildFor(prop, containerProperties).build();
     prop.clear();
     Assert.assertEquals(200L, container.getMemorySizeValue(prop, conf,
         "taskmanager.memory",
@@ -106,7 +105,7 @@ public class TestFlinkOptimizerContainer {
 
     prop.clear();
     containerProperties = Maps.newHashMap();
-    conf = FlinkConf.buildFor(prop, containerProperties).build();
+    conf = FlinkOptimizerContainer.FlinkConf.buildFor(prop, containerProperties).build();
 
     prop.put("taskmanager.memory", "300 M");
     prop.put("jobmanager.memory", "300");
@@ -117,7 +116,7 @@ public class TestFlinkOptimizerContainer {
         "jobmanager.memory",
         "jobmanager.memory.process.size"));
 
-    conf = FlinkConf.buildFor(Maps.newHashMap(), Maps.newHashMap()).build();
+    conf = FlinkOptimizerContainer.FlinkConf.buildFor(Maps.newHashMap(), Maps.newHashMap()).build();
     prop.clear();
     Assert.assertEquals(0L, container.getMemorySizeValue(prop, conf,
         "taskmanager.memory",

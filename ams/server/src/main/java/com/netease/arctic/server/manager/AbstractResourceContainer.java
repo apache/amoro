@@ -1,10 +1,11 @@
-package com.netease.arctic.optimizer.container;
+package com.netease.arctic.server.manager;
 
 import com.netease.arctic.ams.api.PropertyNames;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceContainer;
 import com.netease.arctic.ams.api.resource.ResourceStatus;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,8 +28,12 @@ public abstract class AbstractResourceContainer implements ResourceContainer {
   public void init(String name, Map<String, String> containerProperties) {
     this.containerName = name;
     this.containerProperties = containerProperties;
-    this.amsHome = PropertyUtil.getRequiredNotNull(containerProperties, PropertyNames.AMS_HOME);
-    this.amsOptimizingUrl = PropertyUtil.getRequiredNotNull(containerProperties, PropertyNames.AMS_OPTIMIZER_URI);
+    this.amsHome = containerProperties.get(PropertyNames.AMS_HOME);
+    this.amsOptimizingUrl = containerProperties.get(PropertyNames.AMS_OPTIMIZER_URI);
+    Preconditions.checkNotNull(this.amsHome,
+        "Container Property: %s is required", PropertyNames.AMS_HOME);
+    Preconditions.checkNotNull(this.amsOptimizingUrl,
+        "Container Property: %s is required", PropertyNames.AMS_OPTIMIZER_URI);
   }
 
   @Override
@@ -68,9 +73,8 @@ public abstract class AbstractResourceContainer implements ResourceContainer {
         PropertyNames.OPTIMIZER_EXTEND_DISK_STORAGE,
         PropertyNames.OPTIMIZER_EXTEND_DISK_STORAGE_DEFAULT)) {
       stringBuilder.append(" -eds -dsp ")
-          .append(PropertyUtil.checkAndGetProperty(
-              resource.getProperties(),
-              PropertyNames.OPTIMIZER_DISK_STORAGE_PATH));
+          .append(
+              resource.getRequiredProperty(PropertyNames.OPTIMIZER_DISK_STORAGE_PATH));
       if (resource.getProperties().containsKey(PropertyNames.OPTIMIZER_MEMORY_STORAGE_SIZE)) {
         stringBuilder.append(" -msz ")
             .append(resource.getProperties().get(PropertyNames.OPTIMIZER_MEMORY_STORAGE_SIZE));
