@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizer.container;
+package com.netease.arctic.server.manager;
 
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;

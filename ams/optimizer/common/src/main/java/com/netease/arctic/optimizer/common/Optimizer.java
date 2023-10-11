@@ -8,11 +8,6 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 public class Optimizer {
-
-  /**
-   * Job-Id, This property must be included when registering the optimizer.
-   */
-  public static final String PROPERTY_JOB_ID = "job-id";
   private static final Logger LOG = LoggerFactory.getLogger(Optimizer.class);
 
   private final OptimizerConfig config;
