@@ -25,7 +25,7 @@
 #        .
 ARG AMORO_TAG=master-snapshot
 
-FROM openjdk:8u332 as builder
+FROM eclipse-temurin:8-jdk-jammy as builder
 ARG FLINK_VERSION=1.15.3
 
 ADD . /workspace/amoro
@@ -50,15 +50,8 @@ ARG MAVEN_URL=https://maven.aliyun.com/repository/central
 ARG DEBIAN_MIRROR=http://deb.debian.org
 
 
-RUN sed -i "s#http://deb.debian.org#${DEBIAN_MIRROR}#g" /etc/apt/sources.list
-
 RUN apt-get update \
-    && apt-get install -y wget \
-    && apt-get install -y vim \
     && apt-get install -y netcat \
-    && apt-get install -y net-tools \
-    && apt-get install -y telnet \
-    && apt-get install -y dos2unix \
     && apt-get clean
 
 WORKDIR /usr/local
