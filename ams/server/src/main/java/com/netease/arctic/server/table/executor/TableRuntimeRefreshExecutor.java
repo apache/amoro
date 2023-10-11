@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.table.executor;
 
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
@@ -62,11 +63,11 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     try {
       long lastOptimizedSnapshotId = tableRuntime.getLastOptimizedSnapshotId();
       long lastOptimizedChangeSnapshotId = tableRuntime.getLastOptimizedChangeSnapshotId();
-      ArcticTable table = loadTable(tableRuntime);
+      AmoroTable<?> table = loadTable(tableRuntime);
       tableRuntime.refresh(table);
       if (lastOptimizedSnapshotId != tableRuntime.getCurrentSnapshotId() ||
           lastOptimizedChangeSnapshotId != tableRuntime.getCurrentChangeSnapshotId()) {
-        tryEvaluatingPendingInput(tableRuntime, table);
+        tryEvaluatingPendingInput(tableRuntime, (ArcticTable) table.originalTable());
       }
     } catch (Throwable throwable) {
       logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);

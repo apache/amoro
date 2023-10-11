@@ -3,6 +3,7 @@ package com.netease.arctic.server.optimizing;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizingService;
@@ -307,8 +308,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     for (TableRuntime tableRuntime : scheduledTables) {
       LOG.debug("Planning table {}", tableRuntime.getTableIdentifier());
       try {
-        ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
-        OptimizingPlanner planner = new OptimizingPlanner(tableRuntime.refresh(table), table,
+        AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
+        OptimizingPlanner planner = new OptimizingPlanner(
+            tableRuntime.refresh(table),
+            (ArcticTable) table.originalTable(),
             getAvailableCore());
         if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
           LOG.info("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
@@ -552,7 +555,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     }
 
     private UnKeyedTableCommit buildCommit() {
-      ArcticTable table = tableManager.loadTable(tableRuntime.getTableIdentifier());
+      ArcticTable table = (ArcticTable) tableManager.loadTable(tableRuntime.getTableIdentifier()).originalTable();
       if (table.isUnkeyedTable()) {
         return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values());
       } else {
