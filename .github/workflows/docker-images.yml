@@ -63,6 +63,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          load: true
           file: docker/amoro/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: ${{ github.ref == 'refs/heads/master' }}
@@ -74,6 +75,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          load: true
           file: docker/quickdemo/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: ${{ github.ref == 'refs/heads/master' }}
