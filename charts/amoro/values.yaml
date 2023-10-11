@@ -121,7 +121,7 @@ optimizer:
       repository: arctic163/optimizer-flink
       ## the image tag, if not set, the default value is same with amoro image tag.
       tag: ~
-      jobUri: "local:///opt/flink/usrlib/OptimizeJob.jar"
+      jobUri: "local:///opt/flink/usrlib/optimizer-job.jar"
     properties: {
       "flink-conf.taskmanager.memory.managed.size": "32mb",
       "flink-conf.taskmanager.memory.netwrok.max": "32mb",
