@@ -16,7 +16,7 @@
 
 
 {{- define "amoro.optimizer.container.flink" -}}
-container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
+container-impl: com.netease.arctic.server.manager.FlinkOptimizerContainer
 properties:
   target: kubernetes-application
   job-uri: {{ .Values.optimizer.flink.image.jobUri | quote }}
@@ -31,7 +31,7 @@ properties:
 
 
 {{- define "amoro.optimizer.container.local" -}}
-container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer
+container-impl: com.netease.arctic.server.manager.LocalOptimizerContainer
 properties:
   export.JAVA_HOME: "/opt/java"   # JDK environment
   {{- with .Values.optimizer.local.properties -}}
