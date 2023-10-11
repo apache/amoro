@@ -45,7 +45,7 @@
             <span v-else>{{formState.catalog.optimizerGroup}}</span>
           </a-form-item>
           <a-form-item>
-            <p class="header">{{$t('storageConfig')}}</p>
+            <p class="header">{{$t('storageConfigName')}}</p>
           </a-form-item>
           <a-form-item label="Type" :name="['storageConfig', 'storage.type']" :rules="[{ required: isEdit }]">
             <a-select
@@ -56,7 +56,15 @@
             />
             <span v-else class="config-value">{{formState.storageConfig['storage.type']}}</span>
           </a-form-item>
-          <a-form-item v-if="formState.storageConfig['storage.type'] === 'Hadoop'">
+          <a-form-item v-if="formState.storageConfig['storage.type'] === 'S3'" label="Endpoint" :name="['storageConfig', 'storage.s3.endpoint']" :rules="[{ required: false }]">
+            <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.s3.endpoint']" />
+            <span v-else class="config-value">{{formState.storageConfig['storage.s3.endpoint']}}</span>
+          </a-form-item>
+          <a-form-item v-if="formState.storageConfig['storage.type'] === 'S3'" label="Region" :name="['storageConfig', 'storage.s3.region']" :rules="[{ required: false }]">
+            <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.s3.region']" />
+            <span v-else class="config-value">{{formState.storageConfig['storage.s3.region']}}</span>
+          </a-form-item>
+          <div v-if="formState.storageConfig['storage.type'] === 'Hadoop'">
             <a-form-item
               v-for="config in formState.storageConfigArray"
               :key="config.label"
@@ -76,15 +84,7 @@
               </a-upload>
               <span v-if="config.isSuccess || config.fileName" class="config-value" :class="{ 'view-active': !!config.fileUrl }" @click="viewFileDetail(config.fileUrl)">{{ config.fileName }}</span>
             </a-form-item>
-          </a-form-item>
-          <a-form-item v-if="formState.storageConfig['storage.type'] === 'S3'" label="End points" :name="['storageConfig', 'storage.s3.end_points']" :rules="[{ required: isEdit }]">
-            <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.s3.end_points']" />
-            <span v-else class="config-value">{{formState.storageConfig['storage.s3.end_points']}}</span>
-          </a-form-item>
-          <a-form-item v-if="formState.storageConfig['storage.type'] === 'S3'" label="Region" :name="['storageConfig', 'storage.s3.region']" :rules="[{ required: isEdit }]">
-            <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.s3.region']" />
-            <span v-else class="config-value">{{formState.storageConfig['storage.s3.region']}}</span>
-          </a-form-item>
+          </div>
           <a-form-item>
             <p class="header">{{$t('authenticationConfig')}}</p>
           </a-form-item>
@@ -133,10 +133,6 @@
           <a-form-item v-if="formState.authConfig['auth.type'] === 'AK/SK'" label="Secret Key" :name="['authConfig', 'auth.ak_sk.secret_key']" :rules="[{ required: isEdit }]">
             <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.ak_sk.secret_key']" />
             <span v-else class="config-value">{{formState.authConfig['auth.ak_sk.secret_key']}}</span>
-          </a-form-item>
-          <a-form-item v-if="formState.authConfig['auth.type'] === 'ARN'" label="ARN" :name="['authConfig', 'auth.arn.value']" :rules="[{ required: isEdit }]">
-            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.arn.value']" />
-            <span v-else class="config-value">{{formState.authConfig['auth.arn.value']}}</span>
           </a-form-item>
           <a-form-item>
             <p class="header">{{$t('properties')}}</p>
@@ -301,8 +297,8 @@ const s3ConfigTypeOps = reactive<ILableAndValue[]>([{
   label: 'AK/SK',
   value: 'AK/SK'
 }, {
-  label: 'ARN',
-  value: 'ARN'
+  label: 'CUSTOM',
+  value: 'CUSTOM'
 }])
 
 const storageConfigTypeOps = reactive<ILableAndValue[]>([{
@@ -519,8 +515,10 @@ function getFileIdParams() {
     }
   })
   Object.keys(storageConfig).forEach(key => {
-    const id = (storageConfigArray.find(item => item.key === key) || {}).fileId
-    storageConfig[key] = id
+    if (['hadoop.core.site', 'hadoop.hdfs.site', 'hive.site'].includes(key)) {
+      const id = (storageConfigArray.find(item => item.key === key) || {}).fileId
+      storageConfig[key] = id
+    }
   })
 }
 function handleSave() {

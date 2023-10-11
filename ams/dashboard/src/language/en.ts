@@ -155,7 +155,7 @@ export default {
   tableFormat: 'Table Format',
   metastore: 'Metastore',
   basic: 'Basic',
-  storageConfig: 'Storage',
+  storageConfigName: 'Storage',
   authenticationConfig: 'Authentication',
   upload: 'Upload',
   save: 'Save',
