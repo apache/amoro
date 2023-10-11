@@ -16,36 +16,37 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>amoro-ams</artifactId>
-        <groupId>com.netease.amoro</groupId>
-        <version>0.6.0-SNAPSHOT</version>
-    </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>amoro-optimizer-container</artifactId>
-    <name>Amoro Project Optimizer Container</name>
+    <parent>
+        <groupId>com.netease.amoro</groupId>
+        <artifactId>amoro-ams</artifactId>
+        <version>0.6.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>amoro-optimizer</artifactId>
+    <packaging>pom</packaging>
+    <name>Amoro Project Optimizer Parent</name>
     <url>https://amoro.netease.com</url>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.netease.amoro</groupId>
-            <artifactId>optimizer-common</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+    <modules>
+        <module>flink-optimizer</module>
+        <module>standalone-optimizer</module>
+        <module>common</module>
+    </modules>
 
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-        </dependency>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <configuration>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-        </dependency>
-    </dependencies>
 </project>
