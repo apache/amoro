@@ -57,7 +57,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build all module with Maven
-        run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp
+        run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp -DskipTests
 
       - name: Build and Push Amoro Docker Image
         uses: docker/build-push-action@v4
