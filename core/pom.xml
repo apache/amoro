@@ -79,6 +79,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>iceberg-aws</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.parquet</groupId>
             <artifactId>parquet-avro</artifactId>
         </dependency>
@@ -189,56 +194,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>aws</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.iceberg</groupId>
-                    <artifactId>iceberg-aws</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>s3</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>glue</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>kms</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>dynamodb</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>sts</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>url-connection-client</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>org.apache.hadoop</groupId>
-                    <artifactId>hadoop-aws</artifactId>
-                    <version>${hadoop.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
-
 </project>

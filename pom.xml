@@ -215,6 +215,7 @@
                 <groupId>org.apache.iceberg</groupId>
                 <artifactId>iceberg-aws</artifactId>
                 <version>${iceberg.version}</version>
+                <scope>runtime</scope>
             </dependency>
 
             <dependency>
@@ -285,6 +286,12 @@
                         <artifactId>jersey-servlet</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-aws</artifactId>
+                <version>${hadoop.version}</version>
             </dependency>
 
             <dependency>
