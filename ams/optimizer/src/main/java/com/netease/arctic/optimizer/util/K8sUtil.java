@@ -21,7 +21,6 @@ import com.google.common.collect.ImmutableMap;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
-import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.slf4j.Logger;
 
@@ -29,9 +28,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class K8sUtil {
-  public static void runDeployment(String namespace, String name, KubernetesClient client, String image, String cmd, Logger logger, String memory , String cpu) {
+  public static void runDeployment(String namespace, String name, KubernetesClient client, String image, String cmd, Logger logger, String memory , String cpu, String resourceId, String groupName) {
 
-    submitJob(namespace, name, client, image, cmd,memory,cpu);
+    submitJob(namespace, name, client, image, cmd,memory,cpu,resourceId,groupName);
 
     // Polling loop to wait for deletion
     long waitPodTimeout = 300; // Timeout in seconds
@@ -125,7 +124,7 @@ public class K8sUtil {
     }
   }
 
-  private static void submitJob(String namespace, String name, KubernetesClient client, String image, String cmd,String memory ,String cpu) {
+  private static void submitJob(String namespace, String name, KubernetesClient client, String image, String cmd, String memory , String cpu, String resourceId, String groupName) {
 
     Deployment deployment = new DeploymentBuilder()
         .withNewMetadata()
@@ -136,6 +135,8 @@ public class K8sUtil {
         .withNewTemplate()
         .withNewMetadata()
         .addToLabels("app", name)
+        .addToLabels("amoro-optimizer-group", groupName)
+        .addToLabels("amoro-resource-id", resourceId)
         .endMetadata()
         .withNewSpec()
         .addNewContainer()

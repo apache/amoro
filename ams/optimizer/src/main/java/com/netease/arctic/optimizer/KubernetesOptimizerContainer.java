@@ -38,16 +38,17 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
     // start k8s job using k8s client
     String kubeConfigPath = PropertyUtil.checkAndGetProperty(getContainerProperties(), KUBE_CONFIG_PATH);
     String kubeConfig = getKubeConfigContent(kubeConfigPath);
-    String namespace = PropertyUtil.checkAndGetProperty(resource.getProperties(),
-        NAMESPACE);
+    String namespace = resource.getProperties().getOrDefault(NAMESPACE, "default");
     String image = PropertyUtil.checkAndGetProperty(resource.getProperties(),
         IMAGE);
     String cpu = PropertyUtil.checkAndGetProperty(resource.getProperties(),
         CPU_PROPERTY);
     Config config = Config.fromKubeconfig(kubeConfig);
+    String resourceId = resource.getResourceId();
+    String groupName = resource.getGroupName();
     KubernetesClient client = new KubernetesClientBuilder().withConfig(config).build();
     K8sUtil.runDeployment(namespace, getResourceName(resource),
-        client, image,String.join(" ",cmd),LOG,memory+"Mi",cpu);
+        client, image,String.join(" ",cmd),LOG,memory+"Mi",cpu,resourceId,groupName);
     LOG.info("Started k8s optimizer. ");
   }
 
