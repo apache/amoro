@@ -18,7 +18,7 @@
 
 package com.netease.arctic.optimizer.flink;
 
-import com.netease.arctic.optimizer.common.Optimizer;
+import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.optimizer.common.OptimizerToucher;
 import org.apache.flink.runtime.execution.Environment;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
@@ -42,7 +42,7 @@ public class FlinkToucher extends RichParallelSourceFunction<String> {
   public void run(SourceContext<String> sourceContext) {
     String jobId = FLINK_TASK_RUNTIME_FIELDS.bind(getRuntimeContext()).get().getJobID().toString();
     toucher.withTokenChangeListener(sourceContext::collect)
-        .withRegisterProperty(Optimizer.PROPERTY_JOB_ID, jobId)
+        .withRegisterProperty(Resource.PROPERTY_JOB_ID, jobId)
         .start();
   }
 

@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -83,7 +84,9 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     Assert.assertEquals(createTableId.getId().longValue(), handler.getInitTables().get(0).getTableId());
 
     // test change properties
-    tableService().loadTable(createTableId).updateProperties()
+    ArcticTable arcticTable = (ArcticTable)tableService().loadTable(createTableId).originalTable();
+
+    arcticTable.updateProperties()
         .set(TableProperties.ENABLE_ORPHAN_CLEAN, "true").commit();
     tableService().getRuntime(createTableId).refresh(tableService.loadTable(serverTableIdentifier()));
     Assert.assertEquals(1, handler.getConfigChangedTables().size());
@@ -131,8 +134,8 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
 
     @Override
     protected void handleTableAdded(
-        ArcticTable table, TableRuntime tableRuntime) {
-      addedTables.add(Pair.of(table, tableRuntime));
+        AmoroTable<?> table, TableRuntime tableRuntime) {
+      addedTables.add(Pair.of((ArcticTable) table.originalTable(), tableRuntime));
     }
 
     @Override

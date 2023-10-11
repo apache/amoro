@@ -1,5 +1,6 @@
 package com.netease.arctic.optimizer.standalone;
 
+import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.optimizer.common.Optimizer;
 import com.netease.arctic.optimizer.common.OptimizerConfig;
 import org.kohsuke.args4j.CmdLineException;
@@ -18,7 +19,7 @@ public class StandaloneOptimizer {
 
     RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
     String processId = runtimeMXBean.getName().split("@")[0];
-    optimizer.getToucher().withRegisterProperty(Optimizer.PROPERTY_JOB_ID, processId);
+    optimizer.getToucher().withRegisterProperty(Resource.PROPERTY_JOB_ID, processId);
     optimizer.startOptimizing();
   }
 }

@@ -28,4 +28,13 @@ public enum TableFormat {
   MIXED_ICEBERG,
   MIXED_HIVE,
   PAIMON;
+
+  public boolean in(TableFormat... tableFormats) {
+    for (TableFormat tableFormat : tableFormats) {
+      if (this == tableFormat) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
