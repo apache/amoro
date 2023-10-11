@@ -1,10 +1,12 @@
 package com.netease.arctic.server.catalog;
 
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.catalog.IcebergCatalogWrapper;
-import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.formats.iceberg.IcebergTable;
 import com.netease.arctic.utils.CatalogUtil;
+import org.apache.iceberg.Table;
 
 import java.util.Collections;
 import java.util.List;
@@ -55,8 +57,11 @@ public class IcebergCatalogImpl extends ExternalCatalog {
   }
 
   @Override
-  public ArcticTable loadTable(String database, String tableName) {
-    return catalogWrapper.loadTable(com.netease.arctic.table.TableIdentifier.of(catalogWrapper.name(), database,
-        tableName));
+  public AmoroTable<Table> loadTable(String database, String tableName) {
+    com.netease.arctic.table.TableIdentifier identifier = com.netease.arctic.table.TableIdentifier.of(
+        catalogWrapper.name(),
+        database,
+        tableName);
+    return new IcebergTable(identifier, catalogWrapper.loadTable(identifier).asUnkeyedTable());
   }
 }

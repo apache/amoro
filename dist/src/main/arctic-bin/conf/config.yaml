@@ -52,13 +52,13 @@ ams:
     jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
     url: jdbc:derby:/tmp/amoro/derby;create=true
 
-  #  MySQL database configuration.
-  #  database:
-  #    type: mysql
-  #    jdbc-driver-class: com.mysql.cj.jdbc.Driver
-  #    url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
-  #    username: root
-  #    password: root
+#    MySQL database configuration.
+#    database:
+#      type: mysql
+#      jdbc-driver-class: com.mysql.cj.jdbc.Driver
+#      url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
+#      username: root
+#      password: root
 
   #  Postgres database configuration.
   #  database:
@@ -86,13 +86,13 @@ ams:
 
 containers:
   - name: localContainer
-    container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer
+    container-impl: com.netease.arctic.optimizer.container.LocalOptimizerContainer
     properties:
       export.JAVA_HOME: "/opt/java"   # JDK environment
 
 #containers:
 #  - name: flinkContainer
-#    container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
+#    container-impl: com.netease.arctic.optimizer.container.FlinkOptimizerContainer
 #    properties:
 #      flink-home: "/opt/flink/"                                     # Flink install home
 #      target: "yarn-per-job"                                        # Flink run target, (yarn-per-job, yarn-application, kubernetes-application)

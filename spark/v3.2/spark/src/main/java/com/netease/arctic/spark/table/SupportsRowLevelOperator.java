@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -23,8 +22,8 @@ import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 /**
- * A mix-in interface of {@link org.apache.spark.sql.connector.catalog.Table},
- * to indicate that can handle update or delete by upsert.
+ * A mix-in interface of {@link org.apache.spark.sql.connector.catalog.Table}, to indicate that can
+ * handle update or delete by upsert.
  */
 public interface SupportsRowLevelOperator extends Table {
 
@@ -37,7 +36,6 @@ public interface SupportsRowLevelOperator extends Table {
   SupportsExtendIdentColumns newUpsertScanBuilder(CaseInsensitiveStringMap options);
 
   boolean requireAdditionIdentifierColumns();
-
 
   /**
    * will table handle insert as upsert

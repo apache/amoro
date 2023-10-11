@@ -55,5 +55,5 @@ public interface AmoroTable<T> {
   /**
    * Returns the current snapshot of this table
    */
-  Snapshot currentSnapshot();
+  TableSnapshot currentSnapshot();
 }
