@@ -19,9 +19,9 @@ ARG FLINK_VERSION=1.14
 FROM flink:${FLINK_VERSION}
 
 ARG REPO_URL=https://repo.maven.apache.org/maven2
-ARG OPTIMIZRE_JOB=optimizer-job.jar
+ARG OPTIMIZER_JOB=optimizer-job.jar
 
 RUN mkdir -p $FLINK_HOME/usrlib
 
-COPY $OPTIMIZRE_JOB $FLINK_HOME/usrlib/optimizer-job.jar
+COPY $OPTIMIZER_JOB $FLINK_HOME/usrlib/optimizer-job.jar
 
