@@ -51,7 +51,7 @@ Options:
     --apache-archive        Apache Archive url, default is https://archive.apache.org/dist
     --debian-mirror         Mirror url of debian, default is http://deb.debian.org
     --optimizer-job         Location of optimizer job
-    --tag                   Tag for amoro/optimizer-flink/quickstart image.
+    --tag                   Tag for amoro/optimizer-flink/quickdemo image.
     --also-make             Also make amoro when build quickdemo, if set to false, it will pull from hub or use exists dependency.
     --dry-run               If this set to true, will not call 'docker build'
 EOF
@@ -245,7 +245,7 @@ function build_quickdemo() {
 
     set -x
     cd "$PROJECT_HOME" || exit
-    # dos2unix ${CURRENT_DIR}/quickstart/config.sh
+
     docker build -t $IMAGE_REF:$IMAGE_TAG \
       --build-arg AMORO_TAG=${AMORO_TAG} \
       --build-arg DEBIAN_MIRROR=${DEBIAN_MIRROR} \

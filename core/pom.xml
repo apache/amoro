@@ -109,6 +109,11 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.paimon</groupId>
+            <artifactId>paimon-bundle</artifactId>
+        </dependency>
+
         <!-- test dependencies -->
 
         <dependency>
