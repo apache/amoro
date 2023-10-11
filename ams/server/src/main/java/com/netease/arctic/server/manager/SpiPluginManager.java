@@ -20,11 +20,12 @@ package com.netease.arctic.server.manager;
 
 import com.netease.arctic.ams.api.AmoroPlugin;
 import com.netease.arctic.ams.api.PluginManager;
+import com.netease.arctic.server.utils.PreconditionUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,6 +58,8 @@ public abstract class SpiPluginManager<T extends AmoroPlugin> implements PluginM
 
   @Override
   public void install(String pluginName) {
+    PreconditionUtils.checkNotExist(installedPlugins.containsKey(pluginName),
+        "Plugin " + pluginName);
     for (T plugin : pluginLoader) {
       if (plugin.name().equals(pluginName)) {
         installedPlugins.put(pluginName, plugin);
@@ -66,12 +69,27 @@ public abstract class SpiPluginManager<T extends AmoroPlugin> implements PluginM
 
   @Override
   public void uninstall(String pluginName) {
+    PreconditionUtils.checkExist(installedPlugins.containsKey(pluginName),
+        "Plugin " + pluginName);
     installedPlugins.remove(pluginName);
   }
 
+  @NotNull
   @Override
-  public List<T> list() {
-    return new ArrayList<>(installedPlugins.values());
+  public Iterator<T> iterator() {
+    return new Iterator<T>() {
+
+      final Iterator<T> iterator = installedPlugins.values().iterator();
+      @Override
+      public boolean hasNext() {
+        return iterator.hasNext();
+      }
+
+      @Override
+      public T next() {
+        return iterator.next();
+      }
+    };
   }
 
   @Override
