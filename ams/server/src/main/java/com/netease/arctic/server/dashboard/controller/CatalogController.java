@@ -281,7 +281,7 @@ public class CatalogController {
       throw new IllegalArgumentException("Paimon catalog must have 'warehouse' property");
     }
 
-    if ("hive".equalsIgnoreCase(info.getType())) {
+    if (CATALOG_TYPE_HIVE.equalsIgnoreCase(info.getType())) {
       if (!properties.containsKey(CatalogOptions.URI.key())) {
         throw new IllegalArgumentException("Paimon hive catalog must have 'uri' property");
       }
