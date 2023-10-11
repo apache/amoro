@@ -31,7 +31,7 @@ import java.io.Serializable;
  */
 public class OptimizerConfig implements Serializable {
 
-  @Option(name = "-a", aliases = "--" + PropertyNames.OPTIMIZER_AMS_URL, usage = "The ams url", required = true)
+  @Option(name = "-a", aliases = "--" + PropertyNames.AMS_OPTIMIZER_URI, usage = "The ams url", required = true)
   private String amsUrl;
 
   @Option(name = "-p", aliases = "--" + PropertyNames.OPTIMIZER_EXECUTION_PARALLEL,

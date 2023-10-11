@@ -64,24 +64,21 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
       db = dbs.get(0);
     }
     exec("create catalog arctic with ('type'='arctic', 'metastore.url'='%s')", getCatalogUrl());
-    exec("create table arctic.%s.L (id int) " +
-        "with ('scan.startup.mode'='earliest', 'monitor-interval'='1 s')", db);
-    exec("create table arctic.%s.DIM (id int, name string, primary key(id) not enforced) " +
-        "with ('write.upsert.enabled'='true', 'lookup.reloading.interval'='1 s')", db);
+    exec(
+        "create table arctic.%s.L (id int) "
+            + "with ('scan.startup.mode'='earliest', 'monitor-interval'='1 s','streaming'='true')",
+        db);
+    exec(
+        "create table arctic.%s.DIM (id int, name string, primary key(id) not enforced) "
+            + "with ('write.upsert.enabled'='true', 'lookup.reloading.interval'='1 s')",
+        db);
     exec("create view vi as select *, PROCTIME() as proc from arctic.%s.L", db);
 
     writeAndCommit(
         TableIdentifier.of(getCatalogName(), db, "DIM"),
-        Lists.newArrayList(
-            DataUtil.toRowData(1, "a"),
-            DataUtil.toRowData(2, "b"))
-    );
+        Lists.newArrayList(DataUtil.toRowData(1, "a"), DataUtil.toRowData(2, "b")));
     writeAndCommit(
-        TableIdentifier.of(getCatalogName(), db, "L"),
-        Lists.newArrayList(
-            DataUtil.toRowData(1)
-        )
-    );
+        TableIdentifier.of(getCatalogName(), db, "L"), Lists.newArrayList(DataUtil.toRowData(1)));
   }
 
   @After
@@ -92,12 +89,13 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
 
   @Test()
   public void testLookup() throws Exception {
-    TableResult tableResult = exec(
-        "select L.id, D.name from vi L LEFT JOIN arctic.%s.DIM " +
-            "for system_time as of L.proc AS D ON L.id = D.id",
-        db);
+    TableResult tableResult =
+        exec(
+            "select L.id, D.name from vi L LEFT JOIN arctic.%s.DIM "
+                + "for system_time as of L.proc AS D ON L.id = D.id",
+            db);
 
-    tableResult.await(1, TimeUnit.MINUTES);// wait for the first row.
+    tableResult.await(1, TimeUnit.MINUTES); // wait for the first row.
 
     writeToChangeAndCommit(
         TableIdentifier.of(getCatalogName(), db, "DIM"),
@@ -105,8 +103,7 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
             DataUtil.toRowData(2, "c"),
             DataUtil.toRowData(3, "d"),
             DataUtil.toRowData(4, "e"),
-            DataUtil.toRowData(5, "f")
-        ),
+            DataUtil.toRowData(5, "f")),
         true);
     Thread.sleep(2000); // wait dim table commit and reload
 
@@ -117,8 +114,7 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
             DataUtil.toRowData(3),
             DataUtil.toRowData(4),
             DataUtil.toRowData(5),
-            DataUtil.toRowData(6)
-        ),
+            DataUtil.toRowData(6)),
         false);
 
     int expected = 6, count = 0;
@@ -133,12 +129,12 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
 
     Assert.assertEquals(expected, actual.size());
     List<Object[]> expects = new LinkedList<>();
-    expects.add(new Object[]{1, "a"});
-    expects.add(new Object[]{2, "c"});
-    expects.add(new Object[]{3, "d"});
-    expects.add(new Object[]{4, "e"});
-    expects.add(new Object[]{5, "f"});
-    expects.add(new Object[]{6, null});
+    expects.add(new Object[] {1, "a"});
+    expects.add(new Object[] {2, "c"});
+    expects.add(new Object[] {3, "d"});
+    expects.add(new Object[] {4, "e"});
+    expects.add(new Object[] {5, "f"});
+    expects.add(new Object[] {6, null});
     Assert.assertEquals(DataUtil.toRowSet(expects), actual);
   }
 
@@ -157,8 +153,7 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
     return true;
   }
 
-  private void writeAndCommit(
-      TableIdentifier table, List<RowData> expected) throws IOException {
+  private void writeAndCommit(TableIdentifier table, List<RowData> expected) throws IOException {
     writeAndCommit(table, expected, true, false);
   }
 
@@ -168,15 +163,19 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
   }
 
   private void writeAndCommit(
-      TableIdentifier table, List<RowData> expected, boolean writeToBaseStore, boolean upsertEnabled) throws IOException {
+      TableIdentifier table,
+      List<RowData> expected,
+      boolean writeToBaseStore,
+      boolean upsertEnabled)
+      throws IOException {
     ArcticTable arcticTable = getCatalog().loadTable(table);
     Assert.assertNotNull(arcticTable);
     RowType rowType = FlinkSchemaUtil.convert(arcticTable.schema());
     for (RowData rowData : expected) {
       try (TaskWriter<RowData> taskWriter =
-               writeToBaseStore
-                   ? createBaseTaskWriter(arcticTable, rowType)
-                   : createTaskWriter(arcticTable, rowType)) {
+          writeToBaseStore
+              ? createBaseTaskWriter(arcticTable, rowType)
+              : createTaskWriter(arcticTable, rowType)) {
         if (writeToBaseStore) {
           writeAndCommit(rowData, taskWriter, arcticTable);
         } else {
@@ -185,5 +184,4 @@ public class LookupITCase extends CatalogITCaseBase implements FlinkTaskWriterBa
       }
     }
   }
-
 }

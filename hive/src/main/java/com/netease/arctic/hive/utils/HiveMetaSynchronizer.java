@@ -54,6 +54,7 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
@@ -189,10 +190,9 @@ public class HiveMetaSynchronizer {
         } catch (IOException e) {
           throw new UncheckedIOException("Failed to close table scan of " + table.name(), e);
         }
-        StructLikeMap<Collection<DataFile>> filesMap = filesGroupedByPartition;
         List<DataFile> filesToDelete = Lists.newArrayList();
         List<DataFile> filesToAdd = Lists.newArrayList();
-        List<StructLike> icebergPartitions = Lists.newArrayList(filesMap.keySet());
+        List<StructLike> icebergPartitions = Lists.newArrayList(filesGroupedByPartition.keySet());
         for (Partition hivePartition : hivePartitions) {
           StructLike partitionData = HivePartitionUtil.buildPartitionData(hivePartition.getValues(), table.spec());
           icebergPartitions.remove(partitionData);
@@ -201,8 +201,8 @@ public class HiveMetaSynchronizer {
                 table,
                 buildPartitionValueMap(hivePartition.getValues(), table.spec()),
                 hivePartition.getSd().getLocation());
-            if (filesMap.get(partitionData) != null) {
-              filesToDelete.addAll(filesMap.get(partitionData));
+            if (filesGroupedByPartition.get(partitionData) != null) {
+              filesToDelete.addAll(filesGroupedByPartition.get(partitionData));
               filesToAdd.addAll(hiveDataFiles);
               // make sure new partition is not created by arctic
             } else if (hivePartition.getParameters().get(HiveTableProperties.ARCTIC_TABLE_FLAG) == null &&
@@ -213,11 +213,11 @@ public class HiveMetaSynchronizer {
         }
 
         icebergPartitions.forEach(partition -> {
-          List<DataFile> dataFiles = Lists.newArrayList(filesMap.get(partition));
+          List<DataFile> dataFiles = Lists.newArrayList(filesGroupedByPartition.get(partition));
           if (dataFiles.size() > 0) {
             // make sure dropped partition with no files
             if (!table.io().exists(dataFiles.get(0).path().toString())) {
-              filesToDelete.addAll(filesMap.get(partition));
+              filesToDelete.addAll(filesGroupedByPartition.get(partition));
             }
           }
         });
@@ -253,7 +253,7 @@ public class HiveMetaSynchronizer {
   }
 
   /**
-   * once getRuntime location from iceberg property, should update hive table location,
+   * once get location from iceberg property, should update hive table location,
    * because only arctic update hive table location for unPartitioned table.
    */
   private static void syncNoPartitionTable(
@@ -273,7 +273,7 @@ public class HiveMetaSynchronizer {
         return hiveTable.getSd().getLocation();
       });
     } catch (Exception e) {
-      LOG.error("{} getRuntime hive location failed", table.id(), e);
+      LOG.error("{} get hive location failed", table.id(), e);
       return;
     }
 
@@ -451,10 +451,7 @@ public class HiveMetaSynchronizer {
 
     // compare hive partition parameter transient_lastDdlTime with arctic partition properties to
     // find out if the partition is changed.
-    if (arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime)) {
-      return true;
-    }
-    return false;
+    return arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime);
   }
 
   @VisibleForTesting
@@ -480,10 +477,7 @@ public class HiveMetaSynchronizer {
 
     // compare hive partition parameter transient_lastDdlTime with arctic partition properties to
     // find out if the partition is changed.
-    if (arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime)) {
-      return true;
-    }
-    return false;
+    return arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime);
   }
 
   private static List<DataFile> listHivePartitionFiles(

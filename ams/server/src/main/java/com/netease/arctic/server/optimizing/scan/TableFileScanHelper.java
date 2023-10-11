@@ -20,6 +20,7 @@ package com.netease.arctic.server.optimizing.scan;
 
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.io.CloseableIterable;
 
 import java.util.List;
 
@@ -52,7 +53,7 @@ public interface TableFileScanHelper {
     boolean test(String partition);
   }
 
-  List<FileScanResult> scan();
+  CloseableIterable<FileScanResult> scan();
 
   TableFileScanHelper withPartitionFilter(PartitionFilter partitionFilter);
 }

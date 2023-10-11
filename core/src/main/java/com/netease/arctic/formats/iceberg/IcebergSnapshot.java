@@ -22,15 +22,15 @@ import com.netease.arctic.TableSnapshot;
 import org.apache.iceberg.Snapshot;
 
 public class IcebergSnapshot implements TableSnapshot {
-  Snapshot snapshot;
+  private final Snapshot snapshot;
 
-  public IcebergSnapshot(org.apache.iceberg.Snapshot snapshot) {
+  public IcebergSnapshot(Snapshot snapshot) {
     this.snapshot = snapshot;
   }
 
   @Override
   public long watermark() {
-    return -1;
+    return -1L;
   }
 
   @Override
@@ -43,7 +43,7 @@ public class IcebergSnapshot implements TableSnapshot {
     return String.valueOf(snapshot.snapshotId());
   }
 
-  public Snapshot getSnapshot() {
+  public Snapshot icebergSnapshot() {
     return snapshot;
   }
 }

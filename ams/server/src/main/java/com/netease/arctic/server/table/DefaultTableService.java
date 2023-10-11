@@ -6,7 +6,6 @@ import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.catalog.CatalogBuilder;
@@ -309,10 +308,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     });
 
     if (headHandler != null) {
-      // Paimon table don't need optimizing in AMS
-      List<TableRuntimeMeta> noPaimonMetas =
-          tableRuntimeMetaList.stream().filter(t -> t.getFormat() != TableFormat.PAIMON).collect(Collectors.toList());
-      headHandler.initialize(noPaimonMetas);
+      headHandler.initialize(tableRuntimeMetaList);
     }
     tableExplorerTimer = new Timer("ExternalTableExplorer", true);
     tableExplorerTimer.scheduleAtFixedRate(

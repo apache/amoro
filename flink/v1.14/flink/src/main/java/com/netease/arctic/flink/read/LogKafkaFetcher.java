@@ -18,6 +18,12 @@
 
 package com.netease.arctic.flink.read;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
+import static com.netease.arctic.log.LogData.MAGIC_NUMBER;
+import static org.apache.flink.util.Preconditions.checkArgument;
+import static org.apache.flink.util.Preconditions.checkNotNull;
+
 import com.netease.arctic.flink.read.internals.KafkaFetcher;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.log.LogData;
@@ -47,16 +53,10 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Queue;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
-import static com.netease.arctic.log.LogData.MAGIC_NUMBER;
-import static org.apache.flink.util.Preconditions.checkArgument;
-import static org.apache.flink.util.Preconditions.checkNotNull;
-
 /**
- * The fetcher runs in {@link LogKafkaConsumer} and fetches messages from kafka, and retracts message as handling a
- * Flip message that {@link LogData#getFlip()} is true.
- * <p>
+ * The fetcher runs in {@link LogKafkaConsumer} and fetches messages from kafka, and retracts
+ * message as handling a Flip message that {@link LogData#getFlip()} is true.
+ *
  * @deprecated since 0.4.1, will be removed in 0.7.0;
  */
 @Deprecated
@@ -91,7 +91,8 @@ public class LogKafkaFetcher extends KafkaFetcher<RowData> {
           unassignedPartitionsQueue,
       LogKafkaConsumerThread<RowData> logKafkaConsumerThread,
       int subtaskId,
-      String logConsumerChangelogMode) throws Exception {
+      String logConsumerChangelogMode)
+      throws Exception {
     super(
         sourceContext,
         assignedPartitionsWithInitialOffsets,
@@ -109,23 +110,22 @@ public class LogKafkaFetcher extends KafkaFetcher<RowData> {
         handover,
         logKafkaConsumerThread,
         unassignedPartitionsQueue);
-    this.logDataJsonDeserialization = new LogDataJsonDeserialization<>(
-        schema,
-        LogRecordV1.factory,
-        LogRecordV1.arrayFactory,
-        LogRecordV1.mapFactory
-    );
+    this.logDataJsonDeserialization =
+        new LogDataJsonDeserialization<>(
+            schema, LogRecordV1.factory, LogRecordV1.arrayFactory, LogRecordV1.mapFactory);
     this.logRetractionEnable = logRetractionEnable;
     this.logReadHelper = logReadHelper;
     this.logKafkaConsumerThread = logKafkaConsumerThread;
     this.subtaskId = subtaskId;
-    this.logConsumerAppendOnly = LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY.equalsIgnoreCase(logConsumerChangelogMode);
+    this.logConsumerAppendOnly =
+        LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY.equalsIgnoreCase(logConsumerChangelogMode);
   }
 
   @Override
   public void partitionConsumerRecordsHandler(
       List<ConsumerRecord<byte[], byte[]>> partitionRecords,
-      KafkaTopicPartitionState<RowData, TopicPartition> partitionState) throws Exception {
+      KafkaTopicPartitionState<RowData, TopicPartition> partitionState)
+      throws Exception {
     for (ConsumerRecord<byte[], byte[]> record : partitionRecords) {
       byte[] value = record.value();
       boolean magicFormat = checkMagicNum(value);
@@ -155,22 +155,26 @@ public class LogKafkaFetcher extends KafkaFetcher<RowData> {
   }
 
   /**
-   * filter the rowData only works during
-   * {@link com.netease.arctic.flink.table.descriptors.ArcticValidator#ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE}
-   * is false and
-   * {@link com.netease.arctic.flink.table.descriptors.ArcticValidator#ARCTIC_LOG_CONSUMER_CHANGELOG_MODE}
-   * is {@link com.netease.arctic.flink.table.descriptors.ArcticValidator#LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY} and
-   * rowData.rowKind != INSERT
+   * filter the rowData only works during {@link
+   * com.netease.arctic.flink.table.descriptors.ArcticValidator#ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE}
+   * is false and {@link
+   * com.netease.arctic.flink.table.descriptors.ArcticValidator#ARCTIC_LOG_CONSUMER_CHANGELOG_MODE}
+   * is {@link
+   * com.netease.arctic.flink.table.descriptors.ArcticValidator#LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY}
+   * and rowData.rowKind != INSERT
    *
    * @param rowData the judged data
    * @return true means should be filtered.
    */
   boolean filterByRowKind(RowData rowData) {
-    return !logRetractionEnable && logConsumerAppendOnly && !rowData.getRowKind().equals(RowKind.INSERT);
+    return !logRetractionEnable
+        && logConsumerAppendOnly
+        && !rowData.getRowKind().equals(RowKind.INSERT);
   }
 
   /**
-   * Should filter the records that has been fetched in the buffer when the {@link LogData#getFlip()} is true.
+   * Should filter the records that has been fetched in the buffer when the {@link
+   * LogData#getFlip()} is true.
    */
   private boolean filterBuffer(LogData<RowData> logData, int partition, long actualRowOffset) {
     final String upstreamId = logData.getUpstreamId();
@@ -202,13 +206,17 @@ public class LogKafkaFetcher extends KafkaFetcher<RowData> {
   private void processMsg(
       ConsumerRecord<byte[], byte[]> record,
       final LogData<RowData> logData,
-      KafkaTopicPartitionState<RowData, TopicPartition> partitionState) throws IOException {
+      KafkaTopicPartitionState<RowData, TopicPartition> partitionState)
+      throws IOException {
     if (!logData.getFlip()) {
       handleUnFlip(logData, record, partitionState);
     } else {
       LOG.info(
           "subtaskId={}, fetch a flip msg, flip offset= {} with partition= {}, data={}.",
-          subtaskId, record.offset(), record.partition(), logData);
+          subtaskId,
+          record.offset(),
+          record.partition(),
+          logData);
       handleFlip(logData, record, partitionState);
     }
   }
@@ -220,7 +228,8 @@ public class LogKafkaFetcher extends KafkaFetcher<RowData> {
     RowData actualValue = logData.getActualValue();
 
     if (!logRetractionEnable) {
-      emitRecordWithTimestampsWithoutConsistency(actualValue, partitionState, record.offset(), record.timestamp());
+      emitRecordWithTimestampsWithoutConsistency(
+          actualValue, partitionState, record.offset(), record.timestamp());
     } else {
       // enable log retraction
       handleUnFlipWithRetraction(logData, record, partitionState);
@@ -239,7 +248,8 @@ public class LogKafkaFetcher extends KafkaFetcher<RowData> {
     boolean isRetracting = logReadHelper.isJobRetractingRightNow(upstreamId, partition);
     if (isRetracting) {
       if (logData.getEpicNo() <= logReadHelper.queryRetractingEpicNo(upstreamId, partition)) {
-        //  consumer is retracting but log data does not need to be retracted, these are not duplicate data.
+        //  consumer is retracting but log data does not need to be retracted, these are not
+        // duplicate data.
         LOG.info(
             "although the consumer is retracting status, however the LogData is not required to turn ChangeAction, {}.",
             actualValue);
@@ -255,8 +265,7 @@ public class LogKafkaFetcher extends KafkaFetcher<RowData> {
         partitionState,
         record.offset(),
         record.timestamp(),
-        isRetracting
-    );
+        isRetracting);
   }
 
   private void handleFlip(
@@ -267,8 +276,10 @@ public class LogKafkaFetcher extends KafkaFetcher<RowData> {
     final long epicNo = logData.getEpicNo();
     final int partition = record.partition();
     if (!logRetractionEnable) {
-      LOG.info("subtaskId={}, receive a flip msg, while {} is false, so ignore this flip.",
-          subtaskId, ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key());
+      LOG.info(
+          "subtaskId={}, receive a flip msg, while {} is false, so ignore this flip.",
+          subtaskId,
+          ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key());
       return;
     }
 
@@ -281,7 +292,9 @@ public class LogKafkaFetcher extends KafkaFetcher<RowData> {
       if (!seekOffsetOpt.isPresent()) {
         LOG.warn(
             "could not find out seek offset by upstreamId={}, epicNo={}, partition={}.",
-            upstreamId, epicNo, partition);
+            upstreamId,
+            epicNo,
+            partition);
         return;
       }
       long seekOffset = seekOffsetOpt.get();
@@ -297,8 +310,7 @@ public class LogKafkaFetcher extends KafkaFetcher<RowData> {
       String topic = record.topic();
       KafkaTopicPartitionState<RowData, TopicPartition> kafkaTopicPartitionState =
           new KafkaTopicPartitionState<>(
-              new KafkaTopicPartition(topic, partition),
-              new TopicPartition(topic, partition));
+              new KafkaTopicPartition(topic, partition), new TopicPartition(topic, partition));
       kafkaTopicPartitionState.setOffset(seekOffset);
       logKafkaConsumerThread.setTopicPartitionOffset(kafkaTopicPartitionState);
     } else {
@@ -315,7 +327,9 @@ public class LogKafkaFetcher extends KafkaFetcher<RowData> {
   public static boolean checkMagicNum(byte[] value) {
     checkNotNull(value);
     checkArgument(value.length >= 3);
-    return value[0] == MAGIC_NUMBER[0] && value[1] == MAGIC_NUMBER[1] && value[2] == MAGIC_NUMBER[2];
+    return value[0] == MAGIC_NUMBER[0]
+        && value[1] == MAGIC_NUMBER[1]
+        && value[2] == MAGIC_NUMBER[2];
   }
 
   protected void emitRecordWithTimestampsWithConsistency(
@@ -335,12 +349,7 @@ public class LogKafkaFetcher extends KafkaFetcher<RowData> {
       } else {
         logReadHelper.updateEpicStartOffsetIfEmpty(upstreamId, epicNo, partition, offset);
       }
-      emitRecordWithTimestamps(
-          record,
-          partitionState,
-          offset,
-          kafkaEventTimestamp
-      );
+      emitRecordWithTimestamps(record, partitionState, offset, kafkaEventTimestamp);
     }
   }
 
@@ -350,12 +359,7 @@ public class LogKafkaFetcher extends KafkaFetcher<RowData> {
       long offset,
       long kafkaEventTimestamp) {
     synchronized (checkpointLock) {
-      emitRecordWithTimestamps(
-          record,
-          partitionState,
-          offset,
-          kafkaEventTimestamp
-      );
+      emitRecordWithTimestamps(record, partitionState, offset, kafkaEventTimestamp);
     }
   }
 
@@ -376,9 +380,9 @@ public class LogKafkaFetcher extends KafkaFetcher<RowData> {
   /**
    * Emits a record attaching a timestamp to it.
    *
-   * @param records             The records to emit
-   * @param partitionState      The state of the Kafka partition from which the record was fetched
-   * @param offset              The offset of the corresponding Kafka record
+   * @param records The records to emit
+   * @param partitionState The state of the Kafka partition from which the record was fetched
+   * @param offset The offset of the corresponding Kafka record
    * @param kafkaEventTimestamp The timestamp of the Kafka record
    */
   protected void emitRecordsWithTimestamps(

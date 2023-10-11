@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.server.optimizing.maintainer;
 
 import com.netease.arctic.IcebergFileEntry;
@@ -34,21 +52,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Table maintainer for mixed-iceberg and mixed-hive tables.
+ */
 public class MixedTableMaintainer implements TableMaintainer {
 
   private static final Logger LOG = LoggerFactory.getLogger(MixedTableMaintainer.class);
 
-  private ArcticTable arcticTable;
+  private final ArcticTable arcticTable;
 
   private ChangeTableMaintainer changeMaintainer;
 
-  private BaseTableMaintainer baseMaintainer;
+  private final BaseTableMaintainer baseMaintainer;
 
-  private Set<String> changeFiles;
+  private final Set<String> changeFiles;
 
-  private Set<String> baseFiles;
+  private final Set<String> baseFiles;
 
-  private Set<String> hiveFiles;
+  private final Set<String> hiveFiles;
 
   public MixedTableMaintainer(ArcticTable arcticTable) {
     this.arcticTable = arcticTable;
@@ -71,27 +92,11 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void cleanContentFiles(long lastTime) {
+  public void cleanOrphanFiles(TableRuntime tableRuntime) {
     if (changeMaintainer != null) {
-      changeMaintainer.cleanContentFiles(lastTime);
+      changeMaintainer.cleanOrphanFiles(tableRuntime);
     }
-    baseMaintainer.cleanContentFiles(lastTime);
-  }
-
-  @Override
-  public void cleanMetadata(long lastTime) {
-    if (changeMaintainer != null) {
-      changeMaintainer.cleanMetadata(lastTime);
-    }
-    baseMaintainer.cleanMetadata(lastTime);
-  }
-
-  @Override
-  public void cleanDanglingDeleteFiles() {
-    if (changeMaintainer != null) {
-      changeMaintainer.cleanDanglingDeleteFiles();
-    }
-    baseMaintainer.cleanDanglingDeleteFiles();
+    baseMaintainer.cleanOrphanFiles(tableRuntime);
   }
 
   @Override
@@ -102,12 +107,32 @@ public class MixedTableMaintainer implements TableMaintainer {
     baseMaintainer.expireSnapshots(tableRuntime);
   }
 
-  @Override
-  public void expireSnapshots(long mustOlderThan) {
+  protected void expireSnapshots(long mustOlderThan) {
     if (changeMaintainer != null) {
       changeMaintainer.expireSnapshots(mustOlderThan);
     }
     baseMaintainer.expireSnapshots(mustOlderThan);
+  }
+
+  protected void cleanContentFiles(long lastTime) {
+    if (changeMaintainer != null) {
+      changeMaintainer.cleanContentFiles(lastTime);
+    }
+    baseMaintainer.cleanContentFiles(lastTime);
+  }
+
+  protected void cleanMetadata(long lastTime) {
+    if (changeMaintainer != null) {
+      changeMaintainer.cleanMetadata(lastTime);
+    }
+    baseMaintainer.cleanMetadata(lastTime);
+  }
+
+  protected void cleanDanglingDeleteFiles() {
+    if (changeMaintainer != null) {
+      changeMaintainer.cleanDanglingDeleteFiles();
+    }
+    baseMaintainer.cleanDanglingDeleteFiles();
   }
 
   public ChangeTableMaintainer getChangeMaintainer() {
@@ -118,7 +143,8 @@ public class MixedTableMaintainer implements TableMaintainer {
     return baseMaintainer;
   }
 
-  private Set<String> mergeSets(Set<String>... sets) {
+  @SafeVarargs
+  private final Set<String> mergeSets(Set<String>... sets) {
     Set<String> result = new HashSet<>();
     for (Set<String> set : sets) {
       result.addAll(set);
@@ -130,7 +156,7 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     private static final int DATA_FILE_LIST_SPLIT = 3000;
 
-    private UnkeyedTable unkeyedTable;
+    private final UnkeyedTable unkeyedTable;
 
     public ChangeTableMaintainer(UnkeyedTable unkeyedTable) {
       super(unkeyedTable);
@@ -142,22 +168,22 @@ public class MixedTableMaintainer implements TableMaintainer {
       return mergeSets(changeFiles, baseFiles, hiveFiles);
     }
 
+    @Override
     public void expireSnapshots(TableRuntime tableRuntime) {
       expireSnapshots(Long.MAX_VALUE);
     }
 
     @Override
     public void expireSnapshots(long mustOlderThan) {
-      long changeDataTTL = getChangeDataTTL();
-      expireFiles(Longs.min(System.currentTimeMillis() - changeDataTTL, mustOlderThan));
-      super.expireSnapshots(mustOlderThan);
+      long changeTTLPoint = getChangeTTLPoint();
+      expireFiles(Longs.min(getChangeTTLPoint(), mustOlderThan));
+      super.expireSnapshots(Longs.min(changeTTLPoint, mustOlderThan));
     }
 
+    @Override
     protected long olderThanSnapshotNeedToExpire(long mustOlderThan) {
-      long changeDataTTL = getChangeDataTTL();
       long latestChangeFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(unkeyedTable);
-      long changeTTLPoint = System.currentTimeMillis() - changeDataTTL;
-      return Longs.min(latestChangeFlinkCommitTime, mustOlderThan, changeTTLPoint);
+      return Longs.min(latestChangeFlinkCommitTime, mustOlderThan);
     }
 
     @Override
@@ -170,12 +196,11 @@ public class MixedTableMaintainer implements TableMaintainer {
       deleteChangeFile(expiredDataFileEntries);
     }
 
-    private long getChangeDataTTL() {
-      long changeDataTTL = CompatiblePropertyUtil.propertyAsLong(
+    private long getChangeTTLPoint() {
+      return System.currentTimeMillis() - CompatiblePropertyUtil.propertyAsLong(
           unkeyedTable.properties(),
           TableProperties.CHANGE_DATA_TTL,
           TableProperties.CHANGE_DATA_TTL_DEFAULT) * 60 * 1000;
-      return changeDataTTL;
     }
 
     private List<IcebergFileEntry> getExpiredDataFileEntries(long ttlPoint) {
@@ -269,11 +294,8 @@ public class MixedTableMaintainer implements TableMaintainer {
 
   public class BaseTableMaintainer extends IcebergTableMaintainer {
 
-    private UnkeyedTable unkeyedTable;
-
     public BaseTableMaintainer(UnkeyedTable unkeyedTable) {
       super(unkeyedTable);
-      this.unkeyedTable = unkeyedTable;
     }
 
     @Override

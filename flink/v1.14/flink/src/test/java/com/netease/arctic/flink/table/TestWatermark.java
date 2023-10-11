@@ -17,6 +17,8 @@ package com.netease.arctic.flink.table;
  * limitations under the License.
  */
 
+import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -68,20 +70,18 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-
 public class TestWatermark extends FlinkTestBase {
   public static final Logger LOG = LoggerFactory.getLogger(TestWatermark.class);
 
-  @Rule
-  public TemporaryFolder tempFolder = new TemporaryFolder();
+  @Rule public TemporaryFolder tempFolder = new TemporaryFolder();
 
   private static final String DB = TableTestHelper.TEST_TABLE_ID.getDatabase();
   private static final String TABLE = "test_keyed";
 
   public TestWatermark() {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-      new BasicTableTestHelper(true, true));
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true));
   }
 
   @Before
@@ -95,45 +95,62 @@ public class TestWatermark extends FlinkTestBase {
     sql("DROP TABLE IF EXISTS arcticCatalog." + DB + "." + TABLE);
   }
 
-  @Test(timeout = 30000)
+  @Test
   public void testWatermark() throws Exception {
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
     String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
 
-    sql("CREATE TABLE IF NOT EXISTS %s (" +
-            " id bigint, user_id int, name STRING, category string, op_time timestamp, is_true boolean" +
-            ", PRIMARY KEY (id, user_id) NOT ENFORCED) PARTITIONED BY(category, name) WITH %s",
+    sql(
+        "CREATE TABLE IF NOT EXISTS %s ("
+            + " id bigint, user_id int, name STRING, category string, op_time timestamp, is_true boolean"
+            + ", PRIMARY KEY (id, user_id) NOT ENFORCED) PARTITIONED BY(category, name) WITH %s",
         table, toWithClause(tableProperties));
 
-    TableSchema flinkSchema = TableSchema.builder()
-        .field("id", DataTypes.BIGINT())
-        .field("user_id", DataTypes.INT())
-        .field("name", DataTypes.STRING())
-        .field("category", DataTypes.STRING())
-        .field("op_time", DataTypes.TIMESTAMP(3))
-        .field("is_true", DataTypes.BOOLEAN())
-        .build();
+    TableSchema flinkSchema =
+        TableSchema.builder()
+            .field("id", DataTypes.BIGINT())
+            .field("user_id", DataTypes.INT())
+            .field("name", DataTypes.STRING())
+            .field("category", DataTypes.STRING())
+            .field("op_time", DataTypes.TIMESTAMP(3))
+            .field("is_true", DataTypes.BOOLEAN())
+            .build();
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
-    KeyedTable keyedTable = (KeyedTable) ArcticUtils.loadArcticTable(
-        ArcticTableLoader.of(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE), catalogBuilder));
+    KeyedTable keyedTable =
+        (KeyedTable)
+            ArcticUtils.loadArcticTable(
+                ArcticTableLoader.of(
+                    TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE), catalogBuilder));
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, true);
-    List<RowData> baseData = new ArrayList<RowData>() {{
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 2L, 123, StringData.fromString("a"), StringData.fromString("a"),
-          TimestampData.fromLocalDateTime(LocalDateTime.now().minusMinutes(1)), true));
-    }};
+    List<RowData> baseData =
+        new ArrayList<RowData>() {
+          {
+            add(
+                GenericRowData.ofKind(
+                    RowKind.INSERT,
+                    2L,
+                    123,
+                    StringData.fromString("a"),
+                    StringData.fromString("a"),
+                    TimestampData.fromLocalDateTime(LocalDateTime.now().minusMinutes(1)),
+                    true));
+          }
+        };
     for (RowData record : baseData) {
       taskWriter.write(record);
     }
     commit(keyedTable, taskWriter.complete(), true);
 
-    sql("create table d (tt as cast(op_time as timestamp(3)), watermark for tt as tt) like %s", table);
+    sql(
+        "create table d (tt as cast(op_time as timestamp(3)), watermark for tt as tt) like %s",
+        table);
 
     Table source = getTableEnv().sqlQuery("select is_true from d");
 
     WatermarkTestOperator op = new WatermarkTestOperator();
-    getTableEnv().toRetractStream(source, RowData.class)
+    getTableEnv()
+        .toRetractStream(source, RowData.class)
         .transform("test watermark", TypeInformation.of(RowData.class), op);
     getEnv().executeAsync("test watermark");
 
@@ -148,38 +165,55 @@ public class TestWatermark extends FlinkTestBase {
     Map<String, String> tableProperties = new HashMap<>();
     String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
 
-    sql("CREATE TABLE IF NOT EXISTS %s (" +
-            " id bigint, user_id int, name STRING, category string, op_time timestamp, is_true boolean" +
-            ", PRIMARY KEY (id, user_id) NOT ENFORCED) PARTITIONED BY(category, name) WITH %s",
+    sql(
+        "CREATE TABLE IF NOT EXISTS %s ("
+            + " id bigint, user_id int, name STRING, category string, op_time timestamp, is_true boolean"
+            + ", PRIMARY KEY (id, user_id) NOT ENFORCED) PARTITIONED BY(category, name) WITH %s",
         table, toWithClause(tableProperties));
 
-    TableSchema flinkSchema = TableSchema.builder()
-        .field("id", DataTypes.BIGINT())
-        .field("user_id", DataTypes.INT())
-        .field("name", DataTypes.STRING())
-        .field("category", DataTypes.STRING())
-        .field("op_time", DataTypes.TIMESTAMP(3))
-        .field("is_true", DataTypes.BOOLEAN())
-        .build();
+    TableSchema flinkSchema =
+        TableSchema.builder()
+            .field("id", DataTypes.BIGINT())
+            .field("user_id", DataTypes.INT())
+            .field("name", DataTypes.STRING())
+            .field("category", DataTypes.STRING())
+            .field("op_time", DataTypes.TIMESTAMP(3))
+            .field("is_true", DataTypes.BOOLEAN())
+            .build();
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
-    KeyedTable keyedTable = (KeyedTable) ArcticUtils.loadArcticTable(
-        ArcticTableLoader.of(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE), catalogBuilder));
+    KeyedTable keyedTable =
+        (KeyedTable)
+            ArcticUtils.loadArcticTable(
+                ArcticTableLoader.of(
+                    TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE), catalogBuilder));
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, true);
-    List<RowData> baseData = new ArrayList<RowData>() {{
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 2L, 123, StringData.fromString("a"), StringData.fromString("a"),
-          TimestampData.fromLocalDateTime(LocalDateTime.parse("2022-06-17T10:08:11.0")), true));
-    }};
+    List<RowData> baseData =
+        new ArrayList<RowData>() {
+          {
+            add(
+                GenericRowData.ofKind(
+                    RowKind.INSERT,
+                    2L,
+                    123,
+                    StringData.fromString("a"),
+                    StringData.fromString("a"),
+                    TimestampData.fromLocalDateTime(LocalDateTime.parse("2022-06-17T10:08:11.0")),
+                    true));
+          }
+        };
     for (RowData record : baseData) {
       taskWriter.write(record);
     }
     commit(keyedTable, taskWriter.complete(), true);
 
-    sql("create table d (tt as cast(op_time as timestamp(3)), watermark for tt as tt) like %s", table);
+    sql(
+        "create table d (tt as cast(op_time as timestamp(3)), watermark for tt as tt) like %s",
+        table);
 
     TableResult result = exec("select is_true, tt from d");
 
-    CommonTestUtils.waitUntilJobManagerIsInitialized(() -> result.getJobClient().get().getJobStatus().get());
+    CommonTestUtils.waitUntilJobManagerIsInitialized(
+        () -> result.getJobClient().get().getJobStatus().get());
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
       Row row = iterator.next();
@@ -188,7 +222,7 @@ public class TestWatermark extends FlinkTestBase {
     result.getJobClient().ifPresent(TestUtil::cancelJob);
 
     List<Object[]> expected = new LinkedList<>();
-    expected.add(new Object[]{true, LocalDateTime.parse("2022-06-17T10:08:11")});
+    expected.add(new Object[] {true, LocalDateTime.parse("2022-06-17T10:08:11")});
     Assert.assertEquals(DataUtil.toRowSet(expected), actual);
   }
 
@@ -221,5 +255,4 @@ public class TestWatermark extends FlinkTestBase {
       super.processWatermark(mark);
     }
   }
-
 }

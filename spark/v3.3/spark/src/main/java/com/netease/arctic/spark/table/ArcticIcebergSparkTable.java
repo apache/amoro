@@ -58,8 +58,8 @@ public class ArcticIcebergSparkTable extends SparkTable implements SupportsParti
   }
 
   @Override
-  public void createPartition(InternalRow ident, Map<String, String> properties) throws PartitionAlreadyExistsException,
-      UnsupportedOperationException {
+  public void createPartition(InternalRow ident, Map<String, String> properties)
+      throws PartitionAlreadyExistsException, UnsupportedOperationException {
     throw new UnsupportedOperationException("not supported create partition");
   }
 
@@ -75,7 +75,8 @@ public class ArcticIcebergSparkTable extends SparkTable implements SupportsParti
   }
 
   @Override
-  public Map<String, String> loadPartitionMetadata(InternalRow ident) throws UnsupportedOperationException {
+  public Map<String, String> loadPartitionMetadata(InternalRow ident)
+      throws UnsupportedOperationException {
     return null;
   }
 

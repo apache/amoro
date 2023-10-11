@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink;
 
+import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.IDENTIFIER;
+import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
@@ -82,18 +85,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.IDENTIFIER;
-import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
-
 public class FlinkTestBase extends TableTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkTestBase.class);
-  
+
   @ClassRule
   public static final MiniClusterWithClientResource MINI_CLUSTER_RESOURCE =
       MiniClusterResource.createWithClassloaderCheckDisabled();
 
-  @Rule
-  public TestName name = new TestName();
+  @Rule public TestName name = new TestName();
 
   public static String metastoreUrl;
 
@@ -103,13 +102,15 @@ public class FlinkTestBase extends TableTestBase {
   protected Map<String, String> props;
   private volatile StreamExecutionEnvironment env = null;
   public static final Schema TABLE_SCHEMA = BasicTableTestHelper.TABLE_SCHEMA;
-  public static final TableSchema FLINK_SCHEMA = TableSchema.builder()
-      .field("id", DataTypes.INT())
-      .field("name", DataTypes.STRING())
-      .field("ts", DataTypes.BIGINT())
-      .field("op_time", DataTypes.TIMESTAMP())
-      .build();
-  public static final RowType FLINK_ROW_TYPE = (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType();
+  public static final TableSchema FLINK_SCHEMA =
+      TableSchema.builder()
+          .field("id", DataTypes.INT())
+          .field("name", DataTypes.STRING())
+          .field("ts", DataTypes.BIGINT())
+          .field("op_time", DataTypes.TIMESTAMP())
+          .build();
+  public static final RowType FLINK_ROW_TYPE =
+      (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType();
 
   public static InternalCatalogBuilder catalogBuilder;
   public static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
@@ -142,9 +143,9 @@ public class FlinkTestBase extends TableTestBase {
     if (tEnv == null) {
       synchronized (this) {
         if (tEnv == null) {
-          this.tEnv = StreamTableEnvironment.create(getEnv(), EnvironmentSettings
-              .newInstance()
-              .inStreamingMode().build());
+          this.tEnv =
+              StreamTableEnvironment.create(
+                  getEnv(), EnvironmentSettings.newInstance().inStreamingMode().build());
           Configuration configuration = tEnv.getConfig().getConfiguration();
           // set low-level key-value options
           configuration.setString(TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED.key(), "true");
@@ -158,15 +159,18 @@ public class FlinkTestBase extends TableTestBase {
     if (env == null) {
       synchronized (this) {
         if (env == null) {
-          StateBackend backend = new FsStateBackend(
-              "file:///" + System.getProperty("java.io.tmpdir") + "/flink/backend");
+          StateBackend backend =
+              new FsStateBackend(
+                  "file:///" + System.getProperty("java.io.tmpdir") + "/flink/backend");
           env =
-              StreamExecutionEnvironment.getExecutionEnvironment(MiniClusterResource.DISABLE_CLASSLOADER_CHECK_CONFIG);
+              StreamExecutionEnvironment.getExecutionEnvironment(
+                  MiniClusterResource.DISABLE_CLASSLOADER_CHECK_CONFIG);
           env.setParallelism(1);
           env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
           env.getCheckpointConfig().setCheckpointInterval(300);
-          env.getCheckpointConfig().enableExternalizedCheckpoints(
-              CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
+          env.getCheckpointConfig()
+              .enableExternalizedCheckpoints(
+                  CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
           env.setStateBackend(backend);
           env.setRestartStrategy(RestartStrategies.noRestart());
         }
@@ -176,15 +180,17 @@ public class FlinkTestBase extends TableTestBase {
   }
 
   protected List<Row> sql(String query, Object... args) {
-    TableResult tableResult = getTableEnv()
-        .executeSql(String.format(query, args));
-    tableResult.getJobClient().ifPresent(c -> {
-      try {
-        c.getJobExecutionResult().get();
-      } catch (InterruptedException | ExecutionException e) {
-        throw new RuntimeException(e);
-      }
-    });
+    TableResult tableResult = getTableEnv().executeSql(String.format(query, args));
+    tableResult
+        .getJobClient()
+        .ifPresent(
+            c -> {
+              try {
+                c.getJobExecutionResult().get();
+              } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+              }
+            });
     try (CloseableIterator<Row> iter = tableResult.collect()) {
       List<Row> results = Lists.newArrayList(iter);
       return results;
@@ -209,15 +215,15 @@ public class FlinkTestBase extends TableTestBase {
   public static List<Record> read(KeyedTable table) {
     CloseableIterable<CombinedScanTask> combinedScanTasks = table.newScan().planTasks();
     Schema schema = table.schema();
-    GenericArcticDataReader genericArcticDataReader = new GenericArcticDataReader(
-        table.io(),
-        schema,
-        schema,
-        table.primaryKeySpec(),
-        null,
-        true,
-        IdentityPartitionConverters::convertConstant
-    );
+    GenericArcticDataReader genericArcticDataReader =
+        new GenericArcticDataReader(
+            table.io(),
+            schema,
+            schema,
+            table.primaryKeySpec(),
+            null,
+            true,
+            IdentityPartitionConverters::convertConstant);
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     for (CombinedScanTask combinedScanTask : combinedScanTasks) {
       for (KeyedTableScanTask keyedTableScanTask : combinedScanTask.tasks()) {
@@ -230,9 +236,19 @@ public class FlinkTestBase extends TableTestBase {
   public static Set<Record> toRecords(Collection<Row> rows) {
     GenericRecord record = GenericRecord.create(TABLE_SCHEMA);
     ImmutableSet.Builder<Record> b = ImmutableSet.builder();
-    rows.forEach(r ->
-        b.add(record.copy(ImmutableMap.of("id", r.getField(0), "name", r.getField(1),
-          "ts", r.getField(2), "op_time", r.getField(3)))));
+    rows.forEach(
+        r ->
+            b.add(
+                record.copy(
+                    ImmutableMap.of(
+                        "id",
+                        r.getField(0),
+                        "name",
+                        r.getField(1),
+                        "ts",
+                        r.getField(2),
+                        "op_time",
+                        r.getField(3)))));
     return b.build();
   }
 
@@ -244,15 +260,22 @@ public class FlinkTestBase extends TableTestBase {
       if (propCount > 0) {
         builder.append(",");
       }
-      builder.append("'").append(entry.getKey()).append("'").append("=")
-          .append("'").append(entry.getValue()).append("'");
+      builder
+          .append("'")
+          .append(entry.getKey())
+          .append("'")
+          .append("=")
+          .append("'")
+          .append(entry.getValue())
+          .append("'");
       propCount++;
     }
     builder.append(")");
     return builder.toString();
   }
 
-  protected static RowData createRowData(Integer id, String name, String dateTime, RowKind rowKind) {
+  protected static RowData createRowData(
+      Integer id, String name, String dateTime, RowKind rowKind) {
     return GenericRowData.ofKind(
         rowKind,
         id,
@@ -286,13 +309,13 @@ public class FlinkTestBase extends TableTestBase {
     }
   }
 
-  protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType,
-                                                             boolean base) {
+  protected static TaskWriter<RowData> createKeyedTaskWriter(
+      KeyedTable keyedTable, RowType rowType, boolean base) {
     return createKeyedTaskWriter(keyedTable, rowType, base, 3);
   }
 
-  protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType,
-                                                             boolean base, long mask) {
+  protected static TaskWriter<RowData> createKeyedTaskWriter(
+      KeyedTable keyedTable, RowType rowType, boolean base, long mask) {
     ArcticRowDataTaskWriterFactory taskWriterFactory =
         new ArcticRowDataTaskWriterFactory(keyedTable, rowType, base);
     taskWriterFactory.setMask(mask);

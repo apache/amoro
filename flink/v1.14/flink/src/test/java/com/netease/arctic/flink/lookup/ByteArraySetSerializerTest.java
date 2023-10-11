@@ -63,7 +63,8 @@ public class ByteArraySetSerializerTest {
     long cost = System.currentTimeMillis() - start;
     assert serialized != null;
     Assert.assertEquals(totalSize, serialized.length);
-    LOG.info("serialized cost: {}, num= {}, result byte array size={}.", cost, num, serialized.length);
+    LOG.info(
+        "serialized cost: {}, num= {}, result byte array size={}.", cost, num, serialized.length);
 
     start = System.currentTimeMillis();
     Set<ByteArrayWrapper> actualSet = ByteArraySetSerializer.deserialize(serialized);
@@ -82,6 +83,5 @@ public class ByteArraySetSerializerTest {
     }
     long end = System.currentTimeMillis();
     LOG.info("contains process time:" + (end - start));
-
   }
 }

@@ -24,24 +24,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-/**
- * Abstract class providing a Kafka test environment.
- */
+/** Abstract class providing a Kafka test environment. */
 public abstract class KafkaTestEnvironment {
-  /**
-   * Configuration class for {@link KafkaTestEnvironment}.
-   */
+  /** Configuration class for {@link KafkaTestEnvironment}. */
   public static class Config {
     private int kafkaServersNumber = 1;
     private Properties kafkaServerProperties = null;
     private boolean secureMode = false;
     private boolean hideKafkaBehindProxy = false;
 
-    /**
-     * Please use {@link KafkaTestEnvironment#createConfig()} method.
-     */
-    private Config() {
-    }
+    /** Please use {@link KafkaTestEnvironment#createConfig()} method. */
+    private Config() {}
 
     public int getKafkaServersNumber() {
       return kafkaServersNumber;
@@ -114,9 +107,7 @@ public abstract class KafkaTestEnvironment {
 
   // -- offset handlers
 
-  /**
-   * Simple interface to commit and retrieve offsets.
-   */
+  /** Simple interface to commit and retrieve offsets. */
   public interface KafkaOffsetHandler {
     Long getCommittedOffset(String topicName, int partition);
 

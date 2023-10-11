@@ -14,8 +14,6 @@ import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
 import org.apache.commons.collections.CollectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,15 +23,14 @@ import java.util.stream.Collectors;
 
 public class ServerTableDescriptor extends PersistentBase {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ServerTableDescriptor.class);
-
   private final Map<TableFormat, FormatTableDescriptor> formatDescriptorMap = new HashMap<>();
 
   private final TableService tableService;
 
-  {
+  public ServerTableDescriptor(TableService tableService) {
+    this.tableService = tableService;
     FormatTableDescriptor[] formatTableDescriptors = new FormatTableDescriptor[] {
-        new MixedTableDescriptor(),
+        new MixedAndIcebergTableDescriptor(),
         new PaimonTableDescriptor()
     };
     for (FormatTableDescriptor formatTableDescriptor : formatTableDescriptors) {
@@ -41,10 +38,6 @@ public class ServerTableDescriptor extends PersistentBase {
         formatDescriptorMap.put(format, formatTableDescriptor);
       }
     }
-  }
-
-  public ServerTableDescriptor(TableService tableService) {
-    this.tableService = tableService;
   }
 
   public ServerTableMeta getTableDetail(ServerTableIdentifier tableIdentifier) {
@@ -87,12 +80,6 @@ public class ServerTableDescriptor extends PersistentBase {
     return getAs(
         OptimizingMapper.class,
         mapper -> mapper.selectOptimizingProcesses(catalog, db, table));
-  }
-
-  public List<OptimizingTaskMeta> getOptimizingTasks(long processId) {
-    return getAs(
-        OptimizingMapper.class,
-        mapper -> mapper.selectOptimizeTaskMetas(Collections.singletonList(processId)));
   }
 
   public List<OptimizingTaskMeta> getOptimizingTasks(List<OptimizingProcessMeta> processMetaList) {

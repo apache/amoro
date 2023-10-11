@@ -25,15 +25,14 @@ import org.apache.flink.util.InstantiationUtil;
 
 import java.io.IOException;
 
-/**
- * Serializer that serializes and deserializes {@link ArcticSplit}.
- */
+/** Serializer that serializes and deserializes {@link ArcticSplit}. */
 public class ArcticSplitSerializer implements SimpleVersionedSerializer<ArcticSplit> {
   public static final ArcticSplitSerializer INSTANCE = new ArcticSplitSerializer();
   private static final int VERSION = 1;
 
   private static final byte SNAPSHOT_SPLIT_FLAG = 1;
   private static final byte CHANGELOG_SPLIT_FLAG = 2;
+  private static final byte MOR_SPLIT_FLAG = 3;
 
   @Override
   public int getVersion() {
@@ -45,18 +44,22 @@ public class ArcticSplitSerializer implements SimpleVersionedSerializer<ArcticSp
     if (split == null) {
       return new byte[0];
     }
-    if (split.isSnapshotSplit()) {
+    if (split.isMergeOnReadSplit()) {
+      MergeOnReadSplit mergeOnReadSplit = (MergeOnReadSplit) split;
+      byte[] content = InstantiationUtil.serializeObject(mergeOnReadSplit);
+      return Bytes.mergeByte(new byte[] {MOR_SPLIT_FLAG}, content);
+    } else if (split.isSnapshotSplit()) {
       SnapshotSplit snapshotSplit = (SnapshotSplit) split;
       byte[] content = InstantiationUtil.serializeObject(snapshotSplit);
-      return Bytes.mergeByte(new byte[]{SNAPSHOT_SPLIT_FLAG}, content);
-
+      return Bytes.mergeByte(new byte[] {SNAPSHOT_SPLIT_FLAG}, content);
     } else if (split.isChangelogSplit()) {
       ChangelogSplit changelogSplit = (ChangelogSplit) split;
       byte[] content = InstantiationUtil.serializeObject(changelogSplit);
-      return Bytes.mergeByte(new byte[]{CHANGELOG_SPLIT_FLAG}, content);
+      return Bytes.mergeByte(new byte[] {CHANGELOG_SPLIT_FLAG}, content);
     } else {
       throw new IllegalArgumentException(
-          String.format("This arctic split is not supported, class %s.", split.getClass().getSimpleName()));
+          String.format(
+              "This arctic split is not supported, class %s.", split.getClass().getSimpleName()));
     }
   }
 
@@ -69,12 +72,20 @@ public class ArcticSplitSerializer implements SimpleVersionedSerializer<ArcticSp
       byte flag = serialized[0];
       if (version == VERSION) {
         byte[] content = Bytes.subByte(serialized, 1, serialized.length - 1);
-        if (flag == SNAPSHOT_SPLIT_FLAG) {
-          return InstantiationUtil.<SnapshotSplit>deserializeObject(content, SnapshotSplit.class.getClassLoader());
+        if (flag == MOR_SPLIT_FLAG) {
+          return InstantiationUtil.<MergeOnReadSplit>deserializeObject(
+              content, MergeOnReadSplit.class.getClassLoader());
+        } else if (flag == SNAPSHOT_SPLIT_FLAG) {
+          return InstantiationUtil.<SnapshotSplit>deserializeObject(
+              content, SnapshotSplit.class.getClassLoader());
         } else if (flag == CHANGELOG_SPLIT_FLAG) {
-          return InstantiationUtil.<ChangelogSplit>deserializeObject(content, ChangelogSplit.class.getClassLoader());
+          return InstantiationUtil.<ChangelogSplit>deserializeObject(
+              content, ChangelogSplit.class.getClassLoader());
         } else {
-          throw new IllegalArgumentException("this flag split is unsupported. available: 1,2.");
+          throw new IllegalArgumentException(
+              String.format(
+                  "this flag split %s is unsupported. available: %s, %s, and %s.",
+                  flag, SNAPSHOT_SPLIT_FLAG, CHANGELOG_SPLIT_FLAG, MOR_SPLIT_FLAG));
         }
       }
     } catch (ClassNotFoundException e) {

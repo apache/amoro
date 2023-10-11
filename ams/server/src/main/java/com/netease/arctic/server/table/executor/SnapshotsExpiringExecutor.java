@@ -19,7 +19,6 @@
 package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.AmoroTable;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.optimizing.maintainer.TableMaintainer;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
@@ -47,8 +46,7 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
-    return tableRuntime.getFormat() != TableFormat.PAIMON &&
-        tableRuntime.getTableConfiguration().isExpireSnapshotEnabled();
+    return tableRuntime.getTableConfiguration().isExpireSnapshotEnabled();
   }
 
   @Override
@@ -59,13 +57,8 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
   @Override
   public void execute(TableRuntime tableRuntime) {
     try {
-      TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
-      if (!tableConfiguration.isExpireSnapshotEnabled()) {
-        return;
-      }
-
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
-      TableMaintainer tableMaintainer = TableMaintainer.createMaintainer(amoroTable);
+      TableMaintainer tableMaintainer = TableMaintainer.ofTable(amoroTable);
       tableMaintainer.expireSnapshots(tableRuntime);
     } catch (Throwable t) {
       LOG.error("unexpected expire error of table {} ", tableRuntime.getTableIdentifier(), t);

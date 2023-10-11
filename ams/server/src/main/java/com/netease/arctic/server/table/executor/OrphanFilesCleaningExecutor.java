@@ -26,7 +26,7 @@ import com.netease.arctic.server.table.TableRuntime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.netease.arctic.server.optimizing.maintainer.TableMaintainer.createMaintainer;
+import static com.netease.arctic.server.optimizing.maintainer.TableMaintainer.ofTable;
 
 public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(OrphanFilesCleaningExecutor.class);
@@ -56,39 +56,13 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   @Override
   public void execute(TableRuntime tableRuntime) {
     try {
-      LOG.info("{} clean orphan files", tableRuntime.getTableIdentifier());
-      TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
-
-      if (!tableConfiguration.isCleanOrphanEnabled()) {
-        return;
-      }
-
-      long keepTime = tableConfiguration.getOrphanExistingMinutes() * 60 * 1000;
-
-      LOG.info("{} clean orphan files, keepTime={}", tableRuntime.getTableIdentifier(), keepTime);
+      LOG.info("{} start cleaning orphan files", tableRuntime.getTableIdentifier());
       // clear data files
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
-      TableMaintainer tableMaintainer = createMaintainer(amoroTable);
-
-      tableMaintainer.cleanContentFiles(System.currentTimeMillis() - keepTime);
-
-      //refresh
-      tableMaintainer = createMaintainer(loadTable(tableRuntime));
-
-      // clear metadata files
-      tableMaintainer.cleanMetadata(System.currentTimeMillis() - keepTime);
-
-      if (!tableConfiguration.isDeleteDanglingDeleteFilesEnabled()) {
-        return;
-      }
-
-      //refresh
-      tableMaintainer = createMaintainer(loadTable(tableRuntime));
-
-      // clear dangling delete files
-      tableMaintainer.cleanDanglingDeleteFiles();
+      TableMaintainer tableMaintainer = ofTable(amoroTable);
+      tableMaintainer.cleanOrphanFiles(tableRuntime);
     } catch (Throwable t) {
-      LOG.error("{} orphan file clean unexpected error", tableRuntime.getTableIdentifier(), t);
+      LOG.error("{} failed to clean orphan file", tableRuntime.getTableIdentifier(), t);
     }
   }
 }

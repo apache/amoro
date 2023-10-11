@@ -20,13 +20,14 @@ package com.netease.arctic.flink.read.hybrid.split;
 
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.utils.FileScanTaskUtil;
-import org.apache.flink.util.FlinkRuntimeException;
+import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 public class MergeOnReadSplit extends ArcticSplit {
   private static final long serialVersionUID = 1L;
   private final int taskIndex;
   private final KeyedTableScanTask keyedTableScanTask;
+  private long recordOffset;
 
   public MergeOnReadSplit(int taskIndex, KeyedTableScanTask keyedTableScanTask) {
     this.taskIndex = taskIndex;
@@ -43,8 +44,10 @@ public class MergeOnReadSplit extends ArcticSplit {
   }
 
   @Override
-  public void updateOffset(Object[] recordOffsets) {
-    throw new FlinkRuntimeException("Merge On Read not support offset state right now.");
+  public void updateOffset(Object[] offsets) {
+    Preconditions.checkArgument(offsets.length == 2);
+    // offsets[0] is file offset, but we don't need it
+    recordOffset = (long) offsets[1];
   }
 
   @Override
@@ -57,8 +60,25 @@ public class MergeOnReadSplit extends ArcticSplit {
     return MoreObjects.toStringHelper(this)
         .add("insertTasks", FileScanTaskUtil.toString(keyedTableScanTask.insertTasks()))
         .add("baseTasks", FileScanTaskUtil.toString(keyedTableScanTask.baseTasks()))
-        .add("arcticEquityDeletes", FileScanTaskUtil.toString(keyedTableScanTask.arcticEquityDeletes()))
+        .add(
+            "arcticEquityDeletes",
+            FileScanTaskUtil.toString(keyedTableScanTask.arcticEquityDeletes()))
         .toString();
+  }
+
+  public long recordOffset() {
+    return recordOffset;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (!(obj instanceof MergeOnReadSplit)) {
+      return false;
+    }
+    MergeOnReadSplit other = (MergeOnReadSplit) obj;
+    return splitId().equals(other.splitId())
+        && recordOffset == other.recordOffset
+        && taskIndex == other.taskIndex;
   }
 
   @Override
@@ -66,7 +86,9 @@ public class MergeOnReadSplit extends ArcticSplit {
     return MoreObjects.toStringHelper(this)
         .add("\ninsertTasks", FileScanTaskUtil.toString(keyedTableScanTask.insertTasks()))
         .add("\nbaseTasks", FileScanTaskUtil.toString(keyedTableScanTask.baseTasks()))
-        .add("\narcticEquityDeletes", FileScanTaskUtil.toString(keyedTableScanTask.arcticEquityDeletes()))
+        .add(
+            "\narcticEquityDeletes",
+            FileScanTaskUtil.toString(keyedTableScanTask.arcticEquityDeletes()))
         .add("\ncost", keyedTableScanTask.cost() / 1024 + " KB")
         .add("\nrecordCount", keyedTableScanTask.recordCount())
         .toString();

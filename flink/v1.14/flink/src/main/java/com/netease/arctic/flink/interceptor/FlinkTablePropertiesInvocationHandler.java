@@ -28,17 +28,15 @@ import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Integrate flinkTable properties
- */
+/** Integrate flinkTable properties */
 public class FlinkTablePropertiesInvocationHandler implements InvocationHandler, Serializable {
 
   private ArcticTable arcticTable;
   private final Map<String, String> flinkTableProperties = new HashMap<>();
   protected Map<String, String> tablePropertiesCombined = new HashMap<>();
 
-  public FlinkTablePropertiesInvocationHandler(Map<String, String> flinkTableProperties,
-                                               ArcticTable arcticTable) {
+  public FlinkTablePropertiesInvocationHandler(
+      Map<String, String> flinkTableProperties, ArcticTable arcticTable) {
     this.tablePropertiesCombined.putAll(arcticTable.properties());
     this.arcticTable = arcticTable;
     if (flinkTableProperties == null) {
@@ -49,8 +47,10 @@ public class FlinkTablePropertiesInvocationHandler implements InvocationHandler,
   }
 
   public Object getProxy() {
-    return Proxy.newProxyInstance(arcticTable.getClass().getClassLoader(),
-        ReflectionUtil.getAllInterface(arcticTable.getClass()), this);
+    return Proxy.newProxyInstance(
+        arcticTable.getClass().getClassLoader(),
+        ReflectionUtil.getAllInterface(arcticTable.getClass()),
+        this);
   }
 
   @Override
@@ -70,17 +70,17 @@ public class FlinkTablePropertiesInvocationHandler implements InvocationHandler,
 
   private void rewriteProperties() {
     Map<String, String> refreshedProperties = arcticTable.properties();
-    // iterate through the properties of the arctic table and update the properties of the tablePropertiesCombined.
+    // iterate through the properties of the arctic table and update the properties of the
+    // tablePropertiesCombined.
     for (Map.Entry<String, String> entry : refreshedProperties.entrySet()) {
       if (flinkTableProperties.containsKey(entry.getKey())) {
         // Don't update the properties of the tablePropertiesCombined
         continue;
       }
-      if (!tablePropertiesCombined.containsKey(entry.getKey()) ||
-          !tablePropertiesCombined.get(entry.getKey()).equals(entry.getValue())) {
+      if (!tablePropertiesCombined.containsKey(entry.getKey())
+          || !tablePropertiesCombined.get(entry.getKey()).equals(entry.getValue())) {
         tablePropertiesCombined.put(entry.getKey(), entry.getValue());
       }
     }
   }
-
 }

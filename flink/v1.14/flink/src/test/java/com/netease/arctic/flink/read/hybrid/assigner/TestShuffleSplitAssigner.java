@@ -53,7 +53,8 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
   public void testSingleParallelism() {
     ShuffleSplitAssigner shuffleSplitAssigner = instanceSplitAssigner(1);
 
-    List<ArcticSplit> splitList = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
+    List<ArcticSplit> splitList =
+        FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
     shuffleSplitAssigner.onDiscoveredSplits(splitList);
     List<ArcticSplit> actual = new ArrayList<>();
 
@@ -73,7 +74,8 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
   public void testMultiParallelism() {
     ShuffleSplitAssigner shuffleSplitAssigner = instanceSplitAssigner(3);
 
-    List<ArcticSplit> splitList = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
+    List<ArcticSplit> splitList =
+        FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
     shuffleSplitAssigner.onDiscoveredSplits(splitList);
     List<ArcticSplit> actual = new ArrayList<>();
 
@@ -83,7 +85,7 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
       if (splitOpt.isAvailable()) {
         actual.add(splitOpt.split());
       } else {
-        LOG.info("subtask id {}, splits {}.\n {}", subtaskId, actual.size(), actual);
+        LOG.info("Subtask id {}, splits {}.\n {}", subtaskId, actual.size(), actual);
         --subtaskId;
       }
     }
@@ -94,55 +96,64 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
   @Test
   public void testTreeNodeMaskUpdate() {
     ShuffleSplitAssigner shuffleSplitAssigner = instanceSplitAssigner(3);
-    long[][] treeNodes = new long[][]{{3, 0}, {3, 1}, {3, 2}, {3, 3}, {7, 0}, {7, 1}, {7, 2}, {7, 3}, {7, 4},
-        {1, 0}, {1, 1}, {0, 0}, {7, 7}, {15, 15}};
-    long[][] expectNodes = new long[][]{{3, 0}, {3, 1}, {3, 2}, {3, 3}, {3, 0}, {3, 1}, {3, 2}, {3, 3}, {3, 0},
-        {3, 0}, {3, 2}, {3, 1}, {3, 3}, {3, 0}, {3, 2}, {3, 1}, {3, 3}, {3, 3}, {3, 3}};
+    long[][] treeNodes =
+        new long[][] {
+          {3, 0}, {3, 1}, {3, 2}, {3, 3}, {7, 0}, {7, 1}, {7, 2}, {7, 3}, {7, 4}, {1, 0}, {1, 1},
+          {0, 0}, {7, 7}, {15, 15}
+        };
+    long[][] expectNodes =
+        new long[][] {
+          {3, 0}, {3, 1}, {3, 2}, {3, 3}, {3, 0}, {3, 1}, {3, 2}, {3, 3}, {3, 0}, {3, 0}, {3, 2},
+          {3, 1}, {3, 3}, {3, 0}, {3, 2}, {3, 1}, {3, 3}, {3, 3}, {3, 3}
+        };
 
     List<DataTreeNode> actualNodes = new ArrayList<>();
 
     for (long[] node : treeNodes) {
-      ArcticSplit arcticSplit = new ArcticSplit() {
-        DataTreeNode dataTreeNode = DataTreeNode.of(node[0], node[1]);
+      ArcticSplit arcticSplit =
+          new ArcticSplit() {
+            DataTreeNode dataTreeNode = DataTreeNode.of(node[0], node[1]);
 
-        @Override
-        public Integer taskIndex() {
-          return null;
-        }
+            @Override
+            public Integer taskIndex() {
+              return null;
+            }
 
-        @Override
-        public void updateOffset(Object[] recordOffsets) {
-        }
+            @Override
+            public void updateOffset(Object[] recordOffsets) {}
 
-        @Override
-        public ArcticSplit copy() {
-          return null;
-        }
+            @Override
+            public ArcticSplit copy() {
+              return null;
+            }
 
-        @Override
-        public DataTreeNode dataTreeNode() {
-          return this.dataTreeNode;
-        }
+            @Override
+            public DataTreeNode dataTreeNode() {
+              return this.dataTreeNode;
+            }
 
-        @Override
-        public void modifyTreeNode(DataTreeNode expected) {
-          this.dataTreeNode = expected;
-        }
+            @Override
+            public void modifyTreeNode(DataTreeNode expected) {
+              this.dataTreeNode = expected;
+            }
 
-        @Override
-        public String splitId() {
-          return null;
-        }
+            @Override
+            public String splitId() {
+              return null;
+            }
 
-        @Override
-        public String toString() {
-          return dataTreeNode.toString();
-        }
-      };
+            @Override
+            public String toString() {
+              return dataTreeNode.toString();
+            }
+          };
       List<DataTreeNode> exactTreeNodes = shuffleSplitAssigner.getExactlyTreeNodes(arcticSplit);
       actualNodes.addAll(exactTreeNodes);
     }
-    long[][] result = actualNodes.stream().map(treeNode -> new long[]{treeNode.mask(), treeNode.index()}).toArray(value -> new long[actualNodes.size()][]);
+    long[][] result =
+        actualNodes.stream()
+            .map(treeNode -> new long[] {treeNode.mask(), treeNode.index()})
+            .toArray(value -> new long[actualNodes.size()][]);
 
     Assert.assertArrayEquals(expectNodes, result);
   }
@@ -150,19 +161,20 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
   @Test
   public void testNodeUpMoved() throws IOException {
     writeUpdateWithSpecifiedMaskOne();
-    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
+    List<ArcticSplit> arcticSplits =
+        FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
     int totalParallelism = 3;
     ShuffleSplitAssigner assigner = instanceSplitAssigner(totalParallelism);
     assigner.onDiscoveredSplits(arcticSplits);
-    RowDataReaderFunction rowDataReaderFunction = new RowDataReaderFunction(
-        new Configuration(),
-        testKeyedTable.schema(),
-        testKeyedTable.schema(),
-        testKeyedTable.primaryKeySpec(),
-        null,
-        true,
-        testKeyedTable.io()
-    );
+    RowDataReaderFunction rowDataReaderFunction =
+        new RowDataReaderFunction(
+            new Configuration(),
+            testKeyedTable.schema(),
+            testKeyedTable.schema(),
+            testKeyedTable.primaryKeySpec(),
+            null,
+            true,
+            testKeyedTable.io());
     int subtaskId = 0;
     Split split;
     List<RowData> actual = new ArrayList<>();
@@ -170,7 +182,8 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
     do {
       split = assigner.getNext(subtaskId);
       if (split.isAvailable()) {
-        DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split.split());
+        DataIterator<RowData> dataIterator =
+            rowDataReaderFunction.createDataIterator(split.split());
         while (dataIterator.hasNext()) {
           RowData rowData = dataIterator.next();
           LOG.info("{}", rowData);
@@ -182,21 +195,24 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
       }
     } while (subtaskId < totalParallelism);
 
-
-    List<RowData> excepts = exceptsCollection();
+    List<RowData> excepts = expectedCollection();
     excepts.addAll(generateRecords());
-    RowData[] array = excepts.stream().sorted(Comparator.comparing(RowData::toString))
-        .collect(Collectors.toList())
-        .toArray(new RowData[excepts.size()]);
+    RowData[] array =
+        excepts.stream()
+            .sorted(Comparator.comparing(RowData::toString))
+            .collect(Collectors.toList())
+            .toArray(new RowData[excepts.size()]);
     assertArrayEquals(array, actual);
   }
 
   protected ShuffleSplitAssigner instanceSplitAssigner(int parallelism) {
-    SplitEnumeratorContext<ArcticSplit> splitEnumeratorContext = new InternalSplitEnumeratorContext(parallelism);
+    SplitEnumeratorContext<ArcticSplit> splitEnumeratorContext =
+        new InternalSplitEnumeratorContext(parallelism);
     return new ShuffleSplitAssigner(splitEnumeratorContext);
   }
 
-  protected static class InternalSplitEnumeratorContext implements SplitEnumeratorContext<ArcticSplit> {
+  protected static class InternalSplitEnumeratorContext
+      implements SplitEnumeratorContext<ArcticSplit> {
     private final int parallelism;
 
     public InternalSplitEnumeratorContext(int parallelism) {
@@ -209,9 +225,7 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
     }
 
     @Override
-    public void sendEventToSourceReader(int subtaskId, SourceEvent event) {
-
-    }
+    public void sendEventToSourceReader(int subtaskId, SourceEvent event) {}
 
     @Override
     public int currentParallelism() {
@@ -224,28 +238,19 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
     }
 
     @Override
-    public void assignSplits(SplitsAssignment<ArcticSplit> newSplitAssignments) {
-
-    }
+    public void assignSplits(SplitsAssignment<ArcticSplit> newSplitAssignments) {}
 
     @Override
-    public void signalNoMoreSplits(int subtask) {
-
-    }
+    public void signalNoMoreSplits(int subtask) {}
 
     @Override
-    public <T> void callAsync(Callable<T> callable, BiConsumer<T, Throwable> handler) {
-
-    }
+    public <T> void callAsync(Callable<T> callable, BiConsumer<T, Throwable> handler) {}
 
     @Override
-    public <T> void callAsync(Callable<T> callable, BiConsumer<T, Throwable> handler, long initialDelay, long period) {
-
-    }
+    public <T> void callAsync(
+        Callable<T> callable, BiConsumer<T, Throwable> handler, long initialDelay, long period) {}
 
     @Override
-    public void runInCoordinatorThread(Runnable runnable) {
-
-    }
+    public void runInCoordinatorThread(Runnable runnable) {}
   }
 }

@@ -20,13 +20,17 @@ package com.netease.arctic.flink.read.hybrid.assigner;
 
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.PrimaryKeyedFile;
+import com.netease.arctic.flink.read.hybrid.enumerator.ArcticSourceEnumState;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
 import com.netease.arctic.scan.ArcticFileScanTask;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,6 +38,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,7 +48,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
- * According to Mark,Index TreeNodes and subtaskId assigning a split to special subtask to read.
+ * According to Mark, Index TreeNodes and subtaskId assigning a split to special subtask to read.
  */
 public class ShuffleSplitAssigner implements SplitAssigner {
   private static final Logger LOG = LoggerFactory.getLogger(ShuffleSplitAssigner.class);
@@ -57,19 +62,17 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   private final Object lock = new Object();
 
   /**
-   * Key is the partition data and file index of the arctic file, Value is flink application subtaskId.
+   * Key is the partition data and file index of the arctic file, Value is flink application
+   * subtaskId.
    */
   private final Map<Long, Integer> partitionIndexSubtaskMap;
-  /**
-   * Key is subtaskId, Value is the queue of unAssigned arctic splits.
-   */
+  /** Key is subtaskId, Value is the queue of unAssigned arctic splits. */
   private final Map<Integer, PriorityBlockingQueue<ArcticSplit>> subtaskSplitMap;
 
   private CompletableFuture<Void> availableFuture;
 
-
-  public ShuffleSplitAssigner(
-      SplitEnumeratorContext<ArcticSplit> enumeratorContext) {
+  @VisibleForTesting
+  public ShuffleSplitAssigner(SplitEnumeratorContext<ArcticSplit> enumeratorContext) {
     this.enumeratorContext = enumeratorContext;
     this.totalParallelism = enumeratorContext.currentParallelism();
     this.partitionIndexSubtaskMap = new ConcurrentHashMap<>();
@@ -77,23 +80,44 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   }
 
   public ShuffleSplitAssigner(
-      SplitEnumeratorContext<ArcticSplit> enumeratorContext, Collection<ArcticSplitState> splitStates,
-      long[] shuffleSplitRelation) {
+      SplitEnumeratorContext<ArcticSplit> enumeratorContext,
+      String tableName,
+      @Nullable ArcticSourceEnumState enumState) {
     this.enumeratorContext = enumeratorContext;
     this.partitionIndexSubtaskMap = new ConcurrentHashMap<>();
     this.subtaskSplitMap = new ConcurrentHashMap<>();
-    deserializePartitionIndex(shuffleSplitRelation);
-    splitStates.forEach(state -> onDiscoveredSplits(Collections.singleton(state.toSourceSplit())));
+    if (enumState == null) {
+      this.totalParallelism = enumeratorContext.currentParallelism();
+      LOG.info(
+          "Arctic source enumerator current parallelism is {} for table {}",
+          totalParallelism,
+          tableName);
+    } else {
+      LOG.info(
+          "Arctic source restored {} splits from state for table {}",
+          enumState.pendingSplits().size(),
+          tableName);
+      deserializePartitionIndex(
+          Objects.requireNonNull(
+              enumState.shuffleSplitRelation(),
+              "The partition index and subtask state couldn't be null."));
+      enumState
+          .pendingSplits()
+          .forEach(state -> onDiscoveredSplits(Collections.singleton(state.toSourceSplit())));
+    }
   }
 
   @Override
   public Split getNext() {
-    throw new UnsupportedOperationException("ShuffleSplitAssigner couldn't support this operation.");
+    throw new UnsupportedOperationException(
+        "ShuffleSplitAssigner couldn't support this operation.");
   }
 
   @Override
   public Split getNext(int subtaskId) {
-    return getNextSplit(subtaskId).map(Split::of).orElseGet(isEmpty() ? Split::unavailable : Split::subtaskUnavailable);
+    return getNextSplit(subtaskId)
+        .map(Split::of)
+        .orElseGet(isEmpty() ? Split::unavailable : Split::subtaskUnavailable);
   }
 
   private Optional<ArcticSplit> getNextSplit(int subTaskId) {
@@ -117,12 +141,16 @@ public class ShuffleSplitAssigner implements SplitAssigner {
         LOG.debug("Subtask {}, couldn't retrieve arctic source split in the queue.", subTaskId);
         return Optional.empty();
       } else {
-        LOG.info("get next arctic split taskIndex {}, totalSplitNum {}, arcticSplit {}.",
-            arcticSplit.taskIndex(), totalSplitNum, arcticSplit);
+        LOG.info(
+            "get next arctic split taskIndex {}, totalSplitNum {}, arcticSplit {}.",
+            arcticSplit.taskIndex(),
+            totalSplitNum,
+            arcticSplit);
         return Optional.of(arcticSplit);
       }
     } else {
-      LOG.debug("Subtask {}, it's an idle subtask due to the empty queue with this subtask.", subTaskId);
+      LOG.debug(
+          "Subtask {}, it's an idle subtask due to the empty queue with this subtask.", subTaskId);
       return Optional.empty();
     }
   }
@@ -146,12 +174,18 @@ public class ShuffleSplitAssigner implements SplitAssigner {
 
     for (DataTreeNode node : exactlyTreeNodes) {
       long partitionIndexKey = Math.abs(file.partition().toString().hashCode() + node.index());
-      int subtaskId = partitionIndexSubtaskMap.computeIfAbsent(
-          partitionIndexKey, key -> (partitionIndexSubtaskMap.size() + 1) % totalParallelism);
-      LOG.info("partition = {}, (mask, index) = ({}, {}), subtaskId = {}",
-          file.partition().toString(), node.mask(), node.index(), subtaskId);
+      int subtaskId =
+          partitionIndexSubtaskMap.computeIfAbsent(
+              partitionIndexKey, key -> (partitionIndexSubtaskMap.size() + 1) % totalParallelism);
+      LOG.info(
+          "partition = {}, (mask, index) = ({}, {}), subtaskId = {}",
+          file.partition().toString(),
+          node.mask(),
+          node.index(),
+          subtaskId);
 
-      PriorityBlockingQueue<ArcticSplit> queue = subtaskSplitMap.getOrDefault(subtaskId, new PriorityBlockingQueue<>());
+      PriorityBlockingQueue<ArcticSplit> queue =
+          subtaskSplitMap.getOrDefault(subtaskId, new PriorityBlockingQueue<>());
       ArcticSplit copiedSplit = split.copy();
       copiedSplit.modifyTreeNode(node);
       LOG.info("put split into queue: {}", copiedSplit);
@@ -164,11 +198,10 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   @Override
   public Collection<ArcticSplitState> state() {
     List<ArcticSplitState> arcticSplitStates = new ArrayList<>();
-    subtaskSplitMap.forEach((key, value) ->
-        arcticSplitStates.addAll(
-            value.stream()
-                .map(ArcticSplitState::new)
-                .collect(Collectors.toList())));
+    subtaskSplitMap.forEach(
+        (key, value) ->
+            arcticSplitStates.addAll(
+                value.stream().map(ArcticSplitState::new).collect(Collectors.toList())));
 
     return arcticSplitStates;
   }
@@ -185,7 +218,8 @@ public class ShuffleSplitAssigner implements SplitAssigner {
     if (subtaskSplitMap.isEmpty()) {
       return true;
     }
-    for (Map.Entry<Integer, PriorityBlockingQueue<ArcticSplit>> entry : subtaskSplitMap.entrySet()) {
+    for (Map.Entry<Integer, PriorityBlockingQueue<ArcticSplit>> entry :
+        subtaskSplitMap.entrySet()) {
       if (!entry.getValue().isEmpty()) {
         return false;
       }
@@ -226,20 +260,21 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   }
 
   /**
-   * <p>
+   * Different data files may locate in different layers when multi snapshots are committed, so
+   * arctic source reading should consider emitting the records and keeping ordering. According to
+   * the dataTreeNode of the arctic split and the currentMaskOfTreeNode, return the exact tree node
+   * list which may move up or go down layers in the arctic tree.
+   *
+   * <pre>
    * |mask=0          o
    * |             /     \
    * |mask=1     o        o
    * |         /   \    /   \
    * |mask=3  o     o  o     o
-   * <p>
-   * Different data files may locate in different layers when multi snapshots are committed, so arctic source reading
-   * should consider emitting the records and keeping ordering. According to the dataTreeNode of the arctic split and
-   * the currentMaskOfTreeNode, return the exact tree node list which may move up or go down layers in the arctic tree.
-   * </p>
+   * </pre>
    *
-   * @param arcticSplit arctic split.
-   * @return the exact tree node list.
+   * @param arcticSplit Arctic split.
+   * @return The exact tree node list.
    */
   public List<DataTreeNode> getExactlyTreeNodes(ArcticSplit arcticSplit) {
     DataTreeNode dataTreeNode = arcticSplit.dataTreeNode();
@@ -279,7 +314,8 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   private PrimaryKeyedFile findAnyFileInArcticSplit(ArcticSplit arcticSplit) {
     AtomicReference<PrimaryKeyedFile> file = new AtomicReference<>();
     if (arcticSplit.isChangelogSplit()) {
-      List<ArcticFileScanTask> arcticSplits = new ArrayList<>(arcticSplit.asChangelogSplit().insertTasks());
+      List<ArcticFileScanTask> arcticSplits =
+          new ArrayList<>(arcticSplit.asChangelogSplit().insertTasks());
       arcticSplits.addAll(arcticSplit.asChangelogSplit().deleteTasks());
       arcticSplits.stream().findFirst().ifPresent(task -> file.set(task.file()));
       if (file.get() != null) {
@@ -287,7 +323,8 @@ public class ShuffleSplitAssigner implements SplitAssigner {
       }
     }
 
-    List<ArcticFileScanTask> arcticSplits = new ArrayList<>(arcticSplit.asSnapshotSplit().insertTasks());
+    List<ArcticFileScanTask> arcticSplits =
+        new ArrayList<>(arcticSplit.asSnapshotSplit().insertTasks());
     arcticSplits.stream().findFirst().ifPresent(task -> file.set(task.file()));
     if (file.get() != null) {
       return file.get();

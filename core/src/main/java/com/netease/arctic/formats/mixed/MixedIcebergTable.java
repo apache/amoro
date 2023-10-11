@@ -26,11 +26,10 @@ import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.Snapshot;
 
 import java.util.Map;
-import java.util.Optional;
 
 public class MixedIcebergTable implements AmoroTable<ArcticTable> {
 
-  private ArcticTable arcticTable;
+  private final ArcticTable arcticTable;
 
   public MixedIcebergTable(ArcticTable arcticTable) {
     this.arcticTable = arcticTable;
@@ -58,17 +57,17 @@ public class MixedIcebergTable implements AmoroTable<ArcticTable> {
 
   @Override
   public TableSnapshot currentSnapshot() {
-    Optional<Snapshot> changeSnapshot;
-    Optional<Snapshot> baseSnapshot;
+    Snapshot changeSnapshot;
+    Snapshot baseSnapshot;
     if (arcticTable.isKeyedTable()) {
-      changeSnapshot = Optional.ofNullable(arcticTable.asKeyedTable().changeTable().currentSnapshot());
-      baseSnapshot = Optional.ofNullable(arcticTable.asKeyedTable().baseTable().currentSnapshot());
+      changeSnapshot = arcticTable.asKeyedTable().changeTable().currentSnapshot();
+      baseSnapshot = arcticTable.asKeyedTable().baseTable().currentSnapshot();
     } else {
-      changeSnapshot = Optional.empty();
-      baseSnapshot = Optional.ofNullable(arcticTable.asUnkeyedTable().currentSnapshot());
+      changeSnapshot = null;
+      baseSnapshot = arcticTable.asUnkeyedTable().currentSnapshot();
     }
 
-    if (!changeSnapshot.isPresent() && !baseSnapshot.isPresent()) {
+    if (changeSnapshot == null && baseSnapshot == null) {
       return null;
     }
 

@@ -71,8 +71,11 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
   private List<CombinedScanTask> tasks = null;
 
   UnkeyedSparkBatchScan(
-      UnkeyedTable table, boolean caseSensitive,
-      Schema expectedSchema, List<Expression> filters, CaseInsensitiveStringMap options) {
+      UnkeyedTable table,
+      boolean caseSensitive,
+      Schema expectedSchema,
+      List<Expression> filters,
+      CaseInsensitiveStringMap options) {
     this.table = table;
     this.caseSensitive = caseSensitive;
     this.expectedSchema = expectedSchema;
@@ -84,8 +87,8 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
     List<CombinedScanTask> scanTasks = tasks();
     ArcticInputPartition[] readTasks = new ArcticInputPartition[scanTasks.size()];
     for (int i = 0; i < scanTasks.size(); i++) {
-      readTasks[i] = new ArcticInputPartition(scanTasks.get(i), table, expectedSchema,
-          caseSensitive);
+      readTasks[i] =
+          new ArcticInputPartition(scanTasks.get(i), table, expectedSchema, caseSensitive);
     }
     return readTasks;
   }
@@ -100,8 +103,8 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
     if (table.currentSnapshot() == null) {
       return new Stats(0L, 0L);
     }
-    if (!table.spec().isUnpartitioned() &&
-        (filterExpressions == null || filterExpressions.isEmpty())) {
+    if (!table.spec().isUnpartitioned()
+        && (filterExpressions == null || filterExpressions.isEmpty())) {
       LOG.debug("using table metadata to estimate table statistics");
       long totalRecords =
           PropertyUtil.propertyAsLong(
@@ -149,8 +152,10 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
       LOG.info("mor statistics plan task start");
       try (CloseableIterable<CombinedScanTask> tasksIterable = scan.planTasks()) {
         this.tasks = Lists.newArrayList(tasksIterable);
-        LOG.info("mor statistics plan task end, cost time {}, tasks num {}",
-            System.currentTimeMillis() - startTime, tasks.size());
+        LOG.info(
+            "mor statistics plan task end, cost time {}, tasks num {}",
+            System.currentTimeMillis() - startTime,
+            tasks.size());
       } catch (IOException e) {
         throw new UncheckedIOException("Failed to close table scan: %s", e);
       }
@@ -178,10 +183,9 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
     InternalRow current;
 
     RowReader(ArcticInputPartition task) {
-      reader = new ArcticSparkUnkeyedDataReader(
-          task.io, task.tableSchema, task.expectedSchema,
-          task.nameMapping, task.caseSensitive
-      );
+      reader =
+          new ArcticSparkUnkeyedDataReader(
+              task.io, task.tableSchema, task.expectedSchema, task.nameMapping, task.caseSensitive);
       scanTasks = task.combinedScanTask.files().iterator();
     }
 
@@ -248,21 +252,21 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
     }
 
     UnkeyedSparkBatchScan that = (UnkeyedSparkBatchScan) o;
-    return table.id().equals(that.table.id()) &&
-        readSchema().equals(that.readSchema()) &&
-        filterExpressions.toString().equals(that.filterExpressions.toString());
+    return table.id().equals(that.table.id())
+        && readSchema().equals(that.readSchema())
+        && filterExpressions.toString().equals(that.filterExpressions.toString());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        table.id(), readSchema(), filterExpressions.toString());
+    return Objects.hash(table.id(), readSchema(), filterExpressions.toString());
   }
 
   @Override
   public String description() {
     if (filterExpressions != null) {
-      String filters = filterExpressions.stream().map(Spark3Util::describe).collect(Collectors.joining(", "));
+      String filters =
+          filterExpressions.stream().map(Spark3Util::describe).collect(Collectors.joining(", "));
       return String.format("%s [filters=%s]", table, filters);
     }
     return "";

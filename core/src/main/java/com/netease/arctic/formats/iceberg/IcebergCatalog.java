@@ -26,6 +26,7 @@ import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,11 +34,8 @@ public class IcebergCatalog implements FormatCatalog {
 
   private final Catalog icebergCatalog;
 
-  private final String name;
-
-  public IcebergCatalog(Catalog icebergCatalog, String name) {
+  public IcebergCatalog(Catalog icebergCatalog) {
     this.icebergCatalog = icebergCatalog;
-    this.name = name;
   }
 
   @Override

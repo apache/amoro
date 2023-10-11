@@ -1,25 +1,32 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License,
-      Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
-      software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-      either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License,
+     Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+     software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+     either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 package com.netease.arctic.flink.read.source;
+
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_READ_FILE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_READ_MODE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
+import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Preconditions;
@@ -37,75 +44,43 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_READ_FILE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_READ_MODE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
-import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
-
-/**
- * This is an arctic source scan context.
- */
+/** This is an arctic source scan context. */
 public class ArcticScanContext extends ScanContext implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
   private final String scanStartupMode;
+  private final boolean batchMode;
 
-  protected ArcticScanContext(
-      boolean caseSensitive,
-      Long snapshotId,
-      StreamingStartingStrategy startingStrategy,
-      Long startSnapshotTimestamp,
-      Long startSnapshotId,
-      Long endSnapshotId,
-      Long asOfTimestamp,
-      Long splitSize,
-      Integer splitLookback,
-      Long splitOpenFileCost,
-      boolean isStreaming,
-      Duration monitorInterval,
-      String nameMapping,
-      Schema schema,
-      List<Expression> filters,
-      long limit,
-      boolean includeColumnStats,
-      boolean exposeLocality,
-      Integer planParallelism,
-      int maxPlanningSnapshotCount,
-      String scanStartupMode,
-      int maxAllowedPlanningFailures,
-      String branch,
-      String tag,
-      String startTag,
-      String endTag) {
-    super(caseSensitive,
-        snapshotId,
-        startingStrategy,
-        startSnapshotTimestamp,
-        startSnapshotId,
-        endSnapshotId,
-        asOfTimestamp,
-        splitSize,
-        splitLookback,
-        splitOpenFileCost,
-        isStreaming,
-        monitorInterval,
-        nameMapping,
-        schema,
-        filters,
-        limit,
-        includeColumnStats,
-        exposeLocality,
-        planParallelism,
-        maxPlanningSnapshotCount,
-        maxAllowedPlanningFailures,
-        branch,
-        tag,
-        startTag,
-        endTag);
-    this.scanStartupMode = scanStartupMode;
+  protected ArcticScanContext(Builder builder) {
+    super(
+        builder.caseSensitive,
+        builder.snapshotId,
+        builder.startingStrategy,
+        builder.startSnapshotTimestamp,
+        builder.startSnapshotId,
+        builder.endSnapshotId,
+        builder.asOfTimestamp,
+        builder.splitSize,
+        builder.splitLookback,
+        builder.splitOpenFileCost,
+        builder.isStreaming,
+        builder.monitorInterval,
+        builder.nameMapping,
+        builder.projectedSchema,
+        builder.filters,
+        builder.limit,
+        builder.includeColumnStats,
+        builder.exposeLocality,
+        builder.planParallelism,
+        builder.maxPlanningSnapshotCount,
+        builder.maxAllowedPlanningFailures,
+        builder.branch,
+        builder.tag,
+        builder.startTag,
+        builder.endTag);
+    this.scanStartupMode = builder.scanStartupMode;
+    this.batchMode = builder.batchMode;
   }
 
   public boolean caseSensitive() {
@@ -156,9 +131,7 @@ public class ArcticScanContext extends ScanContext implements Serializable {
     return schema;
   }
 
-  /**
-   * Only working for base store right now.
-   */
+  /** Only working for base store right now. */
   public List<Expression> filters() {
     return filters;
   }
@@ -173,6 +146,10 @@ public class ArcticScanContext extends ScanContext implements Serializable {
 
   public String scanStartupMode() {
     return scanStartupMode;
+  }
+
+  public boolean isBatchMode() {
+    return batchMode;
   }
 
   public static class Builder {
@@ -199,8 +176,7 @@ public class ArcticScanContext extends ScanContext implements Serializable {
     private boolean exposeLocality;
     private Integer planParallelism =
         FlinkConfigOptions.TABLE_EXEC_ICEBERG_WORKER_POOL_SIZE.defaultValue();
-    private int maxPlanningSnapshotCount =
-        FlinkReadOptions.MAX_PLANNING_SNAPSHOT_COUNT_OPTION.defaultValue();
+    private int maxPlanningSnapshotCount = MAX_PLANNING_SNAPSHOT_COUNT.defaultValue();
 
     private int maxAllowedPlanningFailures =
         FlinkReadOptions.MAX_ALLOWED_PLANNING_FAILURES_OPTION.defaultValue();
@@ -213,9 +189,9 @@ public class ArcticScanContext extends ScanContext implements Serializable {
 
     private String endTag = FlinkReadOptions.END_TAG.defaultValue();
     private String scanStartupMode;
+    private boolean batchMode = false;
 
-    private Builder() {
-    }
+    private Builder() {}
 
     public Builder caseSensitive(boolean newCaseSensitive) {
       this.caseSensitive = newCaseSensitive;
@@ -347,6 +323,11 @@ public class ArcticScanContext extends ScanContext implements Serializable {
       return this;
     }
 
+    public Builder batchMode(boolean batchMode) {
+      this.batchMode = batchMode;
+      return this;
+    }
+
     public Builder fromProperties(Map<String, String> properties) {
       Configuration config = new Configuration();
       properties.forEach(config::setString);
@@ -376,38 +357,21 @@ public class ArcticScanContext extends ScanContext implements Serializable {
 
     public ArcticScanContext build() {
       scanStartupMode = scanStartupMode == null ? null : scanStartupMode.toLowerCase();
-      Preconditions.checkArgument(Objects.isNull(scanStartupMode) ||
-              Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_EARLIEST) ||
-              Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_LATEST),
-          String.format("only support %s, %s when %s is %s",
-              SCAN_STARTUP_MODE_EARLIEST, SCAN_STARTUP_MODE_LATEST, ARCTIC_READ_MODE, ARCTIC_READ_FILE));
-      return new ArcticScanContext(
-          caseSensitive,
-          snapshotId,
-          startingStrategy,
-          startSnapshotTimestamp,
-          startSnapshotId,
-          endSnapshotId,
-          asOfTimestamp,
-          splitSize,
-          splitLookback,
-          splitOpenFileCost,
-          isStreaming,
-          monitorInterval,
-          nameMapping,
-          projectedSchema,
-          filters,
-          limit,
-          includeColumnStats,
-          exposeLocality,
-          planParallelism,
-          maxPlanningSnapshotCount,
-          scanStartupMode,
-          maxAllowedPlanningFailures,
-          branch,
-          tag,
-          startTag,
-          endTag);
+      Preconditions.checkArgument(
+          Objects.isNull(scanStartupMode)
+              || Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_EARLIEST)
+              || Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_LATEST),
+          String.format(
+              "only support %s, %s when %s is %s",
+              SCAN_STARTUP_MODE_EARLIEST,
+              SCAN_STARTUP_MODE_LATEST,
+              ARCTIC_READ_MODE,
+              ARCTIC_READ_FILE));
+      Preconditions.checkArgument(
+          !(isStreaming && batchMode),
+          String.format(
+              "only support %s = false when execution.runtime-mode is batch", STREAMING.key()));
+      return new ArcticScanContext(this);
     }
   }
 }
