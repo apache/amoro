@@ -38,6 +38,8 @@ import com.netease.arctic.table.TableProperties;
 import io.javalin.http.Context;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.relocated.com.google.common.base.Objects;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,7 +47,11 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import static com.netease.arctic.ams.api.TableFormat.ICEBERG;
+import static com.netease.arctic.ams.api.TableFormat.MIXED_HIVE;
+import static com.netease.arctic.ams.api.TableFormat.MIXED_ICEBERG;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_ACCESS_KEY;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB;
@@ -84,6 +90,7 @@ public class CatalogController {
   private static final String EMPTY_XML_BASE64 = "PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==";
 
   private static final Map<String, List<String>> CATALOG_REQUIRED_PROPERTIES;
+  private static final Set<CatalogDescriptor> VALIDATE_CATALOGS;
 
   private final TableService tableService;
 
@@ -92,6 +99,65 @@ public class CatalogController {
     CATALOG_REQUIRED_PROPERTIES.put(CATALOG_TYPE_AMS, Lists.newArrayList(KEY_WAREHOUSE));
     CATALOG_REQUIRED_PROPERTIES.put(CATALOG_TYPE_HADOOP, Lists.newArrayList(CatalogProperties.WAREHOUSE_LOCATION));
     CATALOG_REQUIRED_PROPERTIES.put(CATALOG_TYPE_CUSTOM, Lists.newArrayList(CatalogProperties.CATALOG_IMPL));
+  }
+  
+  static {
+    VALIDATE_CATALOGS = Sets.newHashSet();
+    VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_AMS, STORAGE_CONFIGS_VALUE_TYPE_S3, ICEBERG));
+    VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_AMS, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, ICEBERG));
+    VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_AMS, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_ICEBERG));
+    VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_HIVE, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_ICEBERG));
+    VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_HIVE, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, ICEBERG));
+    VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_HIVE, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_HIVE));
+    VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_HADOOP, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_ICEBERG));
+    VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_HADOOP, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, ICEBERG));
+    VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_CUSTOM, STORAGE_CONFIGS_VALUE_TYPE_S3, ICEBERG));
+    VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_CUSTOM, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, ICEBERG));
+    VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_CUSTOM, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_ICEBERG));
+  }
+  
+  private static class CatalogDescriptor {
+    private final String catalogType;
+    private final String storageType;
+    private final TableFormat tableFormat;
+
+    public CatalogDescriptor(String catalogType, String storageType, TableFormat tableFormat) {
+      this.catalogType = catalogType;
+      this.storageType = storageType;
+      this.tableFormat = tableFormat;
+    }
+    
+    public static CatalogDescriptor of(String catalogType, String storageType, TableFormat tableFormat) {
+      return new CatalogDescriptor(catalogType, storageType, tableFormat);
+    }
+
+    public static CatalogDescriptor of(CatalogRegisterInfo info) {
+      // only support one table format now
+      String tableFormat = info.getTableFormatList().get(0);
+      String storageType = info.getStorageConfig().get(STORAGE_CONFIGS_KEY_TYPE);
+      String catalogType = info.getType();
+      return of(catalogType, storageType, TableFormat.valueOf(tableFormat));
+    }
+
+    @Override
+    public String toString() {
+      return String.format("Metastore [%s], Storage Type [%s], Table Format [%s]", catalogType, storageType,
+          tableFormat);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      CatalogDescriptor that = (CatalogDescriptor) o;
+      return Objects.equal(catalogType, that.catalogType) &&
+          Objects.equal(storageType, that.storageType) && tableFormat == that.tableFormat;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(catalogType, storageType, tableFormat);
+    }
   }
 
   public CatalogController(TableService tableService, PlatformFileManager platformFileInfoService) {
@@ -174,49 +240,60 @@ public class CatalogController {
       String catalogName,
       Map<String, String> metaAuthConfig) {
     Map<String, Object> serverAuthConfig = new HashMap<>();
-    serverAuthConfig.put(
+    String authType = metaAuthConfig.getOrDefault(
         AUTH_CONFIGS_KEY_TYPE,
-        metaAuthConfig.getOrDefault(
-            AUTH_CONFIGS_KEY_TYPE,
-            "simple").toUpperCase());
-    serverAuthConfig.put(
-        AUTH_CONFIGS_KEY_HADOOP_USERNAME,
-        metaAuthConfig.get(AUTH_CONFIGS_KEY_HADOOP_USERNAME));
+        AUTH_CONFIGS_VALUE_TYPE_SIMPLE);
+    serverAuthConfig.put(AUTH_CONFIGS_KEY_TYPE, authType.toUpperCase());
+    if (AUTH_CONFIGS_VALUE_TYPE_SIMPLE.equals(authType)) {
+      serverAuthConfig.put(
+          AUTH_CONFIGS_KEY_HADOOP_USERNAME,
+          metaAuthConfig.get(AUTH_CONFIGS_KEY_HADOOP_USERNAME));
+    } else if (AUTH_CONFIGS_VALUE_TYPE_KERBEROS.equals(authType)) {
+      serverAuthConfig.put(
+          AUTH_CONFIGS_KEY_PRINCIPAL,
+          metaAuthConfig.get(AUTH_CONFIGS_KEY_PRINCIPAL));
 
-    serverAuthConfig.put(
-        AUTH_CONFIGS_KEY_PRINCIPAL,
-        metaAuthConfig.get(AUTH_CONFIGS_KEY_PRINCIPAL));
+      serverAuthConfig.put(AUTH_CONFIGS_KEY_KEYTAB, new ConfigFileItem(
+          catalogName + ".keytab",
+          constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_AUTH,
+              AUTH_CONFIGS_KEY_KEYTAB.replace("\\.", "-"))));
 
-    serverAuthConfig.put(AUTH_CONFIGS_KEY_KEYTAB, new ConfigFileItem(
-        catalogName + ".keytab",
-        constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_AUTH,
-            AUTH_CONFIGS_KEY_KEYTAB.replace("\\.", "-"))));
+      serverAuthConfig.put(AUTH_CONFIGS_KEY_KRB5, new ConfigFileItem(
+          "krb5.conf",
+          constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_AUTH,
+              AUTH_CONFIGS_KEY_KRB5.replace("\\.", "-"))));
+    } else if (AUTH_CONFIGS_VALUE_TYPE_AK_SK.equals(authType)) {
+      CatalogPropertyUtil.migrateProperty(metaAuthConfig, serverAuthConfig, AUTH_CONFIGS_KEY_ACCESS_KEY);
+      CatalogPropertyUtil.migrateProperty(metaAuthConfig, serverAuthConfig, AUTH_CONFIGS_KEY_SECRET_KEY);
+    }
 
-    serverAuthConfig.put(AUTH_CONFIGS_KEY_KRB5, new ConfigFileItem(
-        "krb5.conf",
-        constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_AUTH,
-            AUTH_CONFIGS_KEY_KRB5.replace("\\.", "-"))));
     return serverAuthConfig;
   }
 
   private Map<String, Object> storageConvertFromMetaToServer(String catalogName, Map<String, String> config) {
     Map<String, Object> storageConfig = new HashMap<>();
-    storageConfig.put(STORAGE_CONFIGS_KEY_CORE_SITE, new ConfigFileItem(
-        ArcticManagementConf.CATALOG_CORE_SITE + ".xml",
-        constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_STORAGE,
-            STORAGE_CONFIGS_KEY_CORE_SITE.replace("\\.", "-"))));
+    String storageType = CatalogPropertyUtil.getCompatibleStorageType(config);
+    storageConfig.put(STORAGE_CONFIGS_KEY_TYPE, storageType);
+    if (STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equals(storageType)) {
+      storageConfig.put(STORAGE_CONFIGS_KEY_CORE_SITE, new ConfigFileItem(
+          ArcticManagementConf.CATALOG_CORE_SITE + ".xml",
+          constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_STORAGE,
+              STORAGE_CONFIGS_KEY_CORE_SITE.replace("\\.", "-"))));
 
-    storageConfig.put(STORAGE_CONFIGS_KEY_HDFS_SITE, new ConfigFileItem(
-        ArcticManagementConf.CATALOG_HDFS_SITE + ".xml",
-        constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_STORAGE,
-            STORAGE_CONFIGS_KEY_HDFS_SITE.replace("\\.", "-"))));
+      storageConfig.put(STORAGE_CONFIGS_KEY_HDFS_SITE, new ConfigFileItem(
+          ArcticManagementConf.CATALOG_HDFS_SITE + ".xml",
+          constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_STORAGE,
+              STORAGE_CONFIGS_KEY_HDFS_SITE.replace("\\.", "-"))));
 
-    storageConfig.put(STORAGE_CONFIGS_KEY_HIVE_SITE, new ConfigFileItem(
-        ArcticManagementConf.CATALOG_HIVE_SITE + ".xml",
-        constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_STORAGE,
-            STORAGE_CONFIGS_KEY_HIVE_SITE.replace("\\.", "-"))));
+      storageConfig.put(STORAGE_CONFIGS_KEY_HIVE_SITE, new ConfigFileItem(
+          ArcticManagementConf.CATALOG_HIVE_SITE + ".xml",
+          constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_STORAGE,
+              STORAGE_CONFIGS_KEY_HIVE_SITE.replace("\\.", "-"))));
+    } else if (STORAGE_CONFIGS_VALUE_TYPE_S3.equals(storageType)) {
+      CatalogPropertyUtil.migrateProperty(config, storageConfig, STORAGE_CONFIGS_KEY_REGION);
+      CatalogPropertyUtil.migrateProperty(config, storageConfig, STORAGE_CONFIGS_KEY_ENDPOINT);
+    }
 
-    storageConfig.put(STORAGE_CONFIGS_KEY_TYPE, CatalogPropertyUtil.getCompatibleStorageType(config));
     return storageConfig;
   }
 
@@ -233,24 +310,12 @@ public class CatalogController {
         .put(
             CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.SELF_OPTIMIZING_GROUP,
             info.getOptimizerGroup());
-    if (info.getTableFormatList() == null || info.getTableFormatList().isEmpty()) {
-      throw new RuntimeException("Invalid table format list");
-    }
     StringBuilder tableFormats = new StringBuilder();
     try {
       // validate table format
       info.getTableFormatList().forEach(item -> tableFormats.append(TableFormat.valueOf(item).name()));
     } catch (Exception e) {
       throw new RuntimeException("Invalid table format list, " + String.join(",", info.getTableFormatList()));
-    }
-    List<String> requiredProperties = CATALOG_REQUIRED_PROPERTIES.get(info.getType());
-    if (requiredProperties != null && !requiredProperties.isEmpty()) {
-      for (String propertyName : requiredProperties) {
-        if (!info.getProperties().containsKey(propertyName)) {
-          throw new RuntimeException(
-              String.format("Catalog type:%s require property:%s.", info.getType(), propertyName));
-        }
-      }
     }
     catalogMeta.getCatalogProperties().put(CatalogMetaProperties.TABLE_FORMATS, tableFormats.toString());
     catalogMeta.setAuthConfigs(authConvertFromServerToMeta(info.getAuthConfig(), oldCatalogMeta));
@@ -284,10 +349,10 @@ public class CatalogController {
         }
       }
     } else if (storageType.equals(STORAGE_CONFIGS_VALUE_TYPE_S3)) {
-      if (info.getStorageConfig().containsKey(STORAGE_CONFIGS_KEY_REGION)) {
+      if (StringUtils.isNotBlank(info.getStorageConfig().get(STORAGE_CONFIGS_KEY_REGION))) {
         metaStorageConfig.put(STORAGE_CONFIGS_KEY_REGION, info.getStorageConfig().get(STORAGE_CONFIGS_KEY_REGION));
       }
-      if (info.getStorageConfig().containsKey(STORAGE_CONFIGS_KEY_ENDPOINT)) {
+      if (StringUtils.isNotBlank(info.getStorageConfig().get(STORAGE_CONFIGS_KEY_ENDPOINT))) {
         metaStorageConfig.put(STORAGE_CONFIGS_KEY_ENDPOINT, info.getStorageConfig().get(STORAGE_CONFIGS_KEY_ENDPOINT));
       }
     } else {
@@ -303,16 +368,34 @@ public class CatalogController {
    */
   public void createCatalog(Context ctx) {
     CatalogRegisterInfo info = ctx.bodyAsClass(CatalogRegisterInfo.class);
-    Preconditions.checkNotNull(info.getAuthConfig(), "catalog auth config must not be null");
-    Preconditions.checkNotNull(info.getStorageConfig(), "catalog storage config must not be null");
-    Preconditions.checkNotNull(info.getProperties(), "catalog properties must not be null");
-    Preconditions.checkNotNull(info.getTableProperties(), "catalog table properties must not be null");
+    validateCatalogRegisterInfo(info);
     if (tableService.catalogExist(info.getName())) {
       throw new RuntimeException("Duplicate catalog name!");
     }
     CatalogMeta catalogMeta = constructCatalogMeta(info, null);
     tableService.createCatalog(catalogMeta);
     ctx.json(OkResponse.of(""));
+  }
+
+  private void validateCatalogRegisterInfo(CatalogRegisterInfo info) {
+    Preconditions.checkNotNull(info.getAuthConfig(), "Catalog auth config must not be null");
+    Preconditions.checkNotNull(info.getStorageConfig(), "Catalog storage config must not be null");
+    Preconditions.checkNotNull(info.getProperties(), "Catalog properties must not be null");
+    Preconditions.checkNotNull(info.getTableProperties(), "Catalog table properties must not be null");
+    Preconditions.checkArgument(info.getTableFormatList() != null && !info.getTableFormatList().isEmpty(),
+        "Catalog table format list must not be empty");
+
+    CatalogDescriptor catalogDescriptor = CatalogDescriptor.of(info);
+    Preconditions.checkArgument(VALIDATE_CATALOGS.contains(catalogDescriptor),
+        "Not support " + catalogDescriptor);
+
+    List<String> requiredProperties = CATALOG_REQUIRED_PROPERTIES.get(info.getType());
+    if (requiredProperties != null && !requiredProperties.isEmpty()) {
+      for (String propertyName : requiredProperties) {
+        Preconditions.checkArgument(info.getProperties().containsKey(propertyName),
+            String.format("Catalog type:%s require property:%s.", info.getType(), propertyName));
+      }
+    }
   }
 
   /**
@@ -333,8 +416,7 @@ public class CatalogController {
         info.setType(catalogMeta.getCatalogType());
       }
       info.setAuthConfig(authConvertFromMetaToServer(catalogName, catalogMeta.getAuthConfigs()));
-      Map<String, Object> storageConfig = storageConvertFromMetaToServer(catalogName, catalogMeta.getStorageConfigs());
-      info.setStorageConfig(storageConfig);
+      info.setStorageConfig(storageConvertFromMetaToServer(catalogName, catalogMeta.getStorageConfigs()));
       // we put the table format single
       String tableFormat = catalogMeta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS);
       if (StringUtils.isEmpty(tableFormat)) {
@@ -362,8 +444,7 @@ public class CatalogController {
    */
   public void updateCatalog(Context ctx) {
     CatalogRegisterInfo info = ctx.bodyAsClass(CatalogRegisterInfo.class);
-    Preconditions.checkNotNull(info.getAuthConfig(), "catalog auth config must not be null");
-    Preconditions.checkNotNull(info.getStorageConfig(), "catalog storage config must not be null");
+    validateCatalogRegisterInfo(info);
     CatalogMeta optCatalog = tableService.getCatalogMeta(info.getName());
 
     // check only some item can be modified!

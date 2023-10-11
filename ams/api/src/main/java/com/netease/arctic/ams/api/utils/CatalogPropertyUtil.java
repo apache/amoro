@@ -31,4 +31,18 @@ public class CatalogPropertyUtil {
     }
     return conf.get(STORAGE_CONFIGS_KEY_TYPE);
   }
+
+  public static <T> void migrateProperty(Map<String, String> sourceProperties, Map<String, T> targetProperties,
+                                     String key) {
+    migrateProperty(sourceProperties, targetProperties, key, key);
+  }
+
+  public static <T> void migrateProperty(Map<String, String> sourceProperties, Map<String, T> targetProperties,
+                                     String sourceKey, String targetKey) {
+    if (sourceProperties.containsKey(sourceKey)
+        && sourceProperties.get(sourceKey) != null
+        && !"".equals(sourceProperties.get(sourceKey))) {
+      targetProperties.put(targetKey, (T) sourceProperties.get(sourceKey));
+    }
+  }
 }

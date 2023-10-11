@@ -22,6 +22,7 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.ams.api.utils.CatalogPropertyUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOAdapter;
 import com.netease.arctic.io.ArcticFileIOs;
@@ -105,17 +106,17 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
     }
     Map<String, String> authConfigs = meta.getAuthConfigs();
     if (AUTH_CONFIGS_VALUE_TYPE_AK_SK.equals(authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE))) {
-      migrateProperty(authConfigs, meta.getCatalogProperties(), CatalogMetaProperties.AUTH_CONFIGS_KEY_ACCESS_KEY,
-          CatalogMetaProperties.AUTH_CONFIGS_KEY_S3_ACCESS_KEY);
-      migrateProperty(authConfigs, meta.getCatalogProperties(), CatalogMetaProperties.AUTH_CONFIGS_KEY_SECRET_KEY,
-          CatalogMetaProperties.AUTH_CONFIGS_KEY_S3_SECRET_KEY);
+      CatalogPropertyUtil.migrateProperty(authConfigs, meta.getCatalogProperties(),
+          CatalogMetaProperties.AUTH_CONFIGS_KEY_ACCESS_KEY, CatalogMetaProperties.AUTH_CONFIGS_KEY_S3_ACCESS_KEY);
+      CatalogPropertyUtil.migrateProperty(authConfigs, meta.getCatalogProperties(),
+          CatalogMetaProperties.AUTH_CONFIGS_KEY_SECRET_KEY, CatalogMetaProperties.AUTH_CONFIGS_KEY_S3_SECRET_KEY);
     }
     Map<String, String> storageConfigs = meta.getStorageConfigs();
     if (STORAGE_CONFIGS_VALUE_TYPE_S3.equals(storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE))) {
-      migrateProperty(storageConfigs, meta.getCatalogProperties(), CatalogMetaProperties.STORAGE_CONFIGS_KEY_REGION,
-          CatalogMetaProperties.STORAGE_CONFIGS_KEY_S3_REGION);
-      migrateProperty(storageConfigs, meta.getCatalogProperties(), CatalogMetaProperties.STORAGE_CONFIGS_KEY_ENDPOINT,
-          CatalogMetaProperties.STORAGE_CONFIGS_KEY_S3_ENDPOINT);
+      CatalogPropertyUtil.migrateProperty(storageConfigs, meta.getCatalogProperties(),
+          CatalogMetaProperties.STORAGE_CONFIGS_KEY_REGION, CatalogMetaProperties.STORAGE_CONFIGS_KEY_S3_REGION);
+      CatalogPropertyUtil.migrateProperty(storageConfigs, meta.getCatalogProperties(),
+          CatalogMetaProperties.STORAGE_CONFIGS_KEY_ENDPOINT, CatalogMetaProperties.STORAGE_CONFIGS_KEY_S3_ENDPOINT);
     }
 
     icebergCatalog = tableMetaStore.doAs(() -> org.apache.iceberg.CatalogUtil.buildIcebergCatalog(name(),
@@ -134,13 +135,6 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
       tableFilterPattern = Pattern.compile(tableFilter);
     } else {
       tableFilterPattern = null;
-    }
-  }
-
-  private void migrateProperty(Map<String, String> sourceProperties, Map<String, String> targetProperties,
-                               String sourceKey, String targetKey) {
-    if (sourceProperties.containsKey(sourceKey)) {
-      targetProperties.put(targetKey, sourceProperties.get(sourceKey));
     }
   }
 
