@@ -16,9 +16,22 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.manager;
+package com.netease.arctic.server.utils;
 
-import com.netease.arctic.ams.api.AmoroPlugin;
+import com.netease.arctic.server.exception.AlreadyExistsException;
+import com.netease.arctic.server.exception.ObjectNotExistsException;
 
-public interface TestPlugin extends AmoroPlugin {
+public class PreconditionUtils {
+
+  public static void checkExist(boolean exists, String objectName) {
+    if (!exists) {
+      throw new ObjectNotExistsException(objectName);
+    }
+  }
+
+  public static void checkNotExist(boolean exists, String objectName) {
+    if (exists) {
+      throw new AlreadyExistsException(objectName);
+    }
+  }
 }
