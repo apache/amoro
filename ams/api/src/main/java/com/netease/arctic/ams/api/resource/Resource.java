@@ -9,6 +9,10 @@ import java.util.Map;
 import java.util.UUID;
 
 public class Resource {
+  /**
+   * Job-Id, This property must be included when registering the optimizer.
+   */
+  public static final String PROPERTY_JOB_ID = "job-id";
   private String resourceId;
   private String containerName;
   private String groupName;
@@ -62,6 +66,14 @@ public class Resource {
 
   public Map<String, String> getProperties() {
     return properties;
+  }
+
+  public String getRequiredProperty(String key) {
+    Preconditions.checkState(properties != null && properties.containsKey(key),
+        "Cannot find %s in properties", key);
+    String value = properties.get(key);
+    Preconditions.checkNotNull(value, "Value of key:%s is null", key);
+    return value;
   }
 
   public ResourceType getType() {

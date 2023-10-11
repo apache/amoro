@@ -53,12 +53,6 @@
 
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-optimizer-container</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.netease.amoro</groupId>
             <artifactId>amoro-ams-dashboard</artifactId>
             <version>${project.version}</version>
         </dependency>
