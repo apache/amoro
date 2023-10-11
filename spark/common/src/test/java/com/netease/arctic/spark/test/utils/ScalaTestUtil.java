@@ -25,10 +25,7 @@ import java.util.List;
 
 public class ScalaTestUtil {
 
-
   public static <T> Seq<T> seq(List<T> values) {
     return JavaConverters.asScalaBufferConverter(values).asScala().seq();
   }
-
-
 }

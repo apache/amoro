@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.lookup;
 
+import static com.netease.arctic.flink.util.LookupUtil.convertLookupOptions;
+
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.Schema;
@@ -31,8 +33,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import static com.netease.arctic.flink.util.LookupUtil.convertLookupOptions;
 
 public class KVTableFactory implements TableFactory<RowData>, Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(KVTableFactory.class);
@@ -49,10 +49,11 @@ public class KVTableFactory implements TableFactory<RowData>, Serializable {
     Set<String> joinKeySet = new HashSet<>(joinKeys);
     Set<String> primaryKeySet = new HashSet<>(primaryKeys);
     // keep the primary keys order with projected schema fields.
-    primaryKeys = projectSchema.asStruct().fields().stream()
-        .map(Types.NestedField::name)
-        .filter(primaryKeySet::contains)
-        .collect(Collectors.toList());
+    primaryKeys =
+        projectSchema.asStruct().fields().stream()
+            .map(Types.NestedField::name)
+            .filter(primaryKeySet::contains)
+            .collect(Collectors.toList());
 
     if (primaryKeySet.equals(joinKeySet)) {
       LOG.info(

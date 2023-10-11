@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.catalog;
 
+import static com.netease.arctic.flink.FlinkSchemaUtil.toSchema;
+import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
+
 import com.google.common.base.Objects;
 import com.netease.arctic.NoSuchDatabaseException;
 import com.netease.arctic.flink.InternalCatalogBuilder;
@@ -25,11 +28,16 @@ import com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions;
 import com.netease.arctic.flink.table.DynamicTableFactory;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.util.ArcticUtils;
+import com.netease.arctic.scan.ArcticFileScanTask;
+import com.netease.arctic.scan.CombinedScanTask;
+import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.WatermarkSpec;
@@ -48,40 +56,45 @@ import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.catalog.exceptions.FunctionNotExistException;
 import org.apache.flink.table.catalog.exceptions.TableAlreadyExistException;
 import org.apache.flink.table.catalog.exceptions.TableNotExistException;
+import org.apache.flink.table.catalog.exceptions.TableNotPartitionedException;
 import org.apache.flink.table.catalog.stats.CatalogColumnStatistics;
 import org.apache.flink.table.catalog.stats.CatalogTableStatistics;
 import org.apache.flink.table.expressions.Expression;
 import org.apache.flink.table.factories.Factory;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.types.logical.RowType;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.util.FlinkCompatibilityUtil;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static com.netease.arctic.flink.FlinkSchemaUtil.toSchema;
-import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
-
-/**
- * Catalogs for arctic data lake.
- */
+/** Catalogs for arctic data lake. */
 public class ArcticCatalog extends AbstractCatalog {
   public static final String DEFAULT_DB = "default";
 
   /**
-   * To distinguish 'CREATE TABLE LIKE' by checking stack
-   * {@link org.apache.flink.table.planner.operations.SqlCreateTableConverter#lookupLikeSourceTable}
+   * To distinguish 'CREATE TABLE LIKE' by checking stack {@link
+   * org.apache.flink.table.planner.operations.SqlCreateTableConverter#lookupLikeSourceTable}
    */
   public static final String SQL_LIKE_METHOD = "lookupLikeSourceTable";
 
@@ -89,10 +102,7 @@ public class ArcticCatalog extends AbstractCatalog {
 
   private com.netease.arctic.catalog.ArcticCatalog internalCatalog;
 
-  public ArcticCatalog(
-      String name,
-      String defaultDatabase,
-      InternalCatalogBuilder catalogBuilder) {
+  public ArcticCatalog(String name, String defaultDatabase, InternalCatalogBuilder catalogBuilder) {
     super(name, defaultDatabase);
     this.catalogBuilder = catalogBuilder;
   }
@@ -107,8 +117,7 @@ public class ArcticCatalog extends AbstractCatalog {
   }
 
   @Override
-  public void close() throws CatalogException {
-  }
+  public void close() throws CatalogException {}
 
   @Override
   public List<String> listDatabases() throws CatalogException {
@@ -126,8 +135,8 @@ public class ArcticCatalog extends AbstractCatalog {
   }
 
   @Override
-  public void createDatabase(String name, CatalogDatabase database, boolean ignoreIfExists) throws CatalogException,
-      DatabaseAlreadyExistException {
+  public void createDatabase(String name, CatalogDatabase database, boolean ignoreIfExists)
+      throws CatalogException, DatabaseAlreadyExistException {
     try {
       internalCatalog.createDatabase(name);
     } catch (AlreadyExistsException e) {
@@ -138,8 +147,8 @@ public class ArcticCatalog extends AbstractCatalog {
   }
 
   @Override
-  public void dropDatabase(String name, boolean ignoreIfNotExists, boolean cascade) throws CatalogException,
-      DatabaseNotExistException {
+  public void dropDatabase(String name, boolean ignoreIfNotExists, boolean cascade)
+      throws CatalogException, DatabaseNotExistException {
     try {
       internalCatalog.dropDatabase(name);
     } catch (NoSuchDatabaseException e) {
@@ -157,8 +166,8 @@ public class ArcticCatalog extends AbstractCatalog {
 
   @Override
   public List<String> listTables(String databaseName) throws CatalogException {
-    return internalCatalog.listTables(databaseName)
-        .stream().map(TableIdentifier::getTableName)
+    return internalCatalog.listTables(databaseName).stream()
+        .map(TableIdentifier::getTableName)
         .collect(Collectors.toList());
   }
 
@@ -168,7 +177,8 @@ public class ArcticCatalog extends AbstractCatalog {
   }
 
   @Override
-  public CatalogBaseTable getTable(ObjectPath tablePath) throws TableNotExistException, CatalogException {
+  public CatalogBaseTable getTable(ObjectPath tablePath)
+      throws TableNotExistException, CatalogException {
     TableIdentifier tableIdentifier = getTableIdentifier(tablePath);
     if (!internalCatalog.tableExists(tableIdentifier)) {
       throw new TableNotExistException(this.getName(), tablePath);
@@ -190,14 +200,15 @@ public class ArcticCatalog extends AbstractCatalog {
   }
 
   /**
-   * For now, 'CREATE TABLE LIKE' would be treated as the case which users want to add watermark in temporal join,
-   * as an alternative of lookup join, and use Arctic table as build table, i.e. right table.
-   * So the properties those required in temporal join will be put automatically.
-   * <p>
-   * If you don't want the properties, 'EXCLUDING ALL' is what you need.
-   * More details @see <a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/create/#like">LIKE</a>
+   * For now, 'CREATE TABLE LIKE' would be treated as the case which users want to add watermark in
+   * temporal join, as an alternative of lookup join, and use Arctic table as build table, i.e.
+   * right table. So the properties those required in temporal join will be put automatically.
+   *
+   * <p>If you don't want the properties, 'EXCLUDING ALL' is what you need. More details @see <a
+   * href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/create/#like">LIKE</a>
    */
-  private void fillTableMetaPropertiesIfLookupLike(Map<String, String> properties, TableIdentifier tableIdentifier) {
+  private void fillTableMetaPropertiesIfLookupLike(
+      Map<String, String> properties, TableIdentifier tableIdentifier) {
     StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
     boolean isLookupLike = false;
     for (StackTraceElement stackTraceElement : stackTraceElements) {
@@ -215,7 +226,8 @@ public class ArcticCatalog extends AbstractCatalog {
     properties.put(ArcticValidator.ARCTIC_CATALOG.key(), tableIdentifier.getCatalog());
     properties.put(ArcticValidator.ARCTIC_TABLE.key(), tableIdentifier.getTableName());
     properties.put(ArcticValidator.ARCTIC_DATABASE.key(), tableIdentifier.getDatabase());
-    properties.put(ArcticCatalogFactoryOptions.METASTORE_URL.key(), catalogBuilder.getMetastoreUrl());
+    properties.put(
+        ArcticCatalogFactoryOptions.METASTORE_URL.key(), catalogBuilder.getMetastoreUrl());
   }
 
   private static List<String> toPartitionKeys(PartitionSpec spec, Schema icebergSchema) {
@@ -234,17 +246,23 @@ public class ArcticCatalog extends AbstractCatalog {
   }
 
   private void fillTableProperties(Map<String, String> tableProperties) {
-    boolean enableStream = CompatiblePropertyUtil.propertyAsBoolean(tableProperties,
-        TableProperties.ENABLE_LOG_STORE, TableProperties.ENABLE_LOG_STORE_DEFAULT);
+    boolean enableStream =
+        CompatiblePropertyUtil.propertyAsBoolean(
+            tableProperties,
+            TableProperties.ENABLE_LOG_STORE,
+            TableProperties.ENABLE_LOG_STORE_DEFAULT);
     if (enableStream) {
-      tableProperties.putIfAbsent(FactoryUtil.FORMAT.key(), tableProperties.getOrDefault(
-          TableProperties.LOG_STORE_DATA_FORMAT,
-          TableProperties.LOG_STORE_DATA_FORMAT_DEFAULT));
+      tableProperties.putIfAbsent(
+          FactoryUtil.FORMAT.key(),
+          tableProperties.getOrDefault(
+              TableProperties.LOG_STORE_DATA_FORMAT,
+              TableProperties.LOG_STORE_DATA_FORMAT_DEFAULT));
     }
   }
 
   private TableIdentifier getTableIdentifier(ObjectPath tablePath) {
-    return TableIdentifier.of(internalCatalog.name(), tablePath.getDatabaseName(), tablePath.getObjectName());
+    return TableIdentifier.of(
+        internalCatalog.name(), tablePath.getDatabaseName(), tablePath.getObjectName());
   }
 
   @Override
@@ -260,9 +278,7 @@ public class ArcticCatalog extends AbstractCatalog {
   @Override
   public void renameTable(ObjectPath tablePath, String newTableName, boolean ignoreIfNotExists)
       throws CatalogException {
-    internalCatalog.renameTable(
-        getTableIdentifier(tablePath),
-        newTableName);
+    internalCatalog.renameTable(getTableIdentifier(tablePath), newTableName);
   }
 
   @Override
@@ -273,31 +289,37 @@ public class ArcticCatalog extends AbstractCatalog {
     TableSchema tableSchema = table.getSchema();
     TableSchema.Builder flinkSchemaBuilder = TableSchema.builder();
 
-    tableSchema.getTableColumns().forEach(c -> {
-      List<WatermarkSpec> ws = tableSchema.getWatermarkSpecs();
-      for (WatermarkSpec w : ws) {
-        if (w.getRowtimeAttribute().equals(c.getName())) {
-          return;
-        }
-      }
-      flinkSchemaBuilder.field(c.getName(), c.getType());
-    });
+    tableSchema
+        .getTableColumns()
+        .forEach(
+            c -> {
+              List<WatermarkSpec> ws = tableSchema.getWatermarkSpecs();
+              for (WatermarkSpec w : ws) {
+                if (w.getRowtimeAttribute().equals(c.getName())) {
+                  return;
+                }
+              }
+              flinkSchemaBuilder.field(c.getName(), c.getType());
+            });
     if (tableSchema.getPrimaryKey().isPresent()) {
-      flinkSchemaBuilder.primaryKey(tableSchema.getPrimaryKey().get().getColumns().toArray(new String[0]));
+      flinkSchemaBuilder.primaryKey(
+          tableSchema.getPrimaryKey().get().getColumns().toArray(new String[0]));
     }
     TableSchema tableSchemaWithoutWatermark = flinkSchemaBuilder.build();
 
     Schema icebergSchema = FlinkSchemaUtil.convert(tableSchemaWithoutWatermark);
 
-    TableBuilder tableBuilder = internalCatalog.newTableBuilder(
-        getTableIdentifier(tablePath), icebergSchema);
+    TableBuilder tableBuilder =
+        internalCatalog.newTableBuilder(getTableIdentifier(tablePath), icebergSchema);
 
-    tableSchema.getPrimaryKey().ifPresent(k -> {
-          PrimaryKeySpec.Builder builder = PrimaryKeySpec.builderFor(icebergSchema);
-          k.getColumns().forEach(builder::addColumn);
-          tableBuilder.withPrimaryKeySpec(builder.build());
-        }
-    );
+    tableSchema
+        .getPrimaryKey()
+        .ifPresent(
+            k -> {
+              PrimaryKeySpec.Builder builder = PrimaryKeySpec.builderFor(icebergSchema);
+              k.getColumns().forEach(builder::addColumn);
+              tableBuilder.withPrimaryKeySpec(builder.build());
+            });
 
     PartitionSpec spec = toPartitionSpec(((CatalogTable) table).getPartitionKeys(), icebergSchema);
     tableBuilder.withPartitionSpec(spec);
@@ -320,15 +342,19 @@ public class ArcticCatalog extends AbstractCatalog {
   }
 
   private static void validateFlinkTable(CatalogBaseTable table) {
-    Preconditions.checkArgument(table instanceof CatalogTable, "The Table should be a CatalogTable.");
+    Preconditions.checkArgument(
+        table instanceof CatalogTable, "The Table should be a CatalogTable.");
 
     TableSchema schema = table.getSchema();
-    schema.getTableColumns().forEach(column -> {
-      if (!FlinkCompatibilityUtil.isPhysicalColumn(column)) {
-        throw new UnsupportedOperationException("Creating table with computed columns is not supported yet.");
-      }
-    });
-
+    schema
+        .getTableColumns()
+        .forEach(
+            column -> {
+              if (!FlinkCompatibilityUtil.isPhysicalColumn(column)) {
+                throw new UnsupportedOperationException(
+                    "Creating table with computed columns is not supported yet.");
+              }
+            });
   }
 
   @Override
@@ -338,19 +364,73 @@ public class ArcticCatalog extends AbstractCatalog {
   }
 
   @Override
-  public List<CatalogPartitionSpec> listPartitions(ObjectPath tablePath) throws CatalogException {
+  public List<CatalogPartitionSpec> listPartitions(ObjectPath tablePath)
+      throws CatalogException, TableNotPartitionedException {
+    TableIdentifier tableIdentifier = getTableIdentifier(tablePath);
+    ArcticTable arcticTable = internalCatalog.loadTable(tableIdentifier);
+
+    if (arcticTable.spec().isUnpartitioned()) {
+      throw new TableNotPartitionedException(internalCatalog.name(), tablePath);
+    }
+    Set<CatalogPartitionSpec> set = Sets.newHashSet();
+    if (arcticTable.isKeyedTable()) {
+      KeyedTable table = arcticTable.asKeyedTable();
+      try (CloseableIterable<CombinedScanTask> combinedScanTasks = table.newScan().planTasks()) {
+        for (CombinedScanTask combinedScanTask : combinedScanTasks) {
+          combinedScanTask.tasks().stream()
+              .flatMap(
+                  (Function<KeyedTableScanTask, Stream<ArcticFileScanTask>>)
+                      keyedTableScanTask ->
+                          Stream.of(
+                                  keyedTableScanTask.dataTasks(),
+                                  keyedTableScanTask.arcticEquityDeletes())
+                              .flatMap(List::stream))
+              .forEach(
+                  arcticFileScanTask -> {
+                    Map<String, String> map = Maps.newHashMap();
+                    StructLike structLike = arcticFileScanTask.partition();
+                    PartitionSpec spec = table.spec();
+                    for (int i = 0; i < structLike.size(); i++) {
+                      map.put(
+                          spec.fields().get(i).name(),
+                          String.valueOf(structLike.get(i, Object.class)));
+                    }
+                    set.add(new CatalogPartitionSpec(map));
+                  });
+        }
+      } catch (IOException e) {
+        throw new CatalogException(
+            String.format("Failed to list partitions of table %s", tablePath), e);
+      }
+    } else {
+      UnkeyedTable table = arcticTable.asUnkeyedTable();
+      try (CloseableIterable<FileScanTask> tasks = table.newScan().planFiles()) {
+        for (DataFile dataFile : CloseableIterable.transform(tasks, FileScanTask::file)) {
+          Map<String, String> map = Maps.newHashMap();
+          StructLike structLike = dataFile.partition();
+          PartitionSpec spec = table.specs().get(dataFile.specId());
+          for (int i = 0; i < structLike.size(); i++) {
+            map.put(spec.fields().get(i).name(), String.valueOf(structLike.get(i, Object.class)));
+          }
+          set.add(new CatalogPartitionSpec(map));
+        }
+      } catch (IOException e) {
+        throw new CatalogException(
+            String.format("Failed to list partitions of table %s", tablePath), e);
+      }
+    }
+    return Lists.newArrayList(set);
+  }
+
+  @Override
+  public List<CatalogPartitionSpec> listPartitions(
+      ObjectPath tablePath, CatalogPartitionSpec partitionSpec) throws CatalogException {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public List<CatalogPartitionSpec> listPartitions(ObjectPath tablePath, CatalogPartitionSpec partitionSpec)
-      throws CatalogException {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public List<CatalogPartitionSpec> listPartitionsByFilter(ObjectPath tablePath, List<Expression> filters)
-      throws CatalogException {
+  public List<CatalogPartitionSpec> listPartitionsByFilter(
+      ObjectPath tablePath, List<Expression> filters) throws CatalogException {
     throw new UnsupportedOperationException();
   }
 
@@ -368,21 +448,28 @@ public class ArcticCatalog extends AbstractCatalog {
 
   @Override
   public void createPartition(
-      ObjectPath tablePath, CatalogPartitionSpec partitionSpec, CatalogPartition partition,
-      boolean ignoreIfExists) throws CatalogException {
+      ObjectPath tablePath,
+      CatalogPartitionSpec partitionSpec,
+      CatalogPartition partition,
+      boolean ignoreIfExists)
+      throws CatalogException {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void dropPartition(ObjectPath tablePath, CatalogPartitionSpec partitionSpec, boolean ignoreIfNotExists)
+  public void dropPartition(
+      ObjectPath tablePath, CatalogPartitionSpec partitionSpec, boolean ignoreIfNotExists)
       throws CatalogException {
     throw new UnsupportedOperationException();
   }
 
   @Override
   public void alterPartition(
-      ObjectPath tablePath, CatalogPartitionSpec partitionSpec, CatalogPartition newPartition,
-      boolean ignoreIfNotExists) throws CatalogException {
+      ObjectPath tablePath,
+      CatalogPartitionSpec partitionSpec,
+      CatalogPartition newPartition,
+      boolean ignoreIfNotExists)
+      throws CatalogException {
     throw new UnsupportedOperationException();
   }
 
@@ -392,7 +479,8 @@ public class ArcticCatalog extends AbstractCatalog {
   }
 
   @Override
-  public CatalogFunction getFunction(ObjectPath functionPath) throws FunctionNotExistException, CatalogException {
+  public CatalogFunction getFunction(ObjectPath functionPath)
+      throws FunctionNotExistException, CatalogException {
     throw new FunctionNotExistException(getName(), functionPath);
   }
 
@@ -402,19 +490,22 @@ public class ArcticCatalog extends AbstractCatalog {
   }
 
   @Override
-  public void createFunction(ObjectPath functionPath, CatalogFunction function, boolean ignoreIfExists)
+  public void createFunction(
+      ObjectPath functionPath, CatalogFunction function, boolean ignoreIfExists)
       throws CatalogException {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void alterFunction(ObjectPath functionPath, CatalogFunction newFunction, boolean ignoreIfNotExists)
+  public void alterFunction(
+      ObjectPath functionPath, CatalogFunction newFunction, boolean ignoreIfNotExists)
       throws CatalogException {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void dropFunction(ObjectPath functionPath, boolean ignoreIfNotExists) throws CatalogException {
+  public void dropFunction(ObjectPath functionPath, boolean ignoreIfNotExists)
+      throws CatalogException {
     throw new UnsupportedOperationException();
   }
 
@@ -424,48 +515,53 @@ public class ArcticCatalog extends AbstractCatalog {
   }
 
   @Override
-  public CatalogColumnStatistics getTableColumnStatistics(ObjectPath tablePath) throws CatalogException {
+  public CatalogColumnStatistics getTableColumnStatistics(ObjectPath tablePath)
+      throws CatalogException {
     return CatalogColumnStatistics.UNKNOWN;
   }
 
   @Override
-  public CatalogTableStatistics getPartitionStatistics(ObjectPath tablePath, CatalogPartitionSpec partitionSpec)
-      throws CatalogException {
+  public CatalogTableStatistics getPartitionStatistics(
+      ObjectPath tablePath, CatalogPartitionSpec partitionSpec) throws CatalogException {
     return CatalogTableStatistics.UNKNOWN;
   }
 
   @Override
-  public CatalogColumnStatistics getPartitionColumnStatistics(ObjectPath tablePath, CatalogPartitionSpec partitionSpec)
-      throws CatalogException {
+  public CatalogColumnStatistics getPartitionColumnStatistics(
+      ObjectPath tablePath, CatalogPartitionSpec partitionSpec) throws CatalogException {
     return CatalogColumnStatistics.UNKNOWN;
   }
 
   @Override
   public void alterTableStatistics(
-      ObjectPath tablePath, CatalogTableStatistics tableStatistics,
-      boolean ignoreIfNotExists) throws CatalogException {
+      ObjectPath tablePath, CatalogTableStatistics tableStatistics, boolean ignoreIfNotExists)
+      throws CatalogException {
     throw new UnsupportedOperationException();
   }
 
   @Override
   public void alterTableColumnStatistics(
-      ObjectPath tablePath, CatalogColumnStatistics columnStatistics,
-      boolean ignoreIfNotExists) throws CatalogException {
+      ObjectPath tablePath, CatalogColumnStatistics columnStatistics, boolean ignoreIfNotExists)
+      throws CatalogException {
     throw new UnsupportedOperationException();
   }
 
   @Override
   public void alterPartitionStatistics(
-      ObjectPath tablePath, CatalogPartitionSpec partitionSpec,
-      CatalogTableStatistics partitionStatistics, boolean ignoreIfNotExists)
+      ObjectPath tablePath,
+      CatalogPartitionSpec partitionSpec,
+      CatalogTableStatistics partitionStatistics,
+      boolean ignoreIfNotExists)
       throws CatalogException {
     throw new UnsupportedOperationException();
   }
 
   @Override
   public void alterPartitionColumnStatistics(
-      ObjectPath tablePath, CatalogPartitionSpec partitionSpec,
-      CatalogColumnStatistics columnStatistics, boolean ignoreIfNotExists)
+      ObjectPath tablePath,
+      CatalogPartitionSpec partitionSpec,
+      CatalogColumnStatistics columnStatistics,
+      boolean ignoreIfNotExists)
       throws CatalogException {
     throw new UnsupportedOperationException();
   }

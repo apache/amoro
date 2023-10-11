@@ -42,13 +42,14 @@ import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 
 /**
- * Arctic Source based of Flip27.
- * <p>
- * If ArcticSource is used as a build table in lookup join, it will be implemented by temporal join.
- * Two source should use processing time as watermark.
- * ArcticSource will generate watermark after first splits planned by ArcticSourceEnumerator having been finished.
+ * Arctic Source based of FLIP-27.
+ *
+ * <p>If ArcticSource is used as a build table in lookup join, it will be implemented by temporal
+ * join. Two source should use processing time as watermark. ArcticSource will generate watermark
+ * after first splits planned by ArcticSourceEnumerator having been finished.
  */
-public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumState>, ResultTypeQueryable<T> {
+public class ArcticSource<T>
+    implements Source<T, ArcticSplit, ArcticSourceEnumState>, ResultTypeQueryable<T> {
   private static final long serialVersionUID = 1L;
   private final ArcticScanContext scanContext;
   private final ReaderFunction<T> readerFunction;
@@ -56,13 +57,18 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
   private final ArcticTableLoader loader;
   private final String tableName;
   /**
-   * generate arctic watermark. This is only for lookup join arctic table, and arctic table is used as build table,
-   * i.e. right table.
+   * generate arctic watermark. This is only for lookup join arctic table, and arctic table is used
+   * as build table, i.e. right table.
    */
   private final boolean dimTable;
 
-  public ArcticSource(ArcticTableLoader loader, ArcticScanContext scanContext, ReaderFunction<T> readerFunction,
-                      TypeInformation<T> typeInformation, String tableName, boolean dimTable) {
+  public ArcticSource(
+      ArcticTableLoader loader,
+      ArcticScanContext scanContext,
+      ReaderFunction<T> readerFunction,
+      TypeInformation<T> typeInformation,
+      String tableName,
+      boolean dimTable) {
     this.loader = loader;
     this.scanContext = scanContext;
     this.readerFunction = readerFunction;
@@ -78,7 +84,8 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
 
   @Override
   public SourceReader<T, ArcticSplit> createReader(SourceReaderContext readerContext) {
-    return new ArcticSourceReader<>(readerFunction, readerContext.getConfiguration(), readerContext, dimTable);
+    return new ArcticSourceReader<>(
+        readerFunction, readerContext.getConfiguration(), readerContext, dimTable);
   }
 
   @Override
@@ -92,17 +99,18 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
     SplitAssigner splitAssigner;
     if (scanContext.isStreaming()) {
       splitAssigner = new ShuffleSplitAssigner(enumContext, tableName, enumState);
-      return new ArcticSourceEnumerator(enumContext, splitAssigner, loader, scanContext, enumState, dimTable);
+      return new ArcticSourceEnumerator(
+          enumContext, splitAssigner, loader, scanContext, enumState, dimTable);
     } else {
       splitAssigner = new StaticSplitAssigner(enumState);
-      return new StaticArcticSourceEnumerator(enumContext, splitAssigner, loader, scanContext, null);
+      return new StaticArcticSourceEnumerator(
+          enumContext, splitAssigner, loader, scanContext, null);
     }
   }
 
   @Override
   public SplitEnumerator<ArcticSplit, ArcticSourceEnumState> restoreEnumerator(
-      SplitEnumeratorContext<ArcticSplit> enumContext,
-      ArcticSourceEnumState checkpoint) {
+      SplitEnumeratorContext<ArcticSplit> enumContext, ArcticSourceEnumState checkpoint) {
     return createEnumerator(enumContext, checkpoint);
   }
 

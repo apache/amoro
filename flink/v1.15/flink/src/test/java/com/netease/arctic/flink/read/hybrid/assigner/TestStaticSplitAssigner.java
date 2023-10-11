@@ -38,8 +38,9 @@ public class TestStaticSplitAssigner extends TestRowDataReaderFunction {
   @Test
   public void testSingleParallelism() throws IOException {
     try (StaticSplitAssigner staticSplitAssigner = instanceStaticSplitAssigner()) {
-      List<ArcticSplit> splitList = FlinkSplitPlanner.mergeOnReadPlan(testKeyedTable, Collections.emptyList(),
-          new AtomicInteger());
+      List<ArcticSplit> splitList =
+          FlinkSplitPlanner.mergeOnReadPlan(
+              testKeyedTable, Collections.emptyList(), new AtomicInteger());
       staticSplitAssigner.onDiscoveredSplits(splitList);
       List<ArcticSplit> actual = new ArrayList<>();
 
@@ -59,8 +60,9 @@ public class TestStaticSplitAssigner extends TestRowDataReaderFunction {
   @Test
   public void testMultiParallelism() throws IOException {
     try (StaticSplitAssigner staticSplitAssigner = instanceStaticSplitAssigner()) {
-      List<ArcticSplit> splitList = FlinkSplitPlanner.mergeOnReadPlan(testKeyedTable, Collections.emptyList(),
-          new AtomicInteger());
+      List<ArcticSplit> splitList =
+          FlinkSplitPlanner.mergeOnReadPlan(
+              testKeyedTable, Collections.emptyList(), new AtomicInteger());
       staticSplitAssigner.onDiscoveredSplits(splitList);
       List<ArcticSplit> actual = new ArrayList<>();
 

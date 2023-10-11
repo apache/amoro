@@ -35,18 +35,16 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
-/**
- * The source reader for Kafka partitions.
- */
+/** The source reader for Kafka partitions. */
 public class LogKafkaSourceReader<T> extends KafkaSourceReader<T> {
 
   private static final Logger LOG = LoggerFactory.getLogger(LogKafkaSourceReader.class);
 
-  @Nullable
-  private final LogSourceHelper logReadHelper;
+  @Nullable private final LogSourceHelper logReadHelper;
 
   public LogKafkaSourceReader(
-      FutureCompletingBlockingQueue<RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>>> elementsQueue,
+      FutureCompletingBlockingQueue<RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>>>
+          elementsQueue,
       KafkaSourceFetcherManager kafkaSourceFetcherManager,
       RecordEmitter<ConsumerRecord<byte[], byte[]>, T, KafkaPartitionSplitState> recordEmitter,
       Configuration config,
@@ -76,5 +74,4 @@ public class LogKafkaSourceReader<T> extends KafkaSourceReader<T> {
   protected KafkaPartitionSplit toSplitType(String splitId, KafkaPartitionSplitState splitState) {
     return ((LogKafkaPartitionSplitState) splitState).toLogKafkaPartitionSplit();
   }
-
 }

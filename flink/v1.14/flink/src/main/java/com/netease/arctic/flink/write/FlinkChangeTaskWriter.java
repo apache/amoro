@@ -42,8 +42,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * task writer for {@link KeyedTable#changeTable()} ()}.
- * Dev should make sure outputFileFactory write to change table's location
+ * task writer for {@link KeyedTable#changeTable()} ()}. Dev should make sure outputFileFactory
+ * write to change table's location
  */
 public class FlinkChangeTaskWriter extends ChangeTaskWriter<RowData> {
 
@@ -52,12 +52,29 @@ public class FlinkChangeTaskWriter extends ChangeTaskWriter<RowData> {
 
   private Set<PrimaryKeyData> hasUpdateBeforeKeys = new HashSet<>();
 
-  public FlinkChangeTaskWriter(FileFormat format, FileAppenderFactory<RowData> appenderFactory,
-                               OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize,
-                               long mask, Schema schema, RowType flinkSchema, PartitionSpec spec,
-                               PrimaryKeySpec primaryKeySpec, boolean upsert) {
-    super(format, appenderFactory, outputFileFactory, io, targetFileSize,
-        mask, schema, spec, primaryKeySpec, false);
+  public FlinkChangeTaskWriter(
+      FileFormat format,
+      FileAppenderFactory<RowData> appenderFactory,
+      OutputFileFactory outputFileFactory,
+      ArcticFileIO io,
+      long targetFileSize,
+      long mask,
+      Schema schema,
+      RowType flinkSchema,
+      PartitionSpec spec,
+      PrimaryKeySpec primaryKeySpec,
+      boolean upsert) {
+    super(
+        format,
+        appenderFactory,
+        outputFileFactory,
+        io,
+        targetFileSize,
+        mask,
+        schema,
+        spec,
+        primaryKeySpec,
+        false);
     this.wrapper = new RowDataWrapper(flinkSchema, schema.asStruct());
     this.upsert = upsert;
   }
@@ -98,9 +115,7 @@ public class FlinkChangeTaskWriter extends ChangeTaskWriter<RowData> {
     return ChangeAction.INSERT;
   }
 
-  /**
-   * Turn update_after to insert if there isn't update_after followed by update_before.
-   */
+  /** Turn update_after to insert if there isn't update_after followed by update_before. */
   private void processMultiUpdateAfter(RowData row) {
     RowKind rowKind = row.getRowKind();
     if (RowKind.UPDATE_BEFORE.equals(rowKind) || RowKind.UPDATE_AFTER.equals(rowKind)) {

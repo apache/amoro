@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.util;
 
+import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.TOPIC;
+
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.table.TableProperties;
 import org.apache.flink.configuration.ConfigOption;
@@ -29,54 +31,58 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.TOPIC;
-
-/**
- * PropertyUtil compatible with legacy flink properties
- */
+/** PropertyUtil compatible with legacy flink properties */
 public class CompatibleFlinkPropertyUtil {
 
-  private CompatibleFlinkPropertyUtil() {
+  private CompatibleFlinkPropertyUtil() {}
+
+  public static boolean propertyAsBoolean(
+      Map<String, String> properties, String property, boolean defaultValue) {
+    return PropertyUtil.propertyAsBoolean(
+        properties, getCompatibleProperty(properties, property), defaultValue);
   }
 
-  public static boolean propertyAsBoolean(Map<String, String> properties,
-                                          String property, boolean defaultValue) {
-    return PropertyUtil.propertyAsBoolean(properties, getCompatibleProperty(properties, property), defaultValue);
-  }
-
-  public static boolean propertyAsBoolean(ReadableConfig config, ConfigOption<Boolean> configOption) {
+  public static boolean propertyAsBoolean(
+      ReadableConfig config, ConfigOption<Boolean> configOption) {
     ConfigOption<Boolean> legacyProperty = getLegacyProperty(configOption);
-    if (legacyProperty != null && config.getOptional(legacyProperty).isPresent() &&
-        !config.getOptional(configOption).isPresent()) {
+    if (legacyProperty != null
+        && config.getOptional(legacyProperty).isPresent()
+        && !config.getOptional(configOption).isPresent()) {
       return config.get(legacyProperty);
     } else {
       return config.get(configOption);
     }
   }
 
-  public static double propertyAsDouble(Map<String, String> properties,
-                                        String property, double defaultValue) {
-    return PropertyUtil.propertyAsDouble(properties, getCompatibleProperty(properties, property), defaultValue);
+  public static double propertyAsDouble(
+      Map<String, String> properties, String property, double defaultValue) {
+    return PropertyUtil.propertyAsDouble(
+        properties, getCompatibleProperty(properties, property), defaultValue);
   }
 
-  public static int propertyAsInt(Map<String, String> properties,
-                                  String property, int defaultValue) {
-    return PropertyUtil.propertyAsInt(properties, getCompatibleProperty(properties, property), defaultValue);
+  public static int propertyAsInt(
+      Map<String, String> properties, String property, int defaultValue) {
+    return PropertyUtil.propertyAsInt(
+        properties, getCompatibleProperty(properties, property), defaultValue);
   }
 
-  public static long propertyAsLong(Map<String, String> properties,
-                                    String property, long defaultValue) {
-    return PropertyUtil.propertyAsLong(properties, getCompatibleProperty(properties, property), defaultValue);
+  public static long propertyAsLong(
+      Map<String, String> properties, String property, long defaultValue) {
+    return PropertyUtil.propertyAsLong(
+        properties, getCompatibleProperty(properties, property), defaultValue);
   }
 
-  public static String propertyAsString(Map<String, String> properties,
-                                        String property, String defaultValue) {
-    return PropertyUtil.propertyAsString(properties, getCompatibleProperty(properties, property), defaultValue);
+  public static String propertyAsString(
+      Map<String, String> properties, String property, String defaultValue) {
+    return PropertyUtil.propertyAsString(
+        properties, getCompatibleProperty(properties, property), defaultValue);
   }
 
   private static String getCompatibleProperty(Map<String, String> properties, String property) {
     String legacyProperty = getLegacyProperty(property);
-    if (legacyProperty != null && properties.containsKey(legacyProperty) && !properties.containsKey(property)) {
+    if (legacyProperty != null
+        && properties.containsKey(legacyProperty)
+        && !properties.containsKey(property)) {
       return legacyProperty;
     } else {
       return property;
@@ -115,8 +121,8 @@ public class CompatibleFlinkPropertyUtil {
   }
 
   /**
-   * Get log-store properties from table properties and flink options, whose prefix is
-   * {@link TableProperties#LOG_STORE_PROPERTIES_PREFIX}.
+   * Get log-store properties from table properties and flink options, whose prefix is {@link
+   * TableProperties#LOG_STORE_PROPERTIES_PREFIX}.
    *
    * @param tableOptions including table properties and flink options
    * @return Properties. The keys in it have no {@link TableProperties#LOG_STORE_PROPERTIES_PREFIX}.
@@ -130,7 +136,8 @@ public class CompatibleFlinkPropertyUtil {
           .forEach(
               key -> {
                 final String value = tableOptions.get(key);
-                final String subKey = key.substring((TableProperties.LOG_STORE_PROPERTIES_PREFIX).length());
+                final String subKey =
+                    key.substring((TableProperties.LOG_STORE_PROPERTIES_PREFIX).length());
                 properties.put(subKey, value);
               });
     }

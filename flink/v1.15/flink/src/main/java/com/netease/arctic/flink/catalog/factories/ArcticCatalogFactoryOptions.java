@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.catalog.factories;
 
+import static com.netease.arctic.flink.catalog.ArcticCatalog.DEFAULT_DB;
+
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.flink.catalog.ArcticCatalog;
 import org.apache.flink.annotation.Internal;
@@ -25,11 +27,7 @@ import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.table.catalog.CommonCatalogOptions;
 
-import static com.netease.arctic.flink.catalog.ArcticCatalog.DEFAULT_DB;
-
-/**
- * {@link ConfigOption}s for {@link ArcticCatalog}.
- */
+/** {@link ConfigOption}s for {@link ArcticCatalog}. */
 @Internal
 public class ArcticCatalogFactoryOptions {
   public static final String IDENTIFIER = "arctic";
@@ -47,26 +45,37 @@ public class ArcticCatalogFactoryOptions {
   // authorization configs
   public static final ConfigOption<String> AUTH_AMS_CONFIGS_DISABLE =
       ConfigOptions.key(PROPERTIES_PREFIX + "." + CatalogMetaProperties.LOAD_AUTH_FROM_AMS)
-          .stringType().noDefaultValue();
+          .stringType()
+          .noDefaultValue();
   public static final ConfigOption<String> AUTH_METHOD =
       ConfigOptions.key(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE)
-          .stringType().noDefaultValue();
+          .stringType()
+          .noDefaultValue();
   public static final ConfigOption<String> SIMPLE_USER_NAME =
-      ConfigOptions.key(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME)
-          .stringType().noDefaultValue();
+      ConfigOptions.key(
+              PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME)
+          .stringType()
+          .noDefaultValue();
   public static final ConfigOption<String> KEYTAB_LOGIN_USER =
       ConfigOptions.key(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL)
-          .stringType().noDefaultValue();
+          .stringType()
+          .noDefaultValue();
   public static final ConfigOption<String> KRB5_CONF_PATH =
       ConfigOptions.key(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB_PATH)
-          .stringType().noDefaultValue();
+          .stringType()
+          .noDefaultValue();
   public static final ConfigOption<String> KRB5_CONF_ENCODE =
       ConfigOptions.key(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB_ENCODE)
-          .stringType().noDefaultValue();
+          .stringType()
+          .noDefaultValue();
   public static final ConfigOption<String> KEYTAB_PATH =
-      ConfigOptions.key(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB_PATH)
-          .stringType().noDefaultValue();
+      ConfigOptions.key(
+              PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB_PATH)
+          .stringType()
+          .noDefaultValue();
   public static final ConfigOption<String> KEYTAB_ENCODE =
-      ConfigOptions.key(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB_ENCODE)
-          .stringType().noDefaultValue();
+      ConfigOptions.key(
+              PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB_ENCODE)
+          .stringType()
+          .noDefaultValue();
 }
