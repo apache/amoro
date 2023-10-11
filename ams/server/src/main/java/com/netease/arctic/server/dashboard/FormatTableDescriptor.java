@@ -55,7 +55,7 @@ public interface FormatTableDescriptor {
   /**
    * Get the DDL information of the {@link AmoroTable}.
    */
-  List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) throws Exception;
+  List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable);
 
   /**
    * Get the partition information of the {@link AmoroTable}.
