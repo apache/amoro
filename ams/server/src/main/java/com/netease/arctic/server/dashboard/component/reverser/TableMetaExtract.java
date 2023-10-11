@@ -18,15 +18,17 @@
 
 package com.netease.arctic.server.dashboard.component.reverser;
 
-import com.google.common.base.Objects;
-
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import javax.annotation.Nullable;
+
 import java.util.List;
 import java.util.Map;
+
 
 /**
  * An interface for returning the historical metadata of a table.
  * The table can be iceberg,mixed-iceberg,mixed-hive,paimon and so on.
+ *
  * @param <T> Table type
  */
 interface TableMetaExtract<T> {
@@ -121,7 +123,7 @@ interface TableMetaExtract<T> {
 
     @Override
     public String toString() {
-      return Objects.toStringHelper(this)
+      return MoreObjects.toStringHelper(this)
           .add("id", id)
           .add("parentId", parentId)
           .add("name", name)

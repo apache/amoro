@@ -51,7 +51,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Utils for spark {@link DataType}.
+ * Copy from org.apache.paimon.spark.SparkTypeUtilsorg.apache.paimon.spark.SparkTypeUtils.
+ * Reason:
+ * 1. Ams server don't have paimon-spark dependency.
  */
 public class PaimonTypeToSparkType {
 

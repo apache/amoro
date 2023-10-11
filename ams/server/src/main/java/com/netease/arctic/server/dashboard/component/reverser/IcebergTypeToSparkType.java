@@ -43,6 +43,12 @@ import org.apache.spark.sql.types.TimestampType$;
 
 import java.util.List;
 
+/**
+ * Copy from org.apache.iceberg.spark.TypeToSparkType.
+ * Reason:
+ * 1. org.apache.iceberg.spark.TypeToSparkType is package private.
+ * 2. iceberg-spark dependency is runtime scope, so we can't use it in compile scope.
+ */
 public class IcebergTypeToSparkType extends TypeUtil.SchemaVisitor<DataType> {
   public IcebergTypeToSparkType() {
   }
