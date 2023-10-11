@@ -38,6 +38,15 @@ public class IcebergCatalogFactory implements FormatCatalogFactory {
   @Override
   public FormatCatalog create(
       String name, String metastoreType, Map<String, String> properties, Configuration configuration) {
+    Catalog icebergCatalog = icebergCatalog(name, metastoreType, properties, configuration);
+    return new IcebergCatalog(icebergCatalog);
+  }
+
+  public static Catalog icebergCatalog(
+      String name,
+      String metastoreType,
+      Map<String, String> properties,
+      Configuration configuration) {
     Preconditions.checkArgument(StringUtils.isNotBlank(metastoreType), "metastore type is blank");
     Map<String, String> icebergProperties = Maps.newHashMap(properties);
     if (CatalogMetaProperties.CATALOG_TYPE_HADOOP.equalsIgnoreCase(metastoreType) ||
@@ -56,8 +65,7 @@ public class IcebergCatalogFactory implements FormatCatalogFactory {
       icebergProperties.put(CatalogProperties.CATALOG_IMPL, icebergCatalogImpl);
     }
 
-    Catalog icebergCatalog = CatalogUtil.buildIcebergCatalog(name, icebergProperties, configuration);
-    return new IcebergCatalog(icebergCatalog);
+    return CatalogUtil.buildIcebergCatalog(name, icebergProperties, configuration);
   }
 
   @Override
