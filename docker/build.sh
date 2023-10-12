@@ -180,7 +180,7 @@ function build_datanode() {
 
 function build_optimizer_flink() {
     local IMAGE_REF=arctic163/optimizer-flink
-    local IMAGE_TAG=$AMORO_TAG-flink-${FLINK_MAJOR_VERSION}
+    local IMAGE_TAG=$AMORO_TAG-flink${FLINK_MAJOR_VERSION}
     print_image $IMAGE_REF $IMAGE_TAG
 
     FLINK_OPTIMIZER_JOB=${OPTIMIZER_JOB}
