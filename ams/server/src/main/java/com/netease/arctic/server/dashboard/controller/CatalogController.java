@@ -111,53 +111,10 @@ public class CatalogController {
     VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_HIVE, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_HIVE));
     VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_HADOOP, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_ICEBERG));
     VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_HADOOP, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, ICEBERG));
+    VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_GLUE, STORAGE_CONFIGS_VALUE_TYPE_S3, ICEBERG));
     VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_CUSTOM, STORAGE_CONFIGS_VALUE_TYPE_S3, ICEBERG));
     VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_CUSTOM, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, ICEBERG));
     VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_CUSTOM, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_ICEBERG));
-  }
-  
-  private static class CatalogDescriptor {
-    private final String catalogType;
-    private final String storageType;
-    private final TableFormat tableFormat;
-
-    public CatalogDescriptor(String catalogType, String storageType, TableFormat tableFormat) {
-      this.catalogType = catalogType;
-      this.storageType = storageType;
-      this.tableFormat = tableFormat;
-    }
-    
-    public static CatalogDescriptor of(String catalogType, String storageType, TableFormat tableFormat) {
-      return new CatalogDescriptor(catalogType, storageType, tableFormat);
-    }
-
-    public static CatalogDescriptor of(CatalogRegisterInfo info) {
-      // only support one table format now
-      String tableFormat = info.getTableFormatList().get(0);
-      String storageType = info.getStorageConfig().get(STORAGE_CONFIGS_KEY_TYPE);
-      String catalogType = info.getType();
-      return of(catalogType, storageType, TableFormat.valueOf(tableFormat));
-    }
-
-    @Override
-    public String toString() {
-      return String.format("Metastore [%s], Storage Type [%s], Table Format [%s]", catalogType, storageType,
-          tableFormat);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      CatalogDescriptor that = (CatalogDescriptor) o;
-      return Objects.equal(catalogType, that.catalogType) &&
-          Objects.equal(storageType, that.storageType) && tableFormat == that.tableFormat;
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hashCode(catalogType, storageType, tableFormat);
-    }
   }
 
   public CatalogController(TableService tableService, PlatformFileManager platformFileInfoService) {
@@ -385,9 +342,7 @@ public class CatalogController {
     Preconditions.checkArgument(info.getTableFormatList() != null && !info.getTableFormatList().isEmpty(),
         "Catalog table format list must not be empty");
 
-    CatalogDescriptor catalogDescriptor = CatalogDescriptor.of(info);
-    Preconditions.checkArgument(VALIDATE_CATALOGS.contains(catalogDescriptor),
-        "Not support " + catalogDescriptor);
+    CatalogDescriptor.of(info).validate();
 
     List<String> requiredProperties = CATALOG_REQUIRED_PROPERTIES.get(info.getType());
     if (requiredProperties != null && !requiredProperties.isEmpty()) {
@@ -508,6 +463,54 @@ public class CatalogController {
       ctx.result(Base64.getDecoder().decode(storageConfig.get(key)));
     } else {
       throw new RuntimeException("Invalid request for " + confType);
+    }
+  }
+
+  private static class CatalogDescriptor {
+    private final String catalogType;
+    private final String storageType;
+    private final TableFormat tableFormat;
+
+    public CatalogDescriptor(String catalogType, String storageType, TableFormat tableFormat) {
+      this.catalogType = catalogType;
+      this.storageType = storageType;
+      this.tableFormat = tableFormat;
+    }
+
+    public static CatalogDescriptor of(String catalogType, String storageType, TableFormat tableFormat) {
+      return new CatalogDescriptor(catalogType, storageType, tableFormat);
+    }
+
+    public static CatalogDescriptor of(CatalogRegisterInfo info) {
+      // only support one table format now
+      String tableFormat = info.getTableFormatList().get(0);
+      String storageType = info.getStorageConfig().get(STORAGE_CONFIGS_KEY_TYPE);
+      String catalogType = info.getType();
+      return of(catalogType, storageType, TableFormat.valueOf(tableFormat));
+    }
+
+    public void validate() {
+      Preconditions.checkArgument(VALIDATE_CATALOGS.contains(this), "Not support " + this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      CatalogDescriptor that = (CatalogDescriptor) o;
+      return Objects.equal(catalogType, that.catalogType) &&
+          Objects.equal(storageType, that.storageType) && tableFormat == that.tableFormat;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(catalogType, storageType, tableFormat);
+    }
+
+    @Override
+    public String toString() {
+      return String.format("Metastore [%s], Storage Type [%s], Table Format [%s]", catalogType, storageType,
+          tableFormat);
     }
   }
 }
