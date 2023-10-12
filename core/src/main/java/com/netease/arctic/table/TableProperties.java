@@ -150,6 +150,17 @@ public class TableProperties {
   public static final String BASE_SNAPSHOT_KEEP_MINUTES = "snapshot.base.keep.minutes";
   public static final long BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT = 720; // 12 Hours
 
+  public static final String ENABLE_DATA_EXPIRATION = "data-expire.enabled";
+  public static final boolean ENABLE_DATA_EXPIRATION_DEFAULT = false;
+  public static final String DATA_EXPIRATION_LEVEL = "data-expire.level";
+  public static final String DATA_EXPIRATION_LEVEL_DEFAULT = "partition";
+  public static final String DATA_EXPIRATION_FIELD = "data-expire.field";
+  public static final String DATA_EXPIRATION_DATE_STRING_PATTERN = "data-expire.datetime-string-pattern";
+  public static final String DATA_EXPIRATION_DATE_STRING_PATTERN_DEFAULT = "yyyy-MM-dd";
+  public static final String DATA_EXPIRATION_DATE_NUMBER_FORMAT = "data-expire.datetime-number-format";
+  public static final String DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT = "TIMESTAMP_MS";
+  public static final String DATA_EXPIRATION_RETENTION_TIME = "data-expire.retention-time";
+
   public static final String ENABLE_DANGLING_DELETE_FILES_CLEAN = "clean-dangling-delete-files.enabled";
   public static final boolean ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT = true;
 
