@@ -246,7 +246,7 @@ const storeSupportFormat: {[prop:string]: string[]} = {
   ams: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
   hive: [tableFormatMap.MIXED_HIVE, tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
   hadoop: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
-  glue: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
+  glue: [tableFormatMap.ICEBERG],
   custom: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG]
 }
 
@@ -299,14 +299,6 @@ const s3ConfigTypeOps = reactive<ILableAndValue[]>([{
 }, {
   label: 'CUSTOM',
   value: 'CUSTOM'
-}])
-
-const storageConfigTypeOps = reactive<ILableAndValue[]>([{
-  label: 'Hadoop',
-  value: 'Hadoop'
-}, {
-  label: 'S3',
-  value: 'S3'
 }])
 
 const storageConfigMap = {
@@ -441,6 +433,37 @@ const changeTypeShow = (val: string) => {
 const formatOptions = computed(() => {
   const type = formState.catalog.type
   return storeSupportFormat[type] || []
+})
+
+const storageConfigTypeS3 = reactive<ILableAndValue[]>([{
+  label: 'S3',
+  value: 'S3'
+}])
+
+const storageConfigTypeHadoop = reactive<ILableAndValue[]>([{
+  label: 'Hadoop',
+  value: 'Hadoop'
+}])
+
+const storageConfigTypeHadoopS3 = reactive<ILableAndValue[]>([{
+  label: 'Hadoop',
+  value: 'Hadoop'
+}, {
+  label: 'S3',
+  value: 'S3'
+}])
+
+const storageConfigTypeOps = computed(() => {
+  const type = formState.catalog.type
+  if (type === 'ams' || type === 'custom') {
+    return storageConfigTypeHadoopS3
+  } else if (type === 'glue') {
+    return storageConfigTypeS3
+  } else if (type === 'hive' || type === 'hadoop') {
+    return storageConfigTypeHadoop
+  } else {
+    return null
+  }
 })
 
 const authTypeOptions = computed(() => {
