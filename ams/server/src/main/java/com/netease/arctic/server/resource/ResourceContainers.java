@@ -58,7 +58,7 @@ public class ResourceContainers {
 
     public ContainerWrapper(ContainerMetadata metadata) {
       this.metadata = metadata;
-      this.container = null;
+      this.container = loadResourceContainer(metadata.getImplClass());
     }
 
     ContainerWrapper(ContainerMetadata metadata, ResourceContainer container) {
