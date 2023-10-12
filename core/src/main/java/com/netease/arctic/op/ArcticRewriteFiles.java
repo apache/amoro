@@ -69,6 +69,20 @@ public class ArcticRewriteFiles extends ArcticUpdate<RewriteFiles> implements Re
   }
 
   @Override
+  public RewriteFiles deleteFile(DataFile dataFile) {
+    this.deleteIcebergDataFile(dataFile);
+    rewriteFiles.deleteFile(dataFile);
+    return this;
+  }
+
+  @Override
+  public RewriteFiles deleteFile(DeleteFile deleteFile) {
+    this.deleteIcebergDeleteFile(deleteFile);
+    rewriteFiles.deleteFile(deleteFile);
+    return this;
+  }
+
+  @Override
   public RewriteFiles validateFromSnapshot(long snapshotId) {
     rewriteFiles.validateFromSnapshot(snapshotId);
     return this;
