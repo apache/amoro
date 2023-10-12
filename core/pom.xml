@@ -79,6 +79,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>iceberg-aws</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.parquet</groupId>
             <artifactId>parquet-avro</artifactId>
         </dependency>
@@ -107,6 +112,11 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.paimon</groupId>
+            <artifactId>paimon-bundle</artifactId>
         </dependency>
 
         <!-- test dependencies -->
@@ -184,50 +194,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>aws</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.iceberg</groupId>
-                    <artifactId>iceberg-aws</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>s3</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>glue</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>kms</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>dynamodb</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>sts</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>url-connection-client</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
-
 </project>

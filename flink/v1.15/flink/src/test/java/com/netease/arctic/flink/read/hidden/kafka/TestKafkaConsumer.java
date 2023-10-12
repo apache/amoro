@@ -20,11 +20,14 @@ package com.netease.arctic.flink.read.hidden.kafka;
 
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getProperties;
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
+import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static com.netease.arctic.flink.write.hidden.kafka.TestHiddenLogOperators.topic;
+import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
+import com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate;
+import com.netease.arctic.flink.kafka.testutils.KafkaContainerTest;
 import com.netease.arctic.flink.write.hidden.kafka.TestBaseLog;
 import org.apache.flink.streaming.connectors.kafka.internals.FlinkKafkaInternalProducer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -50,16 +53,15 @@ import java.util.stream.Collectors;
 
 public class TestKafkaConsumer extends TestBaseLog {
   private static final Logger LOG = LoggerFactory.getLogger(TestKafkaConsumer.class);
-  private static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
 
   @BeforeClass
   public static void prepare() throws Exception {
-    kafkaTestBase.prepare();
+    KAFKA_CONTAINER.start();
   }
 
   @AfterClass
   public static void shutdown() throws Exception {
-    kafkaTestBase.shutDownServices();
+    KAFKA_CONTAINER.close();
   }
 
   @Test
@@ -69,7 +71,9 @@ public class TestKafkaConsumer extends TestBaseLog {
     final String transactionalIdPrefix = UUID.randomUUID().toString();
     try {
       int numCount = 20;
-      Properties properties = getProperties(kafkaTestBase.getProperties());
+      Properties properties = new Properties();
+      properties.put(BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
+      properties = getProperties(KafkaConfigGenerate.getStandardProperties(properties));
       properties.put(TRANSACTIONAL_ID_CONFIG, transactionalIdPrefix + "flip");
       reuse = new FlinkKafkaInternalProducer<>(properties);
       reuse.initTransactions();
@@ -78,7 +82,7 @@ public class TestKafkaConsumer extends TestBaseLog {
         reuse.send(new ProducerRecord<>(topic, "test-value-" + i));
       }
       reuse.commitTransaction();
-      int count = kafkaTestBase.countAllRecords(topic);
+      int count = KafkaContainerTest.countAllRecords(topic, properties);
       LOG.info("consumption = {}", count);
       assertThat(count).isEqualTo(numCount);
     } catch (Throwable e) {
@@ -96,8 +100,9 @@ public class TestKafkaConsumer extends TestBaseLog {
   public void testResetOffset() {
     final int countNum = 20;
     String topicIntern = topic;
-    Properties properties = getPropertiesWithByteArray(kafkaTestBase.getProperties());
-
+    Properties properties = new Properties();
+    properties.put(BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
+    getPropertiesWithByteArray(KafkaConfigGenerate.getStandardProperties(properties));
     // send
     properties.put(TRANSACTIONAL_ID_CONFIG, "transactionalId1");
     FlinkKafkaInternalProducer<byte[], byte[]> reuse = new FlinkKafkaInternalProducer<>(properties);

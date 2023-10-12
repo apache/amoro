@@ -19,6 +19,8 @@
 package com.netease.arctic.server.manager;
 
 import com.netease.arctic.ams.api.AmoroPlugin;
+import com.netease.arctic.server.exception.AlreadyExistsException;
+import com.netease.arctic.server.exception.ObjectNotExistsException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,8 +32,8 @@ import java.util.List;
 public class TestSpiPluginMananger {
 
   private SpiPluginManager<TestPlugin> pluginManager;
-  private static final String pluginName1 = "plugin1";
-  private static final String pluginName2 = "plugin2";
+  private static final String PLUGIN_NAME_1 = "plugin1";
+  private static final String PLUGIN_NAME_2 = "plugin2";
 
   @BeforeEach
   public void setup() {
@@ -45,24 +47,29 @@ public class TestSpiPluginMananger {
 
   @Test
   public void testInstall() {
-    pluginManager.install("plugin1");
-    AmoroPlugin plugin = pluginManager.get("plugin1");
+    pluginManager.install(PLUGIN_NAME_1);
+    AmoroPlugin plugin = pluginManager.get(PLUGIN_NAME_1);
     Assertions.assertNotNull(plugin);
-    Assertions.assertEquals("plugin1", plugin.name());
+    Assertions.assertEquals(PLUGIN_NAME_1, plugin.name());
+
+    pluginManager.install(PLUGIN_NAME_2);
+    plugin = pluginManager.get(PLUGIN_NAME_2);
+    Assertions.assertNotNull(plugin);
+    Assertions.assertEquals(PLUGIN_NAME_2, plugin.name());
   }
 
   @Test
   public void testUninstall() {
-    pluginManager.install("plugin1");
-    pluginManager.uninstall("plugin1");
-    AmoroPlugin plugin = pluginManager.get("plugin1");
+    pluginManager.install(PLUGIN_NAME_1);
+    pluginManager.uninstall(PLUGIN_NAME_1);
+    AmoroPlugin plugin = pluginManager.get(PLUGIN_NAME_1);
     Assertions.assertNull(plugin);
   }
 
   @Test
   public void testList() {
-    pluginManager.install("plugin1");
-    pluginManager.install("plugin2");
+    pluginManager.install(PLUGIN_NAME_1);
+    pluginManager.install(PLUGIN_NAME_2);
 
     List<TestPlugin> plugins = pluginManager.list();
     Assertions.assertEquals(2, plugins.size());
@@ -70,19 +77,36 @@ public class TestSpiPluginMananger {
 
   @Test
   public void testGet() {
-    pluginManager.install("plugin1");
-    AmoroPlugin plugin = pluginManager.get("plugin1");
+    pluginManager.install(PLUGIN_NAME_1);
+    AmoroPlugin plugin = pluginManager.get(PLUGIN_NAME_1);
     Assertions.assertNotNull(plugin);
-    Assertions.assertEquals("plugin1", plugin.name());
+    Assertions.assertEquals(PLUGIN_NAME_1, plugin.name());
   }
 
   @Test
   public void testClose() {
-    pluginManager.install("plugin1");
-    pluginManager.install("plugin2");
+    pluginManager.install(PLUGIN_NAME_1);
+    pluginManager.install(PLUGIN_NAME_2);
     pluginManager.close();
     List<TestPlugin> plugins = pluginManager.list();
     Assertions.assertTrue(plugins.isEmpty());
+  }
+
+  @Test
+  public void testDuplcateInstall() {
+    pluginManager.install(PLUGIN_NAME_1);
+    Assertions.assertThrows(AlreadyExistsException.class, () -> {
+      pluginManager.install(PLUGIN_NAME_1);
+    });
+  }
+
+  @Test
+  public void testDuplcateUninstall() {
+    pluginManager.install(PLUGIN_NAME_1);
+    pluginManager.uninstall(PLUGIN_NAME_1);
+    Assertions.assertThrows(ObjectNotExistsException.class, () -> {
+      pluginManager.uninstall(PLUGIN_NAME_1);
+    });
   }
 
   public static class TestPluginImpl1 implements TestPlugin {
@@ -91,7 +115,7 @@ public class TestSpiPluginMananger {
 
     @Override
     public String name() {
-      return pluginName1;
+      return PLUGIN_NAME_1;
     }
   }
 
@@ -102,7 +126,10 @@ public class TestSpiPluginMananger {
 
     @Override
     public String name() {
-      return pluginName2;
+      return PLUGIN_NAME_2;
     }
+  }
+
+  public interface TestPlugin extends AmoroPlugin {
   }
 }

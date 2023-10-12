@@ -25,7 +25,7 @@ Local container is a way to start Optimizer by local process and supports multi-
 ```yaml
 containers:
   - name: localContainer
-    container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer
+    container-impl: com.netease.arctic.server.manager.LocalOptimizerContainer
     properties:
       export.JAVA_HOME: "/opt/java"   # JDK environment
 ```
@@ -33,7 +33,7 @@ containers:
 ### Flink container
 Flink container is a way to start Optimizer through Flink jobs. With Flink, you can easily deploy Optimizer
 on yarn clusters or kubernetes clusters to support large-scale data scenarios. To use flink container, 
-you need to add a new container configuration. with container-impl as `com.netease.arctic.optimizer.FlinkOptimizerContainer`
+you need to add a new container configuration. with container-impl as `com.netease.arctic.server.manager.FlinkOptimizerContainer`
 
 FlinkOptimizerContainer support the following properties:
 
@@ -64,7 +64,7 @@ An example for yarn-per-job mode:
 ```yaml
 containers:
   - name: flinkContainer
-    container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
+    container-impl: com.netease.arctic.server.manager.FlinkOptimizerContainer
     properties:
       flink-home: /opt/flink/                              #flink install home
       export.HADOOP_CONF_DIR: /etc/hadoop/conf/            #hadoop config dir
@@ -78,7 +78,7 @@ An example for kubernetes-application mode:
 ```yaml
 containers:
   - name: flinkContainer
-    container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
+    container-impl: com.netease.arctic.server.manager.FlinkOptimizerContainer
     properties:
       flink-home: /opt/flink/                                                        #flink install home
       target: kubernetes-application                                                 #flink run as native kubernetes
@@ -171,7 +171,7 @@ You can submit optimizer in your own Flink task development platform or local Fl
  -Dtaskmanager.memory.network.max=32mb \
  -Dtaskmanager.memory.network.min=32mb \
  -c com.netease.arctic.optimizer.flink.FlinkOptimizer \
- ${ARCTIC_HOME}/plugin/optimize/OptimizeJob.jar \
+ ${ARCTIC_HOME}/plugin/flink/optimizer-job.jar \
  -a 127.0.0.1:1261 \
  -g flinkGroup \
  -p 1 \

@@ -78,6 +78,7 @@
                                     <include>org.apache.iceberg:iceberg-data</include>
                                     <include>org.apache.iceberg:iceberg-orc</include>
                                     <include>org.apache.iceberg:iceberg-parquet</include>
+                                    <include>org.apache.iceberg:iceberg-aws</include>
                                     <include>org.apache.parquet:parquet-column</include>
                                     <include>org.apache.parquet:parquet-hadoop</include>
                                     <include>org.apache.parquet:parquet-common</include>
