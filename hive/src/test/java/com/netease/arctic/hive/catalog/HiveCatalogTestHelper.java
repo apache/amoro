@@ -20,10 +20,13 @@ package com.netease.arctic.hive.catalog;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.catalog.MixedTables;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -38,11 +41,23 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
   private final TableFormat tableFormat;
   private final Configuration hiveConf;
 
+  public static CatalogTestHelper build(Configuration hiveConf, TableFormat... formats) {
+    Preconditions.checkArgument(formats.length == 1, "Cannot support multiple table formats");
+    return new HiveCatalogTestHelper(formats[0], hiveConf);
+  }
+
   public HiveCatalogTestHelper(TableFormat tableFormat, Configuration hiveConf) {
-    Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG) ||
-        tableFormat.equals(TableFormat.MIXED_HIVE), "Cannot support table format:" + tableFormat);
+    Preconditions.checkArgument(
+        tableFormat.equals(TableFormat.ICEBERG) ||
+            tableFormat.equals(TableFormat.MIXED_HIVE) || tableFormat.equals(TableFormat.MIXED_ICEBERG),
+        "Cannot support table format:" + tableFormat);
     this.tableFormat = tableFormat;
     this.hiveConf = hiveConf;
+  }
+
+  @Override
+  public String metastoreType() {
+    return CatalogMetaProperties.CATALOG_TYPE_HIVE;
   }
 
   @Override
@@ -53,6 +68,9 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
   @Override
   public CatalogMeta buildCatalogMeta(String baseDir) {
     Map<String, String> properties = Maps.newHashMap();
+    if (TableFormat.MIXED_ICEBERG == tableFormat) {
+      properties.put(CatalogProperties.URI, hiveConf.get(HiveConf.ConfVars.METASTOREURIS.varname));
+    }
     return CatalogTestHelpers.buildHiveCatalogMeta(TEST_CATALOG_NAME,
         properties, hiveConf, tableFormat);
   }

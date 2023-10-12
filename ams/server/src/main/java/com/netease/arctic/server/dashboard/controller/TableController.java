@@ -21,7 +21,6 @@ package com.netease.arctic.server.dashboard.controller;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.Constants;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
@@ -34,19 +33,15 @@ import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.ServerTableDescriptor;
 import com.netease.arctic.server.dashboard.ServerTableProperties;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
-import com.netease.arctic.server.dashboard.model.AMSPartitionField;
 import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
-import com.netease.arctic.server.dashboard.model.FilesStatistics;
 import com.netease.arctic.server.dashboard.model.HiveTableInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
-import com.netease.arctic.server.dashboard.model.TableBasicInfo;
 import com.netease.arctic.server.dashboard.model.TableMeta;
 import com.netease.arctic.server.dashboard.model.TableOperation;
-import com.netease.arctic.server.dashboard.model.TableStatistics;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.UpgradeHiveMeta;
 import com.netease.arctic.server.dashboard.model.UpgradeRunningInfo;
@@ -55,25 +50,18 @@ import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.dashboard.response.PageResult;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.CommonUtil;
-import com.netease.arctic.server.dashboard.utils.TableStatCollector;
 import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
 import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
 import io.javalin.http.Context;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,7 +79,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * Table controller.
+ * The controller that handles table requests.
  */
 public class TableController {
   private static final Logger LOG = LoggerFactory.getLogger(TableController.class);
@@ -133,53 +121,9 @@ public class TableController {
         "catalog.database.tableName can not be empty in any element");
     Preconditions.checkState(tableService.catalogExist(catalog), "invalid catalog!");
 
-    ArcticTable table = tableService.loadTable(ServerTableIdentifier.of(catalog, database, tableMame));
-    // set basic info
-    TableBasicInfo tableBasicInfo = getTableBasicInfo(table);
-    ServerTableMeta serverTableMeta = getServerTableMeta(table);
-    long tableSize = 0;
-    long tableFileCnt = 0;
-    Map<String, Object> baseMetrics = Maps.newHashMap();
-    FilesStatistics baseFilesStatistics = tableBasicInfo.getBaseStatistics().getTotalFilesStat();
-    Map<String, String> baseSummary = tableBasicInfo.getBaseStatistics().getSummary();
-    baseMetrics.put("lastCommitTime", AmsUtil.longOrNull(baseSummary.get("visibleTime")));
-    baseMetrics.put("totalSize", AmsUtil.byteToXB(baseFilesStatistics.getTotalSize()));
-    baseMetrics.put("fileCount", baseFilesStatistics.getFileCnt());
-    baseMetrics.put("averageFileSize", AmsUtil.byteToXB(baseFilesStatistics.getAverageSize()));
-    baseMetrics.put("baseWatermark", AmsUtil.longOrNull(serverTableMeta.getBaseWatermark()));
-    tableSize += baseFilesStatistics.getTotalSize();
-    tableFileCnt += baseFilesStatistics.getFileCnt();
-    serverTableMeta.setBaseMetrics(baseMetrics);
+    ServerTableMeta serverTableMeta =
+        tableDescriptor.getTableDetail(ServerTableIdentifier.of(catalog, database, tableMame));
 
-    Map<String, Object> changeMetrics = Maps.newHashMap();
-    if (tableBasicInfo.getChangeStatistics() != null) {
-      FilesStatistics changeFilesStatistics = tableBasicInfo.getChangeStatistics().getTotalFilesStat();
-      Map<String, String> changeSummary = tableBasicInfo.getChangeStatistics().getSummary();
-      changeMetrics.put("lastCommitTime", AmsUtil.longOrNull(changeSummary.get("visibleTime")));
-      changeMetrics.put("totalSize", AmsUtil.byteToXB(changeFilesStatistics.getTotalSize()));
-      changeMetrics.put("fileCount", changeFilesStatistics.getFileCnt());
-      changeMetrics.put("averageFileSize", AmsUtil.byteToXB(changeFilesStatistics.getAverageSize()));
-      changeMetrics.put("tableWatermark", AmsUtil.longOrNull(serverTableMeta.getTableWatermark()));
-      tableSize += changeFilesStatistics.getTotalSize();
-      tableFileCnt += changeFilesStatistics.getFileCnt();
-    } else {
-      changeMetrics.put("lastCommitTime", null);
-      changeMetrics.put("totalSize", null);
-      changeMetrics.put("fileCount", null);
-      changeMetrics.put("averageFileSize", null);
-      changeMetrics.put("tableWatermark", null);
-    }
-    serverTableMeta.setChangeMetrics(changeMetrics);
-    Set<TableFormat> tableFormats =
-        com.netease.arctic.utils.CatalogUtil.tableFormats(tableService.getCatalogMeta(catalog));
-    Preconditions.checkArgument(tableFormats.size() == 1, "Catalog support only one table format now.");
-    TableFormat tableFormat = tableFormats.iterator().next();
-    Map<String, Object> tableSummary = new HashMap<>();
-    tableSummary.put("size", AmsUtil.byteToXB(tableSize));
-    tableSummary.put("file", tableFileCnt);
-    tableSummary.put("averageFile", AmsUtil.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt));
-    tableSummary.put("tableFormat", AmsUtil.formatString(tableFormat.name()));
-    serverTableMeta.setTableSummary(tableSummary);
     ctx.json(OkResponse.of(serverTableMeta));
   }
 
@@ -199,7 +143,7 @@ public class TableController {
         tableService.getServerCatalog(catalog) instanceof MixedHiveCatalogImpl,
         "catalog {} is not a mixed hive catalog, so not support load hive tables", catalog);
 
-    // getRuntime table from catalog
+    // get table from catalog
     MixedHiveCatalogImpl arcticHiveCatalog = (MixedHiveCatalogImpl) tableService.getServerCatalog(catalog);
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
@@ -227,7 +171,8 @@ public class TableController {
     UpgradeHiveMeta upgradeHiveMeta = ctx.bodyAsClass(UpgradeHiveMeta.class);
 
     ArcticHiveCatalog arcticHiveCatalog
-        = (ArcticHiveCatalog) CatalogLoader.load(String.join("/",
+        = (ArcticHiveCatalog) CatalogLoader.load(String.join(
+        "/",
         AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_TABLE_SERVICE_NAME),
         catalog));
 
@@ -383,8 +328,8 @@ public class TableController {
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
-    ArcticTable arcticTable = tableService.loadTable(ServerTableIdentifier.of(catalog, db, table));
-    List<PartitionBaseInfo> partitionBaseInfos = tableDescriptor.getTablePartition(arcticTable);
+    List<PartitionBaseInfo> partitionBaseInfos = tableDescriptor.getTablePartition(
+        ServerTableIdentifier.of(catalog, db, table));
     int offset = (page - 1) * pageSize;
     PageResult<PartitionBaseInfo> amsPageResult = PageResult.of(partitionBaseInfos,
         offset, pageSize);
@@ -404,8 +349,9 @@ public class TableController {
 
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
-    ArcticTable arcticTable = tableService.loadTable(ServerTableIdentifier.of(catalog, db, table));
-    List<PartitionFileBaseInfo> partitionFileBaseInfos = tableDescriptor.getTableFile(arcticTable, partition);
+
+    List<PartitionFileBaseInfo> partitionFileBaseInfos = tableDescriptor.getTableFile(
+        ServerTableIdentifier.of(catalog, db, table), partition);
     int offset = (page - 1) * pageSize;
     PageResult<PartitionFileBaseInfo> amsPageResult = PageResult.of(partitionFileBaseInfos,
         offset, pageSize);
@@ -511,106 +457,6 @@ public class TableController {
 
     String signCal = CommonUtil.generateTablePageToken(catalog, db, table);
     ctx.json(OkResponse.of(signCal));
-  }
-
-  private TableBasicInfo getTableBasicInfo(ArcticTable table) {
-    try {
-      TableBasicInfo tableBasicInfo = new TableBasicInfo();
-      tableBasicInfo.setTableIdentifier(table.id());
-      TableStatistics changeInfo = null;
-      TableStatistics baseInfo;
-
-      if (table.isUnkeyedTable()) {
-        UnkeyedTable unkeyedTable = table.asUnkeyedTable();
-        baseInfo = new TableStatistics();
-        TableStatCollector.fillTableStatistics(baseInfo, unkeyedTable, table);
-      } else if (table.isKeyedTable()) {
-        KeyedTable keyedTable = table.asKeyedTable();
-        if (!PrimaryKeySpec.noPrimaryKey().equals(keyedTable.primaryKeySpec())) {
-          changeInfo = TableStatCollector.collectChangeTableInfo(keyedTable);
-        }
-        baseInfo = TableStatCollector.collectBaseTableInfo(keyedTable);
-      } else {
-        throw new IllegalStateException("unknown type of table");
-      }
-
-      tableBasicInfo.setChangeStatistics(changeInfo);
-      tableBasicInfo.setBaseStatistics(baseInfo);
-      tableBasicInfo.setTableStatistics(TableStatCollector.union(changeInfo, baseInfo));
-
-      long createTime
-          = PropertyUtil.propertyAsLong(table.properties(), TableProperties.TABLE_CREATE_TIME,
-          TableProperties.TABLE_CREATE_TIME_DEFAULT);
-      if (createTime != TableProperties.TABLE_CREATE_TIME_DEFAULT) {
-        if (tableBasicInfo.getTableStatistics() != null) {
-          if (tableBasicInfo.getTableStatistics().getSummary() == null) {
-            tableBasicInfo.getTableStatistics().setSummary(new HashMap<>());
-          } else {
-            LOG.warn("{} summary is null", table.id());
-          }
-          tableBasicInfo.getTableStatistics().getSummary()
-              .put("createTime", String.valueOf(createTime));
-        } else {
-          LOG.warn("{} table statistics is null {}", table.id(), tableBasicInfo);
-        }
-      }
-      return tableBasicInfo;
-    } catch (Throwable t) {
-      LOG.error("{} failed to build table basic info", table.id(), t);
-      throw t;
-    }
-  }
-
-  private ServerTableMeta getServerTableMeta(ArcticTable table) {
-    ServerTableMeta serverTableMeta = new ServerTableMeta();
-    serverTableMeta.setTableType(table.format().toString());
-    serverTableMeta.setTableIdentifier(table.id());
-    serverTableMeta.setBaseLocation(table.location());
-    fillTableProperties(serverTableMeta, table.properties());
-    serverTableMeta.setPartitionColumnList(table
-        .spec()
-        .fields()
-        .stream()
-        .map(item -> AMSPartitionField.buildFromPartitionSpec(table.spec().schema(), item))
-        .collect(Collectors.toList()));
-    serverTableMeta.setSchema(table
-        .schema()
-        .columns()
-        .stream()
-        .map(AMSColumnInfo::buildFromNestedField)
-        .collect(Collectors.toList()));
-
-    serverTableMeta.setFilter(null);
-    LOG.debug("Table {} is keyedTable: {}", table.name(), table instanceof KeyedTable);
-    if (table.isKeyedTable()) {
-      KeyedTable kt = table.asKeyedTable();
-      if (kt.primaryKeySpec() != null) {
-        serverTableMeta.setPkList(kt
-            .primaryKeySpec()
-            .fields()
-            .stream()
-            .map(item -> AMSColumnInfo.buildFromPartitionSpec(table.spec().schema(), item))
-            .collect(Collectors.toList()));
-      }
-    }
-    if (serverTableMeta.getPkList() == null) {
-      serverTableMeta.setPkList(new ArrayList<>());
-    }
-    return serverTableMeta;
-  }
-
-  private void fillTableProperties(
-      ServerTableMeta serverTableMeta,
-      Map<String, String> tableProperties) {
-    Map<String, String> properties = com.google.common.collect.Maps.newHashMap(tableProperties);
-    serverTableMeta.setTableWatermark(properties.remove(TableProperties.WATERMARK_TABLE));
-    serverTableMeta.setBaseWatermark(properties.remove(TableProperties.WATERMARK_BASE_STORE));
-    serverTableMeta.setCreateTime(PropertyUtil.propertyAsLong(properties, TableProperties.TABLE_CREATE_TIME,
-        TableProperties.TABLE_CREATE_TIME_DEFAULT));
-    properties.remove(TableProperties.TABLE_CREATE_TIME);
-
-    TableProperties.READ_PROTECTED_PROPERTIES.forEach(properties::remove);
-    serverTableMeta.setProperties(properties);
   }
 
   private List<AMSColumnInfo> transformHiveSchemaToAMSColumnInfo(List<FieldSchema> fields) {

@@ -23,10 +23,9 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
@@ -41,10 +40,10 @@ import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.StructLikeMap;
@@ -52,6 +51,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.mockito.Mockito;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -160,7 +161,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
-          DataTestHelpers.writeBaseStorePosDelete(getArcticTable(), transactionId, dataFile,
+          MixedDataTestHelpers.writeBaseStorePosDelete(getArcticTable(), transactionId, dataFile,
               Collections.singletonList(0L)));
     }
     List<DeleteFile> deleteFiles = OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
@@ -269,7 +270,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     }
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
-          DataTestHelpers.writeBaseStorePosDelete(getArcticTable(), transactionId, dataFile, pos));
+          MixedDataTestHelpers.writeBaseStorePosDelete(getArcticTable(), transactionId, dataFile, pos));
     }
     return OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
   }
@@ -286,17 +287,14 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   protected AbstractPartitionPlan buildPlanWithCurrentFiles() {
     TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
     AbstractPartitionPlan partitionPlan = getAndCheckPartitionPlan();
-    List<TableFileScanHelper.FileScanResult> scan = tableFileScanHelper.scan();
-    for (TableFileScanHelper.FileScanResult fileScanResult : scan) {
-      partitionPlan.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
-    }
-    PartitionSpec spec = getArcticTable().spec();
-    partitionProperty().forEach((partition, properties) -> {
-      String partitionToPath = spec.partitionToPath(partition);
-      if (partitionToPath.equals(partitionPlan.getPartition())) {
-        partitionPlan.addPartitionProperties(properties);
+    try (CloseableIterable<TableFileScanHelper.FileScanResult> results = tableFileScanHelper.scan()) {
+      for (TableFileScanHelper.FileScanResult fileScanResult : results) {
+        partitionPlan.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
       }
-    });
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+
     return partitionPlan;
   }
 
@@ -379,16 +377,26 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
   protected Map<DataTreeNode, List<TableFileScanHelper.FileScanResult>> scanBaseFilesGroupByNode() {
     TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
-    List<TableFileScanHelper.FileScanResult> scan = tableFileScanHelper.scan();
-    return scan.stream().collect(Collectors.groupingBy(f -> {
-      PrimaryKeyedFile primaryKeyedFile = (PrimaryKeyedFile) f.file().internalFile();
-      return primaryKeyedFile.node();
-    }));
+    Map<DataTreeNode, List<TableFileScanHelper.FileScanResult>> resultMap = Maps.newHashMap();
+    try (CloseableIterable<TableFileScanHelper.FileScanResult> results = tableFileScanHelper.scan()) {
+      for (TableFileScanHelper.FileScanResult result : results) {
+        PrimaryKeyedFile primaryKeyedFile = (PrimaryKeyedFile) result.file();
+        resultMap.putIfAbsent(primaryKeyedFile.node(), Lists.newArrayList());
+        resultMap.get(primaryKeyedFile.node()).add(result);
+      }
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+    return resultMap;
   }
 
   protected List<TableFileScanHelper.FileScanResult> scanFiles() {
     TableFileScanHelper tableFileScanHelper = getTableFileScanHelper();
-    return tableFileScanHelper.scan();
+    try (CloseableIterable<TableFileScanHelper.FileScanResult> results = tableFileScanHelper.scan()) {
+      return Lists.newArrayList(results.iterator());
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   protected void assertTask(TaskDescriptor actual, List<DataFile> rewrittenDataFiles,
@@ -406,7 +414,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     Assert.assertEquals(expect, actual);
   }
 
-  private void assertFiles(List<? extends ContentFile<?>> expect, IcebergContentFile<?>[] actual) {
+  private void assertFiles(List<? extends ContentFile<?>> expect, ContentFile<?>[] actual) {
     if (expect == null) {
       Assert.assertNull(actual);
       return;

@@ -5,10 +5,8 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import org.apache.iceberg.DataFile;
-import org.junit.Assert;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -35,7 +33,7 @@ public class TestIcebergTableFileScanHelper extends TestUnkeyedTableFileScanHelp
   }
 
   @Override
-  protected void assertDataFileClass(IcebergDataFile file) {
-    Assert.assertTrue(file.internalFile() + " is not DataFile", file.internalFile() instanceof DataFile);
+  protected void assertDataFileClass(DataFile file) {
+    //do nothing
   }
 }

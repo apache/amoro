@@ -282,13 +282,14 @@ public interface TableMetaMapper {
   @Delete("DELETE FROM table_runtime WHERE table_id = #{tableId}")
   void deleteOptimizingRuntime(@Param("tableId") long tableId);
 
-  @Insert("INSERT INTO table_runtime (table_id, catalog_name, db_name, table_name, current_snapshot_id," +
+  @Insert("INSERT INTO table_runtime (table_id, catalog_name, db_name, table_name, format, current_snapshot_id," +
       " current_change_snapshotId, last_optimized_snapshotId, last_optimized_change_snapshotId," +
       " last_major_optimizing_time, last_minor_optimizing_time," +
       " last_full_optimizing_time, optimizing_status, optimizing_status_start_time, optimizing_process_id," +
       " optimizer_group, table_config, pending_input) VALUES" +
       " (#{runtime.tableIdentifier.id}, #{runtime.tableIdentifier.catalog}," +
-      " #{runtime.tableIdentifier.database}, #{runtime.tableIdentifier.tableName},#{runtime.currentSnapshotId}," +
+      " #{runtime.tableIdentifier.database}, #{runtime.tableIdentifier.tableName}, #{runtime.format}, #{runtime" +
+      ".currentSnapshotId}," +
       " #{runtime.currentChangeSnapshotId}, #{runtime.lastOptimizedSnapshotId}," +
       " #{runtime.lastOptimizedChangeSnapshotId}, #{runtime.lastMajorOptimizingTime," +
       " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
@@ -306,7 +307,7 @@ public interface TableMetaMapper {
       " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter})")
   void insertTableRuntime(@Param("runtime") TableRuntime runtime);
 
-  @Select("SELECT a.table_id, a.catalog_name, a.db_name, a.table_name, a.current_snapshot_id, a" +
+  @Select("SELECT a.table_id, a.catalog_name, a.db_name, a.table_name, a.format, a.current_snapshot_id, a" +
       ".current_change_snapshotId, a.last_optimized_snapshotId, a.last_optimized_change_snapshotId," +
       " a.last_major_optimizing_time, a.last_minor_optimizing_time, a.last_full_optimizing_time, a.optimizing_status," +
       " a.optimizing_status_start_time, a.optimizing_process_id," +
@@ -318,6 +319,7 @@ public interface TableMetaMapper {
       @Result(property = "catalogName", column = "catalog_name"),
       @Result(property = "dbName", column = "db_name"),
       @Result(property = "tableName", column = "table_name"),
+      @Result(property = "format", column = "format"),
       @Result(property = "currentSnapshotId", column = "current_snapshot_id"),
       @Result(property = "currentChangeSnapshotId", column = "current_change_snapshotId"),
       @Result(property = "lastOptimizedSnapshotId", column = "last_optimized_snapshotId"),

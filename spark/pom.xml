@@ -20,17 +20,18 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.netease.arctic</groupId>
-        <artifactId>arctic-parent</artifactId>
-        <version>0.5.0-SNAPSHOT</version>
+        <groupId>com.netease.amoro</groupId>
+        <artifactId>amoro-parent</artifactId>
+        <version>0.6.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>arctic-spark</artifactId>
+    <artifactId>amoro-spark</artifactId>
     <packaging>pom</packaging>
-    <name>Arctic Project Spark Parent</name>
-    <url>https://arctic.netease.com</url>
+    <name>Amoro Project Spark Parent</name>
+    <url>https://amoro.netease.com</url>
 
     <modules>
+        <module>common</module>
         <module>v3.1/spark</module>
         <module>v3.1/spark-runtime</module>
         <module>v3.2/spark</module>
@@ -38,4 +39,20 @@
         <module>v3.3/spark</module>
         <module>v3.3/spark-runtime</module>
     </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 </project>

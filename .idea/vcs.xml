@@ -4,8 +4,8 @@
     <option name="links">
       <list>
         <IssueNavigationLink>
-          <option name="issueRegexp" value="ARCTIC\-(\d+)" />
-          <option name="linkRegexp" value="https://github.com/NetEase/arctic/issues/$1" />
+          <option name="issueRegexp" value="(ARCTIC|AMORO)\-(\d+)" />
+          <option name="linkRegexp" value="https://github.com/NetEase/arctic/issues/$2" />
         </IssueNavigationLink>
         <IssueNavigationLink>
           <option name="issueRegexp" value="#(\d+)" />

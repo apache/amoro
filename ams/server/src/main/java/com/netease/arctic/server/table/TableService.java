@@ -134,7 +134,7 @@ public interface TableService extends CatalogService, TableManager {
   long renewBlocker(TableIdentifier tableIdentifier, String blockerId);
 
   /**
-   * getRuntime blockers of table
+   * get blockers of table
    *
    * @return block list
    */

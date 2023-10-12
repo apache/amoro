@@ -20,11 +20,11 @@ package com.netease.arctic.spark.test.suites.sql;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.SparkSQLProperties;
-import com.netease.arctic.spark.test.Asserts;
 import com.netease.arctic.spark.test.SparkTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
-import com.netease.arctic.spark.test.helper.TestTable;
-import com.netease.arctic.spark.test.helper.TestTables;
+import com.netease.arctic.spark.test.utils.Asserts;
+import com.netease.arctic.spark.test.utils.TestTable;
+import com.netease.arctic.spark.test.utils.TestTables;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
@@ -40,7 +40,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.List;
 import java.util.stream.Stream;
 
-
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
 public class TestCreateTableLikeSQL extends SparkTableTestBase {
@@ -50,40 +49,36 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
         Arguments.of(TableFormat.MIXED_ICEBERG, false, Types.TimestampType.withZone()),
         Arguments.of(TableFormat.MIXED_ICEBERG, true, Types.TimestampType.withoutZone()),
         Arguments.of(TableFormat.MIXED_HIVE, false, Types.TimestampType.withoutZone()),
-        Arguments.of(TableFormat.MIXED_HIVE, true, Types.TimestampType.withoutZone())
-    );
+        Arguments.of(TableFormat.MIXED_HIVE, true, Types.TimestampType.withoutZone()));
   }
 
   @DisplayName("TestSQL: CREATE TABLE LIKE handle timestamp type in new table.")
   @ParameterizedTest
   @MethodSource
   public void testTimestampZoneHandle(
-      TableFormat format, boolean newTableTimestampWithoutZone, Type expectTimestampType
-  ) {
-    Schema schema = new Schema(
-        Types.NestedField.required(1, "id", Types.IntegerType.get()),
-        Types.NestedField.optional(2, "ts", Types.TimestampType.withZone())
-    );
+      TableFormat format, boolean newTableTimestampWithoutZone, Type expectTimestampType) {
+    Schema schema =
+        new Schema(
+            Types.NestedField.required(1, "id", Types.IntegerType.get()),
+            Types.NestedField.optional(2, "ts", Types.TimestampType.withZone()));
     createArcticSource(schema, x -> {});
 
-    spark().conf().set(
-        SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
-        newTableTimestampWithoutZone);
+    spark()
+        .conf()
+        .set(
+            SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
+            newTableTimestampWithoutZone);
 
-    sql("CREATE TABLE " + target() + " LIKE " +
-        source() + " USING " + provider(format));
+    sql("CREATE TABLE " + target() + " LIKE " + source() + " USING " + provider(format));
 
     ArcticTable table = loadTable();
     Types.NestedField tsField = table.schema().findField("ts");
     Asserts.assertType(expectTimestampType, tsField.type());
   }
 
-
   public static Stream<Arguments> testCreateTableLikeHiveTable() {
     return Stream.of(
-        Arguments.of(TestTables.MixedHive.NoPK_NoPT),
-        Arguments.of(TestTables.MixedHive.NoPK_PT)
-    );
+        Arguments.of(TestTables.MixedHive.NoPK_NoPT), Arguments.of(TestTables.MixedHive.NoPK_PT));
   }
 
   @DisplayName("Test SQL: CREATE TABLE LIKE hive table")
@@ -93,8 +88,7 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
   public void testCreateTableLikeHiveTable(TestTable source) {
     createHiveSource(source.hiveSchema, source.hivePartitions, ImmutableMap.of("k1", "v1"));
 
-    String sqlText = "CREATE TABLE " + target() +
-        " LIKE " + source() + " USING arctic";
+    String sqlText = "CREATE TABLE " + target() + " LIKE " + source() + " USING arctic";
     sql(sqlText);
     ArcticTable table = loadTable();
     Asserts.assertType(source.schema.asStruct(), table.schema().asStruct());
@@ -103,37 +97,37 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
     Assertions.assertFalse(table.properties().containsKey("k1"));
   }
 
-
   public static Stream<Arguments> testCreateTableLikeDataLakeTable() {
-    List<TestTable> tables = Lists.newArrayList(
-        TestTables.MixedHive.NoPK_NoPT,
-        TestTables.MixedHive.NoPK_PT,
-        TestTables.MixedHive.PK_NoPT,
-        TestTables.MixedHive.PK_PT,
-        TestTables.MixedIceberg.NoPK_NoPT,
-        TestTables.MixedIceberg.PK_NoPT,
-        TestTables.MixedIceberg.PK_PT,
-        TestTables.MixedIceberg.NoPK_PT
-    );
+    List<TestTable> tables =
+        Lists.newArrayList(
+            TestTables.MixedHive.NoPK_NoPT,
+            TestTables.MixedHive.NoPK_PT,
+            TestTables.MixedHive.PK_NoPT,
+            TestTables.MixedHive.PK_PT,
+            TestTables.MixedIceberg.NoPK_NoPT,
+            TestTables.MixedIceberg.PK_NoPT,
+            TestTables.MixedIceberg.PK_PT,
+            TestTables.MixedIceberg.NoPK_PT);
     return tables.stream().map(t -> Arguments.of(t.format, t));
   }
 
   @DisplayName("Test SQL: CREATE TABLE LIKE data-lake table")
   @ParameterizedTest
   @MethodSource
-  public void testCreateTableLikeDataLakeTable(
-      TableFormat format, TestTable source
-  ) {
-    ArcticTable expect = createArcticSource(source.schema,
-        builder -> builder.withPartitionSpec(source.ptSpec)
-            .withPrimaryKeySpec(source.keySpec)
-            .withProperty("k1", "v1")
-    );
+  public void testCreateTableLikeDataLakeTable(TableFormat format, TestTable source) {
+    ArcticTable expect =
+        createArcticSource(
+            source.schema,
+            builder ->
+                builder
+                    .withPartitionSpec(source.ptSpec)
+                    .withPrimaryKeySpec(source.keySpec)
+                    .withProperty("k1", "v1"));
 
     spark().conf().set(SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, true);
 
-    String sqlText = "CREATE TABLE " + target() +
-        " LIKE " + source() + " USING " + provider(format);
+    String sqlText =
+        "CREATE TABLE " + target() + " LIKE " + source() + " USING " + provider(format);
     sql(sqlText);
 
     ArcticTable table = loadTable();
@@ -143,19 +137,13 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
     // CREATE TABLE LIKE do not copy properties.
     Assertions.assertFalse(table.properties().containsKey("k1"));
     if (expect.isKeyedTable()) {
-      Asserts.assertPrimaryKey(expect.asKeyedTable().primaryKeySpec(), table.asKeyedTable().primaryKeySpec());
+      Asserts.assertPrimaryKey(
+          expect.asKeyedTable().primaryKeySpec(), table.asKeyedTable().primaryKeySpec());
     }
   }
 
   public static Stream<Arguments> testCreateTableWithoutProviderInSessionCatalog() {
-    return Stream.of(
-        Arguments.of(
-            "", false
-        ),
-        Arguments.of(
-            "USING arctic", true
-        )
-    );
+    return Stream.of(Arguments.of("", false), Arguments.of("USING arctic", true));
   }
 
   @DisplayName("TestSQL: CREATE TABLE LIKE without USING ARCTIC")
@@ -163,13 +151,11 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
   @MethodSource
   @EnableCatalogSelect.SelectCatalog(use = SESSION_CATALOG)
   public void testCreateTableWithoutProviderInSessionCatalog(
-      String provider, boolean expectCreate
-  ) {
+      String provider, boolean expectCreate) {
     TestTable source = TestTables.MixedHive.PK_PT;
     createHiveSource(source.hiveSchema, source.hivePartitions);
 
-    sql("CREATE TABLE " + target() + " LIKE " +
-        source() + " " + provider);
+    sql("CREATE TABLE " + target() + " LIKE " + source() + " " + provider);
     Assertions.assertEquals(expectCreate, tableExists());
     if (!expectCreate) {
       // not an arctic table.

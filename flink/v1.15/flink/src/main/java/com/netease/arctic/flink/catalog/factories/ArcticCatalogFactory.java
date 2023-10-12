@@ -18,6 +18,11 @@
 
 package com.netease.arctic.flink.catalog.factories;
 
+import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.DEFAULT_DATABASE;
+import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.METASTORE_URL;
+import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getKafkaParams;
+import static org.apache.flink.table.factories.FactoryUtil.PROPERTY_VERSION;
+
 import com.netease.arctic.flink.InternalCatalogBuilder;
 import com.netease.arctic.flink.catalog.ArcticCatalog;
 import org.apache.flink.configuration.ConfigOption;
@@ -32,14 +37,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.DEFAULT_DATABASE;
-import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.METASTORE_URL;
-import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getKafkaParams;
-import static org.apache.flink.table.factories.FactoryUtil.PROPERTY_VERSION;
-
-/**
- * Factory for {@link ArcticCatalog}
- */
+/** Factory for {@link ArcticCatalog} */
 public class ArcticCatalogFactory implements CatalogFactory {
 
   private static final Logger LOG = LoggerFactory.getLogger(ArcticCatalogFactory.class);
@@ -60,8 +58,12 @@ public class ArcticCatalogFactory implements CatalogFactory {
     String metastoreUrl = helper.getOptions().get(METASTORE_URL);
     final Map<String, String> arcticCatalogProperties = getKafkaParams(context.getOptions());
 
-    return new ArcticCatalog(context.getName(), defaultDatabase,
-        InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl).properties(arcticCatalogProperties));
+    return new ArcticCatalog(
+        context.getName(),
+        defaultDatabase,
+        InternalCatalogBuilder.builder()
+            .metastoreUrl(metastoreUrl)
+            .properties(arcticCatalogProperties));
   }
 
   @Override

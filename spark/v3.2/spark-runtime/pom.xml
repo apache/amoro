@@ -21,22 +21,22 @@
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>arctic-spark</artifactId>
-        <groupId>com.netease.arctic</groupId>
-        <version>0.5.0-SNAPSHOT</version>
+        <artifactId>amoro-spark</artifactId>
+        <groupId>com.netease.amoro</groupId>
+        <version>0.6.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>arctic-spark-3.2-runtime</artifactId>
+    <artifactId>amoro-spark-3.2-runtime</artifactId>
     <packaging>jar</packaging>
-    <name>Arctic Project Spark 3.2 Runtime</name>
-    <url>https://arctic.netease.com</url>
+    <name>Amoro Project Spark 3.2 Runtime</name>
+    <url>https://amoro.netease.com</url>
 
     <dependencies>
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-spark-3.2</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-spark-3.2</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>
@@ -60,10 +60,11 @@
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <artifactSet>
                                 <includes>
-                                    <include>com.netease.arctic:arctic-spark-3.2</include>
-                                    <include>com.netease.arctic:arctic-core</include>
-                                    <include>com.netease.arctic:arctic-ams-api</include>
-                                    <include>com.netease.arctic:arctic-hive</include>
+                                    <include>com.netease.amoro:amoro-spark-3-common</include>
+                                    <include>com.netease.amoro:amoro-spark-3.2</include>
+                                    <include>com.netease.amoro:amoro-core</include>
+                                    <include>com.netease.amoro:amoro-ams-api</include>
+                                    <include>com.netease.amoro:amoro-hive</include>
                                     <include>com.alibaba:fastjson</include>
                                     <include>org.apache.curator:curator-framework</include>
                                     <include>org.apache.curator:curator-client</include>
@@ -165,6 +166,9 @@
                                 <relocation>
                                     <pattern>org.apache.thrift</pattern>
                                     <shadedPattern>com.netease.arctic.shade.org.apache.thrift</shadedPattern>
+                                    <excludes>
+                                        <exclude>org.apache.thrift.TException</exclude>
+                                    </excludes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.parquet.avro</pattern>
@@ -220,6 +224,9 @@
                                 <relocation>
                                     <pattern>org.apache.iceberg</pattern>
                                     <shadedPattern>com.netease.arctic.shade.org.apache.iceberg</shadedPattern>
+                                    <excludes>
+                                        <exclude>org.apache.iceberg.mr.hive.*</exclude>
+                                    </excludes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.connector.iceberg</pattern>

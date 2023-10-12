@@ -8,31 +8,19 @@ on:
     branches:
       - "master"
       - "0.**"
-    paths:
-      - "ams/**"
-      - "core/**"
-      - "flink/**"
-      - "hive/**"
-      - "optimizer/**"
-      - "spark/**"
-      - "trino/**"
-      - "pom.xml"
 
   pull_request:
     branches:
       - "master"
       - "0.**"
-    paths-ignpore:
-      - ".github/**"
-      - ".idea/**"
-      - "dev/**"
-      - "dist/**"
-      - "docker/**"
-      - "site/**"
-      - "style/**"
-      - ".gitignore"
-      - "LICENSE"
-      - "README.md"
+    paths:
+      - "ams/**"
+      - "core/**"
+      - "flink/**"
+      - "hive/**"
+      - "spark/**"
+      - "trino/**"
+      - "pom.xml"
 
 jobs:
   build:
@@ -45,6 +33,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
+
+      - name: Validate checkstyle first
+        run: mvn validate
 
       - name: Install dependency with Maven
         run: mvn clean install -DskipTests -pl 'ams/api,core,hive' -Dhadoop=v2 -am -B

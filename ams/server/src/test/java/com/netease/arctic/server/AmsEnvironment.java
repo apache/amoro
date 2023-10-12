@@ -10,7 +10,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.hive.HMSMockServer;
-import com.netease.arctic.optimizer.local.LocalOptimizer;
+import com.netease.arctic.optimizer.standalone.StandaloneOptimizer;
 import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.resource.ResourceContainers;
 import com.netease.arctic.server.table.DefaultTableService;
@@ -98,7 +98,7 @@ public class AmsEnvironment {
     LOG.info("ams environment root path: " + rootPath);
     String path = Objects.requireNonNull(this.getClass().getClassLoader().getResource("")).getPath();
     FileUtils.writeStringToFile(new File(rootPath + "/conf/config.yaml"), getAmsConfig());
-    System.setProperty(Environments.SYSTEM_ARCTIC_HOME, rootPath);
+    System.setProperty(Environments.AMORO_HOME, rootPath);
     System.setProperty("derby.init.sql.dir", path + "../classes/sql/derby/");
     amsExit = new AtomicBoolean(false);
     arcticService = new ArcticServiceContainer();
@@ -250,9 +250,9 @@ public class AmsEnvironment {
             .addProperty("memory", "1024")
             .build());
     new Thread(() -> {
-      String[] startArgs = {"-m", "1024", "-a", getOptimizingServiceUrl(), "-p", "1", "-g", "default"};
+      String[] startArgs = {"-a", getOptimizingServiceUrl(), "-p", "1", "-g", "default"};
       try {
-        LocalOptimizer.main(startArgs);
+        StandaloneOptimizer.main(startArgs);
       } catch (CmdLineException e) {
         throw new RuntimeException(e);
       }
@@ -394,7 +394,7 @@ public class AmsEnvironment {
         "\n" +
         "containers:\n" +
         "  - name: localContainer\n" +
-        "    container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer\n" +
+        "    container-impl: com.netease.arctic.server.manager.LocalOptimizerContainer\n" +
         "    properties:\n" +
         "      memory: \"1024\"\n" +
         "      hadoop_home: /opt/hadoop\n" +

@@ -22,8 +22,8 @@ import com.google.common.collect.Maps;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.spark.SparkSQLProperties;
 import com.netease.arctic.spark.test.SparkTableTestBase;
-import com.netease.arctic.spark.test.helper.RecordGenerator;
-import com.netease.arctic.spark.test.helper.TestTableHelper;
+import com.netease.arctic.spark.test.utils.RecordGenerator;
+import com.netease.arctic.spark.test.utils.TestTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -47,7 +47,6 @@ import java.util.stream.Stream;
 
 public class TestArcticSessionCatalog extends SparkTableTestBase {
 
-
   Dataset<Row> rs;
 
   @Override
@@ -61,18 +60,15 @@ public class TestArcticSessionCatalog extends SparkTableTestBase {
         Arguments.arguments("arctic", true, ""),
         Arguments.arguments("arctic", false, "pt"),
         Arguments.arguments("arctic", true, "pt"),
-
         Arguments.arguments("parquet", false, "pt"),
-        Arguments.arguments("parquet", false, "dt string")
-    );
+        Arguments.arguments("parquet", false, "dt string"));
   }
 
   @ParameterizedTest(name = "{index} USING {0} WITH PK {1} PARTITIONED BY ({2})")
   @MethodSource
   public void testCreateTable(String provider, boolean pk, String pt) {
 
-    String sqlText = "CREATE TABLE " + target() + "(" +
-        " id INT, data string, pt string ";
+    String sqlText = "CREATE TABLE " + target() + "(" + " id INT, data string, pt string ";
     if (pk) {
       sqlText += ", PRIMARY KEY(id)";
     }
@@ -92,35 +88,34 @@ public class TestArcticSessionCatalog extends SparkTableTestBase {
     Assertions.assertNotNull(hiveTable);
   }
 
-  static final Schema schema = new Schema(
-      Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "data", Types.StringType.get()),
-      Types.NestedField.required(3, "pt", Types.StringType.get())
-  );
+  static final Schema schema =
+      new Schema(
+          Types.NestedField.required(1, "id", Types.IntegerType.get()),
+          Types.NestedField.required(2, "data", Types.StringType.get()),
+          Types.NestedField.required(3, "pt", Types.StringType.get()));
 
-  List<Record> source = Lists.newArrayList(
-      RecordGenerator.newRecord(schema, 1, "111", "AAA"),
-      RecordGenerator.newRecord(schema, 2, "222", "AAA"),
-      RecordGenerator.newRecord(schema, 3, "333", "DDD"),
-      RecordGenerator.newRecord(schema, 4, "444", "DDD"),
-      RecordGenerator.newRecord(schema, 5, "555", "EEE"),
-      RecordGenerator.newRecord(schema, 6, "666", "EEE")
-  );
+  List<Record> source =
+      Lists.newArrayList(
+          RecordGenerator.newRecord(schema, 1, "111", "AAA"),
+          RecordGenerator.newRecord(schema, 2, "222", "AAA"),
+          RecordGenerator.newRecord(schema, 3, "333", "DDD"),
+          RecordGenerator.newRecord(schema, 4, "444", "DDD"),
+          RecordGenerator.newRecord(schema, 5, "555", "EEE"),
+          RecordGenerator.newRecord(schema, 6, "666", "EEE"));
 
   public static Stream<Arguments> testCreateTableAsSelect() {
     return Stream.of(
         Arguments.arguments("arctic", true, "", true),
         Arguments.arguments("arctic", false, "pt", true),
         Arguments.arguments("arctic", true, "pt", false),
-
         Arguments.arguments("parquet", false, "pt", false),
-        Arguments.arguments("parquet", false, "", false)
-    );
+        Arguments.arguments("parquet", false, "", false));
   }
 
   @ParameterizedTest(name = "{index} USING {0} WITH PK {1} PARTITIONED BY ({2})")
   @MethodSource
-  public void testCreateTableAsSelect(String provider, boolean pk, String pt, boolean duplicateCheck) {
+  public void testCreateTableAsSelect(
+      String provider, boolean pk, String pt, boolean duplicateCheck) {
     spark().conf().set(SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE, duplicateCheck);
     createViewSource(schema, source);
     String sqlText = "CREATE TABLE " + target();
@@ -136,7 +131,6 @@ public class TestArcticSessionCatalog extends SparkTableTestBase {
     sql(sqlText);
     if ("arctic".equalsIgnoreCase(provider)) {
       Assertions.assertTrue(tableExists());
-
     }
 
     Table hiveTable = loadHiveTable();
@@ -145,7 +139,8 @@ public class TestArcticSessionCatalog extends SparkTableTestBase {
 
   @Test
   public void testLoadLegacyTable() {
-    createTarget(schema,
+    createTarget(
+        schema,
         c -> c.withPrimaryKeySpec(PrimaryKeySpec.builderFor(schema).addColumn("id").build()));
     createViewSource(schema, source);
     Table hiveTable = loadHiveTable();
@@ -154,14 +149,16 @@ public class TestArcticSessionCatalog extends SparkTableTestBase {
     properties.put(HiveTableProperties.ARCTIC_TABLE_FLAG_LEGACY, "true");
     hiveTable.setParameters(properties);
     try {
-      context.getHiveClient().alter_table(hiveTable.getDbName(), hiveTable.getTableName(), hiveTable);
+      context
+          .getHiveClient()
+          .alter_table(hiveTable.getDbName(), hiveTable.getTableName(), hiveTable);
     } catch (TException e) {
       throw new RuntimeException(e);
     }
 
     sql("insert into " + target() + " select * from " + source());
     ArcticTable table = loadTable();
-    List<Record> changes = TestTableHelper.changeRecordsWithAction(table.asKeyedTable());
+    List<Record> changes = TestTableUtil.changeRecordsWithAction(table.asKeyedTable());
     Assertions.assertTrue(changes.size() > 0);
   }
 }

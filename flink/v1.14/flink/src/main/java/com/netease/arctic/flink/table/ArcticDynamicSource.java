@@ -29,6 +29,7 @@ import com.netease.arctic.flink.util.FilterUtil;
 import com.netease.arctic.flink.util.IcebergAndFlinkFilters;
 import com.netease.arctic.hive.io.reader.AbstractAdaptHiveArcticDataReader;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.utils.SchemaUtil;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.api.DataTypes;
@@ -61,6 +62,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
@@ -71,11 +73,14 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-/**
- * Flink table api that generates source operators.
- */
-public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushDown,
-    SupportsProjectionPushDown, SupportsLimitPushDown, SupportsWatermarkPushDown, LookupTableSource {
+/** Flink table api that generates source operators. */
+public class ArcticDynamicSource
+    implements ScanTableSource,
+        SupportsFilterPushDown,
+        SupportsProjectionPushDown,
+        SupportsLimitPushDown,
+        SupportsWatermarkPushDown,
+        LookupTableSource {
 
   private static final Logger LOG = LoggerFactory.getLogger(ArcticDynamicSource.class);
 
@@ -90,21 +95,21 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
   protected ResolvedExpression flinkExpression;
   protected final ArcticTableLoader tableLoader;
 
-  @Nullable
-  protected WatermarkStrategy<RowData> watermarkStrategy;
+  @Nullable protected WatermarkStrategy<RowData> watermarkStrategy;
 
   /**
-   * @param tableName           tableName
+   * @param tableName tableName
    * @param arcticDynamicSource underlying source
-   * @param arcticTable         arcticTable
-   * @param properties          With all ArcticTable properties and sql options
+   * @param arcticTable arcticTable
+   * @param properties With all ArcticTable properties and sql options
    * @param tableLoader
    */
-  public ArcticDynamicSource(String tableName,
-                             ScanTableSource arcticDynamicSource,
-                             ArcticTable arcticTable,
-                             Map<String, String> properties,
-                             ArcticTableLoader tableLoader) {
+  public ArcticDynamicSource(
+      String tableName,
+      ScanTableSource arcticDynamicSource,
+      ArcticTable arcticTable,
+      Map<String, String> properties,
+      ArcticTableLoader tableLoader) {
     this.tableName = tableName;
     this.arcticDynamicSource = arcticDynamicSource;
     this.arcticTable = arcticTable;
@@ -112,14 +117,15 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
     this.tableLoader = tableLoader;
   }
 
-  public ArcticDynamicSource(String tableName,
-                             ScanTableSource arcticDynamicSource,
-                             ArcticTable arcticTable,
-                             Map<String, String> properties,
-                             ArcticTableLoader tableLoader,
-                             int[] projectFields,
-                             List<Expression> filters,
-                             ResolvedExpression flinkExpression) {
+  public ArcticDynamicSource(
+      String tableName,
+      ScanTableSource arcticDynamicSource,
+      ArcticTable arcticTable,
+      Map<String, String> properties,
+      ArcticTableLoader tableLoader,
+      int[] projectFields,
+      List<Expression> filters,
+      ResolvedExpression flinkExpression) {
     this.tableName = tableName;
     this.arcticDynamicSource = arcticDynamicSource;
     this.arcticTable = arcticTable;
@@ -138,18 +144,24 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
   @Override
   public ScanRuntimeProvider getScanRuntimeProvider(ScanContext scanContext) {
     ScanRuntimeProvider origin = arcticDynamicSource.getScanRuntimeProvider(scanContext);
-    Preconditions.checkArgument(origin instanceof DataStreamScanProvider,
-        "file or log ScanRuntimeProvider should be DataStreamScanProvider, but provided is " +
-            origin.getClass());
+    Preconditions.checkArgument(
+        origin instanceof DataStreamScanProvider,
+        "file or log ScanRuntimeProvider should be DataStreamScanProvider, but provided is "
+            + origin.getClass());
     return origin;
   }
 
   @Override
   public DynamicTableSource copy() {
-    return
-        new ArcticDynamicSource(
-            tableName, arcticDynamicSource, arcticTable, properties, tableLoader, projectFields, filters,
-            flinkExpression);
+    return new ArcticDynamicSource(
+        tableName,
+        arcticDynamicSource,
+        arcticTable,
+        properties,
+        tableLoader,
+        projectFields,
+        filters,
+        flinkExpression);
   }
 
   @Override
@@ -159,7 +171,8 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
 
   @Override
   public Result applyFilters(List<ResolvedExpression> filters) {
-    IcebergAndFlinkFilters icebergAndFlinkFilters = FilterUtil.convertFlinkExpressToIceberg(filters);
+    IcebergAndFlinkFilters icebergAndFlinkFilters =
+        FilterUtil.convertFlinkExpressToIceberg(filters);
     this.filters = icebergAndFlinkFilters.expressions();
 
     if (filters.size() == 1) {
@@ -192,8 +205,7 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
         FunctionIdentifier.of(BuiltInFunctionDefinitions.AND.getName()),
         BuiltInFunctionDefinitions.AND,
         Arrays.asList(left, right),
-        DataTypes.BOOLEAN()
-    );
+        DataTypes.BOOLEAN());
   }
 
   @Override
@@ -201,8 +213,7 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
     projectFields = new int[projectedFields.length];
     for (int i = 0; i < projectedFields.length; i++) {
       Preconditions.checkArgument(
-          projectedFields[i].length == 1,
-          "Don't support nested projection now.");
+          projectedFields[i].length == 1, "Don't support nested projection now.");
       projectFields[i] = projectedFields[i][0];
     }
 
@@ -246,24 +257,25 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
     Configuration config = new Configuration();
     properties.forEach(config::setString);
 
-    Optional<RowDataPredicate> rowDataPredicate = generatePredicate(projectedSchema, flinkExpression);
+    Optional<RowDataPredicate> rowDataPredicate =
+        generatePredicate(projectedSchema, flinkExpression);
 
     AbstractAdaptHiveArcticDataReader<RowData> flinkArcticMORDataReader =
         generateMORReader(arcticTable, projectedSchema);
-    DataIteratorReaderFunction<RowData> readerFunction = generateReaderFunction(arcticTable, projectedSchema);
+    DataIteratorReaderFunction<RowData> readerFunction =
+        generateReaderFunction(arcticTable, projectedSchema);
 
-    return
-        new ArcticRowDataLookupFunction(
-            KVTableFactory.INSTANCE,
-            arcticTable,
-            joinKeyNames,
-            projectedSchema,
-            filters,
-            tableLoader,
-            config,
-            rowDataPredicate.orElse(null),
-            flinkArcticMORDataReader,
-            readerFunction);
+    return new ArcticRowDataLookupFunction(
+        KVTableFactory.INSTANCE,
+        arcticTable,
+        joinKeyNames,
+        projectedSchema,
+        filters,
+        tableLoader,
+        config,
+        rowDataPredicate.orElse(null),
+        flinkArcticMORDataReader,
+        readerFunction);
   }
 
   protected DataIteratorReaderFunction<RowData> generateReaderFunction(
@@ -276,8 +288,7 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
         null,
         true,
         arcticTable.io(),
-        true
-    );
+        true);
   }
 
   protected AbstractAdaptHiveArcticDataReader<RowData> generateMORReader(
@@ -292,8 +303,7 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
         null,
         true,
         convertConstant,
-        true
-    );
+        true);
   }
 
   static class ConvertTask implements BiFunction<Type, Object, Object>, Serializable {
@@ -305,12 +315,9 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
     }
   }
 
-
   protected List<String> getJoinKeyNames(int[] joinKeys, Schema projectedSchema) {
-    return Arrays
-        .stream(joinKeys)
-        .mapToObj(
-            index -> projectedSchema.columns().get(index).name())
+    return Arrays.stream(joinKeys)
+        .mapToObj(index -> projectedSchema.columns().get(index).name())
         .collect(Collectors.toList());
   }
 
@@ -318,21 +325,32 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
     Schema arcticTableSchema = arcticTable.schema();
     Schema projectedSchema;
     if (projectFields == null) {
-      LOG.info("projectFields is null.");
+      LOG.info("The projected fields is null.");
       projectedSchema = arcticTable.schema();
     } else {
+      if (arcticTable.isUnkeyedTable()) {
+        throw new UnsupportedOperationException("Unkeyed table doesn't support lookup join.");
+      }
+      List<String> primaryKeys = arcticTable.asKeyedTable().primaryKeySpec().fieldNames();
+      List<Integer> projectFieldList =
+          Arrays.stream(projectFields).boxed().collect(Collectors.toList());
+      List<Types.NestedField> columns = arcticTableSchema.columns();
+      for (int i = 0; i < arcticTableSchema.columns().size(); i++) {
+        if (primaryKeys.contains(columns.get(i).name()) && !projectFieldList.contains(i)) {
+          projectFieldList.add(i);
+          LOG.info(
+              "Add identifier field [{}] to projected schema, due to this field is mismatched.",
+              columns.get(i).name());
+        }
+      }
+
       List<String> projectedFieldNames =
-          Arrays
-              .stream(projectFields)
-              .mapToObj(
-                  index ->
-                      arcticTable.schema().columns().get(index).name())
+          projectFieldList.stream()
+              .map(index -> columns.get(index).name())
               .collect(Collectors.toList());
-      projectedSchema = arcticTableSchema.select(projectedFieldNames);
+      projectedSchema = SchemaUtil.selectInOrder(arcticTableSchema, projectedFieldNames);
       LOG.info(
-          "projected schema {}.\n table schema {}.",
-          projectedSchema,
-          arcticTable.schema());
+          "The projected schema {}.\n table schema {}.", projectedSchema, arcticTable.schema());
     }
     return projectedSchema;
   }
@@ -349,17 +367,18 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
     for (int i = 0; i < fields.size(); i++) {
       Types.NestedField field = fields.get(i);
       fieldIndexMap.put(field.name(), i);
-      fieldDataTypeMap.put(field.name(), TypeConversions.fromLogicalToDataType(FlinkSchemaUtil.convert(field.type())));
+      fieldDataTypeMap.put(
+          field.name(),
+          TypeConversions.fromLogicalToDataType(FlinkSchemaUtil.convert(field.type())));
     }
 
-    RowDataPredicateExpressionVisitor visitor = generateExpressionVisitor(fieldIndexMap, fieldDataTypeMap);
+    RowDataPredicateExpressionVisitor visitor =
+        generateExpressionVisitor(fieldIndexMap, fieldDataTypeMap);
     return flinkExpression.accept(visitor);
   }
 
   protected RowDataPredicateExpressionVisitor generateExpressionVisitor(
       Map<String, Integer> fieldIndexMap, Map<String, DataType> fieldDataTypeMap) {
-    return new RowDataPredicateExpressionVisitor(
-        fieldIndexMap,
-        fieldDataTypeMap);
+    return new RowDataPredicateExpressionVisitor(fieldIndexMap, fieldDataTypeMap);
   }
 }

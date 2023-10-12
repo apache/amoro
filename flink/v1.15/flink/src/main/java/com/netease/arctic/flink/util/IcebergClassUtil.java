@@ -50,14 +50,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * An util generates Apache Iceberg writer and committer operator w
- */
+/** An util generates Apache Iceberg writer and committer operator w */
 public class IcebergClassUtil {
-  private static final String ICEBERG_SCAN_CONTEXT_CLASS = "org.apache.iceberg.flink.source.ScanContext";
-  private static final String ICEBERG_PARTITION_SELECTOR_CLASS = "org.apache.iceberg.flink.sink.PartitionKeySelector";
-  private static final String ICEBERG_FILE_COMMITTER_CLASS = "org.apache.iceberg.flink.sink.IcebergFilesCommitter";
-  private static final String ICEBERG_FILE_WRITER_CLASS = "org.apache.iceberg.flink.sink.IcebergStreamWriter";
+  private static final String ICEBERG_SCAN_CONTEXT_CLASS =
+      "org.apache.iceberg.flink.source.ScanContext";
+  private static final String ICEBERG_PARTITION_SELECTOR_CLASS =
+      "org.apache.iceberg.flink.sink.PartitionKeySelector";
+  private static final String ICEBERG_FILE_COMMITTER_CLASS =
+      "org.apache.iceberg.flink.sink.IcebergFilesCommitter";
+  private static final String ICEBERG_FILE_WRITER_CLASS =
+      "org.apache.iceberg.flink.sink.IcebergStreamWriter";
 
   public static KeySelector<RowData, Object> newPartitionKeySelector(
       PartitionSpec spec, Schema schema, RowType flinkSchema) {
@@ -66,51 +68,77 @@ public class IcebergClassUtil {
       Constructor<?> c = clazz.getConstructor(PartitionSpec.class, Schema.class, RowType.class);
       c.setAccessible(true);
       return (KeySelector<RowData, Object>) c.newInstance(spec, schema, flinkSchema);
-    } catch (NoSuchMethodException | IllegalAccessException |
-        InvocationTargetException | InstantiationException e) {
+    } catch (NoSuchMethodException
+        | IllegalAccessException
+        | InvocationTargetException
+        | InstantiationException e) {
       throw new RuntimeException(e);
     }
   }
 
   public static OneInputStreamOperator<WriteResult, Void> newIcebergFilesCommitter(
-      TableLoader tableLoader, boolean replacePartitions) {
+      TableLoader tableLoader, boolean replacePartitions, String branch, PartitionSpec spec) {
     try {
       Class<?> clazz = forName(ICEBERG_FILE_COMMITTER_CLASS);
-      Constructor<?> c = clazz.getDeclaredConstructor(TableLoader.class, boolean.class, Map.class, Integer.class);
+      Constructor<?> c =
+          clazz.getDeclaredConstructor(
+              TableLoader.class,
+              boolean.class,
+              Map.class,
+              Integer.class,
+              String.class,
+              PartitionSpec.class);
       c.setAccessible(true);
-      return (OneInputStreamOperator<WriteResult, Void>) c.newInstance(
-        tableLoader, replacePartitions, new HashMap<>(), ThreadPools.WORKER_THREAD_POOL_SIZE);
-    } catch (NoSuchMethodException | IllegalAccessException |
-        InvocationTargetException | InstantiationException e) {
+      return (OneInputStreamOperator<WriteResult, Void>)
+          c.newInstance(
+              tableLoader,
+              replacePartitions,
+              new HashMap<>(),
+              ThreadPools.WORKER_THREAD_POOL_SIZE,
+              branch,
+              spec);
+    } catch (NoSuchMethodException
+        | IllegalAccessException
+        | InvocationTargetException
+        | InstantiationException e) {
       throw new RuntimeException(e);
     }
   }
 
-  public static OneInputStreamOperator<WriteResult, Void> newIcebergFilesCommitter(TableLoader tableLoader,
-                                                                                   boolean replacePartitions,
-                                                                                   ArcticFileIO arcticFileIO) {
-    OneInputStreamOperator<WriteResult, Void> obj = newIcebergFilesCommitter(tableLoader, replacePartitions);
+  public static OneInputStreamOperator<WriteResult, Void> newIcebergFilesCommitter(
+      TableLoader tableLoader,
+      boolean replacePartitions,
+      String branch,
+      PartitionSpec spec,
+      ArcticFileIO arcticFileIO) {
+    OneInputStreamOperator<WriteResult, Void> obj =
+        newIcebergFilesCommitter(tableLoader, replacePartitions, branch, spec);
     return (OneInputStreamOperator) ProxyUtil.getProxy(obj, arcticFileIO);
   }
 
   public static ProxyFactory<AbstractStreamOperator> getIcebergStreamWriterProxyFactory(
       String fullTableName, TaskWriterFactory taskWriterFactory, ArcticFileIO arcticFileIO) {
     Class<?> clazz = forName(ICEBERG_FILE_WRITER_CLASS);
-    return (ProxyFactory<AbstractStreamOperator>) ProxyUtil.getProxyFactory(clazz, arcticFileIO,
-        new Class[]{String.class, TaskWriterFactory.class},
-        new Object[]{fullTableName, taskWriterFactory});
+    return (ProxyFactory<AbstractStreamOperator>)
+        ProxyUtil.getProxyFactory(
+            clazz,
+            arcticFileIO,
+            new Class[] {String.class, TaskWriterFactory.class},
+            new Object[] {fullTableName, taskWriterFactory});
   }
 
-  public static StreamingReaderOperator newStreamingReaderOperator(FlinkInputFormat format,
-                                                                   ProcessingTimeService timeService,
-                                                                   MailboxExecutor mailboxExecutor) {
+  public static StreamingReaderOperator newStreamingReaderOperator(
+      FlinkInputFormat format, ProcessingTimeService timeService, MailboxExecutor mailboxExecutor) {
     try {
-      Constructor<StreamingReaderOperator> c = StreamingReaderOperator.class.getDeclaredConstructor(
-          FlinkInputFormat.class,
-          ProcessingTimeService.class, MailboxExecutor.class);
+      Constructor<StreamingReaderOperator> c =
+          StreamingReaderOperator.class.getDeclaredConstructor(
+              FlinkInputFormat.class, ProcessingTimeService.class, MailboxExecutor.class);
       c.setAccessible(true);
       return c.newInstance(format, timeService, mailboxExecutor);
-    } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException | InstantiationException e) {
+    } catch (IllegalAccessException
+        | NoSuchMethodException
+        | InvocationTargetException
+        | InstantiationException e) {
       throw new RuntimeException(e);
     }
   }
@@ -133,18 +161,25 @@ public class IcebergClassUtil {
     }
   }
 
-  public static ProxyFactory<FlinkInputFormat> getInputFormatProxyFactory(OneInputStreamOperatorFactory operatorFactory,
-                                                                          ArcticFileIO arcticFileIO,
-                                                                          Schema tableSchema) {
+  public static ProxyFactory<FlinkInputFormat> getInputFormatProxyFactory(
+      OneInputStreamOperatorFactory operatorFactory,
+      ArcticFileIO arcticFileIO,
+      Schema tableSchema) {
     FlinkInputFormat inputFormat = getInputFormat(operatorFactory);
-    TableLoader tableLoader = ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "tableLoader");
+    TableLoader tableLoader =
+        ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "tableLoader");
     FileIO io = ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "io");
-    EncryptionManager encryption = ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "encryption");
+    EncryptionManager encryption =
+        ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "encryption");
     Object context = ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "context");
 
-    return ProxyUtil.getProxyFactory(FlinkInputFormat.class, arcticFileIO,
-        new Class[]{TableLoader.class, Schema.class, FileIO.class, EncryptionManager.class, ScanContext.class},
-        new Object[]{tableLoader, tableSchema, io, encryption, context});
+    return ProxyUtil.getProxyFactory(
+        FlinkInputFormat.class,
+        arcticFileIO,
+        new Class[] {
+          TableLoader.class, Schema.class, FileIO.class, EncryptionManager.class, ScanContext.class
+        },
+        new Object[] {tableLoader, tableSchema, io, encryption, context});
   }
 
   private static Class<?> forName(String className) {

@@ -29,6 +29,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
 import java.io.IOException;
 
 public class TestRecoverableArcticFileIO extends TableTestBase {

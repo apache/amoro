@@ -278,7 +278,9 @@ case class RewriteArcticMergeIntoTable(spark: SparkSession) extends Rule[Logical
     }
   }
 
-  private def rebuildAttribute(sourceOutput: Seq[Attribute], assignments: Seq[Assignment]): Seq[Expression] = {
+  private def rebuildAttribute(
+      sourceOutput: Seq[Attribute],
+      assignments: Seq[Assignment]): Seq[Expression] = {
     val expressions = sourceOutput.map(v => {
       val assignment = assignments.find(f => {
         f.key match {

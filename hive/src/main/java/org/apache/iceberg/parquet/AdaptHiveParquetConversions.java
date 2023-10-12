@@ -19,6 +19,7 @@
 
 package org.apache.iceberg.parquet;
 
+import com.netease.arctic.hive.utils.TimeUtil;
 import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
@@ -33,7 +34,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -58,7 +58,10 @@ class AdaptHiveParquetConversions {
       case LONG:
       case TIME:
       case TIMESTAMP:
-        return (Literal<T>) Literal.of((Long) value);
+        //Change For Arctic: Add metrics for int96 type
+        Function<Object, Object> timeConversion = converterFromParquet(parquetType, type);
+        return (Literal<T>) Literal.of((Long) timeConversion.apply(value));
+        //Change For Arctic
       case FLOAT:
         return (Literal<T>) Literal.of((Float) value);
       case DOUBLE:
@@ -100,7 +103,7 @@ class AdaptHiveParquetConversions {
           instant = instant.atZone(ZoneId.systemDefault()).toLocalDateTime().toInstant(
               ZoneOffset.UTC);
         }
-        return ChronoUnit.MICROS.between(EPOCH, instant);
+        return TimeUtil.microsBetween(EPOCH, instant);
       };
     }
 

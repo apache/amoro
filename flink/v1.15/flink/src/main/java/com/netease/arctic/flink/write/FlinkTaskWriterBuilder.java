@@ -42,6 +42,7 @@ import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.sink.FlinkAppenderFactory;
@@ -93,9 +94,9 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
 
   @Override
   public TaskWriter<RowData> buildWriter(WriteOperationKind writeOperationKind) {
-    LocationKind locationKind = AdaptHiveOperateToTableRelation.INSTANT.getLocationKindsFromOperateKind(
-        table,
-        writeOperationKind);
+    LocationKind locationKind =
+        AdaptHiveOperateToTableRelation.INSTANT.getLocationKindsFromOperateKind(
+            table, writeOperationKind);
     return buildWriter(locationKind);
   }
 
@@ -103,7 +104,8 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
   public TaskWriter<RowData> buildWriter(LocationKind locationKind) {
     if (locationKind == ChangeLocationKind.INSTANT) {
       return buildChangeWriter();
-    } else if (locationKind == BaseLocationKind.INSTANT || locationKind == HiveLocationKind.INSTANT) {
+    } else if (locationKind == BaseLocationKind.INSTANT
+        || locationKind == HiveLocationKind.INSTANT) {
       return buildBaseWriter(locationKind);
     } else {
       throw new IllegalArgumentException("Not support Location Kind:" + locationKind);
@@ -112,15 +114,23 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
 
   private FlinkBaseTaskWriter buildBaseWriter(LocationKind locationKind) {
     Preconditions.checkArgument(transactionId == null);
-    FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
-        TableProperties.BASE_FILE_FORMAT,
-        TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
-    long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
-        TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+    FileFormat fileFormat =
+        FileFormat.valueOf(
+            (table
+                .properties()
+                .getOrDefault(
+                    TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT)
+                .toUpperCase(Locale.ENGLISH)));
+    long fileSizeBytes =
+        PropertyUtil.propertyAsLong(
+            table.properties(),
+            TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
+            TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
 
     String baseLocation;
     EncryptionManager encryptionManager;
     Schema schema;
+    Table icebergTable;
     PrimaryKeySpec primaryKeySpec = null;
     if (table.isKeyedTable()) {
       KeyedTable keyedTable = table.asKeyedTable();
@@ -128,31 +138,63 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
       encryptionManager = keyedTable.baseTable().encryption();
       schema = keyedTable.baseTable().schema();
       primaryKeySpec = keyedTable.primaryKeySpec();
+      icebergTable = keyedTable.baseTable();
     } else {
       UnkeyedTable table = this.table.asUnkeyedTable();
       baseLocation = table.location();
       encryptionManager = table.encryption();
       schema = table.schema();
+      icebergTable = table;
     }
 
-    Schema selectSchema = TypeUtil.reassignIds(
-        FlinkSchemaUtil.convert(FlinkSchemaUtil.toSchema(flinkSchema)), schema);
+    Schema selectSchema =
+        TypeUtil.reassignIds(
+            FlinkSchemaUtil.convert(FlinkSchemaUtil.toSchema(flinkSchema)), schema);
 
-    OutputFileFactory outputFileFactory = locationKind == HiveLocationKind.INSTANT ?
-        new AdaptHiveOutputFileFactory(((SupportHive) table).hiveLocation(), table.spec(), fileFormat, table.io(),
-            encryptionManager, partitionId, taskId, transactionId) :
-        new CommonOutputFileFactory(baseLocation, table.spec(), fileFormat, table.io(),
-            encryptionManager, partitionId, taskId, transactionId);
-    FileAppenderFactory<RowData> appenderFactory = TableTypeUtil.isHive(table) ?
-        new AdaptHiveFlinkAppenderFactory(schema, flinkSchema, table.properties(), table.spec()) :
-        new FlinkAppenderFactory(
-            schema, flinkSchema, table.properties(), table.spec());
+    OutputFileFactory outputFileFactory =
+        locationKind == HiveLocationKind.INSTANT
+            ? new AdaptHiveOutputFileFactory(
+                ((SupportHive) table).hiveLocation(),
+                table.spec(),
+                fileFormat,
+                table.io(),
+                encryptionManager,
+                partitionId,
+                taskId,
+                transactionId)
+            : new CommonOutputFileFactory(
+                baseLocation,
+                table.spec(),
+                fileFormat,
+                table.io(),
+                encryptionManager,
+                partitionId,
+                taskId,
+                transactionId);
+    FileAppenderFactory<RowData> appenderFactory =
+        TableTypeUtil.isHive(table)
+            ? new AdaptHiveFlinkAppenderFactory(
+                schema, flinkSchema, table.properties(), table.spec())
+            : new FlinkAppenderFactory(
+                icebergTable,
+                schema,
+                flinkSchema,
+                table.properties(),
+                table.spec(),
+                null,
+                null,
+                null);
     return new FlinkBaseTaskWriter(
         fileFormat,
         appenderFactory,
         outputFileFactory,
-        table.io(), fileSizeBytes, mask,
-        selectSchema, flinkSchema, table.spec(), primaryKeySpec);
+        table.io(),
+        fileSizeBytes,
+        mask,
+        selectSchema,
+        flinkSchema,
+        table.spec(),
+        primaryKeySpec);
   }
 
   private TaskWriter<RowData> buildChangeWriter() {
@@ -161,34 +203,71 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
     }
     Preconditions.checkArgument(transactionId == null);
 
-    FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
-        TableProperties.BASE_FILE_FORMAT,
-        TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
-    long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
-        TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+    FileFormat fileFormat =
+        FileFormat.valueOf(
+            (table
+                .properties()
+                .getOrDefault(
+                    TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT)
+                .toUpperCase(Locale.ENGLISH)));
+    long fileSizeBytes =
+        PropertyUtil.propertyAsLong(
+            table.properties(),
+            TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
+            TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
 
     KeyedTable keyedTable = table.asKeyedTable();
-    Schema selectSchema = TypeUtil.reassignIds(
-        FlinkSchemaUtil.convert(FlinkSchemaUtil.toSchema(flinkSchema)), keyedTable.baseTable().schema());
+    Schema selectSchema =
+        TypeUtil.reassignIds(
+            FlinkSchemaUtil.convert(FlinkSchemaUtil.toSchema(flinkSchema)),
+            keyedTable.baseTable().schema());
     Schema changeSchemaWithMeta = SchemaUtil.changeWriteSchema(keyedTable.baseTable().schema());
     RowType flinkSchemaWithMeta = FlinkSchemaUtil.convert(changeSchemaWithMeta);
 
-    OutputFileFactory outputFileFactory = new CommonOutputFileFactory(keyedTable.changeLocation(),
-        keyedTable.spec(), fileFormat, keyedTable.io(), keyedTable.baseTable().encryption(), partitionId,
-        taskId, transactionId);
-    FileAppenderFactory<RowData> appenderFactory = TableTypeUtil.isHive(table) ?
-        new AdaptHiveFlinkAppenderFactory(changeSchemaWithMeta, flinkSchemaWithMeta,
-            keyedTable.properties(), keyedTable.spec()) :
-        new FlinkAppenderFactory(
-            changeSchemaWithMeta, flinkSchemaWithMeta, keyedTable.properties(), keyedTable.spec());
-    boolean upsert = table.isKeyedTable() && PropertyUtil.propertyAsBoolean(table.properties(),
-        TableProperties.UPSERT_ENABLED, TableProperties.UPSERT_ENABLED_DEFAULT);
+    OutputFileFactory outputFileFactory =
+        new CommonOutputFileFactory(
+            keyedTable.changeLocation(),
+            keyedTable.spec(),
+            fileFormat,
+            keyedTable.io(),
+            keyedTable.baseTable().encryption(),
+            partitionId,
+            taskId,
+            transactionId);
+    FileAppenderFactory<RowData> appenderFactory =
+        TableTypeUtil.isHive(table)
+            ? new AdaptHiveFlinkAppenderFactory(
+                changeSchemaWithMeta,
+                flinkSchemaWithMeta,
+                keyedTable.properties(),
+                keyedTable.spec())
+            : new FlinkAppenderFactory(
+                keyedTable.changeTable(),
+                changeSchemaWithMeta,
+                flinkSchemaWithMeta,
+                keyedTable.properties(),
+                keyedTable.spec(),
+                null,
+                null,
+                null);
+    boolean upsert =
+        table.isKeyedTable()
+            && PropertyUtil.propertyAsBoolean(
+                table.properties(),
+                TableProperties.UPSERT_ENABLED,
+                TableProperties.UPSERT_ENABLED_DEFAULT);
     return new FlinkChangeTaskWriter(
         fileFormat,
         appenderFactory,
         outputFileFactory,
-        keyedTable.io(), fileSizeBytes, mask,
-        selectSchema, flinkSchema, keyedTable.spec(), keyedTable.primaryKeySpec(), upsert);
+        keyedTable.io(),
+        fileSizeBytes,
+        mask,
+        selectSchema,
+        flinkSchema,
+        keyedTable.spec(),
+        keyedTable.primaryKeySpec(),
+        upsert);
   }
 
   @Override

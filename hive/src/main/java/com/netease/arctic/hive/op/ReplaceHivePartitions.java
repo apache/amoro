@@ -111,6 +111,12 @@ public class ReplaceHivePartitions implements ReplacePartitions {
   }
 
   @Override
+  public ReplacePartitions toBranch(String branch) {
+    this.delegate.toBranch(branch);
+    return this;
+  }
+
+  @Override
   public ReplacePartitions validateAppendOnly() {
     delegate.validateAppendOnly();
     return this;

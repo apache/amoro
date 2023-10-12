@@ -27,7 +27,7 @@ import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.common.DynConstructors;
@@ -54,6 +54,7 @@ public class CatalogLoader {
   public static final String AMS_CATALOG_IMPL = BasicArcticCatalog.class.getName();
   public static final String ICEBERG_CATALOG_IMPL = BasicIcebergCatalog.class.getName();
   public static final String HIVE_CATALOG_IMPL = "com.netease.arctic.hive.catalog.ArcticHiveCatalog";
+  public static final String MIXED_ICEBERG_CATALOG_IMP = BasicMixedIcebergCatalog.class.getName();
 
   public static final String ICEBERG_REST_CATALOG = RESTCatalog.class.getName();
 
@@ -84,17 +85,6 @@ public class CatalogLoader {
   }
 
   /**
-   * Entrypoint for loading catalog.
-   *
-   * @param client      arctic metastore client
-   * @param catalogName arctic catalog name
-   * @return arctic catalog object
-   */
-  public static ArcticCatalog load(AmsClient client, String catalogName) {
-    return load(client, catalogName, Maps.newHashMap());
-  }
-
-  /**
    * Entrypoint for loading catalog
    *
    * @param client      arctic metastore client
@@ -109,33 +99,36 @@ public class CatalogLoader {
       CatalogUtil.mergeCatalogProperties(catalogMeta, props);
       String catalogImpl;
       Set<TableFormat> tableFormats = CatalogUtil.tableFormats(catalogMeta);
-      Preconditions.checkArgument(tableFormats.size() == 1,
+      Preconditions.checkArgument(
+          tableFormats.size() == 1,
           "Catalog support only one table format now.");
       TableFormat tableFormat = tableFormats.iterator().next();
       switch (type) {
         case CATALOG_TYPE_HADOOP:
-          Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG),
-              "Hadoop catalog support iceberg table only.");
-          if (catalogMeta.getCatalogProperties().containsKey(CatalogMetaProperties.TABLE_FORMATS)) {
+          Preconditions.checkArgument(
+              TableFormat.ICEBERG == tableFormat || TableFormat.MIXED_ICEBERG == tableFormat,
+              "Hadoop catalog support iceberg/mixed-iceberg table only.");
+          if (TableFormat.ICEBERG == tableFormat) {
             catalogImpl = ICEBERG_CATALOG_IMPL;
           } else {
-            // Compatibility with older versions
-            catalogImpl = AMS_CATALOG_IMPL;
+            catalogImpl = MIXED_ICEBERG_CATALOG_IMP;
           }
           break;
         case CATALOG_TYPE_HIVE:
-          if (tableFormat.equals(TableFormat.ICEBERG)) {
+          if (TableFormat.ICEBERG == tableFormat) {
             catalogImpl = ICEBERG_CATALOG_IMPL;
-          } else if (tableFormat.equals(TableFormat.MIXED_HIVE)) {
+          } else if (TableFormat.MIXED_HIVE == tableFormat) {
             catalogImpl = HIVE_CATALOG_IMPL;
+          } else if (TableFormat.MIXED_ICEBERG == tableFormat) {
+            catalogImpl = MIXED_ICEBERG_CATALOG_IMP;
           } else {
-            throw new IllegalArgumentException("Hive Catalog support iceberg table and mixed hive table only");
+            throw new IllegalArgumentException("Hive Catalog support iceberg/mixed-iceberg/mixed-hive table only");
           }
           break;
         case CATALOG_TYPE_AMS:
-          if (tableFormat.equals(TableFormat.MIXED_ICEBERG)) {
+          if (TableFormat.MIXED_ICEBERG == tableFormat) {
             catalogImpl = AMS_CATALOG_IMPL;
-          } else if (tableFormat.equals(TableFormat.ICEBERG)) {
+          } else if (TableFormat.ICEBERG == tableFormat) {
             catalogMeta.putToCatalogProperties(CatalogProperties.WAREHOUSE_LOCATION, catalogName);
             catalogMeta.putToCatalogProperties(CatalogProperties.CATALOG_IMPL, ICEBERG_REST_CATALOG);
             catalogImpl = ICEBERG_CATALOG_IMPL;
@@ -145,11 +138,17 @@ public class CatalogLoader {
 
           break;
         case CATALOG_TYPE_CUSTOM:
-          Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG),
-              "Custom catalog support iceberg table only.");
-          Preconditions.checkArgument(catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL),
+          Preconditions.checkArgument(
+              TableFormat.ICEBERG == tableFormat || TableFormat.MIXED_ICEBERG == tableFormat,
+              "Custom catalog support iceberg/mixed-iceberg table only.");
+          Preconditions.checkArgument(
+              catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL),
               "Custom catalog properties must contains " + CatalogProperties.CATALOG_IMPL);
-          catalogImpl = ICEBERG_CATALOG_IMPL;
+          if (TableFormat.ICEBERG == tableFormat) {
+            catalogImpl = ICEBERG_CATALOG_IMPL;
+          } else {
+            catalogImpl = MIXED_ICEBERG_CATALOG_IMP;
+          }
           break;
         default:
           throw new IllegalStateException("unsupported catalog type:" + type);
@@ -161,6 +160,25 @@ public class CatalogLoader {
       throw new IllegalArgumentException("catalog not found, please check catalog name", e1);
     } catch (Exception e) {
       throw new IllegalStateException("failed when load catalog " + catalogName, e);
+    }
+  }
+
+  /**
+   * Load catalog meta from arctic metastore.
+   *
+   * @param catalogUrl - catalog url
+   * @return catalog meta
+   */
+  public static CatalogMeta loadMeta(String catalogUrl) {
+    ArcticThriftUrl url = ArcticThriftUrl.parse(catalogUrl, Constants.THRIFT_TABLE_SERVICE_NAME);
+    if (url.catalogName() == null || url.catalogName().contains("/")) {
+      throw new IllegalArgumentException("invalid catalog name " + url.catalogName());
+    }
+    AmsClient client = new PooledAmsClient(catalogUrl);
+    try {
+      return client.getCatalog(url.catalogName());
+    } catch (TException e) {
+      throw new IllegalStateException("failed when load catalog " + url.catalogName(), e);
     }
   }
 

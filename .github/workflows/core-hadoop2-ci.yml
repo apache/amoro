@@ -8,31 +8,19 @@ on:
     branches:
       - "master"
       - "0.**"
-    paths:
-      - "ams/**"
-      - "core/**"
-      - "flink/**"
-      - "hive/**"
-      - "optimizer/**"
-      - "spark/**"
-      - "trino/**"
-      - "pom.xml"
 
   pull_request:
     branches:
       - "master"
       - "0.**"
-    paths-ignpore:
-      - ".github/**"
-      - ".idea/**"
-      - "dev/**"
-      - "dist/**"
-      - "docker/**"
-      - "site/**"
-      - "style/**"
-      - ".gitignore"
-      - "LICENSE"
-      - "README.md"
+    paths:
+      - "ams/**"
+      - "core/**"
+      - "flink/**"
+      - "hive/**"
+      - "spark/**"
+      - "trino/**"
+      - "pom.xml"
 
 jobs:
   build:
@@ -47,8 +35,8 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Print maven depend tree
-        run: mvn dependency:tree -B -ntp -Dhadoop=v2
+      - name: Validate checkstyle first
+        run: mvn validate
 
       - name: Build all module with Maven
         run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp -Dhadoop=v2

@@ -19,6 +19,7 @@
 package com.netease.arctic.trino.iceberg;
 
 import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.trino.ArcticCatalogFactory;
 import com.netease.arctic.trino.ArcticCatalogSupportTableSuffix;
 import com.netease.arctic.trino.ArcticConfig;
@@ -28,7 +29,7 @@ import javax.inject.Inject;
 
 public class TestArcticCatalogFactory implements ArcticCatalogFactory {
 
-  private ArcticConfig arcticConfig;
+  private final ArcticConfig arcticConfig;
 
   private ArcticCatalog arcticCatalog;
 
@@ -37,7 +38,6 @@ public class TestArcticCatalogFactory implements ArcticCatalogFactory {
     this.arcticConfig = arcticConfig;
   }
 
-  //先默认只刷新一次，以后需要制定配置刷新策略ArcticCatalog
   public ArcticCatalog getArcticCatalog() {
     if (arcticCatalog == null) {
       synchronized (this) {
@@ -51,5 +51,10 @@ public class TestArcticCatalogFactory implements ArcticCatalogFactory {
       }
     }
     return arcticCatalog;
+  }
+
+  @Override
+  public TableMetaStore getTableMetastore() {
+    return  TableMetaStore.EMPTY;
   }
 }

@@ -47,14 +47,8 @@ public class RowDataStateFactory {
       LookupOptions lookupOptions) {
     db = createDB(lookupOptions, columnFamilyName);
 
-    return
-        new RocksDBRecordState(
-            db,
-            columnFamilyName,
-            keySerializer,
-            valueSerializer,
-            metricGroup,
-            lookupOptions);
+    return new RocksDBRecordState(
+        db, columnFamilyName, keySerializer, valueSerializer, metricGroup, lookupOptions);
   }
 
   public RocksDBSetSpilledState createSetState(
@@ -77,7 +71,9 @@ public class RowDataStateFactory {
 
   RocksDBBackend createDB(final LookupOptions lookupOptions, final String columnFamilyName) {
     if (lookupOptions.isTTLAfterWriteValidated()) {
-      db = RocksDBBackend.getOrCreateInstance(dbPath, (int) lookupOptions.ttlAfterWrite().getSeconds());
+      db =
+          RocksDBBackend.getOrCreateInstance(
+              dbPath, (int) lookupOptions.ttlAfterWrite().getSeconds());
     } else {
       db = RocksDBBackend.getOrCreateInstance(dbPath);
     }
@@ -87,11 +83,13 @@ public class RowDataStateFactory {
     return db;
   }
 
-  private void configColumnFamilyOption(ColumnFamilyOptions columnFamilyOptions, LookupOptions lookupOptions) {
+  private void configColumnFamilyOption(
+      ColumnFamilyOptions columnFamilyOptions, LookupOptions lookupOptions) {
     columnFamilyOptions.setDisableAutoCompactions(true);
 
     BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig();
-    blockBasedTableConfig.setBlockCache(new LRUCache(lookupOptions.blockCacheCapacity(), lookupOptions.numShardBits()));
+    blockBasedTableConfig.setBlockCache(
+        new LRUCache(lookupOptions.blockCacheCapacity(), lookupOptions.numShardBits()));
     columnFamilyOptions.setTableFormatConfig(blockBasedTableConfig);
 
     LOG.info("set db options[disable_auto_compactions={}]", true);

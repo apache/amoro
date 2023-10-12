@@ -41,7 +41,7 @@ export default defineComponent ({
     }
 
     const goDocs = () => {
-      window.open('https://arctic.netease.com/')
+      window.open('https://amoro.netease.com/docs/latest/')
     }
     onMounted(() => {
       getVersion()

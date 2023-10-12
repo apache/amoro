@@ -98,7 +98,7 @@ public abstract class TableDataTestBase extends TableTestBase {
     baseAppend.commit();
 
     // write position with transaction id:4, (id=4)
-    DeleteFile posDeleteFiles = DataTestHelpers.writeBaseStorePosDelete(getArcticTable(),
+    DeleteFile posDeleteFiles = MixedDataTestHelpers.writeBaseStorePosDelete(getArcticTable(),
             4L,
             dataFileForPositionDelete,
             Collections.singletonList(0L))

@@ -20,15 +20,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.netease.arctic</groupId>
-        <artifactId>arctic-flink</artifactId>
-        <version>0.5.0-SNAPSHOT</version>
+        <groupId>com.netease.amoro</groupId>
+        <artifactId>amoro-flink</artifactId>
+        <version>0.6.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>arctic-flink-1.14</artifactId>
-    <name>Arctic Project Flink 1.14</name>
-    <url>https://arctic.netease.com</url>
+    <artifactId>amoro-flink-1.14</artifactId>
+    <name>Amoro Project Flink 1.14</name>
+    <url>https://amoro.netease.com</url>
 
     <properties>
         <kafka.version>2.4.1</kafka.version>
@@ -38,10 +38,10 @@
     </properties>
 
     <dependencies>
-        <!--arctic-->
+        <!--amoro-->
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-core</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-core</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.ow2.asm</groupId>
@@ -51,20 +51,20 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-hive</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-hive</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-flink-1.14-iceberg-bridge</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-flink-1.14-iceberg-bridge</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-flink-1.14</artifactId>
+            <artifactId>iceberg-flink-1.15</artifactId>
             <version>${iceberg.version}</version>
             <exclusions>
                 <exclusion>
@@ -83,8 +83,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-flink-format-1.14</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-flink-format-1.14</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
 
@@ -208,7 +208,7 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-flink-1.14</artifactId>
+            <artifactId>iceberg-flink-1.15</artifactId>
             <version>${iceberg.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
@@ -298,16 +298,16 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-core</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-core</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-hive</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-hive</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
@@ -377,8 +377,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-ams-api</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-ams-api</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -393,7 +393,6 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <dependency>

@@ -25,19 +25,19 @@
     </formats>
 
     <includeBaseDirectory>true</includeBaseDirectory>
-    <baseDirectory>arctic-${project.version}</baseDirectory>
+    <baseDirectory>amoro-${project.version}</baseDirectory>
 
     <files>
         <file>
-            <source>../ams/optimizer/target/arctic-ams-optimizer-${project.version}-jar-with-dependencies.jar</source>
-            <outputDirectory>plugin/optimize</outputDirectory>
-            <destName>OptimizeJob.jar</destName>
+            <source>../ams/optimizer/flink-optimizer/target/flink-optimizer-${project.version}-jar-with-dependencies.jar</source>
+            <outputDirectory>plugin/optimizer/flink</outputDirectory>
+            <destName>optimizer-job.jar</destName>
             <fileMode>0644</fileMode>
         </file>
         <file>
-            <source>../ams/server/target/arctic-ams-server-${project.version}.jar</source>
+            <source>../ams/server/target/amoro-ams-server-${project.version}.jar</source>
             <outputDirectory>lib/</outputDirectory>
-            <destName>arctic-ams-server-${project.version}.jar</destName>
+            <destName>amoro-ams-server-${project.version}.jar</destName>
             <fileMode>0644</fileMode>
         </file>
         <file>
@@ -64,12 +64,17 @@
             <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
+            <directory>../ams/server/src/main/resources/postgres</directory>
+            <outputDirectory>conf/postgres</outputDirectory>
+            <fileMode>0644</fileMode>
+        </fileSet>
+        <fileSet>
             <directory>../ams/server/src/main/resources/derby</directory>
             <outputDirectory>conf/derby</outputDirectory>
             <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
-            <directory>../ams/server/target/arctic-ams-server-dependency/lib</directory>
+            <directory>../ams/server/target/amoro-ams-server-dependency/lib</directory>
             <outputDirectory>lib/</outputDirectory>
             <fileMode>0644</fileMode>
         </fileSet>

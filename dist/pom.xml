@@ -20,14 +20,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.netease.arctic</groupId>
-        <artifactId>arctic-parent</artifactId>
-        <version>0.5.0-SNAPSHOT</version>
+        <groupId>com.netease.amoro</groupId>
+        <artifactId>amoro-parent</artifactId>
+        <version>0.6.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>dist</artifactId>
-    <name>Arctic Project Dist</name>
-    <url>https://arctic.netease.com</url>
+    <name>Amoro Project Dist</name>
+    <url>https://amoro.netease.com</url>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -36,9 +36,20 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-ams-server</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-ams-server</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>standalone-optimizer</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>flink-optimizer</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
@@ -59,7 +70,7 @@
                             <descriptors>
                                 <descriptor>src/main/assemblies/bin.xml</descriptor>
                             </descriptors>
-                            <finalName>arctic-${project.version}-bin</finalName>
+                            <finalName>amoro-${project.version}-bin</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
                         </configuration>
                     </execution>

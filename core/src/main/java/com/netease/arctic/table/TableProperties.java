@@ -87,8 +87,8 @@ public class TableProperties {
   public static final String SELF_OPTIMIZING_MAX_FILE_CNT = "self-optimizing.max-file-count";
   public static final int SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT = 10000;
 
-  public static final String SELF_OPTIMIZING_MAX_FILE_SIZE_BYTES = "self-optimizing.max-file-size-bytes";
-  public static final long SELF_OPTIMIZING_MAX_FILE_SIZE_BYTES_DEFAULT = 8589934592L; // 8 GB
+  public static final String SELF_OPTIMIZING_MAX_TASK_SIZE = "self-optimizing.max-task-size-bytes";
+  public static final long SELF_OPTIMIZING_MAX_TASK_SIZE_DEFAULT = 134217728; // 128 MB
 
   public static final String SELF_OPTIMIZING_FRAGMENT_RATIO = "self-optimizing.fragment-ratio";
   public static final int SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT = 8;
@@ -108,7 +108,6 @@ public class TableProperties {
 
   public static final String SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES = "self-optimizing.full.rewrite-all-files";
   public static final boolean SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT = true;
-
 
   /**
    * deprecated table optimize related properties
@@ -151,8 +150,8 @@ public class TableProperties {
   public static final String BASE_SNAPSHOT_KEEP_MINUTES = "snapshot.base.keep.minutes";
   public static final long BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT = 720; // 12 Hours
 
-  public static final String ENABLE_INDEPENDENT_CLEAN = "clean-independent-delete-files.enabled";
-  public static final boolean ENABLE_INDEPENDENT_CLEAN_DEFAULT = true;
+  public static final String ENABLE_DANGLING_DELETE_FILES_CLEAN = "clean-dangling-delete-files.enabled";
+  public static final boolean ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT = true;
 
   public static final String ENABLE_ORPHAN_CLEAN = "clean-orphan-file.enabled";
   public static final boolean ENABLE_ORPHAN_CLEAN_DEFAULT = false;
@@ -258,6 +257,16 @@ public class TableProperties {
   public static final String OWNER = "owner";
 
   /**
+   * table format related properties
+   */
+  public static final String TABLE_FORMAT = "table-format";
+  public static final String MIXED_FORMAT_PRIMARY_KEY_FIELDS = "mixed-format.primary-key-fields";
+  public static final String MIXED_FORMAT_TABLE_STORE = "mixed-format.table-store";
+  public static final String MIXED_FORMAT_TABLE_STORE_BASE = "base";
+  public static final String MIXED_FORMAT_TABLE_STORE_CHANGE = "change";
+  public static final String MIXED_FORMAT_CHANGE_STORE_IDENTIFIER = "mixed-format.change.identifier";
+
+  /**
    * Protected properties which should not be read by user.
    */
   public static final Set<String> READ_PROTECTED_PROPERTIES = new HashSet<>();
@@ -275,7 +284,6 @@ public class TableProperties {
     READ_PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
     READ_PROTECTED_PROPERTIES.add(FORMAT_VERSION);
     READ_PROTECTED_PROPERTIES.add("flink.max-continuous-empty-commits");
-
 
     WRITE_PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
     WRITE_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_OPTIMIZED_SEQUENCE);

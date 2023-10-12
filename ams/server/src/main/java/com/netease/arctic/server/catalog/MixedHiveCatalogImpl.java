@@ -18,16 +18,20 @@
 
 package com.netease.arctic.server.catalog;
 
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.formats.mixed.MixedHiveTable;
 import com.netease.arctic.hive.CachedHiveClientPool;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.catalog.MixedHiveTables;
+import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
+import com.netease.arctic.server.table.TableMetadata;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.thrift.TException;
 
 import java.util.List;
 
-public class MixedHiveCatalogImpl extends MixedCatalogImpl {
+public class MixedHiveCatalogImpl extends InternalMixedCatalogImpl {
 
   private volatile CachedHiveClientPool hiveClientPool;
 
@@ -40,6 +44,16 @@ public class MixedHiveCatalogImpl extends MixedCatalogImpl {
   public void updateMetadata(CatalogMeta metadata) {
     super.updateMetadata(metadata);
     hiveClientPool = ((MixedHiveTables) tables()).getHiveClientPool();
+  }
+
+  @Override
+  public AmoroTable<?> loadTable(String database, String tableName) {
+    TableMetadata tableMetadata = getAs(TableMetaMapper.class, mapper ->
+        mapper.selectTableMetaByName(getMetadata().getCatalogName(), database, tableName));
+    if (tableMetadata == null) {
+      return null;
+    }
+    return new MixedHiveTable(tables.loadTableByMeta(tableMetadata.buildTableMeta()));
   }
 
   @Override

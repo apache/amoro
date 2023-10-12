@@ -34,6 +34,7 @@ import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.utils.SerializationUtil;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -118,6 +119,9 @@ public class TaskRuntime extends StatedPersistentBase {
 
   void reset(boolean incRetryCount) {
     invokeConsisitency(() -> {
+      if (!incRetryCount && status == Status.PLANNED) {
+        return;
+      }
       if (incRetryCount) {
         retry++;
       }
@@ -269,6 +273,24 @@ public class TaskRuntime extends StatedPersistentBase {
     return tableId;
   }
 
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("tableId", tableId)
+        .add("partition", partition)
+        .add("taskId", taskId.getTaskId())
+        .add("status", status)
+        .add("retry", retry)
+        .add("startTime", startTime)
+        .add("endTime", endTime)
+        .add("costTime", costTime)
+        .add("optimizingThread", optimizingThread)
+        .add("failReason", failReason)
+        .add("summary", summary)
+        .add("properties", properties)
+        .toString();
+  }
+
   private void validThread(OptimizingQueue.OptimizingThread thread) {
     if (!thread.equals(this.optimizingThread)) {
       throw new DuplicateRuntimeException("Task already acked by optimizer thread + " + thread);
@@ -331,30 +353,25 @@ public class TaskRuntime extends StatedPersistentBase {
 
   private class TaskStatusMachine {
 
-    private Set<Status> next;
-
-    private TaskStatusMachine() {
-      this.next = nextStatusMap.get(status);
-    }
-
     public void accept(Status targetStatus) {
       if (owner.isClosed()) {
         throw new OptimizingClosedException(taskId.getProcessId());
       }
-      next = nextStatusMap.get(status);
-      if (!next.contains(targetStatus)) {
+      if (!getNext().contains(targetStatus)) {
         throw new IllegalTaskStateException(taskId, status, targetStatus);
       }
       status = targetStatus;
-      next = nextStatusMap.get(status);
+    }
+
+    private Set<Status> getNext() {
+      return nextStatusMap.get(status);
     }
 
     public synchronized boolean tryAccepting(Status targetStatus) {
-      if (owner.isClosed() || !next.contains(targetStatus)) {
+      if (owner.isClosed() || !getNext().contains(targetStatus)) {
         return false;
       }
       status = targetStatus;
-      next = nextStatusMap.get(status);
       return true;
     }
   }

@@ -18,6 +18,9 @@
 
 package com.netease.arctic.flink.lookup;
 
+import static com.netease.arctic.flink.lookup.LookupMetrics.UNIQUE_CACHE_SIZE;
+
+import com.netease.arctic.utils.SchemaUtil;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 import org.apache.iceberg.Schema;
@@ -33,10 +36,9 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.flink.lookup.LookupMetrics.UNIQUE_CACHE_SIZE;
-
 /**
- * Use a unique index to lookup. Working for the situation where the join keys include the arctic table's primary keys.
+ * Use a unique index to lookup. Working for the situation where the join keys include the arctic
+ * table's primary keys.
  */
 public class UniqueIndexTable implements KVTable<RowData> {
   private static final Logger LOG = LoggerFactory.getLogger(UniqueIndexTable.class);
@@ -59,8 +61,10 @@ public class UniqueIndexTable implements KVTable<RowData> {
             createKeySerializer(projectSchema, primaryKeys),
             createValueSerializer(projectSchema),
             lookupOptions);
-    List<String> fields = projectSchema.asStruct().fields()
-        .stream().map(Types.NestedField::name).collect(Collectors.toList());
+    List<String> fields =
+        projectSchema.asStruct().fields().stream()
+            .map(Types.NestedField::name)
+            .collect(Collectors.toList());
     this.uniqueKeyIndexMapping = primaryKeys.stream().mapToInt(fields::indexOf).toArray();
     this.rowDataPredicate = rowDataPredicate;
   }
@@ -114,8 +118,9 @@ public class UniqueIndexTable implements KVTable<RowData> {
   }
 
   protected boolean predicate(RowData value) {
-    return
-        Optional.ofNullable(rowDataPredicate).map(predicate -> !predicate.test(value)).orElse(false);
+    return Optional.ofNullable(rowDataPredicate)
+        .map(predicate -> !predicate.test(value))
+        .orElse(false);
   }
 
   @Override
@@ -133,7 +138,7 @@ public class UniqueIndexTable implements KVTable<RowData> {
 
   protected BinaryRowDataSerializerWrapper createKeySerializer(
       Schema arcticTableSchema, List<String> keys) {
-    Schema keySchema = arcticTableSchema.select(keys);
+    Schema keySchema = SchemaUtil.selectInOrder(arcticTableSchema, keys);
     return new BinaryRowDataSerializerWrapper(keySchema);
   }
 
@@ -145,5 +150,4 @@ public class UniqueIndexTable implements KVTable<RowData> {
   public void close() {
     recordState.close();
   }
-
 }

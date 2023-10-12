@@ -18,7 +18,9 @@
 
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.BlockerConflictException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
@@ -61,6 +63,7 @@ public class TableRuntime extends StatedPersistentBase {
 
   private final TableRuntimeHandler tableHandler;
   private final ServerTableIdentifier tableIdentifier;
+  private final TableFormat format;
   private final List<TaskRuntime.TaskQuota> taskQuotas = Collections.synchronizedList(new ArrayList<>());
 
   // for unKeyedTable or base table
@@ -97,11 +100,12 @@ public class TableRuntime extends StatedPersistentBase {
   private final ReentrantLock blockerLock = new ReentrantLock();
 
   protected TableRuntime(
-      ServerTableIdentifier tableIdentifier, TableRuntimeHandler tableHandler,
+      ServerTableIdentifier tableIdentifier, TableFormat format, TableRuntimeHandler tableHandler,
       Map<String, String> properties) {
     Preconditions.checkNotNull(tableIdentifier, tableHandler);
     this.tableHandler = tableHandler;
     this.tableIdentifier = tableIdentifier;
+    this.format = format;
     this.tableConfiguration = TableConfiguration.parseConfig(properties);
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
     persistTableRuntime();
@@ -125,6 +129,7 @@ public class TableRuntime extends StatedPersistentBase {
     this.processId = tableRuntimeMeta.getOptimizingProcessId();
     this.optimizingStatus = tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
+    this.format = tableRuntimeMeta.getFormat();
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -178,7 +183,7 @@ public class TableRuntime extends StatedPersistentBase {
     });
   }
 
-  public TableRuntime refresh(ArcticTable table) {
+  public TableRuntime refresh(AmoroTable<?> table) {
     return invokeConsisitency(() -> {
       TableConfiguration configuration = tableConfiguration;
       boolean configChanged = updateConfigInternal(table.properties());
@@ -242,7 +247,8 @@ public class TableRuntime extends StatedPersistentBase {
     this.currentStatusStartTime = System.currentTimeMillis();
   }
 
-  private boolean refreshSnapshots(ArcticTable table) {
+  private boolean refreshSnapshots(AmoroTable<?> amoroTable) {
+    ArcticTable table = (ArcticTable) amoroTable.originalTable();
     if (table.isKeyedTable()) {
       long lastSnapshotId = currentSnapshotId;
       long changeSnapshotId = currentChangeSnapshotId;
@@ -315,6 +321,10 @@ public class TableRuntime extends StatedPersistentBase {
     return tableIdentifier;
   }
 
+  public TableFormat getFormat() {
+    return format;
+  }
+
   public OptimizingStatus getOptimizingStatus() {
     return optimizingStatus;
   }
@@ -365,10 +375,6 @@ public class TableRuntime extends StatedPersistentBase {
 
   public String getOptimizerGroup() {
     return optimizerGroup;
-  }
-
-  public long getTargetSize() {
-    return tableConfiguration.getOptimizingConfig().getTargetSize();
   }
 
   public void setCurrentChangeSnapshotId(long currentChangeSnapshotId) {

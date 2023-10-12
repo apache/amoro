@@ -5,7 +5,8 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.IcebergDataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.io.reader.GenericIcebergDataReader;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.table.TableService;
@@ -25,6 +26,7 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Streams;
@@ -40,18 +42,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-
 public class TestIcebergRestCatalogService {
   private static final Logger LOG = LoggerFactory.getLogger(TestIcebergRestCatalogService.class);
 
-
   static AmsEnvironment ams = AmsEnvironment.getIntegrationInstances();
   static String restCatalogUri = IcebergRestCatalogService.ICEBERG_REST_API_PREFIX;
-
 
   private final String database = "test_ns";
   private final String table = "test_iceberg_tbl";
@@ -85,7 +85,6 @@ public class TestIcebergRestCatalogService {
         "/" + database + "/" + table;
   }
 
-
   @Nested
   public class CatalogPropertiesTest {
     @Test
@@ -116,7 +115,6 @@ public class TestIcebergRestCatalogService {
     }
   }
 
-
   @Nested
   public class NamespaceTests {
     RESTCatalog nsCatalog;
@@ -131,19 +129,19 @@ public class TestIcebergRestCatalogService {
       Assertions.assertTrue(nsCatalog.listNamespaces().isEmpty());
       nsCatalog.createNamespace(Namespace.of(database));
       Assertions.assertEquals(1, nsCatalog.listNamespaces().size());
+      Assertions.assertEquals(0, nsCatalog.listNamespaces(Namespace.of(database)).size());
       nsCatalog.dropNamespace(Namespace.of(database));
       Assertions.assertTrue(nsCatalog.listNamespaces().isEmpty());
     }
   }
 
-
   @Nested
   public class TableTests {
     RESTCatalog nsCatalog;
     List<Record> newRecords = Lists.newArrayList(
-        DataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
-        DataTestHelpers.createRecord(8, "888", 0, "2022-01-02T12:00:00"),
-        DataTestHelpers.createRecord(9, "999", 0, "2022-01-03T12:00:00")
+        MixedDataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
+        MixedDataTestHelpers.createRecord(8, "888", 0, "2022-01-02T12:00:00"),
+        MixedDataTestHelpers.createRecord(9, "999", 0, "2022-01-03T12:00:00")
     );
 
     @BeforeEach
@@ -157,7 +155,6 @@ public class TestIcebergRestCatalogService {
       nsCatalog.dropTable(identifier);
       if (serverCatalog.exist(database, table)) {
         serverCatalog.dropTable(database, table);
-
       }
       serverCatalog.dropDatabase(database);
     }
@@ -186,25 +183,26 @@ public class TestIcebergRestCatalogService {
     @Test
     public void testTableWriteAndCommit() throws IOException {
       Table tbl = nsCatalog.createTable(identifier, schema);
-
-      List<DataFile> files = DataTestHelpers.writeIceberg(tbl, newRecords);
+      WriteResult insert = IcebergDataTestHelpers.insert(tbl, newRecords);
+      DataFile[] files = insert.dataFiles();
       AppendFiles appendFiles = tbl.newAppend();
-      files.forEach(appendFiles::appendFile);
+      Arrays.stream(files).forEach(appendFiles::appendFile);
       appendFiles.commit();
 
       tbl = nsCatalog.loadTable(identifier);
       List<FileScanTask> tasks = Streams.stream(tbl.newScan().planFiles()).collect(Collectors.toList());
-      Assertions.assertEquals(files.size(), tasks.size());
+      Assertions.assertEquals(files.length, tasks.size());
     }
 
     @Test
     public void testTableTransaction() throws IOException {
       Table tbl = nsCatalog.createTable(identifier, schema, spec);
-      List<DataFile> files = DataTestHelpers.writeIceberg(tbl, newRecords);
+      WriteResult insert = IcebergDataTestHelpers.insert(tbl, newRecords);
+      DataFile[] files = insert.dataFiles();
 
       Transaction tx = tbl.newTransaction();
       AppendFiles appendFiles = tx.newAppend();
-      files.forEach(appendFiles::appendFile);
+      Arrays.stream(files).forEach(appendFiles::appendFile);
       appendFiles.commit();
 
       UpdateProperties properties = tx.updateProperties();
@@ -222,16 +220,15 @@ public class TestIcebergRestCatalogService {
       Assertions.assertNotNull(loadedTable.currentSnapshot());
       Assertions.assertEquals("v1", loadedTable.properties().get("k1"));
       tasks = Streams.stream(tbl.newScan().planFiles()).collect(Collectors.toList());
-      Assertions.assertEquals(files.size(), tasks.size());
+      Assertions.assertEquals(files.length, tasks.size());
     }
 
-
     @Test
-    public void testArcticCatalogLoader() {
+    public void testArcticCatalogLoader() throws IOException {
       Table tbl = nsCatalog.createTable(identifier, schema, spec);
-      List<DataFile> files = DataTestHelpers.writeIceberg(tbl, newRecords);
+      DataFile[] files = IcebergDataTestHelpers.insert(tbl, newRecords).dataFiles();
       AppendFiles appendFiles = tbl.newAppend();
-      files.forEach(appendFiles::appendFile);
+      Arrays.stream(files).forEach(appendFiles::appendFile);
       appendFiles.commit();
 
       ArcticCatalog catalog = ams.catalog(AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
@@ -248,13 +245,11 @@ public class TestIcebergRestCatalogService {
           IdentityPartitionConverters::convertConstant,
           false
       );
-      List<Record> records = DataTestHelpers.readBaseStore(
+      List<Record> records = MixedDataTestHelpers.readBaseStore(
           arcticTable, reader, Expressions.alwaysTrue());
       Assertions.assertEquals(newRecords.size(), records.size());
     }
-
   }
-
 
   private RESTCatalog loadCatalog(Map<String, String> clientProperties) {
     clientProperties.put("uri", ams.getHttpUrl() + restCatalogUri);
@@ -268,5 +263,4 @@ public class TestIcebergRestCatalogService {
         clientProperties, store.getConfiguration()
     );
   }
-
 }
