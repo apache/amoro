@@ -26,6 +26,8 @@ import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.file.FileNameGenerator;
+import com.netease.arctic.hive.op.UpdateHiveFiles;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.table.ArcticTable;
@@ -357,6 +359,9 @@ public class BasicOptimizeCommit {
         dataFilesRewrite.rewriteFiles(deleteDataFiles, deleteDeleteFiles, addDataFiles, Collections.emptySet());
       } else {
         dataFilesRewrite.rewriteFiles(deleteDataFiles, Collections.emptySet(), addDataFiles, Collections.emptySet());
+      }
+      if (TableTypeUtil.isHive(arcticTable)) {
+        dataFilesRewrite.set(UpdateHiveFiles.SYNC_DATA_TO_HIVE, "true");
       }
       dataFilesRewrite.commit();
 
