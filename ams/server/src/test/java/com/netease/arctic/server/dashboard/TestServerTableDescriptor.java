@@ -54,7 +54,7 @@ public class TestServerTableDescriptor extends AMSTableTestBase {
   @Test
   public void getTableOperations() {
     ServerTableDescriptor serverTableDescriptor = new ServerTableDescriptor(tableService());
-    ArcticTable arcticTable = tableService().loadTable(serverTableIdentifier());
+    ArcticTable arcticTable = (ArcticTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     arcticTable.updateProperties().set("key", "value1").commit();
     List<DDLInfo> tableOperations = serverTableDescriptor.getTableOperations(serverTableIdentifier());
     Assert.assertEquals(1, tableOperations.size());

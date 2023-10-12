@@ -40,6 +40,17 @@
             <artifactId>amoro-ams-server</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>standalone-optimizer</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>flink-optimizer</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>

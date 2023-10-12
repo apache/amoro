@@ -51,6 +51,7 @@ import org.apache.flink.util.UserCodeClassLoader;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Properties;
@@ -78,8 +79,7 @@ import java.util.function.Supplier;
  * @param <OUT> the output type of the source.
  */
 public class KafkaSource<OUT>
-    implements Source<OUT, KafkaPartitionSplit, KafkaSourceEnumState>,
-    ResultTypeQueryable<OUT> {
+    implements Source<OUT, KafkaPartitionSplit, KafkaSourceEnumState>, ResultTypeQueryable<OUT> {
   private static final long serialVersionUID = -8755372893283732098L;
   // Users can choose only one of the following ways to specify the topics to consume from.
   private final KafkaSubscriber subscriber;
@@ -115,8 +115,7 @@ public class KafkaSource<OUT>
   @Override
   public SourceReader<OUT, KafkaPartitionSplit> createReader(SourceReaderContext readerContext)
       throws Exception {
-    return createReader(readerContext, (ignore) -> {
-    });
+    return createReader(readerContext, (ignore) -> {});
   }
 
   @VisibleForTesting
@@ -146,8 +145,7 @@ public class KafkaSource<OUT>
 
     return new KafkaSourceReader<>(
         elementsQueue,
-        new KafkaSourceFetcherManager(
-            elementsQueue, splitReaderSupplier::get, splitFinishedHook),
+        new KafkaSourceFetcherManager(elementsQueue, splitReaderSupplier::get, splitFinishedHook),
         recordEmitter,
         toConfiguration(props),
         readerContext,
@@ -168,8 +166,7 @@ public class KafkaSource<OUT>
 
   @Override
   public SplitEnumerator<KafkaPartitionSplit, KafkaSourceEnumState> restoreEnumerator(
-      SplitEnumeratorContext<KafkaPartitionSplit> enumContext,
-      KafkaSourceEnumState checkpoint)
+      SplitEnumeratorContext<KafkaPartitionSplit> enumContext, KafkaSourceEnumState checkpoint)
       throws IOException {
     return new KafkaSourceEnumerator(
         subscriber,

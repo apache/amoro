@@ -18,6 +18,12 @@
 
 package com.netease.arctic.flink.lookup;
 
+import static com.netease.arctic.flink.lookup.LookupMetrics.GROUP_NAME_LOOKUP;
+import static com.netease.arctic.flink.lookup.LookupMetrics.LOADING_TIME_MS;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOOKUP_RELOADING_INTERVAL;
+import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
+import static org.apache.flink.util.Preconditions.checkArgument;
+
 import com.netease.arctic.flink.read.MixedIncrementalLoader;
 import com.netease.arctic.flink.read.hybrid.enumerator.MergeOnReadIncrementalPlanner;
 import com.netease.arctic.flink.read.hybrid.reader.DataIteratorReaderFunction;
@@ -53,15 +59,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
-import static com.netease.arctic.flink.lookup.LookupMetrics.GROUP_NAME_LOOKUP;
-import static com.netease.arctic.flink.lookup.LookupMetrics.LOADING_TIME_MS;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOOKUP_RELOADING_INTERVAL;
-import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
-import static org.apache.flink.util.Preconditions.checkArgument;
-
-/**
- * This is a basic lookup function for an arctic table.
- */
+/** This is a basic lookup function for an arctic table. */
 public class BasicLookupFunction<T> implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(BasicLookupFunction.class);
   private static final long serialVersionUID = 1671720424494168710L;
@@ -98,7 +96,8 @@ public class BasicLookupFunction<T> implements Serializable {
     checkArgument(
         arcticTable.isKeyedTable(),
         String.format(
-            "Only keyed arctic table support lookup join, this table [%s] is an unkeyed table.", arcticTable.name()));
+            "Only keyed arctic table support lookup join, this table [%s] is an unkeyed table.",
+            arcticTable.name()));
     Preconditions.checkNotNull(tableFactory, "kvTableFactory cannot be null");
     this.kvTableFactory = tableFactory;
     this.joinKeys = joinKeys;
@@ -138,17 +137,15 @@ public class BasicLookupFunction<T> implements Serializable {
     lookupLoadingTimeMs = new AtomicLong();
     metricGroup.gauge(LOADING_TIME_MS, () -> lookupLoadingTimeMs.get());
 
-    LOG.info(
-        "projected schema {}.\n table schema {}.",
-        projectSchema,
-        arcticTable.schema());
-    kvTable = kvTableFactory.create(
-        new RowDataStateFactory(generateRocksDBPath(context, arcticTable.name()), metricGroup),
-        arcticTable.asKeyedTable().primaryKeySpec().fieldNames(),
-        joinKeys,
-        projectSchema,
-        config,
-        predicate);
+    LOG.info("projected schema {}.\n table schema {}.", projectSchema, arcticTable.schema());
+    kvTable =
+        kvTableFactory.create(
+            new RowDataStateFactory(generateRocksDBPath(context, arcticTable.name()), metricGroup),
+            arcticTable.asKeyedTable().primaryKeySpec().fieldNames(),
+            joinKeys,
+            projectSchema,
+            config,
+            predicate);
     kvTable.open();
 
     this.incrementalLoader =
@@ -156,12 +153,12 @@ public class BasicLookupFunction<T> implements Serializable {
             new MergeOnReadIncrementalPlanner(loader),
             flinkArcticMORDataReader,
             readerFunction,
-            filters
-        );
+            filters);
   }
 
   public void start() {
-    // Keep the first-time synchronized loading to avoid a mass of null-match records during initialization
+    // Keep the first-time synchronized loading to avoid a mass of null-match records during
+    // initialization
     checkAndLoad();
 
     this.executor =
@@ -193,8 +190,8 @@ public class BasicLookupFunction<T> implements Serializable {
   }
 
   /**
-   * Check whether it is time to periodically load data to kvTable.
-   * Support to use {@link Expression} filters to filter the data.
+   * Check whether it is time to periodically load data to kvTable. Support to use {@link
+   * Expression} filters to filter the data.
    */
   private synchronized void checkAndLoad() {
     if (nextLoadTime > System.currentTimeMillis()) {
@@ -205,17 +202,22 @@ public class BasicLookupFunction<T> implements Serializable {
     long batchStart = System.currentTimeMillis();
     while (incrementalLoader.hasNext()) {
       long start = System.currentTimeMillis();
-      arcticTable.io().doAs(() -> {
-        try (CloseableIterator<T> iterator = incrementalLoader.next()) {
-          if (kvTable.initialized()) {
-            kvTable.upsert(iterator);
-          } else {
-            LOG.info("This table {} is still under initialization progress.", arcticTable.name());
-            kvTable.initialize(iterator);
-          }
-        }
-        return null;
-      });
+      arcticTable
+          .io()
+          .doAs(
+              () -> {
+                try (CloseableIterator<T> iterator = incrementalLoader.next()) {
+                  if (kvTable.initialized()) {
+                    kvTable.upsert(iterator);
+                  } else {
+                    LOG.info(
+                        "This table {} is still under initialization progress.",
+                        arcticTable.name());
+                    kvTable.initialize(iterator);
+                  }
+                }
+                return null;
+              });
       LOG.info("Split task fetched, cost {}ms.", System.currentTimeMillis() - start);
     }
     if (!kvTable.initialized()) {
@@ -223,8 +225,10 @@ public class BasicLookupFunction<T> implements Serializable {
     }
     lookupLoadingTimeMs.set(System.currentTimeMillis() - batchStart);
 
-    LOG.info("{} table lookup loading, these batch tasks completed, cost {}ms.",
-        arcticTable.name(), lookupLoadingTimeMs.get());
+    LOG.info(
+        "{} table lookup loading, these batch tasks completed, cost {}ms.",
+        arcticTable.name(),
+        lookupLoadingTimeMs.get());
   }
 
   public KVTable<T> getKVTable() {
@@ -258,8 +262,7 @@ public class BasicLookupFunction<T> implements Serializable {
       Field field = context.getClass().getDeclaredField("context");
       field.setAccessible(true);
       StreamingRuntimeContext runtimeContext = (StreamingRuntimeContext) field.get(context);
-      String[] tmpDirectories =
-          runtimeContext.getTaskManagerRuntimeInfo().getTmpDirectories();
+      String[] tmpDirectories = runtimeContext.getTaskManagerRuntimeInfo().getTmpDirectories();
       return tmpDirectories[ThreadLocalRandom.current().nextInt(tmpDirectories.length)];
     } catch (NoSuchFieldException | IllegalAccessException e) {
       throw new RuntimeException(e);

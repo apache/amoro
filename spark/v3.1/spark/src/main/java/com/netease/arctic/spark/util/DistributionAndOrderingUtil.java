@@ -18,6 +18,8 @@
 
 package com.netease.arctic.spark.util;
 
+import static org.apache.iceberg.spark.Spark3Util.toTransforms;
+
 import com.netease.arctic.spark.SparkAdapterLoader;
 import com.netease.arctic.spark.sql.connector.expressions.FileIndexBucket;
 import com.netease.arctic.table.ArcticTable;
@@ -42,38 +44,39 @@ import org.apache.spark.sql.connector.expressions.Transform;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.apache.iceberg.spark.Spark3Util.toTransforms;
-
 public class DistributionAndOrderingUtil {
 
-  private static final ExpressionHelper expressionHelper = SparkAdapterLoader.getOrLoad().expressions();
+  private static final ExpressionHelper expressionHelper =
+      SparkAdapterLoader.getOrLoad().expressions();
 
   private static final NamedReference SPEC_ID = Expressions.column(MetadataColumns.SPEC_ID.name());
-  private static final NamedReference PARTITION = Expressions.column(MetadataColumns.PARTITION_COLUMN_NAME);
-  private static final NamedReference FILE_PATH = Expressions.column(MetadataColumns.FILE_PATH.name());
-  private static final NamedReference ROW_POSITION = Expressions.column(MetadataColumns.ROW_POSITION.name());
+  private static final NamedReference PARTITION =
+      Expressions.column(MetadataColumns.PARTITION_COLUMN_NAME);
+  private static final NamedReference FILE_PATH =
+      Expressions.column(MetadataColumns.FILE_PATH.name());
+  private static final NamedReference ROW_POSITION =
+      Expressions.column(MetadataColumns.ROW_POSITION.name());
 
   private static final Expression SPEC_ID_ORDER = expressionHelper.sort(SPEC_ID, true);
   private static final Expression PARTITION_ORDER = expressionHelper.sort(PARTITION, true);
   private static final Expression FILE_PATH_ORDER = expressionHelper.sort(FILE_PATH, true);
   private static final Expression ROW_POSITION_ORDER = expressionHelper.sort(ROW_POSITION, true);
-  private static final Expression[] METADATA_ORDERS = new Expression[] {
-      PARTITION_ORDER, FILE_PATH_ORDER, ROW_POSITION_ORDER
-  };
+  private static final Expression[] METADATA_ORDERS =
+      new Expression[] {PARTITION_ORDER, FILE_PATH_ORDER, ROW_POSITION_ORDER};
 
   /**
-   * Build a list of {@link Expression} indicate how to shuffle incoming data before writing.
-   * The result of this method will convert to a list of {@link org.apache.spark.sql.catalyst.expressions.Expression}
-   * which will be used by a {@link RepartitionByExpression} operator.
+   * Build a list of {@link Expression} indicate how to shuffle incoming data before writing. The
+   * result of this method will convert to a list of {@link
+   * org.apache.spark.sql.catalyst.expressions.Expression} which will be used by a {@link
+   * RepartitionByExpression} operator.
    *
    * @param table the arctic table to write
    * @param writeBase write to base store
    * @return array of expressions indicate how to shuffle incoming data.
    */
   public static Expression[] buildTableRequiredDistribution(ArcticTable table, boolean writeBase) {
-    DistributionHashMode distributionHashMode = DistributionHashMode.autoSelect(
-        table.isKeyedTable(),
-        !table.spec().isUnpartitioned());
+    DistributionHashMode distributionHashMode =
+        DistributionHashMode.autoSelect(table.isKeyedTable(), !table.spec().isUnpartitioned());
 
     List<Expression> distributionExpressions = Lists.newArrayList();
 
@@ -82,7 +85,8 @@ public class DistributionAndOrderingUtil {
     }
 
     if (distributionHashMode.isSupportPrimaryKey()) {
-      Transform transform = toTransformsFromPrimary(table, table.asKeyedTable().primaryKeySpec(), writeBase);
+      Transform transform =
+          toTransformsFromPrimary(table, table.asKeyedTable().primaryKeySpec(), writeBase);
       distributionExpressions.add(transform);
     }
 
@@ -90,26 +94,28 @@ public class DistributionAndOrderingUtil {
   }
 
   private static Transform toTransformsFromPrimary(
-      ArcticTable table,
-      PrimaryKeySpec primaryKeySpec,
-      boolean writeBase) {
-    int numBucket = PropertyUtil.propertyAsInt(table.properties(),
-        TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
-        TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
+      ArcticTable table, PrimaryKeySpec primaryKeySpec, boolean writeBase) {
+    int numBucket =
+        PropertyUtil.propertyAsInt(
+            table.properties(),
+            TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
+            TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
 
     if (!writeBase) {
-      numBucket = PropertyUtil.propertyAsInt(table.properties(),
-          TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
-          TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT);
+      numBucket =
+          PropertyUtil.propertyAsInt(
+              table.properties(),
+              TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
+              TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT);
     }
     return new FileIndexBucket(table.schema(), primaryKeySpec, numBucket - 1);
   }
 
   /**
-   * Build a list of {@link Expression} to indicate how the incoming data will be sorted before write.
-   * The result of this method will covert to {@link org.apache.spark.sql.catalyst.expressions.Expression} list and
-   * be used for a local sort by add an {@link org.apache.spark.sql.catalyst.plans.logical.Sort} operator for
-   * in-coming data.
+   * Build a list of {@link Expression} to indicate how the incoming data will be sorted before
+   * write. The result of this method will covert to {@link
+   * org.apache.spark.sql.catalyst.expressions.Expression} list and be used for a local sort by add
+   * an {@link org.apache.spark.sql.catalyst.plans.logical.Sort} operator for in-coming data.
    *
    * @param table the arctic table to write to
    * @param rowLevelOperation is this writing is an row-level-operation or a batch overwrite.
@@ -117,9 +123,7 @@ public class DistributionAndOrderingUtil {
    * @return array of expression to indicate how incoming data will be sorted.
    */
   public static Expression[] buildTableRequiredSortOrder(
-      ArcticTable table,
-      boolean rowLevelOperation,
-      boolean writeBase) {
+      ArcticTable table, boolean rowLevelOperation, boolean writeBase) {
     Schema schema = table.schema();
     PartitionSpec partitionSpec = table.spec();
     PrimaryKeySpec keySpec = PrimaryKeySpec.noPrimaryKey();
@@ -134,13 +138,15 @@ public class DistributionAndOrderingUtil {
 
     SortOrder.Builder builder = SortOrder.builderFor(schema);
     if (partitionSpec.isPartitioned()) {
-      for (PartitionField field: partitionSpec.fields()) {
+      for (PartitionField field : partitionSpec.fields()) {
         String sourceName = schema.findColumnName(field.sourceId());
-        builder.asc(org.apache.iceberg.expressions.Expressions.transform(sourceName, field.transform()));
+        builder.asc(
+            org.apache.iceberg.expressions.Expressions.transform(sourceName, field.transform()));
       }
     }
     SortOrder sortOrder = builder.build();
-    List<Expression> converted = SortOrderVisitor.visit(sortOrder, new SortOrderToSpark(expressionHelper));
+    List<Expression> converted =
+        SortOrderVisitor.visit(sortOrder, new SortOrderToSpark(expressionHelper));
 
     if (keySpec.primaryKeyExisted()) {
       Transform fileIndexBucket = toTransformsFromPrimary(table, keySpec, writeBase);
@@ -154,5 +160,4 @@ public class DistributionAndOrderingUtil {
     }
     return orders;
   }
-
 }

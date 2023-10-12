@@ -43,14 +43,20 @@ public class ArcticSparkKeyedDataReader extends AbstractAdaptHiveArcticDataReade
       PrimaryKeySpec primaryKeySpec,
       String nameMapping,
       boolean caseSensitive) {
-    super(fileIO, tableSchema, projectedSchema, primaryKeySpec, nameMapping, caseSensitive,
-        ArcticSparkUtils::convertConstant, true);
+    super(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        primaryKeySpec,
+        nameMapping,
+        caseSensitive,
+        ArcticSparkUtils::convertConstant,
+        true);
   }
 
   @Override
   protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
-      Schema projectSchema,
-      Map<Integer, ?> idToConstant) {
+      Schema projectSchema, Map<Integer, ?> idToConstant) {
     return fileSchema -> SparkParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
   }
 

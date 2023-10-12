@@ -18,6 +18,13 @@
 
 package com.netease.arctic.flink.write.hidden.kafka;
 
+import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
+import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.getPropertiesByTopic;
+import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
+import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.createLogDataDeserialization;
+import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.userSchema;
+
 import com.netease.arctic.flink.read.source.log.kafka.LogKafkaSource;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
@@ -62,20 +69,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
-import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.getPropertiesByTopic;
-import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
-import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.createLogDataDeserialization;
-import static com.netease.arctic.flink.write.hidden.kafka.TestBaseLog.userSchema;
-
-/**
- * Hidden log operator tests.
- */
+/** Hidden log operator tests. */
 public class TestHiddenLogOperators {
   private static final Logger LOG = LoggerFactory.getLogger(TestHiddenLogOperators.class);
   public static final String topic = "produce-consume-topic";
-  public static final TestGlobalAggregateManager globalAggregateManger = new TestGlobalAggregateManager();
+  public static final TestGlobalAggregateManager globalAggregateManger =
+      new TestGlobalAggregateManager();
 
   @BeforeClass
   public static void prepare() throws Exception {
@@ -93,7 +92,8 @@ public class TestHiddenLogOperators {
     final int count = 20;
 
     String[] expect = new String[count];
-    try (OneInputStreamOperatorTestHarness<RowData, RowData> harness = createProducer(null, topic)) {
+    try (OneInputStreamOperatorTestHarness<RowData, RowData> harness =
+        createProducer(null, topic)) {
       harness.setup();
       harness.initializeEmptyState();
       harness.open();
@@ -169,12 +169,11 @@ public class TestHiddenLogOperators {
     OperatorSubtaskState state2;
     byte[] jobId = IdGenerator.generateUpstreamId();
     try (TestOneInputStreamOperatorIntern<RowData, RowData> harness0 =
-             createProducer(3, 0, jobId, topic);
-         TestOneInputStreamOperatorIntern<RowData, RowData> harness1 =
-             createProducer(3, 1, jobId, topic);
-         TestOneInputStreamOperatorIntern<RowData, RowData> harness2 =
-             createProducer(3, 2, jobId, topic)
-    ) {
+            createProducer(3, 0, jobId, topic);
+        TestOneInputStreamOperatorIntern<RowData, RowData> harness1 =
+            createProducer(3, 1, jobId, topic);
+        TestOneInputStreamOperatorIntern<RowData, RowData> harness2 =
+            createProducer(3, 2, jobId, topic)) {
       harness0.setup();
       harness0.initializeEmptyState();
       harness0.open();
@@ -224,13 +223,14 @@ public class TestHiddenLogOperators {
       ConsumerRecords<byte[], byte[]> consumerRecords = readRecordsBytes(topic);
       Assertions.assertEquals(11, consumerRecords.count());
       LogDataJsonDeserialization<RowData> deserialization = createLogDataDeserialization();
-      consumerRecords.forEach(consumerRecord -> {
-        try {
-          System.out.println(deserialization.deserialize(consumerRecord.value()));
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      });
+      consumerRecords.forEach(
+          consumerRecord -> {
+            try {
+              System.out.println(deserialization.deserialize(consumerRecord.value()));
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
+          });
     } catch (Exception e) {
       e.printStackTrace();
       throw e;
@@ -238,12 +238,11 @@ public class TestHiddenLogOperators {
 
     // failover restore from chp-1
     try (TestOneInputStreamOperatorIntern<RowData, RowData> harness0 =
-             createProducer(3, 0, jobId, 1L, topic);
-         TestOneInputStreamOperatorIntern<RowData, RowData> harness1 =
-             createProducer(3, 1, jobId, 1L, topic);
-         TestOneInputStreamOperatorIntern<RowData, RowData> harness2 =
-             createProducer(3, 2, jobId, 1L, topic)
-    ) {
+            createProducer(3, 0, jobId, 1L, topic);
+        TestOneInputStreamOperatorIntern<RowData, RowData> harness1 =
+            createProducer(3, 1, jobId, 1L, topic);
+        TestOneInputStreamOperatorIntern<RowData, RowData> harness2 =
+            createProducer(3, 2, jobId, 1L, topic)) {
       harness0.setup();
       harness0.initializeState(state0);
       harness0.open();
@@ -278,13 +277,14 @@ public class TestHiddenLogOperators {
       Assertions.assertEquals(8, output.size());
       ConsumerRecords<byte[], byte[]> consumerRecords = readRecordsBytes(topic);
       LogDataJsonDeserialization<RowData> deserialization = createLogDataDeserialization();
-      consumerRecords.forEach(consumerRecord -> {
-        try {
-          System.out.println(deserialization.deserialize(consumerRecord.value()));
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      });
+      consumerRecords.forEach(
+          consumerRecord -> {
+            try {
+              System.out.println(deserialization.deserialize(consumerRecord.value()));
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
+          });
       Assertions.assertEquals(20, consumerRecords.count());
     } catch (Exception e) {
       e.printStackTrace();
@@ -305,42 +305,47 @@ public class TestHiddenLogOperators {
     sub.setField(2, 1L);
     sub.setField(3, StringData.fromString("sssss"));
     sub.setField(4, LocalTime.of(13, 23, 23, 98766545).toNanoOfDay());
-    sub.setField(5, DecimalData.fromBigDecimal(new BigDecimal("123456789.123456789123456789"), 30, 18));
+    sub.setField(
+        5, DecimalData.fromBigDecimal(new BigDecimal("123456789.123456789123456789"), 30, 18));
     sub.setField(6, 123.12345f);
     sub.setField(7, 123.12345d);
     sub.setField(8, (int) LocalDate.of(2022, 5, 5).toEpochDay());
-    sub.setField(9, TimestampData.fromLocalDateTime(LocalDateTime.of(2022, 12, 12, 13, 14, 14, 987654234)));
+    sub.setField(
+        9, TimestampData.fromLocalDateTime(LocalDateTime.of(2022, 12, 12, 13, 14, 14, 987654234)));
     sub.setField(10, TimestampData.fromInstant(Instant.parse("2022-12-13T13:33:44.98765432Z")));
-    sub.setField(11, new byte[]{1});
-    sub.setField(12, new byte[]{'1'});
-    sub.setField(13, new byte[]{2});
+    sub.setField(11, new byte[] {1});
+    sub.setField(12, new byte[] {'1'});
+    sub.setField(13, new byte[] {2});
 
-    GenericArrayData fSubList = new GenericArrayData(new long[]{112L, 123L});
+    GenericArrayData fSubList = new GenericArrayData(new long[] {112L, 123L});
     sub.setField(14, fSubList);
 
-    GenericArrayData fSubList2 = new GenericArrayData(new int[]{112, 123});
+    GenericArrayData fSubList2 = new GenericArrayData(new int[] {112, 123});
     sub.setField(15, fSubList2);
 
     GenericRowData subStruct = new GenericRowData(3);
     subStruct.setField(0, false);
     subStruct.setField(1, 112);
     subStruct.setField(2, 123L);
-    GenericArrayData structList = new GenericArrayData(new GenericRowData[]{subStruct});
+    GenericArrayData structList = new GenericArrayData(new GenericRowData[] {subStruct});
     sub.setField(16, structList);
 
-    GenericMapData map = new GenericMapData(new HashMap<StringData, StringData>() {{
-      put(StringData.fromString("Key_123"), StringData.fromString("Str_123"));
-      put(StringData.fromString("Key_124"), StringData.fromString("Str_123"));
-      put(StringData.fromString("Key_125"), StringData.fromString("Str_123"));
-    }});
+    GenericMapData map =
+        new GenericMapData(
+            new HashMap<StringData, StringData>() {
+              {
+                put(StringData.fromString("Key_123"), StringData.fromString("Str_123"));
+                put(StringData.fromString("Key_124"), StringData.fromString("Str_123"));
+                put(StringData.fromString("Key_125"), StringData.fromString("Str_123"));
+              }
+            });
     sub.setField(17, map);
 
     rowData.setField(3, sub);
     return rowData;
   }
 
-  private static List<String> collect(
-      OneInputStreamOperatorTestHarness<RowData, RowData> harness) {
+  private static List<String> collect(OneInputStreamOperatorTestHarness<RowData, RowData> harness) {
     List<String> parts = new ArrayList<>();
     harness.extractOutputValues().forEach(m -> parts.add(m.toString()));
     return parts;
@@ -357,7 +362,8 @@ public class TestHiddenLogOperators {
   }
 
   private void createConsumer(
-      boolean print, int count, final String groupId, boolean retract, String topic) throws Exception {
+      boolean print, int count, final String groupId, boolean retract, String topic)
+      throws Exception {
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     env.setParallelism(1);
     env.enableCheckpointing(10000);
@@ -379,8 +385,7 @@ public class TestHiddenLogOperators {
                 .setProperties(properties)
                 .build(),
             WatermarkStrategy.noWatermarks(),
-            "Log Source"
-        );
+            "Log Source");
     if (print) {
       streamWithTimestamps.print("log-hidden");
     }
@@ -412,11 +417,8 @@ public class TestHiddenLogOperators {
   }
 
   public static TestOneInputStreamOperatorIntern<RowData, RowData> createProducer(
-      int maxParallelism,
-      int subTaskId,
-      byte[] jobId,
-      Long restoredCheckpointId,
-      String topic) throws Exception {
+      int maxParallelism, int subTaskId, byte[] jobId, Long restoredCheckpointId, String topic)
+      throws Exception {
     return createProducer(
         maxParallelism,
         maxParallelism,
@@ -428,18 +430,9 @@ public class TestHiddenLogOperators {
   }
 
   public static TestOneInputStreamOperatorIntern<RowData, RowData> createProducer(
-      int maxParallelism,
-      int subTaskId,
-      byte[] jobId,
-      String topic) throws Exception {
+      int maxParallelism, int subTaskId, byte[] jobId, String topic) throws Exception {
     return createProducer(
-        maxParallelism,
-        maxParallelism,
-        subTaskId,
-        null,
-        jobId,
-        globalAggregateManger,
-        topic);
+        maxParallelism, maxParallelism, subTaskId, null, jobId, globalAggregateManger, topic);
   }
 
   private static TestOneInputStreamOperatorIntern<RowData, RowData> createProducer(
@@ -449,7 +442,8 @@ public class TestHiddenLogOperators {
       Long restoredCheckpointId,
       byte[] jobId,
       TestGlobalAggregateManager testGlobalAggregateManager,
-      String topic) throws Exception {
+      String topic)
+      throws Exception {
     HiddenLogWriter writer =
         new HiddenLogWriter(
             userSchema,
@@ -458,8 +452,7 @@ public class TestHiddenLogOperators {
             new HiddenKafkaFactory<>(),
             LogRecordV1.fieldGetterFactory,
             jobId,
-            ShuffleHelper.EMPTY
-        );
+            ShuffleHelper.EMPTY);
 
     TestOneInputStreamOperatorIntern<RowData, RowData> harness =
         new TestOneInputStreamOperatorIntern<>(

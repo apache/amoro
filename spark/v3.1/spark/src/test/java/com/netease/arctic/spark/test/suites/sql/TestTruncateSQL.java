@@ -48,25 +48,32 @@ public class TestTruncateSQL extends SparkTableTestBase {
         Arguments.of(TableFormat.MIXED_HIVE, ", PRIMARY KEY(id)", " PARTITIONED BY (day)"),
         Arguments.of(TableFormat.MIXED_HIVE, "", " PARTITIONED BY (day)"),
         Arguments.of(TableFormat.MIXED_ICEBERG, ", PRIMARY KEY(id)", " PARTITIONED BY (day)"),
-        Arguments.of(TableFormat.MIXED_ICEBERG, "", " PARTITIONED BY (day)")
-    );
+        Arguments.of(TableFormat.MIXED_ICEBERG, "", " PARTITIONED BY (day)"));
   }
 
   @DisplayName("Test `test truncate table`")
   @ParameterizedTest
   @MethodSource
   public void testTruncateTable(TableFormat format, String primaryKeyDDL, String partitionDDL) {
-    String sqlText = "CREATE TABLE " + target() + " ( \n" +
-        "id int, data string, day string " + primaryKeyDDL + " ) using " +
-        provider(format) + partitionDDL;
+    String sqlText =
+        "CREATE TABLE "
+            + target()
+            + " ( \n"
+            + "id int, data string, day string "
+            + primaryKeyDDL
+            + " ) using "
+            + provider(format)
+            + partitionDDL;
     sql(sqlText);
-    sql("insert into " +
-        target().database + "." + target().table +
-        " values (1, 'a', 'a'), (2, 'b', 'b'), (3, 'c', 'c')");
+    sql(
+        "insert into "
+            + target().database
+            + "."
+            + target().table
+            + " values (1, 'a', 'a'), (2, 'b', 'b'), (3, 'c', 'c')");
     Assertions.assertEquals(3, tableDeltaFileSize(loadTable()));
     sql("truncate table " + target().database + "." + target().table);
-    Dataset<Row> sql = sql("select * from " +
-        target().database + "." + target().table);
+    Dataset<Row> sql = sql("select * from " + target().database + "." + target().table);
     Assertions.assertEquals(0, sql.collectAsList().size());
     Assertions.assertEquals(3, tableDeltaFileSize(loadTable()));
   }

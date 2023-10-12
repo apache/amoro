@@ -21,9 +21,7 @@ package com.netease.arctic.flink.read.hybrid.enumerator;
 import com.netease.arctic.flink.read.hybrid.reader.ArcticSourceReader;
 import org.apache.flink.api.connector.source.SourceEvent;
 
-/**
- * {@link ArcticSourceReader} won't set timestamp to RowData until receiving this Event.
- */
+/** {@link ArcticSourceReader} won't set timestamp to RowData until receiving this Event. */
 public class InitializationFinishedEvent implements SourceEvent {
   private static final long serialVersionUID = 1L;
 

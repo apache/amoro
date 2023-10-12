@@ -23,12 +23,10 @@ import com.netease.arctic.server.terminal.TerminalSession;
 import com.netease.arctic.server.terminal.TerminalSessionFactory;
 import com.netease.arctic.server.utils.ConfigOptions;
 import com.netease.arctic.server.utils.Configurations;
-import com.netease.arctic.spark.ArcticSparkExtensions;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
-import org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.internal.SQLConf;
@@ -62,7 +60,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
     initializeLogs.add("setup session, session factory: " + LocalSessionFactory.class.getName());
 
     Map<String, String> sparkConf = SparkContextUtil.getSparkConf(configuration);
-    sparkConf.put(com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE, "true");
+    sparkConf.put(SparkContextUtil.MIXED_FORMAT_PROPERTY_REFRESH_BEFORE_USAGE, "true");
 
     Map<String, String> finallyConf = configuration.toMap();
     catalogs.stream()
@@ -106,8 +104,8 @@ public class LocalSessionFactory implements TerminalSessionFactory {
       sparkconf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic");
       sparkconf.set("spark.executor.heartbeatInterval", "100s");
       sparkconf.set("spark.network.timeout", "200s");
-      sparkconf.set("spark.sql.extensions", ArcticSparkExtensions.class.getName() +
-          "," + IcebergSparkSessionExtensions.class.getName());
+      sparkconf.set("spark.sql.extensions", SparkContextUtil.MIXED_FORMAT_EXTENSION +
+          "," + SparkContextUtil.ICEBERG_EXTENSION);
 
       for (String key : this.conf.keySet()) {
         if (key.startsWith(SPARK_CONF_PREFIX)) {

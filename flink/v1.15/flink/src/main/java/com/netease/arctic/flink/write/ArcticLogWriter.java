@@ -23,9 +23,6 @@ import org.apache.flink.streaming.api.operators.BoundedOneInput;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.table.data.RowData;
 
-/**
- * This is a common abstract arctic log writer.
- */
+/** This is a common abstract arctic log writer. */
 public abstract class ArcticLogWriter extends AbstractStreamOperator<RowData>
-    implements OneInputStreamOperator<RowData, RowData>, BoundedOneInput {
-}
+    implements OneInputStreamOperator<RowData, RowData>, BoundedOneInput {}

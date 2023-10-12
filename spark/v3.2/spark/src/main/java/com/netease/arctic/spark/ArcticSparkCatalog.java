@@ -18,6 +18,12 @@
 
 package com.netease.arctic.spark;
 
+import static com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE;
+import static com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE_DEFAULT;
+import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES;
+import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT;
+import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
+
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.utils.CatalogUtil;
@@ -70,12 +76,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE;
-import static com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE_DEFAULT;
-import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES;
-import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT;
-import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
-
 public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   // private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkCatalog.class);
   private String catalogName = null;
@@ -83,7 +83,8 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   private ArcticCatalog catalog;
 
   /**
-   * Build an Arctic {@link com.netease.arctic.table.TableIdentifier} for the given Spark identifier.
+   * Build an Arctic {@link com.netease.arctic.table.TableIdentifier} for the given Spark
+   * identifier.
    *
    * @param identifier Spark's identifier
    * @return an Arctic identifier
@@ -91,40 +92,32 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   protected TableIdentifier buildIdentifier(Identifier identifier) {
     if (identifier.namespace() == null || identifier.namespace().length == 0) {
       throw new IllegalArgumentException(
-          "database is not specific, table identifier: " + identifier.name()
-      );
+          "database is not specific, table identifier: " + identifier.name());
     }
 
     if (identifier.namespace().length > 1) {
       throw new IllegalArgumentException(
-          "arctic does not support multi-level namespace: " +
-              Joiner.on(".").join(identifier.namespace()));
+          "arctic does not support multi-level namespace: "
+              + Joiner.on(".").join(identifier.namespace()));
     }
 
     return TableIdentifier.of(
-        catalog.name(),
-        identifier.namespace()[0].split("\\.")[0],
-        identifier.name());
+        catalog.name(), identifier.namespace()[0].split("\\.")[0], identifier.name());
   }
 
   protected TableIdentifier buildInnerTableIdentifier(Identifier identifier) {
     if (identifier.namespace() == null || identifier.namespace().length == 0) {
       throw new IllegalArgumentException(
-          "database is not specific, table identifier: " + identifier.name()
-      );
+          "database is not specific, table identifier: " + identifier.name());
     }
 
     if (identifier.namespace().length < 2) {
       throw new IllegalArgumentException(
-          "arctic does not support multi-level namespace: " +
-              Joiner.on(".").join(identifier.namespace()));
+          "arctic does not support multi-level namespace: "
+              + Joiner.on(".").join(identifier.namespace()));
     }
 
-    return TableIdentifier.of(
-        catalog.name(),
-        identifier.namespace()[0],
-        identifier.namespace()[1]
-    );
+    return TableIdentifier.of(catalog.name(), identifier.namespace()[0], identifier.namespace()[1]);
   }
 
   @Override
@@ -152,8 +145,8 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     if (type != null) {
       switch (type) {
         case CHANGE:
-          return new ArcticSparkChangeTable((BasicUnkeyedTable) table.asKeyedTable().changeTable(),
-              false);
+          return new ArcticSparkChangeTable(
+              (BasicUnkeyedTable) table.asKeyedTable().changeTable(), false);
         default:
           throw new IllegalArgumentException("Unknown inner table type: " + type);
       }
@@ -171,30 +164,31 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
 
   @Override
   public Table createTable(
-      Identifier ident, StructType schema, Transform[] transforms,
-      Map<String, String> properties) throws TableAlreadyExistsException {
+      Identifier ident, StructType schema, Transform[] transforms, Map<String, String> properties)
+      throws TableAlreadyExistsException {
     checkAndRefreshCatalogMeta(catalog);
     properties = Maps.newHashMap(properties);
     Schema finalSchema = checkAndConvertSchema(schema, properties);
     TableIdentifier identifier = buildIdentifier(ident);
     TableBuilder builder = catalog.newTableBuilder(identifier, finalSchema);
     PartitionSpec spec = Spark3Util.toPartitionSpec(finalSchema, transforms);
-    if (properties.containsKey(TableCatalog.PROP_LOCATION) &&
-        isIdentifierLocation(properties.get(TableCatalog.PROP_LOCATION), ident)) {
+    if (properties.containsKey(TableCatalog.PROP_LOCATION)
+        && isIdentifierLocation(properties.get(TableCatalog.PROP_LOCATION), ident)) {
       properties.remove(TableCatalog.PROP_LOCATION);
     }
     try {
       if (properties.containsKey("primary.keys")) {
-        PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(finalSchema)
-            .addDescription(properties.get("primary.keys"))
-            .build();
+        PrimaryKeySpec primaryKeySpec =
+            PrimaryKeySpec.builderFor(finalSchema)
+                .addDescription(properties.get("primary.keys"))
+                .build();
         properties.remove("primary.keys");
-        builder.withPartitionSpec(spec)
+        builder
+            .withPartitionSpec(spec)
             .withProperties(properties)
             .withPrimaryKeySpec(primaryKeySpec);
       } else {
-        builder.withPartitionSpec(spec)
-            .withProperties(properties);
+        builder.withPartitionSpec(spec).withProperties(properties);
       }
       ArcticTable table = builder.create();
       return ArcticSparkTable.ofArcticTable(table, catalog);
@@ -205,8 +199,10 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
 
   private void checkAndRefreshCatalogMeta(ArcticCatalog catalog) {
     SparkSession sparkSession = SparkSession.active();
-    if (Boolean.parseBoolean(sparkSession.conf().get(REFRESH_CATALOG_BEFORE_USAGE,
-        REFRESH_CATALOG_BEFORE_USAGE_DEFAULT))) {
+    if (Boolean.parseBoolean(
+        sparkSession
+            .conf()
+            .get(REFRESH_CATALOG_BEFORE_USAGE, REFRESH_CATALOG_BEFORE_USAGE_DEFAULT))) {
       catalog.refresh();
     }
   }
@@ -218,9 +214,13 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     if (CatalogUtil.isHiveCatalog(catalog)) {
       useTimestampWithoutZoneInNewTables = true;
     } else {
-      useTimestampWithoutZoneInNewTables = Boolean.parseBoolean(
-          sparkSession.conf().get(USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
-              USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT));
+      useTimestampWithoutZoneInNewTables =
+          Boolean.parseBoolean(
+              sparkSession
+                  .conf()
+                  .get(
+                      USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
+                      USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT));
     }
     if (useTimestampWithoutZoneInNewTables) {
       sparkSession.conf().set(HANDLE_TIMESTAMP_WITHOUT_TIMEZONE, true);
@@ -231,21 +231,25 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
 
     // schema add primary keys
     if (properties.containsKey("primary.keys")) {
-      PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(convertSchema)
-          .addDescription(properties.get("primary.keys"))
-          .build();
+      PrimaryKeySpec primaryKeySpec =
+          PrimaryKeySpec.builderFor(convertSchema)
+              .addDescription(properties.get("primary.keys"))
+              .build();
       List<String> primaryKeys = primaryKeySpec.fieldNames();
       Set<String> pkSet = new HashSet<>(primaryKeys);
       Set<Integer> identifierFieldIds = new HashSet<>();
       List<Types.NestedField> columnsWithPk = new ArrayList<>();
-      convertSchema.columns().forEach(nestedField -> {
-        if (pkSet.contains(nestedField.name())) {
-          columnsWithPk.add(nestedField.asRequired());
-          identifierFieldIds.add(nestedField.fieldId());
-        } else {
-          columnsWithPk.add(nestedField);
-        }
-      });
+      convertSchema
+          .columns()
+          .forEach(
+              nestedField -> {
+                if (pkSet.contains(nestedField.name())) {
+                  columnsWithPk.add(nestedField.asRequired());
+                  identifierFieldIds.add(nestedField.fieldId());
+                } else {
+                  columnsWithPk.add(nestedField);
+                }
+              });
       return new Schema(columnsWithPk, identifierFieldIds);
     }
     return convertSchema;
@@ -324,8 +328,9 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
         } else if ("cherry-pick-snapshot-id".equalsIgnoreCase(set.property())) {
           pickSnapshotId = set;
         } else if ("sort-order".equalsIgnoreCase(set.property())) {
-          throw new UnsupportedOperationException("Cannot specify the 'sort-order' because it's a reserved table " +
-              "property. Please use the command 'ALTER TABLE ... WRITE ORDERED BY' to specify write sort-orders.");
+          throw new UnsupportedOperationException(
+              "Cannot specify the 'sort-order' because it's a reserved table "
+                  + "property. Please use the command 'ALTER TABLE ... WRITE ORDERED BY' to specify write sort-orders.");
         } else {
           propertyChanges.add(set);
         }
@@ -338,15 +343,19 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       }
     }
 
-    commitUnKeyedChanges(table, setLocation, setSnapshotId, pickSnapshotId, propertyChanges, schemaChanges);
+    commitUnKeyedChanges(
+        table, setLocation, setSnapshotId, pickSnapshotId, propertyChanges, schemaChanges);
   }
 
   protected void commitUnKeyedChanges(
-      UnkeyedTable table, SetProperty setLocation, SetProperty setSnapshotId,
-      SetProperty pickSnapshotId, List<TableChange> propertyChanges,
-      List<TableChange> schemaChanges
-  ) {
-    // don't allow setting the snapshot and picking a commit at the same time because order is ambiguous and choosing
+      UnkeyedTable table,
+      SetProperty setLocation,
+      SetProperty setSnapshotId,
+      SetProperty pickSnapshotId,
+      List<TableChange> propertyChanges,
+      List<TableChange> schemaChanges) {
+    // don't allow setting the snapshot and picking a commit at the same time because order is
+    // ambiguous and choosing
     // one order leads to different results
     Preconditions.checkArgument(
         setSnapshotId == null || pickSnapshotId == null,
@@ -366,9 +375,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     Transaction transaction = table.newTransaction();
 
     if (setLocation != null) {
-      transaction.updateLocation()
-          .setLocation(setLocation.value())
-          .commit();
+      transaction.updateLocation().setLocation(setLocation.value()).commit();
     }
 
     if (!propertyChanges.isEmpty()) {
@@ -403,13 +410,14 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       database.add(namespace[0]);
     }
 
-    List<TableIdentifier> tableIdentifiers = database.stream()
-        .map(d -> catalog.listTables(d))
-        .flatMap(Collection::stream)
-        .collect(Collectors.toList());
+    List<TableIdentifier> tableIdentifiers =
+        database.stream()
+            .map(d -> catalog.listTables(d))
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
 
     return tableIdentifiers.stream()
-        .map(i -> Identifier.of(new String[]{i.getDatabase()}, i.getTableName()))
+        .map(i -> Identifier.of(new String[] {i.getDatabase()}, i.getTableName()))
         .toArray(Identifier[]::new);
   }
 
@@ -430,9 +438,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
 
   @Override
   public String[][] listNamespaces() {
-    return catalog.listDatabases().stream()
-        .map(d -> new String[]{d})
-        .toArray(String[][]::new);
+    return catalog.listDatabases().stream().map(d -> new String[] {d}).toArray(String[][]::new);
   }
 
   // ns
@@ -442,12 +448,14 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   }
 
   @Override
-  public Map<String, String> loadNamespaceMetadata(String[] namespace) throws NoSuchNamespaceException {
+  public Map<String, String> loadNamespaceMetadata(String[] namespace)
+      throws NoSuchNamespaceException {
     String database = namespace[0];
     return catalog.listDatabases().stream()
         .filter(d -> StringUtils.equals(d, database))
         .map(d -> new HashMap<String, String>())
-        .findFirst().orElseThrow(() -> new NoSuchNamespaceException(namespace));
+        .findFirst()
+        .orElseThrow(() -> new NoSuchNamespaceException(namespace));
   }
 
   @Override
@@ -461,7 +469,8 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
 
   @Override
   public void alterNamespace(String[] namespace, NamespaceChange... changes) {
-    throw new UnsupportedOperationException("Alter  namespace is not supported by catalog: " + catalogName);
+    throw new UnsupportedOperationException(
+        "Alter  namespace is not supported by catalog: " + catalogName);
   }
 
   @Override

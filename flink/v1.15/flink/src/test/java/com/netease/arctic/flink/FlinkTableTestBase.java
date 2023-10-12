@@ -33,47 +33,37 @@ import org.apache.iceberg.io.WriteResult;
 import java.util.Arrays;
 
 /**
- * This class contains flink table rowType schema and others,
- * and will replace {@link FlinkTestBase} base class in the future.
+ * This class contains flink table rowType schema and others, and will replace {@link FlinkTestBase}
+ * base class in the future.
  */
 public interface FlinkTableTestBase {
   default TaskWriter<RowData> createTaskWriter(ArcticTable arcticTable, RowType rowType) {
-    return arcticTable.isKeyedTable() ?
-        createKeyedTaskWriter((KeyedTable) arcticTable, rowType) :
-        createUnkeyedTaskWriter((UnkeyedTable) arcticTable, rowType);
+    return arcticTable.isKeyedTable()
+        ? createKeyedTaskWriter((KeyedTable) arcticTable, rowType)
+        : createUnkeyedTaskWriter((UnkeyedTable) arcticTable, rowType);
   }
 
   default TaskWriter<RowData> createBaseTaskWriter(ArcticTable arcticTable, RowType rowType) {
-    return arcticTable.isKeyedTable() ?
-        createKeyedTaskWriter((KeyedTable) arcticTable, rowType, true, 3) :
-        createUnkeyedTaskWriter((UnkeyedTable) arcticTable, rowType);
+    return arcticTable.isKeyedTable()
+        ? createKeyedTaskWriter((KeyedTable) arcticTable, rowType, true, 3)
+        : createUnkeyedTaskWriter((UnkeyedTable) arcticTable, rowType);
   }
 
-  default TaskWriter<RowData> createKeyedTaskWriter(
-      KeyedTable keyedTable,
-      RowType rowType) {
+  default TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType) {
     return createKeyedTaskWriter(keyedTable, rowType, false, 3);
   }
 
   default TaskWriter<RowData> createKeyedTaskWriter(
-      KeyedTable keyedTable,
-      RowType rowType,
-      boolean overwrite,
-      long mask) {
+      KeyedTable keyedTable, RowType rowType, boolean overwrite, long mask) {
     return createTaskWriter(keyedTable, rowType, overwrite, mask);
   }
 
-  default TaskWriter<RowData> createUnkeyedTaskWriter(
-      UnkeyedTable unkeyedTable,
-      RowType rowType) {
+  default TaskWriter<RowData> createUnkeyedTaskWriter(UnkeyedTable unkeyedTable, RowType rowType) {
     return createTaskWriter(unkeyedTable, rowType, false, 3);
   }
 
   default TaskWriter<RowData> createTaskWriter(
-      ArcticTable arcticTable,
-      RowType rowType,
-      boolean overwrite,
-      long mask) {
+      ArcticTable arcticTable, RowType rowType, boolean overwrite, long mask) {
     ArcticRowDataTaskWriterFactory taskWriterFactory =
         new ArcticRowDataTaskWriterFactory(arcticTable, rowType, overwrite);
     taskWriterFactory.setMask(mask);
@@ -96,7 +86,9 @@ public interface FlinkTableTestBase {
     } else {
       if (!base) {
         throw new IllegalArgumentException(
-            String.format("arctic table %s is a unkeyed table, can't commit to change table", arcticTable.name()));
+            String.format(
+                "arctic table %s is a unkeyed table, can't commit to change table",
+                arcticTable.name()));
       }
       UnkeyedTable unkeyedTable = arcticTable.asUnkeyedTable();
       AppendFiles baseAppend = unkeyedTable.newAppend();
@@ -105,11 +97,11 @@ public interface FlinkTableTestBase {
     }
   }
 
-  default ArcticTableLoader getTableLoader(String catalogName, String metastoreUrl, ArcticTable arcticTable) {
-    TableIdentifier identifier = TableIdentifier.of(
-        catalogName,
-        arcticTable.id().getDatabase(),
-        arcticTable.id().getTableName());
+  default ArcticTableLoader getTableLoader(
+      String catalogName, String metastoreUrl, ArcticTable arcticTable) {
+    TableIdentifier identifier =
+        TableIdentifier.of(
+            catalogName, arcticTable.id().getDatabase(), arcticTable.id().getTableName());
     InternalCatalogBuilder internalCatalogBuilder =
         InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl);
     return ArcticTableLoader.of(identifier, internalCatalogBuilder, arcticTable.properties());

@@ -13,7 +13,6 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.optimizing.TableOptimizing;
-import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.resource.OptimizerInstance;
@@ -296,7 +295,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   }
 
   private TableRuntimeMeta initTableWithFiles() {
-    ArcticTable arcticTable = tableService().loadTable(serverTableIdentifier());
+    ArcticTable arcticTable = (ArcticTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     appendData(arcticTable.asUnkeyedTable(), 1);
     appendData(arcticTable.asUnkeyedTable(), 2);
     TableRuntimeMeta tableRuntimeMeta = buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
@@ -390,7 +389,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   }
 
   private TableRuntimeMeta buildTableRuntimeMeta(OptimizingStatus status, ResourceGroup resourceGroup) {
-    ArcticTable arcticTable = tableService().loadTable(serverTableIdentifier());
+    ArcticTable arcticTable = (ArcticTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     TableRuntimeMeta tableRuntimeMeta = new TableRuntimeMeta();
     tableRuntimeMeta.setCatalogName(serverTableIdentifier().getCatalog());
     tableRuntimeMeta.setDbName(serverTableIdentifier().getDatabase());
@@ -398,10 +397,6 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     tableRuntimeMeta.setTableId(serverTableIdentifier().getId());
     tableRuntimeMeta.setTableStatus(status);
     tableRuntimeMeta.setTableConfig(TableConfiguration.parseConfig(arcticTable.properties()));
-    tableRuntimeMeta.setCurrentChangeSnapshotId(ArcticServiceConstants.INVALID_SNAPSHOT_ID);
-    tableRuntimeMeta.setCurrentSnapshotId(ArcticServiceConstants.INVALID_SNAPSHOT_ID);
-    tableRuntimeMeta.setLastOptimizedChangeSnapshotId(ArcticServiceConstants.INVALID_SNAPSHOT_ID);
-    tableRuntimeMeta.setLastOptimizedSnapshotId(ArcticServiceConstants.INVALID_SNAPSHOT_ID);
     tableRuntimeMeta.setOptimizerGroup(resourceGroup.getName());
     tableRuntimeMeta.constructTableRuntime(tableService());
     return tableRuntimeMeta;
