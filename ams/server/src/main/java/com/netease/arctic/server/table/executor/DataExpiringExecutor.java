@@ -34,6 +34,7 @@ import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ManifestEntryFields;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.ContentScanTask;
 import org.apache.iceberg.DataFile;
@@ -100,19 +101,34 @@ public class DataExpiringExecutor extends BaseTableExecutor {
     scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 
+  private boolean validateExpirationField(ArcticTable table, String expirationField) {
+    Types.NestedField field = table.schema().findField(expirationField);
+
+    if (StringUtils.isNoneBlank(expirationField) && null != field) {
+      LOG.warn(String.format("Field(%s) used to determine data expiration is illegal for table(%s)",
+          expirationField, table.name()));
+      return false;
+    }
+    Type.TypeID typeID = field.type().typeId();
+    if (DataExpirationConfig.FIELD_TYPES.contains(typeID)) {
+      LOG.warn(String.format("The type(%s) of filed(%s) is incompatible for table(%s)",
+          typeID.name(), expirationField, table.name()));
+      return false;
+    }
+
+    return true;
+  }
+
   @Override
   protected void execute(TableRuntime tableRuntime) {
     try {
       ArcticTable arcticTable = (ArcticTable) loadTable(tableRuntime).originalTable();
-      if (!tableRuntime.getTableConfiguration().getExpiringDataConfig().isEnabled()) {
+      DataExpirationConfig expirationConfig = tableRuntime.getTableConfiguration().getExpiringDataConfig();
+      if (!expirationConfig.isEnabled() || expirationConfig.getRetentionTime() <= 0 ||
+          validateExpirationField(arcticTable, expirationConfig.getExpirationField())) {
         return;
       }
 
-      DataExpirationConfig expirationConfig =
-          new DataExpirationConfig(arcticTable);
-      if (expirationConfig.getRetentionTime() <= 0) {
-        return;
-      }
       purgeTableFrom(arcticTable, expirationConfig,
           Instant.now()
               .atZone(getDefaultZoneId(arcticTable.schema().findField(expirationConfig.getExpirationField())))
@@ -273,13 +289,13 @@ public class DataExpiringExecutor extends BaseTableExecutor {
     // expire data files
     DeleteFiles delete = table.newDelete();
     dataFiles.forEach(delete::deleteFile);
-    delete.set(SnapshotSummary.SNAPSHOT_PRODUCER, "Amoro data expiration");
+    delete.set(SnapshotSummary.SNAPSHOT_PRODUCER, "DATA_EXPIRATION");
     delete.commit();
     // expire delete files
     if (!deleteFiles.isEmpty()) {
       RewriteFiles rewriteFiles = table.newRewrite().validateFromSnapshot(snapshotId);
       deleteFiles.forEach(rewriteFiles::deleteFile);
-      rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, "Amoro data expiration");
+      rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, "DATA_EXPIRATION");
       rewriteFiles.commit();
     }
 

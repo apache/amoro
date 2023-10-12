@@ -47,7 +47,7 @@ public class DataExpirationConfig {
     }
   }
 
-  private static final Set<Type.TypeID> FIELD_TYPES = Sets.newHashSet(
+  public static final Set<Type.TypeID> FIELD_TYPES = Sets.newHashSet(
       Type.TypeID.TIMESTAMP,
       Type.TypeID.STRING,
       Type.TypeID.LONG
