@@ -121,7 +121,7 @@
         <postgres-jdbc.version>42.5.1</postgres-jdbc.version>
         <derby-jdbc.version>10.13.1.1</derby-jdbc.version>
         <commons-dbcp2.version>2.9.0</commons-dbcp2.version>
-        <netty.version>4.1.56.Final</netty.version>
+        <netty.version>4.1.86.Final</netty.version>
         <javalin.version>4.6.1</javalin.version>
         <kyuubi-hive-jdbc-shaded.version>1.6.0-incubating</kyuubi-hive-jdbc-shaded.version>
         <powermock.version>2.0.2</powermock.version>
@@ -285,6 +285,12 @@
                         <artifactId>jersey-servlet</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-aws</artifactId>
+                <version>${hadoop.version}</version>
             </dependency>
 
             <dependency>
@@ -478,6 +484,12 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
                 <version>${netty.version}</version>
             </dependency>
 
