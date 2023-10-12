@@ -36,6 +36,7 @@ import com.netease.arctic.server.utils.ConfigOptions;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
+import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -228,24 +229,25 @@ public class TerminalManager {
   // ========================== private method =========================
 
   private String catalogConnectorType(CatalogMeta catalogMeta) {
-    String catalogType = catalogMeta.getCatalogType().toUpperCase();
-    String tableFormats = catalogMeta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS).toUpperCase();
-    if (catalogType.equals(CatalogType.AMS.name())) {
-      if (tableFormats.contains(TableFormat.MIXED_ICEBERG.name())) {
+    String catalogType = catalogMeta.getCatalogType();
+    String tableFormats = catalogMeta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS);
+    if (catalogType.equalsIgnoreCase(CatalogType.AMS.name())) {
+      if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_ICEBERG.name())) {
         return "arctic";
-      } else if (tableFormats.contains(TableFormat.ICEBERG.name())) {
+      } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.ICEBERG.name())) {
         return "iceberg";
       }
-    } else if (catalogType.equals(CatalogType.HIVE.name()) || catalogType.equals(CatalogType.HADOOP.name())) {
-      if (tableFormats.contains(TableFormat.MIXED_HIVE.name()) ||
-          tableFormats.contains(TableFormat.MIXED_ICEBERG.name())) {
+    } else if (catalogType.equalsIgnoreCase(CatalogType.HIVE.name()) ||
+        catalogType.equalsIgnoreCase(CatalogType.HADOOP.name())) {
+      if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_HIVE.name()) ||
+          StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_ICEBERG.name())) {
         return "arctic";
-      } else if (tableFormats.contains(TableFormat.ICEBERG.name())) {
+      } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.ICEBERG.name())) {
         return "iceberg";
-      } else if (tableFormats.contains(TableFormat.PAIMON.name())) {
+      } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.PAIMON.name())) {
         return "paimon";
       }
-    } else if (catalogType.equals(CatalogType.CUSTOM.name())) {
+    } else if (catalogType.equalsIgnoreCase(CatalogType.CUSTOM.name())) {
       return "iceberg";
     }
     throw new IllegalStateException("unknown catalog type: " + catalogType);
