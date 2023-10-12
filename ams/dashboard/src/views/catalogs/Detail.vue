@@ -234,18 +234,20 @@ const tablePropertiesRef = ref()
 const tableFormatMap = {
   MIXED_HIVE: 'MIXED_HIVE',
   ICEBERG: 'ICEBERG',
-  MIXED_ICEBERG: 'MIXED_ICEBERG'
+  MIXED_ICEBERG: 'MIXED_ICEBERG',
+  PAIMON: 'PAIMON'
 }
 
 const tableFormatText = {
   [tableFormatMap.ICEBERG]: 'Iceberg',
   [tableFormatMap.MIXED_HIVE]: 'Mixed Hive',
-  [tableFormatMap.MIXED_ICEBERG]: 'Mixed Iceberg'
+  [tableFormatMap.MIXED_ICEBERG]: 'Mixed Iceberg',
+  [tableFormatMap.PAIMON]: 'Paimon'
 }
 const storeSupportFormat: {[prop:string]: string[]} = {
   ams: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
-  hive: [tableFormatMap.MIXED_HIVE, tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
-  hadoop: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
+  hive: [tableFormatMap.MIXED_HIVE, tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG, tableFormatMap.PAIMON],
+  hadoop: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG, tableFormatMap.PAIMON],
   glue: [tableFormatMap.ICEBERG],
   custom: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG]
 }

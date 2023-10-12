@@ -40,6 +40,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.relocated.com.google.common.base.Objects;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.paimon.options.CatalogOptions;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -258,6 +259,8 @@ public class CatalogController {
    * Construct catalog meta through catalog register info.
    */
   private CatalogMeta constructCatalogMeta(CatalogRegisterInfo info, CatalogMeta oldCatalogMeta) {
+    checkPaimonCatalog(info);
+
     CatalogMeta catalogMeta = new CatalogMeta();
     catalogMeta.setCatalogName(info.getName());
     catalogMeta.setCatalogType(info.getType());
@@ -318,6 +321,22 @@ public class CatalogController {
 
     catalogMeta.setStorageConfigs(metaStorageConfig);
     return catalogMeta;
+  }
+
+  private void checkPaimonCatalog(CatalogRegisterInfo info) {
+    if (!info.getTableFormatList().contains(TableFormat.PAIMON.name())) {
+      return;
+    }
+    Map<String, String> properties = info.getProperties();
+    if (!properties.containsKey(CatalogOptions.WAREHOUSE.key())) {
+      throw new IllegalArgumentException("Paimon catalog must have 'warehouse' property");
+    }
+
+    if (CATALOG_TYPE_HIVE.equalsIgnoreCase(info.getType())) {
+      if (!properties.containsKey(CatalogOptions.URI.key())) {
+        throw new IllegalArgumentException("Paimon hive catalog must have 'uri' property");
+      }
+    }
   }
 
   /**
