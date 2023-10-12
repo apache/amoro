@@ -29,6 +29,7 @@ import com.netease.arctic.hive.utils.UpgradeHiveTableUtil;
 import com.netease.arctic.server.catalog.IcebergCatalogImpl;
 import com.netease.arctic.server.catalog.InternalIcebergCatalogImpl;
 import com.netease.arctic.server.catalog.MixedHiveCatalogImpl;
+import com.netease.arctic.server.catalog.PaimonServerCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.ServerTableDescriptor;
 import com.netease.arctic.server.dashboard.ServerTableProperties;
@@ -413,6 +414,8 @@ public class TableController {
       hiveTables.stream().filter(e -> !arcticTables.contains(e)).forEach(e -> tables.add(new TableMeta(
           e,
           TableMeta.TableType.HIVE.toString())));
+    } else if (serverCatalog instanceof PaimonServerCatalog) {
+      tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.PAIMON.toString())));
     } else {
       tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.ARCTIC.toString())));
     }
