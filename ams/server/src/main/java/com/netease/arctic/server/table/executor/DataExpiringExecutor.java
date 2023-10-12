@@ -111,8 +111,10 @@ public class DataExpiringExecutor extends BaseTableExecutor {
     }
     Type.TypeID typeID = field.type().typeId();
     if (DataExpirationConfig.FIELD_TYPES.contains(typeID)) {
-      LOG.warn(String.format("The type(%s) of filed(%s) is incompatible for table(%s)",
-          typeID.name(), expirationField, table.name()));
+      LOG.warn(String.format("Table(%s) field(%s) type(%s) is not supported for data expiration, please use the " +
+              "following types: %s",
+          table.name(), expirationField, typeID.name(),
+          StringUtils.join(DataExpirationConfig.FIELD_TYPES, ", ")));
       return false;
     }
 
