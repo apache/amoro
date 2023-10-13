@@ -146,7 +146,8 @@ public class CatalogController {
       Map<String, String> serverAuthConfig,
       CatalogMeta oldCatalogMeta) {
     Map<String, String> metaAuthConfig = new HashMap<>();
-    String authType = serverAuthConfig.getOrDefault(AUTH_CONFIGS_KEY_TYPE, "SIMPLE").toLowerCase();
+    String authType = serverAuthConfig.getOrDefault(AUTH_CONFIGS_KEY_TYPE, AUTH_CONFIGS_VALUE_TYPE_SIMPLE)
+        .toLowerCase();
     metaAuthConfig.put(AUTH_CONFIGS_KEY_TYPE, authType);
     Map<String, String> oldAuthConfig = new HashMap<>();
     if (oldCatalogMeta != null) {
@@ -181,12 +182,8 @@ public class CatalogController {
           AUTH_CONFIGS_KEY_PRINCIPAL,
           serverAuthConfig.get(AUTH_CONFIGS_KEY_PRINCIPAL));
     } else if (authType.equals(AUTH_CONFIGS_VALUE_TYPE_AK_SK)) {
-      metaAuthConfig.put(
-          AUTH_CONFIGS_KEY_ACCESS_KEY,
-          serverAuthConfig.get(AUTH_CONFIGS_KEY_ACCESS_KEY));
-      metaAuthConfig.put(
-          AUTH_CONFIGS_KEY_SECRET_KEY,
-          serverAuthConfig.get(AUTH_CONFIGS_KEY_SECRET_KEY));
+      CatalogPropertyUtil.migrateProperty(serverAuthConfig, metaAuthConfig, AUTH_CONFIGS_KEY_ACCESS_KEY);
+      CatalogPropertyUtil.migrateProperty(serverAuthConfig, metaAuthConfig, AUTH_CONFIGS_KEY_SECRET_KEY);
     }
     return metaAuthConfig;
   }
