@@ -32,6 +32,7 @@ import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.CommonUtil;
 import com.netease.arctic.server.exception.ArcticRuntimeException;
+import com.netease.arctic.server.metrics.MetricsEmitterLoader;
 import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.OptimizerManager;
@@ -92,6 +93,7 @@ public class ArcticServiceContainer {
   private TServer tableManagementServer;
   private TServer optimizingServiceServer;
   private Javalin httpServer;
+  private MetricsEmitterLoader metricsEmitterLoader;
 
   public ArcticServiceContainer() throws Exception {
     initConfig();
@@ -144,6 +146,7 @@ public class ArcticServiceContainer {
     tableService.initialize();
     LOG.info("AMS table service have been initialized");
     terminalManager = new TerminalManager(serviceConfig, tableService);
+    metricsEmitterLoader = new MetricsEmitterLoader();
 
     initThriftService();
     startThriftService();
@@ -195,7 +198,8 @@ public class ArcticServiceContainer {
   private void initHttpService() {
     DashboardServer dashboardServer = new DashboardServer(
         serviceConfig, tableService, optimizingService, terminalManager);
-    IcebergRestCatalogService restCatalogService = new IcebergRestCatalogService(tableService);
+    IcebergRestCatalogService restCatalogService =
+        new IcebergRestCatalogService(tableService, metricsEmitterLoader.metricsManager());
 
     httpServer = Javalin.create(config -> {
       config.addStaticFiles(dashboardServer.configStaticFiles());

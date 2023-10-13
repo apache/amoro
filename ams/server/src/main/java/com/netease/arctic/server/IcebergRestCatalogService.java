@@ -2,19 +2,19 @@ package com.netease.arctic.server;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.metrics.MetricType;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.iceberg.InternalTableOperations;
+import com.netease.arctic.server.manager.MetricsManager;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
@@ -43,6 +43,8 @@ import org.apache.iceberg.rest.RESTResponse;
 import org.apache.iceberg.rest.RESTSerializers;
 import org.apache.iceberg.rest.requests.CreateNamespaceRequest;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
+import org.apache.iceberg.rest.requests.ReportMetricsRequest;
+import org.apache.iceberg.rest.requests.ReportMetricsRequestParser;
 import org.apache.iceberg.rest.requests.UpdateTableRequest;
 import org.apache.iceberg.rest.responses.ConfigResponse;
 import org.apache.iceberg.rest.responses.CreateNamespaceResponse;
@@ -74,10 +76,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 public class IcebergRestCatalogService extends PersistentBase {
 
-  public static final String ICEBERG_METRIC_LOGGER = "iceberg.metric";
-
   private static final Logger LOG = LoggerFactory.getLogger(IcebergRestCatalogService.class);
-  private static final Logger METRIC_LOG = LoggerFactory.getLogger(ICEBERG_METRIC_LOGGER);
 
   public static final String ICEBERG_REST_API_PREFIX = "/api/iceberg/rest";
 
@@ -93,11 +92,13 @@ public class IcebergRestCatalogService extends PersistentBase {
   private final ObjectMapper objectMapper;
 
   private final TableService tableService;
+  private final MetricsManager metricsManager;
 
-  public IcebergRestCatalogService(TableService tableService) {
+  public IcebergRestCatalogService(TableService tableService, MetricsManager metricsManager) {
     this.tableService = tableService;
     this.objectMapper = jsonMapper();
     this.jsonMapper = new JavalinJackson(objectMapper);
+    this.metricsManager = metricsManager;
   }
 
   public EndpointGroup endpoints() {
@@ -401,19 +402,8 @@ public class IcebergRestCatalogService extends PersistentBase {
   public void metricReport(Context ctx) {
     handleTable(ctx, (catalog, tableMeta) -> {
       String bodyJson = ctx.body();
-      String database = tableMeta.getTableIdentifier().getDatabase();
-      String table = tableMeta.getTableIdentifier().getTableName();
-      TypeReference<Map<String, Object>> mapTypeReference = new TypeReference<Map<String, Object>>() {
-      };
-      try {
-        Map<String, Object> report = objectMapper.readValue(bodyJson, mapTypeReference);
-        report.put("identifier", database + "." + table);
-        report.put("catalog", catalog.name());
-        String metricJson = objectMapper.writeValueAsString(report);
-        METRIC_LOG.info(metricJson);
-      } catch (JsonProcessingException e) {
-        throw new RuntimeException(e);
-      }
+      ReportMetricsRequest metricsRequest = ReportMetricsRequestParser.fromJson(bodyJson);
+      metricsManager.emit(metricsRequest.reportType().name(), MetricType.FORMAT_ICEBERG, metricsRequest.report());
       return null;
     });
   }

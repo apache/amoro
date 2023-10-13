@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.manager;
 
+import com.netease.arctic.ams.api.metrics.MetricType;
 import com.netease.arctic.ams.api.metrics.MetricsContent;
 import com.netease.arctic.ams.api.metrics.MetricsEmitter;
 import com.netease.arctic.server.exception.LoadingPluginException;
@@ -35,6 +36,7 @@ public class MetricsManager extends ActivePluginManager<MetricsEmitter> {
   private static final Logger LOG = LoggerFactory.getLogger(MetricsManager.class);
 
   private final String configPath;
+  private final MetricsContentWrapper wrapper = new MetricsContentWrapper();
 
   public MetricsManager(String configPath) {
     this.configPath = configPath;
@@ -50,6 +52,10 @@ public class MetricsManager extends ActivePluginManager<MetricsEmitter> {
     }
   }
 
+  public <T> void emit(String name, MetricType type, T data) {
+    emit(wrapper.wrap(name, type, data));
+  }
+
   public void emit(MetricsContent<?> metrics) {
     forEach(emitter -> {
       try (ClassLoaderContext ignored = new ClassLoaderContext(emitter)) {
@@ -60,5 +66,27 @@ public class MetricsManager extends ActivePluginManager<MetricsEmitter> {
         LOG.error("Emit metrics {} failed", metrics, throwable);
       }
     });
+  }
+
+  static class MetricsContentWrapper {
+
+    public <T> MetricsContent<T> wrap(String name, MetricType type, T data) {
+      return new MetricsContent<T>() {
+        @Override
+        public String name() {
+          return name;
+        }
+
+        @Override
+        public MetricType type() {
+          return type;
+        }
+
+        @Override
+        public T data() {
+          return data;
+        }
+      };
+    }
   }
 }
