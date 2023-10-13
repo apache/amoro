@@ -18,7 +18,44 @@
 
 package com.netease.arctic.server.dashboard.utils;
 
-public class PropertiesUtilTest {
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.junit.Assert;
+import org.junit.Test;
 
-  // TODO
+import java.util.Map;
+
+public class PropertiesUtilTest {
+  
+  private static final Map<String, String> ALL_PROPERTIES = Maps.newHashMap();
+  private static final Map<String, String> CATALOG_PROPERTIES = Maps.newHashMap();
+  private static final Map<String, String> TABLE_PROPERTIES = Maps.newHashMap();
+  
+  static {
+    CATALOG_PROPERTIES.put("catalog1", "catalog1");
+    CATALOG_PROPERTIES.put("catalog2", "catalog2");
+    TABLE_PROPERTIES.put("table1", "table1");
+    TABLE_PROPERTIES.put("table2", "table2");
+    ALL_PROPERTIES.putAll(CATALOG_PROPERTIES);
+    ALL_PROPERTIES.put("table.table1", "table1");
+    ALL_PROPERTIES.put("table.table2", "table2");
+  }
+  
+  @Test
+  public void testExtractTableProperties() {
+    Map<String, String> tableProperties = PropertiesUtil.extractTableProperties(ALL_PROPERTIES);
+    Assert.assertEquals(tableProperties, TABLE_PROPERTIES);
+  }
+  
+  @Test
+  public void testExtractCatalogMetaProperties() {
+    Map<String, String> catalogMetaProperties = PropertiesUtil.extractCatalogMetaProperties(ALL_PROPERTIES);
+    Assert.assertEquals(catalogMetaProperties, CATALOG_PROPERTIES);
+  }
+  
+  @Test
+  public void testUnionCatalogProperties() {
+    Map<String, String> unionCatalogProperties = PropertiesUtil.unionCatalogProperties(TABLE_PROPERTIES,
+        CATALOG_PROPERTIES);
+    Assert.assertEquals(unionCatalogProperties, ALL_PROPERTIES);
+  }
 }
