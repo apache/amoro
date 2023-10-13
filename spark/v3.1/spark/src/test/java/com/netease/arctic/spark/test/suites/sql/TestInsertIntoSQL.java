@@ -31,6 +31,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
@@ -101,21 +102,33 @@ public class TestInsertIntoSQL extends SparkTableTestBase {
 
   public static Stream<Arguments> testNoUpsert() {
     return Stream.of(
-        Arguments.of(MIXED_HIVE, schema, idPrimaryKeySpec, ptSpec),
-        Arguments.of(MIXED_HIVE, schema, noPrimaryKey, ptSpec),
-        Arguments.of(MIXED_HIVE, schema, idPrimaryKeySpec, unpartitioned),
-        Arguments.of(MIXED_HIVE, schema, noPrimaryKey, unpartitioned),
-        Arguments.of(MIXED_ICEBERG, schema, idPrimaryKeySpec, ptSpec),
-        Arguments.of(MIXED_ICEBERG, schema, noPrimaryKey, ptSpec),
-        Arguments.of(MIXED_ICEBERG, schema, idPrimaryKeySpec, unpartitioned),
-        Arguments.of(MIXED_ICEBERG, schema, noPrimaryKey, unpartitioned));
+            Arguments.of(MIXED_HIVE, schema, idPrimaryKeySpec, ptSpec),
+            Arguments.of(MIXED_HIVE, schema, noPrimaryKey, ptSpec),
+            Arguments.of(MIXED_HIVE, schema, idPrimaryKeySpec, unpartitioned),
+            Arguments.of(MIXED_HIVE, schema, noPrimaryKey, unpartitioned),
+            Arguments.of(MIXED_ICEBERG, schema, idPrimaryKeySpec, ptSpec),
+            Arguments.of(MIXED_ICEBERG, schema, noPrimaryKey, ptSpec),
+            Arguments.of(MIXED_ICEBERG, schema, idPrimaryKeySpec, unpartitioned),
+            Arguments.of(MIXED_ICEBERG, schema, noPrimaryKey, unpartitioned))
+        .flatMap(
+            e -> {
+              List parquet = Lists.newArrayList(e.get());
+              parquet.add(FileFormat.PARQUET);
+              List orc = Lists.newArrayList(e.get());
+              orc.add(FileFormat.ORC);
+              return Stream.of(Arguments.of(parquet.toArray()), Arguments.of(orc.toArray()));
+            });
   }
 
   @DisplayName("TestSQL: INSERT INTO table without upsert")
   @ParameterizedTest
   @MethodSource
   public void testNoUpsert(
-      TableFormat format, Schema schema, PrimaryKeySpec keySpec, PartitionSpec ptSpec) {
+      TableFormat format,
+      Schema schema,
+      PrimaryKeySpec keySpec,
+      PartitionSpec ptSpec,
+      FileFormat fileFormat) {
     ArcticTable table =
         createTarget(
             schema,
@@ -123,7 +136,8 @@ public class TestInsertIntoSQL extends SparkTableTestBase {
                 tableBuilder
                     .withPrimaryKeySpec(keySpec)
                     .withProperty(TableProperties.UPSERT_ENABLED, "false")
-                    .withProperty(TableProperties.CHANGE_FILE_FORMAT, "AVRO")
+                    .withProperty(TableProperties.CHANGE_FILE_FORMAT, fileFormat.name())
+                    .withProperty(TableProperties.BASE_FILE_FORMAT, fileFormat.name())
                     .withPartitionSpec(ptSpec));
 
     createViewSource(schema, source);
@@ -143,21 +157,33 @@ public class TestInsertIntoSQL extends SparkTableTestBase {
 
   public static Stream<Arguments> testUpsert() {
     return Stream.of(
-        Arguments.of(MIXED_HIVE, schema, idPrimaryKeySpec, ptSpec),
-        Arguments.of(MIXED_HIVE, schema, noPrimaryKey, ptSpec),
-        Arguments.of(MIXED_HIVE, schema, idPrimaryKeySpec, unpartitioned),
-        Arguments.of(MIXED_HIVE, schema, noPrimaryKey, unpartitioned),
-        Arguments.of(MIXED_ICEBERG, schema, idPrimaryKeySpec, ptSpec),
-        Arguments.of(MIXED_ICEBERG, schema, noPrimaryKey, ptSpec),
-        Arguments.of(MIXED_ICEBERG, schema, idPrimaryKeySpec, unpartitioned),
-        Arguments.of(MIXED_ICEBERG, schema, noPrimaryKey, unpartitioned));
+            Arguments.of(MIXED_HIVE, schema, idPrimaryKeySpec, ptSpec),
+            Arguments.of(MIXED_HIVE, schema, noPrimaryKey, ptSpec),
+            Arguments.of(MIXED_HIVE, schema, idPrimaryKeySpec, unpartitioned),
+            Arguments.of(MIXED_HIVE, schema, noPrimaryKey, unpartitioned),
+            Arguments.of(MIXED_ICEBERG, schema, idPrimaryKeySpec, ptSpec),
+            Arguments.of(MIXED_ICEBERG, schema, noPrimaryKey, ptSpec),
+            Arguments.of(MIXED_ICEBERG, schema, idPrimaryKeySpec, unpartitioned),
+            Arguments.of(MIXED_ICEBERG, schema, noPrimaryKey, unpartitioned))
+        .flatMap(
+            e -> {
+              List parquet = Lists.newArrayList(e.get());
+              parquet.add(FileFormat.PARQUET);
+              List orc = Lists.newArrayList(e.get());
+              orc.add(FileFormat.ORC);
+              return Stream.of(Arguments.of(parquet.toArray()), Arguments.of(orc.toArray()));
+            });
   }
 
   @DisplayName("TestSQL: INSERT INTO table with upsert enabled")
   @ParameterizedTest
   @MethodSource
   public void testUpsert(
-      TableFormat format, Schema schema, PrimaryKeySpec keySpec, PartitionSpec ptSpec) {
+      TableFormat format,
+      Schema schema,
+      PrimaryKeySpec keySpec,
+      PartitionSpec ptSpec,
+      FileFormat fileFormat) {
     ArcticTable table =
         createTarget(
             schema,
@@ -165,6 +191,8 @@ public class TestInsertIntoSQL extends SparkTableTestBase {
                 tableBuilder
                     .withPrimaryKeySpec(keySpec)
                     .withProperty(TableProperties.UPSERT_ENABLED, "true")
+                    .withProperty(TableProperties.CHANGE_FILE_FORMAT, fileFormat.name())
+                    .withProperty(TableProperties.BASE_FILE_FORMAT, fileFormat.name())
                     .withPartitionSpec(ptSpec));
     createViewSource(schema, source);
 

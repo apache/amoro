@@ -26,9 +26,12 @@ import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.data.orc.GenericOrcReader;
 import org.apache.iceberg.data.parquet.GenericParquetReaders;
+import org.apache.iceberg.orc.OrcRowReader;
 import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.types.Type;
+import org.apache.orc.TypeDescription;
 import org.apache.parquet.schema.MessageType;
 
 import java.util.Map;
@@ -80,10 +83,17 @@ public class GenericArcticDataReader extends AbstractArcticDataReader<Record> {
   }
 
   @Override
-  protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
+  protected Function<MessageType, ParquetValueReader<?>> getParquetReaderFunction(
       Schema projectSchema,
       Map<Integer, ?> idToConstant) {
     return fileSchema -> GenericParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
+  }
+
+  @Override
+  protected Function<TypeDescription, OrcRowReader<?>> getOrcReaderFunction(
+      Schema projectSchema,
+      Map<Integer, ?> idToConstant) {
+    return fileSchema -> new GenericOrcReader(projectSchema, fileSchema, idToConstant);
   }
 
   @Override

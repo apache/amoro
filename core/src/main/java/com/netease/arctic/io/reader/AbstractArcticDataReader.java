@@ -18,21 +18,27 @@
 
 package com.netease.arctic.io.reader;
 
+import com.google.common.collect.Sets;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.mapping.NameMappingParser;
+import org.apache.iceberg.orc.ORC;
+import org.apache.iceberg.orc.OrcRowReader;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.types.Type;
+import org.apache.iceberg.types.TypeUtil;
+import org.apache.orc.TypeDescription;
 import org.apache.parquet.schema.MessageType;
 
 import java.io.Serializable;
@@ -120,10 +126,23 @@ public abstract class AbstractArcticDataReader<T> implements Serializable {
         CloseableIterable.concat(
             CloseableIterable.transform(
                 CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-                fileScanTask -> newParquetIterable(
-                    fileScanTask,
-                    newProjectedSchema,
-                    DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
+                fileScanTask -> {
+                  switch (fileScanTask.file().format()) {
+                    case PARQUET:
+                      return newParquetIterable(
+                          fileScanTask,
+                          newProjectedSchema,
+                          DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant));
+                    case ORC:
+                      return newOrcIterable(
+                          fileScanTask,
+                          newProjectedSchema,
+                          DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant));
+                    default:
+                      throw new UnsupportedOperationException(
+                          "Cannot read unknown format: " + fileScanTask.file().format());
+                  }
+                })));
     return dataIterable.iterator();
   }
 
@@ -143,11 +162,23 @@ public abstract class AbstractArcticDataReader<T> implements Serializable {
           CloseableIterable.concat(
               CloseableIterable.transform(
                   CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-                  fileScanTask ->
-                      newParquetIterable(
-                          fileScanTask,
-                          newProjectedSchema,
-                          DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
+                  fileScanTask -> {
+                    switch (fileScanTask.file().format()) {
+                      case PARQUET:
+                        return newParquetIterable(
+                            fileScanTask,
+                            newProjectedSchema,
+                            DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant));
+                      case ORC:
+                        return newOrcIterable(
+                            fileScanTask,
+                            newProjectedSchema,
+                            DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant));
+                      default:
+                        throw new UnsupportedOperationException(
+                            "Cannot read unknown format: " + fileScanTask.file().format());
+                    }
+                  })));
       return dataIterable.iterator();
     } else {
       return CloseableIterator.empty();
@@ -168,7 +199,7 @@ public abstract class AbstractArcticDataReader<T> implements Serializable {
     Parquet.ReadBuilder builder = Parquet.read(fileIO.newInputFile(task.file().path().toString()))
         .split(task.start(), task.length())
         .project(schema)
-        .createReaderFunc(getNewReaderFunction(schema, idToConstant))
+        .createReaderFunc(getParquetReaderFunction(schema, idToConstant))
         .filter(task.residual())
         .caseSensitive(caseSensitive);
 
@@ -180,6 +211,29 @@ public abstract class AbstractArcticDataReader<T> implements Serializable {
     }
 
     return fileIO.doAs(builder::build);
+  }
+
+  protected CloseableIterable<T> newOrcIterable(
+      FileScanTask task,
+      Schema schema,
+      Map<Integer, ?> idToConstant) {
+    Schema readSchemaWithoutConstantAndMetadataFields =
+        TypeUtil.selectNot(
+            schema, Sets.union(idToConstant.keySet(), MetadataColumns.metadataFieldIds()));
+
+    ORC.ReadBuilder builder =
+        ORC.read(fileIO.newInputFile(task.file().path().toString()))
+            .project(readSchemaWithoutConstantAndMetadataFields)
+            .split(task.start(), task.length())
+            .createReaderFunc(getOrcReaderFunction(schema, idToConstant))
+            .filter(task.residual())
+            .caseSensitive(caseSensitive);
+
+    if (nameMapping != null) {
+      builder.withNameMapping(NameMappingParser.fromJson(nameMapping));
+    }
+
+    return builder.build();
   }
 
   private class GenericArcticDeleteFilter extends ArcticDeleteFilter<T> {
@@ -231,7 +285,11 @@ public abstract class AbstractArcticDataReader<T> implements Serializable {
     }
   }
 
-  protected abstract Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
+  protected abstract Function<MessageType, ParquetValueReader<?>> getParquetReaderFunction(
+      Schema projectSchema,
+      Map<Integer, ?> idToConstant);
+
+  protected abstract Function<TypeDescription, OrcRowReader<?>> getOrcReaderFunction(
       Schema projectSchema,
       Map<Integer, ?> idToConstant);
 

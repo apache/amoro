@@ -364,7 +364,7 @@ public class TableController {
    *
    * @param ctx - context for handling the request and response
    */
-  public void getTableOperations(Context ctx) {
+  public void getTableOperations(Context ctx) throws Exception {
     String catalogName = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
     String tableName = ctx.pathParam("table");
