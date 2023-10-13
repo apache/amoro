@@ -309,12 +309,8 @@ public class CatalogController {
         }
       }
     } else if (storageType.equals(STORAGE_CONFIGS_VALUE_TYPE_S3)) {
-      if (StringUtils.isNotBlank(info.getStorageConfig().get(STORAGE_CONFIGS_KEY_REGION))) {
-        metaStorageConfig.put(STORAGE_CONFIGS_KEY_REGION, info.getStorageConfig().get(STORAGE_CONFIGS_KEY_REGION));
-      }
-      if (StringUtils.isNotBlank(info.getStorageConfig().get(STORAGE_CONFIGS_KEY_ENDPOINT))) {
-        metaStorageConfig.put(STORAGE_CONFIGS_KEY_ENDPOINT, info.getStorageConfig().get(STORAGE_CONFIGS_KEY_ENDPOINT));
-      }
+      CatalogPropertyUtil.migrateProperty(info.getStorageConfig(), metaStorageConfig, STORAGE_CONFIGS_KEY_REGION);
+      CatalogPropertyUtil.migrateProperty(info.getStorageConfig(), metaStorageConfig, STORAGE_CONFIGS_KEY_ENDPOINT);
     } else {
       throw new RuntimeException("Invalid storage type " + storageType);
     }
