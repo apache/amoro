@@ -83,6 +83,23 @@ public interface AmoroCatalogTestHelper<T> {
   String catalogName();
 
   /**
+   * Set table property.
+   * @param db database name
+   * @param tableName table name
+   * @param key property key
+   * @param value property value
+   */
+  void setTableProperties(String db, String tableName, String key, String value);
+
+  /**
+   * Remove table property.
+   * @param db database name
+   * @param tableName table name
+   * @param key property key
+   */
+  void removeTableProperties(String db, String tableName, String key);
+
+  /**
    * Clean the catalog. drop databases and tables.
    */
   void clean();

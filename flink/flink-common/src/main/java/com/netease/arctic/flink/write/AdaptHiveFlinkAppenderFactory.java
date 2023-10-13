@@ -192,6 +192,21 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
               .equalityFieldIds(equalityFieldIds)
               .buildEqualityWriter();
 
+        case ORC:
+          return ORC.writeDeletes(outputFile.encryptingOutputFile())
+              .createWriterFunc(
+                  (schema, typDesc) ->
+                      FlinkOrcWriter.buildWriter(lazyEqDeleteFlinkSchema(), schema))
+              .withPartition(partition)
+              .overwrite()
+              .setAll(props)
+              .metricsConfig(metricsConfig)
+              .rowSchema(eqDeleteRowSchema)
+              .withSpec(spec)
+              .withKeyMetadata(outputFile.keyMetadata())
+              .equalityFieldIds(equalityFieldIds)
+              .buildEqualityWriter();
+
         default:
           throw new UnsupportedOperationException(
               "Cannot write equality-deletes for unsupported file format: " + format);
@@ -233,6 +248,21 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
               .withSpec(spec)
               .withKeyMetadata(outputFile.keyMetadata())
               .transformPaths(path -> StringData.fromString(path.toString()))
+              .buildPositionWriter();
+
+        case ORC:
+          RowType orcPosDeleteSchema =
+              FlinkSchemaUtil.convert(DeleteSchemaUtil.posDeleteSchema(posDeleteRowSchema));
+          return ORC.writeDeletes(outputFile.encryptingOutputFile())
+              .createWriterFunc(
+                  (schema, typDesc) -> FlinkOrcWriter.buildWriter(orcPosDeleteSchema, schema))
+              .withPartition(partition)
+              .overwrite()
+              .setAll(props)
+              .metricsConfig(metricsConfig)
+              .rowSchema(posDeleteRowSchema)
+              .withSpec(spec)
+              .withKeyMetadata(outputFile.keyMetadata())
               .buildPositionWriter();
 
         default:
