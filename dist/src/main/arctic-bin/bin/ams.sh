@@ -18,28 +18,14 @@
 #
 
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
-AMORO_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
-export AMORO_HOME
-
-PRGDIR=$(dirname $0)
-PRGDIR=$(cd $PRGDIR;pwd)
-source ${PRGDIR}/config.sh
 
 
-CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
-APP_HOME=$CURRENT_DIR/../
+source ${CURRENT_DIR}/load-config.sh
 
 
-if [[ -d $JAVA_HOME ]]; then
-    JAVA_RUN=$JAVA_HOME/bin/java
-else
-    JAVA_RUN=java
-fi
-XMX=$XMX_CONFIG
-XMS=$XMS_CONFIG
 
-JAVA_OPTS="-server -Xloggc:$AMORO_HOME/logs/gc.log -XX:+IgnoreUnrecognizedVMOptions -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=10M \
--Xms${XMS}m -Xmx${XMX}m \
+JAVA_OPTS="-server -Xloggc:$AMORO_LOG_DIR/gc.log -XX:+IgnoreUnrecognizedVMOptions -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=10M \
+-Xms${JVM_XMS_CONFIG}m -Xmx${JVM_XMX_CONFIG}m \
 -verbose:gc -XX:+PrintGCDetails \
 -Dcom.sun.management.jmxremote \
 -Dcom.sun.management.jmxremote.ssl=false \
@@ -59,27 +45,8 @@ JAVA_OPTS="-server -Xloggc:$AMORO_HOME/logs/gc.log -XX:+IgnoreUnrecognizedVMOpti
 --add-opens=java.base/sun.util.calendar=ALL-UNNAMED \
 "
 
-
-if [ ! -z "$JMX_REMOTE_PORT_CONFIG" ];then
+if [ -n "$JMX_REMOTE_PORT_CONFIG" ];then
         JAVA_OPTS="${JAVA_OPTS} -Dcom.sun.management.jmxremote.port=${JMX_REMOTE_PORT_CONFIG} "
-fi
-
-if [ -z "${LANG_CONFIG}" ];then
-        export LANG=zh_CN.GBK
-else
-        export LANG=${LANG_CONFIG}
-fi
-
-#LD_LIBRARY_PATH
-if [ -d "$APP_HOME/solib" ]; then
-        export LD_LIBRARY_PATH=$APP_HOME/solib
-fi
-
-nss_java_agent_path=`ls -1 $APP_HOME/conf/sentry-javaagent-home/sentry-javaagent-premain-*.jar 2>/dev/null | tail -n1`
-nss_java_agent_lib=$APP_HOME/lib
-if [ -f "$nss_java_agent_path" ]; then
-   JAVA_OPTS="${JAVA_OPTS} -javaagent:$nss_java_agent_path"
-   JAVA_OPTS="${JAVA_OPTS} -Dsentry_collector_libpath=$nss_java_agent_lib"
 fi
 
 if [ ! -z "$JVM_EXTRA_CONFIG" ];then
@@ -87,20 +54,18 @@ if [ ! -z "$JVM_EXTRA_CONFIG" ];then
 fi
 
 RUN_SERVER="com.netease.arctic.server.ArcticServiceContainer"
-WORKDIR=$AMORO_HOME
-RUNSERVER=$RUN_SERVER
-LIB_PATH=$AMORO_HOME/lib
-WORKDIR=$AMORO_HOME
-LOG_DIR=${WORKDIR}/logs
-STDERR_LOG=${WORKDIR}/logs/app.log.err
-PID=${WORKDIR}/run/app.pid
 
-if [ ! -d "$LOG_DIR" ]; then
-    mkdir "$LOG_DIR"
+
+LIB_PATH=$AMORO_HOME/lib
+STDERR_LOG=${AMORO_LOG_DIR}/app.log.err
+PID=${AMORO_HOME}/run/app.pid
+
+if [ ! -d "$AMORO_LOG_DIR" ]; then
+    mkdir "$AMORO_LOG_DIR"
 fi
 
-if [ ! -d "${WORKDIR}/run" ]; then
-    mkdir "${WORKDIR}/run"
+if [ ! -d "${AMORO_HOME}/run" ]; then
+    mkdir "${AMORO_HOME}/run"
 fi
 
 if [ ! -f $PID_PATH ];then
@@ -115,17 +80,9 @@ if [ -z "$JAVA_OPTS" ]; then
     JAVA_OPTS="-Xms512m -Xmx512m -verbose:gc -XX:+PrintGCDetails"
 fi
 
-if [ -z "$RUNSERVER" ]; then
-    echo "RunServer not exist, please check !"
-    exit 1
-fi
-
-if [ -z "$AMORO_CONF_DIR" ]; then
-    AMORO_CONF_DIR=$AMORO_HOME/conf/
-fi
 
 export CLASSPATH=$AMORO_CONF_DIR:$LIB_PATH/:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -)
-CMDS="$JAVA_RUN -Dlog.home=${LOG_DIR} -Dlog.dir=${LOG_DIR} -Duser.dir=${AMORO_HOME}  $JAVA_OPTS ${RUNSERVER}"
+CMDS="$JAVA_RUN -Dlog.home=${AMORO_LOG_DIR} -Dlog.dir=${AMORO_LOG_DIR} -Duser.dir=${AMORO_HOME}  $JAVA_OPTS ${RUN_SERVER}"
 #0:pid bad and proc OK;   1:pid ok and proc bad;    2:pid bad
 function status(){
     test -e ${PID} || return 2
@@ -144,6 +101,11 @@ function start() {
         echo "process start failed."; return 1
     fi
 }
+
+function startForeground() {
+  exec ${CMDS}
+}
+
 function stop() {
     status && kill $(cat ${PID})
     if ! status; then
@@ -185,6 +147,9 @@ case "$1" in
             start
         fi
         ;;
+    start-foreground)
+       startForeground
+       ;;
     stop)
         status;
         if [ $? -ne 0 ]; then
@@ -207,10 +172,15 @@ case "$1" in
         fi
         ;;
     pid)
-        cat $PID
+        status
+        if [ $? -eq 0 ]; then
+          cat $PID
+        else
+          echo "not running"
+        fi
         ;;
     *)
-        echo "Usage $0 start|stop|restart|status|pid"
+        echo "Usage $0 start|start-foreground|stop|restart|status|pid"
         exit 1
         ;;
 esac

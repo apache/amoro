@@ -312,7 +312,8 @@ export enum upgradeStatusMap {
 export enum tableTypeIconMap {
   ICEBERG = 'iceberg',
   ARCTIC = 'amoro',
-  HIVE = 'hive'
+  HIVE = 'hive',
+  PAIMON = 'paimon'
 }
 
 export type ILineChartOriginalData = Record<string, Record<string, number>>
