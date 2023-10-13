@@ -20,12 +20,15 @@ package com.netease.arctic.server.dashboard;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.server.dashboard.component.reverser.DDLReverser;
+import com.netease.arctic.server.dashboard.component.reverser.PaimonTableMetaExtract;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.paimon.table.DataTable;
 
 import java.util.List;
 
@@ -55,7 +58,10 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) {
-    throw new UnsupportedOperationException();
+    DataTable table = getTable(amoroTable);
+    PaimonTableMetaExtract extract = new PaimonTableMetaExtract();
+    DDLReverser<DataTable> ddlReverser = new DDLReverser<>(extract);
+    return ddlReverser.reverse(table, amoroTable.id());
   }
 
   @Override
@@ -66,5 +72,9 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override
   public List<PartitionFileBaseInfo> getTableFile(AmoroTable<?> amoroTable, String partition) {
     throw new UnsupportedOperationException();
+  }
+
+  private DataTable getTable(AmoroTable<?> amoroTable) {
+    return (DataTable) amoroTable.originalTable();
   }
 }
