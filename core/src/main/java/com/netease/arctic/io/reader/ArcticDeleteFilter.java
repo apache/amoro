@@ -41,10 +41,12 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.avro.DataReader;
+import org.apache.iceberg.data.orc.GenericOrcReader;
 import org.apache.iceberg.data.parquet.GenericParquetReaders;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.InputFile;
+import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
@@ -141,10 +143,9 @@ public abstract class ArcticDeleteFilter<T> {
     this.primaryKeyId = primaryKeySpec.primaryKeyStruct().fields().stream()
         .map(Types.NestedField::fieldId).collect(Collectors.toSet());
     this.requiredSchema = fileProjection(tableSchema, requestedSchema, eqDeletes, posDeletes);
-    Set<Integer> deleteIds = Sets.newHashSet(primaryKeyId);
-    deleteIds.add(MetadataColumns.TRANSACTION_ID_FILED.fieldId());
-    deleteIds.add(MetadataColumns.FILE_OFFSET_FILED.fieldId());
-    this.deleteSchema = TypeUtil.select(requiredSchema, deleteIds);
+    this.deleteSchema = TypeUtil.join(
+        TypeUtil.select(requiredSchema, Sets.newHashSet(primaryKeyId)),
+        new Schema(MetadataColumns.FILE_OFFSET_FILED, MetadataColumns.TRANSACTION_ID_FILED));
     if (CollectionUtils.isNotEmpty(sourceNodes)) {
       this.deleteNodeFilter = new NodeFilter<>(sourceNodes, deleteSchema, primaryKeySpec, record -> record);
     } else {
@@ -311,6 +312,10 @@ public abstract class ArcticDeleteFilter<T> {
         return openParquet(input, deleteSchema, idToConstant);
 
       case ORC:
+        return ORC.read(input)
+            .project(deleteSchema)
+            .createReaderFunc(
+                fileSchema -> GenericOrcReader.buildReader(deleteSchema, fileSchema, idToConstant)).build();
       default:
         throw new UnsupportedOperationException(String.format(
             "Cannot read deletes, %s is not a supported format: %s",
@@ -410,6 +415,10 @@ public abstract class ArcticDeleteFilter<T> {
         return builder.build();
 
       case ORC:
+        return ORC.read(input)
+            .project(deleteSchema)
+            .createReaderFunc(
+                fileSchema -> GenericOrcReader.buildReader(deleteSchema, fileSchema)).build();
       default:
         throw new UnsupportedOperationException(String.format(
             "Cannot read deletes, %s is not a supported format: %s",
