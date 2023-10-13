@@ -98,7 +98,7 @@
                      fileName="${LOG_HOME}/amoro-metrics.log"
                      filePattern="${LOG_HOME}/metrics/iceberg-metrics-%i.log.gz">
             <PatternLayout>
-                <pattern>%m%n</pattern>
+                <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
             </PatternLayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="64MB"/>

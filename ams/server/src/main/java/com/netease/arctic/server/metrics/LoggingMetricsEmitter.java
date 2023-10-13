@@ -49,8 +49,7 @@ public class LoggingMetricsEmitter implements MetricsEmitter {
 
   @Override
   public void emit(MetricsContent<?> metrics) {
-    LOG.info("Thread {} received metrics named {} type {} data: {}", Thread.currentThread().getName(), metrics.name(),
-        metrics.type().name(), metrics.data());
+    LOG.info("Received metrics named {} type {} data: {}", metrics.name(), metrics.type().name(), metrics.data());
   }
 
   @Override
