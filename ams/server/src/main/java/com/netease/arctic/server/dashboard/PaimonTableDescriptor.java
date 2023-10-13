@@ -33,13 +33,18 @@ import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.paimon.AbstractFileStore;
 import org.apache.paimon.Snapshot;
+import org.apache.paimon.data.BinaryRow;
+import org.apache.paimon.io.DataFileMeta;
+import org.apache.paimon.manifest.FileKind;
 import org.apache.paimon.manifest.ManifestEntry;
 import org.apache.paimon.manifest.ManifestFile;
 import org.apache.paimon.manifest.ManifestFileMeta;
 import org.apache.paimon.manifest.ManifestList;
 import org.apache.paimon.table.DataTable;
 import org.apache.paimon.table.FileStoreTable;
+import org.apache.paimon.utils.FileStorePathFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -47,6 +52,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+
+import static com.netease.arctic.data.DataFileType.INSERT_FILE;
+import static org.apache.paimon.operation.FileStoreScan.Plan.groupByPartFiles;
 
 /**
  * Descriptor for Paimon format tables.
@@ -154,12 +162,58 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<PartitionBaseInfo> getTablePartition(AmoroTable<?> amoroTable) {
-    throw new UnsupportedOperationException();
+    FileStoreTable table = getTable(amoroTable);
+    AbstractFileStore<?> store = (AbstractFileStore<?>) table.store();
+    FileStorePathFactory fileStorePathFactory = store.pathFactory();
+    List<ManifestEntry> files = store.newScan().plan().files(FileKind.ADD);
+    Map<BinaryRow, Map<Integer, List<DataFileMeta>>> groupByPartFiles = groupByPartFiles(files);
+
+    List<PartitionBaseInfo> partitionBaseInfoList = new ArrayList<>();
+    for (Map.Entry<BinaryRow, Map<Integer, List<DataFileMeta>>> groupByPartitionEntry : groupByPartFiles.entrySet()) {
+      for (Map.Entry<Integer, List<DataFileMeta>> groupByBucketEntry : groupByPartitionEntry.getValue().entrySet()) {
+        String partitionSt = partitionString(
+            groupByPartitionEntry.getKey(),
+            groupByBucketEntry.getKey(),
+            fileStorePathFactory);
+        int fileCount = 0;
+        int fileSize = 0;
+        long lastCommitTime = 0;
+        for (DataFileMeta dataFileMeta : groupByBucketEntry.getValue()) {
+          fileCount++;
+          fileSize += dataFileMeta.fileSize();
+          lastCommitTime = Math.max(lastCommitTime, dataFileMeta.creationTime().getMillisecond());
+        }
+        partitionBaseInfoList.add(new PartitionBaseInfo(partitionSt, fileCount, fileSize, lastCommitTime));
+      }
+    }
+    return partitionBaseInfoList;
   }
 
   @Override
   public List<PartitionFileBaseInfo> getTableFile(AmoroTable<?> amoroTable, String partition) {
-    throw new UnsupportedOperationException();
+    FileStoreTable table = getTable(amoroTable);
+    AbstractFileStore<?> store = (AbstractFileStore<?>) table.store();
+    FileStorePathFactory fileStorePathFactory = store.pathFactory();
+    List<ManifestEntry> files = store.newScan().plan().files(FileKind.ADD);
+    List<PartitionFileBaseInfo> partitionFileBases = new ArrayList<>();
+    for (ManifestEntry manifestEntry : files) {
+      String partitionSt = partitionString(
+          manifestEntry.partition(),
+          manifestEntry.bucket(),
+          fileStorePathFactory);
+      partitionFileBases.add(
+          new PartitionFileBaseInfo(
+              null,
+              INSERT_FILE,
+              manifestEntry.file().creationTime().getMillisecond(),
+              partitionSt,
+              fullFilePath(store, manifestEntry),
+              manifestEntry.file().fileSize()
+          )
+      );
+    }
+
+    return partitionFileBases;
   }
 
   private TransactionsOfTable manifestListInfo(
@@ -185,6 +239,16 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         snapshot.timeMillis(),
         snapshot.commitKind().toString(),
         null);
+  }
+
+  private String partitionString(BinaryRow partition, Integer bucket, FileStorePathFactory fileStorePathFactory) {
+    String partitionString = fileStorePathFactory.getPartitionString(partition);
+    return partitionString + "/bucket-" + bucket;
+  }
+
+  private String fullFilePath(AbstractFileStore<?> store, ManifestEntry manifestEntry) {
+    return store.pathFactory().createDataFilePathFactory(
+        manifestEntry.partition(), manifestEntry.bucket()).toPath(manifestEntry.file().fileName()).toString();
   }
 
   private FileStoreTable getTable(AmoroTable<?> amoroTable) {
