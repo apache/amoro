@@ -21,12 +21,12 @@ package com.netease.arctic.server.dashboard.model;
 import java.util.Map;
 
 public class TransactionsOfTable {
-  public long transactionId; // required
-  public int fileCount; // required
-  public long fileSize; // required
-  public long commitTime; // required
-  public String operation; // required
-  public Map<String, String> summary;
+  private long transactionId; // required
+  private int fileCount; // required
+  private long fileSize; // required
+  private long commitTime; // required
+  private String operation; // required
+  private Map<String, String> summary;
 
   public TransactionsOfTable() {
   }
