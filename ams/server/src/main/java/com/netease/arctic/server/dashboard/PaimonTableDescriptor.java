@@ -20,6 +20,8 @@ package com.netease.arctic.server.dashboard;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.server.dashboard.component.reverser.DDLReverser;
+import com.netease.arctic.server.dashboard.component.reverser.PaimonTableMetaExtract;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
 import com.netease.arctic.server.dashboard.model.AMSPartitionField;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
@@ -137,7 +139,10 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) {
-    throw new UnsupportedOperationException();
+    DataTable table = getTable(amoroTable);
+    PaimonTableMetaExtract extract = new PaimonTableMetaExtract();
+    DDLReverser<DataTable> ddlReverser = new DDLReverser<>(extract);
+    return ddlReverser.reverse(table, amoroTable.id());
   }
 
   @Override
