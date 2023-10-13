@@ -37,6 +37,7 @@ import org.apache.paimon.manifest.ManifestEntry;
 import org.apache.paimon.manifest.ManifestFile;
 import org.apache.paimon.manifest.ManifestFileMeta;
 import org.apache.paimon.manifest.ManifestList;
+import org.apache.paimon.table.DataTable;
 import org.apache.paimon.table.FileStoreTable;
 
 import java.util.HashMap;
@@ -72,7 +73,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
             .collect(Collectors.toList())
     );
 
-    //pk
+    //primary key
     Set<String> primaryKeyNames = new HashSet<>(table.primaryKeys());
     List<AMSColumnInfo> primaryKeys = serverTableMeta.getSchema()
         .stream()
@@ -91,38 +92,44 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     serverTableMeta.setProperties(table.options());
 
     Map<String, Object> tableSummary = new HashMap<>();
-    Map<String, Object> baseSummary = new HashMap<>();
-    //table summery
+    Map<String, Object> baseMetric = new HashMap<>();
+    //table summary
     tableSummary.put("tableFormat", AmsUtil.formatString(amoroTable.format().name()));
     Snapshot snapshot = store.snapshotManager().latestSnapshot();
     if (snapshot != null) {
       TransactionsOfTable transactionsOfTable =
           manifestListInfo(store, snapshot, (m, s) -> s.dataManifests(m));
-      tableSummary.put("size", AmsUtil.byteToXB(transactionsOfTable.fileSize));
-      tableSummary.put("file", transactionsOfTable.fileCount);
-      tableSummary.put("averageFile", AmsUtil.byteToXB(
-          transactionsOfTable.fileCount == 0 ? 0 : transactionsOfTable.fileSize / transactionsOfTable.fileCount));
+      long fileSize = transactionsOfTable.getFileSize();
+      String totalSize = AmsUtil.byteToXB(fileSize);
+      int fileCount = transactionsOfTable.getFileCount();
 
-      baseSummary.put("totalSize", AmsUtil.byteToXB(transactionsOfTable.fileSize));
-      baseSummary.put("fileCount", transactionsOfTable.fileCount);
-      baseSummary.put("averageFileSize", AmsUtil.byteToXB(
-          transactionsOfTable.fileCount == 0 ? 0 : transactionsOfTable.fileSize / transactionsOfTable.fileCount));
-      baseSummary.put("lastCommitTime", snapshot.timeMillis());
+      String averageFileSize = AmsUtil.byteToXB(
+          fileCount == 0 ?
+              0 : fileSize / fileCount);
+
+      tableSummary.put("averageFile", averageFileSize);
+      tableSummary.put("file", fileCount);
+      tableSummary.put("size", totalSize);
+
+      baseMetric.put("totalSize", totalSize);
+      baseMetric.put("fileCount", fileCount);
+      baseMetric.put("averageFileSize", averageFileSize);
+      baseMetric.put("lastCommitTime", snapshot.timeMillis());
       Long watermark = snapshot.watermark();
       if (watermark != null && watermark > 0) {
-        baseSummary.put("baseWatermark", watermark);
+        baseMetric.put("baseWatermark", watermark);
       }
     } else {
       tableSummary.put("size", 0);
       tableSummary.put("file", 0);
       tableSummary.put("averageFile", 0);
 
-      baseSummary.put("totalSize", 0);
-      baseSummary.put("fileCount", 0);
-      baseSummary.put("averageFileSize", 0);
+      baseMetric.put("totalSize", 0);
+      baseMetric.put("fileCount", 0);
+      baseMetric.put("averageFileSize", 0);
     }
     serverTableMeta.setTableSummary(tableSummary);
-    serverTableMeta.setBaseMetrics(baseSummary);
+    serverTableMeta.setBaseMetrics(baseMetric);
 
     return serverTableMeta;
   }
