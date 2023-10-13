@@ -43,6 +43,7 @@ import java.util.stream.Collectors;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
@@ -54,6 +55,7 @@ public class CatalogLoader {
   public static final String AMS_CATALOG_IMPL = BasicArcticCatalog.class.getName();
   public static final String ICEBERG_CATALOG_IMPL = BasicIcebergCatalog.class.getName();
   public static final String HIVE_CATALOG_IMPL = "com.netease.arctic.hive.catalog.ArcticHiveCatalog";
+  public static final String GLUE_CATALOG_IMPL = "org.apache.iceberg.aws.glue.GlueCatalog";
   public static final String MIXED_ICEBERG_CATALOG_IMP = BasicMixedIcebergCatalog.class.getName();
 
   public static final String ICEBERG_REST_CATALOG = RESTCatalog.class.getName();
@@ -104,7 +106,6 @@ public class CatalogLoader {
           "Catalog support only one table format now.");
       TableFormat tableFormat = tableFormats.iterator().next();
       switch (type) {
-        // TODO
         case CATALOG_TYPE_HADOOP:
           Preconditions.checkArgument(
               TableFormat.ICEBERG == tableFormat || TableFormat.MIXED_ICEBERG == tableFormat,
@@ -137,6 +138,13 @@ public class CatalogLoader {
             throw new IllegalArgumentException("Internal Catalog support iceberg or mixed-iceberg table only");
           }
 
+          break;
+        case CATALOG_TYPE_GLUE:
+          if (TableFormat.ICEBERG == tableFormat) {
+            catalogImpl = GLUE_CATALOG_IMPL;
+          } else {
+            throw new IllegalArgumentException("Glue Catalog support iceberg table only");
+          }
           break;
         case CATALOG_TYPE_CUSTOM:
           Preconditions.checkArgument(

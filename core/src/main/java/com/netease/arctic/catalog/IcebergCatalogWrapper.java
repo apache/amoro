@@ -99,7 +99,7 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
     this.tableMetaStore = CatalogUtil.buildMetaStore(meta);
     if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(meta.getCatalogType())) {
       meta.getCatalogProperties()
-          .put(CatalogProperties.CATALOG_IMPL, CatalogMetaProperties.ICEBERG_CATALOG_TYPE_GLUE_IMPL);
+          .put(CatalogProperties.CATALOG_IMPL, CatalogLoader.GLUE_CATALOG_IMPL);
     }
     if (meta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
       meta.getCatalogProperties().remove(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE);

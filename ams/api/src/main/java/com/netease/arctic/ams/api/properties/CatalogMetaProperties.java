@@ -68,8 +68,6 @@ public class CatalogMetaProperties {
   public static final String CATALOG_TYPE_GLUE = "glue";
   public static final String CATALOG_TYPE_CUSTOM = "custom";
 
-  public static final String ICEBERG_CATALOG_TYPE_GLUE_IMPL = "org.apache.iceberg.aws.glue.GlueCatalog";
-
   public static final String TABLE_FORMATS = "table-formats";
 
   public static final String CLIENT_POOL_SIZE = "clients";
