@@ -14,6 +14,7 @@ public class AsyncTableExecutors {
   private OptimizingCommitExecutor optimizingCommitExecutor;
   private OptimizingExpiringExecutor optimizingExpiringExecutor;
   private HiveCommitSyncExecutor hiveCommitSyncExecutor;
+  private DataExpiringExecutor dataExpiringExecutor;
 
   public static AsyncTableExecutors getInstance() {
     return instance;
@@ -39,6 +40,12 @@ public class AsyncTableExecutors {
     this.tableRefreshingExecutor = new TableRuntimeRefreshExecutor(tableManager,
         conf.getInteger(ArcticManagementConf.REFRESH_TABLES_THREAD_COUNT),
         conf.getLong(ArcticManagementConf.REFRESH_TABLES_INTERVAL));
+    if (conf.getBoolean(ArcticManagementConf.DATA_EXPIRATION_ENABLED)) {
+      this.dataExpiringExecutor = new DataExpiringExecutor(
+          tableManager,
+          conf.getInteger(ArcticManagementConf.DATA_EXPIRATION_THREAD_COUNT),
+          conf.get(ArcticManagementConf.DATA_EXPIRATION_INTERVAL));
+    }
   }
 
   public SnapshotsExpiringExecutor getSnapshotsExpiringExecutor() {
@@ -67,5 +74,9 @@ public class AsyncTableExecutors {
 
   public HiveCommitSyncExecutor getHiveCommitSyncExecutor() {
     return hiveCommitSyncExecutor;
+  }
+
+  public DataExpiringExecutor getDataExpiringExecutor() {
+    return dataExpiringExecutor;
   }
 }

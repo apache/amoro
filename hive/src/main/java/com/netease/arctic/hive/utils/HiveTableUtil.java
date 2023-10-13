@@ -118,6 +118,11 @@ public class HiveTableUtil {
         storageDescriptor.setInputFormat(HiveTableProperties.PARQUET_INPUT_FORMAT);
         serDeInfo.setSerializationLib(HiveTableProperties.PARQUET_ROW_FORMAT_SERDE);
         break;
+      case ORC:
+        storageDescriptor.setOutputFormat(HiveTableProperties.ORC_OUTPUT_FORMAT);
+        storageDescriptor.setInputFormat(HiveTableProperties.ORC_INPUT_FORMAT);
+        serDeInfo.setSerializationLib(HiveTableProperties.ORC_ROW_FORMAT_SERDE);
+        break;
       default:
         throw new IllegalArgumentException("Unsupported hive table file format:" + format);
     }

@@ -91,6 +91,7 @@
                                     <include>org.apache.iceberg:iceberg-spark</include>
                                     <include>org.apache.iceberg:iceberg-spark-extensions-3.3_2.12</include>
                                     <include>org.apache.iceberg:iceberg-bundled-guava</include>
+                                    <include>org.apache.orc:*</include>
 
                                     <include>org.apache.thrift:libthrift</include>
                                     <include>org.apache.avro:avro</include>
@@ -160,6 +161,10 @@
 
 
                                 <!-- relocation required dependencies -->
+                                <relocation>
+                                    <pattern>org.apache.orc</pattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.orc</shadedPattern>
+                                </relocation>
                                 <relocation>
                                     <pattern>org.apache.avro</pattern>
                                     <shadedPattern>com.netease.arctic.shade.org.apache.avro</shadedPattern>

@@ -112,6 +112,16 @@ public class IcebergHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Ca
   }
 
   @Override
+  public void setTableProperties(String db, String tableName, String key, String value) {
+    originalCatalog().loadTable(TableIdentifier.of(db, tableName)).updateProperties().set(key, value).commit();
+  }
+
+  @Override
+  public void removeTableProperties(String db, String tableName, String key) {
+    originalCatalog().loadTable(TableIdentifier.of(db, tableName)).updateProperties().remove(key).commit();
+  }
+
+  @Override
   public void clean() {
     Catalog catalog = originalCatalog();
     if (catalog instanceof SupportsNamespaces) {

@@ -231,6 +231,8 @@ This product includes code from Apache Iceberg.
 * org.apache.iceberg.spark.data.ParquetWithSparkSchemaVisitor copied and modified to org.apache.iceberg.spark.data.AdaptHiveParquetWithSparkSchemaVisitor
 * org.apache.iceberg.flink.data.ParquetWithFlinkSchemaVisitor copied and modified to org.apache.iceberg.flink.data.AdaptHiveParquetWithFlinkSchemaVisitor
 * org.apache.iceberg.parquet.ParquetUtil copied and modified to org.apache.iceberg.parquet.AdaptHiveParquetUtil
+* org.apache.paimon.spark.SparkTypeUtilsorg.apache.paimon.spark.SparkTypeUtils copied and modified to com.netease.arctic.server.dashboard.component.reverser.PaimonTypeToSparkType
+* org.apache.iceberg.spark.TypeToSparkType copied and modified to com.netease.arctic.server.dashboard.component.reverser.IcebergTypeToSparkType
 
 
 

@@ -126,7 +126,7 @@ public abstract class AbstractAdaptHiveArcticDataReader<T> extends AbstractArcti
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(fileIO.newInputFile(task.file().path().toString()))
         .split(task.start(), task.length())
         .project(schema)
-        .createReaderFunc(getNewReaderFunction(schema, idToConstant))
+        .createReaderFunc(getParquetReaderFunction(schema, idToConstant))
         .filter(task.residual())
         .caseSensitive(caseSensitive);
 
