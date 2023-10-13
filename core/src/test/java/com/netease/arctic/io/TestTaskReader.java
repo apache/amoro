@@ -47,6 +47,7 @@ import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import static com.netease.arctic.table.TableProperties.FILE_FORMAT_ORC;
 
 @RunWith(Parameterized.class)
 public class TestTaskReader extends TableDataTestBase {
@@ -55,13 +56,20 @@ public class TestTaskReader extends TableDataTestBase {
 
   @Parameterized.Parameters(name = "useDiskMap = {2}")
   public static Object[] parameters() {
-    return new Object[][] {{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(true, true), false},
-                           {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(true, true), true}};
+    return new Object[][] {
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+         new BasicTableTestHelper(true, true), false},
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+         new BasicTableTestHelper(true, true), true},
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+         new BasicTableTestHelper(true, true, FILE_FORMAT_ORC), false},
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+         new BasicTableTestHelper(true, true, FILE_FORMAT_ORC), true}
+    };
   }
 
-  public TestTaskReader(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper,
+  public TestTaskReader(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper,
       boolean useDiskMap) {
     super(catalogTestHelper, tableTestHelper);
     this.useDiskMap = useDiskMap;

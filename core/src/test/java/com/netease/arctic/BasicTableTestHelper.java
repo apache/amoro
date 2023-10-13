@@ -29,11 +29,16 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 
 public class BasicTableTestHelper implements TableTestHelper {
 
@@ -74,8 +79,12 @@ public class BasicTableTestHelper implements TableTestHelper {
         hasPartition ? SPEC : PartitionSpec.unpartitioned(), tableProperties);
   }
 
+  public BasicTableTestHelper(boolean hasPrimaryKey, boolean hasPartition, String fileFormat) {
+    this(hasPrimaryKey, hasPartition, buildTableFormat(fileFormat));
+  }
+
   public BasicTableTestHelper(boolean hasPrimaryKey, boolean hasPartition) {
-    this(hasPrimaryKey, hasPartition, null);
+    this(hasPrimaryKey, hasPartition, DEFAULT_FILE_FORMAT_DEFAULT);
   }
 
   @Override
@@ -139,5 +148,13 @@ public class BasicTableTestHelper implements TableTestHelper {
   public String toString() {
     return String.format("hasPrimaryKey = %b, hasPartitionSpec = %b", primaryKeySpec.primaryKeyExisted(),
         partitionSpec.isPartitioned());
+  }
+
+  protected static Map<String, String> buildTableFormat(String fileFormat) {
+    Map<String, String> tableProperties = Maps.newHashMapWithExpectedSize(3);
+    tableProperties.put(BASE_FILE_FORMAT, fileFormat);
+    tableProperties.put(CHANGE_FILE_FORMAT, fileFormat);
+    tableProperties.put(DEFAULT_FILE_FORMAT, fileFormat);
+    return tableProperties;
   }
 }

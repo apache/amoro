@@ -267,7 +267,7 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
             primaryKeyedFile.fileSizeInBytes(),
             primaryKeyedFile.fileSizeInBytes(),
             primaryKeyedFile.recordCount(),
-            IcebergFileFormat.PARQUET,
+            IcebergFileFormat.fromIceberg(primaryKeyedFile.format()),
             ImmutableList.of(),
             split.getPartitionSpecJson(),
             split.getPartitionDataJson(),

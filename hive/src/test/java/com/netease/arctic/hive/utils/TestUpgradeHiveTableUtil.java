@@ -29,7 +29,6 @@ import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.Database;
@@ -55,7 +54,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 @RunWith(Parameterized.class)
@@ -72,14 +70,16 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
   private String db = "testUpgradeHiveDb";
   private String table = "testUpgradeHiveTable";
   private boolean isPartitioned;
+  private FileFormat fileFormat;
   private String[] partitionNames = {"name", HiveTableTestHelper.COLUMN_NAME_OP_DAY};
   private String[] partitionValues = {"Bob", "2020-01-01"};
 
   public TestUpgradeHiveTableUtil(
-      CatalogTestHelper catalogTestHelper, boolean isPartitioned) throws IOException {
+      CatalogTestHelper catalogTestHelper, boolean isPartitioned, FileFormat fileFormat) throws IOException {
     super(catalogTestHelper);
     folder.create();
     this.isPartitioned = isPartitioned;
+    this.fileFormat = fileFormat;
   }
 
   @Before
@@ -102,10 +102,14 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
     TEST_HMS.getHiveClient().dropDatabase(db);
   }
 
-  @Parameterized.Parameters(name = "{0}, {1}")
+  @Parameterized.Parameters(name = "{0}, {1}, {2}")
   public static Object[] parameters() {
-    return new Object[][] {{new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()), true},
-                           {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()), false}};
+    return new Object[][] {
+        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()), true, FileFormat.PARQUET},
+        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()), false, FileFormat.PARQUET},
+        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()), true, FileFormat.ORC},
+        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()), false, FileFormat.ORC}
+    };
   }
 
   @Test
@@ -144,7 +148,7 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
         schema,
         spec,
         folder.newFolder(db).getAbsolutePath(),
-        FileFormat.valueOf(TableProperties.DEFAULT_FILE_FORMAT_DEFAULT.toUpperCase(Locale.ENGLISH))));
+        fileFormat));
     TEST_HMS.getHiveClient().createTable(hiveTable);
     return TEST_HMS.getHiveClient().getTable(db, table);
   }
