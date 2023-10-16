@@ -23,7 +23,7 @@
     <parent>
         <artifactId>amoro-spark</artifactId>
         <groupId>com.netease.amoro</groupId>
-        <version>0.5.1</version>
+        <version>0.5.2-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
