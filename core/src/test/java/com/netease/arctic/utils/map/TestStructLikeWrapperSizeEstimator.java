@@ -47,6 +47,7 @@ public class TestStructLikeWrapperSizeEstimator {
     StructLikeWrapper wrapper = StructLikeWrapper.forType(BasicTableTestHelper.TABLE_SCHEMA.asStruct()).set(record2);
 
     // Because the size of map also will increase, so the record2Size should a little bigger than the size of the record
-    Assert.assertEquals(1, record2Size / new StructLikeWrapperSizeEstimator().sizeEstimate(wrapper));
+    long estimateSize = new StructLikeWrapperSizeEstimator().sizeEstimate(wrapper);
+    Assert.assertEquals(1, record2Size / estimateSize);
   }
 }

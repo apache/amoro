@@ -44,9 +44,7 @@ public abstract class StructLikeBaseMap<T> implements SimpleMap<StructLike, T> {
 
   @Override
   public void put(StructLike key, T value) {
-    StructLikeWrapper wrapper = wrappers.get();
-    getInternalMap().put(wrapper.set(key), value);
-    wrapper.set(null); // don't hold a reference to the key.
+    getInternalMap().put(structLikeWrapper.copyFor(key), value);
   }
 
   @Override
