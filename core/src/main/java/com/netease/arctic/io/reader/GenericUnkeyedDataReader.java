@@ -19,12 +19,12 @@
 package com.netease.arctic.io.reader;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.iceberg.InternalRecordWrapper;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.orc.GenericOrcReader;
 import org.apache.iceberg.data.parquet.GenericParquetReaders;
@@ -39,8 +39,8 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class GenericIcebergDataReader extends AbstractIcebergDataReader<Record> {
-  public GenericIcebergDataReader(
+public class GenericUnkeyedDataReader extends AbstractUnkeyedDataReader<Record> {
+  public GenericUnkeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -51,7 +51,7 @@ public class GenericIcebergDataReader extends AbstractIcebergDataReader<Record> 
     super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive, convertConstant, reuseContainer);
   }
 
-  public GenericIcebergDataReader(
+  public GenericUnkeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -72,7 +72,7 @@ public class GenericIcebergDataReader extends AbstractIcebergDataReader<Record> 
   }
 
 
-  public GenericIcebergDataReader(
+  public GenericUnkeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -110,6 +110,9 @@ public class GenericIcebergDataReader extends AbstractIcebergDataReader<Record> 
 
   @Override
   protected Function<Schema, Function<Record, StructLike>> toStructLikeFunction() {
-    return schema -> record -> new InternalRecordWrapper(schema.asStruct()).wrap(record);
+    return schema -> {
+      final InternalRecordWrapper wrapper = new InternalRecordWrapper(schema.asStruct());
+      return wrapper::copyFor;
+    };
   }
 }

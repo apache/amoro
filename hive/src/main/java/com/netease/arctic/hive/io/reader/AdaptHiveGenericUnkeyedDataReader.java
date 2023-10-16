@@ -19,12 +19,12 @@
 package com.netease.arctic.hive.io.reader;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.iceberg.InternalRecordWrapper;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.orc.GenericOrcReader;
 import org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders;
@@ -39,9 +39,9 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class GenericAdaptHiveIcebergDataReader extends AbstractAdaptHiveIcebergDataReader<Record> {
+public class AdaptHiveGenericUnkeyedDataReader extends AbstractAdaptHiveUnkeyedDataReader<Record> {
 
-  public GenericAdaptHiveIcebergDataReader(
+  public AdaptHiveGenericUnkeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -53,7 +53,7 @@ public class GenericAdaptHiveIcebergDataReader extends AbstractAdaptHiveIcebergD
         convertConstant, reuseContainer, structLikeCollections);
   }
 
-  public GenericAdaptHiveIcebergDataReader(
+  public AdaptHiveGenericUnkeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -63,7 +63,7 @@ public class GenericAdaptHiveIcebergDataReader extends AbstractAdaptHiveIcebergD
     super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive, convertConstant, reuseContainer);
   }
 
-  public GenericAdaptHiveIcebergDataReader(
+  public AdaptHiveGenericUnkeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -101,6 +101,9 @@ public class GenericAdaptHiveIcebergDataReader extends AbstractAdaptHiveIcebergD
 
   @Override
   protected Function<Schema, Function<Record, StructLike>> toStructLikeFunction() {
-    return schema -> record -> new InternalRecordWrapper(schema.asStruct()).wrap(record);
+    return schema -> {
+      final InternalRecordWrapper wrapper = new InternalRecordWrapper(schema.asStruct());
+      return wrapper::copyFor;
+    };
   }
 }
