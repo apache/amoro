@@ -4,7 +4,6 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
-import com.netease.arctic.ams.api.utils.CatalogPropertyUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.io.TableTrashManagers;
@@ -52,7 +51,7 @@ public class MixedTables {
     this.catalogMeta = meta;
     if (meta.getStorageConfigs() != null &&
         CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equalsIgnoreCase(
-            CatalogPropertyUtil.getCompatibleStorageType(meta.getStorageConfigs()))) {
+            CatalogUtil.getCompatibleStorageType(meta.getStorageConfigs()))) {
       if (!meta.getStorageConfigs().containsKey(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE)) {
         throw new IllegalStateException("lack hdfs.site config");
       }

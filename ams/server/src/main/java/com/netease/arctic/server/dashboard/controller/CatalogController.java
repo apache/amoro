@@ -25,7 +25,6 @@ import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.ams.api.utils.CatalogPropertyUtil;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.dashboard.PlatformFileManager;
 import com.netease.arctic.server.dashboard.model.CatalogRegisterInfo;
@@ -35,6 +34,7 @@ import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.dashboard.utils.PropertiesUtil;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CatalogUtil;
 import io.javalin.http.Context;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.CatalogProperties;
@@ -182,8 +182,8 @@ public class CatalogController {
           AUTH_CONFIGS_KEY_PRINCIPAL,
           serverAuthConfig.get(AUTH_CONFIGS_KEY_PRINCIPAL));
     } else if (authType.equals(AUTH_CONFIGS_VALUE_TYPE_AK_SK)) {
-      CatalogPropertyUtil.migrateProperty(serverAuthConfig, metaAuthConfig, AUTH_CONFIGS_KEY_ACCESS_KEY);
-      CatalogPropertyUtil.migrateProperty(serverAuthConfig, metaAuthConfig, AUTH_CONFIGS_KEY_SECRET_KEY);
+      CatalogUtil.copyProperty(serverAuthConfig, metaAuthConfig, AUTH_CONFIGS_KEY_ACCESS_KEY);
+      CatalogUtil.copyProperty(serverAuthConfig, metaAuthConfig, AUTH_CONFIGS_KEY_SECRET_KEY);
     }
     return metaAuthConfig;
   }
@@ -218,8 +218,8 @@ public class CatalogController {
           constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_AUTH,
               AUTH_CONFIGS_KEY_KRB5.replace("\\.", "-"))));
     } else if (AUTH_CONFIGS_VALUE_TYPE_AK_SK.equals(authType)) {
-      CatalogPropertyUtil.migrateProperty(metaAuthConfig, serverAuthConfig, AUTH_CONFIGS_KEY_ACCESS_KEY);
-      CatalogPropertyUtil.migrateProperty(metaAuthConfig, serverAuthConfig, AUTH_CONFIGS_KEY_SECRET_KEY);
+      CatalogUtil.copyProperty(metaAuthConfig, serverAuthConfig, AUTH_CONFIGS_KEY_ACCESS_KEY);
+      CatalogUtil.copyProperty(metaAuthConfig, serverAuthConfig, AUTH_CONFIGS_KEY_SECRET_KEY);
     }
 
     return serverAuthConfig;
@@ -227,7 +227,7 @@ public class CatalogController {
 
   private Map<String, Object> storageConvertFromMetaToServer(String catalogName, Map<String, String> config) {
     Map<String, Object> storageConfig = new HashMap<>();
-    String storageType = CatalogPropertyUtil.getCompatibleStorageType(config);
+    String storageType = CatalogUtil.getCompatibleStorageType(config);
     storageConfig.put(STORAGE_CONFIGS_KEY_TYPE, storageType);
     if (STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equals(storageType)) {
       storageConfig.put(STORAGE_CONFIGS_KEY_CORE_SITE, new ConfigFileItem(
@@ -245,8 +245,8 @@ public class CatalogController {
           constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_STORAGE,
               STORAGE_CONFIGS_KEY_HIVE_SITE.replace("\\.", "-"))));
     } else if (STORAGE_CONFIGS_VALUE_TYPE_S3.equals(storageType)) {
-      CatalogPropertyUtil.migrateProperty(config, storageConfig, STORAGE_CONFIGS_KEY_REGION);
-      CatalogPropertyUtil.migrateProperty(config, storageConfig, STORAGE_CONFIGS_KEY_ENDPOINT);
+      CatalogUtil.copyProperty(config, storageConfig, STORAGE_CONFIGS_KEY_REGION);
+      CatalogUtil.copyProperty(config, storageConfig, STORAGE_CONFIGS_KEY_ENDPOINT);
     }
 
     return storageConfig;
@@ -306,8 +306,8 @@ public class CatalogController {
         }
       }
     } else if (storageType.equals(STORAGE_CONFIGS_VALUE_TYPE_S3)) {
-      CatalogPropertyUtil.migrateProperty(info.getStorageConfig(), metaStorageConfig, STORAGE_CONFIGS_KEY_REGION);
-      CatalogPropertyUtil.migrateProperty(info.getStorageConfig(), metaStorageConfig, STORAGE_CONFIGS_KEY_ENDPOINT);
+      CatalogUtil.copyProperty(info.getStorageConfig(), metaStorageConfig, STORAGE_CONFIGS_KEY_REGION);
+      CatalogUtil.copyProperty(info.getStorageConfig(), metaStorageConfig, STORAGE_CONFIGS_KEY_ENDPOINT);
     } else {
       throw new RuntimeException("Invalid storage type " + storageType);
     }

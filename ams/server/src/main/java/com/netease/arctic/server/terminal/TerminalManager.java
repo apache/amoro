@@ -22,7 +22,6 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.ams.api.utils.CatalogPropertyUtil;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.catalog.CatalogType;
 import com.netease.arctic.server.dashboard.model.LatestSessionInfo;
@@ -267,7 +266,7 @@ public class TerminalManager {
     if (catalogMeta.getStorageConfigs() != null) {
       Map<String, String> storageConfigs = catalogMeta.getStorageConfigs();
       if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP
-          .equalsIgnoreCase(CatalogPropertyUtil.getCompatibleStorageType(storageConfigs))) {
+          .equalsIgnoreCase(CatalogUtil.getCompatibleStorageType(storageConfigs))) {
         builder.withBase64MetaStoreSite(
                 catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE))
             .withBase64CoreSite(

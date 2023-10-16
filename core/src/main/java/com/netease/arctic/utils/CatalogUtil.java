@@ -22,7 +22,6 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.ams.api.utils.CatalogPropertyUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BasicIcebergCatalog;
 import com.netease.arctic.io.ArcticFileIO;
@@ -54,6 +53,9 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALO
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS_LEGACY;
 
 public class CatalogUtil {
 
@@ -105,7 +107,7 @@ public class CatalogUtil {
     if (catalogMeta.getStorageConfigs() != null) {
       Map<String, String> storageConfigs = catalogMeta.getStorageConfigs();
       if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP
-          .equalsIgnoreCase(CatalogPropertyUtil.getCompatibleStorageType(storageConfigs))) {
+          .equalsIgnoreCase(CatalogUtil.getCompatibleStorageType(storageConfigs))) {
         String coreSite = storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE);
         String hdfsSite = storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE);
         String hiveSite = storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE);
@@ -225,5 +227,45 @@ public class CatalogUtil {
   public static com.netease.arctic.ams.api.TableIdentifier amsTaleId(TableIdentifier tableIdentifier) {
     return new com.netease.arctic.ams.api.TableIdentifier(tableIdentifier.getCatalog(),
         tableIdentifier.getDatabase(), tableIdentifier.getTableName());
+  }
+
+  /**
+   * Get storage type compatible with history storage type `hdfs`, which is `Hadoop` now.
+   *
+   * @param conf - configurations containing `storage.type`
+   * @return storage type, return `Hadoop` if `storage.type` is `hdfs`, return null if `storage.type` not exist.
+   */
+  public static String getCompatibleStorageType(Map<String, String> conf) {
+    if (STORAGE_CONFIGS_VALUE_TYPE_HDFS_LEGACY.equals(conf.get(STORAGE_CONFIGS_KEY_TYPE))) {
+      return STORAGE_CONFIGS_VALUE_TYPE_HADOOP;
+    }
+    return conf.get(STORAGE_CONFIGS_KEY_TYPE);
+  }
+
+  /**
+   * Copy property from source properties to target properties
+   *
+   * @param fromProperties - from these properties
+   * @param toProperties   - to these properties
+   * @param key            - key
+   */
+  public static <T> void copyProperty(Map<String, String> fromProperties, Map<String, T> toProperties,
+                                      String key) {
+    copyProperty(fromProperties, toProperties, key, key);
+  }
+
+  /**
+   * Copy property from source properties to target properties, support changing the key name.
+   *
+   * @param fromProperties - from these properties
+   * @param toProperties   - to these properties
+   * @param fromKey        - from key
+   * @param toKey          - to key
+   */
+  public static <T> void copyProperty(Map<String, String> fromProperties, Map<String, T> toProperties,
+                                      String fromKey, String toKey) {
+    if (StringUtils.isNotEmpty(fromProperties.get(fromKey))) {
+      toProperties.put(toKey, (T) fromProperties.get(fromKey));
+    }
   }
 }
