@@ -32,6 +32,8 @@ OPTIMIZER_JOB_PATH=ams/optimizer/flink-optimizer/target/flink-optimizer-${AMORO_
 OPTIMIZER_JOB=${PROJECT_HOME}/${OPTIMIZER_JOB_PATH}
 AMORO_TAG=$AMORO_VERSION
 ALSO_MAKE=true
+MAVEN_MIRROR=https://repo.maven.apache.org/maven2
+
 
 function usage() {
     cat <<EOF
@@ -50,6 +52,7 @@ Options:
     --hadoop-version        Hadoop binary release version, default is 2.10.2, format must be x.y.z
     --apache-archive        Apache Archive url, default is https://archive.apache.org/dist
     --debian-mirror         Mirror url of debian, default is http://deb.debian.org
+    --maven-mirror          Mirror url of maven, default is https://repo.maven.apache.org/maven2
     --optimizer-job         Location of optimizer job
     --tag                   Tag for amoro/optimizer-flink/quickdemo image.
     --also-make             Also make amoro when build quickdemo, if set to false, it will pull from hub or use exists dependency.
@@ -58,7 +61,7 @@ EOF
 }
 
 
-ACTION=amoro
+ACTION=help
 
 i=1;
 j=$#;
@@ -113,6 +116,12 @@ while [ $i -le $j ]; do
     "--also-make")
     shift 1
     ALSO_MAKE=$1
+    i=$((i+2))
+    ;;
+
+    "--maven-mirror")
+    shift 1
+    MAVEN_MIRROR=$1
     i=$((i+2))
     ;;
 
@@ -197,6 +206,7 @@ function build_optimizer_flink() {
     docker build -t ${IMAGE_REF}:${IMAGE_TAG} \
       --build-arg FLINK_VERSION=$FLINK_VERSION \
       --build-arg OPTIMIZER_JOB=$OPTIMIZER_JOB_PATH \
+      --build-arg MAVEN_MIRROR=$MAVEN_MIRROR \
       -f ./docker/optimizer-flink/Dockerfile .
 }
 

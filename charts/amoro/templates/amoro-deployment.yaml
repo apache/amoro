@@ -37,7 +37,7 @@ spec: {{/* TODO If Support Replica can be use more than 1 */}}
             - name: "AMS_DATABASE_PASSWORD"
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Release.Name }}
+                  name: {{ include "common.names.fullname" . }}
                   key: password
             {{- end }}
            {{- with .Values.env }}
