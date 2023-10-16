@@ -16,14 +16,17 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink;
+package com.netease.arctic.flink.catalog;
 
+import static java.util.Collections.singletonList;
 import static org.apache.flink.table.api.Expressions.$;
+import static org.apache.flink.table.expressions.ApiExpressionUtils.valueLiteral;
+import static org.apache.flink.table.functions.BuiltInFunctionDefinitions.EQUALS;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
-import com.netease.arctic.flink.catalog.ArcticCatalog;
+import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.DataUtil;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.table.api.ApiExpression;
@@ -31,8 +34,12 @@ import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.catalog.CatalogPartitionSpec;
 import org.apache.flink.table.catalog.ObjectPath;
+import org.apache.flink.table.catalog.exceptions.PartitionSpecInvalidException;
 import org.apache.flink.table.catalog.exceptions.TableNotPartitionedException;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.expressions.CallExpression;
+import org.apache.flink.table.expressions.FieldReferenceExpression;
+import org.apache.flink.table.expressions.ResolvedExpression;
 import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.types.RowKind;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
@@ -40,6 +47,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -143,5 +151,65 @@ public class TestArcticCatalogTablePartitions extends FlinkTestBase {
     expected.add(partitionSpec2);
     Assert.assertEquals(
         "Should produce the expected catalog partition specs.", partitionList, expected);
+  }
+
+  @Test
+  public void testListPartitionsByFilter()
+      throws TableNotPartitionedException, PartitionSpecInvalidException {
+    List<Object[]> data = new LinkedList<>();
+    data.add(new Object[] {1, "mark", "2023-10-01"});
+    data.add(new Object[] {2, "Gerry", "2023-10-02"});
+    data.add(new Object[] {2, "mark", "2023-10-02"});
+    data.add(new Object[] {2, "Gerry", "2023-10-01"});
+    data.add(new Object[] {RowKind.DELETE, 2, "Gerry", "2023-10-02"});
+
+    DataStreamSource<RowData> rowData =
+        getEnv()
+            .fromCollection(
+                DataUtil.toRowData(data),
+                InternalTypeInfo.ofFields(
+                    DataTypes.INT().getLogicalType(),
+                    DataTypes.VARCHAR(100).getLogicalType(),
+                    DataTypes.VARCHAR(100).getLogicalType()));
+    Table input = getTableEnv().fromDataStream(rowData, $("id"), $("name"), $("dt"));
+    getTableEnv().createTemporaryView("input", input);
+
+    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql(
+        "CREATE TABLE IF NOT EXISTS arcticCatalog."
+            + db
+            + "."
+            + tableName
+            + "("
+            + " id INT, name STRING, dt STRING) PARTITIONED BY (dt,name)");
+    sql("INSERT INTO %s select * from input", "arcticCatalog." + db + "." + tableName);
+
+    ResolvedExpression dtRef = new FieldReferenceExpression("dt", DataTypes.STRING(), 0, 3);
+    CallExpression callExpression =
+        CallExpression.permanent(
+            EQUALS,
+            Arrays.asList(dtRef, valueLiteral("2023-10-01", DataTypes.STRING().notNull())),
+            DataTypes.BOOLEAN());
+
+    ObjectPath objectPath = new ObjectPath(db, tableName);
+    ArcticCatalog arcticCatalog = (ArcticCatalog) getTableEnv().getCatalog("arcticCatalog").get();
+    List<CatalogPartitionSpec> list =
+        arcticCatalog.listPartitionsByFilter(objectPath, singletonList(callExpression));
+
+    List<CatalogPartitionSpec> expected = Lists.newArrayList();
+    CatalogPartitionSpec partitionSpec1 =
+        new CatalogPartitionSpec(ImmutableMap.of("dt", "2023-10-01", "name", "Gerry"));
+    CatalogPartitionSpec partitionSpec2 =
+        new CatalogPartitionSpec(ImmutableMap.of("dt", "2023-10-01", "name", "mark"));
+    expected.add(partitionSpec1);
+    expected.add(partitionSpec2);
+    Assert.assertEquals("Should produce the expected catalog partition specs.", list, expected);
+
+    List<CatalogPartitionSpec> listCatalogPartitionSpec =
+        arcticCatalog.listPartitions(
+            objectPath,
+            new CatalogPartitionSpec(ImmutableMap.of("dt", "2023-10-01", "name", "Gerry")));
+    Assert.assertEquals(
+        "Should produce the expected catalog partition specs.", listCatalogPartitionSpec.size(), 1);
   }
 }
