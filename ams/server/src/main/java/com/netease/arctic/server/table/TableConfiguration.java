@@ -107,7 +107,8 @@ public class TableConfiguration {
         changeDataTTLMinutes == that.changeDataTTLMinutes && cleanOrphanEnabled == that.cleanOrphanEnabled &&
         orphanExistingMinutes == that.orphanExistingMinutes &&
         deleteDanglingDeleteFilesEnabled == that.deleteDanglingDeleteFilesEnabled &&
-        Objects.equal(optimizingConfig, that.optimizingConfig);
+        Objects.equal(optimizingConfig, that.optimizingConfig) &&
+        Objects.equal(expiringDataConfig, that.expiringDataConfig);
   }
 
   @Override
