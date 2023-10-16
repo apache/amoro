@@ -35,14 +35,14 @@ public class MetricsEmitterLoader {
 
   public MetricsEmitterLoader() {
     this.metricsManager = new MetricsManager(Environments.getConfigPath() + "/" + PLUGIN_CONFIG_DIRECTORY);
-    installPlugins();
+    loadPlugins();
   }
 
   public MetricsManager metricsManager() {
     return metricsManager;
   }
 
-  private void installPlugins() {
+  private void loadPlugins() {
     String configDir = Environments.getConfigPath() + "/" + PLUGIN_CONFIG_DIRECTORY;
     File dir = new File(configDir);
     File[] yamlFiles = dir.listFiles((dir1, name) -> name.endsWith(".yaml"));

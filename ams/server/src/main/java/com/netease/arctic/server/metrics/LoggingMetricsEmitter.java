@@ -27,10 +27,10 @@ import java.util.Map;
 
 public class LoggingMetricsEmitter implements MetricsEmitter {
 
-  public static final String METRIC_LOGGER = "amoro.metric";
+  public static final String NAME = "log_emitter";
 
+  private static final String METRIC_LOGGER = "amoro.metric";
   private static final Logger LOG = LoggerFactory.getLogger(METRIC_LOGGER);
-  private static final String NAME = "log_emitter";
 
   @Override
   public void open(Map<String, String> properties) {
