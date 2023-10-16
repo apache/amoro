@@ -103,6 +103,18 @@ public class ArcticManagementConf {
           .defaultValue(60000L)
           .withDescription("Interval for refreshing table metadata.");
 
+  public static final ConfigOption<Integer> EXTERNAL_CATALOGS_EXPLORER_THREAD_COUNT =
+          ConfigOptions.key("external-catalog-explorer.thread-count")
+                  .intType()
+                  .defaultValue(10)
+                  .withDescription("The number of threads used for discover tables in external catalogs.");
+
+  public static final ConfigOption<Integer> EXTERNAL_CATALOGS_EXPLORER_QUEUE_SIZE =
+          ConfigOptions.key("external-catalog-explorer.queue-size")
+                  .intType()
+                  .defaultValue(1000000)
+                  .withDescription("The queue size of the executors of the external catalog explorer.");
+
   public static final ConfigOption<Long> BLOCKER_TIMEOUT =
       ConfigOptions.key("blocker.timeout")
           .longType()
