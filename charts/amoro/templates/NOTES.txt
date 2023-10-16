@@ -32,8 +32,8 @@ Additional Resources Docs
 {{ if eq .Chart.AppVersion "master-snapshot" }}
         * Documentation: https://amoro.netease.com/docs/latest/
         * Version build Info : https://github.com/NetEase/amoro
-{{- else -}}
-        * Documentation: https://amoro.netease.com/docs/0.5.0/
+{{ else }}
+        * Documentation: https://amoro.netease.com/docs/{{ .Chart.AppVersion }}/
         * Version build Info : https://github.com/NetEase/amoro/releases/tag/v{{ .Chart.AppVersion }}
 {{ end }}
 
