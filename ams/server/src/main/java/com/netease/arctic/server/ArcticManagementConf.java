@@ -55,6 +55,18 @@ public class ArcticManagementConf {
           .defaultValue(3 * 60 * 1000L)
           .withDescription("Interval to refresh the external catalog.");
 
+  public static final ConfigOption<Integer> REFRESH_EXTERNAL_CATALOGS_THREAD_COUNT =
+          ConfigOptions.key("refresh-external-catalogs.thread-count")
+                  .intType()
+                  .defaultValue(10)
+                  .withDescription("The number of threads used for discover tables in external catalogs.");
+
+  public static final ConfigOption<Integer> REFRESH_EXTERNAL_CATALOGS_QUEUE_SIZE =
+          ConfigOptions.key("refresh-external-catalogs.queue-size")
+                  .intType()
+                  .defaultValue(1000000)
+                  .withDescription("The queue size of the executors of the external catalog explorer.");
+
   public static final ConfigOption<Boolean> EXPIRE_SNAPSHOTS_ENABLED =
       ConfigOptions.key("expire-snapshots.enabled")
           .booleanType()
@@ -102,18 +114,6 @@ public class ArcticManagementConf {
           .longType()
           .defaultValue(60000L)
           .withDescription("Interval for refreshing table metadata.");
-
-  public static final ConfigOption<Integer> EXTERNAL_CATALOGS_EXPLORER_THREAD_COUNT =
-          ConfigOptions.key("external-catalog-explorer.thread-count")
-                  .intType()
-                  .defaultValue(10)
-                  .withDescription("The number of threads used for discover tables in external catalogs.");
-
-  public static final ConfigOption<Integer> EXTERNAL_CATALOGS_EXPLORER_QUEUE_SIZE =
-          ConfigOptions.key("external-catalog-explorer.queue-size")
-                  .intType()
-                  .defaultValue(1000000)
-                  .withDescription("The queue size of the executors of the external catalog explorer.");
 
   public static final ConfigOption<Long> BLOCKER_TIMEOUT =
       ConfigOptions.key("blocker.timeout")

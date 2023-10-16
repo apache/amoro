@@ -327,8 +327,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
       headHandler.initialize(tableRuntimeMetaList);
     }
     if (tableExplorerExecutors == null) {
-      int threadCount = serverConfiguration.getInteger(ArcticManagementConf.EXTERNAL_CATALOGS_EXPLORER_THREAD_COUNT);
-      int queueSize = serverConfiguration.getInteger(ArcticManagementConf.EXTERNAL_CATALOGS_EXPLORER_QUEUE_SIZE);
+      int threadCount = serverConfiguration.getInteger(ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_THREAD_COUNT);
+      int queueSize = serverConfiguration.getInteger(ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_QUEUE_SIZE);
       tableExplorerExecutors = new ThreadPoolExecutor(
               threadCount,
               threadCount,
