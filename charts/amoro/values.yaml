@@ -107,7 +107,7 @@ amoroConf:
   log4j2: ~
 
 
-## Configure the container of optimizer that allow you to submit optimizer by AMS
+## Configure the container of optimizer that allows you to submit optimizer by AMS
 optimizer:
   # flink optimizer
   flink:
@@ -119,7 +119,7 @@ optimizer:
     image:
       ## the image repository
       repository: arctic163/optimizer-flink
-      ## the image tag, if not set, the default value is same with amoro image tag.
+      ## the image tag, if not set, the default value is the same with amoro image tag.
       tag: ~
       jobUri: "local:///opt/flink/usrlib/optimizer-job.jar"
     properties: {
