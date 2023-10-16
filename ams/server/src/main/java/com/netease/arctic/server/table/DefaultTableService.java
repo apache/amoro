@@ -421,7 +421,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
                 TableMetaMapper.class,
                 mapper -> mapper.selectTableIdentifiersByCatalog(externalCatalog.name())).stream()
                 .collect(Collectors.toMap(TableIdentity::new, tableIdentifier -> tableIdentifier));
-        LOG.info("Loaded {} tables from Amoro server catalog {}.", serverTableIdentifiers.size(), externalCatalog. name());
+        LOG.info("Loaded {} tables from Amoro server catalog {}.",
+                serverTableIdentifiers.size(), externalCatalog. name());
         Sets.difference(tableIdentifiers, serverTableIdentifiers.keySet())
             .forEach(tableIdentity -> {
               try {
