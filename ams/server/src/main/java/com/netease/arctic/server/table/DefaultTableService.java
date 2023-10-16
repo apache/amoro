@@ -57,10 +57,10 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private RuntimeHandlerChain headHandler;
 
   private final ScheduledExecutorService tableExplorerScheduler = Executors.newSingleThreadScheduledExecutor(
-            new ThreadFactoryBuilder()
-                    .setNameFormat("table-explorer-scheduler")
-                    .setDaemon(true)
-                    .build()
+      new ThreadFactoryBuilder()
+          .setNameFormat("table-explorer-scheduler")
+          .setDaemon(true)
+          .build()
   );
 
   private ExecutorService tableExplorerExecutors;
@@ -232,7 +232,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     checkStarted();
     return getAs(TableMetaMapper.class, TableMetaMapper::selectTableMetas);
   }
- 
+
   @Override
   public List<TableMetadata> listTableMetas(String catalogName, String database) {
     checkStarted();
@@ -330,21 +330,21 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
       int threadCount = serverConfiguration.getInteger(ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_THREAD_COUNT);
       int queueSize = serverConfiguration.getInteger(ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_QUEUE_SIZE);
       tableExplorerExecutors = new ThreadPoolExecutor(
-              threadCount,
-              threadCount,
-              0,
-              TimeUnit.SECONDS,
-              new LinkedBlockingQueue<>(queueSize),
-              new ThreadFactoryBuilder()
-                      .setNameFormat("table-explorer-executor-%d")
-                      .setDaemon(true)
-                      .build());
+          threadCount,
+          threadCount,
+          0,
+          TimeUnit.SECONDS,
+          new LinkedBlockingQueue<>(queueSize),
+          new ThreadFactoryBuilder()
+              .setNameFormat("table-explorer-executor-%d")
+              .setDaemon(true)
+              .build());
     }
     tableExplorerScheduler.scheduleAtFixedRate(
-            this::exploreExternalCatalog,
-            0,
-            externalCatalogRefreshingInterval,
-            TimeUnit.MILLISECONDS);
+        this::exploreExternalCatalog,
+        0,
+        externalCatalogRefreshingInterval,
+        TimeUnit.MILLISECONDS);
     initialized.complete(true);
   }
 
@@ -395,26 +395,27 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
       try {
         final List<CompletableFuture<Set<TableIdentity>>> tableIdentifiersFuture = Lists.newArrayList();
         externalCatalog.listDatabases().forEach(
-                database -> {
-                  try {
-                    tableIdentifiersFuture.add(
-                            CompletableFuture.supplyAsync(
-                                    () -> externalCatalog.listTables(database).stream()
-                                            .map(TableIdentity::new)
-                                            .collect(Collectors.toSet()), tableExplorerExecutors));
-                  } catch (RejectedExecutionException e) {
-                    LOG.error("The queue of table explorer is full, please increase the queue size or thread count.");
-                  }
-                }
+            database -> {
+              try {
+                tableIdentifiersFuture.add(
+                    CompletableFuture.supplyAsync(
+                        () -> externalCatalog.listTables(database).stream()
+                            .map(TableIdentity::new)
+                            .collect(Collectors.toSet()), tableExplorerExecutors));
+              } catch (RejectedExecutionException e) {
+                LOG.error("The queue of table explorer is full, please increase the queue size or thread count.");
+              }
+            }
         );
         Set<TableIdentity> tableIdentifiers =
-                tableIdentifiersFuture.stream()
-                        .map(CompletableFuture::join)
-                        .reduce(
-                                (a, b) -> {
-                                  a.addAll(b);
-                                  return a; })
-                        .orElse(Sets.newHashSet());
+            tableIdentifiersFuture.stream()
+                .map(CompletableFuture::join)
+                .reduce(
+                    (a, b) -> {
+                      a.addAll(b);
+                      return a;
+                    })
+                .orElse(Sets.newHashSet());
         LOG.info("Loaded {} tables from external catalog {}.", tableIdentifiers.size(), externalCatalog.name());
         Map<TableIdentity, ServerTableIdentifier> serverTableIdentifiers =
             getAs(
@@ -422,40 +423,40 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
                 mapper -> mapper.selectTableIdentifiersByCatalog(externalCatalog.name())).stream()
                 .collect(Collectors.toMap(TableIdentity::new, tableIdentifier -> tableIdentifier));
         LOG.info("Loaded {} tables from Amoro server catalog {}.",
-                serverTableIdentifiers.size(), externalCatalog. name());
+            serverTableIdentifiers.size(), externalCatalog.name());
         Sets.difference(tableIdentifiers, serverTableIdentifiers.keySet())
             .forEach(tableIdentity -> {
-              try {
-                tableExplorerExecutors.submit(
+                  try {
+                    tableExplorerExecutors.submit(
                         () -> {
                           try {
                             syncTable(externalCatalog, tableIdentity);
                           } catch (Exception e) {
                             if (e.getCause() != null &&
-                                    e.getCause() instanceof NoSuchIcebergTableException &&
-                                    e.getMessage().contains("Not an iceberg table")) {
+                                e.getCause() instanceof NoSuchIcebergTableException &&
+                                e.getMessage().contains("Not an iceberg table")) {
                               LOG.info("Skip non-iceberg table {}.", tableIdentity.toString());
                             } else {
                               LOG.error("TableExplorer sync table {} error", tableIdentity.toString(), e);
                             }
                           }
                         });
-              } catch (RejectedExecutionException e) {
-                LOG.error("The queue of table explorer is full, please increase the queue size or thread count.");
-              }
-            }
+                  } catch (RejectedExecutionException e) {
+                    LOG.error("The queue of table explorer is full, please increase the queue size or thread count.");
+                  }
+                }
             );
         Sets.difference(serverTableIdentifiers.keySet(), tableIdentifiers)
             .forEach(tableIdentity -> {
               try {
                 tableExplorerExecutors.submit(
-                        () -> {
-                          try {
-                            disposeTable(externalCatalog, serverTableIdentifiers.get(tableIdentity));
-                          } catch (Exception e) {
-                            LOG.error("TableExplorer dispose table {} error", tableIdentity.toString(), e);
-                          }
-                        });
+                    () -> {
+                      try {
+                        disposeTable(externalCatalog, serverTableIdentifiers.get(tableIdentity));
+                      } catch (Exception e) {
+                        LOG.error("TableExplorer dispose table {} error", tableIdentity.toString(), e);
+                      }
+                    });
               } catch (RejectedExecutionException e) {
                 LOG.error("The queue of table explorer is full, please increase the queue size or thread count.");
               }
@@ -517,8 +518,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private void syncTable(ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
     try {
       doAsTransaction(
-              () -> externalCatalog.syncTable(tableIdentity.getDatabase(), tableIdentity.getTableName()),
-              () -> handleTableRuntimeAdded(externalCatalog, tableIdentity)
+          () -> externalCatalog.syncTable(tableIdentity.getDatabase(), tableIdentity.getTableName()),
+          () -> handleTableRuntimeAdded(externalCatalog, tableIdentity)
       );
     } catch (Throwable t) {
       revertTableRuntimeAdded(externalCatalog, tableIdentity);
