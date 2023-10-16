@@ -104,13 +104,13 @@ public class DataExpiringExecutor extends BaseTableExecutor {
   private boolean validateExpirationField(ArcticTable table, String expirationField) {
     Types.NestedField field = table.schema().findField(expirationField);
 
-    if (StringUtils.isNoneBlank(expirationField) && null != field) {
+    if (StringUtils.isBlank(expirationField) || null == field) {
       LOG.warn(String.format("Field(%s) used to determine data expiration is illegal for table(%s)",
           expirationField, table.name()));
       return false;
     }
     Type.TypeID typeID = field.type().typeId();
-    if (DataExpirationConfig.FIELD_TYPES.contains(typeID)) {
+    if (!DataExpirationConfig.FIELD_TYPES.contains(typeID)) {
       LOG.warn(String.format("Table(%s) field(%s) type(%s) is not supported for data expiration, please use the " +
               "following types: %s",
           table.name(), expirationField, typeID.name(),
@@ -127,7 +127,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       ArcticTable arcticTable = (ArcticTable) loadTable(tableRuntime).originalTable();
       DataExpirationConfig expirationConfig = tableRuntime.getTableConfiguration().getExpiringDataConfig();
       if (!expirationConfig.isEnabled() || expirationConfig.getRetentionTime() <= 0 ||
-          validateExpirationField(arcticTable, expirationConfig.getExpirationField())) {
+          !validateExpirationField(arcticTable, expirationConfig.getExpirationField())) {
         return;
       }
 
