@@ -1,0 +1,24 @@
+apiVersion: v1
+entries:
+  amoro:
+  - apiVersion: v2
+    appVersion: master-snapshot
+    created: "2023-10-16T11:05:15.776103662+08:00"
+    dependencies:
+    - name: common
+      repository: oci://registry-1.docker.io/bitnamicharts
+      tags:
+      - bitnami-common
+      version: 2.11.1
+    description: A Helm chart for Amoro
+    digest: ac390b4c23bc04dc5523829e4f88c44924387801b7e8258658b7e8dfd8d876cd
+    home: https://amoro.netease.com/
+    icon: https://amoro.netease.com/img/amoro-logo-icon.png
+    name: amoro
+    sources:
+    - https://github.com/NetEase/amoro
+    type: application
+    urls:
+    - https://netease.github.io/amoro/charts/amoro-0.1.0.tgz
+    version: 0.1.0
+generated: "2023-10-16T11:05:15.774496009+08:00"

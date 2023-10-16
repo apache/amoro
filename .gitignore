@@ -66,4 +66,3 @@ conf/
 *unit_test_base_tmp/
 
 */.gitignore
-*.tgz
