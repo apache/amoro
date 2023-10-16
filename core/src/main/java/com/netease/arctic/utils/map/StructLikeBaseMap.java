@@ -18,21 +18,20 @@
 
 package com.netease.arctic.utils.map;
 
-import com.netease.arctic.iceberg.StructLikeWrapper;
-import com.netease.arctic.iceberg.StructLikeWrapperFactory;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.StructLikeWrapper;
 
 import java.io.IOException;
 
 public abstract class StructLikeBaseMap<T> implements SimpleMap<StructLike, T> {
 
+  protected final StructLikeWrapper structLikeWrapper;
   protected final ThreadLocal<StructLikeWrapper> wrappers;
-  protected final StructLikeWrapperFactory structLikeWrapperFactory;
 
   protected StructLikeBaseMap(Types.StructType type) {
-    this.structLikeWrapperFactory = new StructLikeWrapperFactory(type);
-    this.wrappers = ThreadLocal.withInitial(() -> structLikeWrapperFactory.create());
+    this.structLikeWrapper = StructLikeWrapper.forType(type);
+    this.wrappers = ThreadLocal.withInitial(() -> structLikeWrapper.copyFor(null));
   }
 
   @Override
@@ -45,7 +44,9 @@ public abstract class StructLikeBaseMap<T> implements SimpleMap<StructLike, T> {
 
   @Override
   public void put(StructLike key, T value) {
-    getInternalMap().put(structLikeWrapperFactory.create().set(key), value);
+    StructLikeWrapper wrapper = wrappers.get();
+    getInternalMap().put(wrapper.set(key), value);
+    wrapper.set(null); // don't hold a reference to the key.
   }
 
   @Override

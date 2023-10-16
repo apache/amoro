@@ -20,8 +20,8 @@ package com.netease.arctic.flink.read.source;
 
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.flink.read.AdaptHiveFlinkParquetReaders;
-import com.netease.arctic.hive.io.reader.AbstractAdaptHiveIcebergDataReader;
-import com.netease.arctic.iceberg.DeleteFilter;
+import com.netease.arctic.hive.io.reader.AbstractAdaptHiveUnkeyedDataReader;
+import com.netease.arctic.io.reader.DeleteFilter;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -53,7 +53,7 @@ import java.util.function.Function;
  * DeleteFilter}. It shall be projected before sent to downstream. This can be processed in {@link
  * DataIterator#next()}
  */
-public class FlinkArcticDataReader extends AbstractAdaptHiveIcebergDataReader<RowData>
+public class FlinkArcticDataReader extends AbstractAdaptHiveUnkeyedDataReader<RowData>
     implements FileScanTaskReader<RowData> {
   private static final long serialVersionUID = -6773693031945244386L;
 

@@ -20,11 +20,10 @@ package com.netease.arctic.utils.map;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.data.ChangedLsn;
-import com.netease.arctic.iceberg.StructLikeWrapper;
-import com.netease.arctic.iceberg.StructLikeWrapperFactory;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.utils.ObjectSizeCalculator;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.util.StructLikeWrapper;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -45,9 +44,7 @@ public class TestStructLikeWrapperSizeEstimator {
     map.put(record2, changedLsn);
     long newSize = ObjectSizeCalculator.getObjectSize(((map.getInternalMap())));
     long record2Size = newSize - oldSize;
-    StructLikeWrapperFactory wrapperFactory = new StructLikeWrapperFactory(
-        BasicTableTestHelper.TABLE_SCHEMA.asStruct());
-    StructLikeWrapper wrapper = wrapperFactory.create().set(record2);
+    StructLikeWrapper wrapper = StructLikeWrapper.forType(BasicTableTestHelper.TABLE_SCHEMA.asStruct()).set(record2);
 
     // Because the size of map also will increase, so the record2Size should a little bigger than the size of the record
     Assert.assertEquals(1, record2Size / new StructLikeWrapperSizeEstimator().sizeEstimate(wrapper));

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.iceberg;
+package com.netease.arctic.io.reader;
 
 import com.netease.arctic.io.CloseableIterableWrapper;
 import com.netease.arctic.io.CloseablePredicate;
