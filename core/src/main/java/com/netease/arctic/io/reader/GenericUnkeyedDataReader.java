@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,25 +16,18 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.read.source;
+package com.netease.arctic.io.reader;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.flink.read.AdaptHiveFlinkParquetReaders;
-import com.netease.arctic.hive.io.reader.AbstractAdaptHiveUnkeyedDataReader;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.reader.DeleteFilter;
-import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
-import org.apache.flink.table.data.RowData;
-import org.apache.flink.table.types.logical.RowType;
-import org.apache.iceberg.FileScanTask;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.flink.FlinkSchemaUtil;
-import org.apache.iceberg.flink.RowDataWrapper;
-import org.apache.iceberg.flink.data.FlinkOrcReader;
-import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.io.CloseableIterator;
+import org.apache.iceberg.data.InternalRecordWrapper;
+import org.apache.iceberg.data.Record;
+import org.apache.iceberg.data.orc.GenericOrcReader;
+import org.apache.iceberg.data.parquet.GenericParquetReaders;
 import org.apache.iceberg.orc.OrcRowReader;
 import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.types.Type;
@@ -46,18 +39,8 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-/**
- * This is an arctic reader accepts a {@link FileScanTask} and produces a {@link
- * CloseableIterator<RowData>}. The RowData read from this reader may have more columns than the
- * original schema. The additional columns are added after the original columns, see {@link
- * DeleteFilter}. It shall be projected before sent to downstream. This can be processed in {@link
- * DataIterator#next()}
- */
-public class FlinkArcticDataReader extends AbstractAdaptHiveUnkeyedDataReader<RowData>
-    implements FileScanTaskReader<RowData> {
-  private static final long serialVersionUID = -6773693031945244386L;
-
-  public FlinkArcticDataReader(
+public class GenericUnkeyedDataReader extends AbstractUnkeyedDataReader<Record> {
+  public GenericUnkeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -65,6 +48,18 @@ public class FlinkArcticDataReader extends AbstractAdaptHiveUnkeyedDataReader<Ro
       boolean caseSensitive,
       BiFunction<Type, Object, Object> convertConstant,
       boolean reuseContainer) {
+    super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive, convertConstant, reuseContainer);
+  }
+
+  public GenericUnkeyedDataReader(
+      ArcticFileIO fileIO,
+      Schema tableSchema,
+      Schema projectedSchema,
+      String nameMapping,
+      boolean caseSensitive,
+      BiFunction<Type, Object, Object> convertConstant,
+      boolean reuseContainer,
+      StructLikeCollections structLikeCollections) {
     super(
         fileIO,
         tableSchema,
@@ -72,10 +67,12 @@ public class FlinkArcticDataReader extends AbstractAdaptHiveUnkeyedDataReader<Ro
         nameMapping,
         caseSensitive,
         convertConstant,
-        reuseContainer);
+        reuseContainer,
+        structLikeCollections);
   }
 
-  public FlinkArcticDataReader(
+
+  public GenericUnkeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -99,30 +96,23 @@ public class FlinkArcticDataReader extends AbstractAdaptHiveUnkeyedDataReader<Ro
 
   @Override
   protected Function<MessageType, ParquetValueReader<?>> getParquetReaderFunction(
-      Schema projectedSchema, Map<Integer, ?> idToConstant) {
-    return fileSchema ->
-        AdaptHiveFlinkParquetReaders.buildReader(projectedSchema, fileSchema, idToConstant);
+      Schema projectedSchema,
+      Map<Integer, ?> idToConstant) {
+    return fileSchema -> GenericParquetReaders.buildReader(projectedSchema, fileSchema, idToConstant);
   }
 
   @Override
   protected Function<TypeDescription, OrcRowReader<?>> getOrcReaderFunction(
-      Schema projectSchema, Map<Integer, ?> idToConstant) {
-    return fileSchema -> new FlinkOrcReader(projectSchema, fileSchema, idToConstant);
+      Schema projectSchema,
+      Map<Integer, ?> idToConstant) {
+    return fileSchema -> new GenericOrcReader(projectSchema, fileSchema, idToConstant);
   }
 
   @Override
-  protected Function<Schema, Function<RowData, StructLike>> toStructLikeFunction() {
+  protected Function<Schema, Function<Record, StructLike>> toStructLikeFunction() {
     return schema -> {
-      RowType requiredRowType = FlinkSchemaUtil.convert(schema);
-      RowDataWrapper asStructLike = new RowDataWrapper(requiredRowType, schema.asStruct());
-      return asStructLike::wrap;
+      final InternalRecordWrapper wrapper = new InternalRecordWrapper(schema.asStruct());
+      return wrapper::copyFor;
     };
-  }
-
-  @Override
-  public CloseableIterator<RowData> open(FileScanTask fileScanTask) {
-    ArcticFileScanTask arcticFileScanTask = (ArcticFileScanTask) fileScanTask;
-    CloseableIterable<RowData> rowDataIterable = readData(arcticFileScanTask);
-    return fileIO.doAs(rowDataIterable::iterator);
   }
 }
