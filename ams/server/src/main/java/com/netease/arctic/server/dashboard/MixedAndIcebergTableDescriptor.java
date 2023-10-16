@@ -22,7 +22,6 @@ import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.op.SnapshotSummary;
 import com.netease.arctic.server.dashboard.component.reverser.DDLReverser;
 import com.netease.arctic.server.dashboard.component.reverser.IcebergTableMetaExtract;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
@@ -50,6 +49,7 @@ import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IcebergGenerics;
@@ -147,27 +147,41 @@ public class MixedAndIcebergTableDescriptor implements FormatTableDescriptor {
       if (snapshot.operation().equals(DataOperations.REPLACE)) {
         return;
       }
-      if (snapshot.summary().containsKey(SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE)) {
+      Map<String, String> summary = snapshot.summary();
+      if (summary.containsKey(com.netease.arctic.op.SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE)) {
         return;
       }
       TransactionsOfTable transactionsOfTable = new TransactionsOfTable();
       transactionsOfTable.setTransactionId(snapshot.snapshotId());
       int fileCount = PropertyUtil
-          .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_FILES_PROP, 0);
+          .propertyAsInt(summary, org.apache.iceberg.SnapshotSummary.ADDED_FILES_PROP, 0);
       fileCount += PropertyUtil
-          .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_DELETE_FILES_PROP, 0);
+          .propertyAsInt(summary, org.apache.iceberg.SnapshotSummary.ADDED_DELETE_FILES_PROP, 0);
       fileCount += PropertyUtil
-          .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.DELETED_FILES_PROP, 0);
+          .propertyAsInt(summary, org.apache.iceberg.SnapshotSummary.DELETED_FILES_PROP, 0);
       fileCount += PropertyUtil
-          .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.REMOVED_DELETE_FILES_PROP, 0);
+          .propertyAsInt(summary, org.apache.iceberg.SnapshotSummary.REMOVED_DELETE_FILES_PROP, 0);
       transactionsOfTable.setFileCount(fileCount);
       transactionsOfTable.setFileSize(PropertyUtil
-          .propertyAsLong(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_FILE_SIZE_PROP, 0) +
+          .propertyAsLong(summary, org.apache.iceberg.SnapshotSummary.ADDED_FILE_SIZE_PROP, 0) +
           PropertyUtil
-              .propertyAsLong(snapshot.summary(), org.apache.iceberg.SnapshotSummary.REMOVED_FILE_SIZE_PROP, 0));
+              .propertyAsLong(summary, org.apache.iceberg.SnapshotSummary.REMOVED_FILE_SIZE_PROP, 0));
       transactionsOfTable.setCommitTime(snapshot.timestampMillis());
       transactionsOfTable.setOperation(snapshot.operation());
-      transactionsOfTable.setSummary(snapshot.summary());
+      transactionsOfTable.setSummary(summary);
+
+      //Metric in chart
+      Map<String, String> summaryForChat = new HashMap<>();
+      summaryForChat.put("total-records", summary.get(SnapshotSummary.TOTAL_RECORDS_PROP));
+      summaryForChat.put("eq-delete-records", summary.get(SnapshotSummary.TOTAL_EQ_DELETES_PROP));
+      summaryForChat.put("pos-delete-records", summary.get(SnapshotSummary.TOTAL_POS_DELETES_PROP));
+      summaryForChat.put("data-files", summary.get(SnapshotSummary.TOTAL_DATA_FILES_PROP));
+      summaryForChat.put("delete-files", summary.get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
+      summaryForChat.put("total-files",
+          PropertyUtil.propertyAsInt(summary, SnapshotSummary.TOTAL_DELETE_FILES_PROP, 0) +
+              PropertyUtil.propertyAsInt(summary, SnapshotSummary.TOTAL_DATA_FILES_PROP, 0) + "");
+      transactionsOfTable.setSummaryForChart(summaryForChat);
+
       transactionsOfTables.add(transactionsOfTable);
     }));
     transactionsOfTables.sort((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()));
