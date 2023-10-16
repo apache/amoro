@@ -146,7 +146,8 @@ public abstract class ArcticDeleteFilter<T> {
     deleteIds.add(MetadataColumns.FILE_OFFSET_FILED.fieldId());
     this.deleteSchema = TypeUtil.select(requiredSchema, deleteIds);
     if (CollectionUtils.isNotEmpty(sourceNodes)) {
-      this.deleteNodeFilter = new NodeFilter<>(sourceNodes, deleteSchema, primaryKeySpec, record -> record);
+      this.deleteNodeFilter = new NodeFilter<>(sourceNodes, deleteSchema, primaryKeySpec,
+          record -> new InternalRecordWrapper(deleteSchema.asStruct()).wrap(record));
     } else {
       this.deleteNodeFilter = null;
     }
