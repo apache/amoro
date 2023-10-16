@@ -2,6 +2,7 @@ package com.netease.arctic.server.table;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.netease.arctic.server.utils.ConfigurationUtil;
@@ -199,5 +200,32 @@ public class DataExpirationConfig {
   public DataExpirationConfig setNumberDateFormat(String numberDateFormat) {
     this.numberDateFormat = numberDateFormat;
     return this;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof DataExpirationConfig)) {
+      return false;
+    }
+    DataExpirationConfig config = (DataExpirationConfig) o;
+    return enabled == config.enabled && retentionTime == config.retentionTime &&
+        Objects.equal(expirationField, config.expirationField) &&
+        expirationLevel == config.expirationLevel &&
+        Objects.equal(dateTimePattern, config.dateTimePattern) &&
+        Objects.equal(numberDateFormat, config.numberDateFormat);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(
+        enabled,
+        expirationField,
+        expirationLevel,
+        retentionTime,
+        dateTimePattern,
+        numberDateFormat);
   }
 }
