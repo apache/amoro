@@ -44,12 +44,6 @@
             <groupId>com.netease.amoro</groupId>
             <artifactId>flink-common</artifactId>
             <version>${project.parent.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>iceberg-flink-1.17</artifactId>
-                    <groupId>org.apache.iceberg</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.iceberg</groupId>
