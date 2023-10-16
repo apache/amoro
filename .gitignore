@@ -1,0 +1,69 @@
+*.swp
+.DS_Store
+.cache
+*dependency-reduced-pom.xml
+
+# intellij files
+.idea/*
+!.idea/vcs.xml
+!.idea/icon.svg
+.idea_modules/
+*.ipr
+*.iws
+*.iml
+
+# gradle build
+.gradle
+build
+gradle/
+out
+gradle/wrapper/gradle-wrapper.jar
+
+__pycache__/
+*.py[cod]
+.eggs/
+.tox/
+env/
+venv/
+*.egg-info/
+test-reports
+build/
+dist/
+sdist/
+.coverage
+coverage.xml
+.pytest_cache/
+spark/tmp/
+spark/spark-warehouse/
+
+# vscode/eclipse files
+.classpath
+.project
+.settings
+bin/
+
+# Hive/metastore files
+metastore_db/
+
+# Python stuff
+python/.mypy_cache/
+
+# logs
+logs/
+core/derby.log
+*.log
+
+# target
+target/
+
+# keberos configs
+*arctic_krb_conf/
+
+# local config
+conf/
+
+# test resources
+*unit_test_base_tmp/
+
+*/.gitignore
+*.tgz
