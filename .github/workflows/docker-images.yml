@@ -151,7 +151,8 @@ jobs:
       - name: Build optimizer module with Maven
         run: mvn clean package -pl 'ams/optimizer/flink-optimizer' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
 
-      - run: ls -lh ams/optimizer/flink-optimizer/target/flink-optimizer-${AMORO_VERSION}-jar-with-dependencies.jar
+      - run: ls -lh ams/optimizer/flink-optimizer/target/flink-optimizer-${AMORO_VERSION}-jar-with-dependencies.jar \
+          && pwd
 
       - name: Build and Push Flink Optimizer Docker Image
         uses: docker/build-push-action@v4
