@@ -3,18 +3,27 @@ package com.netease.arctic.server.dashboard;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
+import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
+import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
 import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
+import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.iceberg.relocated.com.google.common.collect.Streams;
+import org.apache.paimon.AbstractFileStore;
+import org.apache.paimon.Snapshot;
+import org.apache.paimon.table.FileStoreTable;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -29,7 +38,7 @@ public class ServerTableDescriptor extends PersistentBase {
 
   public ServerTableDescriptor(TableService tableService) {
     this.tableService = tableService;
-    FormatTableDescriptor[] formatTableDescriptors = new FormatTableDescriptor[] {
+    FormatTableDescriptor[] formatTableDescriptors = new FormatTableDescriptor[]{
         new MixedAndIcebergTableDescriptor(),
         new PaimonTableDescriptor()
     };
@@ -91,5 +100,34 @@ public class ServerTableDescriptor extends PersistentBase {
     return getAs(
         OptimizingMapper.class,
         mapper -> mapper.selectOptimizeTaskMetas(processIds));
+  }
+
+  public List<OptimizingProcessInfo> getPaimonOptimizingProcesses(
+      AmoroTable<?> amoroTable, ServerTableIdentifier tableIdentifier) {
+    List<OptimizingProcessInfo> processInfoList = new ArrayList<>();
+    FileStoreTable fileStoreTable = (FileStoreTable) amoroTable.originalTable();
+    AbstractFileStore<?> store = (AbstractFileStore<?>) fileStoreTable.store();
+    try {
+      Streams.stream(store.snapshotManager().snapshots())
+          .filter(s -> s.commitKind() == Snapshot.CommitKind.COMPACT)
+          .forEach(s -> {
+            OptimizingProcessInfo optimizingProcessInfo = new OptimizingProcessInfo();
+            optimizingProcessInfo.setProcessId(s.id());
+            ServerTableIdentifier tableIdentifierWithTableId = getAs(TableMetaMapper.class,
+                mapper -> mapper.selectTableIdentifier(tableIdentifier.getCatalog(),
+                    tableIdentifier.getDatabase(),
+                    tableIdentifier.getTableName()));
+            optimizingProcessInfo.setTableId(tableIdentifierWithTableId.getId());
+            optimizingProcessInfo.setCatalogName(tableIdentifierWithTableId.getCatalog());
+            optimizingProcessInfo.setDbName(tableIdentifierWithTableId.getDatabase());
+            optimizingProcessInfo.setTableName(tableIdentifierWithTableId.getTableName());
+            optimizingProcessInfo.setStatus(OptimizingProcess.Status.SUCCESS);
+            optimizingProcessInfo.setFinishTime(s.timeMillis());
+            processInfoList.add(optimizingProcessInfo);
+          });
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return processInfoList;
   }
 }
