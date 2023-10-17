@@ -35,12 +35,12 @@ import java.util.Map;
 public class MetricsManager extends ActivePluginManager<MetricsEmitter> {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetricsManager.class);
-  private static final String PLUGIN_CONFIG_DIRECTORY = "metrics";
+  private static final String METRICS_CONFIG_DIRECTORY = "metrics";
 
   private final String configPath;
 
   public MetricsManager() {
-    this(new File(Environments.getHomePath(), PLUGIN_CONFIG_DIRECTORY).getPath());
+    this(new File(Environments.getHomePath(), METRICS_CONFIG_DIRECTORY).getPath());
   }
 
   public MetricsManager(String configPath) {
