@@ -90,7 +90,7 @@
         <iceberg.version>1.3.0</iceberg.version>
         <paimon.version>0.5.0-incubating</paimon.version>
         <hive.version>3.1.1</hive.version>
-        <hadoop.version>3.2.2</hadoop.version>
+        <hadoop.version>3.2.4</hadoop.version>
         <kerby.version>2.0.3</kerby.version>
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>
@@ -968,7 +968,7 @@
             <properties>
                 <guava.version>14.0.1</guava.version>
                 <hive.version>2.1.1</hive.version>
-                <hadoop.version>2.9.2</hadoop.version>
+                <hadoop.version>2.10.2</hadoop.version>
                 <terminal.spark.version>3.1.2</terminal.spark.version>
                 <terminal.spark.major.version>3.1</terminal.spark.major.version>
             </properties>
@@ -983,7 +983,7 @@
             <properties>
                 <guava.version>32.1.1-jre</guava.version>
                 <hive.version>3.1.1</hive.version>
-                <hadoop.version>3.2.2</hadoop.version>
+                <hadoop.version>3.2.4</hadoop.version>
                 <terminal.spark.version>3.3.2</terminal.spark.version>
                 <terminal.spark.major.version>3.3</terminal.spark.major.version>
             </properties>
