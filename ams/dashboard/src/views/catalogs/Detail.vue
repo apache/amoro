@@ -248,7 +248,7 @@ const storeSupportFormat: {[prop:string]: string[]} = {
   ams: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
   hive: [tableFormatMap.MIXED_HIVE, tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG, tableFormatMap.PAIMON],
   hadoop: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG, tableFormatMap.PAIMON],
-  glue: [tableFormatMap.ICEBERG],
+  glue: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
   custom: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG]
 }
 
