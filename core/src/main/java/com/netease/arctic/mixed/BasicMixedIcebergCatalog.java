@@ -22,6 +22,7 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.TableTrashManagers;
 import com.netease.arctic.op.CreateTableTransaction;
@@ -87,6 +88,17 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
 
   private void initialize(CatalogMeta catalogMeta) {
     CatalogUtil.mergeCatalogProperties(catalogMeta, clientSideProperties);
+
+    catalogMeta.putToCatalogProperties(
+        org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE, catalogMeta.getCatalogType());
+    if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(catalogMeta.getCatalogType())) {
+      catalogMeta.getCatalogProperties()
+          .put(CatalogProperties.CATALOG_IMPL, CatalogLoader.GLUE_CATALOG_IMPL);
+    }
+    if (catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
+      catalogMeta.getCatalogProperties().remove(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE);
+    }
+
     TableMetaStore metaStore = CatalogUtil.buildMetaStore(catalogMeta);
     Catalog icebergCatalog = metaStore.doAs(() -> buildIcebergCatalog(
         catalogMeta.getCatalogName(), catalogMeta.getCatalogType(),

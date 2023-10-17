@@ -22,7 +22,7 @@ either express or implied.
 package com.netease.arctic.flink.read.source;
 
 import com.netease.arctic.flink.read.AdaptHiveFlinkParquetReaders;
-import com.netease.arctic.hive.io.reader.AbstractAdaptHiveArcticDataReader;
+import com.netease.arctic.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.flink.table.data.RowData;
@@ -31,15 +31,18 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.RowDataWrapper;
+import org.apache.iceberg.flink.data.FlinkOrcReader;
+import org.apache.iceberg.orc.OrcRowReader;
 import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.types.Type;
+import org.apache.orc.TypeDescription;
 import org.apache.parquet.schema.MessageType;
 
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class FlinkArcticMORDataReader extends AbstractAdaptHiveArcticDataReader<RowData> {
+public class FlinkArcticMORDataReader extends AbstractAdaptHiveKeyedDataReader<RowData> {
   public FlinkArcticMORDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
@@ -61,10 +64,16 @@ public class FlinkArcticMORDataReader extends AbstractAdaptHiveArcticDataReader<
   }
 
   @Override
-  protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
+  protected Function<MessageType, ParquetValueReader<?>> getParquetReaderFunction(
       Schema projectSchema, Map<Integer, ?> idToConstant) {
     return fileSchema ->
         AdaptHiveFlinkParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
+  }
+
+  @Override
+  protected Function<TypeDescription, OrcRowReader<?>> getOrcReaderFunction(
+      Schema projectSchema, Map<Integer, ?> idToConstant) {
+    return fileSchema -> new FlinkOrcReader(projectSchema, fileSchema, idToConstant);
   }
 
   @Override

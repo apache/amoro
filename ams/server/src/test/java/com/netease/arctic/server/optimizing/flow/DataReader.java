@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.optimizing.flow;
 
-import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
-import com.netease.arctic.hive.io.reader.GenericAdaptHiveIcebergDataReader;
+import com.netease.arctic.hive.io.reader.AdaptHiveGenericKeyedDataReader;
+import com.netease.arctic.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.ArcticTable;
@@ -56,7 +56,7 @@ public class DataReader {
 
   private List<Record> readKeyed(KeyedTable table) throws IOException, ExecutionException, InterruptedException {
     CloseableIterable<CombinedScanTask> combinedScanTasks = table.newScan().planTasks();
-    AdaptHiveGenericArcticDataReader dataReader = new AdaptHiveGenericArcticDataReader(
+    AdaptHiveGenericKeyedDataReader dataReader = new AdaptHiveGenericKeyedDataReader(
         table.io(),
         table.schema(),
         table.schema(),
@@ -94,7 +94,7 @@ public class DataReader {
   }
 
   private List<Record> readIceberg(UnkeyedTable table) throws ExecutionException, InterruptedException {
-    GenericAdaptHiveIcebergDataReader dataReader = new GenericAdaptHiveIcebergDataReader(
+    AdaptHiveGenericUnkeyedDataReader dataReader = new AdaptHiveGenericUnkeyedDataReader(
         table.io(),
         table.schema(),
         table.schema(),

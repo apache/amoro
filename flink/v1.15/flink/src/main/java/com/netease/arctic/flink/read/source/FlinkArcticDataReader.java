@@ -20,9 +20,9 @@ package com.netease.arctic.flink.read.source;
 
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.flink.read.AdaptHiveFlinkParquetReaders;
-import com.netease.arctic.hive.io.reader.AbstractAdaptHiveIcebergDataReader;
-import com.netease.arctic.iceberg.DeleteFilter;
+import com.netease.arctic.hive.io.reader.AbstractAdaptHiveUnkeyedDataReader;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.reader.DeleteFilter;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.flink.table.data.RowData;
@@ -32,10 +32,13 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.RowDataWrapper;
+import org.apache.iceberg.flink.data.FlinkOrcReader;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
+import org.apache.iceberg.orc.OrcRowReader;
 import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.types.Type;
+import org.apache.orc.TypeDescription;
 import org.apache.parquet.schema.MessageType;
 
 import java.util.Map;
@@ -50,7 +53,7 @@ import java.util.function.Function;
  * DeleteFilter}. It shall be projected before sent to downstream. This can be processed in {@link
  * DataIterator#next()}
  */
-public class FlinkArcticDataReader extends AbstractAdaptHiveIcebergDataReader<RowData>
+public class FlinkArcticDataReader extends AbstractAdaptHiveUnkeyedDataReader<RowData>
     implements FileScanTaskReader<RowData> {
   private static final long serialVersionUID = -6773693031945244386L;
 
@@ -95,10 +98,16 @@ public class FlinkArcticDataReader extends AbstractAdaptHiveIcebergDataReader<Ro
   }
 
   @Override
-  protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
-      Schema projectSchema, Map<Integer, ?> idToConstant) {
+  protected Function<MessageType, ParquetValueReader<?>> getParquetReaderFunction(
+      Schema projectedSchema, Map<Integer, ?> idToConstant) {
     return fileSchema ->
-        AdaptHiveFlinkParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
+        AdaptHiveFlinkParquetReaders.buildReader(projectedSchema, fileSchema, idToConstant);
+  }
+
+  @Override
+  protected Function<TypeDescription, OrcRowReader<?>> getOrcReaderFunction(
+      Schema projectSchema, Map<Integer, ?> idToConstant) {
+    return fileSchema -> new FlinkOrcReader(projectSchema, fileSchema, idToConstant);
   }
 
   @Override
