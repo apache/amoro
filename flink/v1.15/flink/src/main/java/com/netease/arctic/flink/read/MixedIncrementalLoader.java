@@ -23,7 +23,7 @@ import com.netease.arctic.flink.read.hybrid.enumerator.ContinuousEnumerationResu
 import com.netease.arctic.flink.read.hybrid.enumerator.ContinuousSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.reader.DataIteratorReaderFunction;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
-import com.netease.arctic.hive.io.reader.AbstractAdaptHiveArcticDataReader;
+import com.netease.arctic.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterator;
 import org.slf4j.Logger;
@@ -50,14 +50,14 @@ public class MixedIncrementalLoader<T> implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(MixedIncrementalLoader.class);
   private final ContinuousSplitPlanner continuousSplitPlanner;
   private final DataIteratorReaderFunction<T> readerFunction;
-  private AbstractAdaptHiveArcticDataReader<T> flinkArcticMORDataReader;
+  private AbstractAdaptHiveKeyedDataReader<T> flinkArcticMORDataReader;
   private final List<Expression> filters;
   private final AtomicReference<ArcticEnumeratorOffset> enumeratorPosition;
   private final Queue<ArcticSplit> splitQueue;
 
   public MixedIncrementalLoader(
       ContinuousSplitPlanner continuousSplitPlanner,
-      AbstractAdaptHiveArcticDataReader<T> flinkArcticMORDataReader,
+      AbstractAdaptHiveKeyedDataReader<T> flinkArcticMORDataReader,
       DataIteratorReaderFunction<T> readerFunction,
       List<Expression> filters) {
     this.continuousSplitPlanner = continuousSplitPlanner;

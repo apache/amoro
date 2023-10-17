@@ -18,9 +18,9 @@
 
 package com.netease.arctic.utils.map;
 
-import com.netease.arctic.iceberg.StructLikeWrapper;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.StructLikeWrapper;
 
 import javax.annotation.Nullable;
 
@@ -40,7 +40,7 @@ public class StructLikeSpillableMap<T> extends StructLikeBaseMap<T> {
   private StructLikeSpillableMap(Types.StructType type, Long maxInMemorySizeInBytes, @Nullable String backendBaseDir) {
     super(type);
     this.wrapperMap = new SimpleSpillableMap<>(maxInMemorySizeInBytes, backendBaseDir,
-        SerializationUtil.createStructLikeWrapperSerializer(structLikeWrapperFactory),
+        SerializationUtil.createStructLikeWrapperSerializer(structLikeWrapper),
         SerializationUtil.createJavaSimpleSerializer(),
         new StructLikeWrapperSizeEstimator(), new DefaultSizeEstimator<>());
   }

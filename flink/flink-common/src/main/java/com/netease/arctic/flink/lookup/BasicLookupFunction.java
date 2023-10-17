@@ -28,7 +28,7 @@ import com.netease.arctic.flink.read.MixedIncrementalLoader;
 import com.netease.arctic.flink.read.hybrid.enumerator.MergeOnReadIncrementalPlanner;
 import com.netease.arctic.flink.read.hybrid.reader.DataIteratorReaderFunction;
 import com.netease.arctic.flink.table.ArcticTableLoader;
-import com.netease.arctic.hive.io.reader.AbstractAdaptHiveArcticDataReader;
+import com.netease.arctic.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.MetricGroup;
@@ -76,7 +76,7 @@ public class BasicLookupFunction<T> implements Serializable {
   private transient AtomicLong lookupLoadingTimeMs;
   private final Predicate<T> predicate;
   private final TableFactory<T> kvTableFactory;
-  private final AbstractAdaptHiveArcticDataReader<T> flinkArcticMORDataReader;
+  private final AbstractAdaptHiveKeyedDataReader<T> flinkArcticMORDataReader;
   private final DataIteratorReaderFunction<T> readerFunction;
 
   private transient ScheduledExecutorService executor;
@@ -91,7 +91,7 @@ public class BasicLookupFunction<T> implements Serializable {
       ArcticTableLoader tableLoader,
       Configuration config,
       Predicate<T> predicate,
-      AbstractAdaptHiveArcticDataReader<T> flinkArcticMORDataReader,
+      AbstractAdaptHiveKeyedDataReader<T> flinkArcticMORDataReader,
       DataIteratorReaderFunction<T> readerFunction) {
     checkArgument(
         arcticTable.isKeyedTable(),

@@ -1,7 +1,7 @@
 package com.netease.arctic.hive.optimizing;
 
 import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
+import com.netease.arctic.hive.io.reader.AdaptHiveGenericKeyedDataReader;
 import com.netease.arctic.optimizing.OptimizingDataReader;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.scan.ArcticFileScanTask;
@@ -49,7 +49,7 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
 
   @Override
   public CloseableIterable<Record> readData() {
-    AdaptHiveGenericArcticDataReader reader = arcticDataReader(table.schema());
+    AdaptHiveGenericKeyedDataReader reader = arcticDataReader(table.schema());
 
     // Change returned value by readData  from Iterator to Iterable in future
     CloseableIterator<Record> closeableIterator = reader.readData(nodeFileScanTask(input.rewrittenDataFilesForMixed()));
@@ -63,7 +63,7 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
         MetadataColumns.ROW_POSITION,
         com.netease.arctic.table.MetadataColumns.TREE_NODE_FIELD
     );
-    AdaptHiveGenericArcticDataReader reader = arcticDataReader(schema);
+    AdaptHiveGenericKeyedDataReader reader = arcticDataReader(schema);
     return wrapIterator2Iterable(reader.readDeletedData(nodeFileScanTask(input.rePosDeletedDataFilesForMixed())));
   }
 
@@ -72,7 +72,7 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
 
   }
 
-  private AdaptHiveGenericArcticDataReader arcticDataReader(Schema requiredSchema) {
+  private AdaptHiveGenericKeyedDataReader arcticDataReader(Schema requiredSchema) {
 
     PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.noPrimaryKey();
     if (table.isKeyedTable()) {
@@ -80,7 +80,7 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
       primaryKeySpec = keyedTable.primaryKeySpec();
     }
 
-    return new AdaptHiveGenericArcticDataReader(table.io(), table.schema(), requiredSchema,
+    return new AdaptHiveGenericKeyedDataReader(table.io(), table.schema(), requiredSchema,
         primaryKeySpec, table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
         false, IdentityPartitionConverters::convertConstant, null,
         false, structLikeCollections);

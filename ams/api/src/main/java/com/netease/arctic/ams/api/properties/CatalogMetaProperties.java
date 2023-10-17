@@ -25,17 +25,25 @@ public class CatalogMetaProperties {
   public static final String STORAGE_CONFIGS_KEY_HDFS_SITE = "hadoop.hdfs.site";
   public static final String STORAGE_CONFIGS_KEY_CORE_SITE = "hadoop.core.site";
   public static final String STORAGE_CONFIGS_KEY_HIVE_SITE = "hive.site";
+  public static final String STORAGE_CONFIGS_KEY_REGION = "storage.s3.region";
+  public static final String STORAGE_CONFIGS_KEY_ENDPOINT = "storage.s3.endpoint";
 
-  public static final String STORAGE_CONFIGS_VALUE_TYPE_HDFS = "hdfs";
+  public static final String STORAGE_CONFIGS_VALUE_TYPE_HDFS_LEGACY = "hdfs";
+  public static final String STORAGE_CONFIGS_VALUE_TYPE_HADOOP = "Hadoop";
+  public static final String STORAGE_CONFIGS_VALUE_TYPE_S3 = "S3";
 
   public static final String AUTH_CONFIGS_KEY_TYPE = "auth.type";
   public static final String AUTH_CONFIGS_KEY_PRINCIPAL = "auth.kerberos.principal";
   public static final String AUTH_CONFIGS_KEY_KEYTAB = "auth.kerberos.keytab";
   public static final String AUTH_CONFIGS_KEY_KRB5 = "auth.kerberos.krb5";
   public static final String AUTH_CONFIGS_KEY_HADOOP_USERNAME = "auth.simple.hadoop_username";
+  public static final String AUTH_CONFIGS_KEY_ACCESS_KEY = "auth.ak_sk.access_key";
+  public static final String AUTH_CONFIGS_KEY_SECRET_KEY = "auth.ak_sk.secret_key";
 
   public static final String AUTH_CONFIGS_VALUE_TYPE_SIMPLE = "simple";
   public static final String AUTH_CONFIGS_VALUE_TYPE_KERBEROS = "kerberos";
+  public static final String AUTH_CONFIGS_VALUE_TYPE_AK_SK = "ak/sk";
+  public static final String AUTH_CONFIGS_VALUE_TYPE_CUSTOM = "custom";
 
   //Deprecated from version v0.4.0, use KEY_WAREHOUSE
   @Deprecated
@@ -51,6 +59,7 @@ public class CatalogMetaProperties {
   public static final String CATALOG_TYPE_HADOOP = "hadoop";
   public static final String CATALOG_TYPE_HIVE = "hive";
   public static final String CATALOG_TYPE_AMS = "ams";
+  public static final String CATALOG_TYPE_GLUE = "glue";
   public static final String CATALOG_TYPE_CUSTOM = "custom";
 
   public static final String TABLE_FORMATS = "table-formats";
