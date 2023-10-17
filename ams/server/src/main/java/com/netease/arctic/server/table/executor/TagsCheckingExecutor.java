@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.table.executor;
 
+import com.netease.arctic.AmoroTable;
+import com.netease.arctic.formats.iceberg.IcebergTable;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
@@ -25,7 +27,6 @@ import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotRef;
@@ -62,8 +63,8 @@ public class TagsCheckingExecutor extends BaseTableExecutor {
   @Override
   protected void execute(TableRuntime tableRuntime) {
     try {
-      ArcticTable arcticTable = loadTable(tableRuntime);
-      new Checker(arcticTable, TagConfig.fromTableProperties(arcticTable.properties()), LocalDate.now())
+      AmoroTable<?> amoroTable = loadTable(tableRuntime);
+      new Checker(amoroTable, TagConfig.fromTableProperties(amoroTable.properties()), LocalDate.now())
           .checkAndCreateTodayTag();
     } catch (Throwable t) {
       LOG.error("unexpected tag checking error of table {} ", tableRuntime.getTableIdentifier(), t);
@@ -71,13 +72,13 @@ public class TagsCheckingExecutor extends BaseTableExecutor {
   }
 
   public static class Checker {
-    private final ArcticTable arcticTable;
+    private final AmoroTable<?> amoroTable;
     private final TagConfig tagConfig;
     private final LocalDate now;
 
-    public Checker(ArcticTable arcticTable,
+    public Checker(AmoroTable<?> amoroTable,
                    TagConfig tagConfig, LocalDate now) {
-      this.arcticTable = arcticTable;
+      this.amoroTable = amoroTable;
       this.tagConfig = tagConfig;
       this.now = now;
     }
@@ -88,21 +89,36 @@ public class TagsCheckingExecutor extends BaseTableExecutor {
       }
       // check today's tag/branch exist
       if (findRefOfToday(getTable(), false) != null || findRefOfToday(getTable(), true) != null) {
-        LOG.debug("{} find today's tag or branch, skip", arcticTable.name());
+        LOG.debug("{} find today's tag or branch, skip", amoroTable.name());
         return;
       }
       // create today's tag/branch if not exist
       boolean success;
-      if (arcticTable.isUnkeyedTable()) {
-        success = createUnkeyedTableRef(arcticTable.asUnkeyedTable());
+      if (amoroTable.originalTable() instanceof IcebergTable) {
+        success = createIcebergTableRef((Table) amoroTable.originalTable());
+      } else if (amoroTable.originalTable() instanceof ArcticTable) {
+        ArcticTable arcticTable = (ArcticTable) amoroTable.originalTable();
+        if (arcticTable.isKeyedTable()) {
+          success = createKeyedTableRef(arcticTable.asKeyedTable());
+        } else {
+          success = createIcebergTableRef(arcticTable.asUnkeyedTable());
+        }
       } else {
-        success = createKeyedTableRef(arcticTable.asKeyedTable());
+        // not support other table format
+        return;
       }
-      LOG.info("{} today's ref creation {}", arcticTable.name(), success ? "succeed" : "skipped");
+      LOG.info("{} today's ref creation {}", amoroTable.name(), success ? "succeed" : "skipped");
     }
 
     private Table getTable() {
-      return arcticTable.isKeyedTable() ? arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
+      if (amoroTable.originalTable() instanceof IcebergTable) {
+        return (Table) amoroTable.originalTable();
+      } else if (amoroTable.originalTable() instanceof ArcticTable) {
+        ArcticTable arcticTable = (ArcticTable) amoroTable.originalTable();
+        return arcticTable.isKeyedTable() ? arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
+      } else {
+        throw new UnsupportedOperationException("only support Iceberg/Mixed Format");
+      }
     }
 
     private String findRefOfToday(Table table, boolean isBranch) {
@@ -121,24 +137,24 @@ public class TagsCheckingExecutor extends BaseTableExecutor {
           .orElse(null);
     }
 
-    private boolean createUnkeyedTableRef(UnkeyedTable table) {
+    private boolean createIcebergTableRef(Table table) {
       Snapshot snapshot = findSnapshot(table, getTagTriggerTime());
       if (snapshot == null) {
-        LOG.info("{} no snapshot found at {}", arcticTable.name(), getTagTriggerTime());
+        LOG.info("{} no snapshot found at {}", amoroTable.name(), getTagTriggerTime());
         return false;
       }
       if (!tagConfig.isOptimizingTag()) {
         table.manageSnapshots()
             .createTag(getTodayTagName(), snapshot.snapshotId())
             .commit();
-        LOG.info("{} create today's tag {} on snapshot {} {}", arcticTable.name(), getTodayTagName(),
+        LOG.info("{} create today's tag {} on snapshot {} {}", amoroTable.name(), getTodayTagName(),
             snapshot.snapshotId(),
             snapshot.timestampMillis());
       } else {
         table.manageSnapshots()
             .createBranch(getTodayBranchName(), snapshot.snapshotId())
             .commit();
-        LOG.info("{} create today's branch {} on snapshot {} {}", arcticTable.name(), getTodayBranchName(),
+        LOG.info("{} create today's branch {} on snapshot {} {}", amoroTable.name(), getTodayBranchName(),
             snapshot.snapshotId(),
             snapshot.timestampMillis());
       }
@@ -149,7 +165,7 @@ public class TagsCheckingExecutor extends BaseTableExecutor {
       BaseTable baseStore = table.baseTable();
       ChangeTable changeStore = table.changeTable();
       if (!tagConfig.isOptimizingTag()) {
-        return createUnkeyedTableRef(baseStore);
+        return createIcebergTableRef(baseStore);
       } else {
         // 1.create change branch
         Snapshot changeSnapshot;
@@ -163,7 +179,7 @@ public class TagsCheckingExecutor extends BaseTableExecutor {
           // branch on change store not exists
           changeSnapshot = findSnapshot(changeStore, getTagTriggerTime());
           if (changeSnapshot == null) {
-            LOG.debug("{} find no snapshot on change store, skip", arcticTable.name());
+            LOG.debug("{} find no snapshot on change store, skip", amoroTable.name());
             return false;
           }
         }
@@ -183,7 +199,7 @@ public class TagsCheckingExecutor extends BaseTableExecutor {
           }
         }
         if (baseSnapshot == null) {
-          LOG.debug("{} find no snapshot on base store, skip", arcticTable.name());
+          LOG.debug("{} find no snapshot on base store, skip", amoroTable.name());
           return false;
         }
         if (branchOfChange == null) {
@@ -191,14 +207,14 @@ public class TagsCheckingExecutor extends BaseTableExecutor {
           changeStore.manageSnapshots()
               .createBranch(getTodayBranchName(), changeSnapshot.snapshotId())
               .commit();
-          LOG.info("{} create today's change branch {} on snapshot {} {}", arcticTable.name(), getTodayBranchName(),
+          LOG.info("{} create today's change branch {} on snapshot {} {}", amoroTable.name(), getTodayBranchName(),
               changeSnapshot.snapshotId(),
               changeSnapshot.timestampMillis());
         }
         baseStore.manageSnapshots()
             .createBranch(getTodayBranchName(), baseSnapshot.snapshotId())
             .commit();
-        LOG.info("{} create today's base branch {} on snapshot {} {}", arcticTable.name(), getTodayBranchName(),
+        LOG.info("{} create today's base branch {} on snapshot {} {}", amoroTable.name(), getTodayBranchName(),
             baseSnapshot.snapshotId(),
             baseSnapshot.timestampMillis());
         return true;

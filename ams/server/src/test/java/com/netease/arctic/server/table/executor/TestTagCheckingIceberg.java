@@ -18,11 +18,13 @@
 
 package com.netease.arctic.server.table.executor;
 
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
+import com.netease.arctic.formats.iceberg.IcebergTable;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -41,5 +43,10 @@ public class TestTagCheckingIceberg extends TestTagChecking {
   public TestTagCheckingIceberg(CatalogTestHelper catalogTestHelper,
                                 TableTestHelper tableTestHelper, String format) {
     super(catalogTestHelper, tableTestHelper, format);
+  }
+
+  @Override
+  public AmoroTable<?> getAmoroTable() {
+    return new IcebergTable(getArcticTable().id(), getArcticTable().asUnkeyedTable());
   }
 }

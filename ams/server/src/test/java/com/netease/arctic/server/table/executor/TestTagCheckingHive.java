@@ -18,9 +18,11 @@
 
 package com.netease.arctic.server.table.executor;
 
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
+import com.netease.arctic.formats.mixed.MixedHiveTable;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
@@ -45,5 +47,10 @@ public class TestTagCheckingHive extends TestTagChecking {
   public TestTagCheckingHive(CatalogTestHelper catalogTestHelper,
                              TableTestHelper tableTestHelper, String format) {
     super(catalogTestHelper, tableTestHelper, format);
+  }
+
+  @Override
+  public AmoroTable<?> getAmoroTable() {
+    return new MixedHiveTable(getArcticTable());
   }
 }

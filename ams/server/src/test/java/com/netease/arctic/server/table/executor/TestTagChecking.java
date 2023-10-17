@@ -18,11 +18,13 @@
 
 package com.netease.arctic.server.table.executor;
 
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
+import com.netease.arctic.formats.mixed.MixedIcebergTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.Snapshot;
@@ -56,6 +58,10 @@ public class TestTagChecking extends ExecutorTestBase {
     super(catalogTestHelper, tableTestHelper);
     this.format = format;
   }
+  
+  public AmoroTable<?> getAmoroTable() {
+    return new MixedIcebergTable(getArcticTable());
+  }
 
   @Before
   public void before() {
@@ -80,20 +86,20 @@ public class TestTagChecking extends ExecutorTestBase {
     LocalDate now = LocalDate.now();
 
     // not enabled
-    new TagsCheckingExecutor.Checker(getArcticTable(),
+    new TagsCheckingExecutor.Checker(getAmoroTable(),
         TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
         now).checkAndCreateTodayTag();
     assertNoRef(table);
 
     // enabled and create a tag
     getArcticTable().updateProperties().set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true").commit();
-    new TagsCheckingExecutor.Checker(getArcticTable(),
+    new TagsCheckingExecutor.Checker(getAmoroTable(),
         TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
         now).checkAndCreateTodayTag();
     assertTag(table, snapshot, now);
     
     // recheck and should not create new tag
-    new TagsCheckingExecutor.Checker(getArcticTable(),
+    new TagsCheckingExecutor.Checker(getAmoroTable(),
         TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
         now).checkAndCreateTodayTag();
     assertTag(table, snapshot, now);
@@ -108,7 +114,7 @@ public class TestTagChecking extends ExecutorTestBase {
     table.newAppend().commit();
     Snapshot snapshot = table.currentSnapshot();
     LocalDate now = LocalDate.now();
-    new TagsCheckingExecutor.Checker(getArcticTable(),
+    new TagsCheckingExecutor.Checker(getAmoroTable(),
         TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
         now).checkAndCreateTodayTag();
     assertBranch(table, snapshot, now);
@@ -121,7 +127,7 @@ public class TestTagChecking extends ExecutorTestBase {
     UnkeyedTable table = getArcticTable().asUnkeyedTable();
     table.newAppend().commit();
     LocalDate tomorrow = LocalDate.now().plusDays(1);
-    new TagsCheckingExecutor.Checker(getArcticTable(),
+    new TagsCheckingExecutor.Checker(getAmoroTable(),
         TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
         tomorrow).checkAndCreateTodayTag();
     assertNoRef(table);
@@ -135,13 +141,13 @@ public class TestTagChecking extends ExecutorTestBase {
     baseTable.newAppend().commit();
     Snapshot baseSnapshot = baseTable.currentSnapshot();
     LocalDate now = LocalDate.now();
-    new TagsCheckingExecutor.Checker(getArcticTable(),
+    new TagsCheckingExecutor.Checker(getAmoroTable(),
         TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
         now).checkAndCreateTodayTag();
     assertTag(baseTable, baseSnapshot, now);
 
     // recheck and should not create new tag
-    new TagsCheckingExecutor.Checker(getArcticTable(),
+    new TagsCheckingExecutor.Checker(getAmoroTable(),
         TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
         now).checkAndCreateTodayTag();
     assertTag(baseTable, baseSnapshot, now);
@@ -157,14 +163,14 @@ public class TestTagChecking extends ExecutorTestBase {
     changeTable.newAppend().commit();
     Snapshot changeSnapshot = changeTable.currentSnapshot();
     LocalDate now = LocalDate.now();
-    new TagsCheckingExecutor.Checker(getArcticTable(),
+    new TagsCheckingExecutor.Checker(getAmoroTable(),
         TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
         now).checkAndCreateTodayTag();
     assertBranch(changeTable, changeSnapshot, now);
     assertBranch(baseTable, baseTable.currentSnapshot(), now);
 
     // recheck and should not create new branch
-    new TagsCheckingExecutor.Checker(getArcticTable(),
+    new TagsCheckingExecutor.Checker(getAmoroTable(),
         TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
         now).checkAndCreateTodayTag();
     assertBranch(changeTable, changeSnapshot, now);
@@ -185,14 +191,14 @@ public class TestTagChecking extends ExecutorTestBase {
     changeTable.newAppend().commit();
     Snapshot changeSnapshot = changeTable.currentSnapshot();
     LocalDate now = LocalDate.now();
-    new TagsCheckingExecutor.Checker(getArcticTable(),
+    new TagsCheckingExecutor.Checker(getAmoroTable(),
         TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
         now).checkAndCreateTodayTag();
     assertBranch(changeTable, changeSnapshot, now);
     assertBranch(baseTable, baseSnapshot, now);
 
     // recheck and should not create new branch
-    new TagsCheckingExecutor.Checker(getArcticTable(),
+    new TagsCheckingExecutor.Checker(getAmoroTable(),
         TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
         now).checkAndCreateTodayTag();
     assertBranch(changeTable, changeSnapshot, now);
@@ -207,7 +213,7 @@ public class TestTagChecking extends ExecutorTestBase {
     UnkeyedTable baseTable = getArcticTable().asKeyedTable().baseTable();
     changeTable.newAppend().commit();
     LocalDate now = LocalDate.now().plusDays(1);
-    new TagsCheckingExecutor.Checker(getArcticTable(),
+    new TagsCheckingExecutor.Checker(getAmoroTable(),
         TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
         now).checkAndCreateTodayTag();
     assertNoRef(changeTable);
@@ -225,7 +231,7 @@ public class TestTagChecking extends ExecutorTestBase {
     Thread.sleep(2);
     baseTable.newAppend().commit();
     LocalDate now = LocalDate.now();
-    new TagsCheckingExecutor.Checker(getArcticTable(),
+    new TagsCheckingExecutor.Checker(getAmoroTable(),
         TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
         now).checkAndCreateTodayTag();
     assertNoRef(changeTable);
@@ -241,7 +247,7 @@ public class TestTagChecking extends ExecutorTestBase {
     UnkeyedTable baseTable = getArcticTable().asKeyedTable().baseTable();
     baseTable.newAppend().commit();
     LocalDate now = LocalDate.now();
-    new TagsCheckingExecutor.Checker(getArcticTable(),
+    new TagsCheckingExecutor.Checker(getAmoroTable(),
         TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
         now).checkAndCreateTodayTag();
     assertNoRef(changeTable);
@@ -262,7 +268,7 @@ public class TestTagChecking extends ExecutorTestBase {
     changeTable.newAppend().commit();
     Snapshot changeSnapshot = changeTable.currentSnapshot();
     LocalDate now = LocalDate.now();
-    new TagsCheckingExecutor.Checker(getArcticTable(),
+    new TagsCheckingExecutor.Checker(getAmoroTable(),
         TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
         now).checkAndCreateTodayTag();
     assertBranch(changeTable, changeSnapshot, now);
@@ -273,7 +279,7 @@ public class TestTagChecking extends ExecutorTestBase {
     assertNoRef(baseTable);
 
     // compensate branch
-    new TagsCheckingExecutor.Checker(getArcticTable(),
+    new TagsCheckingExecutor.Checker(getAmoroTable(),
         TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
         now).checkAndCreateTodayTag();
     assertBranch(changeTable, changeSnapshot, now);
