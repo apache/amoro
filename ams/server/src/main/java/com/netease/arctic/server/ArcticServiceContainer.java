@@ -326,7 +326,7 @@ public class ArcticServiceContainer {
     @SuppressWarnings("unchecked")
     private void initServiceConfig(Map<String, Object> envConfig) throws IOException {
       LOG.info("initializing service configuration...");
-      String configPath = "/Users/huangjianmin/Downloads/config.yaml";
+      String configPath = Environments.getConfigPath() + "/" + SERVER_CONFIG_FILENAME;
       LOG.info("load config from path: {}", configPath);
       yamlConfig = new JSONObject(new Yaml().loadAs(Files.newInputStream(Paths.get(configPath)), Map.class));
       JSONObject systemConfig = yamlConfig.getJSONObject(ArcticManagementConf.SYSTEM_CONFIG);
