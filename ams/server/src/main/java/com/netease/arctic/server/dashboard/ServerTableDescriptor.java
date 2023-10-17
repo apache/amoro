@@ -8,6 +8,7 @@ import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
+import com.netease.arctic.server.dashboard.utils.FilesStatisticsBuilder;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
 import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
@@ -20,6 +21,11 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.paimon.AbstractFileStore;
 import org.apache.paimon.Snapshot;
+import org.apache.paimon.manifest.FileKind;
+import org.apache.paimon.manifest.ManifestEntry;
+import org.apache.paimon.manifest.ManifestFile;
+import org.apache.paimon.manifest.ManifestFileMeta;
+import org.apache.paimon.manifest.ManifestList;
 import org.apache.paimon.table.FileStoreTable;
 
 import java.io.IOException;
@@ -104,6 +110,7 @@ public class ServerTableDescriptor extends PersistentBase {
 
   public List<OptimizingProcessInfo> getPaimonOptimizingProcesses(
       AmoroTable<?> amoroTable, ServerTableIdentifier tableIdentifier) {
+    // Temporary solution for Paimon. TODO: Get compaction info from Paimon compaction task
     List<OptimizingProcessInfo> processInfoList = new ArrayList<>();
     FileStoreTable fileStoreTable = (FileStoreTable) amoroTable.originalTable();
     AbstractFileStore<?> store = (AbstractFileStore<?>) fileStoreTable.store();
@@ -123,6 +130,23 @@ public class ServerTableDescriptor extends PersistentBase {
             optimizingProcessInfo.setTableName(tableIdentifierWithTableId.getTableName());
             optimizingProcessInfo.setStatus(OptimizingProcess.Status.SUCCESS);
             optimizingProcessInfo.setFinishTime(s.timeMillis());
+            FilesStatisticsBuilder inputBuilder = new FilesStatisticsBuilder();
+            FilesStatisticsBuilder outputBuilder = new FilesStatisticsBuilder();
+            ManifestFile manifestFile = store.manifestFileFactory().create();
+            ManifestList manifestList = store.manifestListFactory().create();
+            List<ManifestFileMeta> manifestFileMetas = s.deltaManifests(manifestList);
+            for (ManifestFileMeta manifestFileMeta : manifestFileMetas) {
+              List<ManifestEntry> compactManifestEntries = manifestFile.read(manifestFileMeta.fileName());
+              for (ManifestEntry compactManifestEntry : compactManifestEntries) {
+                if (compactManifestEntry.kind() == FileKind.DELETE) {
+                  inputBuilder.addFile(compactManifestEntry.file().fileSize());
+                } else {
+                  outputBuilder.addFile(compactManifestEntry.file().fileSize());
+                }
+              }
+            }
+            optimizingProcessInfo.setInputFiles(inputBuilder.build());
+            optimizingProcessInfo.setOutputFiles(outputBuilder.build());
             processInfoList.add(optimizingProcessInfo);
           });
     } catch (IOException e) {

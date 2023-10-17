@@ -280,6 +280,7 @@ public class TableController {
           .map(p -> OptimizingProcessInfo.build(p, optimizingTasks.get(p.getProcessId())))
           .collect(Collectors.toList());
     } else {
+      // Temporary solution for Paimon
       result = tableDescriptor.getPaimonOptimizingProcesses(amoroTable, tableIdentifier);
     }
 
