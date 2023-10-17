@@ -91,6 +91,7 @@
         <paimon.version>0.5.0-incubating</paimon.version>
         <hive.version>3.1.1</hive.version>
         <hadoop.version>3.2.2</hadoop.version>
+        <kerby.version>2.0.3</kerby.version>
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>
         <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
@@ -985,7 +986,6 @@
                 <hadoop.version>3.2.2</hadoop.version>
                 <terminal.spark.version>3.3.2</terminal.spark.version>
                 <terminal.spark.major.version>3.3</terminal.spark.major.version>
-                <kerby.version>2.0.3</kerby.version>
             </properties>
         </profile>
         <profile>
