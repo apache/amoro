@@ -36,7 +36,7 @@ jobs:
           cache: maven
 
       - name: Validate checkstyle first
-        run: mvn validate
+        run: mvn validate -pl '!trino'
 
       - name: Build all module with Maven
         run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp
