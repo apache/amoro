@@ -264,19 +264,24 @@ public class TerminalManager {
   }
 
   private TableMetaStore getCatalogTableMetaStore(CatalogMeta catalogMeta) {
-    TableMetaStore.Builder builder = TableMetaStore.builder()
-        .withBase64MetaStoreSite(
-            catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE))
-        .withBase64CoreSite(
-            catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE))
-        .withBase64HdfsSite(
-            catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE));
-    if (catalogMeta.getAuthConfigs()
-        .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE)
-        .equalsIgnoreCase(CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE)) {
+    TableMetaStore.Builder builder = TableMetaStore.builder();
+    if (catalogMeta.getStorageConfigs() != null) {
+      Map<String, String> storageConfigs = catalogMeta.getStorageConfigs();
+      if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP
+          .equalsIgnoreCase(CatalogUtil.getCompatibleStorageType(storageConfigs))) {
+        builder.withBase64MetaStoreSite(
+                catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE))
+            .withBase64CoreSite(
+                catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE))
+            .withBase64HdfsSite(
+                catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE));
+      }
+    }
+    String authType = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
+    if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE.equalsIgnoreCase(authType)) {
       builder.withSimpleAuth(catalogMeta.getAuthConfigs()
           .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME));
-    } else {
+    } else if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_KERBEROS.equalsIgnoreCase(authType)) {
       builder.withBase64Auth(
           catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE),
           catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME),
