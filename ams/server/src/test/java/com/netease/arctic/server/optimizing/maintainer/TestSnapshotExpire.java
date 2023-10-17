@@ -363,6 +363,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Assume.assumeTrue(isKeyedTable());
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
     BaseTable baseTable = testKeyedTable.baseTable();
+    testKeyedTable.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
     // commit an empty snapshot and its statistic file
     baseTable.newAppend().commit();
     Snapshot s1 = baseTable.currentSnapshot();
