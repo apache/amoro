@@ -19,26 +19,28 @@
 package com.netease.arctic.server.metrics;
 
 import com.netease.arctic.ams.api.metrics.MetricType;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import com.netease.arctic.ams.api.metrics.MetricsContent;
+import org.apache.iceberg.metrics.MetricsReport;
+import org.apache.iceberg.rest.requests.ReportMetricsRequest;
 
-import java.util.Objects;
+public class IcebergMetricsWrapper {
+  public static MetricsContent<MetricsReport> wrap(MetricsReport report) {
+    ReportMetricsRequest typedMetric = ReportMetricsRequest.of(report);
+    return new MetricsContent<MetricsReport>() {
+      @Override
+      public String name() {
+        return typedMetric.reportType().name();
+      }
 
-import static com.netease.arctic.ams.api.Environments.AMORO_HOME;
+      @Override
+      public MetricType type() {
+        return MetricType.FORMAT_ICEBERG;
+      }
 
-public class TestMetricsEmitterLoader {
-
-  @Before
-  public void setUp() {
-    System.setProperty(AMORO_HOME, Objects.requireNonNull(this.getClass().getClassLoader().getResource("")).getPath());
-  }
-
-  @Test
-  public void testLoadPlugins() {
-    MetricsEmitterLoader loader = new MetricsEmitterLoader();
-
-    Assert.assertNotNull(loader.metricsManager().get(LoggingMetricsEmitter.NAME));
-    loader.metricsManager().emit("test", MetricType.FORMAT_ICEBERG, "test");
+      @Override
+      public MetricsReport data() {
+        return report;
+      }
+    };
   }
 }

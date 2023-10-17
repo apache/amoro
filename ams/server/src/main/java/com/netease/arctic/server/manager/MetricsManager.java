@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.manager;
 
-import com.netease.arctic.ams.api.metrics.MetricType;
+import com.netease.arctic.ams.api.Environments;
 import com.netease.arctic.ams.api.metrics.MetricsContent;
 import com.netease.arctic.ams.api.metrics.MetricsEmitter;
 import com.netease.arctic.server.exception.LoadingPluginException;
@@ -29,17 +29,32 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 import java.util.Map;
 
 public class MetricsManager extends ActivePluginManager<MetricsEmitter> {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetricsManager.class);
+  private static final String PLUGIN_CONFIG_DIRECTORY = "plugins";
 
   private final String configPath;
-  private final MetricsContentWrapper wrapper = new MetricsContentWrapper();
+
+  public MetricsManager() {
+    this(Environments.getConfigPath() + "/" + PLUGIN_CONFIG_DIRECTORY);
+  }
 
   public MetricsManager(String configPath) {
     this.configPath = configPath;
+  }
+
+  public void initialize() {
+    File dir = new File(configPath);
+    File[] yamlFiles = dir.listFiles((dir1, name) -> name.endsWith(".yaml"));
+    if (yamlFiles != null) {
+      Arrays.stream(yamlFiles).forEach(file -> {
+        this.install(file.getName().replace(".yaml", ""));
+      });
+    }
   }
 
   @Override
@@ -52,10 +67,6 @@ public class MetricsManager extends ActivePluginManager<MetricsEmitter> {
     }
   }
 
-  public <T> void emit(String name, MetricType type, T data) {
-    emit(wrapper.wrap(name, type, data));
-  }
-
   public void emit(MetricsContent<?> metrics) {
     forEach(emitter -> {
       try (ClassLoaderContext ignored = new ClassLoaderContext(emitter)) {
@@ -66,27 +77,5 @@ public class MetricsManager extends ActivePluginManager<MetricsEmitter> {
         LOG.error("Emit metrics {} failed", metrics, throwable);
       }
     });
-  }
-
-  static class MetricsContentWrapper {
-
-    public <T> MetricsContent<T> wrap(String name, MetricType type, T data) {
-      return new MetricsContent<T>() {
-        @Override
-        public String name() {
-          return name;
-        }
-
-        @Override
-        public MetricType type() {
-          return type;
-        }
-
-        @Override
-        public T data() {
-          return data;
-        }
-      };
-    }
   }
 }

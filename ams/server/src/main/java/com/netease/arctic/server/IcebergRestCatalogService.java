@@ -8,13 +8,13 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.metrics.MetricType;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.iceberg.InternalTableOperations;
 import com.netease.arctic.server.manager.MetricsManager;
+import com.netease.arctic.server.metrics.IcebergMetricsWrapper;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
@@ -403,7 +403,7 @@ public class IcebergRestCatalogService extends PersistentBase {
     handleTable(ctx, (catalog, tableMeta) -> {
       String bodyJson = ctx.body();
       ReportMetricsRequest metricsRequest = ReportMetricsRequestParser.fromJson(bodyJson);
-      metricsManager.emit(metricsRequest.reportType().name(), MetricType.FORMAT_ICEBERG, metricsRequest.report());
+      metricsManager.emit(IcebergMetricsWrapper.wrap(metricsRequest.report()));
       return null;
     });
   }
