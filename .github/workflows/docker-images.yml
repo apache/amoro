@@ -1,0 +1,149 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+
+# This workflow will build docker images when commit merged or pushed to master.
+# or tags pushed.
+
+name: Publish Docker Image
+
+on:
+  push:
+    branches:
+      - "master"
+      - "docker-image"
+    tags:
+      - "v*"
+
+
+  workflow_dispatch:
+
+jobs:
+  docker-amoro:
+    name: Push Amoro Docker Image to Docker Hub
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.repository, 'NetEase/') }}
+    strategy:
+      matrix:
+        hadoop: ["v3"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: maven
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Set up Docker tags
+        uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: arctic163/amoro
+          tags: |
+            type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},value=master-snapshot
+            type=ref,event=branch,enable=${{ matrix.hadoop == 'v2' }},value=master-snapshot-hadoop2
+            type=semver,enable=${{ matrix.hadoop == 'v3' }},pattern={{version}}
+            type=semver,enable=${{ matrix.hadoop == 'v2' }},pattern={{version}}-hadoop2
+
+      - name: Print tags
+        run: echo ${{ steps.meta.output.tags }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build dist module with Maven
+        run: mvn clean install -pl 'dist' -am -e -Dhadoop=${{ matrix.hadoop }} -DskipTests -B -ntp
+
+      - name: Build and Push Amoro Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          file: docker/amoro/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.output.tags }}
+
+  docker-optimizer-flink:
+    name: Push Amoro Optimizer-Flink Docker Image to Docker Hub
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.repository, 'NetEase/') }}
+    strategy:
+      matrix:
+        flink: [ "1.14.6", "1.15.3" ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: maven
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Set up Docker tags
+        uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: arctic163/amoro
+          tags: |
+            type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},value=master-snapshot
+            type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},value=master-snapshot-flink1.14
+            type=ref,event=branch,enable=${{ matrix.flink == '1.15.3' }},value=master-snapshot-flink1.15
+            type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}
+            type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}-flink1.14
+            type=semver,enable=${{ matrix.flink == '1.15.3' }},pattern={{version}}-flink1.15
+
+      - name: Print tags
+        run: echo ${{ steps.meta.output.tags }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set optimizer flink version
+        run: |
+          OPTIMIZER_FLINK=${{ matrix.flink }} && \
+          echo "OPTIMIZER_FLINK=-Doptimizer.flink${OPTIMIZER_FLINK%.*}" >> $GITHUB_ENV
+
+      - name: Build all module with Maven
+        run: mvn clean install -pl 'ams/optimizer/flink-optimizer' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
+
+      - name: Build and Push Amoro Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          file: docker/optimizer-flink/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.output.tags }}
+          build-args: |
+            FLINK_VERSION=${{ matrix.flink }}
