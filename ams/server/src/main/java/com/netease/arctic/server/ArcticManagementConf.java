@@ -178,21 +178,19 @@ public class ArcticManagementConf {
   public static final ConfigOption<String> DB_TYPE =
       ConfigOptions.key("database.type")
           .stringType()
-          .defaultValue("mysql")
+          .defaultValue("derby")
           .withDescription("Database type.");
 
   public static final ConfigOption<String> DB_CONNECTION_URL =
       ConfigOptions.key("database.url")
           .stringType()
-          .defaultValue("jdbc:mysql://127.0.0.1:3306/metadata?" +
-              "serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=UTF8" +
-              "&autoReconnect=true&useAffectedRows=true")
+          .defaultValue("jdbc:derby:/tmp/amoro/derby;create=true")
           .withDescription("Database connection address");
 
   public static final ConfigOption<String> DB_DRIVER_CLASS_NAME =
       ConfigOptions.key("database.jdbc-driver-class")
           .stringType()
-          .defaultValue("com.mysql.jdbc.Driver")
+          .defaultValue("org.apache.derby.jdbc.EmbeddedDriver")
           .withDescription("The JDBC driver class name for connecting to the database.");
 
   public static final ConfigOption<String> DB_USER_NAME =
