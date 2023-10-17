@@ -19,11 +19,11 @@
 package com.netease.arctic.spark.test.utils;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
-import com.netease.arctic.hive.io.reader.GenericAdaptHiveIcebergDataReader;
+import com.netease.arctic.hive.io.reader.AdaptHiveGenericKeyedDataReader;
+import com.netease.arctic.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.MixedDataTestHelpers;
-import com.netease.arctic.io.reader.GenericIcebergDataReader;
+import com.netease.arctic.io.reader.GenericUnkeyedDataReader;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.ArcticTable;
@@ -233,8 +233,8 @@ public class TestTableUtil {
   }
 
   public static List<Record> unkeyedTableRecords(UnkeyedTable table, Expression expression) {
-    GenericAdaptHiveIcebergDataReader reader =
-        new GenericAdaptHiveIcebergDataReader(
+    AdaptHiveGenericUnkeyedDataReader reader =
+        new AdaptHiveGenericUnkeyedDataReader(
             table.io(),
             table.schema(),
             table.schema(),
@@ -267,8 +267,8 @@ public class TestTableUtil {
   }
 
   public static List<Record> readKeyedTable(KeyedTable keyedTable, Expression expression) {
-    AdaptHiveGenericArcticDataReader reader =
-        new AdaptHiveGenericArcticDataReader(
+    AdaptHiveGenericKeyedDataReader reader =
+        new AdaptHiveGenericKeyedDataReader(
             keyedTable.io(),
             keyedTable.schema(),
             keyedTable.schema(),
@@ -370,8 +370,8 @@ public class TestTableUtil {
     columns.add(MetadataColumns.CHANGE_ACTION_FIELD);
     Schema expectSchema = new Schema(columns);
 
-    GenericIcebergDataReader reader =
-        new GenericIcebergDataReader(
+    GenericUnkeyedDataReader reader =
+        new GenericUnkeyedDataReader(
             keyedTable.io(),
             keyedTable.schema(),
             expectSchema,

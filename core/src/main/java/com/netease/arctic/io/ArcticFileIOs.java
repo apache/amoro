@@ -55,7 +55,7 @@ public class ArcticFileIOs {
     return new ArcticHadoopFileIO(tableMetaStore);
   }
 
-  public static ArcticFileIO  buildAdaptIcebergFileIO(TableMetaStore tableMetaStore, FileIO io) {
+  public static ArcticFileIO buildAdaptIcebergFileIO(TableMetaStore tableMetaStore, FileIO io) {
     if (io instanceof HadoopFileIO) {
       return buildHadoopFileIO(tableMetaStore);
     } else {
