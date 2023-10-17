@@ -61,9 +61,9 @@ jobs:
           images: |
             name='arctic163/amoro'
           tags: |
-            type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix=snapshot
-            type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix=snapshot-hadoop3
-            type=ref,event=branch,enable=${{ matrix.hadoop == 'v2' }},suffix=snapshot-hadoop2
+            type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix=-snapshot
+            type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix=-snapshot-hadoop3
+            type=ref,event=branch,enable=${{ matrix.hadoop == 'v2' }},suffix=-snapshot-hadoop2
             type=semver,event=tag,enable=${{ matrix.hadoop == 'v3' }},pattern={{version}}
             type=semver,event=tag,enable=${{ matrix.hadoop == 'v2' }},pattern={{version}}-hadoop2
 
