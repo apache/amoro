@@ -18,9 +18,9 @@
 
 package com.netease.arctic.utils.map;
 
-import com.netease.arctic.iceberg.StructLikeWrapper;
 import com.netease.arctic.utils.ObjectSizeCalculator;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.util.StructLikeWrapper;
 
 /**
  * Size Estimator for StructLikeWrapper record payload.

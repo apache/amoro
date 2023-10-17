@@ -170,7 +170,7 @@ public class MixedAndIcebergTableDescriptor implements FormatTableDescriptor {
       transactionsOfTable.setSummary(snapshot.summary());
       transactionsOfTables.add(transactionsOfTable);
     }));
-    transactionsOfTables.sort((o1, o2) -> Long.compare(o2.commitTime, o1.commitTime));
+    transactionsOfTables.sort((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()));
     return transactionsOfTables;
   }
 

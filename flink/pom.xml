@@ -33,10 +33,6 @@
     <url>https://amoro.netease.com</url>
 
     <modules>
-        <module>v1.14/flink</module>
-        <module>v1.14/flink-format</module>
-        <module>v1.14/flink-runtime</module>
-        <module>v1.14/arctic-flink-1.14-iceberg-bridge</module>
         <module>v1.15/flink</module>
         <module>v1.15/flink-format</module>
         <module>v1.15/flink-runtime</module>

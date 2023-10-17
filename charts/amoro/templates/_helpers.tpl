@@ -12,6 +12,12 @@ Create chart name and version as used by the chart label.
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
+{{/*AmoroHome*/}}
+{{- define "amoro.home" -}}
+{{ .Values.amoroHome | default "/usr/local/amoro" }}
+{{- end -}}
+{{/* Amoro Home end */}}
+
 {{/*
 Common labels
 */}}
@@ -30,4 +36,30 @@ Selector labels
 {{- define "amoro.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "amoro.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
+{{- end -}}
+
+{{/*Amoro Image Tag*/}}
+{{- define "amoro.image.tag" -}}
+{{ .Values.image.tag | default .Chart.AppVersion }}
+{{- end -}}
+
+{{- define "amoro.image" -}}
+{{ .Values.image.repository }}:{{include "amoro.image.tag" .}}
+{{- end -}}
+
+{{- define "amoro.svc.optimizing.fullname" -}}
+{{include "common.names.fullname" . }}-optimizing.{{.Release.Namespace}}.svc.{{.Values.clusterDomain}}
+{{- end -}}
+
+{{- define "amoro.svc.optimizing.uri" -}}
+thrift://{{ include "amoro.svc.optimizing.fullname" .}}:{{ .Values.server.optimizing.port }}
+{{- end -}}
+
+
+{{- define "amoro.sa.name" -}}
+{{ if .Values.serviceAccount.create }}
+{{- include "common.names.fullname" . -}}
+{{- else -}}
+{{- .Values.serviceAccount.name -}}
+{{ end }}
+{{- end -}}

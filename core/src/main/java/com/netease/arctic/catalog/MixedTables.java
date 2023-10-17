@@ -50,8 +50,8 @@ public class MixedTables {
   private void initialize(CatalogMeta meta) {
     this.catalogMeta = meta;
     if (meta.getStorageConfigs() != null &&
-        CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS.equalsIgnoreCase(
-            meta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE))) {
+        CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equalsIgnoreCase(
+            CatalogUtil.getCompatibleStorageType(meta.getStorageConfigs()))) {
       if (!meta.getStorageConfigs().containsKey(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE)) {
         throw new IllegalStateException("lack hdfs.site config");
       }

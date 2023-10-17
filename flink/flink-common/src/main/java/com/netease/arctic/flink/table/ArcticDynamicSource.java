@@ -27,7 +27,7 @@ import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunction;
 import com.netease.arctic.flink.read.source.FlinkArcticMORDataReader;
 import com.netease.arctic.flink.util.FilterUtil;
 import com.netease.arctic.flink.util.IcebergAndFlinkFilters;
-import com.netease.arctic.hive.io.reader.AbstractAdaptHiveArcticDataReader;
+import com.netease.arctic.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.SchemaUtil;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -260,7 +260,7 @@ public class ArcticDynamicSource
     Optional<RowDataPredicate> rowDataPredicate =
         generatePredicate(projectedSchema, flinkExpression);
 
-    AbstractAdaptHiveArcticDataReader<RowData> flinkArcticMORDataReader =
+    AbstractAdaptHiveKeyedDataReader<RowData> flinkArcticMORDataReader =
         generateMORReader(arcticTable, projectedSchema);
     DataIteratorReaderFunction<RowData> readerFunction =
         generateReaderFunction(arcticTable, projectedSchema);
@@ -291,7 +291,7 @@ public class ArcticDynamicSource
         true);
   }
 
-  protected AbstractAdaptHiveArcticDataReader<RowData> generateMORReader(
+  protected AbstractAdaptHiveKeyedDataReader<RowData> generateMORReader(
       ArcticTable arcticTable, Schema projectedSchema) {
     BiFunction<Type, Object, Object> convertConstant = new ConvertTask();
 

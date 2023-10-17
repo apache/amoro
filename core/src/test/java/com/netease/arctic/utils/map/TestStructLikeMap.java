@@ -1,16 +1,16 @@
 package com.netease.arctic.utils.map;
 
 import com.netease.arctic.data.ChangedLsn;
-import com.netease.arctic.iceberg.StructProjection;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
+import org.apache.iceberg.util.StructProjection;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.UUID;
@@ -52,14 +52,14 @@ public class TestStructLikeMap {
     long count = 100;
     for (long i = 0; i < count; i++) {
       StructLike delete = new DeleteStructLike();
-      StructLike key = StructProjection.create(DELETE_SCHEMA, PK_SCHEMA).copyWrap(delete);
+      StructLike key = StructProjection.create(DELETE_SCHEMA, PK_SCHEMA).copyFor(delete);
       expectedMap.put(key, ChangedLsn.of(i, i));
       actualMap.put(key, ChangedLsn.of(i, i));
     }
 
     for (long i = 0; i < count; i++) {
       StructLike data = new DataStructLike();
-      StructLike key = StructProjection.create(DATA_SCHEMA, PK_SCHEMA).copyWrap(data);
+      StructLike key = StructProjection.create(DATA_SCHEMA, PK_SCHEMA).copyFor(data);
       Assert.assertEquals(expectedMap.get(key), actualMap.get(key));
     }
     actualMap.close();
@@ -74,10 +74,10 @@ public class TestStructLikeMap {
         RANDOM.nextInt(),
         RANDOM.nextBoolean(),
         UUID.randomUUID().toString(),
-        UUID.randomUUID().toString().getBytes("utf8")
+        UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)
     };
 
-    DataStructLike() throws UnsupportedEncodingException {
+    DataStructLike() {
     }
 
     @Override
