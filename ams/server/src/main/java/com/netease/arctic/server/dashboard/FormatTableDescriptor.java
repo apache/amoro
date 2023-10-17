@@ -60,10 +60,10 @@ public interface FormatTableDescriptor {
   /**
    * Get the partition information of the {@link AmoroTable}.
    */
-  List<PartitionBaseInfo> getTablePartition(AmoroTable<?> amoroTable);
+  List<PartitionBaseInfo> getTablePartitions(AmoroTable<?> amoroTable);
 
   /**
    * Get the file information of the {@link AmoroTable}.
    */
-  List<PartitionFileBaseInfo> getTableFile(AmoroTable<?> amoroTable, String partition);
+  List<PartitionFileBaseInfo> getTableFiles(AmoroTable<?> amoroTable, String partition);
 }
