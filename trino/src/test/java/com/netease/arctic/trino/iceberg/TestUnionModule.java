@@ -18,11 +18,6 @@
 
 package com.netease.arctic.trino.iceberg;
 
-import static com.google.inject.multibindings.Multibinder.newSetBinder;
-import static io.airlift.configuration.ConfigBinder.configBinder;
-import static io.airlift.json.JsonCodecBinder.jsonCodecBinder;
-import static org.weakref.jmx.guice.ExportBinder.newExporter;
-
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
@@ -34,6 +29,7 @@ import com.netease.arctic.trino.ArcticHdfsAuthentication;
 import com.netease.arctic.trino.ArcticHdfsConfiguration;
 import com.netease.arctic.trino.ArcticMetadataFactory;
 import com.netease.arctic.trino.ArcticPageSourceProvider;
+import com.netease.arctic.trino.ArcticSessionProperties;
 import com.netease.arctic.trino.ArcticTransactionManager;
 import com.netease.arctic.trino.keyed.KeyedConnectorSplitManager;
 import com.netease.arctic.trino.keyed.KeyedPageSourceProvider;
@@ -74,87 +70,73 @@ import io.trino.spi.connector.TableProcedureMetadata;
 import io.trino.spi.procedure.Procedure;
 import org.weakref.jmx.guice.ExportBinder;
 
+import static com.google.inject.multibindings.Multibinder.newSetBinder;
+import static io.airlift.configuration.ConfigBinder.configBinder;
+import static io.airlift.json.JsonCodecBinder.jsonCodecBinder;
+import static org.weakref.jmx.guice.ExportBinder.newExporter;
+
 public class TestUnionModule implements Module {
+
 
   @Override
   public void configure(Binder binder) {
-    // base
-    configBinder(binder).bindConfig(ArcticConfig.class);
-    binder.bind(IcebergSessionProperties.class).in(Scopes.SINGLETON);
-    binder.bind(KeyedConnectorSplitManager.class).in(Scopes.SINGLETON);
-    binder.bind(KeyedPageSourceProvider.class).in(Scopes.SINGLETON);
-    binder.bind(ArcticCatalogFactory.class).to(TestArcticCatalogFactory.class).in(Scopes.SINGLETON);
-    binder.bind(TrinoCatalogFactory.class).to(ArcticTrinoCatalogFactory.class).in(Scopes.SINGLETON);
-    binder.bind(ArcticTransactionManager.class).in(Scopes.SINGLETON);
-    binder.bind(ArcticMetadataFactory.class).in(Scopes.SINGLETON);
-    binder.bind(TableStatisticsWriter.class).in(Scopes.SINGLETON);
-    binder
-        .bind(ConnectorSplitManager.class)
-        .to(ArcticConnectorSplitManager.class)
-        .in(Scopes.SINGLETON);
-    binder
-        .bind(ConnectorPageSourceProvider.class)
-        .to(ArcticPageSourceProvider.class)
-        .in(Scopes.SINGLETON);
+      //base
+      configBinder(binder).bindConfig(ArcticConfig.class);
+      binder.bind(IcebergSessionProperties.class).in(Scopes.SINGLETON);
+      binder.bind(KeyedConnectorSplitManager.class).in(Scopes.SINGLETON);
+      binder.bind(KeyedPageSourceProvider.class).in(Scopes.SINGLETON);
+      binder.bind(ArcticCatalogFactory.class).to(TestArcticCatalogFactory.class).in(Scopes.SINGLETON);
+      binder.bind(TrinoCatalogFactory.class).to(ArcticTrinoCatalogFactory.class).in(Scopes.SINGLETON);
+      binder.bind(ArcticTransactionManager.class).in(Scopes.SINGLETON);
+      binder.bind(ArcticMetadataFactory.class).in(Scopes.SINGLETON);
+      binder.bind(TableStatisticsWriter.class).in(Scopes.SINGLETON);
+      binder.bind(ConnectorSplitManager.class).to(ArcticConnectorSplitManager.class).in(Scopes.SINGLETON);
+      binder.bind(ConnectorPageSourceProvider.class).to(ArcticPageSourceProvider.class).in(Scopes.SINGLETON);
 
-    // ############# IcebergModule
-    configBinder(binder).bindConfig(HiveMetastoreConfig.class);
-    configBinder(binder).bindConfig(IcebergConfig.class);
+      //############# IcebergModule
+      configBinder(binder).bindConfig(HiveMetastoreConfig.class);
+      configBinder(binder).bindConfig(IcebergConfig.class);
 
-    newSetBinder(binder, SessionPropertiesProvider.class)
-        .addBinding()
-        .to(IcebergSessionProperties.class)
-        .in(Scopes.SINGLETON);
-    binder.bind(IcebergTableProperties.class).in(Scopes.SINGLETON);
+      newSetBinder(binder, SessionPropertiesProvider.class).addBinding().to(IcebergSessionProperties.class).in(Scopes.SINGLETON);
+      binder.bind(IcebergTableProperties.class).in(Scopes.SINGLETON);
 
-    binder.bind(IcebergSplitManager.class).in(Scopes.SINGLETON);
-    binder.bind(IcebergPageSourceProvider.class).in(Scopes.SINGLETON);
+      binder.bind(IcebergSplitManager.class).in(Scopes.SINGLETON);
+      binder.bind(IcebergPageSourceProvider.class).in(Scopes.SINGLETON);
 
-    binder
-        .bind(ConnectorPageSinkProvider.class)
-        .to(IcebergPageSinkProvider.class)
-        .in(Scopes.SINGLETON);
+      binder.bind(ConnectorPageSinkProvider.class)
+          .to(IcebergPageSinkProvider.class).in(Scopes.SINGLETON);
 
-    binder
-        .bind(ConnectorNodePartitioningProvider.class)
-        .to(IcebergNodePartitioningProvider.class)
-        .in(Scopes.SINGLETON);
+      binder.bind(ConnectorNodePartitioningProvider.class)
+          .to(IcebergNodePartitioningProvider.class).in(Scopes.SINGLETON);
 
-    configBinder(binder).bindConfig(OrcReaderConfig.class);
-    configBinder(binder).bindConfig(OrcWriterConfig.class);
+      configBinder(binder).bindConfig(OrcReaderConfig.class);
+      configBinder(binder).bindConfig(OrcWriterConfig.class);
 
-    configBinder(binder).bindConfig(ParquetReaderConfig.class);
-    configBinder(binder).bindConfig(ParquetWriterConfig.class);
+      configBinder(binder).bindConfig(ParquetReaderConfig.class);
+      configBinder(binder).bindConfig(ParquetWriterConfig.class);
 
-    jsonCodecBinder(binder).bindJsonCodec(CommitTaskData.class);
+      jsonCodecBinder(binder).bindJsonCodec(CommitTaskData.class);
 
-    binder.bind(FileFormatDataSourceStats.class).in(Scopes.SINGLETON);
-    newExporter(binder).export(FileFormatDataSourceStats.class).withGeneratedName();
+      binder.bind(FileFormatDataSourceStats.class).in(Scopes.SINGLETON);
+      newExporter(binder).export(FileFormatDataSourceStats.class).withGeneratedName();
 
-    binder.bind(IcebergFileWriterFactory.class).in(Scopes.SINGLETON);
-    newExporter(binder).export(IcebergFileWriterFactory.class).withGeneratedName();
+      binder.bind(IcebergFileWriterFactory.class).in(Scopes.SINGLETON);
+      newExporter(binder).export(IcebergFileWriterFactory.class).withGeneratedName();
 
-    Multibinder<Procedure> procedures = newSetBinder(binder, Procedure.class);
-    procedures.addBinding().toProvider(RollbackToSnapshotProcedure.class).in(Scopes.SINGLETON);
+      Multibinder<Procedure> procedures = newSetBinder(binder, Procedure.class);
+      procedures.addBinding().toProvider(RollbackToSnapshotProcedure.class).in(Scopes.SINGLETON);
 
-    Multibinder<TableProcedureMetadata> tableProcedures =
-        newSetBinder(binder, TableProcedureMetadata.class);
-    tableProcedures.addBinding().toProvider(OptimizeTableProcedure.class).in(Scopes.SINGLETON);
-    tableProcedures
-        .addBinding()
-        .toProvider(ExpireSnapshotsTableProcedure.class)
-        .in(Scopes.SINGLETON);
-    tableProcedures
-        .addBinding()
-        .toProvider(RemoveOrphanFilesTableProcedure.class)
-        .in(Scopes.SINGLETON);
+      Multibinder<TableProcedureMetadata> tableProcedures = newSetBinder(binder, TableProcedureMetadata.class);
+      tableProcedures.addBinding().toProvider(OptimizeTableProcedure.class).in(Scopes.SINGLETON);
+      tableProcedures.addBinding().toProvider(ExpireSnapshotsTableProcedure.class).in(Scopes.SINGLETON);
+      tableProcedures.addBinding().toProvider(RemoveOrphanFilesTableProcedure.class).in(Scopes.SINGLETON);
 
-    // hdfs
-    ConfigBinder.configBinder(binder).bindConfig(HdfsConfig.class);
-    binder.bind(HdfsConfiguration.class).to(ArcticHdfsConfiguration.class).in(Scopes.SINGLETON);
-    binder.bind(HdfsAuthentication.class).to(ArcticHdfsAuthentication.class).in(Scopes.SINGLETON);
-    binder.bind(HdfsEnvironment.class).in(Scopes.SINGLETON);
-    binder.bind(NamenodeStats.class).in(Scopes.SINGLETON);
-    ExportBinder.newExporter(binder).export(NamenodeStats.class).withGeneratedName();
+      //hdfs
+      ConfigBinder.configBinder(binder).bindConfig(HdfsConfig.class);
+      binder.bind(HdfsConfiguration.class).to(ArcticHdfsConfiguration.class).in(Scopes.SINGLETON);
+      binder.bind(HdfsAuthentication.class).to(ArcticHdfsAuthentication.class).in(Scopes.SINGLETON);
+      binder.bind(HdfsEnvironment.class).in(Scopes.SINGLETON);
+      binder.bind(NamenodeStats.class).in(Scopes.SINGLETON);
+      ExportBinder.newExporter(binder).export(NamenodeStats.class).withGeneratedName();
   }
 }

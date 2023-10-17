@@ -18,14 +18,17 @@
 
 package com.netease.arctic;
 
-import static io.trino.spi.ErrorType.EXTERNAL;
-
 import io.trino.spi.ErrorCode;
 import io.trino.spi.ErrorCodeSupplier;
 import io.trino.spi.ErrorType;
 
-/** Error code */
-public enum ArcticErrorCode implements ErrorCodeSupplier {
+import static io.trino.spi.ErrorType.EXTERNAL;
+
+/**
+ * Error code
+ */
+public enum ArcticErrorCode
+    implements ErrorCodeSupplier {
   ARCTIC_BAD_DATA(4, EXTERNAL);
 
   private final ErrorCode errorCode;

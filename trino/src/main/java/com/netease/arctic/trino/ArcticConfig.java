@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -21,7 +22,9 @@ package com.netease.arctic.trino;
 import io.airlift.configuration.Config;
 import io.airlift.configuration.ConfigDescription;
 
-/** Arctic config */
+/**
+ * Arctic config
+ */
 public class ArcticConfig {
   private String catalogUrl;
   private boolean hdfsImpersonationEnabled;

@@ -18,10 +18,6 @@
 
 package com.netease.arctic.trino.unkeyed;
 
-import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
-import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
-import static java.util.Locale.ENGLISH;
-
 import com.google.common.collect.ImmutableList;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.table.ArcticTable;
@@ -47,7 +43,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/** A TrinoCatalog for Arctic, this is in order to reuse iceberg code */
+import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
+import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
+import static java.util.Locale.ENGLISH;
+
+/**
+ * A TrinoCatalog for Arctic, this is in order to reuse iceberg code
+ */
 public class ArcticTrinoCatalog implements TrinoCatalog {
 
   private ArcticCatalog arcticCatalog;
@@ -59,8 +61,7 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
   @Override
   public boolean namespaceExists(ConnectorSession session, String namespace) {
     if (!namespace.equals(namespace.toLowerCase(ENGLISH))) {
-      // Currently, Trino schemas are always lowercase, so this one cannot exist
-      // (https://github.com/trinodb/trino/issues/17)
+      // Currently, Trino schemas are always lowercase, so this one cannot exist (https://github.com/trinodb/trino/issues/17)
       return false;
     }
     if (HiveUtil.isHiveSystemSchema(namespace)) {
@@ -95,8 +96,7 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
   }
 
   @Override
-  public Optional<TrinoPrincipal> getNamespacePrincipal(
-      ConnectorSession session, String namespace) {
+  public Optional<TrinoPrincipal> getNamespacePrincipal(ConnectorSession session, String namespace) {
     return Optional.empty();
   }
 
@@ -110,8 +110,7 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
   }
 
   @Override
-  public void setNamespacePrincipal(
-      ConnectorSession session, String namespace, TrinoPrincipal principal) {
+  public void setNamespacePrincipal(ConnectorSession session, String namespace, TrinoPrincipal principal) {
     throw new TrinoException(NOT_SUPPORTED, "Unsupported drop db");
   }
 
@@ -122,7 +121,8 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
 
   @Override
   public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> namespace) {
-    return listNamespaces(session, namespace).stream()
+    return listNamespaces(session, namespace)
+        .stream()
         .flatMap(s -> arcticCatalog.listTables(s).stream())
         .map(s -> new SchemaTableName(s.getDatabase(), s.getTableName()))
         .collect(Collectors.toList());
@@ -130,17 +130,12 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
 
   @Override
   public Transaction newCreateTableTransaction(
-      ConnectorSession session,
-      SchemaTableName schemaTableName,
-      Schema schema,
-      PartitionSpec partitionSpec,
-      String location,
-      Map<String, String> properties) {
-    return arcticCatalog
-        .newTableBuilder(getTableIdentifier(schemaTableName), schema)
-        .withPartitionSpec(partitionSpec)
-        .withProperties(properties)
-        .createTransaction();
+      ConnectorSession session, SchemaTableName schemaTableName,
+      Schema schema, PartitionSpec partitionSpec,
+      String location, Map<String, String> properties) {
+    return arcticCatalog.newTableBuilder(getTableIdentifier(schemaTableName), schema)
+            .withPartitionSpec(partitionSpec)
+            .withProperties(properties).createTransaction();
   }
 
   @Override
@@ -154,10 +149,8 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
 
   @Override
   public void dropTable(ConnectorSession session, SchemaTableName schemaTableName) {
-    arcticCatalog.dropTable(
-        TableIdentifier.of(
-            arcticCatalog.name(), schemaTableName.getSchemaName(), schemaTableName.getTableName()),
-        true);
+    arcticCatalog.dropTable(TableIdentifier.of(arcticCatalog.name(),
+        schemaTableName.getSchemaName(), schemaTableName.getTableName()), true);
   }
 
   @Override
@@ -175,14 +168,12 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
   }
 
   @Override
-  public void updateTableComment(
-      ConnectorSession session, SchemaTableName schemaTableName, Optional<String> comment) {
+  public void updateTableComment(ConnectorSession session, SchemaTableName schemaTableName, Optional<String> comment) {
     throw new TrinoException(NOT_SUPPORTED, "UnSupport update table comment");
   }
 
   @Override
-  public void updateViewComment(
-      ConnectorSession session, SchemaTableName schemaViewName, Optional<String> comment) {
+  public void updateViewComment(ConnectorSession session, SchemaTableName schemaViewName, Optional<String> comment) {
     throw new TrinoException(NOT_SUPPORTED, "UnSupport update table comment");
   }
 
@@ -190,20 +181,18 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
   public void updateViewColumnComment(
       ConnectorSession session,
       SchemaTableName schemaViewName,
-      String columnName,
-      Optional<String> comment) {
+      String columnName, Optional<String> comment) {
     throw new TrinoException(NOT_SUPPORTED, "UnSupport update table comment");
   }
 
   @Override
   public String defaultTableLocation(ConnectorSession session, SchemaTableName schemaTableName) {
-    // 不会使用
+    //不会使用
     return null;
   }
 
   @Override
-  public void setTablePrincipal(
-      ConnectorSession session, SchemaTableName schemaTableName, TrinoPrincipal principal) {
+  public void setTablePrincipal(ConnectorSession session, SchemaTableName schemaTableName, TrinoPrincipal principal) {
     throw new TrinoException(NOT_SUPPORTED, "UnSupport set table principal");
   }
 
@@ -222,8 +211,7 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
   }
 
   @Override
-  public void setViewPrincipal(
-      ConnectorSession session, SchemaTableName schemaViewName, TrinoPrincipal principal) {
+  public void setViewPrincipal(ConnectorSession session, SchemaTableName schemaViewName, TrinoPrincipal principal) {
     throw new TrinoException(NOT_SUPPORTED, "Unsupported view");
   }
 
@@ -238,20 +226,17 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
   }
 
   @Override
-  public Map<SchemaTableName, ConnectorViewDefinition> getViews(
-      ConnectorSession session, Optional<String> namespace) {
+  public Map<SchemaTableName, ConnectorViewDefinition> getViews(ConnectorSession session, Optional<String> namespace) {
     throw new TrinoException(NOT_SUPPORTED, "Unsupported view");
   }
 
   @Override
-  public Optional<ConnectorViewDefinition> getView(
-      ConnectorSession session, SchemaTableName viewIdentifier) {
+  public Optional<ConnectorViewDefinition> getView(ConnectorSession session, SchemaTableName viewIdentifier) {
     throw new TrinoException(NOT_SUPPORTED, "Unsupported view");
   }
 
   @Override
-  public List<SchemaTableName> listMaterializedViews(
-      ConnectorSession session, Optional<String> namespace) {
+  public List<SchemaTableName> listMaterializedViews(ConnectorSession session, Optional<String> namespace) {
     throw new TrinoException(NOT_SUPPORTED, "Unsupported view");
   }
 
@@ -272,13 +257,13 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
 
   @Override
   public Optional<ConnectorMaterializedViewDefinition> getMaterializedView(
-      ConnectorSession session, SchemaTableName schemaViewName) {
+      ConnectorSession session,
+      SchemaTableName schemaViewName) {
     throw new TrinoException(NOT_SUPPORTED, "Unsupported view");
   }
 
   @Override
-  public void renameMaterializedView(
-      ConnectorSession session, SchemaTableName source, SchemaTableName target) {
+  public void renameMaterializedView(ConnectorSession session, SchemaTableName source, SchemaTableName target) {
     throw new TrinoException(NOT_SUPPORTED, "Unsupported view");
   }
 
@@ -292,13 +277,12 @@ public class ArcticTrinoCatalog implements TrinoCatalog {
   }
 
   @Override
-  public Optional<CatalogSchemaTableName> redirectTable(
-      ConnectorSession session, SchemaTableName tableName) {
+  public Optional<CatalogSchemaTableName> redirectTable(ConnectorSession session, SchemaTableName tableName) {
     return Optional.empty();
   }
 
   private TableIdentifier getTableIdentifier(SchemaTableName schemaTableName) {
-    return TableIdentifier.of(
-        arcticCatalog.name(), schemaTableName.getSchemaName(), schemaTableName.getTableName());
+    return TableIdentifier.of(arcticCatalog.name(),
+        schemaTableName.getSchemaName(), schemaTableName.getTableName());
   }
 }

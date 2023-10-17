@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,13 +18,6 @@
  */
 
 package com.netease.arctic.trino;
-
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.Sets.immutableEnumSet;
-import static io.trino.spi.connector.ConnectorCapabilities.NOT_NULL_COLUMN_CONSTRAINT;
-import static io.trino.spi.transaction.IsolationLevel.SERIALIZABLE;
-import static io.trino.spi.transaction.IsolationLevel.checkConnectorSupports;
-import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -49,12 +43,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-/** A Connector of arctic to Trino */
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Sets.immutableEnumSet;
+import static io.trino.spi.connector.ConnectorCapabilities.NOT_NULL_COLUMN_CONSTRAINT;
+import static io.trino.spi.transaction.IsolationLevel.SERIALIZABLE;
+import static io.trino.spi.transaction.IsolationLevel.checkConnectorSupports;
+import static java.util.Objects.requireNonNull;
+
+/**
+ * A Connector of arctic to Trino
+ */
 public class ArcticConnector implements Connector {
 
   private static final Logger log = LoggerFactory.getLogger(ArcticConnector.class);
@@ -91,22 +93,15 @@ public class ArcticConnector implements Connector {
     this.splitManager = requireNonNull(splitManager, "splitManager is null");
     this.pageSourceProvider = requireNonNull(pageSourceProvider, "pageSourceProvider is null");
     this.pageSinkProvider = requireNonNull(pageSinkProvider, "pageSinkProvider is null");
-    this.nodePartitioningProvider =
-        requireNonNull(nodePartitioningProvider, "nodePartitioningProvider is null");
-    this.sessionProperties =
-        requireNonNull(sessionPropertiesProviders, "sessionPropertiesProviders is null").stream()
-            .flatMap(
-                sessionPropertiesProvider ->
-                    sessionPropertiesProvider.getSessionProperties().stream())
-            .collect(toImmutableList());
-    this.schemaProperties =
-        ImmutableList.copyOf(requireNonNull(schemaProperties, "schemaProperties is null"));
-    this.tableProperties =
-        ImmutableList.copyOf(requireNonNull(tableProperties, "tableProperties is null"));
+    this.nodePartitioningProvider = requireNonNull(nodePartitioningProvider, "nodePartitioningProvider is null");
+    this.sessionProperties = requireNonNull(sessionPropertiesProviders, "sessionPropertiesProviders is null").stream()
+        .flatMap(sessionPropertiesProvider -> sessionPropertiesProvider.getSessionProperties().stream())
+        .collect(toImmutableList());
+    this.schemaProperties = ImmutableList.copyOf(requireNonNull(schemaProperties, "schemaProperties is null"));
+    this.tableProperties = ImmutableList.copyOf(requireNonNull(tableProperties, "tableProperties is null"));
     this.accessControl = requireNonNull(accessControl, "accessControl is null");
     this.procedures = ImmutableSet.copyOf(requireNonNull(procedures, "procedures is null"));
-    this.tableProcedures =
-        ImmutableSet.copyOf(requireNonNull(tableProcedures, "tableProcedures is null"));
+    this.tableProcedures = ImmutableSet.copyOf(requireNonNull(tableProcedures, "tableProcedures is null"));
   }
 
   @Override
@@ -115,8 +110,7 @@ public class ArcticConnector implements Connector {
   }
 
   @Override
-  public ConnectorMetadata getMetadata(
-      ConnectorSession session, ConnectorTransactionHandle transaction) {
+  public ConnectorMetadata getMetadata(ConnectorSession session, ConnectorTransactionHandle transaction) {
     ConnectorMetadata metadata = transactionManager.get(transaction);
     return new ClassLoaderSafeConnectorMetadata(metadata, getClass().getClassLoader());
   }
@@ -178,7 +172,9 @@ public class ArcticConnector implements Connector {
 
   @Override
   public ConnectorTransactionHandle beginTransaction(
-      IsolationLevel isolationLevel, boolean readOnly, boolean autoCommit) {
+      IsolationLevel isolationLevel,
+      boolean readOnly,
+      boolean autoCommit) {
     checkConnectorSupports(SERIALIZABLE, isolationLevel);
     ConnectorTransactionHandle transaction = new HiveTransactionHandle(autoCommit);
     transactionManager.begin(transaction);

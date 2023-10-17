@@ -28,7 +28,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-/** Copy from hadoop-common to avoid testing hive metastore checking version */
+/**
+ * Copy from hadoop-common to avoid testing hive metastore checking version
+ */
 @InterfaceAudience.Public
 @InterfaceStability.Stable
 public class VersionInfo {
@@ -41,14 +43,15 @@ public class VersionInfo {
     String versionInfoFile = component + "-version-info.properties";
     InputStream is = null;
     try {
-      is = Thread.currentThread().getContextClassLoader().getResourceAsStream(versionInfoFile);
+      is = Thread.currentThread().getContextClassLoader()
+          .getResourceAsStream(versionInfoFile);
       if (is == null) {
         throw new IOException("Resource not found");
       }
       info.load(is);
     } catch (IOException ex) {
-      LoggerFactory.getLogger(getClass())
-          .warn("Could not read '" + versionInfoFile + "', " + ex.toString(), ex);
+      LoggerFactory.getLogger(getClass()).warn("Could not read '" +
+          versionInfoFile + "', " + ex.toString(), ex);
     } finally {
       IOUtils.closeStream(is);
     }
@@ -83,13 +86,10 @@ public class VersionInfo {
   }
 
   protected String _getBuildVersion() {
-    return _getVersion()
-        + " from "
-        + _getRevision()
-        + " by "
-        + _getUser()
-        + " source checksum "
-        + _getSrcChecksum();
+    return _getVersion() +
+        " from " + _getRevision() +
+        " by " + _getUser() +
+        " source checksum " + _getSrcChecksum();
   }
 
   protected String _getProtocVersion() {
@@ -100,7 +100,6 @@ public class VersionInfo {
 
   /**
    * Get the Hadoop version.
-   *
    * @return the Hadoop version string, eg. "0.6.3-dev"
    */
   public static String getVersion() {
@@ -109,7 +108,6 @@ public class VersionInfo {
 
   /**
    * Get the Git commit hash of the repository when compiled.
-   *
    * @return the commit hash, eg. "18f64065d5db6208daf50b02c1b5ed4ee3ce547a"
    */
   public static String getRevision() {
@@ -118,7 +116,6 @@ public class VersionInfo {
 
   /**
    * Get the branch on which this originated.
-   *
    * @return The branch name, e.g. "trunk" or "branches/branch-0.20"
    */
   public static String getBranch() {
@@ -127,7 +124,6 @@ public class VersionInfo {
 
   /**
    * The date that Hadoop was compiled.
-   *
    * @return the compilation date in unix date format
    */
   public static String getDate() {
@@ -136,7 +132,6 @@ public class VersionInfo {
 
   /**
    * The user that compiled Hadoop.
-   *
    * @return the username of the user
    */
   public static String getUser() {
@@ -145,7 +140,6 @@ public class VersionInfo {
 
   /**
    * Get the URL for the Hadoop repository.
-   *
    * @return the URL of the Hadoop repository
    */
   public static String getUrl() {
@@ -154,7 +148,6 @@ public class VersionInfo {
 
   /**
    * Get the checksum of the source files from which Hadoop was built.
-   *
    * @return the checksum of the source files
    */
   public static String getSrcChecksum() {
@@ -162,8 +155,8 @@ public class VersionInfo {
   }
 
   /**
-   * Returns the buildVersion which includes version, revision, user and date.
-   *
+   * Returns the buildVersion which includes version,
+   * revision, user and date.
    * @return the buildVersion
    */
   public static String getBuildVersion() {
@@ -172,7 +165,6 @@ public class VersionInfo {
 
   /**
    * Returns the protoc version used for the build.
-   *
    * @return the protoc version
    */
   public static String getProtocVersion() {
@@ -186,7 +178,7 @@ public class VersionInfo {
     System.out.println("Compiled by " + getUser() + " on " + getDate());
     System.out.println("Compiled with protoc " + getProtocVersion());
     System.out.println("From source with checksum " + getSrcChecksum());
-    System.out.println(
-        "This command was run using " + ClassUtil.findContainingJar(VersionInfo.class));
+    System.out.println("This command was run using " +
+        ClassUtil.findContainingJar(VersionInfo.class));
   }
 }

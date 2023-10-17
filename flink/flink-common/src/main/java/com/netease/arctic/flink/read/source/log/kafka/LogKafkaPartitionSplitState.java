@@ -34,21 +34,13 @@ public class LogKafkaPartitionSplitState extends KafkaPartitionSplitState {
    * opposite RowKind.
    */
   private boolean retracting;
-  /**
-   * @see LogKafkaPartitionSplit#retractStopOffset
-   */
+  /** @see LogKafkaPartitionSplit#retractStopOffset */
   @Nullable private Long retractStopOffset;
-  /**
-   * @see LogKafkaPartitionSplit#revertStartOffset
-   */
+  /** @see LogKafkaPartitionSplit#revertStartOffset */
   @Nullable private Long revertStartOffset;
-  /**
-   * @see LogKafkaPartitionSplit#retractingEpicNo
-   */
+  /** @see LogKafkaPartitionSplit#retractingEpicNo */
   @Nullable private Long retractingEpicNo;
-  /**
-   * @see LogKafkaPartitionSplit#retractingUpstreamId
-   */
+  /** @see LogKafkaPartitionSplit#retractingUpstreamId */
   @Nullable private String retractingUpstreamId;
   /** Key: upstream job id + "_" + epicNo, Value: epic start offset */
   private final NavigableMap<String, Long> upstreamEpicStartOffsets;

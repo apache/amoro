@@ -18,10 +18,6 @@
 
 package com.netease.arctic.trino.iceberg;
 
-import static io.trino.plugin.tpch.TpchMetadata.TINY_SCHEMA_NAME;
-import static io.trino.testing.QueryAssertions.copyTpchTables;
-import static java.util.Objects.requireNonNull;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.trino.testing.QueryRunner;
@@ -31,15 +27,17 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class SchemaInitializer implements Consumer<QueryRunner> {
+import static io.trino.plugin.tpch.TpchMetadata.TINY_SCHEMA_NAME;
+import static io.trino.testing.QueryAssertions.copyTpchTables;
+import static java.util.Objects.requireNonNull;
+
+public class SchemaInitializer
+    implements Consumer<QueryRunner> {
   private final String schemaName;
   private final Map<String, String> schemaProperties;
   private final Iterable<TpchTable<?>> clonedTpchTables;
 
-  private SchemaInitializer(
-      String schemaName,
-      Map<String, String> schemaProperties,
-      Iterable<TpchTable<?>> tpchTablesToClone) {
+  private SchemaInitializer(String schemaName, Map<String, String> schemaProperties, Iterable<TpchTable<?>> tpchTablesToClone) {
     this.schemaName = requireNonNull(schemaName, "schemaName is null");
     this.schemaProperties = requireNonNull(schemaProperties, "schemaProperties is null");
     this.clonedTpchTables = requireNonNull(tpchTablesToClone, "tpchTablesToClone is null");
@@ -51,16 +49,11 @@ public class SchemaInitializer implements Consumer<QueryRunner> {
 
   @Override
   public void accept(QueryRunner queryRunner) {
-    String schemaProperties =
-        this.schemaProperties.entrySet().stream()
-            .map(entry -> entry.getKey() + " = " + entry.getValue())
-            .collect(Collectors.joining(", ", " WITH ( ", " )"));
-    queryRunner.execute(
-        "CREATE SCHEMA IF NOT EXISTS "
-            + schemaName
-            + (this.schemaProperties.size() > 0 ? schemaProperties : ""));
-    copyTpchTables(
-        queryRunner, "tpch", TINY_SCHEMA_NAME, queryRunner.getDefaultSession(), clonedTpchTables);
+    String schemaProperties = this.schemaProperties.entrySet().stream()
+        .map(entry -> entry.getKey() + " = " + entry.getValue())
+        .collect(Collectors.joining(", ", " WITH ( ", " )"));
+    queryRunner.execute("CREATE SCHEMA IF NOT EXISTS " + schemaName + (this.schemaProperties.size() > 0 ? schemaProperties : ""));
+    copyTpchTables(queryRunner, "tpch", TINY_SCHEMA_NAME, queryRunner.getDefaultSession(), clonedTpchTables);
   }
 
   public static Builder builder() {

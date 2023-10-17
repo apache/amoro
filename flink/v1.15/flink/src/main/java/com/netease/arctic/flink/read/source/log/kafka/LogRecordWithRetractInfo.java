@@ -28,17 +28,11 @@ public class LogRecordWithRetractInfo<T> extends ConsumerRecord<byte[], byte[]> 
    * opposite RowKind.
    */
   private final boolean retracting;
-  /**
-   * @see LogKafkaPartitionSplit#retractStopOffset
-   */
+  /** @see LogKafkaPartitionSplit#retractStopOffset */
   private final Long retractStoppingOffset;
-  /**
-   * @see LogKafkaPartitionSplit#revertStartOffset
-   */
+  /** @see LogKafkaPartitionSplit#revertStartOffset */
   private final Long revertStartingOffset;
-  /**
-   * @see LogKafkaPartitionSplit#retractingEpicNo
-   */
+  /** @see LogKafkaPartitionSplit#retractingEpicNo */
   private final Long retractingEpicNo;
 
   private final LogData<T> logData;

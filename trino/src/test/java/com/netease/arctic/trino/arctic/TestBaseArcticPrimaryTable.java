@@ -18,9 +18,6 @@
 
 package com.netease.arctic.trino.arctic;
 
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.google.common.collect.ImmutableMap;
 import com.netease.arctic.TestedCatalogs;
 import com.netease.arctic.ams.api.TableFormat;
@@ -28,6 +25,8 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import io.trino.testing.QueryRunner;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
+import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrino {
 
@@ -42,12 +41,12 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
     setupTables();
     initData();
     return ArcticQueryRunner.builder()
-        .setIcebergProperties(
-            ImmutableMap.of(
-                "arctic.url",
-                String.format("thrift://localhost:%s/%s", AMS.port(), TEST_CATALOG_NAME),
-                "arctic.enable-split-task-by-delete-ratio",
-                "true"))
+        .setIcebergProperties(ImmutableMap.of(
+            "arctic.url",
+            String.format("thrift://localhost:%s/%s", AMS.port(), TEST_CATALOG_NAME),
+            "arctic.enable-split-task-by-delete-ratio",
+            "true"
+        ))
         .build();
   }
 
@@ -55,12 +54,11 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
   public void testStats() {
     assertThat(query("SHOW STATS FOR " + PK_TABLE_FULL_NAME))
         .skippingTypesCheck()
-        .matches(
-            "VALUES "
-                + "('id', NULL, NULL, 0e0, NULL, '1', '6'), "
-                + "('name$name', 4805e-1, NULL, 0e0, NULL, NULL, NULL), "
-                + "('op_time', NULL, NULL, 0e0, NULL, '2022-01-01 12:00:00.000000', '2022-01-04 12:00:00.000000'), "
-                + "(NULL, NULL, NULL, NULL, 7e0, NULL, NULL)");
+        .matches("VALUES " +
+            "('id', NULL, NULL, 0e0, NULL, '1', '6'), " +
+            "('name$name', 4805e-1, NULL, 0e0, NULL, NULL, NULL), " +
+            "('op_time', NULL, NULL, 0e0, NULL, '2022-01-01 12:00:00.000000', '2022-01-04 12:00:00.000000'), " +
+            "(NULL, NULL, NULL, NULL, 7e0, NULL, NULL)");
   }
 
   @Test
@@ -72,10 +70,10 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
   public void tableMORWithProject() throws InterruptedException {
     assertQuery(
         "select op_time, \"name$name\" from " + PK_TABLE_FULL_NAME,
-        "VALUES (TIMESTAMP '2022-01-01 12:00:00', 'john'), "
-            + "(TIMESTAMP'2022-01-02 12:00:00', 'lily'), "
-            + "(TIMESTAMP'2022-01-03 12:00:00', 'jake'), "
-            + "(TIMESTAMP'2022-01-01 12:00:00', 'mack')");
+        "VALUES (TIMESTAMP '2022-01-01 12:00:00', 'john'), " +
+            "(TIMESTAMP'2022-01-02 12:00:00', 'lily'), " +
+            "(TIMESTAMP'2022-01-03 12:00:00', 'jake'), " +
+            "(TIMESTAMP'2022-01-01 12:00:00', 'mack')");
   }
 
   @Test
@@ -85,42 +83,39 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
 
   @Test
   public void baseQueryWhenTableNameContainCatalogAndDataBase() {
-    assertQuery(
-        "select id from " + "arctic.test_db.\"arctic.test_db.test_pk_table#base\"",
-        "VALUES 1, 2, 3");
+    assertQuery("select id from " + "arctic.test_db.\"arctic.test_db.test_pk_table#base\"", "VALUES 1, 2, 3");
   }
 
   @Test
   public void baseQueryWhenTableNameContainDataBase() {
-    assertQuery(
-        "select id from " + "arctic.test_db.\"test_db.test_pk_table#base\"", "VALUES 1, 2, 3");
+    assertQuery("select id from " + "arctic.test_db.\"test_db.test_pk_table#base\"", "VALUES 1, 2, 3");
   }
 
   @Test
   public void changeQuery() {
     assertQuery(
         "select * from " + "arctic.test_db.\"test_pk_table#change\"",
-        "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT'),"
-            + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT'),"
-            + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
+        "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT')," +
+            "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT')," +
+            "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
   }
 
   @Test
   public void changeQueryWhenTableNameContainCatalogAndDataBase() {
     assertQuery(
         "select * from " + "arctic.test_db.\"arctic.test_db.test_pk_table#change\"",
-        "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT'),"
-            + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT'),"
-            + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
+        "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT')," +
+            "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT')," +
+            "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
   }
 
   @Test
   public void changeQueryWhenTableNameContainDataBase() {
     assertQuery(
         "select * from " + "arctic.test_db.\"test_db.test_pk_table#change\"",
-        "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT'),"
-            + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT'),"
-            + "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
+        "VALUES (6,'mack',TIMESTAMP '2022-01-01 12:00:00.000000' ,3,1,'INSERT')," +
+            "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',2,1,'INSERT')," +
+            "(5,'mary',TIMESTAMP '2022-01-01 12:00:00.000000',4,1,'DELETE')");
   }
 
   @AfterClass(alwaysRun = true)

@@ -18,8 +18,6 @@
 
 package com.netease.arctic.trino.iceberg;
 
-import static io.trino.testing.TestingSession.testSessionBuilder;
-
 import com.google.common.collect.ImmutableMap;
 import com.netease.arctic.trino.ArcticPlugin;
 import io.airlift.log.Logger;
@@ -30,41 +28,48 @@ import io.trino.testing.DistributedQueryRunner;
 import java.nio.file.Path;
 import java.util.Map;
 
+import static io.trino.testing.TestingSession.testSessionBuilder;
+
 public final class ArcticQueryRunnerForClient {
   private static final Logger log = Logger.get(ArcticQueryRunnerForClient.class);
 
   public static final String ARCTIC_CATALOG = "arctic";
 
-  private ArcticQueryRunnerForClient() {}
+  private ArcticQueryRunnerForClient() {
+  }
 
-  public static DistributedQueryRunner createIcebergQueryRunner(
-      Map<String, String> extraProperties, String url) throws Exception {
+  public static DistributedQueryRunner createIcebergQueryRunner(Map<String, String> extraProperties, String url) throws Exception {
     return createIcebergQueryRunner(extraProperties, false, url);
   }
 
   public static DistributedQueryRunner createIcebergQueryRunner(
-      Map<String, String> extraProperties, boolean createTpchTables, String url) throws Exception {
-    Session session = testSessionBuilder().setCatalog(ARCTIC_CATALOG).build();
+      Map<String, String> extraProperties,
+      boolean createTpchTables, String url)
+      throws Exception {
+    Session session = testSessionBuilder()
+        .setCatalog(ARCTIC_CATALOG)
+        .build();
 
-    DistributedQueryRunner queryRunner =
-        DistributedQueryRunner.builder(session)
-            .setExtraProperties(extraProperties)
-            .setNodeCount(1)
-            .build();
+    DistributedQueryRunner queryRunner = DistributedQueryRunner.builder(session)
+        .setExtraProperties(extraProperties)
+        .setNodeCount(1)
+        .build();
 
     Path dataDir = queryRunner.getCoordinator().getBaseDataDir().resolve("arctic_data");
     Path catalogDir = dataDir.getParent().resolve("catalog");
 
     queryRunner.installPlugin(new ArcticPlugin());
-    Map<String, String> icebergProperties =
-        ImmutableMap.<String, String>builder().put("arctic.url", url).build();
+    Map<String, String> icebergProperties = ImmutableMap.<String, String>builder()
+        .put("arctic.url", url)
+        .build();
 
     queryRunner.createCatalog(ARCTIC_CATALOG, "arctic", icebergProperties);
 
     return queryRunner;
   }
 
-  public static void main(String[] args) throws Exception {
+  public static void main(String[] args)
+      throws Exception {
     Logging.initialize();
     Map<String, String> properties = ImmutableMap.of("http-server.http.port", "8080");
     String url = args[0];

@@ -24,10 +24,11 @@ import io.trino.spi.classloader.ThreadContextClassLoader;
 import org.apache.hadoop.conf.Configuration;
 
 import javax.inject.Inject;
-
 import java.net.URI;
 
-/** Factory to generate Configuration of Hadoop */
+/**
+ * Factory to generate Configuration of Hadoop
+ */
 public class ArcticHdfsConfiguration implements HdfsConfiguration {
 
   private final ArcticCatalogFactory arcticCatalogFactory;
@@ -39,8 +40,7 @@ public class ArcticHdfsConfiguration implements HdfsConfiguration {
 
   @Override
   public Configuration getConfiguration(HdfsContext context, URI uri) {
-    try (ThreadContextClassLoader ignored =
-        new ThreadContextClassLoader(this.getClass().getClassLoader())) {
+    try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(this.getClass().getClassLoader())) {
       return arcticCatalogFactory.getTableMetastore().getConfiguration();
     }
   }

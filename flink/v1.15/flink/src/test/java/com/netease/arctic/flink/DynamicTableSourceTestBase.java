@@ -61,8 +61,7 @@ public abstract class DynamicTableSourceTestBase extends TableFactoryHarness.Sca
         false);
   }
 
-  public void init() {}
-  ;
+  public void init() {};
 
   public abstract void doRun(
       WatermarkGenerator<RowData> generator,

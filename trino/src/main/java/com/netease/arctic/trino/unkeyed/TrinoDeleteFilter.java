@@ -18,10 +18,6 @@
 
 package com.netease.arctic.trino.unkeyed;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static java.util.Objects.requireNonNull;
-
 import com.netease.arctic.io.reader.DeleteFilter;
 import com.netease.arctic.trino.delete.TrinoRow;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
@@ -37,11 +33,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static java.util.Objects.requireNonNull;
+
 /**
- * Iceberg original TrinoDeleteFilter has some problems for arctic, such as iceberg version, table
- * type.
+ * Iceberg original TrinoDeleteFilter has some problems for arctic, such as iceberg version, table type.
  */
-public class TrinoDeleteFilter extends DeleteFilter<TrinoRow> {
+public class TrinoDeleteFilter
+    extends DeleteFilter<TrinoRow> {
   private final FileIO fileIO;
 
   public TrinoDeleteFilter(
@@ -63,15 +63,16 @@ public class TrinoDeleteFilter extends DeleteFilter<TrinoRow> {
     return fileIO.newInputFile(s);
   }
 
-  private static Schema filterSchema(
-      Schema tableSchema, List<IcebergColumnHandle> requestedColumns) {
-    Set<Integer> requestedFieldIds =
-        requestedColumns.stream().map(IcebergColumnHandle::getId).collect(toImmutableSet());
+  private static Schema filterSchema(Schema tableSchema, List<IcebergColumnHandle> requestedColumns) {
+    Set<Integer> requestedFieldIds = requestedColumns.stream()
+        .map(IcebergColumnHandle::getId)
+        .collect(toImmutableSet());
     return new Schema(filterFieldList(tableSchema.columns(), requestedFieldIds));
   }
 
   private static List<Types.NestedField> filterFieldList(
-      List<Types.NestedField> fields, Set<Integer> requestedFieldIds) {
+      List<Types.NestedField> fields,
+      Set<Integer> requestedFieldIds) {
     return fields.stream()
         .map(field -> filterField(field, requestedFieldIds))
         .filter(Optional::isPresent)
@@ -79,26 +80,23 @@ public class TrinoDeleteFilter extends DeleteFilter<TrinoRow> {
         .collect(toImmutableList());
   }
 
-  private static Optional<Types.NestedField> filterField(
-      Types.NestedField field, Set<Integer> requestedFieldIds) {
+  private static Optional<Types.NestedField> filterField(Types.NestedField field, Set<Integer> requestedFieldIds) {
     Type fieldType = field.type();
     if (requestedFieldIds.contains(field.fieldId())) {
       return Optional.of(field);
     }
 
     if (fieldType.isStructType()) {
-      List<Types.NestedField> requiredChildren =
-          filterFieldList(fieldType.asStructType().fields(), requestedFieldIds);
+      List<Types.NestedField> requiredChildren = filterFieldList(fieldType.asStructType().fields(), requestedFieldIds);
       if (requiredChildren.isEmpty()) {
         return Optional.empty();
       }
-      return Optional.of(
-          Types.NestedField.of(
-              field.fieldId(),
-              field.isOptional(),
-              field.name(),
-              Types.StructType.of(requiredChildren),
-              field.doc()));
+      return Optional.of(Types.NestedField.of(
+          field.fieldId(),
+          field.isOptional(),
+          field.name(),
+          Types.StructType.of(requiredChildren),
+          field.doc()));
     }
 
     return Optional.empty();

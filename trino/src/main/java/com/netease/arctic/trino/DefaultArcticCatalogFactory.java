@@ -24,12 +24,12 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
 import io.trino.spi.classloader.ThreadContextClassLoader;
-
 import javax.inject.Inject;
-
 import java.util.Collections;
 
-/** A factory to generate {@link ArcticCatalog} */
+/**
+ * A factory to generate {@link ArcticCatalog}
+ */
 public class DefaultArcticCatalogFactory implements ArcticCatalogFactory {
 
   private final ArcticConfig arcticConfig;
@@ -46,8 +46,7 @@ public class DefaultArcticCatalogFactory implements ArcticCatalogFactory {
     if (arcticCatalog == null) {
       synchronized (this) {
         if (arcticCatalog == null) {
-          try (ThreadContextClassLoader ignored =
-              new ThreadContextClassLoader(this.getClass().getClassLoader())) {
+          try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(this.getClass().getClassLoader())) {
             this.arcticCatalog =
                 new ArcticCatalogSupportTableSuffix(
                     CatalogLoader.load(arcticConfig.getCatalogUrl(), Collections.emptyMap()));
@@ -63,8 +62,7 @@ public class DefaultArcticCatalogFactory implements ArcticCatalogFactory {
     if (this.tableMetaStore == null) {
       synchronized (this) {
         if (this.tableMetaStore == null) {
-          try (ThreadContextClassLoader ignored =
-              new ThreadContextClassLoader(this.getClass().getClassLoader())) {
+          try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(this.getClass().getClassLoader())) {
             CatalogMeta meta = CatalogLoader.loadMeta(arcticConfig.getCatalogUrl());
             this.tableMetaStore = CatalogUtil.buildMetaStore(meta);
           }

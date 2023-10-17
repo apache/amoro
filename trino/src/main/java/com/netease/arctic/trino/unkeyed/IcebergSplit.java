@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,11 +19,6 @@
 
 package com.netease.arctic.trino.unkeyed;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
-import static io.airlift.slice.SizeOf.estimatedSizeOf;
-import static java.lang.Math.toIntExact;
-import static java.util.Objects.requireNonNull;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
@@ -36,12 +32,18 @@ import org.openjdk.jol.info.ClassLayout;
 
 import java.util.List;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+import static io.airlift.slice.SizeOf.estimatedSizeOf;
+import static java.lang.Math.toIntExact;
+import static java.util.Objects.requireNonNull;
+
 /**
  * Iceberg original IcebergSplit has some problems for arctic, such as iceberg version, table type.
  */
-public class IcebergSplit implements ConnectorSplit {
-  private static final int INSTANCE_SIZE =
-      toIntExact(ClassLayout.parseClass(io.trino.plugin.iceberg.IcebergSplit.class).instanceSize());
+public class IcebergSplit
+    implements ConnectorSplit {
+  private static final int INSTANCE_SIZE = toIntExact(
+      ClassLayout.parseClass(io.trino.plugin.iceberg.IcebergSplit.class).instanceSize());
 
   private final String path;
   private final long start;
@@ -161,16 +163,20 @@ public class IcebergSplit implements ConnectorSplit {
 
   @Override
   public long getRetainedSizeInBytes() {
-    return INSTANCE_SIZE
-        + estimatedSizeOf(path)
-        + estimatedSizeOf(addresses, HostAddress::getRetainedSizeInBytes)
-        + estimatedSizeOf(partitionSpecJson)
-        + estimatedSizeOf(partitionDataJson)
-        + estimatedSizeOf(deletes, TrinoDeleteFile::getRetainedSizeInBytes);
+    return INSTANCE_SIZE +
+        estimatedSizeOf(path) +
+        estimatedSizeOf(addresses, HostAddress::getRetainedSizeInBytes) +
+        estimatedSizeOf(partitionSpecJson) +
+        estimatedSizeOf(partitionDataJson) +
+        estimatedSizeOf(deletes, TrinoDeleteFile::getRetainedSizeInBytes);
   }
 
   @Override
   public String toString() {
-    return toStringHelper(this).addValue(path).addValue(start).addValue(length).toString();
+    return toStringHelper(this)
+        .addValue(path)
+        .addValue(start)
+        .addValue(length)
+        .toString();
   }
 }

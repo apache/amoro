@@ -123,8 +123,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
   protected static final String sinkTableName = "test_sink_exactly_once";
   protected static final TableIdentifier FAIL_TABLE_ID =
       TableIdentifier.of(
-          TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME, sinkTableName);
-  ;
+          TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME, sinkTableName);;
 
   @Before
   public void testSetup() throws IOException {

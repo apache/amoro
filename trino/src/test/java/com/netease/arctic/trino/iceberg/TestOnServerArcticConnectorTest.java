@@ -24,8 +24,7 @@ import io.trino.testing.DistributedQueryRunner;
 public class TestOnServerArcticConnectorTest extends TestBaseArcticConnectorTest {
 
   public static void main(String[] args) throws Exception {
-    DistributedQueryRunner queryRunner =
-        new TestOnServerArcticConnectorTest().createQueryRunnerForClient();
+    DistributedQueryRunner queryRunner = new TestOnServerArcticConnectorTest().createQueryRunnerForClient();
     Thread.sleep(10);
     Logger log = Logger.get(TestOnServerArcticConnectorTest.class);
     log.info("======== SERVER STARTED ========");

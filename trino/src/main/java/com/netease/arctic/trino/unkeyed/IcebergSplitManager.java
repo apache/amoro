@@ -18,10 +18,6 @@
 
 package com.netease.arctic.trino.unkeyed;
 
-import static io.trino.plugin.iceberg.IcebergSessionProperties.getDynamicFilteringWaitTimeout;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.getMinimumAssignedSplitWeight;
-import static java.util.Objects.requireNonNull;
-
 import com.google.common.collect.ImmutableList;
 import com.netease.arctic.trino.ArcticTransactionManager;
 import com.netease.arctic.trino.TableNameResolve;
@@ -43,9 +39,12 @@ import org.apache.iceberg.TableScan;
 
 import javax.inject.Inject;
 
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getDynamicFilteringWaitTimeout;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getMinimumAssignedSplitWeight;
+import static java.util.Objects.requireNonNull;
+
 /**
- * Iceberg original IcebergSplitManager has some problems for arctic, such as iceberg version, table
- * type.
+ * Iceberg original IcebergSplitManager has some problems for arctic, such as iceberg version, table type.
  */
 public class IcebergSplitManager implements ConnectorSplitManager {
 
@@ -80,31 +79,27 @@ public class IcebergSplitManager implements ConnectorSplitManager {
     }
 
     Table icebergTable =
-        transactionManager
-            .get(transaction)
-            .getArcticTable(table.getSchemaTableName())
-            .asUnkeyedTable();
+        transactionManager.get(transaction).getArcticTable(table.getSchemaTableName()).asUnkeyedTable();
     Duration dynamicFilteringWaitTimeout = getDynamicFilteringWaitTimeout(session);
 
-    TableScan tableScan = icebergTable.newScan().useSnapshot(table.getSnapshotId().get());
+    TableScan tableScan = icebergTable.newScan()
+        .useSnapshot(table.getSnapshotId().get());
 
     TableNameResolve resolve = new TableNameResolve(table.getTableName());
-    IcebergSplitSource splitSource =
-        new IcebergSplitSource(
-            fileSystemFactory,
-            session,
-            table,
-            tableScan,
-            table.getMaxScannedFileSize(),
-            dynamicFilter,
-            dynamicFilteringWaitTimeout,
-            constraint,
-            typeManager,
-            table.isRecordScannedFiles(),
-            getMinimumAssignedSplitWeight(session),
-            resolve.withSuffix() ? !resolve.isBase() : false);
+    IcebergSplitSource splitSource = new IcebergSplitSource(
+        fileSystemFactory,
+        session,
+        table,
+        tableScan,
+        table.getMaxScannedFileSize(),
+        dynamicFilter,
+        dynamicFilteringWaitTimeout,
+        constraint,
+        typeManager,
+        table.isRecordScannedFiles(),
+        getMinimumAssignedSplitWeight(session),
+        resolve.withSuffix() ? !resolve.isBase() : false);
 
-    return new ClassLoaderSafeConnectorSplitSource(
-        splitSource, Thread.currentThread().getContextClassLoader());
+    return new ClassLoaderSafeConnectorSplitSource(splitSource, Thread.currentThread().getContextClassLoader());
   }
 }

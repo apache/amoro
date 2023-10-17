@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,9 +19,6 @@
 
 package com.netease.arctic.trino;
 
-import static io.trino.spi.session.PropertyMetadata.booleanProperty;
-import static io.trino.spi.session.PropertyMetadata.doubleProperty;
-
 import com.google.common.collect.ImmutableList;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
 import io.trino.plugin.iceberg.IcebergSessionProperties;
@@ -28,45 +26,47 @@ import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.session.PropertyMetadata;
 
 import javax.inject.Inject;
-
 import java.util.List;
 
-/** Arctic supporting session properties */
-public final class ArcticSessionProperties implements SessionPropertiesProvider {
+import static io.trino.spi.session.PropertyMetadata.booleanProperty;
+import static io.trino.spi.session.PropertyMetadata.doubleProperty;
+
+/**
+ * Arctic supporting session properties
+ */
+public final class ArcticSessionProperties
+    implements SessionPropertiesProvider {
 
   private static final String ARCTIC_STATISTICS_ENABLED = "arctic_table_statistics_enabled";
 
-  private static final String ARCTIC_SPLIT_TASK_BY_DELETE_RATIO =
-      "arctic_split_task_by_delete_ratio";
-  private static final String ARCTIC_ENABLE_SPLIT_TASK_BY_DELETE_RATIO =
-      "arctic_enable_split_task_by_delete_ratio";
+  private static final String ARCTIC_SPLIT_TASK_BY_DELETE_RATIO = "arctic_split_task_by_delete_ratio";
+  private static final String ARCTIC_ENABLE_SPLIT_TASK_BY_DELETE_RATIO = "arctic_enable_split_task_by_delete_ratio";
   private final List<PropertyMetadata<?>> sessionProperties;
 
   @Inject
   public ArcticSessionProperties(
-      ArcticConfig arcticConfig, IcebergSessionProperties icebergSessionProperties) {
-    sessionProperties =
-        ImmutableList.<PropertyMetadata<?>>builder()
-            .addAll(icebergSessionProperties.getSessionProperties())
-            .add(
-                booleanProperty(
-                    ARCTIC_STATISTICS_ENABLED,
-                    "Expose table statistics for Arctic table",
-                    arcticConfig.isTableStatisticsEnabled(),
-                    false))
-            .add(
-                doubleProperty(
-                    ARCTIC_SPLIT_TASK_BY_DELETE_RATIO,
-                    "If task delete ratio less than this value will be split to more task",
-                    arcticConfig.getSplitTaskByDeleteRatio(),
-                    false))
-            .add(
-                booleanProperty(
-                    ARCTIC_ENABLE_SPLIT_TASK_BY_DELETE_RATIO,
-                    "Enable task split by ratio",
-                    arcticConfig.isEnableSplitTaskByDeleteRatio(),
-                    false))
-            .build();
+      ArcticConfig arcticConfig,
+      IcebergSessionProperties icebergSessionProperties) {
+    sessionProperties = ImmutableList.<PropertyMetadata<?>>builder()
+        .addAll(icebergSessionProperties.getSessionProperties())
+        .add(booleanProperty(
+            ARCTIC_STATISTICS_ENABLED,
+            "Expose table statistics for Arctic table",
+            arcticConfig.isTableStatisticsEnabled(),
+            false))
+        .add(doubleProperty(
+            ARCTIC_SPLIT_TASK_BY_DELETE_RATIO,
+            "If task delete ratio less than this value will be split to more task",
+            arcticConfig.getSplitTaskByDeleteRatio(),
+            false
+        ))
+        .add(booleanProperty(
+          ARCTIC_ENABLE_SPLIT_TASK_BY_DELETE_RATIO,
+            "Enable task split by ratio",
+            arcticConfig.isEnableSplitTaskByDeleteRatio(),
+            false
+        ))
+        .build();
   }
 
   @Override

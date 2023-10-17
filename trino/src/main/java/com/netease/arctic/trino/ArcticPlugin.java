@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -22,7 +23,9 @@ import com.google.common.collect.ImmutableList;
 import io.trino.spi.Plugin;
 import io.trino.spi.connector.ConnectorFactory;
 
-/** Arctic Plugin Impl of {@link Plugin} */
+/**
+ * Arctic Plugin Impl of {@link Plugin}
+ */
 public class ArcticPlugin implements Plugin {
 
   @Override
