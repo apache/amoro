@@ -59,11 +59,11 @@ jobs:
         id: meta
         with:
           images: |
-            name=arctic163/amoro
+            name='arctic163/amoro'
           tags: |
-            type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix='-snapshot'
-            type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix='-snapshot-hadoop3'
-            type=ref,event=branch,enable=${{ matrix.hadoop == 'v2' }},suffix='-snapshot-hadoop2'
+            type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix=snapshot
+            type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix=snapshot-hadoop3
+            type=ref,event=branch,enable=${{ matrix.hadoop == 'v2' }},suffix=snapshot-hadoop2
             type=semver,event=tag,enable=${{ matrix.hadoop == 'v3' }},pattern={{version}}
             type=semver,event=tag,enable=${{ matrix.hadoop == 'v2' }},pattern={{version}}-hadoop2
 
@@ -76,8 +76,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Set Maven Build Properties
+        if: ${{ matrix.hadoop != "v3" }}
+        run: |
+          echo "MVN_HADOOP=-Dhadoop=${{ matrix.hadoop }}" >> $GITHUB_ENV
+
       - name: Build dist module with Maven
-        run: mvn clean install -pl 'dist' -am -e -Dhadoop=${{ matrix.hadoop }} -DskipTests -B -ntp
+        run: mvn clean install -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp
 
       - name: Build and Push Amoro Docker Image
         uses: docker/build-push-action@v4
