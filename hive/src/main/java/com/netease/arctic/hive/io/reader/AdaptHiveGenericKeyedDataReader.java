@@ -16,18 +16,19 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.io.reader;
+package com.netease.arctic.hive.io.reader;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.iceberg.InternalRecordWrapper;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.reader.AbstractKeyedDataReader;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.orc.GenericOrcReader;
-import org.apache.iceberg.data.parquet.GenericParquetReaders;
+import org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders;
 import org.apache.iceberg.orc.OrcRowReader;
 import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.types.Type;
@@ -40,11 +41,26 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Implementation of {@link AbstractArcticDataReader} with record type {@link Record}.
+ * Implementation of {@link AbstractKeyedDataReader} with record type {@link Record}.
  */
-public class GenericArcticDataReader extends AbstractArcticDataReader<Record> {
+public class AdaptHiveGenericKeyedDataReader extends AbstractAdaptHiveKeyedDataReader<Record> {
 
-  public GenericArcticDataReader(
+  public AdaptHiveGenericKeyedDataReader(
+      ArcticFileIO fileIO,
+      Schema tableSchema,
+      Schema projectedSchema,
+      PrimaryKeySpec primaryKeySpec,
+      String nameMapping,
+      boolean caseSensitive,
+      BiFunction<Type, Object, Object> convertConstant,
+      Set<DataTreeNode> sourceNodes,
+      boolean reuseContainer,
+      StructLikeCollections structLikeCollections) {
+    super(fileIO, tableSchema, projectedSchema, primaryKeySpec, nameMapping, caseSensitive, convertConstant,
+        sourceNodes, reuseContainer, structLikeCollections);
+  }
+
+  public AdaptHiveGenericKeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -55,21 +71,7 @@ public class GenericArcticDataReader extends AbstractArcticDataReader<Record> {
     super(fileIO, tableSchema, projectedSchema, primaryKeySpec, nameMapping, caseSensitive, convertConstant, false);
   }
 
-  public GenericArcticDataReader(
-      ArcticFileIO fileIO,
-      Schema tableSchema,
-      Schema projectedSchema,
-      PrimaryKeySpec primaryKeySpec,
-      String nameMapping,
-      boolean caseSensitive,
-      BiFunction<Type, Object, Object> convertConstant,
-      Set<DataTreeNode> sourceNodes, boolean reuseContainer,
-      StructLikeCollections structLikeCollections) {
-    super(fileIO, tableSchema, projectedSchema, primaryKeySpec,
-        nameMapping, caseSensitive, convertConstant, sourceNodes, reuseContainer, structLikeCollections);
-  }
-
-  public GenericArcticDataReader(
+  public AdaptHiveGenericKeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -86,7 +88,7 @@ public class GenericArcticDataReader extends AbstractArcticDataReader<Record> {
   protected Function<MessageType, ParquetValueReader<?>> getParquetReaderFunction(
       Schema projectSchema,
       Map<Integer, ?> idToConstant) {
-    return fileSchema -> GenericParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
+    return fileSchema -> AdaptHiveGenericParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
   }
 
   @Override
@@ -96,8 +98,12 @@ public class GenericArcticDataReader extends AbstractArcticDataReader<Record> {
     return fileSchema -> new GenericOrcReader(projectSchema, fileSchema, idToConstant);
   }
 
+
   @Override
   protected Function<Schema, Function<Record, StructLike>> toStructLikeFunction() {
-    return schema -> record -> new InternalRecordWrapper(schema.asStruct()).wrap(record);
+    return schema -> {
+      final InternalRecordWrapper wrapper = new InternalRecordWrapper(schema.asStruct());
+      return wrapper::copyFor;
+    };
   }
 }

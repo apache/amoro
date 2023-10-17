@@ -19,33 +19,30 @@
 ##
 kubeVersion: ""
 fullnameOverride: ""
+clusterDomain: cluster.local
 
 image:
-  repository: arctic163/ams
+  repository: arctic163/amoro
   pullPolicy: IfNotPresent
   tag: ""
 
 imagePullSecrets: [ ]
-#nameOverride: ""
-#fullnameOverride: ""
 
-# Role-based access control
-rbac:
-  # Specifies whether RBAC resources should be created
-  create: true
-  # RBAC rules
-  rules:
-    - apiGroups: [ "" ]
-      resources: [ "pods" ]
-      verbs: [ "create", "list", "delete" ]
-
+# ServiceAccount of Amoro to schedule optimizer.
 serviceAccount:
-  # Specifies whether a service account should be created
+  # Specifies whether a service account should be created or using an existed account
   create: true
   # Annotations to add to the service account
   annotations: { }
-  # Specifies ServiceAccount name to be used (created if `create: true`)
+  # Specifies ServiceAccount name to be used if `create: false`
   name: ~
+  # if `serviceAccount.create` == true. role and role-bind will be created
+  rbac:
+    # create a role/role-bind if automatically create service account
+    create: true
+    # create a cluster-role and cluster-role-bind if cluster := true
+    cluster: false
+
 
 server:
   # AMS REST Service
@@ -77,18 +74,18 @@ server:
       nodePort: ~
       annotations: { }
 
-# amoro Base Dir
-amoroDir: "/usr/local/ams"
+# amoro Base Dir, default /usr/local/amoro
+amoroHome: ~
+
+# jvm options
+jvmOptions: ~
+#  xms=8196
+#  xmx=8196
+#  jmx.remote.port=
+#  extra.options="-XX:NewRatio=1 -XX:SurvivorRatio=3"
+
 # AMS configurations files
 amoroConf:
-  # ams config.sh set env
-  amoroEnv: ~
-#  amoroEnv: |
-#    XMX_CONFIG="8196"
-#    XMS_CONFIG="8196"
-#    JMX_REMOTE_PORT_CONFIG=""
-#    JVM_EXTRA_CONFIG="-XX:NewRatio=1 -XX:SurvivorRatio=3"
-#    LANG_CONFIG="en_US.UTF-8"
   # ams database properties,default is derby. If production,suggest use mysql
   database:
     type: derby
@@ -108,6 +105,37 @@ amoroConf:
   # The value (templated string) is used for conf/log4j2.xml file
   # See example at conf/log4j2.xml.template https://github.com/NetEase/amoro/blob/master/dist/src/main/arctic-bin/conf/log4j2.xml for more details
   log4j2: ~
+
+
+## Configure the container of optimizer that allows you to submit optimizer by AMS
+optimizer:
+  # flink optimizer
+  flink:
+    ## enable the flink optimizer.
+    enabled: true
+    ## container name, default is flink
+    name: ~
+    ## image information of flink optimizer.
+    image:
+      ## the image repository
+      repository: arctic163/optimizer-flink
+      ## the image tag, if not set, the default value is the same with amoro image tag.
+      tag: ~
+      jobUri: "local:///opt/flink/usrlib/optimizer-job.jar"
+    properties: {
+      "flink-conf.taskmanager.memory.managed.size": "32mb",
+      "flink-conf.taskmanager.memory.netwrok.max": "32mb",
+      "flink-conf.taskmanager.memory.netwrok.nin": "32mb"
+    }
+  # local optimizer
+  local:
+    # enable the local optimizer container
+    enabled: true
+    # local optimizer container name. default is local
+    name: ~
+    # properties for optimizer container.
+    properties: ~
+  extra: []
 
 
 ## Configure the ingress resource that allows you to access the
@@ -215,10 +243,7 @@ ingress:
   ##
   extraRules: [ ]
 
-# Command to launch AMS server (templated)
-command: ~
-# Arguments to launch AMS server (templated)
-args: ~
+
 
 # Environment variables (templated)
 env: [ ]
@@ -230,10 +255,6 @@ volumes: [ ]
 # Additional volumeMounts for AMS container (templated)
 volumeMounts: [ ]
 
-# Additional init containers for AMS pod (templated)
-initContainers: [ ]
-# Additional containers for AMS pod (templated)
-containers: [ ]
 
 # Liveness probe
 livenessProbe:

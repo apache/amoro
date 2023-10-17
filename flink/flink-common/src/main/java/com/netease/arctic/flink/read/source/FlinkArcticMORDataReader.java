@@ -22,7 +22,7 @@ either express or implied.
 package com.netease.arctic.flink.read.source;
 
 import com.netease.arctic.flink.read.AdaptHiveFlinkParquetReaders;
-import com.netease.arctic.hive.io.reader.AbstractAdaptHiveArcticDataReader;
+import com.netease.arctic.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.flink.table.data.RowData;
@@ -42,7 +42,7 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class FlinkArcticMORDataReader extends AbstractAdaptHiveArcticDataReader<RowData> {
+public class FlinkArcticMORDataReader extends AbstractAdaptHiveKeyedDataReader<RowData> {
   public FlinkArcticMORDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,

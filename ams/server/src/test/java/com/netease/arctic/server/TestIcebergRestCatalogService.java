@@ -7,7 +7,7 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.io.IcebergDataTestHelpers;
 import com.netease.arctic.io.MixedDataTestHelpers;
-import com.netease.arctic.io.reader.GenericIcebergDataReader;
+import com.netease.arctic.io.reader.GenericUnkeyedDataReader;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.table.ArcticTable;
@@ -236,7 +236,7 @@ public class TestIcebergRestCatalogService {
           AmsEnvironment.INTERNAL_ICEBERG_CATALOG, database, table));
 
       Assertions.assertEquals(TableFormat.ICEBERG, arcticTable.format());
-      GenericIcebergDataReader reader = new GenericIcebergDataReader(
+      GenericUnkeyedDataReader reader = new GenericUnkeyedDataReader(
           arcticTable.io(),
           arcticTable.schema(),
           arcticTable.schema(),

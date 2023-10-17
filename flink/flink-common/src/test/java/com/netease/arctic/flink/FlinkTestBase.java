@@ -28,7 +28,7 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions;
 import com.netease.arctic.flink.write.ArcticRowDataTaskWriterFactory;
-import com.netease.arctic.io.reader.GenericArcticDataReader;
+import com.netease.arctic.io.reader.GenericKeyedDataReader;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.KeyedTable;
@@ -214,8 +214,8 @@ public class FlinkTestBase extends TableTestBase {
   public static List<Record> read(KeyedTable table) {
     CloseableIterable<CombinedScanTask> combinedScanTasks = table.newScan().planTasks();
     Schema schema = table.schema();
-    GenericArcticDataReader genericArcticDataReader =
-        new GenericArcticDataReader(
+    GenericKeyedDataReader genericArcticDataReader =
+        new GenericKeyedDataReader(
             table.io(),
             schema,
             schema,
