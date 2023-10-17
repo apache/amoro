@@ -35,7 +35,7 @@ import java.util.Map;
 public class MetricsManager extends ActivePluginManager<MetricsEmitter> {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetricsManager.class);
-  private static final String PLUGIN_CONFIG_DIRECTORY = "plugins";
+  private static final String PLUGIN_CONFIG_DIRECTORY = "metrics";
 
   private final String configPath;
 
