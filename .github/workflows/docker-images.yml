@@ -59,7 +59,7 @@ jobs:
         id: meta
         with:
           images: |
-            name='arctic163/amoro'
+            name=arctic163/amoro
           tags: |
             type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix=-snapshot
             type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix=-snapshot-hadoop3
@@ -68,7 +68,7 @@ jobs:
             type=semver,event=tag,enable=${{ matrix.hadoop == 'v2' }},pattern={{version}}-hadoop2
 
       - name: Print tags
-        run: echo ${{ steps.meta.outputs.tags }}
+        run: echo '${{ steps.meta.outputs.tags }}'
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
@@ -119,7 +119,7 @@ jobs:
         id: meta
         with:
           images: |
-            arctic163/optimizer-flink
+            name=arctic163/optimizer-flink
           tags: |
             type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot
             type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot-flink1.14
@@ -129,7 +129,7 @@ jobs:
             type=semver,enable=${{ matrix.flink == '1.15.3' }},pattern={{version}}-flink1.15
 
       - name: Print tags
-        run: echo ${{ steps.meta.outputs.tags }}
+        run: echo '${{ steps.meta.outputs.tags }}'
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
