@@ -77,7 +77,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set Maven Build Properties
-        if: ${{ matrix.hadoop != "v3" }}
+        if: ${{ matrix.hadoop != 'v3' }}
         run: |
           echo "MVN_HADOOP=-Dhadoop=${{ matrix.hadoop }}" >> $GITHUB_ENV
 
