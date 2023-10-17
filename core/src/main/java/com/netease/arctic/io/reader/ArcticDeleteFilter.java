@@ -21,8 +21,6 @@ package com.netease.arctic.io.reader;
 import com.netease.arctic.data.ChangedLsn;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.iceberg.InternalRecordWrapper;
-import com.netease.arctic.iceberg.StructProjection;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.CloseableIterableWrapper;
 import com.netease.arctic.io.CloseablePredicate;
@@ -39,6 +37,7 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.avro.Avro;
+import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.avro.DataReader;
 import org.apache.iceberg.data.orc.GenericOrcReader;
@@ -55,11 +54,11 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.Filter;
+import org.apache.iceberg.util.StructProjection;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -126,7 +125,6 @@ public abstract class ArcticDeleteFilter<T> {
       Set<DataTreeNode> sourceNodes) {
     this.eqDeletes = keyedTableScanTask.arcticEquityDeletes().stream()
         .map(ArcticFileScanTask::file)
-        .sorted(Comparator.comparingLong(PrimaryKeyedFile::transactionId))
         .collect(Collectors.toSet());
 
     Map<String, DeleteFile> map = new HashMap<>();
@@ -147,7 +145,8 @@ public abstract class ArcticDeleteFilter<T> {
         TypeUtil.select(requiredSchema, Sets.newHashSet(primaryKeyId)),
         new Schema(MetadataColumns.FILE_OFFSET_FILED, MetadataColumns.TRANSACTION_ID_FILED));
     if (CollectionUtils.isNotEmpty(sourceNodes)) {
-      this.deleteNodeFilter = new NodeFilter<>(sourceNodes, deleteSchema, primaryKeySpec, record -> record);
+      this.deleteNodeFilter = new NodeFilter<>(sourceNodes, deleteSchema, primaryKeySpec,
+          record -> new InternalRecordWrapper(deleteSchema.asStruct()).wrap(record));
     } else {
       this.deleteNodeFilter = null;
     }
@@ -243,7 +242,7 @@ public abstract class ArcticDeleteFilter<T> {
 
     InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(deleteSchema.asStruct());
     CloseableIterable<StructLike> structLikeIterable = CloseableIterable.transform(
-        records, record -> internalRecordWrapper.copyFor(record));
+        records, internalRecordWrapper::copyFor);
 
     StructLikeBaseMap<ChangedLsn> structLikeMap = structLikeCollections.createStructLikeMap(pkSchema.asStruct());
     //init map
@@ -252,7 +251,7 @@ public abstract class ArcticDeleteFilter<T> {
           : getArcticFileIo().doAs(deletes::iterator);
       while (it.hasNext()) {
         StructLike structLike = it.next();
-        StructLike deletePK = deletePKProjectRow.copyWrap(structLike);
+        StructLike deletePK = deletePKProjectRow.copyFor(structLike);
         ChangedLsn deleteLsn = deleteLSN(structLike);
 
         ChangedLsn old = structLikeMap.get(deletePK);
@@ -266,7 +265,7 @@ public abstract class ArcticDeleteFilter<T> {
 
     Predicate<T> isInDeleteSet = record -> {
       StructLike data = asStructLike(record);
-      StructLike dataPk = dataPKProjectRow.copyWrap(data);
+      StructLike dataPk = dataPKProjectRow.copyFor(data);
       ChangedLsn dataLSN = dataLSN(data);
       ChangedLsn deleteLsn = structLikeMap.get(dataPk);
       if (deleteLsn == null) {
@@ -275,9 +274,8 @@ public abstract class ArcticDeleteFilter<T> {
 
       return deleteLsn.compareTo(dataLSN) > 0;
     };
-    CloseablePredicate<T> closeablePredicate = new CloseablePredicate<>(isInDeleteSet, structLikeMap);
 
-    this.eqPredicate = closeablePredicate;
+    this.eqPredicate = new CloseablePredicate<>(isInDeleteSet, structLikeMap);
     return isInDeleteSet;
   }
 
@@ -374,10 +372,7 @@ public abstract class ArcticDeleteFilter<T> {
       if (posSet == null) {
         return false;
       }
-      if (!posSet.contains(pos(item))) {
-        return false;
-      }
-      return true;
+      return posSet.contains(pos(item));
     };
   }
 

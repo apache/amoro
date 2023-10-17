@@ -22,10 +22,10 @@ import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.io.reader.AbstractArcticDataReader;
-import com.netease.arctic.io.reader.AbstractIcebergDataReader;
-import com.netease.arctic.io.reader.GenericArcticDataReader;
-import com.netease.arctic.io.reader.GenericIcebergDataReader;
+import com.netease.arctic.io.reader.AbstractKeyedDataReader;
+import com.netease.arctic.io.reader.AbstractUnkeyedDataReader;
+import com.netease.arctic.io.reader.GenericKeyedDataReader;
+import com.netease.arctic.io.reader.GenericUnkeyedDataReader;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
@@ -216,12 +216,12 @@ public class MixedDataTestHelpers {
   public static List<Record> readKeyedTable(
       KeyedTable keyedTable, Expression expression,
       Schema projectSchema, boolean useDiskMap, boolean readDeletedData) {
-    GenericArcticDataReader reader;
+    GenericKeyedDataReader reader;
     if (projectSchema == null) {
       projectSchema = keyedTable.schema();
     }
     if (useDiskMap) {
-      reader = new GenericArcticDataReader(
+      reader = new GenericKeyedDataReader(
           keyedTable.io(),
           keyedTable.schema(),
           projectSchema,
@@ -232,7 +232,7 @@ public class MixedDataTestHelpers {
           null, false, new StructLikeCollections(true, 0L)
       );
     } else {
-      reader = new GenericArcticDataReader(
+      reader = new GenericKeyedDataReader(
           keyedTable.io(),
           keyedTable.schema(),
           projectSchema,
@@ -248,7 +248,7 @@ public class MixedDataTestHelpers {
 
   public static List<Record> readKeyedTable(
       KeyedTable keyedTable,
-      AbstractArcticDataReader<Record> reader, Expression expression,
+      AbstractKeyedDataReader<Record> reader, Expression expression,
       Schema projectSchema, boolean readDeletedData) {
 
     List<Record> result = Lists.newArrayList();
@@ -291,9 +291,9 @@ public class MixedDataTestHelpers {
     Schema expectTableSchema = MetadataColumns.appendChangeStoreMetadataColumns(keyedTable.schema());
     Schema expectProjectSchema = MetadataColumns.appendChangeStoreMetadataColumns(projectSchema);
 
-    GenericIcebergDataReader reader;
+    GenericUnkeyedDataReader reader;
     if (useDiskMap) {
-      reader = new GenericIcebergDataReader(
+      reader = new GenericUnkeyedDataReader(
           keyedTable.asKeyedTable().io(),
           expectTableSchema,
           expectProjectSchema,
@@ -303,7 +303,7 @@ public class MixedDataTestHelpers {
           false,
           new StructLikeCollections(true, 0L));
     } else {
-      reader = new GenericIcebergDataReader(
+      reader = new GenericUnkeyedDataReader(
           keyedTable.asKeyedTable().io(),
           expectTableSchema,
           expectProjectSchema,
@@ -318,7 +318,7 @@ public class MixedDataTestHelpers {
   }
 
   public static List<Record> readChangeStore(
-      KeyedTable keyedTable, AbstractIcebergDataReader<Record> reader,
+      KeyedTable keyedTable, AbstractUnkeyedDataReader<Record> reader,
       Expression expression) {
 
     ChangeTable changeTable = keyedTable.asKeyedTable().changeTable();
@@ -337,9 +337,9 @@ public class MixedDataTestHelpers {
       projectSchema = table.schema();
     }
 
-    GenericIcebergDataReader reader;
+    GenericUnkeyedDataReader reader;
     if (useDiskMap) {
-      reader = new GenericIcebergDataReader(
+      reader = new GenericUnkeyedDataReader(
           table.io(),
           table.schema(),
           projectSchema,
@@ -349,7 +349,7 @@ public class MixedDataTestHelpers {
           false,
           new StructLikeCollections(true, 0L));
     } else {
-      reader = new GenericIcebergDataReader(
+      reader = new GenericUnkeyedDataReader(
           table.io(),
           table.schema(),
           projectSchema,
@@ -364,7 +364,7 @@ public class MixedDataTestHelpers {
   }
 
   public static List<Record> readBaseStore(
-      ArcticTable table, AbstractIcebergDataReader<Record> reader,
+      ArcticTable table, AbstractUnkeyedDataReader<Record> reader,
       Expression expression) {
 
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(table);

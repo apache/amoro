@@ -31,6 +31,7 @@ public class SparkContextUtil {
   public static final String MIXED_FORMAT_EXTENSION = "com.netease.arctic.spark.ArcticSparkExtensions";
   public static final String ICEBERG_CATALOG = "org.apache.iceberg.spark.SparkCatalog";
   public static final String MIXED_FORMAT_CATALOG = "com.netease.arctic.spark.ArcticSparkCatalog";
+  public static final String PAIMON_CATALOG = "org.apache.paimon.spark.SparkCatalog";
   public static final String MIXED_FORMAT_SESSION_CATALOG = "com.netease.arctic.spark.ArcticSparkSessionCatalog";
   public static final String MIXED_FORMAT_PROPERTY_REFRESH_BEFORE_USAGE =
       "spark.sql.arctic.refresh-catalog-before-usage";
@@ -44,28 +45,28 @@ public class SparkContextUtil {
 
     for (String catalog : catalogs) {
       String connector = sessionConfig.get(TerminalSessionFactory.SessionConfigOptions.catalogConnector(catalog));
-      if ("iceberg".equalsIgnoreCase(connector)) {
-        sparkConf.put("spark.sql.catalog." + catalog, ICEBERG_CATALOG);
-        Map<String, String> properties =
-            TerminalSessionFactory.SessionConfigOptions.getCatalogProperties(sessionConfig, catalog);
-        for (String key : properties.keySet()) {
-          String property = properties.get(key);
-          sparkConf.put("spark.sql.catalog." + catalog + "." + key, property);
-        }
-      } else {
-        String sparkCatalogPrefix = "spark.sql.catalog." + catalog;
-        String catalogClassName = MIXED_FORMAT_CATALOG;
+      String catalogClassName;
+      String sparkCatalogPrefix = "spark.sql.catalog." + catalog;
+      if ("arctic".equalsIgnoreCase(connector)) {
+        catalogClassName = MIXED_FORMAT_CATALOG;
         String type =
             sessionConfig.get(TerminalSessionFactory.SessionConfigOptions.catalogProperty(catalog, "type"));
-        if (sessionConfig.getBoolean(
-            TerminalSessionFactory.SessionConfigOptions.USING_SESSION_CATALOG_FOR_HIVE) &&
+        if (sessionConfig.getBoolean(TerminalSessionFactory.SessionConfigOptions.USING_SESSION_CATALOG_FOR_HIVE) &&
             CatalogType.HIVE.name().equalsIgnoreCase(type)) {
           sparkCatalogPrefix = "spark.sql.catalog.spark_catalog";
           catalogClassName = MIXED_FORMAT_SESSION_CATALOG;
         }
-        sparkConf.put(sparkCatalogPrefix, catalogClassName);
         sparkConf.put(sparkCatalogPrefix + ".url", catalogUrlBase + "/" + catalog);
+      } else {
+        catalogClassName = "iceberg".equalsIgnoreCase(connector) ? ICEBERG_CATALOG : PAIMON_CATALOG;
+        Map<String, String> properties =
+            TerminalSessionFactory.SessionConfigOptions.getCatalogProperties(sessionConfig, catalog);
+        for (String key : properties.keySet()) {
+          String property = properties.get(key);
+          sparkConf.put(sparkCatalogPrefix + "." + key, property);
+        }
       }
+      sparkConf.put(sparkCatalogPrefix, catalogClassName);
     }
     return sparkConf;
   }
