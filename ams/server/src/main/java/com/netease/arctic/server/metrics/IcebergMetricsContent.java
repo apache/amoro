@@ -29,13 +29,13 @@ public class IcebergMetricsContent implements MetricsContent<MetricsReport> {
   private final MetricType type;
   private final MetricsReport data;
 
-  public IcebergMetricsContent(String name, MetricType type, MetricsReport data) {
+  private IcebergMetricsContent(String name, MetricType type, MetricsReport data) {
     this.name = name;
     this.type = type;
     this.data = data;
   }
 
-  public static MetricsContent<MetricsReport> from(MetricsReport report) {
+  public static MetricsContent<MetricsReport> wrap(MetricsReport report) {
     ReportMetricsRequest typedMetric = ReportMetricsRequest.of(report);
     return new IcebergMetricsContent(typedMetric.reportType().name(), MetricType.FORMAT_ICEBERG, report);
   }

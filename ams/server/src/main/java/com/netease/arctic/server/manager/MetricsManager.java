@@ -40,7 +40,7 @@ public class MetricsManager extends ActivePluginManager<MetricsEmitter> {
   private final String configPath;
 
   public MetricsManager() {
-    this(Environments.getHomePath() + "/" + PLUGIN_CONFIG_DIRECTORY);
+    this(new File(Environments.getHomePath(), PLUGIN_CONFIG_DIRECTORY).getPath());
   }
 
   public MetricsManager(String configPath) {

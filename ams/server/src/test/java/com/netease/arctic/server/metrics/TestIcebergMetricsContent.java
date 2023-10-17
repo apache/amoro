@@ -65,7 +65,7 @@ public class TestIcebergMetricsContent {
         return null;
       }
     };
-    MetricsContent<MetricsReport> metricsContent = IcebergMetricsContent.from(report);
+    MetricsContent<MetricsReport> metricsContent = IcebergMetricsContent.wrap(report);
     assertEquals(metricsContent.name(), ReportMetricsRequest.ReportType.COMMIT_REPORT.name());
     assertEquals(metricsContent.type(), MetricType.FORMAT_ICEBERG);
     assertEquals(metricsContent.data(), report);

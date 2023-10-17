@@ -403,7 +403,7 @@ public class IcebergRestCatalogService extends PersistentBase {
     handleTable(ctx, (catalog, tableMeta) -> {
       String bodyJson = ctx.body();
       ReportMetricsRequest metricsRequest = ReportMetricsRequestParser.fromJson(bodyJson);
-      metricsManager.emit(IcebergMetricsContent.from(metricsRequest.report()));
+      metricsManager.emit(IcebergMetricsContent.wrap(metricsRequest.report()));
       return null;
     });
   }
