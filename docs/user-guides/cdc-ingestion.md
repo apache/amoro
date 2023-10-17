@@ -18,7 +18,7 @@ The following example will show how MySQL CDC data is written to an Iceberg tabl
 
 **Requirements**
 
-Please add [Flink Connector MySQL CDC](https://repo1.maven.org/maven2/com/ververica/flink-connector-mysql-cdc/2.3.0/flink-connector-mysql-cdc-2.3.0.jar) and [Iceberg](https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-flink-1.14/1.1.0/iceberg-flink-1.14-1.1.0.jar) Jars to the lib directory of the Flink engine package.
+Please add [Flink SQL Connector MySQL CDC](https://repo1.maven.org/maven2/com/ververica/flink-sql-connector-mysql-cdc/2.3.0/flink-connector-mysql-cdc-2.3.0.jar) and [Iceberg](https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-flink-1.14/1.1.0/iceberg-flink-1.14-1.1.0.jar) Jars to the lib directory of the Flink engine package.
 
 ```sql
 CREATE TABLE products (
@@ -58,7 +58,7 @@ The following example will show how MySQL CDC data is written to a Mixed-Iceberg
 
 **Requirements**
 
-Please add [Flink Connector MySQL CDC](https://repo1.maven.org/maven2/com/ververica/flink-connector-mysql-cdc/2.3.0/flink-connector-mysql-cdc-2.3.0.jar) and [Amoro](../../../download/) Jars to the lib directory of the Flink engine package.
+Please add [Flink SQL Connector MySQL CDC](https://repo1.maven.org/maven2/com/ververica/flink-sql-connector-mysql-cdc/2.3.0/flink-connector-mysql-cdc-2.3.0.jar) and [Amoro](../../../download/) Jars to the lib directory of the Flink engine package.
 
 ```sql
 CREATE TABLE products (

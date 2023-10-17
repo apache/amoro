@@ -19,6 +19,7 @@
 package com.netease.arctic.server;
 
 import com.google.common.base.Preconditions;
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizingService;
@@ -45,7 +46,6 @@ import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.server.utils.Configurations;
-import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
@@ -54,6 +54,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -331,7 +332,7 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
     }
 
     @Override
-    public void handleTableAdded(ArcticTable table, TableRuntime tableRuntime) {
+    public void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
       getOptionalQueueByGroup(tableRuntime.getOptimizerGroup()).ifPresent(q -> q.refreshTable(tableRuntime));
     }
 
@@ -356,7 +357,9 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
 
     @Override
     protected void doDispose() {
-      optimizerMonitorTimer.cancel();
+      if (Objects.nonNull(optimizerMonitorTimer)) {
+        optimizerMonitorTimer.cancel();
+      }
     }
   }
 

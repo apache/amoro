@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -22,20 +21,18 @@ package com.netease.arctic.spark.table;
 import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-/**
- * A mix-in interface of {@link Table}, to indicate that can handle update or delete by upsert.
- */
+/** A mix-in interface of {@link Table}, to indicate that can handle update or delete by upsert. */
 public interface SupportsRowLevelOperator extends Table {
 
   /**
    * Returns support extend columns scan builder
+   *
    * @param options
    * @return
    */
   SupportsExtendIdentColumns newUpsertScanBuilder(CaseInsensitiveStringMap options);
 
   boolean requireAdditionIdentifierColumns();
-
 
   /**
    * will table handle insert as upsert

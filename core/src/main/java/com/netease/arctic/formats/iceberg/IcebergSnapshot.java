@@ -18,18 +18,19 @@
 
 package com.netease.arctic.formats.iceberg;
 
-import com.netease.arctic.Snapshot;
+import com.netease.arctic.TableSnapshot;
+import org.apache.iceberg.Snapshot;
 
-public class IcebergSnapshot implements Snapshot {
-  org.apache.iceberg.Snapshot snapshot;
+public class IcebergSnapshot implements TableSnapshot {
+  private final Snapshot snapshot;
 
-  public IcebergSnapshot(org.apache.iceberg.Snapshot snapshot) {
+  public IcebergSnapshot(Snapshot snapshot) {
     this.snapshot = snapshot;
   }
 
   @Override
   public long watermark() {
-    return commitTime();
+    return -1L;
   }
 
   @Override
@@ -40,5 +41,9 @@ public class IcebergSnapshot implements Snapshot {
   @Override
   public String id() {
     return String.valueOf(snapshot.snapshotId());
+  }
+
+  public Snapshot icebergSnapshot() {
+    return snapshot;
   }
 }

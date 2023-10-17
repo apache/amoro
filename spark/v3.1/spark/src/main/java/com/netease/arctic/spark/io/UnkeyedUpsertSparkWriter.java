@@ -1,5 +1,8 @@
 package com.netease.arctic.spark.io;
 
+import static org.apache.spark.sql.types.DataTypes.IntegerType;
+import static org.apache.spark.sql.types.DataTypes.StringType;
+
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
@@ -25,9 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.spark.sql.types.DataTypes.IntegerType;
-import static org.apache.spark.sql.types.DataTypes.StringType;
-
 public class UnkeyedUpsertSparkWriter<T> implements TaskWriter<T> {
 
   private final List<DeleteFile> completedDeleteFiles = Lists.newArrayList();
@@ -42,11 +42,13 @@ public class UnkeyedUpsertSparkWriter<T> implements TaskWriter<T> {
   private final Map<PartitionKey, SortedPosDeleteWriter<InternalRow>> writerMap = new HashMap<>();
   private boolean closed = false;
 
-  public UnkeyedUpsertSparkWriter(ArcticTable table,
-                                  FileAppenderFactory<InternalRow> appenderFactory,
-                                  OutputFileFactory fileFactory,
-                                  FileFormat format, Schema schema,
-                                  ArcticSparkBaseTaskWriter writer) {
+  public UnkeyedUpsertSparkWriter(
+      ArcticTable table,
+      FileAppenderFactory<InternalRow> appenderFactory,
+      OutputFileFactory fileFactory,
+      FileFormat format,
+      Schema schema,
+      ArcticSparkBaseTaskWriter writer) {
     this.table = table;
     this.appenderFactory = appenderFactory;
     this.fileFactory = fileFactory;
@@ -58,17 +60,19 @@ public class UnkeyedUpsertSparkWriter<T> implements TaskWriter<T> {
   @Override
   public void write(T row) throws IOException {
     if (closed) {
-      throw new IllegalStateException("Pos-delete writer for table " + table.id().toString() + " already closed");
+      throw new IllegalStateException(
+          "Pos-delete writer for table " + table.id().toString() + " already closed");
     }
 
     SparkInternalRowCastWrapper internalRow = (SparkInternalRowCastWrapper) row;
-    StructLike structLike = new SparkInternalRowWrapper(SparkSchemaUtil.convert(schema)).wrap(internalRow.getRow());
+    StructLike structLike =
+        new SparkInternalRowWrapper(SparkSchemaUtil.convert(schema)).wrap(internalRow.getRow());
     PartitionKey partitionKey = new PartitionKey(table.spec(), schema);
     partitionKey.partition(structLike);
     if (writerMap.get(partitionKey) == null) {
-      SortedPosDeleteWriter<InternalRow> writer = new SortedPosDeleteWriter<>(appenderFactory,
-          fileFactory, table.io(),
-          format, partitionKey);
+      SortedPosDeleteWriter<InternalRow> writer =
+          new SortedPosDeleteWriter<>(
+              appenderFactory, fileFactory, table.io(), format, partitionKey);
       writerMap.putIfAbsent(partitionKey, writer);
     }
     if (internalRow.getChangeAction() == ChangeAction.DELETE) {
@@ -83,8 +87,7 @@ public class UnkeyedUpsertSparkWriter<T> implements TaskWriter<T> {
   }
 
   @Override
-  public void abort() throws IOException {
-  }
+  public void abort() throws IOException {}
 
   @Override
   public WriteResult complete() throws IOException {
@@ -95,7 +98,8 @@ public class UnkeyedUpsertSparkWriter<T> implements TaskWriter<T> {
     completedDataFiles.addAll(Arrays.asList(writer.complete().dataFiles()));
     return WriteResult.builder()
         .addDeleteFiles(completedDeleteFiles)
-        .addDataFiles(completedDataFiles).build();
+        .addDataFiles(completedDataFiles)
+        .build();
   }
 
   @Override

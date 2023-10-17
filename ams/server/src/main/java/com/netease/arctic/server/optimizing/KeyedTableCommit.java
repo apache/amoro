@@ -5,11 +5,11 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.op.OverwriteBaseFiles;
+import com.netease.arctic.op.SnapshotSummary;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.exception.OptimizingCommitException;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.ContentFiles;
 import com.netease.arctic.utils.PuffinUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
+import static com.netease.arctic.hive.op.UpdateHiveFiles.SYNC_DATA_TO_HIVE;
 import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
 
 public class KeyedTableCommit extends UnKeyedTableCommit {
@@ -61,9 +62,9 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
   @Override
   public void commit() throws OptimizingCommitException {
     if (tasks.isEmpty()) {
-      LOG.info("{} getRuntime no tasks to commit", table.id());
+      LOG.info("{} found no tasks to commit", table.id());
     }
-    LOG.info("{} getRuntime tasks to commit with from snapshot id = {}", table.id(),
+    LOG.info("{} found tasks to commit from snapshot {}", table.id(),
         fromSnapshotId);
 
     //In the scene of moving files to hive, the files will be renamed
@@ -142,6 +143,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
     removedDataFiles.forEach(overwriteBaseFiles::deleteFile);
     if (TableTypeUtil.isHive(table) && !needMoveFile2Hive()) {
       overwriteBaseFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
+      overwriteBaseFiles.set(SYNC_DATA_TO_HIVE, "true");
     }
     overwriteBaseFiles.skipEmptyCommit().commit();
 

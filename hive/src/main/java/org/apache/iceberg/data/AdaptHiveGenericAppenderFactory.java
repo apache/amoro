@@ -172,6 +172,19 @@ public class AdaptHiveGenericAppenderFactory implements FileAppenderFactory<Reco
               .equalityFieldIds(equalityFieldIds)
               .buildEqualityWriter();
 
+        case ORC:
+          return ORC.writeDeletes(file.encryptingOutputFile())
+              .createWriterFunc(GenericOrcWriter::buildWriter)
+              .withPartition(partition)
+              .overwrite()
+              .setAll(config)
+              .metricsConfig(metricsConfig)
+              .rowSchema(eqDeleteRowSchema)
+              .withSpec(spec)
+              .withKeyMetadata(file.keyMetadata())
+              .equalityFieldIds(equalityFieldIds)
+              .buildEqualityWriter();
+
         default:
           throw new UnsupportedOperationException(
               "Cannot write equality-deletes for unsupported file format: " + format);
@@ -202,6 +215,18 @@ public class AdaptHiveGenericAppenderFactory implements FileAppenderFactory<Reco
         case PARQUET:
           return AdaptHiveParquet.writeDeletes(file.encryptingOutputFile())
               .createWriterFunc(AdaptHiveGenericParquetWriter::buildWriter)
+              .withPartition(partition)
+              .overwrite()
+              .setAll(config)
+              .metricsConfig(metricsConfig)
+              .rowSchema(posDeleteRowSchema)
+              .withSpec(spec)
+              .withKeyMetadata(file.keyMetadata())
+              .buildPositionWriter();
+
+        case ORC:
+          return ORC.writeDeletes(file.encryptingOutputFile())
+              .createWriterFunc(GenericOrcWriter::buildWriter)
               .withPartition(partition)
               .overwrite()
               .setAll(config)

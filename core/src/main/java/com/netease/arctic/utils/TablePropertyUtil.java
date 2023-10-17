@@ -22,7 +22,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.PartitionSpec;
@@ -41,32 +40,6 @@ import java.util.Map;
 public class TablePropertyUtil {
 
   public static final StructLike EMPTY_STRUCT = GenericRecord.create(new Schema());
-
-  /**
-   * Decode string to max transaction id map of each partition.
-   *
-   * @param spec table partition spec
-   * @param value string value
-   * @return max transaction id map of each partition
-   */
-  public static StructLikeMap<Long> decodePartitionMaxTxId(PartitionSpec spec, String value) {
-    try {
-      StructLikeMap<Long> results = StructLikeMap.create(spec.partitionType());
-      TypeReference<Map<String, Long>> typeReference = new TypeReference<Map<String, Long>>() {};
-      Map<String, Long> map = new ObjectMapper().readValue(value, typeReference);
-      for (String key : map.keySet()) {
-        if (spec.isUnpartitioned()) {
-          results.put(null, map.get(key));
-        } else {
-          StructLike partitionData = ArcticDataFiles.data(spec, key);
-          results.put(partitionData, map.get(key));
-        }
-      }
-      return results;
-    } catch (JsonProcessingException e) {
-      throw new UnsupportedOperationException("Failed to decode partition max txId ", e);
-    }
-  }
 
   public static StructLikeMap<Map<String, String>> decodePartitionProperties(PartitionSpec spec, String value) {
     try {
@@ -102,14 +75,6 @@ public class TablePropertyUtil {
       throw new UncheckedIOException(e);
     }
     return value;
-  }
-
-  public static StructLikeMap<Long> getPartitionBaseOptimizedTime(KeyedTable keyedTable) {
-    return getPartitionLongProperties(keyedTable.baseTable(), TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
-  }
-
-  public static StructLikeMap<Long> getPartitionOptimizedSequence(KeyedTable keyedTable) {
-    return getPartitionLongProperties(keyedTable.baseTable(), TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
   }
 
   public static StructLikeMap<Long> getPartitionLongProperties(UnkeyedTable unkeyedTable, String key) {
@@ -150,22 +115,6 @@ public class TablePropertyUtil {
       result = partitionProperty.get(partitionData);
     }
     return result;
-  }
-
-  public static StructLikeMap<Long> getLegacyPartitionMaxTransactionId(KeyedTable keyedTable) {
-    StructLikeMap<Long> baseTableMaxTransactionId = StructLikeMap.create(keyedTable.spec().partitionType());
-
-    StructLikeMap<Map<String, String>> partitionProperty = keyedTable.asKeyedTable().baseTable().partitionProperty();
-    partitionProperty.forEach((partitionKey, propertyValue) -> {
-      Long maxTxId = (propertyValue == null ||
-          propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID) == null) ?
-          null : Long.parseLong(propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID));
-      if (maxTxId != null) {
-        baseTableMaxTransactionId.put(partitionKey, maxTxId);
-      }
-    });
-
-    return baseTableMaxTransactionId;
   }
 
 

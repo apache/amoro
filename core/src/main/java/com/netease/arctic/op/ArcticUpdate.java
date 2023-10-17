@@ -18,12 +18,9 @@
 
 package com.netease.arctic.op;
 
-import com.netease.arctic.AmsClient;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WatermarkGenerator;
-import com.netease.arctic.trace.TableTracer;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -35,7 +32,6 @@ import org.apache.iceberg.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -52,14 +48,12 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
 
   protected final SnapshotUpdate<T> delegate;
   private final ArcticTable arcticTable;
-  private final TableTracer tracer;
   protected final Transaction transaction;
   protected final boolean autoCommitTransaction;
   protected final WatermarkGenerator watermarkGenerator;
 
-  public ArcticUpdate(ArcticTable arcticTable, SnapshotUpdate<T> delegate, TableTracer tracer) {
+  public ArcticUpdate(ArcticTable arcticTable, SnapshotUpdate<T> delegate) {
     this.arcticTable = arcticTable;
-    this.tracer = tracer;
     this.transaction = null;
     this.autoCommitTransaction = false;
     this.watermarkGenerator = null;
@@ -67,10 +61,9 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
   }
 
   public ArcticUpdate(
-      ArcticTable arcticTable, SnapshotUpdate<T> delegate, TableTracer tracer, Transaction transaction,
+      ArcticTable arcticTable, SnapshotUpdate<T> delegate, Transaction transaction,
       boolean autoCommitTransaction) {
     this.arcticTable = arcticTable;
-    this.tracer = tracer;
     this.transaction = transaction;
     this.autoCommitTransaction = autoCommitTransaction;
     WatermarkGenerator watermarkGenerator = null;
@@ -83,45 +76,25 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
     this.delegate = delegate;
   }
 
-  protected Optional<TableTracer> tracer() {
-    if (tracer != null) {
-      return Optional.of(tracer);
-    } else {
-      return Optional.empty();
-    }
-  }
-
   protected void addIcebergDataFile(DataFile file) {
-    if (tracer != null) {
-      tracer.addDataFile(file);
-    }
     if (watermarkGenerator != null) {
       watermarkGenerator.addFile(file);
     }
   }
 
   protected void deleteIcebergDataFile(DataFile file) {
-    if (tracer != null) {
-      tracer.deleteDataFile(file);
-    }
     if (watermarkGenerator != null) {
       watermarkGenerator.addFile(file);
     }
   }
 
   protected void addIcebergDeleteFile(DeleteFile file) {
-    if (tracer != null) {
-      tracer.addDeleteFile(file);
-    }
     if (watermarkGenerator != null) {
       watermarkGenerator.addFile(file);
     }
   }
 
   protected void deleteIcebergDeleteFile(DeleteFile file) {
-    if (tracer != null) {
-      tracer.deleteDeleteFile(file);
-    }
     if (watermarkGenerator != null) {
       watermarkGenerator.addFile(file);
     }
@@ -130,7 +103,6 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
   @Override
   public T set(String property, String value) {
     this.delegate.set(property, value);
-    tracer().ifPresent(tracer -> tracer.setSnapshotSummary(property, value));
     return this.self();
   }
 
@@ -177,9 +149,6 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
     if (transaction != null && autoCommitTransaction) {
       transaction.commitTransaction();
     }
-    if (tracer != null) {
-      tracer.commit();
-    }
   }
 
   @Override
@@ -192,7 +161,6 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
 
     protected final ArcticTable table;
     protected Table tableStore;
-    protected TableTracer tableTracer;
     protected boolean onChangeStore = false;
     protected Transaction insideTransaction;
     protected boolean generateWatermark = false;
@@ -221,13 +189,6 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
       return this;
     }
 
-    public Builder<T, I> traceTable(TableTracer tableTracer) {
-      this.tableTracer = tableTracer;
-      return this;
-    }
-
-    public abstract Builder<T, I> traceTable(AmsClient client, UnkeyedTable traceTable);
-
     protected Table getTableStore() {
       if (tableStore == null) {
         if (table.isKeyedTable()) {
@@ -247,25 +208,24 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
       Table tableStore = getTableStore();
       if (generateWatermark) {
         if (insideTransaction != null) {
-          return updateWithWatermark(tableTracer, insideTransaction, false);
+          return updateWithWatermark(insideTransaction, false);
         } else {
           Transaction transaction = tableStore.newTransaction();
-          return updateWithWatermark(tableTracer, transaction, true);
+          return updateWithWatermark(transaction, true);
         }
       } else {
         if (insideTransaction != null) {
-          return updateWithoutWatermark(tableTracer, transactionDelegateSupplier(insideTransaction));
+          return updateWithoutWatermark(transactionDelegateSupplier(insideTransaction));
         } else {
-          return updateWithoutWatermark(tableTracer, tableStoreDelegateSupplier(tableStore));
+          return updateWithoutWatermark(tableStoreDelegateSupplier(tableStore));
         }
       }
     }
 
-    protected abstract T updateWithWatermark(
-        TableTracer tableTracer, Transaction transaction,
+    protected abstract T updateWithWatermark(Transaction transaction,
         boolean autoCommitTransaction);
 
-    protected abstract T updateWithoutWatermark(TableTracer tableTracer, Supplier<I> delegateSupplier);
+    protected abstract T updateWithoutWatermark(Supplier<I> delegateSupplier);
 
     protected abstract Supplier<I> transactionDelegateSupplier(Transaction transaction);
 

@@ -16,7 +16,9 @@ public class TableConfiguration {
   private boolean cleanOrphanEnabled;
   private long orphanExistingMinutes;
   private boolean autoCreateTagEnabled;
+  private boolean deleteDanglingDeleteFilesEnabled;
   private OptimizingConfig optimizingConfig;
+  private DataExpirationConfig expiringDataConfig;
 
   public TableConfiguration() {
   }
@@ -79,6 +81,24 @@ public class TableConfiguration {
     return this;
   }
 
+  public boolean isDeleteDanglingDeleteFilesEnabled() {
+    return deleteDanglingDeleteFilesEnabled;
+  }
+
+  public TableConfiguration setDeleteDanglingDeleteFilesEnabled(boolean deleteDanglingDeleteFilesEnabled) {
+    this.deleteDanglingDeleteFilesEnabled = deleteDanglingDeleteFilesEnabled;
+    return this;
+  }
+
+  public DataExpirationConfig getExpiringDataConfig() {
+    return expiringDataConfig;
+  }
+
+  public TableConfiguration setExpiringDataConfig(DataExpirationConfig expiringDataConfig) {
+    this.expiringDataConfig = expiringDataConfig;
+    return this;
+  }
+
   public TableConfiguration setAutoCreateTagEnabled(boolean autoCreateTagEnabled) {
     this.autoCreateTagEnabled = autoCreateTagEnabled;
     return this;
@@ -126,6 +146,11 @@ public class TableConfiguration {
             properties,
             TableProperties.ENABLE_AUTO_CREATE_TAG,
             TableProperties.ENABLE_AUTO_CREATE_TAG_DEFAULT))
-        .setOptimizingConfig(OptimizingConfig.parseOptimizingConfig(properties));
+        .setDeleteDanglingDeleteFilesEnabled(CompatiblePropertyUtil.propertyAsBoolean(
+            properties,
+            TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN,
+            TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT))
+        .setOptimizingConfig(OptimizingConfig.parseOptimizingConfig(properties))
+        .setExpiringDataConfig(DataExpirationConfig.parse(properties));
   }
 }

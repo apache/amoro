@@ -1,0 +1,294 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+## @param kubeVersion Force target Kubernetes version (using Helm capabilities if not set)
+##
+kubeVersion: ""
+fullnameOverride: ""
+clusterDomain: cluster.local
+
+image:
+  repository: arctic163/amoro
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: [ ]
+
+# ServiceAccount of Amoro to schedule optimizer.
+serviceAccount:
+  # Specifies whether a service account should be created or using an existed account
+  create: true
+  # Annotations to add to the service account
+  annotations: { }
+  # Specifies ServiceAccount name to be used if `create: false`
+  name: ~
+  # if `serviceAccount.create` == true. role and role-bind will be created
+  rbac:
+    # create a role/role-bind if automatically create service account
+    create: true
+    # create a cluster-role and cluster-role-bind if cluster := true
+    cluster: false
+
+
+server:
+  # AMS REST Service
+  rest:
+    enabled: true
+    port: 1630
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.rest.port }}"
+      nodePort: ~
+      annotations: { }
+
+  # AMS Thrift Server For table services
+  table:
+    enabled: true
+    port: 1260
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.table.port }}"
+      nodePort: ~
+      annotations: { }
+  # AMS Thrift Server For optimizing services
+  optimizing:
+    enabled: true
+    port: 1261
+    service:
+      type: ClusterIP
+      port: "{{ .Values.server.optimizing.port }}"
+      nodePort: ~
+      annotations: { }
+
+# amoro Base Dir, default /usr/local/amoro
+amoroHome: ~
+
+# jvm options
+jvmOptions: ~
+#  xms=8196
+#  xmx=8196
+#  jmx.remote.port=
+#  extra.options="-XX:NewRatio=1 -XX:SurvivorRatio=3"
+
+# AMS configurations files
+amoroConf:
+  # ams database properties,default is derby. If production,suggest use mysql
+  database:
+    type: derby
+    driver: org.apache.derby.jdbc.EmbeddedDriver
+    url: jdbc:derby:/tmp/amoro/derby;create=true
+  #    type: mysql
+  #    driver: com.mysql.cj.jdbc.Driver
+  #    url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
+  #    username: admin
+  #    password: admin
+
+  # The value (templated string) is used for conf.yaml file
+  # See https://github.com/NetEase/amoro/blob/master/dist/src/main/arctic-bin/conf/config.yaml for more details
+  #
+  amoroDefaults: ~
+
+  # The value (templated string) is used for conf/log4j2.xml file
+  # See example at conf/log4j2.xml.template https://github.com/NetEase/amoro/blob/master/dist/src/main/arctic-bin/conf/log4j2.xml for more details
+  log4j2: ~
+
+
+## Configure the container of optimizer that allows you to submit optimizer by AMS
+optimizer:
+  # flink optimizer
+  flink:
+    ## enable the flink optimizer.
+    enabled: true
+    ## container name, default is flink
+    name: ~
+    ## image information of flink optimizer.
+    image:
+      ## the image repository
+      repository: arctic163/optimizer-flink
+      ## the image tag, if not set, the default value is the same with amoro image tag.
+      tag: ~
+      jobUri: "local:///opt/flink/usrlib/optimizer-job.jar"
+    properties: {
+      "flink-conf.taskmanager.memory.managed.size": "32mb",
+      "flink-conf.taskmanager.memory.netwrok.max": "32mb",
+      "flink-conf.taskmanager.memory.netwrok.nin": "32mb"
+    }
+  # local optimizer
+  local:
+    # enable the local optimizer container
+    enabled: true
+    # local optimizer container name. default is local
+    name: ~
+    # properties for optimizer container.
+    properties: ~
+  extra: []
+
+
+## Configure the ingress resource that allows you to access the
+## Amoro installation. Set up the URL
+## ref: https://kubernetes.io/docs/user-guide/ingress/
+##
+ingress:
+  ## @param ingress.enabled Enable ingress controller resource for Amoro Dashbord
+  ##
+  enabled: false
+  ## @param ingress.apiVersion Force Ingress API version (automatically detected if not set)
+  ##
+  apiVersion: ""
+  ## @param ingress.ingressClassName IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
+  ## This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster.
+  ## ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
+  ##
+  ingressClassName: ""
+  ## @param ingress.hostname Default host for the ingress resource
+  ##
+  hostname: amoro.local
+  ## @param ingress.path The Path to MinIO&reg;. You may need to set this to '/*' in order to use this with ALB ingress controllers.
+  ##
+  path: /
+  ## @param ingress.pathType Ingress path type
+  ##
+  pathType: ImplementationSpecific
+  ## @param ingress.annotations Additional annotations for the Ingress resource. To enable certificate autogeneration, place here your cert-manager annotations.
+  ## For a full list of possible ingress annotations, please see
+  ## ref: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
+  ## Use this parameter to set the required annotations for cert-manager, see
+  ## ref: https://cert-manager.io/docs/usage/ingress/#supported-annotations
+  ##
+  ## e.g:
+  ## annotations:
+  ##   kubernetes.io/ingress.class: nginx
+  ##   cert-manager.io/cluster-issuer: cluster-issuer-name
+  ##
+  annotations: { }
+  ## @param ingress.tls Enable TLS configuration for the hostname defined at `ingress.hostname` parameter
+  ## TLS certificates will be retrieved from a TLS secret with name: `{{- printf "%s-tls" .Values.ingress.hostname }}`
+  ## You can:
+  ##   - Use the `ingress.secrets` parameter to create this TLS secret
+  ##   - Rely on cert-manager to create it by setting the corresponding annotations
+  ##   - Rely on Helm to create self-signed certificates by setting `ingress.selfSigned=true`
+  ##
+  tls: false
+  ## @param ingress.selfSigned Create a TLS secret for this ingress record using self-signed certificates generated by Helm
+  ##
+  selfSigned: false
+  ## @param ingress.extraHosts The list of additional hostnames to be covered with this ingress record.
+  ## Most likely the hostname above will be enough, but in the event more hosts are needed, this is an array
+  ## e.g:
+  ## extraHosts:
+  ##   - name: amoro.local
+  ##     path: /
+  ##
+  extraHosts: [ ]
+  ## @param ingress.extraPaths Any additional paths that may need to be added to the ingress under the main host
+  ## For example: The ALB ingress controller requires a special rule for handling SSL redirection.
+  ## extraPaths:
+  ## - path: /*
+  ##   backend:
+  ##     serviceName: ssl-redirect
+  ##     servicePort: use-annotation
+  ##
+  extraPaths: [ ]
+  ## @param ingress.extraTls The tls configuration for additional hostnames to be covered with this ingress record.
+  ## see: https://kubernetes.io/docs/concepts/services-networking/ingress/#tls
+  ## e.g:
+  ## extraTls:
+  ## - hosts:
+  ##     - amoro.local
+  ##   secretName: amoro.local-tls
+  ##
+  extraTls: [ ]
+  ## @param ingress.secrets If you're providing your own certificates, please use this to add the certificates as secrets
+  ## key and certificate are expected in PEM format
+  ## name should line up with a secretName set further up
+  ##
+  ## If it is not set and you're using cert-manager, this is unneeded, as it will create a secret for you with valid certificates
+  ## If it is not set and you're NOT using cert-manager either, self-signed certificates will be created valid for 365 days
+  ## It is also possible to create and manage the certificates outside of this helm chart
+  ## Please see README.md for more information
+  ##
+  ## Example
+  ## secrets:
+  ##   - name: amoro.local-tls
+  ##     key: ""
+  ##     certificate: ""
+  ##
+  secrets: [ ]
+  ## @param ingress.extraRules Additional rules to be covered with this ingress record
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/#ingress-rules
+  ## e.g:
+  ## extraRules:
+  ## - host: example.local
+  ##     http:
+  ##       path: /
+  ##       backend:
+  ##         service:
+  ##           name: example-svc
+  ##           port:
+  ##             name: http
+  ##
+  extraRules: [ ]
+
+
+
+# Environment variables (templated)
+env: [ ]
+# Environment variables from ConfigMaps and Secrets (templated)
+envFrom: [ ]
+
+# Additional volumes for AMS pod (templated)
+volumes: [ ]
+# Additional volumeMounts for AMS container (templated)
+volumeMounts: [ ]
+
+
+# Liveness probe
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 40
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 10
+  successThreshold: 1
+
+# Readiness probe
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 10
+  successThreshold: 1
+
+# Resource requests and limits for Amoro pods
+resources: { }
+#  resources:
+#    requests:
+#      cpu: 2
+#      memory: 4Gi
+#    limits:
+#      cpu: 4
+#      memory: 10Gi
+
+# Constrain Amoro pods to nodes with specific node labels
+nodeSelector: { }
+# Allow to schedule Amoro pods on nodes with matching taints
+tolerations: [ ]
+# Constrain Amoro pods to nodes by complex affinity/anti-affinity rules
+affinity: { }
+# Amoro pods security context
+securityContext: { }

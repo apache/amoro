@@ -205,13 +205,8 @@
 
 This product includes code from Apache Iceberg.
 
-* org.apache.iceberg.data.DeleteFilter copied and modified to com.netease.arctic.iceberg.DeleteFilter
-* org.apache.iceberg.deletes.Deletes copied and modified to com.netease.arctic.iceberg.Deletes
-* org.apache.iceberg.data.InternalRecordWrapper copied and modified to com.netease.arctic.iceberg.InternalRecordWrapper
-* org.apache.iceberg.util.StructLikeMap copied and modified to com.netease.arctic.utils.map.StructLikeMemoryMap
-* org.apache.iceberg.util.StructLikeSet copied and modified to com.netease.arctic.utils.StructLikeSet
-* org.apache.iceberg.util.StructLikeWrapper copied and modified to com.netease.arctic.iceberg.StructLikeWrapper
-* org.apache.iceberg.util.StructProjection copied and modified to com.netease.arctic.iceberg.StructProjection
+* org.apache.iceberg.data.DeleteFilter copied and modified to com.netease.arctic.io.reader.DeleteFilter
+* org.apache.iceberg.deletes.Deletes copied and modified to com.netease.arctic.io.reader.Deletes
 * org.apache.iceberg.data.parquet.BaseParquetReaders copied and modified to org.apache.iceberg.data.parquet.AdaptHiveBaseParquetReaders
 * org.apache.iceberg.data.parquet.BaseParquetWriter copied and modified to org.apache.iceberg.data.parquet.AdaptHiveBaseParquetWriter
 * org.apache.iceberg.data.parquet.GenericParquetReaders copied and modified to org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders
@@ -230,9 +225,22 @@ This product includes code from Apache Iceberg.
 * org.apache.iceberg.parquet.ReadConf copied and modified to org.apache.iceberg.parquet.AdaptHiveReadConf
 * org.apache.iceberg.spark.data.ParquetWithSparkSchemaVisitor copied and modified to org.apache.iceberg.spark.data.AdaptHiveParquetWithSparkSchemaVisitor
 * org.apache.iceberg.flink.data.ParquetWithFlinkSchemaVisitor copied and modified to org.apache.iceberg.flink.data.AdaptHiveParquetWithFlinkSchemaVisitor
+* org.apache.iceberg.parquet.ParquetUtil copied and modified to org.apache.iceberg.parquet.AdaptHiveParquetUtil
+* org.apache.paimon.spark.SparkTypeUtils copied and modified to com.netease.arctic.server.dashboard.component.reverser.PaimonTypeToSparkType
+* org.apache.iceberg.spark.TypeToSparkType copied and modified to com.netease.arctic.server.dashboard.component.reverser.IcebergTypeToSparkType
 
 
 
 Copyright: 2011-2019 The Apache Software Foundation
 Home page: http://iceberg.apache.org/
+License: http://www.apache.org/licenses/LICENSE-2.0
+
+--------------------------------------------------------------------------------
+
+This product includes code from Apache Paimon (incubating).
+
+* org.apache.paimon.spark.SparkTypeUtils copied and modified to com.netease.arctic.server.dashboard.component.reverser.PaimonTypeToSparkType
+
+Copyright: 2011-2019 The Apache Software Foundation
+Home page: http://paimon.apache.org/
 License: http://www.apache.org/licenses/LICENSE-2.0

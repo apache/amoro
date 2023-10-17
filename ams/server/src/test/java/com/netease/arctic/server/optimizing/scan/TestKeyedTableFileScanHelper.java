@@ -24,7 +24,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
 import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.utils.IcebergTableUtil;
@@ -46,8 +46,9 @@ import java.util.List;
 
 @RunWith(Parameterized.class)
 public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
-  public TestKeyedTableFileScanHelper(CatalogTestHelper catalogTestHelper,
-                                      TableTestHelper tableTestHelper) {
+  public TestKeyedTableFileScanHelper(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
@@ -55,24 +56,25 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
   public static Object[][] parameters() {
     return new Object[][] {
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, true)},
+         new BasicTableTestHelper(true, true)},
         {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, false)}};
+         new BasicTableTestHelper(true, false)}};
   }
 
   @Test
   public void testScanEmpty() {
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
     assertScanResult(scan, 0);
   }
 
   @Test
   public void testScanEmptySnapshot() {
     long transactionId = getArcticTable().beginTransaction("");
-    OptimizingTestHelpers.appendBase(getArcticTable(),
+    OptimizingTestHelpers.appendBase(
+        getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), transactionId, Collections.emptyList(), false));
 
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
     assertScanResult(scan, 0);
   }
 
@@ -85,10 +87,11 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
         tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00")
     );
     long transactionId = getArcticTable().beginTransaction("");
-    OptimizingTestHelpers.appendBase(getArcticTable(),
+    OptimizingTestHelpers.appendBase(
+        getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
 
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
 
     assertScanResult(scan, 4, transactionId, 0);
   }
@@ -106,7 +109,7 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
         newRecords, false));
     long sequenceNumber = getArcticTable().changeTable().currentSnapshot().sequenceNumber();
 
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
 
     assertScanResult(scan, 4, sequenceNumber, 0);
   }
@@ -121,7 +124,8 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
     );
 
     long transactionId = getArcticTable().beginTransaction("");
-    OptimizingTestHelpers.appendBase(getArcticTable(),
+    OptimizingTestHelpers.appendBase(
+        getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
 
     transactionId = getArcticTable().beginTransaction("");
@@ -139,13 +143,13 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
     appendChange(tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
         newRecords, false));
 
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
 
     assertScanResult(scan, 8, 1);
 
     // test partition filter
-    scan = buildFileScanHelper().withPartitionFilter(
-        partition -> getPartition().equals(partition)).scan();
+    scan = scanFiles(buildFileScanHelper().withPartitionFilter(
+        partition -> getPartition().equals(partition)));
     if (isPartitionedTable()) {
       assertScanResult(scan, 4, 1);
     } else {
@@ -162,17 +166,18 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
         tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00")
     );
     long transactionId = getArcticTable().beginTransaction("");
-    List<DataFile> dataFiles = OptimizingTestHelpers.appendBase(getArcticTable(),
+    List<DataFile> dataFiles = OptimizingTestHelpers.appendBase(
+        getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
-          DataTestHelpers.writeBaseStorePosDelete(getArcticTable(), transactionId, dataFile,
+          MixedDataTestHelpers.writeBaseStorePosDelete(getArcticTable(), transactionId, dataFile,
               Collections.singletonList(0L)));
     }
     OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
 
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
 
     assertScanResult(scan, 4, transactionId, 1);
   }
@@ -197,21 +202,21 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
         newRecords, false));
 
     // check all files
-    List<TableFileScanHelper.FileScanResult> scan = buildFileScanHelper().scan();
+    List<TableFileScanHelper.FileScanResult> scan = scanFiles();
 
     assertScanResult(scan, 12, 0);
 
     // keep at most 5 files, actually 4 files
     getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "5").commit();
 
-    scan = buildFileScanHelper().scan();
+    scan = scanFiles();
 
     assertScanResult(scan, 4, sequenceNumber, 0);
 
     // keep at most 3 files, actually 0 files
     getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "3").commit();
 
-    scan = buildFileScanHelper().scan();
+    scan = scanFiles();
 
     assertScanResult(scan, 0);
   }
@@ -260,9 +265,7 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
     Assert.assertEquals(Long.MAX_VALUE, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 9));
   }
 
-
   private static KeyedTableFileScanHelper.SnapshotFileGroup buildSequenceGroup(long sequence, long txId, int cnt) {
     return new KeyedTableFileScanHelper.SnapshotFileGroup(sequence, txId, cnt);
   }
-
 }

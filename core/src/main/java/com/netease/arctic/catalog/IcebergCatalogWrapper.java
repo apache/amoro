@@ -37,6 +37,9 @@ import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.Transaction;
+import org.apache.iceberg.aws.AwsClientProperties;
+import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
@@ -50,6 +53,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_AK_SK;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_S3;
 
 /**
  * A wrapper class around {@link Catalog} and implement {@link ArcticCatalog}.
@@ -70,6 +76,10 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
     initialize(meta, Maps.newHashMap());
   }
 
+  public IcebergCatalogWrapper(CatalogMeta meta, Map<String, String> properties) {
+    initialize(meta, properties);
+  }
+
   @Override
   public String name() {
     return meta.getCatalogName();
@@ -88,9 +98,28 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
         org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE,
         meta.getCatalogType());
     this.tableMetaStore = CatalogUtil.buildMetaStore(meta);
-    if (meta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
-      meta.getCatalogProperties().remove("type");
+    if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(meta.getCatalogType())) {
+      meta.getCatalogProperties()
+          .put(CatalogProperties.CATALOG_IMPL, CatalogLoader.GLUE_CATALOG_IMPL);
     }
+    if (meta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
+      meta.getCatalogProperties().remove(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE);
+    }
+    Map<String, String> authConfigs = meta.getAuthConfigs();
+    if (AUTH_CONFIGS_VALUE_TYPE_AK_SK.equals(authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE))) {
+      CatalogUtil.copyProperty(authConfigs, meta.getCatalogProperties(),
+          CatalogMetaProperties.AUTH_CONFIGS_KEY_ACCESS_KEY, S3FileIOProperties.ACCESS_KEY_ID);
+      CatalogUtil.copyProperty(authConfigs, meta.getCatalogProperties(),
+          CatalogMetaProperties.AUTH_CONFIGS_KEY_SECRET_KEY, S3FileIOProperties.SECRET_ACCESS_KEY);
+    }
+    Map<String, String> storageConfigs = meta.getStorageConfigs();
+    if (STORAGE_CONFIGS_VALUE_TYPE_S3.equals(storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE))) {
+      CatalogUtil.copyProperty(storageConfigs, meta.getCatalogProperties(),
+          CatalogMetaProperties.STORAGE_CONFIGS_KEY_REGION, AwsClientProperties.CLIENT_REGION);
+      CatalogUtil.copyProperty(storageConfigs, meta.getCatalogProperties(),
+          CatalogMetaProperties.STORAGE_CONFIGS_KEY_ENDPOINT, S3FileIOProperties.ENDPOINT);
+    }
+
     icebergCatalog = tableMetaStore.doAs(() -> org.apache.iceberg.CatalogUtil.buildIcebergCatalog(name(),
         meta.getCatalogProperties(), tableMetaStore.getConfiguration()));
     if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION)) {
@@ -103,16 +132,11 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
 
     if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_TABLE_FILTER)) {
       String tableFilter =
-              meta.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
+          meta.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
       tableFilterPattern = Pattern.compile(tableFilter);
     } else {
       tableFilterPattern = null;
     }
-
-  }
-
-  public IcebergCatalogWrapper(CatalogMeta meta, Map<String, String> properties) {
-    initialize(meta, properties);
   }
 
   @Override
@@ -280,6 +304,13 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
     }
 
     @Override
+    public Transaction createTransaction() {
+      return icebergCatalog.newCreateTableTransaction(
+          toIcebergTableIdentifier(identifier), schema,
+          spec, properties);
+    }
+
+    @Override
     public TableBuilder withPrimaryKeySpec(PrimaryKeySpec primaryKeySpec) {
       Preconditions.checkArgument(
           primaryKeySpec == null || !primaryKeySpec.primaryKeyExisted(),
@@ -300,7 +331,7 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
         Table icebergTable,
         ArcticFileIO arcticFileIO,
         Map<String, String> catalogProperties) {
-      super(tableIdentifier, icebergTable, arcticFileIO, null, catalogProperties);
+      super(tableIdentifier, icebergTable, arcticFileIO, catalogProperties);
     }
 
     @Override

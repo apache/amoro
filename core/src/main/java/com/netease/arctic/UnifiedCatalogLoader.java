@@ -21,6 +21,7 @@ package com.netease.arctic;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.utils.CatalogUtil;
+
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -44,7 +45,6 @@ public class UnifiedCatalogLoader {
     };
 
     CatalogMeta catalogMeta = metaSupplier.get();
-    String type = catalogMeta.getCatalogType();
     CatalogUtil.mergeCatalogProperties(catalogMeta, props);
     return new CommonUnifiedCatalog(metaSupplier, catalogMeta, props);
   }

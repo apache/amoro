@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  {{ include "common.names.fullname" . }}
+  labels:
+    {{- include "amoro.labels" . | nindent 4 }}
+spec: {{/* TODO If Support Replica can be use more than 1 */}}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "amoro.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/conf: {{ include (print $.Template.BasePath "/amoro-configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "amoro.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if or .Values.serviceAccount.name .Values.serviceAccount.create }}
+      serviceAccountName: {{ .Values.serviceAccount.name | default  (include "common.names.fullname" .) }}
+      {{- end }}
+      initContainers:
+        {{- include "amoro.pod.initContainers" . | nindent 8 }}
+      containers:
+        - name: amoro-ams
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{include "amoro.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/entrypoint.sh", "ams"]
+          env:
+            {{- if eq .Values.amoroConf.database.type "mysql" }}
+            - name: "AMS_DATABASE_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "common.names.fullname" . }}
+                  key: password
+            {{- end }}
+           {{- with .Values.env }}
+           {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
+           {{- with .Values.envFrom }}
+          {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: rest
+              containerPort: {{ .Values.server.rest.port }}
+            - name: table
+              containerPort: {{ .Values.server.table.port }}
+            - name: optimizing
+              containerPort: {{ .Values.server.optimizing.port }}
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /health/status
+              port: rest
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /versionInfo
+              port: rest
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            {{- include "amoro.pod.container.mounts" . | nindent 12}}
+          {{- with .Values.containers }}
+            {{- tpl (toYaml .) $ | nindent 8 }}
+          {{- end }}
+      volumes:
+        {{- include "amoro.pod.volumes" . | nindent 8}}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.securityContext }}
+      securityContext: {{- toYaml . | nindent 8 }}
+      {{- end }}

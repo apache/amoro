@@ -33,7 +33,7 @@ import java.util.Map;
 
 /**
  *  This is a simple data structure that separates tags and metrics, making it easier for reporters to write to popular
- *  monitoring systems when processing {@link MetricReport}
+ *  monitoring systems when processing {@link MetricsContent}
  */
 public class TaggedMetrics {
   private final Map<String, Object> tags;
@@ -48,7 +48,7 @@ public class TaggedMetrics {
     return new TaggedMetrics(tags, metrics);
   }
 
-  public static TaggedMetrics from(MetricReport metricReport) {
+  public static TaggedMetrics from(MetricsContent<?> metricReport) {
     return of(parseTags(metricReport), parseMetrics(metricReport));
   }
 

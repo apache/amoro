@@ -22,7 +22,7 @@ import com.netease.arctic.server.dashboard.response.OkResponse;
 import io.javalin.http.Context;
 
 /**
- * health check controller
+ * The controller that handles health check requests.
  */
 public class HealthCheckController {
 

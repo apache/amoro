@@ -23,7 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.graph.Traverser;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.iceberg.DeleteFilter;
+import com.netease.arctic.io.reader.DeleteFilter;
 import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.trino.delete.DummyFileScanTask;
 import com.netease.arctic.trino.delete.TrinoRow;

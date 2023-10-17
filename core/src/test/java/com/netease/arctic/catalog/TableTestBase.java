@@ -82,7 +82,7 @@ public abstract class TableTestBase extends CatalogTestBase {
 
   @After
   public void dropTable() {
-    getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
+    getCatalog().dropTable(tableTestHelper.id(), true);
   }
 
   protected ArcticTable getArcticTable() {

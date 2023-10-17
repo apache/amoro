@@ -19,11 +19,11 @@
 package com.netease.arctic.spark.test.utils;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
-import com.netease.arctic.hive.io.reader.GenericAdaptHiveIcebergDataReader;
+import com.netease.arctic.hive.io.reader.AdaptHiveGenericKeyedDataReader;
+import com.netease.arctic.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.io.DataTestHelpers;
-import com.netease.arctic.io.reader.GenericIcebergDataReader;
+import com.netease.arctic.io.MixedDataTestHelpers;
+import com.netease.arctic.io.reader.GenericUnkeyedDataReader;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.ArcticTable;
@@ -74,7 +74,8 @@ public class TestTableUtil {
     for (int i = 0; i < values.length; i++) {
       Object v = record.get(i);
       if (v instanceof LocalDateTime) {
-        Timestamp ts = Timestamp.valueOf(((LocalDateTime) v).atZone(ZoneOffset.UTC).toLocalDateTime());
+        Timestamp ts =
+            Timestamp.valueOf(((LocalDateTime) v).atZone(ZoneOffset.UTC).toLocalDateTime());
         Timestamp tsUTC = Timestamp.valueOf((LocalDateTime) v);
         values[i] = ts;
         continue;
@@ -93,7 +94,8 @@ public class TestTableUtil {
       Types.NestedField field = type.fields().get(i);
       if (field.type().equals(Types.TimestampType.withZone())) {
         Preconditions.checkArgument(v instanceof Timestamp);
-        Object offsetDateTime = ((Timestamp) v).toInstant().atZone(ZoneId.systemDefault()).toOffsetDateTime();
+        Object offsetDateTime =
+            ((Timestamp) v).toInstant().atZone(ZoneId.systemDefault()).toOffsetDateTime();
         record.set(i, offsetDateTime);
         continue;
       } else if (field.type().equals(Types.TimestampType.withoutZone())) {
@@ -112,32 +114,39 @@ public class TestTableUtil {
       return schema;
     }
     Set<String> pks = Sets.newHashSet(keySpec.fieldNames());
-    List<Types.NestedField> fields = schema.columns().stream().map(
-        f -> {
-          if (pks.contains(f.name())) {
-            return f.asRequired();
-          } else {
-            return f;
-          }
-        }
-    ).collect(Collectors.toList());
+    List<Types.NestedField> fields =
+        schema.columns().stream()
+            .map(
+                f -> {
+                  if (pks.contains(f.name())) {
+                    return f.asRequired();
+                  } else {
+                    return f;
+                  }
+                })
+            .collect(Collectors.toList());
     return new Schema(fields);
   }
 
   public static Schema timestampToWithoutZone(Schema schema) {
-    List<Types.NestedField> fields = schema.columns().stream().map(
-        f -> {
-          if (f.type().equals(Types.TimestampType.withZone())) {
-            return Types.NestedField.of(f.fieldId(), f.isOptional(), f.name(),
-                Types.TimestampType.withoutZone(), f.doc());
-          } else {
-            return f;
-          }
-        }
-    ).collect(Collectors.toList());
+    List<Types.NestedField> fields =
+        schema.columns().stream()
+            .map(
+                f -> {
+                  if (f.type().equals(Types.TimestampType.withZone())) {
+                    return Types.NestedField.of(
+                        f.fieldId(),
+                        f.isOptional(),
+                        f.name(),
+                        Types.TimestampType.withoutZone(),
+                        f.doc());
+                  } else {
+                    return f;
+                  }
+                })
+            .collect(Collectors.toList());
     return new Schema(fields);
   }
-
 
   public static TableFiles files(ArcticTable table) {
     if (table.isUnkeyedTable()) {
@@ -153,10 +162,11 @@ public class TestTableUtil {
     Set<DeleteFile> baseDeleteFiles = Sets.newHashSet();
 
     try (CloseableIterable<FileScanTask> it = table.newScan().planFiles()) {
-      it.forEach(f -> {
-        baseDataFiles.add(f.file());
-        baseDeleteFiles.addAll(f.deletes());
-      });
+      it.forEach(
+          f -> {
+            baseDataFiles.add(f.file());
+            baseDeleteFiles.addAll(f.deletes());
+          });
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -170,16 +180,21 @@ public class TestTableUtil {
     Set<DataFile> deleteFiles = Sets.newHashSet();
 
     try (CloseableIterable<CombinedScanTask> it = table.newScan().planTasks()) {
-      it.forEach(cst -> cst.tasks().forEach(
-          t -> {
-            t.baseTasks().forEach(fileTask -> {
-              baseDataFiles.add(fileTask.file());
-              baseDeleteFiles.addAll(fileTask.deletes());
-            });
-            t.insertTasks().forEach(fileTask -> insertFiles.add(fileTask.file()));
-            t.arcticEquityDeletes().forEach(fileTask -> deleteFiles.add(fileTask.file()));
-          }
-      ));
+      it.forEach(
+          cst ->
+              cst.tasks()
+                  .forEach(
+                      t -> {
+                        t.baseTasks()
+                            .forEach(
+                                fileTask -> {
+                                  baseDataFiles.add(fileTask.file());
+                                  baseDeleteFiles.addAll(fileTask.deletes());
+                                });
+                        t.insertTasks().forEach(fileTask -> insertFiles.add(fileTask.file()));
+                        t.arcticEquityDeletes()
+                            .forEach(fileTask -> deleteFiles.add(fileTask.file()));
+                      }));
       return new TableFiles(baseDataFiles, baseDeleteFiles, insertFiles, deleteFiles);
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -196,47 +211,55 @@ public class TestTableUtil {
       if (table instanceof SupportHive) {
         records = readKeyedTable(table.asKeyedTable(), expression);
       } else {
-        records = DataTestHelpers.readKeyedTable(table.asKeyedTable(), expression);
+        records = MixedDataTestHelpers.readKeyedTable(table.asKeyedTable(), expression);
       }
     } else {
       records = unkeyedTableRecords(table.asUnkeyedTable(), expression);
     }
 
     return records.stream()
-        .map(r -> {
-          if (r.struct().fields().size() == table.schema().columns().size()) {
-            return r;
-          }
-          GenericRecord record = GenericRecord.create(table.schema());
-          for (int i = 0; i < table.schema().columns().size(); i++) {
-            record.set(i, r.get(i));
-          }
-          return record;
-        })
+        .map(
+            r -> {
+              if (r.struct().fields().size() == table.schema().columns().size()) {
+                return r;
+              }
+              GenericRecord record = GenericRecord.create(table.schema());
+              for (int i = 0; i < table.schema().columns().size(); i++) {
+                record.set(i, r.get(i));
+              }
+              return record;
+            })
         .collect(Collectors.toList());
   }
 
   public static List<Record> unkeyedTableRecords(UnkeyedTable table, Expression expression) {
-    GenericAdaptHiveIcebergDataReader reader = new GenericAdaptHiveIcebergDataReader(
-        table.io(),
-        table.schema(),
-        table.schema(),
-        null,
-        true,
-        IdentityPartitionConverters::convertConstant, false
-    );
+    AdaptHiveGenericUnkeyedDataReader reader =
+        new AdaptHiveGenericUnkeyedDataReader(
+            table.io(),
+            table.schema(),
+            table.schema(),
+            null,
+            true,
+            IdentityPartitionConverters::convertConstant,
+            false);
     List<Record> result = Lists.newArrayList();
     try (CloseableIterable<org.apache.iceberg.CombinedScanTask> combinedScanTasks =
-             table.newScan().filter(expression).planTasks()) {
-      combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
-        try (CloseableIterator<Record> records = reader.readData(scTask).iterator()) {
-          while (records.hasNext()) {
-            result.add(records.next());
-          }
-        } catch (IOException e) {
-          throw new UncheckedIOException(e);
-        }
-      }));
+        table.newScan().filter(expression).planTasks()) {
+      combinedScanTasks.forEach(
+          combinedTask ->
+              combinedTask
+                  .tasks()
+                  .forEach(
+                      scTask -> {
+                        try (CloseableIterator<Record> records =
+                            reader.readData(scTask).iterator()) {
+                          while (records.hasNext()) {
+                            result.add(records.next());
+                          }
+                        } catch (IOException e) {
+                          throw new UncheckedIOException(e);
+                        }
+                      }));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
@@ -244,62 +267,69 @@ public class TestTableUtil {
   }
 
   public static List<Record> readKeyedTable(KeyedTable keyedTable, Expression expression) {
-    AdaptHiveGenericArcticDataReader reader = new AdaptHiveGenericArcticDataReader(
-        keyedTable.io(),
-        keyedTable.schema(),
-        keyedTable.schema(),
-        keyedTable.primaryKeySpec(),
-        null,
-        true,
-        IdentityPartitionConverters::convertConstant
-    );
+    AdaptHiveGenericKeyedDataReader reader =
+        new AdaptHiveGenericKeyedDataReader(
+            keyedTable.io(),
+            keyedTable.schema(),
+            keyedTable.schema(),
+            keyedTable.primaryKeySpec(),
+            null,
+            true,
+            IdentityPartitionConverters::convertConstant);
     List<Record> result = Lists.newArrayList();
-    try (CloseableIterable<CombinedScanTask> combinedScanTasks = keyedTable.newScan().filter(expression).planTasks()) {
-      combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
-        try (CloseableIterator<Record> records = reader.readData(scTask)) {
-          while (records.hasNext()) {
-            result.add(records.next());
-          }
-        } catch (IOException e) {
-          throw new UncheckedIOException(e);
-        }
-      }));
+    try (CloseableIterable<CombinedScanTask> combinedScanTasks =
+        keyedTable.newScan().filter(expression).planTasks()) {
+      combinedScanTasks.forEach(
+          combinedTask ->
+              combinedTask
+                  .tasks()
+                  .forEach(
+                      scTask -> {
+                        try (CloseableIterator<Record> records = reader.readData(scTask)) {
+                          while (records.hasNext()) {
+                            result.add(records.next());
+                          }
+                        } catch (IOException e) {
+                          throw new UncheckedIOException(e);
+                        }
+                      }));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
     return result;
   }
 
-
   public static List<DataFile> writeToBase(ArcticTable table, List<Record> data) {
     TaskWriter<Record> baseWriter = null;
     UnkeyedTable baseTable = null;
     if (table.isKeyedTable()) {
-      baseWriter = GenericTaskWriters.builderFor(table.asKeyedTable())
-          .withTransactionId(table.asKeyedTable().beginTransaction(System.currentTimeMillis() + ""))
-          .buildBaseWriter();
+      baseWriter =
+          GenericTaskWriters.builderFor(table.asKeyedTable())
+              .withTransactionId(
+                  table.asKeyedTable().beginTransaction(System.currentTimeMillis() + ""))
+              .buildBaseWriter();
       baseTable = table.asKeyedTable().baseTable();
     } else {
-      baseWriter = GenericTaskWriters.builderFor(table.asUnkeyedTable())
-          .buildBaseWriter();
+      baseWriter = GenericTaskWriters.builderFor(table.asUnkeyedTable()).buildBaseWriter();
       baseTable = table.asUnkeyedTable();
     }
     return writeToBase(baseTable, baseWriter, data);
   }
 
-  public static List<DataFile> writeToBase(UnkeyedTable table, TaskWriter<Record> writer, List<Record> data) {
+  public static List<DataFile> writeToBase(
+      UnkeyedTable table, TaskWriter<Record> writer, List<Record> data) {
     try {
-      data.forEach(row -> {
-        try {
-          writer.write(row);
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      });
+      data.forEach(
+          row -> {
+            try {
+              writer.write(row);
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          });
       WriteResult result = writer.complete();
       AppendFiles appendFiles = table.newAppend();
-      Arrays.stream(result.dataFiles())
-          .forEach(appendFiles::appendFile);
+      Arrays.stream(result.dataFiles()).forEach(appendFiles::appendFile);
       appendFiles.commit();
       return Lists.newArrayList(result.dataFiles());
     } catch (IOException e) {
@@ -313,21 +343,21 @@ public class TestTableUtil {
     }
   }
 
-  public static List<DataFile> writeToChange(KeyedTable table, List<Record> rows, ChangeAction action) {
-    try (TaskWriter<Record> writer = GenericTaskWriters.builderFor(table)
-        .withChangeAction(action)
-        .buildChangeWriter()) {
-      rows.forEach(row -> {
-        try {
-          writer.write(row);
-        } catch (IOException e) {
-          throw new UncheckedIOException(e);
-        }
-      });
+  public static List<DataFile> writeToChange(
+      KeyedTable table, List<Record> rows, ChangeAction action) {
+    try (TaskWriter<Record> writer =
+        GenericTaskWriters.builderFor(table).withChangeAction(action).buildChangeWriter()) {
+      rows.forEach(
+          row -> {
+            try {
+              writer.write(row);
+            } catch (IOException e) {
+              throw new UncheckedIOException(e);
+            }
+          });
       AppendFiles appendFiles = table.changeTable().newAppend();
       WriteResult result = writer.complete();
-      Arrays.stream(result.dataFiles())
-          .forEach(appendFiles::appendFile);
+      Arrays.stream(result.dataFiles()).forEach(appendFiles::appendFile);
       appendFiles.commit();
       return Lists.newArrayList(result.dataFiles());
     } catch (IOException e) {
@@ -340,35 +370,41 @@ public class TestTableUtil {
     columns.add(MetadataColumns.CHANGE_ACTION_FIELD);
     Schema expectSchema = new Schema(columns);
 
-    GenericIcebergDataReader reader = new GenericIcebergDataReader(
-        keyedTable.io(),
-        keyedTable.schema(),
-        expectSchema,
-        null,
-        true,
-        IdentityPartitionConverters::convertConstant,
-        false
-    );
+    GenericUnkeyedDataReader reader =
+        new GenericUnkeyedDataReader(
+            keyedTable.io(),
+            keyedTable.schema(),
+            expectSchema,
+            null,
+            true,
+            IdentityPartitionConverters::convertConstant,
+            false);
     List<Record> result = Lists.newArrayList();
     try (CloseableIterable<org.apache.iceberg.CombinedScanTask> combinedScanTasks =
-             keyedTable.changeTable().newScan().planTasks()) {
-      combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
-        try (CloseableIterator<Record> records = reader.readData(scTask).iterator()) {
-          while (records.hasNext()) {
-            result.add(records.next());
-          }
-        } catch (IOException e) {
-          throw new UncheckedIOException(e);
-        }
-      }));
+        keyedTable.changeTable().newScan().planTasks()) {
+      combinedScanTasks.forEach(
+          combinedTask ->
+              combinedTask
+                  .tasks()
+                  .forEach(
+                      scTask -> {
+                        try (CloseableIterator<Record> records =
+                            reader.readData(scTask).iterator()) {
+                          while (records.hasNext()) {
+                            result.add(records.next());
+                          }
+                        } catch (IOException e) {
+                          throw new UncheckedIOException(e);
+                        }
+                      }));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
     return result;
   }
 
-
-  public static Record extendMetadataValue(Record record, Types.NestedField metaColumn, Object value) {
+  public static Record extendMetadataValue(
+      Record record, Types.NestedField metaColumn, Object value) {
     List<Types.NestedField> columns = Lists.newArrayList(record.struct().fields());
     columns.add(metaColumn);
     Schema expectSchema = new Schema(columns);

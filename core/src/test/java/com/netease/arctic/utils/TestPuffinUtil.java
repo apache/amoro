@@ -24,7 +24,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
@@ -99,8 +99,8 @@ public class TestPuffinUtil extends TableTestBase {
     if (spec.isUnpartitioned()) {
       result.put(TablePropertyUtil.EMPTY_STRUCT, 1L);
     } else {
-      StructLike partition1 = DataTestHelpers.recordPartition("2022-01-01T12:00:00");
-      StructLike partition2 = DataTestHelpers.recordPartition("2022-01-01T12:00:00");
+      StructLike partition1 = MixedDataTestHelpers.recordPartition("2022-01-01T12:00:00");
+      StructLike partition2 = MixedDataTestHelpers.recordPartition("2022-01-01T12:00:00");
       result.put(partition1, 1L);
       result.put(partition2, 2L);
     }
@@ -113,8 +113,8 @@ public class TestPuffinUtil extends TableTestBase {
     if (spec.isUnpartitioned()) {
       result.put(TablePropertyUtil.EMPTY_STRUCT, 1000L);
     } else {
-      StructLike partition1 = DataTestHelpers.recordPartition("2022-01-01T12:00:00");
-      StructLike partition2 = DataTestHelpers.recordPartition("2022-01-01T12:00:00");
+      StructLike partition1 = MixedDataTestHelpers.recordPartition("2022-01-01T12:00:00");
+      StructLike partition2 = MixedDataTestHelpers.recordPartition("2022-01-01T12:00:00");
       result.put(partition1, 1000L);
       result.put(partition2, 2000L);
     }

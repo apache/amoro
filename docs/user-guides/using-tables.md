@@ -141,6 +141,60 @@ ALTER TABLE test_db.test_log_store set tblproperties (
     'self-optimizing.enabled' = 'false');
 ```
 
+## Configure data expiration
+
+Amoro can periodically clean data based on the table's expiration policy, which includes properties such as whether to enable expiration, retention duration, expiration level, and the selection of the field for expiration. 
+it's also necessary for AMS to have the data expiration thread enabled. You can enable the 'data-expiration' property in the configuration file
+
+### Enable or disable data expiration
+
+By default, Amoro has data expiration disabled. If you want to enable data expiration, please execute the following command.
+
+```sql
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'data-expire.enabled' = 'true');
+```
+
+### Set the data retention period
+
+The configuration for data retention duration consists of a number and a unit. For example, '90d' represents retaining data for 90 days, and '12h' indicates 12 hours.
+
+```sql
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'data-expire.retention-time' = '90d');
+```
+
+### Select the event-time field
+
+Data expiration requires users to specify a field for determining expiration. 
+In addition to supporting timestampz/timestamp field types for this purpose, it also supports string and long field type. 
+String field require a date pattern for proper parsing, with the default format being 'yyyy-MM-dd'. Additionally, long fields can be chosen as the expiration event time, but you need to specify the timestamp's unit, which can be in `TIMESTAMP_MS` or `TIMESTAMP_S`.
+Note that timestamp, timestampz, and long field types use UTC, while others use the local time zone.
+
+```sql
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'data-expire.field' = 'op_time');
+
+-- select string field
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'data-expire.field' = 'op_time',
+    'data-expire.datetime-string-pattern' = 'yyyy-MM-dd');
+
+-- select long field
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'data-expire.field' = 'op_time',
+    'data-expire.datetime-number-format' = 'TIMESTAMP_MS');
+```
+
+### Adjust the data expiration level
+
+Data expiration supports two levels, including `PARTITION` and `FILE`. The default level is `PARTITION`, which means that AMS deletes files only when all the files within a partition have expired.
+
+```sql
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'data-expire.level' = 'partition');
+```
+
 ## Delete table
 
 After logging into the AMS Dashboard. To modify a table, enter the modification statement in the `terminal` and execute it.

@@ -43,7 +43,7 @@ public class CatalogTestHelpers {
     Map<String, String> storageConfig = new HashMap<>();
     storageConfig.put(
         CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE,
-        CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS);
+        CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP);
     storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE, HADOOP_EMPTY_CONFIG_BASE64);
     storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE, HADOOP_EMPTY_CONFIG_BASE64);
 
