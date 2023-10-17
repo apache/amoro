@@ -14,7 +14,7 @@ import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.iceberg.InternalTableOperations;
 import com.netease.arctic.server.manager.MetricsManager;
-import com.netease.arctic.server.metrics.IcebergMetricsWrapper;
+import com.netease.arctic.server.metrics.IcebergMetricsContent;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
@@ -118,7 +118,7 @@ public class IcebergRestCatalogService extends PersistentBase {
         delete("/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}", this::deleteTable);
         head("/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}", this::tableExists);
         post("/v1/catalogs/{catalog}/tables/rename", this::renameTable);
-        post("/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}/metrics", this::metricReport);
+        post("/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}/metrics", this::reportMetrics);
       });
     };
   }
@@ -399,11 +399,11 @@ public class IcebergRestCatalogService extends PersistentBase {
   /**
    * POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}/metrics
    */
-  public void metricReport(Context ctx) {
+  public void reportMetrics(Context ctx) {
     handleTable(ctx, (catalog, tableMeta) -> {
       String bodyJson = ctx.body();
       ReportMetricsRequest metricsRequest = ReportMetricsRequestParser.fromJson(bodyJson);
-      metricsManager.emit(IcebergMetricsWrapper.wrap(metricsRequest.report()));
+      metricsManager.emit(IcebergMetricsContent.from(metricsRequest.report()));
       return null;
     });
   }

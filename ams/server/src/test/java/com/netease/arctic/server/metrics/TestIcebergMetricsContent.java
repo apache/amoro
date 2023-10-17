@@ -20,27 +20,54 @@ package com.netease.arctic.server.metrics;
 
 import com.netease.arctic.ams.api.metrics.MetricType;
 import com.netease.arctic.ams.api.metrics.MetricsContent;
+import org.apache.iceberg.metrics.CommitMetricsResult;
+import org.apache.iceberg.metrics.CommitReport;
 import org.apache.iceberg.metrics.MetricsReport;
 import org.apache.iceberg.rest.requests.ReportMetricsRequest;
+import org.junit.jupiter.api.Test;
 
-public class IcebergMetricsWrapper {
-  public static MetricsContent<MetricsReport> wrap(MetricsReport report) {
-    ReportMetricsRequest typedMetric = ReportMetricsRequest.of(report);
-    return new MetricsContent<MetricsReport>() {
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class TestIcebergMetricsContent {
+
+  @Test
+  public void testWrap() {
+    CommitReport report = new CommitReport() {
       @Override
-      public String name() {
-        return typedMetric.reportType().name();
+      public String tableName() {
+        return null;
       }
 
       @Override
-      public MetricType type() {
-        return MetricType.FORMAT_ICEBERG;
+      public long snapshotId() {
+        return 0;
       }
 
       @Override
-      public MetricsReport data() {
-        return report;
+      public long sequenceNumber() {
+        return 0;
+      }
+
+      @Override
+      public String operation() {
+        return null;
+      }
+
+      @Override
+      public CommitMetricsResult commitMetrics() {
+        return null;
+      }
+
+      @Override
+      public Map<String, String> metadata() {
+        return null;
       }
     };
+    MetricsContent<MetricsReport> metricsContent = IcebergMetricsContent.from(report);
+    assertEquals(metricsContent.name(), ReportMetricsRequest.ReportType.COMMIT_REPORT.name());
+    assertEquals(metricsContent.type(), MetricType.FORMAT_ICEBERG);
+    assertEquals(metricsContent.data(), report);
   }
 }
