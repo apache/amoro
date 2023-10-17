@@ -18,12 +18,6 @@
 
 package com.netease.arctic.op;
 
-import com.netease.arctic.op.ArcticAppendFiles;
-import com.netease.arctic.op.ArcticDeleteFiles;
-import com.netease.arctic.op.ArcticOverwriteFiles;
-import com.netease.arctic.op.ArcticReplacePartitions;
-import com.netease.arctic.op.ArcticRewriteFiles;
-import com.netease.arctic.op.ArcticRowDelta;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
@@ -55,6 +49,7 @@ import org.apache.iceberg.UpdateStatistics;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.LocationProvider;
+
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;

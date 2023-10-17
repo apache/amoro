@@ -47,6 +47,7 @@ import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import static com.netease.arctic.table.TableProperties.FILE_FORMAT_ORC;
 
 @RunWith(Parameterized.class)
 public class TestTaskReader extends TableDataTestBase {
@@ -55,13 +56,20 @@ public class TestTaskReader extends TableDataTestBase {
 
   @Parameterized.Parameters(name = "useDiskMap = {2}")
   public static Object[] parameters() {
-    return new Object[][] {{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(true, true), false},
-                           {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(true, true), true}};
+    return new Object[][] {
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+         new BasicTableTestHelper(true, true), false},
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+         new BasicTableTestHelper(true, true), true},
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+         new BasicTableTestHelper(true, true, FILE_FORMAT_ORC), false},
+        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+         new BasicTableTestHelper(true, true, FILE_FORMAT_ORC), true}
+    };
   }
 
-  public TestTaskReader(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper,
+  public TestTaskReader(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper,
       boolean useDiskMap) {
     super(catalogTestHelper, tableTestHelper);
     this.useDiskMap = useDiskMap;
@@ -144,9 +152,9 @@ public class TestTaskReader extends TableDataTestBase {
         Expressions.alwaysTrue(), null, useDiskMap));
     //expect: +(id=5),+(id=6),-(id=5)
     Set<Record> expectRecords = Sets.newHashSet();
-    expectRecords.add(DataTestHelpers.appendMetaColumnValues(allRecords.get(4), 2, 1, ChangeAction.INSERT));
-    expectRecords.add(DataTestHelpers.appendMetaColumnValues(allRecords.get(5), 2, 2, ChangeAction.INSERT));
-    expectRecords.add(DataTestHelpers.appendMetaColumnValues(allRecords.get(4), 3, 1, ChangeAction.DELETE));
+    expectRecords.add(MixedDataTestHelpers.appendMetaColumnValues(allRecords.get(4), 2, 1, ChangeAction.INSERT));
+    expectRecords.add(MixedDataTestHelpers.appendMetaColumnValues(allRecords.get(5), 2, 2, ChangeAction.INSERT));
+    expectRecords.add(MixedDataTestHelpers.appendMetaColumnValues(allRecords.get(4), 3, 1, ChangeAction.DELETE));
     Assert.assertEquals(expectRecords, records);
   }
 

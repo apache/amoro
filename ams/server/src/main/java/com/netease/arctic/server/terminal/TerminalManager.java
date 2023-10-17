@@ -133,7 +133,7 @@ public class TerminalManager {
   }
 
   /**
-   * getRuntime execution status and logs
+   * Get execution status and logs
    */
   public LogInfo getExecutionLog(String sessionId) {
     if (sessionId == null) {
@@ -150,7 +150,7 @@ public class TerminalManager {
   }
 
   /**
-   * getRuntime execution result.
+   * Get execution result.
    */
   public List<SqlResult> getExecutionResults(String sessionId) {
     if (sessionId == null) {
@@ -190,7 +190,7 @@ public class TerminalManager {
   }
 
   /**
-   * getRuntime last execution info
+   * Get last execution info
    *
    * @param terminalId - id of terminal window
    * @return last session info
@@ -244,6 +244,8 @@ public class TerminalManager {
         return "arctic";
       } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.ICEBERG.name())) {
         return "iceberg";
+      } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.PAIMON.name())) {
+        return "paimon";
       }
     } else if (catalogType.equalsIgnoreCase(CatalogType.CUSTOM.name())) {
       return "iceberg";
@@ -335,14 +337,15 @@ public class TerminalManager {
 
   private void applyClientProperties(CatalogMeta catalogMeta) {
     Set<TableFormat> formats = CatalogUtil.tableFormats(catalogMeta);
-    if (CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(catalogMeta.getCatalogType())) {
-      if (formats.contains(TableFormat.ICEBERG)) {
+    String catalogType = catalogMeta.getCatalogType();
+    if (formats.contains(TableFormat.ICEBERG)) {
+      if (CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(catalogType)) {
         catalogMeta.putToCatalogProperties(CatalogMetaProperties.KEY_WAREHOUSE, catalogMeta.getCatalogName());
+      } else if (!catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
+        catalogMeta.putToCatalogProperties("type", catalogType);
       }
-    } else if (formats.contains(TableFormat.ICEBERG)) {
-      if (!catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
-        catalogMeta.putToCatalogProperties("type", catalogMeta.getCatalogType());
-      }
+    } else if (formats.contains(TableFormat.PAIMON) && "hive".equals(catalogType)) {
+      catalogMeta.putToCatalogProperties("metastore", catalogType);
     }
   }
 

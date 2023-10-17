@@ -44,17 +44,22 @@ public class TestDescSQL extends SparkTableTestBase {
         Arguments.of(TableFormat.MIXED_HIVE, ", PRIMARY KEY(id)", " PARTITIONED BY (day)"),
         Arguments.of(TableFormat.MIXED_HIVE, "", " PARTITIONED BY (day)"),
         Arguments.of(TableFormat.MIXED_ICEBERG, ", PRIMARY KEY(id)", " PARTITIONED BY (day)"),
-        Arguments.of(TableFormat.MIXED_ICEBERG, "", " PARTITIONED BY (day)")
-    );
+        Arguments.of(TableFormat.MIXED_ICEBERG, "", " PARTITIONED BY (day)"));
   }
 
   @DisplayName("Test `test describe table`")
   @ParameterizedTest
   @MethodSource
   public void testDescTable(TableFormat format, String primaryKeyDDL, String partitionDDL) {
-    String sqlText = "CREATE TABLE " + target() + " ( \n" +
-        "id int, data string, day string " + primaryKeyDDL + " ) using " +
-        provider(format) + partitionDDL;
+    String sqlText =
+        "CREATE TABLE "
+            + target()
+            + " ( \n"
+            + "id int, data string, day string "
+            + primaryKeyDDL
+            + " ) using "
+            + provider(format)
+            + partitionDDL;
     sql(sqlText);
     List<Row> rows = sql("desc " + target().database + "." + target().table).collectAsList();
     List<String> primaryKeys = new ArrayList<>();
@@ -67,7 +72,8 @@ public class TestDescSQL extends SparkTableTestBase {
     }
     assertTableDesc(rows, primaryKeys, partitions);
 
-    List<Row> rows2 = sql("desc extended " + target().database + "." + target().table).collectAsList();
+    List<Row> rows2 =
+        sql("desc extended " + target().database + "." + target().table).collectAsList();
     assertTableDesc(rows2, primaryKeys, partitions);
   }
 }

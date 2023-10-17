@@ -49,6 +49,7 @@ public class TablePropertyUtil {
    * @param value string value
    * @return max transaction id map of each partition
    */
+  @Deprecated
   public static StructLikeMap<Long> decodePartitionMaxTxId(PartitionSpec spec, String value) {
     try {
       StructLikeMap<Long> results = StructLikeMap.create(spec.partitionType());
@@ -104,10 +105,12 @@ public class TablePropertyUtil {
     return value;
   }
 
+  @Deprecated
   public static StructLikeMap<Long> getPartitionBaseOptimizedTime(KeyedTable keyedTable) {
     return getPartitionLongProperties(keyedTable.baseTable(), TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
   }
 
+  @Deprecated
   public static StructLikeMap<Long> getPartitionOptimizedSequence(KeyedTable keyedTable) {
     return getPartitionLongProperties(keyedTable.baseTable(), TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
   }
@@ -152,6 +155,7 @@ public class TablePropertyUtil {
     return result;
   }
 
+  @Deprecated
   public static StructLikeMap<Long> getLegacyPartitionMaxTransactionId(KeyedTable keyedTable) {
     StructLikeMap<Long> baseTableMaxTransactionId = StructLikeMap.create(keyedTable.spec().partitionType());
 

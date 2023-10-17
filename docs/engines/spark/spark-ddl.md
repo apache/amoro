@@ -66,8 +66,8 @@ Supported transformations are:
 
 * years(ts): partition by year
 * months(ts): partition by month
-* days(ts) or date(ts): equivalent to dateint partitioning
-* hours(ts) or date_hour(ts): equivalent to dateint and hour partitioning
+* days(ts) or date(ts): equivalent to dating partitioning
+* hours(ts) or date_hour(ts): equivalent to dating and hour partitioning
 * bucket(N, col): partition by hashed value mod N buckets
 * truncate(L, col): partition by value truncated to L
 

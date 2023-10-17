@@ -36,7 +36,7 @@ public interface PlatformFileMapper {
   void addFile(@Param("fileInfo") PlatformFileInfo platformFileInfo);
 
   /**
-   * getRuntime file content encoded by base64 by fileId
+   * get file content encoded by base64 by fileId
    */
   @Select("SELECT file_content_b64 FROM " + TABLE_NAME + " WHERE id = #{fileId}")
   String getFileById(@Param("fileId") Integer fileId);

@@ -32,27 +32,35 @@ Self-optimizing configurations are applicable to both Iceberg Format and Mixed s
 | self-optimizing.enabled                             | true             | Enables Self-optimizing                                |
 | self-optimizing.group                               | default          | Optimizer group for Self-optimizing                                   |
 | self-optimizing.quota                               | 0.1              | Quota for Self-optimizing, indicating the CPU resource the table can take up                       |
-| self-optimizing.execute.num-retries                         | 5                | Number of retries after failure of Self-optimizing                       |
+| self-optimizing.execute.num-retries                 | 5                | Number of retries after failure of Self-optimizing                       |
 | self-optimizing.target-size                         | 134217728(128MB) | Target size for Self-optimizing                           |
 | self-optimizing.max-file-count                      | 10000            | Maximum number of files processed by a Self-optimizing process              |               |
+| self-optimizing.max-task-size-bytes                 | 134217728(128MB) | Maximum file size bytes in a single task for splitting tasks                |               |
 | self-optimizing.fragment-ratio                      | 8                | The fragment file size threshold. We could divide self-optimizing.target-size by this ratio to get the actual fragment file size           |
 | self-optimizing.minor.trigger.file-count            | 12               | The minimum numbers of fragment files to trigger minor optimizing   |
 | self-optimizing.minor.trigger.interval              | 3600000(1 hour)  | The time interval in milliseconds to trigger minor optimizing                         |
 | self-optimizing.major.trigger.duplicate-ratio       | 0.5              | The ratio of duplicate data of segment files to trigger major optimizing  |
 | self-optimizing.full.trigger.interval               | -1(closed)       | The time interval in milliseconds to trigger full optimizing
+| self-optimizing.full.rewrite-all-files              | true             | Whether full optimizing rewrites all files or skips files that do not need to be optimized |
 
 ## Data-cleaning configurations
 
 Data-cleaning configurations are applicable to both Iceberg Format and Mixed streaming Format.
 
-| Key                                                 | Default          | Description                                              |
-|---------------------------------------------|-----------|------------------------------------|
-| table-expire.enabled                        | true      | Enables periodically expire table                      |
-| change.data.ttl.minutes                     | 10080(7 days) | Time to live in minutes for data of ChangeStore                |
-| snapshot.base.keep.minutes                  | 720(12 hours) | Table-Expiration keeps the latest snapshots of BaseStore within a specified time in minutes                |
-| clean-orphan-file.enabled                   | false     | Enables periodically clean orphan files                       |
-| clean-orphan-file.min-existing-time-minutes | 2880(2 days)  | Cleaning orphan files keeps the files modified within a specified time in minutes |
-| clean-dangling-delete-files.enabled      | true      | Whether to enable cleaning of dangling delete files |
+| Key                                         | Default       | Description                                                                                                 |
+|---------------------------------------------|---------------|-------------------------------------------------------------------------------------------------------------|
+| table-expire.enabled                        | true          | Enables periodically expire table                                                                           |
+| change.data.ttl.minutes                     | 10080(7 days) | Time to live in minutes for data of ChangeStore                                                             |
+| snapshot.base.keep.minutes                  | 720(12 hours) | Table-Expiration keeps the latest snapshots of BaseStore within a specified time in minutes                 |
+| clean-orphan-file.enabled                   | false         | Enables periodically clean orphan files                                                                     |
+| clean-orphan-file.min-existing-time-minutes | 2880(2 days)  | Cleaning orphan files keeps the files modified within a specified time in minutes                           |
+| clean-dangling-delete-files.enabled         | true          | Whether to enable cleaning of dangling delete files                                                         |
+| data-expire.enabled                         | false         | Whether to enable data expiration                                                                           |
+| data-expire.level                           | partition     | Level of data expiration. Including partition and file                                                      |
+| data-expire.field                           | NULL          | Field used to determine data expiration, supporting timestamp/timestampz/long type and string type field in date format |
+| data-expire.datetime-string-pattern         | yyyy-MM-dd    | Pattern used for matching string datetime |
+| data-expire.datetime-number-format          | TIMESTAMP_MS  | Timestamp unit for long field. Including TIMESTAMP_MS and TIMESTAMP_S |
+| data-expire.retention-time                  | NULL          | Retention period for data expiration. For example, 1d means retaining data for 1 day. Other supported units include h (hour), min (minute), s (second), ms (millisecond), etc. |
 
 ## Mixed Format configurations
 

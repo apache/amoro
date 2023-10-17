@@ -24,6 +24,7 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
+
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -64,6 +65,20 @@ public class ArcticRewriteFiles extends ArcticUpdate<RewriteFiles> implements Re
     dataFilesToReplace.forEach(this::deleteIcebergDataFile);
     deleteFilesToAdd.forEach(this::addIcebergDeleteFile);
     deleteFilesToReplace.forEach(this::deleteIcebergDeleteFile);
+    return this;
+  }
+
+  @Override
+  public RewriteFiles deleteFile(DataFile dataFile) {
+    this.deleteIcebergDataFile(dataFile);
+    rewriteFiles.deleteFile(dataFile);
+    return this;
+  }
+
+  @Override
+  public RewriteFiles deleteFile(DeleteFile deleteFile) {
+    this.deleteIcebergDeleteFile(deleteFile);
+    rewriteFiles.deleteFile(deleteFile);
     return this;
   }
 

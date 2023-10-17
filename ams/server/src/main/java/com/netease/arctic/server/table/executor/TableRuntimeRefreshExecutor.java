@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.table.executor;
 
-import com.netease.arctic.server.optimizing.OptimizingStatus;
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
@@ -46,14 +46,6 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     return Math.min(tableRuntime.getOptimizingConfig().getMinorLeastInterval() * 4L / 5, interval);
   }
 
-  @Override
-  public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
-    if (originalStatus != null && originalStatus.equals(OptimizingStatus.COMMITTING) &&
-        tableRuntime.getOptimizingStatus().equals(OptimizingStatus.IDLE)) {
-      tryEvaluatingPendingInput(tableRuntime, loadTable(tableRuntime));
-    }
-  }
-
   private void tryEvaluatingPendingInput(TableRuntime tableRuntime, ArcticTable table) {
     if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
       OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, table);
@@ -71,11 +63,11 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     try {
       long lastOptimizedSnapshotId = tableRuntime.getLastOptimizedSnapshotId();
       long lastOptimizedChangeSnapshotId = tableRuntime.getLastOptimizedChangeSnapshotId();
-      ArcticTable table = loadTable(tableRuntime);
+      AmoroTable<?> table = loadTable(tableRuntime);
       tableRuntime.refresh(table);
       if (lastOptimizedSnapshotId != tableRuntime.getCurrentSnapshotId() ||
           lastOptimizedChangeSnapshotId != tableRuntime.getCurrentChangeSnapshotId()) {
-        tryEvaluatingPendingInput(tableRuntime, table);
+        tryEvaluatingPendingInput(tableRuntime, (ArcticTable) table.originalTable());
       }
     } catch (Throwable throwable) {
       logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);

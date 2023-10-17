@@ -21,7 +21,7 @@ package com.netease.arctic.hive.catalog;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.HiveDataTestHelpers;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -30,13 +30,13 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 
 public class HiveTableTestHelper extends BasicTableTestHelper {
 
@@ -73,13 +73,17 @@ public class HiveTableTestHelper extends BasicTableTestHelper {
         hasPartition ? HIVE_SPEC : PartitionSpec.unpartitioned(), tableProperties);
   }
 
+  public HiveTableTestHelper(boolean hasPrimaryKey, boolean hasPartition, String fileFormat) {
+    this(hasPrimaryKey, hasPartition, buildTableFormat(fileFormat));
+  }
+
   public HiveTableTestHelper(boolean hasPrimaryKey, boolean hasPartition) {
-    this(hasPrimaryKey, hasPartition, Maps.newHashMap());
+    this(hasPrimaryKey, hasPartition, DEFAULT_FILE_FORMAT_DEFAULT);
   }
 
   @Override
   public Record generateTestRecord(int id, String name, long ts, String opTime) {
-    return DataTestHelpers.createRecord(HIVE_TABLE_SCHEMA, id, name, ts, opTime,
+    return MixedDataTestHelpers.createRecord(HIVE_TABLE_SCHEMA, id, name, ts, opTime,
         opTime + "Z", new BigDecimal("0"), opTime.substring(0, 10));
   }
 

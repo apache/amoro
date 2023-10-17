@@ -18,12 +18,22 @@
 
 package com.netease.arctic.flink.write;
 
+import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
+import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
+import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
+import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.flink.FlinkTestBase;
-import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
+import com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate;
+import com.netease.arctic.flink.kafka.testutils.KafkaContainerTest;
 import com.netease.arctic.flink.metric.MetricsGenerator;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
@@ -33,7 +43,7 @@ import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.flink.util.TestGlobalAggregateManager;
 import com.netease.arctic.flink.util.TestOneInputStreamOperatorIntern;
 import com.netease.arctic.flink.write.hidden.kafka.HiddenKafkaFactory;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.log.LogDataJsonDeserialization;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.utils.IdGenerator;
@@ -81,48 +91,42 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
-import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
-
 @RunWith(Parameterized.class)
 public class TestAutomaticLogWriter extends FlinkTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(TestAutomaticLogWriter.class);
   public ArcticTableLoader tableLoader;
-  public static final TestGlobalAggregateManager globalAggregateManger = new TestGlobalAggregateManager();
-  private static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
+  public static final TestGlobalAggregateManager globalAggregateManger =
+      new TestGlobalAggregateManager();
 
   private final boolean isGapNone;
   private final boolean logstoreEnabled;
 
   public TestAutomaticLogWriter(boolean isGapNone, boolean logstoreEnabled) {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-      new BasicTableTestHelper(true, true));
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true));
     this.isGapNone = isGapNone;
     this.logstoreEnabled = logstoreEnabled;
   }
 
   @Parameterized.Parameters(name = "isGapNone={0}, logstoreEnabled={1}")
   public static Object[][] parameters() {
-    return new Object[][]{
-        {true, true},
-        {false, false},
-        {false, true},
-        {true, false}
+    return new Object[][] {
+      {true, true},
+      {false, false},
+      {false, true},
+      {true, false}
     };
   }
 
   @BeforeClass
   public static void prepare() throws Exception {
-    kafkaTestBase.prepare();
+    KAFKA_CONTAINER.start();
   }
 
   @AfterClass
   public static void shutdown() throws Exception {
-    kafkaTestBase.shutDownServices();
+    KAFKA_CONTAINER.close();
   }
 
   @Before
@@ -133,7 +137,8 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
 
   @Test
   public void testHasCaughtUp() throws Exception {
-    String topic = Thread.currentThread().getStackTrace()[1].getMethodName() + isGapNone + logstoreEnabled;
+    String topic =
+        Thread.currentThread().getStackTrace()[1].getMethodName() + isGapNone + logstoreEnabled;
 
     final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
@@ -145,20 +150,57 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
 
     List<Object[]> expects = new LinkedList<>();
     DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    expects.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-17 10:10:11", dtf).toEpochSecond(ZoneOffset.UTC), LocalDateTime.parse("2022-06-17 10:10:11", dtf)});
-    expects.add(new Object[]{1000015, "b", LocalDateTime.parse("2022-06-17 10:08:11", dtf).toEpochSecond(ZoneOffset.UTC), LocalDateTime.parse("2022-06-17 10:08:11", dtf)});
-    expects.add(new Object[]{1000011, "c", LocalDateTime.parse("2022-06-18 10:10:11", dtf).toEpochSecond(ZoneOffset.UTC), LocalDateTime.parse("2022-06-18 10:10:11", dtf)});
+    expects.add(
+        new Object[] {
+          1000004,
+          "a",
+          LocalDateTime.parse("2022-06-17 10:10:11", dtf).toEpochSecond(ZoneOffset.UTC),
+          LocalDateTime.parse("2022-06-17 10:10:11", dtf)
+        });
+    expects.add(
+        new Object[] {
+          1000015,
+          "b",
+          LocalDateTime.parse("2022-06-17 10:08:11", dtf).toEpochSecond(ZoneOffset.UTC),
+          LocalDateTime.parse("2022-06-17 10:08:11", dtf)
+        });
+    expects.add(
+        new Object[] {
+          1000011,
+          "c",
+          LocalDateTime.parse("2022-06-18 10:10:11", dtf).toEpochSecond(ZoneOffset.UTC),
+          LocalDateTime.parse("2022-06-18 10:10:11", dtf)
+        });
     List<Object[]> catchUpExpects = new LinkedList<>();
-    catchUpExpects.add(new Object[]{1000014, "d", LocalDateTime.now().minusSeconds(3).toEpochSecond(ZoneOffset.UTC), LocalDateTime.now().minusSeconds(3)});
-    catchUpExpects.add(new Object[]{1000021, "d", LocalDateTime.now().minusSeconds(2).toEpochSecond(ZoneOffset.UTC), LocalDateTime.now().minusSeconds(2)});
-    catchUpExpects.add(new Object[]{1000015, "e", LocalDateTime.now().minusSeconds(1).toEpochSecond(ZoneOffset.UTC), LocalDateTime.now().minusSeconds(1)});
+    catchUpExpects.add(
+        new Object[] {
+          1000014,
+          "d",
+          LocalDateTime.now().minusSeconds(3).toEpochSecond(ZoneOffset.UTC),
+          LocalDateTime.now().minusSeconds(3)
+        });
+    catchUpExpects.add(
+        new Object[] {
+          1000021,
+          "d",
+          LocalDateTime.now().minusSeconds(2).toEpochSecond(ZoneOffset.UTC),
+          LocalDateTime.now().minusSeconds(2)
+        });
+    catchUpExpects.add(
+        new Object[] {
+          1000015,
+          "e",
+          LocalDateTime.now().minusSeconds(1).toEpochSecond(ZoneOffset.UTC),
+          LocalDateTime.now().minusSeconds(1)
+        });
     expects.addAll(catchUpExpects);
 
-    DataStream<RowData> input = env.fromElements(expects.stream().map(DataUtil::toRowData).toArray(RowData[]::new));
+    DataStream<RowData> input =
+        env.fromElements(expects.stream().map(DataUtil::toRowData).toArray(RowData[]::new));
 
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
     UpdateProperties up = testKeyedTable.updateProperties();
-    up.set(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
+    up.set(LOG_STORE_ADDRESS, KAFKA_CONTAINER.getBootstrapServers());
     up.set(LOG_STORE_MESSAGE_TOPIC, topic);
     if (logstoreEnabled) {
       up.set(ENABLE_LOG_STORE, "true");
@@ -168,8 +210,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     up.set(LOG_STORE_CATCH_UP.key(), "true");
     up.commit();
 
-    FlinkSink
-        .forRowData(input)
+    FlinkSink.forRowData(input)
         .context(Optional::of)
         .table(testKeyedTable)
         .tableLoader(ArcticTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder))
@@ -181,7 +222,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     env.execute();
 
     testKeyedTable.changeTable().refresh();
-    List<Record> actual = DataTestHelpers.readKeyedTable(testKeyedTable, null);
+    List<Record> actual = MixedDataTestHelpers.readKeyedTable(testKeyedTable, null);
 
     Set<Record> expected = toRecords(DataUtil.toRowSet(expects));
     Assert.assertEquals(expected, new HashSet<>(actual));
@@ -194,15 +235,16 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
 
   @Test
   public void testHasNotCaughtUp() throws Exception {
-    String topic = Thread.currentThread().getStackTrace()[1].getMethodName() + isGapNone + logstoreEnabled;
+    String topic =
+        Thread.currentThread().getStackTrace()[1].getMethodName() + isGapNone + logstoreEnabled;
     byte[] jobId = IdGenerator.generateUpstreamId();
     Duration gap;
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
     UpdateProperties up = testKeyedTable.updateProperties();
-    up.set(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
+    up.set(LOG_STORE_ADDRESS, KAFKA_CONTAINER.getBootstrapServers());
     up.set(LOG_STORE_MESSAGE_TOPIC, topic);
     up.set(ENABLE_LOG_STORE, "true");
-    if (!isGapNone){
+    if (!isGapNone) {
       up.set(AUTO_EMIT_LOGSTORE_WATERMARK_GAP.key(), "20");
     }
     up.commit();
@@ -216,14 +258,33 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     List<Object[]> expects = new LinkedList<>();
     List<WriteResult> results;
     testKeyedTable.refresh();
-    Assert.assertFalse(Boolean.parseBoolean(
-        testKeyedTable.properties().getOrDefault(LOG_STORE_CATCH_UP.key(), "false")));
+    Assert.assertFalse(
+        Boolean.parseBoolean(
+            testKeyedTable.properties().getOrDefault(LOG_STORE_CATCH_UP.key(), "false")));
     try (TestOneInputStreamOperatorIntern<RowData, WriteResult> harness =
         createSingleProducer(1, jobId, topic, gap)) {
       DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-      expects.add(new Object[]{1000004, "a", LocalDateTime.parse("2022-06-17 10:10:11", dtf).toEpochSecond(ZoneOffset.UTC), LocalDateTime.parse("2022-06-17 10:10:11", dtf)});
-      expects.add(new Object[]{1000015, "b", LocalDateTime.parse("2022-06-17 10:18:11", dtf).toEpochSecond(ZoneOffset.UTC), LocalDateTime.parse("2022-06-17 10:18:11", dtf)});
-      expects.add(new Object[]{1000011, "c", LocalDateTime.parse("2022-06-18 10:10:11", dtf).toEpochSecond(ZoneOffset.UTC), LocalDateTime.parse("2022-06-18 10:10:11", dtf)});
+      expects.add(
+          new Object[] {
+            1000004,
+            "a",
+            LocalDateTime.parse("2022-06-17 10:10:11", dtf).toEpochSecond(ZoneOffset.UTC),
+            LocalDateTime.parse("2022-06-17 10:10:11", dtf)
+          });
+      expects.add(
+          new Object[] {
+            1000015,
+            "b",
+            LocalDateTime.parse("2022-06-17 10:18:11", dtf).toEpochSecond(ZoneOffset.UTC),
+            LocalDateTime.parse("2022-06-17 10:18:11", dtf)
+          });
+      expects.add(
+          new Object[] {
+            1000011,
+            "c",
+            LocalDateTime.parse("2022-06-18 10:10:11", dtf).toEpochSecond(ZoneOffset.UTC),
+            LocalDateTime.parse("2022-06-18 10:10:11", dtf)
+          });
       long checkpoint = 0;
 
       harness.setup();
@@ -258,48 +319,48 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     checkLogstoreDataAccuracy(topic, expected);
     testKeyedTable.refresh();
     if (!isGapNone) {
-      Assert.assertTrue(Boolean.parseBoolean(testKeyedTable.properties().get(LOG_STORE_CATCH_UP.key())));
+      Assert.assertTrue(
+          Boolean.parseBoolean(testKeyedTable.properties().get(LOG_STORE_CATCH_UP.key())));
     }
   }
 
   private void checkLogstoreDataAccuracy(String topic, List<Object[]> expects) {
     LogDataJsonDeserialization<RowData> logDataJsonDeserialization =
         new LogDataJsonDeserialization<>(
-            TABLE_SCHEMA,
-            LogRecordV1.factory,
-            LogRecordV1.arrayFactory,
-            LogRecordV1.mapFactory
-        );
-    ConsumerRecords<byte[], byte[]> consumerRecords = kafkaTestBase.readRecordsBytes(topic);
+            TABLE_SCHEMA, LogRecordV1.factory, LogRecordV1.arrayFactory, LogRecordV1.mapFactory);
+    ConsumerRecords<byte[], byte[]> consumerRecords = KafkaContainerTest.readRecordsBytes(topic);
     Assertions.assertEquals(expects.size(), consumerRecords.count());
     List<RowData> actual = new ArrayList<>();
-    consumerRecords.forEach(consumerRecord -> {
-      try {
-        actual.add(logDataJsonDeserialization.deserialize(consumerRecord.value()).getActualValue());
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    });
+    consumerRecords.forEach(
+        consumerRecord -> {
+          try {
+            actual.add(
+                logDataJsonDeserialization.deserialize(consumerRecord.value()).getActualValue());
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+        });
     Collection<RowData> expected = DataUtil.toRowData(expects);
     Assertions.assertEquals(
-        expected.stream().sorted(
-            Comparator
-                .comparing(
-                    RowData::toString)).collect(Collectors.toList()),
-        actual.stream().sorted(
-            Comparator
-                .comparing(
-                    RowData::toString)).collect(Collectors.toList()));
+        expected.stream()
+            .sorted(Comparator.comparing(RowData::toString))
+            .collect(Collectors.toList()),
+        actual.stream()
+            .sorted(Comparator.comparing(RowData::toString))
+            .collect(Collectors.toList()));
   }
 
   public TestOneInputStreamOperatorIntern<RowData, WriteResult> createSingleProducer(
-      int maxParallelism,
-      byte[] jobId,
-      String topic,
-      Duration writeLogstoreWatermarkGap
-  ) throws Exception {
+      int maxParallelism, byte[] jobId, String topic, Duration writeLogstoreWatermarkGap)
+      throws Exception {
     return createProducer(
-        maxParallelism, maxParallelism, 0, null, jobId, globalAggregateManger, topic,
+        maxParallelism,
+        maxParallelism,
+        0,
+        null,
+        jobId,
+        globalAggregateManger,
+        topic,
         writeLogstoreWatermarkGap);
   }
 
@@ -311,7 +372,8 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
       byte[] jobId,
       TestGlobalAggregateManager testGlobalAggregateManager,
       String topic,
-      Duration writeLogstoreWatermarkGap) throws Exception {
+      Duration writeLogstoreWatermarkGap)
+      throws Exception {
     AutomaticLogWriter automaticLogWriter =
         new AutomaticLogWriter(
             TABLE_SCHEMA,
@@ -326,17 +388,22 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
 
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
     RowType flinkSchemaRowType = (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType();
-    Schema writeSchema = TypeUtil.reassignIds(FlinkSchemaUtil.convert(FLINK_SCHEMA), testKeyedTable.schema());
-    MetricsGenerator metricsGenerator = ArcticUtils.getMetricsGenerator(false,
-        false, testKeyedTable, flinkSchemaRowType, writeSchema);
+    Schema writeSchema =
+        TypeUtil.reassignIds(FlinkSchemaUtil.convert(FLINK_SCHEMA), testKeyedTable.schema());
+    MetricsGenerator metricsGenerator =
+        ArcticUtils.getMetricsGenerator(
+            false, false, testKeyedTable, flinkSchemaRowType, writeSchema);
 
-    ArcticFileWriter streamWriter = FlinkSink.createFileWriter(testKeyedTable,
-        null,
-        false,
-        (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType(),
-        tableLoader);
+    ArcticFileWriter streamWriter =
+        FlinkSink.createFileWriter(
+            testKeyedTable,
+            null,
+            false,
+            (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType(),
+            tableLoader);
 
-    ArcticWriter<WriteResult> arcticWriter = new ArcticWriter<>(automaticLogWriter, streamWriter, metricsGenerator);
+    ArcticWriter<WriteResult> arcticWriter =
+        new ArcticWriter<>(automaticLogWriter, streamWriter, metricsGenerator);
 
     TestOneInputStreamOperatorIntern<RowData, WriteResult> harness =
         new TestOneInputStreamOperatorIntern<>(
@@ -351,7 +418,9 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
   }
 
   private static Properties getPropertiesByTopic(String topic) {
-    Properties properties = getPropertiesWithByteArray(kafkaTestBase.getProperties());
+    Properties properties = new Properties();
+    properties.put(BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
+    getPropertiesWithByteArray(KafkaConfigGenerate.getStandardProperties(properties));
     properties.put(LOG_STORE_MESSAGE_TOPIC, topic);
     properties.put(ProducerConfig.ACKS_CONFIG, "all");
     properties.put(ProducerConfig.BATCH_SIZE_CONFIG, "0");

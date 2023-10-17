@@ -29,6 +29,7 @@ import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.utils.Configurations;
 import org.apache.commons.dbcp2.BasicDataSource;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.pool2.impl.BaseObjectPoolConfig;
 import org.apache.ibatis.jdbc.ScriptRunner;
 import org.apache.ibatis.mapping.Environment;
@@ -54,6 +55,7 @@ public class SqlSessionFactoryProvider {
 
   private static final String DERBY_INIT_SQL_SCRIPT = "derby/ams-derby-init.sql";
   private static final String MYSQL_INIT_SQL_SCRIPT = "mysql/ams-mysql-init.sql";
+  private static final String POSTGRES_INIT_SQL_SCRIPT = "postgres/ams-postgres-init.sql";
 
   private static final SqlSessionFactoryProvider INSTANCE = new SqlSessionFactoryProvider();
 
@@ -61,13 +63,16 @@ public class SqlSessionFactoryProvider {
     return INSTANCE;
   }
 
+  private static String dbType;
+
   private volatile SqlSessionFactory sqlSessionFactory;
 
   public void init(Configurations config) {
     BasicDataSource dataSource = new BasicDataSource();
     dataSource.setUrl(config.getString(ArcticManagementConf.DB_CONNECTION_URL));
     dataSource.setDriverClassName(config.getString(ArcticManagementConf.DB_DRIVER_CLASS_NAME));
-    if (ArcticManagementConf.DB_TYPE_MYSQL.equals(config.getString(ArcticManagementConf.DB_TYPE))) {
+    dbType = config.getString(ArcticManagementConf.DB_TYPE);
+    if (ArcticManagementConf.DB_TYPE_MYSQL.equals(dbType) || ArcticManagementConf.DB_TYPE_POSTGRES.equals(dbType)) {
       dataSource.setUsername(config.getString(ArcticManagementConf.DB_USER_NAME));
       dataSource.setPassword(config.getString(ArcticManagementConf.DB_PASSWORD));
     }
@@ -126,9 +131,13 @@ public class SqlSessionFactoryProvider {
       } else if (ArcticManagementConf.DB_TYPE_MYSQL.equals(dbTypeConfig)) {
         query = String.format(
             "SELECT 1 FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'",
-            connection.getCatalog(), "CATALOG_METADATA");
+            connection.getCatalog(), "catalog_metadata");
+      } else if (ArcticManagementConf.DB_TYPE_POSTGRES.equals(dbTypeConfig)) {
+        query = String.format(
+            "SELECT 1 FROM information_schema.tables WHERE table_schema = %s AND table_name = '%s'",
+            "current_schema()", "catalog_metadata");
       }
-      try (ResultSet rs = statement.executeQuery(query);) {
+      try (ResultSet rs = statement.executeQuery(query)) {
         if (!rs.next()) {
           ScriptRunner runner = new ScriptRunner(connection);
           runner.runScript(new InputStreamReader(Files.newInputStream(
@@ -147,6 +156,8 @@ public class SqlSessionFactoryProvider {
       scriptPath = MYSQL_INIT_SQL_SCRIPT;
     } else if (type.equals(ArcticManagementConf.DB_TYPE_DERBY)) {
       scriptPath = DERBY_INIT_SQL_SCRIPT;
+    } else if (type.equals(ArcticManagementConf.DB_TYPE_POSTGRES)) {
+      scriptPath = POSTGRES_INIT_SQL_SCRIPT;
     }
     URL scriptUrl = ClassLoader.getSystemResource(scriptPath);
     if (scriptUrl == null) {
@@ -160,5 +171,12 @@ public class SqlSessionFactoryProvider {
         sqlSessionFactory != null,
         "Persistent configuration is not initialized yet.");
     return sqlSessionFactory;
+  }
+
+  public static String getDbType() {
+    Preconditions.checkState(
+        StringUtils.isNotBlank(dbType),
+        "Persistent configuration is not initialized yet.");
+    return dbType;
   }
 }

@@ -20,12 +20,12 @@ package com.netease.arctic.hive.io;
 
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
-import com.netease.arctic.hive.io.reader.GenericAdaptHiveIcebergDataReader;
+import com.netease.arctic.hive.io.reader.AdaptHiveGenericKeyedDataReader;
+import com.netease.arctic.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.CombinedScanTask;
@@ -79,7 +79,7 @@ public class HiveDataTestHelpers {
       builder.withOrdered();
     }
     try (TaskWriter<Record> writer = builder.buildWriter(ChangeLocationKind.INSTANT)) {
-      return DataTestHelpers.writeRecords(writer, records);
+      return MixedDataTestHelpers.writeRecords(writer, records);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
@@ -106,7 +106,7 @@ public class HiveDataTestHelpers {
     }
     LocationKind writeLocationKind = writeHiveLocation ? HiveLocationKind.INSTANT : BaseLocationKind.INSTANT;
     try (TaskWriter<Record> writer = builder.buildWriter(writeLocationKind)) {
-      return DataTestHelpers.writeRecords(writer, records);
+      return MixedDataTestHelpers.writeRecords(writer, records);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
@@ -115,12 +115,12 @@ public class HiveDataTestHelpers {
   public static List<Record> readKeyedTable(
       KeyedTable keyedTable, Expression expression,
       Schema projectSchema, boolean useDiskMap, boolean readDeletedData) {
-    AdaptHiveGenericArcticDataReader reader;
+    AdaptHiveGenericKeyedDataReader reader;
     if (projectSchema == null) {
       projectSchema = keyedTable.schema();
     }
     if (useDiskMap) {
-      reader = new AdaptHiveGenericArcticDataReader(
+      reader = new AdaptHiveGenericKeyedDataReader(
           keyedTable.io(),
           keyedTable.schema(),
           projectSchema,
@@ -131,7 +131,7 @@ public class HiveDataTestHelpers {
           null, false, new StructLikeCollections(true, 0L)
       );
     } else {
-      reader = new AdaptHiveGenericArcticDataReader(
+      reader = new AdaptHiveGenericKeyedDataReader(
           keyedTable.io(),
           keyedTable.schema(),
           projectSchema,
@@ -142,7 +142,7 @@ public class HiveDataTestHelpers {
       );
     }
 
-    return DataTestHelpers.readKeyedTable(keyedTable, reader, expression, projectSchema, readDeletedData);
+    return MixedDataTestHelpers.readKeyedTable(keyedTable, reader, expression, projectSchema, readDeletedData);
   }
 
   public static List<Record> readChangeStore(
@@ -154,9 +154,9 @@ public class HiveDataTestHelpers {
     Schema expectTableSchema = MetadataColumns.appendChangeStoreMetadataColumns(keyedTable.schema());
     Schema expectProjectSchema = MetadataColumns.appendChangeStoreMetadataColumns(projectSchema);
 
-    GenericAdaptHiveIcebergDataReader reader;
+    AdaptHiveGenericUnkeyedDataReader reader;
     if (useDiskMap) {
-      reader = new GenericAdaptHiveIcebergDataReader(
+      reader = new AdaptHiveGenericUnkeyedDataReader(
           keyedTable.asKeyedTable().io(),
           expectTableSchema,
           expectProjectSchema,
@@ -166,7 +166,7 @@ public class HiveDataTestHelpers {
           false,
           new StructLikeCollections(true, 0L));
     } else {
-      reader = new GenericAdaptHiveIcebergDataReader(
+      reader = new AdaptHiveGenericUnkeyedDataReader(
           keyedTable.asKeyedTable().io(),
           expectTableSchema,
           expectProjectSchema,
@@ -177,7 +177,7 @@ public class HiveDataTestHelpers {
       );
     }
 
-    return DataTestHelpers.readChangeStore(keyedTable, reader, expression);
+    return MixedDataTestHelpers.readChangeStore(keyedTable, reader, expression);
   }
 
   public static List<Record> readBaseStore(
@@ -187,9 +187,9 @@ public class HiveDataTestHelpers {
       projectSchema = table.schema();
     }
 
-    GenericAdaptHiveIcebergDataReader reader;
+    AdaptHiveGenericUnkeyedDataReader reader;
     if (useDiskMap) {
-      reader = new GenericAdaptHiveIcebergDataReader(
+      reader = new AdaptHiveGenericUnkeyedDataReader(
           table.io(),
           table.schema(),
           projectSchema,
@@ -199,7 +199,7 @@ public class HiveDataTestHelpers {
           false,
           new StructLikeCollections(true, 0L));
     } else {
-      reader = new GenericAdaptHiveIcebergDataReader(
+      reader = new AdaptHiveGenericUnkeyedDataReader(
           table.io(),
           table.schema(),
           projectSchema,
@@ -210,7 +210,7 @@ public class HiveDataTestHelpers {
       );
     }
 
-    return DataTestHelpers.readBaseStore(table, reader, expression);
+    return MixedDataTestHelpers.readBaseStore(table, reader, expression);
   }
 
   public static void testWrite(ArcticTable table, LocationKind locationKind, List<Record> records, String pathFeature)
@@ -266,7 +266,7 @@ public class HiveDataTestHelpers {
   }
 
   public static List<Record> readHiveKeyedTable(KeyedTable keyedTable, Expression expression) {
-    AdaptHiveGenericArcticDataReader reader = new AdaptHiveGenericArcticDataReader(
+    AdaptHiveGenericKeyedDataReader reader = new AdaptHiveGenericKeyedDataReader(
         keyedTable.io(),
         keyedTable.schema(),
         keyedTable.schema(),
@@ -315,7 +315,7 @@ public class HiveDataTestHelpers {
     )).collect(Collectors.toList());
     if (primaryKeySpec != null) {
       KeyedTableScanTask keyedTableScanTask = new NodeFileScanTask(arcticFileScanTasks);
-      AdaptHiveGenericArcticDataReader genericArcticDataReader = new AdaptHiveGenericArcticDataReader(
+      AdaptHiveGenericKeyedDataReader genericArcticDataReader = new AdaptHiveGenericKeyedDataReader(
           fileIO,
           schema,
           schema,
@@ -326,7 +326,7 @@ public class HiveDataTestHelpers {
       );
       return genericArcticDataReader.readData(keyedTableScanTask);
     } else {
-      GenericAdaptHiveIcebergDataReader genericArcticDataReader = new GenericAdaptHiveIcebergDataReader(
+      AdaptHiveGenericUnkeyedDataReader genericArcticDataReader = new AdaptHiveGenericUnkeyedDataReader(
           fileIO,
           schema,
           schema,

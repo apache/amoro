@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
+import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.table.BasicTableSnapshot;
@@ -32,7 +33,6 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableSnapshot;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -43,6 +43,7 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.TableProperties;
@@ -73,8 +74,8 @@ public class IcebergTableUtil {
   public static final String PROPERTIES_METADATA_LOCATION = "iceberg.metadata.location";
   public static final String PROPERTIES_PREV_METADATA_LOCATION = "iceberg.metadata.prev-location";
 
-  public static long getSnapshotId(UnkeyedTable internalTable, boolean refresh) {
-    Snapshot currentSnapshot = getSnapshot(internalTable, refresh);
+  public static long getSnapshotId(Table table, boolean refresh) {
+    Snapshot currentSnapshot = getSnapshot(table, refresh);
     if (currentSnapshot == null) {
       return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
     } else {
@@ -83,7 +84,6 @@ public class IcebergTableUtil {
   }
 
   public static TableSnapshot getSnapshot(ArcticTable arcticTable, TableRuntime tableRuntime) {
-    tableRuntime.refresh(arcticTable);
     if (arcticTable.isUnkeyedTable()) {
       return new BasicTableSnapshot(tableRuntime.getCurrentSnapshotId());
     } else {
@@ -92,14 +92,14 @@ public class IcebergTableUtil {
     }
   }
 
-  public static Snapshot getSnapshot(UnkeyedTable internalTable, boolean refresh) {
+  public static Snapshot getSnapshot(Table table, boolean refresh) {
     if (refresh) {
-      internalTable.refresh();
+      table.refresh();
     }
-    return internalTable.currentSnapshot();
+    return table.currentSnapshot();
   }
 
-  public static Set<String> getAllContentFilePath(UnkeyedTable internalTable) {
+  public static Set<String> getAllContentFilePath(Table internalTable) {
     Set<String> validFilesPath = new HashSet<>();
 
     TableEntriesScan entriesScan = TableEntriesScan.builder(internalTable)
@@ -116,7 +116,7 @@ public class IcebergTableUtil {
     return validFilesPath;
   }
 
-  public static Set<DeleteFile> getDanglingDeleteFiles(UnkeyedTable internalTable) {
+  public static Set<DeleteFile> getDanglingDeleteFiles(Table internalTable) {
     if (internalTable.currentSnapshot() == null) {
       return Collections.emptySet();
     }
@@ -161,7 +161,8 @@ public class IcebergTableUtil {
     TableMetaStore store = CatalogUtil.buildMetaStore(meta);
     Configuration conf = store.getConfiguration();
     String ioImpl = catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, DEFAULT_FILE_IO_IMPL);
-    return org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
+    FileIO fileIO = org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
+    return ArcticFileIOs.buildAdaptIcebergFileIO(store, fileIO);
   }
 
 

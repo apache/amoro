@@ -35,8 +35,6 @@
 
     <properties>
         <hive.version>2.3.9</hive.version>
-        <root.dir>${project.basedir}</root.dir>
-        <spark.mysql.version>5.1.40</spark.mysql.version>
         <spark.version>3.3.2</spark.version>
         <scala.version>2.12.15</scala.version>
     </properties>
@@ -79,6 +77,14 @@
                 <exclusion>
                     <groupId>org.apache.arrow</groupId>
                     <artifactId>arrow-vector</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.orc</groupId>
+                    <artifactId>orc-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.orc</groupId>
+                    <artifactId>orc-mapreduce</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -252,7 +258,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -331,6 +336,10 @@
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -376,6 +385,10 @@
                 </exclusion>
                 <exclusion>
                     <groupId>org.codehaus.janino</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.orc</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
@@ -428,25 +441,6 @@
                 <artifactId>scala-maven-plugin</artifactId>
                 <configuration>
                     <scalaVersion>${scala.version}</scalaVersion>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.diffplug.spotless</groupId>
-                <artifactId>spotless-maven-plugin</artifactId>
-                <configuration>
-                    <java>
-                        <excludes>
-                            <exclude>src/main/java/**/*.java</exclude>
-                            <exclude>src/test/java/**/*.java</exclude>
-                        </excludes>
-                    </java>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <configuration>
-                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
                 </configuration>
             </plugin>
             <plugin>

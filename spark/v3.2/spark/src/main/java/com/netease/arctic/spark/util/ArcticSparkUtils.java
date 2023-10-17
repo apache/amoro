@@ -18,6 +18,10 @@
 
 package com.netease.arctic.spark.util;
 
+import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE;
+import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE_DEFAULT;
+import static org.apache.iceberg.spark.Spark3Util.toTransforms;
+
 import com.netease.arctic.spark.table.ArcticSparkTable;
 import com.netease.arctic.table.DistributionHashMode;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -51,20 +55,20 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE;
-import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE_DEFAULT;
-import static org.apache.iceberg.spark.Spark3Util.toTransforms;
-
 public class ArcticSparkUtils {
   private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkUtils.class);
 
-  public static TableCatalogAndIdentifier tableCatalogAndIdentifier(SparkSession spark, List<String> nameParts) {
-    Spark3Util.CatalogAndIdentifier catalogAndIdentifier = Spark3Util.catalogAndIdentifier(
-        spark, nameParts, spark.sessionState().catalogManager().currentCatalog());
+  public static TableCatalogAndIdentifier tableCatalogAndIdentifier(
+      SparkSession spark, List<String> nameParts) {
+    Spark3Util.CatalogAndIdentifier catalogAndIdentifier =
+        Spark3Util.catalogAndIdentifier(
+            spark, nameParts, spark.sessionState().catalogManager().currentCatalog());
     CatalogPlugin catalog = catalogAndIdentifier.catalog();
-    Preconditions.checkArgument(catalog instanceof TableCatalog,
+    Preconditions.checkArgument(
+        catalog instanceof TableCatalog,
         "Cannot resolver name-parts %s to catalog and identifier, %s is not a table catalog",
-        Joiner.on(',').join(nameParts), catalog.name());
+        Joiner.on(',').join(nameParts),
+        catalog.name());
     return new TableCatalogAndIdentifier((TableCatalog) catalog, catalogAndIdentifier.identifier());
   }
 
@@ -88,35 +92,41 @@ public class ArcticSparkUtils {
 
   public static ClusteredDistribution buildRequiredDistribution(ArcticSparkTable arcticSparkTable) {
     // Fallback to use distribution mode parsed from table properties .
-    String modeName = PropertyUtil.propertyAsString(
-        arcticSparkTable.properties(),
-        WRITE_DISTRIBUTION_MODE,
-        WRITE_DISTRIBUTION_MODE_DEFAULT);
+    String modeName =
+        PropertyUtil.propertyAsString(
+            arcticSparkTable.properties(),
+            WRITE_DISTRIBUTION_MODE,
+            WRITE_DISTRIBUTION_MODE_DEFAULT);
     DistributionMode writeMode = DistributionMode.fromName(modeName);
     switch (writeMode) {
       case NONE:
         return null;
 
       case HASH:
-        DistributionHashMode distributionHashMode = DistributionHashMode.valueOfDesc(
-            arcticSparkTable.properties().getOrDefault(
-                TableProperties.WRITE_DISTRIBUTION_HASH_MODE,
-                TableProperties.WRITE_DISTRIBUTION_HASH_MODE_DEFAULT));
+        DistributionHashMode distributionHashMode =
+            DistributionHashMode.valueOfDesc(
+                arcticSparkTable
+                    .properties()
+                    .getOrDefault(
+                        TableProperties.WRITE_DISTRIBUTION_HASH_MODE,
+                        TableProperties.WRITE_DISTRIBUTION_HASH_MODE_DEFAULT));
         List<Transform> transforms = new ArrayList<>();
         if (DistributionHashMode.AUTO.equals(distributionHashMode)) {
-          distributionHashMode = DistributionHashMode.autoSelect(
-              arcticSparkTable.table().isKeyedTable(),
-              !arcticSparkTable.table().spec().isUnpartitioned());
+          distributionHashMode =
+              DistributionHashMode.autoSelect(
+                  arcticSparkTable.table().isKeyedTable(),
+                  !arcticSparkTable.table().spec().isUnpartitioned());
         }
         if (distributionHashMode.isSupportPrimaryKey()) {
-          Transform transform = toTransformsFromPrimary(
-              arcticSparkTable,
-              arcticSparkTable.table().asKeyedTable().primaryKeySpec());
+          Transform transform =
+              toTransformsFromPrimary(
+                  arcticSparkTable, arcticSparkTable.table().asKeyedTable().primaryKeySpec());
           transforms.add(transform);
           if (distributionHashMode.isSupportPartition()) {
             transforms.addAll(Arrays.asList(toTransforms(arcticSparkTable.table().spec())));
           }
-          return Distributions.clustered(transforms.stream().filter(Objects::nonNull).toArray(Transform[]::new));
+          return Distributions.clustered(
+              transforms.stream().filter(Objects::nonNull).toArray(Transform[]::new));
         } else {
           if (distributionHashMode.isSupportPartition()) {
             return Distributions.clustered(toTransforms(arcticSparkTable.table().spec()));
@@ -126,8 +136,10 @@ public class ArcticSparkUtils {
         }
 
       case RANGE:
-        LOG.warn("Fallback to use 'none' distribution mode, because {}={} is not supported in spark now",
-            WRITE_DISTRIBUTION_MODE, DistributionMode.RANGE.modeName());
+        LOG.warn(
+            "Fallback to use 'none' distribution mode, because {}={} is not supported in spark now",
+            WRITE_DISTRIBUTION_MODE,
+            DistributionMode.RANGE.modeName());
         return null;
 
       default:
@@ -135,9 +147,13 @@ public class ArcticSparkUtils {
     }
   }
 
-  private static Transform toTransformsFromPrimary(ArcticSparkTable arcticSparkTable, PrimaryKeySpec primaryKeySpec) {
-    int numBucket = PropertyUtil.propertyAsInt(arcticSparkTable.properties(),
-        TableProperties.BASE_FILE_INDEX_HASH_BUCKET, TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
+  private static Transform toTransformsFromPrimary(
+      ArcticSparkTable arcticSparkTable, PrimaryKeySpec primaryKeySpec) {
+    int numBucket =
+        PropertyUtil.propertyAsInt(
+            arcticSparkTable.properties(),
+            TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
+            TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
     return Expressions.bucket(numBucket, primaryKeySpec.fieldNames().get(0));
   }
 

@@ -24,6 +24,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;

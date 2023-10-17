@@ -21,6 +21,7 @@ package com.netease.arctic.server;
 
 import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.ConfigOptions;
+import java.time.Duration;
 
 public class ArcticManagementConf {
 
@@ -252,6 +253,25 @@ public class ArcticManagementConf {
           .defaultValue(30)
           .withDescription("session timeout in minute");
 
+  /**
+   * configs of data expiration
+   */
+  public static final ConfigOption<Boolean> DATA_EXPIRATION_ENABLED =
+      ConfigOptions.key("data-expiration.enabled")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("Enable data expiration");
+  public static final ConfigOption<Integer> DATA_EXPIRATION_THREAD_COUNT =
+      ConfigOptions.key("data-expiration.thread-count")
+          .intType()
+          .defaultValue(10)
+          .withDescription("The number of threads used for data expiring");
+  public static final ConfigOption<Duration> DATA_EXPIRATION_INTERVAL =
+      ConfigOptions.key("data-expiration.interval")
+          .durationType()
+          .defaultValue(Duration.ofDays(1))
+          .withDescription("Execute interval for data expiration");
+
   public static final String SYSTEM_CONFIG = "ams";
 
   public static final String CATALOG_CORE_SITE = "core-site";
@@ -272,5 +292,5 @@ public class ArcticManagementConf {
 
   public static final String DB_TYPE_DERBY = "derby";
   public static final String DB_TYPE_MYSQL = "mysql";
-
+  public static final String DB_TYPE_POSTGRES = "postgres";
 }

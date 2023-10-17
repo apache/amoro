@@ -19,7 +19,7 @@
 package com.netease.arctic;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -29,11 +29,16 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 
 public class BasicTableTestHelper implements TableTestHelper {
 
@@ -74,8 +79,12 @@ public class BasicTableTestHelper implements TableTestHelper {
         hasPartition ? SPEC : PartitionSpec.unpartitioned(), tableProperties);
   }
 
+  public BasicTableTestHelper(boolean hasPrimaryKey, boolean hasPartition, String fileFormat) {
+    this(hasPrimaryKey, hasPartition, buildTableFormat(fileFormat));
+  }
+
   public BasicTableTestHelper(boolean hasPrimaryKey, boolean hasPartition) {
-    this(hasPrimaryKey, hasPartition, null);
+    this(hasPrimaryKey, hasPartition, DEFAULT_FILE_FORMAT_DEFAULT);
   }
 
   @Override
@@ -100,44 +109,52 @@ public class BasicTableTestHelper implements TableTestHelper {
 
   @Override
   public Record generateTestRecord(int id, String name, long ts, String opTime) {
-    return DataTestHelpers.createRecord(TABLE_SCHEMA, id, name, ts, opTime);
+    return MixedDataTestHelpers.createRecord(TABLE_SCHEMA, id, name, ts, opTime);
   }
 
   @Override
   public List<DataFile> writeChangeStore(
       KeyedTable keyedTable, Long txId, ChangeAction action, List<Record> records, boolean orderedWrite) {
-    return DataTestHelpers.writeChangeStore(keyedTable, txId, action, records, orderedWrite);
+    return MixedDataTestHelpers.writeChangeStore(keyedTable, txId, action, records, orderedWrite);
   }
 
   @Override
   public List<DataFile> writeBaseStore(
       ArcticTable table, long txId, List<Record> records, boolean orderedWrite) {
-    return DataTestHelpers.writeBaseStore(table, txId, records, orderedWrite);
+    return MixedDataTestHelpers.writeBaseStore(table, txId, records, orderedWrite);
   }
 
   @Override
   public List<Record> readKeyedTable(
       KeyedTable keyedTable, Expression expression,
       Schema projectSchema, boolean useDiskMap, boolean readDeletedData) {
-    return DataTestHelpers.readKeyedTable(keyedTable, expression, projectSchema, useDiskMap, readDeletedData);
+    return MixedDataTestHelpers.readKeyedTable(keyedTable, expression, projectSchema, useDiskMap, readDeletedData);
   }
 
   @Override
   public List<Record> readChangeStore(
       KeyedTable keyedTable, Expression expression, Schema projectSchema, boolean useDiskMap) {
-    return DataTestHelpers.readChangeStore(keyedTable, expression, projectSchema, useDiskMap);
+    return MixedDataTestHelpers.readChangeStore(keyedTable, expression, projectSchema, useDiskMap);
   }
 
   @Override
   public List<Record> readBaseStore(
       ArcticTable table, Expression expression, Schema projectSchema,
       boolean useDiskMap) {
-    return DataTestHelpers.readBaseStore(table, expression, projectSchema, useDiskMap);
+    return MixedDataTestHelpers.readBaseStore(table, expression, projectSchema, useDiskMap);
   }
 
   @Override
   public String toString() {
     return String.format("hasPrimaryKey = %b, hasPartitionSpec = %b", primaryKeySpec.primaryKeyExisted(),
         partitionSpec.isPartitioned());
+  }
+
+  protected static Map<String, String> buildTableFormat(String fileFormat) {
+    Map<String, String> tableProperties = Maps.newHashMapWithExpectedSize(3);
+    tableProperties.put(BASE_FILE_FORMAT, fileFormat);
+    tableProperties.put(CHANGE_FILE_FORMAT, fileFormat);
+    tableProperties.put(DEFAULT_FILE_FORMAT, fileFormat);
+    return tableProperties;
   }
 }

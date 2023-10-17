@@ -6,7 +6,9 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
+
 import java.util.Set;
+
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
@@ -19,6 +21,10 @@ public class CatalogBuilder {
     String type = catalogMeta.getCatalogType();
     Set<TableFormat> tableFormats = CatalogUtil.tableFormats(catalogMeta);
     TableFormat tableFormat = tableFormats.iterator().next();
+
+    if (tableFormat == TableFormat.PAIMON) {
+      return new PaimonServerCatalog(catalogMeta);
+    }
 
     switch (type) {
       case CATALOG_TYPE_HADOOP:

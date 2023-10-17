@@ -18,7 +18,7 @@
 
 package com.netease.arctic.op;
 
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.io.TableDataTestBase;
 import com.netease.arctic.utils.PuffinUtil;
 import org.apache.iceberg.DataFile;
@@ -42,12 +42,13 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
   public void testOverwriteAllPartition() {
     long txId = getArcticTable().asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
     List<Record> newRecords = Lists.newArrayList(
-        DataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
-        DataTestHelpers.createRecord(8, "888", 0, "2022-01-01T12:00:00"),
-        DataTestHelpers.createRecord(9, "999", 0, "2022-01-01T12:00:00")
+        MixedDataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
+        MixedDataTestHelpers.createRecord(8, "888", 0, "2022-01-01T12:00:00"),
+        MixedDataTestHelpers.createRecord(9, "999", 0, "2022-01-01T12:00:00")
     );
     long before = System.currentTimeMillis();
-    List<DataFile> newFiles = DataTestHelpers.writeBaseStore(getArcticTable().asKeyedTable(), txId, newRecords, false);
+    List<DataFile> newFiles = MixedDataTestHelpers
+        .writeBaseStore(getArcticTable().asKeyedTable(), txId, newRecords, false);
     OverwriteBaseFiles overwrite = getArcticTable().asKeyedTable().newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.overwriteByRowFilter(Expressions.alwaysTrue())
@@ -61,30 +62,30 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
     // expect result: all partition with new txId
     Assert.assertEquals(
         txId,
-        partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-01T12:00:00")).longValue());
+        partitionOptimizedSequence.get(MixedDataTestHelpers.recordPartition("2022-01-01T12:00:00")).longValue());
     Assert.assertEquals(
         txId,
-        partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")).longValue());
+        partitionOptimizedSequence.get(MixedDataTestHelpers.recordPartition("2022-01-02T12:00:00")).longValue());
     Assert.assertEquals(
         txId,
-        partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-03T12:00:00")).longValue());
+        partitionOptimizedSequence.get(MixedDataTestHelpers.recordPartition("2022-01-03T12:00:00")).longValue());
     Assert.assertEquals(
         txId,
-        partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-04T12:00:00")).longValue());
+        partitionOptimizedSequence.get(MixedDataTestHelpers.recordPartition("2022-01-04T12:00:00")).longValue());
 
     StructLikeMap<Long> partitionOptimizedTime =
         PuffinUtil.reader(getArcticTable().asKeyedTable()).readBaseOptimizedTime();
     // expect result: all partition with new optimized time
     assertRange(before, after,
-        partitionOptimizedTime.get(DataTestHelpers.recordPartition("2022-01-01T12:00:00")));
+        partitionOptimizedTime.get(MixedDataTestHelpers.recordPartition("2022-01-01T12:00:00")));
     assertRange(before, after,
-        partitionOptimizedTime.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")));
+        partitionOptimizedTime.get(MixedDataTestHelpers.recordPartition("2022-01-02T12:00:00")));
     assertRange(before, after,
-        partitionOptimizedTime.get(DataTestHelpers.recordPartition("2022-01-03T12:00:00")));
+        partitionOptimizedTime.get(MixedDataTestHelpers.recordPartition("2022-01-03T12:00:00")));
     assertRange(before, after,
-        partitionOptimizedTime.get(DataTestHelpers.recordPartition("2022-01-04T12:00:00")));
+        partitionOptimizedTime.get(MixedDataTestHelpers.recordPartition("2022-01-04T12:00:00")));
 
-    List<Record> rows = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), Expressions.alwaysTrue());
+    List<Record> rows = MixedDataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), Expressions.alwaysTrue());
     // partition1 -> base[7,8,9]
     Assert.assertEquals(3, rows.size());
 
@@ -104,11 +105,12 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
   public void testOverwritePartitionByExpression() {
     long txId = getArcticTable().asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
     List<Record> newRecords = Lists.newArrayList(
-        DataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
-        DataTestHelpers.createRecord(8, "888", 0, "2022-01-01T12:00:00"),
-        DataTestHelpers.createRecord(9, "999", 0, "2022-01-01T12:00:00")
+        MixedDataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
+        MixedDataTestHelpers.createRecord(8, "888", 0, "2022-01-01T12:00:00"),
+        MixedDataTestHelpers.createRecord(9, "999", 0, "2022-01-01T12:00:00")
     );
-    List<DataFile> newFiles = DataTestHelpers.writeBaseStore(getArcticTable().asKeyedTable(), txId, newRecords, false);
+    List<DataFile> newFiles = MixedDataTestHelpers
+        .writeBaseStore(getArcticTable().asKeyedTable(), txId, newRecords, false);
     long before = System.currentTimeMillis();
     OverwriteBaseFiles overwrite = getArcticTable().asKeyedTable().newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
@@ -131,27 +133,27 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
     // expect result: 1,2,4 partition with new txId, 3 partition is null
     Assert.assertEquals(
         txId,
-        partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-01T12:00:00")).longValue());
+        partitionOptimizedSequence.get(MixedDataTestHelpers.recordPartition("2022-01-01T12:00:00")).longValue());
     Assert.assertEquals(
         txId,
-        partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")).longValue());
-    Assert.assertNull(partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-03T12:00:00")));
+        partitionOptimizedSequence.get(MixedDataTestHelpers.recordPartition("2022-01-02T12:00:00")).longValue());
+    Assert.assertNull(partitionOptimizedSequence.get(MixedDataTestHelpers.recordPartition("2022-01-03T12:00:00")));
     Assert.assertEquals(
         txId,
-        partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")).longValue());
+        partitionOptimizedSequence.get(MixedDataTestHelpers.recordPartition("2022-01-02T12:00:00")).longValue());
 
     StructLikeMap<Long> partitionOptimizedTime =
         PuffinUtil.reader(getArcticTable().asKeyedTable()).readBaseOptimizedTime();
     // expect result: 1,2,4 partition with new optimized time, 3 partition is null
     assertRange(before, after,
-        partitionOptimizedTime.get(DataTestHelpers.recordPartition("2022-01-01T12:00:00")));
+        partitionOptimizedTime.get(MixedDataTestHelpers.recordPartition("2022-01-01T12:00:00")));
     assertRange(before, after,
-        partitionOptimizedTime.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")));
-    Assert.assertNull(partitionOptimizedTime.get(DataTestHelpers.recordPartition("2022-01-03T12:00:00")));
+        partitionOptimizedTime.get(MixedDataTestHelpers.recordPartition("2022-01-02T12:00:00")));
+    Assert.assertNull(partitionOptimizedTime.get(MixedDataTestHelpers.recordPartition("2022-01-03T12:00:00")));
     assertRange(before, after,
-        partitionOptimizedTime.get(DataTestHelpers.recordPartition("2022-01-04T12:00:00")));
+        partitionOptimizedTime.get(MixedDataTestHelpers.recordPartition("2022-01-04T12:00:00")));
 
-    List<Record> rows = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), Expressions.alwaysTrue());
+    List<Record> rows = MixedDataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), Expressions.alwaysTrue());
     // partition1 -> base[7,8,9]
     // partition3 -> base[3]
     Assert.assertEquals(4, rows.size());

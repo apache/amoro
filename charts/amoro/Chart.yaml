@@ -20,8 +20,14 @@ name: amoro
 description: A Helm chart for Amoro
 type: application
 version: 0.1.0
-appVersion: "0.5.0"
+appVersion: "0.6.0"
 home: https://amoro.netease.com/
 icon: https://amoro.netease.com/img/amoro-logo-icon.png
 sources:
   - https://github.com/NetEase/amoro
+dependencies:
+  - name: common
+    repository: oci://registry-1.docker.io/bitnamicharts
+    tags:
+      - bitnami-common
+    version: 2.11.1
