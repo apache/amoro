@@ -169,6 +169,10 @@
                     <groupId>org.apache.hive</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.jodd</groupId>
+                    <artifactId>jodd-core</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
