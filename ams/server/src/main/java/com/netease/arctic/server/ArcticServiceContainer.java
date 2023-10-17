@@ -133,6 +133,7 @@ public class ArcticServiceContainer {
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
     addHandlerChain(optimizingService.getTableRuntimeHandler());
+    addHandlerChain(AsyncTableExecutors.getInstance().getDataExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getSnapshotsExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingCommitExecutor());
@@ -171,6 +172,10 @@ public class ArcticServiceContainer {
       tableService.dispose();
       tableService = null;
     }
+    if (terminalManager != null) {
+      terminalManager.dispose();
+      terminalManager = null;
+    }
     optimizingService = null;
   }
 
@@ -200,6 +205,7 @@ public class ArcticServiceContainer {
       config.addStaticFiles(dashboardServer.configStaticFiles());
       config.sessionHandler(SessionHandler::new);
       config.enableCorsForAllOrigins();
+      config.showJavalinBanner = false;
     });
     httpServer.routes(() -> {
       dashboardServer.endpoints().addEndpoints();
@@ -238,7 +244,17 @@ public class ArcticServiceContainer {
   private void startHttpService() {
     int port = serviceConfig.getInteger(ArcticManagementConf.HTTP_SERVER_PORT);
     httpServer.start(port);
-    LOG.info("Http server start at {}!!!", port);
+
+    LOG.info("\n" +
+        "    ___     __  ___ ____   ____   ____ \n" +
+        "   /   |   /  |/  // __ \\ / __ \\ / __ \\\n" +
+        "  / /| |  / /|_/ // / / // /_/ // / / /\n" +
+        " / ___ | / /  / // /_/ // _, _// /_/ / \n" +
+        "/_/  |_|/_/  /_/ \\____//_/ |_| \\____/  \n" +
+        "                                       \n" +
+        "      https://amoro.netease.com/       \n");
+
+    LOG.info("Http server start at {}.", port);
   }
 
   private void initThriftService() throws TTransportException {

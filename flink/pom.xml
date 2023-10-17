@@ -33,23 +33,21 @@
     <url>https://amoro.netease.com</url>
 
     <modules>
-        <module>v1.12/flink</module>
-        <module>v1.12/flink-format</module>
-        <module>v1.12/flink-runtime</module>
-        <module>v1.12/arctic-flink-1.12-iceberg-bridge</module>
-        <module>v1.12/arctic-flink-1.12-pulsar-bridge</module>
-        <module>v1.14/flink</module>
-        <module>v1.14/flink-format</module>
-        <module>v1.14/flink-runtime</module>
-        <module>v1.14/arctic-flink-1.14-iceberg-bridge</module>
         <module>v1.15/flink</module>
         <module>v1.15/flink-format</module>
         <module>v1.15/flink-runtime</module>
         <module>v1.15/arctic-flink-1.15-iceberg-bridge</module>
+        <module>v1.17/flink</module>
+        <module>v1.17/flink-runtime</module>
+        <module>flink-common</module>
+        <module>flink-common-format</module>
+        <module>flink-common-iceberg-bridge</module>
     </modules>
 
     <properties>
         <kafka.version>2.4.1</kafka.version>
+        <gson.version>2.9.0</gson.version>
+        <jackson.vesion>2.10.2</jackson.vesion>
     </properties>
 
     <build>
