@@ -68,7 +68,7 @@ jobs:
             type=semver,event=tag,enable=${{ matrix.hadoop == 'v2' }},pattern={{version}}-hadoop2
 
       - name: Print tags
-        run: echo ${{ steps.meta.output.tags }}
+        run: echo ${{ steps.meta.outputs.tags }}
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
@@ -91,7 +91,7 @@ jobs:
           push: true
           file: docker/amoro/Dockerfile
           platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.output.tags }}
+          tags: ${{ steps.meta.outputs.tags }}
 
   docker-optimizer-flink:
     name: Push Amoro Optimizer-Flink Docker Image to Docker Hub
@@ -121,15 +121,15 @@ jobs:
           images: |
             arctic163/optimizer-flink
           tags: |
-            type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix='-snapshot'
-            type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix='-snapshot-flink1.14'
-            type=ref,event=branch,enable=${{ matrix.flink == '1.15.3' }},suffix='-snapshot-flink1.15'
+            type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot
+            type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot-flink1.14
+            type=ref,event=branch,enable=${{ matrix.flink == '1.15.3' }},suffix=-snapshot-flink1.15
             type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}
             type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}-flink1.14
             type=semver,enable=${{ matrix.flink == '1.15.3' }},pattern={{version}}-flink1.15
 
       - name: Print tags
-        run: echo ${{ steps.meta.output.tags }}
+        run: echo ${{ steps.meta.outputs.tags }}
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
@@ -152,6 +152,6 @@ jobs:
           push: true
           file: docker/optimizer-flink/Dockerfile
           platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.output.tags }}
+          tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             FLINK_VERSION=${{ matrix.flink }}
