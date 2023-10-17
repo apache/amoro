@@ -175,6 +175,10 @@ public class ArcticServiceContainer {
       tableService.dispose();
       tableService = null;
     }
+    if (terminalManager != null) {
+      terminalManager.dispose();
+      terminalManager = null;
+    }
     optimizingService = null;
   }
 
