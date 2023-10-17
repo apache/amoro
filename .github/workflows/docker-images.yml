@@ -25,14 +25,18 @@ on:
   push:
     branches:
       - "master"
+    tags:
+      - "v*"
+
   pull_request:
     branches:
       - "master"
+
   workflow_dispatch:
 
 jobs:
-  push_official_image:
-    name: Push Snapshot Docker Image to Docker Hub
+  docker-amoro:
+    name: Push Amoro Docker Image to Docker Hub
     runs-on: ubuntu-latest
     if: ${{ startsWith(github.repository, 'NetEase/') }}
     steps:
@@ -45,43 +49,37 @@ jobs:
           cache: maven
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - run: echo "${{ secrets.DOCKERHUB_USER  }}"
+      - name: Set up Docker tags
+        uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: arctic163/amoro
+          tags: |
+            type=ref,event=branch,enable=${{ github.ref == 'ref/heads/master' }},value=master-snapshot
+            type=semver,pattern={{version}}
+
+      - name: Print tags
+        run: echo ${{ step.meta.output.tags }}
 
       - name: Login to Docker Hub
-        if: github.ref == 'refs/heads/master'
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Build all module with Maven
-        run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp -DskipTests
+        run: mvn clean install -pl '!trino' -DskipTests -B -ntp
 
       - name: Build and Push Amoro Docker Image
         uses: docker/build-push-action@v4
         with:
           context: .
-          load: true
           file: docker/amoro/Dockerfile
           platforms: linux/amd64,linux/arm64
-          push: ${{ github.ref == 'refs/heads/master' }}
           tags: arctic163/amoro:master-snapshot
 
-      - run: docker images
 
-      - name: Build and Push Amoro QuickDemo Docker Image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          load: true
-          file: docker/quickdemo/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: ${{ github.ref == 'refs/heads/master' }}
-          tags: arctic163/quickdemo:master-snapshot
-          build-args: |
-            FLINK_VERSION=1.15.3
-            AMORO_TAG=master-snapshot
-
-      - run: docker images
