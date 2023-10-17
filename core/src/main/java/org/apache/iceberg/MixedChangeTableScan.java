@@ -91,14 +91,7 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
         fileScanTask -> {
           StructLike partition = fileScanTask.file().partition();
           long sequenceNumber = fileScanTask.file().dataSequenceNumber();
-          Boolean shouldKeep = shouldKeepFile(partition, sequenceNumber);
-          if (shouldKeep == null) {
-            String filePath = fileScanTask.file().path().toString();
-            return shouldKeepFileWithLegacyTxId(partition,
-                FileNameRules.parseChange(filePath, sequenceNumber).transactionId());
-          } else {
-            return shouldKeep;
-          }
+          return shouldKeepFile(partition, sequenceNumber);
         });
     return CloseableIterable.transform(filteredTasks,
         fileScanTask -> new BasicArcticFileScanTask(DefaultKeyedFile.parseChange(fileScanTask.file()),
@@ -123,7 +116,7 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
     if (fromSequence != null) {
       return sequence > fromSequence;
     } else {
-      return null;
+      return true;
     }
   }
 

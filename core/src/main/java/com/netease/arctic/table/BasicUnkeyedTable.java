@@ -323,9 +323,4 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public UpdatePartitionProperties updatePartitionProperties(Transaction transaction) {
     return new PartitionPropertiesUpdate(this, transaction);
   }
-
-  @Override
-  public UpdateStatistics updateStatistics() {
-    return icebergTable.updateStatistics();
-  }
 }
