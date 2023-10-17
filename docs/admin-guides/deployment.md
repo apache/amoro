@@ -118,7 +118,7 @@ and move it into the `{AMORO_HOME}/lib/` directory. You can use the following co
 ```shell
 cd ${AMORO_HOME}
 MYSQL_JDBC_DRIVER_VERSION=8.0.30
-curl -O https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_JDBC_DRIVER_VERSION}/mysql-connector-java-${MYSQL_JDBC_DRIVER_VERSION}.jar
+wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_JDBC_DRIVER_VERSION}/mysql-connector-java-${MYSQL_JDBC_DRIVER_VERSION}.jar
 mv mysql-connector-java-${MYSQL_JDBC_DRIVER_VERSION}.jar lib
 ```
 
