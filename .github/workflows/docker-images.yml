@@ -59,12 +59,13 @@ jobs:
         id: meta
         with:
           images: |
-            arctic163/amoro
+            name=arctic163/amoro
           tags: |
-            type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},value=master-snapshot
-            type=ref,event=branch,enable=${{ matrix.hadoop == 'v2' }},value=master-snapshot-hadoop2
-            type=semver,enable=${{ matrix.hadoop == 'v3' }},pattern={{version}}
-            type=semver,enable=${{ matrix.hadoop == 'v2' }},pattern={{version}}-hadoop2
+            type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix='-snapshot'
+            type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix='-snapshot-hadoop3'
+            type=ref,event=branch,enable=${{ matrix.hadoop == 'v2' }},suffix='-snapshot-hadoop2'
+            type=semver,event=tag,enable=${{ matrix.hadoop == 'v3' }},pattern={{version}}
+            type=semver,event=tag,enable=${{ matrix.hadoop == 'v2' }},pattern={{version}}-hadoop2
 
       - name: Print tags
         run: echo ${{ steps.meta.output.tags }}
@@ -115,9 +116,9 @@ jobs:
           images: |
             arctic163/optimizer-flink
           tags: |
-            type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},value=master-snapshot
-            type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},value=master-snapshot-flink1.14
-            type=ref,event=branch,enable=${{ matrix.flink == '1.15.3' }},value=master-snapshot-flink1.15
+            type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix='-snapshot'
+            type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix='-snapshot-flink1.14'
+            type=ref,event=branch,enable=${{ matrix.flink == '1.15.3' }},suffix='-snapshot-flink1.15'
             type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}
             type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}-flink1.14
             type=semver,enable=${{ matrix.flink == '1.15.3' }},pattern={{version}}-flink1.15
