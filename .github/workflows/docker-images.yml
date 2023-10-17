@@ -206,7 +206,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build optimizer module with Maven
-        run: mvn clean package -pl 'flink/v.17/flink-runtime' -am -e -DskipTests -B -ntp
+        run: mvn clean package -pl 'flink/v1.17/flink-runtime' -am -e -DskipTests -B -ntp
 
       - name: Build and Push Flink Optimizer Docker Image
         uses: docker/build-push-action@v4
