@@ -258,7 +258,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
             groupByBucketEntry.getKey(),
             fileStorePathFactory);
         int fileCount = 0;
-        int fileSize = 0;
+        long fileSize = 0;
         long lastCommitTime = 0;
         for (DataFileMeta dataFileMeta : groupByBucketEntry.getValue()) {
           fileCount++;
@@ -309,7 +309,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     ManifestFile manifestFile = store.manifestFileFactory().create();
     List<ManifestFileMeta> manifestFileMetas = biFunction.apply(manifestList, snapshot);
     int fileCount = 0;
-    int fileSize = 0;
+    long fileSize = 0;
     for (ManifestFileMeta manifestFileMeta : manifestFileMetas) {
       fileCount += manifestFileMeta.numAddedFiles();
       fileCount -= manifestFileMeta.numDeletedFiles();
