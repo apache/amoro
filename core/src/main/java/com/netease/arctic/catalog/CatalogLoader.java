@@ -142,8 +142,10 @@ public class CatalogLoader {
         case CATALOG_TYPE_GLUE:
           if (TableFormat.ICEBERG == tableFormat) {
             catalogImpl = GLUE_CATALOG_IMPL;
+          } else if (TableFormat.MIXED_ICEBERG == tableFormat) {
+            catalogImpl = MIXED_ICEBERG_CATALOG_IMP;
           } else {
-            throw new IllegalArgumentException("Glue Catalog support iceberg table only");
+            throw new IllegalArgumentException("Glue Catalog support iceberg/mixed-iceberg table only");
           }
           break;
         case CATALOG_TYPE_CUSTOM:

@@ -58,6 +58,8 @@ public class CatalogBuilder {
       case CATALOG_TYPE_GLUE:
         if (TableFormat.ICEBERG == tableFormat) {
           return new IcebergCatalogImpl(catalogMeta);
+        } else if (TableFormat.MIXED_ICEBERG == tableFormat) {
+          return new MixedIcebergCatalogImpl(catalogMeta);
         } else {
           throw new IllegalStateException("Glue catalog support iceberg table only.");
         }
