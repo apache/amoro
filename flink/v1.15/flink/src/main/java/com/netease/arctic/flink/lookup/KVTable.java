@@ -57,10 +57,14 @@ public interface KVTable<T> extends Serializable, Closeable {
    */
   void initialize(Iterator<T> dataStream) throws IOException;
 
-  /** @return if the rowData is filtered, return true. */
+  /**
+   * @return if the rowData is filtered, return true.
+   */
   boolean filter(T value);
 
-  /** @return if initialization is completed, return true. */
+  /**
+   * @return if initialization is completed, return true.
+   */
   boolean initialized();
 
   /**

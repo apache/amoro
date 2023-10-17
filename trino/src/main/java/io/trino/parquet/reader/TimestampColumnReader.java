@@ -14,6 +14,11 @@
 
 package io.trino.parquet.reader;
 
+import static io.trino.parquet.ParquetTimestampUtils.decodeInt96Timestamp;
+import static io.trino.plugin.base.type.TrinoTimestampEncoderFactory.createTimestampEncoder;
+import static io.trino.spi.type.TimeZoneKey.UTC_KEY;
+import static java.util.Objects.requireNonNull;
+
 import io.trino.parquet.PrimitiveField;
 import io.trino.plugin.base.type.DecodedTimestamp;
 import io.trino.plugin.base.type.TrinoTimestampEncoder;
@@ -24,16 +29,8 @@ import io.trino.spi.type.TimestampWithTimeZoneType;
 import io.trino.spi.type.Type;
 import org.joda.time.DateTimeZone;
 
-import static io.trino.parquet.ParquetTimestampUtils.decodeInt96Timestamp;
-import static io.trino.plugin.base.type.TrinoTimestampEncoderFactory.createTimestampEncoder;
-import static io.trino.spi.type.TimeZoneKey.UTC_KEY;
-import static java.util.Objects.requireNonNull;
-
-/**
- * Copy from trino-parquet TimestampColumnReader and do some change to adapt Arctic
- */
-public class TimestampColumnReader
-    extends PrimitiveColumnReader {
+/** Copy from trino-parquet TimestampColumnReader and do some change to adapt Arctic */
+public class TimestampColumnReader extends PrimitiveColumnReader {
   private final DateTimeZone timeZone;
 
   public TimestampColumnReader(PrimitiveField field, DateTimeZone timeZone) {
@@ -41,17 +38,19 @@ public class TimestampColumnReader
     this.timeZone = requireNonNull(timeZone, "timeZone is null");
   }
 
-  // TODO: refactor to provide type at construction time (https://github.com/trinodb/trino/issues/5198)
+  // TODO: refactor to provide type at construction time
+  // (https://github.com/trinodb/trino/issues/5198)
   @Override
   protected void readValue(BlockBuilder blockBuilder, Type type) {
     if (type instanceof TimestampWithTimeZoneType) {
       DecodedTimestamp decodedTimestamp = decodeInt96Timestamp(valuesReader.readBytes());
       LongTimestampWithTimeZone longTimestampWithTimeZone =
-          LongTimestampWithTimeZone.fromEpochSecondsAndFraction(decodedTimestamp.epochSeconds(),
-              decodedTimestamp.nanosOfSecond() * 1000L, UTC_KEY);
+          LongTimestampWithTimeZone.fromEpochSecondsAndFraction(
+              decodedTimestamp.epochSeconds(), decodedTimestamp.nanosOfSecond() * 1000L, UTC_KEY);
       type.writeObject(blockBuilder, longTimestampWithTimeZone);
     } else {
-      TrinoTimestampEncoder<?> trinoTimestampEncoder = createTimestampEncoder((TimestampType) type, timeZone);
+      TrinoTimestampEncoder<?> trinoTimestampEncoder =
+          createTimestampEncoder((TimestampType) type, timeZone);
       trinoTimestampEncoder.write(decodeInt96Timestamp(valuesReader.readBytes()), blockBuilder);
     }
   }

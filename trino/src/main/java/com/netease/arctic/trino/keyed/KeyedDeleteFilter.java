@@ -18,6 +18,9 @@
 
 package com.netease.arctic.trino.keyed;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static io.trino.plugin.iceberg.TypeConverter.toIcebergType;
+
 import com.netease.arctic.hive.io.reader.AdaptHiveArcticDeleteFilter;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -32,12 +35,7 @@ import org.apache.iceberg.types.Types;
 import java.util.List;
 import java.util.Optional;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static io.trino.plugin.iceberg.TypeConverter.toIcebergType;
-
-/**
- * KeyedDeleteFilter is used to do MOR for Keyed Table
- */
+/** KeyedDeleteFilter is used to do MOR for Keyed Table */
 public class KeyedDeleteFilter extends AdaptHiveArcticDeleteFilter<TrinoRow> {
 
   private FileIO fileIO;
@@ -48,7 +46,11 @@ public class KeyedDeleteFilter extends AdaptHiveArcticDeleteFilter<TrinoRow> {
       List<IcebergColumnHandle> requestedSchema,
       PrimaryKeySpec primaryKeySpec,
       FileIO fileIO) {
-    super(keyedTableScanTask, tableSchema, filterSchema(tableSchema, requestedSchema), primaryKeySpec);
+    super(
+        keyedTableScanTask,
+        tableSchema,
+        filterSchema(tableSchema, requestedSchema),
+        primaryKeySpec);
     this.fileIO = fileIO;
   }
 
@@ -62,13 +64,13 @@ public class KeyedDeleteFilter extends AdaptHiveArcticDeleteFilter<TrinoRow> {
     return fileIO.newInputFile(location);
   }
 
-  private static Schema filterSchema(Schema tableSchema, List<IcebergColumnHandle> requestedColumns) {
+  private static Schema filterSchema(
+      Schema tableSchema, List<IcebergColumnHandle> requestedColumns) {
     return new Schema(filterFieldList(tableSchema.columns(), requestedColumns));
   }
 
   private static List<Types.NestedField> filterFieldList(
-      List<Types.NestedField> fields,
-      List<IcebergColumnHandle> requestedSchemas) {
+      List<Types.NestedField> fields, List<IcebergColumnHandle> requestedSchemas) {
     return requestedSchemas.stream()
         .map(id -> filterField(id, fields))
         .filter(Optional::isPresent)
@@ -78,18 +80,22 @@ public class KeyedDeleteFilter extends AdaptHiveArcticDeleteFilter<TrinoRow> {
 
   private static Optional<Types.NestedField> filterField(
       IcebergColumnHandle requestedSchema, List<Types.NestedField> fields) {
-    for (Types.NestedField nestedField: fields) {
+    for (Types.NestedField nestedField : fields) {
       if (nestedField.fieldId() == requestedSchema.getId()) {
         return Optional.of(nestedField);
       }
       if (nestedField.type().isStructType()) {
-        Optional<Types.NestedField> optional = filterField(requestedSchema, nestedField.type().asStructType().fields());
+        Optional<Types.NestedField> optional =
+            filterField(requestedSchema, nestedField.type().asStructType().fields());
         if (optional.isPresent()) {
           return optional;
         }
       }
     }
-    return Optional.of(Types.NestedField.optional(requestedSchema.getId(), requestedSchema.getName(),
-        toIcebergType(requestedSchema.getType())));
+    return Optional.of(
+        Types.NestedField.optional(
+            requestedSchema.getId(),
+            requestedSchema.getName(),
+            toIcebergType(requestedSchema.getType())));
   }
 }
