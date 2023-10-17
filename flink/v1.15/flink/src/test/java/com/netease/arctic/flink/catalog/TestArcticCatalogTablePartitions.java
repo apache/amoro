@@ -211,5 +211,13 @@ public class TestArcticCatalogTablePartitions extends FlinkTestBase {
             new CatalogPartitionSpec(ImmutableMap.of("dt", "2023-10-01", "name", "Gerry")));
     Assert.assertEquals(
         "Should produce the expected catalog partition specs.", listCatalogPartitionSpec.size(), 1);
+
+    try {
+      arcticCatalog.listPartitions(
+          objectPath,
+          new CatalogPartitionSpec(ImmutableMap.of("dt", "2023-10-01", "name1", "Gerry")));
+    } catch (Exception e) {
+      Assert.assertTrue(e instanceof PartitionSpecInvalidException);
+    }
   }
 }

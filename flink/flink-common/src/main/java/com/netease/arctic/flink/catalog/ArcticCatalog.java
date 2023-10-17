@@ -619,15 +619,13 @@ public class ArcticCatalog extends AbstractCatalog {
   private void checkValidPartitionSpec(
       CatalogPartitionSpec partitionSpec, PartitionSpec arcticPartitionSpec, ObjectPath tablePath)
       throws PartitionSpecInvalidException {
-    for (PartitionField field : arcticPartitionSpec.fields()) {
-      if (!partitionSpec.getPartitionSpec().containsKey(field.name())) {
-        throw new PartitionSpecInvalidException(
-            getName(),
-            arcticPartitionSpec.fields().stream()
-                .map(PartitionField::name)
-                .collect(Collectors.toList()),
-            tablePath,
-            partitionSpec);
+    List<String> partitionKeys =
+        arcticPartitionSpec.fields().stream()
+            .map(PartitionField::name)
+            .collect(Collectors.toList());
+    for (String key : partitionSpec.getPartitionSpec().keySet()) {
+      if (!partitionKeys.contains(key)) {
+        throw new PartitionSpecInvalidException(getName(), partitionKeys, tablePath, partitionSpec);
       }
     }
   }
