@@ -165,4 +165,4 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             FLINK_VERSION=${{ matrix.flink }}
-            OPTIMIZER_JOB=ams/optimizer/flink-optimizer/target/flink-optimizer-${env.AMORO_VERSION}-jar-with-dependencies.jar
+            OPTIMIZER_JOB=ams/optimizer/flink-optimizer/target/flink-optimizer-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
