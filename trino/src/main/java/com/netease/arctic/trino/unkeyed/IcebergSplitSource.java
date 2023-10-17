@@ -133,7 +133,7 @@ public class IcebergSplitSource
   private final boolean recordScannedFiles;
   private final ImmutableSet.Builder<DataFileWithDeleteFiles> scannedFiles = ImmutableSet.builder();
 
-  private boolean isChange;
+  private final boolean isChange;
 
   public IcebergSplitSource(
       TrinoFileSystemFactory fileSystemFactory,

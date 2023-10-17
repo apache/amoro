@@ -62,7 +62,7 @@ public class KeyedConnectorSplitManager implements ConnectorSplitManager {
 
   private static final Logger LOG = LoggerFactory.getLogger(KeyedConnectorSplitManager.class);
 
-  private ArcticTransactionManager arcticTransactionManager;
+  private final ArcticTransactionManager arcticTransactionManager;
 
   @Inject
   public KeyedConnectorSplitManager(ArcticTransactionManager arcticTransactionManager) {

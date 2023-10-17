@@ -36,7 +36,7 @@ public class RewriteFilesInput extends BaseOptimizingInput {
   private final DataFile[] rePosDeletedDataFiles;
   private final ContentFile<?>[] readOnlyDeleteFiles;
   private final ContentFile<?>[] rewrittenDeleteFiles;
-  private ArcticTable table;
+  private final ArcticTable table;
 
   public RewriteFilesInput(
       DataFile[] rewrittenDataFiles,

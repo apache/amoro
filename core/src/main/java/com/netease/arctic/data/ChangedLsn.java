@@ -107,8 +107,8 @@ public class ChangedLsn implements Comparable<ChangedLsn>, Serializable {
 
   @Override
   public String toString() {
-    return new StringBuilder("RecordLsn(").append(transactionId)
-            .append(", ").append(fileOffset).append(")").toString();
+    return "RecordLsn(" + transactionId +
+        ", " + fileOffset + ")";
   }
 
   public byte[] toBytes() {

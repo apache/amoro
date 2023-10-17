@@ -19,17 +19,11 @@
 package com.netease.arctic.hive;
 
 import org.apache.hadoop.hive.metastore.PartitionDropOptions;
-import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.EnvironmentContext;
-import org.apache.hadoop.hive.metastore.api.InvalidObjectException;
-import org.apache.hadoop.hive.metastore.api.InvalidOperationException;
 import org.apache.hadoop.hive.metastore.api.MetaException;
-import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.hadoop.hive.metastore.api.UnknownDBException;
-import org.apache.hadoop.hive.metastore.api.UnknownTableException;
 import org.apache.thrift.TException;
 
 import java.lang.reflect.InvocationTargetException;
@@ -44,59 +38,58 @@ public interface HMSClient {
   List<String> getAllDatabases() throws TException;
 
   void alterPartition(String dbName, String tblName, Partition newPart, EnvironmentContext environmentContext)
-      throws InvalidOperationException, MetaException, TException, ClassNotFoundException,
+      throws TException, ClassNotFoundException,
       NoSuchMethodException, InvocationTargetException, IllegalAccessException;
 
   Partition getPartition(String dbName, String tblName,
-                         List<String> partVals) throws NoSuchObjectException, MetaException, TException;
+                         List<String> partVals) throws TException;
 
   Partition getPartition(String dbName, String tblName,
-                         String name) throws MetaException, UnknownTableException, NoSuchObjectException, TException;
+                         String name) throws TException;
 
-  Table getTable(String dbName, String tableName) throws MetaException,
-      TException, NoSuchObjectException;
+  Table getTable(String dbName, String tableName) throws
+      TException;
 
   void alterTable(String defaultDatabaseName, String tblName,
-                  Table table) throws InvalidOperationException, MetaException, TException;
+                  Table table) throws TException;
 
   List<Partition> listPartitions(String dbName, String tblName,
-                                 short maxParts) throws NoSuchObjectException, MetaException, TException;
+                                 short maxParts) throws TException;
 
   List<Partition> listPartitions(String dbName, String tblName,
                                  List<String> partVals, short maxParts)
-      throws NoSuchObjectException, MetaException, TException;
+      throws TException;
 
   List<String> listPartitionNames(String dbName, String tblName,
-                                  short maxParts) throws MetaException, TException;
+                                  short maxParts) throws TException;
 
 
   void createDatabase(Database db)
-      throws InvalidObjectException, AlreadyExistsException, MetaException, TException;
+      throws TException;
 
   void dropDatabase(String name, boolean deleteData, boolean ignoreUnknownDb, boolean cascade)
-      throws NoSuchObjectException, InvalidOperationException, MetaException, TException;
+      throws TException;
 
   void dropTable(String dbname, String tableName, boolean deleteData,
-                 boolean ignoreUnknownTab) throws MetaException, TException,
-      NoSuchObjectException;
+                 boolean ignoreUnknownTab) throws TException;
 
-  void createTable(Table tbl) throws AlreadyExistsException,
-      InvalidObjectException, MetaException, NoSuchObjectException, TException;
+  void createTable(Table tbl) throws
+      TException;
 
   Database getDatabase(String databaseName)
-      throws NoSuchObjectException, MetaException, TException;
+      throws TException;
 
   Partition addPartition(Partition partition)
-      throws InvalidObjectException, AlreadyExistsException, MetaException, TException;
+      throws TException;
 
   boolean dropPartition(String dbName, String tblName, List<String> partVals,
                         PartitionDropOptions options) throws TException;
 
   int addPartitions(List<Partition> partitions)
-      throws InvalidObjectException, AlreadyExistsException, MetaException, TException;
+      throws TException;
 
 
-  List<String> getAllTables(String dbName) throws MetaException, TException, UnknownDBException;
+  List<String> getAllTables(String dbName) throws TException;
 
   void alterPartitions(String dbName, String tblName, List<Partition> newParts, EnvironmentContext environmentContext)
       throws TException, InstantiationException, IllegalAccessException, NoSuchMethodException,

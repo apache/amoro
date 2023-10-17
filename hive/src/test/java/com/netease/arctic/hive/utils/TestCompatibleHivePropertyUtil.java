@@ -30,27 +30,31 @@ public class TestCompatibleHivePropertyUtil {
   @Test
   public void testGetNewProperty() {
     Map<String, String> properties = Maps.newHashMap();
-    Assert.assertEquals(
-        false,
-        CompatibleHivePropertyUtil.propertyAsBoolean(properties, HiveTableProperties.ARCTIC_TABLE_FLAG, false));
+    Assert.assertFalse(CompatibleHivePropertyUtil.propertyAsBoolean(
+        properties,
+        HiveTableProperties.ARCTIC_TABLE_FLAG,
+        false));
 
     properties.put(HiveTableProperties.ARCTIC_TABLE_FLAG, "true");
-    Assert.assertEquals(
-        true,
-        CompatibleHivePropertyUtil.propertyAsBoolean(properties, HiveTableProperties.ARCTIC_TABLE_FLAG, false));
+    Assert.assertTrue(CompatibleHivePropertyUtil.propertyAsBoolean(
+        properties,
+        HiveTableProperties.ARCTIC_TABLE_FLAG,
+        false));
 
     properties.put(HiveTableProperties.ARCTIC_TABLE_FLAG_LEGACY, "false");
-    Assert.assertEquals(
-        true,
-        CompatibleHivePropertyUtil.propertyAsBoolean(properties, HiveTableProperties.ARCTIC_TABLE_FLAG, false));
+    Assert.assertTrue(CompatibleHivePropertyUtil.propertyAsBoolean(
+        properties,
+        HiveTableProperties.ARCTIC_TABLE_FLAG,
+        false));
   }
 
   @Test
   public void testGetLegacyProperty() {
     Map<String, String> properties = Maps.newHashMap();
     properties.put(HiveTableProperties.ARCTIC_TABLE_FLAG_LEGACY, "true");
-    Assert.assertEquals(
-        true,
-        CompatibleHivePropertyUtil.propertyAsBoolean(properties, HiveTableProperties.ARCTIC_TABLE_FLAG, false));
+    Assert.assertTrue(CompatibleHivePropertyUtil.propertyAsBoolean(
+        properties,
+        HiveTableProperties.ARCTIC_TABLE_FLAG,
+        false));
   }
 }

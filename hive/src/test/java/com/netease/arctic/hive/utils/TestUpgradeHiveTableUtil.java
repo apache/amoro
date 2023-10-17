@@ -67,12 +67,12 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
 
   private Table hiveTable;
   private TableIdentifier identifier;
-  private String db = "testUpgradeHiveDb";
-  private String table = "testUpgradeHiveTable";
-  private boolean isPartitioned;
-  private FileFormat fileFormat;
-  private String[] partitionNames = {"name", HiveTableTestHelper.COLUMN_NAME_OP_DAY};
-  private String[] partitionValues = {"Bob", "2020-01-01"};
+  private final String db = "testUpgradeHiveDb";
+  private final String table = "testUpgradeHiveTable";
+  private final boolean isPartitioned;
+  private final FileFormat fileFormat;
+  private final String[] partitionNames = {"name", HiveTableTestHelper.COLUMN_NAME_OP_DAY};
+  private final String[] partitionValues = {"Bob", "2020-01-01"};
 
   public TestUpgradeHiveTableUtil(
       CatalogTestHelper catalogTestHelper, boolean isPartitioned, FileFormat fileFormat) throws IOException {
