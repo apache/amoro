@@ -152,8 +152,6 @@ jobs:
 
       - name: Build and Push Flink Optimizer Docker Image
         uses: docker/build-push-action@v4
-        env:
-          AMORO_VERSION=
         with:
           context: .
           push: true
