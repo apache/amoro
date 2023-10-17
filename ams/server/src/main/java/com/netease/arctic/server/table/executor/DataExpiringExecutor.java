@@ -93,6 +93,9 @@ public class DataExpiringExecutor extends BaseTableExecutor {
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
+    if (null == tableRuntime.getTableConfiguration().getExpiringDataConfig()) {
+      return false;
+    }
     return tableRuntime.getTableConfiguration().getExpiringDataConfig().isEnabled();
   }
 
@@ -187,8 +190,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
     TableScan tableScan = table.newScan().filter(partitionFilter).includeColumnStats();
 
     CloseableIterable<FileScanTask> tasks;
-    long snapshotId =
-        null == snapshot ? ArcticServiceConstants.INVALID_SNAPSHOT_ID : snapshot.snapshotId();
+    long snapshotId = getSnapshotId(snapshot);
     if (snapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
       tasks = tableScan.planFiles();
     } else {
@@ -257,8 +259,8 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
-      expireFiles(changeTable, changeSnapshot.snapshotId(), changeExpiredFiles, expireTimestamp);
-      expireFiles(baseTable, baseSnapshot.snapshotId(), baseExpiredFiles, expireTimestamp);
+      expireFiles(changeTable, getSnapshotId(changeSnapshot), changeExpiredFiles, expireTimestamp);
+      expireFiles(baseTable, getSnapshotId(baseSnapshot), baseExpiredFiles, expireTimestamp);
     } else {
       UnkeyedTable unkeyedTable = table.asUnkeyedTable();
       Snapshot snapshot = unkeyedTable.currentSnapshot();
@@ -279,7 +281,7 @@ public class DataExpiringExecutor extends BaseTableExecutor {
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
-      expireFiles(unkeyedTable, snapshot.snapshotId(), expiredFiles, expireTimestamp);
+      expireFiles(unkeyedTable, getSnapshotId(snapshot), expiredFiles, expireTimestamp);
     }
   }
 
@@ -523,6 +525,10 @@ public class DataExpiringExecutor extends BaseTableExecutor {
                   .toEpochMilli());
     }
     return literal;
+  }
+
+  private static long getSnapshotId(Snapshot snapshot) {
+    return null == snapshot ? ArcticServiceConstants.INVALID_SNAPSHOT_ID : snapshot.snapshotId();
   }
 
   protected static class FileEntry extends IcebergFileEntry {
