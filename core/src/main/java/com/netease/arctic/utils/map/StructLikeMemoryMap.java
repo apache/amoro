@@ -18,14 +18,14 @@
 
 package com.netease.arctic.utils.map;
 
-import com.netease.arctic.iceberg.StructLikeWrapper;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.StructLikeWrapper;
 
 import java.util.HashMap;
 
 /**
- * Copy form iceberg {@link org.apache.iceberg.util.StructLikeMap}. Make using StructLikeWrapper more cheap
+ * Map implementation for {@link StructLikeWrapper} as the key based on memory.
  */
 public class StructLikeMemoryMap<T> extends StructLikeBaseMap<T> {
 
@@ -68,7 +68,7 @@ public class StructLikeMemoryMap<T> extends StructLikeBaseMap<T> {
 
     @Override
     public void close() {
-      //do nothing and gc will digard it
+      //do nothing and gc will discard it
     }
   }
 }

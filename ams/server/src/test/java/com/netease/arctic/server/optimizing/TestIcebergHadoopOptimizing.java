@@ -20,7 +20,6 @@ package com.netease.arctic.server.optimizing;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.iceberg.InternalRecordWrapper;
 import com.netease.arctic.server.AmsEnvironment;
 import com.netease.arctic.server.IcebergRestCatalogService;
 import com.netease.arctic.server.catalog.InternalCatalog;
@@ -36,6 +35,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.hadoop.HadoopCatalog;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -407,7 +407,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
       }
     }
 
-    String impl = null;
+    String impl;
     Map<String, String> properties = Maps.newHashMap();
     if (catalog.equalsIgnoreCase(AmsEnvironment.ICEBERG_CATALOG)) {
       impl = HadoopCatalog.class.getName();

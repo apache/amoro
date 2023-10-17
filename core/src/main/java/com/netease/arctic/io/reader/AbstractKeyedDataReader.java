@@ -54,7 +54,7 @@ import java.util.function.Function;
  *
  * @param <T> to indicate the record data type.
  */
-public abstract class AbstractArcticDataReader<T> implements Serializable {
+public abstract class AbstractKeyedDataReader<T> implements Serializable {
 
   protected final ArcticFileIO fileIO;
   protected final Schema tableSchema;
@@ -67,7 +67,7 @@ public abstract class AbstractArcticDataReader<T> implements Serializable {
   protected final boolean reuseContainer;
   protected StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
 
-  public AbstractArcticDataReader(
+  public AbstractKeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -83,7 +83,7 @@ public abstract class AbstractArcticDataReader<T> implements Serializable {
     this.structLikeCollections = structLikeCollections;
   }
 
-  public AbstractArcticDataReader(
+  public AbstractKeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -96,7 +96,7 @@ public abstract class AbstractArcticDataReader<T> implements Serializable {
         convertConstant, null, reuseContainer);
   }
 
-  public AbstractArcticDataReader(
+  public AbstractKeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -244,7 +244,7 @@ public abstract class AbstractArcticDataReader<T> implements Serializable {
         KeyedTableScanTask keyedTableScanTask,
         Schema tableSchema, Schema requestedSchema, PrimaryKeySpec primaryKeySpec) {
       super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec);
-      this.asStructLike = AbstractArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      this.asStructLike = AbstractKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     protected GenericArcticDeleteFilter(
@@ -256,7 +256,7 @@ public abstract class AbstractArcticDataReader<T> implements Serializable {
         StructLikeCollections structLikeCollections) {
       super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec,
           sourceNodes, structLikeCollections);
-      this.asStructLike = AbstractArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      this.asStructLike = AbstractKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     protected GenericArcticDeleteFilter(
@@ -266,7 +266,7 @@ public abstract class AbstractArcticDataReader<T> implements Serializable {
         PrimaryKeySpec primaryKeySpec,
         Set<DataTreeNode> sourceNodes) {
       super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec, sourceNodes);
-      this.asStructLike = AbstractArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      this.asStructLike = AbstractKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     @Override

@@ -20,7 +20,6 @@ package com.netease.arctic.io.reader;
 
 import com.google.common.collect.Sets;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.iceberg.DeleteFilter;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -52,7 +51,7 @@ import java.util.function.Function;
  * Abstract implementation of iceberg data reader consuming {@link ArcticFileScanTask}.
  * @param <T> to indicate the record data type.
  */
-public abstract class AbstractIcebergDataReader<T> {
+public abstract class AbstractUnkeyedDataReader<T> {
 
   protected final Schema tableSchema;
   protected final Schema projectedSchema;
@@ -64,7 +63,7 @@ public abstract class AbstractIcebergDataReader<T> {
   protected final boolean reuseContainer;
   private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
 
-  public AbstractIcebergDataReader(
+  public AbstractUnkeyedDataReader(
       ArcticFileIO fileIO, Schema tableSchema, Schema projectedSchema,
       String nameMapping, boolean caseSensitive, BiFunction<Type, Object, Object> convertConstant,
       boolean reuseContainer, StructLikeCollections structLikeCollections) {
@@ -73,7 +72,7 @@ public abstract class AbstractIcebergDataReader<T> {
     this.structLikeCollections = structLikeCollections;
   }
 
-  public AbstractIcebergDataReader(
+  public AbstractUnkeyedDataReader(
       ArcticFileIO fileIO, Schema tableSchema, Schema projectedSchema,
       String nameMapping, boolean caseSensitive, BiFunction<Type, Object, Object> convertConstant,
       boolean reuseContainer) {
@@ -81,7 +80,7 @@ public abstract class AbstractIcebergDataReader<T> {
         caseSensitive, convertConstant, null, reuseContainer);
   }
 
-  public AbstractIcebergDataReader(
+  public AbstractUnkeyedDataReader(
       ArcticFileIO fileIO, Schema tableSchema, Schema projectedSchema, PrimaryKeySpec primaryKeySpec,
       String nameMapping, boolean caseSensitive, BiFunction<Type, Object, Object> convertConstant,
       Set<DataTreeNode> sourceNodes, boolean reuseContainer) {

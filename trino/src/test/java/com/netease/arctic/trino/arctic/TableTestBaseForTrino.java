@@ -26,8 +26,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.iceberg.InternalRecordWrapper;
-import com.netease.arctic.io.reader.GenericArcticDataReader;
+import com.netease.arctic.io.reader.GenericKeyedDataReader;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
@@ -49,6 +48,7 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IdentityPartitionConverters;
+import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
@@ -206,7 +206,7 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
   }
 
   protected static List<Record> readKeyedTable(KeyedTable keyedTable) {
-    GenericArcticDataReader reader = new GenericArcticDataReader(
+    GenericKeyedDataReader reader = new GenericKeyedDataReader(
         keyedTable.io(),
         keyedTable.schema(),
         keyedTable.schema(),

@@ -18,8 +18,6 @@
 
 package com.netease.arctic.io.reader;
 
-import com.netease.arctic.iceberg.CombinedDeleteFilter;
-import com.netease.arctic.iceberg.StructForDelete;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.optimizing.OptimizingDataReader;
 import com.netease.arctic.optimizing.RewriteFilesInput;

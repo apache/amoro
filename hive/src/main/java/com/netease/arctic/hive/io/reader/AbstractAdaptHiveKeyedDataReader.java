@@ -20,7 +20,7 @@ package com.netease.arctic.hive.io.reader;
 
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.reader.AbstractArcticDataReader;
+import com.netease.arctic.io.reader.AbstractKeyedDataReader;
 import com.netease.arctic.io.reader.ArcticDeleteFilter;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -42,9 +42,9 @@ import java.util.function.Function;
 /**
  * AdaptHive can read all Data.
  */
-public abstract class AbstractAdaptHiveArcticDataReader<T> extends AbstractArcticDataReader<T> {
+public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedDataReader<T> {
 
-  public AbstractAdaptHiveArcticDataReader(
+  public AbstractAdaptHiveKeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -68,7 +68,7 @@ public abstract class AbstractAdaptHiveArcticDataReader<T> extends AbstractArcti
         structLikeCollections);
   }
 
-  public AbstractAdaptHiveArcticDataReader(
+  public AbstractAdaptHiveKeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -88,7 +88,7 @@ public abstract class AbstractAdaptHiveArcticDataReader<T> extends AbstractArcti
         reuseContainer);
   }
 
-  public AbstractAdaptHiveArcticDataReader(
+  public AbstractAdaptHiveKeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -148,7 +148,7 @@ public abstract class AbstractAdaptHiveArcticDataReader<T> extends AbstractArcti
         KeyedTableScanTask keyedTableScanTask,
         Schema tableSchema, Schema requestedSchema, PrimaryKeySpec primaryKeySpec) {
       super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec);
-      this.asStructLike = AbstractAdaptHiveArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      this.asStructLike = AbstractAdaptHiveKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     protected AdaptHiveGenericArcticDeleteFilter(
@@ -160,7 +160,7 @@ public abstract class AbstractAdaptHiveArcticDataReader<T> extends AbstractArcti
         StructLikeCollections structLikeCollections) {
       super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec,
           sourceNodes, structLikeCollections);
-      this.asStructLike = AbstractAdaptHiveArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      this.asStructLike = AbstractAdaptHiveKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     protected AdaptHiveGenericArcticDeleteFilter(
@@ -170,7 +170,7 @@ public abstract class AbstractAdaptHiveArcticDataReader<T> extends AbstractArcti
         PrimaryKeySpec primaryKeySpec,
         Set<DataTreeNode> sourceNodes) {
       super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec, sourceNodes);
-      this.asStructLike = AbstractAdaptHiveArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      this.asStructLike = AbstractAdaptHiveKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     @Override
