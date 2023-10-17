@@ -58,7 +58,8 @@ jobs:
         uses: docker/metadata-action@v5
         id: meta
         with:
-          images: arctic163/amoro
+          images: |
+            arctic163/amoro
           tags: |
             type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},value=master-snapshot
             type=ref,event=branch,enable=${{ matrix.hadoop == 'v2' }},value=master-snapshot-hadoop2
@@ -111,7 +112,8 @@ jobs:
         uses: docker/metadata-action@v5
         id: meta
         with:
-          images: arctic163/amoro
+          images: |
+            arctic163/optimizer-flink
           tags: |
             type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},value=master-snapshot
             type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},value=master-snapshot-flink1.14
@@ -134,10 +136,10 @@ jobs:
           OPTIMIZER_FLINK=${{ matrix.flink }} && \
           echo "OPTIMIZER_FLINK=-Doptimizer.flink${OPTIMIZER_FLINK%.*}" >> $GITHUB_ENV
 
-      - name: Build all module with Maven
+      - name: Build optimizer module with Maven
         run: mvn clean install -pl 'ams/optimizer/flink-optimizer' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
 
-      - name: Build and Push Amoro Docker Image
+      - name: Build and Push Flink Optimizer Docker Image
         uses: docker/build-push-action@v4
         with:
           context: .
