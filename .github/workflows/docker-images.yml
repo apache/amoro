@@ -142,13 +142,13 @@ jobs:
           OPTIMIZER_FLINK=${{ matrix.flink }} && \
           echo "OPTIMIZER_FLINK=-Doptimizer.flink${OPTIMIZER_FLINK%.*}" >> $GITHUB_ENV
 
-      - name: Build optimizer module with Maven
-        run: mvn clean install -pl 'ams/optimizer/flink-optimizer' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
-
       - name: Set ENV Amoro version
         run: |
-          AMORO_VERSION=`cat ./pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'` \
+          AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'` \
           && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_ENV
+
+      - name: Build optimizer module with Maven
+        run: mvn clean install -pl 'ams/optimizer/flink-optimizer' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
 
       - name: Build and Push Flink Optimizer Docker Image
         uses: docker/build-push-action@v4
