@@ -23,6 +23,8 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.op.SnapshotSummary;
+import com.netease.arctic.server.dashboard.component.reverser.DDLReverser;
+import com.netease.arctic.server.dashboard.component.reverser.IcebergTableMetaExtract;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
 import com.netease.arctic.server.dashboard.model.AMSPartitionField;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
@@ -44,13 +46,11 @@ import com.netease.arctic.utils.ManifestEntryFields;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.HasTableOperations;
-import org.apache.iceberg.HistoryEntry;
 import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.data.InternalRecordWrapper;
@@ -66,10 +66,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -172,7 +170,7 @@ public class MixedAndIcebergTableDescriptor implements FormatTableDescriptor {
       transactionsOfTable.setSummary(snapshot.summary());
       transactionsOfTables.add(transactionsOfTable);
     }));
-    transactionsOfTables.sort((o1, o2) -> Long.compare(o2.commitTime, o1.commitTime));
+    transactionsOfTables.sort((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()));
     return transactionsOfTables;
   }
 
@@ -230,62 +228,16 @@ public class MixedAndIcebergTableDescriptor implements FormatTableDescriptor {
 
   public List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) {
     ArcticTable arcticTable = getTable(amoroTable);
-    List<DDLInfo> result = new ArrayList<>();
     Table table;
     if (arcticTable.isKeyedTable()) {
       table = arcticTable.asKeyedTable().baseTable();
     } else {
       table = arcticTable.asUnkeyedTable();
     }
-    List<HistoryEntry> snapshotLog = ((HasTableOperations) table).operations().current().snapshotLog();
-    List<org.apache.iceberg.TableMetadata.MetadataLogEntry> metadataLogEntries =
-        ((HasTableOperations) table).operations().current().previousFiles();
-    Set<Long> time = new HashSet<>();
-    snapshotLog.forEach(e -> time.add(e.timestampMillis()));
-    String lastMetadataLogEntryFile = null;
-    org.apache.iceberg.TableMetadata lastTableMetadata = null;
-    for (int i = 1; i < metadataLogEntries.size(); i++) {
-      org.apache.iceberg.TableMetadata.MetadataLogEntry currentEntry = metadataLogEntries.get(i);
-      if (!time.contains(currentEntry.timestampMillis())) {
-        org.apache.iceberg.TableMetadata.MetadataLogEntry previousEntry = metadataLogEntries.get(i - 1);
-        org.apache.iceberg.TableMetadata oldTableMetadata;
-        if (lastMetadataLogEntryFile == null || !lastMetadataLogEntryFile.equals(previousEntry.file())) {
-          oldTableMetadata = TableMetadataParser.read(table.io(), previousEntry.file());
-        } else {
-          oldTableMetadata = lastTableMetadata;
-        }
 
-        org.apache.iceberg.TableMetadata
-            newTableMetadata = TableMetadataParser.read(table.io(), currentEntry.file());
-        lastMetadataLogEntryFile = currentEntry.file();
-        lastTableMetadata = newTableMetadata;
-
-        DDLInfo.Generator generator = new DDLInfo.Generator();
-        result.addAll(generator.tableIdentify(arcticTable.id())
-            .oldMeta(oldTableMetadata)
-            .newMeta(newTableMetadata)
-            .generate());
-      }
-    }
-    if (metadataLogEntries.size() > 0) {
-      org.apache.iceberg.TableMetadata.MetadataLogEntry previousEntry = metadataLogEntries
-          .get(metadataLogEntries.size() - 1);
-      org.apache.iceberg.TableMetadata oldTableMetadata;
-
-      if (lastMetadataLogEntryFile == null || !lastMetadataLogEntryFile.equals(previousEntry.file())) {
-        oldTableMetadata = TableMetadataParser.read(table.io(), previousEntry.file());
-      } else {
-        oldTableMetadata = lastTableMetadata;
-      }
-
-      org.apache.iceberg.TableMetadata newTableMetadata = ((HasTableOperations) table).operations().current();
-      DDLInfo.Generator generator = new DDLInfo.Generator();
-      result.addAll(generator.tableIdentify(arcticTable.id())
-          .oldMeta(oldTableMetadata)
-          .newMeta(newTableMetadata)
-          .generate());
-    }
-    return result;
+    IcebergTableMetaExtract extract = new IcebergTableMetaExtract();
+    DDLReverser<Table> ddlReverser = new DDLReverser<>(extract);
+    return ddlReverser.reverse(table, amoroTable.id());
   }
 
   @Override

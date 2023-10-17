@@ -18,10 +18,15 @@ ARG FLINK_VERSION=1.14
 
 FROM flink:${FLINK_VERSION}
 
-ARG REPO_URL=https://repo.maven.apache.org/maven2
-ARG OPTIMIZRE_JOB=optimizer-job.jar
+ARG MAVEN_MIRROR=https://repo.maven.apache.org/maven2
+ARG OPTIMIZER_JOB=optimizer-job.jar
 
-RUN mkdir -p $FLINK_HOME/usrlib
+RUN cd $FLINK_HOME/lib \
+    && wget ${MAVEN_MIRROR}/software/amazon/awssdk/bundle/2.20.5/bundle-2.20.5.jar \
+    && wget ${MAVEN_MIRROR}/software/amazon/awssdk/url-connection-client/2.20.5/url-connection-client-2.20.5.jar \
+    && wget ${MAVEN_MIRROR}/org/apache/flink/flink-shaded-hadoop-2-uber/2.8.3-10.0/flink-shaded-hadoop-2-uber-2.8.3-10.0.jar \
+    && chown flink:flink *.jar \
+    && mkdir -p $FLINK_HOME/usrlib
 
-COPY $OPTIMIZRE_JOB $FLINK_HOME/usrlib/optimizer-job.jar
+COPY $OPTIMIZER_JOB $FLINK_HOME/usrlib/optimizer-job.jar
 

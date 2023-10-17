@@ -32,6 +32,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.UUID;
@@ -100,8 +101,7 @@ class AdaptHiveParquetConversions {
         if (!((Types.TimestampType) icebergType).shouldAdjustToUTC()) {
           //iceberg org.apache.iceberg.expressions.Literals resolve timestamp without tz use UTC, but in fact it is
           // local time zone
-          instant = instant.atZone(ZoneId.systemDefault()).toLocalDateTime().toInstant(
-              ZoneOffset.UTC);
+          instant = LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toInstant(ZoneOffset.UTC);
         }
         return TimeUtil.microsBetween(EPOCH, instant);
       };
