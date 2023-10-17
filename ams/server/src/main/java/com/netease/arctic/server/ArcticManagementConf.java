@@ -49,6 +49,12 @@ public class ArcticManagementConf {
           .defaultValue("admin")
           .withDescription("The administrator password");
 
+  public static final ConfigOption<Integer> LIVENESS_PROBE_TCP_PORT =
+      ConfigOptions.key("liveness-probe-tcp-port")
+          .intType()
+          .defaultValue(-1)
+          .withDescription("livenessProbe tcp port of the server.");
+
   public static final ConfigOption<Long> REFRESH_EXTERNAL_CATALOGS_INTERVAL =
       ConfigOptions.key("refresh-external-catalogs.interval")
           .longType()

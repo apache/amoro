@@ -67,6 +67,8 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -92,6 +94,7 @@ public class ArcticServiceContainer {
   private TServer tableManagementServer;
   private TServer optimizingServiceServer;
   private Javalin httpServer;
+  private Thread livenessProbeThread;
 
   public ArcticServiceContainer() throws Exception {
     initConfig();
@@ -103,6 +106,7 @@ public class ArcticServiceContainer {
       ArcticServiceContainer service = new ArcticServiceContainer();
       while (true) {
         try {
+          service.startLivenessProbe();
           service.waitLeaderShip();
           service.startService();
           service.waitFollowerShip();
@@ -175,6 +179,9 @@ public class ArcticServiceContainer {
     if (terminalManager != null) {
       terminalManager.dispose();
       terminalManager = null;
+    }
+    if (livenessProbeThread != null) {
+      livenessProbeThread.interrupt();
     }
     optimizingService = null;
   }
@@ -452,6 +459,32 @@ public class ArcticServiceContainer {
       } else {
         result.put(fullKey, value);
       }
+    }
+  }
+
+  private void startLivenessProbe() {
+    int port = serviceConfig.getInteger(ArcticManagementConf.LIVENESS_PROBE_TCP_PORT);
+    if (port > 0) {
+      this.livenessProbeThread =
+          new ThreadFactoryBuilder()
+              .setDaemon(true)
+              .setNameFormat("LivenessProbe-thread-%d")
+              .build()
+              .newThread(
+                  () -> {
+                    try (ServerSocket serverSocket = new ServerSocket(port)) {
+                      LOG.info("LivenessProbe listening on port: " + port);
+                      while (true) {
+                        try (Socket ignored = serverSocket.accept()) {
+                          // do nothing
+                        }
+                      }
+                    } catch (Exception e) {
+                      LOG.error("LivenessProbe start error", e);
+                      throw new RuntimeException(e);
+                    }
+                  });
+      livenessProbeThread.start();
     }
   }
 

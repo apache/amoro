@@ -3,6 +3,7 @@ ams:
   admin-password: admin
   server-bind-host: "0.0.0.0"
   server-expose-host: "127.0.0.1"
+  liveness-probe-tcp-port: -1
 
   thrift-server:
     max-message-size: 104857600 # 100MB
