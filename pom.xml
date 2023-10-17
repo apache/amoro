@@ -605,6 +605,18 @@
                         <groupId>org.apache.hive</groupId>
                         <artifactId>hive-orc</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-yarn-server-resourcemanager</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-yarn-server-applicationhistoryservice</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-yarn-registry</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
