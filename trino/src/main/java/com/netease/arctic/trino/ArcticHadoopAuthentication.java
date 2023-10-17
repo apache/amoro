@@ -23,9 +23,7 @@ import com.netease.arctic.table.TableMetaStore;
 import io.trino.hdfs.authentication.HadoopAuthentication;
 import org.apache.hadoop.security.UserGroupInformation;
 
-/**
- * Arctic Hadoop Authentication using TableMetaStore
- */
+/** Arctic Hadoop Authentication using TableMetaStore */
 public class ArcticHadoopAuthentication implements HadoopAuthentication {
 
   private final ArcticCatalogFactory arcticCatalogFactory;

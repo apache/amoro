@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,6 +17,19 @@
  */
 
 package com.netease.arctic.trino.keyed;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.netease.arctic.trino.ArcticSessionProperties.isArcticStatisticsEnabled;
+import static io.trino.plugin.hive.HiveApplyProjectionUtil.extractSupportedProjectedColumns;
+import static io.trino.plugin.hive.HiveApplyProjectionUtil.replaceWithNewVariables;
+import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
+import static io.trino.plugin.hive.util.HiveUtil.isStructuralType;
+import static io.trino.plugin.iceberg.IcebergUtil.getColumns;
+import static io.trino.plugin.iceberg.TypeConverter.toTrinoType;
+import static io.trino.spi.connector.RetryMode.NO_RETRIES;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -78,22 +90,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.netease.arctic.trino.ArcticSessionProperties.isArcticStatisticsEnabled;
-import static io.trino.plugin.hive.HiveApplyProjectionUtil.extractSupportedProjectedColumns;
-import static io.trino.plugin.hive.HiveApplyProjectionUtil.replaceWithNewVariables;
-import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
-import static io.trino.plugin.hive.util.HiveUtil.isStructuralType;
-import static io.trino.plugin.iceberg.IcebergUtil.getColumns;
-import static io.trino.plugin.iceberg.TypeConverter.toTrinoType;
-import static io.trino.spi.connector.RetryMode.NO_RETRIES;
-
-/**
- * Metadata for Keyed Table
- */
+/** Metadata for Keyed Table */
 public class KeyedConnectorMetadata implements ConnectorMetadata {
 
   private static final Logger log = LoggerFactory.getLogger(KeyedConnectorMetadata.class);
@@ -102,9 +99,11 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
 
   private TypeManager typeManager;
 
-  private ConcurrentHashMap<SchemaTableName, ArcticTable> concurrentHashMap = new ConcurrentHashMap<>();
+  private ConcurrentHashMap<SchemaTableName, ArcticTable> concurrentHashMap =
+      new ConcurrentHashMap<>();
 
-  private final Map<IcebergTableHandle, TableStatistics> tableStatisticsCache = new ConcurrentHashMap<>();
+  private final Map<IcebergTableHandle, TableStatistics> tableStatisticsCache =
+      new ConcurrentHashMap<>();
 
   public KeyedConnectorMetadata(ArcticCatalog arcticCatalog, TypeManager typeManager) {
     this.arcticCatalog = arcticCatalog;
@@ -113,7 +112,9 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
 
   @Override
   public List<String> listSchemaNames(ConnectorSession session) {
-    return arcticCatalog.listDatabases().stream().map(s -> s.toLowerCase(Locale.ROOT)).collect(Collectors.toList());
+    return arcticCatalog.listDatabases().stream()
+        .map(s -> s.toLowerCase(Locale.ROOT))
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -126,37 +127,41 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
     TableIdentifier tableIdentifier = arcticTable.id();
     Map<String, String> tableProperties = arcticTable.properties();
     String nameMappingJson = tableProperties.get(TableProperties.DEFAULT_NAME_MAPPING);
-    IcebergTableHandle icebergTableHandle = new IcebergTableHandle(
-        tableName.getSchemaName(),
-        tableIdentifier.getTableName(),
-        TableType.DATA,
-        Optional.empty(),
-        SchemaParser.toJson(arcticTable.schema()),
-        Optional.of(arcticTable.spec()).map(PartitionSpecParser::toJson),
-        2,
-        TupleDomain.all(),
-        TupleDomain.all(),
-        ImmutableSet.of(),
-        Optional.ofNullable(nameMappingJson),
-        arcticTable.location(),
-        tableProperties,
-        NO_RETRIES,
-        ImmutableList.of(),
-        false,
-        Optional.empty());
+    IcebergTableHandle icebergTableHandle =
+        new IcebergTableHandle(
+            tableName.getSchemaName(),
+            tableIdentifier.getTableName(),
+            TableType.DATA,
+            Optional.empty(),
+            SchemaParser.toJson(arcticTable.schema()),
+            Optional.of(arcticTable.spec()).map(PartitionSpecParser::toJson),
+            2,
+            TupleDomain.all(),
+            TupleDomain.all(),
+            ImmutableSet.of(),
+            Optional.ofNullable(nameMappingJson),
+            arcticTable.location(),
+            tableProperties,
+            NO_RETRIES,
+            ImmutableList.of(),
+            false,
+            Optional.empty());
 
-    return new KeyedTableHandle(icebergTableHandle, ObjectSerializerUtil.write(arcticTable.primaryKeySpec()));
+    return new KeyedTableHandle(
+        icebergTableHandle, ObjectSerializerUtil.write(arcticTable.primaryKeySpec()));
   }
 
   @Override
-  public ConnectorTableMetadata getTableMetadata(ConnectorSession session, ConnectorTableHandle table) {
+  public ConnectorTableMetadata getTableMetadata(
+      ConnectorSession session, ConnectorTableHandle table) {
     KeyedTableHandle keyedTableHandle = (KeyedTableHandle) table;
     IcebergTableHandle icebergTableHandle = keyedTableHandle.getIcebergTableHandle();
     SchemaTableName schemaTableName =
         new SchemaTableName(icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName());
-    ArcticTable arcticTable = getArcticTable(new SchemaTableName(
-        icebergTableHandle.getSchemaName(),
-        icebergTableHandle.getTableName()));
+    ArcticTable arcticTable =
+        getArcticTable(
+            new SchemaTableName(
+                icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName()));
     if (arcticTable == null) {
       throw new TableNotFoundException(schemaTableName);
     }
@@ -165,14 +170,16 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
   }
 
   @Override
-  public Map<String, ColumnHandle> getColumnHandles(ConnectorSession session, ConnectorTableHandle tableHandle) {
+  public Map<String, ColumnHandle> getColumnHandles(
+      ConnectorSession session, ConnectorTableHandle tableHandle) {
     KeyedTableHandle keyedTableHandle = (KeyedTableHandle) tableHandle;
     IcebergTableHandle icebergTableHandle = keyedTableHandle.getIcebergTableHandle();
     SchemaTableName schemaTableName =
         new SchemaTableName(icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName());
-    ArcticTable arcticTable = getArcticTable(new SchemaTableName(
-        icebergTableHandle.getSchemaName(),
-        icebergTableHandle.getTableName()));
+    ArcticTable arcticTable =
+        getArcticTable(
+            new SchemaTableName(
+                icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName()));
     if (arcticTable == null) {
       throw new TableNotFoundException(schemaTableName);
     }
@@ -187,14 +194,9 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
 
   @Override
   public ColumnMetadata getColumnMetadata(
-      ConnectorSession session,
-      ConnectorTableHandle tableHandle,
-      ColumnHandle columnHandle) {
+      ConnectorSession session, ConnectorTableHandle tableHandle, ColumnHandle columnHandle) {
     IcebergColumnHandle column = (IcebergColumnHandle) columnHandle;
-    return ColumnMetadata.builder()
-        .setName(column.getName())
-        .setType(column.getType())
-        .build();
+    return ColumnMetadata.builder().setName(column.getName()).setType(column.getType()).build();
   }
 
   private List<ColumnMetadata> getColumnMetadata(ArcticTable arcticTable) {
@@ -209,18 +211,18 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
               .setType(toTrinoType(column.type(), typeManager))
               .setNullable(column.isOptional())
               .setExtraInfo(Optional.of(column.fieldId() + ""))
-              .build()
-      );
+              .build());
     }
     return columnsMetadata.build();
   }
 
   @Override
   public Map<SchemaTableName, List<ColumnMetadata>> listTableColumns(
-      ConnectorSession session,
-      SchemaTablePrefix prefix) {
-    List<SchemaTableName> schemaTableNames = !prefix.getTable().isPresent() ?
-        listTables(session, prefix.getSchema()) : Lists.newArrayList(prefix.toSchemaTableName());
+      ConnectorSession session, SchemaTablePrefix prefix) {
+    List<SchemaTableName> schemaTableNames =
+        !prefix.getTable().isPresent()
+            ? listTables(session, prefix.getSchema())
+            : Lists.newArrayList(prefix.toSchemaTableName());
     ImmutableMap.Builder<SchemaTableName, List<ColumnMetadata>> columns = ImmutableMap.builder();
     for (SchemaTableName schemaTableName : schemaTableNames) {
       try {
@@ -238,8 +240,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
 
   @Override
   public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> schemaName) {
-    return listNamespaces(session, schemaName)
-        .stream()
+    return listNamespaces(session, schemaName).stream()
         .flatMap(s -> arcticCatalog.listTables(s).stream())
         .map(s -> new SchemaTableName(s.getDatabase(), s.getTableName()))
         .collect(Collectors.toList());
@@ -247,61 +248,67 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
 
   @Override
   public Optional<ConstraintApplicationResult<ConnectorTableHandle>> applyFilter(
-      ConnectorSession session,
-      ConnectorTableHandle handle,
-      Constraint constraint) {
+      ConnectorSession session, ConnectorTableHandle handle, Constraint constraint) {
     KeyedTableHandle table = (KeyedTableHandle) handle;
     IcebergTableHandle icebergTableHandle = table.getIcebergTableHandle();
-    ArcticTable arcticTable = getArcticTable(new SchemaTableName(
-        icebergTableHandle.getSchemaName(),
-        icebergTableHandle.getTableName()));
+    ArcticTable arcticTable =
+        getArcticTable(
+            new SchemaTableName(
+                icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName()));
 
     Set<Integer> partitionSourceIds = identityPartitionColumnsInAllSpecs(arcticTable);
     BiPredicate<IcebergColumnHandle, Domain> isIdentityPartition =
         (column, domain) -> partitionSourceIds.contains(column.getId());
 
-    TupleDomain<IcebergColumnHandle> newEnforcedConstraint = constraint.getSummary()
-        .transformKeys(IcebergColumnHandle.class::cast)
-        .filter(isIdentityPartition)
-        .intersect(icebergTableHandle.getEnforcedPredicate());
+    TupleDomain<IcebergColumnHandle> newEnforcedConstraint =
+        constraint
+            .getSummary()
+            .transformKeys(IcebergColumnHandle.class::cast)
+            .filter(isIdentityPartition)
+            .intersect(icebergTableHandle.getEnforcedPredicate());
 
-    TupleDomain<IcebergColumnHandle> remainingConstraint = constraint.getSummary()
-        .transformKeys(IcebergColumnHandle.class::cast)
-        .filter(isIdentityPartition.negate());
+    TupleDomain<IcebergColumnHandle> remainingConstraint =
+        constraint
+            .getSummary()
+            .transformKeys(IcebergColumnHandle.class::cast)
+            .filter(isIdentityPartition.negate());
 
-    TupleDomain<IcebergColumnHandle> newUnenforcedConstraint = remainingConstraint
-        // Only applies to the unenforced constraint because structural types cannot be partition keys
-        .filter((columnHandle, predicate) -> !isStructuralType(columnHandle.getType()))
-        .intersect(icebergTableHandle.getUnenforcedPredicate());
+    TupleDomain<IcebergColumnHandle> newUnenforcedConstraint =
+        remainingConstraint
+            // Only applies to the unenforced constraint because structural types cannot be
+            // partition keys
+            .filter((columnHandle, predicate) -> !isStructuralType(columnHandle.getType()))
+            .intersect(icebergTableHandle.getUnenforcedPredicate());
 
-    if (newEnforcedConstraint.equals(icebergTableHandle.getEnforcedPredicate()) &&
-        newUnenforcedConstraint.equals(icebergTableHandle.getUnenforcedPredicate())) {
+    if (newEnforcedConstraint.equals(icebergTableHandle.getEnforcedPredicate())
+        && newUnenforcedConstraint.equals(icebergTableHandle.getUnenforcedPredicate())) {
       return Optional.empty();
     }
 
-    IcebergTableHandle newIcebergTableHandle = new IcebergTableHandle(
-        icebergTableHandle.getSchemaName(),
-        icebergTableHandle.getTableName(),
-        icebergTableHandle.getTableType(),
-        icebergTableHandle.getSnapshotId(),
-        icebergTableHandle.getTableSchemaJson(),
-        icebergTableHandle.getPartitionSpecJson(),
-        2,
-        newUnenforcedConstraint,
-        newEnforcedConstraint,
-        icebergTableHandle.getProjectedColumns(),
-        icebergTableHandle.getNameMappingJson(),
-        icebergTableHandle.getTableLocation(),
-        icebergTableHandle.getStorageProperties(),
-        icebergTableHandle.getRetryMode(),
-        icebergTableHandle.getUpdatedColumns(),
-        icebergTableHandle.isRecordScannedFiles(),
-        icebergTableHandle.getMaxScannedFileSize()
-    );
-    return Optional.of(new ConstraintApplicationResult<>(
-        new KeyedTableHandle(newIcebergTableHandle, table.getPrimaryKeySpecBytes()),
-        remainingConstraint.transformKeys(ColumnHandle.class::cast),
-        false));
+    IcebergTableHandle newIcebergTableHandle =
+        new IcebergTableHandle(
+            icebergTableHandle.getSchemaName(),
+            icebergTableHandle.getTableName(),
+            icebergTableHandle.getTableType(),
+            icebergTableHandle.getSnapshotId(),
+            icebergTableHandle.getTableSchemaJson(),
+            icebergTableHandle.getPartitionSpecJson(),
+            2,
+            newUnenforcedConstraint,
+            newEnforcedConstraint,
+            icebergTableHandle.getProjectedColumns(),
+            icebergTableHandle.getNameMappingJson(),
+            icebergTableHandle.getTableLocation(),
+            icebergTableHandle.getStorageProperties(),
+            icebergTableHandle.getRetryMode(),
+            icebergTableHandle.getUpdatedColumns(),
+            icebergTableHandle.isRecordScannedFiles(),
+            icebergTableHandle.getMaxScannedFileSize());
+    return Optional.of(
+        new ConstraintApplicationResult<>(
+            new KeyedTableHandle(newIcebergTableHandle, table.getPrimaryKeySpecBytes()),
+            remainingConstraint.transformKeys(ColumnHandle.class::cast),
+            false));
   }
 
   @Override
@@ -310,60 +317,73 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
       ConnectorTableHandle handle,
       List<ConnectorExpression> projections,
       Map<String, ColumnHandle> assignments) {
-    // Create projected column representations for supported sub expressions. Simple column references and chain of
+    // Create projected column representations for supported sub expressions. Simple column
+    // references and chain of
     // dereferences on a variable are supported right now.
-    Set<ConnectorExpression> projectedExpressions = projections.stream()
-        .flatMap(expression -> extractSupportedProjectedColumns(expression).stream())
-        .collect(toImmutableSet());
+    Set<ConnectorExpression> projectedExpressions =
+        projections.stream()
+            .flatMap(expression -> extractSupportedProjectedColumns(expression).stream())
+            .collect(toImmutableSet());
 
-    Map<ConnectorExpression, HiveApplyProjectionUtil.ProjectedColumnRepresentation> columnProjections =
-        projectedExpressions.stream()
-            .collect(toImmutableMap(Function.identity(), HiveApplyProjectionUtil::createProjectedColumnRepresentation));
+    Map<ConnectorExpression, HiveApplyProjectionUtil.ProjectedColumnRepresentation>
+        columnProjections =
+            projectedExpressions.stream()
+                .collect(
+                    toImmutableMap(
+                        Function.identity(),
+                        HiveApplyProjectionUtil::createProjectedColumnRepresentation));
 
     KeyedTableHandle keyedTableHandle = (KeyedTableHandle) handle;
     IcebergTableHandle icebergTableHandle = keyedTableHandle.getIcebergTableHandle();
 
     // all references are simple variables
-    if (columnProjections.values()
-        .stream()
+    if (columnProjections.values().stream()
         .allMatch(HiveApplyProjectionUtil.ProjectedColumnRepresentation::isVariable)) {
-      Set<IcebergColumnHandle> projectedColumns = assignments.values().stream()
-          .map(IcebergColumnHandle.class::cast)
-          .collect(toImmutableSet());
+      Set<IcebergColumnHandle> projectedColumns =
+          assignments.values().stream()
+              .map(IcebergColumnHandle.class::cast)
+              .collect(toImmutableSet());
       if (icebergTableHandle.getProjectedColumns().equals(projectedColumns)) {
         return Optional.empty();
       }
-      List<Assignment> assignmentsList = assignments.entrySet().stream()
-          .map(assignment -> new Assignment(
-              assignment.getKey(),
-              assignment.getValue(),
-              ((IcebergColumnHandle) assignment.getValue()).getType()))
-          .collect(toImmutableList());
+      List<Assignment> assignmentsList =
+          assignments.entrySet().stream()
+              .map(
+                  assignment ->
+                      new Assignment(
+                          assignment.getKey(),
+                          assignment.getValue(),
+                          ((IcebergColumnHandle) assignment.getValue()).getType()))
+              .collect(toImmutableList());
 
-      return Optional.of(new ProjectionApplicationResult<>(
-          keyedTableHandle.withProjectedColumns(projectedColumns),
-          projections,
-          assignmentsList,
-          false));
+      return Optional.of(
+          new ProjectionApplicationResult<>(
+              keyedTableHandle.withProjectedColumns(projectedColumns),
+              projections,
+              assignmentsList,
+              false));
     }
 
     Map<String, Assignment> newAssignments = new HashMap<>();
-    ImmutableMap.Builder<ConnectorExpression, Variable> newVariablesBuilder = ImmutableMap.builder();
+    ImmutableMap.Builder<ConnectorExpression, Variable> newVariablesBuilder =
+        ImmutableMap.builder();
     ImmutableSet.Builder<IcebergColumnHandle> projectedColumnsBuilder = ImmutableSet.builder();
 
-    for (Map.Entry<ConnectorExpression, HiveApplyProjectionUtil.ProjectedColumnRepresentation> entry :
-        columnProjections.entrySet()) {
+    for (Map.Entry<ConnectorExpression, HiveApplyProjectionUtil.ProjectedColumnRepresentation>
+        entry : columnProjections.entrySet()) {
       ConnectorExpression expression = entry.getKey();
       HiveApplyProjectionUtil.ProjectedColumnRepresentation projectedColumn = entry.getValue();
 
       IcebergColumnHandle baseColumnHandle =
           (IcebergColumnHandle) assignments.get(projectedColumn.getVariable().getName());
       IcebergColumnHandle projectedColumnHandle =
-          createProjectedColumnHandle(baseColumnHandle, projectedColumn.getDereferenceIndices(), expression.getType());
+          createProjectedColumnHandle(
+              baseColumnHandle, projectedColumn.getDereferenceIndices(), expression.getType());
       String projectedColumnName = projectedColumnHandle.getQualifiedName();
 
       Variable projectedColumnVariable = new Variable(projectedColumnName, expression.getType());
-      Assignment newAssignment = new Assignment(projectedColumnName, projectedColumnHandle, expression.getType());
+      Assignment newAssignment =
+          new Assignment(projectedColumnName, projectedColumnHandle, expression.getType());
       newAssignments.putIfAbsent(projectedColumnName, newAssignment);
 
       newVariablesBuilder.put(expression, projectedColumnVariable);
@@ -372,20 +392,24 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
 
     // Modify projections to refer to new variables
     Map<ConnectorExpression, Variable> newVariables = newVariablesBuilder.buildOrThrow();
-    List<ConnectorExpression> newProjections = projections.stream()
-        .map(expression -> replaceWithNewVariables(expression, newVariables))
-        .collect(toImmutableList());
+    List<ConnectorExpression> newProjections =
+        projections.stream()
+            .map(expression -> replaceWithNewVariables(expression, newVariables))
+            .collect(toImmutableList());
 
-    List<Assignment> outputAssignments = newAssignments.values().stream().collect(toImmutableList());
-    return Optional.of(new ProjectionApplicationResult<>(
-        keyedTableHandle.withProjectedColumns(projectedColumnsBuilder.build()),
-        newProjections,
-        outputAssignments,
-        false));
+    List<Assignment> outputAssignments =
+        newAssignments.values().stream().collect(toImmutableList());
+    return Optional.of(
+        new ProjectionApplicationResult<>(
+            keyedTableHandle.withProjectedColumns(projectedColumnsBuilder.build()),
+            newProjections,
+            outputAssignments,
+            false));
   }
 
   @Override
-  public TableStatistics getTableStatistics(ConnectorSession session, ConnectorTableHandle tableHandle) {
+  public TableStatistics getTableStatistics(
+      ConnectorSession session, ConnectorTableHandle tableHandle) {
     if (!isArcticStatisticsEnabled(session)) {
       return TableStatistics.empty();
     }
@@ -396,7 +420,8 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
     // If this changes, the caching logic may here may need to be revised.
     checkArgument(originalHandle.getUpdatedColumns().isEmpty(), "Unexpected updated columns");
     checkArgument(!originalHandle.isRecordScannedFiles(), "Unexpected scanned files recording set");
-    checkArgument(originalHandle.getMaxScannedFileSize().isEmpty(), "Unexpected max scanned file size set");
+    checkArgument(
+        originalHandle.getMaxScannedFileSize().isEmpty(), "Unexpected max scanned file size set");
 
     return tableStatisticsCache.computeIfAbsent(
         new IcebergTableHandle(
@@ -418,30 +443,49 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
             originalHandle.isRecordScannedFiles(),
             originalHandle.getMaxScannedFileSize()),
         handle -> {
-          ArcticTable arcticTable = getArcticTable(new SchemaTableName(
-              originalHandle.getSchemaName(), originalHandle.getTableName()));
-          TableStatistics baseTableStatistics = TableStatisticsReader.getTableStatistics(
-              typeManager,
-              session,
-              withSnapshotId(handle, arcticTable.asKeyedTable().baseTable().currentSnapshot().snapshotId()),
-              arcticTable.asKeyedTable().baseTable());
-          TableStatistics changeTableStatistics = TableStatisticsReader.getTableStatistics(
-              typeManager,
-              session,
-              withSnapshotId(handle, arcticTable.asKeyedTable().changeTable().currentSnapshot().snapshotId()),
-              arcticTable.asKeyedTable().changeTable());
+          ArcticTable arcticTable =
+              getArcticTable(
+                  new SchemaTableName(
+                      originalHandle.getSchemaName(), originalHandle.getTableName()));
+          TableStatistics baseTableStatistics =
+              TableStatisticsReader.getTableStatistics(
+                  typeManager,
+                  session,
+                  withSnapshotId(
+                      handle,
+                      arcticTable.asKeyedTable().baseTable().currentSnapshot().snapshotId()),
+                  arcticTable.asKeyedTable().baseTable());
+          TableStatistics changeTableStatistics =
+              TableStatisticsReader.getTableStatistics(
+                  typeManager,
+                  session,
+                  withSnapshotId(
+                      handle,
+                      arcticTable.asKeyedTable().changeTable().currentSnapshot().snapshotId()),
+                  arcticTable.asKeyedTable().changeTable());
           return computeBothTablesStatistics(baseTableStatistics, changeTableStatistics);
         });
   }
 
   private static IcebergTableHandle withSnapshotId(IcebergTableHandle handle, long snapshotId) {
     return new IcebergTableHandle(
-        handle.getSchemaName(), handle.getTableName(), handle.getTableType(),
+        handle.getSchemaName(),
+        handle.getTableName(),
+        handle.getTableType(),
         Optional.of(snapshotId),
-        handle.getTableSchemaJson(), handle.getPartitionSpecJson(), handle.getFormatVersion(),
-        handle.getUnenforcedPredicate(), handle.getEnforcedPredicate(), handle.getProjectedColumns(),
-        handle.getNameMappingJson(), handle.getTableLocation(), handle.getStorageProperties(), handle.getRetryMode(),
-        handle.getUpdatedColumns(), handle.isRecordScannedFiles(), handle.getMaxScannedFileSize());
+        handle.getTableSchemaJson(),
+        handle.getPartitionSpecJson(),
+        handle.getFormatVersion(),
+        handle.getUnenforcedPredicate(),
+        handle.getEnforcedPredicate(),
+        handle.getProjectedColumns(),
+        handle.getNameMappingJson(),
+        handle.getTableLocation(),
+        handle.getStorageProperties(),
+        handle.getRetryMode(),
+        handle.getUpdatedColumns(),
+        handle.isRecordScannedFiles(),
+        handle.getMaxScannedFileSize());
   }
 
   private static TableStatistics computeBothTablesStatistics(
@@ -449,66 +493,77 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
     double baseRowCount = baseTableStatistics.getRowCount().getValue();
     double changeRowCount = changeTableStatistics.getRowCount().getValue();
     Estimate rowCount = Estimate.of(baseRowCount + changeRowCount);
-    Map<ColumnHandle, ColumnStatistics> baseColumnStatistics = baseTableStatistics.getColumnStatistics();
-    Map<ColumnHandle, ColumnStatistics> changeColumnStatistics = changeTableStatistics.getColumnStatistics();
+    Map<ColumnHandle, ColumnStatistics> baseColumnStatistics =
+        baseTableStatistics.getColumnStatistics();
+    Map<ColumnHandle, ColumnStatistics> changeColumnStatistics =
+        changeTableStatistics.getColumnStatistics();
     Map<ColumnHandle, ColumnStatistics> newColumnStatistics = new HashMap<>();
-    changeColumnStatistics.forEach((columnHandle, statisticsOfChangeColumn) -> {
-      ColumnStatistics statisticsOfBaseColumn = baseColumnStatistics.get(columnHandle);
-      ColumnStatistics.Builder columnBuilder = new ColumnStatistics.Builder();
+    changeColumnStatistics.forEach(
+        (columnHandle, statisticsOfChangeColumn) -> {
+          ColumnStatistics statisticsOfBaseColumn = baseColumnStatistics.get(columnHandle);
+          ColumnStatistics.Builder columnBuilder = new ColumnStatistics.Builder();
 
-      Estimate baseDataSize = statisticsOfBaseColumn.getDataSize();
-      Estimate changeDataSize = statisticsOfChangeColumn.getDataSize();
-      if (!baseDataSize.isUnknown() || !changeDataSize.isUnknown()) {
-        double value = Stream.of(baseDataSize, changeDataSize)
-            .mapToDouble(Estimate::getValue)
-            .average()
-            .getAsDouble();
-        columnBuilder.setDataSize(Double.isNaN(value) ? Estimate.unknown() : Estimate.of(value));
-      }
+          Estimate baseDataSize = statisticsOfBaseColumn.getDataSize();
+          Estimate changeDataSize = statisticsOfChangeColumn.getDataSize();
+          if (!baseDataSize.isUnknown() || !changeDataSize.isUnknown()) {
+            double value =
+                Stream.of(baseDataSize, changeDataSize)
+                    .mapToDouble(Estimate::getValue)
+                    .average()
+                    .getAsDouble();
+            columnBuilder.setDataSize(
+                Double.isNaN(value) ? Estimate.unknown() : Estimate.of(value));
+          }
 
-      Optional<DoubleRange> baseRange = statisticsOfBaseColumn.getRange();
-      Optional<DoubleRange> changeRange = statisticsOfChangeColumn.getRange();
-      if (baseRange.isPresent() && changeRange.isPresent()) {
-        columnBuilder.setRange(DoubleRange.union(baseRange.get(), changeRange.get()));
-      } else {
-        columnBuilder.setRange(baseRange.isPresent() ? baseRange : changeRange);
-      }
+          Optional<DoubleRange> baseRange = statisticsOfBaseColumn.getRange();
+          Optional<DoubleRange> changeRange = statisticsOfChangeColumn.getRange();
+          if (baseRange.isPresent() && changeRange.isPresent()) {
+            columnBuilder.setRange(DoubleRange.union(baseRange.get(), changeRange.get()));
+          } else {
+            columnBuilder.setRange(baseRange.isPresent() ? baseRange : changeRange);
+          }
 
-      Estimate baseNullsFraction = statisticsOfBaseColumn.getNullsFraction();
-      Estimate changeNullsFraction = statisticsOfChangeColumn.getNullsFraction();
-      if (!baseNullsFraction.isUnknown() && !changeNullsFraction.isUnknown()) {
-        columnBuilder.setNullsFraction(Estimate.of(
-            ((baseNullsFraction.getValue() * baseRowCount) +
-                (statisticsOfChangeColumn.getNullsFraction().getValue() * changeRowCount)) /
-                (baseRowCount + changeRowCount)));
-      } else {
-        columnBuilder.setNullsFraction(baseNullsFraction.isUnknown() ? changeNullsFraction : baseNullsFraction);
-      }
+          Estimate baseNullsFraction = statisticsOfBaseColumn.getNullsFraction();
+          Estimate changeNullsFraction = statisticsOfChangeColumn.getNullsFraction();
+          if (!baseNullsFraction.isUnknown() && !changeNullsFraction.isUnknown()) {
+            columnBuilder.setNullsFraction(
+                Estimate.of(
+                    ((baseNullsFraction.getValue() * baseRowCount)
+                            + (statisticsOfChangeColumn.getNullsFraction().getValue()
+                                * changeRowCount))
+                        / (baseRowCount + changeRowCount)));
+          } else {
+            columnBuilder.setNullsFraction(
+                baseNullsFraction.isUnknown() ? changeNullsFraction : baseNullsFraction);
+          }
 
-      Estimate baseDistinctValue = statisticsOfBaseColumn.getDistinctValuesCount();
-      Estimate changeDistinctValue = statisticsOfChangeColumn.getDistinctValuesCount();
-      if (!baseDistinctValue.isUnknown() || !changeDistinctValue.isUnknown()) {
-        double value = Stream.of(baseDistinctValue, changeDistinctValue)
-            .mapToDouble(Estimate::getValue)
-            .map(dataSize -> Double.isNaN(dataSize) ? 0 : dataSize)
-            .sum();
-        columnBuilder.setDistinctValuesCount(Estimate.of(value));
-      }
+          Estimate baseDistinctValue = statisticsOfBaseColumn.getDistinctValuesCount();
+          Estimate changeDistinctValue = statisticsOfChangeColumn.getDistinctValuesCount();
+          if (!baseDistinctValue.isUnknown() || !changeDistinctValue.isUnknown()) {
+            double value =
+                Stream.of(baseDistinctValue, changeDistinctValue)
+                    .mapToDouble(Estimate::getValue)
+                    .map(dataSize -> Double.isNaN(dataSize) ? 0 : dataSize)
+                    .sum();
+            columnBuilder.setDistinctValuesCount(Estimate.of(value));
+          }
 
-      ColumnStatistics columnStatistics = columnBuilder.build();
-      newColumnStatistics.put(columnHandle, columnStatistics);
-    });
+          ColumnStatistics columnStatistics = columnBuilder.build();
+          newColumnStatistics.put(columnHandle, columnStatistics);
+        });
     return new TableStatistics(rowCount, newColumnStatistics);
   }
 
   private static Set<Integer> identityPartitionColumnsInAllSpecs(ArcticTable table) {
     // Extract identity partition column source ids common to ALL specs
-    return table.spec().partitionType().fields()
-        .stream().map(s -> s.fieldId()).collect(Collectors.toUnmodifiableSet());
+    return table.spec().partitionType().fields().stream()
+        .map(s -> s.fieldId())
+        .collect(Collectors.toUnmodifiableSet());
   }
 
   private static IcebergColumnHandle createProjectedColumnHandle(
-      IcebergColumnHandle column, List<Integer> indices,
+      IcebergColumnHandle column,
+      List<Integer> indices,
       io.trino.spi.type.Type projectedColumnType) {
     if (indices.isEmpty()) {
       return column;
@@ -534,9 +589,12 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
   public ArcticTable getArcticTable(SchemaTableName schemaTableName) {
     concurrentHashMap.computeIfAbsent(
         schemaTableName,
-        ignore -> arcticCatalog.loadTable(TableIdentifier.of(arcticCatalog.name(),
-            schemaTableName.getSchemaName(), schemaTableName.getTableName()))
-    );
+        ignore ->
+            arcticCatalog.loadTable(
+                TableIdentifier.of(
+                    arcticCatalog.name(),
+                    schemaTableName.getSchemaName(),
+                    schemaTableName.getTableName())));
     return concurrentHashMap.get(schemaTableName);
   }
 

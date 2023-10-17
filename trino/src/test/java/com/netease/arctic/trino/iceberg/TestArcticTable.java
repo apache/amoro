@@ -51,7 +51,7 @@ import org.apache.iceberg.io.LocationProvider;
 import java.util.List;
 import java.util.Map;
 
-//extends BasicUnkeyedTable is for adapt IcebergMeta
+// extends BasicUnkeyedTable is for adapt IcebergMeta
 public class TestArcticTable extends BasicUnkeyedTable {
 
   private BaseTable table;
