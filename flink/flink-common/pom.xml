@@ -350,13 +350,6 @@
             </exclusions>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-json</artifactId>
-            <version>${flink.version}</version>
-            <scope>test</scope>
-        </dependency>
-
         <!-- conflicts with the version in spring-cloud, so assign it explicitly here -->
         <dependency>
             <groupId>org.apache.curator</groupId>
