@@ -31,7 +31,7 @@
             <span v-else>{{metastoreType}}</span>
           </a-form-item>
           <a-form-item :label="$t('tableFormat')" :name="['tableFormat']" :rules="[{ required: isEdit && isNewCatalog }]">
-            <a-radio-group :disabled="!isEdit || !isNewCatalog" v-model:value="formState.tableFormat" name="radioGroup">
+            <a-radio-group :disabled="!isEdit || !isNewCatalog" v-model:value="formState.tableFormat" name="radioGroup" @change="changeTableFormat">
               <a-radio v-for="item in formatOptions" :key="item" :value="item">{{tableFormatText[item]}}</a-radio>
             </a-radio-group>
           </a-form-item>
@@ -265,6 +265,13 @@ const authConfigMap = {
   'auth.kerberos.krb5': 'Kerberos Krb5'
 }
 
+const defaultPropertiesMap = {
+  ams: 'warehouse',
+  hadoop: 'warehouse',
+  custom: 'catalog-impl',
+  PAIMON: 'warehouse'
+}
+
 watch(() => route.query,
   (value) => {
     value && initData()
@@ -310,7 +317,8 @@ async function getConfigInfo() {
       formState.tableFormat = tableFormatMap.MIXED_ICEBERG
       formState.authConfig = { ...newCatalogConfig.authConfig }
       formState.storageConfig = { ...newCatalogConfig.storageConfig }
-      formState.properties = {}
+      const key = defaultPropertiesMap[formState.catalog.type]
+      formState.properties = key ? { [key]: '' } : {}
       formState.storageConfigArray.length = 0
       formState.authConfigArray.length = 0
     } else {
@@ -387,7 +395,16 @@ const formatOptions = computed(() => {
   return storeSupportFormat[type] || []
 })
 
-function changeMetastore() {
+async function changeProperties(type) {
+  const properties = await propertiesRef.value.getPropertiesWithoputValidation()
+  const key = defaultPropertiesMap[type] || ''
+  if (key && !properties[key]) {
+    properties[key] = ''
+    formState.properties = properties
+  }
+}
+
+async function changeMetastore(val) {
   formState.tableFormat = formatOptions.value[0]
   if (!isNewCatalog.value) { return }
   const index = formState.storageConfigArray.findIndex(item => item.key === 'hive.site')
@@ -413,7 +430,13 @@ function changeMetastore() {
       delete formState.storageConfig['hive.site']
     }
   }
+  await changeProperties(val)
 }
+
+async function changeTableFormat(e) {
+  await changeProperties(e.target.value)
+}
+
 function handleEdit() {
   emit('updateEdit', true)
 }
