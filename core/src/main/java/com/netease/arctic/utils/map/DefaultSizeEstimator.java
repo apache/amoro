@@ -18,13 +18,13 @@
 
 package com.netease.arctic.utils.map;
 
-import com.netease.arctic.utils.ObjectSizeCalculator;
+import org.apache.lucene.util.RamUsageEstimator;
 
 import java.io.Serializable;
 
 public class DefaultSizeEstimator<T> implements SizeEstimator<T>, Serializable {
   @Override
   public long sizeEstimate(T t) {
-    return ObjectSizeCalculator.getObjectSize(t);
+    return RamUsageEstimator.sizeOfObject(t, 0);
   }
 }

@@ -353,6 +353,7 @@
         <dependency>
             <groupId>org.openjdk.jol</groupId>
             <artifactId>jol-core</artifactId>
+            <version>${jol.version}</version>
             <scope>provided</scope>
         </dependency>
 
