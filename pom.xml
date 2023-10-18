@@ -93,7 +93,6 @@
         <hadoop.version>3.2.2</hadoop.version>
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>
-        <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
         <slf4j.version>1.7.30</slf4j.version>
         <log4j.version>2.20.0</log4j.version>
         <junit4.version>4.13</junit4.version>
@@ -336,12 +335,6 @@
                 <groupId>args4j</groupId>
                 <artifactId>args4j</artifactId>
                 <version>${args4j.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${mysql-jdbc.version}</version>
             </dependency>
 
             <dependency>

@@ -364,6 +364,16 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         manifestEntry.partition(), manifestEntry.bucket()).toPath(manifestEntry.file().fileName()).toString();
   }
 
+  private String partitionString(BinaryRow partition, Integer bucket, FileStorePathFactory fileStorePathFactory) {
+    String partitionString = fileStorePathFactory.getPartitionString(partition);
+    return partitionString + "/bucket-" + bucket;
+  }
+
+  private String fullFilePath(AbstractFileStore<?> store, ManifestEntry manifestEntry) {
+    return store.pathFactory().createDataFilePathFactory(
+        manifestEntry.partition(), manifestEntry.bucket()).toPath(manifestEntry.file().fileName()).toString();
+  }
+
   private FileStoreTable getTable(AmoroTable<?> amoroTable) {
     return (FileStoreTable) amoroTable.originalTable();
   }

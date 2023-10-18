@@ -28,5 +28,5 @@ RUN cd $FLINK_HOME/lib \
     && chown flink:flink *.jar \
     && mkdir -p $FLINK_HOME/usrlib
 
-COPY $OPTIMIZER_JOB $FLINK_HOME/usrlib/optimizer-job.jar
+ADD $OPTIMIZER_JOB $FLINK_HOME/usrlib/optimizer-job.jar
 

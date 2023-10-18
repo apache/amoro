@@ -21,6 +21,7 @@ package com.netease.arctic.server.manager;
 import com.netease.arctic.ams.api.metrics.MetricType;
 import com.netease.arctic.ams.api.metrics.MetricsContent;
 import com.netease.arctic.ams.api.metrics.MetricsEmitter;
+import com.netease.arctic.server.metrics.LoggingMetricsEmitter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,8 +29,11 @@ import org.mockito.Mock;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 
+import static com.netease.arctic.ams.api.Environments.AMORO_HOME;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestMetricsManager {
@@ -61,6 +65,15 @@ public class TestMetricsManager {
   @AfterEach
   public void tearDown() {
     manager.close();
+  }
+
+  @Test
+  public void testInitialize() {
+    System.setProperty(AMORO_HOME, Objects.requireNonNull(this.getClass().getClassLoader().getResource("")).getPath());
+    MetricsManager testManager = new MetricsManager();
+    testManager.initialize();
+
+    assertNotNull(testManager.get(LoggingMetricsEmitter.NAME));
   }
 
   @Test
