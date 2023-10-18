@@ -243,7 +243,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public List<PartitionBaseInfo> getTablePartition(AmoroTable<?> amoroTable) {
+  public List<PartitionBaseInfo> getTablePartitions(AmoroTable<?> amoroTable) {
     FileStoreTable table = getTable(amoroTable);
     AbstractFileStore<?> store = (AbstractFileStore<?>) table.store();
     FileStorePathFactory fileStorePathFactory = store.pathFactory();
@@ -272,9 +272,31 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public List<PartitionFileBaseInfo> getTableFile(AmoroTable<?> amoroTable, String partition) {
+  public List<PartitionFileBaseInfo> getTableFiles(AmoroTable<?> amoroTable, String partition) {
     FileStoreTable table = getTable(amoroTable);
     AbstractFileStore<?> store = (AbstractFileStore<?>) table.store();
+
+    //Cache file add snapshot id
+    Map<DataFileMeta, Long> fileSnapshotIdMap = new HashMap<>();
+    ManifestList manifestList = store.manifestListFactory().create();
+    ManifestFile manifestFile = store.manifestFileFactory().create();
+    Iterator<Snapshot> snapshots;
+    try {
+      snapshots = store.snapshotManager().snapshots();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    while (snapshots.hasNext()) {
+      Snapshot snapshot = snapshots.next();
+      List<ManifestFileMeta> deltaManifests = snapshot.deltaManifests(manifestList);
+      for (ManifestFileMeta manifestFileMeta : deltaManifests) {
+        List<ManifestEntry> manifestEntries = manifestFile.read(manifestFileMeta.fileName());
+        for (ManifestEntry manifestEntry : manifestEntries) {
+          fileSnapshotIdMap.put(manifestEntry.file(), snapshot.id());
+        }
+      }
+    }
+
     FileStorePathFactory fileStorePathFactory = store.pathFactory();
     List<ManifestEntry> files = store.newScan().plan().files(FileKind.ADD);
     List<PartitionFileBaseInfo> partitionFileBases = new ArrayList<>();
@@ -283,12 +305,13 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
           manifestEntry.partition(),
           manifestEntry.bucket(),
           fileStorePathFactory);
-      if (partition != null && !partition.equals(partitionSt)) {
+      if (partition != null && !table.partitionKeys().isEmpty() && !partition.equals(partitionSt)) {
         continue;
       }
+      Long snapshotId = fileSnapshotIdMap.get(manifestEntry.file());
       partitionFileBases.add(
           new PartitionFileBaseInfo(
-              null,
+              snapshotId == null ? null : snapshotId.toString(),
               INSERT_FILE,
               manifestEntry.file().creationTime().getMillisecond(),
               partitionSt,
