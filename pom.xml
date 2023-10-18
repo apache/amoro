@@ -621,6 +621,10 @@
                         <groupId>io.netty</groupId>
                         <artifactId>netty-common</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hbase</groupId>
+                        <artifactId>hbase-hadoop2-compat</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
