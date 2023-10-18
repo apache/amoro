@@ -377,7 +377,8 @@ public class CatalogController {
     if (newInfo.getAuthConfig().containsKey(AUTH_CONFIGS_KEY_SECRET_KEY)) {
       Object secretKey = newInfo.getAuthConfig().get(AUTH_CONFIGS_KEY_SECRET_KEY);
       if (DesensitizationUtil.isDesensitized(secretKey)) {
-        Preconditions.checkArgument(oldCatalogMeta.getAuthConfigs().containsKey(AUTH_CONFIGS_KEY_SECRET_KEY), "");
+        Preconditions.checkArgument(oldCatalogMeta.getAuthConfigs().containsKey(AUTH_CONFIGS_KEY_SECRET_KEY),
+            "Secret key is not set before，must provide a valid secret key");
         newInfo.getAuthConfig()
             .put(AUTH_CONFIGS_KEY_SECRET_KEY, oldCatalogMeta.getAuthConfigs().get(AUTH_CONFIGS_KEY_SECRET_KEY));
       }
