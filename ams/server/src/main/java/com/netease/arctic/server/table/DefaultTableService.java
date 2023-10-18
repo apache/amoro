@@ -24,7 +24,6 @@ import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.blocker.TableBlocker;
 import com.netease.arctic.server.utils.Configurations;
 import org.apache.commons.lang.StringUtils;
-import org.apache.iceberg.exceptions.NoSuchIcebergTableException;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
@@ -434,13 +433,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
                               try {
                                 syncTable(externalCatalog, tableIdentity);
                               } catch (Exception e) {
-                                if (e.getCause() != null &&
-                                    e.getCause() instanceof NoSuchIcebergTableException &&
-                                    e.getMessage().contains("Not an iceberg table")) {
-                                  LOG.info("Skip non-iceberg table {}.", tableIdentity.toString());
-                                } else {
-                                  LOG.error("TableExplorer sync table {} error", tableIdentity.toString(), e);
-                                }
+                                LOG.error("TableExplorer sync table {} error", tableIdentity.toString(), e);
                               }
                             }, tableExplorerExecutors));
                   } catch (RejectedExecutionException e) {
