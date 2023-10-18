@@ -310,6 +310,9 @@ public class IcebergRestCatalogService extends PersistentBase {
     });
   }
 
+  /**
+   * GET PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}
+   */
   public void loadTable(Context ctx) {
     handleTable(ctx, (catalog, tableMeta) -> {
       TableMetadata tableMetadata = null;
