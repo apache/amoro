@@ -93,7 +93,6 @@
         <hadoop.version>3.2.2</hadoop.version>
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>
-        <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
         <slf4j.version>1.7.30</slf4j.version>
         <log4j.version>2.20.0</log4j.version>
         <junit4.version>4.13</junit4.version>
@@ -130,6 +129,7 @@
         <jol.version>0.16</jol.version>
         <trino.version>406</trino.version>
         <lucene.version>8.11.2</lucene.version>
+        <bitmap.version>0.9.44</bitmap.version>
     </properties>
 
     <dependencyManagement>
@@ -340,12 +340,6 @@
             </dependency>
 
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${mysql-jdbc.version}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>org.apache.orc</groupId>
                 <artifactId>orc-core</artifactId>
                 <version>${orc-core.version}</version>
@@ -404,6 +398,12 @@
                 <groupId>org.apache.paimon</groupId>
                 <artifactId>paimon-bundle</artifactId>
                 <version>${paimon.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.roaringbitmap</groupId>
+                <artifactId>RoaringBitmap</artifactId>
+                <version>${bitmap.version}</version>
             </dependency>
 
             <dependency>
