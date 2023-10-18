@@ -55,6 +55,9 @@ COPY --from=builder "/usr/local/amoro" "/usr/local/amoro"
 
 WORKDIR ${AMORO_HOME}
 
+RUN cd ${AMORO_HOME}/lib \
+    && wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.30/mysql-connector-java-8.0.30.jar
+
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["help"]
 

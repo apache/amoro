@@ -80,13 +80,13 @@ containers:
   - name: flinkContainer
     container-impl: com.netease.arctic.server.manager.FlinkOptimizerContainer
     properties:
-      flink-home: /opt/flink/                                                        #flink install home
-      target: kubernetes-application                                                 #flink run as native kubernetes
-      job-uri: "local:///opt/flink/usrlib/OptimizeJob.jar"                           #optimizer job location in image
-      ams-optimizing-uri: thrift://ams.amoro.service.local:1261                      #AMS optimizing uri 
-      export.FLINK_CONF_DIR: /opt/flink/conf/                                        #flink config dir
-      flink-conf.kubernetes.container.image: "arctic163/optimizer-flink1.14:latest"  #image ref
-      flink-conf.kubernetes.service-account: flink                                   #kubernetes service account
+      flink-home: /opt/flink/                                                        # Flink install home
+      target: kubernetes-application                                                 # Flink run as native kubernetes
+      job-uri: "local:///opt/flink/usrlib/optimizer-job.jar"                         # Optimizer job main jar for kubernetes application
+      ams-optimizing-uri: thrift://ams.amoro.service.local:1261                      # AMS optimizing uri 
+      export.FLINK_CONF_DIR: /opt/flink/conf/                                        # Flink config dir
+      flink-conf.kubernetes.container.image: "arctic163/optimizer-flink:{version}"   # Optimizer image ref
+      flink-conf.kubernetes.service-account: flink                                   # Service account that is used within kubernetes cluster.
 ```
 
 
