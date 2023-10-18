@@ -18,14 +18,14 @@
 
 package com.netease.arctic.utils;
 
-import com.netease.arctic.iceberg.InternalRecordWrapper;
-import com.netease.arctic.iceberg.StructLikeWrapper;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.StructLikeWrapper;
 import org.junit.Assert;
 import org.junit.Test;
 

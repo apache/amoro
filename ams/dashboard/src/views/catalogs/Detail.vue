@@ -45,27 +45,46 @@
             <span v-else>{{formState.catalog.optimizerGroup}}</span>
           </a-form-item>
           <a-form-item>
-            <p class="header">{{$t('storageConfig')}}</p>
+            <p class="header">{{$t('storageConfigName')}}</p>
           </a-form-item>
-          <a-form-item
-            v-for="config in formState.storageConfigArray"
-            :key="config.label"
-            :label="config.label"
-            class="g-flex-ac">
-            <a-upload
+          <a-form-item label="Type" :name="['storageConfig', 'storage.type']" :rules="[{ required: isEdit }]">
+            <a-select
               v-if="isEdit"
-              v-model:file-list="config.fileList"
-              name="file"
-              accept=".xml"
-              :showUploadList="false"
-              :action="uploadUrl"
-              :disabled="config.uploadLoading"
-              @change="(args) => uploadFile(args, config, 'STORAGE')"
-            >
-              <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">{{$t('upload')}}</a-button>
-            </a-upload>
-            <span v-if="config.isSuccess || config.fileName" class="config-value" :class="{'view-active': !!config.fileUrl}" @click="viewFileDetail(config.fileUrl)">{{config.fileName}}</span>
+              v-model:value="formState.storageConfig['storage.type']"
+              :placeholder="placeholder.selectPh"
+              :options="storageConfigTypeOps"
+            />
+            <span v-else class="config-value">{{formState.storageConfig['storage.type']}}</span>
           </a-form-item>
+          <a-form-item v-if="formState.storageConfig['storage.type'] === 'S3'" label="Endpoint" :name="['storageConfig', 'storage.s3.endpoint']" :rules="[{ required: false }]">
+            <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.s3.endpoint']" />
+            <span v-else class="config-value">{{formState.storageConfig['storage.s3.endpoint']}}</span>
+          </a-form-item>
+          <a-form-item v-if="formState.storageConfig['storage.type'] === 'S3'" label="Region" :name="['storageConfig', 'storage.s3.region']" :rules="[{ required: false }]">
+            <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.s3.region']" />
+            <span v-else class="config-value">{{formState.storageConfig['storage.s3.region']}}</span>
+          </a-form-item>
+          <div v-if="formState.storageConfig['storage.type'] === 'Hadoop'">
+            <a-form-item
+              v-for="config in formState.storageConfigArray"
+              :key="config.label"
+              :label="config.label"
+              class="g-flex-ac">
+              <a-upload
+                v-if="isEdit"
+                v-model:file-list="config.fileList"
+                name="file"
+                accept=".xml"
+                :showUploadList="false"
+                :action="uploadUrl"
+                :disabled="config.uploadLoading"
+                @change="(args) => uploadFile(args, config, 'STORAGE')"
+              >
+                <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">{{ $t('upload') }}</a-button>
+              </a-upload>
+              <span v-if="config.isSuccess || config.fileName" class="config-value" :class="{ 'view-active': !!config.fileUrl }" @click="viewFileDetail(config.fileUrl)">{{ config.fileName }}</span>
+            </a-form-item>
+          </div>
           <a-form-item>
             <p class="header">{{$t('authenticationConfig')}}</p>
           </a-form-item>
@@ -74,7 +93,7 @@
               v-if="isEdit"
               v-model:value="formState.authConfig['auth.type']"
               :placeholder="placeholder.selectPh"
-              :options="authConfigTypeOps"
+              :options="authTypeOptions"
             />
             <span v-else class="config-value">{{formState.authConfig['auth.type']}}</span>
           </a-form-item>
@@ -107,11 +126,25 @@
               <span v-if="config.isSuccess || config.fileName" class="config-value auth-filename" :class="{'view-active': !!config.fileUrl}" @click="viewFileDetail(config.fileUrl)" :title="config.fileName">{{config.fileName}}</span>
             </a-form-item>
           </div>
+          <a-form-item v-if="formState.authConfig['auth.type'] === 'AK/SK'" label="Access Key" :name="['authConfig', 'auth.ak_sk.access_key']" :rules="[{ required: isEdit }]">
+            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.ak_sk.access_key']" />
+            <span v-else class="config-value">{{formState.authConfig['auth.ak_sk.access_key']}}</span>
+          </a-form-item>
+          <a-form-item v-if="formState.authConfig['auth.type'] === 'AK/SK'" label="Secret Key" :name="['authConfig', 'auth.ak_sk.secret_key']" :rules="[{ required: isEdit }]">
+            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.ak_sk.secret_key']" />
+            <span v-else class="config-value">{{formState.authConfig['auth.ak_sk.secret_key']}}</span>
+          </a-form-item>
           <a-form-item>
             <p class="header">{{$t('properties')}}</p>
           </a-form-item>
           <a-form-item>
             <Properties :propertiesObj="formState.properties" :isEdit="isEdit" ref="propertiesRef" />
+          </a-form-item>
+          <a-form-item>
+            <p class="header">{{$t('tableProperties')}}</p>
+          </a-form-item>
+          <a-form-item>
+            <Properties :propertiesObj="formState.tableProperties" :isEdit="isEdit" ref="tablePropertiesRef" />
           </a-form-item>
         </a-form>
       </div>
@@ -157,6 +190,7 @@ interface FormState {
   storageConfig: IMap<string>
   authConfig: IMap<string>
   properties: IMap<string>
+  tableProperties: IMap<string>
   storageConfigArray: IStorageConfigItem[]
   authConfigArray: IStorageConfigItem[]
 }
@@ -195,6 +229,7 @@ const isArcticMetastore = computed(() => {
 const loading = ref<boolean>(false)
 const formRef = ref()
 const propertiesRef = ref()
+const tablePropertiesRef = ref()
 // ICEBERG  MIXED_HIVE  MIXED_ICEBERG
 const tableFormatMap = {
   MIXED_HIVE: 'MIXED_HIVE',
@@ -202,6 +237,7 @@ const tableFormatMap = {
   MIXED_ICEBERG: 'MIXED_ICEBERG',
   PAIMON: 'PAIMON'
 }
+
 const tableFormatText = {
   [tableFormatMap.ICEBERG]: 'Iceberg',
   [tableFormatMap.MIXED_HIVE]: 'Mixed Hive',
@@ -212,8 +248,10 @@ const storeSupportFormat: {[prop:string]: string[]} = {
   ams: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
   hive: [tableFormatMap.MIXED_HIVE, tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG, tableFormatMap.PAIMON],
   hadoop: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG, tableFormatMap.PAIMON],
+  glue: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
   custom: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG]
 }
+
 const storageConfigFileNameMap = {
   'hadoop.core.site': 'core-site.xml',
   'hadoop.hdfs.site': 'hdfs-site.xml',
@@ -244,15 +282,25 @@ const formState:FormState = reactive({
   storageConfig: {},
   authConfig: {},
   properties: {},
+  tableProperties: {},
   storageConfigArray: [],
   authConfigArray: []
 })
-const authConfigTypeOps = reactive<ILableAndValue[]>([{
+
+const hadoopConfigTypeOps = reactive<ILableAndValue[]>([{
   label: 'SIMPLE',
   value: 'SIMPLE'
 }, {
   label: 'KERBEROS',
   value: 'KERBEROS'
+}])
+
+const s3ConfigTypeOps = reactive<ILableAndValue[]>([{
+  label: 'AK/SK',
+  value: 'AK/SK'
+}, {
+  label: 'CUSTOM',
+  value: 'CUSTOM'
 }])
 
 const storageConfigMap = {
@@ -311,12 +359,13 @@ async function getConfigInfo() {
       formState.authConfig = { ...newCatalogConfig.authConfig }
       formState.storageConfig = { ...newCatalogConfig.storageConfig }
       formState.properties = {}
+      formState.tableProperties = {}
       formState.storageConfigArray.length = 0
       formState.authConfigArray.length = 0
     } else {
       const res = await getCatalogsSetting(catalogname)
       if (!res) { return }
-      const { name, type, tableFormatList, storageConfig, authConfig, properties, optimizerGroup } = res
+      const { name, type, tableFormatList, storageConfig, authConfig, properties, tableProperties, optimizerGroup } = res
       formState.catalog.name = name
       formState.catalog.type = type
       formState.catalog.optimizerGroup = optimizerGroup
@@ -324,6 +373,7 @@ async function getConfigInfo() {
       formState.authConfig = authConfig
       formState.storageConfig = storageConfig
       formState.properties = properties || {}
+      formState.tableProperties = tableProperties || {}
       formState.storageConfigArray.length = 0
       formState.authConfigArray.length = 0
       getMetastoreType()
@@ -387,6 +437,48 @@ const formatOptions = computed(() => {
   return storeSupportFormat[type] || []
 })
 
+const storageConfigTypeS3 = reactive<ILableAndValue[]>([{
+  label: 'S3',
+  value: 'S3'
+}])
+
+const storageConfigTypeHadoop = reactive<ILableAndValue[]>([{
+  label: 'Hadoop',
+  value: 'Hadoop'
+}])
+
+const storageConfigTypeHadoopS3 = reactive<ILableAndValue[]>([{
+  label: 'Hadoop',
+  value: 'Hadoop'
+}, {
+  label: 'S3',
+  value: 'S3'
+}])
+
+const storageConfigTypeOps = computed(() => {
+  const type = formState.catalog.type
+  if (type === 'ams' || type === 'custom') {
+    return storageConfigTypeHadoopS3
+  } else if (type === 'glue') {
+    return storageConfigTypeS3
+  } else if (type === 'hive' || type === 'hadoop') {
+    return storageConfigTypeHadoop
+  } else {
+    return null
+  }
+})
+
+const authTypeOptions = computed(() => {
+  const type = formState.storageConfig['storage.type']
+  if (type === 'Hadoop') {
+    return hadoopConfigTypeOps
+  } else if (type === 'S3') {
+    return s3ConfigTypeOps
+  } else {
+    return null
+  }
+})
+
 function changeMetastore() {
   formState.tableFormat = formatOptions.value[0]
   if (!isNewCatalog.value) { return }
@@ -448,8 +540,10 @@ function getFileIdParams() {
     }
   })
   Object.keys(storageConfig).forEach(key => {
-    const id = (storageConfigArray.find(item => item.key === key) || {}).fileId
-    storageConfig[key] = id
+    if (['hadoop.core.site', 'hadoop.hdfs.site', 'hive.site'].includes(key)) {
+      const id = (storageConfigArray.find(item => item.key === key) || {}).fileId
+      storageConfig[key] = id
+    }
   })
 }
 function handleSave() {
@@ -458,7 +552,11 @@ function handleSave() {
     .then(async() => {
       const { catalog, tableFormat, storageConfig, authConfig } = formState
       const properties = await propertiesRef.value.getProperties()
+      const tableProperties = await tablePropertiesRef.value.getProperties()
       if (!properties) {
+        return
+      }
+      if (!tableProperties) {
         return
       }
       loading.value = true
@@ -470,7 +568,8 @@ function handleSave() {
         tableFormatList: [tableFormat],
         storageConfig,
         authConfig,
-        properties
+        properties,
+        tableProperties
       }).then(() => {
         message.success(`${t('save')} ${t('success')}`)
         emit('updateEdit', false, {
