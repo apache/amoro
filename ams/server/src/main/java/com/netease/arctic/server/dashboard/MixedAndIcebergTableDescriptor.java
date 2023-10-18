@@ -241,13 +241,13 @@ public class MixedAndIcebergTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public List<PartitionBaseInfo> getTablePartition(AmoroTable<?> amoroTable) {
+  public List<PartitionBaseInfo> getTablePartitions(AmoroTable<?> amoroTable) {
     ArcticTable arcticTable = getTable(amoroTable);
     if (arcticTable.spec().isUnpartitioned()) {
       return new ArrayList<>();
     }
     Map<String, PartitionBaseInfo> partitionBaseInfoHashMap = new HashMap<>();
-    getTableFile(amoroTable, null).forEach(fileInfo -> {
+    getTableFiles(amoroTable, null).forEach(fileInfo -> {
       if (!partitionBaseInfoHashMap.containsKey(fileInfo.getPartition())) {
         partitionBaseInfoHashMap.put(fileInfo.getPartition(), new PartitionBaseInfo());
         partitionBaseInfoHashMap.get(fileInfo.getPartition()).setPartition(fileInfo.getPartition());
@@ -263,7 +263,8 @@ public class MixedAndIcebergTableDescriptor implements FormatTableDescriptor {
     return new ArrayList<>(partitionBaseInfoHashMap.values());
   }
 
-  public List<PartitionFileBaseInfo> getTableFile(AmoroTable<?> amoroTable, String partition) {
+  @Override
+  public List<PartitionFileBaseInfo> getTableFiles(AmoroTable<?> amoroTable, String partition) {
     ArcticTable arcticTable = getTable(amoroTable);
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     if (arcticTable.isKeyedTable()) {
