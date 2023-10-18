@@ -129,13 +129,16 @@ Amoro is built using Maven with Java 1.8 and Java 17(only for `trino` module).
     </toolchain>
 </toolchains>
 ```
+Spotless is used as the checkstyle plugin but Spotless cannot sense the Toolchains plugin. So if you want to perform checkstyle during the build, you must package the trino module separately.
 
-* To invoke a build and run tests: `mvn package -P toolchain`
-* To skip tests: `mvn -DskipTests package -P toolchain`
-* To package without trino module and JAVA 17 dependency: `mvn clean package -DskipTests -pl '!trino'`
-* To build with hadoop 2.x(the default is 3.x) `mvn clean package -DskipTests -Dhadoop=v2`
+* To invoke a build and run tests: `mvn package -pl '!trino'`
+* To skip tests: `mvn -DskipTests package -pl '!trino'`
+* To build with hadoop 2.x(the default is 3.x) `mvn clean package -DskipTests -pl '!trino' -Dhadoop=v2`
 * To indicate flink version for optimizer(the default is 1.14, 1.15 and 1.16 are available)
-`mvn clean package -DskipTests -Doptimizer.flink=1.15`
+`mvn clean package -DskipTests -pl '!trino' -Doptimizer.flink=1.15`
+* To package with trino module by toolchains(Skip checkstyle): `mvn clean package -DskipTests -Dcheckstyle.skip=true -P toolchain`
+* To package trino module separately in java 17 environment: `mvn clean package -DskipTests -pl trino -am`
+* To package trino module separately by toolchains(Skip checkstyle): `mvn clean package -DskipTests -Dcheckstyle.skip=true -pl 'trino' -am -P toolchain`
 
 ## Quickstart
 
