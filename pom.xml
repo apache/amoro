@@ -128,6 +128,7 @@
         <kryo.version>2.24.0</kryo.version>
         <jol.version>0.16</jol.version>
         <trino.version>406</trino.version>
+        <bitmap.version>0.9.44</bitmap.version>
     </properties>
 
     <dependencyManagement>
@@ -396,6 +397,12 @@
                 <groupId>org.apache.paimon</groupId>
                 <artifactId>paimon-bundle</artifactId>
                 <version>${paimon.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.roaringbitmap</groupId>
+                <artifactId>RoaringBitmap</artifactId>
+                <version>${bitmap.version}</version>
             </dependency>
 
             <dependency>
