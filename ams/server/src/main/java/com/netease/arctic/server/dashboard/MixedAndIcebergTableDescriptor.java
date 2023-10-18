@@ -171,16 +171,19 @@ public class MixedAndIcebergTableDescriptor implements FormatTableDescriptor {
       transactionsOfTable.setSummary(summary);
 
       //Metric in chart
-      Map<String, String> summaryForChat = new HashMap<>();
-      summaryForChat.put("total-records", summary.get(SnapshotSummary.TOTAL_RECORDS_PROP));
-      summaryForChat.put("eq-delete-records", summary.get(SnapshotSummary.TOTAL_EQ_DELETES_PROP));
-      summaryForChat.put("pos-delete-records", summary.get(SnapshotSummary.TOTAL_POS_DELETES_PROP));
-      summaryForChat.put("data-files", summary.get(SnapshotSummary.TOTAL_DATA_FILES_PROP));
-      summaryForChat.put("delete-files", summary.get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
-      summaryForChat.put("total-files",
+      Map<String, String> recordsSummaryForChat = new HashMap<>();
+      recordsSummaryForChat.put("total-records", summary.get(SnapshotSummary.TOTAL_RECORDS_PROP));
+      recordsSummaryForChat.put("eq-delete-records", summary.get(SnapshotSummary.TOTAL_EQ_DELETES_PROP));
+      recordsSummaryForChat.put("pos-delete-records", summary.get(SnapshotSummary.TOTAL_POS_DELETES_PROP));
+      transactionsOfTable.setRecordsSummaryForChart(recordsSummaryForChat);
+
+      Map<String, String> filesSummaryForChat = new HashMap<>();
+      filesSummaryForChat.put("data-files", summary.get(SnapshotSummary.TOTAL_DATA_FILES_PROP));
+      filesSummaryForChat.put("delete-files", summary.get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
+      filesSummaryForChat.put("total-files",
           PropertyUtil.propertyAsInt(summary, SnapshotSummary.TOTAL_DELETE_FILES_PROP, 0) +
               PropertyUtil.propertyAsInt(summary, SnapshotSummary.TOTAL_DATA_FILES_PROP, 0) + "");
-      transactionsOfTable.setSummaryForChart(summaryForChat);
+      transactionsOfTable.setFilesSummaryForChart(filesSummaryForChat);
 
       transactionsOfTables.add(transactionsOfTable);
     }));

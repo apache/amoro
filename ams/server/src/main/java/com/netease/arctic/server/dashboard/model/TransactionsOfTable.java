@@ -29,7 +29,9 @@ public class TransactionsOfTable {
   private Map<String, String> summary;
 
   //Determine what content to display on the front-end line chart.
-  private Map<String, String> summaryForChart;
+  private Map<String, String> recordsSummaryForChart;
+
+  private Map<String, String> filesSummaryForChart;
 
   public TransactionsOfTable() {
   }
@@ -97,11 +99,19 @@ public class TransactionsOfTable {
     this.summary = summary;
   }
 
-  public Map<String, String> getSummaryForChart() {
-    return summaryForChart;
+  public Map<String, String> getRecordsSummaryForChart() {
+    return recordsSummaryForChart;
   }
 
-  public void setSummaryForChart(Map<String, String> summaryForChart) {
-    this.summaryForChart = summaryForChart;
+  public void setRecordsSummaryForChart(Map<String, String> recordsSummaryForChart) {
+    this.recordsSummaryForChart = recordsSummaryForChart;
+  }
+
+  public Map<String, String> getFilesSummaryForChart() {
+    return filesSummaryForChart;
+  }
+
+  public void setFilesSummaryForChart(Map<String, String> filesSummaryForChart) {
+    this.filesSummaryForChart = filesSummaryForChart;
   }
 }

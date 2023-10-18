@@ -32,7 +32,6 @@ import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.paimon.AbstractFileStore;
 import org.apache.paimon.Snapshot;
 import org.apache.paimon.data.BinaryRow;
@@ -45,9 +44,11 @@ import org.apache.paimon.manifest.ManifestList;
 import org.apache.paimon.table.DataTable;
 import org.apache.paimon.table.FileStoreTable;
 import org.apache.paimon.utils.FileStorePathFactory;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -190,12 +191,19 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
       summary.put("changelogs", String.valueOf(changeLogFileCount));
 
       //Summary in chart
-      Set<String> summaryKeyForChat = Sets.newHashSet("total-records", "delta-records",
-          "changelog-records", "delta-files", "data-files", "changelogs");
-      Map<String, String> summaryForChat = summary.entrySet().stream()
-          .filter(e -> summaryKeyForChat.contains(e.getKey()))
-          .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-      deltaTransactionsOfTable.setSummaryForChart(summaryForChat);
+      Map<String, String> recordsSummaryForChat = extractSummary(
+          summary,
+          "total-records",
+          "delta-records",
+          "changelog-records");
+      deltaTransactionsOfTable.setRecordsSummaryForChart(recordsSummaryForChat);
+
+      Map<String, String> filesSummaryForChat = extractSummary(
+          summary,
+          "delta-files",
+          "data-files",
+          "changelogs");
+      deltaTransactionsOfTable.setFilesSummaryForChart(filesSummaryForChat);
 
       deltaTransactionsOfTable.setSummary(summary);
       transactionsOfTables.add(deltaTransactionsOfTable);
@@ -322,6 +330,14 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     }
 
     return partitionFileBases;
+  }
+
+  @NotNull
+  private static Map<String, String> extractSummary(Map<String, String> summary, String... keys) {
+    Set<String> keySet = new HashSet<>(Arrays.asList(keys));
+    return summary.entrySet().stream()
+        .filter(e -> keySet.contains(e.getKey()))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   private TransactionsOfTable manifestListInfo(
