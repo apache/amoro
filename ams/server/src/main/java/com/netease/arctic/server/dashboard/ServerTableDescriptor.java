@@ -114,16 +114,16 @@ public class ServerTableDescriptor extends PersistentBase {
     List<OptimizingProcessInfo> processInfoList = new ArrayList<>();
     FileStoreTable fileStoreTable = (FileStoreTable) amoroTable.originalTable();
     AbstractFileStore<?> store = (AbstractFileStore<?>) fileStoreTable.store();
+    ServerTableIdentifier tableIdentifierWithTableId = getAs(TableMetaMapper.class,
+        mapper -> mapper.selectTableIdentifier(tableIdentifier.getCatalog(),
+            tableIdentifier.getDatabase(),
+            tableIdentifier.getTableName()));
     try {
       Streams.stream(store.snapshotManager().snapshots())
           .filter(s -> s.commitKind() == Snapshot.CommitKind.COMPACT)
           .forEach(s -> {
             OptimizingProcessInfo optimizingProcessInfo = new OptimizingProcessInfo();
             optimizingProcessInfo.setProcessId(s.id());
-            ServerTableIdentifier tableIdentifierWithTableId = getAs(TableMetaMapper.class,
-                mapper -> mapper.selectTableIdentifier(tableIdentifier.getCatalog(),
-                    tableIdentifier.getDatabase(),
-                    tableIdentifier.getTableName()));
             optimizingProcessInfo.setTableId(tableIdentifierWithTableId.getId());
             optimizingProcessInfo.setCatalogName(tableIdentifierWithTableId.getCatalog());
             optimizingProcessInfo.setDbName(tableIdentifierWithTableId.getDatabase());
