@@ -262,7 +262,7 @@ public class TableController {
 
     ServerTableIdentifier tableIdentifier = ServerTableIdentifier.of(catalog, db, table);
     AmoroTable<?> amoroTable = tableService.loadTable(tableIdentifier);
-    int total = 0;
+    int total;
     List<OptimizingProcessInfo> result;
     if (amoroTable.format() != TableFormat.PAIMON) {
       List<OptimizingProcessMeta> processMetaList = tableDescriptor.getOptimizingProcesses(catalog, db, table);
