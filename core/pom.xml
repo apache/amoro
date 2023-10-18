@@ -119,6 +119,12 @@
             <artifactId>paimon-bundle</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.roaringbitmap</groupId>
+            <artifactId>RoaringBitmap</artifactId>
+            <version>0.9.25</version>
+        </dependency>
+
         <!-- test dependencies -->
 
         <dependency>
