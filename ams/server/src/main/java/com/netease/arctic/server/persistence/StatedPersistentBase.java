@@ -54,8 +54,6 @@ public abstract class StatedPersistentBase extends PersistentBase {
     stateLock.lock();
     try {
       runnable.run();
-    } catch (Throwable throwable) {
-      throw throwable;
     } finally {
       stateLock.unlock();
     }
