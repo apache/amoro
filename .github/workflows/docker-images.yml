@@ -176,7 +176,7 @@ jobs:
     name: Push Amoro Quick-Demo Docker Image to Docker Hub
     runs-on: ubuntu-latest
     needs: docker-amoro
-    if: ${{ startsWith(github.repository, 'NetEase/') }}
+    if: ${{ startsWith(github.repository, 'NetEase/') && starsWith(github.ref, 'refs/tags/' )}}
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 8
