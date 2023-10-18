@@ -60,7 +60,7 @@ public class ArcticManagementConf {
       ConfigOptions.key("refresh-external-catalogs.thread-count")
           .intType()
           .defaultValue(10)
-          .withDescription("The number of threads used for discover tables in external catalogs.");
+          .withDescription("The number of threads used for discovering tables in external catalogs.");
 
   public static final ConfigOption<Integer> REFRESH_EXTERNAL_CATALOGS_QUEUE_SIZE =
       ConfigOptions.key("refresh-external-catalogs.queue-size")
