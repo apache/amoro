@@ -106,6 +106,6 @@ containers:
 #      export.HADOOP_USER_NAME: hadoop                             # Hadoop user submit on yarn
 #      export.FLINK_CONF_DIR: /opt/flink/conf/                     # Flink config dir
 #      # flink kubernetes application properties.
-#      job-uri: "local:///opt/flink/usrlib/OptimizeJob.jar"        # optimizer job main jor for application mode
-#      flink-conf.kubernetes.container.image: "arctic163/optimizer-flink1.14:latest"   #optimizer image ref
-#      flink-conf.kubernetes.service-account: flink                # service account to manager application job.
+#      job-uri: "local:///opt/flink/usrlib/optimizer-job.jar"      # Optimizer job main jar for kubernetes application
+#      flink-conf.kubernetes.container.image: "arctic163/optimizer-flink:{version}"   # Optimizer image ref
+#      flink-conf.kubernetes.service-account: flink                # Service account that is used within kubernetes cluster.
