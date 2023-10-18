@@ -175,6 +175,83 @@ public class TestCatalog extends CatalogTestBase {
     sql("DROP CATALOG arcticCatalog");
   }
 
+  @Test
+  public void testAlterTable() throws Exception {
+    final String keyTable = "test_key_table";
+    final String unKeyTable = "test_unkey_table";
+    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("USE CATALOG arcticCatalog");
+    sql("CREATE DATABASE arcticCatalog." + DB);
+    sql(
+        "CREATE TABLE arcticCatalog."
+            + DB
+            + "."
+            + keyTable
+            + " ("
+            + " id INT,"
+            + " name STRING,"
+            + " t TIMESTAMP,"
+            + " PRIMARY KEY (id) NOT ENFORCED "
+            + ") PARTITIONED BY(t) "
+            + " WITH ("
+            + " 'connector' = 'arctic'"
+            + ")");
+    sql(
+        "CREATE TABLE arcticCatalog."
+            + DB
+            + "."
+            + unKeyTable
+            + " ("
+            + " id INT,"
+            + " name STRING,"
+            + " t TIMESTAMP"
+            + ") PARTITIONED BY(t) "
+            + " WITH ("
+            + " 'connector' = 'arctic',"
+            + " 'self-optimizing.enabled' = 'false'"
+            + ")");
+    sql("USE  arcticCatalog." + DB);
+
+    sql(
+        "ALTER TABLE arcticCatalog."
+            + DB
+            + "."
+            + keyTable
+            + " "
+            + "SET ( 'self-optimizing.enabled' = 'true')");
+    sql(
+        "ALTER TABLE arcticCatalog."
+            + DB
+            + "."
+            + keyTable
+            + " "
+            + "SET ( 'self-optimizing.group' = 'flink')");
+    sql(
+        "ALTER TABLE arcticCatalog."
+            + DB
+            + "."
+            + keyTable
+            + " "
+            + "SET ( 'write.upsert.enabled' = 'true')");
+    Map<String, String> keyTableProperties =
+        getCatalog().loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, keyTable)).properties();
+    Assert.assertEquals(keyTableProperties.get("self-optimizing.enabled"), "true");
+    Assert.assertEquals(keyTableProperties.get("self-optimizing.group"), "flink");
+    Assert.assertEquals(keyTableProperties.get("write.upsert.enabled"), "true");
+
+    sql(
+        "ALTER TABLE arcticCatalog."
+            + DB
+            + "."
+            + unKeyTable
+            + " "
+            + "SET ( 'write.metadata.delete-after-commit.enabled' = 'false')");
+    Map<String, String> unKeyTableProperties =
+        getCatalog().loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, unKeyTable)).properties();
+    Assert.assertEquals(
+        unKeyTableProperties.get("write.metadata.delete-after-commit.enabled"), "false");
+  }
+
   protected List<Row> sql(String query, Object... args) {
     TableResult tableResult = getTableEnv().executeSql(String.format(query, args));
     tableResult

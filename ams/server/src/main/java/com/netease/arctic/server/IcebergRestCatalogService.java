@@ -7,10 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
@@ -21,7 +19,6 @@ import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.IcebergTableUtil;
-import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.ContentType;
@@ -315,6 +312,7 @@ public class IcebergRestCatalogService extends PersistentBase {
   /**
    * GET PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}
    */
+
   public void loadTable(Context ctx) {
     handleTable(ctx, (catalog, tableMeta) -> {
       TableMetadata tableMetadata = null;

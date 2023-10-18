@@ -69,6 +69,8 @@ import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Transaction;
+import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.util.FlinkCompatibilityUtil;
@@ -184,19 +186,7 @@ public class ArcticCatalog extends AbstractCatalog {
       throw new TableNotExistException(this.getName(), tablePath);
     }
     ArcticTable table = internalCatalog.loadTable(tableIdentifier);
-    Schema arcticSchema = table.schema();
-
-    RowType rowType = FlinkSchemaUtil.convert(arcticSchema);
-    Map<String, String> arcticProperties = Maps.newHashMap(table.properties());
-    fillTableProperties(arcticProperties);
-    fillTableMetaPropertiesIfLookupLike(arcticProperties, tableIdentifier);
-
-    List<String> partitionKeys = toPartitionKeys(table.spec(), table.schema());
-    return new CatalogTableImpl(
-        toSchema(rowType, ArcticUtils.getPrimaryKeys(table)),
-        partitionKeys,
-        arcticProperties,
-        null);
+    return toCatalogTable(table, tableIdentifier);
   }
 
   /**
@@ -359,8 +349,184 @@ public class ArcticCatalog extends AbstractCatalog {
 
   @Override
   public void alterTable(ObjectPath tablePath, CatalogBaseTable newTable, boolean ignoreIfNotExists)
-      throws CatalogException {
-    throw new UnsupportedOperationException();
+      throws CatalogException, TableNotExistException {
+    validateFlinkTable(newTable);
+
+    TableIdentifier tableIdentifier = getTableIdentifier(tablePath);
+    ArcticTable arcticTable;
+    try {
+      arcticTable = internalCatalog.loadTable(tableIdentifier);
+    } catch (org.apache.iceberg.exceptions.NoSuchTableException e) {
+      if (!ignoreIfNotExists) {
+        throw new TableNotExistException(internalCatalog.name(), tablePath, e);
+      } else {
+        return;
+      }
+    }
+
+    CatalogTable table = toCatalogTable(arcticTable, tableIdentifier);
+    // Currently, Flink SQL only support altering table properties.
+    validateTableSchemaAndPartition(table, (CatalogTable) newTable);
+
+    if (arcticTable.isUnkeyedTable()) {
+      alterUnKeyedTable(arcticTable.asUnkeyedTable(), newTable);
+    } else if (arcticTable.isKeyedTable()) {
+      alterKeyedTable(arcticTable.asKeyedTable(), newTable);
+    } else {
+      throw new UnsupportedOperationException("Unsupported alter table");
+    }
+  }
+
+  private void alterKeyedTable(KeyedTable table, CatalogBaseTable newTable) {
+    Map<String, String> oldProperties = table.properties();
+    Map<String, String> setProperties = Maps.newHashMap();
+    for (Map.Entry<String, String> entry : newTable.getOptions().entrySet()) {
+      String key = entry.getKey();
+      String value = entry.getValue();
+      if (!java.util.Objects.equals(value, oldProperties.get(key))) {
+        setProperties.put(key, value);
+      }
+    }
+    oldProperties
+        .keySet()
+        .forEach(
+            k -> {
+              if (!newTable.getOptions().containsKey(k)) {
+                setProperties.put(k, null);
+              }
+            });
+    commitKeyedChanges(table, setProperties);
+  }
+
+  private void commitKeyedChanges(KeyedTable table, Map<String, String> setProperties) {
+    if (!setProperties.isEmpty()) {
+      commitUnKeyedChanges(table.baseTable(), null, null, null, setProperties);
+      if (table.changeTable() != null) {
+        commitUnKeyedChanges(table.changeTable(), null, null, null, setProperties);
+      }
+    }
+  }
+
+  private void alterUnKeyedTable(UnkeyedTable table, CatalogBaseTable newTable) {
+    Map<String, String> oldProperties = table.properties();
+    Map<String, String> setProperties = Maps.newHashMap();
+
+    String setLocation = null;
+    String setSnapshotId = null;
+    String pickSnapshotId = null;
+
+    for (Map.Entry<String, String> entry : newTable.getOptions().entrySet()) {
+      String key = entry.getKey();
+      String value = entry.getValue();
+
+      if (java.util.Objects.equals(value, oldProperties.get(key))) {
+        continue;
+      }
+
+      if ("location".equalsIgnoreCase(key)) {
+        setLocation = value;
+      } else if ("current-snapshot-id".equalsIgnoreCase(key)) {
+        setSnapshotId = value;
+      } else if ("cherry-pick-snapshot-id".equalsIgnoreCase(key)) {
+        pickSnapshotId = value;
+      } else {
+        setProperties.put(key, value);
+      }
+    }
+
+    oldProperties
+        .keySet()
+        .forEach(
+            k -> {
+              if (!newTable.getOptions().containsKey(k)) {
+                setProperties.put(k, null);
+              }
+            });
+    commitUnKeyedChanges(table, setLocation, setSnapshotId, pickSnapshotId, setProperties);
+  }
+
+  private void commitUnKeyedChanges(
+      UnkeyedTable table,
+      String setLocation,
+      String setSnapshotId,
+      String pickSnapshotId,
+      Map<String, String> setProperties) {
+    Preconditions.checkArgument(
+        setSnapshotId == null || pickSnapshotId == null,
+        "Cannot set the current snapshot ID and cherry-pick snapshot changes");
+
+    if (setSnapshotId != null) {
+      long newSnapshotId = Long.parseLong(setSnapshotId);
+      table.manageSnapshots().setCurrentSnapshot(newSnapshotId).commit();
+    }
+
+    // if updating the table snapshot, perform that update first in case it fails
+    if (pickSnapshotId != null) {
+      long newSnapshotId = Long.parseLong(pickSnapshotId);
+      table.manageSnapshots().cherrypick(newSnapshotId).commit();
+    }
+
+    Transaction transaction = table.newTransaction();
+
+    if (setLocation != null) {
+      transaction.updateLocation().setLocation(setLocation).commit();
+    }
+
+    if (!setProperties.isEmpty()) {
+      UpdateProperties updateProperties = transaction.updateProperties();
+      setProperties.forEach(
+          (k, v) -> {
+            if (v == null) {
+              updateProperties.remove(k);
+            } else {
+              updateProperties.set(k, v);
+            }
+          });
+      updateProperties.commit();
+    }
+    transaction.commitTransaction();
+  }
+
+  private CatalogTable toCatalogTable(ArcticTable table, TableIdentifier tableIdentifier) {
+    Schema arcticSchema = table.schema();
+
+    RowType rowType = FlinkSchemaUtil.convert(arcticSchema);
+    Map<String, String> arcticProperties = Maps.newHashMap(table.properties());
+    fillTableProperties(arcticProperties);
+    fillTableMetaPropertiesIfLookupLike(arcticProperties, tableIdentifier);
+
+    List<String> partitionKeys = toPartitionKeys(table.spec(), table.schema());
+    return new CatalogTableImpl(
+        toSchema(rowType, ArcticUtils.getPrimaryKeys(table)),
+        partitionKeys,
+        arcticProperties,
+        null);
+  }
+
+  private static void validateTableSchemaAndPartition(CatalogTable ct1, CatalogTable ct2) {
+    TableSchema ts1 = ct1.getSchema();
+    TableSchema ts2 = ct2.getSchema();
+    boolean equalsPrimary = false;
+
+    if (ts1.getPrimaryKey().isPresent() && ts2.getPrimaryKey().isPresent()) {
+      equalsPrimary =
+          java.util.Objects.equals(
+                  ts1.getPrimaryKey().get().getType(), ts2.getPrimaryKey().get().getType())
+              && java.util.Objects.equals(
+                  ts1.getPrimaryKey().get().getColumns(), ts2.getPrimaryKey().get().getColumns());
+    } else if (!ts1.getPrimaryKey().isPresent() && !ts2.getPrimaryKey().isPresent()) {
+      equalsPrimary = true;
+    }
+
+    if (!(java.util.Objects.equals(ts1.getTableColumns(), ts2.getTableColumns())
+        && java.util.Objects.equals(ts1.getWatermarkSpecs(), ts2.getWatermarkSpecs())
+        && equalsPrimary)) {
+      throw new UnsupportedOperationException("Altering schema is not supported yet.");
+    }
+
+    if (!ct1.getPartitionKeys().equals(ct2.getPartitionKeys())) {
+      throw new UnsupportedOperationException("Altering partition keys is not supported yet.");
+    }
   }
 
   @Override
