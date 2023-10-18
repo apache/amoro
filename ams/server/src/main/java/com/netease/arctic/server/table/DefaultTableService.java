@@ -393,11 +393,11 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     LOG.info("Syncing external catalogs: {}", String.join(",", externalCatalogMap.keySet()));
     for (ExternalCatalog externalCatalog : externalCatalogMap.values()) {
       try {
-        final List<CompletableFuture<Set<TableIdentity>>> tableIdentifiersFuture = Lists.newArrayList();
+        final List<CompletableFuture<Set<TableIdentity>>> tableIdentifiersFutures = Lists.newArrayList();
         externalCatalog.listDatabases().forEach(
             database -> {
               try {
-                tableIdentifiersFuture.add(
+                tableIdentifiersFutures.add(
                     CompletableFuture.supplyAsync(
                         () -> externalCatalog.listTables(database).stream()
                             .map(TableIdentity::new)
@@ -408,7 +408,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
             }
         );
         Set<TableIdentity> tableIdentifiers =
-            tableIdentifiersFuture.stream()
+            tableIdentifiersFutures.stream()
                 .map(CompletableFuture::join)
                 .reduce(
                     (a, b) -> {
@@ -424,23 +424,25 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
                 .collect(Collectors.toMap(TableIdentity::new, tableIdentifier -> tableIdentifier));
         LOG.info("Loaded {} tables from Amoro server catalog {}.",
             serverTableIdentifiers.size(), externalCatalog.name());
+        final List<CompletableFuture<Void>> taskFutures = Lists.newArrayList();
         Sets.difference(tableIdentifiers, serverTableIdentifiers.keySet())
             .forEach(tableIdentity -> {
                   try {
-                    tableExplorerExecutors.submit(
-                        () -> {
-                          try {
-                            syncTable(externalCatalog, tableIdentity);
-                          } catch (Exception e) {
-                            if (e.getCause() != null &&
-                                e.getCause() instanceof NoSuchIcebergTableException &&
-                                e.getMessage().contains("Not an iceberg table")) {
-                              LOG.info("Skip non-iceberg table {}.", tableIdentity.toString());
-                            } else {
-                              LOG.error("TableExplorer sync table {} error", tableIdentity.toString(), e);
-                            }
-                          }
-                        });
+                    taskFutures.add(
+                        CompletableFuture.runAsync(
+                            () -> {
+                              try {
+                                syncTable(externalCatalog, tableIdentity);
+                              } catch (Exception e) {
+                                if (e.getCause() != null &&
+                                    e.getCause() instanceof NoSuchIcebergTableException &&
+                                    e.getMessage().contains("Not an iceberg table")) {
+                                  LOG.info("Skip non-iceberg table {}.", tableIdentity.toString());
+                                } else {
+                                  LOG.error("TableExplorer sync table {} error", tableIdentity.toString(), e);
+                                }
+                              }
+                            }, tableExplorerExecutors));
                   } catch (RejectedExecutionException e) {
                     LOG.error("The queue of table explorer is full, please increase the queue size or thread count.");
                   }
@@ -449,18 +451,20 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
         Sets.difference(serverTableIdentifiers.keySet(), tableIdentifiers)
             .forEach(tableIdentity -> {
               try {
-                tableExplorerExecutors.submit(
-                    () -> {
-                      try {
-                        disposeTable(externalCatalog, serverTableIdentifiers.get(tableIdentity));
-                      } catch (Exception e) {
-                        LOG.error("TableExplorer dispose table {} error", tableIdentity.toString(), e);
-                      }
-                    });
+                taskFutures.add(
+                    CompletableFuture.runAsync(
+                        () -> {
+                          try {
+                            disposeTable(externalCatalog, serverTableIdentifiers.get(tableIdentity));
+                          } catch (Exception e) {
+                            LOG.error("TableExplorer dispose table {} error", tableIdentity.toString(), e);
+                          }
+                        }, tableExplorerExecutors));
               } catch (RejectedExecutionException e) {
                 LOG.error("The queue of table explorer is full, please increase the queue size or thread count.");
               }
             });
+        taskFutures.forEach(CompletableFuture::join);
       } catch (Throwable e) {
         LOG.error("TableExplorer error", e);
       }
