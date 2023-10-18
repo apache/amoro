@@ -72,6 +72,7 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
+import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.util.FlinkCompatibilityUtil;
 import org.apache.iceberg.io.CloseableIterable;
@@ -356,7 +357,7 @@ public class ArcticCatalog extends AbstractCatalog {
     ArcticTable arcticTable;
     try {
       arcticTable = internalCatalog.loadTable(tableIdentifier);
-    } catch (org.apache.iceberg.exceptions.NoSuchTableException e) {
+    } catch (NoSuchTableException e) {
       if (!ignoreIfNotExists) {
         throw new TableNotExistException(internalCatalog.name(), tablePath, e);
       } else {
@@ -383,7 +384,7 @@ public class ArcticCatalog extends AbstractCatalog {
     for (Map.Entry<String, String> entry : newTable.getOptions().entrySet()) {
       String key = entry.getKey();
       String value = entry.getValue();
-      if (!java.util.Objects.equals(value, oldProperties.get(key))) {
+      if (!Objects.equal(value, oldProperties.get(key))) {
         setProperties.put(key, value);
       }
     }
@@ -400,9 +401,27 @@ public class ArcticCatalog extends AbstractCatalog {
 
   private void commitKeyedChanges(KeyedTable table, Map<String, String> setProperties) {
     if (!setProperties.isEmpty()) {
-      commitUnKeyedChanges(table.baseTable(), null, null, null, setProperties);
+      UpdateProperties baseTableUpdateProperties = table.baseTable().updateProperties();
+      setProperties.forEach(
+          (k, v) -> {
+            if (v == null) {
+              baseTableUpdateProperties.remove(k);
+            } else {
+              baseTableUpdateProperties.set(k, v);
+            }
+          });
+      baseTableUpdateProperties.commit();
       if (table.changeTable() != null) {
-        commitUnKeyedChanges(table.changeTable(), null, null, null, setProperties);
+        UpdateProperties changeTableUpdateProperties = table.changeTable().updateProperties();
+        setProperties.forEach(
+            (k, v) -> {
+              if (v == null) {
+                changeTableUpdateProperties.remove(k);
+              } else {
+                changeTableUpdateProperties.set(k, v);
+              }
+            });
+        changeTableUpdateProperties.commit();
       }
     }
   }
@@ -419,7 +438,7 @@ public class ArcticCatalog extends AbstractCatalog {
       String key = entry.getKey();
       String value = entry.getValue();
 
-      if (java.util.Objects.equals(value, oldProperties.get(key))) {
+      if (Objects.equal(value, oldProperties.get(key))) {
         continue;
       }
 
@@ -510,16 +529,15 @@ public class ArcticCatalog extends AbstractCatalog {
 
     if (ts1.getPrimaryKey().isPresent() && ts2.getPrimaryKey().isPresent()) {
       equalsPrimary =
-          java.util.Objects.equals(
-                  ts1.getPrimaryKey().get().getType(), ts2.getPrimaryKey().get().getType())
-              && java.util.Objects.equals(
+          Objects.equal(ts1.getPrimaryKey().get().getType(), ts2.getPrimaryKey().get().getType())
+              && Objects.equal(
                   ts1.getPrimaryKey().get().getColumns(), ts2.getPrimaryKey().get().getColumns());
     } else if (!ts1.getPrimaryKey().isPresent() && !ts2.getPrimaryKey().isPresent()) {
       equalsPrimary = true;
     }
 
-    if (!(java.util.Objects.equals(ts1.getTableColumns(), ts2.getTableColumns())
-        && java.util.Objects.equals(ts1.getWatermarkSpecs(), ts2.getWatermarkSpecs())
+    if (!(Objects.equal(ts1.getTableColumns(), ts2.getTableColumns())
+        && Objects.equal(ts1.getWatermarkSpecs(), ts2.getWatermarkSpecs())
         && equalsPrimary)) {
       throw new UnsupportedOperationException("Altering schema is not supported yet.");
     }
