@@ -41,6 +41,9 @@ public class LocalSessionFactory implements TerminalSessionFactory {
   static final Set<String> STATIC_SPARK_CONF = Collections.unmodifiableSet(
       Sets.newHashSet("spark.sql.extensions")
   );
+  static final Set<String> EXTERNAL_CONNECTORS = Collections.unmodifiableSet(
+      Sets.newHashSet("iceberg", "paimon")
+  );
   static final String SPARK_CONF_PREFIX = "spark.";
 
   SparkSession context = null;
@@ -64,7 +67,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
 
     Map<String, String> finallyConf = configuration.toMap();
     catalogs.stream()
-        .filter(c -> isIcebergCatalog(c, configuration))
+        .filter(c -> isExternalConnector(c, configuration))
         .forEach(c -> setHadoopConfigToSparkSession(c, session, metaStore));
 
     for (String key : sparkConf.keySet()) {
@@ -78,9 +81,10 @@ public class LocalSessionFactory implements TerminalSessionFactory {
     return new LocalTerminalSession(catalogs, session, initializeLogs, finallyConf);
   }
 
-  private boolean isIcebergCatalog(String catalog, Configurations configurations) {
-    String connector = configurations.get(TerminalSessionFactory.SessionConfigOptions.catalogConnector(catalog));
-    return "iceberg".equalsIgnoreCase(connector);
+  private boolean isExternalConnector(String catalog, Configurations configurations) {
+    String connector = configurations.get(
+        TerminalSessionFactory.SessionConfigOptions.catalogConnector(catalog)).toLowerCase();
+    return EXTERNAL_CONNECTORS.contains(connector);
   }
 
   private void setHadoopConfigToSparkSession(String catalog, SparkSession session, TableMetaStore metaStore) {

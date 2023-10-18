@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.reader;
 
-import com.netease.arctic.hive.io.reader.AbstractAdaptHiveArcticDataReader;
+import com.netease.arctic.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.spark.SparkInternalRowWrapper;
 import com.netease.arctic.spark.util.ArcticSparkUtils;
@@ -37,7 +37,7 @@ import org.apache.spark.sql.types.StructType;
 import java.util.Map;
 import java.util.function.Function;
 
-public class ArcticSparkKeyedDataReader extends AbstractAdaptHiveArcticDataReader<InternalRow> {
+public class ArcticSparkKeyedDataReader extends AbstractAdaptHiveKeyedDataReader<InternalRow> {
 
   public ArcticSparkKeyedDataReader(
       ArcticFileIO fileIO,

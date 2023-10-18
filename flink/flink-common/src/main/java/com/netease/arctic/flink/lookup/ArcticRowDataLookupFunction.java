@@ -23,7 +23,7 @@ package com.netease.arctic.flink.lookup;
 
 import com.netease.arctic.flink.read.hybrid.reader.DataIteratorReaderFunction;
 import com.netease.arctic.flink.table.ArcticTableLoader;
-import com.netease.arctic.hive.io.reader.AbstractAdaptHiveArcticDataReader;
+import com.netease.arctic.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.data.RowData;
@@ -50,7 +50,7 @@ public class ArcticRowDataLookupFunction extends TableFunction<RowData> {
       ArcticTableLoader tableLoader,
       Configuration config,
       Predicate<RowData> predicate,
-      AbstractAdaptHiveArcticDataReader<RowData> flinkArcticMORDataReader,
+      AbstractAdaptHiveKeyedDataReader<RowData> flinkArcticMORDataReader,
       DataIteratorReaderFunction<RowData> readerFunction) {
     this.basicLookupFunction =
         new BasicLookupFunction<>(
