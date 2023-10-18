@@ -240,12 +240,12 @@ public class TestCatalog extends CatalogTestBase {
     Assert.assertEquals(keyTableProperties.get("write.upsert.enabled"), "true");
 
     sql(
-            "ALTER TABLE arcticCatalog."
-                    + DB
-                    + "."
-                    + unKeyTable
-                    + " "
-                    + "SET ( 'write.metadata.delete-after-commit.enabled' = 'false')");
+        "ALTER TABLE arcticCatalog."
+            + DB
+            + "."
+            + unKeyTable
+            + " "
+            + "SET ( 'write.metadata.delete-after-commit.enabled' = 'false')");
     Map<String, String> unKeyTableProperties =
         getCatalog().loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, unKeyTable)).properties();
     Assert.assertEquals(
