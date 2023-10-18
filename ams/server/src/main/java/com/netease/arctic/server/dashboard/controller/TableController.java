@@ -282,6 +282,11 @@ public class TableController {
     } else {
       // Temporary solution for Paimon
       result = tableDescriptor.getPaimonOptimizingProcesses(amoroTable, tableIdentifier);
+      total = result.size();
+      result = result.stream()
+          .skip(offset)
+          .limit(limit)
+          .collect(Collectors.toList());
     }
 
     ctx.json(OkResponse.of(PageResult.of(result, total)));
