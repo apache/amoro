@@ -614,12 +614,6 @@
                             <order>,javax,java,\\#</order>
                         </importOrder>
                     </java>
-                    <scala>
-                        <scalafmt>
-                            <scalaMajorVersion>2.12</scalaMajorVersion>
-                            <file>../.scalafmt.conf</file>
-                        </scalafmt>
-                    </scala>
                 </configuration>
             </plugin>
         </plugins>
