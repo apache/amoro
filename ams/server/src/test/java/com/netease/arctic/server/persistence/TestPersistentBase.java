@@ -2,7 +2,6 @@ package com.netease.arctic.server.persistence;
 
 import com.netease.arctic.server.exception.UndefinedException;
 import org.apache.ibatis.session.SqlSession;
-import org.junit.Assert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,10 +12,10 @@ import static org.mockito.Mockito.never;
 
 public class TestPersistentBase {
 
-  private TestMapper mapper = Mockito.mock(TestMapper.class);
-  private NestedSqlSession session = Mockito.mock(NestedSqlSession.class);
-  private SqlSession sqlSession = Mockito.mock(SqlSession.class);
-  private PersistentBase testObject = Mockito.spy(new PersistentBase() {});
+  private final TestMapper mapper = Mockito.mock(TestMapper.class);
+  private final NestedSqlSession session = Mockito.mock(NestedSqlSession.class);
+  private final SqlSession sqlSession = Mockito.mock(SqlSession.class);
+  private final PersistentBase testObject = Mockito.spy(new PersistentBase() {});
 
   @BeforeEach
   void setUp() {
@@ -88,7 +87,7 @@ public class TestPersistentBase {
       Assertions.assertEquals("error", e.getMessage());
       return;
     }
-    Assert.assertEquals(false, true);
+    Assertions.fail();
   }
 
   @Test

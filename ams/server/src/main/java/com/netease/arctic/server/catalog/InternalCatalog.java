@@ -138,21 +138,17 @@ public abstract class InternalCatalog extends ServerCatalog {
   }
 
   private String getDatabaseDesc(String database) {
-    return new StringBuilder()
-        .append(name())
-        .append('.')
-        .append(database)
-        .toString();
+    return name() +
+        '.' +
+        database;
   }
 
   protected String getTableDesc(String database, String tableName) {
-    return new StringBuilder()
-        .append(name())
-        .append('.')
-        .append(database)
-        .append('.')
-        .append(tableName)
-        .toString();
+    return name() +
+        '.' +
+        database +
+        '.' +
+        tableName;
   }
 
   public Integer getTableCount() {

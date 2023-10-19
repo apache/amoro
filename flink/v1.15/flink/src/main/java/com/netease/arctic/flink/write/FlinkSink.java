@@ -98,7 +98,7 @@ public class FlinkSink {
     private Properties producerConfig;
     private String topic;
     private boolean overwrite = false;
-    private String branch = SnapshotRef.MAIN_BRANCH;
+    private final String branch = SnapshotRef.MAIN_BRANCH;
     private DistributionHashMode distributionMode = null;
 
     private Builder() {}

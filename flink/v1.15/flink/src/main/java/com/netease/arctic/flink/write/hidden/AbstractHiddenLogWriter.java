@@ -150,8 +150,7 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
       epicNo++;
     } else {
       hiddenLogJobIdentifyState.clear();
-      hiddenLogJobIdentifyState.add(
-          new String(jobIdentify, 0, jobIdentify.length, StandardCharsets.UTF_8));
+      hiddenLogJobIdentifyState.add(new String(jobIdentify, StandardCharsets.UTF_8));
     }
 
     logDataJsonSerialization =

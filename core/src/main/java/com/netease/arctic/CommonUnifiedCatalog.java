@@ -36,10 +36,10 @@ import java.util.stream.Stream;
 
 public class CommonUnifiedCatalog implements UnifiedCatalog {
 
-  private Supplier<CatalogMeta> metaSupplier;
+  private final Supplier<CatalogMeta> metaSupplier;
   private CatalogMeta meta;
   private Map<TableFormat, FormatCatalog> formatCatalogs = Maps.newHashMap();
-  private Map<String, String> properties = Maps.newHashMap();
+  private final Map<String, String> properties = Maps.newHashMap();
 
   public CommonUnifiedCatalog(
       Supplier<CatalogMeta> catalogMetaSupplier, CatalogMeta meta, Map<String, String> properties

@@ -37,5 +37,5 @@ public interface ThriftClientFactory {
    * @param transport
    * @return
    */
-  public TServiceClient createClient(TTransport transport);
+  TServiceClient createClient(TTransport transport);
 }

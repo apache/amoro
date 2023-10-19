@@ -227,7 +227,7 @@ public class GlobalFlipCommitter {
     // TRUE means has already sent flip msg to topic successfully.
     private volatile boolean hasCommittedFlip = false;
     // Mark how long it took to collect all commit requests.
-    private Cost cost = new Cost();
+    private final Cost cost = new Cost();
 
     void add(int taskId, CommitRequest commitRequest) {
       this.taskIds.add(taskId);

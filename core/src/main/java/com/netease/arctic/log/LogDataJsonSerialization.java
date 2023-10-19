@@ -32,8 +32,8 @@ public class LogDataJsonSerialization<T> implements Serializable {
   private static final long serialVersionUID = 66420071549145794L;
   private transient LogDataToJsonConverters.LogDataToJsonConverter<T> logDataToJsonConverter;
 
-  private Schema schema;
-  private LogData.FieldGetterFactory<T> fieldGetterFactory;
+  private final Schema schema;
+  private final LogData.FieldGetterFactory<T> fieldGetterFactory;
 
   /**
    * Reusable object node.

@@ -71,7 +71,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
 
   private RewriteFilesInput dataScanTask;
 
-  private Schema posSchema = new Schema(
+  private final Schema posSchema = new Schema(
       MetadataColumns.FILE_PATH,
       MetadataColumns.ROW_POSITION
   );

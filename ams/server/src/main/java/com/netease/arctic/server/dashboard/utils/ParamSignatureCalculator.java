@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -64,7 +65,7 @@ public class ParamSignatureCalculator {
   public static String getMD5(String value) {
     String result = "";
     try {
-      result = getMD5(value.getBytes("UTF-8"));
+      result = getMD5(value.getBytes(StandardCharsets.UTF_8));
     } catch (Exception e) {
       LOG.error("get MD5 Error!!", e);
     }
@@ -82,8 +83,8 @@ public class ParamSignatureCalculator {
    */
   public static String generateParamStringWithValueList(Map<String, List<String>> map) {
     Set<String> set = map.keySet();
-    String[] keyArray = (String[]) set.toArray(new String[set.size()]);
-    StringBuffer sb = new StringBuffer("");
+    String[] keyArray = set.toArray(new String[set.size()]);
+    StringBuffer sb = new StringBuffer();
     Arrays.sort(keyArray);
     String firstValue = "";
     for (int i = 0; i < keyArray.length; i++) {
@@ -116,8 +117,8 @@ public class ParamSignatureCalculator {
    */
   public static String generateParamStringWithValue(Map<String, String> map) {
     Set<String> set = map.keySet();
-    String[] keyArray = (String[]) set.toArray(new String[set.size()]);
-    StringBuffer sb = new StringBuffer("");
+    String[] keyArray = set.toArray(new String[set.size()]);
+    StringBuffer sb = new StringBuffer();
     Arrays.sort(keyArray);
     String firstValue = "";
     for (int i = 0; i < keyArray.length; i++) {

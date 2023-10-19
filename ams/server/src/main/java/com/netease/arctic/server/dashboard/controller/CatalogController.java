@@ -155,36 +155,40 @@ public class CatalogController {
       oldAuthConfig = oldCatalogMeta.getAuthConfigs();
     }
 
-    if (authType.equals(AUTH_CONFIGS_VALUE_TYPE_SIMPLE)) {
-      metaAuthConfig.put(
-          AUTH_CONFIGS_KEY_HADOOP_USERNAME,
-          serverAuthConfig.get(AUTH_CONFIGS_KEY_HADOOP_USERNAME));
-    } else if (authType.equals(AUTH_CONFIGS_VALUE_TYPE_KERBEROS)) {
-      String keytabFileId = serverAuthConfig.get(AUTH_CONFIGS_KEY_KEYTAB);
-      if (!StringUtils.isEmpty(keytabFileId)) {
-        String keytabB64 = platformFileInfoService.getFileContentB64ById(Integer.valueOf(keytabFileId));
-        metaAuthConfig.put(AUTH_CONFIGS_KEY_KEYTAB, keytabB64);
-      } else {
+    switch (authType) {
+      case AUTH_CONFIGS_VALUE_TYPE_SIMPLE:
         metaAuthConfig.put(
-            AUTH_CONFIGS_KEY_KEYTAB,
-            oldAuthConfig.get(AUTH_CONFIGS_KEY_KEYTAB));
-      }
+            AUTH_CONFIGS_KEY_HADOOP_USERNAME,
+            serverAuthConfig.get(AUTH_CONFIGS_KEY_HADOOP_USERNAME));
+        break;
+      case AUTH_CONFIGS_VALUE_TYPE_KERBEROS:
+        String keytabFileId = serverAuthConfig.get(AUTH_CONFIGS_KEY_KEYTAB);
+        if (!StringUtils.isEmpty(keytabFileId)) {
+          String keytabB64 = platformFileInfoService.getFileContentB64ById(Integer.valueOf(keytabFileId));
+          metaAuthConfig.put(AUTH_CONFIGS_KEY_KEYTAB, keytabB64);
+        } else {
+          metaAuthConfig.put(
+              AUTH_CONFIGS_KEY_KEYTAB,
+              oldAuthConfig.get(AUTH_CONFIGS_KEY_KEYTAB));
+        }
 
-      String krbFileId = serverAuthConfig.get(AUTH_CONFIGS_KEY_KRB5);
-      if (!StringUtils.isEmpty(krbFileId)) {
-        String krbB64 = platformFileInfoService.getFileContentB64ById(Integer.valueOf(krbFileId));
-        metaAuthConfig.put(AUTH_CONFIGS_KEY_KRB5, krbB64);
-      } else {
+        String krbFileId = serverAuthConfig.get(AUTH_CONFIGS_KEY_KRB5);
+        if (!StringUtils.isEmpty(krbFileId)) {
+          String krbB64 = platformFileInfoService.getFileContentB64ById(Integer.valueOf(krbFileId));
+          metaAuthConfig.put(AUTH_CONFIGS_KEY_KRB5, krbB64);
+        } else {
+          metaAuthConfig.put(
+              AUTH_CONFIGS_KEY_KRB5,
+              oldAuthConfig.get(AUTH_CONFIGS_KEY_KRB5));
+        }
         metaAuthConfig.put(
-            AUTH_CONFIGS_KEY_KRB5,
-            oldAuthConfig.get(AUTH_CONFIGS_KEY_KRB5));
-      }
-      metaAuthConfig.put(
-          AUTH_CONFIGS_KEY_PRINCIPAL,
-          serverAuthConfig.get(AUTH_CONFIGS_KEY_PRINCIPAL));
-    } else if (authType.equals(AUTH_CONFIGS_VALUE_TYPE_AK_SK)) {
-      CatalogUtil.copyProperty(serverAuthConfig, metaAuthConfig, AUTH_CONFIGS_KEY_ACCESS_KEY);
-      CatalogUtil.copyProperty(serverAuthConfig, metaAuthConfig, AUTH_CONFIGS_KEY_SECRET_KEY);
+            AUTH_CONFIGS_KEY_PRINCIPAL,
+            serverAuthConfig.get(AUTH_CONFIGS_KEY_PRINCIPAL));
+        break;
+      case AUTH_CONFIGS_VALUE_TYPE_AK_SK:
+        CatalogUtil.copyProperty(serverAuthConfig, metaAuthConfig, AUTH_CONFIGS_KEY_ACCESS_KEY);
+        CatalogUtil.copyProperty(serverAuthConfig, metaAuthConfig, AUTH_CONFIGS_KEY_SECRET_KEY);
+        break;
     }
     return metaAuthConfig;
   }
@@ -200,27 +204,31 @@ public class CatalogController {
         AUTH_CONFIGS_KEY_TYPE,
         AUTH_CONFIGS_VALUE_TYPE_SIMPLE);
     serverAuthConfig.put(AUTH_CONFIGS_KEY_TYPE, authType.toUpperCase());
-    if (AUTH_CONFIGS_VALUE_TYPE_SIMPLE.equals(authType)) {
-      serverAuthConfig.put(
-          AUTH_CONFIGS_KEY_HADOOP_USERNAME,
-          metaAuthConfig.get(AUTH_CONFIGS_KEY_HADOOP_USERNAME));
-    } else if (AUTH_CONFIGS_VALUE_TYPE_KERBEROS.equals(authType)) {
-      serverAuthConfig.put(
-          AUTH_CONFIGS_KEY_PRINCIPAL,
-          metaAuthConfig.get(AUTH_CONFIGS_KEY_PRINCIPAL));
+    switch (authType) {
+      case AUTH_CONFIGS_VALUE_TYPE_SIMPLE:
+        serverAuthConfig.put(
+            AUTH_CONFIGS_KEY_HADOOP_USERNAME,
+            metaAuthConfig.get(AUTH_CONFIGS_KEY_HADOOP_USERNAME));
+        break;
+      case AUTH_CONFIGS_VALUE_TYPE_KERBEROS:
+        serverAuthConfig.put(
+            AUTH_CONFIGS_KEY_PRINCIPAL,
+            metaAuthConfig.get(AUTH_CONFIGS_KEY_PRINCIPAL));
 
-      serverAuthConfig.put(AUTH_CONFIGS_KEY_KEYTAB, new ConfigFileItem(
-          catalogName + ".keytab",
-          constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_AUTH,
-              AUTH_CONFIGS_KEY_KEYTAB.replace("\\.", "-"))));
+        serverAuthConfig.put(AUTH_CONFIGS_KEY_KEYTAB, new ConfigFileItem(
+            catalogName + ".keytab",
+            constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_AUTH,
+                AUTH_CONFIGS_KEY_KEYTAB.replace("\\.", "-"))));
 
-      serverAuthConfig.put(AUTH_CONFIGS_KEY_KRB5, new ConfigFileItem(
-          "krb5.conf",
-          constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_AUTH,
-              AUTH_CONFIGS_KEY_KRB5.replace("\\.", "-"))));
-    } else if (AUTH_CONFIGS_VALUE_TYPE_AK_SK.equals(authType)) {
-      CatalogUtil.copyProperty(metaAuthConfig, serverAuthConfig, AUTH_CONFIGS_KEY_ACCESS_KEY);
-      CatalogUtil.copyProperty(metaAuthConfig, serverAuthConfig, AUTH_CONFIGS_KEY_SECRET_KEY);
+        serverAuthConfig.put(AUTH_CONFIGS_KEY_KRB5, new ConfigFileItem(
+            "krb5.conf",
+            constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_AUTH,
+                AUTH_CONFIGS_KEY_KRB5.replace("\\.", "-"))));
+        break;
+      case AUTH_CONFIGS_VALUE_TYPE_AK_SK:
+        CatalogUtil.copyProperty(metaAuthConfig, serverAuthConfig, AUTH_CONFIGS_KEY_ACCESS_KEY);
+        CatalogUtil.copyProperty(metaAuthConfig, serverAuthConfig, AUTH_CONFIGS_KEY_SECRET_KEY);
+        break;
     }
 
     return serverAuthConfig;
@@ -437,7 +445,7 @@ public class CatalogController {
     String catalogName = ctx.pathParam("catalogName");
     Preconditions.checkArgument(StringUtils.isNotEmpty(ctx.pathParam("catalogName")), "Catalog name is empty!");
     List<String> dbs = tableService.listDatabases(catalogName);
-    if (dbs != null && dbs.size() == 0) {
+    if (dbs != null && dbs.isEmpty()) {
       tableService.dropCatalog(catalogName);
       ctx.json(OkResponse.of("OK"));
     } else {

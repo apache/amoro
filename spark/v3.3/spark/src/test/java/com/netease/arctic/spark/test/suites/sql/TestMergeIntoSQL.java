@@ -70,7 +70,7 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
           RecordGenerator.newRecord(schema, 5, "s5", "001"),
           RecordGenerator.newRecord(schema, 6, "s6", "003"));
 
-  private List<Record> target = Lists.newArrayList();
+  private final List<Record> target = Lists.newArrayList();
 
   public void setupTest(PrimaryKeySpec keySpec) {
     ArcticTable table = createTarget(schema, builder -> builder.withPrimaryKeySpec(keySpec));

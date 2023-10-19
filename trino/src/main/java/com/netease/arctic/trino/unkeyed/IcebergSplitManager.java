@@ -98,7 +98,7 @@ public class IcebergSplitManager implements ConnectorSplitManager {
         typeManager,
         table.isRecordScannedFiles(),
         getMinimumAssignedSplitWeight(session),
-        resolve.withSuffix() ? !resolve.isBase() : false);
+        resolve.withSuffix() && !resolve.isBase());
 
     return new ClassLoaderSafeConnectorSplitSource(splitSource, Thread.currentThread().getContextClassLoader());
   }
