@@ -507,7 +507,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
           LOG.info("Waiting " + retryDelaySeconds + " seconds before next connection attempt.");
           Thread.sleep(retryDelaySeconds * 1000);
         } catch (InterruptedException ignore) {
-          LOG.warn("Unexpected InterruptedException while waiting between connection retries.", ignore);
+          ignore.printStackTrace();
         }
       }
     }
@@ -2296,7 +2296,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
       return rsp;
     } else {
       NotificationEventResponse filtered = new NotificationEventResponse();
-      if (rsp.getEvents() != null) {
+      if (rsp != null && rsp.getEvents() != null) {
         for (NotificationEvent e : rsp.getEvents()) {
           if (filter.accept(e)) {
             filtered.addToEvents(e);
