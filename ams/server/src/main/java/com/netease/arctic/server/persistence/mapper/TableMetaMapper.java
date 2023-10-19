@@ -198,8 +198,9 @@ public interface TableMetaMapper {
   TableMetadata selectTableMetaByName(@Param("catalogName") String catalogName,
                                       @Param("databaseName") String databaseName, @Param("tableName") String tableName);
 
-  @Insert("INSERT INTO table_identifier(catalog_name, db_name, table_name) VALUES(" +
-      " #{tableIdentifier.catalog}, #{tableIdentifier.database}, #{tableIdentifier.tableName})")
+  @Insert("INSERT INTO table_identifier(catalog_name, db_name, table_name, format) VALUES(" +
+      " #{tableIdentifier.catalog}, #{tableIdentifier.database}, #{tableIdentifier.tableName}, " +
+      " #{tableIdentifier.format})")
   @Options(useGeneratedKeys = true, keyProperty = "tableIdentifier.id")
   void insertTable(@Param("tableIdentifier") ServerTableIdentifier tableIdentifier);
 
@@ -213,7 +214,7 @@ public interface TableMetaMapper {
       @Param("databaseName") String databaseName,
       @Param("tableName") String tableName);
 
-  @Select("SELECT table_id, catalog_name, db_name, table_name FROM table_identifier" +
+  @Select("SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier" +
       " WHERE catalog_name = #{catalogName} AND db_name = #{databaseName} AND table_name = #{tableName}")
   @Results({
       @Result(property = "id", column = "table_id"),
@@ -226,7 +227,7 @@ public interface TableMetaMapper {
       @Param("databaseName") String databaseName,
       @Param("tableName") String tableName);
 
-  @Select("SELECT table_id, catalog_name, db_name, table_name FROM table_identifier" +
+  @Select("SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier" +
       " WHERE catalog_name = #{catalogName} AND db_name = #{databaseName}")
   @Results({
       @Result(property = "id", column = "table_id"),
@@ -238,7 +239,7 @@ public interface TableMetaMapper {
       @Param("catalogName") String catalogName,
       @Param("databaseName") String databaseName);
 
-  @Select("SELECT table_id, catalog_name, db_name, table_name FROM table_identifier" +
+  @Select("SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier" +
       " WHERE catalog_name = #{catalogName}")
   @Results({
       @Result(property = "id", column = "table_id"),
@@ -248,7 +249,7 @@ public interface TableMetaMapper {
   })
   List<ServerTableIdentifier> selectTableIdentifiersByCatalog(@Param("catalogName") String catalogName);
 
-  @Select("SELECT table_id, catalog_name, db_name, table_name FROM table_identifier")
+  @Select("SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier")
   @Results({
       @Result(property = "id", column = "table_id"),
       @Result(property = "catalog", column = "catalog_name"),
