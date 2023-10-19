@@ -687,8 +687,10 @@ public class TableMetaStore implements Serializable {
 
     public TableMetaStore build() {
       readProperties();
-      Preconditions.checkNotNull(hdfsSite);
-      Preconditions.checkNotNull(coreSite);
+      if (!disableAuth) {
+        Preconditions.checkNotNull(hdfsSite);
+        Preconditions.checkNotNull(coreSite);
+      }
       if (AUTH_METHOD_SIMPLE.equals(authMethod)) {
         Preconditions.checkNotNull(hadoopUsername);
       } else if (AUTH_METHOD_KERBEROS.equals(authMethod)) {

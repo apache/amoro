@@ -67,6 +67,7 @@
             <groupId>org.apache.iceberg</groupId>
             <artifactId>iceberg-flink-1.17</artifactId>
             <version>${iceberg.version}</version>
+            <scope>provided</scope>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -348,13 +349,6 @@
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-json</artifactId>
-            <version>${flink.version}</version>
-            <scope>test</scope>
         </dependency>
 
         <!-- conflicts with the version in spring-cloud, so assign it explicitly here -->

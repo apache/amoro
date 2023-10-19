@@ -173,13 +173,15 @@
         </dependency>
 
         <dependency>
-            <groupId>org.mybatis</groupId>
-            <artifactId>mybatis</artifactId>
+            <groupId>org.apache.paimon</groupId>
+            <artifactId>paimon-spark-common</artifactId>
+            <version>${paimon.version}</version>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
         </dependency>
 
         <dependency>
