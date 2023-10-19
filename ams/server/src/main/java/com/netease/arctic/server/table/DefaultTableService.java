@@ -530,7 +530,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private void handleTableRuntimeAdded(ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
     ServerTableIdentifier tableIdentifier =
         externalCatalog.getServerTableIdentifier(tableIdentity.getDatabase(), tableIdentity.getTableName());
-    AmoroTable<?> table = externalCatalog.loadTable( tableIdentity.getDatabase(), tableIdentity.getTableName());
+    AmoroTable<?> table = externalCatalog.loadTable(tableIdentity.getDatabase(), tableIdentity.getTableName());
     TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
     tableRuntimeMap.put(tableIdentifier, tableRuntime);
     if (headHandler != null) {
