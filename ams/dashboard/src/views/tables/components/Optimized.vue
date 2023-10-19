@@ -104,10 +104,11 @@ async function getTableInfo() {
         // commitTime: item.commitTime ? dateFormat(item.commitTime) : '',
         startTime: item.startTime ? dateFormat(item.startTime) : '-',
         finishTime: item.finishTime ? dateFormat(item.finishTime) : '-',
-        duration: formatMS2Time(item.duration || 0),
+        optimizingType: item.optimizingType ? item.optimizingType : '-',
+        duration: formatMS2Time(item.duration || '-'),
         inputFiles: `${bytesToSize(inputFiles.totalSize)} / ${inputFiles.fileCnt}`,
         outputFiles: `${bytesToSize(outputFiles.totalSize)} / ${outputFiles.fileCnt}`,
-        tasks: `${item.successTasks} / ${item.totalTasks}（${item.runningTasks} running）`
+        tasks: `${item.successTasks || '-'} / ${item.totalTasks || '-'}${item.runningTasks ? ` (${item.runningTasks} running)` : ''}`
       }
     }))
     console.log(dataSource)
