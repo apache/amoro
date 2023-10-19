@@ -84,7 +84,7 @@ public class PaimonServerCatalog extends ExternalCatalog {
 
   @Override
   public List<TableIDWithFormat> listTables(String database) {
-    return doAs(() -> new ArrayList<>(paimonCatalog.listTableMetas(database)));
+    return doAs(() -> new ArrayList<>(paimonCatalog.listTables(database)));
   }
 
   @Override
