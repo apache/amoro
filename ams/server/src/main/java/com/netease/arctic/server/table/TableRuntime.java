@@ -63,7 +63,6 @@ public class TableRuntime extends StatedPersistentBase {
 
   private final TableRuntimeHandler tableHandler;
   private final ServerTableIdentifier tableIdentifier;
-  private final TableFormat format;
   private final List<TaskRuntime.TaskQuota> taskQuotas = Collections.synchronizedList(new ArrayList<>());
 
   // for unKeyedTable or base table
@@ -100,12 +99,11 @@ public class TableRuntime extends StatedPersistentBase {
   private final ReentrantLock blockerLock = new ReentrantLock();
 
   protected TableRuntime(
-      ServerTableIdentifier tableIdentifier, TableFormat format, TableRuntimeHandler tableHandler,
+      ServerTableIdentifier tableIdentifier, TableRuntimeHandler tableHandler,
       Map<String, String> properties) {
     Preconditions.checkNotNull(tableIdentifier, tableHandler);
     this.tableHandler = tableHandler;
     this.tableIdentifier = tableIdentifier;
-    this.format = format;
     this.tableConfiguration = TableConfiguration.parseConfig(properties);
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
     persistTableRuntime();
@@ -131,7 +129,6 @@ public class TableRuntime extends StatedPersistentBase {
     this.processId = tableRuntimeMeta.getOptimizingProcessId();
     this.optimizingStatus = tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
-    this.format = tableRuntimeMeta.getFormat();
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -324,7 +321,7 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public TableFormat getFormat() {
-    return format;
+    return tableIdentifier.getFormat();
   }
 
   public OptimizingStatus getOptimizingStatus() {

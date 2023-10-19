@@ -308,7 +308,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     for (TableRuntime tableRuntime : scheduledTables) {
       LOG.debug("Planning table {}", tableRuntime.getTableIdentifier());
       try {
-        AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
+        AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier().getIdentifier());
         OptimizingPlanner planner = new OptimizingPlanner(
             tableRuntime.refresh(table),
             (ArcticTable) table.originalTable(),
@@ -555,7 +555,8 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     }
 
     private UnKeyedTableCommit buildCommit() {
-      ArcticTable table = (ArcticTable) tableManager.loadTable(tableRuntime.getTableIdentifier()).originalTable();
+      ArcticTable table = (ArcticTable) tableManager.loadTable(tableRuntime.getTableIdentifier().getIdentifier())
+          .originalTable();
       if (table.isUnkeyedTable()) {
         return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values());
       } else {

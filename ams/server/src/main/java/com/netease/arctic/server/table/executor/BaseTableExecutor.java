@@ -112,6 +112,6 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
   }
 
   protected AmoroTable<?> loadTable(TableRuntime tableRuntime) {
-    return tableManager.loadTable(tableRuntime.getTableIdentifier());
+    return tableManager.loadTable(tableRuntime.getTableIdentifier().getIdentifier());
   }
 }
