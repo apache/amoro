@@ -6,10 +6,11 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.IcebergCatalogWrapper;
 import com.netease.arctic.formats.iceberg.IcebergTable;
+import org.apache.iceberg.Table;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.iceberg.Table;
 
 public class IcebergCatalogImpl extends ExternalCatalog {
 
