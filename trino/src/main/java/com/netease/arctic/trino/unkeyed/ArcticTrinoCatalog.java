@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 /** A TrinoCatalog for Arctic, this is in order to reuse iceberg code */
 public class ArcticTrinoCatalog implements TrinoCatalog {
 
-  private ArcticCatalog arcticCatalog;
+  private final ArcticCatalog arcticCatalog;
 
   public ArcticTrinoCatalog(ArcticCatalog arcticCatalog) {
     this.arcticCatalog = arcticCatalog;

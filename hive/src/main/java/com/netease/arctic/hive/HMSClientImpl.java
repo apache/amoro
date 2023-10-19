@@ -32,7 +32,7 @@ import java.util.List;
 
 public class HMSClientImpl implements HMSClient {
 
-  private HiveMetaStoreClient client;
+  private final HiveMetaStoreClient client;
 
 
   public HMSClientImpl(HiveMetaStoreClient client) {

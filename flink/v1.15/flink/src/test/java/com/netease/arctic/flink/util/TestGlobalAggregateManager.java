@@ -31,7 +31,7 @@ import java.util.Map;
  * RpcGlobalAggregateManager} in the jobMaster.
  */
 public class TestGlobalAggregateManager implements GlobalAggregateManager {
-  private Map<String, Object> accumulators = new HashMap<>();
+  private final Map<String, Object> accumulators = new HashMap<>();
 
   @Override
   public <IN, ACC, OUT> OUT updateGlobalAggregate(

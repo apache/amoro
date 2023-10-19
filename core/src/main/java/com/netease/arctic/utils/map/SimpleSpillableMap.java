@@ -149,9 +149,9 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
 
     private final String columnFamily = UUID.randomUUID().toString();
 
-    private SerializationUtil.SimpleSerializer<K> keySerializer;
+    private final SerializationUtil.SimpleSerializer<K> keySerializer;
 
-    private SerializationUtil.SimpleSerializer<T> valueSerializer;
+    private final SerializationUtil.SimpleSerializer<T> valueSerializer;
 
     public SimpleSpilledMap(
         SerializationUtil.SimpleSerializer<K> keySerializer,

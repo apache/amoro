@@ -38,9 +38,9 @@ import javax.inject.Inject;
  */
 public class ArcticConnectorSplitManager implements ConnectorSplitManager {
 
-  private KeyedConnectorSplitManager keyedConnectorSplitManager;
+  private final KeyedConnectorSplitManager keyedConnectorSplitManager;
 
-  private IcebergSplitManager icebergSplitManager;
+  private final IcebergSplitManager icebergSplitManager;
 
   @Inject
   public ArcticConnectorSplitManager(

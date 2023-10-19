@@ -38,7 +38,7 @@ import java.util.Optional;
 /** KeyedDeleteFilter is used to do MOR for Keyed Table */
 public class KeyedDeleteFilter extends AdaptHiveArcticDeleteFilter<TrinoRow> {
 
-  private FileIO fileIO;
+  private final FileIO fileIO;
 
   protected KeyedDeleteFilter(
       KeyedTableScanTask keyedTableScanTask,

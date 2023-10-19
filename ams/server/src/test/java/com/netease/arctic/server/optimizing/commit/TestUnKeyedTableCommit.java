@@ -313,7 +313,7 @@ public class TestUnKeyedTableCommit extends TableTestBase {
         Optional.ofNullable(arcticTable.asUnkeyedTable().currentSnapshot()).map(Snapshot::snapshotId)
             .orElse(null),
         getArcticTable(),
-        Arrays.asList(taskRuntime));
+        Collections.singletonList(taskRuntime));
     commit.commit();
   }
 

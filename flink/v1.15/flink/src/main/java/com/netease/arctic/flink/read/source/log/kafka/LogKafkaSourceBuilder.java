@@ -93,8 +93,8 @@ public class LogKafkaSourceBuilder {
   // The configurations.
   protected Properties kafkaProperties;
 
-  private Schema schema;
-  private Map<String, String> tableProperties;
+  private final Schema schema;
+  private final Map<String, String> tableProperties;
 
   /**
    * @param schema read schema, only contains the selected fields
@@ -134,7 +134,7 @@ public class LogKafkaSourceBuilder {
 
   /**
    * Set a list of topics the LogKafkaSource should consume from. All the topics in the list should
-   * have existed in the Kafka cluster. Otherwise an exception will be thrown. To allow some of the
+   * have existed in the Kafka cluster. Otherwise, an exception will be thrown. To allow some of the
    * topics to be created lazily, please use {@link #setTopicPattern(Pattern)} instead.
    */
   public LogKafkaSourceBuilder setTopics(List<String> topics) {
@@ -145,7 +145,7 @@ public class LogKafkaSourceBuilder {
 
   /**
    * Set a list of topics the LogKafkaSource should consume from. All the topics in the list should
-   * have existed in the Kafka cluster. Otherwise an exception will be thrown. To allow some of the
+   * have existed in the Kafka cluster. Otherwise, an exception will be thrown. To allow some of the
    * topics to be created lazily, please use {@link #setTopicPattern(Pattern)} instead.
    *
    * @param topics the list of topics to consume from.

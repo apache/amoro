@@ -53,8 +53,8 @@ public class IcebergSplit implements ConnectorSplit {
   private final String partitionSpecJson;
   private final String partitionDataJson;
   private final List<TrinoDeleteFile> deletes;
-  private Long transactionId;
-  private DataFileType fileType;
+  private final Long transactionId;
+  private final DataFileType fileType;
 
   @JsonCreator
   public IcebergSplit(

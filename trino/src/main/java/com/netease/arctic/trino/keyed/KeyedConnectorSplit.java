@@ -32,7 +32,7 @@ import java.util.List;
 /** ConnectorSplit for Keyed Table */
 public class KeyedConnectorSplit implements ConnectorSplit {
 
-  private byte[] keyedTableScanTaskBytes;
+  private final byte[] keyedTableScanTaskBytes;
 
   private KeyedTableScanTask keyedTableScanTask;
 

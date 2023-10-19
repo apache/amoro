@@ -70,7 +70,7 @@ import org.weakref.jmx.guice.ExportBinder;
 /** Arctic module of Trino */
 public class ArcticModule implements Module {
 
-  private TypeManager typeManager;
+  private final TypeManager typeManager;
 
   public ArcticModule(TypeManager typeManager) {
     this.typeManager = typeManager;

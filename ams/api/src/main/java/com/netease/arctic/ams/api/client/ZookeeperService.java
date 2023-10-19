@@ -33,8 +33,8 @@ import java.nio.charset.StandardCharsets;
 public class ZookeeperService {
 
   private static volatile ZookeeperService instance;
-  private CuratorFramework zkClient;
-  private String zkServerAddress;
+  private final CuratorFramework zkClient;
+  private final String zkServerAddress;
 
   private ZookeeperService(String zkServerAddress) {
     this.zkServerAddress = zkServerAddress;

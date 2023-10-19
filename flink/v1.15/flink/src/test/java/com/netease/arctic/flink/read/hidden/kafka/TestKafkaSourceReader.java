@@ -211,8 +211,8 @@ public class TestKafkaSourceReader {
   /** A source output that validates the output. */
   public static class ValidatingSourceOutput implements ReaderOutput<RowData> {
     private final Set<RowData> consumedValues = new HashSet<>();
-    private int max = Integer.MIN_VALUE;
-    private int min = Integer.MAX_VALUE;
+    private final int max = Integer.MIN_VALUE;
+    private final int min = Integer.MAX_VALUE;
 
     private int count = 0;
 

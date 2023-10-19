@@ -48,6 +48,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.Filter;
+import org.roaringbitmap.longlong.Roaring64Bitmap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,7 +80,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
   private final List<DeleteFile> posDeletes;
   private final List<DeleteFile> eqDeletes;
 
-  private Map<String, Set<Long>> positionMap;
+  private Map<String, Roaring64Bitmap> positionMap;
 
   private final Set<String> positionPathSets;
 
@@ -260,7 +261,6 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
       return record -> false;
     }
 
-    // if there are fewer deletes than a reasonable number to keep in memory, use a set
     if (positionMap == null) {
       positionMap = new HashMap<>();
       List<CloseableIterable<Record>> deletes = Lists.transform(
@@ -273,16 +273,15 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
         if (positionPathSets != null && !positionPathSets.contains(path)) {
           continue;
         }
-        Set<Long> posSet = positionMap.computeIfAbsent(path, k -> new HashSet<>());
-        posSet.add((Long) POSITION_ACCESSOR.get(deleteRecord));
+        Roaring64Bitmap posBitMap = positionMap.computeIfAbsent(path, k -> new Roaring64Bitmap());
+        posBitMap.add((Long) POSITION_ACCESSOR.get(deleteRecord));
       }
     }
 
     return structLikeForDelete -> {
-      Set<Long> posSet;
-      posSet = positionMap.get(structLikeForDelete.filePath());
+      Roaring64Bitmap posSet = positionMap.get(structLikeForDelete.filePath());
 
-      if (posSet == null) {
+      if (posSet == null || posSet.isEmpty()) {
         return false;
       }
       return posSet.contains(structLikeForDelete.getPosition());

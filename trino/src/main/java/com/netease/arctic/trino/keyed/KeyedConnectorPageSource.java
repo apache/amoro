@@ -61,21 +61,21 @@ import java.util.stream.Collectors;
 /** ConnectorPageSource for Keyed Table */
 public class KeyedConnectorPageSource implements ConnectorPageSource {
 
-  private IcebergPageSourceProvider icebergPageSourceProvider;
-  private ConnectorTransactionHandle transaction;
-  private ConnectorSession session;
-  private KeyedConnectorSplit split;
-  private KeyedTableHandle table;
-  private List<IcebergColumnHandle> expectedColumns;
-  private List<IcebergColumnHandle> requiredColumns;
-  private DynamicFilter dynamicFilter;
-  private TypeManager typeManager;
-  private AdaptHiveArcticDeleteFilter<TrinoRow> arcticDeleteFilter;
+  private final IcebergPageSourceProvider icebergPageSourceProvider;
+  private final ConnectorTransactionHandle transaction;
+  private final ConnectorSession session;
+  private final KeyedConnectorSplit split;
+  private final KeyedTableHandle table;
+  private final List<IcebergColumnHandle> expectedColumns;
+  private final List<IcebergColumnHandle> requiredColumns;
+  private final DynamicFilter dynamicFilter;
+  private final TypeManager typeManager;
+  private final AdaptHiveArcticDeleteFilter<TrinoRow> arcticDeleteFilter;
 
-  private List<ColumnHandle> requireColumnsDummy;
-  private Type[] requireColumnTypes;
-  private int[] expectedColumnIndexes;
-  private Iterator<ArcticFileScanTask> dataTasksIt;
+  private final List<ColumnHandle> requireColumnsDummy;
+  private final Type[] requireColumnTypes;
+  private final int[] expectedColumnIndexes;
+  private final Iterator<ArcticFileScanTask> dataTasksIt;
 
   private boolean close;
   long completedPositions;

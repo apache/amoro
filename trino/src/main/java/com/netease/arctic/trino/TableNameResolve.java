@@ -27,7 +27,7 @@ public class TableNameResolve {
   private static final String DOT_SPIT = ".";
   private static final String REGEX_DOT_SPLIT = "\\.";
 
-  private String original;
+  private final String original;
   private String tableName;
   private Boolean isBase;
 

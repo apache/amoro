@@ -135,7 +135,7 @@ public class IcebergSplitSource implements ConnectorSplitSource {
   private final boolean recordScannedFiles;
   private final ImmutableSet.Builder<DataFileWithDeleteFiles> scannedFiles = ImmutableSet.builder();
 
-  private boolean isChange;
+  private final boolean isChange;
 
   public IcebergSplitSource(
       TrinoFileSystemFactory fileSystemFactory,

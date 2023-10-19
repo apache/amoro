@@ -32,7 +32,7 @@ import java.util.Map;
 public class CommonUtil {
   private static final Logger LOG = LoggerFactory.getLogger(CommonUtil.class);
 
-  private static String[] TOKEN_WHITE_LIST = {
+  private static final String[] TOKEN_WHITE_LIST = {
       "/login/current",
       "/versionInfo"
   };

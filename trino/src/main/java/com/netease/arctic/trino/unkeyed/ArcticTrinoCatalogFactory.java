@@ -28,7 +28,7 @@ import javax.inject.Inject;
 /** Factory to generate TrinoCatalog */
 public class ArcticTrinoCatalogFactory implements TrinoCatalogFactory {
 
-  private ArcticCatalogFactory arcticCatalogFactory;
+  private final ArcticCatalogFactory arcticCatalogFactory;
 
   @Inject
   public ArcticTrinoCatalogFactory(ArcticCatalogFactory arcticCatalogFactory) {

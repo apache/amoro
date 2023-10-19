@@ -41,9 +41,9 @@ import java.util.List;
  */
 public class ArcticPageSourceProvider implements ConnectorPageSourceProvider {
 
-  private KeyedPageSourceProvider keyedPageSourceProvider;
+  private final KeyedPageSourceProvider keyedPageSourceProvider;
 
-  private IcebergPageSourceProvider icebergPageSourceProvider;
+  private final IcebergPageSourceProvider icebergPageSourceProvider;
 
   @Inject
   public ArcticPageSourceProvider(

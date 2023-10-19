@@ -28,8 +28,8 @@ public enum SqlStatus {
   FAILED(4,"Failed"),
   CANCELED(5,"Canceled");
 
-  private int status;
-  private String name;
+  private final int status;
+  private final String name;
 
   SqlStatus(int status, String name) {
     this.status = status;

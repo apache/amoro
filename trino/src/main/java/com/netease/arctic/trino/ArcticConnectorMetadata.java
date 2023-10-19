@@ -75,11 +75,11 @@ import java.util.stream.Collectors;
  */
 public class ArcticConnectorMetadata implements ConnectorMetadata {
 
-  private KeyedConnectorMetadata keyedConnectorMetadata;
+  private final KeyedConnectorMetadata keyedConnectorMetadata;
 
-  private IcebergMetadata icebergMetadata;
+  private final IcebergMetadata icebergMetadata;
 
-  private ArcticCatalog arcticCatalog;
+  private final ArcticCatalog arcticCatalog;
 
   public ArcticConnectorMetadata(
       KeyedConnectorMetadata keyedConnectorMetadata,

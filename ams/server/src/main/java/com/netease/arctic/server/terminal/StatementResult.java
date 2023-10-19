@@ -26,13 +26,13 @@ import java.util.List;
  * result of single statement.
  */
 public class StatementResult {
-  private int lineNumber;
-  private String statement;
+  private final int lineNumber;
+  private final String statement;
   private boolean success;
   private String logs;
-  private List<String> columns;
-  private List<Object[]> datas = Lists.newArrayList();
-  private boolean empty;
+  private final List<String> columns;
+  private final List<Object[]> datas = Lists.newArrayList();
+  private final boolean empty;
 
   public StatementResult(String statement, int lineNumber, List<String> columns) {
     this.statement = statement;

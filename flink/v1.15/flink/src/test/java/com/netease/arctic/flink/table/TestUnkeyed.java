@@ -254,8 +254,7 @@ public class TestUnkeyed extends FlinkTestBase {
                 + "/*+ OPTIONS("
                 + "'arctic.read.mode'='file'"
                 + ", 'scan.startup.mode'='earliest'"
-                + ")*/"
-                + "");
+                + ")*/");
 
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
@@ -324,8 +323,7 @@ public class TestUnkeyed extends FlinkTestBase {
                     + ", 'snapshot-id'='"
                     + s.snapshotId()
                     + "'"
-                    + ")*/"
-                    + "")));
+                    + ")*/")));
   }
 
   @Test
@@ -371,8 +369,7 @@ public class TestUnkeyed extends FlinkTestBase {
                 + ", 'start-snapshot-id'='"
                 + s.snapshotId()
                 + "'"
-                + ")*/"
-                + "");
+                + ")*/");
 
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
@@ -443,8 +440,7 @@ public class TestUnkeyed extends FlinkTestBase {
                 + "/*+ OPTIONS("
                 + "'arctic.read.mode'='log'"
                 + ", 'scan.startup.mode'='earliest'"
-                + ")*/"
-                + "");
+                + ")*/");
 
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
@@ -516,8 +512,7 @@ public class TestUnkeyed extends FlinkTestBase {
                 + "/*+ OPTIONS("
                 + "'arctic.read.mode'='log'"
                 + ", 'scan.startup.mode'='earliest'"
-                + ")*/"
-                + "");
+                + ")*/");
 
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
@@ -680,8 +675,7 @@ public class TestUnkeyed extends FlinkTestBase {
                 + s.snapshotId()
                 + "'"
                 + ", 'streaming'='false'"
-                + ")*/"
-                + ""));
+                + ")*/"));
     Assert.assertEquals(
         DataUtil.toRowSet(expected),
         sqlSet(
@@ -695,8 +689,7 @@ public class TestUnkeyed extends FlinkTestBase {
                 + s.timestampMillis()
                 + "'"
                 + ", 'streaming'='false'"
-                + ")*/"
-                + ""));
+                + ")*/"));
   }
 
   @Test
@@ -763,8 +756,7 @@ public class TestUnkeyed extends FlinkTestBase {
                 + ", 'start-snapshot-id'='"
                 + s.snapshotId()
                 + "'"
-                + ")*/"
-                + "");
+                + ")*/");
 
     List<Row> expected =
         new ArrayList<Row>() {
@@ -845,8 +837,7 @@ public class TestUnkeyed extends FlinkTestBase {
                 + "/*+ OPTIONS("
                 + "'arctic.read.mode'='log'"
                 + ", 'scan.startup.mode'='earliest'"
-                + ")*/"
-                + "");
+                + ")*/");
 
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
@@ -920,8 +911,7 @@ public class TestUnkeyed extends FlinkTestBase {
                 + "/*+ OPTIONS("
                 + "'arctic.read.mode'='log'"
                 + ", 'scan.startup.mode'='earliest'"
-                + ")*/"
-                + "");
+                + ")*/");
 
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {

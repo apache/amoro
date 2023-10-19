@@ -21,7 +21,7 @@ package com.netease.arctic.flink.shuffle;
 import org.apache.flink.table.data.RowData;
 
 public class ShuffleKey {
-  private RowData row;
+  private final RowData row;
 
   public ShuffleKey(RowData row) {
     this.row = row;

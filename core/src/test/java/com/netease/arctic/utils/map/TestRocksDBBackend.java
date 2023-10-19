@@ -51,7 +51,7 @@ public class TestRocksDBBackend {
     rocksDBBackend.dropColumnFamily(CF_NAME);
     try {
       rocksDBBackend.get(CF_NAME, "name");
-      Assert.assertTrue(false);
+      Assert.fail();
     } catch (Throwable t) {
       Assert.assertTrue(t instanceof ArcticIOException);
     }
@@ -67,7 +67,7 @@ public class TestRocksDBBackend {
     rocksDBBackend.put(CF_NAME, 4556, expect.get(2));
     Iterator<String> values = rocksDBBackend.valuesForTest(CF_NAME);
     List<String> valueList = new ArrayList<>();
-    for (; values.hasNext(); ) {
+    while (values.hasNext()) {
       valueList.add(values.next());
     }
     Collections.sort(expect);
@@ -78,7 +78,7 @@ public class TestRocksDBBackend {
     rocksDBBackend.delete(CF_NAME, "name");
     valueList = new ArrayList<>();
     values = rocksDBBackend.valuesForTest(CF_NAME);
-    for (; values.hasNext(); ) {
+    while (values.hasNext()) {
       valueList.add(values.next());
     }
     Assert.assertEquals(2, valueList.size());
@@ -92,6 +92,6 @@ public class TestRocksDBBackend {
     Assert.assertTrue(baseFile.exists());
     Assert.assertTrue(baseFile.isDirectory());
     rocksDBBackend.close();
-    Assert.assertTrue(!baseFile.exists());
+    Assert.assertFalse(baseFile.exists());
   }
 }
