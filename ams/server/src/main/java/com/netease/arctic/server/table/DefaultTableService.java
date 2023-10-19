@@ -1,8 +1,8 @@
 package com.netease.arctic.server.table;
 
 import com.google.common.base.Objects;
-import com.google.common.collect.Lists;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.AmoroTable;
