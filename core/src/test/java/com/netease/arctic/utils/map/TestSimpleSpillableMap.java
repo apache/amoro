@@ -2,10 +2,10 @@ package com.netease.arctic.utils.map;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.apache.lucene.util.RamUsageEstimator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.openjdk.jol.info.GraphLayout;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -22,8 +22,8 @@ public class TestSimpleSpillableMap {
 
   @Before
   public void initSizes() {
-    keySize = GraphLayout.parseInstance(new Key()).totalSize();
-    valueSize = GraphLayout.parseInstance(new Value()).totalSize();
+    keySize = RamUsageEstimator.sizeOfObject(new Key(), 0);
+    valueSize = RamUsageEstimator.sizeOfObject(new Value(), 0);
   }
 
   @Test
