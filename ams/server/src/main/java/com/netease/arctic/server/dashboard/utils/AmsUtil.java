@@ -79,6 +79,8 @@ public class AmsUtil {
     summary.computeIfPresent(SnapshotSummary.REMOVED_FILE_SIZE_PROP,
         (k, v) -> byteToXB(Long.parseLong(info.getSummary().get(k))));
     transactionsOfTable.setSummary(summary);
+    transactionsOfTable.setFilesSummaryForChart(info.getFilesSummaryForChart());
+    transactionsOfTable.setRecordsSummaryForChart(info.getRecordsSummaryForChart());
     return transactionsOfTable;
   }
 

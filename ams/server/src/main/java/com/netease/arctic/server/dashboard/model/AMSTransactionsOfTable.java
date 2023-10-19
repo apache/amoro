@@ -31,6 +31,11 @@ public class AMSTransactionsOfTable {
   private String operation;
   private Map<String, String> summary;
 
+  private Map<String, String> recordsSummaryForChart;
+
+  private Map<String, String> filesSummaryForChart;
+
+
 
   public AMSTransactionsOfTable() {
   }
@@ -105,6 +110,22 @@ public class AMSTransactionsOfTable {
 
   public void setSummary(Map<String, String> summary) {
     this.summary = summary;
+  }
+
+  public Map<String, String> getRecordsSummaryForChart() {
+    return recordsSummaryForChart;
+  }
+
+  public void setRecordsSummaryForChart(Map<String, String> recordsSummaryForChart) {
+    this.recordsSummaryForChart = recordsSummaryForChart;
+  }
+
+  public Map<String, String> getFilesSummaryForChart() {
+    return filesSummaryForChart;
+  }
+
+  public void setFilesSummaryForChart(Map<String, String> filesSummaryForChart) {
+    this.filesSummaryForChart = filesSummaryForChart;
   }
 
   @Override
