@@ -26,8 +26,8 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>amoro-flink-1.17</artifactId>
-    <name>Amoro Project Flink 1.17</name>
+    <artifactId>amoro-flink-1.16</artifactId>
+    <name>Amoro Project Flink 1.16</name>
     <url>https://amoro.netease.com</url>
 
     <packaging>jar</packaging>
@@ -36,7 +36,7 @@
         <kafka.version>3.2.3</kafka.version>
         <assertj.version>3.21.0</assertj.version>
         <testcontainers.version>1.17.2</testcontainers.version>
-        <flink.version>1.17.1</flink.version>
+        <flink.version>1.16.2</flink.version>
     </properties>
 
     <dependencies>
@@ -47,7 +47,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-flink-1.17</artifactId>
+            <artifactId>iceberg-flink-1.16</artifactId>
             <version>${iceberg.version}</version>
             <exclusions>
                 <exclusion>
