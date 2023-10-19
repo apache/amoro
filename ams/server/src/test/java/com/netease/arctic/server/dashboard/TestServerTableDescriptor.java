@@ -21,7 +21,6 @@ package com.netease.arctic.server.dashboard;
 import com.netease.arctic.formats.AmoroCatalogTestHelper;
 import com.netease.arctic.server.catalog.TableCatalogTestBase;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
-import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.table.TableIdentifier;
 import org.junit.Assert;
 import org.junit.Before;

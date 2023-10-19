@@ -66,7 +66,7 @@ public abstract class InternalCatalog extends ServerCatalog {
         TableMetaMapper.class,
         mapper -> mapper.selectTableIdentifiersByDb(getMetadata().getCatalogName(), database))
         .stream()
-        .map( sid -> TableIDWithFormat.of(
+        .map(sid -> TableIDWithFormat.of(
             com.netease.arctic.table.TableIdentifier.of(sid.getIdentifier()), sid.getFormat()))
         .collect(Collectors.toList());
   }
@@ -77,7 +77,7 @@ public abstract class InternalCatalog extends ServerCatalog {
         TableMetaMapper.class,
         mapper -> mapper.selectTableIdentifiersByCatalog(getMetadata().getCatalogName()))
         .stream()
-        .map( sid -> TableIDWithFormat.of(
+        .map(sid -> TableIDWithFormat.of(
             com.netease.arctic.table.TableIdentifier.of(sid.getIdentifier()), sid.getFormat()))
         .collect(Collectors.toList());
   }

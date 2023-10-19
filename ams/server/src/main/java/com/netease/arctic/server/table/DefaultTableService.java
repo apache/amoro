@@ -517,7 +517,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private void syncTable(ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
     try {
       doAsTransaction(
-          () -> externalCatalog.syncTable(tableIdentity.getDatabase(), tableIdentity.getTableName(), tableIdentity.getFormat()),
+          () -> externalCatalog.syncTable(
+              tableIdentity.getDatabase(), tableIdentity.getTableName(), tableIdentity.getFormat()),
           () -> handleTableRuntimeAdded(externalCatalog, tableIdentity)
       );
     } catch (Throwable t) {
