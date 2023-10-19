@@ -35,7 +35,7 @@ public class OptimizerTestHelpers {
   }
 
   public static void setCallAmsIntervalForTest() {
-    DynFields.builder().hiddenImpl(AbstractOptimizerOperator.class, "CALL_AMS_INTERVAL")
-        .buildStatic().set(CALL_AMS_INTERVAL);
+    DynFields.builder().hiddenImpl(AbstractOptimizerOperator.class, "callAmsInterval").build()
+        .set(AbstractOptimizerOperator.class, CALL_AMS_INTERVAL);
   }
 }

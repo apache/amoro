@@ -17,8 +17,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class AbstractOptimizerOperator implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractOptimizerOperator.class);
 
-  @SuppressWarnings("all")
-  private static long CALL_AMS_INTERVAL = 5000;//5s
+
+  // Call ams every 5 seconds by default
+  private long callAmsInterval = TimeUnit.SECONDS.toMillis(5);
 
   private final OptimizerConfig config;
   private final AtomicReference<String> token = new AtomicReference<>();
@@ -97,6 +98,14 @@ public class AbstractOptimizerOperator implements Serializable {
     throw new IllegalStateException("Operator is stopped");
   }
 
+  public long getCallAmsInterval() {
+    return callAmsInterval;
+  }
+
+  public void setCallAmsInterval(long callAmsInterval) {
+    this.callAmsInterval = callAmsInterval;
+  }
+
   protected OptimizerConfig getConfig() {
     return config;
   }
@@ -126,7 +135,7 @@ public class AbstractOptimizerOperator implements Serializable {
   }
 
   protected void waitAShortTime() {
-    waitAShortTime(CALL_AMS_INTERVAL);
+    waitAShortTime(callAmsInterval);
   }
 
   protected void waitAShortTime(long waitTime) {
