@@ -102,7 +102,10 @@ public class TableStatCollector {
     FilesStatistics changeFs = changeTableInfo.getTotalFilesStat();
     FilesStatistics baseFs = baseTableInfo.getTotalFilesStat();
 
-    overview.setTotalFilesStat(changeFs, baseFs);
+    overview.setTotalFilesStat(new FilesStatistics.Builder()
+        .addFilesStatistics(changeFs)
+        .addFilesStatistics(baseFs)
+        .build());
     return overview;
   }
 
