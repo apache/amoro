@@ -27,6 +27,7 @@ import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableIdentifier;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,12 +53,14 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
 
   @Test
   public void testLoadTable() {
-    ArcticTable arcticTable = (ArcticTable) tableService().loadTable(serverTableIdentifier()).originalTable();
+    ArcticTable arcticTable = (ArcticTable) tableService()
+        .loadTable(serverTableIdentifier().getIdentifier()).originalTable();
     validateArcticTable(arcticTable);
 
     // test load not existed table
-    Assert.assertThrows(ObjectNotExistsException.class, () -> tableService().loadTable(
-        ServerTableIdentifier.of(null, "unknown", "unknown", "unknown")));
+    Assert.assertThrows(ObjectNotExistsException.class,
+        () -> tableService().loadTable(
+            TableIdentifier.of("unknown", "unknown", "unknown").buildTableIdentifier()));
   }
 
   @Test
@@ -65,11 +68,13 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
     Assert.assertTrue(tableService().contains(serverTableIdentifier()));
     ServerTableIdentifier copyId = ServerTableIdentifier.of(null,
         serverTableIdentifier().getCatalog(), serverTableIdentifier().getDatabase(),
-        serverTableIdentifier().getTableName());
+        serverTableIdentifier().getTableName(),
+        serverTableIdentifier().getFormat());
     Assert.assertFalse(tableService().contains(copyId));
-    copyId = ServerTableIdentifier.of(serverTableIdentifier().getId(),
+    copyId = ServerTableIdentifier.of(
+        serverTableIdentifier().getId(),
         serverTableIdentifier().getCatalog(), serverTableIdentifier().getDatabase(),
-        "unknown");
+        "unknown", serverTableIdentifier().getFormat());
     Assert.assertFalse(tableService().contains(copyId));
   }
 

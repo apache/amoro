@@ -114,8 +114,10 @@ public class TableRuntime extends StatedPersistentBase {
   protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
     Preconditions.checkNotNull(tableRuntimeMeta, tableHandler);
     this.tableHandler = tableHandler;
-    this.tableIdentifier = ServerTableIdentifier.of(tableRuntimeMeta.getTableId(), tableRuntimeMeta.getCatalogName(),
-        tableRuntimeMeta.getDbName(), tableRuntimeMeta.getTableName());
+    this.tableIdentifier = ServerTableIdentifier.of(
+        tableRuntimeMeta.getTableId(), tableRuntimeMeta.getCatalogName(),
+        tableRuntimeMeta.getDbName(), tableRuntimeMeta.getTableName(),
+        tableRuntimeMeta.getFormat());
     this.currentSnapshotId = tableRuntimeMeta.getCurrentSnapshotId();
     this.lastOptimizedSnapshotId = tableRuntimeMeta.getLastOptimizedSnapshotId();
     this.lastOptimizedChangeSnapshotId = tableRuntimeMeta.getLastOptimizedChangeSnapshotId();

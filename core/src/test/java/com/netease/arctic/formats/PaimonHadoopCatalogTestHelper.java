@@ -150,6 +150,11 @@ public class PaimonHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Cat
     }
   }
 
+  @Override
+  public TableFormat format() {
+    return TableFormat.PAIMON;
+  }
+
   protected String getMetastoreType() {
     return CatalogMetaProperties.CATALOG_TYPE_HADOOP;
   }

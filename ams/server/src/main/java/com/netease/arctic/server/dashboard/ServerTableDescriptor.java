@@ -2,6 +2,7 @@ package com.netease.arctic.server.dashboard;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
@@ -40,37 +41,37 @@ public class ServerTableDescriptor extends PersistentBase {
     }
   }
 
-  public ServerTableMeta getTableDetail(ServerTableIdentifier tableIdentifier) {
+  public ServerTableMeta getTableDetail(TableIdentifier tableIdentifier) {
     AmoroTable<?> amoroTable = tableService.loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getTableDetail(amoroTable);
   }
 
-  public List<TransactionsOfTable> getTransactions(ServerTableIdentifier tableIdentifier) {
+  public List<TransactionsOfTable> getTransactions(TableIdentifier tableIdentifier) {
     AmoroTable<?> amoroTable = tableService.loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getTransactions(amoroTable);
   }
 
-  public List<PartitionFileBaseInfo> getTransactionDetail(ServerTableIdentifier tableIdentifier, long transactionId) {
+  public List<PartitionFileBaseInfo> getTransactionDetail(TableIdentifier tableIdentifier, long transactionId) {
     AmoroTable<?> amoroTable = tableService.loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getTransactionDetail(amoroTable, transactionId);
   }
 
-  public List<DDLInfo> getTableOperations(ServerTableIdentifier tableIdentifier) {
+  public List<DDLInfo> getTableOperations(TableIdentifier tableIdentifier) {
     AmoroTable<?> amoroTable = tableService.loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getTableOperations(amoroTable);
   }
 
-  public List<PartitionBaseInfo> getTablePartition(ServerTableIdentifier tableIdentifier) {
+  public List<PartitionBaseInfo> getTablePartition(TableIdentifier tableIdentifier) {
     AmoroTable<?> amoroTable = tableService.loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getTablePartitions(amoroTable);
   }
 
-  public List<PartitionFileBaseInfo> getTableFile(ServerTableIdentifier tableIdentifier, String partition) {
+  public List<PartitionFileBaseInfo> getTableFile(TableIdentifier tableIdentifier, String partition) {
     AmoroTable<?> amoroTable = tableService.loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getTableFiles(amoroTable, partition);

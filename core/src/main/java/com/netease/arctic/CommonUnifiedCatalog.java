@@ -110,7 +110,7 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   }
 
   @Override
-  public List<TableMeta> listTableMetas(String database) {
+  public List<TableIDWithFormat> listTableMetas(String database) {
     if (!exist(database)) {
       throw new NoSuchDatabaseException("Database: " + database + " does not exist.");
     }
@@ -128,7 +128,7 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     return tableNameToFormat.keySet().stream()
         .map(tableName -> {
           TableFormat format = tableNameToFormat.get(tableName);
-          return TableMeta.of(TableIdentifier.of(this.meta.getCatalogName(), database, tableName), format);
+          return TableIDWithFormat.of(TableIdentifier.of(this.meta.getCatalogName(), database, tableName), format);
         }).collect(Collectors.toList());
   }
 

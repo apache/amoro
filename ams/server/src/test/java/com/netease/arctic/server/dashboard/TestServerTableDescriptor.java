@@ -22,6 +22,7 @@ import com.netease.arctic.formats.AmoroCatalogTestHelper;
 import com.netease.arctic.server.catalog.TableCatalogTestBase;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.table.TableIdentifier;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -77,7 +78,7 @@ public abstract class TestServerTableDescriptor extends TableCatalogTestBase {
     tableOperationsDropColumn();
 
     List<DDLInfo> tableOperations = serverTableDescriptor.getTableOperations(
-        ServerTableIdentifier.of(getAmoroCatalogTestHelper().catalogName(), TEST_DB, TEST_TABLE));
+        TableIdentifier.of(getAmoroCatalogTestHelper().catalogName(), TEST_DB, TEST_TABLE).buildTableIdentifier());
 
     Assert.assertEquals(
         tableOperations.get(0).getDdl(),

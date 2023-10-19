@@ -20,6 +20,7 @@ package com.netease.arctic.formats;
 
 import com.netease.arctic.AmoroCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import org.apache.hadoop.conf.Configuration;
 
 /**
@@ -109,4 +110,6 @@ public interface AmoroCatalogTestHelper<T> {
    */
   void createTable(String db, String tableName)
       throws Exception;
+
+  TableFormat format();
 }

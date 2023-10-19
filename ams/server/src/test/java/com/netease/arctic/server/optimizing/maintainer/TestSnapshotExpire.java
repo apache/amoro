@@ -171,7 +171,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     testKeyedTable.updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
-        ServerTableIdentifier.of(AmsUtil.toTableIdentifier(testKeyedTable.id())));
+        ServerTableIdentifier.of(AmsUtil.toTableIdentifier(testKeyedTable.id()), tableRuntime.getFormat()));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
     Mockito.when(tableRuntime.getTableConfiguration()).thenReturn(
         TableConfiguration.parseConfig(testKeyedTable.properties()));
@@ -210,7 +210,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     table.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
-        ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id())));
+        ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id()), tableRuntime.getFormat()));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
     Mockito.when(tableRuntime.getTableConfiguration()).thenReturn(
         TableConfiguration.parseConfig(table.properties()));
@@ -237,7 +237,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
-        ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id())));
+        ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id()), tableRuntime.getFormat()));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
     Mockito.when(tableRuntime.getTableConfiguration()).thenReturn(
         TableConfiguration.parseConfig(table.properties()));

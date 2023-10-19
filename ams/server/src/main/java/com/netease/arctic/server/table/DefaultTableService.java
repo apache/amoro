@@ -3,9 +3,11 @@ package com.netease.arctic.server.table;
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.catalog.CatalogBuilder;
@@ -187,7 +189,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public List<TableIdentifier> listTables(String catalogName, String dbName) {
+  public List<TableIDWithFormat> listTables(String catalogName, String dbName) {
     checkStarted();
     return getServerCatalog(catalogName).listTables(dbName);
   }
@@ -205,7 +207,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public AmoroTable<?> loadTable(ServerTableIdentifier tableIdentifier) {
+  public AmoroTable<?> loadTable(TableIdentifier tableIdentifier) {
     checkStarted();
     return getServerCatalog(tableIdentifier.getCatalog())
         .loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
@@ -446,7 +448,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
   private void syncTable(ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
     invokeConsisitency(() -> doAsTransaction(
-        () -> externalCatalog.syncTable(tableIdentity.getDatabase(), tableIdentity.getTableName()),
+        () -> externalCatalog.syncTable(
+            tableIdentity.getDatabase(), tableIdentity.getTableName(), tableIdentity.getFormat()),
         () -> handleTableRuntimeAdded(externalCatalog, tableIdentity)
     ));
   }
@@ -480,14 +483,18 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     private final String database;
     private final String tableName;
 
-    protected TableIdentity(TableIdentifier tableIdentifier) {
-      this.database = tableIdentifier.getDatabase();
-      this.tableName = tableIdentifier.getTableName();
+    private final TableFormat format;
+
+    protected TableIdentity(TableIDWithFormat idWithFormat) {
+      this.database = idWithFormat.getIdentifier().getDatabase();
+      this.tableName = idWithFormat.getIdentifier().getTableName();
+      this.format = idWithFormat.getTableFormat();
     }
 
     protected TableIdentity(ServerTableIdentifier serverTableIdentifier) {
       this.database = serverTableIdentifier.getDatabase();
       this.tableName = serverTableIdentifier.getTableName();
+      this.format = serverTableIdentifier.getFormat();
     }
 
     public String getDatabase() {
@@ -496,6 +503,10 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
     public String getTableName() {
       return tableName;
+    }
+
+    public TableFormat getFormat() {
+      return format;
     }
 
     @Override

@@ -142,6 +142,11 @@ public class IcebergHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Ca
     catalog.createTable(TableIdentifier.of(db, tableName), schema, spec, properties);
   }
 
+  @Override
+  public TableFormat format() {
+    return TableFormat.ICEBERG;
+  }
+
   protected String getMetastoreType() {
     return CatalogMetaProperties.CATALOG_TYPE_HADOOP;
   }
