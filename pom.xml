@@ -126,8 +126,8 @@
         <powermock.version>2.0.2</powermock.version>
         <rocksdb.version>7.10.2</rocksdb.version>
         <kryo.version>2.24.0</kryo.version>
-        <jol.version>0.16</jol.version>
         <trino.version>406</trino.version>
+        <lucene.version>8.11.2</lucene.version>
         <bitmap.version>0.9.44</bitmap.version>
     </properties>
 
@@ -520,12 +520,6 @@
             </dependency>
 
             <dependency>
-                <groupId>org.openjdk.jol</groupId>
-                <artifactId>jol-core</artifactId>
-                <version>${jol.version}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>org.apache.hive</groupId>
                 <artifactId>hive-metastore</artifactId>
                 <version>${hive.version}</version>
@@ -653,6 +647,12 @@
                 <groupId>io.trino</groupId>
                 <artifactId>trino-spi</artifactId>
                 <version>${trino.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-core</artifactId>
+                <version>${lucene.version}</version>
             </dependency>
 
             <dependency>
