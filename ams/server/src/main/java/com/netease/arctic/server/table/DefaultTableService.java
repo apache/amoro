@@ -349,7 +349,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
   public TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
     if (tableIdentifier == null) {
-      throw new ObjectNotExistsException(tableIdentifier);
+      throw new IllegalArgumentException("ServerTableIdentifier is null");
     }
     TableRuntime tableRuntime = getRuntime(tableIdentifier);
     if (tableRuntime == null) {
