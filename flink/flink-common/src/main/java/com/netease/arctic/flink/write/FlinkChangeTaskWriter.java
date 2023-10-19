@@ -49,7 +49,7 @@ public class FlinkChangeTaskWriter extends ChangeTaskWriter<RowData> {
 
   private final RowDataWrapper wrapper;
   private final boolean upsert;
-  private Set<PrimaryKeyData> hasUpdateBeforeKeys = new HashSet<>();
+  private final Set<PrimaryKeyData> hasUpdateBeforeKeys = new HashSet<>();
 
   public FlinkChangeTaskWriter(
       FileFormat format,

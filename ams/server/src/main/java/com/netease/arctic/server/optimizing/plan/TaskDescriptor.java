@@ -5,10 +5,10 @@ import com.netease.arctic.optimizing.RewriteFilesInput;
 import java.util.Map;
 
 public class TaskDescriptor {
-  private long tableId;
-  private String partition;
-  private RewriteFilesInput input;
-  private Map<String, String> properties;
+  private final long tableId;
+  private final String partition;
+  private final RewriteFilesInput input;
+  private final Map<String, String> properties;
 
   TaskDescriptor(long tableId, String partition, RewriteFilesInput input, Map<String, String> properties) {
     this.tableId = tableId;

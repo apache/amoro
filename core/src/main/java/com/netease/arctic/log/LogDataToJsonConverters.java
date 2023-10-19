@@ -60,7 +60,7 @@ public class LogDataToJsonConverters implements Serializable {
 
     class FormatConverterContext implements Serializable {
       private static final long serialVersionUID = 109329249465478511L;
-      private transient JsonNode node;
+      private final transient JsonNode node;
       private final ObjectMapper mapper;
 
       public FormatConverterContext(

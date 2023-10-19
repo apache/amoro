@@ -41,7 +41,6 @@ public class MetricUtil {
   public static void duration(Runnable runnable, String name) {
     long t1 = System.currentTimeMillis();
     runnable.run();
-    ;
     long t2 = System.currentTimeMillis();
     LOG.info("{} code duration is {}ms", name, t2 - t1);
   }

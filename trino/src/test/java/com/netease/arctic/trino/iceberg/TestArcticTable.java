@@ -54,9 +54,9 @@ import java.util.Map;
 //extends BasicUnkeyedTable is for adapt IcebergMeta
 public class TestArcticTable extends BasicUnkeyedTable {
 
-  private BaseTable table;
+  private final BaseTable table;
 
-  private TableIdentifier tableIdentifier;
+  private final TableIdentifier tableIdentifier;
 
   public TestArcticTable(BaseTable table, TableIdentifier tableIdentifier) {
     super(null, null, null, null);

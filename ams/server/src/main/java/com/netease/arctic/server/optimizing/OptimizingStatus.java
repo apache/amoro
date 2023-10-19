@@ -7,9 +7,9 @@ public enum OptimizingStatus {
   COMMITTING("committing", true),
   PENDING("pending", false),
   IDLE("idle", false);
-  private String displayValue;
+  private final String displayValue;
 
-  private boolean isProcessing;
+  private final boolean isProcessing;
 
   OptimizingStatus(String displayValue, boolean isProcessing) {
     this.displayValue = displayValue;

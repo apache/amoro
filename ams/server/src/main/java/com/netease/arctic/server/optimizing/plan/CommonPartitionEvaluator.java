@@ -177,10 +177,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     }
     if (deletes.stream().anyMatch(delete -> delete.content() == FileContent.EQUALITY_DELETES)) {
       return true;
-    } else if (deletes.stream().filter(delete -> delete.content() == FileContent.POSITION_DELETES).count() >= 2) {
-      return true;
     } else {
-      return false;
+      return deletes.stream().filter(delete -> delete.content() == FileContent.POSITION_DELETES).count() >= 2;
     }
   }
 

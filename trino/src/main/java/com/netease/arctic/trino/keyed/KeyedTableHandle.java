@@ -33,11 +33,11 @@ import java.util.Set;
  */
 public class KeyedTableHandle implements ConnectorTableHandle {
 
-  private IcebergTableHandle icebergTableHandle;
+  private final IcebergTableHandle icebergTableHandle;
 
   private transient PrimaryKeySpec primaryKeySpec;
 
-  private byte[] primaryKeySpecBytes;
+  private final byte[] primaryKeySpecBytes;
 
   @JsonCreator
   public KeyedTableHandle(

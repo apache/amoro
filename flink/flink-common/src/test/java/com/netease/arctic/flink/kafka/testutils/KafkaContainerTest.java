@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
 
 @Testcontainers
 public class KafkaContainerTest {
-  private static Logger LOG = LoggerFactory.getLogger(KafkaContainerTest.class);
+  private static final Logger LOG = LoggerFactory.getLogger(KafkaContainerTest.class);
   public static String INTER_CONTAINER_KAFKA_ALIAS = "kafka";
   public static Network NETWORK = Network.newNetwork();
   public static String KAFKA = "confluentinc/cp-kafka:7.2.6";

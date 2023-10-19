@@ -4,7 +4,7 @@ public enum ResourceType {
 
   OPTIMIZER(0);
 
-  private int type;
+  private final int type;
 
   ResourceType(int type) {
     this.type = type;

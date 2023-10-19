@@ -150,7 +150,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
     ChangeTableIncrementalScan changeTableScan = table.changeTable().newScan()
         .fromSequence(partitionOptimizedSequence);
 
-    changeTableScan = (ChangeTableIncrementalScan) changeTableScan.filter(partitionExpressions);
+    changeTableScan = changeTableScan.filter(partitionExpressions);
 
     return CloseableIterable.transform(changeTableScan.planFiles(), s -> (ArcticFileScanTask) s);
   }
