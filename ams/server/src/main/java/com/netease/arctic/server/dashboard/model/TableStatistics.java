@@ -59,7 +59,10 @@ public class TableStatistics {
   }
 
   public void setTotalFilesStat(FilesStatistics changeFs, FilesStatistics baseFs) {
-    this.totalFilesStat = totalFilesStat;
+    setTotalFilesStat(new FilesStatistics.Builder()
+            .addFilesStatistics(changeFs)
+            .addFilesStatistics(baseFs)
+            .build());
   }
 
   public Map<String, String> getSummary() {
