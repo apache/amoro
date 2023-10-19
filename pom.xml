@@ -93,7 +93,6 @@
         <hadoop.version>3.2.2</hadoop.version>
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>
-        <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
         <slf4j.version>1.7.30</slf4j.version>
         <log4j.version>2.20.0</log4j.version>
         <junit4.version>4.13</junit4.version>
@@ -127,8 +126,9 @@
         <powermock.version>2.0.2</powermock.version>
         <rocksdb.version>7.10.2</rocksdb.version>
         <kryo.version>2.24.0</kryo.version>
-        <jol.version>0.16</jol.version>
         <trino.version>406</trino.version>
+        <lucene.version>8.11.2</lucene.version>
+        <bitmap.version>0.9.44</bitmap.version>
     </properties>
 
     <dependencyManagement>
@@ -248,6 +248,10 @@
                         <groupId>log4j</groupId>
                         <artifactId>log4j</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -339,12 +343,6 @@
             </dependency>
 
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${mysql-jdbc.version}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>org.apache.orc</groupId>
                 <artifactId>orc-core</artifactId>
                 <version>${orc-core.version}</version>
@@ -403,6 +401,12 @@
                 <groupId>org.apache.paimon</groupId>
                 <artifactId>paimon-bundle</artifactId>
                 <version>${paimon.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.roaringbitmap</groupId>
+                <artifactId>RoaringBitmap</artifactId>
+                <version>${bitmap.version}</version>
             </dependency>
 
             <dependency>
@@ -520,12 +524,6 @@
             </dependency>
 
             <dependency>
-                <groupId>org.openjdk.jol</groupId>
-                <artifactId>jol-core</artifactId>
-                <version>${jol.version}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>org.apache.hive</groupId>
                 <artifactId>hive-metastore</artifactId>
                 <version>${hive.version}</version>
@@ -590,6 +588,10 @@
                         <groupId>org.apache.hive</groupId>
                         <artifactId>hive-orc</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -653,6 +655,12 @@
                 <groupId>io.trino</groupId>
                 <artifactId>trino-spi</artifactId>
                 <version>${trino.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-core</artifactId>
+                <version>${lucene.version}</version>
             </dependency>
 
             <dependency>

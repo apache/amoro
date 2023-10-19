@@ -82,13 +82,13 @@ public class ServerTableDescriptor extends PersistentBase {
   public List<PartitionBaseInfo> getTablePartition(ServerTableIdentifier tableIdentifier) {
     AmoroTable<?> amoroTable = tableService.loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
-    return formatTableDescriptor.getTablePartition(amoroTable);
+    return formatTableDescriptor.getTablePartitions(amoroTable);
   }
 
   public List<PartitionFileBaseInfo> getTableFile(ServerTableIdentifier tableIdentifier, String partition) {
     AmoroTable<?> amoroTable = tableService.loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
-    return formatTableDescriptor.getTableFile(amoroTable, partition);
+    return formatTableDescriptor.getTableFiles(amoroTable, partition);
   }
 
   public List<OptimizingProcessMeta> getOptimizingProcesses(String catalog, String db, String table) {
