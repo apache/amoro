@@ -15,12 +15,21 @@
   limitations under the License.
 */}}
 
-{{- if .Values.rbac.create }}
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name:  {{ include "common.names.fullname" . }}
-  labels:
-    {{- include "amoro.labels" . | nindent 4 }}
-rules: {{- toYaml .Values.rbac.rules | nindent 2 }}
-{{- end }}
+
+{{- define "amoro.rbac.rules" -}}
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "watch", "list", "create", "delete"]
+- apiGroups: ["extensions", "apps"]
+  resources: ["deployments"]
+  verbs: ["get", "watch", "list", "create", "delete"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "create", "update", "delete"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list", "create", "delete"]
+{{- end -}}
