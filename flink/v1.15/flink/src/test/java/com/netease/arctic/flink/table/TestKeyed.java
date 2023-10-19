@@ -93,7 +93,7 @@ public class TestKeyed extends FlinkTestBase {
   private String catalog;
   private String db;
   private String topic;
-  private Map<String, String> tableProperties = new HashMap<>();
+  private final Map<String, String> tableProperties = new HashMap<>();
   public boolean isHive;
   public boolean kafkaLegacyEnable;
 
@@ -282,8 +282,7 @@ public class TestKeyed extends FlinkTestBase {
                 + "/*+ OPTIONS("
                 + "'arctic.read.mode'='file'"
                 + ", 'streaming'='false'"
-                + ")*/"
-                + "");
+                + ")*/");
 
     List<Object[]> expected = new LinkedList<>();
     expected.add(
@@ -363,8 +362,7 @@ public class TestKeyed extends FlinkTestBase {
                 + "/*+ OPTIONS("
                 + "'arctic.read.mode'='log'"
                 + ", 'scan.startup.mode'='earliest'"
-                + ")*/"
-                + "");
+                + ")*/");
 
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
@@ -431,8 +429,7 @@ public class TestKeyed extends FlinkTestBase {
                 + "/*+ OPTIONS("
                 + "'arctic.read.mode'='log'"
                 + ", 'scan.startup.mode'='earliest'"
-                + ")*/"
-                + "");
+                + ")*/");
 
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
@@ -1013,8 +1010,7 @@ public class TestKeyed extends FlinkTestBase {
                 + "/*+ OPTIONS("
                 + "'arctic.read.mode'='log'"
                 + ", 'scan.startup.mode'='earliest'"
-                + ")*/"
-                + "");
+                + ")*/");
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
       for (Object[] datum : data) {
@@ -1081,8 +1077,7 @@ public class TestKeyed extends FlinkTestBase {
                 + "/*+ OPTIONS("
                 + "'arctic.read.mode'='log'"
                 + ", 'scan.startup.mode'='earliest'"
-                + ")*/"
-                + "");
+                + ")*/");
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
       for (Object[] datum : data) {

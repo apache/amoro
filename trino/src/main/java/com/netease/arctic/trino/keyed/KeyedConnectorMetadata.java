@@ -98,11 +98,11 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
 
   private static final Logger log = LoggerFactory.getLogger(KeyedConnectorMetadata.class);
 
-  private ArcticCatalog arcticCatalog;
+  private final ArcticCatalog arcticCatalog;
 
-  private TypeManager typeManager;
+  private final TypeManager typeManager;
 
-  private ConcurrentHashMap<SchemaTableName, ArcticTable> concurrentHashMap = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<SchemaTableName, ArcticTable> concurrentHashMap = new ConcurrentHashMap<>();
 
   private final Map<IcebergTableHandle, TableStatistics> tableStatisticsCache = new ConcurrentHashMap<>();
 

@@ -69,7 +69,6 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
     List<DataType> dataTypeList =
         Arrays.stream(schema.fields()).map(StructField::dataType).collect(Collectors.toList());
     List<Object> objectSeq = new ArrayList<>(dataTypeList.size() + 1);
-    ;
     row.toSeq(schema).toStream().foreach(objectSeq::add);
     objectSeq.add(fileOffset);
     return new GenericInternalRow(objectSeq.toArray());

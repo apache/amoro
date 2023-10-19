@@ -690,8 +690,7 @@ public class IcebergMetadata
     TrinoFileSystem fileSystem = fileSystemFactory.create(session);
     try {
       if (fileSystem.listFiles(location).hasNext()) {
-        throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, format("" +
-            "Cannot create a table on a non-empty location:" +
+        throw new TrinoException(ICEBERG_FILESYSTEM_ERROR, format("Cannot create a table on a non-empty location:" +
             " %s, set 'iceberg.unique-table-location=true' in your Iceberg catalog properties " +
             "to use unique table locations for every table.", location));
       }

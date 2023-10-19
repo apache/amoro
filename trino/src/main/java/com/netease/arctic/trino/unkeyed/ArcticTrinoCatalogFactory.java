@@ -30,7 +30,7 @@ import javax.inject.Inject;
  */
 public class ArcticTrinoCatalogFactory implements TrinoCatalogFactory {
 
-  private ArcticCatalogFactory arcticCatalogFactory;
+  private final ArcticCatalogFactory arcticCatalogFactory;
 
   @Inject
   public ArcticTrinoCatalogFactory(ArcticCatalogFactory arcticCatalogFactory) {

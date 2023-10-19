@@ -399,7 +399,6 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
       boolean delegateDrop = false;
       if (delegate != null) {
         delegateDrop = delegate.dropTable(ident);
-        ;
       }
       return holderDrop || delegateDrop;
     }

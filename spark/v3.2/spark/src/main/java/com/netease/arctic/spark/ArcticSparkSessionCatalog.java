@@ -203,10 +203,7 @@ public class ArcticSparkSessionCatalog<
   }
 
   private boolean useArctic(String provider) {
-    if ("arctic".equalsIgnoreCase(provider)) {
-      return true;
-    }
-    return false;
+    return "arctic".equalsIgnoreCase(provider);
   }
 
   private T getSessionCatalog() {

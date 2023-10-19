@@ -160,7 +160,7 @@ public class RecordGenerator {
             return EPOCH.plus((long) value, ChronoUnit.MICROS).toLocalDateTime();
           }
         case DATE:
-          return EPOCH.plus((int) value, ChronoUnit.SECONDS).toLocalDate();
+          return EPOCH.plusSeconds((int) value).toLocalDate();
       }
       return value;
     }

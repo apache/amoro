@@ -95,13 +95,13 @@ public class HMSMockServer {
       .orNoop()
       .buildStatic();
 
-  private File hiveLocalDir;
-  private HiveConf hiveConf;
+  private final File hiveLocalDir;
+  private final HiveConf hiveConf;
   private ExecutorService executorService;
   private TServer server;
   private HiveMetaStore.HMSHandler baseHandler;
   private HiveClientPool clientPool;
-  private int port;
+  private final int port;
   private HiveMetaStoreClient client;
   private boolean started = false;
 
@@ -354,7 +354,7 @@ public class HMSMockServer {
       if (trimmedLine.length() < 1 || trimmedLine.startsWith("--")) {
         // Do nothing, ignore blank lines and comments
       } else if (trimmedLine.endsWith(";")) {
-        command.append(line.substring(0, line.lastIndexOf(";")));
+        command.append(line, 0, line.lastIndexOf(";"));
         command.append(" ");
         Statement statement = connection.createStatement();
         LOG.debug("Running: {}", command);
