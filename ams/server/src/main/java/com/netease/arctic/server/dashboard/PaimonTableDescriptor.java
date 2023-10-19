@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.dashboard;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.DataFileType;
@@ -55,6 +56,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -65,6 +71,17 @@ import static org.apache.paimon.operation.FileStoreScan.Plan.groupByPartFiles;
  * Descriptor for Paimon format tables.
  */
 public class PaimonTableDescriptor implements FormatTableDescriptor {
+
+  private Executor executor;
+
+  public PaimonTableDescriptor(int threadCount) {
+    this.executor = Executors.newScheduledThreadPool(
+        threadCount,
+        new ThreadFactoryBuilder()
+            .setDaemon(true)
+            .setNameFormat("DASHBOARD" + "-%d").build());
+  }
+
   @Override
   public List<TableFormat> supportFormat() {
     return Lists.newArrayList(TableFormat.PAIMON);
@@ -158,55 +175,22 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
       throw new RuntimeException(e);
     }
     AbstractFileStore<?> store = (AbstractFileStore<?>) table.store();
+    List<CompletableFuture<TransactionsOfTable>> futures = new ArrayList<>();
     while (snapshots.hasNext()) {
       Snapshot snapshot = snapshots.next();
       if (snapshot.commitKind() == Snapshot.CommitKind.COMPACT) {
         continue;
       }
-      Map<String, String> summary = new HashMap<>();
-      summary.put("commitUser", snapshot.commitUser());
-      summary.put("commitIdentifier", String.valueOf(snapshot.commitIdentifier()));
-      if (snapshot.watermark() != null) {
-        summary.put("watermark", String.valueOf(snapshot.watermark()));
+      futures.add(CompletableFuture.supplyAsync(() -> getTransactionsOfTable(store, snapshot), executor));
+    }
+    for (CompletableFuture<TransactionsOfTable> completableFuture : futures) {
+      try {
+        transactionsOfTables.add(completableFuture.get());
+      } catch (InterruptedException e) {
+        //ignore
+      } catch (ExecutionException e) {
+        throw new RuntimeException(e);
       }
-
-      //record number
-      if (snapshot.totalRecordCount() != null) {
-        summary.put("total-records", String.valueOf(snapshot.totalRecordCount()));
-      }
-      if (snapshot.deltaRecordCount() != null) {
-        summary.put("delta-records", String.valueOf(snapshot.deltaRecordCount()));
-      }
-      if (snapshot.changelogRecordCount() != null) {
-        summary.put("changelog-records", String.valueOf(snapshot.changelogRecordCount()));
-      }
-
-      //file number
-      TransactionsOfTable deltaTransactionsOfTable = manifestListInfo(store, snapshot, (m, s) -> s.deltaManifests(m));
-      int deltaFileCount = deltaTransactionsOfTable.getFileCount();
-      int dataFileCount = manifestListInfo(store, snapshot, (m, s) -> s.dataManifests(m)).getFileCount();
-      int changeLogFileCount = manifestListInfo(store, snapshot, (m, s) -> s.changelogManifests(m)).getFileCount();
-      summary.put("delta-files", String.valueOf(deltaFileCount));
-      summary.put("data-files", String.valueOf(dataFileCount));
-      summary.put("changelogs", String.valueOf(changeLogFileCount));
-
-      //Summary in chart
-      Map<String, String> recordsSummaryForChat = extractSummary(
-          summary,
-          "total-records",
-          "delta-records",
-          "changelog-records");
-      deltaTransactionsOfTable.setRecordsSummaryForChart(recordsSummaryForChat);
-
-      Map<String, String> filesSummaryForChat = extractSummary(
-          summary,
-          "delta-files",
-          "data-files",
-          "changelogs");
-      deltaTransactionsOfTable.setFilesSummaryForChart(filesSummaryForChat);
-
-      deltaTransactionsOfTable.setSummary(summary);
-      transactionsOfTables.add(deltaTransactionsOfTable);
     }
     return transactionsOfTables;
   }
@@ -285,7 +269,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     AbstractFileStore<?> store = (AbstractFileStore<?>) table.store();
 
     //Cache file add snapshot id
-    Map<DataFileMeta, Long> fileSnapshotIdMap = new HashMap<>();
+    Map<DataFileMeta, Long> fileSnapshotIdMap = new ConcurrentHashMap<>();
     ManifestList manifestList = store.manifestListFactory().create();
     ManifestFile manifestFile = store.manifestFileFactory().create();
     Iterator<Snapshot> snapshots;
@@ -294,15 +278,27 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+
+    List<CompletableFuture<Void>> futures = new ArrayList<>();
     while (snapshots.hasNext()) {
       Snapshot snapshot = snapshots.next();
-      List<ManifestFileMeta> deltaManifests = snapshot.deltaManifests(manifestList);
-      for (ManifestFileMeta manifestFileMeta : deltaManifests) {
-        List<ManifestEntry> manifestEntries = manifestFile.read(manifestFileMeta.fileName());
-        for (ManifestEntry manifestEntry : manifestEntries) {
-          fileSnapshotIdMap.put(manifestEntry.file(), snapshot.id());
+      futures.add(CompletableFuture.runAsync(() -> {
+        List<ManifestFileMeta> deltaManifests = snapshot.deltaManifests(manifestList);
+        for (ManifestFileMeta manifestFileMeta : deltaManifests) {
+          List<ManifestEntry> manifestEntries = manifestFile.read(manifestFileMeta.fileName());
+          for (ManifestEntry manifestEntry : manifestEntries) {
+            fileSnapshotIdMap.put(manifestEntry.file(), snapshot.id());
+          }
         }
-      }
+      }, executor));
+    }
+
+    try {
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get();
+    } catch (InterruptedException e) {
+      //ignore
+    } catch (ExecutionException e) {
+      throw new RuntimeException(e);
     }
 
     FileStorePathFactory fileStorePathFactory = store.pathFactory();
@@ -330,6 +326,54 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     }
 
     return partitionFileBases;
+  }
+
+  @NotNull
+  private TransactionsOfTable getTransactionsOfTable(AbstractFileStore<?> store, Snapshot snapshot) {
+    Map<String, String> summary = new HashMap<>();
+    summary.put("commitUser", snapshot.commitUser());
+    summary.put("commitIdentifier", String.valueOf(snapshot.commitIdentifier()));
+    if (snapshot.watermark() != null) {
+      summary.put("watermark", String.valueOf(snapshot.watermark()));
+    }
+
+    //record number
+    if (snapshot.totalRecordCount() != null) {
+      summary.put("total-records", String.valueOf(snapshot.totalRecordCount()));
+    }
+    if (snapshot.deltaRecordCount() != null) {
+      summary.put("delta-records", String.valueOf(snapshot.deltaRecordCount()));
+    }
+    if (snapshot.changelogRecordCount() != null) {
+      summary.put("changelog-records", String.valueOf(snapshot.changelogRecordCount()));
+    }
+
+    //file number
+    TransactionsOfTable deltaTransactionsOfTable = manifestListInfo(store, snapshot, (m, s) -> s.deltaManifests(m));
+    int deltaFileCount = deltaTransactionsOfTable.getFileCount();
+    int dataFileCount = manifestListInfo(store, snapshot, (m, s) -> s.dataManifests(m)).getFileCount();
+    int changeLogFileCount = manifestListInfo(store, snapshot, (m, s) -> s.changelogManifests(m)).getFileCount();
+    summary.put("delta-files", String.valueOf(deltaFileCount));
+    summary.put("data-files", String.valueOf(dataFileCount));
+    summary.put("changelogs", String.valueOf(changeLogFileCount));
+
+    //Summary in chart
+    Map<String, String> recordsSummaryForChat = extractSummary(
+        summary,
+        "total-records",
+        "delta-records",
+        "changelog-records");
+    deltaTransactionsOfTable.setRecordsSummaryForChart(recordsSummaryForChat);
+
+    Map<String, String> filesSummaryForChat = extractSummary(
+        summary,
+        "delta-files",
+        "data-files",
+        "changelogs");
+    deltaTransactionsOfTable.setFilesSummaryForChart(filesSummaryForChat);
+
+    deltaTransactionsOfTable.setSummary(summary);
+    return deltaTransactionsOfTable;
   }
 
   @NotNull

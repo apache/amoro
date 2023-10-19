@@ -49,6 +49,12 @@ public class ArcticManagementConf {
           .defaultValue("admin")
           .withDescription("The administrator password");
 
+  public static final ConfigOption<Integer> DASHBOARD_THREAD_COUNT =
+      ConfigOptions.key("dashboard.thread-count")
+          .intType()
+          .defaultValue(20)
+          .withDescription("The number of threads used for dashboard to read metadata.");
+
   public static final ConfigOption<Long> REFRESH_EXTERNAL_CATALOGS_INTERVAL =
       ConfigOptions.key("refresh-external-catalogs.interval")
           .longType()
@@ -64,7 +70,7 @@ public class ArcticManagementConf {
   public static final ConfigOption<Integer> EXPIRE_SNAPSHOTS_THREAD_COUNT =
       ConfigOptions.key("expire-snapshots.thread-count")
           .intType()
-          .defaultValue(10)
+          .defaultValue(20)
           .withDescription("The number of threads used for snapshots expiring.");
 
   public static final ConfigOption<Boolean> CLEAN_ORPHAN_FILES_ENABLED =
