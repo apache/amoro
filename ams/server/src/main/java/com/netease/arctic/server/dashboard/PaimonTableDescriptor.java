@@ -72,10 +72,10 @@ import static org.apache.paimon.operation.FileStoreScan.Plan.groupByPartFiles;
  */
 public class PaimonTableDescriptor implements FormatTableDescriptor {
 
-  private Executor executor;
+  private final Executor executor;
 
   public PaimonTableDescriptor(int threadCount) {
-    this.executor = Executors.newScheduledThreadPool(
+    this.executor = Executors.newFixedThreadPool(
         threadCount,
         new ThreadFactoryBuilder()
             .setDaemon(true)
