@@ -16,9 +16,7 @@ on:
     paths:
       - "ams/**"
       - "core/**"
-      - "flink/**"
       - "hive/**"
-      - "spark/**"
       - "trino/**"
       - "pom.xml"
 

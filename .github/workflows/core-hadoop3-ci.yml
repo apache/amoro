@@ -19,7 +19,6 @@ on:
       - "flink/**"
       - "hive/**"
       - "spark/**"
-      - "trino/**"
       - "pom.xml"
 
 jobs:
@@ -36,10 +35,10 @@ jobs:
           cache: maven
 
       - name: Validate checkstyle first
-        run: mvn validate -pl '!trino'
+        run: mvn validate
 
       - name: Build all module with Maven
-        run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp
+        run: mvn clean install -Djacoco.flink.skip=true -B -ntp
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
