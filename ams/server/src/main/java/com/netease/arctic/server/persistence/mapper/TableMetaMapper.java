@@ -222,7 +222,8 @@ public interface TableMetaMapper {
       @Result(property = "id", column = "table_id"),
       @Result(property = "tableName", column = "table_name"),
       @Result(property = "database", column = "db_name"),
-      @Result(property = "catalog", column = "catalog_name")
+      @Result(property = "catalog", column = "catalog_name"),
+      @Result(property = "format", column = "format"),
   })
   ServerTableIdentifier selectTableIdentifier(
       @Param("catalogName") String catalogName,
@@ -235,7 +236,8 @@ public interface TableMetaMapper {
       @Result(property = "id", column = "table_id"),
       @Result(property = "catalog", column = "catalog_name"),
       @Result(property = "database", column = "db_name"),
-      @Result(property = "tableName", column = "table_name")
+      @Result(property = "tableName", column = "table_name"),
+      @Result(property = "format", column = "format")
   })
   List<ServerTableIdentifier> selectTableIdentifiersByDb(
       @Param("catalogName") String catalogName,
@@ -247,7 +249,8 @@ public interface TableMetaMapper {
       @Result(property = "id", column = "table_id"),
       @Result(property = "catalog", column = "catalog_name"),
       @Result(property = "database", column = "db_name"),
-      @Result(property = "tableName", column = "table_name")
+      @Result(property = "tableName", column = "table_name"),
+      @Result(property = "format", column = "format")
   })
   List<ServerTableIdentifier> selectTableIdentifiersByCatalog(@Param("catalogName") String catalogName);
 
@@ -256,7 +259,8 @@ public interface TableMetaMapper {
       @Result(property = "id", column = "table_id"),
       @Result(property = "catalog", column = "catalog_name"),
       @Result(property = "database", column = "db_name"),
-      @Result(property = "tableName", column = "table_name")
+      @Result(property = "tableName", column = "table_name"),
+      @Result(property = "format", column = "format")
   })
   List<ServerTableIdentifier> selectAllTableIdentifiers();
 
