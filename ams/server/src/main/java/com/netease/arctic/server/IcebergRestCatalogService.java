@@ -14,11 +14,11 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
-import com.netease.arctic.server.iceberg.InternalTableOperations;
+import com.netease.arctic.server.iceberg.InternalTableStoreOperations;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
-import com.netease.arctic.server.utils.IcebergTableUtil;
+import com.netease.arctic.server.utils.InternalTableUtil;
 import com.netease.arctic.utils.CatalogUtil;
 import io.javalin.apibuilder.EndpointGroup;
 import io.javalin.http.ContentType;
@@ -64,8 +64,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.server.utils.IcebergTableUtil.loadIcebergTableMetadata;
-import static com.netease.arctic.server.utils.IcebergTableUtil.newIcebergFileIo;
+import static com.netease.arctic.server.utils.InternalTableUtil.loadIcebergTableStoreMetadata;
+import static com.netease.arctic.server.utils.InternalTableUtil.newIcebergFileIo;
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.head;
@@ -249,7 +249,7 @@ public class IcebergRestCatalogService extends PersistentBase {
     handleNamespace(ctx, (catalog, database) -> {
       checkDatabaseExist(catalog.exist(database), database);
       List<TableIdentifier> tableIdentifiers = catalog.listTables(database).stream()
-          .map(i -> TableIdentifier.of(database, i.getTableName()))
+          .map(i -> TableIdentifier.of(database, i.getIdentifier().getTableName()))
           .collect(Collectors.toList());
 
       return ListTablesResponse.builder()
@@ -289,14 +289,14 @@ public class IcebergRestCatalogService extends PersistentBase {
           location, request.properties()
       );
       ServerTableIdentifier identifier = ServerTableIdentifier.of(catalog.name(), database, tableName);
-      String newMetadataFileLocation = IcebergTableUtil.genNewMetadataFileLocation(null, tableMetadata);
+      String newMetadataFileLocation = InternalTableUtil.genNewMetadataFileLocation(null, tableMetadata);
       FileIO io = newIcebergFileIo(catalog.getMetadata());
       try {
-        com.netease.arctic.server.table.TableMetadata amsTableMeta = IcebergTableUtil.createTableInternal(
+        com.netease.arctic.server.table.TableMetadata amsTableMeta = InternalTableUtil.createTableInternal(
             identifier, catalog.getMetadata(), tableMetadata, newMetadataFileLocation, io
         );
         tableService.createTable(catalog.name(), amsTableMeta);
-        TableMetadata current = loadIcebergTableMetadata(io, amsTableMeta);
+        TableMetadata current = loadIcebergTableStoreMetadata(io, amsTableMeta);
         return LoadTableResponse.builder()
             .withTableMetadata(current)
             .build();
@@ -316,7 +316,7 @@ public class IcebergRestCatalogService extends PersistentBase {
     handleTable(ctx, (catalog, tableMeta) -> {
       TableMetadata tableMetadata = null;
       try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
-        tableMetadata = IcebergTableUtil.loadIcebergTableMetadata(io, tableMeta);
+        tableMetadata = InternalTableUtil.loadIcebergTableStoreMetadata(io, tableMeta);
       }
       if (tableMetadata == null) {
         throw new NoSuchTableException("failed to load table from metadata file.");
@@ -334,7 +334,7 @@ public class IcebergRestCatalogService extends PersistentBase {
     handleTable(ctx, (catalog, tableMeta) -> {
       UpdateTableRequest request = bodyAsClass(ctx, UpdateTableRequest.class);
       try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
-        TableOperations ops = InternalTableOperations.buildForLoad(tableMeta, io);
+        TableOperations ops = InternalTableUtil.newTableOperations(tableMeta, io, false);
         TableMetadata base = ops.current();
         if (base == null) {
           throw new CommitFailedException("table metadata lost.");
@@ -364,7 +364,7 @@ public class IcebergRestCatalogService extends PersistentBase {
       TableMetadata current = null;
       try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
         try {
-          current = IcebergTableUtil.loadIcebergTableMetadata(io, tableMetadata);
+          current = InternalTableUtil.loadIcebergTableStoreMetadata(io, tableMetadata);
         } catch (Exception e) {
           LOG.warn("failed to load iceberg table metadata, metadata file maybe lost: " + e.getMessage());
         }

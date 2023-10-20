@@ -60,7 +60,7 @@ public class AmsEnvironment {
   public static final String INTERNAL_ICEBERG_CATALOG_WAREHOUSE = "/internal_iceberg/warehouse";
   public static final String ICEBERG_CATALOG = "iceberg_catalog";
   public static String ICEBERG_CATALOG_DIR = "/iceberg/warehouse";
-  public static final String MIXED_ICEBERG_CATALOG = "mixed_iceberg_catalog";
+  public static final String INTERNAL_MIXED_ICEBERG_CATALOG = "mixed_iceberg_catalog";
   public static String MIXED_ICEBERG_CATALOG_DIR = "/mixed_iceberg/warehouse";
   public static final String MIXED_HIVE_CATALOG = "mixed_hive_catalog";
   private boolean started = false;
@@ -183,7 +183,7 @@ public class AmsEnvironment {
   }
 
   private void initCatalog() {
-    createIcebergCatalog();
+    createExternalIcebergCatalog();
     createInternalIceberg();
     createMixIcebergCatalog();
     createMixHiveCatalog();
@@ -201,7 +201,7 @@ public class AmsEnvironment {
     catalogs.put(INTERNAL_ICEBERG_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" + INTERNAL_ICEBERG_CATALOG));
   }
 
-  private void createIcebergCatalog() {
+  private void createExternalIcebergCatalog() {
     String warehouseDir = rootPath + ICEBERG_CATALOG_DIR;
     Map<String, String> properties = Maps.newHashMap();
     createDirIfNotExist(warehouseDir);
@@ -217,10 +217,12 @@ public class AmsEnvironment {
     Map<String, String> properties = Maps.newHashMap();
     createDirIfNotExist(warehouseDir);
     properties.put(CatalogMetaProperties.KEY_WAREHOUSE, warehouseDir);
-    CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(MIXED_ICEBERG_CATALOG,
+    CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(
+        INTERNAL_MIXED_ICEBERG_CATALOG,
         CatalogMetaProperties.CATALOG_TYPE_AMS, properties, TableFormat.MIXED_ICEBERG);
     tableService.createCatalog(catalogMeta);
-    catalogs.put(MIXED_ICEBERG_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" + MIXED_ICEBERG_CATALOG));
+    catalogs.put(INTERNAL_MIXED_ICEBERG_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" +
+        INTERNAL_MIXED_ICEBERG_CATALOG));
   }
 
   private void createMixHiveCatalog() {

@@ -97,7 +97,8 @@ CREATE TABLE table_identifier
     table_id BIGSERIAL PRIMARY KEY,
     catalog_name VARCHAR(64) NOT NULL,
     db_name VARCHAR(128) NOT NULL,
-    table_name VARCHAR(128) NOT NULL
+    table_name VARCHAR(128) NOT NULL,
+    format     VARCHAR(32)  NOT NULL
 );
 CREATE UNIQUE INDEX table_name_index ON table_identifier (catalog_name, db_name, table_name);
 
@@ -106,6 +107,7 @@ COMMENT ON COLUMN table_identifier.table_id IS 'Auto-increment ID';
 COMMENT ON COLUMN table_identifier.catalog_name IS 'Catalog name';
 COMMENT ON COLUMN table_identifier.db_name IS 'Database name';
 COMMENT ON COLUMN table_identifier.table_name IS 'Table name';
+COMMENT ON COLUMN table_identifier.format IS 'Table format';
 
 CREATE TABLE table_metadata
 (

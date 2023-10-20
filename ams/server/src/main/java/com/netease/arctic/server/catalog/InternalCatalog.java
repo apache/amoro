@@ -1,5 +1,6 @@
 package com.netease.arctic.server.catalog;
 
+import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.exception.AlreadyExistsException;
@@ -60,7 +61,7 @@ public abstract class InternalCatalog extends ServerCatalog {
   }
 
   @Override
-  public List<TableIdentifier> listTables(String database) {
+  public List<TableIDWithFormat> listTables(String database) {
     return getAs(
         TableMetaMapper.class,
         mapper -> mapper.selectTableIdentifiersByDb(getMetadata().getCatalogName(), database))
@@ -70,7 +71,7 @@ public abstract class InternalCatalog extends ServerCatalog {
   }
 
   @Override
-  public List<TableIdentifier> listTables() {
+  public List<TableIDWithFormat> listTables() {
     return getAs(
         TableMetaMapper.class,
         mapper -> mapper.selectTableIdentifiersByCatalog(getMetadata().getCatalogName()))

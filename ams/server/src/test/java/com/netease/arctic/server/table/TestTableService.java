@@ -19,6 +19,7 @@
 package com.netease.arctic.server.table;
 
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.TestedCatalogs;
 import com.netease.arctic.ams.api.BlockableOperation;
@@ -71,11 +72,13 @@ public class TestTableService extends AMSTableTestBase {
         tableMeta().getTableIdentifier()).buildTableMeta());
 
     // test list tables
-    List<TableIdentifier> tableIdentifierList = tableService().listTables(
+    List<TableIDWithFormat> tableIdentifierList = tableService().listTables(
         TEST_CATALOG_NAME,
         TEST_DB_NAME);
     Assert.assertEquals(1, tableIdentifierList.size());
-    Assert.assertEquals(tableMeta().getTableIdentifier(), tableIdentifierList.get(0));
+    Assert.assertEquals(
+        tableMeta().getTableIdentifier(),
+        tableIdentifierList.get(0).getIdentifier().buildTableIdentifier());
 
     // test list table metadata
     List<TableMetadata> tableMetadataList = tableService().listTableMetas();

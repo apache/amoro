@@ -21,15 +21,13 @@ package com.netease.arctic.server.dashboard.controller;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.Constants;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.UpgradeHiveTableUtil;
-import com.netease.arctic.server.catalog.IcebergCatalogImpl;
-import com.netease.arctic.server.catalog.InternalIcebergCatalogImpl;
 import com.netease.arctic.server.catalog.MixedHiveCatalogImpl;
-import com.netease.arctic.server.catalog.PaimonServerCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.ServerTableDescriptor;
 import com.netease.arctic.server.dashboard.ServerTableProperties;
@@ -62,11 +60,11 @@ import io.javalin.http.Context;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.relocated.com.google.common.base.Function;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -394,31 +392,36 @@ public class TableController {
         StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(db),
         "catalog.database can not be empty in any element");
 
-    List<com.netease.arctic.ams.api.TableIdentifier> tableIdentifiers = tableService.listTables(catalog, db);
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
-    List<TableMeta> tables = new ArrayList<>();
+    Function<TableFormat, String> formatToType = format -> {
+      switch (format) {
+        case MIXED_HIVE:
+        case MIXED_ICEBERG:
+          return TableMeta.TableType.ARCTIC.toString();
+        case PAIMON:
+          return TableMeta.TableType.PAIMON.toString();
+        case ICEBERG:
+          return TableMeta.TableType.ICEBERG.toString();
+        default:
+          throw new IllegalStateException("Unknown format");
+      }
+    };
 
-    if (serverCatalog instanceof IcebergCatalogImpl || serverCatalog instanceof InternalIcebergCatalogImpl) {
-      tableIdentifiers.forEach(e -> tables.add(new TableMeta(
-          e.getTableName(),
-          TableMeta.TableType.ICEBERG.toString())));
-    } else if (serverCatalog instanceof MixedHiveCatalogImpl) {
-      tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.ARCTIC.toString())));
+    List<TableMeta> tables = tableService.listTables(catalog, db).stream()
+        .map(idWithFormat -> new TableMeta(
+            idWithFormat.getIdentifier().getTableName(),
+            formatToType.apply(idWithFormat.getTableFormat())))
+        .collect(Collectors.toList());
+
+    if (serverCatalog instanceof MixedHiveCatalogImpl) {
       List<String> hiveTables = HiveTableUtil.getAllHiveTables(
           ((MixedHiveCatalogImpl) serverCatalog).getHiveClient(),
           db);
-      Set<String> arcticTables =
-          tableIdentifiers.stream()
-              .map(com.netease.arctic.ams.api.TableIdentifier::getTableName)
-              .collect(Collectors.toSet());
-      hiveTables.stream().filter(e -> !arcticTables.contains(e)).forEach(e -> tables.add(new TableMeta(
-          e,
-          TableMeta.TableType.HIVE.toString())));
-    } else if (serverCatalog instanceof PaimonServerCatalog) {
-      tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.PAIMON.toString())));
-    } else {
-      tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.ARCTIC.toString())));
+      Set<String> arcticTables = tables.stream().map(TableMeta::getName).collect(Collectors.toSet());
+      hiveTables.stream().filter(e -> !arcticTables.contains(e))
+          .forEach(e -> tables.add(new TableMeta(e, TableMeta.TableType.HIVE.toString())));
     }
+
     ctx.json(OkResponse.of(tables.stream().filter(t -> StringUtils.isBlank(keywords) ||
         t.getName().contains(keywords)).collect(Collectors.toList())));
   }

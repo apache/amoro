@@ -3,6 +3,7 @@ package com.netease.arctic.server.table;
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
@@ -187,7 +188,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public List<TableIdentifier> listTables(String catalogName, String dbName) {
+  public List<TableIDWithFormat> listTables(String catalogName, String dbName) {
     checkStarted();
     return getServerCatalog(catalogName).listTables(dbName);
   }
@@ -318,7 +319,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     initialized.complete(true);
   }
 
-  public TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
+  private TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
     if (tableIdentifier == null) {
       throw new ObjectNotExistsException(tableIdentifier);
     }
@@ -361,6 +362,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     for (ExternalCatalog externalCatalog : externalCatalogMap.values()) {
       try {
         Set<TableIdentity> tableIdentifiers = externalCatalog.listTables().stream()
+            .map(t -> t.getIdentifier().buildTableIdentifier())
             .map(TableIdentity::new)
             .collect(Collectors.toSet());
         Map<TableIdentity, ServerTableIdentifier> serverTableIdentifiers =

@@ -20,6 +20,7 @@ package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.CommonUnifiedCatalog;
+import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
@@ -72,7 +73,7 @@ public class PaimonServerCatalog extends ExternalCatalog {
   }
 
   @Override
-  public List<TableIdentifier> listTables() {
+  public List<TableIDWithFormat> listTables() {
     return doAs(() -> paimonCatalog.listDatabases()
         .stream()
         .map(this::listTables)
@@ -81,11 +82,8 @@ public class PaimonServerCatalog extends ExternalCatalog {
   }
 
   @Override
-  public List<TableIdentifier> listTables(String database) {
-    return doAs(() -> paimonCatalog.listTableMetas(database)
-        .stream()
-        .map(t -> t.getIdentifier().buildTableIdentifier())
-        .collect(Collectors.toList()));
+  public List<TableIDWithFormat> listTables(String database) {
+    return doAs(() -> paimonCatalog.listTableMetas(database));
   }
 
   @Override

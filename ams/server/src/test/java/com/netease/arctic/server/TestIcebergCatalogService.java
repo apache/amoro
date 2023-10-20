@@ -1,6 +1,5 @@
 package com.netease.arctic.server;
 
-import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
@@ -8,16 +7,12 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.io.IcebergDataTestHelpers;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.io.reader.GenericUnkeyedDataReader;
-import com.netease.arctic.server.catalog.InternalCatalog;
-import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateProperties;
@@ -31,10 +26,8 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.rest.RESTCatalog;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -47,43 +40,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class TestIcebergRestCatalogService {
-  private static final Logger LOG = LoggerFactory.getLogger(TestIcebergRestCatalogService.class);
-
-  static AmsEnvironment ams = AmsEnvironment.getIntegrationInstances();
-  static String restCatalogUri = IcebergRestCatalogService.ICEBERG_REST_API_PREFIX;
-
-  private final String database = "test_ns";
-  private final String table = "test_iceberg_tbl";
+public class TestIcebergCatalogService extends InternalCatalogServiceTestBase {
+  private static final Logger LOG = LoggerFactory.getLogger(TestIcebergCatalogService.class);
 
   private final Namespace ns = Namespace.of(database);
   private final TableIdentifier identifier = TableIdentifier.of(ns, table);
 
-  private final Schema schema = BasicTableTestHelper.TABLE_SCHEMA;
-  private final PartitionSpec spec = BasicTableTestHelper.SPEC;
-
-  private String location;
-
-  @BeforeAll
-  public static void beforeAll() throws Exception {
-    ams.start();
-  }
-
-  @AfterAll
-  public static void afterAll() throws IOException {
-    ams.stop();
-  }
-
-  TableService service;
-  InternalCatalog serverCatalog;
-
-  @BeforeEach
-  public void before() {
-    service = ams.serviceContainer().getTableService();
-    serverCatalog = (InternalCatalog) service.getServerCatalog(AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
-    location = serverCatalog.getMetadata().getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE) +
-        "/" + database + "/" + table;
-  }
 
   @Nested
   public class CatalogPropertiesTest {

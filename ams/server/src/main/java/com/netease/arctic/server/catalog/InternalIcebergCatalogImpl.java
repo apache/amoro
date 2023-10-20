@@ -5,19 +5,17 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.catalog.IcebergCatalogWrapper;
 import com.netease.arctic.formats.iceberg.IcebergTable;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.ArcticFileIOAdapter;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.IcebergRestCatalogService;
-import com.netease.arctic.server.iceberg.InternalTableOperations;
+import com.netease.arctic.server.iceberg.InternalTableStoreOperations;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.utils.Configurations;
-import com.netease.arctic.server.utils.IcebergTableUtil;
+import com.netease.arctic.server.utils.InternalTableUtil;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.rest.RESTCatalog;
 
 public class InternalIcebergCatalogImpl extends InternalCatalog {
@@ -61,16 +59,25 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
     if (tableMetadata == null) {
       return null;
     }
-    FileIO io = IcebergTableUtil.newIcebergFileIo(getMetadata());
-    ArcticFileIO fileIO = new ArcticFileIOAdapter(io);
-    TableOperations ops = InternalTableOperations.buildForLoad(tableMetadata, io);
-    BaseTable table = new BaseTable(ops, TableIdentifier.of(database, tableName).toString());
+    ArcticFileIO fileIO = fileIO(getMetadata());
+    BaseTable table = loadIcebergTable(fileIO, tableMetadata);
     com.netease.arctic.table.TableIdentifier tableIdentifier =
         com.netease.arctic.table.TableIdentifier.of(name(), database, tableName);
     return new IcebergTable(tableIdentifier,
         new IcebergCatalogWrapper.BasicIcebergTable(
             tableIdentifier, table, fileIO, getMetadata().getCatalogProperties())
     );
+  }
+
+  protected BaseTable loadIcebergTable(ArcticFileIO fileIO, TableMetadata tableMetadata) {
+    TableOperations ops = InternalTableUtil.newTableOperations(tableMetadata, fileIO, false);
+    return new BaseTable(ops, TableIdentifier.of(
+        tableMetadata.getTableIdentifier().getDatabase(),
+        tableMetadata.getTableIdentifier().getTableName()).toString());
+  }
+
+  protected ArcticFileIO fileIO(CatalogMeta catalogMeta) {
+    return InternalTableUtil.newIcebergFileIo(catalogMeta);
   }
 
 

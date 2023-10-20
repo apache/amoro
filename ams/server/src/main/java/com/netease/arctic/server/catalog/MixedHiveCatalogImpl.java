@@ -20,6 +20,7 @@ package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.formats.mixed.MixedHiveTable;
 import com.netease.arctic.hive.CachedHiveClientPool;
 import com.netease.arctic.hive.HMSClient;
@@ -31,13 +32,15 @@ import org.apache.thrift.TException;
 
 import java.util.List;
 
-public class MixedHiveCatalogImpl extends InternalMixedCatalogImpl {
-
+public class MixedHiveCatalogImpl extends InternalCatalog {
+  protected final MixedTables tables;
   private volatile CachedHiveClientPool hiveClientPool;
 
   protected MixedHiveCatalogImpl(CatalogMeta catalogMeta) {
-    super(catalogMeta, new MixedHiveTables(catalogMeta));
+    super(catalogMeta);
+    this.tables = new MixedHiveTables(catalogMeta);
     hiveClientPool = ((MixedHiveTables) tables()).getHiveClientPool();
+
   }
 
   @Override
@@ -103,5 +106,9 @@ public class MixedHiveCatalogImpl extends InternalMixedCatalogImpl {
 
   public CachedHiveClientPool getHiveClient() {
     return hiveClientPool;
+  }
+
+  private MixedTables tables() {
+    return tables;
   }
 }

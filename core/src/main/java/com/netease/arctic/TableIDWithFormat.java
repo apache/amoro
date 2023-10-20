@@ -21,16 +21,16 @@ package com.netease.arctic;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.TableIdentifier;
 
-public class TableMeta {
+public class TableIDWithFormat {
 
-  public static TableMeta of(TableIdentifier identifier, TableFormat tableFormat) {
-    return new TableMeta(identifier, tableFormat);
+  public static TableIDWithFormat of(TableIdentifier identifier, TableFormat tableFormat) {
+    return new TableIDWithFormat(identifier, tableFormat);
   }
 
   private final TableIdentifier identifier;
   private final TableFormat tableFormat;
 
-  public TableMeta(TableIdentifier identifier, TableFormat tableFormat) {
+  public TableIDWithFormat(TableIdentifier identifier, TableFormat tableFormat) {
     this.identifier = identifier;
     this.tableFormat = tableFormat;
   }

@@ -3,7 +3,7 @@ package com.netease.arctic.server.iceberg;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
-import com.netease.arctic.server.utils.IcebergTableUtil;
+import com.netease.arctic.server.utils.InternalTableUtil;
 import org.apache.iceberg.LocationProviders;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableOperations;
@@ -15,33 +15,25 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class InternalTableOperations extends PersistentBase implements TableOperations {
+public class InternalTableStoreOperations extends PersistentBase implements TableOperations {
 
   private final ServerTableIdentifier identifier;
 
   private TableMetadata current;
   private final FileIO io;
   private com.netease.arctic.server.table.TableMetadata tableMetadata;
+  private final boolean changeStore;
 
-
-  public static InternalTableOperations buildForLoad(
-      com.netease.arctic.server.table.TableMetadata tableMetadata,
-      FileIO io
-  ) {
-    return new InternalTableOperations(
-        tableMetadata.getTableIdentifier(),
-        tableMetadata,
-        io);
-  }
-
-  public InternalTableOperations(
+  public InternalTableStoreOperations(
       ServerTableIdentifier identifier,
       com.netease.arctic.server.table.TableMetadata tableMetadata,
-      FileIO io
+      FileIO io,
+      boolean changeStore
   ) {
     this.io = io;
     this.tableMetadata = tableMetadata;
     this.identifier = identifier;
+    this.changeStore = changeStore;
   }
 
 
@@ -61,7 +53,7 @@ public class InternalTableOperations extends PersistentBase implements TableOper
     if (this.tableMetadata == null) {
       return null;
     }
-    this.current = IcebergTableUtil.loadIcebergTableMetadata(io, this.tableMetadata);
+    this.current = InternalTableUtil.loadIcebergTableStoreMetadata(io, this.tableMetadata, this.changeStore);
     return this.current;
   }
 
@@ -76,13 +68,13 @@ public class InternalTableOperations extends PersistentBase implements TableOper
       throw new CommitFailedException("Cannot commit: stale table metadata");
     }
 
-    String newMetadataFileLocation = IcebergTableUtil.genNewMetadataFileLocation(base, metadata);
+    String newMetadataFileLocation = InternalTableUtil.genNewMetadataFileLocation(base, metadata);
 
     try {
-      IcebergTableUtil.commitTableInternal(
-          tableMetadata, base, metadata, newMetadataFileLocation, io);
+      InternalTableUtil.commitTableInternal(
+          tableMetadata, base, metadata, newMetadataFileLocation, io, changeStore);
       com.netease.arctic.server.table.TableMetadata updatedMetadata = doCommit();
-      IcebergTableUtil.checkCommitSuccess(updatedMetadata, newMetadataFileLocation);
+      InternalTableUtil.checkCommitSuccess(updatedMetadata, newMetadataFileLocation, changeStore);
     } catch (Exception e) {
       io.deleteFile(newMetadataFileLocation);
     } finally {
@@ -98,7 +90,7 @@ public class InternalTableOperations extends PersistentBase implements TableOper
 
   @Override
   public String metadataFileLocation(String fileName) {
-    return IcebergTableUtil.genMetadataFileLocation(current(), fileName);
+    return InternalTableUtil.genMetadataFileLocation(current(), fileName);
   }
 
 
