@@ -22,6 +22,7 @@ import com.netease.arctic.formats.AmoroCatalogTestHelper;
 import com.netease.arctic.server.catalog.TableCatalogTestBase;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.server.utils.Configurations;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,7 +51,7 @@ public abstract class TestServerTableDescriptor extends TableCatalogTestBase {
 
   @Test
   public void tableOperations() throws Exception {
-    ServerTableDescriptor serverTableDescriptor = new ServerTableDescriptor(tableService());
+    ServerTableDescriptor serverTableDescriptor = new ServerTableDescriptor(tableService(), new Configurations());
 
     //add properties
     getAmoroCatalogTestHelper().setTableProperties(TEST_DB, TEST_TABLE, "k1", "v1");
