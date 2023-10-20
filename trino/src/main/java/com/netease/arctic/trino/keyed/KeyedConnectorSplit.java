@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -30,9 +29,7 @@ import io.trino.spi.connector.ConnectorSplit;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * ConnectorSplit for Keyed Table
- */
+/** ConnectorSplit for Keyed Table */
 public class KeyedConnectorSplit implements ConnectorSplit {
 
   private final byte[] keyedTableScanTaskBytes;

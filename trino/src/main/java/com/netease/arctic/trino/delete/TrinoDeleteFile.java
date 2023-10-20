@@ -18,6 +18,12 @@
 
 package com.netease.arctic.trino.delete;
 
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static io.airlift.slice.SizeOf.SIZE_OF_INT;
+import static io.airlift.slice.SizeOf.SIZE_OF_LONG;
+import static io.airlift.slice.SizeOf.estimatedSizeOf;
+import static java.util.Objects.requireNonNull;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -30,52 +36,34 @@ import org.apache.iceberg.StructLike;
 import org.openjdk.jol.info.ClassLayout;
 
 import javax.annotation.Nullable;
+
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.function.ToLongFunction;
 
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static io.airlift.slice.SizeOf.SIZE_OF_INT;
-import static io.airlift.slice.SizeOf.SIZE_OF_LONG;
-import static io.airlift.slice.SizeOf.estimatedSizeOf;
-import static java.util.Objects.requireNonNull;
+/** Copy from trino-iceberg TrinoDeleteFile and do some change to adapt Arctic */
+public class TrinoDeleteFile implements DeleteFile {
+  private static final long INSTANCE_SIZE =
+      ClassLayout.parseClass(TrinoDeleteFile.class).instanceSize();
 
-/**
- * Copy from trino-iceberg TrinoDeleteFile and do some change to adapt Arctic
- */
-public class TrinoDeleteFile
-    implements DeleteFile {
-  private static final long INSTANCE_SIZE = ClassLayout.parseClass(TrinoDeleteFile.class).instanceSize();
-
-  @Nullable
-  private final Long pos;
+  @Nullable private final Long pos;
   private final int specId;
   private final FileContent fileContent;
   private final String path;
   private final FileFormat format;
   private final long recordCount;
   private final long fileSizeInBytes;
-  @Nullable
-  private final Map<Integer, Long> columnSizes;
-  @Nullable
-  private final Map<Integer, Long> valueCounts;
-  @Nullable
-  private final Map<Integer, Long> nullValueCounts;
-  @Nullable
-  private final Map<Integer, Long> nanValueCounts;
-  @Nullable
-  private final Map<Integer, byte[]> lowerBounds;
-  @Nullable
-  private final Map<Integer, byte[]> upperBounds;
-  @Nullable
-  private final byte[] keyMetadata;
-  @Nullable
-  private final List<Integer> equalityFieldIds;
-  @Nullable
-  private final Integer sortOrderId;
-  @Nullable
-  private final List<Long> splitOffsets;
+  @Nullable private final Map<Integer, Long> columnSizes;
+  @Nullable private final Map<Integer, Long> valueCounts;
+  @Nullable private final Map<Integer, Long> nullValueCounts;
+  @Nullable private final Map<Integer, Long> nanValueCounts;
+  @Nullable private final Map<Integer, byte[]> lowerBounds;
+  @Nullable private final Map<Integer, byte[]> upperBounds;
+  @Nullable private final byte[] keyMetadata;
+  @Nullable private final List<Integer> equalityFieldIds;
+  @Nullable private final Integer sortOrderId;
+  @Nullable private final List<Long> splitOffsets;
 
   public static TrinoDeleteFile copyOf(DeleteFile deleteFile) {
     return new TrinoDeleteFile(
@@ -90,10 +78,18 @@ public class TrinoDeleteFile
         deleteFile.valueCounts(),
         deleteFile.nullValueCounts(),
         deleteFile.nanValueCounts(),
-        deleteFile.lowerBounds() == null ? null : deleteFile.lowerBounds().entrySet().stream()
-            .collect(toImmutableMap(Map.Entry<Integer, ByteBuffer>::getKey, entry -> entry.getValue().array())),
-        deleteFile.upperBounds() == null ? null : deleteFile.upperBounds().entrySet().stream()
-            .collect(toImmutableMap(Map.Entry<Integer, ByteBuffer>::getKey, entry -> entry.getValue().array())),
+        deleteFile.lowerBounds() == null
+            ? null
+            : deleteFile.lowerBounds().entrySet().stream()
+                .collect(
+                    toImmutableMap(
+                        Map.Entry<Integer, ByteBuffer>::getKey, entry -> entry.getValue().array())),
+        deleteFile.upperBounds() == null
+            ? null
+            : deleteFile.upperBounds().entrySet().stream()
+                .collect(
+                    toImmutableMap(
+                        Map.Entry<Integer, ByteBuffer>::getKey, entry -> entry.getValue().array())),
         deleteFile.keyMetadata() == null ? null : deleteFile.keyMetadata().array(),
         deleteFile.equalityFieldIds(),
         deleteFile.sortOrderId(),
@@ -133,7 +129,8 @@ public class TrinoDeleteFile
     this.lowerBounds = lowerBounds == null ? null : ImmutableMap.copyOf(lowerBounds);
     this.upperBounds = upperBounds == null ? null : ImmutableMap.copyOf(upperBounds);
     this.keyMetadata = keyMetadata == null ? null : keyMetadata.clone();
-    this.equalityFieldIds = equalityFieldIds == null ? null : ImmutableList.copyOf(equalityFieldIds);
+    this.equalityFieldIds =
+        equalityFieldIds == null ? null : ImmutableList.copyOf(equalityFieldIds);
     this.sortOrderId = sortOrderId;
     this.splitOffsets = splitOffsets == null ? null : ImmutableList.copyOf(splitOffsets);
   }
@@ -314,15 +311,15 @@ public class TrinoDeleteFile
   public long getRetainedSizeInBytes() {
     ToLongFunction<Integer> intSizeOf = ignored -> SIZE_OF_INT;
     ToLongFunction<Long> longSizeOf = ignored -> SIZE_OF_LONG;
-    return INSTANCE_SIZE +
-        estimatedSizeOf(path) +
-        estimatedSizeOf(columnSizes, intSizeOf, longSizeOf) +
-        estimatedSizeOf(nullValueCounts, intSizeOf, longSizeOf) +
-        estimatedSizeOf(nanValueCounts, intSizeOf, longSizeOf) +
-        estimatedSizeOf(lowerBounds, intSizeOf, value -> value.length) +
-        estimatedSizeOf(upperBounds, intSizeOf, value -> value.length) +
-        (keyMetadata == null ? 0 : keyMetadata.length) +
-        estimatedSizeOf(equalityFieldIds, intSizeOf) +
-        estimatedSizeOf(splitOffsets, longSizeOf);
+    return INSTANCE_SIZE
+        + estimatedSizeOf(path)
+        + estimatedSizeOf(columnSizes, intSizeOf, longSizeOf)
+        + estimatedSizeOf(nullValueCounts, intSizeOf, longSizeOf)
+        + estimatedSizeOf(nanValueCounts, intSizeOf, longSizeOf)
+        + estimatedSizeOf(lowerBounds, intSizeOf, value -> value.length)
+        + estimatedSizeOf(upperBounds, intSizeOf, value -> value.length)
+        + (keyMetadata == null ? 0 : keyMetadata.length)
+        + estimatedSizeOf(equalityFieldIds, intSizeOf)
+        + estimatedSizeOf(splitOffsets, longSizeOf);
   }
 }

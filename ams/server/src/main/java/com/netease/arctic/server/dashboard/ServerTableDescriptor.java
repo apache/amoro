@@ -23,17 +23,33 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
+import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
+import com.netease.arctic.server.dashboard.utils.FilesStatisticsBuilder;
+import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
 import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
+import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
+import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.iceberg.relocated.com.google.common.collect.Streams;
+import org.apache.paimon.AbstractFileStore;
+import org.apache.paimon.Snapshot;
+import org.apache.paimon.manifest.FileKind;
+import org.apache.paimon.manifest.ManifestEntry;
+import org.apache.paimon.manifest.ManifestFile;
+import org.apache.paimon.manifest.ManifestFileMeta;
+import org.apache.paimon.manifest.ManifestList;
+import org.apache.paimon.table.FileStoreTable;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -48,7 +64,7 @@ public class ServerTableDescriptor extends PersistentBase {
 
   public ServerTableDescriptor(TableService tableService) {
     this.tableService = tableService;
-    FormatTableDescriptor[] formatTableDescriptors = new FormatTableDescriptor[] {
+    FormatTableDescriptor[] formatTableDescriptors = new FormatTableDescriptor[]{
         new MixedAndIcebergTableDescriptor(),
         new PaimonTableDescriptor()
     };
@@ -115,5 +131,52 @@ public class ServerTableDescriptor extends PersistentBase {
   private AmoroTable<?> loadTable(TableIdentifier identifier) {
     ServerCatalog catalog = tableService.getServerCatalog(identifier.getCatalog());
     return catalog.loadTable(identifier.getDatabase(), identifier.getTableName());
+  }
+
+  public List<OptimizingProcessInfo> getPaimonOptimizingProcesses(
+      AmoroTable<?> amoroTable, ServerTableIdentifier tableIdentifier) {
+    // Temporary solution for Paimon. TODO: Get compaction info from Paimon compaction task
+    List<OptimizingProcessInfo> processInfoList = new ArrayList<>();
+    FileStoreTable fileStoreTable = (FileStoreTable) amoroTable.originalTable();
+    AbstractFileStore<?> store = (AbstractFileStore<?>) fileStoreTable.store();
+    ServerTableIdentifier tableIdentifierWithTableId = getAs(TableMetaMapper.class,
+        mapper -> mapper.selectTableIdentifier(tableIdentifier.getCatalog(),
+            tableIdentifier.getDatabase(),
+            tableIdentifier.getTableName()));
+    try {
+      Streams.stream(store.snapshotManager().snapshots())
+          .filter(s -> s.commitKind() == Snapshot.CommitKind.COMPACT)
+          .forEach(s -> {
+            OptimizingProcessInfo optimizingProcessInfo = new OptimizingProcessInfo();
+            optimizingProcessInfo.setProcessId(s.id());
+            optimizingProcessInfo.setTableId(tableIdentifierWithTableId.getId());
+            optimizingProcessInfo.setCatalogName(tableIdentifierWithTableId.getCatalog());
+            optimizingProcessInfo.setDbName(tableIdentifierWithTableId.getDatabase());
+            optimizingProcessInfo.setTableName(tableIdentifierWithTableId.getTableName());
+            optimizingProcessInfo.setStatus(OptimizingProcess.Status.SUCCESS);
+            optimizingProcessInfo.setFinishTime(s.timeMillis());
+            FilesStatisticsBuilder inputBuilder = new FilesStatisticsBuilder();
+            FilesStatisticsBuilder outputBuilder = new FilesStatisticsBuilder();
+            ManifestFile manifestFile = store.manifestFileFactory().create();
+            ManifestList manifestList = store.manifestListFactory().create();
+            List<ManifestFileMeta> manifestFileMetas = s.deltaManifests(manifestList);
+            for (ManifestFileMeta manifestFileMeta : manifestFileMetas) {
+              List<ManifestEntry> compactManifestEntries = manifestFile.read(manifestFileMeta.fileName());
+              for (ManifestEntry compactManifestEntry : compactManifestEntries) {
+                if (compactManifestEntry.kind() == FileKind.DELETE) {
+                  inputBuilder.addFile(compactManifestEntry.file().fileSize());
+                } else {
+                  outputBuilder.addFile(compactManifestEntry.file().fileSize());
+                }
+              }
+            }
+            optimizingProcessInfo.setInputFiles(inputBuilder.build());
+            optimizingProcessInfo.setOutputFiles(outputBuilder.build());
+            processInfoList.add(optimizingProcessInfo);
+          });
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return processInfoList;
   }
 }

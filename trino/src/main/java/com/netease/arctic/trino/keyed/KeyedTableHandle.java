@@ -28,9 +28,7 @@ import io.trino.spi.connector.ConnectorTableHandle;
 
 import java.util.Set;
 
-/**
- * ConnectorTableHandle for Keyed Table, beside contain primary beside IcebergTableHandle
- */
+/** ConnectorTableHandle for Keyed Table, beside contain primary beside IcebergTableHandle */
 public class KeyedTableHandle implements ConnectorTableHandle {
 
   private final IcebergTableHandle icebergTableHandle;
@@ -65,7 +63,8 @@ public class KeyedTableHandle implements ConnectorTableHandle {
   }
 
   public KeyedTableHandle withProjectedColumns(Set<IcebergColumnHandle> projectedColumns) {
-    IcebergTableHandle newIcebergTableHandle = icebergTableHandle.withProjectedColumns(projectedColumns);
+    IcebergTableHandle newIcebergTableHandle =
+        icebergTableHandle.withProjectedColumns(projectedColumns);
     return new KeyedTableHandle(newIcebergTableHandle, primaryKeySpecBytes);
   }
 }

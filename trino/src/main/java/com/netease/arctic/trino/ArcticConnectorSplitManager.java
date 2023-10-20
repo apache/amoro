@@ -32,10 +32,9 @@ import io.trino.spi.connector.DynamicFilter;
 import javax.inject.Inject;
 
 /**
- * {@link ArcticConnectorSplitManager} is a Union {@link ConnectorSplitManager} contain
- * {@link KeyedConnectorSplitManager}  and
- * {@link IcebergSplitManager}.
- * This is final {@link ConnectorSplitManager} provided to Trino
+ * {@link ArcticConnectorSplitManager} is a Union {@link ConnectorSplitManager} contain {@link
+ * KeyedConnectorSplitManager} and {@link IcebergSplitManager}. This is final {@link
+ * ConnectorSplitManager} provided to Trino
  */
 public class ArcticConnectorSplitManager implements ConnectorSplitManager {
 
@@ -53,14 +52,16 @@ public class ArcticConnectorSplitManager implements ConnectorSplitManager {
 
   @Override
   public ConnectorSplitSource getSplits(
-      ConnectorTransactionHandle transaction, ConnectorSession session,
-      ConnectorTableHandle table, DynamicFilter dynamicFilter, Constraint constraint) {
+      ConnectorTransactionHandle transaction,
+      ConnectorSession session,
+      ConnectorTableHandle table,
+      DynamicFilter dynamicFilter,
+      Constraint constraint) {
     if (table instanceof KeyedTableHandle) {
-      return keyedConnectorSplitManager.getSplits(transaction, session,
-          table, dynamicFilter, constraint);
+      return keyedConnectorSplitManager.getSplits(
+          transaction, session, table, dynamicFilter, constraint);
     } else {
-      return icebergSplitManager.getSplits(transaction, session,
-          table, dynamicFilter, constraint);
+      return icebergSplitManager.getSplits(transaction, session, table, dynamicFilter, constraint);
     }
   }
 }
