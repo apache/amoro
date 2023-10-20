@@ -30,7 +30,7 @@ tblproperties(
   'log-store.type' = 'kafka',
   'log-store.address' = '127.0.0.1:9092',
   'log-store.topic' = 'local_catalog.test_db.test_log_store.log_store',
-  'table.event-time-field ' = 'op_time',
+  'table.event-time-field' = 'op_time',
   'table.watermark-allowed-lateness-second' = '60');
 ```
 

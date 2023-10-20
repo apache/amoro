@@ -36,7 +36,7 @@ writes and can also serve as a trigger indicator for downstream batch computing 
 Mixed Format uses the following configurations to configure watermark:
 
 ```sql
-  'table.event-time-field ' = 'op_time',
+  'table.event-time-field' = 'op_time',
   'table.watermark-allowed-lateness-second' = '60'
 ```
 
