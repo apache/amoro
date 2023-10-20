@@ -31,6 +31,7 @@ import com.netease.arctic.server.dashboard.model.CatalogRegisterInfo;
 import com.netease.arctic.server.dashboard.model.CatalogSettingInfo;
 import com.netease.arctic.server.dashboard.model.CatalogSettingInfo.ConfigFileItem;
 import com.netease.arctic.server.dashboard.response.OkResponse;
+import com.netease.arctic.server.dashboard.utils.DesensitizationUtil;
 import com.netease.arctic.server.dashboard.utils.PropertiesUtil;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.table.TableProperties;
@@ -117,6 +118,18 @@ public class CatalogController {
     VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_CUSTOM, STORAGE_CONFIGS_VALUE_TYPE_S3, ICEBERG));
     VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_CUSTOM, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, ICEBERG));
     VALIDATE_CATALOGS.add(CatalogDescriptor.of(CATALOG_TYPE_CUSTOM, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_ICEBERG));
+  }
+
+  private static Set<String> getHiddenCatalogTableProperties() {
+    return Sets.newHashSet(TableProperties.SELF_OPTIMIZING_GROUP);
+  }
+
+  private static Set<String> getHiddenCatalogProperties(String type) {
+    Set<String> hiddenProperties = Sets.newHashSet(TABLE_FORMATS);
+    if (!CATALOG_TYPE_CUSTOM.equals(type)) {
+      hiddenProperties.add(CatalogProperties.CATALOG_IMPL);
+    }
+    return hiddenProperties;
   }
 
   public CatalogController(TableService tableService, PlatformFileManager platformFileInfoService) {
@@ -265,8 +278,6 @@ public class CatalogController {
    * Construct catalog meta through catalog register info.
    */
   private CatalogMeta constructCatalogMeta(CatalogRegisterInfo info, CatalogMeta oldCatalogMeta) {
-    checkPaimonCatalog(info);
-
     CatalogMeta catalogMeta = new CatalogMeta();
     catalogMeta.setCatalogName(info.getName());
     catalogMeta.setCatalogType(info.getType());
@@ -341,6 +352,47 @@ public class CatalogController {
     }
   }
 
+  private void checkHiddenProperties(CatalogRegisterInfo info) {
+    getHiddenCatalogTableProperties().stream()
+        .filter(info.getTableProperties()::containsKey)
+        .findAny()
+        .ifPresent(hiddenCatalogTableProperty -> {
+          throw new IllegalArgumentException(
+              String.format("Table property %s is not allowed to set", hiddenCatalogTableProperty));
+        });
+    getHiddenCatalogProperties(info.getType()).stream()
+        .filter(info.getProperties()::containsKey)
+        .findAny()
+        .ifPresent(hiddenCatalogProperty -> {
+          throw new IllegalArgumentException(
+              String.format("Catalog property %s is not allowed to set", hiddenCatalogProperty));
+        });
+  }
+
+  private void removeHiddenProperties(CatalogSettingInfo info) {
+    getHiddenCatalogTableProperties().forEach(info.getTableProperties()::remove);
+    getHiddenCatalogProperties(info.getType()).forEach(info.getProperties()::remove);
+  }
+
+  private void maskSensitiveData(CatalogSettingInfo info) {
+    if (info.getAuthConfig().containsKey(AUTH_CONFIGS_KEY_SECRET_KEY)) {
+      info.getAuthConfig().put(AUTH_CONFIGS_KEY_SECRET_KEY,
+          DesensitizationUtil.desensitize(info.getAuthConfig().get(AUTH_CONFIGS_KEY_SECRET_KEY)));
+    }
+  }
+
+  private void unMaskSensitiveData(CatalogRegisterInfo newInfo, CatalogMeta oldCatalogMeta) {
+    if (newInfo.getAuthConfig().containsKey(AUTH_CONFIGS_KEY_SECRET_KEY)) {
+      Object secretKey = newInfo.getAuthConfig().get(AUTH_CONFIGS_KEY_SECRET_KEY);
+      if (DesensitizationUtil.isDesensitized(secretKey)) {
+        Preconditions.checkArgument(oldCatalogMeta.getAuthConfigs().containsKey(AUTH_CONFIGS_KEY_SECRET_KEY),
+            "Secret key is not set before，must provide a valid secret key");
+        newInfo.getAuthConfig()
+            .put(AUTH_CONFIGS_KEY_SECRET_KEY, oldCatalogMeta.getAuthConfigs().get(AUTH_CONFIGS_KEY_SECRET_KEY));
+      }
+    }
+  }
+
   /**
    * Register catalog to ams.
    */
@@ -364,6 +416,7 @@ public class CatalogController {
         "Catalog table format list must not be empty");
 
     CatalogDescriptor.of(info).validate();
+    checkHiddenProperties(info);
 
     List<String> requiredProperties = CATALOG_REQUIRED_PROPERTIES.get(info.getType());
     if (requiredProperties != null && !requiredProperties.isEmpty()) {
@@ -372,6 +425,8 @@ public class CatalogController {
             String.format("Catalog type:%s require property:%s.", info.getType(), propertyName));
       }
     }
+
+    checkPaimonCatalog(info);
   }
 
   /**
@@ -407,7 +462,8 @@ public class CatalogController {
       info.setTableProperties(PropertiesUtil.extractTableProperties(catalogMeta.getCatalogProperties()));
       info.setOptimizerGroup(info.getTableProperties().getOrDefault(TableProperties.SELF_OPTIMIZING_GROUP,
           TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT));
-      info.getProperties().remove(CatalogMetaProperties.TABLE_FORMATS);
+      removeHiddenProperties(info);
+      maskSensitiveData(info);
       ctx.json(OkResponse.of(info));
       return;
     }
@@ -422,7 +478,9 @@ public class CatalogController {
     CatalogRegisterInfo info = ctx.bodyAsClass(CatalogRegisterInfo.class);
     validateCatalogRegisterInfo(info);
     CatalogMeta optCatalog = tableService.getCatalogMeta(info.getName());
+    Preconditions.checkNotNull(optCatalog, "Catalog not exist!");
 
+    unMaskSensitiveData(info, optCatalog);
     // check only some item can be modified!
     CatalogMeta catalogMeta = constructCatalogMeta(info, optCatalog);
     tableService.updateCatalog(catalogMeta);

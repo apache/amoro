@@ -260,7 +260,7 @@ public abstract class ArcticDeleteFilter<T> {
         }
       }
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
 
     Predicate<T> isInDeleteSet = record -> {
