@@ -317,6 +317,7 @@ const defaultPropertiesMap = {
   ams: ['warehouse'],
   hadoop: ['warehouse'],
   custom: ['catalog-impl'],
+  glue: ['warehouse', 'lock-impl', 'lock-table'],
   PAIMON: ['warehouse']
 }
 
@@ -448,14 +449,25 @@ const formatOptions = computed(() => {
   return storeSupportFormat[type] || []
 })
 
-async function changeProperties(type) {
+async function changeProperties() {
   const properties = await propertiesRef.value.getPropertiesWithoputValidation()
-  const keys = defaultPropertiesMap[type] || []
-  keys.forEach(key => {
+  const catalogKeys = defaultPropertiesMap[formState.catalog.type] || []
+  catalogKeys.forEach(key => {
     if (key && !properties[key]) {
       properties[key] = ''
     }
   })
+  const formatKeys = defaultPropertiesMap[formState.tableFormat] || []
+  formatKeys.forEach(key => {
+    if (key && !properties[key]) {
+      properties[key] = ''
+    }
+  })
+  for (const key in properties) {
+    if (!properties[key] && !catalogKeys.includes(key) && !formatKeys.includes(key)) {
+      delete properties[key]
+    }
+  }
   formState.properties = properties
 }
 
@@ -501,7 +513,7 @@ const authTypeOptions = computed(() => {
   }
 })
 
-async function changeMetastore(val) {
+async function changeMetastore() {
   formState.tableFormat = formatOptions.value[0]
   if (!isNewCatalog.value) { return }
   const index = formState.storageConfigArray.findIndex(item => item.key === 'hive.site')
@@ -527,11 +539,11 @@ async function changeMetastore(val) {
       delete formState.storageConfig['hive.site']
     }
   }
-  await changeProperties(val)
+  await changeProperties()
 }
 
-async function changeTableFormat(e) {
-  await changeProperties(e.target.value)
+async function changeTableFormat() {
+  await changeProperties()
 }
 
 function handleEdit() {
