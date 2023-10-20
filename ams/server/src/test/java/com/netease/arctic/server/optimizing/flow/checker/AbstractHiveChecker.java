@@ -51,7 +51,7 @@ public abstract class AbstractHiveChecker extends OptimizingCountChecker {
 
   private int count;
 
-  private TableDataView view;
+  private final TableDataView view;
 
   public AbstractHiveChecker(TableDataView view) {
     super(1);

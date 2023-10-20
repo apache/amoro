@@ -530,8 +530,7 @@ public class TestBaseArcticConnectorTest
 
   @Test
   public void testCreatePartitionedTable() {
-    assertUpdate("" +
-        "CREATE TABLE test_partitioned_table (" +
+    assertUpdate("CREATE TABLE test_partitioned_table (" +
         "  a_boolean boolean, " +
         "  an_integer integer, " +
         "  a_bigint bigint, " +
@@ -623,8 +622,7 @@ public class TestBaseArcticConnectorTest
         "AND a_row = CAST(ROW(42, 'this is a random value') AS ROW(id int, vc varchar)) " +
         "AND an_array = ARRAY[VARCHAR 'uno', 'dos', 'tres'] " +
         "AND a_map = map(ARRAY[1,2], ARRAY['ek', VARCHAR 'one']) " +
-        "AND \"a quoted, field\" = VARCHAR 'tralala' " +
-        ""))
+        "AND \"a quoted, field\" = VARCHAR 'tralala' "))
         .matches(values);
 
     assertThat(query("SELECT * FROM test_partitioned_table WHERE " +
@@ -645,8 +643,7 @@ public class TestBaseArcticConnectorTest
         "AND a_row IS NULL " +
         "AND an_array IS NULL " +
         "AND a_map IS NULL " +
-        "AND \"a quoted, field\" IS NULL " +
-        ""))
+        "AND \"a quoted, field\" IS NULL "))
         .skippingTypesCheck()
         .matches(nullValues);
 
@@ -750,8 +747,7 @@ public class TestBaseArcticConnectorTest
         "  partition.\"a quoted, field\" " +
         // Note: partitioning on non-primitive columns is not allowed in Iceberg
         " FROM \"test_partitioned_table$partitions\" "))
-        .matches("" +
-            "VALUES (" +
+        .matches("VALUES (" +
             "  BIGINT '1', " +
             "  BIGINT '1', " +
             "  true, " +
@@ -796,8 +792,7 @@ public class TestBaseArcticConnectorTest
 
   @Test
   public void testCreatePartitionedTableWithNestedTypes() {
-    assertUpdate("" +
-        "CREATE TABLE test_partitioned_table_nested_type (" +
+    assertUpdate("CREATE TABLE test_partitioned_table_nested_type (" +
         "  _string VARCHAR" +
         ", _struct ROW(_field1 INT, _field2 VARCHAR)" +
         ", _date DATE" +
@@ -1711,8 +1706,7 @@ public class TestBaseArcticConnectorTest
         ")");
 
     assertUpdate(
-        "" +
-            "INSERT INTO test_metadata_delete " +
+        "INSERT INTO test_metadata_delete " +
             "SELECT orderkey, linenumber, linestatus " +
             "FROM tpch.tiny.lineitem",
         "SELECT count(*) FROM lineitem");
@@ -2038,7 +2032,7 @@ public class TestBaseArcticConnectorTest
 
       Optional<ConstraintApplicationResult<TableHandle>> result = metadata.applyFilter(session, table, new Constraint(domains));
 
-      assertTrue(result.isEmpty() == (expectedUnenforcedPredicate == null && expectedEnforcedPredicate == null));
+      assertEquals((expectedUnenforcedPredicate == null && expectedEnforcedPredicate == null), result.isEmpty());
 
       if (result.isPresent()) {
         IcebergTableHandle newTable = (IcebergTableHandle) result.get().getHandle().getConnectorHandle();
@@ -2129,8 +2123,7 @@ public class TestBaseArcticConnectorTest
 
     dropTable("test_nested_table_1");
 
-    assertUpdate("" +
-        "CREATE TABLE test_nested_table_2 (" +
+    assertUpdate("CREATE TABLE test_nested_table_2 (" +
         " int INTEGER" +
         ", arr ARRAY(ROW(id INTEGER, vc VARCHAR))" +
         ", big BIGINT" +
@@ -2373,8 +2366,7 @@ public class TestBaseArcticConnectorTest
         "AND a_uuid = UUID '20050910-1330-11e9-ffff-2a86e4085a59' " +
         "AND a_row = CAST(ROW(42, 'this is a random value') AS ROW(id int, vc varchar)) " +
         "AND an_array = ARRAY[VARCHAR 'uno', 'dos', 'tres'] " +
-        "AND a_map = map(ARRAY[1,2], ARRAY['ek', VARCHAR 'one']) " +
-        ""))
+        "AND a_map = map(ARRAY[1,2], ARRAY['ek', VARCHAR 'one']) "))
         .matches(values);
 
     assertThat(query("SELECT * FROM test_all_types WHERE " +
@@ -2394,8 +2386,7 @@ public class TestBaseArcticConnectorTest
         "AND a_uuid IS NULL " +
         "AND a_row IS NULL " +
         "AND an_array IS NULL " +
-        "AND a_map IS NULL " +
-        ""))
+        "AND a_map IS NULL "))
         .skippingTypesCheck()
         .matches(nullValues);
 

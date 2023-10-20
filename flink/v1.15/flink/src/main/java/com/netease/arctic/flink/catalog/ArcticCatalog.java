@@ -20,6 +20,7 @@ package com.netease.arctic.flink.catalog;
 
 import static com.netease.arctic.flink.FlinkSchemaUtil.toSchema;
 import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
+import static org.apache.flink.util.Preconditions.checkNotNull;
 
 import com.google.common.base.Objects;
 import com.netease.arctic.NoSuchDatabaseException;
@@ -54,6 +55,7 @@ import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.table.catalog.exceptions.DatabaseAlreadyExistException;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.catalog.exceptions.FunctionNotExistException;
+import org.apache.flink.table.catalog.exceptions.PartitionSpecInvalidException;
 import org.apache.flink.table.catalog.exceptions.TableAlreadyExistException;
 import org.apache.flink.table.catalog.exceptions.TableNotExistException;
 import org.apache.flink.table.catalog.exceptions.TableNotPartitionedException;
@@ -70,6 +72,8 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
+import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.flink.FlinkFilters;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.util.FlinkCompatibilityUtil;
 import org.apache.iceberg.io.CloseableIterable;
@@ -366,8 +370,43 @@ public class ArcticCatalog extends AbstractCatalog {
   @Override
   public List<CatalogPartitionSpec> listPartitions(ObjectPath tablePath)
       throws CatalogException, TableNotPartitionedException {
+    return listPartitionsByFilter(tablePath, Collections.emptyList());
+  }
+
+  @Override
+  public List<CatalogPartitionSpec> listPartitions(
+      ObjectPath tablePath, CatalogPartitionSpec partitionSpec)
+      throws CatalogException, TableNotPartitionedException, PartitionSpecInvalidException {
+    checkNotNull(tablePath, "Table path cannot be null");
+    checkNotNull(partitionSpec, "CatalogPartitionSpec cannot be null");
+    TableIdentifier tableIdentifier = getTableIdentifier(tablePath);
+    checkValidPartitionSpec(
+        partitionSpec, internalCatalog.loadTable(tableIdentifier).spec(), tablePath);
+    List<CatalogPartitionSpec> catalogPartitionSpecs = listPartitions(tablePath);
+    return catalogPartitionSpecs.stream()
+        .filter(spec -> spec.equals(partitionSpec))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<CatalogPartitionSpec> listPartitionsByFilter(
+      ObjectPath tablePath, List<Expression> filters)
+      throws CatalogException, TableNotPartitionedException {
     TableIdentifier tableIdentifier = getTableIdentifier(tablePath);
     ArcticTable arcticTable = internalCatalog.loadTable(tableIdentifier);
+
+    org.apache.iceberg.expressions.Expression filter;
+    List<org.apache.iceberg.expressions.Expression> expressions =
+        filters.stream()
+            .map(FlinkFilters::convert)
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .collect(Collectors.toList());
+
+    filter =
+        expressions.isEmpty()
+            ? Expressions.alwaysTrue()
+            : expressions.stream().reduce(Expressions::and).orElse(Expressions.alwaysTrue());
 
     if (arcticTable.spec().isUnpartitioned()) {
       throw new TableNotPartitionedException(internalCatalog.name(), tablePath);
@@ -375,7 +414,8 @@ public class ArcticCatalog extends AbstractCatalog {
     Set<CatalogPartitionSpec> set = Sets.newHashSet();
     if (arcticTable.isKeyedTable()) {
       KeyedTable table = arcticTable.asKeyedTable();
-      try (CloseableIterable<CombinedScanTask> combinedScanTasks = table.newScan().planTasks()) {
+      try (CloseableIterable<CombinedScanTask> combinedScanTasks =
+          table.newScan().filter(filter).planTasks()) {
         for (CombinedScanTask combinedScanTask : combinedScanTasks) {
           combinedScanTask.tasks().stream()
               .flatMap(
@@ -404,7 +444,7 @@ public class ArcticCatalog extends AbstractCatalog {
       }
     } else {
       UnkeyedTable table = arcticTable.asUnkeyedTable();
-      try (CloseableIterable<FileScanTask> tasks = table.newScan().planFiles()) {
+      try (CloseableIterable<FileScanTask> tasks = table.newScan().filter(filter).planFiles()) {
         for (DataFile dataFile : CloseableIterable.transform(tasks, FileScanTask::file)) {
           Map<String, String> map = Maps.newHashMap();
           StructLike structLike = dataFile.partition();
@@ -420,18 +460,6 @@ public class ArcticCatalog extends AbstractCatalog {
       }
     }
     return Lists.newArrayList(set);
-  }
-
-  @Override
-  public List<CatalogPartitionSpec> listPartitions(
-      ObjectPath tablePath, CatalogPartitionSpec partitionSpec) throws CatalogException {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public List<CatalogPartitionSpec> listPartitionsByFilter(
-      ObjectPath tablePath, List<Expression> filters) throws CatalogException {
-    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -577,5 +605,28 @@ public class ArcticCatalog extends AbstractCatalog {
 
   public String amsCatalogName() {
     return internalCatalog.name();
+  }
+
+  /**
+   * Check whether a list of partition values are valid based on the given list of partition keys.
+   *
+   * @param partitionSpec a partition spec.
+   * @param arcticPartitionSpec arcticPartitionSpec
+   * @param tablePath tablePath
+   * @throws PartitionSpecInvalidException thrown if any key in partitionSpec doesn't exist in
+   *     partitionKeys.
+   */
+  private void checkValidPartitionSpec(
+      CatalogPartitionSpec partitionSpec, PartitionSpec arcticPartitionSpec, ObjectPath tablePath)
+      throws PartitionSpecInvalidException {
+    List<String> partitionKeys =
+        arcticPartitionSpec.fields().stream()
+            .map(PartitionField::name)
+            .collect(Collectors.toList());
+    for (String key : partitionSpec.getPartitionSpec().keySet()) {
+      if (!partitionKeys.contains(key)) {
+        throw new PartitionSpecInvalidException(getName(), partitionKeys, tablePath, partitionSpec);
+      }
+    }
   }
 }

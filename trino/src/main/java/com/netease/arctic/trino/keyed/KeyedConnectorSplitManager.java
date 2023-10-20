@@ -62,7 +62,7 @@ public class KeyedConnectorSplitManager implements ConnectorSplitManager {
 
   private static final Logger LOG = LoggerFactory.getLogger(KeyedConnectorSplitManager.class);
 
-  private ArcticTransactionManager arcticTransactionManager;
+  private final ArcticTransactionManager arcticTransactionManager;
 
   @Inject
   public KeyedConnectorSplitManager(ArcticTransactionManager arcticTransactionManager) {
@@ -101,13 +101,11 @@ public class KeyedConnectorSplitManager implements ConnectorSplitManager {
     try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(pluginClassloader)) {
       //优化
       CloseableIterable<CombinedScanTask> combinedScanTasks =
-          MetricUtil.duration(() -> tableScan.planTasks(), "plan tasks");
+          MetricUtil.duration(tableScan::planTasks, "plan tasks");
 
       List<KeyedTableScanTask> fileScanTaskList = new ArrayList<>();
       for (CombinedScanTask combinedScanTask : combinedScanTasks) {
-        for (KeyedTableScanTask fileScanTask : combinedScanTask.tasks()) {
-          fileScanTaskList.add(fileScanTask);
-        }
+        fileScanTaskList.addAll(combinedScanTask.tasks());
       }
 
       List<KeyedConnectorSplit> keyedConnectorSplits = fileScanTaskList.stream().map(

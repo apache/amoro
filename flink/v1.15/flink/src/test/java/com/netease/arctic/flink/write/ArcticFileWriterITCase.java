@@ -82,8 +82,8 @@ public class ArcticFileWriterITCase extends FlinkTestBase {
   private static final Map<String, CountDownLatch> LATCH_MAP = new ConcurrentHashMap<>();
   public ArcticTableLoader tableLoader;
   private String latchId;
-  private int NUM_SOURCES = 4;
-  private int NUM_RECORDS = 10000;
+  private final int NUM_SOURCES = 4;
+  private final int NUM_RECORDS = 10000;
 
   public ArcticFileWriterITCase() {
     super(

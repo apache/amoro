@@ -9,9 +9,9 @@ import java.util.function.Supplier;
 
 public final class NestedSqlSession implements Closeable {
   @VisibleForTesting
-  protected static final int MAX_NEST_BEGIN_COUNT = 5;
+  private static final int MAX_NEST_BEGIN_COUNT = 5;
   @VisibleForTesting
-  protected static final ThreadLocal<NestedSqlSession> sessions = new ThreadLocal<>();
+  private static final ThreadLocal<NestedSqlSession> sessions = new ThreadLocal<>();
 
   private int nestCount = 0;
   private boolean isRollingback = false;
@@ -28,12 +28,12 @@ public final class NestedSqlSession implements Closeable {
     }
   }
 
-  protected SqlSession getSqlSession() {
+  SqlSession getSqlSession() {
     return sqlSession;
   }
 
   @VisibleForTesting
-  protected NestedSqlSession(SqlSession sqlSession) {
+  NestedSqlSession(SqlSession sqlSession) {
     this.sqlSession = sqlSession;
   }
 
@@ -75,7 +75,7 @@ public final class NestedSqlSession implements Closeable {
     } else if (nestCount == 0 && sqlSession != null) {
       sqlSession.close();
       sqlSession = null;
-      sessions.set(null);
+      sessions.remove();
       nestCount = -1;
     }
   }

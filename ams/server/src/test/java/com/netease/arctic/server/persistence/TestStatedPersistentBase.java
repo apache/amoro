@@ -23,8 +23,8 @@ public class TestStatedPersistentBase {
     private String stringState = "";
     @StatedPersistentBase.StateField
     private int intState = 0;
-    private boolean booleanField = false;
-    private long longField = 0L;
+    private final boolean booleanField = false;
+    private final long longField = 0L;
   }
 
   @Test

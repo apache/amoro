@@ -125,7 +125,7 @@ public class SqlSessionFactoryProvider {
 
     try (SqlSession sqlSession = get().openSession(true);
          Connection connection = sqlSession.getConnection();
-         Statement statement = connection.createStatement();) {
+         Statement statement = connection.createStatement()) {
       if (ArcticManagementConf.DB_TYPE_DERBY.equals(dbTypeConfig)) {
         query = "SELECT 1 FROM SYS.SYSTABLES WHERE TABLENAME = 'CATALOG_METADATA'";
       } else if (ArcticManagementConf.DB_TYPE_MYSQL.equals(dbTypeConfig)) {

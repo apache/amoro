@@ -28,7 +28,7 @@ import java.util.List;
  */
 public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
 
-  private String outputDir;
+  private final String outputDir;
 
   public MixFormatRewriteExecutor(
       RewriteFilesInput input,

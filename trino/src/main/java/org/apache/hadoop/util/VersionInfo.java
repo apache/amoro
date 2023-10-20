@@ -36,7 +36,7 @@ import java.util.Properties;
 public class VersionInfo {
   private static final Logger LOG = LoggerFactory.getLogger(VersionInfo.class);
 
-  private Properties info;
+  private final Properties info;
 
   protected VersionInfo(String component) {
     info = new Properties();
@@ -51,7 +51,7 @@ public class VersionInfo {
       info.load(is);
     } catch (IOException ex) {
       LoggerFactory.getLogger(getClass()).warn("Could not read '" +
-          versionInfoFile + "', " + ex.toString(), ex);
+          versionInfoFile + "', " + ex, ex);
     } finally {
       IOUtils.closeStream(is);
     }
@@ -96,7 +96,7 @@ public class VersionInfo {
     return info.getProperty("protocVersion", "Unknown");
   }
 
-  private static VersionInfo COMMON_VERSION_INFO = new VersionInfo("common");
+  private static final VersionInfo COMMON_VERSION_INFO = new VersionInfo("common");
 
   /**
    * Get the Hadoop version.

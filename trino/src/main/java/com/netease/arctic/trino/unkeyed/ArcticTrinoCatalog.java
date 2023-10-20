@@ -52,7 +52,7 @@ import static java.util.Locale.ENGLISH;
  */
 public class ArcticTrinoCatalog implements TrinoCatalog {
 
-  private ArcticCatalog arcticCatalog;
+  private final ArcticCatalog arcticCatalog;
 
   public ArcticTrinoCatalog(ArcticCatalog arcticCatalog) {
     this.arcticCatalog = arcticCatalog;
