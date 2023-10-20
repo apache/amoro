@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,6 +17,8 @@
  */
 
 package com.netease.arctic.trino;
+
+import static com.google.inject.Scopes.SINGLETON;
 
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -63,11 +64,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.google.inject.Scopes.SINGLETON;
-
-/**
- * Factory to generate {@link Connector}
- */
+/** Factory to generate {@link Connector} */
 public class ArcticConnectorFactory implements ConnectorFactory {
 
   private static final Logger LOG = LoggerFactory.getLogger(ArcticConnectorFactory.class);
@@ -78,43 +75,54 @@ public class ArcticConnectorFactory implements ConnectorFactory {
   }
 
   @Override
-  public Connector create(String catalogName, Map<String, String> config, ConnectorContext context) {
+  public Connector create(
+      String catalogName, Map<String, String> config, ConnectorContext context) {
     ClassLoader classLoader = InternalIcebergConnectorFactory.class.getClassLoader();
     try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-      Bootstrap app = new Bootstrap(
-          new EventModule(),
-          new MBeanModule(),
-          new ConnectorObjectNameGeneratorModule("io.trino.plugin.iceberg", "trino.plugin.iceberg"),
-          new JsonModule(),
-          new ArcticModule(context.getTypeManager()),
-          new IcebergSecurityModule(),
-          new MBeanServerModule(),
-          binder -> {
-            binder.bind(NodeVersion.class)
-                .toInstance(new NodeVersion(context.getNodeManager().getCurrentNode().getVersion()));
-            binder.bind(NodeManager.class).toInstance(context.getNodeManager());
-            binder.bind(TypeManager.class).toInstance(context.getTypeManager());
-            binder.bind(PageIndexerFactory.class).toInstance(context.getPageIndexerFactory());
-            binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
-            binder.bind(TrinoFileSystemFactory.class).to(HdfsFileSystemFactory.class).in(SINGLETON);
-          });
+      Bootstrap app =
+          new Bootstrap(
+              new EventModule(),
+              new MBeanModule(),
+              new ConnectorObjectNameGeneratorModule(
+                  "io.trino.plugin.iceberg", "trino.plugin.iceberg"),
+              new JsonModule(),
+              new ArcticModule(context.getTypeManager()),
+              new IcebergSecurityModule(),
+              new MBeanServerModule(),
+              binder -> {
+                binder
+                    .bind(NodeVersion.class)
+                    .toInstance(
+                        new NodeVersion(context.getNodeManager().getCurrentNode().getVersion()));
+                binder.bind(NodeManager.class).toInstance(context.getNodeManager());
+                binder.bind(TypeManager.class).toInstance(context.getTypeManager());
+                binder.bind(PageIndexerFactory.class).toInstance(context.getPageIndexerFactory());
+                binder.bind(CatalogName.class).toInstance(new CatalogName(catalogName));
+                binder
+                    .bind(TrinoFileSystemFactory.class)
+                    .to(HdfsFileSystemFactory.class)
+                    .in(SINGLETON);
+              });
 
-      Injector injector = app
-          .doNotInitializeLogging()
-          .setRequiredConfigurationProperties(config)
-          .initialize();
+      Injector injector =
+          app.doNotInitializeLogging().setRequiredConfigurationProperties(config).initialize();
 
       LifeCycleManager lifeCycleManager = injector.getInstance(LifeCycleManager.class);
-      ArcticTransactionManager transactionManager = injector.getInstance(ArcticTransactionManager.class);
+      ArcticTransactionManager transactionManager =
+          injector.getInstance(ArcticTransactionManager.class);
       ConnectorSplitManager splitManager = injector.getInstance(ConnectorSplitManager.class);
-      ConnectorPageSourceProvider connectorPageSource = injector.getInstance(ConnectorPageSourceProvider.class);
-      ConnectorPageSinkProvider pageSinkProvider = injector.getInstance(ConnectorPageSinkProvider.class);
+      ConnectorPageSourceProvider connectorPageSource =
+          injector.getInstance(ConnectorPageSourceProvider.class);
+      ConnectorPageSinkProvider pageSinkProvider =
+          injector.getInstance(ConnectorPageSinkProvider.class);
       ConnectorNodePartitioningProvider connectorDistributionProvider =
           injector.getInstance(ConnectorNodePartitioningProvider.class);
       Set<SessionPropertiesProvider> sessionPropertiesProviders =
           injector.getInstance(Key.get(new TypeLiteral<Set<SessionPropertiesProvider>>() {}));
-      IcebergTableProperties icebergTableProperties = injector.getInstance(IcebergTableProperties.class);
-      Set<Procedure> procedures = injector.getInstance(Key.get(new TypeLiteral<Set<Procedure>>() {}));
+      IcebergTableProperties icebergTableProperties =
+          injector.getInstance(IcebergTableProperties.class);
+      Set<Procedure> procedures =
+          injector.getInstance(Key.get(new TypeLiteral<Set<Procedure>>() {}));
       Set<TableProcedureMetadata> tableProcedures =
           injector.getInstance(Key.get(new TypeLiteral<Set<TableProcedureMetadata>>() {}));
       Optional<ConnectorAccessControl> accessControl =
