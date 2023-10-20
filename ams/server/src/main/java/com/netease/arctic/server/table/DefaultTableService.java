@@ -222,7 +222,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public AmoroTable<?> loadTable(TableIdentifier tableIdentifier) {
+  public AmoroTable<?> loadTable(ServerTableIdentifier tableIdentifier) {
     checkStarted();
     return getServerCatalog(tableIdentifier.getCatalog())
         .loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
