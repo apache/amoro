@@ -27,7 +27,6 @@ import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableIdentifier;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,13 +53,14 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
   @Test
   public void testLoadTable() {
     ArcticTable arcticTable = (ArcticTable) tableService()
-        .loadTable(serverTableIdentifier().getIdentifier()).originalTable();
+        .loadTable(serverTableIdentifier()).originalTable();
     validateArcticTable(arcticTable);
 
     // test load not existed table
     Assert.assertThrows(ObjectNotExistsException.class,
         () -> tableService().loadTable(
-            TableIdentifier.of("unknown", "unknown", "unknown").buildTableIdentifier()));
+            ServerTableIdentifier.of("unknown", "unknown", "unknown",
+                serverTableIdentifier().getFormat())));
   }
 
   @Test
