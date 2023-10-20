@@ -16,36 +16,19 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizing;
+package com.netease.arctic.server.dashboard.utils;
 
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+/**
+ * Util to desensitize sensitive data.
+ */
+public class DesensitizationUtil {
+  public static String COMMON_SECRET_FORMAT = "********";
 
-import java.util.HashMap;
-import java.util.Map;
-
-public abstract class BaseOptimizingInput implements TableOptimizing.OptimizingInput {
-
-  private final Map<String, String> options = new HashMap<>();
-
-  @Override
-  public void option(String name, String value) {
-    options.put(name, value);
+  public static String desensitize(Object data) {
+    return COMMON_SECRET_FORMAT;
   }
 
-  @Override
-  public void options(Map<String, String> options) {
-    this.options.putAll(options);
-  }
-
-  @Override
-  public Map<String, String> getOptions() {
-    return options;
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("options", options)
-        .toString();
+  public static boolean isDesensitized(Object data) {
+    return COMMON_SECRET_FORMAT.equals(data);
   }
 }

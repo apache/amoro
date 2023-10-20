@@ -75,7 +75,7 @@ public final class NestedSqlSession implements Closeable {
     } else if (nestCount == 0 && sqlSession != null) {
       sqlSession.close();
       sqlSession = null;
-      sessions.set(null);
+      sessions.remove();
       nestCount = -1;
     }
   }

@@ -1,6 +1,7 @@
 package com.netease.arctic.server.table;
 
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -350,9 +351,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   public TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
-    if (tableIdentifier == null) {
-      throw new ObjectNotExistsException(tableIdentifier);
-    }
+    Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier cannot be null");
     TableRuntime tableRuntime = getRuntime(tableIdentifier);
     if (tableRuntime == null) {
       throw new ObjectNotExistsException(tableIdentifier);
