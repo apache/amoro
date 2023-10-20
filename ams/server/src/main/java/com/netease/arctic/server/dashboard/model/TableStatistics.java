@@ -58,10 +58,6 @@ public class TableStatistics {
     this.totalFilesStat = totalFilesStat;
   }
 
-  public void setTotalFilesStat(FilesStatistics changeFs, FilesStatistics baseFs) {
-    this.totalFilesStat = totalFilesStat;
-  }
-
   public Map<String, String> getSummary() {
     return summary;
   }
