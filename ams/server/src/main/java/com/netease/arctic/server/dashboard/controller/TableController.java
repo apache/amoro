@@ -251,13 +251,13 @@ public class TableController {
 
     int offset = (page - 1) * pageSize;
     int limit = pageSize;
+    ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
     Preconditions.checkArgument(offset >= 0, "offset[%s] must >= 0", offset);
     Preconditions.checkArgument(limit >= 0, "limit[%s] must >= 0", limit);
-    Preconditions.checkState(tableService.tableExist(new com.netease.arctic.ams.api.TableIdentifier(catalog, db,
-        table)), "no such table");
+    Preconditions.checkState(serverCatalog.exist(db, table), "no such table");
 
-    ServerTableIdentifier tableIdentifier = ServerTableIdentifier.of(catalog, db, table);
-    AmoroTable<?> amoroTable = tableService.loadTable(tableIdentifier);
+    TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
+    AmoroTable<?> amoroTable = serverCatalog.loadTable(db, table);
     int total;
     List<OptimizingProcessInfo> result;
     if (amoroTable.format() != TableFormat.PAIMON) {
@@ -277,7 +277,7 @@ public class TableController {
           .collect(Collectors.toList());
     } else {
       // Temporary solution for Paimon
-      result = tableDescriptor.getPaimonOptimizingProcesses(amoroTable, tableIdentifier);
+      result = tableDescriptor.getPaimonOptimizingProcesses(amoroTable, tableIdentifier.buildTableIdentifier());
       total = result.size();
       result = result.stream()
           .skip(offset)

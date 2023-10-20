@@ -134,12 +134,12 @@ public class ServerTableDescriptor extends PersistentBase {
   }
 
   public List<OptimizingProcessInfo> getPaimonOptimizingProcesses(
-      AmoroTable<?> amoroTable, ServerTableIdentifier tableIdentifier) {
+      AmoroTable<?> amoroTable, TableIdentifier tableIdentifier) {
     // Temporary solution for Paimon. TODO: Get compaction info from Paimon compaction task
     List<OptimizingProcessInfo> processInfoList = new ArrayList<>();
     FileStoreTable fileStoreTable = (FileStoreTable) amoroTable.originalTable();
     AbstractFileStore<?> store = (AbstractFileStore<?>) fileStoreTable.store();
-    ServerTableIdentifier tableIdentifierWithTableId = getAs(TableMetaMapper.class,
+    ServerTableIdentifier serverTableIdentifier = getAs(TableMetaMapper.class,
         mapper -> mapper.selectTableIdentifier(tableIdentifier.getCatalog(),
             tableIdentifier.getDatabase(),
             tableIdentifier.getTableName()));
@@ -149,10 +149,10 @@ public class ServerTableDescriptor extends PersistentBase {
           .forEach(s -> {
             OptimizingProcessInfo optimizingProcessInfo = new OptimizingProcessInfo();
             optimizingProcessInfo.setProcessId(s.id());
-            optimizingProcessInfo.setTableId(tableIdentifierWithTableId.getId());
-            optimizingProcessInfo.setCatalogName(tableIdentifierWithTableId.getCatalog());
-            optimizingProcessInfo.setDbName(tableIdentifierWithTableId.getDatabase());
-            optimizingProcessInfo.setTableName(tableIdentifierWithTableId.getTableName());
+            optimizingProcessInfo.setTableId(serverTableIdentifier.getId());
+            optimizingProcessInfo.setCatalogName(serverTableIdentifier.getCatalog());
+            optimizingProcessInfo.setDbName(serverTableIdentifier.getDatabase());
+            optimizingProcessInfo.setTableName(serverTableIdentifier.getTableName());
             optimizingProcessInfo.setStatus(OptimizingProcess.Status.SUCCESS);
             optimizingProcessInfo.setFinishTime(s.timeMillis());
             FilesStatisticsBuilder inputBuilder = new FilesStatisticsBuilder();
