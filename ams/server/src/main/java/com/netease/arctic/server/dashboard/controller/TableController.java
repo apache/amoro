@@ -113,15 +113,15 @@ public class TableController {
 
     String catalog = ctx.pathParam("catalog");
     String database = ctx.pathParam("db");
-    String tableMame = ctx.pathParam("table");
+    String tableName = ctx.pathParam("table");
 
     Preconditions.checkArgument(
-        StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(database) && StringUtils.isNotBlank(tableMame),
+        StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(database) && StringUtils.isNotBlank(tableName),
         "catalog.database.tableName can not be empty in any element");
     Preconditions.checkState(tableService.catalogExist(catalog), "invalid catalog!");
 
     ServerTableMeta serverTableMeta =
-        tableDescriptor.getTableDetail(TableIdentifier.of(catalog, database, tableMame).buildTableIdentifier());
+        tableDescriptor.getTableDetail(TableIdentifier.of(catalog, database, tableName).buildTableIdentifier());
 
     ctx.json(OkResponse.of(serverTableMeta));
   }
@@ -296,12 +296,12 @@ public class TableController {
   public void getTableTransactions(Context ctx) {
     String catalog = ctx.pathParam("catalog");
     String database = ctx.pathParam("db");
-    String tableMame = ctx.pathParam("table");
+    String tableName = ctx.pathParam("table");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
     List<TransactionsOfTable> transactionsOfTables =
-        tableDescriptor.getTransactions(TableIdentifier.of(catalog, database, tableMame).buildTableIdentifier());
+        tableDescriptor.getTransactions(TableIdentifier.of(catalog, database, tableName).buildTableIdentifier());
     int offset = (page - 1) * pageSize;
     PageResult<AMSTransactionsOfTable> pageResult = PageResult.of(transactionsOfTables,
         offset, pageSize, AmsUtil::toTransactionsOfTable);
@@ -316,13 +316,13 @@ public class TableController {
   public void getTransactionDetail(Context ctx) {
     String catalog = ctx.pathParam("catalog");
     String database = ctx.pathParam("db");
-    String tableMame = ctx.pathParam("table");
+    String tableName = ctx.pathParam("table");
     String transactionId = ctx.pathParam("transactionId");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
     List<PartitionFileBaseInfo> result = tableDescriptor.getTransactionDetail(
-        TableIdentifier.of(catalog, database, tableMame).buildTableIdentifier(), Long.parseLong(transactionId));
+        TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(), Long.parseLong(transactionId));
     int offset = (page - 1) * pageSize;
     PageResult<PartitionFileBaseInfo> amsPageResult = PageResult.of(result,
         offset, pageSize);
