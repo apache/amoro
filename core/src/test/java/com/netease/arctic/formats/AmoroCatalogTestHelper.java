@@ -110,6 +110,4 @@ public interface AmoroCatalogTestHelper<T> {
    */
   void createTable(String db, String tableName)
       throws Exception;
-
-  TableFormat format();
 }
