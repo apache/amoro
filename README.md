@@ -110,15 +110,9 @@ Amoro contains modules as below:
 
 ## Building
 
-Amoro is built using Maven with Java 1.8 and Java 17(only for `trino` module). And `trino` module is skipped by default.
+Amoro is built using Maven with Java 1.8 and Java 17(only for `trino` module).
 
-* To invoke a build and run tests: `mvn clean package`
-* To skip tests: `mvn clean package -DskipTests`
-* To build with hadoop 2.x(the default is 3.x) `mvn clean package -DskipTests -Dhadoop=v2`
-* To indicate flink version for optimizer(the default is 1.14, 1.15 and 1.16 are available)
-  `mvn clean package -DskipTests -Doptimizer.flink=1.15`
-
-To build `trino` module, Java 17 environment or config `toolchains.xml` in `${user.home}/.m2/` dir is needed. The content of `toolchains.xml` is:
+* To build Trino module need config `toolchains.xml` in `${user.home}/.m2/` dir, the content is
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
@@ -135,12 +129,18 @@ To build `trino` module, Java 17 environment or config `toolchains.xml` in `${us
     </toolchain>
 </toolchains>
 ```
->Spotless is used as the checkstyle plugin but Spotless cannot sense the Toolchains plugin. So if you want to perform checkstyle when building `trino` module, the toolchain plug-in must be separated from checkstyle.
 
-* To invoke a build include `trino` module by toolchains: `mvn clean package -DwithTrino -DskipTests -Dspotless.check.skip=true -P toolchain`
-* To invoke a build include `trino` module in Java 17 environment: `mvn clean package -DwithTrino -DskipTests`
-* To only build `trino` and its dependent modules by toolchains: `mvn clean package -DwithTrino -DskipTests -Dspotless.check.skip=true -pl 'trino' -am -P toolchain`
-* To only build `trino` and its dependent modules in Java 17 environment: `mvn clean package -DwithTrino -DskipTests -pl 'trino' -am`
+* To invoke a build and run tests: `mvn package -P toolchain`
+* To skip tests: `mvn -DskipTests package -P toolchain`
+* To package without trino module and JAVA 17 dependency: `mvn clean package -DskipTests -pl '!trino'`
+* To build with hadoop 2.x(the default is 3.x) `mvn clean package -DskipTests -Dhadoop=v2`
+* To indicate flink version for optimizer(the default is 1.14, 1.15 and 1.16 are available)
+  `mvn clean package -DskipTests -Doptimizer.flink=1.15`
+
+>Spotless is skipped by default in `trino` module. So if you want to perform checkstyle when building `trino` module, you must be in a Java 17 environment.
+
+* To invoke a build include `trino` module in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless`
+* To only build `trino` and its dependent modules in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless -pl 'trino' -am`
 ## Quickstart
 
 Visit [https://amoro.netease.com/quick-demo/](https://amoro.netease.com/quick-demo/) to quickly

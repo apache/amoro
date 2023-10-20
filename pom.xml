@@ -37,6 +37,16 @@
         </license>
     </licenses>
 
+    <modules>
+        <module>core</module>
+        <module>hive</module>
+        <module>flink</module>
+        <module>spark</module>
+        <module>trino</module>
+        <module>ams</module>
+        <module>dist</module>
+    </modules>
+
     <scm>
         <connection>scm:git:git@github.com:NetEase/amoro.git</connection>
         <developerConnection>scm:git:git@github.com:NetEase/amoro.git</developerConnection>
@@ -975,39 +985,6 @@
     </build>
 
     <profiles>
-        <profile>
-            <id>default</id>
-            <activation>
-                <property>
-                    <name>!withTrino</name>
-                </property>
-            </activation>
-            <modules>
-                <module>core</module>
-                <module>hive</module>
-                <module>flink</module>
-                <module>spark</module>
-                <module>ams</module>
-                <module>dist</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>include-trino</id>
-            <activation>
-                <property>
-                    <name>withTrino</name>
-                </property>
-            </activation>
-            <modules>
-                <module>core</module>
-                <module>hive</module>
-                <module>flink</module>
-                <module>spark</module>
-                <module>trino</module>
-                <module>ams</module>
-                <module>dist</module>
-            </modules>
-        </profile>
         <profile>
             <id>hadoop2</id>
             <activation>
