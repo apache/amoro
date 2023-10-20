@@ -71,7 +71,8 @@ public interface TableMetaMapper {
   List<TableMetadata> selectTableMetas();
 
   @Select("SELECT table_identifier.table_id as table_id, table_identifier.catalog_name as catalog_name, " +
-      "table_identifier.db_name as db_name, table_identifier.table_name as table_name, format, primary_key, " +
+      "table_identifier.db_name as db_name, table_identifier.table_name as table_name, table_metadata.format, " +
+      "primary_key, " +
       "table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, " +
       "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, meta_version " +
       "FROM table_metadata INNER JOIN table_identifier ON table_metadata.table_id=table_identifier.table_id " +
@@ -167,7 +168,8 @@ public interface TableMetaMapper {
   TableMetadata selectTableMetaById(@Param("tableId") long tableId);
 
   @Select("SELECT table_identifier.table_id as table_id, table_identifier.catalog_name as catalog_name," +
-      " table_identifier.db_name as db_name, table_identifier.table_name as table_name, format, primary_key," +
+      " table_identifier.db_name as db_name, table_identifier.table_name as table_name, table_metadata.format, " +
+      " primary_key," +
       " table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, auth_method," +
       " hadoop_username, krb_keytab, krb_conf, krb_principal, properties, meta_version " +
       " FROM table_metadata INNER JOIN table_identifier ON table_metadata.table_id = table_identifier.table_id" +
