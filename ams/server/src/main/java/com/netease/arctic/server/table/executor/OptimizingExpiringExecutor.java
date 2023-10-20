@@ -33,7 +33,7 @@ public class OptimizingExpiringExecutor extends BaseTableExecutor {
   // 30 days
   private static final long KEEP_TIME = 30 * 24 * 60 * 60 * 1000L;
 
-  private Persistency persistency = new Persistency();
+  private final Persistency persistency = new Persistency();
 
   public OptimizingExpiringExecutor(TableManager tableRuntimes) {
     super(tableRuntimes, 1);

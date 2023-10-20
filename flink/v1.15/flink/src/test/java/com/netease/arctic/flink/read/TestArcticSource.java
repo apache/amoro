@@ -123,7 +123,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
   protected static final String sinkTableName = "test_sink_exactly_once";
   protected static final TableIdentifier FAIL_TABLE_ID =
       TableIdentifier.of(
-          TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME, sinkTableName);;
+          TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME, sinkTableName);
 
   @Before
   public void testSetup() throws IOException {
@@ -1038,7 +1038,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
 
     private static WatermarkFailoverTestOperator op;
     private static long watermarkAfterFailover = -1;
-    private static AtomicInteger watermarkCounter = new AtomicInteger(0);
+    private static final AtomicInteger watermarkCounter = new AtomicInteger(0);
 
     public static long getWatermarkAfterFailover() {
       return watermarkAfterFailover;

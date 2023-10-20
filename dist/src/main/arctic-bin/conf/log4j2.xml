@@ -94,11 +94,11 @@
         </RollingFile>
 
         <!--Logs for iceberg metrics report -->
-        <RollingFile name="icebergRestMetricReporter"
-                     fileName="${LOG_HOME}/iceberg-metrics.log"
+        <RollingFile name="amoroMetricReporter"
+                     fileName="${LOG_HOME}/amoro-metrics.log"
                      filePattern="${LOG_HOME}/metrics/iceberg-metrics-%i.log.gz">
             <PatternLayout>
-                <pattern>%m%n</pattern>
+                <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
             </PatternLayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="64MB"/>
@@ -108,9 +108,9 @@
     </Appenders>
 
     <Loggers>
-        <logger name="iceberg.metric"  level="info">
+        <logger name="amoro.metric"  level="info">
             <!-- iceberg rest metric reporter logs -->
-            <AppenderRef ref="icebergRestMetricReporter" />
+            <AppenderRef ref="amoroMetricReporter" />
         </logger>
 
         <Root level="debug">

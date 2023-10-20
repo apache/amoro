@@ -152,7 +152,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
         .fromSequence(partitionOptimizedSequence)
         .fromLegacyTransaction(legacyPartitionMaxTransactionId);
 
-    changeTableScan = (ChangeTableIncrementalScan) changeTableScan.filter(partitionExpressions);
+    changeTableScan = changeTableScan.filter(partitionExpressions);
 
     return CloseableIterable.transform(changeTableScan.planFiles(), s -> (ArcticFileScanTask) s);
   }

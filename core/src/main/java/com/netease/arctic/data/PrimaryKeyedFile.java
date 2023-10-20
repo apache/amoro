@@ -44,6 +44,6 @@ public interface PrimaryKeyedFile extends DataFile {
    * File information summary for logging
    */
   default String fileInfo() {
-    return new StringBuilder().append(path()).append("[").append(fileSizeInBytes()).append("]").toString();
+    return path() + "[" + fileSizeInBytes() + "]";
   }
 }

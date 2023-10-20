@@ -32,11 +32,11 @@ import java.util.stream.Collectors;
  */
 public class MixFormatOptimizingDataReader implements OptimizingDataReader {
 
-  private ArcticTable table;
+  private final ArcticTable table;
 
-  private StructLikeCollections structLikeCollections;
+  private final StructLikeCollections structLikeCollections;
 
-  private RewriteFilesInput input;
+  private final RewriteFilesInput input;
 
   public MixFormatOptimizingDataReader(
       ArcticTable table,

@@ -31,11 +31,11 @@ import java.util.List;
 import java.util.function.Function;
 
 public class DataComparator {
-  private List<Record> expectRecords;
-  private List<Record> actualRecords;
+  private final List<Record> expectRecords;
+  private final List<Record> actualRecords;
   private Comparator<Record> comparator;
 
-  private Function<Object, Object> fieldValueTrans;
+  private final Function<Object, Object> fieldValueTrans;
 
   protected DataComparator(List<Record> expectRecords, List<Record> actualRecords) {
     this.expectRecords = expectRecords;

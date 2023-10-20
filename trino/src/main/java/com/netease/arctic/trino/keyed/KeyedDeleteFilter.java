@@ -40,7 +40,7 @@ import static io.trino.plugin.iceberg.TypeConverter.toIcebergType;
  */
 public class KeyedDeleteFilter extends AdaptHiveArcticDeleteFilter<TrinoRow> {
 
-  private FileIO fileIO;
+  private final FileIO fileIO;
 
   protected KeyedDeleteFilter(
       KeyedTableScanTask keyedTableScanTask,

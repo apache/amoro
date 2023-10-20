@@ -66,7 +66,8 @@ public abstract class InternalCatalog extends ServerCatalog {
         TableMetaMapper.class,
         mapper -> mapper.selectTableIdentifiersByDb(getMetadata().getCatalogName(), database))
         .stream()
-        .map(ServerTableIdentifier::getIdentifier)
+        .map(sid -> TableIDWithFormat.of(
+            com.netease.arctic.table.TableIdentifier.of(sid.getIdentifier()), sid.getFormat()))
         .collect(Collectors.toList());
   }
 
@@ -76,7 +77,8 @@ public abstract class InternalCatalog extends ServerCatalog {
         TableMetaMapper.class,
         mapper -> mapper.selectTableIdentifiersByCatalog(getMetadata().getCatalogName()))
         .stream()
-        .map(ServerTableIdentifier::getIdentifier)
+        .map(sid -> TableIDWithFormat.of(
+            com.netease.arctic.table.TableIdentifier.of(sid.getIdentifier()), sid.getFormat()))
         .collect(Collectors.toList());
   }
 
@@ -136,21 +138,17 @@ public abstract class InternalCatalog extends ServerCatalog {
   }
 
   private String getDatabaseDesc(String database) {
-    return new StringBuilder()
-        .append(name())
-        .append('.')
-        .append(database)
-        .toString();
+    return name() +
+        '.' +
+        database;
   }
 
   protected String getTableDesc(String database, String tableName) {
-    return new StringBuilder()
-        .append(name())
-        .append('.')
-        .append(database)
-        .append('.')
-        .append(tableName)
-        .toString();
+    return name() +
+        '.' +
+        database +
+        '.' +
+        tableName;
   }
 
   public Integer getTableCount() {

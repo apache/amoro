@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.netease.arctic.TableTestHelper.TEST_DB_NAME;
 import static com.netease.arctic.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
@@ -74,7 +75,9 @@ public class TestTableService extends AMSTableTestBase {
     // test list tables
     List<TableIDWithFormat> tableIdentifierList = tableService().listTables(
         TEST_CATALOG_NAME,
-        TEST_DB_NAME);
+        TEST_DB_NAME).stream()
+        .map(t -> t.getIdentifier().buildTableIdentifier())
+        .collect(Collectors.toList());
     Assert.assertEquals(1, tableIdentifierList.size());
     Assert.assertEquals(
         tableMeta().getTableIdentifier(),
@@ -158,7 +161,7 @@ public class TestTableService extends AMSTableTestBase {
     assertBlocked(BlockableOperation.OPTIMIZE);
     assertBlocked(BlockableOperation.BATCH_WRITE);
 
-    tableService().releaseBlocker(tableIdentifier, block.getBlockerId() + "");
+    tableService().releaseBlocker(tableIdentifier, block.getBlockerId());
     assertBlockerCnt(0);
     assertNotBlocked(BlockableOperation.OPTIMIZE);
     assertNotBlocked(BlockableOperation.BATCH_WRITE);
@@ -191,7 +194,7 @@ public class TestTableService extends AMSTableTestBase {
     assertBlocked(BlockableOperation.OPTIMIZE);
     assertBlocked(BlockableOperation.BATCH_WRITE);
 
-    tableService().releaseBlocker(tableIdentifier, block.getBlockerId() + "");
+    tableService().releaseBlocker(tableIdentifier, block.getBlockerId());
     assertBlockerCnt(0);
     assertNotBlocked(BlockableOperation.OPTIMIZE);
     assertNotBlocked(BlockableOperation.BATCH_WRITE);
@@ -217,7 +220,7 @@ public class TestTableService extends AMSTableTestBase {
     Blocker block = tableService().block(tableIdentifier, operations, getProperties());
     Thread.sleep(1);
 
-    tableService().renewBlocker(tableIdentifier, block.getBlockerId() + "");
+    tableService().renewBlocker(tableIdentifier, block.getBlockerId());
     assertBlockerCnt(1);
     assertBlocked(BlockableOperation.OPTIMIZE);
     assertBlocked(BlockableOperation.BATCH_WRITE);
@@ -228,7 +231,7 @@ public class TestTableService extends AMSTableTestBase {
     assertBlocked(BlockableOperation.BATCH_WRITE);
     assertBlockerRenewed(tableService().getBlockers(tableIdentifier).get(0));
 
-    tableService().releaseBlocker(tableIdentifier, block.getBlockerId() + "");
+    tableService().releaseBlocker(tableIdentifier, block.getBlockerId());
     assertBlockerCnt(0);
     assertNotBlocked(BlockableOperation.OPTIMIZE);
     assertNotBlocked(BlockableOperation.BATCH_WRITE);
@@ -249,13 +252,13 @@ public class TestTableService extends AMSTableTestBase {
 
     Blocker block = tableService().block(tableIdentifier, operations, getProperties());
 
-    tableService().releaseBlocker(tableIdentifier, block.getBlockerId() + "");
+    tableService().releaseBlocker(tableIdentifier, block.getBlockerId());
 
     Blocker block2 = tableService().block(tableIdentifier, operations, getProperties());
 
     Assert.assertEquals(Long.parseLong(block2.getBlockerId()) - Long.parseLong(block.getBlockerId()), 1);
 
-    tableService().releaseBlocker(tableIdentifier, block2.getBlockerId() + "");
+    tableService().releaseBlocker(tableIdentifier, block2.getBlockerId());
 
     dropTable();
     dropDatabase();

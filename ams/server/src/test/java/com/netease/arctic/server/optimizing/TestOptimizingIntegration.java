@@ -22,7 +22,7 @@ import java.io.IOException;
 @Disabled
 public class TestOptimizingIntegration {
 
-  private static AmsEnvironment amsEnv = AmsEnvironment.getIntegrationInstances();
+  private static final AmsEnvironment amsEnv = AmsEnvironment.getIntegrationInstances();
 
 
   private static final String DATABASE = "optimizing_integration_test_db";

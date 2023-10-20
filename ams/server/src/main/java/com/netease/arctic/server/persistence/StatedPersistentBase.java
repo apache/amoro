@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public abstract class StatedPersistentBase extends PersistentBase {
 
   private static final Map<Class<? extends PersistentBase>, List<State>> stateMetaCache = Maps.newConcurrentMap();
-  private Lock stateLock = new ReentrantLock();
+  private final Lock stateLock = new ReentrantLock();
   private List<State> states = Lists.newArrayList();
 
   protected StatedPersistentBase() {
@@ -54,8 +54,6 @@ public abstract class StatedPersistentBase extends PersistentBase {
     stateLock.lock();
     try {
       runnable.run();
-    } catch (Throwable throwable) {
-      throw throwable;
     } finally {
       stateLock.unlock();
     }
@@ -99,7 +97,7 @@ public abstract class StatedPersistentBase extends PersistentBase {
 
   private class State {
     private Object value;
-    private Field field;
+    private final Field field;
 
     State(Field field) {
       this.field = field;

@@ -100,7 +100,7 @@ public class KyuubiSession implements TerminalSession {
     try {
       this.connection.close();
     } catch (SQLException e) {
-      this.logs.add("error when release connection." + e.toString());
+      this.logs.add("error when release connection." + e);
     }
   }
 

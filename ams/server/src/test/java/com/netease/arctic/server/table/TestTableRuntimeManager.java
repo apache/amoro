@@ -52,12 +52,15 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
 
   @Test
   public void testLoadTable() {
-    ArcticTable arcticTable = (ArcticTable) tableService().loadTable(serverTableIdentifier()).originalTable();
+    ArcticTable arcticTable = (ArcticTable) tableService()
+        .loadTable(serverTableIdentifier()).originalTable();
     validateArcticTable(arcticTable);
 
     // test load not existed table
-    Assert.assertThrows(ObjectNotExistsException.class, () -> tableService().loadTable(
-        ServerTableIdentifier.of(null, "unknown", "unknown", "unknown")));
+    Assert.assertThrows(ObjectNotExistsException.class,
+        () -> tableService().loadTable(
+            ServerTableIdentifier.of("unknown", "unknown", "unknown",
+                serverTableIdentifier().getFormat())));
   }
 
   @Test
@@ -65,11 +68,13 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
     Assert.assertTrue(tableService().contains(serverTableIdentifier()));
     ServerTableIdentifier copyId = ServerTableIdentifier.of(null,
         serverTableIdentifier().getCatalog(), serverTableIdentifier().getDatabase(),
-        serverTableIdentifier().getTableName());
+        serverTableIdentifier().getTableName(),
+        serverTableIdentifier().getFormat());
     Assert.assertFalse(tableService().contains(copyId));
-    copyId = ServerTableIdentifier.of(serverTableIdentifier().getId(),
+    copyId = ServerTableIdentifier.of(
+        serverTableIdentifier().getId(),
         serverTableIdentifier().getCatalog(), serverTableIdentifier().getDatabase(),
-        "unknown");
+        "unknown", serverTableIdentifier().getFormat());
     Assert.assertFalse(tableService().contains(copyId));
   }
 

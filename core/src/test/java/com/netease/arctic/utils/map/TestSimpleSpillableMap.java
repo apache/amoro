@@ -2,10 +2,10 @@ package com.netease.arctic.utils.map;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.apache.lucene.util.RamUsageEstimator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.openjdk.jol.info.GraphLayout;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -22,14 +22,14 @@ public class TestSimpleSpillableMap {
 
   @Before
   public void initSizes() {
-    keySize = GraphLayout.parseInstance(new Key()).totalSize();
-    valueSize = GraphLayout.parseInstance(new Value()).totalSize();
+    keySize = RamUsageEstimator.sizeOfObject(new Key(), 0);
+    valueSize = RamUsageEstimator.sizeOfObject(new Value(), 0);
   }
 
   @Test
   public void testMemoryMap() {
     SimpleSpillableMap<Key, Value> map = testMap(10, 10);
-    Assert.assertTrue(map.getSizeOfFileOnDiskInBytes() == 0);
+    Assert.assertEquals(0, map.getSizeOfFileOnDiskInBytes());
     map.close();
   }
 
@@ -115,7 +115,7 @@ public class TestSimpleSpillableMap {
   private SimpleSpillableMap<Key, Value> testMap(long expectMemorySize, int expectKeyCount) {
     SimpleSpillableMap<Key, Value> actualMap = new SimpleSpillableMap<>(expectMemorySize * (keySize + valueSize),
         null, new DefaultSizeEstimator<>(), new DefaultSizeEstimator<>());
-    Assert.assertTrue(actualMap.getSizeOfFileOnDiskInBytes() == 0);
+    Assert.assertEquals(0, actualMap.getSizeOfFileOnDiskInBytes());
     Map<Key, Value> expectedMap = Maps.newHashMap();
     for (int i = 0; i < expectKeyCount; i++) {
       Key key = new Key();

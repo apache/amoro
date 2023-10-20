@@ -11,6 +11,7 @@ public class ServerTableIdentifier {
   private String catalog;
   private String database;
   private String tableName;
+  private TableFormat format;
 
   private TableFormat format;
 

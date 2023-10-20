@@ -74,8 +74,8 @@ public class TestServerCatalog extends TableCatalogTestBase {
   @Test
   public void listTables() {
     Assert.assertEquals(1, getExternalCatalog().listTables(testDatabaseName).size());
-    Assert.assertEquals(testTableName, getExternalCatalog().listTables(testDatabaseName).get(0)
-        .getIdentifier().getTableName());
+    Assert.assertEquals(testTableName,
+        getExternalCatalog().listTables(testDatabaseName).get(0).getIdentifier().getTableName());
   }
 
   @Test

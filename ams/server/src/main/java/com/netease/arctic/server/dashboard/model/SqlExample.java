@@ -47,8 +47,8 @@ public enum SqlExample {
   DESCRIBE("Describe",
       "desc db_name.table_name;");
 
-  private String name;
-  private String sql;
+  private final String name;
+  private final String sql;
 
   SqlExample(String name, String sql) {
     this.name = name;

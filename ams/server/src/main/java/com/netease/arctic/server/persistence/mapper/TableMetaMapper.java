@@ -71,7 +71,8 @@ public interface TableMetaMapper {
   List<TableMetadata> selectTableMetas();
 
   @Select("SELECT table_identifier.table_id as table_id, table_identifier.catalog_name as catalog_name, " +
-      "table_identifier.db_name as db_name, table_identifier.table_name as table_name, format, primary_key, " +
+      "table_identifier.db_name as db_name, table_identifier.table_name as table_name, table_metadata.format, " +
+      "primary_key, " +
       "table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, " +
       "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, meta_version " +
       "FROM table_metadata INNER JOIN table_identifier ON table_metadata.table_id=table_identifier.table_id " +
@@ -167,7 +168,8 @@ public interface TableMetaMapper {
   TableMetadata selectTableMetaById(@Param("tableId") long tableId);
 
   @Select("SELECT table_identifier.table_id as table_id, table_identifier.catalog_name as catalog_name," +
-      " table_identifier.db_name as db_name, table_identifier.table_name as table_name, format, primary_key," +
+      " table_identifier.db_name as db_name, table_identifier.table_name as table_name, table_metadata.format, " +
+      " primary_key," +
       " table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, auth_method," +
       " hadoop_username, krb_keytab, krb_conf, krb_principal, properties, meta_version " +
       " FROM table_metadata INNER JOIN table_identifier ON table_metadata.table_id = table_identifier.table_id" +
@@ -198,8 +200,9 @@ public interface TableMetaMapper {
   TableMetadata selectTableMetaByName(@Param("catalogName") String catalogName,
                                       @Param("databaseName") String databaseName, @Param("tableName") String tableName);
 
-  @Insert("INSERT INTO table_identifier(catalog_name, db_name, table_name) VALUES(" +
-      " #{tableIdentifier.catalog}, #{tableIdentifier.database}, #{tableIdentifier.tableName})")
+  @Insert("INSERT INTO table_identifier(catalog_name, db_name, table_name, format) VALUES(" +
+      " #{tableIdentifier.catalog}, #{tableIdentifier.database}, #{tableIdentifier.tableName}, " +
+      " #{tableIdentifier.format})")
   @Options(useGeneratedKeys = true, keyProperty = "tableIdentifier.id")
   void insertTable(@Param("tableIdentifier") ServerTableIdentifier tableIdentifier);
 
@@ -213,7 +216,7 @@ public interface TableMetaMapper {
       @Param("databaseName") String databaseName,
       @Param("tableName") String tableName);
 
-  @Select("SELECT table_id, catalog_name, db_name, table_name FROM table_identifier" +
+  @Select("SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier" +
       " WHERE catalog_name = #{catalogName} AND db_name = #{databaseName} AND table_name = #{tableName}")
   @Results({
       @Result(property = "id", column = "table_id"),
@@ -226,7 +229,7 @@ public interface TableMetaMapper {
       @Param("databaseName") String databaseName,
       @Param("tableName") String tableName);
 
-  @Select("SELECT table_id, catalog_name, db_name, table_name FROM table_identifier" +
+  @Select("SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier" +
       " WHERE catalog_name = #{catalogName} AND db_name = #{databaseName}")
   @Results({
       @Result(property = "id", column = "table_id"),
@@ -238,7 +241,7 @@ public interface TableMetaMapper {
       @Param("catalogName") String catalogName,
       @Param("databaseName") String databaseName);
 
-  @Select("SELECT table_id, catalog_name, db_name, table_name FROM table_identifier" +
+  @Select("SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier" +
       " WHERE catalog_name = #{catalogName}")
   @Results({
       @Result(property = "id", column = "table_id"),
@@ -248,7 +251,7 @@ public interface TableMetaMapper {
   })
   List<ServerTableIdentifier> selectTableIdentifiersByCatalog(@Param("catalogName") String catalogName);
 
-  @Select("SELECT table_id, catalog_name, db_name, table_name FROM table_identifier")
+  @Select("SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier")
   @Results({
       @Result(property = "id", column = "table_id"),
       @Result(property = "catalog", column = "catalog_name"),
@@ -282,13 +285,13 @@ public interface TableMetaMapper {
   @Delete("DELETE FROM table_runtime WHERE table_id = #{tableId}")
   void deleteOptimizingRuntime(@Param("tableId") long tableId);
 
-  @Insert("INSERT INTO table_runtime (table_id, catalog_name, db_name, table_name, format, current_snapshot_id," +
+  @Insert("INSERT INTO table_runtime (table_id, catalog_name, db_name, table_name, current_snapshot_id," +
       " current_change_snapshotId, last_optimized_snapshotId, last_optimized_change_snapshotId," +
       " last_major_optimizing_time, last_minor_optimizing_time," +
       " last_full_optimizing_time, optimizing_status, optimizing_status_start_time, optimizing_process_id," +
       " optimizer_group, table_config, pending_input) VALUES" +
       " (#{runtime.tableIdentifier.id}, #{runtime.tableIdentifier.catalog}," +
-      " #{runtime.tableIdentifier.database}, #{runtime.tableIdentifier.tableName}, #{runtime.format}, #{runtime" +
+      " #{runtime.tableIdentifier.database}, #{runtime.tableIdentifier.tableName}, #{runtime" +
       ".currentSnapshotId}," +
       " #{runtime.currentChangeSnapshotId}, #{runtime.lastOptimizedSnapshotId}," +
       " #{runtime.lastOptimizedChangeSnapshotId}, #{runtime.lastMajorOptimizingTime," +
@@ -307,12 +310,13 @@ public interface TableMetaMapper {
       " typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter})")
   void insertTableRuntime(@Param("runtime") TableRuntime runtime);
 
-  @Select("SELECT a.table_id, a.catalog_name, a.db_name, a.table_name, a.format, a.current_snapshot_id, a" +
+  @Select("SELECT a.table_id, a.catalog_name, a.db_name, a.table_name, i.format, a.current_snapshot_id, a" +
       ".current_change_snapshotId, a.last_optimized_snapshotId, a.last_optimized_change_snapshotId," +
       " a.last_major_optimizing_time, a.last_minor_optimizing_time, a.last_full_optimizing_time, a.optimizing_status," +
       " a.optimizing_status_start_time, a.optimizing_process_id," +
       " a.optimizer_group, a.table_config, a.pending_input, b.optimizing_type, b.target_snapshot_id," +
       " b.target_change_snapshot_id, b.plan_time, b.from_sequence, b.to_sequence FROM table_runtime a" +
+      " INNER JOIN table_identifier i ON a.table_id = i.table_id " +
       " LEFT JOIN table_optimizing_process b ON a.optimizing_process_id = b.process_id")
   @Results({
       @Result(property = "tableId", column = "table_id"),

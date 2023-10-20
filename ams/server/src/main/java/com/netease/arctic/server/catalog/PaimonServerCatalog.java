@@ -23,9 +23,10 @@ import com.netease.arctic.CommonUnifiedCatalog;
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -83,7 +84,7 @@ public class PaimonServerCatalog extends ExternalCatalog {
 
   @Override
   public List<TableIDWithFormat> listTables(String database) {
-    return doAs(() -> paimonCatalog.listTableMetas(database));
+    return doAs(() -> new ArrayList<>(paimonCatalog.listTables(database)));
   }
 
   @Override

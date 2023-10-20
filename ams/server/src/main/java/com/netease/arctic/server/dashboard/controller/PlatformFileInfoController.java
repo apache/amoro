@@ -36,7 +36,7 @@ import java.util.Map;
  */
 public class PlatformFileInfoController {
 
-  private PlatformFileManager platformFileInfoService;
+  private final PlatformFileManager platformFileInfoService;
 
   public PlatformFileInfoController(PlatformFileManager platformFileInfoService) {
     this.platformFileInfoService = platformFileInfoService;

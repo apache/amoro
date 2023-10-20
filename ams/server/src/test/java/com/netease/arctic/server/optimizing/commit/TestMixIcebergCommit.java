@@ -49,6 +49,7 @@ import org.junit.runners.Parameterized;
 import org.mockito.Mockito;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -143,7 +144,7 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
     Mockito.when(taskRuntime.getOutput()).thenReturn(output);
     KeyedTableCommit commit = new KeyedTableCommit(
         getArcticTable(),
-        Arrays.asList(taskRuntime),
+        Collections.singletonList(taskRuntime),
         Optional.ofNullable(arcticTable.asKeyedTable().baseTable().currentSnapshot()).map(Snapshot::snapshotId)
             .orElse(null),
         fromSequence,

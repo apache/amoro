@@ -169,7 +169,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(dataFiles.get(0).partition(), getArcticTable().spec().partitionType());
-    ((SupportHive) getArcticTable()).getHMSClient().run(client -> {
+    getArcticTable().getHMSClient().run(client -> {
       Table hiveTable = client.getTable(getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
       StorageDescriptor tableSd = hiveTable.getSd();
       PrincipalPrivilegeSet privilegeSet = hiveTable.getPrivileges();
@@ -221,7 +221,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(dataFiles.get(0).partition(), getArcticTable().spec().partitionType());
-    ((SupportHive) getArcticTable()).getHMSClient().run(client -> {
+    getArcticTable().getHMSClient().run(client -> {
       Table hiveTable = client.getTable(getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
       StorageDescriptor tableSd = hiveTable.getSd();
       PrincipalPrivilegeSet privilegeSet = hiveTable.getPrivileges();

@@ -66,7 +66,7 @@ public class TableMeta {
     ICEBERG("iceberg"),
     PAIMON("paimon");
 
-    private String name;
+    private final String name;
 
     TableType(String name) {
       this.name = name;

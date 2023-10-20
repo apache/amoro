@@ -46,7 +46,7 @@ import java.util.function.Function;
 
 class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
 
-  private static DynConstructors.Ctor<PageWriteStore> pageStoreCtorParquet = DynConstructors
+  private static final DynConstructors.Ctor<PageWriteStore> pageStoreCtorParquet = DynConstructors
       .builder(PageWriteStore.class)
       .hiddenImpl(
           "org.apache.parquet.hadoop.ColumnChunkPageWriteStore",
@@ -78,7 +78,7 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
   private long nextCheckRecordCount = 10;
   private boolean closed;
 
-  private Schema schema;
+  private final Schema schema;
 
   private static final String COLUMN_INDEX_TRUNCATE_LENGTH = "parquet.columnindex.truncate.length";
   private static final int DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH = 64;

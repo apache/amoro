@@ -36,7 +36,7 @@ public interface UnifiedCatalog extends AmoroCatalog {
    * @param database given database
    * @return identifier and format list
    */
-  List<TableIDWithFormat> listTableMetas(String database);
+  List<TableIDWithFormat> listTables(String database);
 
   /**
    * Refresh catalog meta

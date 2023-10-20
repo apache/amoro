@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableFormat;
@@ -51,7 +50,6 @@ import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.CommonUtil;
 import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
 import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
-import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableIdentifier;
@@ -62,6 +60,7 @@ import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.relocated.com.google.common.base.Function;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,6 +75,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
 
 /**
  * The controller that handles table requests.
@@ -121,7 +121,7 @@ public class TableController {
     Preconditions.checkState(tableService.catalogExist(catalog), "invalid catalog!");
 
     ServerTableMeta serverTableMeta =
-        tableDescriptor.getTableDetail(ServerTableIdentifier.of(catalog, database, tableMame));
+        tableDescriptor.getTableDetail(TableIdentifier.of(catalog, database, tableMame).buildTableIdentifier());
 
     ctx.json(OkResponse.of(serverTableMeta));
   }
@@ -275,19 +275,20 @@ public class TableController {
   }
 
   /**
-   * get list of transactions.
+   * get list of transactions.String newMetadataFileLocation = IcebergTableUtil.genNewMetadataFileLocation(null, tableMetadata);
+
    *
    * @param ctx - context for handling the request and response
    */
   public void getTableTransactions(Context ctx) {
-    String catalogName = ctx.pathParam("catalog");
-    String db = ctx.pathParam("db");
-    String tableName = ctx.pathParam("table");
+    String catalog = ctx.pathParam("catalog");
+    String database = ctx.pathParam("db");
+    String tableMame = ctx.pathParam("table");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
     List<TransactionsOfTable> transactionsOfTables =
-        tableDescriptor.getTransactions(ServerTableIdentifier.of(catalogName, db, tableName));
+        tableDescriptor.getTransactions(TableIdentifier.of(catalog, database, tableMame).buildTableIdentifier());
     int offset = (page - 1) * pageSize;
     PageResult<AMSTransactionsOfTable> pageResult = PageResult.of(transactionsOfTables,
         offset, pageSize, AmsUtil::toTransactionsOfTable);
@@ -300,15 +301,15 @@ public class TableController {
    * @param ctx - context for handling the request and response
    */
   public void getTransactionDetail(Context ctx) {
-    String catalogName = ctx.pathParam("catalog");
-    String db = ctx.pathParam("db");
-    String tableName = ctx.pathParam("table");
+    String catalog = ctx.pathParam("catalog");
+    String database = ctx.pathParam("db");
+    String tableMame = ctx.pathParam("table");
     String transactionId = ctx.pathParam("transactionId");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
-    List<PartitionFileBaseInfo> result = tableDescriptor.getTransactionDetail(ServerTableIdentifier.of(catalogName, db,
-        tableName), Long.parseLong(transactionId));
+    List<PartitionFileBaseInfo> result = tableDescriptor.getTransactionDetail(
+        TableIdentifier.of(catalog, database, tableMame).buildTableIdentifier(), Long.parseLong(transactionId));
     int offset = (page - 1) * pageSize;
     PageResult<PartitionFileBaseInfo> amsPageResult = PageResult.of(result,
         offset, pageSize);
@@ -322,13 +323,13 @@ public class TableController {
    */
   public void getTablePartitions(Context ctx) {
     String catalog = ctx.pathParam("catalog");
-    String db = ctx.pathParam("db");
+    String database = ctx.pathParam("db");
     String table = ctx.pathParam("table");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
     List<PartitionBaseInfo> partitionBaseInfos = tableDescriptor.getTablePartition(
-        ServerTableIdentifier.of(catalog, db, table));
+        TableIdentifier.of(catalog, database, table).buildTableIdentifier());
     int offset = (page - 1) * pageSize;
     PageResult<PartitionBaseInfo> amsPageResult = PageResult.of(partitionBaseInfos,
         offset, pageSize);
@@ -350,7 +351,7 @@ public class TableController {
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
     List<PartitionFileBaseInfo> partitionFileBaseInfos = tableDescriptor.getTableFile(
-        ServerTableIdentifier.of(catalog, db, table), partition);
+        TableIdentifier.of(catalog, db, table).buildTableIdentifier(), partition);
     int offset = (page - 1) * pageSize;
     PageResult<PartitionFileBaseInfo> amsPageResult = PageResult.of(partitionFileBaseInfos,
         offset, pageSize);
@@ -371,8 +372,8 @@ public class TableController {
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
     int offset = (page - 1) * pageSize;
 
-    List<DDLInfo> ddlInfoList = tableDescriptor.getTableOperations(ServerTableIdentifier.of(catalogName, db,
-        tableName));
+    List<DDLInfo> ddlInfoList = tableDescriptor.getTableOperations(
+        TableIdentifier.of(catalogName, db, tableName).buildTableIdentifier());
     Collections.reverse(ddlInfoList);
     PageResult<TableOperation> amsPageResult = PageResult.of(ddlInfoList,
         offset, pageSize, TableOperation::buildFromDDLInfo);

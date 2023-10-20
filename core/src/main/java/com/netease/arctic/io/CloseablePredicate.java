@@ -24,9 +24,9 @@ import java.util.function.Predicate;
 
 public class CloseablePredicate<T> implements Predicate<T>, Closeable {
 
-  private Predicate<T> predicate;
+  private final Predicate<T> predicate;
 
-  private Closeable closeable;
+  private final Closeable closeable;
 
   public CloseablePredicate(Predicate<T> predicate, Closeable closeable) {
     this.predicate = predicate;

@@ -219,10 +219,10 @@ public class MixedTables {
         String changeLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_CHANGE);
         try {
           if (StringUtils.isNotBlank(baseLocation)) {
-            dropInternalTable(tableMetaStore, baseLocation, purge);
+            dropInternalTable(tableMetaStore, baseLocation, false);
           }
           if (StringUtils.isNotBlank(changeLocation)) {
-            dropInternalTable(tableMetaStore, changeLocation, purge);
+            dropInternalTable(tableMetaStore, changeLocation, false);
           }
         } catch (Exception e) {
           LOG.warn("drop base/change iceberg table fail ", e);

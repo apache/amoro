@@ -113,7 +113,7 @@ public class PrimaryKeySpec implements Serializable {
 
   public static class Builder {
     private final Schema schema;
-    private List<PrimaryKeyField> pkFields = new ArrayList<>();
+    private final List<PrimaryKeyField> pkFields = new ArrayList<>();
 
     private Builder(Schema schema) {
       this.schema = schema;

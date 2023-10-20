@@ -30,6 +30,6 @@ public interface OptimizingProcess {
     RUNNING,
     CLOSED,
     SUCCESS,
-    FAILED;
+    FAILED
   }
 }
