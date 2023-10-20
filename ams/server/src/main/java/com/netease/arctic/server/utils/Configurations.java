@@ -463,9 +463,7 @@ public class Configurations implements java.io.Serializable, Cloneable {
    */
   public void addAllToProperties(Properties props) {
     synchronized (this.confData) {
-      for (Map.Entry<String, Object> entry : this.confData.entrySet()) {
-        props.put(entry.getKey(), entry.getValue());
-      }
+      props.putAll(this.confData);
     }
   }
 

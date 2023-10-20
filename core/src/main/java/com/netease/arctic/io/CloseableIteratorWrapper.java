@@ -29,8 +29,8 @@ public class CloseableIteratorWrapper<T> implements CloseableIterator<T> {
 
   private static final Logger LOG = LoggerFactory.getLogger(CloseableIteratorWrapper.class);
 
-  private Closeable[] closeables;
-  private CloseableIterator<T> closeableIterator;
+  private final Closeable[] closeables;
+  private final CloseableIterator<T> closeableIterator;
 
   public CloseableIteratorWrapper(CloseableIterator<T> closeableIterator, Closeable... closeables) {
     this.closeableIterator = closeableIterator;

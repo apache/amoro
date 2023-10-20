@@ -42,7 +42,7 @@ import java.util.stream.Stream;
 
 public class TestSqlExtendParser {
 
-  private ArcticSqlExtensionsParser parser =
+  private final ArcticSqlExtensionsParser parser =
       new ArcticSqlExtensionsParser(
           new AbstractSqlParser() {
             @Override
@@ -51,7 +51,7 @@ public class TestSqlExtendParser {
             }
           });
 
-  private SparkSqlParser sparkSqlParser = new SparkSqlParser();
+  private final SparkSqlParser sparkSqlParser = new SparkSqlParser();
 
   @ParameterizedTest
   @ValueSource(

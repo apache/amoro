@@ -231,7 +231,7 @@ public class TestWatermark extends FlinkTestBase {
 
     private static final long serialVersionUID = 1L;
     public long watermark;
-    private static CompletableFuture<Void> waitWatermark = new CompletableFuture<>();
+    private static final CompletableFuture<Void> waitWatermark = new CompletableFuture<>();
 
     public WatermarkTestOperator() {
       super();

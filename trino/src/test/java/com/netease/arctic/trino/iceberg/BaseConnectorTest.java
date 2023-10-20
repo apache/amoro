@@ -446,7 +446,7 @@ public abstract class BaseConnectorTest
   @Test
   public void testMultipleRangesPredicate() {
     // List columns explicitly. Some connectors do not maintain column ordering.
-    assertQuery("" +
+    assertQuery(
         "SELECT orderkey, custkey, orderstatus, totalprice, orderdate, orderpriority, clerk, shippriority, comment " +
         "FROM orders " +
         "WHERE orderkey BETWEEN 10 AND 50");
@@ -455,7 +455,7 @@ public abstract class BaseConnectorTest
   @Test
   public void testRangePredicate() {
     // List columns explicitly. Some connectors do not maintain column ordering.
-    assertQuery("" +
+    assertQuery(
         "SELECT orderkey, custkey, orderstatus, totalprice, orderdate, orderpriority, clerk, shippriority, comment " +
         "FROM orders " +
         "WHERE orderkey BETWEEN 10 AND 50");
@@ -2186,11 +2186,11 @@ public abstract class BaseConnectorTest
     String query = "SELECT phone, custkey, acctbal FROM customer";
 
     try (TestTable table = new TestTable(getQueryRunner()::execute, "test_insert_", "AS " + query + " WITH NO DATA")) {
-      assertQuery("SELECT count(*) FROM " + table.getName() + "", "SELECT 0");
+      assertQuery("SELECT count(*) FROM " + table.getName(), "SELECT 0");
 
       assertUpdate("INSERT INTO " + table.getName() + " " + query, "SELECT count(*) FROM customer");
 
-      assertQuery("SELECT * FROM " + table.getName() + "", query);
+      assertQuery("SELECT * FROM " + table.getName(), query);
 
       assertUpdate("INSERT INTO " + table.getName() + " (custkey) VALUES (-1)", 1);
       assertUpdate("INSERT INTO " + table.getName() + " (custkey) VALUES (null)", 1);
@@ -2199,7 +2199,7 @@ public abstract class BaseConnectorTest
       assertUpdate("INSERT INTO " + table.getName() + " (phone, custkey) VALUES ('3283-2001-01-03', -3)", 1);
       assertUpdate("INSERT INTO " + table.getName() + " (acctbal) VALUES (1234)", 1);
 
-      assertQuery("SELECT * FROM " + table.getName() + "", query
+      assertQuery("SELECT * FROM " + table.getName(), query
           + " UNION ALL SELECT null, -1, null"
           + " UNION ALL SELECT null, null, null"
           + " UNION ALL SELECT '3283-2001-01-01', null, null"

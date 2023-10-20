@@ -46,6 +46,7 @@
         <guava-retrying.version>2.0.0</guava-retrying.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-io.version>2.4</commons-io.version>
+        <jol.version>0.16</jol.version>
     </properties>
 
     <dependencies>
@@ -353,6 +354,7 @@
         <dependency>
             <groupId>org.openjdk.jol</groupId>
             <artifactId>jol-core</artifactId>
+            <version>${jol.version}</version>
             <scope>provided</scope>
         </dependency>
 

@@ -26,8 +26,8 @@ import java.io.IOException;
 
 public class CloseableIterableWrapper<T> implements CloseableIterable<T> {
 
-  private Closeable[] closeables;
-  private CloseableIterable<T> inner;
+  private final Closeable[] closeables;
+  private final CloseableIterable<T> inner;
 
   public CloseableIterableWrapper(CloseableIterable<T> inner, Closeable... closeables) {
     this.inner = inner;

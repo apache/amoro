@@ -54,7 +54,7 @@ public class LogRecordV1 implements LogData<RowData>, Serializable {
   byte[] upstreamId;
   long epicNo;
   private boolean flip;
-  private ChangeAction changeAction;
+  private final ChangeAction changeAction;
   private transient RowData actualValue;
 
   public LogRecordV1(

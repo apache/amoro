@@ -64,9 +64,8 @@ public class DataReaderCommon {
   protected static Map<Integer, ?> getIdToConstant(
       DataFile dataFile, Schema projectedSchema, PartitionSpec spec,
       BiFunction<Type, Object, Object> convertConstant) {
-    Map<Integer, Object> idToConstant = new HashMap<>();
 
-    idToConstant.putAll(partitionMap(dataFile, spec, convertConstant));
+    Map<Integer, Object> idToConstant = new HashMap<>(partitionMap(dataFile, spec, convertConstant));
 
     idToConstant.put(org.apache.iceberg.MetadataColumns.FILE_PATH.fieldId(),
         convertConstant.apply(Types.StringType.get(), dataFile.path().toString()));

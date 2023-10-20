@@ -93,7 +93,7 @@ public interface TerminalSession {
     String usingSessionCatalogForHive =
         sessionConf.getOrDefault(usingSessionCatalogForHiveKey, "false");
     String type =
-        sessionConf.get(TerminalSessionFactory.SessionConfigOptions.catalogProperty(catalog, "type"));
+        sessionConf.get(TerminalSessionFactory.SessionConfigOptions.catalogProperty(catalog, "type").key());
     return usingSessionCatalogForHive.equals("true") && CatalogType.HIVE.name().equalsIgnoreCase(type);
   }
 }

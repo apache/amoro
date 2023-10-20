@@ -35,7 +35,7 @@ import java.util.List;
  */
 public class KeyedConnectorSplit implements ConnectorSplit {
 
-  private byte[] keyedTableScanTaskBytes;
+  private final byte[] keyedTableScanTaskBytes;
 
   private KeyedTableScanTask keyedTableScanTask;
 
