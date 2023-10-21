@@ -25,11 +25,18 @@ import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.server.ArcticManagementConf;
+import com.netease.arctic.server.catalog.IcebergCatalogImpl;
+import com.netease.arctic.server.catalog.InternalIcebergCatalogImpl;
+import com.netease.arctic.server.catalog.MixedHiveCatalogImpl;
+import com.netease.arctic.server.catalog.PaimonServerCatalog;
+import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.PlatformFileManager;
 import com.netease.arctic.server.dashboard.model.CatalogRegisterInfo;
 import com.netease.arctic.server.dashboard.model.CatalogSettingInfo;
 import com.netease.arctic.server.dashboard.model.CatalogSettingInfo.ConfigFileItem;
+import com.netease.arctic.server.dashboard.model.TableMeta;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.dashboard.utils.DesensitizationUtil;
 import com.netease.arctic.server.dashboard.utils.PropertiesUtil;
@@ -50,6 +57,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.netease.arctic.ams.api.TableFormat.ICEBERG;
 import static com.netease.arctic.ams.api.TableFormat.MIXED_HIVE;
@@ -137,6 +145,74 @@ public class CatalogController {
     this.tableService = tableService;
     this.platformFileInfoService = platformFileInfoService;
   }
+
+  /**
+   * get list of catalogs.
+   *
+   * @param ctx - context for handling the request and response
+   */
+  public void getCatalogs(Context ctx) {
+    List<CatalogMeta> catalogs = tableService.listCatalogMetas();
+    ctx.json(OkResponse.of(catalogs));
+  }
+
+  /**
+   * get databases of some catalog.
+   *
+   * @param ctx - context for handling the request and response
+   */
+  public void getDatabaseList(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String keywords = ctx.queryParam("keywords");
+
+    List<String> dbList = tableService.listDatabases(catalog).stream()
+        .filter(item -> org.apache.commons.lang3.StringUtils.isBlank(keywords) || item.contains(keywords))
+        .collect(Collectors.toList());
+    ctx.json(OkResponse.of(dbList));
+  }
+
+  /**
+   * get table list of catalog.db.
+   *
+   * @param ctx - context for handling the request and response
+   */
+  public void getTableList(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String keywords = ctx.queryParam("keywords");
+    org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument(
+        org.apache.commons.lang3.StringUtils.isNotBlank(catalog) && org.apache.commons.lang3.StringUtils.isNotBlank(db),
+        "catalog.database can not be empty in any element");
+
+    List<com.netease.arctic.ams.api.TableIdentifier> tableIdentifiers = tableService.listTables(catalog, db);
+    ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
+    List<TableMeta> tables = new ArrayList<>();
+
+    if (serverCatalog instanceof IcebergCatalogImpl || serverCatalog instanceof InternalIcebergCatalogImpl) {
+      tableIdentifiers.forEach(e -> tables.add(new TableMeta(
+          e.getTableName(),
+          TableMeta.TableType.ICEBERG.toString())));
+    } else if (serverCatalog instanceof MixedHiveCatalogImpl) {
+      tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.ARCTIC.toString())));
+      List<String> hiveTables = HiveTableUtil.getAllHiveTables(
+          ((MixedHiveCatalogImpl) serverCatalog).getHiveClient(),
+          db);
+      Set<String> arcticTables =
+          tableIdentifiers.stream()
+              .map(com.netease.arctic.ams.api.TableIdentifier::getTableName)
+              .collect(Collectors.toSet());
+      hiveTables.stream().filter(e -> !arcticTables.contains(e)).forEach(e -> tables.add(new TableMeta(
+          e,
+          TableMeta.TableType.HIVE.toString())));
+    } else if (serverCatalog instanceof PaimonServerCatalog) {
+      tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.PAIMON.toString())));
+    } else {
+      tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.ARCTIC.toString())));
+    }
+    ctx.json(OkResponse.of(tables.stream().filter(t -> org.apache.commons.lang3.StringUtils.isBlank(keywords) ||
+        t.getName().contains(keywords)).collect(Collectors.toList())));
+  }
+
 
   /**
    * Get catalog Type list
