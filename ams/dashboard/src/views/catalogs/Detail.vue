@@ -317,7 +317,7 @@ const defaultPropertiesMap = {
   ams: ['warehouse'],
   hadoop: ['warehouse'],
   custom: ['catalog-impl'],
-  glue: ['warehouse', 'lock-impl', 'lock-table'],
+  glue: ['warehouse', 'lock-impl', 'lock.table'],
   PAIMON: ['warehouse']
 }
 

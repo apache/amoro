@@ -34,7 +34,8 @@ import java.util.function.Supplier;
 class ChangeFieldName extends TypeUtil.CustomOrderSchemaVisitor<Type> {
 
   enum ChangeType {
-    TO_UPPERCASE, TO_LOWERCASE
+    TO_UPPERCASE,
+    TO_LOWERCASE
   }
 
   private final ChangeType changeType;
@@ -76,12 +77,17 @@ class ChangeFieldName extends TypeUtil.CustomOrderSchemaVisitor<Type> {
       Types.NestedField field = fields.get(i);
       Type type = types.next();
       if (field.isOptional()) {
-        newFields.add(Types.NestedField.optional(field.fieldId(), changeName(field.name()), type, field.doc()));
+        newFields.add(
+            Types.NestedField.optional(
+                field.fieldId(), changeName(field.name()), type, field.doc()));
       } else {
-        newFields.add(Types.NestedField.required(field.fieldId(), changeName(field.name()), type, field.doc()));
+        newFields.add(
+            Types.NestedField.required(
+                field.fieldId(), changeName(field.name()), type, field.doc()));
       }
       if (fieldNameSet.contains(newFields.get(i).name())) {
-        throw new IllegalArgumentException("Multiple fields' name will be changed to " + newFields.get(i).name());
+        throw new IllegalArgumentException(
+            "Multiple fields' name will be changed to " + newFields.get(i).name());
       }
       fieldNameSet.add(newFields.get(i).name());
     }

@@ -26,9 +26,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * This class is a temporary implementation, as readData and readDeleteData need to read the delete file twice.
- * Later on, it will be changed to read the delete file only once.
- * Can read both Mixed-hive and Mixed-iceberg format.
+ * This class is a temporary implementation, as readData and readDeleteData need to read the delete
+ * file twice. Later on, it will be changed to read the delete file only once. Can read both
+ * Mixed-hive and Mixed-iceberg format.
  */
 public class MixFormatOptimizingDataReader implements OptimizingDataReader {
 
@@ -39,9 +39,7 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
   private final RewriteFilesInput input;
 
   public MixFormatOptimizingDataReader(
-      ArcticTable table,
-      StructLikeCollections structLikeCollections,
-      RewriteFilesInput input) {
+      ArcticTable table, StructLikeCollections structLikeCollections, RewriteFilesInput input) {
     this.table = table;
     this.structLikeCollections = structLikeCollections;
     this.input = input;
@@ -52,25 +50,25 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
     AdaptHiveGenericKeyedDataReader reader = arcticDataReader(table.schema());
 
     // Change returned value by readData  from Iterator to Iterable in future
-    CloseableIterator<Record> closeableIterator = reader.readData(nodeFileScanTask(input.rewrittenDataFilesForMixed()));
+    CloseableIterator<Record> closeableIterator =
+        reader.readData(nodeFileScanTask(input.rewrittenDataFilesForMixed()));
     return wrapIterator2Iterable(closeableIterator);
   }
 
   @Override
   public CloseableIterable<Record> readDeletedData() {
-    Schema schema = new Schema(
-        MetadataColumns.FILE_PATH,
-        MetadataColumns.ROW_POSITION,
-        com.netease.arctic.table.MetadataColumns.TREE_NODE_FIELD
-    );
+    Schema schema =
+        new Schema(
+            MetadataColumns.FILE_PATH,
+            MetadataColumns.ROW_POSITION,
+            com.netease.arctic.table.MetadataColumns.TREE_NODE_FIELD);
     AdaptHiveGenericKeyedDataReader reader = arcticDataReader(schema);
-    return wrapIterator2Iterable(reader.readDeletedData(nodeFileScanTask(input.rePosDeletedDataFilesForMixed())));
+    return wrapIterator2Iterable(
+        reader.readDeletedData(nodeFileScanTask(input.rePosDeletedDataFilesForMixed())));
   }
 
   @Override
-  public void close() {
-
-  }
+  public void close() {}
 
   private AdaptHiveGenericKeyedDataReader arcticDataReader(Schema requiredSchema) {
 
@@ -80,10 +78,17 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
       primaryKeySpec = keyedTable.primaryKeySpec();
     }
 
-    return new AdaptHiveGenericKeyedDataReader(table.io(), table.schema(), requiredSchema,
-        primaryKeySpec, table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
-        false, IdentityPartitionConverters::convertConstant, null,
-        false, structLikeCollections);
+    return new AdaptHiveGenericKeyedDataReader(
+        table.io(),
+        table.schema(),
+        requiredSchema,
+        primaryKeySpec,
+        table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
+        false,
+        IdentityPartitionConverters::convertConstant,
+        null,
+        false,
+        structLikeCollections);
   }
 
   private NodeFileScanTask nodeFileScanTask(List<PrimaryKeyedFile> dataFiles) {
@@ -95,9 +100,10 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
     allTaskFiles.addAll(equlityDeleteList);
     allTaskFiles.addAll(dataFiles);
 
-    List<ArcticFileScanTask> fileScanTasks = allTaskFiles.stream()
-        .map(file -> new BasicArcticFileScanTask(file, posDeleteList, table.spec()))
-        .collect(Collectors.toList());
+    List<ArcticFileScanTask> fileScanTasks =
+        allTaskFiles.stream()
+            .map(file -> new BasicArcticFileScanTask(file, posDeleteList, table.spec()))
+            .collect(Collectors.toList());
     return new NodeFileScanTask(fileScanTasks);
   }
 

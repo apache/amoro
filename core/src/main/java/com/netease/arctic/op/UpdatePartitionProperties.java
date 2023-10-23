@@ -26,13 +26,14 @@ import java.util.Map;
 
 /**
  * API for updating partition properties.
- * <p>
- * Apply returns the updated partition properties as a map for validation.
- * <p>
- * When committing, these changes will be applied to the current table metadata. Commit conflicts
+ *
+ * <p>Apply returns the updated partition properties as a map for validation.
+ *
+ * <p>When committing, these changes will be applied to the current table metadata. Commit conflicts
  * will be resolved by applying the pending changes to the new table metadata.
  */
-public interface UpdatePartitionProperties extends PendingUpdate<StructLikeMap<Map<String, String>>> {
+public interface UpdatePartitionProperties
+    extends PendingUpdate<StructLikeMap<Map<String, String>>> {
 
   /**
    * Add a key/value property to the partition.
@@ -54,5 +55,4 @@ public interface UpdatePartitionProperties extends PendingUpdate<StructLikeMap<M
    * @throws NullPointerException If the key is null
    */
   UpdatePartitionProperties remove(StructLike partitionData, String key);
-
 }

@@ -31,8 +31,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Copy from Iceberg {@link LockManagers.InMemoryLockManager}, fix the NullPointerException when release lock.
- * After this <a href="https://github.com/apache/iceberg/issues/4550">issue</a> is fixed, this class can be removed.
+ * Copy from Iceberg {@link LockManagers.InMemoryLockManager}, fix the NullPointerException when
+ * release lock. After this <a href="https://github.com/apache/iceberg/issues/4550">issue</a> is
+ * fixed, this class can be removed.
  */
 public class IcebergInMemoryLockManager extends LockManagers.BaseLockManager {
 
@@ -41,7 +42,8 @@ public class IcebergInMemoryLockManager extends LockManagers.BaseLockManager {
   private static final Map<String, InMemoryLockContent> LOCKS = Maps.newConcurrentMap();
   private static final Map<String, ScheduledFuture<?>> HEARTBEATS = Maps.newHashMap();
 
-  private static final IcebergInMemoryLockManager INSTANCE = new IcebergInMemoryLockManager(Maps.newHashMap());
+  private static final IcebergInMemoryLockManager INSTANCE =
+      new IcebergInMemoryLockManager(Maps.newHashMap());
 
   public static IcebergInMemoryLockManager instance() {
     return INSTANCE;
@@ -126,16 +128,12 @@ public class IcebergInMemoryLockManager extends LockManagers.BaseLockManager {
 
     if (!currentContent.ownerId().equals(ownerId)) {
       LOG.error(
-          "Cannot unlock {} by {}, current owner: {}",
-          entityId,
-          ownerId,
-          currentContent.ownerId());
+          "Cannot unlock {} by {}, current owner: {}", entityId, ownerId, currentContent.ownerId());
       return false;
     }
 
     // where NPE happens
-    Optional.ofNullable(HEARTBEATS.remove(entityId))
-        .ifPresent(future -> future.cancel(false));
+    Optional.ofNullable(HEARTBEATS.remove(entityId)).ifPresent(future -> future.cancel(false));
     LOCKS.remove(entityId);
     return true;
   }

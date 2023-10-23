@@ -35,14 +35,13 @@ import org.apache.iceberg.util.StructLikeMap;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Replace {@link BaseTable} partition files and change max transaction id map
- */
-public class KeyedPartitionRewrite extends PartitionTransactionOperation implements RewritePartitions {
+/** Replace {@link BaseTable} partition files and change max transaction id map */
+public class KeyedPartitionRewrite extends PartitionTransactionOperation
+    implements RewritePartitions {
 
   protected List<DataFile> addFiles = Lists.newArrayList();
   private Long optimizedSequence;
-  
+
   public KeyedPartitionRewrite(KeyedTable keyedTable) {
     super(keyedTable);
   }

@@ -25,35 +25,23 @@ import java.util.Map;
 
 public interface AmoroTable<T> {
 
-  /**
-   * Returns the {@link TableIdentifier} of this table
-   */
+  /** Returns the {@link TableIdentifier} of this table */
   TableIdentifier id();
 
-  /**
-   * Returns the name of this table
-   */
+  /** Returns the name of this table */
   default String name() {
     return id().toString();
   }
 
-  /**
-   * Returns the {@link TableFormat} of this table
-   */
+  /** Returns the {@link TableFormat} of this table */
   TableFormat format();
 
-  /**
-   * Returns the properties of this table
-   */
+  /** Returns the properties of this table */
   Map<String, String> properties();
 
-  /**
-   * Returns the original of this table
-   */
+  /** Returns the original of this table */
   T originalTable();
 
-  /**
-   * Returns the current snapshot of this table
-   */
+  /** Returns the current snapshot of this table */
   TableSnapshot currentSnapshot();
 }

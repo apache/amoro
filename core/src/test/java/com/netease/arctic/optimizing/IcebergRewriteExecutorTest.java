@@ -71,13 +71,10 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
 
   private RewriteFilesInput dataScanTask;
 
-  private final Schema posSchema = new Schema(
-      MetadataColumns.FILE_PATH,
-      MetadataColumns.ROW_POSITION
-  );
+  private final Schema posSchema =
+      new Schema(MetadataColumns.FILE_PATH, MetadataColumns.ROW_POSITION);
 
-  public IcebergRewriteExecutorTest(
-      boolean partitionedTable, FileFormat fileFormat) {
+  public IcebergRewriteExecutorTest(boolean partitionedTable, FileFormat fileFormat) {
     super(
         new BasicCatalogTestHelper(TableFormat.ICEBERG),
         new BasicTableTestHelper(false, true, buildTableProperties(fileFormat)));
@@ -86,9 +83,11 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
 
   @Parameterized.Parameters(name = "partitionedTable = {0}, fileFormat = {1}")
   public static Object[][] parameters() {
-    return new Object[][] {{true, FileFormat.PARQUET}, {false, FileFormat.PARQUET},
-                           {true, FileFormat.AVRO}, {false, FileFormat.AVRO},
-                           {true, FileFormat.ORC}, {false, FileFormat.ORC}};
+    return new Object[][] {
+      {true, FileFormat.PARQUET}, {false, FileFormat.PARQUET},
+      {true, FileFormat.AVRO}, {false, FileFormat.AVRO},
+      {true, FileFormat.ORC}, {false, FileFormat.ORC}
+    };
   }
 
   private static Map<String, String> buildTableProperties(FileFormat fileFormat) {
@@ -110,61 +109,84 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
   @Before
   public void initDataAndReader() throws IOException {
     StructLike partitionData = getPartitionData();
-    OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(getArcticTable().asUnkeyedTable(), 0, 1)
-        .format(fileFormat).build();
-    DataFile dataFile = FileHelpers.writeDataFile(getArcticTable().asUnkeyedTable(),
-        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData,
-        Arrays.asList(
-            MixedDataTestHelpers.createRecord(1, "john", 0, "1970-01-01T08:00:00"),
-            MixedDataTestHelpers.createRecord(2, "lily", 1, "1970-01-01T08:00:00"),
-            MixedDataTestHelpers.createRecord(3, "sam", 2, "1970-01-01T08:00:00")));
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(getArcticTable().asUnkeyedTable(), 0, 1)
+            .format(fileFormat)
+            .build();
+    DataFile dataFile =
+        FileHelpers.writeDataFile(
+            getArcticTable().asUnkeyedTable(),
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            Arrays.asList(
+                MixedDataTestHelpers.createRecord(1, "john", 0, "1970-01-01T08:00:00"),
+                MixedDataTestHelpers.createRecord(2, "lily", 1, "1970-01-01T08:00:00"),
+                MixedDataTestHelpers.createRecord(3, "sam", 2, "1970-01-01T08:00:00")));
 
     Schema idSchema = TypeUtil.select(BasicTableTestHelper.TABLE_SCHEMA, Sets.newHashSet(1));
     GenericRecord idRecord = GenericRecord.create(idSchema);
-    DeleteFile eqDeleteFile = FileHelpers.writeDeleteFile(getArcticTable().asUnkeyedTable(),
-        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData,
-        Collections.singletonList(idRecord.copy("id", 1)), idSchema);
+    DeleteFile eqDeleteFile =
+        FileHelpers.writeDeleteFile(
+            getArcticTable().asUnkeyedTable(),
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            Collections.singletonList(idRecord.copy("id", 1)),
+            idSchema);
 
     List<Pair<CharSequence, Long>> deletes = Lists.newArrayList();
     deletes.add(Pair.of(dataFile.path(), 1L));
-    DeleteFile posDeleteFile = FileHelpers.writeDeleteFile(getArcticTable().asUnkeyedTable(),
-        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData, deletes).first();
+    DeleteFile posDeleteFile =
+        FileHelpers.writeDeleteFile(
+                getArcticTable().asUnkeyedTable(),
+                outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+                partitionData,
+                deletes)
+            .first();
 
-    scanTask = new RewriteFilesInput(
-        new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
-        new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
-        new DeleteFile[] {MixedDataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile,2L),
-                          MixedDataTestHelpers.wrapIcebergDeleteFile(posDeleteFile,3L)},
-        new DeleteFile[] {},
-        getArcticTable());
+    scanTask =
+        new RewriteFilesInput(
+            new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
+            new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
+            new DeleteFile[] {
+              MixedDataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile, 2L),
+              MixedDataTestHelpers.wrapIcebergDeleteFile(posDeleteFile, 3L)
+            },
+            new DeleteFile[] {},
+            getArcticTable());
 
-    dataScanTask = new RewriteFilesInput(
-        new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
-        new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile,1L)},
-        new DeleteFile[] {},
-        new DeleteFile[] {},
-        getArcticTable());
+    dataScanTask =
+        new RewriteFilesInput(
+            new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
+            new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
+            new DeleteFile[] {},
+            new DeleteFile[] {},
+            getArcticTable());
   }
 
   @Test
   public void readAllData() throws IOException {
-    IcebergRewriteExecutor executor = new IcebergRewriteExecutor(
-        scanTask,
-        getArcticTable(),
-        StructLikeCollections.DEFAULT
-    );
+    IcebergRewriteExecutor executor =
+        new IcebergRewriteExecutor(scanTask, getArcticTable(), StructLikeCollections.DEFAULT);
 
     RewriteFilesOutput output = executor.execute();
 
-    try (CloseableIterable<Record> records = openFile(output.getDataFiles()[0].path().toString(),
-        output.getDataFiles()[0].format(), getArcticTable().schema(), new HashMap<>())) {
+    try (CloseableIterable<Record> records =
+        openFile(
+            output.getDataFiles()[0].path().toString(),
+            output.getDataFiles()[0].format(),
+            getArcticTable().schema(),
+            new HashMap<>())) {
       Assert.assertEquals(1, Iterables.size(records));
       Record record = Iterables.getFirst(records, null);
       Assert.assertEquals(record.get(0), 3);
     }
 
-    try (CloseableIterable<Record> records = openFile(output.getDeleteFiles()[0].path().toString(),
-        output.getDataFiles()[0].format(), posSchema, new HashMap<>())) {
+    try (CloseableIterable<Record> records =
+        openFile(
+            output.getDeleteFiles()[0].path().toString(),
+            output.getDataFiles()[0].format(),
+            posSchema,
+            new HashMap<>())) {
       Assert.assertEquals(2, Iterables.size(records));
       Record first = Iterables.getFirst(records, null);
       Assert.assertEquals(first.get(1), 0L);
@@ -175,16 +197,17 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
 
   @Test
   public void readOnlyData() throws IOException {
-    IcebergRewriteExecutor executor = new IcebergRewriteExecutor(
-        dataScanTask,
-        getArcticTable(),
-        StructLikeCollections.DEFAULT
-    );
+    IcebergRewriteExecutor executor =
+        new IcebergRewriteExecutor(dataScanTask, getArcticTable(), StructLikeCollections.DEFAULT);
 
     RewriteFilesOutput output = executor.execute();
 
-    try (CloseableIterable<Record> records = openFile(output.getDataFiles()[0].path().toString(),
-        output.getDataFiles()[0].format(), getArcticTable().schema(), new HashMap<>())) {
+    try (CloseableIterable<Record> records =
+        openFile(
+            output.getDataFiles()[0].path().toString(),
+            output.getDataFiles()[0].format(),
+            getArcticTable().schema(),
+            new HashMap<>())) {
       Assert.assertEquals(3, Iterables.size(records));
     }
 
@@ -192,39 +215,49 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
   }
 
   private CloseableIterable<Record> openFile(
-      String path, FileFormat fileFormat, Schema fileProjection,
-      Map<Integer, ?> idToConstant) {
+      String path, FileFormat fileFormat, Schema fileProjection, Map<Integer, ?> idToConstant) {
     InputFile input = getArcticTable().io().newInputFile(path);
 
     switch (fileFormat) {
       case AVRO:
-        Avro.ReadBuilder avro = Avro.read(input)
-            .project(fileProjection)
-            .createReaderFunc(
-                avroSchema -> DataReader.create(fileProjection, avroSchema, idToConstant));
+        Avro.ReadBuilder avro =
+            Avro.read(input)
+                .project(fileProjection)
+                .createReaderFunc(
+                    avroSchema -> DataReader.create(fileProjection, avroSchema, idToConstant));
         return avro.build();
 
       case PARQUET:
-        Parquet.ReadBuilder parquet = Parquet.read(input)
-            .project(fileProjection)
-            .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(fileProjection, fileSchema,
-                idToConstant));
+        Parquet.ReadBuilder parquet =
+            Parquet.read(input)
+                .project(fileProjection)
+                .createReaderFunc(
+                    fileSchema ->
+                        GenericParquetReaders.buildReader(
+                            fileProjection, fileSchema, idToConstant));
         return parquet.build();
 
       case ORC:
-        Schema projectionWithoutConstantAndMetadataFields = TypeUtil.selectNot(
-            fileProjection,
-            org.apache.iceberg.relocated.com.google.common.collect.Sets.union(
-                idToConstant.keySet(),
-                MetadataColumns.metadataFieldIds()));
-        org.apache.iceberg.orc.ORC.ReadBuilder orc = org.apache.iceberg.orc.ORC.read(input)
-            .project(projectionWithoutConstantAndMetadataFields)
-            .createReaderFunc(fileSchema -> GenericOrcReader.buildReader(fileProjection, fileSchema, idToConstant));
+        Schema projectionWithoutConstantAndMetadataFields =
+            TypeUtil.selectNot(
+                fileProjection,
+                org.apache.iceberg.relocated.com.google.common.collect.Sets.union(
+                    idToConstant.keySet(), MetadataColumns.metadataFieldIds()));
+        org.apache.iceberg.orc.ORC.ReadBuilder orc =
+            org.apache
+                .iceberg
+                .orc
+                .ORC
+                .read(input)
+                .project(projectionWithoutConstantAndMetadataFields)
+                .createReaderFunc(
+                    fileSchema ->
+                        GenericOrcReader.buildReader(fileProjection, fileSchema, idToConstant));
         return orc.build();
 
       default:
-        throw new UnsupportedOperationException(String.format("Cannot read %s file: %s",
-            fileFormat.name(), path));
+        throw new UnsupportedOperationException(
+            String.format("Cannot read %s file: %s", fileFormat.name(), path));
     }
   }
 }

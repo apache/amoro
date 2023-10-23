@@ -27,8 +27,8 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
 
 /**
- * Table scan for {@link com.netease.arctic.table.ChangeTable}, support filter files with data sequence number
- * and return {@link BasicArcticFileScanTask}.
+ * Table scan for {@link com.netease.arctic.table.ChangeTable}, support filter files with data
+ * sequence number and return {@link BasicArcticFileScanTask}.
  */
 public class MixedChangeTableScan extends DataTableScan implements ChangeTableIncrementalScan {
   private StructLikeMap<Long> fromPartitionSequence;
@@ -56,7 +56,8 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
   }
 
   @Override
-  protected MixedChangeTableScan newRefinedScan(Table table, Schema schema, TableScanContext context) {
+  protected MixedChangeTableScan newRefinedScan(
+      Table table, Schema schema, TableScanContext context) {
     MixedChangeTableScan scan = new MixedChangeTableScan(table, schema, context);
     scan.fromPartitionSequence = this.fromPartitionSequence;
     scan.toSequence = this.toSequence;
@@ -86,18 +87,20 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
 
   @Override
   public CloseableIterable<FileScanTask> doPlanFiles() {
-    CloseableIterable<FileScanTask> filteredTasks = CloseableIterable.filter(
-        super.doPlanFiles(),
-        fileScanTask -> {
-          StructLike partition = fileScanTask.file().partition();
-          long sequenceNumber = fileScanTask.file().dataSequenceNumber();
+    CloseableIterable<FileScanTask> filteredTasks =
+        CloseableIterable.filter(
+            super.doPlanFiles(),
+            fileScanTask -> {
+              StructLike partition = fileScanTask.file().partition();
+              long sequenceNumber = fileScanTask.file().dataSequenceNumber();
           return shouldKeepFile(partition, sequenceNumber);
-        });
-    return CloseableIterable.transform(filteredTasks,
-        fileScanTask -> new BasicArcticFileScanTask(DefaultKeyedFile.parseChange(fileScanTask.file()),
-            null, table().spec(), null));
+            });
+    return CloseableIterable.transform(
+        filteredTasks,
+        fileScanTask ->
+            new BasicArcticFileScanTask(
+                DefaultKeyedFile.parseChange(fileScanTask.file()), null, table().spec(), null));
   }
-
 
   private boolean shouldKeepFile(StructLike partition, long sequence) {
     if (biggerThanToSequence(sequence)) {

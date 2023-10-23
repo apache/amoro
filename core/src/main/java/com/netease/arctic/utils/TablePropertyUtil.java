@@ -34,9 +34,7 @@ import org.apache.iceberg.util.StructLikeMap;
 import java.io.UncheckedIOException;
 import java.util.Map;
 
-/**
- * Utils to handle table properties.
- */
+/** Utils to handle table properties. */
 public class TablePropertyUtil {
 
   public static final StructLike EMPTY_STRUCT = GenericRecord.create(new Schema());
@@ -61,8 +59,8 @@ public class TablePropertyUtil {
     }
   }
 
-  public static String encodePartitionProperties(PartitionSpec spec,
-      StructLikeMap<Map<String, String>> partitionProperties) {
+  public static String encodePartitionProperties(
+      PartitionSpec spec, StructLikeMap<Map<String, String>> partitionProperties) {
     Map<String, Map<String, String>> stringKeyMap = Maps.newHashMap();
     for (StructLike pd : partitionProperties.keySet()) {
       String pathLike = spec.partitionToPath(pd);
@@ -81,24 +79,31 @@ public class TablePropertyUtil {
     StructLikeMap<Long> result = StructLikeMap.create(unkeyedTable.spec().partitionType());
 
     StructLikeMap<Map<String, String>> partitionProperty = unkeyedTable.partitionProperty();
-    partitionProperty.forEach((partitionKey, propertyValue) -> {
-      Long longValue = (propertyValue == null || propertyValue.get(key) == null) ?
-          null : Long.parseLong(propertyValue.get(key));
-      if (longValue != null) {
-        result.put(partitionKey, longValue);
-      }
-    });
+    partitionProperty.forEach(
+        (partitionKey, propertyValue) -> {
+          Long longValue =
+              (propertyValue == null || propertyValue.get(key) == null)
+                  ? null
+                  : Long.parseLong(propertyValue.get(key));
+          if (longValue != null) {
+            result.put(partitionKey, longValue);
+          }
+        });
 
     return result;
   }
 
-  public static Map<String, String> getPartitionProperties(ArcticTable arcticTable, String partitionPath) {
+  public static Map<String, String> getPartitionProperties(
+      ArcticTable arcticTable, String partitionPath) {
     return getPartitionProperties(
-        arcticTable.isKeyedTable() ? arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable(),
+        arcticTable.isKeyedTable()
+            ? arcticTable.asKeyedTable().baseTable()
+            : arcticTable.asUnkeyedTable(),
         partitionPath);
   }
 
-  public static Map<String, String> getPartitionProperties(UnkeyedTable unkeyedTable, String partitionPath) {
+  public static Map<String, String> getPartitionProperties(
+      UnkeyedTable unkeyedTable, String partitionPath) {
     StructLike partitionData;
     if (unkeyedTable.spec().isUnpartitioned()) {
       partitionData = TablePropertyUtil.EMPTY_STRUCT;
@@ -108,7 +113,8 @@ public class TablePropertyUtil {
     return getPartitionProperties(unkeyedTable, partitionData);
   }
 
-  public static Map<String, String> getPartitionProperties(UnkeyedTable unkeyedTable, StructLike partitionData) {
+  public static Map<String, String> getPartitionProperties(
+      UnkeyedTable unkeyedTable, StructLike partitionData) {
     Map<String, String> result = Maps.newHashMap();
     StructLikeMap<Map<String, String>> partitionProperty = unkeyedTable.partitionProperty();
     if (partitionProperty.containsKey(partitionData)) {

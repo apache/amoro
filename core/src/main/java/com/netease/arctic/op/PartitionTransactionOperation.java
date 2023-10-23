@@ -81,7 +81,6 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Lis
     return this;
   }
 
-
   public void commit() {
     if (this.skipEmptyCommit && isEmptyCommit()) {
       return;

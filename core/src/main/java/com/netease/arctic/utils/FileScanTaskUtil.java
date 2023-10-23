@@ -25,14 +25,12 @@ import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-/**
- * Utility class for working with file scan tasks.
- */
+/** Utility class for working with file scan tasks. */
 public class FileScanTaskUtil {
 
   /**
-   * Converts a collection of ArcticFileScanTask objects to a string representation.
-   * The string representation includes details about each file, such as its path, type, mask, index,
+   * Converts a collection of ArcticFileScanTask objects to a string representation. The string
+   * representation includes details about each file, such as its path, type, mask, index,
    * transaction ID, file size in bytes, and record count.
    *
    * @param tasks the collection of ArcticFileScanTask objects to convert to a string
@@ -42,17 +40,20 @@ public class FileScanTaskUtil {
     if (tasks == null) {
       return "[]";
     }
-    return Iterables.toString(tasks.stream()
-        .map(ArcticFileScanTask::file)
-        .map(primaryKeyedFile ->
-            MoreObjects.toStringHelper(primaryKeyedFile)
-                .add("\n\tfile", primaryKeyedFile.path().toString())
-                .add("\n\ttype", primaryKeyedFile.type().shortName())
-                .add("\n\tmask", primaryKeyedFile.node().mask())
-                .add("\n\tindex", primaryKeyedFile.node().index())
-                .add("\n\ttransactionId", primaryKeyedFile.transactionId())
-                .add("\n\tfileSizeInBytes", primaryKeyedFile.fileSizeInBytes())
-                .add("\n\trecordCount", primaryKeyedFile.recordCount())
-                .toString()).collect(Collectors.toList()));
+    return Iterables.toString(
+        tasks.stream()
+            .map(ArcticFileScanTask::file)
+            .map(
+                primaryKeyedFile ->
+                    MoreObjects.toStringHelper(primaryKeyedFile)
+                        .add("\n\tfile", primaryKeyedFile.path().toString())
+                        .add("\n\ttype", primaryKeyedFile.type().shortName())
+                        .add("\n\tmask", primaryKeyedFile.node().mask())
+                        .add("\n\tindex", primaryKeyedFile.node().index())
+                        .add("\n\ttransactionId", primaryKeyedFile.transactionId())
+                        .add("\n\tfileSizeInBytes", primaryKeyedFile.fileSizeInBytes())
+                        .add("\n\trecordCount", primaryKeyedFile.recordCount())
+                        .toString())
+            .collect(Collectors.toList()));
   }
 }

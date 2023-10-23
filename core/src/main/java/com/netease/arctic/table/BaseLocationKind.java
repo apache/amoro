@@ -4,6 +4,5 @@ public final class BaseLocationKind implements LocationKind {
 
   public static final LocationKind INSTANT = new BaseLocationKind();
 
-  private BaseLocationKind() {
-  }
+  private BaseLocationKind() {}
 }

@@ -47,9 +47,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
-/**
- * Overwrite {@link com.netease.arctic.table.BaseTable} and change max transaction id map
- */
+/** Overwrite {@link com.netease.arctic.table.BaseTable} and change max transaction id map */
 public class OverwriteBaseFiles extends PartitionTransactionOperation {
 
   public static final String PROPERTIES_TRANSACTION_ID = "txId";
@@ -109,15 +107,16 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   }
 
   /**
-   * Update optimized sequence for partition.
-   * The files of ChangeStore whose sequence is bigger than optimized sequence should migrate to BaseStore later.
+   * Update optimized sequence for partition. The files of ChangeStore whose sequence is bigger than
+   * optimized sequence should migrate to BaseStore later.
    *
    * @param partitionData - partition
    * @param sequence - optimized sequence
    * @return this for chain
    */
   public OverwriteBaseFiles updateOptimizedSequence(StructLike partitionData, long sequence) {
-    Preconditions.checkArgument(this.dynamic == null || !this.dynamic,
+    Preconditions.checkArgument(
+        this.dynamic == null || !this.dynamic,
         "updateOptimizedSequenceDynamically() and updateOptimizedSequence() can't be used simultaneously");
     this.partitionOptimizedSequence.put(partitionData, sequence);
     this.dynamic = false;
@@ -125,14 +124,15 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   }
 
   /**
-   * Update optimized sequence for changed partitions.
-   * The files of ChangeStore whose sequence is bigger than optimized sequence should migrate to BaseStore later.
+   * Update optimized sequence for changed partitions. The files of ChangeStore whose sequence is
+   * bigger than optimized sequence should migrate to BaseStore later.
    *
    * @param sequence - optimized sequence
    * @return this for chain
    */
   public OverwriteBaseFiles updateOptimizedSequenceDynamically(long sequence) {
-    Preconditions.checkArgument(this.dynamic == null || this.dynamic,
+    Preconditions.checkArgument(
+        this.dynamic == null || this.dynamic,
         "updateOptimizedSequenceDynamically() and updateOptimizedSequence() can't be used simultaneously");
     this.optimizedSequence = sequence;
     this.dynamic = true;
@@ -140,7 +140,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   }
 
   public OverwriteBaseFiles validateNoConflictingAppends(Expression newConflictDetectionFilter) {
-    Preconditions.checkArgument(newConflictDetectionFilter != null, "Conflict detection filter cannot be null");
+    Preconditions.checkArgument(
+        newConflictDetectionFilter != null, "Conflict detection filter cannot be null");
     this.conflictDetectionFilter = newConflictDetectionFilter;
     return this;
   }
@@ -148,8 +149,11 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   @Override
   protected boolean isEmptyCommit() {
     applyDeleteExpression();
-    return deleteFiles.isEmpty() && addFiles.isEmpty() && deleteDeleteFiles.isEmpty() && addDeleteFiles.isEmpty() &&
-        partitionOptimizedSequence.isEmpty();
+    return deleteFiles.isEmpty()
+        && addFiles.isEmpty()
+        && deleteDeleteFiles.isEmpty()
+        && addDeleteFiles.isEmpty()
+        && partitionOptimizedSequence.isEmpty();
   }
 
   @Override
@@ -160,7 +164,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
 
     StructLikeMap<Long> sequenceForChangedPartitions = null;
     if (this.dynamic) {
-      sequenceForChangedPartitions = StructLikeMap.create(transaction.table().spec().partitionType());
+      sequenceForChangedPartitions =
+          StructLikeMap.create(transaction.table().spec().partitionType());
     }
 
     UnkeyedTable baseTable = keyedTable.baseTable();
@@ -196,7 +201,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     }
 
     // step2: RowDelta/Rewrite pos-delete files
-    if (CollectionUtils.isNotEmpty(addDeleteFiles) || CollectionUtils.isNotEmpty(deleteDeleteFiles)) {
+    if (CollectionUtils.isNotEmpty(addDeleteFiles)
+        || CollectionUtils.isNotEmpty(deleteDeleteFiles)) {
       if (CollectionUtils.isEmpty(deleteDeleteFiles)) {
         RowDelta rowDelta = transaction.newRowDelta();
         if (baseTable.currentSnapshot() != null) {
@@ -229,8 +235,11 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
             sequenceForChangedPartitions.put(d.partition(), this.optimizedSequence);
           }
         }
-        rewriteFiles.rewriteFiles(Collections.emptySet(), new HashSet<>(deleteDeleteFiles),
-            Collections.emptySet(), new HashSet<>(addDeleteFiles));
+        rewriteFiles.rewriteFiles(
+            Collections.emptySet(),
+            new HashSet<>(deleteDeleteFiles),
+            Collections.emptySet(),
+            new HashSet<>(addDeleteFiles));
         if (MapUtils.isNotEmpty(properties)) {
           properties.forEach(rewriteFiles::set);
         }
@@ -264,7 +273,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     toChangePartitionSequence.forEach((partition, sequence) -> {
       optimizedSequence.put(partition, sequence);
       optimizedTime.put(partition, commitTime);
-    });
+        });
 
     StatisticsFile statisticsFile = null;
     List<StatisticsFile> result = Lists.newArrayList();
@@ -292,17 +301,21 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     if (this.deleteExpression == null) {
       return;
     }
-    try (CloseableIterable<CombinedScanTask> combinedScanTasks
-             = keyedTable.newScan().filter(deleteExpression).planTasks()) {
-      combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(
-          t -> {
-            t.dataTasks().forEach(ft -> deleteFiles.add(ft.file()));
-            t.arcticEquityDeletes().forEach(ft -> deleteFiles.add(ft.file()));
-          }
-      ));
+    try (CloseableIterable<CombinedScanTask> combinedScanTasks =
+        keyedTable.newScan().filter(deleteExpression).planTasks()) {
+      combinedScanTasks.forEach(
+          combinedTask ->
+              combinedTask
+                  .tasks()
+                  .forEach(
+                      t -> {
+                        t.dataTasks().forEach(ft -> deleteFiles.add(ft.file()));
+                        t.arcticEquityDeletes().forEach(ft -> deleteFiles.add(ft.file()));
+                      }));
       this.deleteExpressionApplied = true;
     } catch (IOException e) {
-      throw new IllegalStateException("failed when apply delete expression when overwrite files", e);
+      throw new IllegalStateException(
+          "failed when apply delete expression when overwrite files", e);
     }
   }
 }
