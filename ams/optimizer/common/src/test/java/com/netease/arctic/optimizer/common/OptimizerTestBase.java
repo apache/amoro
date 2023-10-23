@@ -24,8 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 
 public abstract class OptimizerTestBase {
-  @ClassRule
-  public static TestAms TEST_AMS = new TestAms();
+  @ClassRule public static TestAms TEST_AMS = new TestAms();
 
   @BeforeClass
   public static void reduceCallAmsInterval() {

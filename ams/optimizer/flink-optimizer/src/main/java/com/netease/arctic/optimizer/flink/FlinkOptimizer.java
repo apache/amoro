@@ -20,7 +20,8 @@ public class FlinkOptimizer {
   private static final String JOB_NAME = "arctic-flink-optimizer";
 
   public static void main(String[] args) throws CmdLineException {
-    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(new Configuration());
+    StreamExecutionEnvironment env =
+        StreamExecutionEnvironment.getExecutionEnvironment(new Configuration());
     OptimizerConfig optimizerConfig = new OptimizerConfig(args);
 
     // calculate optimizer memory allocation
@@ -30,7 +31,8 @@ public class FlinkOptimizer {
     env.addSource(new FlinkToucher(optimizer.getToucher()))
         .setParallelism(1)
         .broadcast()
-        .transform(FlinkExecutor.class.getName(), Types.VOID, new FlinkExecutor(optimizer.getExecutors()))
+        .transform(
+            FlinkExecutor.class.getName(), Types.VOID, new FlinkExecutor(optimizer.getExecutors()))
         .setParallelism(optimizerConfig.getExecutionParallel())
         .addSink(new DiscardingSink<>())
         .name("Optimizer empty sink")
@@ -53,12 +55,16 @@ public class FlinkOptimizer {
     }
     int parallelism = config.getExecutionParallel();
     int numberOfTaskSlots = configuration.get(TaskManagerOptions.NUM_TASK_SLOTS);
-    int memorySize = jobMemorySize.getMebiBytes() + (parallelism / numberOfTaskSlots) * taskMemorySize.getMebiBytes();
+    int memorySize =
+        jobMemorySize.getMebiBytes()
+            + (parallelism / numberOfTaskSlots) * taskMemorySize.getMebiBytes();
     if (parallelism % numberOfTaskSlots != 0) {
       memorySize += taskMemorySize.getMebiBytes();
     }
     if (memorySize != config.getMemorySize()) {
-      LOG.info("Reset the memory allocation of the optimizer to {}, before set is {}", memorySize,
+      LOG.info(
+          "Reset the memory allocation of the optimizer to {}, before set is {}",
+          memorySize,
           config.getMemorySize());
       config.setMemorySize(memorySize);
     }
