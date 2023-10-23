@@ -18,7 +18,7 @@ public interface CatalogService {
   /**
    * Gets the catalog metadata for the given catalog name.
    *
-   * @return the list of catalog metadata
+   * @return the catalog meta information
    */
   CatalogMeta getCatalogMeta(String catalogName);
 
