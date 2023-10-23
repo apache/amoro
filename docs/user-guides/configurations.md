@@ -118,6 +118,6 @@ If using Iceberg Format，please refer to [Iceberg configurations](https://icebe
 
 ### Dashboard configurations
 
-| Key                            | Default | Description                                                                                                                  |
-|--------------------------------|---------|------------------------------------------------------------------------------------------------------------------------------|
-| dashboard.thread-count         | 20      | The number of threads used for dashboard to read metadata. Currently only using for paimon's 'Files' and 'Transactions' page |
+| Key                                | Default | Description                                                                                                                          |
+|------------------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------|
+| dashboard.mainfest.io.thread-count | 20      | The number of threads used for dashboard to read metadata. Currently only using for 'Files' and 'Transactions' page of paimon format |

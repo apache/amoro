@@ -50,7 +50,7 @@ public class ArcticManagementConf {
           .withDescription("The administrator password");
 
   public static final ConfigOption<Integer> DASHBOARD_THREAD_COUNT =
-      ConfigOptions.key("dashboard.thread-count")
+      ConfigOptions.key("dashboard.mainfest.io.thread-count")
           .intType()
           .defaultValue(20)
           .withDescription("The number of threads used for dashboard to read metadata.");
