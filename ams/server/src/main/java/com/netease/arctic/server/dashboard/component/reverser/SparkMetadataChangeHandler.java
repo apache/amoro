@@ -39,7 +39,7 @@ public class SparkMetadataChangeHandler implements MetadataChangeHandler {
   private static final String DOC = " COMMENT '%s'";
   private static final String TYPE = " TYPE %s";
 
-  private String tableName;
+  private final String tableName;
 
   public SparkMetadataChangeHandler(String tableName) {
     this.tableName = tableName;

@@ -48,8 +48,8 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
   private final GenericObjectPool<ThriftClient<T>> pool;
   private final PoolConfig poolConfig;
   private final String serviceName;
-  private String url;
-  private boolean serviceReset = false;
+  private final String url;
+  private final boolean serviceReset = false;
 
   /**
    * Construct a new pool using

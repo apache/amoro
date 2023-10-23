@@ -19,8 +19,9 @@
 package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.formats.mixed.MixedIcebergTable;
 import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
 import java.util.List;
@@ -56,7 +57,7 @@ public class MixedIcebergCatalogImpl extends ExternalCatalog {
   }
 
   @Override
-  public List<TableIdentifier> listTables() {
+  public List<TableIDWithFormat> listTables() {
     return listDatabases().stream()
         .map(this::listTables)
         .flatMap(List::stream)
@@ -64,10 +65,10 @@ public class MixedIcebergCatalogImpl extends ExternalCatalog {
   }
 
   @Override
-  public List<TableIdentifier> listTables(String database) {
+  public List<TableIDWithFormat> listTables(String database) {
     return mixedIcebergCatalog.listTables(database)
         .stream()
-        .map(com.netease.arctic.table.TableIdentifier::buildTableIdentifier)
+        .map(id -> TableIDWithFormat.of(id, TableFormat.MIXED_ICEBERG))
         .collect(Collectors.toList());
   }
 

@@ -176,7 +176,7 @@ public class TestBaseLog {
             }
           });
 
-  private PrimaryKeySpec primaryKeySpec =
+  private final PrimaryKeySpec primaryKeySpec =
       PrimaryKeySpec.builderFor(userSchema).addColumn(1).build();
 
   public final RowType flinkUserSchema = FlinkSchemaUtil.convert(userSchema);

@@ -26,9 +26,9 @@ import java.util.Map;
 
 public class RecordWithAction implements Record {
 
-  private Record record;
+  private final Record record;
 
-  private ChangeAction action;
+  private final ChangeAction action;
 
   public RecordWithAction(Record record, ChangeAction action) {
     this.record = record;
@@ -105,10 +105,9 @@ public class RecordWithAction implements Record {
 
   @Override
   public String toString() {
-    final StringBuilder sb = new StringBuilder("RecordWithAction{");
-    sb.append("record=").append(record);
-    sb.append(", action=").append(action);
-    sb.append('}');
-    return sb.toString();
+    String sb = "RecordWithAction{" + "record=" + record +
+        ", action=" + action +
+        '}';
+    return sb;
   }
 }

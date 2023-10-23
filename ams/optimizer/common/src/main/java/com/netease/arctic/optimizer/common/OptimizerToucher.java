@@ -16,7 +16,7 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
 
   private TokenChangeListener tokenChangeListener;
   private final Map<String, String> registerProperties = Maps.newHashMap();
-  private long startTime;
+  private final long startTime;
 
   public OptimizerToucher(OptimizerConfig config) {
     super(config);

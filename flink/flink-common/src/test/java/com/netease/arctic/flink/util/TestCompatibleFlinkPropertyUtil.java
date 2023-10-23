@@ -33,14 +33,12 @@ public class TestCompatibleFlinkPropertyUtil {
             config, ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE));
 
     config.setBoolean(ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE, true);
-    Assert.assertEquals(
-        true,
+    Assert.assertTrue(
         CompatibleFlinkPropertyUtil.propertyAsBoolean(
             config, ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE));
 
     config.setBoolean(ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY, false);
-    Assert.assertEquals(
-        true,
+    Assert.assertTrue(
         CompatibleFlinkPropertyUtil.propertyAsBoolean(
             config, ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE));
   }
@@ -49,8 +47,7 @@ public class TestCompatibleFlinkPropertyUtil {
   public void testGetLegacyProperty() {
     Configuration config = new Configuration();
     config.setBoolean(ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY, true);
-    Assert.assertEquals(
-        true,
+    Assert.assertTrue(
         CompatibleFlinkPropertyUtil.propertyAsBoolean(
             config, ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE));
   }

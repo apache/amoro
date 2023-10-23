@@ -1004,13 +1004,13 @@ public class DateTimeUtils {
       case QUARTER:
         return (month + 2) / 3;
       case DOW:
-        return (int) floorMod((long) (julian + 1), 7L) + 1;
+        return (int) floorMod(julian + 1, 7L) + 1;
       case ISODOW:
-        return (int) floorMod((long) julian, 7L) + 1;
+        return (int) floorMod(julian, 7L) + 1;
       case WEEK:
         return getIso8601WeekNumber(julian, year, month, day);
       case DOY:
-        long janFirst = (long) ymdToJulian(year, 1, 1);
+        long janFirst = ymdToJulian(year, 1, 1);
         return (int) ((long) julian - janFirst) + 1;
       case DECADE:
         return year / 10;
@@ -1022,7 +1022,7 @@ public class DateTimeUtils {
   }
 
   private static long firstMondayOfFirstWeek(int year) {
-    long janFirst = (long) ymdToJulian(year, 1, 1);
+    long janFirst = ymdToJulian(year, 1, 1);
     long janFirstDow = floorMod(janFirst + 1L, 7L);
     return janFirst + (11L - janFirstDow) % 7L - 3L;
   }
@@ -1030,13 +1030,13 @@ public class DateTimeUtils {
   private static int getIso8601WeekNumber(int julian, int year, int month, int day) {
     long fmofw = firstMondayOfFirstWeek(year);
     if (month == 12 && day > 28) {
-      return 31 - day + 4 > 7 - ((int) floorMod((long) julian, 7L) + 1)
-              && 31 - day + (int) (floorMod((long) julian, 7L) + 1L) >= 4
+      return 31 - day + 4 > 7 - ((int) floorMod(julian, 7L) + 1)
+              && 31 - day + (int) (floorMod(julian, 7L) + 1L) >= 4
           ? (int) ((long) julian - fmofw) / 7 + 1
           : 1;
     } else if (month == 1 && day < 5) {
-      return 4 - day <= 7 - ((int) floorMod((long) julian, 7L) + 1)
-              && day - (int) (floorMod((long) julian, 7L) + 1L) >= -3
+      return 4 - day <= 7 - ((int) floorMod(julian, 7L) + 1)
+              && day - (int) (floorMod(julian, 7L) + 1L) >= -3
           ? 1
           : (int) ((long) julian - firstMondayOfFirstWeek(year - 1)) / 7 + 1;
     } else {

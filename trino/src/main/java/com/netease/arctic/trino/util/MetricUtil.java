@@ -23,9 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.function.Supplier;
 
-/**
- * tools to metric run time
- */
+/** tools to metric run time */
 public class MetricUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetricUtil.class);
@@ -41,7 +39,6 @@ public class MetricUtil {
   public static void duration(Runnable runnable, String name) {
     long t1 = System.currentTimeMillis();
     runnable.run();
-    ;
     long t2 = System.currentTimeMillis();
     LOG.info("{} code duration is {}ms", name, t2 - t1);
   }

@@ -99,6 +99,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.kerby</groupId>
+            <artifactId>kerb-simplekdc</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.orc</groupId>
             <artifactId>orc-core</artifactId>
             <classifier>nohive</classifier>

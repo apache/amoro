@@ -55,11 +55,11 @@ public class ArcticTreeNodePosDeleteWriter<T> implements FileWriter<PositionDele
   private final StructLike partition;
   private final ArcticFileIO fileIO;
   private final EncryptionManager encryptionManager;
-  private Long transactionId;
+  private final Long transactionId;
 
-  private String location;
+  private final String location;
 
-  private PartitionSpec spec;
+  private final PartitionSpec spec;
 
 
   public ArcticTreeNodePosDeleteWriter(

@@ -76,23 +76,21 @@ public class ArcticRuntimeException extends RuntimeException {
   }
 
   protected static String getObjectName(TableIdentifier tableIdentifier) {
-    return new StringBuilder().append("Table ")
-            .append(tableIdentifier.getCatalog())
-            .append('.')
-            .append(tableIdentifier.getDatabase())
-            .append('.')
-            .append(tableIdentifier.getTableName())
-            .toString();
+    return "Table " +
+        tableIdentifier.getCatalog() +
+        '.' +
+        tableIdentifier.getDatabase() +
+        '.' +
+        tableIdentifier.getTableName();
   }
 
   protected static String getObjectName(ServerTableIdentifier tableIdentifier) {
-    return new StringBuilder().append("Table ")
-            .append(tableIdentifier.getCatalog())
-            .append('.')
-            .append(tableIdentifier.getDatabase())
-            .append('.')
-            .append(tableIdentifier.getTableName())
-            .toString();
+    return "Table " +
+        tableIdentifier.getCatalog() +
+        '.' +
+        tableIdentifier.getDatabase() +
+        '.' +
+        tableIdentifier.getTableName();
   }
 
   public static ArcticException normalize(Throwable throwable) {

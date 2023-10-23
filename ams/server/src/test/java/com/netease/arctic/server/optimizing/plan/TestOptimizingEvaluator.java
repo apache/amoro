@@ -122,13 +122,13 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
   }
 
   private static class FileInfo {
-    private Set<String> partitions = Sets.newHashSet();
+    private final Set<String> partitions = Sets.newHashSet();
     private int dataFileCount = 0;
     private long dataFileSize = 0;
-    private int equalityDeleteFileCount = 0;
-    private int positionalDeleteFileCount = 0;
-    private long positionalDeleteBytes = 0L;
-    private long equalityDeleteBytes = 0L;
+    private final int equalityDeleteFileCount = 0;
+    private final int positionalDeleteFileCount = 0;
+    private final long positionalDeleteBytes = 0L;
+    private final long equalityDeleteBytes = 0L;
 
     public static FileInfo buildFileInfo(PartitionSpec spec, List<DataFile> dataFiles) {
       FileInfo fileInfo = new FileInfo();

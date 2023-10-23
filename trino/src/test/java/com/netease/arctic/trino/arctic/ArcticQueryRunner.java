@@ -18,6 +18,10 @@
 
 package com.netease.arctic.trino.arctic;
 
+import static io.airlift.testing.Closeables.closeAllSuppress;
+import static io.trino.testing.TestingSession.testSessionBuilder;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableMap;
 import com.netease.arctic.trino.ArcticPlugin;
 import io.airlift.log.Logger;
@@ -29,32 +33,23 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.airlift.testing.Closeables.closeAllSuppress;
-import static io.trino.testing.TestingSession.testSessionBuilder;
-import static java.util.Objects.requireNonNull;
-
 public final class ArcticQueryRunner {
   private static final Logger log = Logger.get(ArcticQueryRunner.class);
 
   public static final String ARCTIC_CATALOG = "arctic";
 
-  private ArcticQueryRunner() {
-  }
+  private ArcticQueryRunner() {}
 
   public static Builder builder() {
     return new Builder();
   }
 
-  public static class Builder
-      extends DistributedQueryRunner.Builder<Builder> {
+  public static class Builder extends DistributedQueryRunner.Builder<Builder> {
     private Optional<File> metastoreDirectory = Optional.empty();
     private ImmutableMap.Builder<String, String> icebergProperties = ImmutableMap.builder();
 
     protected Builder() {
-      super(testSessionBuilder()
-          .setCatalog(ARCTIC_CATALOG)
-          .setSchema("tpch")
-          .build());
+      super(testSessionBuilder().setCatalog(ARCTIC_CATALOG).setSchema("tpch").build());
     }
 
     public Builder setMetastoreDirectory(File metastoreDirectory) {
@@ -63,8 +58,9 @@ public final class ArcticQueryRunner {
     }
 
     public Builder setIcebergProperties(Map<String, String> icebergProperties) {
-      this.icebergProperties = ImmutableMap.<String, String>builder()
-          .putAll(requireNonNull(icebergProperties, "icebergProperties is null"));
+      this.icebergProperties =
+          ImmutableMap.<String, String>builder()
+              .putAll(requireNonNull(icebergProperties, "icebergProperties is null"));
       return self();
     }
 
@@ -74,15 +70,15 @@ public final class ArcticQueryRunner {
     }
 
     @Override
-    public DistributedQueryRunner build()
-        throws Exception {
+    public DistributedQueryRunner build() throws Exception {
       DistributedQueryRunner queryRunner = super.build();
       try {
         queryRunner.installPlugin(new TpchPlugin());
         queryRunner.createCatalog("tpch", "tpch");
 
         queryRunner.installPlugin(new ArcticPlugin());
-        Map<String, String> icebergProperties = new HashMap<>(this.icebergProperties.buildOrThrow());
+        Map<String, String> icebergProperties =
+            new HashMap<>(this.icebergProperties.buildOrThrow());
         queryRunner.createCatalog(ARCTIC_CATALOG, "arctic", icebergProperties);
         return queryRunner;
       } catch (Exception e) {
@@ -92,12 +88,12 @@ public final class ArcticQueryRunner {
     }
   }
 
-  public static void main(String[] args)
-      throws Exception {
+  public static void main(String[] args) throws Exception {
     DistributedQueryRunner queryRunner = null;
-    queryRunner = ArcticQueryRunner.builder()
-        .setExtraProperties(ImmutableMap.of("http-server.http.port", "8080"))
-        .build();
+    queryRunner =
+        ArcticQueryRunner.builder()
+            .setExtraProperties(ImmutableMap.of("http-server.http.port", "8080"))
+            .build();
     Thread.sleep(10);
     Logger log = Logger.get(ArcticQueryRunner.class);
     log.info("======== SERVER STARTED ========");

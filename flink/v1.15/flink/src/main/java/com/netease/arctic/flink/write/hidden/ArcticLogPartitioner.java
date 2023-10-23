@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ArcticLogPartitioner<T> implements Serializable {
   private static final long serialVersionUID = 9184708069203854226L;
   private final AtomicInteger counter = new AtomicInteger(0);
-  private ShuffleHelper helper;
+  private final ShuffleHelper helper;
 
   public ArcticLogPartitioner(ShuffleHelper shuffleHelper) {
     this.helper = shuffleHelper;

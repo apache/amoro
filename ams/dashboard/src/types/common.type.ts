@@ -150,6 +150,8 @@ export interface TransactionItem {
   commitTime: string
   snapshotId: string
   summary: TransactionItemSummary
+  filesSummaryForChart: Record<string, number>
+  recordsSummaryForChart: Record<string, number>
 }
 
 export interface OperationItem {

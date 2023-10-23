@@ -40,7 +40,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class DataReader {
-  private ArcticTable table;
+  private final ArcticTable table;
 
   public DataReader(ArcticTable table) {
     this.table = table;

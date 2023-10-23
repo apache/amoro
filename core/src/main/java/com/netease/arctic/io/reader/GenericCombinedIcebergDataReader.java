@@ -205,10 +205,8 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
       requiredIds.add(MetadataColumns.ROW_POSITION.fieldId());
     }
 
-    if (eqDeleteIds != null) {
-      requiredIds.addAll(requiredEqDeleteIds);
-      requiredIds.add(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED.fieldId());
-    }
+    requiredIds.addAll(requiredEqDeleteIds);
+    requiredIds.add(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED.fieldId());
 
     requiredIds.add(MetadataColumns.IS_DELETED.fieldId());
 

@@ -67,7 +67,7 @@ public class HiddenKafkaProducer<T> implements LogMsgFactory.Producer<T> {
   private transient FlinkKafkaInternalProducer<byte[], byte[]> producer;
   private transient FlinkKafkaInternalProducer<byte[], byte[]> transactionalProducer;
 
-  private ArcticLogPartitioner<T> arcticLogPartitioner;
+  private final ArcticLogPartitioner<T> arcticLogPartitioner;
   private int[] partitions;
 
   public HiddenKafkaProducer(
