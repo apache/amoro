@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ParamSignatureCalculatorTest {
+public class TestParamSignatureCalculator {
 
   @Test
   public void testGenerateParamStringWithValueList() {

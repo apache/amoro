@@ -10,7 +10,7 @@ import java.util.Map;
 import static com.netease.arctic.server.ArcticManagementConf.DB_PASSWORD;
 import static com.netease.arctic.server.ArcticManagementConf.SERVER_EXPOSE_HOST;
 
-public class ConfigurationUtilTest {
+public class TestConfigurationUtil {
 
   @Test
   public void testConvertConfigurationKeys() {

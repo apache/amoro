@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-public class CompressUtilTest {
+public class TestCompressUtil {
 
   @Test
   public void zipAndUnzip() {
