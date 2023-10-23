@@ -44,8 +44,6 @@ public abstract class BaseOptimizingInput implements TableOptimizing.OptimizingI
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("options", options)
-        .toString();
+    return MoreObjects.toStringHelper(this).add("options", options).toString();
   }
 }

@@ -38,9 +38,7 @@ import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Locale;
 
-/**
- * Builder to create writers for {@link KeyedTable} writting {@link Record}.
- */
+/** Builder to create writers for {@link KeyedTable} writting {@link Record}. */
 public class GenericTaskWriters {
 
   public static Builder builderFor(ArcticTable table) {
@@ -60,7 +58,6 @@ public class GenericTaskWriters {
     private int taskId = 0;
     private ChangeAction changeAction = ChangeAction.INSERT;
     private boolean orderedWriter = false;
-
 
     Builder(ArcticTable table) {
       this.table = table;
@@ -102,56 +99,126 @@ public class GenericTaskWriters {
 
     public GenericBaseTaskWriter buildBaseWriter() {
       writeBasePreconditions();
-      FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.BASE_FILE_FORMAT,
-          TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
-      long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
-          TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
-      long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
-          TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
+      FileFormat fileFormat =
+          FileFormat.valueOf(
+              (table
+                  .properties()
+                  .getOrDefault(
+                      TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT)
+                  .toUpperCase(Locale.ENGLISH)));
+      long fileSizeBytes =
+          PropertyUtil.propertyAsLong(
+              table.properties(),
+              TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
+              TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+      long mask =
+          PropertyUtil.propertyAsLong(
+                  table.properties(),
+                  TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
+                  TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT)
+              - 1;
       return new GenericBaseTaskWriter(
           fileFormat,
           new GenericAppenderFactory(base.schema(), table.spec()),
-          new CommonOutputFileFactory(base.location(), table.spec(), fileFormat, table.io(),
-              base.encryption(), partitionId, taskId, transactionId),
-          table.io(), fileSizeBytes, mask, base.schema(),
-          table.spec(), primaryKeySpec, orderedWriter);
+          new CommonOutputFileFactory(
+              base.location(),
+              table.spec(),
+              fileFormat,
+              table.io(),
+              base.encryption(),
+              partitionId,
+              taskId,
+              transactionId),
+          table.io(),
+          fileSizeBytes,
+          mask,
+          base.schema(),
+          table.spec(),
+          primaryKeySpec,
+          orderedWriter);
     }
 
-    public SortedPosDeleteWriter<Record> buildBasePosDeleteWriter(long mask, long index, StructLike partitionKey) {
+    public SortedPosDeleteWriter<Record> buildBasePosDeleteWriter(
+        long mask, long index, StructLike partitionKey) {
       writeBasePreconditions();
-      FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.BASE_FILE_FORMAT,
-          TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
+      FileFormat fileFormat =
+          FileFormat.valueOf(
+              (table
+                  .properties()
+                  .getOrDefault(
+                      TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT)
+                  .toUpperCase(Locale.ENGLISH)));
       GenericAppenderFactory appenderFactory =
           new GenericAppenderFactory(base.schema(), table.spec());
       appenderFactory.set(
-          org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_PATH.name(),
+          org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX
+              + MetadataColumns.DELETE_FILE_PATH.name(),
           MetricsModes.Full.get().toString());
       appenderFactory.set(
-          org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_POS.name(),
+          org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX
+              + MetadataColumns.DELETE_FILE_POS.name(),
           MetricsModes.Full.get().toString());
-      return new SortedPosDeleteWriter<>(appenderFactory,
-          new CommonOutputFileFactory(base.location(), table.spec(), fileFormat, table.io(),
-              base.encryption(), partitionId, taskId, transactionId), table.io(),
-          fileFormat, mask, index, partitionKey);
+      return new SortedPosDeleteWriter<>(
+          appenderFactory,
+          new CommonOutputFileFactory(
+              base.location(),
+              table.spec(),
+              fileFormat,
+              table.io(),
+              base.encryption(),
+              partitionId,
+              taskId,
+              transactionId),
+          table.io(),
+          fileFormat,
+          mask,
+          index,
+          partitionKey);
     }
 
     public GenericChangeTaskWriter buildChangeWriter() {
       Preconditions.checkNotNull(change);
 
-      FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.CHANGE_FILE_FORMAT,
-          TableProperties.CHANGE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
-      long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
-          TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
-      long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
-          TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
+      FileFormat fileFormat =
+          FileFormat.valueOf(
+              (table
+                  .properties()
+                  .getOrDefault(
+                      TableProperties.CHANGE_FILE_FORMAT,
+                      TableProperties.CHANGE_FILE_FORMAT_DEFAULT)
+                  .toUpperCase(Locale.ENGLISH)));
+      long fileSizeBytes =
+          PropertyUtil.propertyAsLong(
+              table.properties(),
+              TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
+              TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+      long mask =
+          PropertyUtil.propertyAsLong(
+                  table.properties(),
+                  TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
+                  TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT)
+              - 1;
       Schema changeWriteSchema = SchemaUtil.changeWriteSchema(change.schema());
       return new GenericChangeTaskWriter(
           fileFormat,
           new GenericAppenderFactory(changeWriteSchema, table.spec()),
-          new CommonOutputFileFactory(change.location(), table.spec(), fileFormat, table.io(),
-              change.encryption(), partitionId, taskId, transactionId),
-          table.io(), fileSizeBytes, mask, change.schema(), table.spec(), primaryKeySpec,
-          changeAction, orderedWriter);
+          new CommonOutputFileFactory(
+              change.location(),
+              table.spec(),
+              fileFormat,
+              table.io(),
+              change.encryption(),
+              partitionId,
+              taskId,
+              transactionId),
+          table.io(),
+          fileSizeBytes,
+          mask,
+          change.schema(),
+          table.spec(),
+          primaryKeySpec,
+          changeAction,
+          orderedWriter);
     }
 
     private void writeBasePreconditions() {

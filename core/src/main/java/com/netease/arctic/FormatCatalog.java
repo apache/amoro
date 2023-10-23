@@ -20,9 +20,7 @@ package com.netease.arctic;
 
 import java.util.List;
 
-/**
- * A catalog for a specific table format.
- */
+/** A catalog for a specific table format. */
 public interface FormatCatalog extends AmoroCatalog {
 
   /**
@@ -33,5 +31,4 @@ public interface FormatCatalog extends AmoroCatalog {
    * @throws NoSuchDatabaseException when database not exists.
    */
   List<String> listTables(String database);
-
 }

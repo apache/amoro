@@ -1,5 +1,6 @@
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 
 import java.util.Objects;
@@ -10,28 +11,32 @@ public class ServerTableIdentifier {
   private String catalog;
   private String database;
   private String tableName;
+  private TableFormat format;
 
   //used by the MyBatis framework.
   private ServerTableIdentifier() {
   }
 
-  private ServerTableIdentifier(TableIdentifier tableIdentifier) {
+  private ServerTableIdentifier(TableIdentifier tableIdentifier, TableFormat format) {
     this.catalog = tableIdentifier.getCatalog();
     this.database = tableIdentifier.getDatabase();
     this.tableName = tableIdentifier.getTableName();
+    this.format = format;
   }
 
-  private ServerTableIdentifier(String catalog, String database, String tableName) {
+  private ServerTableIdentifier(String catalog, String database, String tableName, TableFormat format) {
     this.catalog = catalog;
     this.database = database;
     this.tableName = tableName;
+    this.format = format;
   }
 
-  private ServerTableIdentifier(Long id, String catalog, String database, String tableName) {
+  private ServerTableIdentifier(Long id, String catalog, String database, String tableName, TableFormat format) {
     this.id = id;
     this.catalog = catalog;
     this.database = database;
     this.tableName = tableName;
+    this.format = format;
   }
 
   public Long getId() {
@@ -50,6 +55,10 @@ public class ServerTableIdentifier {
     return tableName;
   }
 
+  public TableFormat getFormat() {
+    return this.format;
+  }
+
   public void setId(Long id) {
     this.id = id;
   }
@@ -64,6 +73,10 @@ public class ServerTableIdentifier {
 
   public void setTableName(String tableName) {
     this.tableName = tableName;
+  }
+
+  public void setFormat(TableFormat format) {
+    this.format = format;
   }
 
   @Override
@@ -89,16 +102,17 @@ public class ServerTableIdentifier {
     return String.format("%s.%s.%s(tableId=%d)", catalog, database, tableName, id);
   }
 
-  public static ServerTableIdentifier of(TableIdentifier tableIdentifier) {
-    return new ServerTableIdentifier(tableIdentifier);
+  public static ServerTableIdentifier of(TableIdentifier tableIdentifier, TableFormat format) {
+    return new ServerTableIdentifier(tableIdentifier, format);
   }
 
-  public static ServerTableIdentifier of(String catalog, String database, String tableName) {
-    return new ServerTableIdentifier(catalog, database, tableName);
+  public static ServerTableIdentifier of(String catalog, String database, String tableName, TableFormat format) {
+    return new ServerTableIdentifier(catalog, database, tableName, format);
   }
 
-  public static ServerTableIdentifier of(Long id, String catalog, String database, String tableName) {
-    return new ServerTableIdentifier(id, catalog, database, tableName);
+  public static ServerTableIdentifier of(
+      Long id, String catalog, String database, String tableName, TableFormat format) {
+    return new ServerTableIdentifier(id, catalog, database, tableName, format);
   }
 
   public TableIdentifier getIdentifier() {

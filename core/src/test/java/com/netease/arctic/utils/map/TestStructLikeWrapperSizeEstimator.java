@@ -45,9 +45,11 @@ public class TestStructLikeWrapperSizeEstimator {
     map.put(record2, changedLsn);
     long newSize = RamUsageEstimator.sizeOfObject(map, 0);
     long record2Size = newSize - oldSize;
-    StructLikeWrapper wrapper = StructLikeWrapper.forType(BasicTableTestHelper.TABLE_SCHEMA.asStruct()).set(record2);
+    StructLikeWrapper wrapper =
+        StructLikeWrapper.forType(BasicTableTestHelper.TABLE_SCHEMA.asStruct()).set(record2);
 
-    // Because the size of map also will increase, so the record2Size should a little bigger than the size of the record
+    // Because the size of map also will increase, so the record2Size should a little bigger than
+    // the size of the record
     long estimateSize = new StructLikeWrapperSizeEstimator().sizeEstimate(wrapper);
     Assert.assertEquals(1, record2Size / estimateSize);
   }

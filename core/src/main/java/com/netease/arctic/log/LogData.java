@@ -18,6 +18,8 @@
 
 package com.netease.arctic.log;
 
+import static com.netease.arctic.utils.FlipUtil.convertToByte;
+
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.utils.IdGenerator;
 import org.apache.iceberg.relocated.com.google.common.primitives.Longs;
@@ -25,13 +27,9 @@ import org.apache.iceberg.types.Type;
 
 import java.io.Serializable;
 
-import static com.netease.arctic.utils.FlipUtil.convertToByte;
-
-/**
- * Wrap log data: log version, upstreamId, EpicNo, Flip, actual value {@link T} information.
- */
+/** Wrap log data: log version, upstreamId, EpicNo, Flip, actual value {@link T} information. */
 public interface LogData<T> {
-  byte[] MAGIC_NUMBER = new byte[]{'n', 'e', 't'};
+  byte[] MAGIC_NUMBER = new byte[] {'n', 'e', 't'};
 
   /**
    * The version mark the {@link LogData}
@@ -45,7 +43,8 @@ public interface LogData<T> {
   byte[] getVersionBytes();
 
   /**
-   * The job id generated from an upstream job(e.g. arctic log writer operator in the flink application)
+   * The job id generated from an upstream job(e.g. arctic log writer operator in the flink
+   * application)
    *
    * @return generated from {@link IdGenerator} ordinarily
    */
@@ -56,8 +55,8 @@ public interface LogData<T> {
   byte[] getUpstreamIdBytes();
 
   /**
-   * The epic number indicates a batch of data in the log queue(e.g. Kafka), the EpicNo is similar to the checkpoint id
-   * in the flink application.
+   * The epic number indicates a batch of data in the log queue(e.g. Kafka), the EpicNo is similar
+   * to the checkpoint id in the flink application.
    *
    * @return epic number
    */
@@ -68,9 +67,9 @@ public interface LogData<T> {
   }
 
   /**
-   * Flip flag the upstream job whether happened failover or restored from a last completed checkpoint,
-   * flip is true means downstream job should retract the duplicate data in the log queue.
-   * flip is false means this is a normal data in the log queue(e.g. Kafka).
+   * Flip flag the upstream job whether happened failover or restored from a last completed
+   * checkpoint, flip is true means downstream job should retract the duplicate data in the log
+   * queue. flip is false means this is a normal data in the log queue(e.g. Kafka).
    *
    * @return true: retract message in the log queue, false: regard the message as normal data.
    */
@@ -91,14 +90,10 @@ public interface LogData<T> {
     return getChangeAction().toByteValue();
   }
 
-  /**
-   * @return rowData if in the flink application
-   */
+  /** @return rowData if in the flink application */
   T getActualValue();
 
-  /**
-   * Accessor for getting the field of a row during runtime.
-   */
+  /** Accessor for getting the field of a row during runtime. */
   interface FieldGetter<T> extends Serializable {
     Object getFieldOrNull(T row, int fieldPos);
   }

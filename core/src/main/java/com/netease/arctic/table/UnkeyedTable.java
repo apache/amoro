@@ -25,18 +25,15 @@ import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.Map;
 
-/**
- * Represents an arctic table without keys supported, the same as an {@link Table}
- */
+/** Represents an arctic table without keys supported, the same as an {@link Table} */
 public interface UnkeyedTable extends ArcticTable, Table {
 
-  /**
-   * Returns the partition properties map.
-   */
+  /** Returns the partition properties map. */
   StructLikeMap<Map<String, String>> partitionProperty();
 
   /**
-   * Create a new {@link UpdatePartitionProperties} to update partition properties and commit the changes.
+   * Create a new {@link UpdatePartitionProperties} to update partition properties and commit the
+   * changes.
    *
    * @param transaction the transaction to update partition properties
    * @return a new {@link UpdatePartitionProperties}

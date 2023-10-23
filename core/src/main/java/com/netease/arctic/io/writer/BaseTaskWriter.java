@@ -46,6 +46,7 @@ import java.util.Set;
 
 /**
  * Abstract implementation of writer for {@link com.netease.arctic.table.BaseTable}.
+ *
  * @param <T> to indicate the record data type.
  */
 public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
@@ -58,16 +59,22 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
   private final WriterHolder<T> writerHolder;
 
   protected BaseTaskWriter(
-      FileFormat format, FileAppenderFactory<T> appenderFactory,
-      OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize, long mask,
-      Schema schema, PartitionSpec spec, PrimaryKeySpec primaryKeySpec, boolean orderedWriter
-  ) {
+      FileFormat format,
+      FileAppenderFactory<T> appenderFactory,
+      OutputFileFactory outputFileFactory,
+      ArcticFileIO io,
+      long targetFileSize,
+      long mask,
+      Schema schema,
+      PartitionSpec spec,
+      PrimaryKeySpec primaryKeySpec,
+      boolean orderedWriter) {
     if (orderedWriter) {
-      this.writerHolder = new OrderedWriterHolder<>(
-          format, appenderFactory, outputFileFactory, io, targetFileSize);
+      this.writerHolder =
+          new OrderedWriterHolder<>(format, appenderFactory, outputFileFactory, io, targetFileSize);
     } else {
-      this.writerHolder = new FanoutWriterHolder<>(
-          format, appenderFactory, outputFileFactory, io, targetFileSize);
+      this.writerHolder =
+          new FanoutWriterHolder<>(format, appenderFactory, outputFileFactory, io, targetFileSize);
     }
     this.io = io;
     this.mask = mask;
@@ -115,7 +122,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
   public WriteResult complete() throws IOException {
     writerHolder.close();
     List<DataFile> files = writerHolder.completedFiles();
-    return WriteResult.builder().addDataFiles(files.toArray(new DataFile[]{})).build();
+    return WriteResult.builder().addDataFiles(files.toArray(new DataFile[] {})).build();
   }
 
   @Override
@@ -127,12 +134,8 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     return primaryKey;
   }
 
-  /**
-   * Wrap the data as a {@link StructLike}.
-   */
+  /** Wrap the data as a {@link StructLike}. */
   protected abstract StructLike asStructLike(T data);
-
-
 
   protected static class DataWriterKey extends TaskWriterKey {
 
@@ -157,7 +160,6 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
       return "[" + partitionKey.toString() + " " + getTreeNode().toString() + "]";
     }
   }
-
 
   protected abstract static class WriterHolder<T> {
 
@@ -207,25 +209,31 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
       return !format.equals(FileFormat.ORC) && dataWriter.length() >= targetFileSize;
     }
 
-
-
     protected TaskDataWriter<T> newWriter(TaskWriterKey writerKey) {
-      DataWriter<T> dataWriter = io.doAs(() -> appenderFactory.newDataWriter(
-          outputFileFactory.newOutputFile(writerKey), format, writerKey.getPartitionKey()));
+      DataWriter<T> dataWriter =
+          io.doAs(
+              () ->
+                  appenderFactory.newDataWriter(
+                      outputFileFactory.newOutputFile(writerKey),
+                      format,
+                      writerKey.getPartitionKey()));
       return new TaskDataWriter<>(dataWriter, io);
     }
   }
 
   /**
-   * a fan-out writer holder which will keep an opened writer for all write key.
-   * This holder does not require records have been sorted, but will keep open files as many as write keys.
+   * a fan-out writer holder which will keep an opened writer for all write key. This holder does
+   * not require records have been sorted, but will keep open files as many as write keys.
    */
   protected static class FanoutWriterHolder<T> extends WriterHolder<T> {
     private final Map<DataWriterKey, TaskDataWriter<T>> dataWriterMap = Maps.newHashMap();
 
     public FanoutWriterHolder(
-        FileFormat format, FileAppenderFactory<T> appenderFactory,
-        OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize) {
+        FileFormat format,
+        FileAppenderFactory<T> appenderFactory,
+        OutputFileFactory outputFileFactory,
+        ArcticFileIO io,
+        long targetFileSize) {
       super(format, appenderFactory, outputFileFactory, io, targetFileSize);
     }
 
@@ -260,20 +268,18 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
       }
       dataWriterMap.clear();
     }
-
   }
 
   /**
-   * a writer holder which require records had been sorted before write.
-   * The holder will hold only one writer in open, and will throw an IllegalStateException exception
-   * if TaskWriter request a data writer via a write key which has been already closed.
+   * a writer holder which require records had been sorted before write. The holder will hold only
+   * one writer in open, and will throw an IllegalStateException exception if TaskWriter request a
+   * data writer via a write key which has been already closed.
    */
   protected static class OrderedWriterHolder<T> extends WriterHolder<T> {
 
     private TaskDataWriter<T> currentWriter;
     private DataWriterKey currentKey;
     private final Set<DataWriterKey> completedKeys = Sets.newHashSet();
-
 
     public OrderedWriterHolder(
         FileFormat format,
@@ -293,7 +299,8 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
         }
 
         if (completedKeys.contains(writerKey)) {
-          throw new IllegalStateException("The write key " + writerKey + " has already been completed");
+          throw new IllegalStateException(
+              "The write key " + writerKey + " has already been completed");
         }
 
         currentKey = writerKey.copy();
@@ -340,15 +347,17 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     }
 
     protected void close() {
-      io.doAs(() -> {
-        dataWriter.close();
-        return null;
-      });
+      io.doAs(
+          () -> {
+            dataWriter.close();
+            return null;
+          });
       if (currentRows <= 0) {
         try {
           io.deleteFile(dataWriter.toDataFile().path().toString());
         } catch (UncheckedIOException e) {
-          // the file may not have been created, and it isn't worth failing the job to clean up, skip deleting
+          // the file may not have been created, and it isn't worth failing the job to clean up,
+          // skip deleting
         }
       }
     }

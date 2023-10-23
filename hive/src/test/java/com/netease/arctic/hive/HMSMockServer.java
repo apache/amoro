@@ -69,31 +69,41 @@ public class HMSMockServer {
 
   // create the metastore handlers based on whether we're working with Hive2 or Hive3 dependencies
   // we need to do this because there is a breaking API change between Hive2 and Hive3
-  private static final DynConstructors.Ctor<HiveMetaStore.HMSHandler> HMS_HANDLER_CTOR = DynConstructors.builder()
-      .impl(HiveMetaStore.HMSHandler.class, String.class, Configuration.class)
-      .impl(HiveMetaStore.HMSHandler.class, String.class, HiveConf.class)
-      .build();
+  private static final DynConstructors.Ctor<HiveMetaStore.HMSHandler> HMS_HANDLER_CTOR =
+      DynConstructors.builder()
+          .impl(HiveMetaStore.HMSHandler.class, String.class, Configuration.class)
+          .impl(HiveMetaStore.HMSHandler.class, String.class, HiveConf.class)
+          .build();
 
-  private static final DynMethods.StaticMethod GET_BASE_HMS_HANDLER = DynMethods.builder("getProxy")
-      .impl(RetryingHMSHandler.class, Configuration.class, IHMSHandler.class, boolean.class)
-      .impl(RetryingHMSHandler.class, HiveConf.class, IHMSHandler.class, boolean.class)
-      .buildStatic();
+  private static final DynMethods.StaticMethod GET_BASE_HMS_HANDLER =
+      DynMethods.builder("getProxy")
+          .impl(RetryingHMSHandler.class, Configuration.class, IHMSHandler.class, boolean.class)
+          .impl(RetryingHMSHandler.class, HiveConf.class, IHMSHandler.class, boolean.class)
+          .buildStatic();
 
-  private static final DynConstructors.Ctor<HiveMetaStoreClient> HMS_CLIENT_CTOR = DynConstructors.builder()
-      .impl(HiveMetaStoreClient.class, HiveConf.class)
-      .impl(HiveMetaStoreClient.class, Configuration.class)
-      .build();
+  private static final DynConstructors.Ctor<HiveMetaStoreClient> HMS_CLIENT_CTOR =
+      DynConstructors.builder()
+          .impl(HiveMetaStoreClient.class, HiveConf.class)
+          .impl(HiveMetaStoreClient.class, Configuration.class)
+          .build();
 
-  // Hive3 introduces background metastore tasks (MetastoreTaskThread) for performing various cleanup duties. These
-  // threads are scheduled and executed in a static thread pool (org.apache.hadoop.hive.metastore.ThreadPool).
-  // This thread pool is shut down normally as part of the JVM shutdown hook, but since we're creating and tearing down
-  // multiple metastore instances within the same JVM, we have to call this cleanup method manually, otherwise
-  // threads from our previous test suite will be stuck in the pool with stale config, and keep on being scheduled.
-  // This can lead to issues, e.g. accidental Persistence Manager closure by ScheduledQueryExecutionsMaintTask.
-  private static final DynMethods.StaticMethod METASTORE_THREADS_SHUTDOWN = DynMethods.builder("shutdown")
-      .impl("org.apache.hadoop.hive.metastore.ThreadPool")
-      .orNoop()
-      .buildStatic();
+  // Hive3 introduces background metastore tasks (MetastoreTaskThread) for performing various
+  // cleanup duties. These
+  // threads are scheduled and executed in a static thread pool
+  // (org.apache.hadoop.hive.metastore.ThreadPool).
+  // This thread pool is shut down normally as part of the JVM shutdown hook, but since we're
+  // creating and tearing down
+  // multiple metastore instances within the same JVM, we have to call this cleanup method manually,
+  // otherwise
+  // threads from our previous test suite will be stuck in the pool with stale config, and keep on
+  // being scheduled.
+  // This can lead to issues, e.g. accidental Persistence Manager closure by
+  // ScheduledQueryExecutionsMaintTask.
+  private static final DynMethods.StaticMethod METASTORE_THREADS_SHUTDOWN =
+      DynMethods.builder("shutdown")
+          .impl("org.apache.hadoop.hive.metastore.ThreadPool")
+          .orNoop()
+          .buildStatic();
 
   private final File hiveLocalDir;
   private final HiveConf hiveConf;
@@ -116,9 +126,7 @@ public class HMSMockServer {
     this.hiveConf = newHiveConf(this.port);
   }
 
-  /**
-   * Starts a TestHiveMetastore with the default connection pool size (5).
-   */
+  /** Starts a TestHiveMetastore with the default connection pool size (5). */
   public void start() {
     LOG.info("-------------------------------------------------------------------------");
     LOG.info("    Starting HiveMetastoreServer ");
@@ -145,8 +153,11 @@ public class HMSMockServer {
       this.executorService = Executors.newSingleThreadExecutor();
       this.executorService.submit(() -> server.serve());
 
-      // in Hive3, setting this as a system prop ensures that it will be picked up whenever a new HiveConf is created
-      System.setProperty(HiveConf.ConfVars.METASTOREURIS.varname, hiveConf.getVar(HiveConf.ConfVars.METASTOREURIS));
+      // in Hive3, setting this as a system prop ensures that it will be picked up whenever a new
+      // HiveConf is created
+      System.setProperty(
+          HiveConf.ConfVars.METASTOREURIS.varname,
+          hiveConf.getVar(HiveConf.ConfVars.METASTOREURIS));
 
       this.clientPool = new HiveClientPool(1, hiveConf);
       started = true;
@@ -193,7 +204,8 @@ public class HMSMockServer {
 
   private void clearHMSTxnHandlerStaticResource() {
     try {
-      // Clear the static connection pool resource in org.apache.hadoop.hive.metastore.txn.TxnHandler
+      // Clear the static connection pool resource in
+      // org.apache.hadoop.hive.metastore.txn.TxnHandler
       // in case using the old connection pool in the new Hive Metastore server.
       Class<?> handlerClass = Class.forName("org.apache.hadoop.hive.metastore.txn.TxnHandler");
       Field coonPoolField = handlerClass.getDeclaredField("connPool");
@@ -234,26 +246,28 @@ public class HMSMockServer {
   public void reset() throws Exception {
     for (String dbName : clientPool.run(client -> client.getAllDatabases())) {
       for (String tblName : clientPool.run(client -> client.getAllTables(dbName))) {
-        clientPool.run(client -> {
-          client.dropTable(dbName, tblName, true, true, true);
-          return null;
-        });
+        clientPool.run(
+            client -> {
+              client.dropTable(dbName, tblName, true, true, true);
+              return null;
+            });
       }
 
       if (!DEFAULT_DATABASE_NAME.equals(dbName)) {
         // Drop cascade, functions dropped by cascade
-        clientPool.run(client -> {
-          client.dropDatabase(dbName, true, true, true);
-          return null;
-        });
+        clientPool.run(
+            client -> {
+              client.dropDatabase(dbName, true, true, true);
+              return null;
+            });
       }
     }
 
     Path warehouseRoot = new Path(hiveLocalDir.getAbsolutePath());
     FileSystem fs = Util.getFs(warehouseRoot, hiveConf);
     for (FileStatus fileStatus : fs.listStatus(warehouseRoot)) {
-      if (!fileStatus.getPath().getName().equals("derby.log") &&
-          !fileStatus.getPath().getName().equals("metastore_db")) {
+      if (!fileStatus.getPath().getName().equals("derby.log")
+          && !fileStatus.getPath().getName().equals("metastore_db")) {
         fs.delete(fileStatus.getPath(), true);
       }
     }
@@ -270,13 +284,16 @@ public class HMSMockServer {
     return this.client;
   }
 
-  private TServer newThriftServer(TServerSocket socket, int poolSize, HiveConf conf) throws Exception {
+  private TServer newThriftServer(TServerSocket socket, int poolSize, HiveConf conf)
+      throws Exception {
     HiveConf serverConf = new HiveConf(conf);
     String derbyPath = getDerbyPath();
     LOG.info("DerbyPath: {}", derbyPath);
     String derbyUrl = "jdbc:derby:;databaseName=" + derbyPath + ";create=true";
-    // when test iceberg with hive catalog, Exception `java.sql.SQLSyntaxErrorException: Table/View 'HIVE_LOCKS' does
-    // not exist.` will throw, this is a bug of hive scheamtools, see https://issues.apache.org/jira/browse/HIVE-21302.
+    // when test iceberg with hive catalog, Exception `java.sql.SQLSyntaxErrorException: Table/View
+    // 'HIVE_LOCKS' does
+    // not exist.` will throw, this is a bug of hive scheamtools, see
+    // https://issues.apache.org/jira/browse/HIVE-21302.
     // so we set up metastore first to avoid this bug.
     setupMetastoreDB(derbyUrl);
 
@@ -284,28 +301,30 @@ public class HMSMockServer {
     baseHandler = HMS_HANDLER_CTOR.newInstance("new db based metaserver", serverConf);
     IHMSHandler handler = GET_BASE_HMS_HANDLER.invoke(serverConf, baseHandler, false);
 
-    SynchronousQueue<Runnable> executorQueue =
-        new SynchronousQueue<Runnable>();
+    SynchronousQueue<Runnable> executorQueue = new SynchronousQueue<Runnable>();
     AtomicInteger threadCount = new AtomicInteger(0);
-    ThreadPoolExecutor hiveThriftServerThreadPool = new ThreadPoolExecutor(
-        1,
-        poolSize,
-        60,
-        TimeUnit.SECONDS,
-        executorQueue,
-        r -> {
-          Thread thread = new Thread(r);
-          String threadName = "HMS-pool-" + threadCount.incrementAndGet();
-          thread.setName(threadName);
-          LOG.info("HMSMockServer create thread: {}", threadName);
-          return thread;
-        }, new ThreadPoolExecutor.AbortPolicy());
+    ThreadPoolExecutor hiveThriftServerThreadPool =
+        new ThreadPoolExecutor(
+            1,
+            poolSize,
+            60,
+            TimeUnit.SECONDS,
+            executorQueue,
+            r -> {
+              Thread thread = new Thread(r);
+              String threadName = "HMS-pool-" + threadCount.incrementAndGet();
+              thread.setName(threadName);
+              LOG.info("HMSMockServer create thread: {}", threadName);
+              return thread;
+            },
+            new ThreadPoolExecutor.AbortPolicy());
 
-    TThreadPoolServer.Args args = new TThreadPoolServer.Args(socket)
-        .processor(new TSetIpAddressProcessor<>(handler))
-        .transportFactory(new TTransportFactory())
-        .protocolFactory(new TBinaryProtocol.Factory())
-        .executorService(hiveThriftServerThreadPool);
+    TThreadPoolServer.Args args =
+        new TThreadPoolServer.Args(socket)
+            .processor(new TSetIpAddressProcessor<>(handler))
+            .transportFactory(new TTransportFactory())
+            .protocolFactory(new TBinaryProtocol.Factory())
+            .executorService(hiveThriftServerThreadPool);
 
     return new TThreadPoolServer(args);
   }
@@ -318,7 +337,8 @@ public class HMSMockServer {
         HiveConf.ConfVars.METASTOREWAREHOUSE.varname,
         "file:///" + hiveLocalDir.getAbsolutePath().replace("\\", "/"));
     newHiveConf.set(HiveConf.ConfVars.METASTORE_TRY_DIRECT_SQL.varname, "false");
-    newHiveConf.set(HiveConf.ConfVars.METASTORE_DISALLOW_INCOMPATIBLE_COL_TYPE_CHANGES.varname, "false");
+    newHiveConf.set(
+        HiveConf.ConfVars.METASTORE_DISALLOW_INCOMPATIBLE_COL_TYPE_CHANGES.varname, "false");
     newHiveConf.set(HiveConf.ConfVars.METASTORE_SCHEMA_VERIFICATION.varname, "false");
     newHiveConf.set("datanucleus.schema.autoCreateTables", "true");
     newHiveConf.set("hive.metastore.client.capability.check", "false");

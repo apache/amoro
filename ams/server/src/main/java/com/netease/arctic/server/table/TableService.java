@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.TableIdentifier;
@@ -81,7 +82,7 @@ public interface TableService extends CatalogService, TableManager {
    *
    * @return {@link TableIdentifier} list
    */
-  List<TableIdentifier> listTables(String catalogName, String dbName);
+  List<TableIDWithFormat> listTables(String catalogName, String dbName);
 
   /**
    * create arctic database

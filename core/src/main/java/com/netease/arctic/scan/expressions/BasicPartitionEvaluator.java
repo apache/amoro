@@ -30,7 +30,6 @@ import org.apache.iceberg.expressions.UnboundPredicate;
 
 import java.util.List;
 
-
 public class BasicPartitionEvaluator extends Projections.ProjectionEvaluator {
 
   private final PartitionSpec spec;
@@ -79,9 +78,8 @@ public class BasicPartitionEvaluator extends Projections.ProjectionEvaluator {
     Expression result = Expressions.alwaysTrue();
     String expressionName = pred.ref().name();
     if (StringUtils.isNotEmpty(expressionName)) {
-      List<PartitionField> parts = spec().getFieldsBySourceId(
-          spec().schema().asStruct().field(expressionName).fieldId()
-      );
+      List<PartitionField> parts =
+          spec().getFieldsBySourceId(spec().schema().asStruct().field(expressionName).fieldId());
       return parts.size() > 0 ? pred : result;
     }
     return result;
@@ -95,5 +93,4 @@ public class BasicPartitionEvaluator extends Projections.ProjectionEvaluator {
   PartitionSpec spec() {
     return spec;
   }
-
 }

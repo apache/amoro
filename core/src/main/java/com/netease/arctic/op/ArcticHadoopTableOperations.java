@@ -43,24 +43,27 @@ public class ArcticHadoopTableOperations extends HadoopTableOperations {
 
   @Override
   public void commit(TableMetadata base, TableMetadata metadata) {
-    arcticFileIO.doAs(() -> {
-      try {
-        super.commit(base, metadata);
+    arcticFileIO.doAs(
+        () -> {
+          try {
+            super.commit(base, metadata);
 
-        // HadoopTableOperations#commit will throw CommitFailedException even though rename metadata file successfully
-        // in hdfs, it may be not safe. So transform all RuntimeException to CommitStateUnknownException to avoid
-        // delete the committed metadata and manifest files.
-        //
-        // But this change may invalid the retry action for some commit operation.
-      } catch (CommitFailedException e) {
-        if (e.getCause() != null) {
-          throw new CommitStateUnknownException(e);
-        } else {
-          // Do to wrap the direct CommitFailedException, we should retry committing.
-          throw e;
-        }
-      }
-      return null;
-    });
+            // HadoopTableOperations#commit will throw CommitFailedException even though rename
+            // metadata file successfully
+            // in hdfs, it may be not safe. So transform all RuntimeException to
+            // CommitStateUnknownException to avoid
+            // delete the committed metadata and manifest files.
+            //
+            // But this change may invalid the retry action for some commit operation.
+          } catch (CommitFailedException e) {
+            if (e.getCause() != null) {
+              throw new CommitStateUnknownException(e);
+            } else {
+              // Do to wrap the direct CommitFailedException, we should retry committing.
+              throw e;
+            }
+          }
+          return null;
+        });
   }
 }

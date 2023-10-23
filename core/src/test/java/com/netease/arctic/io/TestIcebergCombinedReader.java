@@ -64,8 +64,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
 
   private RewriteFilesInput dataScanTask;
 
-  public TestIcebergCombinedReader(
-      boolean partitionedTable, FileFormat fileFormat) {
+  public TestIcebergCombinedReader(boolean partitionedTable, FileFormat fileFormat) {
     super(
         new BasicCatalogTestHelper(TableFormat.ICEBERG),
         new BasicTableTestHelper(false, partitionedTable, buildTableProperties(fileFormat)));
@@ -74,9 +73,11 @@ public class TestIcebergCombinedReader extends TableTestBase {
 
   @Parameterized.Parameters(name = "partitionedTable = {0}, fileFormat = {1}")
   public static Object[][] parameters() {
-    return new Object[][] {{true, FileFormat.PARQUET}, {false, FileFormat.PARQUET},
-                           {true, FileFormat.AVRO}, {false, FileFormat.AVRO},
-                           {true, FileFormat.ORC}, {false, FileFormat.ORC}};
+    return new Object[][] {
+      {true, FileFormat.PARQUET}, {false, FileFormat.PARQUET},
+      {true, FileFormat.AVRO}, {false, FileFormat.AVRO},
+      {true, FileFormat.ORC}, {false, FileFormat.ORC}
+    };
   }
 
   private static Map<String, String> buildTableProperties(FileFormat fileFormat) {
@@ -98,47 +99,72 @@ public class TestIcebergCombinedReader extends TableTestBase {
   @Before
   public void initDataAndReader() throws IOException {
     StructLike partitionData = getPartitionData();
-    OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(getArcticTable().asUnkeyedTable(), 0, 1)
-        .format(fileFormat).build();
-    DataFile dataFile = FileHelpers.writeDataFile(getArcticTable().asUnkeyedTable(),
-        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData,
-        Arrays.asList(
-            MixedDataTestHelpers.createRecord(1, "john", 0, "1970-01-01T08:00:00"),
-            MixedDataTestHelpers.createRecord(2, "lily", 1, "1970-01-01T08:00:00"),
-            MixedDataTestHelpers.createRecord(3, "sam", 2, "1970-01-01T08:00:00")));
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(getArcticTable().asUnkeyedTable(), 0, 1)
+            .format(fileFormat)
+            .build();
+    DataFile dataFile =
+        FileHelpers.writeDataFile(
+            getArcticTable().asUnkeyedTable(),
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            Arrays.asList(
+                MixedDataTestHelpers.createRecord(1, "john", 0, "1970-01-01T08:00:00"),
+                MixedDataTestHelpers.createRecord(2, "lily", 1, "1970-01-01T08:00:00"),
+                MixedDataTestHelpers.createRecord(3, "sam", 2, "1970-01-01T08:00:00")));
 
     Schema idSchema = TypeUtil.select(BasicTableTestHelper.TABLE_SCHEMA, Sets.newHashSet(1));
     GenericRecord idRecord = GenericRecord.create(idSchema);
-    DeleteFile eqDeleteFile = FileHelpers.writeDeleteFile(getArcticTable().asUnkeyedTable(),
-        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData,
-        Collections.singletonList(idRecord.copy("id", 1)), idSchema);
+    DeleteFile eqDeleteFile =
+        FileHelpers.writeDeleteFile(
+            getArcticTable().asUnkeyedTable(),
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            Collections.singletonList(idRecord.copy("id", 1)),
+            idSchema);
 
     List<Pair<CharSequence, Long>> deletes = Lists.newArrayList();
     deletes.add(Pair.of(dataFile.path(), 1L));
-    DeleteFile posDeleteFile = FileHelpers.writeDeleteFile(getArcticTable().asUnkeyedTable(),
-        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData, deletes).first();
+    DeleteFile posDeleteFile =
+        FileHelpers.writeDeleteFile(
+                getArcticTable().asUnkeyedTable(),
+                outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+                partitionData,
+                deletes)
+            .first();
 
-    scanTask = new RewriteFilesInput(
-        new DataFile[]{MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
-        new DataFile[]{MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
-        new DeleteFile[]{MixedDataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile, 2L),
-                         MixedDataTestHelpers.wrapIcebergDeleteFile(posDeleteFile, 3L)},
-        new DeleteFile[]{},
-        getArcticTable());
-    dataScanTask = new RewriteFilesInput(
-        new DataFile[]{MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
-        new DataFile[]{MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
-        new DeleteFile[]{},
-        new DeleteFile[]{},
-        getArcticTable());
+    scanTask =
+        new RewriteFilesInput(
+            new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
+            new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
+            new DeleteFile[] {
+              MixedDataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile, 2L),
+              MixedDataTestHelpers.wrapIcebergDeleteFile(posDeleteFile, 3L)
+            },
+            new DeleteFile[] {},
+            getArcticTable());
+    dataScanTask =
+        new RewriteFilesInput(
+            new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
+            new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
+            new DeleteFile[] {},
+            new DeleteFile[] {},
+            getArcticTable());
   }
 
   @Test
   public void readAllData() throws IOException {
-    GenericCombinedIcebergDataReader dataReader = new GenericCombinedIcebergDataReader(getArcticTable().io(),
-        getArcticTable().schema(),
-        getArcticTable().spec(), null, false,
-        IdentityPartitionConverters::convertConstant, false, null, scanTask);
+    GenericCombinedIcebergDataReader dataReader =
+        new GenericCombinedIcebergDataReader(
+            getArcticTable().io(),
+            getArcticTable().schema(),
+            getArcticTable().spec(),
+            null,
+            false,
+            IdentityPartitionConverters::convertConstant,
+            false,
+            null,
+            scanTask);
     try (CloseableIterable<Record> records = dataReader.readData()) {
       Assert.assertEquals(1, Iterables.size(records));
       Record record = Iterables.getFirst(records, null);
@@ -149,10 +175,17 @@ public class TestIcebergCombinedReader extends TableTestBase {
 
   @Test
   public void readAllDataNegate() throws IOException {
-    GenericCombinedIcebergDataReader dataReader = new GenericCombinedIcebergDataReader(getArcticTable().io(),
-        getArcticTable().schema(),
-        getArcticTable().spec(), null, false,
-        IdentityPartitionConverters::convertConstant, false, null, scanTask);
+    GenericCombinedIcebergDataReader dataReader =
+        new GenericCombinedIcebergDataReader(
+            getArcticTable().io(),
+            getArcticTable().schema(),
+            getArcticTable().spec(),
+            null,
+            false,
+            IdentityPartitionConverters::convertConstant,
+            false,
+            null,
+            scanTask);
     try (CloseableIterable<Record> records = dataReader.readDeletedData()) {
       Assert.assertEquals(2, Iterables.size(records));
       Record first = Iterables.getFirst(records, null);
@@ -165,10 +198,17 @@ public class TestIcebergCombinedReader extends TableTestBase {
 
   @Test
   public void readOnlyData() throws IOException {
-    GenericCombinedIcebergDataReader dataReader = new GenericCombinedIcebergDataReader(getArcticTable().io(),
-        getArcticTable().schema(),
-        getArcticTable().spec(), null, false,
-        IdentityPartitionConverters::convertConstant, false, null, dataScanTask);
+    GenericCombinedIcebergDataReader dataReader =
+        new GenericCombinedIcebergDataReader(
+            getArcticTable().io(),
+            getArcticTable().schema(),
+            getArcticTable().spec(),
+            null,
+            false,
+            IdentityPartitionConverters::convertConstant,
+            false,
+            null,
+            dataScanTask);
     try (CloseableIterable<Record> records = dataReader.readData()) {
       Assert.assertEquals(3, Iterables.size(records));
     }
@@ -177,10 +217,17 @@ public class TestIcebergCombinedReader extends TableTestBase {
 
   @Test
   public void readOnlyDataNegate() throws IOException {
-    GenericCombinedIcebergDataReader dataReader = new GenericCombinedIcebergDataReader(getArcticTable().io(),
-        getArcticTable().schema(),
-        getArcticTable().spec(), null, false,
-        IdentityPartitionConverters::convertConstant, false, null, dataScanTask);
+    GenericCombinedIcebergDataReader dataReader =
+        new GenericCombinedIcebergDataReader(
+            getArcticTable().io(),
+            getArcticTable().schema(),
+            getArcticTable().spec(),
+            null,
+            false,
+            IdentityPartitionConverters::convertConstant,
+            false,
+            null,
+            dataScanTask);
     try (CloseableIterable<Record> records = dataReader.readDeletedData()) {
       Assert.assertEquals(0, Iterables.size(records));
     }

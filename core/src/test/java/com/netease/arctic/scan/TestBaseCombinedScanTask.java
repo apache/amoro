@@ -42,38 +42,26 @@ public class TestBaseCombinedScanTask {
                 .withPath("/tmp/1-I-2-0-0-9009257362994691056-2.parquet")
                 .withFileSizeInBytes(10L)
                 .withRecordCount(100L)
-                .build()
-        );
-    DefaultKeyedFile keyedFile =
-        DefaultKeyedFile
-            .parseChange((DataFile) entry.getFile());
+                .build());
+    DefaultKeyedFile keyedFile = DefaultKeyedFile.parseChange((DataFile) entry.getFile());
     BasicArcticFileScanTask task =
-        new BasicArcticFileScanTask(
-            keyedFile,
-            null,
-            PartitionSpec.unpartitioned(),
-            null);
-
+        new BasicArcticFileScanTask(keyedFile, null, PartitionSpec.unpartitioned(), null);
 
     BaseCombinedScanTask baseCombinedScanTask =
-        new BaseCombinedScanTask(
-            new NodeFileScanTask(
-                Collections.singletonList(
-                    task
-                )));
-    String expected = "BaseCombinedScanTask{\n" +
-        "tasks=NodeFileScanTask{\n" +
-        "\tbaseTasks=[], \n" +
-        "\tinsertTasks=[DefaultKeyedFile{\n" +
-        "\t\tfile=/tmp/1-I-2-0-0-9009257362994691056-2.parquet, \n" +
-        "\t\ttype=I, \n" +
-        "\t\tmask=0, \n" +
-        "\t\tindex=0, \n" +
-        "\t\ttransactionId=2, \n" +
-        "\t\tfileSizeInBytes=10, \n" +
-        "\t\trecordCount=100}], \n" +
-        "\tdeleteFiles=[]}}";
+        new BaseCombinedScanTask(new NodeFileScanTask(Collections.singletonList(task)));
+    String expected =
+        "BaseCombinedScanTask{\n"
+            + "tasks=NodeFileScanTask{\n"
+            + "\tbaseTasks=[], \n"
+            + "\tinsertTasks=[DefaultKeyedFile{\n"
+            + "\t\tfile=/tmp/1-I-2-0-0-9009257362994691056-2.parquet, \n"
+            + "\t\ttype=I, \n"
+            + "\t\tmask=0, \n"
+            + "\t\tindex=0, \n"
+            + "\t\ttransactionId=2, \n"
+            + "\t\tfileSizeInBytes=10, \n"
+            + "\t\trecordCount=100}], \n"
+            + "\tdeleteFiles=[]}}";
     Assert.assertEquals(expected, baseCombinedScanTask.toString());
   }
-
 }

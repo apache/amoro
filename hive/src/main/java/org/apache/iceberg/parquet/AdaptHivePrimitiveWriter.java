@@ -31,9 +31,9 @@ public class AdaptHivePrimitiveWriter<T> implements ParquetValueWriter<T> {
   private final List<TripleWriter<?>> children;
 
   protected AdaptHivePrimitiveWriter(ColumnDescriptor desc) {
-    //Change For Arctic
+    // Change For Arctic
     this.column = AdaptHiveColumnWriter.newWriter(desc);
-    //Change For Arctic
+    // Change For Arctic
     this.children = ImmutableList.of(column);
   }
 
