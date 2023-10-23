@@ -23,7 +23,7 @@ import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.scan.expressions.BasicPartitionEvaluator;
 import com.netease.arctic.table.BasicKeyedTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.PuffinUtil;
+import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -140,7 +140,7 @@ public class BasicKeyedTableScan implements KeyedTableScan {
   }
 
   private CloseableIterable<ArcticFileScanTask> planChangeFiles() {
-    StructLikeMap<Long> partitionOptimizedSequence = PuffinUtil.reader(table).readOptimizedSequence();
+    StructLikeMap<Long> partitionOptimizedSequence = ArcticTableUtil.readOptimizedSequence(table);
     Expression partitionExpressions = Expressions.alwaysTrue();
     if (expression != null) {
       //Only push down filters related to partition

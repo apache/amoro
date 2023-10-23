@@ -20,6 +20,7 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.PuffinUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
@@ -72,9 +73,8 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
     addFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
     CreateSnapshotEvent newSnapshot = (CreateSnapshotEvent) replacePartitions.updateEvent();
-
-    PuffinUtil.Reader reader = PuffinUtil.reader(keyedTable.baseTable());
-    StructLikeMap<Long> oldOptimizedSequence = reader.readOptimizedSequence();
+    
+    StructLikeMap<Long> oldOptimizedSequence = ArcticTableUtil.readOptimizedSequence(keyedTable);
     StructLikeMap<Long> optimizedSequence = StructLikeMap.create(spec.partitionType());
     if (oldOptimizedSequence != null) {
       optimizedSequence.putAll(oldOptimizedSequence);
@@ -83,9 +83,9 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
 
     StatisticsFile statisticsFile =
         PuffinUtil.writer(keyedTable.baseTable(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
-            .addOptimizedSequence(optimizedSequence)
-            .overwrite()
-            .write();
+            .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence,
+                PuffinUtil.createPartitionDataSerializer(keyedTable.spec()))
+            .complete();
     return Collections.singletonList(statisticsFile);
   }
 

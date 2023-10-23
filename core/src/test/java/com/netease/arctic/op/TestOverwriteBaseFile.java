@@ -20,7 +20,7 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.io.TableDataTestBase;
-import com.netease.arctic.utils.PuffinUtil;
+import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
@@ -58,7 +58,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
     // overwrite all partition and add new data file
 
     StructLikeMap<Long> partitionOptimizedSequence =
-        PuffinUtil.reader(getArcticTable().asKeyedTable()).readOptimizedSequence();
+        ArcticTableUtil.readOptimizedSequence(getArcticTable().asKeyedTable());
     // expect result: all partition with new txId
     Assert.assertEquals(
         txId,
@@ -74,7 +74,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
         partitionOptimizedSequence.get(MixedDataTestHelpers.recordPartition("2022-01-04T12:00:00")).longValue());
 
     StructLikeMap<Long> partitionOptimizedTime =
-        PuffinUtil.reader(getArcticTable().asKeyedTable()).readBaseOptimizedTime();
+        ArcticTableUtil.readOptimizedSequence(getArcticTable().asKeyedTable());
     // expect result: all partition with new optimized time
     assertRange(before, after,
         partitionOptimizedTime.get(MixedDataTestHelpers.recordPartition("2022-01-01T12:00:00")));
@@ -129,7 +129,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
     long after = System.currentTimeMillis();
 
     StructLikeMap<Long> partitionOptimizedSequence =
-        PuffinUtil.reader(getArcticTable().asKeyedTable()).readOptimizedSequence();
+        ArcticTableUtil.readOptimizedSequence(getArcticTable().asKeyedTable());
     // expect result: 1,2,4 partition with new txId, 3 partition is null
     Assert.assertEquals(
         txId,
@@ -143,7 +143,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
         partitionOptimizedSequence.get(MixedDataTestHelpers.recordPartition("2022-01-02T12:00:00")).longValue());
 
     StructLikeMap<Long> partitionOptimizedTime =
-        PuffinUtil.reader(getArcticTable().asKeyedTable()).readBaseOptimizedTime();
+        ArcticTableUtil.readOptimizedSequence(getArcticTable().asKeyedTable());
     // expect result: 1,2,4 partition with new optimized time, 3 partition is null
     assertRange(before, after,
         partitionOptimizedTime.get(MixedDataTestHelpers.recordPartition("2022-01-01T12:00:00")));

@@ -29,8 +29,8 @@ import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
-import com.netease.arctic.utils.PuffinUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;
@@ -157,8 +157,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     UnkeyedTable baseTable = arcticTable.baseTable();
     ChangeTable changeTable = arcticTable.changeTable();
     if (changeSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
-      StructLikeMap<Long> partitionOptimizedSequence =
-          PuffinUtil.reader(arcticTable).useSnapshotId(baseSnapshotId).readOptimizedSequence();
+      StructLikeMap<Long> partitionOptimizedSequence = ArcticTableUtil.readOptimizedSequence(baseTable, baseSnapshotId);
       long maxSequence = getMaxSequenceLimit(arcticTable, changeSnapshotId, partitionOptimizedSequence);
       if (maxSequence != Long.MIN_VALUE) {
         ChangeTableIncrementalScan changeTableIncrementalScan = changeTable.newScan()

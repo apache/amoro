@@ -21,6 +21,7 @@ package com.netease.arctic.op;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.PuffinUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -244,9 +245,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     // step3: set optimized sequence id, optimized time
     long commitTime = System.currentTimeMillis();
     PartitionSpec spec = transaction.table().spec();
-    PuffinUtil.Reader reader = PuffinUtil.reader(keyedTable.baseTable());
-    StructLikeMap<Long> oldOptimizedSequence = reader.readOptimizedSequence();
-    StructLikeMap<Long> oldOptimizedTime = reader.readBaseOptimizedTime();
+    StructLikeMap<Long> oldOptimizedSequence = ArcticTableUtil.readOptimizedSequence(keyedTable);
+    StructLikeMap<Long> oldOptimizedTime = ArcticTableUtil.readBaseOptimizedTime(keyedTable);
     StructLikeMap<Long> optimizedSequence = StructLikeMap.create(spec.partitionType());
     StructLikeMap<Long> optimizedTime = StructLikeMap.create(spec.partitionType());
     if (oldOptimizedSequence != null) {
@@ -272,12 +272,13 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
       if (statisticsFile != null) {
         result.add(PuffinUtil.copyToSnapshot(statisticsFile, newSnapshot.snapshotId()));
       } else {
+        PuffinUtil.PartitionDataSerializer dataSerializer =
+            PuffinUtil.createPartitionDataSerializer(keyedTable.spec());
         statisticsFile =
             PuffinUtil.writer(keyedTable.baseTable(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
-                .addOptimizedSequence(optimizedSequence)
-                .addBaseOptimizedTime(optimizedTime)
-                .overwrite()
-                .write();
+                .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence, dataSerializer)
+                .add(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, optimizedTime, dataSerializer)
+                .complete();
         result.add(statisticsFile);
       }
     }

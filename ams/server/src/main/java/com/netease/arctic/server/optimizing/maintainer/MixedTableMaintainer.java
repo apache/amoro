@@ -29,8 +29,8 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
-import com.netease.arctic.utils.PuffinUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -229,7 +229,7 @@ public class MixedTableMaintainer implements TableMaintainer {
         return;
       }
 
-      StructLikeMap<Long> optimizedSequences = PuffinUtil.reader(keyedTable).readOptimizedSequence();
+      StructLikeMap<Long> optimizedSequences = ArcticTableUtil.readOptimizedSequence(keyedTable);
       if (MapUtils.isEmpty(optimizedSequences)) {
         LOG.info("table {} not contains max transaction id", keyedTable.id());
         return;

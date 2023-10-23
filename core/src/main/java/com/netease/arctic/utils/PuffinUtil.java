@@ -21,15 +21,13 @@ package com.netease.arctic.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.GenericBlobMetadata;
 import org.apache.iceberg.GenericStatisticsFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.puffin.Blob;
 import org.apache.iceberg.puffin.BlobMetadata;
@@ -47,6 +45,8 @@ import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -54,187 +54,103 @@ import java.util.stream.Collectors;
  * Puffin are a kind of file format for Iceberg statistics file {@link StatisticsFile}.
  */
 public class PuffinUtil {
-  public static final String BLOB_TYPE_OPTIMIZED_SEQUENCE = "optimized-sequence";
-  public static final String BLOB_TYPE_BASE_OPTIMIZED_TIME = "base-optimized-time";
 
-  public static Writer writer(UnkeyedTable table, long snapshotId, long sequenceNumber) {
+  public static Writer writer(Table table, long snapshotId, long sequenceNumber) {
     return new Writer(table, snapshotId, sequenceNumber);
   }
 
-  public static Reader reader(UnkeyedTable table) {
+  public static Reader reader(Table table) {
     return new Reader(table);
   }
 
-  public static Reader reader(KeyedTable keyedTable) {
-    return new Reader(keyedTable.baseTable());
-  }
-
   public static class Writer {
-    private final UnkeyedTable table;
     private final long snapshotId;
     private final long sequenceNumber;
-    private StructLikeMap<Long> optimizedSequence;
-    private StructLikeMap<Long> baseOptimizedTime;
-    private boolean overwrite = false;
+    private final OutputFile outputFile;
+    private final PuffinWriter puffinWriter;
+    private boolean closed = false;
 
-    private Writer(UnkeyedTable table, long snapshotId, long sequenceNumber) {
-      this.table = table;
+    private Writer(Table table, long snapshotId, long sequenceNumber) {
       this.snapshotId = snapshotId;
       this.sequenceNumber = sequenceNumber;
+      this.outputFile = table.io()
+          .newOutputFile(table.location() + "/data/" + snapshotId + "-" + UUID.randomUUID() + ".puffin");
+      this.puffinWriter = Puffin.write(outputFile).build();
     }
 
-    public Writer addOptimizedSequence(StructLikeMap<Long> optimizedSequence) {
-      this.optimizedSequence = optimizedSequence;
+    public Writer addBlob(String type, ByteBuffer blobData) {
+      checkNotClosed();
+      puffinWriter.add(new Blob(type, Collections.emptyList(), snapshotId, sequenceNumber, blobData));
       return this;
     }
 
-    public Writer addBaseOptimizedTime(StructLikeMap<Long> baseOptimizedTime) {
-      this.baseOptimizedTime = baseOptimizedTime;
-      return this;
-    }
-    
-    public Writer overwrite() {
-      this.overwrite = true;
-      return this;
+    public <T> Writer add(String type, T data, DataSerializer<T> serializer) {
+      checkNotClosed();
+      return addBlob(type, serializer.serialize(data));
     }
 
-    public StatisticsFile write() {
-      if (optimizedSequence == null && baseOptimizedTime == null) {
-        throw new IllegalArgumentException("No statistics to write");
-      }
-      OutputFile outputFile = table.io().newOutputFile(table.location() + "/metadata/" + snapshotId + ".puffin");
-      if (outputFile.toInputFile().exists()) {
-        if (overwrite) {
-          // overwrite the old puffin file for retry
-          table.io().deleteFile(outputFile);
-        } else {
-          throw new IllegalStateException("Puffin file already exists: " + outputFile.location());
-        }
-      }
-      List<BlobMetadata> blobMetadata;
-      long fileSize;
-      long footerSize;
-      try (PuffinWriter puffinWriter = Puffin.write(outputFile).build()) {
-        if (optimizedSequence != null) {
-          puffinWriter.add(
-              new Blob(BLOB_TYPE_OPTIMIZED_SEQUENCE, Collections.emptyList(), snapshotId, sequenceNumber,
-                  ByteBuffer.wrap(encodePartitionValues(table.spec(), optimizedSequence).getBytes())));
-        }
-        if (baseOptimizedTime != null) {
-          puffinWriter.add(
-              new Blob(BLOB_TYPE_BASE_OPTIMIZED_TIME, Collections.emptyList(), snapshotId, sequenceNumber,
-                  ByteBuffer.wrap(encodePartitionValues(table.spec(), baseOptimizedTime).getBytes())));
-        }
+    public StatisticsFile complete() {
+      checkNotClosed();
+      try {
         puffinWriter.finish();
-        blobMetadata = puffinWriter.writtenBlobsMetadata();
-        fileSize = puffinWriter.fileSize();
-        footerSize = puffinWriter.footerSize();
+        List<BlobMetadata> blobMetadata = puffinWriter.writtenBlobsMetadata();
+        long fileSize = puffinWriter.fileSize();
+        long footerSize = puffinWriter.footerSize();
+        List<org.apache.iceberg.BlobMetadata> collect =
+            blobMetadata.stream().map(GenericBlobMetadata::from).collect(Collectors.toList());
+        return new GenericStatisticsFile(
+            snapshotId,
+            outputFile.location(),
+            fileSize,
+            footerSize,
+            collect);
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        throw new UncheckedIOException(e);
+      } finally {
+        close();
       }
-      List<org.apache.iceberg.BlobMetadata> collect =
-          blobMetadata.stream().map(GenericBlobMetadata::from).collect(Collectors.toList());
-      return new GenericStatisticsFile(
-          snapshotId,
-          outputFile.location(),
-          fileSize,
-          footerSize,
-          collect);
+    }
+
+    private void checkNotClosed() {
+      Preconditions.checkState(!closed, "Cannot operate on a closed writer");
+    }
+
+    private void close() {
+      if (!closed) {
+        closed = true;
+        try {
+          puffinWriter.close();
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+      }
     }
   }
 
   public static class Reader {
-    private final UnkeyedTable table;
-    private Long snapshotId;
+    private final Table table;
 
-    private Reader(UnkeyedTable table) {
+    private Reader(Table table) {
       this.table = table;
     }
-    
-    public Reader useSnapshotId(long snapshotId) {
-      this.snapshotId = snapshotId;
-      return this;
-    }
 
-    public StructLikeMap<Long> readOptimizedSequence() {
-      return readWithCompatibility(BLOB_TYPE_OPTIMIZED_SEQUENCE);
-    }
-
-    public StructLikeMap<Long> readBaseOptimizedTime() {
-      return readWithCompatibility(BLOB_TYPE_BASE_OPTIMIZED_TIME);
-    }
-
-    private StructLikeMap<Long> readWithCompatibility(String type) {
-      StructLikeMap<Long> result = read(type);
-      if (result != null) {
-        return result;
-      }
-      // to be compatible with old Amoro version 0.5.0 which didn't use puffin file and stored the statistics in
-      // table properties
-      switch (type) {
-        case BLOB_TYPE_OPTIMIZED_SEQUENCE:
-          return TablePropertyUtil.getPartitionLongProperties(table, TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
-        case BLOB_TYPE_BASE_OPTIMIZED_TIME:
-          return TablePropertyUtil.getPartitionLongProperties(table, TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
-        default:
-          throw new IllegalArgumentException("Unknown blob type: " + type);
-      }
-    }
-
-    private StructLikeMap<Long> read(String type) {
-      StatisticsFile statisticsFile = findStatisticsFile(type);
-      if (statisticsFile == null) {
+    public <T> T read(StatisticsFile statisticsFile, String type, DataSerializer<T> deserializer) {
+      ByteBuffer blobData = read(statisticsFile, type);
+      if (blobData == null) {
         return null;
       }
+      return deserializer.deserialize(blobData);
+    }
+
+    public ByteBuffer read(StatisticsFile statisticsFile, String type) {
       try (PuffinReader puffin = Puffin.read(table.io().newInputFile(statisticsFile.path())).build()) {
         FileMetadata fileMetadata = puffin.fileMetadata();
         BlobMetadata blobMetadata =
             fileMetadata.blobs().stream().filter(b -> type.equals(b.type())).findFirst().orElseThrow(
                 () -> new IllegalStateException("No blob of type " + type + " found in file " + statisticsFile.path()));
-        ByteBuffer result = puffin.readAll(Collections.singletonList(blobMetadata)).iterator().next().second();
-        return decodePartitionValues(table.spec(), new String(result.array()));
+        return puffin.readAll(Collections.singletonList(blobMetadata)).iterator().next().second();
       } catch (IOException e) {
         throw new UncheckedIOException(e);
-      }
-    }
-
-    private StatisticsFile findStatisticsFile(String type) {
-      long snapshotId;
-      if (this.snapshotId == null) {
-        Snapshot currentSnapshot = table.currentSnapshot();
-        if (currentSnapshot == null) {
-          return null;
-        }
-        snapshotId = currentSnapshot.snapshotId();
-      } else {
-        snapshotId = this.snapshotId;
-      }
-      List<StatisticsFile> statisticsFiles = table.statisticsFiles();
-      if (statisticsFiles.isEmpty()) {
-        return null;
-      }
-      Map<Long, List<StatisticsFile>> statisticsFilesBySnapshotId =
-          statisticsFiles.stream().collect(Collectors.groupingBy(StatisticsFile::snapshotId));
-      while (true) {
-        List<StatisticsFile> statisticsFile = statisticsFilesBySnapshotId.get(snapshotId);
-        if (statisticsFile != null) {
-          Preconditions.checkArgument(statisticsFile.size() == 1,
-              "Multiple statistics files found for snapshot %s", snapshotId);
-          StatisticsFile file = statisticsFile.get(0);
-          List<org.apache.iceberg.BlobMetadata> blobs = file.blobMetadata();
-          if (blobs != null) {
-            if (blobs.stream().anyMatch(b -> type.equals(b.type()))) {
-              return file;
-            }
-          }
-        }
-        // seek parent snapshot
-        Snapshot snapshot = table.snapshot(snapshotId);
-        if (snapshot == null) {
-          return null;
-        } else {
-          snapshotId = snapshot.parentId();
-        }
       }
     }
   }
@@ -256,38 +172,91 @@ public class PuffinUtil {
         statisticsFile.blobMetadata());
   }
 
-  private static <T> String encodePartitionValues(PartitionSpec spec, StructLikeMap<T> partitionValues) {
-    Map<String, T> stringKeyMap = Maps.newHashMap();
-    for (StructLike pd : partitionValues.keySet()) {
-      String pathLike = spec.partitionToPath(pd);
-      stringKeyMap.put(pathLike, partitionValues.get(pd));
+  public static List<StatisticsFile> findLatestValidStatisticsFiles(Table table,
+                                                                    long currentSnapshotId,
+                                                                    Predicate<StatisticsFile> validator) {
+    List<StatisticsFile> statisticsFiles = table.statisticsFiles();
+    if (statisticsFiles.isEmpty()) {
+      return null;
     }
-    String value;
-    try {
-      value = new ObjectMapper().writeValueAsString(stringKeyMap);
-    } catch (JsonProcessingException e) {
-      throw new UncheckedIOException(e);
-    }
-    return value;
-  }
-
-  private static StructLikeMap<Long> decodePartitionValues(PartitionSpec spec, String value) {
-    try {
-      StructLikeMap<Long> results = StructLikeMap.create(spec.partitionType());
-      TypeReference<Map<String, Long>> typeReference = new TypeReference<Map<String, Long>>() {
-      };
-      Map<String, Long> map = new ObjectMapper().readValue(value, typeReference);
-      for (String key : map.keySet()) {
-        if (spec.isUnpartitioned()) {
-          results.put(TablePropertyUtil.EMPTY_STRUCT, map.get(key));
-        } else {
-          StructLike partitionData = ArcticDataFiles.data(spec, key);
-          results.put(partitionData, map.get(key));
+    Map<Long, List<StatisticsFile>> statisticsFilesBySnapshotId =
+        statisticsFiles.stream().collect(Collectors.groupingBy(StatisticsFile::snapshotId));
+    long snapshotId = currentSnapshotId;
+    while (true) {
+      List<StatisticsFile> statisticsFileList = statisticsFilesBySnapshotId.get(snapshotId);
+      if (statisticsFileList != null) {
+        List<StatisticsFile> result = statisticsFileList.stream().filter(validator).collect(Collectors.toList());
+        if (!result.isEmpty()) {
+          return result;
         }
       }
-      return results;
-    } catch (JsonProcessingException e) {
-      throw new UnsupportedOperationException("Failed to decode partition max txId ", e);
+      // seek parent snapshot
+      Snapshot snapshot = table.snapshot(snapshotId);
+      if (snapshot == null) {
+        return null;
+      } else {
+        snapshotId = snapshot.parentId();
+      }
+    }
+  }
+
+  public static Predicate<StatisticsFile> containsBlobOfType(String type) {
+    return statisticsFile -> statisticsFile.blobMetadata().stream().anyMatch(b -> type.equals(b.type()));
+  }
+  
+  public static PartitionDataSerializer createPartitionDataSerializer(PartitionSpec spec) {
+    return new PartitionDataSerializer(spec);
+  }
+
+  public interface DataSerializer<T> {
+    ByteBuffer serialize(T data);
+
+    T deserialize(ByteBuffer buffer);
+  }
+
+  public static class PartitionDataSerializer implements DataSerializer<StructLikeMap<Long>> {
+
+    private final PartitionSpec spec;
+
+    public PartitionDataSerializer(PartitionSpec spec) {
+      this.spec = spec;
+    }
+
+    @Override
+    public ByteBuffer serialize(StructLikeMap<Long> data) {
+      Map<String, Long> stringKeyMap = Maps.newHashMap();
+      for (StructLike pd : data.keySet()) {
+        String pathLike = spec.partitionToPath(pd);
+        stringKeyMap.put(pathLike, data.get(pd));
+      }
+      String value;
+      try {
+        value = new ObjectMapper().writeValueAsString(stringKeyMap);
+      } catch (JsonProcessingException e) {
+        throw new UncheckedIOException(e);
+      }
+      return ByteBuffer.wrap(value.getBytes());
+    }
+
+    @Override
+    public StructLikeMap<Long> deserialize(ByteBuffer buffer) {
+      try {
+        StructLikeMap<Long> results = StructLikeMap.create(spec.partitionType());
+        TypeReference<Map<String, Long>> typeReference = new TypeReference<Map<String, Long>>() {
+        };
+        Map<String, Long> map = new ObjectMapper().readValue(new String(buffer.array()), typeReference);
+        for (String key : map.keySet()) {
+          if (spec.isUnpartitioned()) {
+            results.put(TablePropertyUtil.EMPTY_STRUCT, map.get(key));
+          } else {
+            StructLike partitionData = ArcticDataFiles.data(spec, key);
+            results.put(partitionData, map.get(key));
+          }
+        }
+        return results;
+      } catch (JsonProcessingException e) {
+        throw new UnsupportedOperationException("Failed to decode partition max txId ", e);
+      }
     }
   }
 }

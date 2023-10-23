@@ -36,6 +36,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.List;
+
 @RunWith(Parameterized.class)
 public class TestPuffinUtil extends TableTestBase {
 
@@ -61,29 +63,43 @@ public class TestPuffinUtil extends TableTestBase {
     UnkeyedTable table = getArcticTable().isKeyedTable() ? getArcticTable().asKeyedTable().baseTable() :
         getArcticTable().asUnkeyedTable();
     table.newAppend().commit();
-    PuffinUtil.Reader reader = PuffinUtil.reader(table);
-    Assert.assertTrue(reader.readBaseOptimizedTime().isEmpty());
-    Assert.assertTrue(reader.readOptimizedSequence().isEmpty());
 
     Snapshot snapshot = table.currentSnapshot();
     StructLikeMap<Long> optimizedTime = buildPartitionOptimizedTime();
     StructLikeMap<Long> optimizedSequence = buildPartitionOptimizedSequence();
 
+    PuffinUtil.PartitionDataSerializer dataSerializer =
+        PuffinUtil.createPartitionDataSerializer(table.spec());
     PuffinUtil.Writer writer = PuffinUtil.writer(table, snapshot.snapshotId(), snapshot.sequenceNumber())
-        .addBaseOptimizedTime(optimizedTime)
-        .addOptimizedSequence(optimizedSequence);
-    StatisticsFile statisticsFile = writer.write();
+        .add(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, optimizedTime, dataSerializer)
+        .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence, dataSerializer);
+    StatisticsFile statisticsFile = writer.complete();
     table.updateStatistics().setStatistics(snapshot.snapshotId(), statisticsFile).commit();
 
-    reader = PuffinUtil.reader(table);
-    assertStructLikeEquals(optimizedTime, reader.readBaseOptimizedTime());
-    assertStructLikeEquals(optimizedSequence, reader.readOptimizedSequence());
+    PuffinUtil.Reader reader = PuffinUtil.reader(table);
+
+    assertStructLikeEquals(optimizedTime,
+        reader.read(findValidStatisticFile(table, ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME),
+            ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, dataSerializer));
+    assertStructLikeEquals(optimizedSequence,
+        reader.read(findValidStatisticFile(table, ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE),
+            ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, dataSerializer));
 
     table.newAppend().commit();
-    reader = PuffinUtil.reader(table)
-        .useSnapshotId(table.currentSnapshot().snapshotId());
-    assertStructLikeEquals(optimizedTime, reader.readBaseOptimizedTime());
-    assertStructLikeEquals(optimizedSequence, reader.readOptimizedSequence());
+
+    assertStructLikeEquals(optimizedTime,
+        reader.read(findValidStatisticFile(table, ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME),
+            ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, dataSerializer));
+    assertStructLikeEquals(optimizedSequence,
+        reader.read(findValidStatisticFile(table, ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE),
+            ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, dataSerializer));
+  }
+
+  private StatisticsFile findValidStatisticFile(UnkeyedTable table, String type) {
+    List<StatisticsFile> latestValidStatisticsFiles =
+        PuffinUtil.findLatestValidStatisticsFiles(table, table.currentSnapshot().snapshotId(),
+            PuffinUtil.containsBlobOfType(type));
+    return latestValidStatisticsFiles.get(0);
   }
 
   private void assertStructLikeEquals(StructLikeMap<Long> expected, StructLikeMap<Long> actual) {
