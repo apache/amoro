@@ -9,18 +9,15 @@ import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TMultiplexedProtocol;
 import org.apache.thrift.protocol.TProtocol;
 
-/**
- * Client pool cache for different ams server, sharing in jvm.
- */
+/** Client pool cache for different ams server, sharing in jvm. */
 public class AmsClientPools {
 
   private static final int CLIENT_POOL_MIN_IDLE = 0;
   private static final int CLIENT_POOL_MAX_IDLE = 5;
   private static final int CLIENT_POOL_MAX_WAIT_MS = 5000;
 
-  private static final LoadingCache<String, ThriftClientPool<ArcticTableMetastore.Client>> CLIENT_POOLS
-      = Caffeine.newBuilder()
-      .build(AmsClientPools::buildClientPool);
+  private static final LoadingCache<String, ThriftClientPool<ArcticTableMetastore.Client>>
+      CLIENT_POOLS = Caffeine.newBuilder().build(AmsClientPools::buildClientPool);
 
   public static ThriftClientPool<ArcticTableMetastore.Client> getClientPool(String metastoreUrl) {
     return CLIENT_POOLS.get(metastoreUrl);
@@ -40,8 +37,9 @@ public class AmsClientPools {
         url,
         s -> {
           TProtocol protocol = new TBinaryProtocol(s);
-          ArcticTableMetastore.Client tableMetastore = new ArcticTableMetastore.Client(
-              new TMultiplexedProtocol(protocol, Constants.THRIFT_TABLE_SERVICE_NAME));
+          ArcticTableMetastore.Client tableMetastore =
+              new ArcticTableMetastore.Client(
+                  new TMultiplexedProtocol(protocol, Constants.THRIFT_TABLE_SERVICE_NAME));
           return tableMetastore;
         },
         c -> {
@@ -51,6 +49,8 @@ public class AmsClientPools {
             return false;
           }
           return true;
-        }, poolConfig, Constants.THRIFT_TABLE_SERVICE_NAME);
+        },
+        poolConfig,
+        Constants.THRIFT_TABLE_SERVICE_NAME);
   }
 }

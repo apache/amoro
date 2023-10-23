@@ -1,7 +1,6 @@
 package com.netease.arctic.ams.api.resource;
 
 public enum ResourceType {
-
   OPTIMIZER(0);
 
   private final int type;
