@@ -141,9 +141,10 @@ public class ArcticDataFiles {
   }
 
   private static GenericRecord genericRecord(PartitionSpec spec) {
-    List<String> collect = spec.fields().stream()
-        .map(s -> spec.schema().findColumnName(s.sourceId()))
-        .collect(Collectors.toList());
+    List<String> collect =
+        spec.fields().stream()
+            .map(s -> spec.schema().findColumnName(s.sourceId()))
+            .collect(Collectors.toList());
     return GenericRecord.create(spec.schema().select(collect));
   }
 }
