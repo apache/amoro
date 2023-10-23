@@ -1,13 +1,15 @@
 package com.netease.arctic.mixed;
 
 import com.google.common.collect.Maps;
+import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableMetaStore;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
+import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.rest.HTTPClient;
 import org.apache.iceberg.rest.RESTCatalog;
@@ -48,10 +50,28 @@ public class MixedIcebergAmoroCatalog extends BasicMixedIcebergCatalog {
   }
 
   @Override
-  public List<TableIdentifier> listTables(String database) {
+  public List<com.netease.arctic.table.TableIdentifier> listTables(String database) {
     // Amoro iceberg rest catalog only return base store of mixed-format
     return icebergCatalog().listTables(Namespace.of(database))
-        .stream().map(id -> TableIdentifier.of(this.name(), database, id.name()))
+        .stream().map(id -> com.netease.arctic.table.TableIdentifier.of(this.name(), database, id.name()))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  protected MixedTables newMixedTables(TableMetaStore metaStore, CatalogMeta meta, Catalog icebergCatalog) {
+    return new InternalMixedTables(metaStore, meta, icebergCatalog);
+  }
+
+  static class InternalMixedTables extends MixedTables {
+
+    public InternalMixedTables(TableMetaStore tableMetaStore, CatalogMeta catalogMeta, Catalog catalog) {
+      super(tableMetaStore, catalogMeta, catalog);
+    }
+
+    @Override
+    protected TableIdentifier generateChangeStoreIdentifier(
+        TableIdentifier baseIdentifier) {
+      return TableIdentifier.of(baseIdentifier.namespace(), baseIdentifier.name() + "@change");
+    }
   }
 }

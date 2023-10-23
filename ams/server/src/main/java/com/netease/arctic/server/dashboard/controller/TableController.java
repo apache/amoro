@@ -408,7 +408,7 @@ public class TableController {
       }
     };
 
-    List<TableMeta> tables = tableService.listTables(catalog, db).stream()
+    List<TableMeta> tables = serverCatalog.listTables(db).stream()
         .map(idWithFormat -> new TableMeta(
             idWithFormat.getIdentifier().getTableName(),
             formatToType.apply(idWithFormat.getTableFormat())))

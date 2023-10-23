@@ -110,12 +110,11 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
           catalogMeta.getCatalogProperties().get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
       databaseFilterPattern = Pattern.compile(databaseFilter);
     }
-    MixedTables tables = new MixedTables(metaStore, catalogMeta, icebergCatalog);
     synchronized (this) {
       this.tableMetaStore = metaStore;
       this.icebergCatalog = icebergCatalog;
       this.databaseFilterPattern = databaseFilterPattern;
-      this.tables = tables;
+      this.tables = newMixedTables(metaStore, catalogMeta, icebergCatalog);
       this.meta = catalogMeta;
     }
   }
@@ -164,7 +163,7 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
         visited.add(identifier);
         PrimaryKeySpec keySpec = tables.getPrimaryKeySpec(table);
         if (keySpec.primaryKeyExisted()) {
-          visited.add(tables.changeStoreIdentifier(table));
+          visited.add(tables.generateChangeStoreIdentifier(table));
         }
       }
     }
@@ -202,7 +201,7 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     boolean changeDeleted = false;
     if (table.isKeyedTable()) {
       try {
-        changeDeleted = dropTableInternal(tables.changeStoreIdentifier(base.asUnkeyedTable()), purge);
+        changeDeleted = dropTableInternal(tables.generateChangeStoreIdentifier(base.asUnkeyedTable()), purge);
       } catch (Exception e) {
         // pass
       }
@@ -253,6 +252,10 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
       properties.put(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE, metastoreType);
     }
     return org.apache.iceberg.CatalogUtil.buildIcebergCatalog(name, properties, hadoopConf);
+  }
+
+  protected MixedTables newMixedTables(TableMetaStore metaStore, CatalogMeta meta, Catalog icebergCatalog) {
+    return new MixedTables(metaStore, meta, icebergCatalog);
   }
 
   private org.apache.iceberg.catalog.TableIdentifier toIcebergTableIdentifier(TableIdentifier identifier) {

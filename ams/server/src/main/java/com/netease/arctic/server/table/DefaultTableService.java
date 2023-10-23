@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
@@ -149,10 +150,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   @Override
   public TableMetadata loadTableMetadata(TableIdentifier tableIdentifier) {
     validateTableExists(tableIdentifier);
-    return Optional.ofNullable(getAs(TableMetaMapper.class, mapper ->
-            mapper.selectTableMetaByName(tableIdentifier.getCatalog(),
-                tableIdentifier.getDatabase(), tableIdentifier.getTableName())))
-        .orElseThrow(() -> new ObjectNotExistsException(tableIdentifier));
+    InternalCatalog internalCatalog = getInternalCatalog(tableIdentifier.getCatalog());
+    return internalCatalog.loadTableMetadata(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
   }
 
   @Override

@@ -78,7 +78,7 @@ public class MixedTables {
     return keySpec;
   }
 
-  public TableIdentifier changeStoreIdentifier(Table base) {
+  public TableIdentifier generateChangeStoreIdentifier(Table base) {
     if (!base.properties().containsKey(TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER)) {
       throw new IllegalStateException("can read change store identifier from base store properties");
     }
@@ -86,7 +86,7 @@ public class MixedTables {
     return TableIdentifier.parse(change);
   }
 
-  protected TableIdentifier changeStoreIdentifier(TableIdentifier baseIdentifier) {
+  protected TableIdentifier generateChangeStoreIdentifier(TableIdentifier baseIdentifier) {
     String separator = catalogMeta.getCatalogProperties().getOrDefault(
         CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR,
         CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR_DEFAULT
@@ -123,7 +123,7 @@ public class MixedTables {
   ) {
     Map<String, String> tableStoreProperties = tableStoreProperties(keySpec, properties);
     TableIdentifier baseIdentifier = TableIdentifier.of(identifier.getDatabase(), identifier.getTableName());
-    TableIdentifier changeIdentifier = changeStoreIdentifier(baseIdentifier);
+    TableIdentifier changeIdentifier = generateChangeStoreIdentifier(baseIdentifier);
     if (keySpec.primaryKeyExisted() && tableStoreExists(changeIdentifier)) {
       throw new AlreadyExistsException("change store already exists");
     }
@@ -177,7 +177,7 @@ public class MixedTables {
   }
 
   protected Table loadChangeStore(Table base) {
-    TableIdentifier changeIdentifier = changeStoreIdentifier(base);
+    TableIdentifier changeIdentifier = generateChangeStoreIdentifier(base);
     return tableMetaStore.doAs(
         () -> icebergCatalog.loadTable(changeIdentifier));
   }

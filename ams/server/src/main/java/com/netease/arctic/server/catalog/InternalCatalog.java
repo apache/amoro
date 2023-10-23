@@ -13,6 +13,7 @@ import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public abstract class InternalCatalog extends ServerCatalog {
@@ -135,6 +136,15 @@ public abstract class InternalCatalog extends ServerCatalog {
         mapper.selectTableIdentifier(getMetadata().getCatalogName(), database, tableName));
     return tableIdentifier != null && getAs(TableMetaMapper.class, mapper ->
         mapper.selectTableMetaById(tableIdentifier.getId())) != null;
+  }
+
+
+  public TableMetadata loadTableMetadata(String database, String table) {
+    return Optional.ofNullable(
+        getAs(TableMetaMapper.class,
+            mapper -> mapper.selectTableMetaByName(name(), database, table)))
+        .orElseThrow(() -> new ObjectNotExistsException(
+            com.netease.arctic.table.TableIdentifier.of(name(), database, table).toString()));
   }
 
   private String getDatabaseDesc(String database) {

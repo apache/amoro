@@ -3,9 +3,11 @@ package com.netease.arctic.server.utils;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
+import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.iceberg.InternalTableStoreOperations;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
@@ -17,7 +19,9 @@ import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.TableProperties;
+import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.CommitFailedException;
+import org.apache.iceberg.exceptions.NotFoundException;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -48,6 +52,88 @@ public class InternalTableUtil {
     return new InternalTableStoreOperations(tableMeta.getTableIdentifier(), tableMeta, io, changeStore);
   }
 
+  /**
+   * Check is this a change store table name
+   * @param tableName table name to create or load.
+   * @return is this match the change store name pattern
+   */
+  public static boolean isMatchChangeStoreNamePattern(String tableName) {
+    if (!tableName.contains(MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR)) {
+      return false;
+    }
+    String separator = MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR;
+    String changeStoreSuffix = separator + "change";
+    Preconditions.checkArgument(
+        tableName.indexOf(separator) == tableName.lastIndexOf(separator) && tableName.endsWith(changeStoreSuffix),
+        "illegal table name: %s, %s is not allowed in table name.",
+        tableName, MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR);
+
+    return true;
+  }
+
+
+  /**
+   * get the real table location.
+   * @param catalog - internal server catalog to create the table.
+   * @param database - database of table to be created
+   * @param tableName - tableName of table to be created.
+   * @param location - the requested location.
+   * @param changeStore - is this table is a change store
+   * @return - the real table location.
+   */
+  public static String tableLocation(
+      InternalCatalog catalog, String database, String tableName, String location, boolean changeStore) {
+    if (StringUtils.isBlank(location)) {
+      String warehouse = catalog.getMetadata().getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
+      Preconditions.checkState(
+          StringUtils.isNotBlank(warehouse),
+          "catalog warehouse is not configured");
+      warehouse = LocationUtil.stripTrailingSlash(warehouse);
+      if (!changeStore) {
+        location = warehouse + "/" + database + "/" + tableName;
+      } else {
+        String realTableName = internalTableName(tableName);
+        location = warehouse + "/" + database + "/" + realTableName + "/change";
+      }
+    } else {
+      location = LocationUtil.stripTrailingSlash(location);
+    }
+    return location;
+  }
+
+
+  public static void validateTableNameForCreating(
+      InternalCatalog catalog, String database, String tableName, boolean changeStore
+  ) {
+    if (!changeStore) {
+      if (catalog.exist(database, tableName)) {
+        throw new AlreadyExistsException("Table: " + tableName + " already exists.");
+      }
+    } else {
+      String internalTableName = internalTableName(tableName);
+      if (!catalog.exist(database, internalTableName)) {
+        throw new NotFoundException("You are creating the change store of table: " + internalTableName +
+            ", but the base store of table " + internalTableName + " is not exists.");
+      }
+      com.netease.arctic.server.table.TableMetadata internalMetadata =
+          catalog.loadTableMetadata(database, internalTableName);
+      Preconditions.checkState(StringUtils.isEmpty(internalMetadata.getChangeLocation()),
+          "The change store of table: " + internalTableName + " has already been created.");
+    }
+  }
+
+  /**
+   * get the internal table name
+   * @param tableName requested table name
+   * @return internal table name
+   */
+  public static String internalTableName(String tableName) {
+    if (isMatchChangeStoreNamePattern(tableName)) {
+      String suffix = MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR + "change";
+      return tableName.substring(0, tableName.length() - suffix.length());
+    }
+    return tableName;
+  }
 
   /**
    * create an iceberg file io instance
@@ -167,6 +253,7 @@ public class InternalTableUtil {
   public static com.netease.arctic.server.table.TableMetadata createTableInternal(
       ServerTableIdentifier identifier,
       CatalogMeta catalogMeta,
+
       TableMetadata icebergTableMetadata,
       String metadataFileLocation,
       FileIO io

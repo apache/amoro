@@ -12,10 +12,8 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
-import com.netease.arctic.server.iceberg.InternalTableOperations;
 import com.netease.arctic.server.manager.MetricsManager;
 import com.netease.arctic.server.metrics.IcebergMetricsContent;
-import com.netease.arctic.server.iceberg.InternalTableStoreOperations;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
@@ -26,7 +24,6 @@ import io.javalin.http.ContentType;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.plugin.json.JavalinJackson;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.TableMetadata;
@@ -54,7 +51,6 @@ import org.apache.iceberg.rest.responses.GetNamespaceResponse;
 import org.apache.iceberg.rest.responses.ListNamespacesResponse;
 import org.apache.iceberg.rest.responses.ListTablesResponse;
 import org.apache.iceberg.rest.responses.LoadTableResponse;
-import org.apache.iceberg.util.LocationUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -215,14 +211,9 @@ public class IcebergRestCatalogService extends PersistentBase {
    * GET PREFIX/v1/catalogs/{catalog}/namespaces/{namespaces}
    */
   public void getNamespace(Context ctx) {
-    handleNamespace(ctx, (catalog, database) -> {
-      if (catalog.exist(database)) {
-        return GetNamespaceResponse.builder()
-            .withNamespace(Namespace.of(database))
-            .build();
-      }
-      throw new NoSuchNamespaceException("database:" + database + " doesn't exist.");
-    });
+    handleNamespace(ctx, (catalog, database) -> GetNamespaceResponse.builder()
+          .withNamespace(Namespace.of(database))
+          .build());
   }
 
   /**
@@ -249,7 +240,6 @@ public class IcebergRestCatalogService extends PersistentBase {
    */
   public void listTablesInNamespace(Context ctx) {
     handleNamespace(ctx, (catalog, database) -> {
-      checkDatabaseExist(catalog.exist(database), database);
       List<TableIdentifier> tableIdentifiers = catalog.listTables(database).stream()
           .map(i -> TableIdentifier.of(database, i.getIdentifier().getTableName()))
           .collect(Collectors.toList());
@@ -265,23 +255,13 @@ public class IcebergRestCatalogService extends PersistentBase {
    */
   public void createTable(Context ctx) {
     handleNamespace(ctx, (catalog, database) -> {
-      checkDatabaseExist(catalog.exist(database), database);
 
       CreateTableRequest request = bodyAsClass(ctx, CreateTableRequest.class);
       String tableName = request.name();
-      checkAlreadyExists(!catalog.exist(database, tableName),
-          "Table", database + "." + tableName);
-      String location = request.location();
-      if (StringUtils.isBlank(location)) {
-        String warehouse = catalog.getMetadata().getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
-        Preconditions.checkState(
-            StringUtils.isNotBlank(warehouse),
-            "catalog warehouse is not configured");
-        warehouse = LocationUtil.stripTrailingSlash(warehouse);
-        location = warehouse + "/" + database + "/" + tableName;
-      } else {
-        location = LocationUtil.stripTrailingSlash(location);
-      }
+      boolean changeStore = InternalTableUtil.isMatchChangeStoreNamePattern(tableName);
+      InternalTableUtil.validateTableNameForCreating(catalog, database, tableName, changeStore);
+      String location = InternalTableUtil.tableLocation(
+          catalog, database, tableName, request.location(), changeStore);
       PartitionSpec spec = request.spec();
       SortOrder sortOrder = request.writeOrder();
       TableMetadata tableMetadata = TableMetadata.newTableMetadata(
@@ -294,12 +274,20 @@ public class IcebergRestCatalogService extends PersistentBase {
           catalog.name(), database, tableName, TableFormat.ICEBERG);
       String newMetadataFileLocation = InternalTableUtil.genNewMetadataFileLocation(null, tableMetadata);
       FileIO io = newIcebergFileIo(catalog.getMetadata());
+
       try {
-        com.netease.arctic.server.table.TableMetadata amsTableMeta = InternalTableUtil.createTableInternal(
-            identifier, catalog.getMetadata(), tableMetadata, newMetadataFileLocation, io
-        );
-        tableService.createTable(catalog.name(), amsTableMeta);
-        TableMetadata current = loadIcebergTableStoreMetadata(io, amsTableMeta);
+        com.netease.arctic.server.table.TableMetadata internalTableMetadata;
+        if (!changeStore) {
+          internalTableMetadata = InternalTableUtil.createTableInternal(
+              identifier, catalog.getMetadata(), tableMetadata, newMetadataFileLocation, io
+          );
+          tableService.createTable(catalog.name(), internalTableMetadata);
+        } else {
+          String internalTableName = InternalTableUtil.internalTableName(tableName);
+          internalTableMetadata = catalog.loadTableMetadata(database, internalTableName);
+
+        }
+        TableMetadata current = loadIcebergTableStoreMetadata(io, internalTableMetadata, changeStore);
         return LoadTableResponse.builder()
             .withTableMetadata(current)
             .build();
@@ -435,6 +423,7 @@ public class IcebergRestCatalogService extends PersistentBase {
       String ns = ctx.pathParam("namespace");
       Preconditions.checkNotNull(ns, "namespace is null");
       checkUnsupported(!ns.contains("."), "multi-level namespace is not supported");
+      checkDatabaseExist(catalog.exist(ns), ns);
       return handler.apply(catalog, ns);
     });
   }
@@ -443,7 +432,6 @@ public class IcebergRestCatalogService extends PersistentBase {
       Context ctx,
       BiFunction<InternalCatalog, com.netease.arctic.server.table.TableMetadata, ? extends RESTResponse> handler) {
     handleNamespace(ctx, (catalog, database) -> {
-      checkDatabaseExist(catalog.exist(database), database);
 
       String tableName = ctx.pathParam("table");
       Preconditions.checkNotNull(tableName, "table name is null");
