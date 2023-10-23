@@ -39,6 +39,7 @@ import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Streams;
+import org.apache.iceberg.util.Pair;
 import org.apache.paimon.AbstractFileStore;
 import org.apache.paimon.Snapshot;
 import org.apache.paimon.manifest.FileKind;
@@ -111,72 +112,15 @@ public class ServerTableDescriptor extends PersistentBase {
     return formatTableDescriptor.getTableFiles(amoroTable, partition);
   }
 
-  public List<OptimizingProcessMeta> getOptimizingProcesses(String catalog, String db, String table) {
-    return getAs(
-        OptimizingMapper.class,
-        mapper -> mapper.selectOptimizingProcesses(catalog, db, table));
-  }
-
-  public List<OptimizingTaskMeta> getOptimizingTasks(List<OptimizingProcessMeta> processMetaList) {
-    if (CollectionUtils.isEmpty(processMetaList)) {
-      return Collections.emptyList();
-    }
-    List<Long> processIds = processMetaList.stream()
-        .map(OptimizingProcessMeta::getProcessId).collect(Collectors.toList());
-    return getAs(
-        OptimizingMapper.class,
-        mapper -> mapper.selectOptimizeTaskMetas(processIds));
+  public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
+      TableIdentifier tableIdentifier, int limit, int offset) {
+    AmoroTable<?> amoroTable = loadTable(tableIdentifier);
+    FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
+    return formatTableDescriptor.getOptimizingProcessesInfo(amoroTable, limit, offset);
   }
 
   private AmoroTable<?> loadTable(TableIdentifier identifier) {
     ServerCatalog catalog = tableService.getServerCatalog(identifier.getCatalog());
     return catalog.loadTable(identifier.getDatabase(), identifier.getTableName());
-  }
-
-  public List<OptimizingProcessInfo> getPaimonOptimizingProcesses(
-      AmoroTable<?> amoroTable, TableIdentifier tableIdentifier) {
-    // Temporary solution for Paimon. TODO: Get compaction info from Paimon compaction task
-    List<OptimizingProcessInfo> processInfoList = new ArrayList<>();
-    FileStoreTable fileStoreTable = (FileStoreTable) amoroTable.originalTable();
-    AbstractFileStore<?> store = (AbstractFileStore<?>) fileStoreTable.store();
-    ServerTableIdentifier serverTableIdentifier = getAs(TableMetaMapper.class,
-        mapper -> mapper.selectTableIdentifier(tableIdentifier.getCatalog(),
-            tableIdentifier.getDatabase(),
-            tableIdentifier.getTableName()));
-    try {
-      Streams.stream(store.snapshotManager().snapshots())
-          .filter(s -> s.commitKind() == Snapshot.CommitKind.COMPACT)
-          .forEach(s -> {
-            OptimizingProcessInfo optimizingProcessInfo = new OptimizingProcessInfo();
-            optimizingProcessInfo.setProcessId(s.id());
-            optimizingProcessInfo.setTableId(serverTableIdentifier.getId());
-            optimizingProcessInfo.setCatalogName(serverTableIdentifier.getCatalog());
-            optimizingProcessInfo.setDbName(serverTableIdentifier.getDatabase());
-            optimizingProcessInfo.setTableName(serverTableIdentifier.getTableName());
-            optimizingProcessInfo.setStatus(OptimizingProcess.Status.SUCCESS);
-            optimizingProcessInfo.setFinishTime(s.timeMillis());
-            FilesStatisticsBuilder inputBuilder = new FilesStatisticsBuilder();
-            FilesStatisticsBuilder outputBuilder = new FilesStatisticsBuilder();
-            ManifestFile manifestFile = store.manifestFileFactory().create();
-            ManifestList manifestList = store.manifestListFactory().create();
-            List<ManifestFileMeta> manifestFileMetas = s.deltaManifests(manifestList);
-            for (ManifestFileMeta manifestFileMeta : manifestFileMetas) {
-              List<ManifestEntry> compactManifestEntries = manifestFile.read(manifestFileMeta.fileName());
-              for (ManifestEntry compactManifestEntry : compactManifestEntries) {
-                if (compactManifestEntry.kind() == FileKind.DELETE) {
-                  inputBuilder.addFile(compactManifestEntry.file().fileSize());
-                } else {
-                  outputBuilder.addFile(compactManifestEntry.file().fileSize());
-                }
-              }
-            }
-            optimizingProcessInfo.setInputFiles(inputBuilder.build());
-            optimizingProcessInfo.setOutputFiles(outputBuilder.build());
-            processInfoList.add(optimizingProcessInfo);
-          });
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    return processInfoList;
   }
 }
