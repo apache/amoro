@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
-import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableFormat;
@@ -49,8 +48,6 @@ import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.dashboard.response.PageResult;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.CommonUtil;
-import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
-import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableIdentifier;
@@ -62,6 +59,7 @@ import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.relocated.com.google.common.base.Function;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.iceberg.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Collections;
@@ -257,33 +255,10 @@ public class TableController {
     Preconditions.checkState(serverCatalog.exist(db, table), "no such table");
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
-    AmoroTable<?> amoroTable = serverCatalog.loadTable(db, table);
-    int total;
-    List<OptimizingProcessInfo> result;
-    if (amoroTable.format() != TableFormat.PAIMON) {
-      List<OptimizingProcessMeta> processMetaList = tableDescriptor.getOptimizingProcesses(catalog, db, table);
-      total = processMetaList.size();
-
-      processMetaList = processMetaList.stream()
-          .skip(offset)
-          .limit(limit)
-          .collect(Collectors.toList());
-
-      Map<Long, List<OptimizingTaskMeta>> optimizingTasks = tableDescriptor.getOptimizingTasks(processMetaList).stream()
-          .collect(Collectors.groupingBy(OptimizingTaskMeta::getProcessId));
-
-      result = processMetaList.stream()
-          .map(p -> OptimizingProcessInfo.build(p, optimizingTasks.get(p.getProcessId())))
-          .collect(Collectors.toList());
-    } else {
-      // Temporary solution for Paimon
-      result = tableDescriptor.getPaimonOptimizingProcesses(amoroTable, tableIdentifier.buildTableIdentifier());
-      total = result.size();
-      result = result.stream()
-          .skip(offset)
-          .limit(limit)
-          .collect(Collectors.toList());
-    }
+    Pair<List<OptimizingProcessInfo>, Integer> optimizingProcessesInfo = tableDescriptor.getOptimizingProcessesInfo(
+        tableIdentifier.buildTableIdentifier(), limit, offset);
+    List<OptimizingProcessInfo> result = optimizingProcessesInfo.first();
+    int total = optimizingProcessesInfo.second();
 
     ctx.json(OkResponse.of(PageResult.of(result, total)));
   }
