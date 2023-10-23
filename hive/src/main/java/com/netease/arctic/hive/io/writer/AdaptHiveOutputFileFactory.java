@@ -31,6 +31,7 @@ import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.OutputFile;
 
 /**
+ * <pre>
  * For adapt hive table with partitions the dir construct is :
  *    ${table_location}
  *            -| change
@@ -47,6 +48,7 @@ import org.apache.iceberg.io.OutputFile;
  *            -| hive
  *                  -| ${timestamp}_{txid}
  * txId of unkeyed table is random long.
+ * </pre>
  */
 public class AdaptHiveOutputFileFactory implements OutputFileFactory {
 
