@@ -16,7 +16,7 @@ public interface CatalogService {
   List<CatalogMeta> listCatalogMetas();
 
   /**
-   * Retrieves the list of all catalog metadata.
+   * Gets the catalog metadata for the given catalog name.
    *
    * @return the list of catalog metadata
    */
@@ -31,7 +31,7 @@ public interface CatalogService {
   boolean catalogExist(String catalogName);
 
   /**
-   * Retrieves the ServerCatalog with the given catalogName.
+   * Retrieves the ServerCatalog with the given catalog name.
    *
    * @param catalogName the name of the ServerCatalog to retrieve
    * @return the ServerCatalog object matching the catalogName, or null if no catalog exists

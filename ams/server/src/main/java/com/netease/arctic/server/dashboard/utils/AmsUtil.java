@@ -48,7 +48,7 @@ import static com.netease.arctic.server.ArcticManagementConf.SERVER_EXPOSE_HOST;
 import static com.netease.arctic.server.ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT;
 
 /**
- * AMSUtil provides utility methods for working with AMS (Arctic Monitoring System) related operations.
+ * AMSUtil provides utility methods for working with AMS (Arctic Management Service) related operations.
  */
 public class AmsUtil {
 
