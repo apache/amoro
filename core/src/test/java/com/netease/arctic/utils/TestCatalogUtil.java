@@ -8,7 +8,8 @@ import java.util.Map;
 
 public class TestCatalogUtil {
   /**
-   * when log-store flag is on , fill up with default related props and other user-defined prop should be keep
+   * when log-store flag is on , fill up with default related props and other user-defined prop
+   * should be keep
    */
   @Test
   public void testMergeCatalogPropertiesToTable() {
@@ -30,13 +31,12 @@ public class TestCatalogUtil {
     catalogProperties.put("table.log-store.consistency.guarantee.enable", "true");
     catalogProperties.put("ams.address", "127.0.0.1");
 
-    Map<String, String> result = CatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
+    Map<String, String> result =
+        CatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
     Assert.assertEquals(expected, result);
   }
 
-  /**
-   * when log-store flag is off, remove all related props
-   */
+  /** when log-store flag is off, remove all related props */
   @Test
   public void testMergeCatalogPropertiesToTable1() {
     Map<String, String> expected = new HashMap<>();
@@ -52,13 +52,12 @@ public class TestCatalogUtil {
     catalogProperties.put("table.log-store.consistency.guarantee.enable", "true");
     catalogProperties.put("ams.address", "127.0.0.1");
 
-    Map<String, String> result = CatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
+    Map<String, String> result =
+        CatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
     Assert.assertEquals(expected, result);
   }
 
-  /**
-   * user-defined prop should not be overwritten by default props
-   */
+  /** user-defined prop should not be overwritten by default props */
   @Test
   public void testMergeCatalogPropertiesToTable2() {
     Map<String, String> expected = new HashMap<>();
@@ -78,13 +77,12 @@ public class TestCatalogUtil {
     catalogProperties.put("table.log-store.consistency.guarantee.enable", "true");
     catalogProperties.put("ams.address", "127.0.0.1");
 
-    Map<String, String> result = CatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
+    Map<String, String> result =
+        CatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
     Assert.assertEquals(expected, result);
   }
 
-  /**
-   * Other user-defined prop should not lose
-   */
+  /** Other user-defined prop should not lose */
   @Test
   public void testMergeCatalogPropertiesToTable3() {
     Map<String, String> expected = new HashMap<>();
@@ -106,13 +104,14 @@ public class TestCatalogUtil {
     catalogProperties.put("table.log-store.consistency.guarantee.enable", "true");
     catalogProperties.put("ams.address", "127.0.0.1");
 
-    Map<String, String> result = CatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
+    Map<String, String> result =
+        CatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
     Assert.assertEquals(expected, result);
   }
 
   /**
-   * user-defined and default catalog 'self-optimizing.enabled' are both switched on,
-   * keep all related props
+   * user-defined and default catalog 'self-optimizing.enabled' are both switched on, keep all
+   * related props
    */
   @Test
   public void testMergeCatalogPropertiesToTable4() {
@@ -142,14 +141,15 @@ public class TestCatalogUtil {
     catalogProperties.put("table.self-optimizing.group", "mygroup");
     catalogProperties.put("ams.address", "127.0.0.1");
 
-    Map<String, String> result = CatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
+    Map<String, String> result =
+        CatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
     Assert.assertEquals(expected, result);
   }
 
   /**
-   * user-defined and default catalog prop 'self-optimizing.enabled' are both switched off,
-   * remove optimizer related props from default catalog
-   * while keep user-defined related prop and 'self-optimizing.enabled' itself.
+   * user-defined and default catalog prop 'self-optimizing.enabled' are both switched off, remove
+   * optimizer related props from default catalog while keep user-defined related prop and
+   * 'self-optimizing.enabled' itself.
    */
   @Test
   public void testMergeCatalogPropertiesToTable5() {
@@ -179,13 +179,14 @@ public class TestCatalogUtil {
     catalogProperties.put("table.self-optimizing.group", "mygroup");
     catalogProperties.put("ams.address", "127.0.0.1");
 
-    Map<String, String> result = CatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
+    Map<String, String> result =
+        CatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
     Assert.assertEquals(expected, result);
   }
 
   /**
-   * when optimized flag is off in catalog props and no user-defined value,
-   * remove optimizer related props but 'self-optimizing.enabled' itself.
+   * when optimized flag is off in catalog props and no user-defined value, remove optimizer related
+   * props but 'self-optimizing.enabled' itself.
    */
   @Test
   public void testMergeCatalogPropertiesToTable6() {
@@ -211,13 +212,14 @@ public class TestCatalogUtil {
     catalogProperties.put("table.self-optimizing.group", "mygroup");
     catalogProperties.put("ams.address", "127.0.0.1");
 
-    Map<String, String> result = CatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
+    Map<String, String> result =
+        CatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
     Assert.assertEquals(expected, result);
   }
 
   /**
-   * user-defined 'self-optimizing.enabled' is switched on,
-   * overwrite behavior of default catalog props
+   * user-defined 'self-optimizing.enabled' is switched on, overwrite behavior of default catalog
+   * props
    */
   @Test
   public void testMergeCatalogPropertiesToTable7() {
@@ -241,7 +243,8 @@ public class TestCatalogUtil {
     catalogProperties.put("table.self-optimizing.group", "mygroup");
     catalogProperties.put("ams.address", "127.0.0.1");
 
-    Map<String, String> result = CatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
+    Map<String, String> result =
+        CatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
     Assert.assertEquals(expected, result);
   }
 }

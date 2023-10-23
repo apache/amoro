@@ -51,32 +51,30 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public abstract class AdaptHiveBaseParquetReaders<T> {
-  protected AdaptHiveBaseParquetReaders() {
-  }
+  protected AdaptHiveBaseParquetReaders() {}
 
-  protected ParquetValueReader<T> createReader(Schema expectedSchema,
-      MessageType fileSchema) {
+  protected ParquetValueReader<T> createReader(Schema expectedSchema, MessageType fileSchema) {
     return createReader(expectedSchema, fileSchema, ImmutableMap.of());
   }
 
   @SuppressWarnings("unchecked")
-  protected ParquetValueReader<T> createReader(Schema expectedSchema,
-      MessageType fileSchema,
-      Map<Integer, ?> idToConstant) {
+  protected ParquetValueReader<T> createReader(
+      Schema expectedSchema, MessageType fileSchema, Map<Integer, ?> idToConstant) {
     if (ParquetSchemaUtil.hasIds(fileSchema)) {
       return (ParquetValueReader<T>)
-          TypeWithSchemaVisitor.visit(expectedSchema.asStruct(), fileSchema,
-              new ReadBuilder(fileSchema, idToConstant));
+          TypeWithSchemaVisitor.visit(
+              expectedSchema.asStruct(), fileSchema, new ReadBuilder(fileSchema, idToConstant));
     } else {
       return (ParquetValueReader<T>)
-          TypeWithSchemaVisitor.visit(expectedSchema.asStruct(), fileSchema,
+          TypeWithSchemaVisitor.visit(
+              expectedSchema.asStruct(),
+              fileSchema,
               new FallbackReadBuilder(fileSchema, idToConstant));
     }
   }
 
-  protected abstract ParquetValueReader<T> createStructReader(List<Type> types,
-      List<ParquetValueReader<?>> fieldReaders,
-      Types.StructType structType);
+  protected abstract ParquetValueReader<T> createStructReader(
+      List<Type> types, List<ParquetValueReader<?>> fieldReaders, Types.StructType structType);
 
   private class FallbackReadBuilder extends ReadBuilder {
     private FallbackReadBuilder(MessageType type, Map<Integer, ?> idToConstant) {
@@ -84,18 +82,18 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
     }
 
     @Override
-    public ParquetValueReader<?> message(Types.StructType expected, MessageType message,
-        List<ParquetValueReader<?>> fieldReaders) {
+    public ParquetValueReader<?> message(
+        Types.StructType expected, MessageType message, List<ParquetValueReader<?>> fieldReaders) {
       // the top level matches by ID, but the remaining IDs are missing
       return super.struct(expected, message, fieldReaders);
     }
 
     @Override
-    public ParquetValueReader<?> struct(Types.StructType expected, GroupType struct,
-        List<ParquetValueReader<?>> fieldReaders) {
+    public ParquetValueReader<?> struct(
+        Types.StructType expected, GroupType struct, List<ParquetValueReader<?>> fieldReaders) {
       // the expected struct is ignored because nested fields are never found when the
-      List<ParquetValueReader<?>> newFields = Lists.newArrayListWithExpectedSize(
-          fieldReaders.size());
+      List<ParquetValueReader<?>> newFields =
+          Lists.newArrayListWithExpectedSize(fieldReaders.size());
       List<Type> types = Lists.newArrayListWithExpectedSize(fieldReaders.size());
       List<Type> fields = struct.getFields();
       for (int i = 0; i < fields.size(); i += 1) {
@@ -122,14 +120,14 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
     }
 
     @Override
-    public ParquetValueReader<?> message(Types.StructType expected, MessageType message,
-        List<ParquetValueReader<?>> fieldReaders) {
+    public ParquetValueReader<?> message(
+        Types.StructType expected, MessageType message, List<ParquetValueReader<?>> fieldReaders) {
       return struct(expected, message.asGroupType(), fieldReaders);
     }
 
     @Override
-    public ParquetValueReader<?> struct(Types.StructType expected, GroupType struct,
-        List<ParquetValueReader<?>> fieldReaders) {
+    public ParquetValueReader<?> struct(
+        Types.StructType expected, GroupType struct, List<ParquetValueReader<?>> fieldReaders) {
       // match the expected struct's order
       Map<Integer, ParquetValueReader<?>> readersById = Maps.newHashMap();
       Map<Integer, Type> typesById = Maps.newHashMap();
@@ -145,10 +143,10 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
         }
       }
 
-      List<Types.NestedField> expectedFields = expected != null ?
-          expected.fields() : ImmutableList.of();
-      List<ParquetValueReader<?>> reorderedFields = Lists.newArrayListWithExpectedSize(
-          expectedFields.size());
+      List<Types.NestedField> expectedFields =
+          expected != null ? expected.fields() : ImmutableList.of();
+      List<ParquetValueReader<?>> reorderedFields =
+          Lists.newArrayListWithExpectedSize(expectedFields.size());
       List<Type> types = Lists.newArrayListWithExpectedSize(expectedFields.size());
       for (Types.NestedField field : expectedFields) {
         int id = field.fieldId();
@@ -178,8 +176,8 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
     }
 
     @Override
-    public ParquetValueReader<?> list(Types.ListType expectedList, GroupType array,
-        ParquetValueReader<?> elementReader) {
+    public ParquetValueReader<?> list(
+        Types.ListType expectedList, GroupType array, ParquetValueReader<?> elementReader) {
       if (expectedList == null) {
         return null;
       }
@@ -193,12 +191,14 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
       Type elementType = repeated.getType(0);
       int elementD = type.getMaxDefinitionLevel(path(elementType.getName())) - 1;
 
-      return new ParquetValueReaders.ListReader<>(repeatedD, repeatedR,
-          ParquetValueReaders.option(elementType, elementD, elementReader));
+      return new ParquetValueReaders.ListReader<>(
+          repeatedD, repeatedR, ParquetValueReaders.option(elementType, elementD, elementReader));
     }
 
     @Override
-    public ParquetValueReader<?> map(Types.MapType expectedMap, GroupType map,
+    public ParquetValueReader<?> map(
+        Types.MapType expectedMap,
+        GroupType map,
         ParquetValueReader<?> keyReader,
         ParquetValueReader<?> valueReader) {
       if (expectedMap == null) {
@@ -216,15 +216,17 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
       Type valueType = repeatedKeyValue.getType(1);
       int valueD = type.getMaxDefinitionLevel(path(valueType.getName())) - 1;
 
-      return new ParquetValueReaders.MapReader<>(repeatedD, repeatedR,
+      return new ParquetValueReaders.MapReader<>(
+          repeatedD,
+          repeatedR,
           ParquetValueReaders.option(keyType, keyD, keyReader),
           ParquetValueReaders.option(valueType, valueD, valueReader));
     }
 
     @Override
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
-    public ParquetValueReader<?> primitive(org.apache.iceberg.types.Type.PrimitiveType expected,
-        PrimitiveType primitive) {
+    public ParquetValueReader<?> primitive(
+        org.apache.iceberg.types.Type.PrimitiveType expected, PrimitiveType primitive) {
       if (expected == null) {
         return null;
       }
@@ -293,13 +295,13 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
         case FIXED_LEN_BYTE_ARRAY:
           return new FixedReader(desc);
         case BINARY:
-          //Change For Arctic ⬇
+          // Change For Arctic ⬇
           if (expected == Types.StringType.get()) {
             return new ParquetValueReaders.StringReader(desc);
           } else {
             return new ParquetValueReaders.BytesReader(desc);
           }
-          //Change For Arctic ⬆
+          // Change For Arctic ⬆
         case INT32:
           if (expected.typeId() == org.apache.iceberg.types.Type.TypeID.LONG) {
             return new ParquetValueReaders.IntAsLongReader(desc);
@@ -316,7 +318,7 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
         case INT64:
         case DOUBLE:
           return new ParquetValueReaders.UnboxedReader<>(desc);
-        //Change For Arctic ⬇
+          // Change For Arctic ⬇
         case INT96:
           // Impala & Spark used to write timestamps as INT96 without a logical type. For backwards
           // compatibility we try to read INT96 as timestamps.
@@ -326,7 +328,7 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
           } else {
             return new TimestampIntWithOutTZ96Reader(desc);
           }
-        //Change For Arctic ⬆
+          // Change For Arctic ⬆
         default:
           throw new UnsupportedOperationException("Unsupported type: " + primitive);
       }
@@ -362,7 +364,8 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
     }
   }
 
-  private static class TimestampMillisReader extends ParquetValueReaders.PrimitiveReader<LocalDateTime> {
+  private static class TimestampMillisReader
+      extends ParquetValueReaders.PrimitiveReader<LocalDateTime> {
     private TimestampMillisReader(ColumnDescriptor desc) {
       super(desc);
     }
@@ -373,8 +376,9 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
     }
   }
 
-  //Change For Arctic ⬇
-  private static class TimestampIntWithOutTZ96Reader extends ParquetValueReaders.PrimitiveReader<LocalDateTime> {
+  // Change For Arctic ⬇
+  private static class TimestampIntWithOutTZ96Reader
+      extends ParquetValueReaders.PrimitiveReader<LocalDateTime> {
     private static final long UNIX_EPOCH_JULIAN = 2_440_588L;
 
     TimestampIntWithOutTZ96Reader(ColumnDescriptor desc) {
@@ -383,38 +387,42 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
 
     @Override
     public LocalDateTime read(LocalDateTime reuse) {
-      final ByteBuffer byteBuffer = column.nextBinary().toByteBuffer().order(ByteOrder.LITTLE_ENDIAN);
+      final ByteBuffer byteBuffer =
+          column.nextBinary().toByteBuffer().order(ByteOrder.LITTLE_ENDIAN);
       final long timeOfDayNanos = byteBuffer.getLong();
       final int julianDay = byteBuffer.getInt();
 
-      return Instant
-          .ofEpochMilli(TimeUnit.DAYS.toMillis(julianDay - UNIX_EPOCH_JULIAN))
-          .plusNanos(timeOfDayNanos).atZone(ZoneId.systemDefault()).toLocalDateTime();
+      return Instant.ofEpochMilli(TimeUnit.DAYS.toMillis(julianDay - UNIX_EPOCH_JULIAN))
+          .plusNanos(timeOfDayNanos)
+          .atZone(ZoneId.systemDefault())
+          .toLocalDateTime();
     }
   }
 
-  private static class TimestampIntWithTZ96Reader extends ParquetValueReaders.PrimitiveReader<OffsetDateTime> {
+  private static class TimestampIntWithTZ96Reader
+      extends ParquetValueReaders.PrimitiveReader<OffsetDateTime> {
     private static final long UNIX_EPOCH_JULIAN = 2_440_588L;
 
     private TimestampIntWithTZ96Reader(ColumnDescriptor desc) {
       super(desc);
-
     }
 
     @Override
     public OffsetDateTime read(OffsetDateTime reuse) {
-      final ByteBuffer byteBuffer = column.nextBinary().toByteBuffer().order(ByteOrder.LITTLE_ENDIAN);
+      final ByteBuffer byteBuffer =
+          column.nextBinary().toByteBuffer().order(ByteOrder.LITTLE_ENDIAN);
       final long timeOfDayNanos = byteBuffer.getLong();
       final int julianDay = byteBuffer.getInt();
 
-      return Instant
-          .ofEpochMilli(TimeUnit.DAYS.toMillis(julianDay - UNIX_EPOCH_JULIAN))
-          .plusNanos(timeOfDayNanos).atOffset(ZoneOffset.UTC);
+      return Instant.ofEpochMilli(TimeUnit.DAYS.toMillis(julianDay - UNIX_EPOCH_JULIAN))
+          .plusNanos(timeOfDayNanos)
+          .atOffset(ZoneOffset.UTC);
     }
   }
-  //Change For Arctic ⬆
+  // Change For Arctic ⬆
 
-  private static class TimestamptzReader extends ParquetValueReaders.PrimitiveReader<OffsetDateTime> {
+  private static class TimestamptzReader
+      extends ParquetValueReaders.PrimitiveReader<OffsetDateTime> {
     private TimestamptzReader(ColumnDescriptor desc) {
       super(desc);
     }
@@ -425,7 +433,8 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
     }
   }
 
-  private static class TimestamptzMillisReader extends ParquetValueReaders.PrimitiveReader<OffsetDateTime> {
+  private static class TimestamptzMillisReader
+      extends ParquetValueReaders.PrimitiveReader<OffsetDateTime> {
     private TimestamptzMillisReader(ColumnDescriptor desc) {
       super(desc);
     }

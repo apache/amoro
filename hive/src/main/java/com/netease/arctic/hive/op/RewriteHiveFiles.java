@@ -13,9 +13,19 @@ import java.util.Set;
 
 public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements RewriteFiles {
 
-  public RewriteHiveFiles(Transaction transaction, boolean insideTransaction, UnkeyedHiveTable table,
-                      HMSClientPool hmsClient, HMSClientPool transactionClient) {
-    super(transaction, insideTransaction, table, transaction.newRewrite(), hmsClient, transactionClient);
+  public RewriteHiveFiles(
+      Transaction transaction,
+      boolean insideTransaction,
+      UnkeyedHiveTable table,
+      HMSClientPool hmsClient,
+      HMSClientPool transactionClient) {
+    super(
+        transaction,
+        insideTransaction,
+        table,
+        transaction.newRewrite(),
+        hmsClient,
+        transactionClient);
   }
 
   @Override
@@ -26,18 +36,21 @@ public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements R
   }
 
   @Override
-  public RewriteFiles rewriteFiles(Set<DataFile> filesToDelete, Set<DataFile> filesToAdd, long sequenceNumber) {
+  public RewriteFiles rewriteFiles(
+      Set<DataFile> filesToDelete, Set<DataFile> filesToAdd, long sequenceNumber) {
     delegate.rewriteFiles(filesToDelete, filesToAdd, sequenceNumber);
     markHiveFiles(filesToDelete, filesToAdd);
     return this;
   }
 
   @Override
-  public RewriteFiles rewriteFiles(Set<DataFile> dataFilesToReplace,
-                                   Set<DeleteFile> deleteFilesToReplace,
-                                   Set<DataFile> dataFilesToAdd,
-                                   Set<DeleteFile> deleteFilesToAdd) {
-    delegate.rewriteFiles(dataFilesToReplace, deleteFilesToReplace, dataFilesToAdd, deleteFilesToAdd);
+  public RewriteFiles rewriteFiles(
+      Set<DataFile> dataFilesToReplace,
+      Set<DeleteFile> deleteFilesToReplace,
+      Set<DataFile> dataFilesToAdd,
+      Set<DeleteFile> deleteFilesToAdd) {
+    delegate.rewriteFiles(
+        dataFilesToReplace, deleteFilesToReplace, dataFilesToAdd, deleteFilesToAdd);
     markHiveFiles(dataFilesToReplace, dataFilesToAdd);
 
     return this;

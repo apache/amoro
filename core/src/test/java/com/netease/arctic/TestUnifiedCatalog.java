@@ -34,17 +34,15 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class TestUnifiedCatalog {
 
-  @ClassRule
-  public static TestAms testAms = new TestAms();
+  @ClassRule public static TestAms testAms = new TestAms();
 
-  @Rule
-  public TemporaryFolder warehouse = new TemporaryFolder();
+  @Rule public TemporaryFolder warehouse = new TemporaryFolder();
 
   @Parameterized.Parameters
   public static Object[] parameters() {
     return new Object[] {
-        TestedCatalogs.hadoopCatalog(TableFormat.ICEBERG),
-        };
+      TestedCatalogs.hadoopCatalog(TableFormat.ICEBERG),
+    };
   }
 
   private final CatalogTestHelper testedCatalog;
@@ -63,8 +61,9 @@ public class TestUnifiedCatalog {
 
   @Test
   public void testCatalogLoader() {
-    UnifiedCatalog catalog = UnifiedCatalogLoader.loadUnifiedCatalog(
-        testAms.getServerUrl(), meta.getCatalogName(), Maps.newHashMap());
+    UnifiedCatalog catalog =
+        UnifiedCatalogLoader.loadUnifiedCatalog(
+            testAms.getServerUrl(), meta.getCatalogName(), Maps.newHashMap());
 
     Assert.assertNotNull(catalog);
     Assert.assertEquals(CommonUnifiedCatalog.class.getName(), catalog.getClass().getName());

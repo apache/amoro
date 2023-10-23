@@ -29,9 +29,19 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implements OverwriteFiles {
 
-  public OverwriteHiveFiles(Transaction transaction, boolean insideTransaction, UnkeyedHiveTable table,
-                            HMSClientPool hmsClient, HMSClientPool transactionClient) {
-    super(transaction, insideTransaction, table, transaction.newOverwrite(), hmsClient, transactionClient);
+  public OverwriteHiveFiles(
+      Transaction transaction,
+      boolean insideTransaction,
+      UnkeyedHiveTable table,
+      HMSClientPool hmsClient,
+      HMSClientPool transactionClient) {
+    super(
+        transaction,
+        insideTransaction,
+        table,
+        transaction.newOverwrite(),
+        hmsClient,
+        transactionClient);
   }
 
   @Override
@@ -41,7 +51,8 @@ public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implemen
 
   @Override
   public OverwriteFiles overwriteByRowFilter(Expression expr) {
-    Preconditions.checkArgument(!table.spec().isUnpartitioned() || expr == Expressions.alwaysTrue(),
+    Preconditions.checkArgument(
+        !table.spec().isUnpartitioned() || expr == Expressions.alwaysTrue(),
         "Unpartitioned hive table support alwaysTrue expression only");
     delegate.overwriteByRowFilter(expr);
     this.expr = expr;

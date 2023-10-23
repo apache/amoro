@@ -31,8 +31,7 @@ public class HiveTableProperties {
   }
 
   public static final String ARCTIC_TABLE_FLAG = "arctic.enabled";
-  @Deprecated
-  public static final String ARCTIC_TABLE_FLAG_LEGACY = "arctic.enable";
+  @Deprecated public static final String ARCTIC_TABLE_FLAG_LEGACY = "arctic.enable";
 
   public static final String ARCTIC_TABLE_PRIMARY_KEYS = "arctic.table.primary-keys";
   // save the root location of arctic table.
@@ -57,12 +56,14 @@ public class HiveTableProperties {
 
   public static final String WATERMARK_HIVE = "watermark.hive";
 
-  public static final String PARQUET_INPUT_FORMAT = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat";
-  public static final String PARQUET_OUTPUT_FORMAT = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat";
-  public static final String PARQUET_ROW_FORMAT_SERDE = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe";
+  public static final String PARQUET_INPUT_FORMAT =
+      "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat";
+  public static final String PARQUET_OUTPUT_FORMAT =
+      "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat";
+  public static final String PARQUET_ROW_FORMAT_SERDE =
+      "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe";
 
   public static final String ORC_INPUT_FORMAT = "org.apache.hadoop.hive.ql.io.orc.OrcInputFormat";
   public static final String ORC_OUTPUT_FORMAT = "org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat";
   public static final String ORC_ROW_FORMAT_SERDE = "org.apache.hadoop.hive.ql.io.orc.OrcSerde";
 }
-

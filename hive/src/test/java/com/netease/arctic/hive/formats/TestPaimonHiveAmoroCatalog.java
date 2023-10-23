@@ -30,8 +30,7 @@ import java.io.IOException;
 @RunWith(Parameterized.class)
 public class TestPaimonHiveAmoroCatalog extends TestPaimonAmoroCatalog {
 
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
   public TestPaimonHiveAmoroCatalog(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
     super(amoroCatalogTestHelper);
@@ -39,9 +38,7 @@ public class TestPaimonHiveAmoroCatalog extends TestPaimonAmoroCatalog {
 
   @Parameterized.Parameters(name = "{0}")
   public static Object[] parameters() {
-    return new Object[] {
-        PaimonHiveCatalogTestHelper.defaultHelper()
-    };
+    return new Object[] {PaimonHiveCatalogTestHelper.defaultHelper()};
   }
 
   @Override

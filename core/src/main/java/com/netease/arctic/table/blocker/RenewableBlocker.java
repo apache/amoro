@@ -34,9 +34,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Renewable {@link Blocker} implementation.
- * This Blocker has expiration time, after which it will be invalid.
- * After blocked, this blocker will renew periodically.
+ * Renewable {@link Blocker} implementation. This Blocker has expiration time, after which it will
+ * be invalid. After blocked, this blocker will renew periodically.
  */
 public class RenewableBlocker implements Blocker {
   private static final Logger LOG = LoggerFactory.getLogger(RenewableBlocker.class);
@@ -58,9 +57,15 @@ public class RenewableBlocker implements Blocker {
 
   private volatile ScheduledFuture<?> renewTaskFuture;
 
-  public RenewableBlocker(String blockerId, List<BlockableOperation> operations, long createTime, long expirationTime,
-                          long blockerTimeout, Map<String, String> properties, TableIdentifier tableIdentifier,
-                          AmsClient amsClient) {
+  public RenewableBlocker(
+      String blockerId,
+      List<BlockableOperation> operations,
+      long createTime,
+      long expirationTime,
+      long blockerTimeout,
+      Map<String, String> properties,
+      TableIdentifier tableIdentifier,
+      AmsClient amsClient) {
     Preconditions.checkArgument(blockerTimeout > 0, "blockerTimeout must > 0");
     this.blockerId = blockerId;
     this.operations = operations;
@@ -87,19 +92,19 @@ public class RenewableBlocker implements Blocker {
     cancelRenew();
     long interval = this.blockerTimeout / 5;
     this.renewTaskFuture =
-        getExecutorService().scheduleAtFixedRate(this::doRenew, interval, interval,
-            TimeUnit.MILLISECONDS);
+        getExecutorService()
+            .scheduleAtFixedRate(this::doRenew, interval, interval, TimeUnit.MILLISECONDS);
   }
 
   private void doRenew() {
     try {
-      this.expirationTime = amsClient.renewBlocker(tableIdentifier.buildTableIdentifier(), blockerId());
+      this.expirationTime =
+          amsClient.renewBlocker(tableIdentifier.buildTableIdentifier(), blockerId());
       LOG.info("renew blocker {} success of {}", blockerId(), tableIdentifier);
     } catch (NoSuchObjectException e) {
       cancelRenew();
     } catch (Throwable t) {
-      LOG.warn("failed to renew block {} of table {}, ignore", blockerId(),
-          tableIdentifier, t);
+      LOG.warn("failed to renew block {} of table {}, ignore", blockerId(), tableIdentifier, t);
     }
   }
 
@@ -144,12 +149,18 @@ public class RenewableBlocker implements Blocker {
 
   @Override
   public String toString() {
-    return "BaseBlocker{" +
-        "blockerId='" + blockerId + '\'' +
-        ", operations=" + operations +
-        ", createTime=" + createTime +
-        ", expirationTime=" + expirationTime +
-        ", properties=" + properties +
-        '}';
+    return "BaseBlocker{"
+        + "blockerId='"
+        + blockerId
+        + '\''
+        + ", operations="
+        + operations
+        + ", createTime="
+        + createTime
+        + ", expirationTime="
+        + expirationTime
+        + ", properties="
+        + properties
+        + '}';
   }
 }

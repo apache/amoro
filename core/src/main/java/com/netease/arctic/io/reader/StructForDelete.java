@@ -39,8 +39,8 @@ public class StructForDelete<T extends StructLike> {
 
   public StructForDelete(Schema schema, Set<Integer> deleteIds) {
     this.pkProjection = StructProjection.create(schema, TypeUtil.select(schema, deleteIds));
-    this.dataTransactionIdAccessor = schema
-        .accessorForField(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED_ID);
+    this.dataTransactionIdAccessor =
+        schema.accessorForField(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED_ID);
     this.posAccessor = schema.accessorForField(MetadataColumns.ROW_POSITION.fieldId());
     this.filePathAccessor = schema.accessorForField(MetadataColumns.FILE_PATH.fieldId());
   }

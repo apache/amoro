@@ -28,7 +28,8 @@ import com.netease.arctic.table.WriteOperationKind;
 
 public class AdaptHiveOperateToTableRelation implements OperateToTableRelation {
 
-  public static final AdaptHiveOperateToTableRelation INSTANT = new AdaptHiveOperateToTableRelation();
+  public static final AdaptHiveOperateToTableRelation INSTANT =
+      new AdaptHiveOperateToTableRelation();
 
   @Override
   public LocationKind getLocationKindsFromOperateKind(

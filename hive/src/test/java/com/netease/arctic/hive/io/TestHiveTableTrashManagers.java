@@ -32,12 +32,9 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class TestHiveTableTrashManagers extends TestTableTrashManagers {
 
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
-  public TestHiveTableTrashManagers(
-      boolean keyedTable,
-      boolean partitionedTable) {
+  public TestHiveTableTrashManagers(boolean keyedTable, boolean partitionedTable) {
     super(
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
         new HiveTableTestHelper(keyedTable, partitionedTable));
@@ -46,14 +43,19 @@ public class TestHiveTableTrashManagers extends TestTableTrashManagers {
   @Parameterized.Parameters(name = "keyedTable = {0}, partitionedTable = {1}")
   public static Object[][] parameters() {
     return new Object[][] {
-        {true, true},
-        {true, false},
-        {false, true},
-        {false, false}};
+      {true, true},
+      {true, false},
+      {false, true},
+      {false, false}
+    };
   }
 
   protected String getTableTrashLocation(TableIdentifier id) {
-    return String.format("file:/%s/%s.db/%s/%s", TEST_HMS.getWareHouseLocation(), id.getDatabase(), id.getTableName(),
+    return String.format(
+        "file:/%s/%s.db/%s/%s",
+        TEST_HMS.getWareHouseLocation(),
+        id.getDatabase(),
+        id.getTableName(),
         TableTrashManagers.DEFAULT_TRASH_DIR);
   }
 }

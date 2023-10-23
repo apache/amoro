@@ -70,11 +70,14 @@ public class TestIcebergCatalog extends CatalogTestBase {
     ArcticTable table = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
     Assert.assertFalse(table.io() instanceof RecoverableHadoopFileIO);
 
-    CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
-    TEST_AMS.getAmsHandler().updateMeta(
-        testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
-        "true");
+    CatalogMeta testCatalogMeta =
+        TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
+    TEST_AMS
+        .getAmsHandler()
+        .updateMeta(
+            testCatalogMeta,
+            CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
+            "true");
     getCatalog().refresh();
 
     table = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);

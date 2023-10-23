@@ -62,9 +62,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * Special point:
- * 1. Apply all delete file to all data file
- * 2. EQUALITY_DELETES only be written by flink in current, so the schemas of  all EQUALITY_DELETES is primary key
+ * Special point: 1. Apply all delete file to all data file 2. EQUALITY_DELETES only be written by
+ * flink in current, so the schemas of all EQUALITY_DELETES is primary key
  */
 public abstract class CombinedDeleteFilter<T extends StructLike> {
 
@@ -72,10 +71,10 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
 
   private static final Schema POS_DELETE_SCHEMA = DeleteSchemaUtil.pathPosSchema();
 
-  private static final Accessor<StructLike> FILENAME_ACCESSOR = POS_DELETE_SCHEMA
-      .accessorForField(MetadataColumns.DELETE_FILE_PATH.fieldId());
-  private static final Accessor<StructLike> POSITION_ACCESSOR = POS_DELETE_SCHEMA
-      .accessorForField(MetadataColumns.DELETE_FILE_POS.fieldId());
+  private static final Accessor<StructLike> FILENAME_ACCESSOR =
+      POS_DELETE_SCHEMA.accessorForField(MetadataColumns.DELETE_FILE_PATH.fieldId());
+  private static final Accessor<StructLike> POSITION_ACCESSOR =
+      POS_DELETE_SCHEMA.accessorForField(MetadataColumns.DELETE_FILE_POS.fieldId());
 
   private final List<DeleteFile> posDeletes;
   private final List<DeleteFile> eqDeletes;
@@ -110,13 +109,15 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
               deleteIds = ImmutableSet.copyOf(ContentFiles.asDeleteFile(delete).equalityFieldIds());
             } else {
               Preconditions.checkArgument(
-                  deleteIds.equals(ImmutableSet.copyOf(ContentFiles.asDeleteFile(delete).equalityFieldIds())),
+                  deleteIds.equals(
+                      ImmutableSet.copyOf(ContentFiles.asDeleteFile(delete).equalityFieldIds())),
                   "Equality delete files have different delete fields");
             }
             eqDeleteBuilder.add(ContentFiles.asDeleteFile(delete));
             break;
           default:
-            throw new UnsupportedOperationException("Unknown delete file content: " + delete.content());
+            throw new UnsupportedOperationException(
+                "Unknown delete file content: " + delete.content());
         }
       }
     }
@@ -155,20 +156,23 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     eqPredicate = null;
   }
 
-  public CloseableIterable<StructForDelete<T>> filter(CloseableIterable<StructForDelete<T>> records) {
+  public CloseableIterable<StructForDelete<T>> filter(
+      CloseableIterable<StructForDelete<T>> records) {
     return applyEqDeletes(applyPosDeletes(records));
   }
 
-  public CloseableIterable<StructForDelete<T>> filterNegate(CloseableIterable<StructForDelete<T>> records) {
+  public CloseableIterable<StructForDelete<T>> filterNegate(
+      CloseableIterable<StructForDelete<T>> records) {
     Predicate<StructForDelete<T>> inEq = applyEqDeletes();
     Predicate<StructForDelete<T>> inPos = applyPosDeletes();
     Predicate<StructForDelete<T>> or = inEq.or(inPos);
-    Filter<StructForDelete<T>> remainingRowsFilter = new Filter<StructForDelete<T>>() {
-      @Override
-      protected boolean shouldKeep(StructForDelete<T> item) {
-        return or.test(item);
-      }
-    };
+    Filter<StructForDelete<T>> remainingRowsFilter =
+        new Filter<StructForDelete<T>>() {
+          @Override
+          protected boolean shouldKeep(StructForDelete<T> item) {
+            return or.test(item);
+          }
+        };
 
     return remainingRowsFilter.filter(records);
   }
@@ -182,22 +186,29 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
       return record -> false;
     }
 
-    CloseableIterable<RecordWithLsn> deleteRecords = CloseableIterable.transform(
-        CloseableIterable.concat(
-            Iterables.transform(
-                eqDeletes, s -> CloseableIterable.transform(
-                    openDeletes(ContentFiles.asDeleteFile(s), deleteSchema),
-                    r -> new RecordWithLsn(s.dataSequenceNumber(), r)))),
-        RecordWithLsn::recordCopy);
+    CloseableIterable<RecordWithLsn> deleteRecords =
+        CloseableIterable.transform(
+            CloseableIterable.concat(
+                Iterables.transform(
+                    eqDeletes,
+                    s ->
+                        CloseableIterable.transform(
+                            openDeletes(ContentFiles.asDeleteFile(s), deleteSchema),
+                            r -> new RecordWithLsn(s.dataSequenceNumber(), r)))),
+            RecordWithLsn::recordCopy);
 
-    InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(deleteSchema.asStruct());
+    InternalRecordWrapper internalRecordWrapper =
+        new InternalRecordWrapper(deleteSchema.asStruct());
 
-    StructLikeBaseMap<Long> structLikeMap = structLikeCollections.createStructLikeMap(deleteSchema.asStruct());
+    StructLikeBaseMap<Long> structLikeMap =
+        structLikeCollections.createStructLikeMap(deleteSchema.asStruct());
 
-    //init map
+    // init map
     try (CloseableIterable<RecordWithLsn> deletes = deleteRecords) {
-      Iterator<RecordWithLsn> it = getArcticFileIo() == null ? deletes.iterator()
-          : getArcticFileIo().doAs(deletes::iterator);
+      Iterator<RecordWithLsn> it =
+          getArcticFileIo() == null
+              ? deletes.iterator()
+              : getArcticFileIo().doAs(deletes::iterator);
       while (it.hasNext()) {
         RecordWithLsn recordWithLsn = it.next();
         Long lsn = recordWithLsn.getLsn();
@@ -211,47 +222,50 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
       throw new RuntimeException(e);
     }
 
-    Predicate<StructForDelete<T>> isInDeleteSet = structForDelete -> {
-      StructLike dataPk = internalRecordWrapper.copyFor(structForDelete.getPk());
-      Long dataLSN = structForDelete.getLsn();
-      Long deleteLsn = structLikeMap.get(dataPk);
-      if (deleteLsn == null) {
-        return false;
-      }
+    Predicate<StructForDelete<T>> isInDeleteSet =
+        structForDelete -> {
+          StructLike dataPk = internalRecordWrapper.copyFor(structForDelete.getPk());
+          Long dataLSN = structForDelete.getLsn();
+          Long deleteLsn = structLikeMap.get(dataPk);
+          if (deleteLsn == null) {
+            return false;
+          }
 
-      return deleteLsn.compareTo(dataLSN) > 0;
-    };
+          return deleteLsn.compareTo(dataLSN) > 0;
+        };
 
-    CloseablePredicate<StructForDelete<T>> closeablePredicate = new CloseablePredicate<>(isInDeleteSet, structLikeMap);
+    CloseablePredicate<StructForDelete<T>> closeablePredicate =
+        new CloseablePredicate<>(isInDeleteSet, structLikeMap);
     this.eqPredicate = closeablePredicate;
     return isInDeleteSet;
   }
 
-  private CloseableIterable<StructForDelete<T>> applyEqDeletes(CloseableIterable<StructForDelete<T>> records) {
-    Predicate<StructForDelete<T>> remainingRows = applyEqDeletes()
-        .negate();
+  private CloseableIterable<StructForDelete<T>> applyEqDeletes(
+      CloseableIterable<StructForDelete<T>> records) {
+    Predicate<StructForDelete<T>> remainingRows = applyEqDeletes().negate();
     return eqDeletesBase(records, remainingRows);
   }
 
   private CloseableIterable<StructForDelete<T>> eqDeletesBase(
-      CloseableIterable<StructForDelete<T>> records,
-      Predicate<StructForDelete<T>> predicate) {
+      CloseableIterable<StructForDelete<T>> records, Predicate<StructForDelete<T>> predicate) {
     // Predicate to test whether a row should be visible to user after applying equality deletions.
     if (eqDeletes.isEmpty()) {
       return records;
     }
 
-    Filter<StructForDelete<T>> remainingRowsFilter = new Filter<StructForDelete<T>>() {
-      @Override
-      protected boolean shouldKeep(StructForDelete<T> item) {
-        return predicate.test(item);
-      }
-    };
+    Filter<StructForDelete<T>> remainingRowsFilter =
+        new Filter<StructForDelete<T>>() {
+          @Override
+          protected boolean shouldKeep(StructForDelete<T> item) {
+            return predicate.test(item);
+          }
+        };
 
     return remainingRowsFilter.filter(records);
   }
 
-  private CloseableIterable<StructForDelete<T>> applyPosDeletes(CloseableIterable<StructForDelete<T>> records) {
+  private CloseableIterable<StructForDelete<T>> applyPosDeletes(
+      CloseableIterable<StructForDelete<T>> records) {
     return applyPosDeletesBase(records, applyPosDeletes().negate());
   }
 
@@ -263,9 +277,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
 
     if (positionMap == null) {
       positionMap = new HashMap<>();
-      List<CloseableIterable<Record>> deletes = Lists.transform(
-          posDeletes,
-          this::openPosDeletes);
+      List<CloseableIterable<Record>> deletes = Lists.transform(posDeletes, this::openPosDeletes);
       CloseableIterator<Record> iterator = CloseableIterable.concat(deletes).iterator();
       while (iterator.hasNext()) {
         Record deleteRecord = iterator.next();
@@ -289,18 +301,18 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
   }
 
   private CloseableIterable<StructForDelete<T>> applyPosDeletesBase(
-      CloseableIterable<StructForDelete<T>> records,
-      Predicate<StructForDelete<T>> predicate) {
+      CloseableIterable<StructForDelete<T>> records, Predicate<StructForDelete<T>> predicate) {
     if (posDeletes.isEmpty()) {
       return records;
     }
 
-    Filter<StructForDelete<T>> filter = new Filter<StructForDelete<T>>() {
-      @Override
-      protected boolean shouldKeep(StructForDelete<T> item) {
-        return predicate.test(item);
-      }
-    };
+    Filter<StructForDelete<T>> filter =
+        new Filter<StructForDelete<T>>() {
+          @Override
+          protected boolean shouldKeep(StructForDelete<T> item) {
+            return predicate.test(item);
+          }
+        };
 
     return filter.filter(records);
   }
@@ -323,7 +335,8 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
         return Parquet.read(input)
             .project(deleteSchema)
             .reuseContainers()
-            .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(deleteSchema, fileSchema))
+            .createReaderFunc(
+                fileSchema -> GenericParquetReaders.buildReader(deleteSchema, fileSchema))
             .build();
 
       case ORC:
@@ -334,8 +347,10 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
             .build();
 
       default:
-        throw new UnsupportedOperationException(String.format(
-            "Cannot read deletes, %s is not a supported format: %s", deleteFile.format().name(), deleteFile.path()));
+        throw new UnsupportedOperationException(
+            String.format(
+                "Cannot read deletes, %s is not a supported format: %s",
+                deleteFile.format().name(), deleteFile.path()));
     }
   }
 

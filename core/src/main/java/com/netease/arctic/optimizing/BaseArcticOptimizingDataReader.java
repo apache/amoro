@@ -47,8 +47,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Abstract implementation of arctic data reader consuming {@link KeyedTableScanTask}, return records
- * after filtering with {@link ArcticDeleteFilter}.
+ * Abstract implementation of arctic data reader consuming {@link KeyedTableScanTask}, return
+ * records after filtering with {@link ArcticDeleteFilter}.
+ *
  * @param <T> to indicate the record data type.
  */
 public abstract class BaseArcticOptimizingDataReader<T> {
@@ -87,41 +88,68 @@ public abstract class BaseArcticOptimizingDataReader<T> {
     this.sourceNodes = sourceNodes;
     this.reuseContainer = reuseContainer;
     this.rewriteFilesInput = rewriteFilesInput;
-    this.structLikeCollections = structLikeCollections == null ? StructLikeCollections.DEFAULT : structLikeCollections;
+    this.structLikeCollections =
+        structLikeCollections == null ? StructLikeCollections.DEFAULT : structLikeCollections;
   }
 
   public CloseableIterator<T> readData(KeyedTableScanTask keyedTableScanTask) {
     ArcticDeleteFilter<T> arcticDeleteFilter =
-        new GenericArcticDeleteFilter(keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec,
-            sourceNodes, structLikeCollections);
+        new GenericArcticDeleteFilter(
+            keyedTableScanTask,
+            tableSchema,
+            projectedSchema,
+            primaryKeySpec,
+            sourceNodes,
+            structLikeCollections);
     Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
 
-    CloseableIterable<T> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
-        CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-        fileScanTask -> arcticDeleteFilter.filter(newParquetIterable(fileScanTask, newProjectedSchema,
-            DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
+    CloseableIterable<T> dataIterable =
+        CloseableIterable.concat(
+            CloseableIterable.transform(
+                CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
+                fileScanTask ->
+                    arcticDeleteFilter.filter(
+                        newParquetIterable(
+                            fileScanTask,
+                            newProjectedSchema,
+                            DataReaderCommon.getIdToConstant(
+                                fileScanTask, newProjectedSchema, convertConstant)))));
     return dataIterable.iterator();
   }
 
   public CloseableIterator<T> readDeletedData(KeyedTableScanTask keyedTableScanTask) {
-    List<PrimaryKeyedFile> equDeleteFiles = keyedTableScanTask.arcticEquityDeletes().stream()
-        .map(ArcticFileScanTask::file).collect(Collectors.toList());
+    List<PrimaryKeyedFile> equDeleteFiles =
+        keyedTableScanTask.arcticEquityDeletes().stream()
+            .map(ArcticFileScanTask::file)
+            .collect(Collectors.toList());
 
-    boolean hasDeleteFile = keyedTableScanTask.arcticEquityDeletes().size() > 0 ||
-        keyedTableScanTask.dataTasks().stream().allMatch(s -> s.deletes().size() > 0);
+    boolean hasDeleteFile =
+        keyedTableScanTask.arcticEquityDeletes().size() > 0
+            || keyedTableScanTask.dataTasks().stream().allMatch(s -> s.deletes().size() > 0);
 
     if (hasDeleteFile) {
-      ArcticDeleteFilter<T> arcticDeleteFilter = new GenericArcticDeleteFilter(
-          keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec, sourceNodes, structLikeCollections
-      );
+      ArcticDeleteFilter<T> arcticDeleteFilter =
+          new GenericArcticDeleteFilter(
+              keyedTableScanTask,
+              tableSchema,
+              projectedSchema,
+              primaryKeySpec,
+              sourceNodes,
+              structLikeCollections);
 
       Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
 
-      CloseableIterable<T> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
-          CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-          fileScanTask -> arcticDeleteFilter.filterNegate(
-              newParquetIterable(fileScanTask, newProjectedSchema,
-                  DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
+      CloseableIterable<T> dataIterable =
+          CloseableIterable.concat(
+              CloseableIterable.transform(
+                  CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
+                  fileScanTask ->
+                      arcticDeleteFilter.filterNegate(
+                          newParquetIterable(
+                              fileScanTask,
+                              newProjectedSchema,
+                              DataReaderCommon.getIdToConstant(
+                                  fileScanTask, newProjectedSchema, convertConstant)))));
       return dataIterable.iterator();
     } else {
       return CloseableIterator.empty();
@@ -130,12 +158,13 @@ public abstract class BaseArcticOptimizingDataReader<T> {
 
   protected CloseableIterable<T> newParquetIterable(
       FileScanTask task, Schema schema, Map<Integer, ?> idToConstant) {
-    Parquet.ReadBuilder builder = Parquet.read(fileIO.newInputFile(task.file().path().toString()))
-        .split(task.start(), task.length())
-        .project(schema)
-        .createReaderFunc(getNewReaderFunction(schema, idToConstant))
-        .filter(task.residual())
-        .caseSensitive(caseSensitive);
+    Parquet.ReadBuilder builder =
+        Parquet.read(fileIO.newInputFile(task.file().path().toString()))
+            .split(task.start(), task.length())
+            .project(schema)
+            .createReaderFunc(getNewReaderFunction(schema, idToConstant))
+            .filter(task.residual())
+            .caseSensitive(caseSensitive);
 
     if (reuseContainer) {
       builder.reuseContainers();
@@ -148,8 +177,7 @@ public abstract class BaseArcticOptimizingDataReader<T> {
   }
 
   protected abstract Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
-      Schema projectSchema,
-      Map<Integer, ?> idToConstant);
+      Schema projectSchema, Map<Integer, ?> idToConstant);
 
   protected abstract Function<Schema, Function<T, StructLike>> toStructLikeFunction();
 
@@ -159,9 +187,12 @@ public abstract class BaseArcticOptimizingDataReader<T> {
 
     protected GenericArcticDeleteFilter(
         KeyedTableScanTask keyedTableScanTask,
-        Schema tableSchema, Schema requestedSchema, PrimaryKeySpec primaryKeySpec) {
+        Schema tableSchema,
+        Schema requestedSchema,
+        PrimaryKeySpec primaryKeySpec) {
       super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec);
-      this.asStructLike = BaseArcticOptimizingDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      this.asStructLike =
+          BaseArcticOptimizingDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     protected GenericArcticDeleteFilter(
@@ -171,9 +202,15 @@ public abstract class BaseArcticOptimizingDataReader<T> {
         PrimaryKeySpec primaryKeySpec,
         Set<DataTreeNode> sourceNodes,
         StructLikeCollections structLikeCollections) {
-      super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec,
-          sourceNodes, structLikeCollections);
-      this.asStructLike = BaseArcticOptimizingDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      super(
+          keyedTableScanTask,
+          tableSchema,
+          requestedSchema,
+          primaryKeySpec,
+          sourceNodes,
+          structLikeCollections);
+      this.asStructLike =
+          BaseArcticOptimizingDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     protected GenericArcticDeleteFilter(
@@ -183,7 +220,8 @@ public abstract class BaseArcticOptimizingDataReader<T> {
         PrimaryKeySpec primaryKeySpec,
         Set<DataTreeNode> sourceNodes) {
       super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec, sourceNodes);
-      this.asStructLike = BaseArcticOptimizingDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      this.asStructLike =
+          BaseArcticOptimizingDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     @Override

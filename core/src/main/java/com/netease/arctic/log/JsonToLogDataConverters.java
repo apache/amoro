@@ -18,6 +18,11 @@
 
 package com.netease.arctic.log;
 
+import static com.netease.arctic.log.TimeFormats.ISO8601_TIMESTAMP_WITH_LOCAL_TIMEZONE_FORMAT;
+import static com.netease.arctic.log.TimeFormats.SQL_TIMESTAMP_FORMAT;
+import static com.netease.arctic.log.TimeFormats.SQL_TIME_FORMAT;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -45,14 +50,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.log.TimeFormats.ISO8601_TIMESTAMP_WITH_LOCAL_TIMEZONE_FORMAT;
-import static com.netease.arctic.log.TimeFormats.SQL_TIMESTAMP_FORMAT;
-import static com.netease.arctic.log.TimeFormats.SQL_TIME_FORMAT;
-import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
-
 /**
- * Tool class used to convert from {@link JsonNode} to {@link LogData}.
- * {@link T} indicate an actual value wrapped within {@link LogData}
+ * Tool class used to convert from {@link JsonNode} to {@link LogData}. {@link T} indicate an actual
+ * value wrapped within {@link LogData}
  */
 public class JsonToLogDataConverters<T> implements Serializable {
 
@@ -76,8 +76,7 @@ public class JsonToLogDataConverters<T> implements Serializable {
    *
    * @param <T> to indicate the log data type
    */
-  interface JsonToLogDataConverter<T> extends Converter<JsonNode, Object, Void, T> {
-  }
+  interface JsonToLogDataConverter<T> extends Converter<JsonNode, Object, Void, T> {}
 
   public JsonToLogDataConverter<T> createConverter(Type type) {
     return wrapIntoNullableConverter(createNotNullConverter(type));
@@ -98,9 +97,11 @@ public class JsonToLogDataConverters<T> implements Serializable {
       case DATE:
         return this::convertToDate;
       case TIME:
-        // For the type: Flink only support TimeType with default precision (second) now. The precision of time is
+        // For the type: Flink only support TimeType with default precision (second) now. The
+        // precision of time is
         // not supported in Flink, so we can think of it as a simple time type directly.
-        // For the data: Flink uses int that support mills to represent time data, so it supports mills precision.
+        // For the data: Flink uses int that support mills to represent time data, so it supports
+        // mills precision.
         return this::convertToTime;
       case TIMESTAMP:
         Types.TimestampType timestamp = (Types.TimestampType) type;
@@ -130,15 +131,10 @@ public class JsonToLogDataConverters<T> implements Serializable {
 
   private JsonToLogDataConverter<T> createStructConverter(Type type) {
     final List<Types.NestedField> fields = type.asNestedType().asStructType().fields();
-    final Type[] fieldTypes = fields.stream()
-        .map(Types.NestedField::type)
-        .toArray(Type[]::new);
-    final String[] fieldNames = fields.stream()
-        .map(Types.NestedField::name).toArray(String[]::new);
+    final Type[] fieldTypes = fields.stream().map(Types.NestedField::type).toArray(Type[]::new);
+    final String[] fieldNames = fields.stream().map(Types.NestedField::name).toArray(String[]::new);
     final List<JsonToLogDataConverter<T>> fieldConverters =
-        Arrays.stream(fieldTypes)
-            .map(this::createConverter)
-            .collect(Collectors.toList());
+        Arrays.stream(fieldTypes).map(this::createConverter).collect(Collectors.toList());
 
     return (jsonNode, context) -> {
       ObjectNode node = (ObjectNode) jsonNode;
@@ -319,7 +315,8 @@ public class JsonToLogDataConverters<T> implements Serializable {
     }
   }
 
-  private static <T> JsonToLogDataConverter<T> wrapIntoNullableConverter(JsonToLogDataConverter<T> converter) {
+  private static <T> JsonToLogDataConverter<T> wrapIntoNullableConverter(
+      JsonToLogDataConverter<T> converter) {
     return (source, context) -> {
       if (source == null || source.isNull() || source.isMissingNode()) {
         return null;

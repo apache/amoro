@@ -18,6 +18,11 @@
 
 package com.netease.arctic;
 
+import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
+
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
@@ -35,25 +40,21 @@ import org.apache.iceberg.types.Types;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import static com.netease.arctic.table.TableProperties.BASE_FILE_FORMAT;
-import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
-import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
-import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 
 public class BasicTableTestHelper implements TableTestHelper {
 
-  public static final Schema TABLE_SCHEMA = new Schema(
-      Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "name", Types.StringType.get()),
-      Types.NestedField.required(3, "ts", Types.LongType.get()),
-      Types.NestedField.required(4, "op_time", Types.TimestampType.withoutZone())
-  );
+  public static final Schema TABLE_SCHEMA =
+      new Schema(
+          Types.NestedField.required(1, "id", Types.IntegerType.get()),
+          Types.NestedField.required(2, "name", Types.StringType.get()),
+          Types.NestedField.required(3, "ts", Types.LongType.get()),
+          Types.NestedField.required(4, "op_time", Types.TimestampType.withoutZone()));
 
-  public static final PartitionSpec SPEC = PartitionSpec.builderFor(TABLE_SCHEMA)
-      .day("op_time").build();
+  public static final PartitionSpec SPEC =
+      PartitionSpec.builderFor(TABLE_SCHEMA).day("op_time").build();
 
-  public static final PrimaryKeySpec PRIMARY_KEY_SPEC = PrimaryKeySpec.builderFor(TABLE_SCHEMA)
-      .addColumn("id").build();
+  public static final PrimaryKeySpec PRIMARY_KEY_SPEC =
+      PrimaryKeySpec.builderFor(TABLE_SCHEMA).addColumn("id").build();
 
   private final Schema tableSchema;
   private final PrimaryKeySpec primaryKeySpec;
@@ -63,7 +64,8 @@ public class BasicTableTestHelper implements TableTestHelper {
   public BasicTableTestHelper(
       Schema tableSchema,
       PrimaryKeySpec primaryKeySpec,
-      PartitionSpec partitionSpec, Map<String, String> tableProperties) {
+      PartitionSpec partitionSpec,
+      Map<String, String> tableProperties) {
     tableProperties = tableProperties == null ? new HashMap<>() : tableProperties;
     tableProperties.put(TableProperties.FORMAT_VERSION, "2");
     this.tableSchema = tableSchema;
@@ -73,10 +75,12 @@ public class BasicTableTestHelper implements TableTestHelper {
   }
 
   public BasicTableTestHelper(
-      boolean hasPrimaryKey, boolean hasPartition,
-      Map<String, String> tableProperties) {
-    this(TABLE_SCHEMA, hasPrimaryKey ? PRIMARY_KEY_SPEC : PrimaryKeySpec.noPrimaryKey(),
-        hasPartition ? SPEC : PartitionSpec.unpartitioned(), tableProperties);
+      boolean hasPrimaryKey, boolean hasPartition, Map<String, String> tableProperties) {
+    this(
+        TABLE_SCHEMA,
+        hasPrimaryKey ? PRIMARY_KEY_SPEC : PrimaryKeySpec.noPrimaryKey(),
+        hasPartition ? SPEC : PartitionSpec.unpartitioned(),
+        tableProperties);
   }
 
   public BasicTableTestHelper(boolean hasPrimaryKey, boolean hasPartition, String fileFormat) {
@@ -114,7 +118,11 @@ public class BasicTableTestHelper implements TableTestHelper {
 
   @Override
   public List<DataFile> writeChangeStore(
-      KeyedTable keyedTable, Long txId, ChangeAction action, List<Record> records, boolean orderedWrite) {
+      KeyedTable keyedTable,
+      Long txId,
+      ChangeAction action,
+      List<Record> records,
+      boolean orderedWrite) {
     return MixedDataTestHelpers.writeChangeStore(keyedTable, txId, action, records, orderedWrite);
   }
 
@@ -126,9 +134,13 @@ public class BasicTableTestHelper implements TableTestHelper {
 
   @Override
   public List<Record> readKeyedTable(
-      KeyedTable keyedTable, Expression expression,
-      Schema projectSchema, boolean useDiskMap, boolean readDeletedData) {
-    return MixedDataTestHelpers.readKeyedTable(keyedTable, expression, projectSchema, useDiskMap, readDeletedData);
+      KeyedTable keyedTable,
+      Expression expression,
+      Schema projectSchema,
+      boolean useDiskMap,
+      boolean readDeletedData) {
+    return MixedDataTestHelpers.readKeyedTable(
+        keyedTable, expression, projectSchema, useDiskMap, readDeletedData);
   }
 
   @Override
@@ -139,15 +151,15 @@ public class BasicTableTestHelper implements TableTestHelper {
 
   @Override
   public List<Record> readBaseStore(
-      ArcticTable table, Expression expression, Schema projectSchema,
-      boolean useDiskMap) {
+      ArcticTable table, Expression expression, Schema projectSchema, boolean useDiskMap) {
     return MixedDataTestHelpers.readBaseStore(table, expression, projectSchema, useDiskMap);
   }
 
   @Override
   public String toString() {
-    return String.format("hasPrimaryKey = %b, hasPartitionSpec = %b", primaryKeySpec.primaryKeyExisted(),
-        partitionSpec.isPartitioned());
+    return String.format(
+        "hasPrimaryKey = %b, hasPartitionSpec = %b",
+        primaryKeySpec.primaryKeyExisted(), partitionSpec.isPartitioned());
   }
 
   protected static Map<String, String> buildTableFormat(String fileFormat) {

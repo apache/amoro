@@ -60,6 +60,7 @@ public enum DistributionHashMode {
 
   /**
    * If primary key needed.
+   *
    * @return true/false
    */
   public boolean mustByPrimaryKey() {
@@ -68,12 +69,13 @@ public enum DistributionHashMode {
 
   /**
    * If partition needed.
+   *
    * @return true/false
    */
   public boolean mustByPartition() {
     return supportPartition && strict();
   }
-  
+
   private boolean strict() {
     return this != AUTO;
   }
@@ -95,6 +97,7 @@ public enum DistributionHashMode {
 
   /**
    * auto select ShufflePolicyType.
+   *
    * @param primaryKeyExist -
    * @param partitionExist -
    * @return ShufflePolicyType

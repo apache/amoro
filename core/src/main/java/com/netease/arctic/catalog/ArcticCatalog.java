@@ -32,24 +32,22 @@ import org.apache.iceberg.exceptions.NoSuchTableException;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Catalog for arctic table create, drop, and load.
- */
+/** Catalog for arctic table create, drop, and load. */
 public interface ArcticCatalog {
 
   /**
    * Return name of catalog
+   *
    * @return catalog's name
    */
   String name();
 
   /**
-   * Initialize a catalog given a custom name and a map of catalog properties.
-   * all catalog implement must be no-args construct.
-   * Catalogs will call this method after implement object created.
+   * Initialize a catalog given a custom name and a map of catalog properties. all catalog implement
+   * must be no-args construct. Catalogs will call this method after implement object created.
    *
-   * @param client     client of arctic metastore
-   * @param meta       catalog init struct
+   * @param client client of arctic metastore
+   * @param meta catalog init struct
    * @param properties client side catalog properties
    */
   void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties);
@@ -89,8 +87,8 @@ public interface ArcticCatalog {
    * Get an arctic table by table identifier.
    *
    * @param tableIdentifier a table identifier
-   * @return instance of {@link com.netease.arctic.table.UnkeyedTable}
-   * or {@link com.netease.arctic.table.KeyedTable} implementation referred by {@code tableIdentifier}
+   * @return instance of {@link com.netease.arctic.table.UnkeyedTable} or {@link
+   *     com.netease.arctic.table.KeyedTable} implementation referred by {@code tableIdentifier}
    */
   ArcticTable loadTable(TableIdentifier tableIdentifier);
 
@@ -112,9 +110,9 @@ public interface ArcticCatalog {
   /**
    * Rename a table.
    *
-   * @param from         identifier of the table to rename
+   * @param from identifier of the table to rename
    * @param newTableName new table name
-   * @throws NoSuchTableException   if the from table does not exist
+   * @throws NoSuchTableException if the from table does not exist
    * @throws AlreadyExistsException if the to table already exists
    */
   void renameTable(TableIdentifier from, String newTableName);
@@ -123,7 +121,7 @@ public interface ArcticCatalog {
    * Drop a table and delete all data and metadata files.
    *
    * @param tableIdentifier a table identifier
-   * @param purge           if true, delete all data and metadata files in the table
+   * @param purge if true, delete all data and metadata files in the table
    * @return true if the table was dropped, false if the table did not exist
    */
   boolean dropTable(TableIdentifier tableIdentifier, boolean purge);
@@ -132,18 +130,17 @@ public interface ArcticCatalog {
    * Instantiate a builder to build a table.
    *
    * @param identifier a table identifier
-   * @param schema     a schema
+   * @param schema a schema
    * @return the builder to build a table
    */
   TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema);
 
-  /**
-   * Refresh catalog meta
-   */
+  /** Refresh catalog meta */
   void refresh();
 
   /**
    * Return a table blocker manager.
+   *
    * @param tableIdentifier a table identifier
    * @return A Table Blocker Mana
    */
@@ -155,5 +152,4 @@ public interface ArcticCatalog {
    * @return properties
    */
   Map<String, String> properties();
-
 }

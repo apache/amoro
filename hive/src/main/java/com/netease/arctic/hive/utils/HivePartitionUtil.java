@@ -50,7 +50,8 @@ public class HivePartitionUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(HivePartitionUtil.class);
 
-  public static List<String> partitionValuesAsList(StructLike partitionData, Types.StructType partitionSchema) {
+  public static List<String> partitionValuesAsList(
+      StructLike partitionData, Types.StructType partitionSchema) {
     List<Types.NestedField> fields = partitionSchema.fields();
     List<String> values = Lists.newArrayList();
     for (int i = 0; i < fields.size(); i++) {
@@ -101,18 +102,17 @@ public class HivePartitionUtil {
   }
 
   public static Partition getPartition(
-      HMSClientPool hmsClient,
-      ArcticTable arcticTable,
-      List<String> partitionValues) {
+      HMSClientPool hmsClient, ArcticTable arcticTable, List<String> partitionValues) {
     String db = arcticTable.id().getDatabase();
     String tableName = arcticTable.id().getTableName();
 
     try {
-      return hmsClient.run(client -> {
-        Partition partition;
-        partition = client.getPartition(db, tableName, partitionValues);
-        return partition;
-      });
+      return hmsClient.run(
+          client -> {
+            Partition partition;
+            partition = client.getPartition(db, tableName, partitionValues);
+            return partition;
+          });
     } catch (NoSuchObjectException e) {
       return null;
     } catch (Exception e) {
@@ -121,8 +121,7 @@ public class HivePartitionUtil {
   }
 
   public static void rewriteHivePartitions(
-      Partition partition, String location, List<DataFile> dataFiles,
-      int accessTimestamp) {
+      Partition partition, String location, List<DataFile> dataFiles, int accessTimestamp) {
     partition.getSd().setLocation(location);
     partition.setLastAccessTime(accessTimestamp);
     HiveTableUtil.generateTableProperties(accessTimestamp, dataFiles)
@@ -132,16 +131,20 @@ public class HivePartitionUtil {
   /**
    * Gets all partitions object of the Hive table.
    *
-   * @param hiveClient      Hive client from ArcticHiveCatalog
+   * @param hiveClient Hive client from ArcticHiveCatalog
    * @param tableIdentifier A table identifier
    * @return A List of Hive partition objects
    */
-  public static List<Partition> getHiveAllPartitions(HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
+  public static List<Partition> getHiveAllPartitions(
+      HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
     try {
-      return hiveClient.run(client ->
-          client.listPartitions(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), Short.MAX_VALUE));
+      return hiveClient.run(
+          client ->
+              client.listPartitions(
+                  tableIdentifier.getDatabase(), tableIdentifier.getTableName(), Short.MAX_VALUE));
     } catch (NoSuchObjectException e) {
-      throw new NoSuchTableException(e, "Hive table does not exist: %s", tableIdentifier.getTableName());
+      throw new NoSuchTableException(
+          e, "Hive table does not exist: %s", tableIdentifier.getTableName());
     } catch (TException e) {
       throw new RuntimeException("Failed to get partitions " + tableIdentifier.getTableName(), e);
     } catch (InterruptedException e) {
@@ -153,18 +156,25 @@ public class HivePartitionUtil {
   /**
    * Gets all partition names of the Hive table.
    *
-   * @param hiveClient      Hive client from ArcticHiveCatalog
+   * @param hiveClient Hive client from ArcticHiveCatalog
    * @param tableIdentifier A table identifier
    * @return A List of Hive partition names
    */
-  public static List<String> getHivePartitionNames(HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
+  public static List<String> getHivePartitionNames(
+      HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
     try {
-      return hiveClient.run(client -> client.listPartitionNames(
-          tableIdentifier.getDatabase(),
-          tableIdentifier.getTableName(),
-          Short.MAX_VALUE)).stream().collect(Collectors.toList());
+      return hiveClient
+          .run(
+              client ->
+                  client.listPartitionNames(
+                      tableIdentifier.getDatabase(),
+                      tableIdentifier.getTableName(),
+                      Short.MAX_VALUE))
+          .stream()
+          .collect(Collectors.toList());
     } catch (NoSuchObjectException e) {
-      throw new NoSuchTableException(e, "Hive table does not exist: %s", tableIdentifier.getTableName());
+      throw new NoSuchTableException(
+          e, "Hive table does not exist: %s", tableIdentifier.getTableName());
     } catch (TException e) {
       throw new RuntimeException("Failed to get partitions " + tableIdentifier.getTableName(), e);
     } catch (InterruptedException e) {
@@ -176,21 +186,26 @@ public class HivePartitionUtil {
   /**
    * Gets all partitions location of the Hive table.
    *
-   * @param hiveClient      Hive client from ArcticHiveCatalog
+   * @param hiveClient Hive client from ArcticHiveCatalog
    * @param tableIdentifier A table identifier
    * @return A List of Hive partition locations
    */
-  public static List<String> getHivePartitionLocations(HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
+  public static List<String> getHivePartitionLocations(
+      HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
     try {
-      return hiveClient.run(client -> client.listPartitions(
-              tableIdentifier.getDatabase(),
-              tableIdentifier.getTableName(),
-              Short.MAX_VALUE))
+      return hiveClient
+          .run(
+              client ->
+                  client.listPartitions(
+                      tableIdentifier.getDatabase(),
+                      tableIdentifier.getTableName(),
+                      Short.MAX_VALUE))
           .stream()
           .map(partition -> partition.getSd().getLocation())
           .collect(Collectors.toList());
     } catch (NoSuchObjectException e) {
-      throw new NoSuchTableException(e, "Hive table does not exist: %s", tableIdentifier.getTableName());
+      throw new NoSuchTableException(
+          e, "Hive table does not exist: %s", tableIdentifier.getTableName());
     } catch (TException e) {
       throw new RuntimeException("Failed to get partitions " + tableIdentifier.getTableName(), e);
     } catch (InterruptedException e) {
@@ -202,35 +217,44 @@ public class HivePartitionUtil {
   /**
    * Change the Hive partition location.
    *
-   * @param hiveClient      Hive client from ArcticHiveCatalog
+   * @param hiveClient Hive client from ArcticHiveCatalog
    * @param tableIdentifier A table identifier
-   * @param partition       A Hive partition name
-   * @param newPath         Target partition location
+   * @param partition A Hive partition name
+   * @param newPath Target partition location
    */
   public static void alterPartition(
-      HMSClientPool hiveClient, TableIdentifier tableIdentifier,
-      String partition, String newPath) throws IOException {
+      HMSClientPool hiveClient, TableIdentifier tableIdentifier, String partition, String newPath)
+      throws IOException {
     try {
-      LOG.info("alter table {} hive partition {} to new location {}",
-          tableIdentifier, partition, newPath);
-      Partition oldPartition = hiveClient.run(
-          client -> client.getPartition(
-              tableIdentifier.getDatabase(),
-              tableIdentifier.getTableName(),
-              partition));
+      LOG.info(
+          "alter table {} hive partition {} to new location {}",
+          tableIdentifier,
+          partition,
+          newPath);
+      Partition oldPartition =
+          hiveClient.run(
+              client ->
+                  client.getPartition(
+                      tableIdentifier.getDatabase(), tableIdentifier.getTableName(), partition));
       Partition newPartition = new Partition(oldPartition);
       newPartition.getSd().setLocation(newPath);
-      hiveClient.run((ClientPool.Action<Void, HMSClient, TException>) client -> {
-        try {
-          client.alterPartition(tableIdentifier.getDatabase(),
-              tableIdentifier.getTableName(),
-              newPartition, null);
-        } catch (ClassNotFoundException | NoSuchMethodException |
-                 InvocationTargetException | IllegalAccessException e) {
-          throw new RuntimeException(e);
-        }
-        return null;
-      });
+      hiveClient.run(
+          (ClientPool.Action<Void, HMSClient, TException>)
+              client -> {
+                try {
+                  client.alterPartition(
+                      tableIdentifier.getDatabase(),
+                      tableIdentifier.getTableName(),
+                      newPartition,
+                      null);
+                } catch (ClassNotFoundException
+                    | NoSuchMethodException
+                    | InvocationTargetException
+                    | IllegalAccessException e) {
+                  throw new RuntimeException(e);
+                }
+                return null;
+              });
     } catch (Exception e) {
       throw new IOException(e);
     }
@@ -247,38 +271,43 @@ public class HivePartitionUtil {
     String tableName = arcticTable.id().getTableName();
 
     try {
-      hmsClient.run(client -> {
-        Partition partition;
-        try {
-          partition = client.getPartition(db, tableName, partitionValues);
-          return partition;
-        } catch (NoSuchObjectException noSuchObjectException) {
-          Table hiveTable = client.getTable(db, tableName);
-          partition = newPartition(hiveTable, partitionValues, partitionLocation,
-              dataFiles, accessTimestamp);
-          client.addPartition(partition);
-          return partition;
-        }
-      });
+      hmsClient.run(
+          client -> {
+            Partition partition;
+            try {
+              partition = client.getPartition(db, tableName, partitionValues);
+              return partition;
+            } catch (NoSuchObjectException noSuchObjectException) {
+              Table hiveTable = client.getTable(db, tableName);
+              partition =
+                  newPartition(
+                      hiveTable, partitionValues, partitionLocation, dataFiles, accessTimestamp);
+              client.addPartition(partition);
+              return partition;
+            }
+          });
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
   public static void dropPartition(
-      HMSClientPool hmsClient,
-      ArcticTable arcticTable,
-      Partition hivePartition) {
+      HMSClientPool hmsClient, ArcticTable arcticTable, Partition hivePartition) {
     try {
-      hmsClient.run(client -> {
-        PartitionDropOptions options = PartitionDropOptions.instance()
-            .deleteData(false)
-            .ifExists(true)
-            .purgeData(false)
-            .returnResults(false);
-        return client.dropPartition(arcticTable.id().getDatabase(),
-            arcticTable.id().getTableName(), hivePartition.getValues(), options);
-      });
+      hmsClient.run(
+          client -> {
+            PartitionDropOptions options =
+                PartitionDropOptions.instance()
+                    .deleteData(false)
+                    .ifExists(true)
+                    .purgeData(false)
+                    .returnResults(false);
+            return client.dropPartition(
+                arcticTable.id().getDatabase(),
+                arcticTable.id().getTableName(),
+                hivePartition.getValues(),
+                options);
+          });
     } catch (TException | InterruptedException e) {
       throw new RuntimeException(e);
     }
@@ -292,6 +321,7 @@ public class HivePartitionUtil {
       List<DataFile> dataFiles,
       int accessTimestamp) {
     dropPartition(hmsClient, arcticTable, hivePartition);
-    createPartitionIfAbsent(hmsClient, arcticTable, hivePartition.getValues(), newLocation, dataFiles, accessTimestamp);
+    createPartitionIfAbsent(
+        hmsClient, arcticTable, hivePartition.getValues(), newLocation, dataFiles, accessTimestamp);
   }
 }

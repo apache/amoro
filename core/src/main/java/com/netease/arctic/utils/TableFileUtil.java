@@ -53,7 +53,8 @@ public class TableFileUtil {
     return filePath.substring(0, lastSlash);
   }
 
-  public static String getPartitionPathFromFilePath(String fileLocation, String tableLocation, String fileName) {
+  public static String getPartitionPathFromFilePath(
+      String fileLocation, String tableLocation, String fileName) {
     int tableIndex = fileLocation.indexOf(tableLocation);
     int fileIndex = fileLocation.lastIndexOf(fileName);
     return fileLocation.substring(tableIndex + tableLocation.length(), fileIndex - 1);
@@ -62,18 +63,17 @@ public class TableFileUtil {
   /**
    * Try to recursiveDelete the empty directory
    *
-   * @param io            arcticTableFileIo
+   * @param io arcticTableFileIo
    * @param directoryPath directory location
-   * @param exclude       the directory will not be deleted
+   * @param exclude the directory will not be deleted
    */
-  public static void deleteEmptyDirectory(ArcticFileIO io, String directoryPath, Set<String> exclude) {
+  public static void deleteEmptyDirectory(
+      ArcticFileIO io, String directoryPath, Set<String> exclude) {
     Preconditions.checkArgument(
-        io.supportFileSystemOperations(),
-        "The fileIo doesn't support directory operation");
+        io.supportFileSystemOperations(), "The fileIo doesn't support directory operation");
     Preconditions.checkArgument(io.exists(directoryPath), "The target directory is not exist");
     Preconditions.checkArgument(
-        io.asFileSystemIO().isDirectory(directoryPath),
-        "The target path is not directory");
+        io.asFileSystemIO().isDirectory(directoryPath), "The target path is not directory");
 
     String parent = new Path(directoryPath).getParent().toString();
     if (exclude.contains(directoryPath) || exclude.contains(parent)) {
@@ -92,7 +92,7 @@ public class TableFileUtil {
    * Get the file path after move file to target directory
    *
    * @param newDirectory target directory
-   * @param filePath     file
+   * @param filePath file
    * @return new file path
    */
   public static String getNewFilePath(String newDirectory, String filePath) {

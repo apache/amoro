@@ -32,7 +32,7 @@ public interface Converter<F, O, C, T> extends Serializable {
   /**
    * Converts elements of type {@code From} into elements of type {@code To}.
    *
-   * @param source  The element to be converted.
+   * @param source The element to be converted.
    * @param context The context with conversion instructions and utilities.
    * @return The element in the target type.
    */

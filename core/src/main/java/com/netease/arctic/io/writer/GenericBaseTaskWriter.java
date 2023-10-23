@@ -28,9 +28,7 @@ import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.FileAppenderFactory;
 
-/**
- * Implementation of {@link BaseTaskWriter} to write {@link Record}.
- */
+/** Implementation of {@link BaseTaskWriter} to write {@link Record}. */
 public class GenericBaseTaskWriter extends BaseTaskWriter<Record> {
 
   private final InternalRecordWrapper wrapper;
@@ -46,8 +44,17 @@ public class GenericBaseTaskWriter extends BaseTaskWriter<Record> {
       PartitionSpec spec,
       PrimaryKeySpec primaryKeySpec,
       boolean orderedWriter) {
-    super(format, appenderFactory, outputFileFactory, io, targetFileSize,
-        mask, schema, spec, primaryKeySpec, orderedWriter);
+    super(
+        format,
+        appenderFactory,
+        outputFileFactory,
+        io,
+        targetFileSize,
+        mask,
+        schema,
+        spec,
+        primaryKeySpec,
+        orderedWriter);
     this.wrapper = new InternalRecordWrapper(schema.asStruct());
   }
 

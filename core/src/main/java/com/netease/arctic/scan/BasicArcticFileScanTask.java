@@ -33,9 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Basic implementation of {@link ArcticFileScanTask}
- */
+/** Basic implementation of {@link ArcticFileScanTask} */
 public class BasicArcticFileScanTask implements ArcticFileScanTask {
 
   private final PrimaryKeyedFile baseFile;
@@ -48,30 +46,43 @@ public class BasicArcticFileScanTask implements ArcticFileScanTask {
 
   private FileScanTask fileScanTask;
 
-  public BasicArcticFileScanTask(PrimaryKeyedFile baseFile, List<DeleteFile> posDeleteFiles, PartitionSpec spec) {
+  public BasicArcticFileScanTask(
+      PrimaryKeyedFile baseFile, List<DeleteFile> posDeleteFiles, PartitionSpec spec) {
     this(baseFile, posDeleteFiles, spec, Expressions.alwaysTrue());
   }
 
   public BasicArcticFileScanTask(
-      PrimaryKeyedFile baseFile, List<DeleteFile> posDeleteFiles, PartitionSpec spec,
+      PrimaryKeyedFile baseFile,
+      List<DeleteFile> posDeleteFiles,
+      PartitionSpec spec,
       Expression expression) {
     this.baseFile = baseFile;
-    this.posDeleteFiles = posDeleteFiles == null ? Collections.emptyList() :
-        posDeleteFiles.stream().filter(s -> {
-          DataTreeNode node = FileNameRules.parseFileNodeFromFileName(s.path().toString());
-          return baseFile.node().isSonOf(node) || baseFile.node().equals(node);
-        }).collect(Collectors.toList());
+    this.posDeleteFiles =
+        posDeleteFiles == null
+            ? Collections.emptyList()
+            : posDeleteFiles.stream()
+                .filter(
+                    s -> {
+                      DataTreeNode node =
+                          FileNameRules.parseFileNodeFromFileName(s.path().toString());
+                      return baseFile.node().isSonOf(node) || baseFile.node().equals(node);
+                    })
+                .collect(Collectors.toList());
     this.spec = spec;
     this.expression = expression;
   }
 
   /**
    * Only for iceberg wrap
+   *
    * @param fileScanTask
    */
   public BasicArcticFileScanTask(FileScanTask fileScanTask) {
-    this(DefaultKeyedFile.parseBase(fileScanTask.file()), fileScanTask.deletes(),
-        fileScanTask.spec(), fileScanTask.residual());
+    this(
+        DefaultKeyedFile.parseBase(fileScanTask.file()),
+        fileScanTask.deletes(),
+        fileScanTask.spec(),
+        fileScanTask.residual());
     this.fileScanTask = fileScanTask;
   }
 

@@ -34,9 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 
-/**
- * AdaptHive can read all Data.
- */
+/** AdaptHive can read all Data. */
 public abstract class AbstractAdaptHiveUnkeyedDataReader<T> extends AbstractUnkeyedDataReader<T> {
 
   public AbstractAdaptHiveUnkeyedDataReader(
@@ -48,8 +46,15 @@ public abstract class AbstractAdaptHiveUnkeyedDataReader<T> extends AbstractUnke
       BiFunction<Type, Object, Object> convertConstant,
       boolean reuseContainer,
       StructLikeCollections structLikeCollections) {
-    super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive,
-        convertConstant, reuseContainer, structLikeCollections);
+    super(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        nameMapping,
+        caseSensitive,
+        convertConstant,
+        reuseContainer,
+        structLikeCollections);
   }
 
   public AbstractAdaptHiveUnkeyedDataReader(
@@ -60,7 +65,14 @@ public abstract class AbstractAdaptHiveUnkeyedDataReader<T> extends AbstractUnke
       boolean caseSensitive,
       BiFunction<Type, Object, Object> convertConstant,
       boolean reuseContainer) {
-    super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive, convertConstant, reuseContainer);
+    super(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        nameMapping,
+        caseSensitive,
+        convertConstant,
+        reuseContainer);
   }
 
   public AbstractAdaptHiveUnkeyedDataReader(
@@ -88,12 +100,13 @@ public abstract class AbstractAdaptHiveUnkeyedDataReader<T> extends AbstractUnke
   @Override
   protected CloseableIterable<T> newParquetIterable(
       FileScanTask task, Schema schema, Map<Integer, ?> idToConstant) {
-    AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(fileIO.newInputFile(task.file().path().toString()))
-        .split(task.start(), task.length())
-        .project(schema)
-        .createReaderFunc(getParquetReaderFunction(schema, idToConstant))
-        .filter(task.residual())
-        .caseSensitive(caseSensitive);
+    AdaptHiveParquet.ReadBuilder builder =
+        AdaptHiveParquet.read(fileIO.newInputFile(task.file().path().toString()))
+            .split(task.start(), task.length())
+            .project(schema)
+            .createReaderFunc(getParquetReaderFunction(schema, idToConstant))
+            .filter(task.residual())
+            .caseSensitive(caseSensitive);
 
     if (reuseContainer) {
       builder.reuseContainers();
