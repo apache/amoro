@@ -20,7 +20,6 @@ package com.netease.arctic.server.dashboard;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
@@ -74,5 +73,6 @@ public interface FormatTableDescriptor {
   /**
    * Get the paged optimizing process information of the {@link AmoroTable} and total size.
    */
-  Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(AmoroTable<?> amoroTable, int limit, int offset);
+  Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
+      AmoroTable<?> amoroTable, int limit, int offset);
 }

@@ -252,7 +252,8 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(AmoroTable<?> amoroTable, int limit, int offset) {
+  public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
+      AmoroTable<?> amoroTable, int limit, int offset) {
     // Temporary solution for Paimon. TODO: Get compaction info from Paimon compaction task
     List<OptimizingProcessInfo> processInfoList = new ArrayList<>();
     TableIdentifier tableIdentifier = amoroTable.id();

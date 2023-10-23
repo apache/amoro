@@ -286,7 +286,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase implements Fo
   }
 
   @Override
-  public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(AmoroTable<?> amoroTable, int limit, int offset) {
+  public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
+      AmoroTable<?> amoroTable, int limit, int offset) {
     TableIdentifier tableIdentifier = amoroTable.id();
     List<OptimizingProcessMeta> processMetaList = getAs(OptimizingMapper.class,
         mapper -> mapper.selectOptimizingProcesses(

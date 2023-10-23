@@ -255,8 +255,8 @@ public class TableController {
     Preconditions.checkState(serverCatalog.exist(db, table), "no such table");
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
-    Pair<List<OptimizingProcessInfo>, Integer> optimizingProcessesInfo = tableDescriptor.getOptimizingProcessesInfo
-        (tableIdentifier.buildTableIdentifier(), limit, offset);
+    Pair<List<OptimizingProcessInfo>, Integer> optimizingProcessesInfo = tableDescriptor.getOptimizingProcessesInfo(
+        tableIdentifier.buildTableIdentifier(), limit, offset);
     List<OptimizingProcessInfo> result = optimizingProcessesInfo.first();
     int total = optimizingProcessesInfo.second();
 
