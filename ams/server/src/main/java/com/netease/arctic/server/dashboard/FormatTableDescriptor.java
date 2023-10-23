@@ -25,6 +25,7 @@ import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
+import com.netease.arctic.server.dashboard.model.TagOrBranchInfo;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import org.apache.iceberg.util.Pair;
 
@@ -75,4 +76,10 @@ public interface FormatTableDescriptor {
    */
   Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
       AmoroTable<?> amoroTable, int limit, int offset);
+
+  /** Get the tag information of the {@link AmoroTable}. */
+  List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable);
+
+  /** Get the branch information of the {@link AmoroTable}. */
+  List<TagOrBranchInfo> getTableBranchs(AmoroTable<?> amoroTable);
 }

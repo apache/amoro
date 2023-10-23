@@ -35,6 +35,7 @@ import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TableBasicInfo;
 import com.netease.arctic.server.dashboard.model.TableStatistics;
+import com.netease.arctic.server.dashboard.model.TagOrBranchInfo;
 import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.TableStatCollector;
@@ -57,6 +58,7 @@ import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IcebergGenerics;
@@ -286,6 +288,44 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase implements Fo
   }
 
   @Override
+  public List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable) {
+    ArcticTable arcticTable = getTable(amoroTable);
+    List<TagOrBranchInfo> result = new ArrayList<>();
+    Map<String, SnapshotRef> snapshotRefs = getSnapshotRefs(arcticTable);
+    snapshotRefs.forEach(
+        (name, snapshotRef) -> {
+          if (snapshotRef.isTag()) {
+            result.add(new TagOrBranchInfo(
+                name,
+                snapshotRef.snapshotId(),
+                snapshotRef.minSnapshotsToKeep(),
+                snapshotRef.maxSnapshotAgeMs(),
+                snapshotRef.maxRefAgeMs()));
+          }
+        });
+    return result;
+  }
+
+  @Override
+  public List<TagOrBranchInfo> getTableBranchs(AmoroTable<?> amoroTable) {
+    ArcticTable arcticTable = getTable(amoroTable);
+    List<TagOrBranchInfo> result = new ArrayList<>();
+    Map<String, SnapshotRef> snapshotRefs = getSnapshotRefs(arcticTable);
+    snapshotRefs.forEach(
+        (name, snapshotRef) -> {
+          if (snapshotRef.isBranch()) {
+            result.add(new TagOrBranchInfo(
+                name,
+                snapshotRef.snapshotId(),
+                snapshotRef.minSnapshotsToKeep(),
+                snapshotRef.maxSnapshotAgeMs(),
+                snapshotRef.maxRefAgeMs()));
+          }
+        });
+    return result;
+  }
+
+  @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
       AmoroTable<?> amoroTable, int limit, int offset) {
     TableIdentifier tableIdentifier = amoroTable.id();
@@ -456,5 +496,19 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase implements Fo
 
   private ArcticTable getTable(AmoroTable<?> amoroTable) {
     return (ArcticTable) amoroTable.originalTable();
+  }
+
+  private Map<String, SnapshotRef> getSnapshotRefs(ArcticTable table) {
+    if (table.isKeyedTable()) {
+      Map<String, SnapshotRef> baseTableRefs = table.asKeyedTable().baseTable().refs();
+      Map<String, SnapshotRef> changeTableRefs = table.asKeyedTable().changeTable().refs();
+      return new HashMap<String, SnapshotRef>(baseTableRefs) {
+        {
+          putAll(changeTableRefs);
+        }
+      };
+    } else {
+      return new HashMap<>(table.asUnkeyedTable().refs());
+    }
   }
 }
