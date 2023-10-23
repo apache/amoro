@@ -18,9 +18,7 @@
 
 package com.netease.arctic.log;
 
-/**
- * Utils to handle byte array.
- */
+/** Utils to handle byte array. */
 public class Bytes {
 
   /**
@@ -31,7 +29,7 @@ public class Bytes {
    * @return new byte array with appended byte
    */
   public static byte[] mergeByte(byte[] src, byte append) {
-    return mergeByte(src, new byte[]{append});
+    return mergeByte(src, new byte[] {append});
   }
 
   /**
@@ -51,8 +49,8 @@ public class Bytes {
   /**
    * Return a new sub array from byte array
    *
-   * @param src    original array
-   * @param off    offset（index）
+   * @param src original array
+   * @param off offset（index）
    * @param length length
    * @return intercepted array
    */

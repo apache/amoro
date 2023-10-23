@@ -34,15 +34,18 @@ import java.util.Map;
 public class TestCatalogLoader {
 
   private static final String TEST_CATALOG_NAME = "test";
-  @ClassRule
-  public static TestAms TEST_AMS = new TestAms();
+  @ClassRule public static TestAms TEST_AMS = new TestAms();
 
   @Test
   public void testLoadIcebergHadoopCatalog() {
     Map<String, String> properties = Maps.newHashMap();
     properties.put(CatalogMetaProperties.KEY_WAREHOUSE, "/temp");
-    CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(TEST_CATALOG_NAME,
-        CatalogMetaProperties.CATALOG_TYPE_HADOOP, properties, TableFormat.ICEBERG);
+    CatalogMeta catalogMeta =
+        CatalogTestHelpers.buildCatalogMeta(
+            TEST_CATALOG_NAME,
+            CatalogMetaProperties.CATALOG_TYPE_HADOOP,
+            properties,
+            TableFormat.ICEBERG);
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
     ArcticCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
     Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
@@ -54,8 +57,12 @@ public class TestCatalogLoader {
   public void testLoadIcebergCustomCatalog() {
     Map<String, String> properties = Maps.newHashMap();
     properties.put(CatalogProperties.CATALOG_IMPL, TestCatalogUtil.TestCatalog.class.getName());
-    CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(TEST_CATALOG_NAME,
-        CatalogMetaProperties.CATALOG_TYPE_CUSTOM, properties, TableFormat.ICEBERG);
+    CatalogMeta catalogMeta =
+        CatalogTestHelpers.buildCatalogMeta(
+            TEST_CATALOG_NAME,
+            CatalogMetaProperties.CATALOG_TYPE_CUSTOM,
+            properties,
+            TableFormat.ICEBERG);
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
     ArcticCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
     Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
@@ -67,8 +74,12 @@ public class TestCatalogLoader {
   public void testLoadMixedIcebergCatalog() {
     Map<String, String> properties = Maps.newHashMap();
     properties.put(CatalogMetaProperties.KEY_WAREHOUSE, "/temp");
-    CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(TEST_CATALOG_NAME,
-        CatalogMetaProperties.CATALOG_TYPE_AMS, properties, TableFormat.MIXED_ICEBERG);
+    CatalogMeta catalogMeta =
+        CatalogTestHelpers.buildCatalogMeta(
+            TEST_CATALOG_NAME,
+            CatalogMetaProperties.CATALOG_TYPE_AMS,
+            properties,
+            TableFormat.MIXED_ICEBERG);
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
     ArcticCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
     Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
@@ -78,17 +89,25 @@ public class TestCatalogLoader {
 
   @Test
   public void testLoadNotExistedCatalog() {
-    Assert.assertThrows("catalog not found, please check catalog name", IllegalArgumentException.class,
+    Assert.assertThrows(
+        "catalog not found, please check catalog name",
+        IllegalArgumentException.class,
         () -> CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME)));
   }
 
   @Test
   public void testLoadCatalogWithErrorFormat() {
     Map<String, String> properties = Maps.newHashMap();
-    CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(TEST_CATALOG_NAME,
-        CatalogMetaProperties.CATALOG_TYPE_HADOOP, properties, TableFormat.MIXED_ICEBERG);
+    CatalogMeta catalogMeta =
+        CatalogTestHelpers.buildCatalogMeta(
+            TEST_CATALOG_NAME,
+            CatalogMetaProperties.CATALOG_TYPE_HADOOP,
+            properties,
+            TableFormat.MIXED_ICEBERG);
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
-    Assert.assertThrows("failed when load catalog test", IllegalStateException.class,
+    Assert.assertThrows(
+        "failed when load catalog test",
+        IllegalStateException.class,
         () -> CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME)));
     TEST_AMS.getAmsHandler().dropCatalog(TEST_CATALOG_NAME);
   }

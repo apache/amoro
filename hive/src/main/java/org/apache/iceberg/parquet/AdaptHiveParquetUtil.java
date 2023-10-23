@@ -33,16 +33,16 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- * Copy from {@link ParquetUtil} to resolve int96 in metric.
- */
+/** Copy from {@link ParquetUtil} to resolve int96 in metric. */
 public class AdaptHiveParquetUtil {
   // not meant to be instantiated
-  private AdaptHiveParquetUtil() {
-  }
+  private AdaptHiveParquetUtil() {}
 
   public static Metrics footerMetrics(
-      ParquetMetadata metadata, Stream<FieldMetrics<?>> fieldMetrics, MetricsConfig metricsConfig, Schema schema) {
+      ParquetMetadata metadata,
+      Stream<FieldMetrics<?>> fieldMetrics,
+      MetricsConfig metricsConfig,
+      Schema schema) {
     return footerMetrics(metadata, fieldMetrics, metricsConfig, null, schema);
   }
 
@@ -85,7 +85,8 @@ public class AdaptHiveParquetUtil {
 
         increment(columnSizes, fieldId, column.getTotalSize());
 
-        MetricsModes.MetricsMode metricsMode = MetricsUtil.metricsMode(fileSchema, metricsConfig, fieldId);
+        MetricsModes.MetricsMode metricsMode =
+            MetricsUtil.metricsMode(fileSchema, metricsConfig, fieldId);
         if (metricsMode == MetricsModes.None.get()) {
           continue;
         }
@@ -102,7 +103,7 @@ public class AdaptHiveParquetUtil {
           if (metricsMode != MetricsModes.Counts.get() && !fieldMetricsMap.containsKey(fieldId)) {
             Types.NestedField field = fileSchema.findField(fieldId);
             if (field != null && stats.hasNonNullValue() && shouldStoreBounds(column, fileSchema)) {
-              //Change For Arctic: Add metrics for int96 type
+              // Change For Arctic: Add metrics for int96 type
               Literal<?> min =
                   AdaptHiveParquetConversions.fromParquetPrimitive(
                       field.type(), column.getPrimitiveType(), stats.genericGetMin());
@@ -111,7 +112,7 @@ public class AdaptHiveParquetUtil {
                   AdaptHiveParquetConversions.fromParquetPrimitive(
                       field.type(), column.getPrimitiveType(), stats.genericGetMax());
               updateMax(upperBounds, fieldId, field.type(), max, metricsMode);
-              //Change For Arctic
+              // Change For Arctic
             }
           }
         }
@@ -143,8 +144,13 @@ public class AdaptHiveParquetUtil {
     List<Types.NestedField> result = new ArrayList<>();
     for (Types.NestedField nestedField : columns) {
       if (nestedField.type().typeId() == Type.TypeID.TIMESTAMP) {
-        result.add(Types.NestedField.of(nestedField.fieldId(), nestedField.isOptional(), nestedField.name(),
-            original.findType(nestedField.fieldId()), nestedField.doc()));
+        result.add(
+            Types.NestedField.of(
+                nestedField.fieldId(),
+                nestedField.isOptional(),
+                nestedField.name(),
+                original.findType(nestedField.fieldId()),
+                nestedField.doc()));
       } else {
         result.add(nestedField);
       }
@@ -164,7 +170,8 @@ public class AdaptHiveParquetUtil {
             entry -> {
               int fieldId = entry.getKey();
               FieldMetrics<?> metrics = entry.getValue();
-              MetricsModes.MetricsMode metricsMode = MetricsUtil.metricsMode(schema, metricsConfig, fieldId);
+              MetricsModes.MetricsMode metricsMode =
+                  MetricsUtil.metricsMode(schema, metricsConfig, fieldId);
 
               // only check for MetricsModes.None, since we don't truncate float/double values.
               if (metricsMode != MetricsModes.None.get()) {
@@ -202,9 +209,9 @@ public class AdaptHiveParquetUtil {
 
   // we allow struct nesting, but not maps or arrays
   private static boolean shouldStoreBounds(ColumnChunkMetaData column, Schema schema) {
-    //Change For Arctic: Add metrics for int96 type
+    // Change For Arctic: Add metrics for int96 type
     // Delete int96 don't need metric logic.
-    //Change For Arctic
+    // Change For Arctic
     ColumnPath columnPath = column.getPath();
     Iterator<String> pathIterator = columnPath.iterator();
     Type currentType = schema.asStruct();

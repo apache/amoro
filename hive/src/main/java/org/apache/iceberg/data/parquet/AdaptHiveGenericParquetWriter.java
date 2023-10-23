@@ -28,8 +28,7 @@ import java.util.List;
 public class AdaptHiveGenericParquetWriter extends AdaptHiveBaseParquetWriter<Record> {
   private static final AdaptHiveGenericParquetWriter INSTANCE = new AdaptHiveGenericParquetWriter();
 
-  private AdaptHiveGenericParquetWriter() {
-  }
+  private AdaptHiveGenericParquetWriter() {}
 
   public static ParquetValueWriter<Record> buildWriter(MessageType type) {
     return INSTANCE.createWriter(type);

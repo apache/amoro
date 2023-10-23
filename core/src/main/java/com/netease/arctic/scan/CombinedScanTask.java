@@ -21,9 +21,7 @@ package com.netease.arctic.scan;
 import java.io.Serializable;
 import java.util.Collection;
 
-/**
- * A scan task made of several {@link KeyedTableScanTask}.
- */
+/** A scan task made of several {@link KeyedTableScanTask}. */
 public interface CombinedScanTask extends Serializable {
   /**
    * Return the {@link KeyedTableScanTask tasks} in this combined task.

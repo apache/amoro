@@ -18,6 +18,8 @@
 
 package com.netease.arctic.io;
 
+import static com.netease.arctic.table.TableProperties.FILE_FORMAT_ORC;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -47,7 +49,6 @@ import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import static com.netease.arctic.table.TableProperties.FILE_FORMAT_ORC;
 
 @RunWith(Parameterized.class)
 public class TestTaskReader extends TableDataTestBase {
@@ -57,29 +58,47 @@ public class TestTaskReader extends TableDataTestBase {
   @Parameterized.Parameters(name = "useDiskMap = {2}")
   public static Object[] parameters() {
     return new Object[][] {
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(true, true), false},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(true, true), true},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(true, true, FILE_FORMAT_ORC), false},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(true, true, FILE_FORMAT_ORC), true}
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true),
+        false
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true),
+        true
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true, FILE_FORMAT_ORC),
+        false
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true, FILE_FORMAT_ORC),
+        true
+      }
     };
   }
 
   public TestTaskReader(
-      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper,
-      boolean useDiskMap) {
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean useDiskMap) {
     super(catalogTestHelper, tableTestHelper);
     this.useDiskMap = useDiskMap;
   }
 
   @Test
   public void testMergeOnRead() {
-    Set<Record> records = Sets.newHashSet(tableTestHelper().readKeyedTable(getArcticTable().asKeyedTable(),
-        Expressions.alwaysTrue(), null, useDiskMap, false));
-    //expect: (id=1),(id=2),(id=3),(id=6)
+    Set<Record> records =
+        Sets.newHashSet(
+            tableTestHelper()
+                .readKeyedTable(
+                    getArcticTable().asKeyedTable(),
+                    Expressions.alwaysTrue(),
+                    null,
+                    useDiskMap,
+                    false));
+    // expect: (id=1),(id=2),(id=3),(id=6)
     Set<Record> expectRecords = Sets.newHashSet();
     expectRecords.add(allRecords.get(0));
     expectRecords.add(allRecords.get(1));
@@ -92,13 +111,15 @@ public class TestTaskReader extends TableDataTestBase {
   public void testMergeOnReadFilterLongType() {
     // where id = 1
     Expression filter = Expressions.equal("id", 1);
-    Set<Record> records = Sets.newHashSet(tableTestHelper().readKeyedTable(getArcticTable().asKeyedTable(),
-        filter, null, useDiskMap, false));
+    Set<Record> records =
+        Sets.newHashSet(
+            tableTestHelper()
+                .readKeyedTable(getArcticTable().asKeyedTable(), filter, null, useDiskMap, false));
 
     List<KeyedTableScanTask> readTasks = planReadTask(filter);
     Assert.assertEquals(2, readTasks.size());
 
-    //expect: (id=1),(id=6), change store can only be filtered by partition expression now.
+    // expect: (id=1),(id=6), change store can only be filtered by partition expression now.
     Set<Record> expectRecords = Sets.newHashSet();
     expectRecords.add(allRecords.get(0));
     expectRecords.add(allRecords.get(5));
@@ -108,9 +129,11 @@ public class TestTaskReader extends TableDataTestBase {
     filter = Expressions.or(Expressions.equal("id", 1), Expressions.equal("id", 3));
     readTasks = planReadTask(filter);
     Assert.assertEquals(3, readTasks.size());
-    records = Sets.newHashSet(tableTestHelper().readKeyedTable(getArcticTable().asKeyedTable(),
-        filter, null, useDiskMap, false));
-    //expect: (id=1),(id=3),(id=6), change store can only be filtered by partition expression now.
+    records =
+        Sets.newHashSet(
+            tableTestHelper()
+                .readKeyedTable(getArcticTable().asKeyedTable(), filter, null, useDiskMap, false));
+    // expect: (id=1),(id=3),(id=6), change store can only be filtered by partition expression now.
     expectRecords.clear();
     expectRecords.add(allRecords.get(0));
     expectRecords.add(allRecords.get(2));
@@ -124,9 +147,11 @@ public class TestTaskReader extends TableDataTestBase {
     Expression filter = Expressions.equal("op_time", "2022-01-01T12:00:00");
     List<KeyedTableScanTask> readTasks = planReadTask(filter);
     Assert.assertEquals(2, readTasks.size());
-    Set<Record> records = Sets.newHashSet(tableTestHelper().readKeyedTable(getArcticTable().asKeyedTable(),
-        filter, null, useDiskMap, false));
-    //expect: (id=1),(id=6), change store can only be filtered by partition expression now.
+    Set<Record> records =
+        Sets.newHashSet(
+            tableTestHelper()
+                .readKeyedTable(getArcticTable().asKeyedTable(), filter, null, useDiskMap, false));
+    // expect: (id=1),(id=6), change store can only be filtered by partition expression now.
     Set<Record> expectRecords = Sets.newHashSet();
     expectRecords.add(allRecords.get(0));
     expectRecords.add(allRecords.get(5));
@@ -139,22 +164,30 @@ public class TestTaskReader extends TableDataTestBase {
     Expression filter = Expressions.greaterThan("op_time", "2022-01-10T12:00:00");
     List<KeyedTableScanTask> readTasks = planReadTask(filter);
     Assert.assertEquals(0, readTasks.size());
-    Set<Record> records = Sets.newHashSet(tableTestHelper().readKeyedTable(getArcticTable().asKeyedTable(),
-        filter, null, useDiskMap, false));
-    //expect: empty, change store can only be filtered by partition expression now.
+    Set<Record> records =
+        Sets.newHashSet(
+            tableTestHelper()
+                .readKeyedTable(getArcticTable().asKeyedTable(), filter, null, useDiskMap, false));
+    // expect: empty, change store can only be filtered by partition expression now.
     Set<Record> expectRecords = Sets.newHashSet();
     Assert.assertEquals(expectRecords, records);
   }
 
   @Test
   public void testReadChange() {
-    Set<Record> records = Sets.newHashSet(tableTestHelper().readChangeStore(getArcticTable().asKeyedTable(),
-        Expressions.alwaysTrue(), null, useDiskMap));
-    //expect: +(id=5),+(id=6),-(id=5)
+    Set<Record> records =
+        Sets.newHashSet(
+            tableTestHelper()
+                .readChangeStore(
+                    getArcticTable().asKeyedTable(), Expressions.alwaysTrue(), null, useDiskMap));
+    // expect: +(id=5),+(id=6),-(id=5)
     Set<Record> expectRecords = Sets.newHashSet();
-    expectRecords.add(MixedDataTestHelpers.appendMetaColumnValues(allRecords.get(4), 2, 1, ChangeAction.INSERT));
-    expectRecords.add(MixedDataTestHelpers.appendMetaColumnValues(allRecords.get(5), 2, 2, ChangeAction.INSERT));
-    expectRecords.add(MixedDataTestHelpers.appendMetaColumnValues(allRecords.get(4), 3, 1, ChangeAction.DELETE));
+    expectRecords.add(
+        MixedDataTestHelpers.appendMetaColumnValues(allRecords.get(4), 2, 1, ChangeAction.INSERT));
+    expectRecords.add(
+        MixedDataTestHelpers.appendMetaColumnValues(allRecords.get(5), 2, 2, ChangeAction.INSERT));
+    expectRecords.add(
+        MixedDataTestHelpers.appendMetaColumnValues(allRecords.get(4), 3, 1, ChangeAction.DELETE));
     Assert.assertEquals(expectRecords, records);
   }
 
@@ -179,9 +212,16 @@ public class TestTaskReader extends TableDataTestBase {
 
   @Test
   public void testReadDeletedData() {
-    Set<Record> records = Sets.newHashSet(tableTestHelper().readKeyedTable(getArcticTable().asKeyedTable(),
-        Expressions.alwaysTrue(), null, useDiskMap, true));
-    //expect: (id=4,id=5)
+    Set<Record> records =
+        Sets.newHashSet(
+            tableTestHelper()
+                .readKeyedTable(
+                    getArcticTable().asKeyedTable(),
+                    Expressions.alwaysTrue(),
+                    null,
+                    useDiskMap,
+                    true));
+    // expect: (id=4,id=5)
     Set<Record> expectRecords = Sets.newHashSet();
     expectRecords.add(allRecords.get(3));
     expectRecords.add(allRecords.get(4));

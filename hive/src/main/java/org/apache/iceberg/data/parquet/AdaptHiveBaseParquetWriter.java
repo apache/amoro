@@ -18,6 +18,8 @@
 
 package org.apache.iceberg.data.parquet;
 
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
+
 import org.apache.iceberg.parquet.AdaptHivePrimitiveWriter;
 import org.apache.iceberg.parquet.ParquetTypeVisitor;
 import org.apache.iceberg.parquet.ParquetValueWriter;
@@ -47,8 +49,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.concurrent.TimeUnit.MICROSECONDS;
-
 public abstract class AdaptHiveBaseParquetWriter<T> {
 
   @SuppressWarnings("unchecked")
@@ -56,7 +56,8 @@ public abstract class AdaptHiveBaseParquetWriter<T> {
     return (ParquetValueWriter<T>) ParquetTypeVisitor.visit(type, new WriteBuilder(type));
   }
 
-  protected abstract ParquetValueWriters.StructWriter<T> createStructWriter(List<ParquetValueWriter<?>> writers);
+  protected abstract ParquetValueWriters.StructWriter<T> createStructWriter(
+      List<ParquetValueWriter<?>> writers);
 
   private class WriteBuilder extends ParquetTypeVisitor<ParquetValueWriter<?>> {
     private final MessageType type;
@@ -66,15 +67,15 @@ public abstract class AdaptHiveBaseParquetWriter<T> {
     }
 
     @Override
-    public ParquetValueWriter<?> message(MessageType message, List<ParquetValueWriter<?>> fieldWriters) {
+    public ParquetValueWriter<?> message(
+        MessageType message, List<ParquetValueWriter<?>> fieldWriters) {
 
       return struct(message.asGroupType(), fieldWriters);
     }
 
     @Override
     public ParquetValueWriter<?> struct(
-        GroupType struct,
-        List<ParquetValueWriter<?>> fieldWriters) {
+        GroupType struct, List<ParquetValueWriter<?>> fieldWriters) {
       List<Type> fields = struct.getFields();
       List<ParquetValueWriter<?>> writers = Lists.newArrayListWithExpectedSize(fieldWriters.size());
       for (int i = 0; i < fields.size(); i += 1) {
@@ -97,15 +98,13 @@ public abstract class AdaptHiveBaseParquetWriter<T> {
       org.apache.parquet.schema.Type elementType = repeated.getType(0);
       int elementD = type.getMaxDefinitionLevel(path(elementType.getName()));
 
-      return ParquetValueWriters.collections(repeatedD, repeatedR,
-          ParquetValueWriters.option(elementType, elementD, elementWriter));
+      return ParquetValueWriters.collections(
+          repeatedD, repeatedR, ParquetValueWriters.option(elementType, elementD, elementWriter));
     }
 
     @Override
     public ParquetValueWriter<?> map(
-        GroupType map,
-        ParquetValueWriter<?> keyWriter,
-        ParquetValueWriter<?> valueWriter) {
+        GroupType map, ParquetValueWriter<?> keyWriter, ParquetValueWriter<?> valueWriter) {
       GroupType repeatedKeyValue = map.getFields().get(0).asGroupType();
       String[] repeatedPath = currentPath();
 
@@ -117,7 +116,9 @@ public abstract class AdaptHiveBaseParquetWriter<T> {
       org.apache.parquet.schema.Type valueType = repeatedKeyValue.getType(1);
       int valueD = type.getMaxDefinitionLevel(path(valueType.getName()));
 
-      return ParquetValueWriters.maps(repeatedD, repeatedR,
+      return ParquetValueWriters.maps(
+          repeatedD,
+          repeatedR,
           ParquetValueWriters.option(keyType, keyD, keyWriter),
           ParquetValueWriters.option(valueType, valueD, valueWriter));
     }
@@ -149,18 +150,19 @@ public abstract class AdaptHiveBaseParquetWriter<T> {
           return ParquetValueWriters.floats(desc);
         case DOUBLE:
           return ParquetValueWriters.doubles(desc);
-        //Change For Arctic ⬇
+          // Change For Arctic ⬇
         case INT96:
           return new TimestampInt96Writer(desc);
-        //Change For Arctic ⬆
+          // Change For Arctic ⬆
         default:
           throw new UnsupportedOperationException("Unsupported type: " + primitive);
       }
     }
   }
 
-  private static class LogicalTypeWriterVisitor implements
-      LogicalTypeAnnotation.LogicalTypeAnnotationVisitor<ParquetValueWriters.PrimitiveWriter<?>> {
+  private static class LogicalTypeWriterVisitor
+      implements LogicalTypeAnnotation.LogicalTypeAnnotationVisitor<
+          ParquetValueWriters.PrimitiveWriter<?>> {
     private final ColumnDescriptor desc;
 
     private LogicalTypeWriterVisitor(ColumnDescriptor desc) {
@@ -184,15 +186,18 @@ public abstract class AdaptHiveBaseParquetWriter<T> {
         LogicalTypeAnnotation.DecimalLogicalTypeAnnotation decimalType) {
       switch (desc.getPrimitiveType().getPrimitiveTypeName()) {
         case INT32:
-          return Optional.of(ParquetValueWriters.decimalAsInteger(
-              desc, decimalType.getPrecision(), decimalType.getScale()));
+          return Optional.of(
+              ParquetValueWriters.decimalAsInteger(
+                  desc, decimalType.getPrecision(), decimalType.getScale()));
         case INT64:
-          return Optional.of(ParquetValueWriters.decimalAsLong(
-              desc, decimalType.getPrecision(), decimalType.getScale()));
+          return Optional.of(
+              ParquetValueWriters.decimalAsLong(
+                  desc, decimalType.getPrecision(), decimalType.getScale()));
         case BINARY:
         case FIXED_LEN_BYTE_ARRAY:
-          return Optional.of(ParquetValueWriters.decimalAsFixed(
-              desc, decimalType.getPrecision(), decimalType.getScale()));
+          return Optional.of(
+              ParquetValueWriters.decimalAsFixed(
+                  desc, decimalType.getPrecision(), decimalType.getScale()));
       }
       return Optional.empty();
     }
@@ -212,8 +217,10 @@ public abstract class AdaptHiveBaseParquetWriter<T> {
     @Override
     public Optional<ParquetValueWriters.PrimitiveWriter<?>> visit(
         LogicalTypeAnnotation.TimestampLogicalTypeAnnotation timestampType) {
-      Preconditions.checkArgument(LogicalTypeAnnotation.TimeUnit.MICROS.equals(timestampType.getUnit()),
-          "Cannot write timestamp in %s, only MICROS is supported", timestampType.getUnit());
+      Preconditions.checkArgument(
+          LogicalTypeAnnotation.TimeUnit.MICROS.equals(timestampType.getUnit()),
+          "Cannot write timestamp in %s, only MICROS is supported",
+          timestampType.getUnit());
       if (timestampType.isAdjustedToUTC()) {
         return Optional.of(new TimestamptzWriter(desc));
       } else {
@@ -280,12 +287,12 @@ public abstract class AdaptHiveBaseParquetWriter<T> {
     @Override
     public void write(int repetitionLevel, LocalDateTime value) {
       column.writeLong(
-          repetitionLevel,
-          ChronoUnit.MICROS.between(EPOCH, value.atOffset(ZoneOffset.UTC)));
+          repetitionLevel, ChronoUnit.MICROS.between(EPOCH, value.atOffset(ZoneOffset.UTC)));
     }
   }
 
-  private static class TimestamptzWriter extends ParquetValueWriters.PrimitiveWriter<OffsetDateTime> {
+  private static class TimestamptzWriter
+      extends ParquetValueWriters.PrimitiveWriter<OffsetDateTime> {
     private TimestamptzWriter(ColumnDescriptor desc) {
       super(desc);
     }
@@ -307,7 +314,7 @@ public abstract class AdaptHiveBaseParquetWriter<T> {
     }
   }
 
-  //Change For Arctic ⬇
+  // Change For Arctic ⬇
   private static class TimestampInt96Writer<T> extends AdaptHivePrimitiveWriter<T> {
 
     private static final long JULIAN_DAY_OF_EPOCH = 2440588L;
@@ -319,9 +326,7 @@ public abstract class AdaptHiveBaseParquetWriter<T> {
       super(descriptor);
     }
 
-    /**
-     * Writes nano timestamps to parquet int96
-     */
+    /** Writes nano timestamps to parquet int96 */
     void writeBinary(int repetitionLevel, int julianDay, long nanosOfDay) {
       ByteBuffer buf = ByteBuffer.allocate(12);
       buf.order(ByteOrder.LITTLE_ENDIAN);
@@ -343,13 +348,13 @@ public abstract class AdaptHiveBaseParquetWriter<T> {
       writeBinary(repetitionLevel, day, nanos);
     }
 
-    /**
-     * Writes Julian day and nanoseconds in a day from the local date time
-     */
+    /** Writes Julian day and nanoseconds in a day from the local date time */
     void writeLocalDateTime(int repetitionLevel, LocalDateTime value) {
       long timestamp = value.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
       int julianDay = (int) (timestamp / MILLIS_IN_DAY + 2440588L);
-      long nanosOfDay = timestamp % MILLIS_IN_DAY * NANOS_PER_MILLISECOND + value.getNano() % NANOS_PER_MILLISECOND;
+      long nanosOfDay =
+          timestamp % MILLIS_IN_DAY * NANOS_PER_MILLISECOND
+              + value.getNano() % NANOS_PER_MILLISECOND;
       writeBinary(repetitionLevel, julianDay, nanosOfDay);
     }
 
@@ -357,7 +362,8 @@ public abstract class AdaptHiveBaseParquetWriter<T> {
       long timestamp = offsetDateTime.toInstant().toEpochMilli();
       int julianDay = (int) (timestamp / MILLIS_IN_DAY + 2440588L);
       long nanosOfDay =
-          timestamp % MILLIS_IN_DAY * NANOS_PER_MILLISECOND + offsetDateTime.getNano() % NANOS_PER_MILLISECOND;
+          timestamp % MILLIS_IN_DAY * NANOS_PER_MILLISECOND
+              + offsetDateTime.getNano() % NANOS_PER_MILLISECOND;
       writeBinary(repetitionLevel, julianDay, nanosOfDay);
     }
 
@@ -374,5 +380,5 @@ public abstract class AdaptHiveBaseParquetWriter<T> {
       }
     }
   }
-  //Change For Arctic ⬆
+  // Change For Arctic ⬆
 }

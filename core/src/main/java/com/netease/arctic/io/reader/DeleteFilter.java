@@ -61,15 +61,13 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * Copy from Iceberg {@link org.apache.iceberg.data.DeleteFilter}.
- * 1. Add Cache Position deletes and eq deletes if reuse this filter
- * 2. remove merge sort for position delete
+ * Copy from Iceberg {@link org.apache.iceberg.data.DeleteFilter}. 1. Add Cache Position deletes and
+ * eq deletes if reuse this filter 2. remove merge sort for position delete
  */
 public abstract class DeleteFilter<T> {
   private static final long DEFAULT_SET_FILTER_THRESHOLD = 100_000L;
-  private static final Schema POS_DELETE_SCHEMA = new Schema(
-      MetadataColumns.DELETE_FILE_PATH,
-      MetadataColumns.DELETE_FILE_POS);
+  private static final Schema POS_DELETE_SCHEMA =
+      new Schema(MetadataColumns.DELETE_FILE_PATH, MetadataColumns.DELETE_FILE_POS);
 
   private final DataFile dataFile;
   private final List<DeleteFile> posDeletes;
@@ -81,10 +79,11 @@ public abstract class DeleteFilter<T> {
 
   private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
 
-  protected DeleteFilter(FileScanTask task,
-                         Schema tableSchema,
-                         Schema requestedSchema,
-                         StructLikeCollections structLikeCollections) {
+  protected DeleteFilter(
+      FileScanTask task,
+      Schema tableSchema,
+      Schema requestedSchema,
+      StructLikeCollections structLikeCollections) {
     this(task, tableSchema, requestedSchema);
     this.structLikeCollections = structLikeCollections;
   }
@@ -102,7 +101,8 @@ public abstract class DeleteFilter<T> {
           eqDeleteBuilder.add(delete);
           break;
         default:
-          throw new UnsupportedOperationException("Unknown delete file content: " + delete.content());
+          throw new UnsupportedOperationException(
+              "Unknown delete file content: " + delete.content());
       }
     }
 
@@ -129,8 +129,9 @@ public abstract class DeleteFilter<T> {
   }
 
   public CloseableIterable<T> filter(CloseableIterable<T> records) {
-    return new CloseableIterableWrapper<>(applyEqDeletes(applyPosDeletes(records)), eqDeletePredicate == null ? null
-        : eqDeletePredicate.toArray(new Closeable[0]));
+    return new CloseableIterableWrapper<>(
+        applyEqDeletes(applyPosDeletes(records)),
+        eqDeletePredicate == null ? null : eqDeletePredicate.toArray(new Closeable[0]));
   }
 
   private List<CloseablePredicate<T>> applyEqDeletes() {
@@ -143,12 +144,14 @@ public abstract class DeleteFilter<T> {
       return isInDeleteSets;
     }
 
-    Multimap<Set<Integer>, DeleteFile> filesByDeleteIds = Multimaps.newMultimap(Maps.newHashMap(), Lists::newArrayList);
+    Multimap<Set<Integer>, DeleteFile> filesByDeleteIds =
+        Multimaps.newMultimap(Maps.newHashMap(), Lists::newArrayList);
     for (DeleteFile delete : eqDeletes) {
       filesByDeleteIds.put(Sets.newHashSet(delete.equalityFieldIds()), delete);
     }
 
-    for (Map.Entry<Set<Integer>, Collection<DeleteFile>> entry : filesByDeleteIds.asMap().entrySet()) {
+    for (Map.Entry<Set<Integer>, Collection<DeleteFile>> entry :
+        filesByDeleteIds.asMap().entrySet()) {
       Set<Integer> ids = entry.getKey();
       Iterable<DeleteFile> deletes = entry.getValue();
 
@@ -157,14 +160,17 @@ public abstract class DeleteFilter<T> {
       // a projection to select and reorder fields of the file schema to match the delete rows
       StructProjection projectRow = StructProjection.create(requiredSchema, deleteSchema);
 
-      Iterable<CloseableIterable<Record>> deleteRecords = Iterables.transform(deletes,
-          delete -> openDeletes(delete, deleteSchema));
-      StructLikeSet deleteSet = Deletes.toEqualitySet(
-          // copy the delete records because they will be held in a set
-          CloseableIterable.transform(CloseableIterable.concat(deleteRecords), Record::copy),
-          deleteSchema.asStruct(), structLikeCollections);
+      Iterable<CloseableIterable<Record>> deleteRecords =
+          Iterables.transform(deletes, delete -> openDeletes(delete, deleteSchema));
+      StructLikeSet deleteSet =
+          Deletes.toEqualitySet(
+              // copy the delete records because they will be held in a set
+              CloseableIterable.transform(CloseableIterable.concat(deleteRecords), Record::copy),
+              deleteSchema.asStruct(),
+              structLikeCollections);
 
-      Predicate<T> isInDeleteSet = record -> deleteSet.contains(projectRow.wrap(asStructLike(record)));
+      Predicate<T> isInDeleteSet =
+          record -> deleteSet.contains(projectRow.wrap(asStructLike(record)));
       CloseablePredicate<T> closeablePredicate = new CloseablePredicate<>(isInDeleteSet, deleteSet);
       isInDeleteSets.add(closeablePredicate);
     }
@@ -174,34 +180,35 @@ public abstract class DeleteFilter<T> {
 
   private CloseableIterable<T> applyEqDeletes(CloseableIterable<T> records) {
     // Predicate to test whether a row should be visible to user after applying equality deletions.
-    Predicate<T> remainingRows = applyEqDeletes().stream()
-        .map(Predicate::negate)
-        .reduce(Predicate::and)
-        .orElse(t -> true);
+    Predicate<T> remainingRows =
+        applyEqDeletes().stream().map(Predicate::negate).reduce(Predicate::and).orElse(t -> true);
 
-    Filter<T> remainingRowsFilter = new Filter<T>() {
-      @Override
-      protected boolean shouldKeep(T item) {
-        return remainingRows.test(item);
-      }
-    };
+    Filter<T> remainingRowsFilter =
+        new Filter<T>() {
+          @Override
+          protected boolean shouldKeep(T item) {
+            return remainingRows.test(item);
+          }
+        };
 
     return remainingRowsFilter.filter(records);
   }
 
   public CloseableIterable<T> findEqualityDeleteRows(CloseableIterable<T> records) {
     // Predicate to test whether a row has been deleted by equality deletions.
-    Predicate<T> deletedRows = applyEqDeletes().stream()
-        .map(s -> (Predicate<T>)s)
-        .reduce(Predicate::or)
-        .orElse(t -> false);
+    Predicate<T> deletedRows =
+        applyEqDeletes().stream()
+            .map(s -> (Predicate<T>) s)
+            .reduce(Predicate::or)
+            .orElse(t -> false);
 
-    Filter<T> deletedRowsFilter = new Filter<T>() {
-      @Override
-      protected boolean shouldKeep(T item) {
-        return deletedRows.test(item);
-      }
-    };
+    Filter<T> deletedRowsFilter =
+        new Filter<T>() {
+          @Override
+          protected boolean shouldKeep(T item) {
+            return deletedRows.test(item);
+          }
+        };
     return deletedRowsFilter.filter(records);
   }
 
@@ -217,9 +224,7 @@ public abstract class DeleteFilter<T> {
       this.positionSet = Deletes.toPositionSet(dataFile.path(), CloseableIterable.concat(deletes));
     }
 
-    return Deletes.filter(
-        records, this::pos,
-        positionSet);
+    return Deletes.filter(records, this::pos, positionSet);
   }
 
   private CloseableIterable<Record> openPosDeletes(DeleteFile file) {
@@ -237,13 +242,16 @@ public abstract class DeleteFilter<T> {
             .build();
 
       case PARQUET:
-        Parquet.ReadBuilder builder = Parquet.read(input)
-            .project(deleteSchema)
-            .reuseContainers()
-            .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(deleteSchema, fileSchema));
+        Parquet.ReadBuilder builder =
+            Parquet.read(input)
+                .project(deleteSchema)
+                .reuseContainers()
+                .createReaderFunc(
+                    fileSchema -> GenericParquetReaders.buildReader(deleteSchema, fileSchema));
 
         if (deleteFile.content() == FileContent.POSITION_DELETES) {
-          builder.filter(Expressions.equal(MetadataColumns.DELETE_FILE_PATH.name(), dataFile.path()));
+          builder.filter(
+              Expressions.equal(MetadataColumns.DELETE_FILE_PATH.name(), dataFile.path()));
         }
 
         return builder.build();
@@ -257,18 +265,24 @@ public abstract class DeleteFilter<T> {
                     fileSchema -> GenericOrcReader.buildReader(deleteSchema, fileSchema));
 
         if (deleteFile.content() == FileContent.POSITION_DELETES) {
-          orcBuilder.filter(Expressions.equal(MetadataColumns.DELETE_FILE_PATH.name(), dataFile.path()));
+          orcBuilder.filter(
+              Expressions.equal(MetadataColumns.DELETE_FILE_PATH.name(), dataFile.path()));
         }
 
         return orcBuilder.build();
       default:
-        throw new UnsupportedOperationException(String.format(
-            "Cannot read deletes, %s is not a supported format: %s", deleteFile.format().name(), deleteFile.path()));
+        throw new UnsupportedOperationException(
+            String.format(
+                "Cannot read deletes, %s is not a supported format: %s",
+                deleteFile.format().name(), deleteFile.path()));
     }
   }
 
-  private static Schema fileProjection(Schema tableSchema, Schema requestedSchema,
-      List<DeleteFile> posDeletes, List<DeleteFile> eqDeletes) {
+  private static Schema fileProjection(
+      Schema tableSchema,
+      Schema requestedSchema,
+      List<DeleteFile> posDeletes,
+      List<DeleteFile> eqDeletes) {
     if (posDeletes.isEmpty() && eqDeletes.isEmpty()) {
       return requestedSchema;
     }
@@ -284,17 +298,20 @@ public abstract class DeleteFilter<T> {
 
     requiredIds.add(MetadataColumns.IS_DELETED.fieldId());
 
-    Set<Integer> missingIds = Sets.newLinkedHashSet(
-        Sets.difference(requiredIds, TypeUtil.getProjectedIds(requestedSchema)));
+    Set<Integer> missingIds =
+        Sets.newLinkedHashSet(
+            Sets.difference(requiredIds, TypeUtil.getProjectedIds(requestedSchema)));
 
     if (missingIds.isEmpty()) {
       return requestedSchema;
     }
 
-    // TODO: support adding nested columns. this will currently fail when finding nested columns to add
+    // TODO: support adding nested columns. this will currently fail when finding nested columns to
+    // add
     List<Types.NestedField> columns = Lists.newArrayList(requestedSchema.columns());
     for (int fieldId : missingIds) {
-      if (fieldId == MetadataColumns.ROW_POSITION.fieldId() || fieldId == MetadataColumns.IS_DELETED.fieldId()) {
+      if (fieldId == MetadataColumns.ROW_POSITION.fieldId()
+          || fieldId == MetadataColumns.IS_DELETED.fieldId()) {
         continue; // add _pos and _deleted at the end
       }
 

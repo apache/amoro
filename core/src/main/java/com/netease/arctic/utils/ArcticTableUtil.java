@@ -7,6 +7,7 @@ import com.netease.arctic.table.UnkeyedTable;
 public class ArcticTableUtil {
   /**
    * check arctic table is iceberg table format
+   *
    * @param arcticTable target arctic table
    * @return Whether iceberg table format
    */
@@ -14,9 +15,7 @@ public class ArcticTableUtil {
     return arcticTable instanceof IcebergCatalogWrapper.BasicIcebergTable;
   }
 
-  /**
-   * Return the base store of the arctic table.
-   */
+  /** Return the base store of the arctic table. */
   public static UnkeyedTable baseStore(ArcticTable arcticTable) {
     if (arcticTable.isKeyedTable()) {
       return arcticTable.asKeyedTable().baseTable();
@@ -25,9 +24,7 @@ public class ArcticTableUtil {
     }
   }
 
-  /**
-   * Return the table root location of the arctic table.
-   */
+  /** Return the table root location of the arctic table. */
   public static String tableRootLocation(ArcticTable arcticTable) {
     String tableRootLocation;
     if (!ArcticTableUtil.isIcebergTableFormat(arcticTable) && arcticTable.isUnkeyedTable()) {

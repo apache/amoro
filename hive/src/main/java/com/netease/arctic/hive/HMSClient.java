@@ -37,62 +37,53 @@ public interface HMSClient {
 
   List<String> getAllDatabases() throws TException;
 
-  void alterPartition(String dbName, String tblName, Partition newPart, EnvironmentContext environmentContext)
-      throws TException, ClassNotFoundException,
-      NoSuchMethodException, InvocationTargetException, IllegalAccessException;
+  void alterPartition(
+      String dbName, String tblName, Partition newPart, EnvironmentContext environmentContext)
+      throws TException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
+          IllegalAccessException;
 
-  Partition getPartition(String dbName, String tblName,
-                         List<String> partVals) throws TException;
+  Partition getPartition(String dbName, String tblName, List<String> partVals) throws TException;
 
-  Partition getPartition(String dbName, String tblName,
-                         String name) throws TException;
+  Partition getPartition(String dbName, String tblName, String name) throws TException;
 
-  Table getTable(String dbName, String tableName) throws
-      TException;
+  Table getTable(String dbName, String tableName) throws TException;
 
-  void alterTable(String defaultDatabaseName, String tblName,
-                  Table table) throws TException;
+  void alterTable(String defaultDatabaseName, String tblName, Table table) throws TException;
 
-  List<Partition> listPartitions(String dbName, String tblName,
-                                 short maxParts) throws TException;
+  List<Partition> listPartitions(String dbName, String tblName, short maxParts) throws TException;
 
-  List<Partition> listPartitions(String dbName, String tblName,
-                                 List<String> partVals, short maxParts)
-      throws TException;
+  List<Partition> listPartitions(
+      String dbName, String tblName, List<String> partVals, short maxParts) throws TException;
 
-  List<String> listPartitionNames(String dbName, String tblName,
-                                  short maxParts) throws TException;
+  List<String> listPartitionNames(String dbName, String tblName, short maxParts) throws TException;
 
-
-  void createDatabase(Database db)
-      throws TException;
+  void createDatabase(Database db) throws TException;
 
   void dropDatabase(String name, boolean deleteData, boolean ignoreUnknownDb, boolean cascade)
       throws TException;
 
-  void dropTable(String dbname, String tableName, boolean deleteData,
-                 boolean ignoreUnknownTab) throws TException;
-
-  void createTable(Table tbl) throws
-      TException;
-
-  Database getDatabase(String databaseName)
+  void dropTable(String dbname, String tableName, boolean deleteData, boolean ignoreUnknownTab)
       throws TException;
 
-  Partition addPartition(Partition partition)
+  void createTable(Table tbl) throws TException;
+
+  Database getDatabase(String databaseName) throws TException;
+
+  Partition addPartition(Partition partition) throws TException;
+
+  boolean dropPartition(
+      String dbName, String tblName, List<String> partVals, PartitionDropOptions options)
       throws TException;
 
-  boolean dropPartition(String dbName, String tblName, List<String> partVals,
-                        PartitionDropOptions options) throws TException;
-
-  int addPartitions(List<Partition> partitions)
-      throws TException;
-
+  int addPartitions(List<Partition> partitions) throws TException;
 
   List<String> getAllTables(String dbName) throws TException;
 
-  void alterPartitions(String dbName, String tblName, List<Partition> newParts, EnvironmentContext environmentContext)
+  void alterPartitions(
+      String dbName,
+      String tblName,
+      List<Partition> newParts,
+      EnvironmentContext environmentContext)
       throws TException, InstantiationException, IllegalAccessException, NoSuchMethodException,
-      InvocationTargetException, ClassNotFoundException;
-
+          InvocationTargetException, ClassNotFoundException;
 }

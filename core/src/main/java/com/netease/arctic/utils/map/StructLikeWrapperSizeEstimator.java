@@ -22,9 +22,7 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.util.StructLikeWrapper;
 import org.apache.lucene.util.RamUsageEstimator;
 
-/**
- * Size Estimator for StructLikeWrapper record payload.
- */
+/** Size Estimator for StructLikeWrapper record payload. */
 public class StructLikeWrapperSizeEstimator implements SizeEstimator<StructLikeWrapper> {
   @Override
   public long sizeEstimate(StructLikeWrapper structLikeWrapper) {

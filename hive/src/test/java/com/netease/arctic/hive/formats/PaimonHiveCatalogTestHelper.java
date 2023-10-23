@@ -29,15 +29,14 @@ import java.util.Map;
 
 public class PaimonHiveCatalogTestHelper extends PaimonHadoopCatalogTestHelper {
 
-  public PaimonHiveCatalogTestHelper(
-      String catalogName,
-      Map<String, String> catalogProperties) {
+  public PaimonHiveCatalogTestHelper(String catalogName, Map<String, String> catalogProperties) {
     super(catalogName, catalogProperties);
   }
 
   @Override
   public void initHiveConf(Configuration hiveConf) {
-    catalogProperties.put(CatalogOptions.URI.key(), hiveConf.get(HiveConf.ConfVars.METASTOREURIS.varname));
+    catalogProperties.put(
+        CatalogOptions.URI.key(), hiveConf.get(HiveConf.ConfVars.METASTOREURIS.varname));
   }
 
   protected String getMetastoreType() {
@@ -45,8 +44,6 @@ public class PaimonHiveCatalogTestHelper extends PaimonHadoopCatalogTestHelper {
   }
 
   public static PaimonHiveCatalogTestHelper defaultHelper() {
-    return new PaimonHiveCatalogTestHelper(
-        "test_paimon_catalog",
-        new HashMap<>());
+    return new PaimonHiveCatalogTestHelper("test_paimon_catalog", new HashMap<>());
   }
 }

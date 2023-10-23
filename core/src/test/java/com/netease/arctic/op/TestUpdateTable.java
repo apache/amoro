@@ -18,6 +18,9 @@
 
 package com.netease.arctic.op;
 
+import static org.apache.iceberg.types.Types.NestedField.optional;
+import static org.apache.iceberg.types.Types.NestedField.required;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
@@ -31,13 +34,11 @@ import org.junit.Test;
 
 import java.util.Map;
 
-import static org.apache.iceberg.types.Types.NestedField.optional;
-import static org.apache.iceberg.types.Types.NestedField.required;
-
 public class TestUpdateTable extends TableTestBase {
 
   public TestUpdateTable() {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(true, true));
   }
 
@@ -76,32 +77,41 @@ public class TestUpdateTable extends TableTestBase {
     UpdateSchema us = getArcticTable().asKeyedTable().baseTable().updateSchema();
     us.addColumn("height", Types.FloatType.get(), "height");
     us.addColumn("birthday", Types.DateType.get());
-    us.addColumn("preferences", Types.StructType.of(
-        required(1, "feature1", Types.IntegerType.get()),
-        optional(2, "feature2", Types.StructType.of(
-            required(3, "item1", Types.IntegerType.get()),
-            optional(4, "optional", Types.BooleanType.get())
-        ))
-    ), "struct of named boolean options");
-    us.addColumn("locations", Types.MapType.ofRequired(5, 6,
+    us.addColumn(
+        "preferences",
         Types.StructType.of(
-            required(7, "address", Types.StringType.get()),
-            required(8, "city", Types.StringType.get()),
-            required(9, "state", Types.StringType.get()),
-            required(10, "zip", Types.IntegerType.get())
-        ),
-        Types.StructType.of(
-            required(11, "lat", Types.DoubleType.get()),
-            required(12, "alt", Types.DoubleType.get()),
-            required(13, "long", Types.FloatType.get())
-        )), "map of address to coordinate");
-    us.addColumn("points", Types.ListType.ofOptional(
-        14,
-        Types.StructType.of(
-            required(15, "x", Types.LongType.get()),
-            required(16, "y", Types.IntegerType.get()),
-            required(17, "z", Types.IntegerType.get())
-        )), "2-D cartesian points");
+            required(1, "feature1", Types.IntegerType.get()),
+            optional(
+                2,
+                "feature2",
+                Types.StructType.of(
+                    required(3, "item1", Types.IntegerType.get()),
+                    optional(4, "optional", Types.BooleanType.get())))),
+        "struct of named boolean options");
+    us.addColumn(
+        "locations",
+        Types.MapType.ofRequired(
+            5,
+            6,
+            Types.StructType.of(
+                required(7, "address", Types.StringType.get()),
+                required(8, "city", Types.StringType.get()),
+                required(9, "state", Types.StringType.get()),
+                required(10, "zip", Types.IntegerType.get())),
+            Types.StructType.of(
+                required(11, "lat", Types.DoubleType.get()),
+                required(12, "alt", Types.DoubleType.get()),
+                required(13, "long", Types.FloatType.get()))),
+        "map of address to coordinate");
+    us.addColumn(
+        "points",
+        Types.ListType.ofOptional(
+            14,
+            Types.StructType.of(
+                required(15, "x", Types.LongType.get()),
+                required(16, "y", Types.IntegerType.get()),
+                required(17, "z", Types.IntegerType.get()))),
+        "2-D cartesian points");
 
     us.commit();
     KeyedSchemaUpdate.syncSchema(getArcticTable().asKeyedTable());
@@ -109,12 +119,16 @@ public class TestUpdateTable extends TableTestBase {
     us = getArcticTable().asKeyedTable().baseTable().updateSchema();
     // primitive
     us.renameColumn("name", "name.nick");
-    us.addColumn("friends", Types.StructType.of(
-        required(18, "name", Types.IntegerType.get()),
-        optional(19, "locations", Types.StructType.of(
-            required(20, "lat", Types.IntegerType.get()),
-            optional(21, "long", Types.BooleanType.get())
-        ))));
+    us.addColumn(
+        "friends",
+        Types.StructType.of(
+            required(18, "name", Types.IntegerType.get()),
+            optional(
+                19,
+                "locations",
+                Types.StructType.of(
+                    required(20, "lat", Types.IntegerType.get()),
+                    optional(21, "long", Types.BooleanType.get())))));
     us.updateColumn("height", Types.DoubleType.get(), "height double");
     us.deleteColumn("birthday");
 
@@ -125,22 +139,25 @@ public class TestUpdateTable extends TableTestBase {
     us.deleteColumn("locations.alt");
 
     // list
-    us.addColumn("pets", Types.MapType.ofRequired(22, 23,
-        Types.StructType.of(
-            required(24, "name", Types.StringType.get())
-        ),
-        Types.StructType.of(
-            required(25, "weight", Types.DoubleType.get())
-        )), "pet list");
+    us.addColumn(
+        "pets",
+        Types.MapType.ofRequired(
+            22,
+            23,
+            Types.StructType.of(required(24, "name", Types.StringType.get())),
+            Types.StructType.of(required(25, "weight", Types.DoubleType.get()))),
+        "pet list");
     us.renameColumn("points.x", "x.y");
     us.updateColumn("points.y", Types.LongType.get());
     us.deleteColumn("points.z");
 
     // struct
-    us.addColumn("preferences", "a", Types.StructType.of(
-        required(26, "a1", Types.IntegerType.get()),
-        optional(27, "a2", Types.BooleanType.get())
-    ));
+    us.addColumn(
+        "preferences",
+        "a",
+        Types.StructType.of(
+            required(26, "a1", Types.IntegerType.get()),
+            optional(27, "a2", Types.BooleanType.get())));
     us.updateColumn("preferences.feature1", Types.LongType.get());
     us.renameColumn("preferences.feature2", "feature3");
     us.deleteColumn("preferences.feature2.item1");

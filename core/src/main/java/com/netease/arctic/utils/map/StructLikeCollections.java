@@ -42,7 +42,8 @@ public class StructLikeCollections implements Serializable {
     }
   }
 
-  public StructLikeCollections(boolean enableSpillableMap, long maxInMemorySizeInBytes, String backendBaseDir) {
+  public StructLikeCollections(
+      boolean enableSpillableMap, long maxInMemorySizeInBytes, String backendBaseDir) {
     this.enableSpillableMap = enableSpillableMap;
     this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
     this.backendBaseDir = backendBaseDir;

@@ -27,9 +27,9 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 
-
 /**
  * A base class of interface {@link TableBuilder}
+ *
  * @param <ThisT> self class
  */
 public abstract class BasicTableBuilder<ThisT extends TableBuilder> implements TableBuilder {
@@ -42,13 +42,11 @@ public abstract class BasicTableBuilder<ThisT extends TableBuilder> implements T
   protected final TableIdentifier identifier;
   protected final TableFormat format;
 
-
   public BasicTableBuilder(Schema schema, TableFormat format, TableIdentifier identifier) {
     this.schema = schema;
     this.format = format;
     this.identifier = identifier;
   }
-
 
   @Override
   public TableBuilder withPartitionSpec(PartitionSpec partitionSpec) {

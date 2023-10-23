@@ -60,10 +60,13 @@ public class TestAms extends ExternalResource {
     if (SingletonResourceUtil.isUseSingletonResource()) {
       if (!mockAms.isStarted()) {
         mockAms.start();
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-          SINGLETON.stopAndCleanUp();
-          LOG.info("Stop singleton mock AMS after testing.");
-        }));
+        Runtime.getRuntime()
+            .addShutdownHook(
+                new Thread(
+                    () -> {
+                      SINGLETON.stopAndCleanUp();
+                      LOG.info("Stop singleton mock AMS after testing.");
+                    }));
         LOG.info("Start singleton mock AMS before testing.");
       }
     } else {

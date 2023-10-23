@@ -194,25 +194,40 @@ public class ReplaceHivePartitions implements ReplacePartitions {
   }
 
   private void commitPartitionProperties() {
-    UpdatePartitionProperties updatePartitionProperties = table.updatePartitionProperties(transaction);
+    UpdatePartitionProperties updatePartitionProperties =
+        table.updatePartitionProperties(transaction);
     if (table.spec().isUnpartitioned() && unpartitionTableLocation != null) {
-      updatePartitionProperties.set(TablePropertyUtil.EMPTY_STRUCT,
-          HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, unpartitionTableLocation);
-      updatePartitionProperties.set(TablePropertyUtil.EMPTY_STRUCT,
-          HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, commitTimestamp + "");
+      updatePartitionProperties.set(
+          TablePropertyUtil.EMPTY_STRUCT,
+          HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
+          unpartitionTableLocation);
+      updatePartitionProperties.set(
+          TablePropertyUtil.EMPTY_STRUCT,
+          HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+          commitTimestamp + "");
     } else {
-      rewritePartitions.forEach((partitionData, partition) -> {
-        updatePartitionProperties.set(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
-            partition.getSd().getLocation());
-        updatePartitionProperties.set(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
-            commitTimestamp + "");
-      });
-      newPartitions.forEach((partitionData, partition) -> {
-        updatePartitionProperties.set(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
-            partition.getSd().getLocation());
-        updatePartitionProperties.set(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
-            commitTimestamp + "");
-      });
+      rewritePartitions.forEach(
+          (partitionData, partition) -> {
+            updatePartitionProperties.set(
+                partitionData,
+                HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
+                partition.getSd().getLocation());
+            updatePartitionProperties.set(
+                partitionData,
+                HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+                commitTimestamp + "");
+          });
+      newPartitions.forEach(
+          (partitionData, partition) -> {
+            updatePartitionProperties.set(
+                partitionData,
+                HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
+                partition.getSd().getLocation());
+            updatePartitionProperties.set(
+                partitionData,
+                HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+                commitTimestamp + "");
+          });
     }
     updatePartitionProperties.commit();
   }
@@ -231,7 +246,8 @@ public class ReplaceHivePartitions implements ReplacePartitions {
     Map<String, List<String>> partitionValueMap = Maps.newHashMap();
 
     for (DataFile d : addFiles) {
-      List<String> partitionValues = HivePartitionUtil.partitionValuesAsList(d.partition(), partitionSchema);
+      List<String> partitionValues =
+          HivePartitionUtil.partitionValuesAsList(d.partition(), partitionSchema);
       String value = Joiner.on("/").join(partitionValues);
       String location = TableFileUtil.getFileDir(d.path().toString());
       partitionLocationMap.put(value, location);
@@ -242,8 +258,10 @@ public class ReplaceHivePartitions implements ReplacePartitions {
       partitionValueMap.put(value, partitionValues);
     }
 
-    partitionLocationMap.forEach((k, v) -> checkOrphanFilesAndDelete(v, partitionDataFileMap.get(k)));
-    partitionLocationMap.forEach((k, v) -> checkDataFileInSameLocation(v, partitionDataFileMap.get(k)));
+    partitionLocationMap.forEach(
+        (k, v) -> checkOrphanFilesAndDelete(v, partitionDataFileMap.get(k)));
+    partitionLocationMap.forEach(
+        (k, v) -> checkDataFileInSameLocation(v, partitionDataFileMap.get(k)));
 
     for (String val : partitionValueMap.keySet()) {
       List<String> values = partitionValueMap.get(val);
@@ -255,7 +273,8 @@ public class ReplaceHivePartitions implements ReplacePartitions {
         HivePartitionUtil.rewriteHivePartitions(partition, location, dataFiles, commitTimestamp);
         rewritePartitions.put(dataFiles.get(0).partition(), partition);
       } catch (NoSuchObjectException e) {
-        Partition p = HivePartitionUtil.newPartition(hiveTable, values, location, dataFiles, commitTimestamp);
+        Partition p =
+            HivePartitionUtil.newPartition(hiveTable, values, location, dataFiles, commitTimestamp);
         newPartitions.put(dataFiles.get(0).partition(), p);
       } catch (TException | InterruptedException e) {
         throw new RuntimeException(e);
@@ -263,12 +282,10 @@ public class ReplaceHivePartitions implements ReplacePartitions {
     }
   }
 
-  /**
-   * check files in the partition, and delete orphan files
-   */
+  /** check files in the partition, and delete orphan files */
   private void checkOrphanFilesAndDelete(String partitionLocation, List<DataFile> dataFiles) {
-    List<String> filePathCollect = dataFiles.stream()
-        .map(dataFile -> dataFile.path().toString()).collect(Collectors.toList());
+    List<String> filePathCollect =
+        dataFiles.stream().map(dataFile -> dataFile.path().toString()).collect(Collectors.toList());
 
     try (ArcticHadoopFileIO io = table.io()) {
       for (FileInfo info : io.listPrefix(partitionLocation)) {
@@ -284,14 +301,15 @@ public class ReplaceHivePartitions implements ReplacePartitions {
     if (!addFiles.isEmpty()) {
       final String newDataLocation = TableFileUtil.getFileDir(addFiles.get(0).path().toString());
       try {
-        transactionalHMSClient.run(c -> {
-          Table tbl = c.getTable(db, tableName);
-          tbl.getSd().setLocation(newDataLocation);
-          HiveTableUtil.generateTableProperties(commitTimestamp, addFiles)
-              .forEach((key, value) -> hiveTable.getParameters().put(key, value));
-          c.alterTable(db, tableName, tbl);
-          return 0;
-        });
+        transactionalHMSClient.run(
+            c -> {
+              Table tbl = c.getTable(db, tableName);
+              tbl.getSd().setLocation(newDataLocation);
+              HiveTableUtil.generateTableProperties(commitTimestamp, addFiles)
+                  .forEach((key, value) -> hiveTable.getParameters().put(key, value));
+              c.alterTable(db, tableName, tbl);
+              return 0;
+            });
       } catch (TException | InterruptedException e) {
         throw new RuntimeException(e);
       }
@@ -300,21 +318,25 @@ public class ReplaceHivePartitions implements ReplacePartitions {
 
   private void commitPartitionedTable() {
     try {
-      transactionalHMSClient.run(c -> {
-        if (!rewritePartitions.isEmpty()) {
-          try {
-            c.alterPartitions(db, tableName, Lists.newArrayList(rewritePartitions.values()), null);
-          } catch (InstantiationException | NoSuchMethodException |
-                   InvocationTargetException | IllegalAccessException |
-                   ClassNotFoundException e) {
-            throw new RuntimeException(e);
-          }
-        }
-        if (!newPartitions.isEmpty()) {
-          c.addPartitions(Lists.newArrayList(newPartitions.values()));
-        }
-        return 0;
-      });
+      transactionalHMSClient.run(
+          c -> {
+            if (!rewritePartitions.isEmpty()) {
+              try {
+                c.alterPartitions(
+                    db, tableName, Lists.newArrayList(rewritePartitions.values()), null);
+              } catch (InstantiationException
+                  | NoSuchMethodException
+                  | InvocationTargetException
+                  | IllegalAccessException
+                  | ClassNotFoundException e) {
+                throw new RuntimeException(e);
+              }
+            }
+            if (!newPartitions.isEmpty()) {
+              c.addPartitions(Lists.newArrayList(newPartitions.values()));
+            }
+            return 0;
+          });
     } catch (TException | InterruptedException e) {
       throw new RuntimeException(e);
     }
@@ -327,9 +349,11 @@ public class ReplaceHivePartitions implements ReplacePartitions {
       Path dirPath = new Path(fileDir);
       if (!partitionPath.equals(dirPath)) {
         throw new CannotAlterHiveLocationException(
-            "can't create new hive location: " + partitionLocation + " for data file: " + df.path().toString() +
-                " is not under partition location path"
-        );
+            "can't create new hive location: "
+                + partitionLocation
+                + " for data file: "
+                + df.path().toString()
+                + " is not under partition location path");
       }
     }
   }

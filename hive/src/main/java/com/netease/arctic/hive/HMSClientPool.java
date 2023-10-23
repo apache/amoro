@@ -21,5 +21,4 @@ package com.netease.arctic.hive;
 import org.apache.iceberg.ClientPool;
 import org.apache.thrift.TException;
 
-public interface HMSClientPool extends ClientPool<HMSClient, TException> {
-}
+public interface HMSClientPool extends ClientPool<HMSClient, TException> {}

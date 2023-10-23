@@ -31,9 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Basic {@link TableBlockerManager} implementation.
- */
+/** Basic {@link TableBlockerManager} implementation. */
 public class BasicTableBlockerManager implements TableBlockerManager {
 
   private final TableIdentifier tableIdentifier;
@@ -53,11 +51,13 @@ public class BasicTableBlockerManager implements TableBlockerManager {
       throws OperationConflictException {
     try {
       Preconditions.checkNotNull(properties, "properties should not be null");
-      return buildBlocker(client.block(tableIdentifier.buildTableIdentifier(), operations, properties), true);
+      return buildBlocker(
+          client.block(tableIdentifier.buildTableIdentifier(), operations, properties), true);
     } catch (OperationConflictException e) {
       throw e;
     } catch (TException e) {
-      throw new IllegalStateException("failed to block table " + tableIdentifier + " with " + operations, e);
+      throw new IllegalStateException(
+          "failed to block table " + tableIdentifier + " with " + operations, e);
     }
   }
 
@@ -66,15 +66,17 @@ public class BasicTableBlockerManager implements TableBlockerManager {
     try {
       client.releaseBlocker(tableIdentifier.buildTableIdentifier(), blocker.blockerId());
     } catch (TException e) {
-      throw new IllegalStateException("failed to release " + tableIdentifier + "'s blocker " + blocker.blockerId(), e);
+      throw new IllegalStateException(
+          "failed to release " + tableIdentifier + "'s blocker " + blocker.blockerId(), e);
     }
   }
 
   @Override
   public List<Blocker> getBlockers() {
     try {
-      return client.getBlockers(tableIdentifier.buildTableIdentifier())
-          .stream().map(this::buildBlocker).collect(Collectors.toList());
+      return client.getBlockers(tableIdentifier.buildTableIdentifier()).stream()
+          .map(this::buildBlocker)
+          .collect(Collectors.toList());
     } catch (TException e) {
       throw new IllegalStateException("failed to get blockers of " + tableIdentifier, e);
     }
@@ -89,19 +91,29 @@ public class BasicTableBlockerManager implements TableBlockerManager {
   }
 
   private Blocker buildBlocker(com.netease.arctic.ams.api.Blocker blocker, boolean needInit) {
-    if (blocker.getProperties() != null &&
-        blocker.getProperties().get(RenewableBlocker.EXPIRATION_TIME_PROPERTY) != null &&
-        blocker.getProperties().get(RenewableBlocker.BLOCKER_TIMEOUT) != null) {
+    if (blocker.getProperties() != null
+        && blocker.getProperties().get(RenewableBlocker.EXPIRATION_TIME_PROPERTY) != null
+        && blocker.getProperties().get(RenewableBlocker.BLOCKER_TIMEOUT) != null) {
       Map<String, String> properties = Maps.newHashMap(blocker.getProperties());
-      long createTime = PropertyUtil.propertyAsLong(properties, RenewableBlocker.CREATE_TIME_PROPERTY, 0);
-      long expirationTime = PropertyUtil.propertyAsLong(properties, RenewableBlocker.EXPIRATION_TIME_PROPERTY, 0);
-      long blockerTimeout = PropertyUtil.propertyAsLong(properties, RenewableBlocker.BLOCKER_TIMEOUT, 0);
+      long createTime =
+          PropertyUtil.propertyAsLong(properties, RenewableBlocker.CREATE_TIME_PROPERTY, 0);
+      long expirationTime =
+          PropertyUtil.propertyAsLong(properties, RenewableBlocker.EXPIRATION_TIME_PROPERTY, 0);
+      long blockerTimeout =
+          PropertyUtil.propertyAsLong(properties, RenewableBlocker.BLOCKER_TIMEOUT, 0);
       properties.remove(RenewableBlocker.CREATE_TIME_PROPERTY);
       properties.remove(RenewableBlocker.EXPIRATION_TIME_PROPERTY);
       properties.remove(RenewableBlocker.BLOCKER_TIMEOUT);
       RenewableBlocker renewableBlocker =
-          new RenewableBlocker(blocker.getBlockerId(), blocker.getOperations(), createTime, expirationTime,
-              blockerTimeout, properties, tableIdentifier, client);
+          new RenewableBlocker(
+              blocker.getBlockerId(),
+              blocker.getOperations(),
+              createTime,
+              expirationTime,
+              blockerTimeout,
+              properties,
+              tableIdentifier,
+              client);
       if (needInit) {
         renewableBlocker.renewAsync();
       }

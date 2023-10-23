@@ -49,9 +49,12 @@ public class TestScanSplitTask extends TableDataTestBase {
       CloseableIterable<CombinedScanTask> combinedScanTasks =
           getArcticTable().asKeyedTable().newScan().enableSplitTaskByDeleteRatio(0.04).planTasks();
       for (CombinedScanTask combinedScanTask : combinedScanTasks) {
-        // If enableSplitTaskByDeleteRatio is turned on, tasks with delete content below the threshold will be split
-        // as much as possible. The above normal plan has 7 tasks, but two of them contain two files each and no
-        // delete content. Therefore, after enableSplitTaskByDeleteRatio is turned on, two additional tasks will be
+        // If enableSplitTaskByDeleteRatio is turned on, tasks with delete content below the
+        // threshold will be split
+        // as much as possible. The above normal plan has 7 tasks, but two of them contain two files
+        // each and no
+        // delete content. Therefore, after enableSplitTaskByDeleteRatio is turned on, two
+        // additional tasks will be
         // split out.
         Assert.assertEquals(combinedScanTask.tasks().size(), 9);
       }
@@ -64,8 +67,10 @@ public class TestScanSplitTask extends TableDataTestBase {
     builder.add(MixedDataTestHelpers.createRecord(8, "mack", 0, "2022-01-01T12:00:00"));
     ImmutableList<Record> records = builder.build();
 
-    GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
-        .withTransactionId(5L).buildChangeWriter();
+    GenericChangeTaskWriter writer =
+        GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
+            .withTransactionId(5L)
+            .buildChangeWriter();
     for (Record record : records) {
       writer.write(record);
     }

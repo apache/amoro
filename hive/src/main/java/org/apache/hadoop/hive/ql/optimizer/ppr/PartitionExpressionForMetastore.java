@@ -28,9 +28,7 @@ import org.apache.hadoop.hive.serde2.typeinfo.PrimitiveTypeInfo;
 
 import java.util.List;
 
-/**
- * Copy from package jar "hive-exec" to avoid class check error
- */
+/** Copy from package jar "hive-exec" to avoid class check error */
 public class PartitionExpressionForMetastore implements PartitionExpressionProxy {
 
   public String convertExprToFilter(byte[] expr) throws MetaException {
@@ -47,7 +45,8 @@ public class PartitionExpressionForMetastore implements PartitionExpressionProxy
       List<PrimitiveTypeInfo> partColumnTypeInfos,
       byte[] expr,
       String defaultPartitionName,
-      List<String> partitionNames) throws MetaException {
+      List<String> partitionNames)
+      throws MetaException {
     return false;
   }
 

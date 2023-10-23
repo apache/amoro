@@ -28,28 +28,41 @@ public class TestHiveSchemaUtil {
   @Test
   public void testChangeFieldNameToLowercase() {
 
-    Schema schema = new Schema(
-        Types.NestedField.optional(1, "Col1", Types.IntegerType.get()),
-        Types.NestedField.optional(2, "COL2", Types.LongType.get()),
-        Types.NestedField.optional(3, "COL3", Types.ListType.ofOptional(4, Types.StringType.get())),
-        Types.NestedField.optional(5, "COL4", Types.MapType.ofOptional(6, 7, Types.StringType.get(),
-            Types.StringType.get())),
-        Types.NestedField.optional(8, "COL5", Types.StructType.of(
-            Types.NestedField.optional(9, "COL6", Types.StringType.get()),
-            Types.NestedField.optional(10, "COL7", Types.TimestampType.withoutZone())))
-    );
+    Schema schema =
+        new Schema(
+            Types.NestedField.optional(1, "Col1", Types.IntegerType.get()),
+            Types.NestedField.optional(2, "COL2", Types.LongType.get()),
+            Types.NestedField.optional(
+                3, "COL3", Types.ListType.ofOptional(4, Types.StringType.get())),
+            Types.NestedField.optional(
+                5,
+                "COL4",
+                Types.MapType.ofOptional(6, 7, Types.StringType.get(), Types.StringType.get())),
+            Types.NestedField.optional(
+                8,
+                "COL5",
+                Types.StructType.of(
+                    Types.NestedField.optional(9, "COL6", Types.StringType.get()),
+                    Types.NestedField.optional(10, "COL7", Types.TimestampType.withoutZone()))));
 
-    Schema changedSchema = new Schema(
-        Types.NestedField.optional(1, "col1", Types.IntegerType.get()),
-        Types.NestedField.optional(2, "col2", Types.LongType.get()),
-        Types.NestedField.optional(3, "col3", Types.ListType.ofOptional(4, Types.StringType.get())),
-        Types.NestedField.optional(5, "col4", Types.MapType.ofOptional(6, 7, Types.StringType.get(),
-            Types.StringType.get())),
-        Types.NestedField.optional(8, "col5", Types.StructType.of(
-            Types.NestedField.optional(9, "col6", Types.StringType.get()),
-            Types.NestedField.optional(10, "col7", Types.TimestampType.withoutZone())))
-    );
+    Schema changedSchema =
+        new Schema(
+            Types.NestedField.optional(1, "col1", Types.IntegerType.get()),
+            Types.NestedField.optional(2, "col2", Types.LongType.get()),
+            Types.NestedField.optional(
+                3, "col3", Types.ListType.ofOptional(4, Types.StringType.get())),
+            Types.NestedField.optional(
+                5,
+                "col4",
+                Types.MapType.ofOptional(6, 7, Types.StringType.get(), Types.StringType.get())),
+            Types.NestedField.optional(
+                8,
+                "col5",
+                Types.StructType.of(
+                    Types.NestedField.optional(9, "col6", Types.StringType.get()),
+                    Types.NestedField.optional(10, "col7", Types.TimestampType.withoutZone()))));
 
-    Assert.assertEquals(changedSchema.asStruct(), HiveSchemaUtil.changeFieldNameToLowercase(schema).asStruct());
+    Assert.assertEquals(
+        changedSchema.asStruct(), HiveSchemaUtil.changeFieldNameToLowercase(schema).asStruct());
   }
 }

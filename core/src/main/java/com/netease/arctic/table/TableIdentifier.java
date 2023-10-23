@@ -23,9 +23,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import java.io.Serializable;
 import java.util.Objects;
 
-/**
- * Unique table identifier, consist of catalog, database, table name
- */
+/** Unique table identifier, consist of catalog, database, table name */
 public class TableIdentifier implements Serializable {
 
   private String catalog;
@@ -34,8 +32,7 @@ public class TableIdentifier implements Serializable {
 
   private String tableName;
 
-  public TableIdentifier() {
-  }
+  public TableIdentifier() {}
 
   private TableIdentifier(String catalog, String database, String tableName) {
     this.catalog = Preconditions.checkNotNull(catalog, "Catalog name must not be null.");
@@ -48,17 +45,19 @@ public class TableIdentifier implements Serializable {
   }
 
   public static TableIdentifier of(com.netease.arctic.ams.api.TableIdentifier identifier) {
-    return new TableIdentifier(identifier.getCatalog(), identifier.getDatabase(), identifier.getTableName());
+    return new TableIdentifier(
+        identifier.getCatalog(), identifier.getDatabase(), identifier.getTableName());
   }
 
   public TableIdentifier(com.netease.arctic.ams.api.TableIdentifier tableIdentifier) {
-    this(tableIdentifier.getCatalog(), tableIdentifier.getDatabase(), tableIdentifier.getTableName());
+    this(
+        tableIdentifier.getCatalog(),
+        tableIdentifier.getDatabase(),
+        tableIdentifier.getTableName());
   }
 
   public com.netease.arctic.ams.api.TableIdentifier buildTableIdentifier() {
-    return new com.netease.arctic.ams.api.TableIdentifier(
-        catalog, database, tableName
-    );
+    return new com.netease.arctic.ams.api.TableIdentifier(catalog, database, tableName);
   }
 
   public String getCatalog() {

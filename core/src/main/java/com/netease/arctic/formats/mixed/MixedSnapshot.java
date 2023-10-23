@@ -30,9 +30,7 @@ public class MixedSnapshot implements TableSnapshot {
 
   private final Snapshot baseSnapshot;
 
-  public MixedSnapshot(
-      Snapshot changeSnapshot,
-      Snapshot baseSnapshot) {
+  public MixedSnapshot(Snapshot changeSnapshot, Snapshot baseSnapshot) {
     this.changeSnapshot = changeSnapshot;
     this.baseSnapshot = baseSnapshot;
   }
@@ -44,7 +42,8 @@ public class MixedSnapshot implements TableSnapshot {
 
   @Override
   public long commitTime() {
-    Long changCommit = Optional.ofNullable(changeSnapshot).map(Snapshot::timestampMillis).orElse(-1L);
+    Long changCommit =
+        Optional.ofNullable(changeSnapshot).map(Snapshot::timestampMillis).orElse(-1L);
     Long baseCommit = Optional.ofNullable(baseSnapshot).map(Snapshot::timestampMillis).orElse(-1L);
     return Longs.max(changCommit, baseCommit);
   }
