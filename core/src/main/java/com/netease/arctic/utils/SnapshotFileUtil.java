@@ -32,7 +32,9 @@ public class SnapshotFileUtil {
   private static final Logger LOG = LoggerFactory.getLogger(SnapshotFileUtil.class);
 
   public static void getSnapshotFiles(
-      ArcticTable table, String innerTable, Snapshot snapshot,
+      ArcticTable table,
+      String innerTable,
+      Snapshot snapshot,
       List<com.netease.arctic.ams.api.DataFile> addFiles,
       List<com.netease.arctic.ams.api.DataFile> deleteFiles) {
     Preconditions.checkNotNull(addFiles, "Add files to delete can not be null");
@@ -51,7 +53,10 @@ public class SnapshotFileUtil {
       deleteFiles.add(ConvertStructUtil.convertToAmsDatafile(file, table, innerTable));
     }
 
-    LOG.debug("{} snapshot get {} add files count and {} delete file count.",
-        snapshot.snapshotId(), addFiles.size(), deleteFiles.size());
+    LOG.debug(
+        "{} snapshot get {} add files count and {} delete file count.",
+        snapshot.snapshotId(),
+        addFiles.size(),
+        deleteFiles.size());
   }
 }

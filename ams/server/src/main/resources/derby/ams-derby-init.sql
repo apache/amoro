@@ -65,7 +65,6 @@ CREATE TABLE table_metadata (
     catalog_name     VARCHAR(256) NOT NULL,
     db_name          VARCHAR(256) NOT NULL,
     table_name       VARCHAR(256) NOT NULL,
-    format           VARCHAR(32) NOT NULL,
     primary_key      VARCHAR(256),
     sort_key         VARCHAR(256),
     table_location   VARCHAR(256),

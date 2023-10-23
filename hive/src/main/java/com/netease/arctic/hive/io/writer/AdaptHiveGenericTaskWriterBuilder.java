@@ -54,9 +54,7 @@ import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Locale;
 
-/**
- * Builder to create writers for {@link KeyedTable} writting {@link Record}.
- */
+/** Builder to create writers for {@link KeyedTable} writting {@link Record}. */
 public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Record> {
 
   private final ArcticTable table;
@@ -93,11 +91,12 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     return this;
   }
 
-  public AdaptHiveGenericTaskWriterBuilder withCustomHiveSubdirectory(String customHiveSubdirectory) {
+  public AdaptHiveGenericTaskWriterBuilder withCustomHiveSubdirectory(
+      String customHiveSubdirectory) {
     this.customHiveSubdirectory = customHiveSubdirectory;
     return this;
   }
-  
+
   public AdaptHiveGenericTaskWriterBuilder withTargetFileSize(long targetFileSize) {
     this.targetFileSize = targetFileSize;
     return this;
@@ -110,9 +109,9 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
 
   @Override
   public TaskWriter<Record> buildWriter(WriteOperationKind writeOperationKind) {
-    LocationKind locationKind = AdaptHiveOperateToTableRelation.INSTANT.getLocationKindsFromOperateKind(
-        table,
-        writeOperationKind);
+    LocationKind locationKind =
+        AdaptHiveOperateToTableRelation.INSTANT.getLocationKindsFromOperateKind(
+            table, writeOperationKind);
     return buildWriter(locationKind);
   }
 
@@ -120,47 +119,79 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   public TaskWriter<Record> buildWriter(LocationKind locationKind) {
     if (locationKind == ChangeLocationKind.INSTANT) {
       return buildChangeWriter();
-    } else if (locationKind == BaseLocationKind.INSTANT || locationKind == HiveLocationKind.INSTANT) {
+    } else if (locationKind == BaseLocationKind.INSTANT
+        || locationKind == HiveLocationKind.INSTANT) {
       return buildBaseWriter(locationKind);
     } else {
       throw new IllegalArgumentException("Not support Location Kind:" + locationKind);
     }
   }
 
-  public SortedPosDeleteWriter<Record> buildBasePosDeleteWriter(long mask, long index, StructLike partitionKey) {
+  public SortedPosDeleteWriter<Record> buildBasePosDeleteWriter(
+      long mask, long index, StructLike partitionKey) {
     writeBasePreconditions();
-    UnkeyedTable baseTable = this.table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
-    FileFormat fileFormat = FileFormat.valueOf((baseTable.properties().getOrDefault(
-        TableProperties.BASE_FILE_FORMAT,
-        TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
+    UnkeyedTable baseTable =
+        this.table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
+    FileFormat fileFormat =
+        FileFormat.valueOf(
+            (baseTable
+                .properties()
+                .getOrDefault(
+                    TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT)
+                .toUpperCase(Locale.ENGLISH)));
     GenericAppenderFactory appenderFactory =
         new GenericAppenderFactory(baseTable.schema(), baseTable.spec());
     appenderFactory.set(
-        org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_PATH.name(),
+        org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX
+            + MetadataColumns.DELETE_FILE_PATH.name(),
         MetricsModes.Full.get().toString());
     appenderFactory.set(
-        org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_POS.name(),
+        org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX
+            + MetadataColumns.DELETE_FILE_POS.name(),
         MetricsModes.Full.get().toString());
-    return new SortedPosDeleteWriter<>(appenderFactory,
-        new CommonOutputFileFactory(baseTable.location(), baseTable.spec(), fileFormat, baseTable.io(),
-            baseTable.encryption(), partitionId, taskId, transactionId), table.io(),
-        fileFormat, mask, index, partitionKey);
+    return new SortedPosDeleteWriter<>(
+        appenderFactory,
+        new CommonOutputFileFactory(
+            baseTable.location(),
+            baseTable.spec(),
+            fileFormat,
+            baseTable.io(),
+            baseTable.encryption(),
+            partitionId,
+            taskId,
+            transactionId),
+        table.io(),
+        fileFormat,
+        mask,
+        index,
+        partitionKey);
   }
 
   private GenericBaseTaskWriter buildBaseWriter(LocationKind locationKind) {
     writeBasePreconditions();
-    FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
-        TableProperties.BASE_FILE_FORMAT,
-        TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
+    FileFormat fileFormat =
+        FileFormat.valueOf(
+            (table
+                .properties()
+                .getOrDefault(
+                    TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT)
+                .toUpperCase(Locale.ENGLISH)));
     long fileSizeBytes;
     if (this.targetFileSize == null) {
-      fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
-          TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+      fileSizeBytes =
+          PropertyUtil.propertyAsLong(
+              table.properties(),
+              TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
+              TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
     } else {
       fileSizeBytes = this.targetFileSize;
     }
-    long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
-        TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
+    long mask =
+        PropertyUtil.propertyAsLong(
+                table.properties(),
+                TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
+                TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT)
+            - 1;
 
     String baseLocation;
     EncryptionManager encryptionManager;
@@ -179,17 +210,42 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
       schema = table.schema();
     }
 
-    OutputFileFactory outputFileFactory = locationKind == HiveLocationKind.INSTANT ?
-        new AdaptHiveOutputFileFactory(((SupportHive) table).hiveLocation(), table.spec(), fileFormat,
-            table.io(), encryptionManager, partitionId, taskId, transactionId, customHiveSubdirectory) :
-        new CommonOutputFileFactory(baseLocation, table.spec(), fileFormat, table.io(),
-            encryptionManager, partitionId, taskId, transactionId);
-    FileAppenderFactory<Record> appenderFactory = TableTypeUtil.isHive(table) ?
-        new AdaptHiveGenericAppenderFactory(schema, table.spec()) :
-        new GenericAppenderFactory(schema, table.spec());
-    return new GenericBaseTaskWriter(fileFormat, appenderFactory,
+    OutputFileFactory outputFileFactory =
+        locationKind == HiveLocationKind.INSTANT
+            ? new AdaptHiveOutputFileFactory(
+                ((SupportHive) table).hiveLocation(),
+                table.spec(),
+                fileFormat,
+                table.io(),
+                encryptionManager,
+                partitionId,
+                taskId,
+                transactionId,
+                customHiveSubdirectory)
+            : new CommonOutputFileFactory(
+                baseLocation,
+                table.spec(),
+                fileFormat,
+                table.io(),
+                encryptionManager,
+                partitionId,
+                taskId,
+                transactionId);
+    FileAppenderFactory<Record> appenderFactory =
+        TableTypeUtil.isHive(table)
+            ? new AdaptHiveGenericAppenderFactory(schema, table.spec())
+            : new GenericAppenderFactory(schema, table.spec());
+    return new GenericBaseTaskWriter(
+        fileFormat,
+        appenderFactory,
         outputFileFactory,
-        table.io(), fileSizeBytes, mask, schema, table.spec(), primaryKeySpec, orderedWriter);
+        table.io(),
+        fileSizeBytes,
+        mask,
+        schema,
+        table.spec(),
+        primaryKeySpec,
+        orderedWriter);
   }
 
   private GenericChangeTaskWriter buildChangeWriter() {
@@ -198,29 +254,54 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     }
     KeyedTable table = (KeyedTable) this.table;
 
-    FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
-        TableProperties.CHANGE_FILE_FORMAT,
-        TableProperties.CHANGE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
+    FileFormat fileFormat =
+        FileFormat.valueOf(
+            (table
+                .properties()
+                .getOrDefault(
+                    TableProperties.CHANGE_FILE_FORMAT, TableProperties.CHANGE_FILE_FORMAT_DEFAULT)
+                .toUpperCase(Locale.ENGLISH)));
     long fileSizeBytes;
     if (this.targetFileSize == null) {
-      fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
-          TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+      fileSizeBytes =
+          PropertyUtil.propertyAsLong(
+              table.properties(),
+              TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
+              TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
     } else {
       fileSizeBytes = this.targetFileSize;
     }
-    long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
-        TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
+    long mask =
+        PropertyUtil.propertyAsLong(
+                table.properties(),
+                TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
+                TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT)
+            - 1;
     Schema changeWriteSchema = SchemaUtil.changeWriteSchema(table.changeTable().schema());
-    FileAppenderFactory<Record> appenderFactory = TableTypeUtil.isHive(table) ?
-        new AdaptHiveGenericAppenderFactory(changeWriteSchema, table.spec()) :
-        new GenericAppenderFactory(changeWriteSchema, table.spec());
+    FileAppenderFactory<Record> appenderFactory =
+        TableTypeUtil.isHive(table)
+            ? new AdaptHiveGenericAppenderFactory(changeWriteSchema, table.spec())
+            : new GenericAppenderFactory(changeWriteSchema, table.spec());
     return new GenericChangeTaskWriter(
         fileFormat,
         appenderFactory,
-        new CommonOutputFileFactory(table.changeLocation(), table.spec(), fileFormat, table.io(),
-            table.changeTable().encryption(), partitionId, taskId, transactionId),
-        table.io(), fileSizeBytes, mask, table.changeTable().schema(), table.spec(), table.primaryKeySpec(),
-        changeAction, orderedWriter);
+        new CommonOutputFileFactory(
+            table.changeLocation(),
+            table.spec(),
+            fileFormat,
+            table.io(),
+            table.changeTable().encryption(),
+            partitionId,
+            taskId,
+            transactionId),
+        table.io(),
+        fileSizeBytes,
+        mask,
+        table.changeTable().schema(),
+        table.spec(),
+        table.primaryKeySpec(),
+        changeAction,
+        orderedWriter);
   }
 
   private void writeBasePreconditions() {

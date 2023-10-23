@@ -44,19 +44,17 @@ import java.util.List;
 @RunWith(Parameterized.class)
 public class TestArcticTreeNodePosDeleteWriter extends TableTestBase {
 
-  public TestArcticTreeNodePosDeleteWriter(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+  public TestArcticTreeNodePosDeleteWriter(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Parameterized.Parameters(name = "{1},{2}")
   public static Object[] parameters() {
-    return new Object[][] {{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(true, true)
-                           },
-                           {
-                               new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                               new BasicTableTestHelper(true, false)
-                           }};
+    return new Object[][] {
+      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, true)},
+      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, false)}
+    };
   }
 
   @Test
@@ -68,16 +66,16 @@ public class TestArcticTreeNodePosDeleteWriter extends TableTestBase {
     StructLike partitionData = GenericRecord.create(table.spec().schema());
     partitionData.set(0, 1);
 
-    ArcticTreeNodePosDeleteWriter<Record> writer = new ArcticTreeNodePosDeleteWriter<>(
-        appenderFactory,
-        FileFormat.PARQUET,
-        partitionData,
-        table.io(),
-        table.encryption(),
-        1L,
-        table.location(),
-        table.spec()
-    );
+    ArcticTreeNodePosDeleteWriter<Record> writer =
+        new ArcticTreeNodePosDeleteWriter<>(
+            appenderFactory,
+            FileFormat.PARQUET,
+            partitionData,
+            table.io(),
+            table.encryption(),
+            1L,
+            table.location(),
+            table.spec());
 
     writer.setTreeNode(DataTreeNode.ofId(4));
     writer.delete("a", 0);

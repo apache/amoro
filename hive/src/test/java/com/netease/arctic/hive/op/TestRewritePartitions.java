@@ -18,6 +18,8 @@
 
 package com.netease.arctic.hive.op;
 
+import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
+
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
@@ -42,33 +44,38 @@ import org.junit.runners.Parameterized;
 
 import java.util.List;
 
-import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
-
 @RunWith(Parameterized.class)
 public class TestRewritePartitions extends TableTestBase {
 
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
   private List<DataFile> initDataFiles;
 
-  public TestRewritePartitions(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+  public TestRewritePartitions(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][] {{new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-                            new HiveTableTestHelper(true, true)},
-                           {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-                            new HiveTableTestHelper(false, true)}};
+    return new Object[][] {
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, true)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(false, true)
+      }
+    };
   }
 
   private void initDataFiles() {
     List<Record> insertRecords = Lists.newArrayList();
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
-    initDataFiles = HiveDataTestHelpers.writeBaseStore(getArcticTable(), 1L, insertRecords, false, true);
+    initDataFiles =
+        HiveDataTestHelpers.writeBaseStore(getArcticTable(), 1L, insertRecords, false, true);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     initDataFiles.forEach(overwriteFiles::addFile);
@@ -82,24 +89,30 @@ public class TestRewritePartitions extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "sam", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
-    List<DataFile> dataFiles = HiveDataTestHelpers.writeBaseStore(getArcticTable(), 2L, insertRecords, false, true);
+    List<DataFile> dataFiles =
+        HiveDataTestHelpers.writeBaseStore(getArcticTable(), 2L, insertRecords, false, true);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     ReplacePartitions replacePartitions = baseStore.newReplacePartitions();
     dataFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
 
-    UpdateHiveFilesTestHelpers.validateHiveTableValues(TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
+    UpdateHiveFilesTestHelpers.validateHiveTableValues(
+        TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
   }
 
   @Test
   public void testRewritePartPartitions() throws TException {
     initDataFiles();
-    DataFile p1DataFile = initDataFiles.stream().filter(dataFile -> dataFile.path().toString().contains("2022-01-01"))
-        .findAny().orElseThrow(() -> new IllegalStateException("Cannot find expect data file"));
+    DataFile p1DataFile =
+        initDataFiles.stream()
+            .filter(dataFile -> dataFile.path().toString().contains("2022-01-01"))
+            .findAny()
+            .orElseThrow(() -> new IllegalStateException("Cannot find expect data file"));
     List<Record> insertRecords = Lists.newArrayList();
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
-    List<DataFile> dataFiles = HiveDataTestHelpers.writeBaseStore(getArcticTable(), 2L, insertRecords, false, true);
+    List<DataFile> dataFiles =
+        HiveDataTestHelpers.writeBaseStore(getArcticTable(), 2L, insertRecords, false, true);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     ReplacePartitions replacePartitions = baseStore.newReplacePartitions();
     dataFiles.forEach(replacePartitions::addFile);
@@ -108,7 +121,8 @@ public class TestRewritePartitions extends TableTestBase {
     List<DataFile> expectDataFiles = Lists.newArrayList(dataFiles);
     expectDataFiles.add(p1DataFile);
 
-    UpdateHiveFilesTestHelpers.validateHiveTableValues(TEST_HMS.getHiveClient(), getArcticTable(), expectDataFiles);
+    UpdateHiveFilesTestHelpers.validateHiveTableValues(
+        TEST_HMS.getHiveClient(), getArcticTable(), expectDataFiles);
   }
 
   @Test
@@ -118,14 +132,16 @@ public class TestRewritePartitions extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "sam", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
-    List<DataFile> dataFiles = HiveDataTestHelpers.writeBaseStore(getArcticTable(), 2L, insertRecords, false, true);
+    List<DataFile> dataFiles =
+        HiveDataTestHelpers.writeBaseStore(getArcticTable(), 2L, insertRecords, false, true);
     Transaction transaction = getBaseStore().newTransaction();
     ReplacePartitions replacePartitions = transaction.newReplacePartitions();
     dataFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
     transaction.commitTransaction();
 
-    UpdateHiveFilesTestHelpers.validateHiveTableValues(TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
+    UpdateHiveFilesTestHelpers.validateHiveTableValues(
+        TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
   }
 
   @Test
@@ -136,15 +152,18 @@ public class TestRewritePartitions extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
 
     String hiveLocation = "test_hive_location";
-    HiveDataTestHelpers.writeBaseStore(getArcticTable(), 1L, insertRecords, false, true, hiveLocation);
+    HiveDataTestHelpers.writeBaseStore(
+        getArcticTable(), 1L, insertRecords, false, true, hiveLocation);
     // rewrite data files
-    List<DataFile> rewriteDataFiles = HiveDataTestHelpers.writeBaseStore(getArcticTable(), 2L, insertRecords, false,
-        true, hiveLocation);
+    List<DataFile> rewriteDataFiles =
+        HiveDataTestHelpers.writeBaseStore(
+            getArcticTable(), 2L, insertRecords, false, true, hiveLocation);
     ReplacePartitions replacePartitions = getBaseStore().newReplacePartitions();
     rewriteDataFiles.forEach(replacePartitions::addFile);
     replacePartitions.set(DELETE_UNTRACKED_HIVE_FILE, "true");
     replacePartitions.commit();
 
-    UpdateHiveFilesTestHelpers.validateHiveTableValues(TEST_HMS.getHiveClient(), getArcticTable(), rewriteDataFiles);
+    UpdateHiveFilesTestHelpers.validateHiveTableValues(
+        TEST_HMS.getHiveClient(), getArcticTable(), rewriteDataFiles);
   }
 }

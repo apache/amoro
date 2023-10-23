@@ -348,7 +348,3 @@ public class ArcticTransaction implements Transaction {
     }
   }
 }
-
-
-
-

@@ -37,12 +37,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Positional delete file writer for iceberg tables. Write to different delete file for every data file.
- * The output delete files are named with pattern: {data_file_name}-delete-{delete_file_suffix}.
- * 
+ * Positional delete file writer for iceberg tables. Write to different delete file for every data
+ * file. The output delete files are named with pattern:
+ * {data_file_name}-delete-{delete_file_suffix}.
+ *
  * @param <T> to indicate the record data type.
  */
-public class ArcticTreeNodePosDeleteWriter<T> implements FileWriter<PositionDelete<T>, DeleteWriteResult>, SetTreeNode {
+public class ArcticTreeNodePosDeleteWriter<T>
+    implements FileWriter<PositionDelete<T>, DeleteWriteResult>, SetTreeNode {
 
   private final Map<DataTreeNode, SortedPosDeleteWriter<T>> posDeletes = Maps.newHashMap();
 
@@ -60,7 +62,6 @@ public class ArcticTreeNodePosDeleteWriter<T> implements FileWriter<PositionDele
   private final String location;
 
   private final PartitionSpec spec;
-
 
   public ArcticTreeNodePosDeleteWriter(
       FileAppenderFactory<T> appenderFactory,
@@ -100,15 +101,20 @@ public class ArcticTreeNodePosDeleteWriter<T> implements FileWriter<PositionDele
   }
 
   private SortedPosDeleteWriter<T> generatePosDelete(DataTreeNode treeNode) {
-    return new SortedPosDeleteWriter<>(appenderFactory,
-        new CommonOutputFileFactory(location, spec, format, fileIO,
-            encryptionManager, 0, 0, transactionId), fileIO,
-        format, treeNode.mask(), treeNode.index(), partition);
+    return new SortedPosDeleteWriter<>(
+        appenderFactory,
+        new CommonOutputFileFactory(
+            location, spec, format, fileIO, encryptionManager, 0, 0, transactionId),
+        fileIO,
+        format,
+        treeNode.mask(),
+        treeNode.index(),
+        partition);
   }
 
   public List<DeleteFile> complete() throws IOException {
     List<DeleteFile> list = new ArrayList<>();
-    for (SortedPosDeleteWriter<T> sortedPosDeleteWriter: posDeletes.values()) {
+    for (SortedPosDeleteWriter<T> sortedPosDeleteWriter : posDeletes.values()) {
       list.addAll(sortedPosDeleteWriter.complete());
     }
     return list;
@@ -116,7 +122,7 @@ public class ArcticTreeNodePosDeleteWriter<T> implements FileWriter<PositionDele
 
   @Override
   public void close() throws IOException {
-    for (SortedPosDeleteWriter<T> sortedPosDeleteWriter: posDeletes.values()) {
+    for (SortedPosDeleteWriter<T> sortedPosDeleteWriter : posDeletes.values()) {
       sortedPosDeleteWriter.close();
     }
   }
@@ -134,8 +140,7 @@ public class ArcticTreeNodePosDeleteWriter<T> implements FileWriter<PositionDele
   public void setTreeNode(DataTreeNode treeNode) {
     if (currentTreeNode != null && currentTreeNode.equals(treeNode)) return;
 
-    currentDeleteWriter = posDeletes.computeIfAbsent(treeNode,
-        this::generatePosDelete);
+    currentDeleteWriter = posDeletes.computeIfAbsent(treeNode, this::generatePosDelete);
     this.currentTreeNode = treeNode;
   }
 

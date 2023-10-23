@@ -28,8 +28,7 @@ import java.io.IOException;
 
 public abstract class AmoroCatalogTestBase {
 
-  @Rule
-  public TemporaryFolder temp = new TemporaryFolder();
+  @Rule public TemporaryFolder temp = new TemporaryFolder();
 
   protected AmoroCatalogTestHelper<?> catalogTestHelper;
 

@@ -22,9 +22,5 @@ import com.netease.arctic.ams.api.ArcticTableMetastore;
 
 import java.io.Serializable;
 
-/**
- * Thrift client API to communicate with ams.
- */
-public interface AmsClient extends ArcticTableMetastore.Iface, Serializable {
-
-}
+/** Thrift client API to communicate with ams. */
+public interface AmsClient extends ArcticTableMetastore.Iface, Serializable {}

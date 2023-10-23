@@ -89,8 +89,10 @@ public class RecordWithAction implements Record {
   }
 
   @Override
-  public Record copy(String field1, Object value1, String field2, Object value2, String field3, Object value3) {
-    return new RecordWithAction(record.copy(field1, value1, field2, value2, field3, value3), action);
+  public Record copy(
+      String field1, Object value1, String field2, Object value2, String field3, Object value3) {
+    return new RecordWithAction(
+        record.copy(field1, value1, field2, value2, field3, value3), action);
   }
 
   @Override
@@ -105,9 +107,7 @@ public class RecordWithAction implements Record {
 
   @Override
   public String toString() {
-    String sb = "RecordWithAction{" + "record=" + record +
-        ", action=" + action +
-        '}';
+    String sb = "RecordWithAction{" + "record=" + record + ", action=" + action + '}';
     return sb;
   }
 }

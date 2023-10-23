@@ -40,9 +40,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-/**
- * Implementation of {@link AbstractKeyedDataReader} with record type {@link Record}.
- */
+/** Implementation of {@link AbstractKeyedDataReader} with record type {@link Record}. */
 public class AdaptHiveGenericKeyedDataReader extends AbstractAdaptHiveKeyedDataReader<Record> {
 
   public AdaptHiveGenericKeyedDataReader(
@@ -56,8 +54,17 @@ public class AdaptHiveGenericKeyedDataReader extends AbstractAdaptHiveKeyedDataR
       Set<DataTreeNode> sourceNodes,
       boolean reuseContainer,
       StructLikeCollections structLikeCollections) {
-    super(fileIO, tableSchema, projectedSchema, primaryKeySpec, nameMapping, caseSensitive, convertConstant,
-        sourceNodes, reuseContainer, structLikeCollections);
+    super(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        primaryKeySpec,
+        nameMapping,
+        caseSensitive,
+        convertConstant,
+        sourceNodes,
+        reuseContainer,
+        structLikeCollections);
   }
 
   public AdaptHiveGenericKeyedDataReader(
@@ -68,7 +75,15 @@ public class AdaptHiveGenericKeyedDataReader extends AbstractAdaptHiveKeyedDataR
       String nameMapping,
       boolean caseSensitive,
       BiFunction<Type, Object, Object> convertConstant) {
-    super(fileIO, tableSchema, projectedSchema, primaryKeySpec, nameMapping, caseSensitive, convertConstant, false);
+    super(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        primaryKeySpec,
+        nameMapping,
+        caseSensitive,
+        convertConstant,
+        false);
   }
 
   public AdaptHiveGenericKeyedDataReader(
@@ -79,25 +94,32 @@ public class AdaptHiveGenericKeyedDataReader extends AbstractAdaptHiveKeyedDataR
       String nameMapping,
       boolean caseSensitive,
       BiFunction<Type, Object, Object> convertConstant,
-      Set<DataTreeNode> sourceNodes, boolean reuseContainer) {
-    super(fileIO, tableSchema, projectedSchema, primaryKeySpec,
-        nameMapping, caseSensitive, convertConstant, sourceNodes, reuseContainer);
+      Set<DataTreeNode> sourceNodes,
+      boolean reuseContainer) {
+    super(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        primaryKeySpec,
+        nameMapping,
+        caseSensitive,
+        convertConstant,
+        sourceNodes,
+        reuseContainer);
   }
 
   @Override
   protected Function<MessageType, ParquetValueReader<?>> getParquetReaderFunction(
-      Schema projectSchema,
-      Map<Integer, ?> idToConstant) {
-    return fileSchema -> AdaptHiveGenericParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
+      Schema projectSchema, Map<Integer, ?> idToConstant) {
+    return fileSchema ->
+        AdaptHiveGenericParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
   }
 
   @Override
   protected Function<TypeDescription, OrcRowReader<?>> getOrcReaderFunction(
-      Schema projectSchema,
-      Map<Integer, ?> idToConstant) {
+      Schema projectSchema, Map<Integer, ?> idToConstant) {
     return fileSchema -> new GenericOrcReader(projectSchema, fileSchema, idToConstant);
   }
-
 
   @Override
   protected Function<Schema, Function<Record, StructLike>> toStructLikeFunction() {

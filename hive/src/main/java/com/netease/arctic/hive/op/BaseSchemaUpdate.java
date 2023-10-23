@@ -80,8 +80,9 @@ public class BaseSchemaUpdate implements UpdateSchema {
 
   @Override
   public UpdateSchema renameColumn(String name, String newName) {
-    throw new UnsupportedOperationException("not support renameColumn now, there will be error when hive stored as " +
-        "parquet and we rename the column");
+    throw new UnsupportedOperationException(
+        "not support renameColumn now, there will be error when hive stored as "
+            + "parquet and we rename the column");
   }
 
   @Override
@@ -136,7 +137,8 @@ public class BaseSchemaUpdate implements UpdateSchema {
     throw new UnsupportedOperationException("hive table not support setIdentifierFields");
   }
 
-  //It is strictly required that all non-partitioned columns precede partitioned columns in the schema.
+  // It is strictly required that all non-partitioned columns precede partitioned columns in the
+  // schema.
   private void moveColBeforePar(String name) {
     if (!arcticTable.spec().isUnpartitioned()) {
       int parFieldMinIndex = Integer.MAX_VALUE;

@@ -28,6 +28,7 @@ public class CatalogUtil {
 
   /**
    * check arctic catalog is hive catalog
+   *
    * @param arcticCatalog target arctic catalog
    * @return Whether hive catalog. true is hive catalog, false isn't hive catalog.
    */

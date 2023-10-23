@@ -24,9 +24,7 @@ import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.LocationProvider;
 
-/**
- * A wrapper class around {@link TableOperations}. Add authentication for all methods.
- */
+/** A wrapper class around {@link TableOperations}. Add authentication for all methods. */
 public class ArcticTableOperations implements TableOperations {
 
   private final TableOperations ops;
@@ -49,10 +47,11 @@ public class ArcticTableOperations implements TableOperations {
 
   @Override
   public void commit(TableMetadata base, TableMetadata metadata) {
-    arcticFileIO.doAs(() -> {
-      ops.commit(base, metadata);
-      return null;
-    });
+    arcticFileIO.doAs(
+        () -> {
+          ops.commit(base, metadata);
+          return null;
+        });
   }
 
   @Override
@@ -86,10 +85,11 @@ public class ArcticTableOperations implements TableOperations {
 
       @Override
       public void commit(TableMetadata base, TableMetadata metadata) {
-        arcticFileIO.doAs(() -> {
-          temp.commit(base, metadata);
-          return null;
-        });
+        arcticFileIO.doAs(
+            () -> {
+              temp.commit(base, metadata);
+              return null;
+            });
       }
 
       @Override

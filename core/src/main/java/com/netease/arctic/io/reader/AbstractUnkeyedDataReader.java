@@ -49,6 +49,7 @@ import java.util.function.Function;
 
 /**
  * Abstract implementation of iceberg data reader consuming {@link ArcticFileScanTask}.
+ *
  * @param <T> to indicate the record data type.
  */
 public abstract class AbstractUnkeyedDataReader<T> {
@@ -64,26 +65,57 @@ public abstract class AbstractUnkeyedDataReader<T> {
   private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
 
   public AbstractUnkeyedDataReader(
-      ArcticFileIO fileIO, Schema tableSchema, Schema projectedSchema,
-      String nameMapping, boolean caseSensitive, BiFunction<Type, Object, Object> convertConstant,
-      boolean reuseContainer, StructLikeCollections structLikeCollections) {
-    this(fileIO, tableSchema, projectedSchema, null, nameMapping,
-        caseSensitive, convertConstant, null, reuseContainer);
+      ArcticFileIO fileIO,
+      Schema tableSchema,
+      Schema projectedSchema,
+      String nameMapping,
+      boolean caseSensitive,
+      BiFunction<Type, Object, Object> convertConstant,
+      boolean reuseContainer,
+      StructLikeCollections structLikeCollections) {
+    this(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        null,
+        nameMapping,
+        caseSensitive,
+        convertConstant,
+        null,
+        reuseContainer);
     this.structLikeCollections = structLikeCollections;
   }
 
   public AbstractUnkeyedDataReader(
-      ArcticFileIO fileIO, Schema tableSchema, Schema projectedSchema,
-      String nameMapping, boolean caseSensitive, BiFunction<Type, Object, Object> convertConstant,
+      ArcticFileIO fileIO,
+      Schema tableSchema,
+      Schema projectedSchema,
+      String nameMapping,
+      boolean caseSensitive,
+      BiFunction<Type, Object, Object> convertConstant,
       boolean reuseContainer) {
-    this(fileIO, tableSchema, projectedSchema, null, nameMapping,
-        caseSensitive, convertConstant, null, reuseContainer);
+    this(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        null,
+        nameMapping,
+        caseSensitive,
+        convertConstant,
+        null,
+        reuseContainer);
   }
 
   public AbstractUnkeyedDataReader(
-      ArcticFileIO fileIO, Schema tableSchema, Schema projectedSchema, PrimaryKeySpec primaryKeySpec,
-      String nameMapping, boolean caseSensitive, BiFunction<Type, Object, Object> convertConstant,
-      Set<DataTreeNode> sourceNodes, boolean reuseContainer) {
+      ArcticFileIO fileIO,
+      Schema tableSchema,
+      Schema projectedSchema,
+      PrimaryKeySpec primaryKeySpec,
+      String nameMapping,
+      boolean caseSensitive,
+      BiFunction<Type, Object, Object> convertConstant,
+      Set<DataTreeNode> sourceNodes,
+      boolean reuseContainer) {
     this.tableSchema = tableSchema;
     this.projectedSchema = projectedSchema;
     this.nameMapping = nameMapping;
@@ -92,8 +124,12 @@ public abstract class AbstractUnkeyedDataReader<T> {
     this.convertConstant = convertConstant;
     this.reuseContainer = reuseContainer;
     if (sourceNodes != null) {
-      this.dataNodeFilter = new NodeFilter<>(sourceNodes, projectedSchema, primaryKeySpec,
-          toStructLikeFunction().apply(projectedSchema));
+      this.dataNodeFilter =
+          new NodeFilter<>(
+              sourceNodes,
+              projectedSchema,
+              primaryKeySpec,
+              toStructLikeFunction().apply(projectedSchema));
     } else {
       this.dataNodeFilter = null;
     }
@@ -101,14 +137,14 @@ public abstract class AbstractUnkeyedDataReader<T> {
 
   public CloseableIterable<T> readData(FileScanTask task) {
 
-    Map<Integer, ?> idToConstant = DataReaderCommon.getIdToConstant(task, projectedSchema, convertConstant);
+    Map<Integer, ?> idToConstant =
+        DataReaderCommon.getIdToConstant(task, projectedSchema, convertConstant);
 
     DeleteFilter<T> deleteFilter =
         new GenericDeleteFilter(task, tableSchema, projectedSchema, structLikeCollections);
 
-    CloseableIterable<T> iterable = deleteFilter.filter(
-        newIterable(task, deleteFilter.requiredSchema(), idToConstant)
-    );
+    CloseableIterable<T> iterable =
+        deleteFilter.filter(newIterable(task, deleteFilter.requiredSchema(), idToConstant));
 
     if (dataNodeFilter != null) {
       return dataNodeFilter.filter(iterable);
@@ -141,12 +177,13 @@ public abstract class AbstractUnkeyedDataReader<T> {
 
   protected CloseableIterable<T> newParquetIterable(
       FileScanTask task, Schema schema, Map<Integer, ?> idToConstant) {
-    Parquet.ReadBuilder builder = Parquet.read(fileIO.newInputFile(task.file().path().toString()))
-        .split(task.start(), task.length())
-        .project(schema)
-        .createReaderFunc(getParquetReaderFunction(schema, idToConstant))
-        .filter(task.residual())
-        .caseSensitive(caseSensitive);
+    Parquet.ReadBuilder builder =
+        Parquet.read(fileIO.newInputFile(task.file().path().toString()))
+            .split(task.start(), task.length())
+            .project(schema)
+            .createReaderFunc(getParquetReaderFunction(schema, idToConstant))
+            .filter(task.residual())
+            .caseSensitive(caseSensitive);
 
     if (reuseContainer) {
       builder.reuseContainers();
@@ -159,9 +196,7 @@ public abstract class AbstractUnkeyedDataReader<T> {
   }
 
   protected CloseableIterable<T> newOrcIterable(
-      FileScanTask task,
-      Schema schema,
-      Map<Integer, ?> idToConstant) {
+      FileScanTask task, Schema schema, Map<Integer, ?> idToConstant) {
     Schema readSchemaWithoutConstantAndMetadataFields =
         TypeUtil.selectNot(
             schema, Sets.union(idToConstant.keySet(), MetadataColumns.metadataFieldIds()));
@@ -182,12 +217,10 @@ public abstract class AbstractUnkeyedDataReader<T> {
   }
 
   protected abstract Function<MessageType, ParquetValueReader<?>> getParquetReaderFunction(
-      Schema projectedSchema,
-      Map<Integer, ?> idToConstant);
+      Schema projectedSchema, Map<Integer, ?> idToConstant);
 
   protected abstract Function<TypeDescription, OrcRowReader<?>> getOrcReaderFunction(
-      Schema projectSchema,
-      Map<Integer, ?> idToConstant);
+      Schema projectSchema, Map<Integer, ?> idToConstant);
 
   protected abstract Function<Schema, Function<T, StructLike>> toStructLikeFunction();
 
@@ -195,10 +228,11 @@ public abstract class AbstractUnkeyedDataReader<T> {
 
     protected Function<T, StructLike> asStructLike;
 
-    GenericDeleteFilter(FileScanTask task,
-                        Schema tableSchema,
-                        Schema requestedSchema,
-                        StructLikeCollections structLikeCollections) {
+    GenericDeleteFilter(
+        FileScanTask task,
+        Schema tableSchema,
+        Schema requestedSchema,
+        StructLikeCollections structLikeCollections) {
       super(task, tableSchema, requestedSchema, structLikeCollections);
       this.asStructLike = toStructLikeFunction().apply(requiredSchema());
     }

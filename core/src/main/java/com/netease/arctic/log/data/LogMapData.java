@@ -21,13 +21,9 @@ package com.netease.arctic.log.data;
 import java.io.Serializable;
 import java.util.Map;
 
-/**
- * An internal data structure representing data of map.
- */
+/** An internal data structure representing data of map. */
 public interface LogMapData {
-  /**
-   * Returns the number of key-value mappings in this map.
-   */
+  /** Returns the number of key-value mappings in this map. */
   int size();
 
   /**
@@ -44,9 +40,7 @@ public interface LogMapData {
    */
   LogArrayData valueArray();
 
-  /**
-   * used by log deserialization
-   */
+  /** used by log deserialization */
   interface Factory extends Serializable {
     LogMapData create(Map<Object, Object> result);
   }

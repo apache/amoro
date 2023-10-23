@@ -67,8 +67,7 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   private AmsClient client;
   private MixedTables tables;
 
-  public BasicMixedIcebergCatalog() {
-  }
+  public BasicMixedIcebergCatalog() {}
 
   public BasicMixedIcebergCatalog(CatalogMeta meta) {
     this.initialize(meta);
@@ -92,11 +91,14 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     catalogMeta.putToCatalogProperties(
         org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE, catalogMeta.getCatalogType());
     if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(catalogMeta.getCatalogType())) {
-      catalogMeta.getCatalogProperties()
+      catalogMeta
+          .getCatalogProperties()
           .put(CatalogProperties.CATALOG_IMPL, CatalogLoader.GLUE_CATALOG_IMPL);
     }
     if (catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
-      catalogMeta.getCatalogProperties().remove(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE);
+      catalogMeta
+          .getCatalogProperties()
+          .remove(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE);
     }
 
     TableMetaStore metaStore = CatalogUtil.buildMetaStore(catalogMeta);
@@ -105,9 +107,13 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
         catalogMeta.getCatalogProperties(), metaStore.getConfiguration()
     ));
     Pattern databaseFilterPattern = null;
-    if (catalogMeta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION)) {
+    if (catalogMeta
+        .getCatalogProperties()
+        .containsKey(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION)) {
       String databaseFilter =
-          catalogMeta.getCatalogProperties().get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
+          catalogMeta
+              .getCatalogProperties()
+              .get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
       databaseFilterPattern = Pattern.compile(databaseFilter);
     }
     synchronized (this) {
@@ -122,13 +128,12 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   @Override
   public List<String> listDatabases() {
     List<String> databases =
-        tableMetaStore.doAs(() ->
-            asNamespaceCatalog().listNamespaces(Namespace.empty())
-                .stream()
-                .map(namespace -> namespace.level(0))
-                .distinct()
-                .collect(Collectors.toList())
-        );
+        tableMetaStore.doAs(
+            () ->
+                asNamespaceCatalog().listNamespaces(Namespace.empty()).stream()
+                    .map(namespace -> namespace.level(0))
+                    .distinct()
+                    .collect(Collectors.toList()));
     if (databaseFilterPattern == null) {
       return databases;
     }
@@ -195,7 +200,8 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     }
     ArcticTable base = table.isKeyedTable() ? table.asKeyedTable().baseTable() : table;
     // delete custom trash location
-    String customTrashLocation = table.properties().get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
+    String customTrashLocation =
+        table.properties().get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
     ArcticFileIO io = table.io();
     boolean deleted = dropTableInternal(toIcebergTableIdentifier(tableIdentifier), purge);
     boolean changeDeleted = false;
@@ -208,7 +214,8 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     }
     // delete custom trash location
     if (customTrashLocation != null) {
-      String trashParentLocation = TableTrashManagers.getTrashParentLocation(tableIdentifier, customTrashLocation);
+      String trashParentLocation =
+          TableTrashManagers.getTrashParentLocation(tableIdentifier, customTrashLocation);
       if (io.supportFileSystemOperations() && io.exists(trashParentLocation)) {
         io.asPrefixFileIO().deletePrefix(trashParentLocation);
       }
@@ -269,9 +276,10 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   private SupportsNamespaces asNamespaceCatalog() {
     Catalog icebergCatalog = icebergCatalog();
     if (!(icebergCatalog instanceof SupportsNamespaces)) {
-      throw new UnsupportedOperationException(String.format(
-          "Iceberg catalog: %s doesn't implement SupportsNamespaces",
-          icebergCatalog.getClass().getName()));
+      throw new UnsupportedOperationException(
+          String.format(
+              "Iceberg catalog: %s doesn't implement SupportsNamespaces",
+              icebergCatalog.getClass().getName()));
     }
     return (SupportsNamespaces) icebergCatalog;
   }
@@ -336,10 +344,7 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
           org.apache.iceberg.catalog.TableIdentifier.of(identifier.getDatabase(), identifier.getTableName()),
           schema, partitionSpec, properties);
       return new CreateTableTransaction(
-          transaction,
-          this::create,
-          () -> dropTable(identifier, true)
-      );
+          transaction, this::create, () -> dropTable(identifier, true));
     }
   }
 }

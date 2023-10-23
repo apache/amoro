@@ -42,6 +42,11 @@ Amoro meets diverse user needs by using different table formats. Currently, Amor
 Iceberg format tables use the engine integration method provided by the Iceberg community.
 For details, please refer to: [Iceberg Docs](https://iceberg.apache.org/docs/latest/).
 
+### Paimon format
+
+Paimon format tables use the engine integration method provided by the Paimon community.
+For details, please refer to: [Paimon Docs](https://paimon.apache.org/docs/master/).
+
 ### Mixed format
 
 Amoro support multiple processing engines for Mixed format as below:

@@ -115,7 +115,6 @@ CREATE TABLE table_metadata
     catalog_name VARCHAR(64) NOT NULL,
     db_name VARCHAR(128) NOT NULL,
     table_name VARCHAR(128) NOT NULL,
-    format VARCHAR(32) NOT NULL,
     primary_key VARCHAR(256),
     sort_key VARCHAR(256),
     table_location VARCHAR(256),
@@ -139,7 +138,6 @@ COMMENT ON COLUMN table_metadata.table_id IS 'Table ID';
 COMMENT ON COLUMN table_metadata.catalog_name IS 'Catalog name';
 COMMENT ON COLUMN table_metadata.db_name IS 'Database name';
 COMMENT ON COLUMN table_metadata.table_name IS 'Table name';
-COMMENT ON COLUMN table_metadata.format IS 'Format';
 COMMENT ON COLUMN table_metadata.primary_key IS 'Primary key';
 COMMENT ON COLUMN table_metadata.sort_key IS 'Sort key';
 COMMENT ON COLUMN table_metadata.table_location IS 'Table location';

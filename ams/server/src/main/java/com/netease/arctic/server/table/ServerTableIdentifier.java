@@ -13,8 +13,6 @@ public class ServerTableIdentifier {
   private String tableName;
   private TableFormat format;
 
-  private TableFormat format;
-
   //used by the MyBatis framework.
   private ServerTableIdentifier() {
   }

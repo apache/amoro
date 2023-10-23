@@ -23,9 +23,9 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 /**
- * Entry of Iceberg ContentFile, include status, ContentFile, snapshotId and sequenceNumber.
- * If the actual sequenceNumber in manifest file is null, it will be inherited from metadata,
- * and it may be null for DELETED entries with iceberg version < 1.0.0.
+ * Entry of Iceberg ContentFile, include status, ContentFile, snapshotId and sequenceNumber. If the
+ * actual sequenceNumber in manifest file is null, it will be inherited from metadata, and it may be
+ * null for DELETED entries with iceberg version < 1.0.0.
  */
 public class IcebergFileEntry {
   private final Long snapshotId;
@@ -33,8 +33,11 @@ public class IcebergFileEntry {
   private final ManifestEntryFields.Status status;
   private final ContentFile<?> file;
 
-  public IcebergFileEntry(Long snapshotId, Long sequenceNumber,
-                          ManifestEntryFields.Status status, ContentFile<?> file) {
+  public IcebergFileEntry(
+      Long snapshotId,
+      Long sequenceNumber,
+      ManifestEntryFields.Status status,
+      ContentFile<?> file) {
     this.snapshotId = snapshotId;
     this.sequenceNumber = sequenceNumber;
     this.status = status;

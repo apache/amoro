@@ -64,8 +64,11 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
   public TestIcebergCombinedReaderVariousTypes(Schema schema) {
     super(
         new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(schema, PrimaryKeySpec.noPrimaryKey(),
-            PartitionSpec.unpartitioned(), buildTableProperties()));
+        new BasicTableTestHelper(
+            schema,
+            PrimaryKeySpec.noPrimaryKey(),
+            PartitionSpec.unpartitioned(),
+            buildTableProperties()));
   }
 
   @Parameterized.Parameters(name = "schema = {0}")
@@ -81,11 +84,8 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
     Schema decimalSchema = getSchema(Types.DecimalType.of(5, 2));
 
     return new Object[] {
-        dateSchema,
-        timeSchema,
-        timestampWithoutZoneSchema,
-        timestampWithZoneSchema,
-        decimalSchema};
+      dateSchema, timeSchema, timestampWithoutZoneSchema, timestampWithZoneSchema, decimalSchema
+    };
   }
 
   @NotNull
@@ -94,8 +94,8 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
         com.google.common.collect.Lists.newArrayList(
             Types.NestedField.of(1, false, "pk1", type),
             Types.NestedField.of(2, false, "pk2", Types.StringType.get()),
-            Types.NestedField.of(3, true, "v1", Types.StringType.get())
-        ), Sets.newHashSet(1, 2));
+            Types.NestedField.of(3, true, "v1", Types.StringType.get())),
+        Sets.newHashSet(1, 2));
   }
 
   private static Map<String, String> buildTableProperties() {
@@ -129,30 +129,27 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
     DataFile[] dataFiles = dataFileList.toArray(new DataFile[0]);
     DeleteFile[] deleteFiles = deleteFileList.toArray(new DeleteFile[0]);
 
-    RewriteFilesInput input = new RewriteFilesInput(
-        dataFiles,
-        new DataFile[] {},
-        new DeleteFile[] {},
-        deleteFiles,
-        table);
+    RewriteFilesInput input =
+        new RewriteFilesInput(
+            dataFiles, new DataFile[] {}, new DeleteFile[] {}, deleteFiles, table);
 
-    CloseableIterable<Record> readData = new GenericCombinedIcebergDataReader(
-        table.io(),
-        table.schema(),
-        table.spec(),
-        null,
-        false,
-        IdentityPartitionConverters::convertConstant,
-        false,
-        null,
-        input
-    ).readData();
+    CloseableIterable<Record> readData =
+        new GenericCombinedIcebergDataReader(
+                table.io(),
+                table.schema(),
+                table.spec(),
+                null,
+                false,
+                IdentityPartitionConverters::convertConstant,
+                false,
+                null,
+                input)
+            .readData();
 
     Assert.assertEquals(Iterables.size(readData), 1);
   }
 
-  private static void write(UnkeyedTable table, List<RecordWithAction> list)
-      throws IOException {
+  private static void write(UnkeyedTable table, List<RecordWithAction> list) throws IOException {
     WriteResult result = IcebergDataTestHelpers.delta(table, list);
 
     RowDelta rowDelta = table.newRowDelta();
