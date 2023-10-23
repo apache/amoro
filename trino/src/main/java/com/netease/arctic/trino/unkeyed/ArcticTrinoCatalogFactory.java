@@ -25,9 +25,7 @@ import io.trino.spi.security.ConnectorIdentity;
 
 import javax.inject.Inject;
 
-/**
- * Factory to generate TrinoCatalog
- */
+/** Factory to generate TrinoCatalog */
 public class ArcticTrinoCatalogFactory implements TrinoCatalogFactory {
 
   private final ArcticCatalogFactory arcticCatalogFactory;

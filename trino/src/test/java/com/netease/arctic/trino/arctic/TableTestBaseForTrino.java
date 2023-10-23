@@ -18,6 +18,9 @@
 
 package com.netease.arctic.trino.arctic;
 
+import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.netease.arctic.ams.api.CatalogMeta;
@@ -63,9 +66,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
-
 public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
 
   protected static TemporaryFolder tmp = new TemporaryFolder();
@@ -78,38 +78,39 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_table");
   protected static final TableIdentifier PK_TABLE_ID =
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_pk_table");
-  protected static final Schema TABLE_SCHEMA = new Schema(
-      Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "name$name", Types.StringType.get()),
-      Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone())
-  );
+  protected static final Schema TABLE_SCHEMA =
+      new Schema(
+          Types.NestedField.required(1, "id", Types.IntegerType.get()),
+          Types.NestedField.required(2, "name$name", Types.StringType.get()),
+          Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone()));
   protected static final Record RECORD = GenericRecord.create(TABLE_SCHEMA);
-  protected static final Schema POS_DELETE_SCHEMA = new Schema(
-      MetadataColumns.DELETE_FILE_PATH,
-      MetadataColumns.DELETE_FILE_POS
-  );
-  protected static final PartitionSpec SPEC = PartitionSpec.builderFor(TABLE_SCHEMA)
-      .day("op_time").build();
-  protected static final PrimaryKeySpec PRIMARY_KEY_SPEC = PrimaryKeySpec.builderFor(TABLE_SCHEMA)
-      .addColumn("id").build();
-  protected static final DataFile FILE_A = DataFiles.builder(SPEC)
-      .withPath("/path/to/data-a.parquet")
-      .withFileSizeInBytes(0)
-      .withPartitionPath("op_time_day=2022-01-01") // easy way to set partition data for now
-      .withRecordCount(2) // needs at least one record or else metrics will filter it out
-      .build();
-  protected static final DataFile FILE_B = DataFiles.builder(SPEC)
-      .withPath("/path/to/data-b.parquet")
-      .withFileSizeInBytes(0)
-      .withPartitionPath("op_time_day=2022-01-02") // easy way to set partition data for now
-      .withRecordCount(2) // needs at least one record or else metrics will filter it out
-      .build();
-  protected static final DataFile FILE_C = DataFiles.builder(SPEC)
-      .withPath("/path/to/data-b.parquet")
-      .withFileSizeInBytes(0)
-      .withPartitionPath("op_time_day=2022-01-03") // easy way to set partition data for now
-      .withRecordCount(2) // needs at least one record or else metrics will filter it out
-      .build();
+  protected static final Schema POS_DELETE_SCHEMA =
+      new Schema(MetadataColumns.DELETE_FILE_PATH, MetadataColumns.DELETE_FILE_POS);
+  protected static final PartitionSpec SPEC =
+      PartitionSpec.builderFor(TABLE_SCHEMA).day("op_time").build();
+  protected static final PrimaryKeySpec PRIMARY_KEY_SPEC =
+      PrimaryKeySpec.builderFor(TABLE_SCHEMA).addColumn("id").build();
+  protected static final DataFile FILE_A =
+      DataFiles.builder(SPEC)
+          .withPath("/path/to/data-a.parquet")
+          .withFileSizeInBytes(0)
+          .withPartitionPath("op_time_day=2022-01-01") // easy way to set partition data for now
+          .withRecordCount(2) // needs at least one record or else metrics will filter it out
+          .build();
+  protected static final DataFile FILE_B =
+      DataFiles.builder(SPEC)
+          .withPath("/path/to/data-b.parquet")
+          .withFileSizeInBytes(0)
+          .withPartitionPath("op_time_day=2022-01-02") // easy way to set partition data for now
+          .withRecordCount(2) // needs at least one record or else metrics will filter it out
+          .build();
+  protected static final DataFile FILE_C =
+      DataFiles.builder(SPEC)
+          .withPath("/path/to/data-b.parquet")
+          .withFileSizeInBytes(0)
+          .withPartitionPath("op_time_day=2022-01-03") // easy way to set partition data for now
+          .withRecordCount(2) // needs at least one record or else metrics will filter it out
+          .build();
 
   protected ArcticCatalog testCatalog;
   protected UnkeyedTable testTable;
@@ -119,18 +120,22 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
     testCatalog = CatalogLoader.load(AMS.getUrl(CatalogTestHelper.TEST_CATALOG_NAME));
 
     File tableDir = tmp.newFolder();
-    testTable = testCatalog
-        .newTableBuilder(TABLE_ID, TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/table")
-        .withPartitionSpec(SPEC)
-        .create().asUnkeyedTable();
+    testTable =
+        testCatalog
+            .newTableBuilder(TABLE_ID, TABLE_SCHEMA)
+            .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/table")
+            .withPartitionSpec(SPEC)
+            .create()
+            .asUnkeyedTable();
 
-    testKeyedTable = testCatalog
-        .newTableBuilder(PK_TABLE_ID, TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_table")
-        .withPartitionSpec(SPEC)
-        .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
-        .create().asKeyedTable();
+    testKeyedTable =
+        testCatalog
+            .newTableBuilder(PK_TABLE_ID, TABLE_SCHEMA)
+            .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_table")
+            .withPartitionSpec(SPEC)
+            .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+            .create()
+            .asKeyedTable();
 
     this.before();
   }
@@ -163,15 +168,16 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
   protected List<DataFile> writeBase(TableIdentifier identifier, List<Record> records) {
     KeyedTable table = testCatalog.loadTable(identifier).asKeyedTable();
     long txId = table.beginTransaction("");
-    try (GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(table)
-        .withTransactionId(txId).buildBaseWriter()) {
-      records.forEach(d -> {
-        try {
-          writer.write(d);
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      });
+    try (GenericBaseTaskWriter writer =
+        GenericTaskWriters.builderFor(table).withTransactionId(txId).buildBaseWriter()) {
+      records.forEach(
+          d -> {
+            try {
+              writer.write(d);
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          });
       WriteResult result = writer.complete();
       AppendFiles appendFiles = table.baseTable().newAppend();
       Arrays.stream(result.dataFiles()).forEach(appendFiles::appendFile);
@@ -182,18 +188,19 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
     }
   }
 
-  protected List<DataFile> writeChange(TableIdentifier identifier, ChangeAction action, List<Record> records) {
+  protected List<DataFile> writeChange(
+      TableIdentifier identifier, ChangeAction action, List<Record> records) {
     KeyedTable table = testCatalog.loadTable(identifier).asKeyedTable();
-    try (GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(table)
-        .withChangeAction(action)
-        .buildChangeWriter()) {
-      records.forEach(d -> {
-        try {
-          writer.write(d);
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      });
+    try (GenericChangeTaskWriter writer =
+        GenericTaskWriters.builderFor(table).withChangeAction(action).buildChangeWriter()) {
+      records.forEach(
+          d -> {
+            try {
+              writer.write(d);
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          });
 
       WriteResult result = writer.complete();
       AppendFiles appendFiles = table.changeTable().newAppend();
@@ -206,26 +213,31 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
   }
 
   protected static List<Record> readKeyedTable(KeyedTable keyedTable) {
-    GenericKeyedDataReader reader = new GenericKeyedDataReader(
-        keyedTable.io(),
-        keyedTable.schema(),
-        keyedTable.schema(),
-        keyedTable.primaryKeySpec(),
-        null,
-        true,
-        IdentityPartitionConverters::convertConstant
-    );
+    GenericKeyedDataReader reader =
+        new GenericKeyedDataReader(
+            keyedTable.io(),
+            keyedTable.schema(),
+            keyedTable.schema(),
+            keyedTable.primaryKeySpec(),
+            null,
+            true,
+            IdentityPartitionConverters::convertConstant);
     List<Record> result = Lists.newArrayList();
     try (CloseableIterable<CombinedScanTask> combinedScanTasks = keyedTable.newScan().planTasks()) {
-      combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
-        try (CloseableIterator<Record> records = reader.readData(scTask)) {
-          while (records.hasNext()) {
-            result.add(records.next());
-          }
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      }));
+      combinedScanTasks.forEach(
+          combinedTask ->
+              combinedTask
+                  .tasks()
+                  .forEach(
+                      scTask -> {
+                        try (CloseableIterator<Record> records = reader.readData(scTask)) {
+                          while (records.hasNext()) {
+                            result.add(records.next());
+                          }
+                        } catch (IOException e) {
+                          throw new RuntimeException(e);
+                        }
+                      }));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -252,7 +264,8 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
     return LocalDateTime.of(2020, 1, day, 0, 0);
   }
 
-  protected StructLike partitionData(Schema tableSchema, PartitionSpec spec, Object... partitionValues) {
+  protected StructLike partitionData(
+      Schema tableSchema, PartitionSpec spec, Object... partitionValues) {
     GenericRecord record = GenericRecord.create(tableSchema);
     int index = 0;
     Set<Integer> partitionField = Sets.newHashSet();
@@ -277,17 +290,18 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
     return pd;
   }
 
-
-  protected static List<DataFile> writeBaseNoCommit(KeyedTable table, long txId, List<Record> records) {
-    try (GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(table)
-        .withTransactionId(txId).buildBaseWriter()) {
-      records.forEach(d -> {
-        try {
-          writer.write(d);
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      });
+  protected static List<DataFile> writeBaseNoCommit(
+      KeyedTable table, long txId, List<Record> records) {
+    try (GenericBaseTaskWriter writer =
+        GenericTaskWriters.builderFor(table).withTransactionId(txId).buildBaseWriter()) {
+      records.forEach(
+          d -> {
+            try {
+              writer.write(d);
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          });
       WriteResult result = writer.complete();
       return Arrays.asList(result.dataFiles());
     } catch (IOException e) {

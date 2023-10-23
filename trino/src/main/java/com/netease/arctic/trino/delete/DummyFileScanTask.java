@@ -18,6 +18,8 @@
 
 package com.netease.arctic.trino.delete;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableList;
 import org.apache.iceberg.CombinedScanTask;
 import org.apache.iceberg.DataFile;
@@ -33,13 +35,8 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Objects.requireNonNull;
-
-/**
- * Copy from trino-iceberg DummyFileScanTask and do some change to adapt Arctic
- */
-public class DummyFileScanTask
-    implements FileScanTask {
+/** Copy from trino-iceberg DummyFileScanTask and do some change to adapt Arctic */
+public class DummyFileScanTask implements FileScanTask {
   private final DataFile file;
   private final List<DeleteFile> deletes;
 
@@ -109,8 +106,7 @@ public class DummyFileScanTask
     throw new UnsupportedOperationException();
   }
 
-  private static class DummyDataFile
-      implements DataFile {
+  private static class DummyDataFile implements DataFile {
     private final String path;
 
     private DummyDataFile(String path) {

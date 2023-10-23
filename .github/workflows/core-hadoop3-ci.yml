@@ -23,7 +23,6 @@ on:
       - "flink/**"
       - "hive/**"
       - "spark/**"
-      - "trino/**"
       - "pom.xml"
 
 jobs:
