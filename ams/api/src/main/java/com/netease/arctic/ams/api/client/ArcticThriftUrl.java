@@ -21,6 +21,7 @@ package com.netease.arctic.ams.api.client;
 import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.properties.AmsHAProperties;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -237,23 +238,13 @@ public class ArcticThriftUrl {
 
   @Override
   public String toString() {
-    return "ArcticThriftUrl{"
-        + "schema='"
-        + schema
-        + '\''
-        + ", host='"
-        + host
-        + '\''
-        + ", port="
-        + port
-        + ", catalogName='"
-        + catalogName
-        + '\''
-        + ", socketTimeout="
-        + socketTimeout
-        + ", url='"
-        + url
-        + '\''
-        + '}';
+    return MoreObjects.toStringHelper(this)
+        .add("schema", schema)
+        .add("host", host)
+        .add("port", port)
+        .add("catalogName", catalogName)
+        .add("socketTimeout", socketTimeout)
+        .add("url", url)
+        .toString();
   }
 }
