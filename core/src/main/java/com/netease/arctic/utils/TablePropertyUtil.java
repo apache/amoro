@@ -192,4 +192,12 @@ public class TablePropertyUtil {
       return Long.parseLong(watermarkValue);
     }
   }
+
+  public static boolean usingHiveCommitProtocol(Map<String, String> properties) {
+    return TableProperties.HIVE_COMMIT_PROTOCOL_HIVE.equalsIgnoreCase(
+        properties.getOrDefault(
+            TableProperties.HIVE_COMMIT_PROTOCOL,
+            TableProperties.HIVE_COMMIT_PROTOCOL_DEFAULT)
+    );
+  }
 }

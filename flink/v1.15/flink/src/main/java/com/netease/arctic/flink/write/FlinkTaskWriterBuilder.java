@@ -37,6 +37,7 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WriteOperationKind;
 import com.netease.arctic.utils.SchemaUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.FileFormat;
@@ -150,6 +151,7 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
     Schema selectSchema =
         TypeUtil.reassignIds(
             FlinkSchemaUtil.convert(FlinkSchemaUtil.toSchema(flinkSchema)), schema);
+    boolean usingHiveCommitProtocol = TablePropertyUtil.usingHiveCommitProtocol(table.properties());
 
     OutputFileFactory outputFileFactory =
         locationKind == HiveLocationKind.INSTANT
@@ -161,7 +163,8 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
                 encryptionManager,
                 partitionId,
                 taskId,
-                transactionId)
+                transactionId,
+                usingHiveCommitProtocol)
             : new CommonOutputFileFactory(
                 baseLocation,
                 table.spec(),

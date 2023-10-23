@@ -38,6 +38,7 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WriteOperationKind;
 import com.netease.arctic.utils.SchemaUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.MetricsModes;
@@ -209,6 +210,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
       encryptionManager = table.encryption();
       schema = table.schema();
     }
+    boolean usingHiveCommitProtocol = TablePropertyUtil.usingHiveCommitProtocol(table.properties());
 
     OutputFileFactory outputFileFactory =
         locationKind == HiveLocationKind.INSTANT
@@ -221,7 +223,8 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
                 partitionId,
                 taskId,
                 transactionId,
-                customHiveSubdirectory)
+                customHiveSubdirectory,
+                usingHiveCommitProtocol)
             : new CommonOutputFileFactory(
                 baseLocation,
                 table.spec(),
