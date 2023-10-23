@@ -60,7 +60,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
   private final ScheduledExecutorService tableExplorerScheduler = Executors.newSingleThreadScheduledExecutor(
       new ThreadFactoryBuilder()
-          .setNameFormat("table-explorer-scheduler")
+          .setNameFormat("table-explorer-scheduler-%d")
           .setDaemon(true)
           .build()
   );
