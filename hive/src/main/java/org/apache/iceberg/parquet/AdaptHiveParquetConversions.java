@@ -101,8 +101,7 @@ class AdaptHiveParquetConversions {
 
         if (!((Types.TimestampType) icebergType).shouldAdjustToUTC()) {
           // iceberg org.apache.iceberg.expressions.Literals resolve timestamp without tz use UTC,
-          // but in fact it is
-          // local time zone
+          // but in fact it is local time zone
           instant =
               LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toInstant(ZoneOffset.UTC);
         }
