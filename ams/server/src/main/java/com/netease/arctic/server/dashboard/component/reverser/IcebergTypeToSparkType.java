@@ -112,10 +112,12 @@ public class IcebergTypeToSparkType extends TypeUtil.SchemaVisitor<DataType> {
       case TIMESTAMP:
         return TimestampType$.MODULE$;
       case STRING:
+        return StringType$.MODULE$;
       case UUID:
         // use String
         return StringType$.MODULE$;
       case FIXED:
+        return BinaryType$.MODULE$;
       case BINARY:
         return BinaryType$.MODULE$;
       case DECIMAL:
