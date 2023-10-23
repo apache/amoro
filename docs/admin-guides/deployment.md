@@ -44,11 +44,11 @@ dist-x.y.z.jar
 archive-tmp/
 maven-archiver/
 
-cd ${base_dir}/flink/v1.12/flink-runtime/target
+cd ${base_dir}/flink/v1.15/flink-runtime/target
 ls 
-amoro-flink-runtime-1.12-x.y.z-tests.jar
-amoro-flink-runtime-1.12-x.y.z.jar # Flink 1.12 runtime package
-original-amoro-flink-runtime-1.12-x.y.z.jar
+amoro-flink-runtime-1.15-x.y.z-tests.jar
+amoro-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
+original-amoro-flink-runtime-1.15-x.y.z.jar
 maven-archiver/
 
 cd ${base_dir}/spark/v3.1/spark-runtime/target
