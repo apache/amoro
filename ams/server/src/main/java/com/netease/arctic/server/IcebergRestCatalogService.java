@@ -250,7 +250,7 @@ public class IcebergRestCatalogService extends PersistentBase {
     handleNamespace(ctx, (catalog, database) -> {
       checkDatabaseExist(catalog.exist(database), database);
       List<TableIdentifier> tableIdentifiers = catalog.listTables(database).stream()
-          .map(i -> TableIdentifier.of(database, i.getTableName()))
+          .map(i -> TableIdentifier.of(database, i.getIdentifier().getTableName()))
           .collect(Collectors.toList());
 
       return ListTablesResponse.builder()
@@ -289,7 +289,8 @@ public class IcebergRestCatalogService extends PersistentBase {
           sortOrder != null ? sortOrder : SortOrder.unsorted(),
           location, request.properties()
       );
-      ServerTableIdentifier identifier = ServerTableIdentifier.of(catalog.name(), database, tableName);
+      ServerTableIdentifier identifier = ServerTableIdentifier.of(
+          catalog.name(), database, tableName, TableFormat.ICEBERG);
       String newMetadataFileLocation = IcebergTableUtil.genNewMetadataFileLocation(null, tableMetadata);
       FileIO io = newIcebergFileIo(catalog.getMetadata());
       try {

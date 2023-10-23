@@ -16,6 +16,12 @@ The Iceberg Format can be accessed using the Connector provided by Iceberg.
 Refer to the documentation at [Iceberg Flink user manual](https://iceberg.apache.org/docs/latest/flink-connector/)
 for more information.
 
+## Paimon format
+
+The Paimon Format can be accessed using the Connector provided by Paimon.
+Refer to the documentation at [Paimon Flink user manual](https://paimon.apache.org/docs/master/engines/flink/)
+for more information.
+
 ## Mixed format
 The Apache Flink engine can process Amoro table data in batch and streaming mode. The Flink on Amoro connector provides the ability to read and write to the Amoro data lake while ensuring data consistency. To meet the high real-time data requirements of businesses, the Amoro data lake's underlying storage structure is designed with LogStore, which stores the latest changelog or append-only real-time data.
 

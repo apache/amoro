@@ -15,6 +15,12 @@ The Iceberg Format can be accessed using the Connector provided by Iceberg.
 Refer to the documentation at [Iceberg Spark Connector](https://iceberg.apache.org/docs/latest/getting-started/) 
 for more information.
 
+# Paimon Format
+
+The Paimon Format can be accessed using the Connector provided by Paimon.
+Refer to the documentation at [Paimon Spark Connector](https://paimon.apache.org/docs/master/engines/spark3/)
+for more information.
+
 # Mixed Format
 
 

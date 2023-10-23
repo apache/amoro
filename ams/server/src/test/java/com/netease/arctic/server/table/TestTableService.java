@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.netease.arctic.TableTestHelper.TEST_DB_NAME;
 import static com.netease.arctic.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
@@ -73,7 +74,9 @@ public class TestTableService extends AMSTableTestBase {
     // test list tables
     List<TableIdentifier> tableIdentifierList = tableService().listTables(
         TEST_CATALOG_NAME,
-        TEST_DB_NAME);
+        TEST_DB_NAME).stream()
+        .map(t -> t.getIdentifier().buildTableIdentifier())
+        .collect(Collectors.toList());
     Assert.assertEquals(1, tableIdentifierList.size());
     Assert.assertEquals(tableMeta().getTableIdentifier(), tableIdentifierList.get(0));
 

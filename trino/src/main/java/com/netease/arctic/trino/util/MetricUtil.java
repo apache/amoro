@@ -23,9 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.function.Supplier;
 
-/**
- * tools to metric run time
- */
+/** tools to metric run time */
 public class MetricUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetricUtil.class);

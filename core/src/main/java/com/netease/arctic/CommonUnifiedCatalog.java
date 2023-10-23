@@ -80,7 +80,7 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     if (!exist(database)) {
       throw new NoSuchDatabaseException("Database: " + database + " does not exist.");
     }
-    if (listTableMetas(database).size() > 0) {
+    if (listTables(database).size() > 0) {
       throw new IllegalStateException("Database: " + database + " is not empty.");
     }
     findFirstFormatCatalog(TableFormat.values()).dropDatabase(database);
@@ -110,7 +110,7 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   }
 
   @Override
-  public List<TableMeta> listTableMetas(String database) {
+  public List<TableIDWithFormat> listTables(String database) {
     if (!exist(database)) {
       throw new NoSuchDatabaseException("Database: " + database + " does not exist.");
     }
@@ -128,7 +128,7 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     return tableNameToFormat.keySet().stream()
         .map(tableName -> {
           TableFormat format = tableNameToFormat.get(tableName);
-          return TableMeta.of(TableIdentifier.of(this.meta.getCatalogName(), database, tableName), format);
+          return TableIDWithFormat.of(TableIdentifier.of(this.meta.getCatalogName(), database, tableName), format);
         }).collect(Collectors.toList());
   }
 
