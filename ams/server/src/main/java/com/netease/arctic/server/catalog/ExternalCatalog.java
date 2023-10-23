@@ -1,6 +1,7 @@
 package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 
@@ -10,9 +11,9 @@ public abstract class ExternalCatalog extends ServerCatalog {
     super(metadata);
   }
 
-  public void syncTable(String database, String tableName) {
+  public void syncTable(String database, String tableName, TableFormat format) {
     ServerTableIdentifier tableIdentifier =
-            ServerTableIdentifier.of(getMetadata().getCatalogName(), database, tableName);
+            ServerTableIdentifier.of(getMetadata().getCatalogName(), database, tableName, format);
     doAs(TableMetaMapper.class, mapper -> mapper.insertTable(tableIdentifier));
   }
 

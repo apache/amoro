@@ -6,9 +6,11 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.catalog.CatalogBuilder;
@@ -177,7 +179,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     InternalCatalog catalog = getInternalCatalog(catalogName);
     ServerTableIdentifier tableIdentifier = catalog.createTable(tableMetadata);
     AmoroTable<?> table = catalog.loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
-    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, table.format(), this, table.properties());
+    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
     tableRuntimeMap.put(tableIdentifier, tableRuntime);
     if (headHandler != null) {
       headHandler.fireTableAdded(table, tableRuntime);
@@ -203,7 +205,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public List<TableIdentifier> listTables(String catalogName, String dbName) {
+  public List<TableIDWithFormat> listTables(String catalogName, String dbName) {
     checkStarted();
     return getServerCatalog(catalogName).listTables(dbName);
   }
@@ -514,7 +516,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private void syncTable(ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
     try {
       doAsTransaction(
-          () -> externalCatalog.syncTable(tableIdentity.getDatabase(), tableIdentity.getTableName()),
+          () -> externalCatalog.syncTable(
+              tableIdentity.getDatabase(), tableIdentity.getTableName(), tableIdentity.getFormat()),
           () -> handleTableRuntimeAdded(externalCatalog, tableIdentity)
       );
     } catch (Throwable t) {
@@ -526,10 +529,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private void handleTableRuntimeAdded(ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
     ServerTableIdentifier tableIdentifier =
         externalCatalog.getServerTableIdentifier(tableIdentity.getDatabase(), tableIdentity.getTableName());
-    AmoroTable<?> table = externalCatalog.loadTable(
-        tableIdentifier.getDatabase(),
-        tableIdentifier.getTableName());
-    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, table.format(), this, table.properties());
+    AmoroTable<?> table = externalCatalog.loadTable(tableIdentity.getDatabase(), tableIdentity.getTableName());
+    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
     tableRuntimeMap.put(tableIdentifier, tableRuntime);
     if (headHandler != null) {
       headHandler.fireTableAdded(table, tableRuntime);
@@ -560,14 +561,18 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     private final String database;
     private final String tableName;
 
-    protected TableIdentity(TableIdentifier tableIdentifier) {
-      this.database = tableIdentifier.getDatabase();
-      this.tableName = tableIdentifier.getTableName();
+    private final TableFormat format;
+
+    protected TableIdentity(TableIDWithFormat idWithFormat) {
+      this.database = idWithFormat.getIdentifier().getDatabase();
+      this.tableName = idWithFormat.getIdentifier().getTableName();
+      this.format = idWithFormat.getTableFormat();
     }
 
     protected TableIdentity(ServerTableIdentifier serverTableIdentifier) {
       this.database = serverTableIdentifier.getDatabase();
       this.tableName = serverTableIdentifier.getTableName();
+      this.format = serverTableIdentifier.getFormat();
     }
 
     public String getDatabase() {
@@ -576,6 +581,10 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
     public String getTableName() {
       return tableName;
+    }
+
+    public TableFormat getFormat() {
+      return format;
     }
 
     @Override

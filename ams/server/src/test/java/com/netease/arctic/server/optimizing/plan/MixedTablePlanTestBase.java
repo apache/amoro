@@ -72,7 +72,8 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
   @Before
   public void mock() {
     tableRuntime = Mockito.mock(TableRuntime.class);
-    ServerTableIdentifier id = ServerTableIdentifier.of(AmsUtil.toTableIdentifier(getArcticTable().id()));
+    ServerTableIdentifier id = ServerTableIdentifier.of(
+        AmsUtil.toTableIdentifier(getArcticTable().id()), getTestFormat());
     id.setId(0L);
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(id);
     Mockito.when(tableRuntime.getOptimizingConfig()).thenAnswer(f -> getConfig());
