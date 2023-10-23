@@ -14,11 +14,15 @@ public class TestSimpleSpilledMap {
 
   @Before
   public void createMap() {
-    SimpleSpillableMap spillableMap = new SimpleSpillableMap(100L,
-        null, new StructLikeWrapperSizeEstimator(), new DefaultSizeEstimator<>());
-    map = spillableMap.new SimpleSpilledMap(
-        SerializationUtil.createJavaSimpleSerializer(),
-        SerializationUtil.createJavaSimpleSerializer(), null);
+    SimpleSpillableMap spillableMap =
+        new SimpleSpillableMap(
+            100L, null, new StructLikeWrapperSizeEstimator(), new DefaultSizeEstimator<>());
+    map =
+        spillableMap
+        .new SimpleSpilledMap(
+            SerializationUtil.createJavaSimpleSerializer(),
+            SerializationUtil.createJavaSimpleSerializer(),
+            null);
   }
 
   @After

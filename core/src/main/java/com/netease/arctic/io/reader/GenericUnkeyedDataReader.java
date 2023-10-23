@@ -48,7 +48,14 @@ public class GenericUnkeyedDataReader extends AbstractUnkeyedDataReader<Record> 
       boolean caseSensitive,
       BiFunction<Type, Object, Object> convertConstant,
       boolean reuseContainer) {
-    super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive, convertConstant, reuseContainer);
+    super(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        nameMapping,
+        caseSensitive,
+        convertConstant,
+        reuseContainer);
   }
 
   public GenericUnkeyedDataReader(
@@ -70,7 +77,6 @@ public class GenericUnkeyedDataReader extends AbstractUnkeyedDataReader<Record> 
         reuseContainer,
         structLikeCollections);
   }
-
 
   public GenericUnkeyedDataReader(
       ArcticFileIO fileIO,
@@ -96,15 +102,14 @@ public class GenericUnkeyedDataReader extends AbstractUnkeyedDataReader<Record> 
 
   @Override
   protected Function<MessageType, ParquetValueReader<?>> getParquetReaderFunction(
-      Schema projectedSchema,
-      Map<Integer, ?> idToConstant) {
-    return fileSchema -> GenericParquetReaders.buildReader(projectedSchema, fileSchema, idToConstant);
+      Schema projectedSchema, Map<Integer, ?> idToConstant) {
+    return fileSchema ->
+        GenericParquetReaders.buildReader(projectedSchema, fileSchema, idToConstant);
   }
 
   @Override
   protected Function<TypeDescription, OrcRowReader<?>> getOrcReaderFunction(
-      Schema projectSchema,
-      Map<Integer, ?> idToConstant) {
+      Schema projectSchema, Map<Integer, ?> idToConstant) {
     return fileSchema -> new GenericOrcReader(projectSchema, fileSchema, idToConstant);
   }
 

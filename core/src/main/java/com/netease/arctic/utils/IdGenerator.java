@@ -20,9 +20,7 @@ package com.netease.arctic.utils;
 
 import java.util.UUID;
 
-/**
- * This is a random id generator.
- */
+/** This is a random id generator. */
 public class IdGenerator {
   public static final int ID_BYTE_LENGTH = 4;
 
@@ -42,6 +40,7 @@ public class IdGenerator {
 
   /**
    * generate a random id
+   *
    * @return random id
    */
   public static long randomId() {

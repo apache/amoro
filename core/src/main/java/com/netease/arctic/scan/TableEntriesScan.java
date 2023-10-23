@@ -52,9 +52,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-/**
- * API for configuring a scan to get the {@link IcebergFileEntry} of an Iceberg Table.
- */
+/** API for configuring a scan to get the {@link IcebergFileEntry} of an Iceberg Table. */
 public class TableEntriesScan {
   private final Table table;
   private final Long snapshotId;
@@ -137,6 +135,7 @@ public class TableEntriesScan {
 
     /**
      * Set if loads the column stats with each file.
+     *
      * <p>Column stats include: value count, null value count, lower bounds, and upper bounds.
      *
      * @return this for chain
@@ -148,6 +147,7 @@ public class TableEntriesScan {
 
     /**
      * Set the sequence number, fetch all entries greater than or equal to this sequence number.
+     *
      * @param fromSequence nullable.
      * @return this for chains
      */
@@ -167,15 +167,29 @@ public class TableEntriesScan {
     }
 
     public TableEntriesScan build() {
-      return new TableEntriesScan(table, snapshotId, dataFilter, aliveEntry,
-          fileContents, includeColumnStats, schema, metadataTableType, fromSequence);
+      return new TableEntriesScan(
+          table,
+          snapshotId,
+          dataFilter,
+          aliveEntry,
+          fileContents,
+          includeColumnStats,
+          schema,
+          metadataTableType,
+          fromSequence);
     }
   }
 
   private TableEntriesScan(
-      Table table, Long snapshotId, Expression dataFilter, boolean aliveEntry,
-      Set<FileContent> validFileContent, boolean includeColumnStats,
-      Schema schema, MetadataTableType metadataTableType, Long fromSequence) {
+      Table table,
+      Long snapshotId,
+      Expression dataFilter,
+      boolean aliveEntry,
+      Set<FileContent> validFileContent,
+      boolean includeColumnStats,
+      Schema schema,
+      MetadataTableType metadataTableType,
+      Long fromSequence) {
     this.table = table;
     this.dataFilter = dataFilter;
     this.aliveEntry = aliveEntry;
@@ -198,41 +212,52 @@ public class TableEntriesScan {
     }
     CloseableIterable<FileScanTask> manifestFileScanTasks = tableScan.planFiles();
 
-    CloseableIterable<StructLike> entries = CloseableIterable.concat(entriesOfManifest(manifestFileScanTasks));
+    CloseableIterable<StructLike> entries =
+        CloseableIterable.concat(entriesOfManifest(manifestFileScanTasks));
 
     CloseableIterable<IcebergFileEntry> allEntries =
-        CloseableIterable.transform(entries, (entry -> {
-          Long sequence = entry.get(entryFieldIndex(ManifestEntryFields.SEQUENCE_NUMBER.name()), Long.class);
-          if (fromSequence != null && fromSequence > sequence) {
-            return null;
-          }
-          ManifestEntryFields.Status status =
-              ManifestEntryFields.Status.of(
-                  entry.get(entryFieldIndex(ManifestEntryFields.STATUS.name()), Integer.class));
-          StructLike fileRecord =
-              entry.get(entryFieldIndex(ManifestEntryFields.DATA_FILE_FIELD_NAME), StructLike.class);
-          FileContent fileContent =
-              getFileContent(fileRecord.get(dataFileFieldIndex(DataFile.CONTENT.name()), Integer.class));
-          if (shouldKeep(status, fileContent)) {
-            Long snapshotId = entry.get(entryFieldIndex(ManifestEntryFields.SNAPSHOT_ID.name()), Long.class);
-            ContentFile<?> contentFile = buildContentFile(fileContent, fileRecord);
-            if (metricsEvaluator().eval(contentFile)) {
-              if (needMetrics() && !includeColumnStats) {
-                contentFile = (ContentFile<?>) contentFile.copyWithoutStats();
+        CloseableIterable.transform(
+            entries,
+            (entry -> {
+              Long sequence =
+                  entry.get(
+                      entryFieldIndex(ManifestEntryFields.SEQUENCE_NUMBER.name()), Long.class);
+              if (fromSequence != null && fromSequence > sequence) {
+                return null;
               }
-              return new IcebergFileEntry(snapshotId, sequence, status, contentFile);
-            }
-          }
-          return null;
-        }));
+              ManifestEntryFields.Status status =
+                  ManifestEntryFields.Status.of(
+                      entry.get(entryFieldIndex(ManifestEntryFields.STATUS.name()), Integer.class));
+              StructLike fileRecord =
+                  entry.get(
+                      entryFieldIndex(ManifestEntryFields.DATA_FILE_FIELD_NAME), StructLike.class);
+              FileContent fileContent =
+                  getFileContent(
+                      fileRecord.get(dataFileFieldIndex(DataFile.CONTENT.name()), Integer.class));
+              if (shouldKeep(status, fileContent)) {
+                Long snapshotId =
+                    entry.get(entryFieldIndex(ManifestEntryFields.SNAPSHOT_ID.name()), Long.class);
+                ContentFile<?> contentFile = buildContentFile(fileContent, fileRecord);
+                if (metricsEvaluator().eval(contentFile)) {
+                  if (needMetrics() && !includeColumnStats) {
+                    contentFile = (ContentFile<?>) contentFile.copyWithoutStats();
+                  }
+                  return new IcebergFileEntry(snapshotId, sequence, status, contentFile);
+                }
+              }
+              return null;
+            }));
     return CloseableIterable.filter(allEntries, Objects::nonNull);
   }
 
   private Table getMetadataTable() {
     if (this.entriesTable == null) {
-      this.entriesTable = MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) table).operations(),
-          table.name(), table.name() + "#" + this.metadataTableType.name(),
-          this.metadataTableType);
+      this.entriesTable =
+          MetadataTableUtils.createMetadataTableInstance(
+              ((HasTableOperations) table).operations(),
+              table.name(),
+              table.name() + "#" + this.metadataTableType.name(),
+              this.metadataTableType);
     }
     return this.entriesTable;
   }
@@ -260,11 +285,14 @@ public class TableEntriesScan {
     return validFileContent != null && validFileContent.contains(fileContent);
   }
 
-  private Iterable<CloseableIterable<StructLike>> entriesOfManifest(CloseableIterable<FileScanTask> fileScanTasks) {
-    return Iterables.transform(fileScanTasks, task -> {
-      assert task != null;
-      return ((DataTask) task).rows();
-    });
+  private Iterable<CloseableIterable<StructLike>> entriesOfManifest(
+      CloseableIterable<FileScanTask> fileScanTasks) {
+    return Iterables.transform(
+        fileScanTasks,
+        task -> {
+          assert task != null;
+          return ((DataTask) task).rows();
+        });
   }
 
   private ContentFile<?> buildContentFile(FileContent fileContent, StructLike fileRecord) {
@@ -281,15 +309,17 @@ public class TableEntriesScan {
     String filePath = fileRecord.get(dataFileFieldIndex(DataFile.FILE_PATH.name()), String.class);
     Long fileSize = fileRecord.get(dataFileFieldIndex(DataFile.FILE_SIZE.name()), Long.class);
     Long recordCount = fileRecord.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class);
-    DataFiles.Builder builder = DataFiles.builder(table.spec())
-        .withPath(filePath)
-        .withFileSizeInBytes(fileSize)
-        .withRecordCount(recordCount);
+    DataFiles.Builder builder =
+        DataFiles.builder(table.spec())
+            .withPath(filePath)
+            .withFileSizeInBytes(fileSize)
+            .withRecordCount(recordCount);
     if (needMetrics()) {
       builder.withMetrics(buildMetrics(fileRecord));
     }
     if (table.spec().isPartitioned()) {
-      StructLike partition = fileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
+      StructLike partition =
+          fileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
       builder.withPartition(partition);
     }
     return builder.build();
@@ -299,15 +329,17 @@ public class TableEntriesScan {
     String filePath = fileRecord.get(dataFileFieldIndex(DataFile.FILE_PATH.name()), String.class);
     Long fileSize = fileRecord.get(dataFileFieldIndex(DataFile.FILE_SIZE.name()), Long.class);
     Long recordCount = fileRecord.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class);
-    FileMetadata.Builder builder = FileMetadata.deleteFileBuilder(table.spec())
-        .withPath(filePath)
-        .withFileSizeInBytes(fileSize)
-        .withRecordCount(recordCount);
+    FileMetadata.Builder builder =
+        FileMetadata.deleteFileBuilder(table.spec())
+            .withPath(filePath)
+            .withFileSizeInBytes(fileSize)
+            .withRecordCount(recordCount);
     if (needMetrics()) {
       builder.withMetrics(buildMetrics(fileRecord));
     }
     if (table.spec().isPartitioned()) {
-      StructLike partition = fileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
+      StructLike partition =
+          fileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
       builder.withPartition(partition);
     }
     if (fileContent == FileContent.EQUALITY_DELETES) {
@@ -322,12 +354,18 @@ public class TableEntriesScan {
   private Metrics buildMetrics(StructLike dataFile) {
     return new Metrics(
         dataFile.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class),
-        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.COLUMN_SIZES.name()), Map.class),
-        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.VALUE_COUNTS.name()), Map.class),
-        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.NULL_VALUE_COUNTS.name()), Map.class),
-        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.NAN_VALUE_COUNTS.name()), Map.class),
-        (Map<Integer, ByteBuffer>) dataFile.get(dataFileFieldIndex(DataFile.LOWER_BOUNDS.name()), Map.class),
-        (Map<Integer, ByteBuffer>) dataFile.get(dataFileFieldIndex(DataFile.UPPER_BOUNDS.name()), Map.class));
+        (Map<Integer, Long>)
+            dataFile.get(dataFileFieldIndex(DataFile.COLUMN_SIZES.name()), Map.class),
+        (Map<Integer, Long>)
+            dataFile.get(dataFileFieldIndex(DataFile.VALUE_COUNTS.name()), Map.class),
+        (Map<Integer, Long>)
+            dataFile.get(dataFileFieldIndex(DataFile.NULL_VALUE_COUNTS.name()), Map.class),
+        (Map<Integer, Long>)
+            dataFile.get(dataFileFieldIndex(DataFile.NAN_VALUE_COUNTS.name()), Map.class),
+        (Map<Integer, ByteBuffer>)
+            dataFile.get(dataFileFieldIndex(DataFile.LOWER_BOUNDS.name()), Map.class),
+        (Map<Integer, ByteBuffer>)
+            dataFile.get(dataFileFieldIndex(DataFile.UPPER_BOUNDS.name()), Map.class));
   }
 
   private int entryFieldIndex(String fieldName) {
@@ -345,7 +383,11 @@ public class TableEntriesScan {
   private int dataFileFieldIndex(String fieldName) {
     if (lazyIndexOfDataFileType == null) {
       List<Types.NestedField> fields =
-          getMetadataTable().schema().findType(ManifestEntryFields.DATA_FILE_FIELD_NAME).asStructType().fields();
+          getMetadataTable()
+              .schema()
+              .findType(ManifestEntryFields.DATA_FILE_FIELD_NAME)
+              .asStructType()
+              .fields();
       Map<String, Integer> map = Maps.newHashMap();
       for (int i = 0; i < fields.size(); i++) {
         map.put(fields.get(i).name(), i);

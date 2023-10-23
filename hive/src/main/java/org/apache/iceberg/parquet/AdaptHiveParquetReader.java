@@ -37,7 +37,8 @@ import java.io.IOException;
 import java.util.function.Function;
 
 /**
- * Copy from iceberg {@link org.apache.iceberg.parquet.ParquetReader} to use {@link AdaptHiveReadConf}
+ * Copy from iceberg {@link org.apache.iceberg.parquet.ParquetReader} to use {@link
+ * AdaptHiveReadConf}
  */
 public class AdaptHiveParquetReader<T> extends CloseableGroup implements CloseableIterable<T> {
   private final InputFile input;
@@ -49,9 +50,15 @@ public class AdaptHiveParquetReader<T> extends CloseableGroup implements Closeab
   private final boolean caseSensitive;
   private final NameMapping nameMapping;
 
-  public AdaptHiveParquetReader(InputFile input, Schema expectedSchema, ParquetReadOptions options,
-      Function<MessageType, ParquetValueReader<?>> readerFunc, NameMapping nameMapping,
-      Expression filter, boolean reuseContainers, boolean caseSensitive) {
+  public AdaptHiveParquetReader(
+      InputFile input,
+      Schema expectedSchema,
+      ParquetReadOptions options,
+      Function<MessageType, ParquetValueReader<?>> readerFunc,
+      NameMapping nameMapping,
+      Expression filter,
+      boolean reuseContainers,
+      boolean caseSensitive) {
     this.input = input;
     this.expectedSchema = expectedSchema;
     this.options = options;
@@ -67,11 +74,20 @@ public class AdaptHiveParquetReader<T> extends CloseableGroup implements Closeab
 
   private AdaptHiveReadConf<T> init() {
     if (conf == null) {
-      //Change For Arctic
-      AdaptHiveReadConf<T> adaptHiveReadConf = new AdaptHiveReadConf<>(
-          input, options, expectedSchema, filter, readerFunc, null, nameMapping, reuseContainers,
-          caseSensitive, null);
-      //Change For Arctic
+      // Change For Arctic
+      AdaptHiveReadConf<T> adaptHiveReadConf =
+          new AdaptHiveReadConf<>(
+              input,
+              options,
+              expectedSchema,
+              filter,
+              readerFunc,
+              null,
+              nameMapping,
+              reuseContainers,
+              caseSensitive,
+              null);
+      // Change For Arctic
       this.conf = adaptHiveReadConf.copy();
       return adaptHiveReadConf;
     }

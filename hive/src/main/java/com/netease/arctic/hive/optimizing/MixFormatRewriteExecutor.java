@@ -23,9 +23,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * OptimizingExecutor form mixed format
- */
+/** OptimizingExecutor form mixed format */
 public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
 
   private final String outputDir;
@@ -48,19 +46,29 @@ public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
   protected FileWriter<PositionDelete<Record>, DeleteWriteResult> posWriter() {
     FileAppenderFactory<Record> appenderFactory = fullMetricAppenderFactory();
     return new ArcticTreeNodePosDeleteWriter<>(
-        appenderFactory, deleteFileFormat(), partition(),
-        io, encryptionManager(), getTransactionId(input.rePosDeletedDataFilesForMixed()), baseLocation(), table.spec());
+        appenderFactory,
+        deleteFileFormat(),
+        partition(),
+        io,
+        encryptionManager(),
+        getTransactionId(input.rePosDeletedDataFilesForMixed()),
+        baseLocation(),
+        table.spec());
   }
 
   @Override
   protected FileWriter<Record, DataWriteResult> dataWriter() {
-    TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(table)
-        .withTransactionId(table.isKeyedTable() ? getTransactionId(input.rewrittenDataFilesForMixed()) : null)
-        .withTaskId(0)
-        .withCustomHiveSubdirectory(outputDir)
-        .withTargetFileSize(targetSize())
-        .buildWriter(StringUtils.isBlank(outputDir) ?
-            WriteOperationKind.MAJOR_OPTIMIZE : WriteOperationKind.FULL_OPTIMIZE);
+    TaskWriter<Record> writer =
+        AdaptHiveGenericTaskWriterBuilder.builderFor(table)
+            .withTransactionId(
+                table.isKeyedTable() ? getTransactionId(input.rewrittenDataFilesForMixed()) : null)
+            .withTaskId(0)
+            .withCustomHiveSubdirectory(outputDir)
+            .withTargetFileSize(targetSize())
+            .buildWriter(
+                StringUtils.isBlank(outputDir)
+                    ? WriteOperationKind.MAJOR_OPTIMIZE
+                    : WriteOperationKind.FULL_OPTIMIZE);
     return wrapTaskWriter2FileWriter(writer);
   }
 

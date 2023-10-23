@@ -39,8 +39,11 @@ public class NodeFilter<T> extends Filter<T> {
   private final PrimaryKeyData primaryKey;
   private final Function<T, StructLike> asStructLike;
 
-  public NodeFilter(Set<DataTreeNode> sourceNodes, Schema schema, PrimaryKeySpec primaryKeySpec,
-                    Function<T, StructLike> asStructLike) {
+  public NodeFilter(
+      Set<DataTreeNode> sourceNodes,
+      Schema schema,
+      PrimaryKeySpec primaryKeySpec,
+      Function<T, StructLike> asStructLike) {
     this.sourceNodes = sourceNodes;
     this.primaryKey = new PrimaryKeyData(primaryKeySpec, schema);
     this.asStructLike = asStructLike;
@@ -57,6 +60,7 @@ public class NodeFilter<T> extends Filter<T> {
     }
 
     primaryKey.primaryKey(asStructLike.apply(record));
-    return sourceNodes.stream().anyMatch(node -> (primaryKey.hashCode() & node.mask()) == node.index());
+    return sourceNodes.stream()
+        .anyMatch(node -> (primaryKey.hashCode() & node.mask()) == node.index());
   }
 }

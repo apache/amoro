@@ -21,8 +21,8 @@ package com.netease.arctic.io;
 import java.time.LocalDate;
 
 /**
- * A mixed-in interface for {@link ArcticFileIO} which indicate the storage system
- * support file recycle operations.
+ * A mixed-in interface for {@link ArcticFileIO} which indicate the storage system support file
+ * recycle operations.
  */
 public interface SupportFileRecycleOperations extends ArcticFileIO {
 
@@ -33,6 +33,7 @@ public interface SupportFileRecycleOperations extends ArcticFileIO {
 
   /**
    * show the given path could be deleted as recoverable.
+   *
    * @param path - a give path to check
    * @return true if the path could be deleted as recoverable.
    */
@@ -40,6 +41,7 @@ public interface SupportFileRecycleOperations extends ArcticFileIO {
 
   /**
    * recover a path which had been deleted as recoverable.
+   *
    * @param path a path had been deleted.
    * @return if the target of path has been recovered.
    */
@@ -47,6 +49,7 @@ public interface SupportFileRecycleOperations extends ArcticFileIO {
 
   /**
    * expire the recycle space by an expiration data
+   *
    * @param expirationDate the date for expire
    */
   void expireRecycle(LocalDate expirationDate);

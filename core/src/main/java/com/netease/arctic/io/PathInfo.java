@@ -20,13 +20,10 @@ package com.netease.arctic.io;
 
 import org.apache.iceberg.io.FileInfo;
 
-/**
- * Extend {@link FileInfo} to indicate the directory type path object.
- */
+/** Extend {@link FileInfo} to indicate the directory type path object. */
 public class PathInfo extends FileInfo {
 
   private final boolean isDirectory;
-
 
   public PathInfo(String location, long size, long createdAtMillis, boolean isDirectory) {
     super(location, size, createdAtMillis);

@@ -17,8 +17,7 @@ public class TestRocksDBBackend {
   public static final String CF_NAME = "TEST";
 
   @Before
-  public void setup() {
-  }
+  public void setup() {}
 
   @Test
   public void testAddAndDropColumnFamily() throws Exception {

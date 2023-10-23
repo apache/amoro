@@ -25,15 +25,20 @@ public class TestFileUtil {
 
   @Test
   public void getFileName() {
-    String fileName = TableFileUtil.getFileName("hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/" +
-        "opt_mon=202109/opt_day=26/00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet");
-    Assert.assertEquals("00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet", fileName);
+    String fileName =
+        TableFileUtil.getFileName(
+            "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/"
+                + "opt_mon=202109/opt_day=26/00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet");
+    Assert.assertEquals(
+        "00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet", fileName);
   }
 
   @Test
   public void getFileDir() {
-    String fileDir = TableFileUtil.getFileDir("hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/" +
-        "opt_mon=202109/opt_day=26/00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet");
+    String fileDir =
+        TableFileUtil.getFileDir(
+            "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/"
+                + "opt_mon=202109/opt_day=26/00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet");
     Assert.assertEquals(
         "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/opt_mon=202109/opt_day=26",
         fileDir);

@@ -33,16 +33,19 @@ public class UnifiedCatalogLoader {
     return loadUnifiedCatalog(client, catalogName, clientSideProperties);
   }
 
-  private static UnifiedCatalog loadUnifiedCatalog(AmsClient client, String catalogName, Map<String, String> props) {
-    Supplier<CatalogMeta> metaSupplier = () -> {
-      try {
-        return client.getCatalog(catalogName);
-      } catch (NoSuchObjectException e) {
-        throw new IllegalStateException("catalog not found, please check catalog name:" + catalogName, e);
-      } catch (Exception e) {
-        throw new IllegalStateException("failed when load catalog " + catalogName, e);
-      }
-    };
+  private static UnifiedCatalog loadUnifiedCatalog(
+      AmsClient client, String catalogName, Map<String, String> props) {
+    Supplier<CatalogMeta> metaSupplier =
+        () -> {
+          try {
+            return client.getCatalog(catalogName);
+          } catch (NoSuchObjectException e) {
+            throw new IllegalStateException(
+                "catalog not found, please check catalog name:" + catalogName, e);
+          } catch (Exception e) {
+            throw new IllegalStateException("failed when load catalog " + catalogName, e);
+          }
+        };
 
     CatalogMeta catalogMeta = metaSupplier.get();
     CatalogUtil.mergeCatalogProperties(catalogMeta, props);

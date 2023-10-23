@@ -41,8 +41,10 @@ public class ArcticOverwriteFiles extends ArcticUpdate<OverwriteFiles> implement
   }
 
   private ArcticOverwriteFiles(
-      ArcticTable arcticTable, OverwriteFiles overwriteFiles,
-      Transaction transaction, boolean autoCommitTransaction) {
+      ArcticTable arcticTable,
+      OverwriteFiles overwriteFiles,
+      Transaction transaction,
+      boolean autoCommitTransaction) {
     super(arcticTable, overwriteFiles, transaction, autoCommitTransaction);
     this.overwriteFiles = overwriteFiles;
   }
@@ -116,12 +118,15 @@ public class ArcticOverwriteFiles extends ArcticUpdate<OverwriteFiles> implement
     }
 
     @Override
-    protected ArcticOverwriteFiles updateWithWatermark(Transaction transaction, boolean autoCommitTransaction) {
-      return new ArcticOverwriteFiles(table, transaction.newOverwrite(), transaction, autoCommitTransaction);
+    protected ArcticOverwriteFiles updateWithWatermark(
+        Transaction transaction, boolean autoCommitTransaction) {
+      return new ArcticOverwriteFiles(
+          table, transaction.newOverwrite(), transaction, autoCommitTransaction);
     }
 
     @Override
-    protected ArcticOverwriteFiles updateWithoutWatermark(Supplier<OverwriteFiles> delegateSupplier) {
+    protected ArcticOverwriteFiles updateWithoutWatermark(
+        Supplier<OverwriteFiles> delegateSupplier) {
       return new ArcticOverwriteFiles(table, delegateSupplier.get());
     }
 

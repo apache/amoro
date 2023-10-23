@@ -29,8 +29,7 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class TestIcebergHiveCatalog extends TestIcebergCatalog {
 
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
   public TestIcebergHiveCatalog(CatalogTestHelper catalogTestHelper) {
     super(catalogTestHelper);

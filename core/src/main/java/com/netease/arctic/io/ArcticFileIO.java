@@ -24,16 +24,14 @@ import org.apache.iceberg.io.SupportsPrefixOperations;
 
 import java.util.concurrent.Callable;
 
-/**
- * Arctic extension from {@link FileIO}, adding more operations.
- */
+/** Arctic extension from {@link FileIO}, adding more operations. */
 public interface ArcticFileIO extends FileIO {
 
   /**
    * Run the given action with login user.
    *
    * @param callable the method to execute
-   * @param <T>      the return type of the run method
+   * @param <T> the return type of the run method
    * @return the value from the run method
    */
   <T> T doAs(Callable<T> callable);
@@ -49,16 +47,12 @@ public interface ArcticFileIO extends FileIO {
     return inputFile.exists();
   }
 
-  /**
-   * Returns true if this tableIo is an {@link SupportsPrefixOperations}
-   */
+  /** Returns true if this tableIo is an {@link SupportsPrefixOperations} */
   default boolean supportPrefixOperations() {
     return false;
   }
 
-  /**
-   * Return this cast to {@link SupportsPrefixOperations} if it is.
-   */
+  /** Return this cast to {@link SupportsPrefixOperations} if it is. */
   default SupportsPrefixOperations asPrefixFileIO() {
     if (supportPrefixOperations()) {
       return (SupportsPrefixOperations) this;
@@ -67,16 +61,12 @@ public interface ArcticFileIO extends FileIO {
     }
   }
 
-  /**
-   * Returns true if this tableIo is an {@link SupportsFileSystemOperations}
-   */
+  /** Returns true if this tableIo is an {@link SupportsFileSystemOperations} */
   default boolean supportFileSystemOperations() {
     return false;
   }
 
-  /**
-   * Return this cast to {@link SupportsFileSystemOperations} if it is.
-   */
+  /** Return this cast to {@link SupportsFileSystemOperations} if it is. */
   default SupportsFileSystemOperations asFileSystemIO() {
     if (supportFileSystemOperations()) {
       return (SupportsFileSystemOperations) this;
@@ -84,16 +74,12 @@ public interface ArcticFileIO extends FileIO {
     throw new IllegalStateException("Doesn't support directory operations");
   }
 
-  /**
-   * Return true if this tableIo support file trash and could recover file be deleted.
-   */
+  /** Return true if this tableIo support file trash and could recover file be deleted. */
   default boolean supportsFileRecycle() {
     return false;
   }
 
-  /**
-   * Return this cast to {@link SupportFileRecycleOperations} if it is.
-   */
+  /** Return this cast to {@link SupportFileRecycleOperations} if it is. */
   default SupportFileRecycleOperations asFileRecycleIO() {
     if (supportsFileRecycle()) {
       return (SupportFileRecycleOperations) this;

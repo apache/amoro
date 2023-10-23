@@ -81,78 +81,93 @@ public class FormatTestBase {
         }
       };
 
-  final Schema userSchema = new Schema(
-      new ArrayList<Types.NestedField>() {
-        {
-          add(Types.NestedField.optional(0, "f_boolean", Types.BooleanType.get()));
-          add(Types.NestedField.optional(1, "f_int", Types.IntegerType.get()));
-          add(Types.NestedField.optional(2, "f_long", Types.LongType.get()));
-          add(Types.NestedField.optional(3, "f_struct", Types.StructType.of(
-              Types.NestedField.optional(4, "f_sub_boolean", Types.BooleanType.get()),
-              Types.NestedField.optional(5, "f_sub_int", Types.IntegerType.get()),
-              Types.NestedField.optional(6, "f_sub_long", Types.LongType.get())
-          )));
-          add(Types.NestedField.optional(7, "f_float", Types.FloatType.get()));
-          add(Types.NestedField.optional(8, "f_double", Types.DoubleType.get()));
-          add(Types.NestedField.optional(9, "f_date", Types.DateType.get()));
-          add(Types.NestedField.optional(10, "f_time", Types.TimeType.get()));
-          add(Types.NestedField.optional(11, "f_timestamp_local", Types.TimestampType.withoutZone()));
-          add(Types.NestedField.optional(12, "f_timestamp_tz", Types.TimestampType.withZone()));
-          add(Types.NestedField.optional(13, "f_string", Types.StringType.get()));
-          add(Types.NestedField.optional(14, "f_uuid", Types.UUIDType.get()));
-          add(Types.NestedField.optional(15, "f_fixed", Types.FixedType.ofLength(10)));
-          add(Types.NestedField.optional(16, "f_binary", Types.BinaryType.get()));
-          add(Types.NestedField.optional(17, "f_decimal", Types.DecimalType.of(10, 5)));
-          add(Types.NestedField.optional(18, "f_list", Types.ListType.ofOptional(
-              19, Types.LongType.get()
-          )));
-          add(Types.NestedField.optional(20, "f_list2", Types.ListType.ofOptional(
-              21, Types.IntegerType.get()
-          )));
-          add(Types.NestedField.optional(22, "f_list3", Types.ListType.ofOptional(
-              23, Types.StructType.of(
-                  Types.NestedField.optional(24, "f_sub_boolean", Types.BooleanType.get()),
-                  Types.NestedField.optional(25, "f_sub_int", Types.IntegerType.get()),
-                  Types.NestedField.optional(26, "f_sub_long", Types.LongType.get())
-              ))));
-          add(Types.NestedField.optional(27, "f_map", Types.MapType.ofOptional(
-              28, 29, Types.LongType.get(), Types.StringType.get()
-          )));
+  final Schema userSchema =
+      new Schema(
+          new ArrayList<Types.NestedField>() {
+            {
+              add(Types.NestedField.optional(0, "f_boolean", Types.BooleanType.get()));
+              add(Types.NestedField.optional(1, "f_int", Types.IntegerType.get()));
+              add(Types.NestedField.optional(2, "f_long", Types.LongType.get()));
+              add(
+                  Types.NestedField.optional(
+                      3,
+                      "f_struct",
+                      Types.StructType.of(
+                          Types.NestedField.optional(4, "f_sub_boolean", Types.BooleanType.get()),
+                          Types.NestedField.optional(5, "f_sub_int", Types.IntegerType.get()),
+                          Types.NestedField.optional(6, "f_sub_long", Types.LongType.get()))));
+              add(Types.NestedField.optional(7, "f_float", Types.FloatType.get()));
+              add(Types.NestedField.optional(8, "f_double", Types.DoubleType.get()));
+              add(Types.NestedField.optional(9, "f_date", Types.DateType.get()));
+              add(Types.NestedField.optional(10, "f_time", Types.TimeType.get()));
+              add(
+                  Types.NestedField.optional(
+                      11, "f_timestamp_local", Types.TimestampType.withoutZone()));
+              add(Types.NestedField.optional(12, "f_timestamp_tz", Types.TimestampType.withZone()));
+              add(Types.NestedField.optional(13, "f_string", Types.StringType.get()));
+              add(Types.NestedField.optional(14, "f_uuid", Types.UUIDType.get()));
+              add(Types.NestedField.optional(15, "f_fixed", Types.FixedType.ofLength(10)));
+              add(Types.NestedField.optional(16, "f_binary", Types.BinaryType.get()));
+              add(Types.NestedField.optional(17, "f_decimal", Types.DecimalType.of(10, 5)));
+              add(
+                  Types.NestedField.optional(
+                      18, "f_list", Types.ListType.ofOptional(19, Types.LongType.get())));
+              add(
+                  Types.NestedField.optional(
+                      20, "f_list2", Types.ListType.ofOptional(21, Types.IntegerType.get())));
+              add(
+                  Types.NestedField.optional(
+                      22,
+                      "f_list3",
+                      Types.ListType.ofOptional(
+                          23,
+                          Types.StructType.of(
+                              Types.NestedField.optional(
+                                  24, "f_sub_boolean", Types.BooleanType.get()),
+                              Types.NestedField.optional(25, "f_sub_int", Types.IntegerType.get()),
+                              Types.NestedField.optional(
+                                  26, "f_sub_long", Types.LongType.get())))));
+              add(
+                  Types.NestedField.optional(
+                      27,
+                      "f_map",
+                      Types.MapType.ofOptional(
+                          28, 29, Types.LongType.get(), Types.StringType.get())));
+            }
+          });
+
+  LogData.Factory<UserPojo> factory =
+      new LogData.Factory<UserPojo>() {
+        @Override
+        public UserPojo createActualValue(Object[] objects, Type[] fieldTypes) {
+          UserPojo userPojo = new UserPojo();
+          userPojo.objects = objects;
+          return userPojo;
         }
-      });
 
-  LogData.Factory<UserPojo> factory = new LogData.Factory<UserPojo>() {
-    @Override
-    public UserPojo createActualValue(Object[] objects, Type[] fieldTypes) {
-      UserPojo userPojo = new UserPojo();
-      userPojo.objects = objects;
-      return userPojo;
-    }
+        @Override
+        public LogData<UserPojo> create(UserPojo userPojo, Object... headers) {
+          Preconditions.checkNotNull(headers);
+          Preconditions.checkArgument(headers.length == 5);
+          return new LogDataUser(
+              (byte[]) headers[0],
+              (byte[]) headers[1],
+              (long) headers[2],
+              (boolean) headers[3],
+              ChangeAction.fromByteValue((byte) headers[4]),
+              userPojo);
+        }
 
-    @Override
-    public LogData<UserPojo> create(UserPojo userPojo, Object... headers) {
-      Preconditions.checkNotNull(headers);
-      Preconditions.checkArgument(headers.length == 5);
-      return new LogDataUser(
-          (byte[]) headers[0],
-          (byte[]) headers[1],
-          (long) headers[2],
-          (boolean) headers[3],
-          ChangeAction.fromByteValue((byte) headers[4]),
-          userPojo
-      );
-    }
+        @Override
+        public Class<?> getActualValueClass() {
+          return UserPojo.class;
+        }
 
-    @Override
-    public Class<?> getActualValueClass() {
-      return UserPojo.class;
-    }
-
-    @Override
-    public Object convertIfNecessary(Type primitiveType, Object obj) {
-      return obj;
-    }
-  };
+        @Override
+        public Object convertIfNecessary(Type primitiveType, Object obj) {
+          return obj;
+        }
+      };
 
   LogArrayData.Factory arrayFactory = GenericArrayData::new;
 
@@ -261,9 +276,9 @@ public class FormatTestBase {
         return false;
       }
       GenericArrayData that = (GenericArrayData) o;
-      return size == that.size &&
-          isPrimitiveArray == that.isPrimitiveArray &&
-          Objects.deepEquals(array, that.array);
+      return size == that.size
+          && isPrimitiveArray == that.isPrimitiveArray
+          && Objects.deepEquals(array, that.array);
     }
 
     @Override
@@ -447,8 +462,7 @@ public class FormatTestBase {
         long epicNo,
         boolean flip,
         ChangeAction changeAction,
-        UserPojo userPojo
-    ) {
+        UserPojo userPojo) {
       this.version = version;
       this.upstreamId = upstreamId;
       this.epicNo = epicNo;

@@ -31,6 +31,8 @@ import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.OutputFile;
 
 /**
+ *
+ *
  * <pre>
  * For adapt hive table with partitions the dir construct is :
  *    ${table_location}
@@ -68,7 +70,16 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       int partitionId,
       long taskId,
       Long transactionId) {
-    this(baseLocation, partitionSpec, format, io, encryptionManager, partitionId, taskId, transactionId, null);
+    this(
+        baseLocation,
+        partitionSpec,
+        format,
+        io,
+        encryptionManager,
+        partitionId,
+        taskId,
+        transactionId,
+        null);
   }
 
   public AdaptHiveOutputFileFactory(
@@ -86,8 +97,10 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     this.io = io;
     this.encryptionManager = encryptionManager;
     if (hiveSubDirectory == null) {
-      this.hiveSubDirectory = transactionId != null ?
-          HiveTableUtil.newHiveSubdirectory(transactionId) : HiveTableUtil.newHiveSubdirectory();
+      this.hiveSubDirectory =
+          transactionId != null
+              ? HiveTableUtil.newHiveSubdirectory(transactionId)
+              : HiveTableUtil.newHiveSubdirectory();
     } else {
       this.hiveSubDirectory = hiveSubDirectory;
     }
@@ -99,8 +112,11 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   }
 
   private String fileLocation(StructLike partitionData, String fileName) {
-    return String.format("%s/%s",
-        HiveTableUtil.newHiveDataLocation(baseLocation, partitionSpec, partitionData, hiveSubDirectory), fileName);
+    return String.format(
+        "%s/%s",
+        HiveTableUtil.newHiveDataLocation(
+            baseLocation, partitionSpec, partitionData, hiveSubDirectory),
+        fileName);
   }
 
   public EncryptedOutputFile newOutputFile(TaskWriterKey key) {

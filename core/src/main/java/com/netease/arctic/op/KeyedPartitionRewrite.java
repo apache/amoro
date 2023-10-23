@@ -33,14 +33,13 @@ import org.apache.iceberg.util.StructLikeMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Replace {@link BaseTable} partition files and change max transaction id map
- */
-public class KeyedPartitionRewrite extends PartitionTransactionOperation implements RewritePartitions {
+/** Replace {@link BaseTable} partition files and change max transaction id map */
+public class KeyedPartitionRewrite extends PartitionTransactionOperation
+    implements RewritePartitions {
 
   protected List<DataFile> addFiles = Lists.newArrayList();
   private Long optimizedSequence;
-  
+
   public KeyedPartitionRewrite(KeyedTable keyedTable) {
     super(keyedTable);
   }
@@ -60,7 +59,8 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
   @Override
   protected StructLikeMap<Map<String, String>> apply(Transaction transaction) {
     PartitionSpec spec = transaction.table().spec();
-    StructLikeMap<Map<String, String>> partitionProperties = StructLikeMap.create(spec.partitionType());
+    StructLikeMap<Map<String, String>> partitionProperties =
+        StructLikeMap.create(spec.partitionType());
     if (this.addFiles.isEmpty()) {
       return partitionProperties;
     }
@@ -72,8 +72,13 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
     addFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
 
-    addFiles.forEach(f -> partitionProperties.computeIfAbsent(f.partition(), k -> Maps.newHashMap())
-        .put(TableProperties.PARTITION_OPTIMIZED_SEQUENCE, String.valueOf(optimizedSequence)));
+    addFiles.forEach(
+        f ->
+            partitionProperties
+                .computeIfAbsent(f.partition(), k -> Maps.newHashMap())
+                .put(
+                    TableProperties.PARTITION_OPTIMIZED_SEQUENCE,
+                    String.valueOf(optimizedSequence)));
     return partitionProperties;
   }
 
