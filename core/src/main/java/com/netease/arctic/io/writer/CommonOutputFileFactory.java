@@ -29,16 +29,18 @@ import org.apache.iceberg.io.OutputFile;
 
 /**
  * Factory responsible for generating data file names for change and base location
- * <p>
- * File name pattern:${tree_node_id}-${file_type}-${transaction_id}-${partition_id}-${task_id}-{operation_id}-{count}
+ *
+ * <p>File name
+ * pattern:${tree_node_id}-${file_type}-${transaction_id}-${partition_id}-${task_id}-{operation_id}-{count}
+ *
  * <ul>
- *   <li>tree_node_id: id of {@link com.netease.arctic.data.DataTreeNode} the file belong</li>
- *   <li>file_type: short name of file's {@link com.netease.arctic.data.DataFileType} </li>
- *   <li>transaction_id: id of transaction the file added</li>
- *   <li>partition_id: id of partitioned data in parallel engine like spark & flink </li>
- *   <li>task_id: id of write task within partition</li>
- *   <li>operation_id: a random id to avoid duplicated file name</li>
- *   <li>count: auto increment count within writer </li>
+ *   <li>tree_node_id: id of {@link com.netease.arctic.data.DataTreeNode} the file belong
+ *   <li>file_type: short name of file's {@link com.netease.arctic.data.DataFileType}
+ *   <li>transaction_id: id of transaction the file added
+ *   <li>partition_id: id of partitioned data in parallel engine like spark & flink
+ *   <li>task_id: id of write task within partition
+ *   <li>operation_id: a random id to avoid duplicated file name
+ *   <li>count: auto increment count within writer
  * </ul>
  */
 public class CommonOutputFileFactory implements OutputFileFactory {
@@ -48,9 +50,15 @@ public class CommonOutputFileFactory implements OutputFileFactory {
   private final EncryptionManager encryptionManager;
   private final FileNameRules fileNameGenerator;
 
-  public CommonOutputFileFactory(String baseLocation, PartitionSpec partitionSpec,
-                           FileFormat format, ArcticFileIO io, EncryptionManager encryptionManager,
-                           int partitionId, long taskId, Long transactionId) {
+  public CommonOutputFileFactory(
+      String baseLocation,
+      PartitionSpec partitionSpec,
+      FileFormat format,
+      ArcticFileIO io,
+      EncryptionManager encryptionManager,
+      int partitionId,
+      long taskId,
+      Long transactionId) {
     this.baseLocation = baseLocation;
     this.partitionSpec = partitionSpec;
     this.io = io;
@@ -66,7 +74,9 @@ public class CommonOutputFileFactory implements OutputFileFactory {
     if (partitionSpec.isUnpartitioned()) {
       return String.format("%s/%s/%s", baseLocation, "data", fileName);
     } else {
-      return String.format("%s/%s/%s/%s", baseLocation, "data", partitionSpec.partitionToPath(partitionData), fileName);
+      return String.format(
+          "%s/%s/%s/%s",
+          baseLocation, "data", partitionSpec.partitionToPath(partitionData), fileName);
     }
   }
 

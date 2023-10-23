@@ -31,18 +31,18 @@ import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Locale;
 
-/**
- * Schema evolution API implementation for {@link KeyedTable}.
- */
+/** Schema evolution API implementation for {@link KeyedTable}. */
 public class HiveSchemaUpdate extends BaseSchemaUpdate {
   private final ArcticTable arcticTable;
   private final HMSClientPool hiveClient;
   private final HMSClientPool transactionClient;
   private final UpdateSchema updateSchema;
 
-  public HiveSchemaUpdate(ArcticTable arcticTable, HMSClientPool hiveClient,
-                          HMSClientPool transactionClient,
-                          UpdateSchema updateSchema) {
+  public HiveSchemaUpdate(
+      ArcticTable arcticTable,
+      HMSClientPool hiveClient,
+      HMSClientPool transactionClient,
+      UpdateSchema updateSchema) {
     super(arcticTable, updateSchema);
     this.arcticTable = arcticTable;
     this.hiveClient = hiveClient;
@@ -54,7 +54,8 @@ public class HiveSchemaUpdate extends BaseSchemaUpdate {
   public void commit() {
     Table tbl = HiveTableUtil.loadHmsTable(hiveClient, arcticTable.id());
     if (tbl == null) {
-      throw new RuntimeException(String.format("there is no such hive table named %s", arcticTable.id().toString()));
+      throw new RuntimeException(
+          String.format("there is no such hive table named %s", arcticTable.id().toString()));
     }
     Schema newSchema = this.updateSchema.apply();
     this.updateSchema.commit();
@@ -62,9 +63,17 @@ public class HiveSchemaUpdate extends BaseSchemaUpdate {
   }
 
   private void syncSchemaToHive(Schema newSchema, Table tbl) {
-    tbl.setSd(HiveTableUtil.storageDescriptor(newSchema, arcticTable.spec(), tbl.getSd().getLocation(),
-        FileFormat.valueOf(PropertyUtil.propertyAsString(arcticTable.properties(), TableProperties.DEFAULT_FILE_FORMAT,
-            TableProperties.DEFAULT_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
+    tbl.setSd(
+        HiveTableUtil.storageDescriptor(
+            newSchema,
+            arcticTable.spec(),
+            tbl.getSd().getLocation(),
+            FileFormat.valueOf(
+                PropertyUtil.propertyAsString(
+                        arcticTable.properties(),
+                        TableProperties.DEFAULT_FILE_FORMAT,
+                        TableProperties.DEFAULT_FILE_FORMAT_DEFAULT)
+                    .toUpperCase(Locale.ENGLISH))));
     HiveTableUtil.persistTable(transactionClient, tbl);
   }
 }

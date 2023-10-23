@@ -18,28 +18,28 @@
 
 package com.netease.arctic.log;
 
+import static com.netease.arctic.log.LogData.MAGIC_NUMBER;
+
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.Arrays;
 
-import static com.netease.arctic.log.LogData.MAGIC_NUMBER;
-
-/**
- * Log format version.
- */
+/** Log format version. */
 public enum FormatVersion {
   FORMAT_VERSION_V1(new MessageBytes().append(MAGIC_NUMBER).append((byte) 1).toBytes());
 
   /**
-   * the version of log format, contains a fixed magic number and actual version number,
-   * the byte array length of the version must be equal to four..
+   * the version of log format, contains a fixed magic number and actual version number, the byte
+   * array length of the version must be equal to four..
    */
   byte[] version;
+
   byte versionNum;
   byte[] magicNum;
 
   FormatVersion(byte[] version) {
-    Preconditions.checkArgument(null != version && version.length == 4,
+    Preconditions.checkArgument(
+        null != version && version.length == 4,
         "format version is null or length is not equal to 4.");
     this.version = version;
     this.magicNum = Bytes.subByte(version, 0, 3);

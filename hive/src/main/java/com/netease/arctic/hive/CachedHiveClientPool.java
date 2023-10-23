@@ -36,9 +36,7 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Cache {@link ArcticHiveClientPool} with {@link TableMetaStore} key.
- */
+/** Cache {@link ArcticHiveClientPool} with {@link TableMetaStore} key. */
 public class CachedHiveClientPool implements HMSClientPool, Serializable {
 
   private static Cache<TableMetaStore, ArcticHiveClientPool> clientPoolCache;
@@ -49,29 +47,37 @@ public class CachedHiveClientPool implements HMSClientPool, Serializable {
 
   public CachedHiveClientPool(TableMetaStore tableMetaStore, Map<String, String> properties) {
     this.tableMetaStore = tableMetaStore;
-    this.clientPoolSize = PropertyUtil.propertyAsInt(properties,
-        CatalogMetaProperties.CLIENT_POOL_SIZE,
-        CatalogMetaProperties.CLIENT_POOL_SIZE_DEFAULT);
-    this.evictionInterval = PropertyUtil.propertyAsLong(properties,
-        CatalogMetaProperties.CLIENT_POOL_CACHE_EVICTION_INTERVAL_MS,
-        CatalogMetaProperties.CLIENT_POOL_CACHE_EVICTION_INTERVAL_MS_DEFAULT);
+    this.clientPoolSize =
+        PropertyUtil.propertyAsInt(
+            properties,
+            CatalogMetaProperties.CLIENT_POOL_SIZE,
+            CatalogMetaProperties.CLIENT_POOL_SIZE_DEFAULT);
+    this.evictionInterval =
+        PropertyUtil.propertyAsLong(
+            properties,
+            CatalogMetaProperties.CLIENT_POOL_CACHE_EVICTION_INTERVAL_MS,
+            CatalogMetaProperties.CLIENT_POOL_CACHE_EVICTION_INTERVAL_MS_DEFAULT);
     init();
   }
 
   private ArcticHiveClientPool clientPool() {
-    return clientPoolCache.get(tableMetaStore, k -> new ArcticHiveClientPool(tableMetaStore, clientPoolSize));
+    return clientPoolCache.get(
+        tableMetaStore, k -> new ArcticHiveClientPool(tableMetaStore, clientPoolSize));
   }
 
   private synchronized void init() {
     if (clientPoolCache == null) {
-      clientPoolCache = Caffeine.newBuilder().expireAfterAccess(evictionInterval, TimeUnit.MILLISECONDS)
-          .removalListener((key, value, cause) -> ((ArcticHiveClientPool) value).close())
-          .build();
+      clientPoolCache =
+          Caffeine.newBuilder()
+              .expireAfterAccess(evictionInterval, TimeUnit.MILLISECONDS)
+              .removalListener((key, value, cause) -> ((ArcticHiveClientPool) value).close())
+              .build();
     }
   }
 
   @Override
-  public <R> R run(Action<R, HMSClient, TException> action) throws TException, InterruptedException {
+  public <R> R run(Action<R, HMSClient, TException> action)
+      throws TException, InterruptedException {
     try {
       return tableMetaStore.doAs(() -> clientPool().run(action));
     } catch (RuntimeException e) {
@@ -80,7 +86,8 @@ public class CachedHiveClientPool implements HMSClientPool, Serializable {
   }
 
   @Override
-  public <R> R run(Action<R, HMSClient, TException> action, boolean retry) throws TException, InterruptedException {
+  public <R> R run(Action<R, HMSClient, TException> action, boolean retry)
+      throws TException, InterruptedException {
     try {
       return tableMetaStore.doAs(() -> clientPool().run(action, retry));
     } catch (RuntimeException e) {

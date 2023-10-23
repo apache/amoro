@@ -30,15 +30,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.PriorityQueue;
 
-/**
- * Schema evolution API implementation for {@link KeyedTable}.
- */
+/** Schema evolution API implementation for {@link KeyedTable}. */
 public class KeyedSchemaUpdate implements UpdateSchema {
   private static final Logger LOG = LoggerFactory.getLogger(KeyedSchemaUpdate.class);
 
@@ -169,8 +168,8 @@ public class KeyedSchemaUpdate implements UpdateSchema {
 
   /**
    * Apply the pending changes to the original schema and returns the result.
-   * <p>
-   * This does not result in a permanent update.
+   *
+   * <p>This does not result in a permanent update.
    *
    * @return the result Schema when all pending updates are applied
    */
@@ -228,18 +227,25 @@ public class KeyedSchemaUpdate implements UpdateSchema {
       syncField(newField, oldField, changeTableUs, null, adds);
     }
 
-    old.columns().forEach((c) -> {
-      if (newer.findField(c.fieldId()) == null) {
-        syncField(null, c, changeTableUs, null, adds);
-      }
-    });
+    old.columns()
+        .forEach(
+            (c) -> {
+              if (newer.findField(c.fieldId()) == null) {
+                syncField(null, c, changeTableUs, null, adds);
+              }
+            });
 
     doAddColumns(adds, changeTableUs);
-    LOG.info("sync schema to changeTable. from: {}, base: {}, actual: {}", old, newer, changeTableUs.apply());
+    LOG.info(
+        "sync schema to changeTable. from: {}, base: {}, actual: {}",
+        old,
+        newer,
+        changeTableUs.apply());
     changeTableUs.commit();
   }
 
-  private static void syncField(Types.NestedField newField,
+  private static void syncField(
+      Types.NestedField newField,
       Types.NestedField oldField,
       UpdateSchema us,
       String fieldPrefix,
@@ -270,18 +276,21 @@ public class KeyedSchemaUpdate implements UpdateSchema {
       } else {
         if (add.parent.contains(DOT)) {
           LOG.error("field: {}", add);
-          throw new UnsupportedOperationException("do not support add deeper than two nested field");
+          throw new UnsupportedOperationException(
+              "do not support add deeper than two nested field");
         }
         us.addColumn(add.parent, add.field, add.type, add.doc);
       }
     }
   }
 
-  private static void addColumnInternal(Types.NestedField field, String fieldPrefix, Collection<Add> adds) {
+  private static void addColumnInternal(
+      Types.NestedField field, String fieldPrefix, Collection<Add> adds) {
     adds.add(new Add(field, fieldPrefix));
   }
 
-  private static void deleteColumnInternal(String field, UpdateSchema changeTableUs, String fieldPrefix) {
+  private static void deleteColumnInternal(
+      String field, UpdateSchema changeTableUs, String fieldPrefix) {
     changeTableUs.deleteColumn(getFullName(fieldPrefix, field));
   }
 
@@ -289,7 +298,8 @@ public class KeyedSchemaUpdate implements UpdateSchema {
     return StringUtils.isBlank(fieldPrefix) ? field : String.join(DOT, fieldPrefix, field);
   }
 
-  private static void updateField(Types.NestedField newField,
+  private static void updateField(
+      Types.NestedField newField,
       Types.NestedField oldField,
       UpdateSchema us,
       String fieldPrefix,
@@ -318,7 +328,8 @@ public class KeyedSchemaUpdate implements UpdateSchema {
     }
   }
 
-  private static void updateNestedField(Types.NestedField newField,
+  private static void updateNestedField(
+      Types.NestedField newField,
       Types.NestedField oldField,
       UpdateSchema us,
       String fieldPrefix,
@@ -334,7 +345,8 @@ public class KeyedSchemaUpdate implements UpdateSchema {
     updateNestedField(newType, oldType, us, prefix, adds);
   }
 
-  private static void updateNestedField(Type.NestedType newType,
+  private static void updateNestedField(
+      Type.NestedType newType,
       Type.NestedType oldType,
       UpdateSchema us,
       String fieldPrefix,
@@ -342,20 +354,27 @@ public class KeyedSchemaUpdate implements UpdateSchema {
     if (Objects.equals(newType, oldType)) {
       return;
     }
-    newType.fields().forEach((field -> {
-      Types.NestedField old = oldType.field(field.fieldId());
-      syncField(field, old, us, fieldPrefix, adds);
-    }));
+    newType
+        .fields()
+        .forEach(
+            (field -> {
+              Types.NestedField old = oldType.field(field.fieldId());
+              syncField(field, old, us, fieldPrefix, adds);
+            }));
 
-    oldType.fields().forEach((o -> {
-      // won't sync repeatedly
-      if (newType.field(o.fieldId()) == null) {
-        syncField(null, o, us, fieldPrefix, adds);
-      }
-    }));
+    oldType
+        .fields()
+        .forEach(
+            (o -> {
+              // won't sync repeatedly
+              if (newType.field(o.fieldId()) == null) {
+                syncField(null, o, us, fieldPrefix, adds);
+              }
+            }));
   }
 
-  private static void updateMapField(Types.NestedField newField,
+  private static void updateMapField(
+      Types.NestedField newField,
       Types.NestedField oldField,
       UpdateSchema us,
       String fieldPrefix,
@@ -375,15 +394,14 @@ public class KeyedSchemaUpdate implements UpdateSchema {
       if (t.isPrimitiveType()) {
         syncField(newF, oldF, us, crtPrefix, adds);
       } else {
-        updateNestedField(newF.type().asNestedType(), oldF.type().asNestedType(), us, crtPrefix, adds);
+        updateNestedField(
+            newF.type().asNestedType(), oldF.type().asNestedType(), us, crtPrefix, adds);
       }
     }
   }
 
-  private static void updatePrimativeFieldType(Types.NestedField newField,
-      Types.NestedField oldField,
-      UpdateSchema us,
-      String fieldPrefix) {
+  private static void updatePrimativeFieldType(
+      Types.NestedField newField, Types.NestedField oldField, UpdateSchema us, String fieldPrefix) {
     String fullName = getFullName(fieldPrefix, oldField.name());
     if (!Objects.equals(newField.type(), oldField.type())) {
       us.updateColumn(fullName, newField.type().asPrimitiveType());
@@ -417,14 +435,21 @@ public class KeyedSchemaUpdate implements UpdateSchema {
 
     @Override
     public String toString() {
-      return "Add{" +
-          "baseFieldId=" + baseFieldId +
-          ", parent='" + parent + '\'' +
-          ", field='" + field + '\'' +
-          ", type=" + type +
-          ", doc='" + doc + '\'' +
-          '}';
+      return "Add{"
+          + "baseFieldId="
+          + baseFieldId
+          + ", parent='"
+          + parent
+          + '\''
+          + ", field='"
+          + field
+          + '\''
+          + ", type="
+          + type
+          + ", doc='"
+          + doc
+          + '\''
+          + '}';
     }
   }
-
 }

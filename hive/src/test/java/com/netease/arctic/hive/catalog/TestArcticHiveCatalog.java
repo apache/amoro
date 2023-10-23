@@ -36,8 +36,7 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class TestArcticHiveCatalog extends TestBasicArcticCatalog {
 
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
   public TestArcticHiveCatalog(CatalogTestHelper catalogTestHelper) {
     super(catalogTestHelper);
@@ -45,8 +44,10 @@ public class TestArcticHiveCatalog extends TestBasicArcticCatalog {
 
   @Parameterized.Parameters(name = "testFormat = {0}")
   public static Object[] parameters() {
-    return new Object[] {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-                         new HiveCatalogTestHelper(TableFormat.ICEBERG, TEST_HMS.getHiveConf())};
+    return new Object[] {
+      new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+      new HiveCatalogTestHelper(TableFormat.ICEBERG, TEST_HMS.getHiveConf())
+    };
   }
 
   @Test
@@ -54,18 +55,27 @@ public class TestArcticHiveCatalog extends TestBasicArcticCatalog {
     if (getCatalog() instanceof ArcticHiveCatalog) {
       getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
       createTestTable();
-      getCatalog().dropTable(TableIdentifier.of(getCatalog().name(),
-          TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME), false);
-      Assert.assertTrue(TEST_HMS.getHiveClient().getAllTables(TableTestHelper.TEST_DB_NAME)
-          .contains(TableTestHelper.TEST_TABLE_NAME));
+      getCatalog()
+          .dropTable(
+              TableIdentifier.of(
+                  getCatalog().name(),
+                  TableTestHelper.TEST_DB_NAME,
+                  TableTestHelper.TEST_TABLE_NAME),
+              false);
+      Assert.assertTrue(
+          TEST_HMS
+              .getHiveClient()
+              .getAllTables(TableTestHelper.TEST_DB_NAME)
+              .contains(TableTestHelper.TEST_TABLE_NAME));
     }
   }
 
   @After
   public void cleanUp() throws TException {
     if (getCatalog() instanceof ArcticHiveCatalog) {
-      TEST_HMS.getHiveClient().dropTable(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME,
-          true, true);
+      TEST_HMS
+          .getHiveClient()
+          .dropTable(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME, true, true);
     }
   }
 }

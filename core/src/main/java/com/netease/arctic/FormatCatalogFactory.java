@@ -23,25 +23,24 @@ import org.apache.hadoop.conf.Configuration;
 
 import java.util.Map;
 
-/**
- * A factory to create a {@link FormatCatalog}.
- */
+/** A factory to create a {@link FormatCatalog}. */
 public interface FormatCatalogFactory {
 
   /**
    * Creates a {@link FormatCatalog} given a map of catalog properties.
    *
-   * @param catalogName   catalog name
+   * @param catalogName catalog name
    * @param metastoreType metastore type
-   * @param properties    catalog properties
+   * @param properties catalog properties
    * @param configuration hadoop configuration
    * @return a new {@link FormatCatalog}
    */
   FormatCatalog create(
-      String catalogName, String metastoreType, Map<String, String> properties, Configuration configuration);
+      String catalogName,
+      String metastoreType,
+      Map<String, String> properties,
+      Configuration configuration);
 
-  /**
-   * format of this catalog factory
-   */
+  /** format of this catalog factory */
   TableFormat format();
 }

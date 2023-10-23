@@ -18,6 +18,22 @@
 
 package org.apache.iceberg.parquet;
 
+import static org.apache.iceberg.TableProperties.DELETE_PARQUET_COMPRESSION;
+import static org.apache.iceberg.TableProperties.DELETE_PARQUET_COMPRESSION_LEVEL;
+import static org.apache.iceberg.TableProperties.DELETE_PARQUET_DICT_SIZE_BYTES;
+import static org.apache.iceberg.TableProperties.DELETE_PARQUET_PAGE_SIZE_BYTES;
+import static org.apache.iceberg.TableProperties.DELETE_PARQUET_ROW_GROUP_SIZE_BYTES;
+import static org.apache.iceberg.TableProperties.PARQUET_COMPRESSION;
+import static org.apache.iceberg.TableProperties.PARQUET_COMPRESSION_DEFAULT;
+import static org.apache.iceberg.TableProperties.PARQUET_COMPRESSION_LEVEL;
+import static org.apache.iceberg.TableProperties.PARQUET_COMPRESSION_LEVEL_DEFAULT;
+import static org.apache.iceberg.TableProperties.PARQUET_DICT_SIZE_BYTES;
+import static org.apache.iceberg.TableProperties.PARQUET_DICT_SIZE_BYTES_DEFAULT;
+import static org.apache.iceberg.TableProperties.PARQUET_PAGE_SIZE_BYTES;
+import static org.apache.iceberg.TableProperties.PARQUET_PAGE_SIZE_BYTES_DEFAULT;
+import static org.apache.iceberg.TableProperties.PARQUET_ROW_GROUP_SIZE_BYTES;
+import static org.apache.iceberg.TableProperties.PARQUET_ROW_GROUP_SIZE_BYTES_DEFAULT;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Files;
@@ -78,28 +94,14 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.apache.iceberg.TableProperties.DELETE_PARQUET_COMPRESSION;
-import static org.apache.iceberg.TableProperties.DELETE_PARQUET_COMPRESSION_LEVEL;
-import static org.apache.iceberg.TableProperties.DELETE_PARQUET_DICT_SIZE_BYTES;
-import static org.apache.iceberg.TableProperties.DELETE_PARQUET_PAGE_SIZE_BYTES;
-import static org.apache.iceberg.TableProperties.DELETE_PARQUET_ROW_GROUP_SIZE_BYTES;
-import static org.apache.iceberg.TableProperties.PARQUET_COMPRESSION;
-import static org.apache.iceberg.TableProperties.PARQUET_COMPRESSION_DEFAULT;
-import static org.apache.iceberg.TableProperties.PARQUET_COMPRESSION_LEVEL;
-import static org.apache.iceberg.TableProperties.PARQUET_COMPRESSION_LEVEL_DEFAULT;
-import static org.apache.iceberg.TableProperties.PARQUET_DICT_SIZE_BYTES;
-import static org.apache.iceberg.TableProperties.PARQUET_DICT_SIZE_BYTES_DEFAULT;
-import static org.apache.iceberg.TableProperties.PARQUET_PAGE_SIZE_BYTES;
-import static org.apache.iceberg.TableProperties.PARQUET_PAGE_SIZE_BYTES_DEFAULT;
-import static org.apache.iceberg.TableProperties.PARQUET_ROW_GROUP_SIZE_BYTES;
-import static org.apache.iceberg.TableProperties.PARQUET_ROW_GROUP_SIZE_BYTES_DEFAULT;
-
 public class AdaptHiveParquet {
-  private AdaptHiveParquet() {
-  }
+  private AdaptHiveParquet() {}
 
-  private static final Collection<String> READ_PROPERTIES_TO_REMOVE = Sets.newHashSet(
-      "parquet.read.filter", "parquet.private.read.filter.predicate", "parquet.read.support.class");
+  private static final Collection<String> READ_PROPERTIES_TO_REMOVE =
+      Sets.newHashSet(
+          "parquet.read.filter",
+          "parquet.private.read.filter.predicate",
+          "parquet.read.support.class");
 
   public static WriteBuilder write(OutputFile file) {
     return new WriteBuilder(file);
@@ -159,7 +161,8 @@ public class AdaptHiveParquet {
       return this;
     }
 
-    public WriteBuilder createWriterFunc(Function<MessageType, ParquetValueWriter<?>> newCreateWriterFunc) {
+    public WriteBuilder createWriterFunc(
+        Function<MessageType, ParquetValueWriter<?>> newCreateWriterFunc) {
       this.createWriterFunc = newCreateWriterFunc;
       return this;
     }
@@ -205,7 +208,8 @@ public class AdaptHiveParquet {
     }
 
     // supposed to always be a private method used strictly by data and delete write builders
-    private WriteBuilder createContextFunc(Function<Map<String, String>, Context> newCreateContextFunc) {
+    private WriteBuilder createContextFunc(
+        Function<Map<String, String>, Context> newCreateContextFunc) {
       this.createContextFunc = newCreateContextFunc;
       return this;
     }
@@ -246,8 +250,8 @@ public class AdaptHiveParquet {
       MessageType type = ParquetSchemaUtil.convert(schema, name);
 
       if (createWriterFunc != null) {
-        Preconditions.checkArgument(writeSupport == null,
-            "Cannot write with both write support and Parquet value writer");
+        Preconditions.checkArgument(
+            writeSupport == null, "Cannot write with both write support and Parquet value writer");
         Configuration conf;
         if (file instanceof HadoopOutputFile) {
           conf = ((HadoopOutputFile) file).getConf();
@@ -259,30 +263,40 @@ public class AdaptHiveParquet {
           conf.set(entry.getKey(), entry.getValue());
         }
 
-        ParquetProperties parquetProperties = ParquetProperties.builder()
-            .withWriterVersion(writerVersion)
-            .withPageSize(pageSize)
-            .withDictionaryPageSize(dictionaryPageSize)
-            .build();
+        ParquetProperties parquetProperties =
+            ParquetProperties.builder()
+                .withWriterVersion(writerVersion)
+                .withPageSize(pageSize)
+                .withDictionaryPageSize(dictionaryPageSize)
+                .build();
 
-        //Change For Arctic
+        // Change For Arctic
         return new org.apache.iceberg.parquet.AdaptHiveParquetWriter<>(
-            conf, file, schema, rowGroupSize, metadata, createWriterFunc, codec,
-            parquetProperties, metricsConfig, writeMode);
-        //Change For Arctic
+            conf,
+            file,
+            schema,
+            rowGroupSize,
+            metadata,
+            createWriterFunc,
+            codec,
+            parquetProperties,
+            metricsConfig,
+            writeMode);
+        // Change For Arctic
       } else {
-        return new ParquetWriteAdapter<>(new ParquetWriteBuilder<D>(ParquetIO.file(file))
-            .withWriterVersion(writerVersion)
-            .setType(type)
-            .setConfig(config)
-            .setKeyValueMetadata(metadata)
-            .setWriteSupport(getWriteSupport(type))
-            .withCompressionCodec(codec)
-            .withWriteMode(writeMode)
-            .withRowGroupSize(rowGroupSize)
-            .withPageSize(pageSize)
-            .withDictionaryPageSize(dictionaryPageSize)
-            .build(),
+        return new ParquetWriteAdapter<>(
+            new ParquetWriteBuilder<D>(ParquetIO.file(file))
+                .withWriterVersion(writerVersion)
+                .setType(type)
+                .setConfig(config)
+                .setKeyValueMetadata(metadata)
+                .setWriteSupport(getWriteSupport(type))
+                .withCompressionCodec(codec)
+                .withWriteMode(writeMode)
+                .withRowGroupSize(rowGroupSize)
+                .withPageSize(pageSize)
+                .withDictionaryPageSize(dictionaryPageSize)
+                .build(),
             metricsConfig);
       }
     }
@@ -294,8 +308,12 @@ public class AdaptHiveParquet {
       private final CompressionCodecName codec;
       private final String compressionLevel;
 
-      private Context(int rowGroupSize, int pageSize, int dictionaryPageSize,
-          CompressionCodecName codec, String compressionLevel) {
+      private Context(
+          int rowGroupSize,
+          int pageSize,
+          int dictionaryPageSize,
+          CompressionCodecName codec,
+          String compressionLevel) {
         this.rowGroupSize = rowGroupSize;
         this.pageSize = pageSize;
         this.dictionaryPageSize = dictionaryPageSize;
@@ -304,19 +322,28 @@ public class AdaptHiveParquet {
       }
 
       static Context dataContext(Map<String, String> config) {
-        int rowGroupSize = Integer.parseInt(config.getOrDefault(
-            PARQUET_ROW_GROUP_SIZE_BYTES, Integer.toString(PARQUET_ROW_GROUP_SIZE_BYTES_DEFAULT)));
+        int rowGroupSize =
+            Integer.parseInt(
+                config.getOrDefault(
+                    PARQUET_ROW_GROUP_SIZE_BYTES,
+                    Integer.toString(PARQUET_ROW_GROUP_SIZE_BYTES_DEFAULT)));
 
-        int pageSize = Integer.parseInt(config.getOrDefault(
-            PARQUET_PAGE_SIZE_BYTES, Integer.toString(PARQUET_PAGE_SIZE_BYTES_DEFAULT)));
+        int pageSize =
+            Integer.parseInt(
+                config.getOrDefault(
+                    PARQUET_PAGE_SIZE_BYTES, Integer.toString(PARQUET_PAGE_SIZE_BYTES_DEFAULT)));
 
-        int dictionaryPageSize = Integer.parseInt(config.getOrDefault(
-            PARQUET_DICT_SIZE_BYTES, Integer.toString(PARQUET_DICT_SIZE_BYTES_DEFAULT)));
+        int dictionaryPageSize =
+            Integer.parseInt(
+                config.getOrDefault(
+                    PARQUET_DICT_SIZE_BYTES, Integer.toString(PARQUET_DICT_SIZE_BYTES_DEFAULT)));
 
-        String codecAsString = config.getOrDefault(PARQUET_COMPRESSION, PARQUET_COMPRESSION_DEFAULT);
+        String codecAsString =
+            config.getOrDefault(PARQUET_COMPRESSION, PARQUET_COMPRESSION_DEFAULT);
         CompressionCodecName codec = toCodec(codecAsString);
 
-        String compressionLevel = config.getOrDefault(PARQUET_COMPRESSION_LEVEL, PARQUET_COMPRESSION_LEVEL_DEFAULT);
+        String compressionLevel =
+            config.getOrDefault(PARQUET_COMPRESSION_LEVEL, PARQUET_COMPRESSION_LEVEL_DEFAULT);
 
         return new Context(rowGroupSize, pageSize, dictionaryPageSize, codec, compressionLevel);
       }
@@ -325,19 +352,24 @@ public class AdaptHiveParquet {
         // default delete config using data config
         Context dataContext = dataContext(config);
 
-        int rowGroupSize = PropertyUtil.propertyAsInt(config,
-            DELETE_PARQUET_ROW_GROUP_SIZE_BYTES, dataContext.rowGroupSize());
+        int rowGroupSize =
+            PropertyUtil.propertyAsInt(
+                config, DELETE_PARQUET_ROW_GROUP_SIZE_BYTES, dataContext.rowGroupSize());
 
-        int pageSize = PropertyUtil.propertyAsInt(config,
-            DELETE_PARQUET_PAGE_SIZE_BYTES, dataContext.pageSize());
+        int pageSize =
+            PropertyUtil.propertyAsInt(
+                config, DELETE_PARQUET_PAGE_SIZE_BYTES, dataContext.pageSize());
 
-        int dictionaryPageSize = PropertyUtil.propertyAsInt(config,
-            DELETE_PARQUET_DICT_SIZE_BYTES, dataContext.dictionaryPageSize());
+        int dictionaryPageSize =
+            PropertyUtil.propertyAsInt(
+                config, DELETE_PARQUET_DICT_SIZE_BYTES, dataContext.dictionaryPageSize());
 
         String codecAsString = config.get(DELETE_PARQUET_COMPRESSION);
-        CompressionCodecName codec = codecAsString != null ? toCodec(codecAsString) : dataContext.codec();
+        CompressionCodecName codec =
+            codecAsString != null ? toCodec(codecAsString) : dataContext.codec();
 
-        String compressionLevel = config.getOrDefault(DELETE_PARQUET_COMPRESSION_LEVEL, dataContext.compressionLevel());
+        String compressionLevel =
+            config.getOrDefault(DELETE_PARQUET_COMPRESSION_LEVEL, dataContext.compressionLevel());
 
         return new Context(rowGroupSize, pageSize, dictionaryPageSize, codec, compressionLevel);
       }
@@ -431,7 +463,8 @@ public class AdaptHiveParquet {
       return this;
     }
 
-    public DataWriteBuilder createWriterFunc(Function<MessageType, ParquetValueWriter<?>> newCreateWriterFunc) {
+    public DataWriteBuilder createWriterFunc(
+        Function<MessageType, ParquetValueWriter<?>> newCreateWriterFunc) {
       appenderBuilder.createWriterFunc(newCreateWriterFunc);
       return this;
     }
@@ -458,11 +491,13 @@ public class AdaptHiveParquet {
 
     public <T> DataWriter<T> build() throws IOException {
       Preconditions.checkArgument(spec != null, "Cannot create data writer without spec");
-      Preconditions.checkArgument(spec.isUnpartitioned() || partition != null,
+      Preconditions.checkArgument(
+          spec.isUnpartitioned() || partition != null,
           "Partition must not be null when creating data writer for partitioned spec");
 
       FileAppender<T> fileAppender = appenderBuilder.build();
-      return new DataWriter<>(fileAppender, FileFormat.PARQUET, location, spec, partition, keyMetadata, sortOrder);
+      return new DataWriter<>(
+          fileAppender, FileFormat.PARQUET, location, spec, partition, keyMetadata, sortOrder);
     }
   }
 
@@ -525,7 +560,8 @@ public class AdaptHiveParquet {
       return this;
     }
 
-    public DeleteWriteBuilder createWriterFunc(Function<MessageType, ParquetValueWriter<?>> newCreateWriterFunc) {
+    public DeleteWriteBuilder createWriterFunc(
+        Function<MessageType, ParquetValueWriter<?>> newCreateWriterFunc) {
       this.createWriterFunc = newCreateWriterFunc;
       return this;
     }
@@ -571,19 +607,25 @@ public class AdaptHiveParquet {
     }
 
     public <T> EqualityDeleteWriter<T> buildEqualityWriter() throws IOException {
-      Preconditions.checkState(rowSchema != null, "Cannot create equality delete file without a schema`");
-      Preconditions.checkState(equalityFieldIds != null, "Cannot create equality delete file without delete field ids");
-      Preconditions.checkState(createWriterFunc != null,
+      Preconditions.checkState(
+          rowSchema != null, "Cannot create equality delete file without a schema`");
+      Preconditions.checkState(
+          equalityFieldIds != null, "Cannot create equality delete file without delete field ids");
+      Preconditions.checkState(
+          createWriterFunc != null,
           "Cannot create equality delete file unless createWriterFunc is set");
-      Preconditions.checkArgument(spec != null,
-          "Spec must not be null when creating equality delete writer");
-      Preconditions.checkArgument(spec.isUnpartitioned() || partition != null,
+      Preconditions.checkArgument(
+          spec != null, "Spec must not be null when creating equality delete writer");
+      Preconditions.checkArgument(
+          spec.isUnpartitioned() || partition != null,
           "Partition must not be null for partitioned writes");
 
       meta("delete-type", "equality");
-      meta("delete-field-ids", IntStream.of(equalityFieldIds)
-          .mapToObj(Objects::toString)
-          .collect(Collectors.joining(", ")));
+      meta(
+          "delete-field-ids",
+          IntStream.of(equalityFieldIds)
+              .mapToObj(Objects::toString)
+              .collect(Collectors.joining(", ")));
 
       // the appender uses the row schema without extra columns
       appenderBuilder.schema(rowSchema);
@@ -591,15 +633,23 @@ public class AdaptHiveParquet {
       appenderBuilder.createContextFunc(WriteBuilder.Context::deleteContext);
 
       return new EqualityDeleteWriter<>(
-          appenderBuilder.build(), FileFormat.PARQUET, location, spec, partition, keyMetadata,
-          sortOrder, equalityFieldIds);
+          appenderBuilder.build(),
+          FileFormat.PARQUET,
+          location,
+          spec,
+          partition,
+          keyMetadata,
+          sortOrder,
+          equalityFieldIds);
     }
 
     public <T> PositionDeleteWriter<T> buildPositionWriter() throws IOException {
-      Preconditions.checkState(equalityFieldIds == null, "Cannot create position delete file using delete field ids");
-      Preconditions.checkArgument(spec != null,
-          "Spec must not be null when creating position delete writer");
-      Preconditions.checkArgument(spec.isUnpartitioned() || partition != null,
+      Preconditions.checkState(
+          equalityFieldIds == null, "Cannot create position delete file using delete field ids");
+      Preconditions.checkArgument(
+          spec != null, "Spec must not be null when creating position delete writer");
+      Preconditions.checkArgument(
+          spec.isUnpartitioned() || partition != null,
           "Partition must not be null for partitioned writes");
 
       meta("delete-type", "position");
@@ -608,22 +658,26 @@ public class AdaptHiveParquet {
         // the appender uses the row schema wrapped with position fields
         appenderBuilder.schema(DeleteSchemaUtil.posDeleteSchema(rowSchema));
 
-        appenderBuilder.createWriterFunc(parquetSchema -> {
-          ParquetValueWriter<?> writer = createWriterFunc.apply(parquetSchema);
-          if (writer instanceof StructWriter) {
-            return new PositionDeleteStructWriter<T>((StructWriter<?>) writer, pathTransformFunc);
-          } else {
-            throw new UnsupportedOperationException("Cannot wrap writer for position deletes: " + writer.getClass());
-          }
-        });
+        appenderBuilder.createWriterFunc(
+            parquetSchema -> {
+              ParquetValueWriter<?> writer = createWriterFunc.apply(parquetSchema);
+              if (writer instanceof StructWriter) {
+                return new PositionDeleteStructWriter<T>(
+                    (StructWriter<?>) writer, pathTransformFunc);
+              } else {
+                throw new UnsupportedOperationException(
+                    "Cannot wrap writer for position deletes: " + writer.getClass());
+              }
+            });
 
       } else {
         appenderBuilder.schema(DeleteSchemaUtil.pathPosSchema());
 
-        appenderBuilder.createWriterFunc(parquetSchema ->
-            new PositionDeleteStructWriter<T>((StructWriter<?>) AdaptHiveGenericParquetWriter.buildWriter(
-                parquetSchema),
-                Function.identity()));
+        appenderBuilder.createWriterFunc(
+            parquetSchema ->
+                new PositionDeleteStructWriter<T>(
+                    (StructWriter<?>) AdaptHiveGenericParquetWriter.buildWriter(parquetSchema),
+                    Function.identity()));
       }
 
       appenderBuilder.createContextFunc(WriteBuilder.Context::deleteContext);
@@ -633,7 +687,8 @@ public class AdaptHiveParquet {
     }
   }
 
-  private static class ParquetWriteBuilder<T> extends ParquetWriter.Builder<T, ParquetWriteBuilder<T>> {
+  private static class ParquetWriteBuilder<T>
+      extends ParquetWriter.Builder<T, ParquetWriteBuilder<T>> {
     private Map<String, String> keyValueMetadata = Maps.newHashMap();
     private Map<String, String> config = Maps.newHashMap();
     private MessageType type;
@@ -744,15 +799,18 @@ public class AdaptHiveParquet {
       return this;
     }
 
-    public ReadBuilder createReaderFunc(Function<MessageType, ParquetValueReader<?>> newReaderFunction) {
-      Preconditions.checkArgument(this.batchedReaderFunc == null,
+    public ReadBuilder createReaderFunc(
+        Function<MessageType, ParquetValueReader<?>> newReaderFunction) {
+      Preconditions.checkArgument(
+          this.batchedReaderFunc == null,
           "Reader function cannot be set since the batched version is already set");
       this.readerFunc = newReaderFunction;
       return this;
     }
 
     public ReadBuilder createBatchedReaderFunc(Function<MessageType, VectorizedReader<?>> func) {
-      Preconditions.checkArgument(this.readerFunc == null,
+      Preconditions.checkArgument(
+          this.readerFunc == null,
           "Batched reader function cannot be set since the non-batched version is already set");
       this.batchedReaderFunc = func;
       return this;
@@ -809,13 +867,28 @@ public class AdaptHiveParquet {
         ParquetReadOptions options = optionsBuilder.build();
 
         if (batchedReaderFunc != null) {
-          return new VectorizedParquetReader<>(file, schema, options, batchedReaderFunc, nameMapping, filter,
-              reuseContainers, caseSensitive, maxRecordsPerBatch);
+          return new VectorizedParquetReader<>(
+              file,
+              schema,
+              options,
+              batchedReaderFunc,
+              nameMapping,
+              filter,
+              reuseContainers,
+              caseSensitive,
+              maxRecordsPerBatch);
         } else {
-          //Change For Arctic
+          // Change For Arctic
           return new AdaptHiveParquetReader<>(
-              file, schema, options, readerFunc, nameMapping, filter, reuseContainers, caseSensitive);
-          //Change For Arctic
+              file,
+              schema,
+              options,
+              readerFunc,
+              nameMapping,
+              filter,
+              reuseContainers,
+              caseSensitive);
+          // Change For Arctic
         }
       }
 
@@ -830,9 +903,12 @@ public class AdaptHiveParquet {
       }
 
       // default options for readers
-      builder.set("parquet.strict.typing", "false") // allow type promotion
+      builder
+          .set("parquet.strict.typing", "false") // allow type promotion
           .set("parquet.avro.compatible", "false") // use the new RecordReader with Utf8 support
-          .set("parquet.avro.add-list-element-records", "false"); // assume that lists use a 3-level schema
+          .set(
+              "parquet.avro.add-list-element-records",
+              "false"); // assume that lists use a 3-level schema
 
       for (Map.Entry<String, String> entry : properties.entrySet()) {
         builder.set(entry.getKey(), entry.getValue());
@@ -848,15 +924,14 @@ public class AdaptHiveParquet {
           throw new UncheckedIOException(e);
         }
         Schema fileSchema = ParquetSchemaUtil.convert(type);
-        builder.useStatsFilter()
+        builder
+            .useStatsFilter()
             .useDictionaryFilter()
             .useRecordFilter(filterRecords)
             .withFilter(ParquetFilters.convert(fileSchema, filter, caseSensitive));
       } else {
         // turn off filtering
-        builder.useStatsFilter(false)
-            .useDictionaryFilter(false)
-            .useRecordFilter(false);
+        builder.useStatsFilter(false).useDictionaryFilter(false).useRecordFilter(false);
       }
 
       if (callInit) {
@@ -914,19 +989,28 @@ public class AdaptHiveParquet {
   /**
    * Combines several files into one
    *
-   * @param inputFiles   an {@link Iterable} of parquet files. The order of iteration determines the order in which
-   *                     content of files are read and written to the {@code outputFile}
-   * @param outputFile   the output parquet file containing all the data from {@code inputFiles}
+   * @param inputFiles an {@link Iterable} of parquet files. The order of iteration determines the
+   *     order in which content of files are read and written to the {@code outputFile}
+   * @param outputFile the output parquet file containing all the data from {@code inputFiles}
    * @param rowGroupSize the row group size to use when writing the {@code outputFile}
-   * @param schema       the schema of the data
-   * @param metadata     extraMetadata to write at the footer of the {@code outputFile}
+   * @param schema the schema of the data
+   * @param metadata extraMetadata to write at the footer of the {@code outputFile}
    */
-  public static void concat(Iterable<File> inputFiles, File outputFile, int rowGroupSize, Schema schema,
-      Map<String, String> metadata) throws IOException {
+  public static void concat(
+      Iterable<File> inputFiles,
+      File outputFile,
+      int rowGroupSize,
+      Schema schema,
+      Map<String, String> metadata)
+      throws IOException {
     OutputFile file = Files.localOutput(outputFile);
-    ParquetFileWriter writer = new ParquetFileWriter(
-        ParquetIO.file(file), ParquetSchemaUtil.convert(schema, "table"),
-        ParquetFileWriter.Mode.CREATE, rowGroupSize, 0);
+    ParquetFileWriter writer =
+        new ParquetFileWriter(
+            ParquetIO.file(file),
+            ParquetSchemaUtil.convert(schema, "table"),
+            ParquetFileWriter.Mode.CREATE,
+            rowGroupSize,
+            0);
     writer.start();
     for (File inputFile : inputFiles) {
       writer.appendFile(ParquetIO.file(Files.localInput(inputFile)));

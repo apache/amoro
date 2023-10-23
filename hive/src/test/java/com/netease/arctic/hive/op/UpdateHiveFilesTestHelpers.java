@@ -46,8 +46,8 @@ import java.util.stream.Collectors;
 public class UpdateHiveFilesTestHelpers {
 
   public static void validateHiveTableValues(
-      HiveMetaStoreClient hiveClient, ArcticTable table,
-      List<DataFile> exceptFiles) throws TException {
+      HiveMetaStoreClient hiveClient, ArcticTable table, List<DataFile> exceptFiles)
+      throws TException {
     if (table.spec().isPartitioned()) {
       UpdateHiveFilesTestHelpers.assertHivePartitionValues(hiveClient, table, exceptFiles);
     } else {
@@ -56,18 +56,14 @@ public class UpdateHiveFilesTestHelpers {
   }
 
   public static void assertHivePartitionValues(
-      HiveMetaStoreClient hiveClient, ArcticTable table,
-      List<DataFile> files) throws TException {
+      HiveMetaStoreClient hiveClient, ArcticTable table, List<DataFile> files) throws TException {
     StructLikeMap<List<DataFile>> filesByPartition = groupFilesByPartition(table.spec(), files);
     StructLikeMap<String> pathByPartition = pathByPartition(table.spec(), filesByPartition);
     TableIdentifier identifier = table.id();
     final String database = identifier.getDatabase();
     final String tableName = identifier.getTableName();
 
-    List<Partition> partitions = hiveClient.listPartitions(
-        database,
-        tableName,
-        Short.MAX_VALUE);
+    List<Partition> partitions = hiveClient.listPartitions(database, tableName, Short.MAX_VALUE);
 
     Assert.assertEquals(filesByPartition.size(), partitions.size());
 
@@ -81,8 +77,7 @@ public class UpdateHiveFilesTestHelpers {
 
       Map<String, String> properties = partitionProperties.get(partitionData);
       Assert.assertEquals(
-          valuePath,
-          properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
+          valuePath, properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
       Assert.assertEquals(
           p.getParameters().get("transient_lastDdlTime"),
           properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
@@ -90,15 +85,15 @@ public class UpdateHiveFilesTestHelpers {
           Streams.stream(table.io().asFileSystemIO().listDirectory(valuePath))
               .map(FileInfo::location)
               .collect(Collectors.toSet()),
-
-          filesByPartition.get(partitionData).stream().map(DataFile::path)
-              .map(CharSequence::toString).collect(Collectors.toSet()));
+          filesByPartition.get(partitionData).stream()
+              .map(DataFile::path)
+              .map(CharSequence::toString)
+              .collect(Collectors.toSet()));
     }
   }
 
   public static void assertHiveTableValue(
-      HiveMetaStoreClient hiveClient, ArcticTable table,
-      List<DataFile> files) throws TException {
+      HiveMetaStoreClient hiveClient, ArcticTable table, List<DataFile> files) throws TException {
     TableIdentifier identifier = table.id();
     final String database = identifier.getDatabase();
     final String tableName = identifier.getTableName();
@@ -109,10 +104,10 @@ public class UpdateHiveFilesTestHelpers {
       Assert.assertEquals(hiveTable.getSd().getLocation(), fileDir);
 
       UnkeyedTable baseStore = ArcticTableUtil.baseStore(table);
-      Map<String, String> properties = baseStore.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT);
+      Map<String, String> properties =
+          baseStore.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT);
       Assert.assertEquals(
-          fileDir,
-          properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
+          fileDir, properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
       Assert.assertEquals(
           hiveTable.getParameters().get("transient_lastDdlTime"),
           properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
@@ -120,25 +115,26 @@ public class UpdateHiveFilesTestHelpers {
   }
 
   private static StructLikeMap<List<DataFile>> groupFilesByPartition(
-      PartitionSpec partitionSpec,
-      List<DataFile> files) {
-    StructLikeMap<List<DataFile>> filesByPartition = StructLikeMap.create(partitionSpec.partitionType());
-    files.forEach(file -> {
-      if (!filesByPartition.containsKey(file.partition())) {
-        filesByPartition.put(file.partition(), Lists.newArrayList());
-      }
-      filesByPartition.get(file.partition()).add(file);
-    });
+      PartitionSpec partitionSpec, List<DataFile> files) {
+    StructLikeMap<List<DataFile>> filesByPartition =
+        StructLikeMap.create(partitionSpec.partitionType());
+    files.forEach(
+        file -> {
+          if (!filesByPartition.containsKey(file.partition())) {
+            filesByPartition.put(file.partition(), Lists.newArrayList());
+          }
+          filesByPartition.get(file.partition()).add(file);
+        });
     return filesByPartition;
   }
 
   private static StructLikeMap<String> pathByPartition(
-      PartitionSpec partitionSpec,
-      StructLikeMap<List<DataFile>> filesByPartition) {
+      PartitionSpec partitionSpec, StructLikeMap<List<DataFile>> filesByPartition) {
     StructLikeMap<String> pathByPartition = StructLikeMap.create(partitionSpec.partitionType());
-    filesByPartition.forEach((partition, files) -> {
-      pathByPartition.put(partition, dirOfFiles(files));
-    });
+    filesByPartition.forEach(
+        (partition, files) -> {
+          pathByPartition.put(partition, dirOfFiles(files));
+        });
     return pathByPartition;
   }
 

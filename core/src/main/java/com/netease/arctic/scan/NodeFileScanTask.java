@@ -31,9 +31,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- * Implementation of {@link KeyedTableScanTask} with files in one single {@link DataTreeNode}
- */
+/** Implementation of {@link KeyedTableScanTask} with files in one single {@link DataTreeNode} */
 public class NodeFileScanTask implements KeyedTableScanTask {
   private static final Logger LOG = LoggerFactory.getLogger(NodeFileScanTask.class);
 
@@ -45,28 +43,32 @@ public class NodeFileScanTask implements KeyedTableScanTask {
   private DataTreeNode treeNode;
   private long rowNums = 0;
 
-  public NodeFileScanTask() {
-  }
+  public NodeFileScanTask() {}
 
   public NodeFileScanTask(DataTreeNode treeNode) {
     this.treeNode = treeNode;
   }
 
   public NodeFileScanTask(List<ArcticFileScanTask> allTasks) {
-    this.baseTasks = allTasks.stream()
-        .filter(t -> t.file().type() == DataFileType.BASE_FILE)
-        .collect(Collectors.toList());
-    this.insertTasks = allTasks.stream()
-        .filter(t -> t.file().type() == DataFileType.INSERT_FILE).collect(Collectors.toList());
-    this.deleteFiles = allTasks.stream()
-        .filter(t -> t.file().type() == DataFileType.EQ_DELETE_FILE).collect(Collectors.toList());
+    this.baseTasks =
+        allTasks.stream()
+            .filter(t -> t.file().type() == DataFileType.BASE_FILE)
+            .collect(Collectors.toList());
+    this.insertTasks =
+        allTasks.stream()
+            .filter(t -> t.file().type() == DataFileType.INSERT_FILE)
+            .collect(Collectors.toList());
+    this.deleteFiles =
+        allTasks.stream()
+            .filter(t -> t.file().type() == DataFileType.EQ_DELETE_FILE)
+            .collect(Collectors.toList());
 
-    Stream.concat(baseTasks.stream(), insertTasks.stream()).forEach(
-        task -> {
-          cost = cost + Math.max(task.file().fileSizeInBytes(), openFileCost);
-          rowNums = rowNums + task.file().recordCount();
-        }
-    );
+    Stream.concat(baseTasks.stream(), insertTasks.stream())
+        .forEach(
+            task -> {
+              cost = cost + Math.max(task.file().fileSizeInBytes(), openFileCost);
+              rowNums = rowNums + task.file().recordCount();
+            });
   }
 
   public void setTreeNode(DataTreeNode treeNode) {
@@ -98,8 +100,7 @@ public class NodeFileScanTask implements KeyedTableScanTask {
 
   @Override
   public List<ArcticFileScanTask> dataTasks() {
-    return Stream.concat(baseTasks.stream(), insertTasks.stream())
-        .collect(Collectors.toList());
+    return Stream.concat(baseTasks.stream(), insertTasks.stream()).collect(Collectors.toList());
   }
 
   public void addFile(ArcticFileScanTask task) {

@@ -32,32 +32,31 @@ import java.util.Map;
 
 public class AdaptHiveGenericParquetReaders extends AdaptHiveBaseParquetReaders<Record> {
 
-  private static final AdaptHiveGenericParquetReaders INSTANCE = new AdaptHiveGenericParquetReaders();
+  private static final AdaptHiveGenericParquetReaders INSTANCE =
+      new AdaptHiveGenericParquetReaders();
 
-  private AdaptHiveGenericParquetReaders() {
-  }
+  private AdaptHiveGenericParquetReaders() {}
 
-  public static ParquetValueReader<Record> buildReader(Schema expectedSchema, MessageType fileSchema) {
+  public static ParquetValueReader<Record> buildReader(
+      Schema expectedSchema, MessageType fileSchema) {
     return INSTANCE.createReader(expectedSchema, fileSchema);
   }
 
-  public static ParquetValueReader<Record> buildReader(Schema expectedSchema, MessageType fileSchema,
-      Map<Integer, ?> idToConstant) {
+  public static ParquetValueReader<Record> buildReader(
+      Schema expectedSchema, MessageType fileSchema, Map<Integer, ?> idToConstant) {
     return INSTANCE.createReader(expectedSchema, fileSchema, idToConstant);
   }
 
   @Override
-  protected ParquetValueReader<Record> createStructReader(List<Type> types, List<ParquetValueReader<?>> fieldReaders,
-      StructType structType) {
+  protected ParquetValueReader<Record> createStructReader(
+      List<Type> types, List<ParquetValueReader<?>> fieldReaders, StructType structType) {
     return new RecordReader(types, fieldReaders, structType);
   }
 
   private static class RecordReader extends StructReader<Record, Record> {
     private final StructType structType;
 
-    RecordReader(List<Type> types,
-        List<ParquetValueReader<?>> readers,
-        StructType struct) {
+    RecordReader(List<Type> types, List<ParquetValueReader<?>> readers, StructType struct) {
       super(types, readers);
       this.structType = struct;
     }

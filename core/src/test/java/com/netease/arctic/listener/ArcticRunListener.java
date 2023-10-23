@@ -82,7 +82,10 @@ public class ArcticRunListener extends RunListener {
   public void testIgnored(Description description) throws Exception {
     super.testIgnored(description);
     Ignore ignore = description.getAnnotation(Ignore.class);
-    LOG.info("@Ignore test method '{}', ignored reason '{}'.", description.getMethodName(), ignore.value());
+    LOG.info(
+        "@Ignore test method '{}', ignored reason '{}'.",
+        description.getMethodName(),
+        ignore.value());
   }
 
   private static class TestCase implements Comparable<TestCase> {

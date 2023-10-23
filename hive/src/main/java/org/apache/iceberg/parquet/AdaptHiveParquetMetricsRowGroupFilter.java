@@ -48,7 +48,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Copy from iceberg {@link org.apache.iceberg.parquet.ParquetMetricsRowGroupFilter} to resolve int96 type.
+ * Copy from iceberg {@link org.apache.iceberg.parquet.ParquetMetricsRowGroupFilter} to resolve
+ * int96 type.
  */
 public class AdaptHiveParquetMetricsRowGroupFilter {
   private static final int IN_PREDICATE_LIMIT = 200;
@@ -60,7 +61,8 @@ public class AdaptHiveParquetMetricsRowGroupFilter {
     this(schema, unbound, true);
   }
 
-  public AdaptHiveParquetMetricsRowGroupFilter(Schema schema, Expression unbound, boolean caseSensitive) {
+  public AdaptHiveParquetMetricsRowGroupFilter(
+      Schema schema, Expression unbound, boolean caseSensitive) {
     this.schema = schema;
     StructType struct = schema.asStruct();
     this.expr = Binder.bind(struct, Expressions.rewriteNot(unbound), caseSensitive);
@@ -100,9 +102,10 @@ public class AdaptHiveParquetMetricsRowGroupFilter {
           Type icebergType = schema.findType(id);
           stats.put(id, col.getStatistics());
           valueCounts.put(id, col.getValueCount());
-          //Change For Arctic
-          conversions.put(id, AdaptHiveParquetConversions.converterFromParquet(colType, icebergType));
-          //Change For Arctic
+          // Change For Arctic
+          conversions.put(
+              id, AdaptHiveParquetConversions.converterFromParquet(colType, icebergType));
+          // Change For Arctic
         }
       }
 
@@ -412,14 +415,22 @@ public class AdaptHiveParquetMetricsRowGroupFilter {
         }
 
         T lower = min(colStats, id);
-        literals = literals.stream().filter(v -> ref.comparator().compare(lower, v) <= 0).collect(Collectors.toList());
-        if (literals.isEmpty()) {  // if all values are less than lower bound, rows cannot match.
+        literals =
+            literals.stream()
+                .filter(v -> ref.comparator().compare(lower, v) <= 0)
+                .collect(Collectors.toList());
+        if (literals.isEmpty()) { // if all values are less than lower bound, rows cannot match.
           return ROWS_CANNOT_MATCH;
         }
 
         T upper = max(colStats, id);
-        literals = literals.stream().filter(v -> ref.comparator().compare(upper, v) >= 0).collect(Collectors.toList());
-        if (literals.isEmpty()) { // if all remaining values are greater than upper bound, rows cannot match.
+        literals =
+            literals.stream()
+                .filter(v -> ref.comparator().compare(upper, v) >= 0)
+                .collect(Collectors.toList());
+        if (literals
+            .isEmpty()) { // if all remaining values are greater than upper bound, rows cannot
+          // match.
           return ROWS_CANNOT_MATCH;
         }
       }
@@ -462,7 +473,9 @@ public class AdaptHiveParquetMetricsRowGroupFilter {
         Binary lower = colStats.genericGetMin();
         // truncate lower bound so that its length in bytes is not greater than the length of prefix
         int lowerLength = Math.min(prefixAsBytes.remaining(), lower.length());
-        int lowerCmp = comparator.compare(BinaryUtil.truncateBinary(lower.toByteBuffer(), lowerLength), prefixAsBytes);
+        int lowerCmp =
+            comparator.compare(
+                BinaryUtil.truncateBinary(lower.toByteBuffer(), lowerLength), prefixAsBytes);
         if (lowerCmp > 0) {
           return ROWS_CANNOT_MATCH;
         }
@@ -470,7 +483,9 @@ public class AdaptHiveParquetMetricsRowGroupFilter {
         Binary upper = colStats.genericGetMax();
         // truncate upper bound so that its length in bytes is not greater than the length of prefix
         int upperLength = Math.min(prefixAsBytes.remaining(), upper.length());
-        int upperCmp = comparator.compare(BinaryUtil.truncateBinary(upper.toByteBuffer(), upperLength), prefixAsBytes);
+        int upperCmp =
+            comparator.compare(
+                BinaryUtil.truncateBinary(upper.toByteBuffer(), upperLength), prefixAsBytes);
         if (upperCmp < 0) {
           return ROWS_CANNOT_MATCH;
         }
@@ -491,33 +506,35 @@ public class AdaptHiveParquetMetricsRowGroupFilter {
   }
 
   /**
-   * Checks against older versions of Parquet statistics which may have a null count but undefined min and max
-   * statistics. Returns true if nonNull values exist in the row group but no further statistics are available.
-   * <p>
-   * We can't use {@code  statistics.hasNonNullValue()} because it is inaccurate with older files and will return
-   * false if min and max are not set.
-   * <p>
-   * This is specifically for 1.5.0-CDH Parquet builds and later which contain the different unusual hasNonNull
-   * behavior. OSS Parquet builds are not effected because PARQUET-251 prohibits the reading of these statistics
-   * from versions of Parquet earlier than 1.8.0.
+   * Checks against older versions of Parquet statistics which may have a null count but undefined
+   * min and max statistics. Returns true if nonNull values exist in the row group but no further
+   * statistics are available.
+   *
+   * <p>We can't use {@code statistics.hasNonNullValue()} because it is inaccurate with older files
+   * and will return false if min and max are not set.
+   *
+   * <p>This is specifically for 1.5.0-CDH Parquet builds and later which contain the different
+   * unusual hasNonNull behavior. OSS Parquet builds are not effected because PARQUET-251 prohibits
+   * the reading of these statistics from versions of Parquet earlier than 1.8.0.
    *
    * @param statistics Statistics to check
    * @param valueCount Number of values in the row group
    * @return true if nonNull values exist and no other stats can be used
    */
   static boolean hasNonNullButNoMinMax(Statistics statistics, long valueCount) {
-    return statistics.getNumNulls() < valueCount &&
-        (statistics.getMaxBytes() == null || statistics.getMinBytes() == null);
+    return statistics.getNumNulls() < valueCount
+        && (statistics.getMaxBytes() == null || statistics.getMinBytes() == null);
   }
 
-  private static Function<Object, Object> converterFor(PrimitiveType parquetType, Type icebergType) {
+  private static Function<Object, Object> converterFor(
+      PrimitiveType parquetType, Type icebergType) {
     Function<Object, Object> fromParquet = ParquetConversions.converterFromParquet(parquetType);
     if (icebergType != null) {
-      if (icebergType.typeId() == Type.TypeID.LONG &&
-          parquetType.getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.INT32) {
+      if (icebergType.typeId() == Type.TypeID.LONG
+          && parquetType.getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.INT32) {
         return value -> ((Integer) fromParquet.apply(value)).longValue();
-      } else if (icebergType.typeId() == Type.TypeID.DOUBLE &&
-          parquetType.getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.FLOAT) {
+      } else if (icebergType.typeId() == Type.TypeID.DOUBLE
+          && parquetType.getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.FLOAT) {
         return value -> ((Float) fromParquet.apply(value)).doubleValue();
       }
     }

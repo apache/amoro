@@ -18,9 +18,7 @@
 
 package com.netease.arctic.hive.exceptions;
 
-/**
- * Exception will be thrown when alter hive location check failed
- */
+/** Exception will be thrown when alter hive location check failed */
 public class CannotAlterHiveLocationException extends IllegalStateException {
   public CannotAlterHiveLocationException(String message) {
     super(message);
