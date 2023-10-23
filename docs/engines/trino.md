@@ -12,7 +12,11 @@ menu:
 
 ## Iceberg format
 Iceberg format can be accessed using the Iceberg Connector provided by Trino.
-please refer to the documentation at [Iceberg Connector](https://trino.io/docs/current/connector/iceberg.html#) for more information. 
+please refer to the documentation at [Iceberg Trino user manual](https://trino.io/docs/current/connector/iceberg.html#) for more information.
+
+## Paimon format
+Paimon format can be accessed using the Paimon Connector provided by Trino.
+please refer to the documentation at [Paimon Trino user manual](https://paimon.apache.org/docs/master/engines/trino/) for more information.
 
 ## Mixed format
 ### Install

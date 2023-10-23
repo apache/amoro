@@ -25,6 +25,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.ams.api.TableCommitMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.table.ServerTableIdentifier;
@@ -79,7 +80,8 @@ public class TableManagementService implements ArcticTableMetastore.Iface {
     if (tableMeta == null) {
       throw new IllegalArgumentException("table meta should not be null");
     }
-    ServerTableIdentifier identifier = ServerTableIdentifier.of(tableMeta.getTableIdentifier());
+    ServerTableIdentifier identifier = ServerTableIdentifier.of(
+        tableMeta.getTableIdentifier(), TableFormat.valueOf(tableMeta.getFormat()));
     CatalogMeta catalogMeta = getCatalog(identifier.getCatalog());
     TableMetadata tableMetadata = new TableMetadata(identifier, tableMeta, catalogMeta);
     tableService.createTable(tableMeta.tableIdentifier.getCatalog(), tableMetadata);

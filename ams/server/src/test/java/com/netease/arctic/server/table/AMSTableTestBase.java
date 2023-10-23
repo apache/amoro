@@ -196,7 +196,9 @@ public class AMSTableTestBase extends TableServiceTestBase {
   }
 
   protected TableMetadata tableMetadata() {
-    return new TableMetadata(ServerTableIdentifier.of(tableMeta.getTableIdentifier()), tableMeta, catalogMeta);
+    return new TableMetadata(
+        ServerTableIdentifier.of(tableMeta.getTableIdentifier(), catalogTestHelper.tableFormat()),
+        tableMeta, catalogMeta);
   }
 
   protected ServerTableIdentifier serverTableIdentifier() {

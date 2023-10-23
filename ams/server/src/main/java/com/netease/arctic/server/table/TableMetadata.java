@@ -51,7 +51,6 @@ public class TableMetadata implements Serializable {
     this.tableIdentifier = identifier;
     Map<String, String> properties = Maps.newHashMap(tableMeta.getProperties());
     Preconditions.checkNotNull(tableMeta.getFormat(), "lack require field: table format");
-    this.format = TableFormat.valueOf(tableMeta.getFormat());
     if (tableMeta.getLocations() != null &&
         tableMeta.getLocations().containsKey(MetaTableProperties.LOCATION_KEY_TABLE)) {
       this.tableLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE);
@@ -107,13 +106,11 @@ public class TableMetadata implements Serializable {
       keySpec.setFields(fields);
       meta.setKeySpec(keySpec);
     }
-    meta.setFormat(this.format.name());
+    meta.setFormat(this.getFormat().name());
     return meta;
   }
 
   private ServerTableIdentifier tableIdentifier;
-
-  private TableFormat format;
 
   private String tableLocation;
 
@@ -146,11 +143,7 @@ public class TableMetadata implements Serializable {
   private volatile TableMetaStore metaStore;
 
   public TableFormat getFormat() {
-    return format;
-  }
-
-  public void setFormat(TableFormat format) {
-    this.format = format;
+    return this.tableIdentifier.getFormat();
   }
 
   public String getTableLocation() {
