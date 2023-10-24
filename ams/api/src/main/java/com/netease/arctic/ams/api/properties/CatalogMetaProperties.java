@@ -45,15 +45,17 @@ public class CatalogMetaProperties {
   public static final String AUTH_CONFIGS_VALUE_TYPE_AK_SK = "ak/sk";
   public static final String AUTH_CONFIGS_VALUE_TYPE_CUSTOM = "custom";
 
-  //Deprecated from version v0.4.0, use KEY_WAREHOUSE
-  @Deprecated
-  public static final String KEY_WAREHOUSE_DIR = "warehouse.dir";
+  // Deprecated from version v0.4.0, use KEY_WAREHOUSE
+  @Deprecated public static final String KEY_WAREHOUSE_DIR = "warehouse.dir";
   public static final String KEY_WAREHOUSE = "warehouse";
   /**
-   * @deprecated since 0.6.0, will be removed in 0.7.0; use {@link CatalogMetaProperties#KEY_TABLE_FILTER} instead.
+   * @deprecated since 0.6.0, will be removed in 0.7.0; use {@link
+   *     CatalogMetaProperties#KEY_TABLE_FILTER} instead.
    */
   @Deprecated
-  public static final String KEY_DATABASE_FILTER_REGULAR_EXPRESSION = "database.filter-regular-expression";
+  public static final String KEY_DATABASE_FILTER_REGULAR_EXPRESSION =
+      "database.filter-regular-expression";
+
   public static final String KEY_TABLE_FILTER = "table-filter";
 
   public static final String CATALOG_TYPE_HADOOP = "hadoop";
@@ -67,8 +69,10 @@ public class CatalogMetaProperties {
   public static final String CLIENT_POOL_SIZE = "clients";
   public static final int CLIENT_POOL_SIZE_DEFAULT = 2;
 
-  public static final String CLIENT_POOL_CACHE_EVICTION_INTERVAL_MS = "client.pool.cache.eviction-interval-ms";
-  public static final long CLIENT_POOL_CACHE_EVICTION_INTERVAL_MS_DEFAULT = TimeUnit.MINUTES.toMillis(5);
+  public static final String CLIENT_POOL_CACHE_EVICTION_INTERVAL_MS =
+      "client.pool.cache.eviction-interval-ms";
+  public static final long CLIENT_POOL_CACHE_EVICTION_INTERVAL_MS_DEFAULT =
+      TimeUnit.MINUTES.toMillis(5);
 
   // only used for engine properties
   public static final String LOAD_AUTH_FROM_AMS = "auth.load-from-ams";
@@ -84,6 +88,7 @@ public class CatalogMetaProperties {
   public static final String OPTIMIZE_PROPERTIES_PREFIX = "self-optimizing.";
 
   // mixed-format properties
-  public static final String MIXED_FORMAT_TABLE_STORE_SEPARATOR = "mixed-format.table-store.separator";
+  public static final String MIXED_FORMAT_TABLE_STORE_SEPARATOR =
+      "mixed-format.table-store.separator";
   public static final String MIXED_FORMAT_TABLE_STORE_SEPARATOR_DEFAULT = "_";
 }
