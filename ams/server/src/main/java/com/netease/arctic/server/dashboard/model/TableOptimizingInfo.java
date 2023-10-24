@@ -23,15 +23,18 @@ import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
-/**
- * Current optimize state of an ArcticTable.
- */
+/** Current optimize state of an ArcticTable. */
 public class TableOptimizingInfo {
 
   public TableOptimizingInfo(ServerTableIdentifier tableIdentifier) {
     this.tableIdentifier = tableIdentifier;
-    this.tableName = tableIdentifier.getCatalog().concat(".").concat(tableIdentifier.getDatabase())
-        .concat(".").concat(tableIdentifier.getTableName());
+    this.tableName =
+        tableIdentifier
+            .getCatalog()
+            .concat(".")
+            .concat(tableIdentifier.getDatabase())
+            .concat(".")
+            .concat(tableIdentifier.getTableName());
   }
 
   private final ServerTableIdentifier tableIdentifier;

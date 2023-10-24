@@ -1,6 +1,5 @@
 package com.netease.arctic.server.dashboard.utils;
 
-
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
 
 public class FilesStatisticsBuilder {
@@ -31,4 +30,3 @@ public class FilesStatisticsBuilder {
     return new FilesStatistics(fileCnt, totalSize);
   }
 }
-

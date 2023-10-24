@@ -18,6 +18,9 @@
 
 package com.netease.arctic.server.table;
 
+import static com.netease.arctic.TableTestHelper.TEST_DB_NAME;
+import static com.netease.arctic.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.TestedCatalogs;
@@ -44,18 +47,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.TableTestHelper.TEST_DB_NAME;
-import static com.netease.arctic.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
-
 @RunWith(Parameterized.class)
 public class TestTableService extends AMSTableTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][] {{TestedCatalogs.internalCatalog(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(true, true)},
-                           {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-                            new HiveTableTestHelper(true, true)}};
+    return new Object[][] {
+      {
+        TestedCatalogs.internalCatalog(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, true)
+      }
+    };
   }
 
   public TestTableService(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -68,15 +74,15 @@ public class TestTableService extends AMSTableTestBase {
 
     // test create table
     createTable();
-    Assert.assertEquals(tableMeta(), tableService().loadTableMetadata(
-        tableMeta().getTableIdentifier()).buildTableMeta());
+    Assert.assertEquals(
+        tableMeta(),
+        tableService().loadTableMetadata(tableMeta().getTableIdentifier()).buildTableMeta());
 
     // test list tables
-    List<TableIdentifier> tableIdentifierList = tableService().listTables(
-        TEST_CATALOG_NAME,
-        TEST_DB_NAME).stream()
-        .map(t -> t.getIdentifier().buildTableIdentifier())
-        .collect(Collectors.toList());
+    List<TableIdentifier> tableIdentifierList =
+        tableService().listTables(TEST_CATALOG_NAME, TEST_DB_NAME).stream()
+            .map(t -> t.getIdentifier().buildTableIdentifier())
+            .collect(Collectors.toList());
     Assert.assertEquals(1, tableIdentifierList.size());
     Assert.assertEquals(tableMeta().getTableIdentifier(), tableIdentifierList.get(0));
 
@@ -93,30 +99,37 @@ public class TestTableService extends AMSTableTestBase {
     Assert.assertTrue(tableService().tableExist(tableMeta().getTableIdentifier()));
 
     // test create duplicate table
-    Assert.assertThrows(AlreadyExistsException.class, () -> tableService().createTable(
-        TEST_CATALOG_NAME,
-        tableMetadata()));
+    Assert.assertThrows(
+        AlreadyExistsException.class,
+        () -> tableService().createTable(TEST_CATALOG_NAME, tableMetadata()));
 
     // test create table with wrong catalog name
-    Assert.assertThrows(ObjectNotExistsException.class, () -> {
-      TableMetadata copyMetadata = new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
-      copyMetadata.getTableIdentifier().setCatalog("unknown");
-      tableService().createTable(TEST_CATALOG_NAME, copyMetadata);
-    });
+    Assert.assertThrows(
+        ObjectNotExistsException.class,
+        () -> {
+          TableMetadata copyMetadata =
+              new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
+          copyMetadata.getTableIdentifier().setCatalog("unknown");
+          tableService().createTable(TEST_CATALOG_NAME, copyMetadata);
+        });
 
     // test create table in not existed catalog
-    Assert.assertThrows(ObjectNotExistsException.class, () -> {
-      TableMetadata copyMetadata = new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
-      copyMetadata.getTableIdentifier().setCatalog("unknown");
-      tableService().createTable("unknown", copyMetadata);
-    });
+    Assert.assertThrows(
+        ObjectNotExistsException.class,
+        () -> {
+          TableMetadata copyMetadata =
+              new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
+          copyMetadata.getTableIdentifier().setCatalog("unknown");
+          tableService().createTable("unknown", copyMetadata);
+        });
 
     if (catalogTestHelper().tableFormat().equals(TableFormat.MIXED_ICEBERG)) {
       // test create table in not existed database
       Assert.assertThrows(
           ObjectNotExistsException.class,
           () -> {
-            TableMetadata copyMetadata = new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
+            TableMetadata copyMetadata =
+                new TableMetadata(serverTableIdentifier(), tableMeta(), catalogMeta());
             copyMetadata.getTableIdentifier().setDatabase("unknown");
             tableService().createTable(TEST_CATALOG_NAME, copyMetadata);
           });
@@ -183,7 +196,9 @@ public class TestTableService extends AMSTableTestBase {
 
     Blocker block = tableService().block(tableIdentifier, operations, getProperties());
 
-    Assert.assertThrows("should be conflict", BlockerConflictException.class,
+    Assert.assertThrows(
+        "should be conflict",
+        BlockerConflictException.class,
         () -> tableService().block(tableIdentifier, operations, getProperties()));
 
     assertBlocker(block, operations);
@@ -253,7 +268,8 @@ public class TestTableService extends AMSTableTestBase {
 
     Blocker block2 = tableService().block(tableIdentifier, operations, getProperties());
 
-    Assert.assertEquals(Long.parseLong(block2.getBlockerId()) - Long.parseLong(block.getBlockerId()), 1);
+    Assert.assertEquals(
+        Long.parseLong(block2.getBlockerId()) - Long.parseLong(block.getBlockerId()), 1);
 
     tableService().releaseBlocker(tableIdentifier, block2.getBlockerId());
 
@@ -265,18 +281,22 @@ public class TestTableService extends AMSTableTestBase {
     Assert.assertEquals(operations.size(), block.getOperations().size());
     operations.forEach(operation -> Assert.assertTrue(block.getOperations().contains(operation)));
     Assert.assertEquals(getProperties().size() + 3, block.getProperties().size());
-    getProperties().forEach((key, value) -> Assert.assertEquals(block.getProperties().get(key), value));
+    getProperties()
+        .forEach((key, value) -> Assert.assertEquals(block.getProperties().get(key), value));
     long timeout = ArcticManagementConf.BLOCKER_TIMEOUT.defaultValue();
     Assert.assertEquals(timeout + "", block.getProperties().get(RenewableBlocker.BLOCKER_TIMEOUT));
 
-    Assert.assertEquals(timeout, Long.parseLong(block.getProperties().get(RenewableBlocker.EXPIRATION_TIME_PROPERTY)) -
-        Long.parseLong(block.getProperties().get(RenewableBlocker.CREATE_TIME_PROPERTY)));
+    Assert.assertEquals(
+        timeout,
+        Long.parseLong(block.getProperties().get(RenewableBlocker.EXPIRATION_TIME_PROPERTY))
+            - Long.parseLong(block.getProperties().get(RenewableBlocker.CREATE_TIME_PROPERTY)));
   }
 
   private void assertBlockerRenewed(Blocker block) {
     long timeout = ArcticManagementConf.BLOCKER_TIMEOUT.defaultValue();
-    long actualTimeout = Long.parseLong(block.getProperties().get(RenewableBlocker.EXPIRATION_TIME_PROPERTY)) -
-        Long.parseLong(block.getProperties().get(RenewableBlocker.CREATE_TIME_PROPERTY));
+    long actualTimeout =
+        Long.parseLong(block.getProperties().get(RenewableBlocker.EXPIRATION_TIME_PROPERTY))
+            - Long.parseLong(block.getProperties().get(RenewableBlocker.CREATE_TIME_PROPERTY));
     Assert.assertTrue("actualTimeout is " + actualTimeout, actualTimeout > timeout);
   }
 

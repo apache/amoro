@@ -40,10 +40,13 @@ public class ThriftServiceProxy<S> implements InvocationHandler {
   }
 
   @SuppressWarnings("unchecked")
-  public static <S> S createProxy(Class<S> serviceClazz, S service,
-                                  Function<Throwable, Throwable> exceptionTransfer) {
-    return (S) Proxy.newProxyInstance(ThriftServiceProxy.class.getClassLoader(),
-        new Class<?>[]{serviceClazz}, new ThriftServiceProxy<>(service, exceptionTransfer));
+  public static <S> S createProxy(
+      Class<S> serviceClazz, S service, Function<Throwable, Throwable> exceptionTransfer) {
+    return (S)
+        Proxy.newProxyInstance(
+            ThriftServiceProxy.class.getClassLoader(),
+            new Class<?>[] {serviceClazz},
+            new ThriftServiceProxy<>(service, exceptionTransfer));
   }
 
   @Override
@@ -53,8 +56,10 @@ public class ThriftServiceProxy<S> implements InvocationHandler {
       result = method.invoke(service, args);
     } catch (InvocationTargetException e) {
       Throwable exception = e.getTargetException();
-      String errorMessage = String.format("Thrift service:%s.%s execute failed",
-          service.getClass().getSimpleName(), method.getName());
+      String errorMessage =
+          String.format(
+              "Thrift service:%s.%s execute failed",
+              service.getClass().getSimpleName(), method.getName());
       LOG.error(errorMessage, exception);
       if (exceptionTransfer != null) {
         throw exceptionTransfer.apply(exception);

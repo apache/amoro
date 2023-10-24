@@ -32,9 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * TableMetaExtract for iceberg table.
- */
+/** TableMetaExtract for iceberg table. */
 public class IcebergTableMetaExtract implements TableMetaExtract<Table> {
 
   @Override
@@ -42,17 +40,20 @@ public class IcebergTableMetaExtract implements TableMetaExtract<Table> {
     List<TableMetadata.MetadataLogEntry> metadataLogEntries =
         ((HasTableOperations) table).operations().current().previousFiles();
 
-    List<TableMetadata> metadataList = metadataLogEntries.stream()
-        .map(entry -> TableMetadataParser.read(table.io(), entry.file()))
-        .collect(Collectors.toList());
+    List<TableMetadata> metadataList =
+        metadataLogEntries.stream()
+            .map(entry -> TableMetadataParser.read(table.io(), entry.file()))
+            .collect(Collectors.toList());
 
     metadataList.add(((HasTableOperations) table).operations().current());
 
     return metadataList.stream()
-        .map(metadata -> new InternalTableMeta(
-            metadata.lastUpdatedMillis(),
-            transform(metadata.schema()),
-            metadata.properties()))
+        .map(
+            metadata ->
+                new InternalTableMeta(
+                    metadata.lastUpdatedMillis(),
+                    transform(metadata.schema()),
+                    metadata.properties()))
         .collect(Collectors.toList());
   }
 
@@ -74,8 +75,7 @@ public class IcebergTableMetaExtract implements TableMetaExtract<Table> {
                 formatName(name),
                 dateTypeToSparkString(fieldType),
                 field.doc(),
-                field.isRequired()
-            ));
+                field.isRequired()));
         result.addAll(transform(field.fieldId(), name, field.type()));
       }
     } else if (type.isListType()) {
@@ -89,37 +89,26 @@ public class IcebergTableMetaExtract implements TableMetaExtract<Table> {
               formatName(name),
               dateTypeToSparkString(elementType),
               "",
-              false
-          )
-      );
-      result.addAll(transform(type.asListType().elementId(), name, type.asListType().elementType()));
+              false));
+      result.addAll(
+          transform(type.asListType().elementId(), name, type.asListType().elementType()));
     } else if (type.isMapType()) {
       List<String> keyName = Lists.newArrayList(parentName);
       keyName.add("key");
       Type keyType = type.asMapType().keyType();
       int keyId = type.asMapType().keyId();
-      result.add(new InternalSchema(
-          keyId,
-          parent,
-          formatName(keyName),
-          dateTypeToSparkString(keyType),
-          "",
-          false
-      ));
+      result.add(
+          new InternalSchema(
+              keyId, parent, formatName(keyName), dateTypeToSparkString(keyType), "", false));
       result.addAll(transform(keyId, keyName, keyType));
 
       List<String> valueName = Lists.newArrayList(parentName);
       valueName.add("value");
       Type valueType = type.asMapType().valueType();
       int valueId = type.asMapType().valueId();
-      result.add(new InternalSchema(
-          valueId,
-          parent,
-          formatName(valueName),
-          dateTypeToSparkString(valueType),
-          "",
-          false
-      ));
+      result.add(
+          new InternalSchema(
+              valueId, parent, formatName(valueName), dateTypeToSparkString(valueType), "", false));
       result.addAll(transform(valueId, valueName, valueType));
     }
     return result;

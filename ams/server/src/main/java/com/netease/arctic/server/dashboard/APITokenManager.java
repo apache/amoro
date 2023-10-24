@@ -28,11 +28,11 @@ public class APITokenManager extends PersistentBase {
     return getAs(ApiTokensMapper.class, mapper -> mapper.getSecretByKey(key));
   }
 
-  public void insertApiToken(ApiTokens  apiToken) {
+  public void insertApiToken(ApiTokens apiToken) {
     doAs(ApiTokensMapper.class, mapper -> mapper.insert(apiToken));
   }
 
-  public void deleteApiToken(Integer  id) {
+  public void deleteApiToken(Integer id) {
     doAs(ApiTokensMapper.class, mapper -> mapper.delToken(id));
   }
 }

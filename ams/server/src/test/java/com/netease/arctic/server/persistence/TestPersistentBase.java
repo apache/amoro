@@ -1,5 +1,7 @@
 package com.netease.arctic.server.persistence;
 
+import static org.mockito.Mockito.never;
+
 import com.netease.arctic.server.exception.UndefinedException;
 import org.apache.ibatis.session.SqlSession;
 import org.junit.jupiter.api.AfterEach;
@@ -7,8 +9,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-
-import static org.mockito.Mockito.never;
 
 public class TestPersistentBase {
 
@@ -65,7 +65,8 @@ public class TestPersistentBase {
     Mockito.when(mapper.testMethod2()).thenReturn(1);
 
     // call doAsExisted method
-    testObject.doAsExisted(TestMapper.class, TestMapper::testMethod2, () -> new UndefinedException("error"));
+    testObject.doAsExisted(
+        TestMapper.class, TestMapper::testMethod2, () -> new UndefinedException("error"));
 
     // verify mapper method was called, session was committed, and no exception was thrown
     Mockito.verify(mapper, Mockito.times(1)).testMethod2();
@@ -79,7 +80,8 @@ public class TestPersistentBase {
     Mockito.when(mapper.testMethod2()).thenReturn(0);
 
     try {
-      testObject.doAsExisted(TestMapper.class, TestMapper::testMethod2, () -> new UndefinedException("error"));
+      testObject.doAsExisted(
+          TestMapper.class, TestMapper::testMethod2, () -> new UndefinedException("error"));
     } catch (UndefinedException e) {
       Mockito.verify(mapper, Mockito.times(1)).testMethod2();
       Mockito.verify(session, Mockito.times(1)).rollback();

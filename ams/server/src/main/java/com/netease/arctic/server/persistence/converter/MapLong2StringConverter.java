@@ -37,9 +37,9 @@ public class MapLong2StringConverter implements TypeHandler<Map<String, Long>> {
   private final Gson gson = new Gson();
 
   @Override
-  public void setParameter(PreparedStatement ps, int i, Map<String, Long> parameter,
-                           JdbcType jdbcType) throws
-      SQLException {
+  public void setParameter(
+      PreparedStatement ps, int i, Map<String, Long> parameter, JdbcType jdbcType)
+      throws SQLException {
     if (parameter == null) {
       ps.setString(i, "");
     } else {
@@ -54,8 +54,7 @@ public class MapLong2StringConverter implements TypeHandler<Map<String, Long>> {
       return null;
     }
 
-    return gson.fromJson(res, new TypeToken<Map<String, Long>>() {
-    }.getType());
+    return gson.fromJson(res, new TypeToken<Map<String, Long>>() {}.getType());
   }
 
   @Override
@@ -65,8 +64,7 @@ public class MapLong2StringConverter implements TypeHandler<Map<String, Long>> {
       return null;
     }
 
-    return gson.fromJson(res, new TypeToken<Map<String, Long>>() {
-    }.getType());
+    return gson.fromJson(res, new TypeToken<Map<String, Long>>() {}.getType());
   }
 
   @Override
@@ -76,7 +74,6 @@ public class MapLong2StringConverter implements TypeHandler<Map<String, Long>> {
       return null;
     }
 
-    return gson.fromJson(res, new TypeToken<Map<String, Long>>() {
-    }.getType());
+    return gson.fromJson(res, new TypeToken<Map<String, Long>>() {}.getType());
   }
 }
