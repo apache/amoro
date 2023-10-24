@@ -21,19 +21,22 @@ package com.netease.arctic.ams.api.metrics;
 import com.netease.arctic.ams.api.ActivePlugin;
 
 /**
- * This is an interface defining a reporter, which users can implement to notify metrics to a monitoring system.
+ * This is an interface defining a reporter, which users can implement to notify metrics to a
+ * monitoring system.
  */
 public interface MetricsEmitter extends ActivePlugin {
 
   /**
    * emit metrics to the monitoring system
+   *
    * @param metrics {@link MetricsContent} to emit.
    */
   void emit(MetricsContent<?> metrics);
 
   /**
-   * determine whether the emitter accepts the metrics according to
-   * {@link MetricsContent#type()} and {@link MetricsContent#name()}
+   * determine whether the emitter accepts the metrics according to {@link MetricsContent#type()}
+   * and {@link MetricsContent#name()}
+   *
    * @param metrics metrics data
    * @return true if the type and name is accepted by the emitter
    */

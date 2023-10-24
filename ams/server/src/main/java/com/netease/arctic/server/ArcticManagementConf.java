@@ -50,6 +50,12 @@ public class ArcticManagementConf {
           .defaultValue("admin")
           .withDescription("The administrator password");
 
+  public static final ConfigOption<Integer> TABLE_MANIFEST_IO_THREAD_COUNT =
+      ConfigOptions.key("table-manifest-io.thread-count")
+          .intType()
+          .defaultValue(10)
+          .withDescription("The number of threads used to read metadata.");
+
   public static final ConfigOption<Long> REFRESH_EXTERNAL_CATALOGS_INTERVAL =
       ConfigOptions.key("refresh-external-catalogs.interval")
           .longType()
