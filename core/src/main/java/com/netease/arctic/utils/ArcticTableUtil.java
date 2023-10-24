@@ -73,11 +73,11 @@ public class ArcticTableUtil {
         snapshotId = snapshot.snapshotId();
       }
     }
-    StructLikeMap<Long> result = readFromPuffin(table, snapshotId, type);
+    StructLikeMap<Long> result = readFromStatisticsFile(table, snapshotId, type);
     return result != null ? result : readLegacyPartitionProperties(table, type);
   }
 
-  private static StructLikeMap<Long> readFromPuffin(
+  private static StructLikeMap<Long> readFromStatisticsFile(
       UnkeyedTable table, long snapshotId, String type) {
     Snapshot snapshot = table.snapshot(snapshotId);
     Preconditions.checkArgument(snapshot != null, "Snapshot %s not found", snapshotId);
