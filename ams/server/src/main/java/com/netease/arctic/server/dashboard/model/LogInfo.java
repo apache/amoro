@@ -29,8 +29,7 @@ public class LogInfo {
     this.logs = logs;
   }
 
-  public LogInfo() {
-  }
+  public LogInfo() {}
 
   public String getLogStatus() {
     return logStatus;

@@ -62,7 +62,8 @@ public class PageResult<R> {
 
   /**
    * x.
-   * @param list  the results have been intercepted
+   *
+   * @param list the results have been intercepted
    * @param total original size
    * @return response contains paging information response
    */
@@ -72,9 +73,10 @@ public class PageResult<R> {
 
   /**
    * generate paging results.
-   * @param list   original queue
+   *
+   * @param list original queue
    * @param offset offset
-   * @param limit  limit
+   * @param limit limit
    * @return response containing paging information
    */
   public static <R> PageResult<R> of(List<R> list, int offset, int limit) {
@@ -86,11 +88,13 @@ public class PageResult<R> {
     }
   }
 
-  public static <T,R> PageResult<R> of(List<T> list, int offset, int limit, Function<T,R> convert) {
+  public static <T, R> PageResult<R> of(
+      List<T> list, int offset, int limit, Function<T, R> convert) {
     if (CollectionUtils.isEmpty(list)) {
       return new PageResult<>(Collections.emptyList(), 0);
     } else {
-      List<R> result = list.stream().skip(offset).limit(limit).map(convert).collect(Collectors.toList());
+      List<R> result =
+          list.stream().skip(offset).limit(limit).map(convert).collect(Collectors.toList());
       return new PageResult<>(result, list.size());
     }
   }

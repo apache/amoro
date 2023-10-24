@@ -30,9 +30,10 @@ public class SchedulingPolicy {
   }
 
   public void setTableSorterIfNeeded(ResourceGroup optimizerGroup) {
-    String schedulingPolicy = Optional.ofNullable(optimizerGroup.getProperties())
-        .orElseGet(Maps::newHashMap)
-        .getOrDefault(SCHEDULING_POLICY_PROPERTY_NAME, QUOTA);
+    String schedulingPolicy =
+        Optional.ofNullable(optimizerGroup.getProperties())
+            .orElseGet(Maps::newHashMap)
+            .getOrDefault(SCHEDULING_POLICY_PROPERTY_NAME, QUOTA);
     if (schedulingPolicy.equalsIgnoreCase(QUOTA)) {
       if (tableSorter == null || !(tableSorter instanceof QuotaOccupySorter)) {
         tableSorter = new QuotaOccupySorter();
@@ -50,9 +51,13 @@ public class SchedulingPolicy {
     tableLock.lock();
     try {
       return tableRuntimeMap.values().stream()
-          .filter(tableRuntime -> tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING &&
-              (tableRuntime.getLastOptimizedSnapshotId() != tableRuntime.getCurrentSnapshotId() ||
-                  tableRuntime.getLastOptimizedChangeSnapshotId() != tableRuntime.getCurrentChangeSnapshotId()))
+          .filter(
+              tableRuntime ->
+                  tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING
+                      && (tableRuntime.getLastOptimizedSnapshotId()
+                              != tableRuntime.getCurrentSnapshotId()
+                          || tableRuntime.getLastOptimizedChangeSnapshotId()
+                              != tableRuntime.getCurrentChangeSnapshotId()))
           .sorted(tableSorter)
           .collect(Collectors.toList());
     } finally {
@@ -105,15 +110,11 @@ public class SchedulingPolicy {
       return Long.compare(
           Math.max(
               one.getLastFullOptimizingTime(),
-              Math.max(
-                  one.getLastMinorOptimizingTime(),
-                  one.getLastMajorOptimizingTime())),
+              Math.max(one.getLastMinorOptimizingTime(), one.getLastMajorOptimizingTime())),
           Math.max(
               another.getLastFullOptimizingTime(),
               Math.max(
-                  another.getLastMinorOptimizingTime(),
-                  another.getLastMajorOptimizingTime()))
-      );
+                  another.getLastMinorOptimizingTime(), another.getLastMajorOptimizingTime())));
     }
   }
 }

@@ -28,8 +28,8 @@ import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.collections.CollectionUtils;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
+import java.util.List;
 
 public class FullOptimizingWrite2HiveChecker extends AbstractHiveChecker {
 
@@ -43,9 +43,11 @@ public class FullOptimizingWrite2HiveChecker extends AbstractHiveChecker {
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit) {
-    return CollectionUtils.isNotEmpty(latestTaskDescriptors) &&
-        latestPlanner.getOptimizingType() == OptimizingType.FULL &&
-        OptimizingInputProperties.parse(latestTaskDescriptors.stream().findAny().get().properties()).getOutputDir() !=
-            null;
+    return CollectionUtils.isNotEmpty(latestTaskDescriptors)
+        && latestPlanner.getOptimizingType() == OptimizingType.FULL
+        && OptimizingInputProperties.parse(
+                    latestTaskDescriptors.stream().findAny().get().properties())
+                .getOutputDir()
+            != null;
   }
 }

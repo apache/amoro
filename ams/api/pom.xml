@@ -180,10 +180,16 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <configuration>
+                    <java>
+                        <excludes>
+                            <exclude>src/main/gen-java/**</exclude>
+                        </excludes>
+                    </java>
+                </configuration>
             </plugin>
-
         </plugins>
     </build>
 

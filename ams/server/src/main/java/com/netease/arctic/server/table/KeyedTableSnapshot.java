@@ -26,9 +26,11 @@ public class KeyedTableSnapshot implements TableSnapshot {
   private final StructLikeMap<Long> partitionOptimizedSequence;
   private final StructLikeMap<Long> legacyPartitionMaxTransactionId;
 
-  public KeyedTableSnapshot(long baseSnapshotId, long changeSnapshotId,
-                            StructLikeMap<Long> partitionOptimizedSequence,
-                            StructLikeMap<Long> legacyPartitionMaxTransactionId) {
+  public KeyedTableSnapshot(
+      long baseSnapshotId,
+      long changeSnapshotId,
+      StructLikeMap<Long> partitionOptimizedSequence,
+      StructLikeMap<Long> legacyPartitionMaxTransactionId) {
     this.baseSnapshotId = baseSnapshotId;
     this.changeSnapshotId = changeSnapshotId;
     this.partitionOptimizedSequence = partitionOptimizedSequence;

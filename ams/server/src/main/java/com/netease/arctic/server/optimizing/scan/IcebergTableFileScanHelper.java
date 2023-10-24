@@ -52,7 +52,8 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
                 return partitionFilter.test(partitionPath);
               }
               return true;
-            }), this::buildFileScanResult);
+            }),
+        this::buildFileScanResult);
   }
 
   protected FileScanResult buildFileScanResult(FileScanTask fileScanTask) {

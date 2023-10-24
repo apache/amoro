@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.optimizing.flow.view;
 
+import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;
+
 import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.ChangeAction;
@@ -49,8 +51,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;
-
 public class KeyedTableDataView extends AbstractTableDataView {
 
   private final Random random;
@@ -71,10 +71,12 @@ public class KeyedTableDataView extends AbstractTableDataView {
       int partitionCount,
       int primaryUpperBound,
       long targetFileSize,
-      Long seed) throws Exception {
+      Long seed)
+      throws Exception {
     super(arcticTable, primary, targetFileSize);
     org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument(
-        primary.columns().size() == 1 && primary.columns().get(0).type().typeId() == Type.TypeID.INTEGER);
+        primary.columns().size() == 1
+            && primary.columns().get(0).type().typeId() == Type.TypeID.INTEGER);
     this.schemaSize = schema.columns().size();
 
     this.primaryUpperBound = primaryUpperBound;
@@ -90,10 +92,12 @@ public class KeyedTableDataView extends AbstractTableDataView {
 
     Map<Integer, Map<Integer, Object>> primaryRelationWithPartition = new HashMap<>();
     if (!arcticTable.spec().isUnpartitioned()) {
-      Integer primaryField = primary.columns()
-          .stream().map(Types.NestedField::fieldId).findAny().get();
-      Set<Integer> partitionFields = arcticTable.spec().fields().stream()
-          .map(PartitionField::sourceId).collect(Collectors.toSet());
+      Integer primaryField =
+          primary.columns().stream().map(Types.NestedField::fieldId).findAny().get();
+      Set<Integer> partitionFields =
+          arcticTable.spec().fields().stream()
+              .map(PartitionField::sourceId)
+              .collect(Collectors.toSet());
       for (Record record : records) {
         Integer primaryValue = null;
         Map<Integer, Object> partitionValues = new HashMap<>();
@@ -112,8 +116,14 @@ public class KeyedTableDataView extends AbstractTableDataView {
       }
     }
 
-    this.generator = new RandomRecordGenerator(arcticTable.schema(), arcticTable.spec(),
-        primary, partitionCount, primaryRelationWithPartition, seed);
+    this.generator =
+        new RandomRecordGenerator(
+            arcticTable.schema(),
+            arcticTable.spec(),
+            primary,
+            partitionCount,
+            primaryRelationWithPartition,
+            seed);
     random = seed == null ? new Random() : new Random(seed);
   }
 
@@ -148,7 +158,7 @@ public class KeyedTableDataView extends AbstractTableDataView {
     for (Record record : scatter) {
       if (view.containsKey(record)) {
         if (random.nextBoolean()) {
-          //delete
+          // delete
           cdc.add(new RecordWithAction(view.get(record), ChangeAction.DELETE));
         } else {
           // update
@@ -165,7 +175,9 @@ public class KeyedTableDataView extends AbstractTableDataView {
   public WriteResult onlyDelete(int count) throws IOException {
     List<Record> scatter = randomRecord(count);
     List<RecordWithAction> delete =
-        scatter.stream().map(s -> new RecordWithAction(s, ChangeAction.DELETE)).collect(Collectors.toList());
+        scatter.stream()
+            .map(s -> new RecordWithAction(s, ChangeAction.DELETE))
+            .collect(Collectors.toList());
     return doWrite(delete);
   }
 
@@ -178,7 +190,8 @@ public class KeyedTableDataView extends AbstractTableDataView {
   public WriteResult custom(List<PKWithAction> data) throws IOException {
     List<RecordWithAction> records = new ArrayList<>();
     for (PKWithAction pkWithAction : data) {
-      records.add(new RecordWithAction(generator.randomRecord(pkWithAction.pk), pkWithAction.action));
+      records.add(
+          new RecordWithAction(generator.randomRecord(pkWithAction.pk), pkWithAction.action));
     }
     return doWrite(records);
   }

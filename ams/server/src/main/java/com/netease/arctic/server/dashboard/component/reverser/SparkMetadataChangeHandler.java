@@ -23,9 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Translate to Spark's DDL syntax.
- */
+/** Translate to Spark's DDL syntax. */
 public class SparkMetadataChangeHandler implements MetadataChangeHandler {
   private static final String ALTER_TABLE = "ALTER TABLE %s";
   private static final String ADD_COLUMN = " ADD COLUMNS %s";
@@ -48,21 +46,18 @@ public class SparkMetadataChangeHandler implements MetadataChangeHandler {
   @Override
   public String changeAndAddProperties(Map<String, String> diffProperties) {
     String template = ALTER_TABLE + SET_PROPERTIES;
-    String properties = diffProperties
-        .entrySet()
-        .stream()
-        .map(entry -> String.format("'%s' = '%s'", entry.getKey(), entry.getValue()))
-        .collect(Collectors.joining(","));
+    String properties =
+        diffProperties.entrySet().stream()
+            .map(entry -> String.format("'%s' = '%s'", entry.getKey(), entry.getValue()))
+            .collect(Collectors.joining(","));
     return String.format(template, tableName, properties);
   }
 
   @Override
   public String removeProperties(Set<String> removeKeys) {
     String template = ALTER_TABLE + UNSET_PROPERTIES;
-    String properties = removeKeys
-        .stream()
-        .map(key -> String.format("'%s'", key))
-        .collect(Collectors.joining(","));
+    String properties =
+        removeKeys.stream().map(key -> String.format("'%s'", key)).collect(Collectors.joining(","));
     return String.format(template, tableName, properties);
   }
 

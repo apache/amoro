@@ -18,6 +18,12 @@
 
 package com.netease.arctic.server.dashboard;
 
+import static io.javalin.apibuilder.ApiBuilder.delete;
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.path;
+import static io.javalin.apibuilder.ApiBuilder.post;
+import static io.javalin.apibuilder.ApiBuilder.put;
+
 import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.server.DefaultOptimizingService;
 import com.netease.arctic.server.IcebergRestCatalogService;
@@ -57,12 +63,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static io.javalin.apibuilder.ApiBuilder.delete;
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.path;
-import static io.javalin.apibuilder.ApiBuilder.post;
-import static io.javalin.apibuilder.ApiBuilder.put;
-
 public class DashboardServer {
 
   public static final Logger LOG = LoggerFactory.getLogger(DashboardServer.class);
@@ -77,10 +77,11 @@ public class DashboardServer {
   private final TerminalController terminalController;
   private final VersionController versionController;
 
-
   public DashboardServer(
-      Configurations serviceConfig, TableService tableService,
-      DefaultOptimizingService optimizerManager, TerminalManager terminalManager) {
+      Configurations serviceConfig,
+      TableService tableService,
+      DefaultOptimizingService optimizerManager,
+      TerminalManager terminalManager) {
     PlatformFileManager platformFileManager = new PlatformFileManager();
     this.catalogController = new CatalogController(tableService, platformFileManager);
     this.healthCheckController = new HealthCheckController();
@@ -88,7 +89,7 @@ public class DashboardServer {
     this.optimizerController = new OptimizerController(tableService, optimizerManager);
     this.platformFileInfoController = new PlatformFileInfoController(platformFileManager);
     this.settingController = new SettingController(serviceConfig, optimizerManager);
-    ServerTableDescriptor tableDescriptor = new ServerTableDescriptor(tableService);
+    ServerTableDescriptor tableDescriptor = new ServerTableDescriptor(tableService, serviceConfig);
     this.tableController = new TableController(tableService, tableDescriptor, serviceConfig);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
@@ -99,13 +100,15 @@ public class DashboardServer {
   // read index.html content
   public String getFileContent() throws IOException {
     if ("".equals(indexHtml)) {
-      try (InputStream fileName = DashboardServer.class.getClassLoader().getResourceAsStream("static/index.html")) {
-        try (InputStreamReader isr = new InputStreamReader(fileName, StandardCharsets.UTF_8.newDecoder());
-             BufferedReader br = new BufferedReader(isr)) {
+      try (InputStream fileName =
+          DashboardServer.class.getClassLoader().getResourceAsStream("static/index.html")) {
+        try (InputStreamReader isr =
+                new InputStreamReader(fileName, StandardCharsets.UTF_8.newDecoder());
+            BufferedReader br = new BufferedReader(isr)) {
           StringBuilder sb = new StringBuilder();
           String line;
           while ((line = br.readLine()) != null) {
-            //process the line
+            // process the line
             sb.append(line);
           }
           indexHtml = sb.toString();
@@ -127,7 +130,7 @@ public class DashboardServer {
       // if the files should be pre-compressed and cached in memory (optimization)
       staticFiles.aliasCheck = null;
       // you can configure this to enable symlinks (= ContextHandler.ApproveAliases())
-      //staticFiles.headers = Map.of(...);
+      // staticFiles.headers = Map.of(...);
       // headers that will be set for the files
       staticFiles.skipFileFunction = req -> false;
       // you can use this to skip certain files in the dir, based on the HttpServletRequest
@@ -137,169 +140,238 @@ public class DashboardServer {
   public EndpointGroup endpoints() {
     return () -> {
       /*backend routers*/
-      path("", () -> {
-        //  /docs/latest can't be located to the index.html, so we add rule to redirect to it.
-        get("/docs/latest", ctx -> ctx.redirect("/docs/latest/index.html"));
-        // unify all addSinglePageRoot(like /tables, /optimizers etc) configure here
-        get("/{page}", ctx -> {
-          String fileName = ctx.pathParam("page");
-          if (fileName != null && fileName.endsWith("ico")) {
-            ctx.contentType(ContentType.IMAGE_ICO);
-            ctx.result(DashboardServer.class.getClassLoader().getResourceAsStream("static/" + fileName));
-          } else {
-            ctx.html(getFileContent());
-          }
-        });
-        get("/hive-tables/upgrade", ctx -> ctx.html(getFileContent()));
-      });
-      path("/ams/v1", () -> {
-        // login controller
-        get("/login/current", loginController::getCurrent);
-        post("/login", loginController::login);
+      path(
+          "",
+          () -> {
+            //  /docs/latest can't be located to the index.html, so we add rule to redirect to it.
+            get("/docs/latest", ctx -> ctx.redirect("/docs/latest/index.html"));
+            // unify all addSinglePageRoot(like /tables, /optimizers etc) configure here
+            get(
+                "/{page}",
+                ctx -> {
+                  String fileName = ctx.pathParam("page");
+                  if (fileName != null && fileName.endsWith("ico")) {
+                    ctx.contentType(ContentType.IMAGE_ICO);
+                    ctx.result(
+                        DashboardServer.class
+                            .getClassLoader()
+                            .getResourceAsStream("static/" + fileName));
+                  } else {
+                    ctx.html(getFileContent());
+                  }
+                });
+            get("/hive-tables/upgrade", ctx -> ctx.html(getFileContent()));
+          });
+      path(
+          "/ams/v1",
+          () -> {
+            // login controller
+            get("/login/current", loginController::getCurrent);
+            post("/login", loginController::login);
 
-        // table controller
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/details", tableController::getTableDetail);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/hive/details", tableController::getHiveTableDetail);
-        post("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade", tableController::upgradeHiveTable);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade/status", tableController::getUpgradeStatus);
-        get("/upgrade/properties", tableController::getUpgradeHiveTableProperties);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
-            tableController::getOptimizingProcesses);
-        get(
-            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
-            tableController::getTableTransactions);
-        get(
-            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions/{transactionId}/detail",
-            tableController::getTransactionDetail);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions", tableController::getTablePartitions);
-        get(
-            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
-            tableController::getPartitionFileListInfo);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/operations", tableController::getTableOperations);
-        get("/catalogs/{catalog}/databases/{db}/tables", tableController::getTableList);
-        get("/catalogs/{catalog}/databases", tableController::getDatabaseList);
-        get("/catalogs", tableController::getCatalogs);
-        // catalog controller
-        post("/catalogs", catalogController::createCatalog);
-        // make sure types is before
-        get("/catalogs/types", catalogController::getCatalogTypeList);
-        get("/catalog/metastore/types", catalogController::getCatalogTypeList);
+            // table controller
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/details",
+                tableController::getTableDetail);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/hive/details",
+                tableController::getHiveTableDetail);
+            post(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade",
+                tableController::upgradeHiveTable);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade/status",
+                tableController::getUpgradeStatus);
+            get("/upgrade/properties", tableController::getUpgradeHiveTableProperties);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
+                tableController::getOptimizingProcesses);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
+                tableController::getTableTransactions);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions/{transactionId}/detail",
+                tableController::getTransactionDetail);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions",
+                tableController::getTablePartitions);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
+                tableController::getPartitionFileListInfo);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/operations",
+                tableController::getTableOperations);
+            get("/catalogs/{catalog}/databases/{db}/tables", tableController::getTableList);
+            get("/catalogs/{catalog}/databases", tableController::getDatabaseList);
+            get("/catalogs", tableController::getCatalogs);
+            // catalog controller
+            post("/catalogs", catalogController::createCatalog);
+            // make sure types is before
+            get("/catalogs/types", catalogController::getCatalogTypeList);
+            get("/catalog/metastore/types", catalogController::getCatalogTypeList);
 
-        get("/catalogs/{catalogName}", catalogController::getCatalogDetail);
-        delete("/catalogs/{catalogName}", catalogController::deleteCatalog);
-        put("/catalogs/{catalogName}", catalogController::updateCatalog);
-        get("/catalogs/{catalogName}/delete/check", catalogController::catalogDeleteCheck);
-        get("/catalogs/{catalogName}/config/{type}/{key}", catalogController::getCatalogConfFileContent);
-        // optimize controller
-        get("/optimize/optimizerGroups/{optimizerGroup}/tables", optimizerController::getOptimizerTables);
-        get("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::getOptimizers);
-        get("/optimize/optimizerGroups", optimizerController::getOptimizerGroups);
-        get("/optimize/optimizerGroups/{optimizerGroup}/info", optimizerController::getOptimizerGroupInfo);
-        delete("/optimize/optimizerGroups/{optimizerGroup}/optimizers/{jobId}", optimizerController::releaseOptimizer);
-        post("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::scaleOutOptimizer);
-        get("/optimize/resourceGroups", optimizerController::getResourceGroup);
-        post("/optimize/resourceGroups", optimizerController::createResourceGroup);
-        put("/optimize/resourceGroups", optimizerController::updateResourceGroup);
-        delete("/optimize/resourceGroups/{resourceGroupName}", optimizerController::deleteResourceGroup);
-        get("/optimize/resourceGroups/{resourceGroupName}/delete/check", optimizerController::deleteCheckResourceGroup);
-        get("/optimize/containers/get", optimizerController::getContainers);
+            get("/catalogs/{catalogName}", catalogController::getCatalogDetail);
+            delete("/catalogs/{catalogName}", catalogController::deleteCatalog);
+            put("/catalogs/{catalogName}", catalogController::updateCatalog);
+            get("/catalogs/{catalogName}/delete/check", catalogController::catalogDeleteCheck);
+            get(
+                "/catalogs/{catalogName}/config/{type}/{key}",
+                catalogController::getCatalogConfFileContent);
+            // optimize controller
+            get(
+                "/optimize/optimizerGroups/{optimizerGroup}/tables",
+                optimizerController::getOptimizerTables);
+            get(
+                "/optimize/optimizerGroups/{optimizerGroup}/optimizers",
+                optimizerController::getOptimizers);
+            get("/optimize/optimizerGroups", optimizerController::getOptimizerGroups);
+            get(
+                "/optimize/optimizerGroups/{optimizerGroup}/info",
+                optimizerController::getOptimizerGroupInfo);
+            delete(
+                "/optimize/optimizerGroups/{optimizerGroup}/optimizers/{jobId}",
+                optimizerController::releaseOptimizer);
+            post(
+                "/optimize/optimizerGroups/{optimizerGroup}/optimizers",
+                optimizerController::scaleOutOptimizer);
+            get("/optimize/resourceGroups", optimizerController::getResourceGroup);
+            post("/optimize/resourceGroups", optimizerController::createResourceGroup);
+            put("/optimize/resourceGroups", optimizerController::updateResourceGroup);
+            delete(
+                "/optimize/resourceGroups/{resourceGroupName}",
+                optimizerController::deleteResourceGroup);
+            get(
+                "/optimize/resourceGroups/{resourceGroupName}/delete/check",
+                optimizerController::deleteCheckResourceGroup);
+            get("/optimize/containers/get", optimizerController::getContainers);
 
-        // console controller
-        get("/terminal/examples", terminalController::getExamples);
-        get("/terminal/examples/{exampleName}", terminalController::getSqlExamples);
-        post("/terminal/catalogs/{catalog}/execute", terminalController::executeScript);
-        get("/terminal/{sessionId}/logs", terminalController::getLogs);
-        get("/terminal/{sessionId}/result", terminalController::getSqlResult);
-        put("/terminal/{sessionId}/stop", terminalController::stopSql);
-        get("/terminal/latestInfos/", terminalController::getLatestInfo);
+            // console controller
+            get("/terminal/examples", terminalController::getExamples);
+            get("/terminal/examples/{exampleName}", terminalController::getSqlExamples);
+            post("/terminal/catalogs/{catalog}/execute", terminalController::executeScript);
+            get("/terminal/{sessionId}/logs", terminalController::getLogs);
+            get("/terminal/{sessionId}/result", terminalController::getSqlResult);
+            put("/terminal/{sessionId}/stop", terminalController::stopSql);
+            get("/terminal/latestInfos/", terminalController::getLatestInfo);
 
-        // file controller
-        post("/files", platformFileInfoController::uploadFile);
-        get("/files/{fileId}", platformFileInfoController::downloadFile);
+            // file controller
+            post("/files", platformFileInfoController::uploadFile);
+            get("/files/{fileId}", platformFileInfoController::downloadFile);
 
-        // setting controller
-        get("/settings/containers", settingController::getContainerSetting);
-        get("/settings/system", settingController::getSystemSetting);
+            // setting controller
+            get("/settings/containers", settingController::getContainerSetting);
+            get("/settings/system", settingController::getSystemSetting);
 
-        // health check
-        get("/health/status", healthCheckController::healthCheck);
+            // health check
+            get("/health/status", healthCheckController::healthCheck);
 
-        // version controller
-        get("/versionInfo", versionController::getVersionInfo);
-      });
+            // version controller
+            get("/versionInfo", versionController::getVersionInfo);
+          });
       // for open api
-      path("/api/ams/v1", () -> {
+      path(
+          "/api/ams/v1",
+          () -> {
 
-        // table controller
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/details", tableController::getTableDetail);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/hive/details", tableController::getHiveTableDetail);
-        post("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade", tableController::upgradeHiveTable);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade/status", tableController::getUpgradeStatus);
-        get("/upgrade/properties", tableController::getUpgradeHiveTableProperties);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
-            tableController::getOptimizingProcesses);
-        get(
-            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
-            tableController::getTableTransactions);
-        get(
-            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions/{transactionId}/detail",
-            tableController::getTransactionDetail);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions", tableController::getTablePartitions);
-        get(
-            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
-            tableController::getPartitionFileListInfo);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/signature", tableController::getTableDetailTabToken);
-        get("/catalogs/{catalog}/databases/{db}/tables", tableController::getTableList);
-        get("/catalogs/{catalog}/databases", tableController::getDatabaseList);
-        get("/catalogs", tableController::getCatalogs);
+            // table controller
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/details",
+                tableController::getTableDetail);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/hive/details",
+                tableController::getHiveTableDetail);
+            post(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade",
+                tableController::upgradeHiveTable);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade/status",
+                tableController::getUpgradeStatus);
+            get("/upgrade/properties", tableController::getUpgradeHiveTableProperties);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
+                tableController::getOptimizingProcesses);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
+                tableController::getTableTransactions);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions/{transactionId}/detail",
+                tableController::getTransactionDetail);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions",
+                tableController::getTablePartitions);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
+                tableController::getPartitionFileListInfo);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/signature",
+                tableController::getTableDetailTabToken);
+            get("/catalogs/{catalog}/databases/{db}/tables", tableController::getTableList);
+            get("/catalogs/{catalog}/databases", tableController::getDatabaseList);
+            get("/catalogs", tableController::getCatalogs);
 
-        // optimize controller
-        get("/optimize/optimizerGroups/{optimizerGroup}/tables", optimizerController::getOptimizerTables);
-        get("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::getOptimizers);
-        get("/optimize/optimizerGroups", optimizerController::getOptimizerGroups);
-        get("/optimize/optimizerGroups/{optimizerGroup}/info", optimizerController::getOptimizerGroupInfo);
-        delete("/optimize/optimizerGroups/{optimizerGroup}/optimizers/{jobId}", optimizerController::releaseOptimizer);
-        post("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::scaleOutOptimizer);
-        get("/optimize/resourceGroups", optimizerController::getResourceGroup);
-        post("/optimize/resourceGroups", optimizerController::createResourceGroup);
-        put("/optimize/resourceGroups", optimizerController::updateResourceGroup);
-        delete("/optimize/resourceGroups/{resourceGroupName}", optimizerController::deleteResourceGroup);
-        get("/optimize/resourceGroups/{resourceGroupName}/delete/check", optimizerController::deleteCheckResourceGroup);
-        get("/optimize/containers/get", optimizerController::getContainers);
+            // optimize controller
+            get(
+                "/optimize/optimizerGroups/{optimizerGroup}/tables",
+                optimizerController::getOptimizerTables);
+            get(
+                "/optimize/optimizerGroups/{optimizerGroup}/optimizers",
+                optimizerController::getOptimizers);
+            get("/optimize/optimizerGroups", optimizerController::getOptimizerGroups);
+            get(
+                "/optimize/optimizerGroups/{optimizerGroup}/info",
+                optimizerController::getOptimizerGroupInfo);
+            delete(
+                "/optimize/optimizerGroups/{optimizerGroup}/optimizers/{jobId}",
+                optimizerController::releaseOptimizer);
+            post(
+                "/optimize/optimizerGroups/{optimizerGroup}/optimizers",
+                optimizerController::scaleOutOptimizer);
+            get("/optimize/resourceGroups", optimizerController::getResourceGroup);
+            post("/optimize/resourceGroups", optimizerController::createResourceGroup);
+            put("/optimize/resourceGroups", optimizerController::updateResourceGroup);
+            delete(
+                "/optimize/resourceGroups/{resourceGroupName}",
+                optimizerController::deleteResourceGroup);
+            get(
+                "/optimize/resourceGroups/{resourceGroupName}/delete/check",
+                optimizerController::deleteCheckResourceGroup);
+            get("/optimize/containers/get", optimizerController::getContainers);
 
-        // console controller
-        get("/terminal/examples", terminalController::getExamples);
-        get("/terminal/examples/{exampleName}", terminalController::getSqlExamples);
-        post("/terminal/catalogs/{catalog}/execute", terminalController::executeScript);
-        get("/terminal/{sessionId}/logs", terminalController::getLogs);
-        get("/terminal/{sessionId}/result", terminalController::getSqlResult);
-        put("/terminal/{sessionId}/stop", terminalController::stopSql);
-        get("/terminal/latestInfos/", terminalController::getLatestInfo);
+            // console controller
+            get("/terminal/examples", terminalController::getExamples);
+            get("/terminal/examples/{exampleName}", terminalController::getSqlExamples);
+            post("/terminal/catalogs/{catalog}/execute", terminalController::executeScript);
+            get("/terminal/{sessionId}/logs", terminalController::getLogs);
+            get("/terminal/{sessionId}/result", terminalController::getSqlResult);
+            put("/terminal/{sessionId}/stop", terminalController::stopSql);
+            get("/terminal/latestInfos/", terminalController::getLatestInfo);
 
-        // health check
-        get("/health/status", healthCheckController::healthCheck);
+            // health check
+            get("/health/status", healthCheckController::healthCheck);
 
-        // version controller
-        get("/versionInfo", versionController::getVersionInfo);
-      });
+            // version controller
+            get("/versionInfo", versionController::getVersionInfo);
+          });
     };
   }
 
   public void preHandleRequest(Context ctx) {
     String uriPath = ctx.path();
     if (needApiKeyCheck(uriPath)) {
-      checkApiToken(ctx.method(), ctx.url(), ctx.queryParam("apiKey"),
-          ctx.queryParam("signature"), ctx.queryParamMap());
+      checkApiToken(
+          ctx.method(),
+          ctx.url(),
+          ctx.queryParam("apiKey"),
+          ctx.queryParam("signature"),
+          ctx.queryParamMap());
     } else if (needLoginCheck(uriPath)) {
       if (null == ctx.sessionAttribute("user")) {
         ctx.sessionAttributeMap();
-        LOG.info("session info: {}", JSONObject.toJSONString(
-            ctx.sessionAttributeMap()));
+        LOG.info("session info: {}", JSONObject.toJSONString(ctx.sessionAttributeMap()));
         throw new ForbiddenException();
       }
     }
   }
-
 
   public void handleException(Exception e, Context ctx) {
     if (e instanceof ForbiddenException) {
@@ -321,26 +393,25 @@ public class DashboardServer {
     }
   }
 
-
   private static final String[] urlWhiteList = {
-      "/ams/v1/versionInfo",
-      "/ams/v1/login",
-      "/ams/v1/health/status",
-      "/",
-      "/overview",
-      "/introduce",
-      "/tables",
-      "/optimizers",
-      "/login",
-      "/terminal",
-      "/hive-tables/upgrade",
-      "/hive-tables",
-      "/index.html",
-      "/favicon.ico",
-      "/js/*",
-      "/img/*",
-      "/css/*",
-      IcebergRestCatalogService.ICEBERG_REST_API_PREFIX + "/*"
+    "/ams/v1/versionInfo",
+    "/ams/v1/login",
+    "/ams/v1/health/status",
+    "/",
+    "/overview",
+    "/introduce",
+    "/tables",
+    "/optimizers",
+    "/login",
+    "/terminal",
+    "/hive-tables/upgrade",
+    "/hive-tables",
+    "/index.html",
+    "/favicon.ico",
+    "/js/*",
+    "/img/*",
+    "/css/*",
+    IcebergRestCatalogService.ICEBERG_REST_API_PREFIX + "/*"
   };
 
   private static boolean needLoginCheck(String uri) {
@@ -363,7 +434,10 @@ public class DashboardServer {
   }
 
   private void checkApiToken(
-      String requestMethod, String requestUrl, String apiKey, String signature,
+      String requestMethod,
+      String requestUrl,
+      String apiKey,
+      String signature,
       Map<String, List<String>> params) {
     String plainText;
     String encryptString;
@@ -396,7 +470,11 @@ public class DashboardServer {
 
       plainText = String.format("%s%s%s", apiKey, encryptString, secrete);
       signCal = ParamSignatureCalculator.getMD5(plainText);
-      LOG.info("calculate:  plainText:{}, signCal:{}, signFromRequest: {}", plainText, signCal, signature);
+      LOG.info(
+          "calculate:  plainText:{}, signCal:{}, signFromRequest: {}",
+          plainText,
+          signCal,
+          signature);
 
       if (!signature.equals(signCal)) {
         LOG.error(String.format("Signature Check Failed!!, req:%s, cal:%s", signature, signCal));
@@ -406,7 +484,11 @@ public class DashboardServer {
       LOG.error("api doFilter error.", e);
       throw new SignatureCheckException();
     } finally {
-      LOG.debug("[finish] in {} ms, [{}] {}", System.currentTimeMillis() - receive, requestMethod, requestUrl);
+      LOG.debug(
+          "[finish] in {} ms, [{}] {}",
+          System.currentTimeMillis() - receive,
+          requestMethod,
+          requestUrl);
     }
   }
 }
