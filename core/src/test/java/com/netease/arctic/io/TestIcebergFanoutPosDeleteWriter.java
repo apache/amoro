@@ -53,16 +53,19 @@ public class TestIcebergFanoutPosDeleteWriter extends TableTestBase {
   private final FileFormat fileFormat;
 
   public TestIcebergFanoutPosDeleteWriter(boolean partitionedTable, FileFormat fileFormat) {
-    super(new BasicCatalogTestHelper(TableFormat.ICEBERG),
+    super(
+        new BasicCatalogTestHelper(TableFormat.ICEBERG),
         new BasicTableTestHelper(false, partitionedTable));
     this.fileFormat = fileFormat;
   }
 
   @Parameterized.Parameters(name = "partitionedTable = {0}, fileFormat = {1}")
   public static Object[][] parameters() {
-    return new Object[][] {{true, FileFormat.PARQUET}, {false, FileFormat.PARQUET},
-                           {true, FileFormat.AVRO}, {false, FileFormat.AVRO},
-                           {true, FileFormat.ORC}, {false, FileFormat.ORC}};
+    return new Object[][] {
+      {true, FileFormat.PARQUET}, {false, FileFormat.PARQUET},
+      {true, FileFormat.AVRO}, {false, FileFormat.AVRO},
+      {true, FileFormat.ORC}, {false, FileFormat.ORC}
+    };
   }
 
   private StructLike getPartitionData() {
@@ -80,37 +83,49 @@ public class TestIcebergFanoutPosDeleteWriter extends TableTestBase {
         new GenericAppenderFactory(getArcticTable().schema(), getArcticTable().spec());
     appenderFactory.setAll(getArcticTable().properties());
     appenderFactory.set(
-        org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_PATH.name(),
+        org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX
+            + MetadataColumns.DELETE_FILE_PATH.name(),
         MetricsModes.Full.get().toString());
     appenderFactory.set(
-        org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_POS.name(),
+        org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX
+            + MetadataColumns.DELETE_FILE_POS.name(),
         MetricsModes.Full.get().toString());
 
-    IcebergFanoutPosDeleteWriter<Record> icebergPosDeleteWriter = new IcebergFanoutPosDeleteWriter<>(
-        appenderFactory, fileFormat, partitionData, getArcticTable().io(),
-        getArcticTable().asUnkeyedTable().encryption(), "suffix");
+    IcebergFanoutPosDeleteWriter<Record> icebergPosDeleteWriter =
+        new IcebergFanoutPosDeleteWriter<>(
+            appenderFactory,
+            fileFormat,
+            partitionData,
+            getArcticTable().io(),
+            getArcticTable().asUnkeyedTable().encryption(),
+            "suffix");
 
     String dataDir = temp.newFolder("data").getPath();
 
     String dataFile1Path =
-        new Path(TableFileUtil.getNewFilePath(dataDir, fileFormat.addExtension("data-1"))).toString();
+        new Path(TableFileUtil.getNewFilePath(dataDir, fileFormat.addExtension("data-1")))
+            .toString();
     icebergPosDeleteWriter.delete(dataFile1Path, 0);
     icebergPosDeleteWriter.delete(dataFile1Path, 1);
     icebergPosDeleteWriter.delete(dataFile1Path, 3);
 
     String dataFile2Path =
-        new Path(TableFileUtil.getNewFilePath(dataDir, fileFormat.addExtension("data-2"))).toString();
+        new Path(TableFileUtil.getNewFilePath(dataDir, fileFormat.addExtension("data-2")))
+            .toString();
     icebergPosDeleteWriter.delete(dataFile2Path, 10);
     icebergPosDeleteWriter.delete(dataFile2Path, 9);
     icebergPosDeleteWriter.delete(dataFile2Path, 8);
 
     List<DeleteFile> deleteFiles = icebergPosDeleteWriter.complete();
     Assert.assertEquals(2, deleteFiles.size());
-    Map<String, DeleteFile> deleteFileMap = deleteFiles.stream().collect(Collectors.toMap(
-        f -> f.path().toString(),
-        f -> f));
-    DeleteFile deleteFile1 = deleteFileMap.get(
-        new Path(TableFileUtil.getNewFilePath(dataDir, fileFormat.addExtension("data-1-delete-suffix"))).toString());
+    Map<String, DeleteFile> deleteFileMap =
+        deleteFiles.stream().collect(Collectors.toMap(f -> f.path().toString(), f -> f));
+    DeleteFile deleteFile1 =
+        deleteFileMap.get(
+            new Path(
+                    TableFileUtil.getNewFilePath(
+                        dataDir, fileFormat.addExtension("data-1-delete-suffix")))
+                .toString());
     Assert.assertNotNull(deleteFile1);
     Assert.assertEquals(3, deleteFile1.recordCount());
     // Check whether the path-pos pairs are sorted as expected.
@@ -121,14 +136,22 @@ public class TestIcebergFanoutPosDeleteWriter extends TableTestBase {
             record.copy("file_path", dataFile1Path, "pos", 0L),
             record.copy("file_path", dataFile1Path, "pos", 1L),
             record.copy("file_path", dataFile1Path, "pos", 3L));
-    Assert.assertEquals(expectedDeletes,
+    Assert.assertEquals(
+        expectedDeletes,
         MixedDataTestHelpers.readDataFile(fileFormat, pathPosSchema, deleteFile1.path()));
 
-    DeleteFile deleteFile2 = deleteFileMap.get(
-        new Path(TableFileUtil.getNewFilePath(dataDir, fileFormat.addExtension("data-2-delete-suffix"))).toString());
+    DeleteFile deleteFile2 =
+        deleteFileMap.get(
+            new Path(
+                    TableFileUtil.getNewFilePath(
+                        dataDir, fileFormat.addExtension("data-2-delete-suffix")))
+                .toString());
     Assert.assertNotNull(deleteFile2);
     Assert.assertEquals(
-        new Path(TableFileUtil.getNewFilePath(dataDir, fileFormat.addExtension("data-2-delete-suffix"))).toString(),
+        new Path(
+                TableFileUtil.getNewFilePath(
+                    dataDir, fileFormat.addExtension("data-2-delete-suffix")))
+            .toString(),
         deleteFile2.path().toString());
     Assert.assertEquals(3, deleteFile2.recordCount());
     // Check whether the path-pos pairs are sorted as expected.

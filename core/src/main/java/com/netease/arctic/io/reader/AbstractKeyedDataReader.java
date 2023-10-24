@@ -49,8 +49,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Abstract implementation of arctic data reader consuming {@link KeyedTableScanTask}, return records
- * after filtering with {@link ArcticDeleteFilter}.
+ * Abstract implementation of arctic data reader consuming {@link KeyedTableScanTask}, return
+ * records after filtering with {@link ArcticDeleteFilter}.
  *
  * @param <T> to indicate the record data type.
  */
@@ -78,8 +78,16 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
       Set<DataTreeNode> sourceNodes,
       boolean reuseContainer,
       StructLikeCollections structLikeCollections) {
-    this(fileIO, tableSchema, projectedSchema, primaryKeySpec, nameMapping, caseSensitive,
-        convertConstant, sourceNodes, reuseContainer);
+    this(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        primaryKeySpec,
+        nameMapping,
+        caseSensitive,
+        convertConstant,
+        sourceNodes,
+        reuseContainer);
     this.structLikeCollections = structLikeCollections;
   }
 
@@ -92,8 +100,16 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
       boolean caseSensitive,
       BiFunction<Type, Object, Object> convertConstant,
       boolean reuseContainer) {
-    this(fileIO, tableSchema, projectedSchema, primaryKeySpec, nameMapping, caseSensitive,
-        convertConstant, null, reuseContainer);
+    this(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        primaryKeySpec,
+        nameMapping,
+        caseSensitive,
+        convertConstant,
+        null,
+        reuseContainer);
   }
 
   public AbstractKeyedDataReader(
@@ -104,7 +120,8 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
       String nameMapping,
       boolean caseSensitive,
       BiFunction<Type, Object, Object> convertConstant,
-      Set<DataTreeNode> sourceNodes, boolean reuseContainer) {
+      Set<DataTreeNode> sourceNodes,
+      boolean reuseContainer) {
     this.fileIO = fileIO;
     this.tableSchema = tableSchema;
     this.projectedSchema = projectedSchema;
@@ -118,67 +135,86 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
 
   public CloseableIterator<T> readData(KeyedTableScanTask keyedTableScanTask) {
     ArcticDeleteFilter<T> arcticDeleteFilter =
-        createArcticDeleteFilter(keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec,
-            sourceNodes, structLikeCollections);
+        createArcticDeleteFilter(
+            keyedTableScanTask,
+            tableSchema,
+            projectedSchema,
+            primaryKeySpec,
+            sourceNodes,
+            structLikeCollections);
     Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
 
-    CloseableIterable<T> dataIterable = arcticDeleteFilter.filter(
-        CloseableIterable.concat(
-            CloseableIterable.transform(
-                CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-                fileScanTask -> {
-                  switch (fileScanTask.file().format()) {
-                    case PARQUET:
-                      return newParquetIterable(
-                          fileScanTask,
-                          newProjectedSchema,
-                          DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant));
-                    case ORC:
-                      return newOrcIterable(
-                          fileScanTask,
-                          newProjectedSchema,
-                          DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant));
-                    default:
-                      throw new UnsupportedOperationException(
-                          "Cannot read unknown format: " + fileScanTask.file().format());
-                  }
-                })));
+    CloseableIterable<T> dataIterable =
+        arcticDeleteFilter.filter(
+            CloseableIterable.concat(
+                CloseableIterable.transform(
+                    CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
+                    fileScanTask -> {
+                      switch (fileScanTask.file().format()) {
+                        case PARQUET:
+                          return newParquetIterable(
+                              fileScanTask,
+                              newProjectedSchema,
+                              DataReaderCommon.getIdToConstant(
+                                  fileScanTask, newProjectedSchema, convertConstant));
+                        case ORC:
+                          return newOrcIterable(
+                              fileScanTask,
+                              newProjectedSchema,
+                              DataReaderCommon.getIdToConstant(
+                                  fileScanTask, newProjectedSchema, convertConstant));
+                        default:
+                          throw new UnsupportedOperationException(
+                              "Cannot read unknown format: " + fileScanTask.file().format());
+                      }
+                    })));
     return dataIterable.iterator();
   }
 
-  //TODO Return deleted record produced by equality delete file only now, should refactor the reader to return all
+  // TODO Return deleted record produced by equality delete file only now, should refactor the
+  // reader to return all
   // deleted records.
   public CloseableIterator<T> readDeletedData(KeyedTableScanTask keyedTableScanTask) {
-    boolean hasDeleteFile = keyedTableScanTask.arcticEquityDeletes().size() > 0 ||
-        keyedTableScanTask.dataTasks().stream().anyMatch(arcticFileScanTask -> arcticFileScanTask.deletes().size() > 0);
+    boolean hasDeleteFile =
+        keyedTableScanTask.arcticEquityDeletes().size() > 0
+            || keyedTableScanTask.dataTasks().stream()
+                .anyMatch(arcticFileScanTask -> arcticFileScanTask.deletes().size() > 0);
     if (hasDeleteFile) {
       ArcticDeleteFilter<T> arcticDeleteFilter =
-          createArcticDeleteFilter(keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec,
-              sourceNodes, structLikeCollections);
+          createArcticDeleteFilter(
+              keyedTableScanTask,
+              tableSchema,
+              projectedSchema,
+              primaryKeySpec,
+              sourceNodes,
+              structLikeCollections);
 
       Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
 
-      CloseableIterable<T> dataIterable = arcticDeleteFilter.filterNegate(
-          CloseableIterable.concat(
-              CloseableIterable.transform(
-                  CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-                  fileScanTask -> {
-                    switch (fileScanTask.file().format()) {
-                      case PARQUET:
-                        return newParquetIterable(
-                            fileScanTask,
-                            newProjectedSchema,
-                            DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant));
-                      case ORC:
-                        return newOrcIterable(
-                            fileScanTask,
-                            newProjectedSchema,
-                            DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant));
-                      default:
-                        throw new UnsupportedOperationException(
-                            "Cannot read unknown format: " + fileScanTask.file().format());
-                    }
-                  })));
+      CloseableIterable<T> dataIterable =
+          arcticDeleteFilter.filterNegate(
+              CloseableIterable.concat(
+                  CloseableIterable.transform(
+                      CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
+                      fileScanTask -> {
+                        switch (fileScanTask.file().format()) {
+                          case PARQUET:
+                            return newParquetIterable(
+                                fileScanTask,
+                                newProjectedSchema,
+                                DataReaderCommon.getIdToConstant(
+                                    fileScanTask, newProjectedSchema, convertConstant));
+                          case ORC:
+                            return newOrcIterable(
+                                fileScanTask,
+                                newProjectedSchema,
+                                DataReaderCommon.getIdToConstant(
+                                    fileScanTask, newProjectedSchema, convertConstant));
+                          default:
+                            throw new UnsupportedOperationException(
+                                "Cannot read unknown format: " + fileScanTask.file().format());
+                        }
+                      })));
       return dataIterable.iterator();
     } else {
       return CloseableIterator.empty();
@@ -186,22 +222,30 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
   }
 
   protected ArcticDeleteFilter<T> createArcticDeleteFilter(
-      KeyedTableScanTask keyedTableScanTask, Schema tableSchema,
-      Schema projectedSchema, PrimaryKeySpec primaryKeySpec,
-      Set<DataTreeNode> sourceNodes, StructLikeCollections structLikeCollections
-  ) {
-    return new GenericArcticDeleteFilter(keyedTableScanTask, tableSchema, projectedSchema,
-        primaryKeySpec, sourceNodes, structLikeCollections);
+      KeyedTableScanTask keyedTableScanTask,
+      Schema tableSchema,
+      Schema projectedSchema,
+      PrimaryKeySpec primaryKeySpec,
+      Set<DataTreeNode> sourceNodes,
+      StructLikeCollections structLikeCollections) {
+    return new GenericArcticDeleteFilter(
+        keyedTableScanTask,
+        tableSchema,
+        projectedSchema,
+        primaryKeySpec,
+        sourceNodes,
+        structLikeCollections);
   }
 
   protected CloseableIterable<T> newParquetIterable(
       FileScanTask task, Schema schema, Map<Integer, ?> idToConstant) {
-    Parquet.ReadBuilder builder = Parquet.read(fileIO.newInputFile(task.file().path().toString()))
-        .split(task.start(), task.length())
-        .project(schema)
-        .createReaderFunc(getParquetReaderFunction(schema, idToConstant))
-        .filter(task.residual())
-        .caseSensitive(caseSensitive);
+    Parquet.ReadBuilder builder =
+        Parquet.read(fileIO.newInputFile(task.file().path().toString()))
+            .split(task.start(), task.length())
+            .project(schema)
+            .createReaderFunc(getParquetReaderFunction(schema, idToConstant))
+            .filter(task.residual())
+            .caseSensitive(caseSensitive);
 
     if (reuseContainer) {
       builder.reuseContainers();
@@ -214,9 +258,7 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
   }
 
   protected CloseableIterable<T> newOrcIterable(
-      FileScanTask task,
-      Schema schema,
-      Map<Integer, ?> idToConstant) {
+      FileScanTask task, Schema schema, Map<Integer, ?> idToConstant) {
     Schema readSchemaWithoutConstantAndMetadataFields =
         TypeUtil.selectNot(
             schema, Sets.union(idToConstant.keySet(), MetadataColumns.metadataFieldIds()));
@@ -242,9 +284,12 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
 
     protected GenericArcticDeleteFilter(
         KeyedTableScanTask keyedTableScanTask,
-        Schema tableSchema, Schema requestedSchema, PrimaryKeySpec primaryKeySpec) {
+        Schema tableSchema,
+        Schema requestedSchema,
+        PrimaryKeySpec primaryKeySpec) {
       super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec);
-      this.asStructLike = AbstractKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      this.asStructLike =
+          AbstractKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     protected GenericArcticDeleteFilter(
@@ -254,9 +299,15 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
         PrimaryKeySpec primaryKeySpec,
         Set<DataTreeNode> sourceNodes,
         StructLikeCollections structLikeCollections) {
-      super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec,
-          sourceNodes, structLikeCollections);
-      this.asStructLike = AbstractKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      super(
+          keyedTableScanTask,
+          tableSchema,
+          requestedSchema,
+          primaryKeySpec,
+          sourceNodes,
+          structLikeCollections);
+      this.asStructLike =
+          AbstractKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     protected GenericArcticDeleteFilter(
@@ -266,7 +317,8 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
         PrimaryKeySpec primaryKeySpec,
         Set<DataTreeNode> sourceNodes) {
       super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec, sourceNodes);
-      this.asStructLike = AbstractKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      this.asStructLike =
+          AbstractKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     @Override
@@ -286,12 +338,10 @@ public abstract class AbstractKeyedDataReader<T> implements Serializable {
   }
 
   protected abstract Function<MessageType, ParquetValueReader<?>> getParquetReaderFunction(
-      Schema projectSchema,
-      Map<Integer, ?> idToConstant);
+      Schema projectSchema, Map<Integer, ?> idToConstant);
 
   protected abstract Function<TypeDescription, OrcRowReader<?>> getOrcReaderFunction(
-      Schema projectSchema,
-      Map<Integer, ?> idToConstant);
+      Schema projectSchema, Map<Integer, ?> idToConstant);
 
   protected abstract Function<Schema, Function<T, StructLike>> toStructLikeFunction();
 }

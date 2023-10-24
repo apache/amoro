@@ -50,11 +50,11 @@ public class AbstractOptimizerOperator implements Serializable {
   private boolean shouldRetryLater(Throwable t) {
     if (t instanceof ArcticException) {
       ArcticException arcticException = (ArcticException) t;
-      //Call ams again when got a persistence/undefined error
-      return ErrorCodes.PERSISTENCE_ERROR_CODE == arcticException.getErrorCode() ||
-          ErrorCodes.UNDEFINED_ERROR_CODE == arcticException.getErrorCode();
+      // Call ams again when got a persistence/undefined error
+      return ErrorCodes.PERSISTENCE_ERROR_CODE == arcticException.getErrorCode()
+          || ErrorCodes.UNDEFINED_ERROR_CODE == arcticException.getErrorCode();
     } else {
-      //Call ams again when got an unexpected error
+      // Call ams again when got an unexpected error
       return true;
     }
   }
@@ -68,17 +68,21 @@ public class AbstractOptimizerOperator implements Serializable {
     return false;
   }
 
-  protected <T> T callAuthenticatedAms(AmsAuthenticatedCallOperation<T> operation) throws TException {
+  protected <T> T callAuthenticatedAms(AmsAuthenticatedCallOperation<T> operation)
+      throws TException {
     while (isStarted()) {
       if (tokenIsReady()) {
         String token = getToken();
         try {
           return operation.call(OptimizingClientPools.getClient(config.getAmsUrl()), token);
         } catch (Throwable t) {
-          if (t instanceof ArcticException &&
-              ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE == ((ArcticException) (t)).getErrorCode()) {
-            //Reset the token when got a authorization error
-            LOG.error("Got a authorization error while calling ams, reset token and wait for a new one", t);
+          if (t instanceof ArcticException
+              && ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE
+                  == ((ArcticException) (t)).getErrorCode()) {
+            // Reset the token when got a authorization error
+            LOG.error(
+                "Got a authorization error while calling ams, reset token and wait for a new one",
+                t);
             resetToken(token);
           } else if (shouldReturnNull(t)) {
             return null;

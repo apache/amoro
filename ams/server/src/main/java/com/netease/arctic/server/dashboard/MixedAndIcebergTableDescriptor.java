@@ -30,6 +30,7 @@ import com.netease.arctic.server.dashboard.model.AMSPartitionField;
 import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
+import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
@@ -37,12 +38,18 @@ import com.netease.arctic.server.dashboard.model.TableBasicInfo;
 import com.netease.arctic.server.dashboard.model.TableStatistics;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.TableStatCollector;
+import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
+import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
+import com.netease.arctic.server.persistence.PersistentBase;
+import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ManifestEntryFields;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.HasTableOperations;
@@ -58,6 +65,7 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +73,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +85,7 @@ import static com.netease.arctic.server.dashboard.utils.AmsUtil.byteToXB;
 /**
  * Descriptor for Mixed-Hive, Mixed-Iceberg, Iceberg format tables.
  */
-public class MixedAndIcebergTableDescriptor implements FormatTableDescriptor {
+public class MixedAndIcebergTableDescriptor extends PersistentBase implements FormatTableDescriptor {
 
   private static final Logger LOG = LoggerFactory.getLogger(MixedAndIcebergTableDescriptor.class);
 
@@ -316,6 +325,36 @@ public class MixedAndIcebergTableDescriptor implements FormatTableDescriptor {
       result.addAll(collectFileInfo(arcticTable.asUnkeyedTable(), false, partition));
     }
     return result;
+  }
+
+  @Override
+  public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
+      AmoroTable<?> amoroTable, int limit, int offset) {
+    TableIdentifier tableIdentifier = amoroTable.id();
+    List<OptimizingProcessMeta> processMetaList = getAs(OptimizingMapper.class,
+        mapper -> mapper.selectOptimizingProcesses(
+            tableIdentifier.getCatalog(),
+            tableIdentifier.getDatabase(),
+            tableIdentifier.getTableName()
+        ));
+    int total = processMetaList.size();
+    processMetaList = processMetaList.stream()
+        .skip(offset)
+        .limit(limit)
+        .collect(Collectors.toList());
+    if (CollectionUtils.isEmpty(processMetaList)) {
+      return Pair.of(Collections.emptyList(), 0);
+    }
+    List<Long> processIds = processMetaList.stream()
+        .map(OptimizingProcessMeta::getProcessId).collect(Collectors.toList());
+    Map<Long, List<OptimizingTaskMeta>> optimizingTasks = getAs(
+        OptimizingMapper.class,
+        mapper -> mapper.selectOptimizeTaskMetas(processIds))
+        .stream().collect(Collectors.groupingBy(OptimizingTaskMeta::getProcessId));
+
+    return Pair.of(processMetaList.stream()
+        .map(p -> OptimizingProcessInfo.build(p, optimizingTasks.get(p.getProcessId())))
+        .collect(Collectors.toList()), total);
   }
 
   private List<PartitionFileBaseInfo> collectFileInfo(Table table, boolean isChangeTable, String partition) {

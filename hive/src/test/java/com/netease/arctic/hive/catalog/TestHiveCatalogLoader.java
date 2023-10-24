@@ -35,16 +35,18 @@ import java.util.Map;
 
 public class TestHiveCatalogLoader {
   private static final String TEST_CATALOG_NAME = "test";
-  @ClassRule
-  public static TestAms TEST_AMS = new TestAms();
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestAms TEST_AMS = new TestAms();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
   @Test
   public void testLoadMixedHiveCatalog() {
     Map<String, String> properties = Maps.newHashMap();
-    CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(TEST_CATALOG_NAME,
-        CatalogMetaProperties.CATALOG_TYPE_HIVE, properties, TableFormat.MIXED_HIVE);
+    CatalogMeta catalogMeta =
+        CatalogTestHelpers.buildCatalogMeta(
+            TEST_CATALOG_NAME,
+            CatalogMetaProperties.CATALOG_TYPE_HIVE,
+            properties,
+            TableFormat.MIXED_HIVE);
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
     ArcticCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
     Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
@@ -55,8 +57,9 @@ public class TestHiveCatalogLoader {
   @Test
   public void testLoadOldHiveCatalog() {
     Map<String, String> properties = Maps.newHashMap();
-    CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(TEST_CATALOG_NAME,
-        CatalogMetaProperties.CATALOG_TYPE_HIVE, properties);
+    CatalogMeta catalogMeta =
+        CatalogTestHelpers.buildCatalogMeta(
+            TEST_CATALOG_NAME, CatalogMetaProperties.CATALOG_TYPE_HIVE, properties);
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
     ArcticCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
     Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());

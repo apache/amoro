@@ -30,14 +30,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Utils to handle Hive table schema.
- */
+/** Utils to handle Hive table schema. */
 public class HiveSchemaUtil {
 
   /**
-   * Converts the Iceberg schema to a Hive schema.
-   * Filter partition fields from iceberg schema fields.
+   * Converts the Iceberg schema to a Hive schema. Filter partition fields from iceberg schema
+   * fields.
    *
    * @param schema The original Iceberg schema to convert
    * @param spec The original Iceberg partition spec to convert
@@ -52,8 +50,8 @@ public class HiveSchemaUtil {
   }
 
   /**
-   * Converts the Iceberg schema to a Hive schema (list of FieldSchema objects).
-   * Filter partition fields from iceberg schema fields.
+   * Converts the Iceberg schema to a Hive schema (list of FieldSchema objects). Filter partition
+   * fields from iceberg schema fields.
    *
    * @param schema The original Iceberg schema to convert
    * @param spec The original Iceberg partition spec to convert
@@ -71,7 +69,8 @@ public class HiveSchemaUtil {
    * @return The Hive column list generated from the Iceberg schema
    */
   public static List<FieldSchema> hivePartitionFields(Schema schema, PartitionSpec spec) {
-    return org.apache.iceberg.hive.HiveSchemaUtil.convert(TypeUtil.select(schema, spec.identitySourceIds()));
+    return org.apache.iceberg.hive.HiveSchemaUtil.convert(
+        TypeUtil.select(schema, spec.identitySourceIds()));
   }
 
   /**
@@ -91,13 +90,16 @@ public class HiveSchemaUtil {
       return schema;
     }
     List<Types.NestedField> columnsWithPk = new ArrayList<>();
-    schema.columns().forEach(nestedField -> {
-      if (pkSet.contains(nestedField.name())) {
-        columnsWithPk.add(nestedField.asRequired());
-      } else {
-        columnsWithPk.add(nestedField);
-      }
-    });
+    schema
+        .columns()
+        .forEach(
+            nestedField -> {
+              if (pkSet.contains(nestedField.name())) {
+                columnsWithPk.add(nestedField.asRequired());
+              } else {
+                columnsWithPk.add(nestedField);
+              }
+            });
     return new Schema(columnsWithPk);
   }
 
@@ -108,8 +110,10 @@ public class HiveSchemaUtil {
    * @return An new schema with lowercase field name
    */
   public static Schema changeFieldNameToLowercase(Schema schema) {
-    Types.StructType struct = TypeUtil.visit(schema.asStruct(),
-        new ChangeFieldName(ChangeFieldName.ChangeType.TO_LOWERCASE)).asStructType();
+    Types.StructType struct =
+        TypeUtil.visit(
+                schema.asStruct(), new ChangeFieldName(ChangeFieldName.ChangeType.TO_LOWERCASE))
+            .asStructType();
     return new Schema(struct.fields(), schema.identifierFieldIds());
   }
 }

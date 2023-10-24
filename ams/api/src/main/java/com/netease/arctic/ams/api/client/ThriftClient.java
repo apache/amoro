@@ -39,8 +39,7 @@ public class ThriftClient<T extends TServiceClient> implements Closeable {
   private boolean finish;
 
   public ThriftClient(
-      TServiceClient client, ObjectPool<ThriftClient<T>> pool,
-      ServiceInfo serviceInfo) {
+      TServiceClient client, ObjectPool<ThriftClient<T>> pool, ServiceInfo serviceInfo) {
     super();
     this.client = client;
     this.pool = pool;
@@ -89,9 +88,7 @@ public class ThriftClient<T extends TServiceClient> implements Closeable {
     ThriftUtil.closeClient(this.client);
   }
 
-  /**
-   * client should return to pool
-   */
+  /** client should return to pool */
   public void finish() {
     this.finish = true;
   }

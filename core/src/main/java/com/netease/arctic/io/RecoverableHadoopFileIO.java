@@ -30,10 +30,9 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.regex.Pattern;
 
-/**
- * Implementation of {@link ArcticFileIO} with deleted files recovery support.
- */
-public class RecoverableHadoopFileIO extends ArcticHadoopFileIO implements SupportFileRecycleOperations {
+/** Implementation of {@link ArcticFileIO} with deleted files recovery support. */
+public class RecoverableHadoopFileIO extends ArcticHadoopFileIO
+    implements SupportFileRecycleOperations {
   private static final Logger LOG = LoggerFactory.getLogger(RecoverableHadoopFileIO.class);
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
@@ -42,13 +41,14 @@ public class RecoverableHadoopFileIO extends ArcticHadoopFileIO implements Suppo
   private final Pattern pattern;
 
   RecoverableHadoopFileIO(
-      TableMetaStore tableMetaStore,
-      TableTrashManager trashManager,
-      String trashFilePattern) {
+      TableMetaStore tableMetaStore, TableTrashManager trashManager, String trashFilePattern) {
     super(tableMetaStore);
     this.trashManager = trashManager;
     this.trashFilePattern = trashFilePattern;
-    this.pattern = Strings.isNullOrEmpty(this.trashFilePattern) ? null : Pattern.compile(this.trashFilePattern);
+    this.pattern =
+        Strings.isNullOrEmpty(this.trashFilePattern)
+            ? null
+            : Pattern.compile(this.trashFilePattern);
   }
 
   @Override

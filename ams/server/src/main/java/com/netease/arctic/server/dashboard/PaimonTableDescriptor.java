@@ -27,11 +27,18 @@ import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
 import com.netease.arctic.server.dashboard.model.AMSPartitionField;
 import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
+import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
+import com.netease.arctic.server.dashboard.utils.FilesStatisticsBuilder;
+import com.netease.arctic.server.optimizing.OptimizingProcess;
+import com.netease.arctic.table.TableIdentifier;
+import java.util.Comparator;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Streams;
+import org.apache.iceberg.util.Pair;
 import org.apache.paimon.AbstractFileStore;
 import org.apache.paimon.Snapshot;
 import org.apache.paimon.data.BinaryRow;
@@ -320,6 +327,57 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     }
 
     return partitionFileBases;
+  }
+
+  @Override
+  public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
+      AmoroTable<?> amoroTable, int limit, int offset) {
+    // Temporary solution for Paimon. TODO: Get compaction info from Paimon compaction task
+    List<OptimizingProcessInfo> processInfoList = new ArrayList<>();
+    TableIdentifier tableIdentifier = amoroTable.id();
+    FileStoreTable fileStoreTable = (FileStoreTable) amoroTable.originalTable();
+    AbstractFileStore<?> store = (AbstractFileStore<?>) fileStoreTable.store();
+    int total;
+    try {
+      List<Snapshot> compactSnapshots = Streams.stream(store.snapshotManager().snapshots())
+          .filter(s -> s.commitKind() == Snapshot.CommitKind.COMPACT).collect(Collectors.toList());
+      total = compactSnapshots.size();
+      processInfoList = compactSnapshots.stream()
+          .sorted(Comparator.comparing(Snapshot::id).reversed())
+          .skip(offset)
+          .limit(limit)
+          .map(s -> {
+            OptimizingProcessInfo optimizingProcessInfo = new OptimizingProcessInfo();
+            optimizingProcessInfo.setProcessId(s.id());
+            optimizingProcessInfo.setCatalogName(tableIdentifier.getCatalog());
+            optimizingProcessInfo.setDbName(tableIdentifier.getDatabase());
+            optimizingProcessInfo.setTableName(tableIdentifier.getTableName());
+            optimizingProcessInfo.setStatus(OptimizingProcess.Status.SUCCESS);
+            optimizingProcessInfo.setFinishTime(s.timeMillis());
+            FilesStatisticsBuilder inputBuilder = new FilesStatisticsBuilder();
+            FilesStatisticsBuilder outputBuilder = new FilesStatisticsBuilder();
+            ManifestFile manifestFile = store.manifestFileFactory().create();
+            ManifestList manifestList = store.manifestListFactory().create();
+            List<ManifestFileMeta> manifestFileMetas = s.deltaManifests(manifestList);
+            for (ManifestFileMeta manifestFileMeta : manifestFileMetas) {
+              List<ManifestEntry> compactManifestEntries = manifestFile.read(manifestFileMeta.fileName());
+              for (ManifestEntry compactManifestEntry : compactManifestEntries) {
+                if (compactManifestEntry.kind() == FileKind.DELETE) {
+                  inputBuilder.addFile(compactManifestEntry.file().fileSize());
+                } else {
+                  outputBuilder.addFile(compactManifestEntry.file().fileSize());
+                }
+              }
+            }
+            optimizingProcessInfo.setInputFiles(inputBuilder.build());
+            optimizingProcessInfo.setOutputFiles(outputBuilder.build());
+            return optimizingProcessInfo;
+          })
+          .collect(Collectors.toList());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return Pair.of(processInfoList, total);
   }
 
   @NotNull

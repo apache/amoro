@@ -24,7 +24,7 @@ import org.junit.Test;
 
 import java.util.Map;
 
-public class PropertiesUtilTest {
+public class TestPropertiesUtil {
   
   private static final Map<String, String> ALL_PROPERTIES = Maps.newHashMap();
   private static final Map<String, String> CATALOG_PROPERTIES = Maps.newHashMap();

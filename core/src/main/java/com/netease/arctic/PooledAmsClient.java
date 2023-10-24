@@ -31,9 +31,7 @@ import org.apache.thrift.TException;
 import java.util.List;
 import java.util.Map;
 
-/**
- * {@link AmsClient} implementation using client pool.
- */
+/** {@link AmsClient} implementation using client pool. */
 public class PooledAmsClient implements AmsClient {
   private final String metastoreUrl;
 
@@ -46,9 +44,7 @@ public class PooledAmsClient implements AmsClient {
   }
 
   @Override
-  public void ping() throws TException {
-
-  }
+  public void ping() throws TException {}
 
   @Override
   public List<CatalogMeta> getCatalogs() throws TException {
@@ -66,20 +62,17 @@ public class PooledAmsClient implements AmsClient {
   }
 
   @Override
-  public void createDatabase(String catalogName, String database)
-      throws TException {
+  public void createDatabase(String catalogName, String database) throws TException {
     getIface().createDatabase(catalogName, database);
   }
 
   @Override
-  public void dropDatabase(String catalogName, String database)
-      throws TException {
+  public void dropDatabase(String catalogName, String database) throws TException {
     getIface().dropDatabase(catalogName, database);
   }
 
   @Override
-  public void createTableMeta(TableMeta tableMeta)
-      throws TException {
+  public void createTableMeta(TableMeta tableMeta) throws TException {
     getIface().createTableMeta(tableMeta);
   }
 
@@ -94,8 +87,7 @@ public class PooledAmsClient implements AmsClient {
   }
 
   @Override
-  public void removeTable(TableIdentifier tableIdentifier, boolean deleteData)
-      throws TException {
+  public void removeTable(TableIdentifier tableIdentifier, boolean deleteData) throws TException {
     getIface().removeTable(tableIdentifier, deleteData);
   }
 
@@ -105,13 +97,16 @@ public class PooledAmsClient implements AmsClient {
   }
 
   @Override
-  public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) throws TException {
+  public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature)
+      throws TException {
     return getIface().allocateTransactionId(tableIdentifier, transactionSignature);
   }
 
   @Override
-  public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
-                       Map<String, String> properties)
+  public Blocker block(
+      TableIdentifier tableIdentifier,
+      List<BlockableOperation> operations,
+      Map<String, String> properties)
       throws TException {
     return getIface().block(tableIdentifier, operations, properties);
   }

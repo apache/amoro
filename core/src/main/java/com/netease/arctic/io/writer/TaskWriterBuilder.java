@@ -24,8 +24,8 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.TaskWriter;
 
 /**
- * A factory to gen {@link TaskWriter}，
- * User don't need to care the detail of data write to which file location with which Parquet style
+ * A factory to gen {@link TaskWriter}， User don't need to care the detail of data write to which
+ * file location with which Parquet style
  */
 public interface TaskWriterBuilder<T> {
 
@@ -34,5 +34,4 @@ public interface TaskWriterBuilder<T> {
   TaskWriter<T> buildWriter(LocationKind locationKind);
 
   SortedPosDeleteWriter<T> buildBasePosDeleteWriter(long mask, long index, StructLike partitionKey);
-
 }

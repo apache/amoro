@@ -24,24 +24,28 @@ import java.util.List;
 
 /**
  * Plugin manager interface for all pluggable services
+ *
  * @param <T> plugin type
  */
 public interface PluginManager<T extends AmoroPlugin> extends Iterable<T> {
 
   /**
    * Install a plugin
+   *
    * @param pluginName related to Plugin.name()
    */
   void install(String pluginName);
 
   /**
    * Uninstall a plugin
+   *
    * @param pluginName related to Plugin.name()
    */
   void uninstall(String pluginName);
 
   /**
    * Get a plugin by its name
+   *
    * @param pluginName related to Plugin.name()
    * @return plugin instance
    */
@@ -49,14 +53,13 @@ public interface PluginManager<T extends AmoroPlugin> extends Iterable<T> {
 
   /**
    * Get all installed plugins
+   *
    * @return all installed plugins
    */
   default List<T> list() {
     return Lists.newArrayList(this);
   }
 
-  /**
-   * Close the plugin manager and trigger all plugins to close if necessary
-   */
+  /** Close the plugin manager and trigger all plugins to close if necessary */
   void close();
 }

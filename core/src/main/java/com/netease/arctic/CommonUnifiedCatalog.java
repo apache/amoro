@@ -42,8 +42,7 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   private final Map<String, String> properties = Maps.newHashMap();
 
   public CommonUnifiedCatalog(
-      Supplier<CatalogMeta> catalogMetaSupplier, CatalogMeta meta, Map<String, String> properties
-  ) {
+      Supplier<CatalogMeta> catalogMetaSupplier, CatalogMeta meta, Map<String, String> properties) {
     this.meta = meta;
     this.properties.putAll(properties);
     this.metaSupplier = catalogMetaSupplier;
@@ -93,14 +92,16 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     }
 
     return formatCatalogAsOrder(TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG, TableFormat.PAIMON)
-        .map(formatCatalog -> {
-          try {
-            return formatCatalog.loadTable(database, table);
-          } catch (NoSuchTableException e) {
-            return null;
-          }
-        })
-        .filter(Objects::nonNull).findFirst()
+        .map(
+            formatCatalog -> {
+              try {
+                return formatCatalog.loadTable(database, table);
+              } catch (NoSuchTableException e) {
+                return null;
+              }
+            })
+        .filter(Objects::nonNull)
+        .findFirst()
         .orElseThrow(() -> new NoSuchTableException("Table: " + table + " does not exist."));
   }
 
@@ -114,22 +115,27 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     if (!exist(database)) {
       throw new NoSuchDatabaseException("Database: " + database + " does not exist.");
     }
-    TableFormat[] formats = new TableFormat[] {TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG, TableFormat.PAIMON};
+    TableFormat[] formats =
+        new TableFormat[] {TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG, TableFormat.PAIMON};
 
     Map<String, TableFormat> tableNameToFormat = Maps.newHashMap();
     for (TableFormat format : formats) {
       if (formatCatalogs.containsKey(format)) {
-        formatCatalogs.get(format)
+        formatCatalogs
+            .get(format)
             .listTables(database)
             .forEach(table -> tableNameToFormat.putIfAbsent(table, format));
       }
     }
 
     return tableNameToFormat.keySet().stream()
-        .map(tableName -> {
-          TableFormat format = tableNameToFormat.get(tableName);
-          return TableIDWithFormat.of(TableIdentifier.of(this.meta.getCatalogName(), database, tableName), format);
-        }).collect(Collectors.toList());
+        .map(
+            tableName -> {
+              TableFormat format = tableNameToFormat.get(tableName);
+              return TableIDWithFormat.of(
+                  TableIdentifier.of(this.meta.getCatalogName(), database, tableName), format);
+            })
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -145,21 +151,21 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     Map<TableFormat, FormatCatalog> formatCatalogs = Maps.newConcurrentMap();
     for (FormatCatalogFactory factory : loader) {
       if (formats.contains(factory.format())) {
-        FormatCatalog catalog = factory.create(
-            name(), meta.getCatalogType(), meta.getCatalogProperties(), store.getConfiguration());
+        FormatCatalog catalog =
+            factory.create(
+                name(),
+                meta.getCatalogType(),
+                meta.getCatalogProperties(),
+                store.getConfiguration());
         formatCatalogs.put(factory.format(), catalog);
       }
     }
     this.formatCatalogs = formatCatalogs;
   }
 
-  /**
-   * get format catalogs as given format order
-   */
+  /** get format catalogs as given format order */
   private Stream<FormatCatalog> formatCatalogAsOrder(TableFormat... formats) {
-    return Stream.of(formats)
-        .filter(formatCatalogs::containsKey)
-        .map(formatCatalogs::get);
+    return Stream.of(formats).filter(formatCatalogs::containsKey).map(formatCatalogs::get);
   }
 
   private FormatCatalog findFirstFormatCatalog(TableFormat... formats) {

@@ -24,8 +24,8 @@ public class OptimizerTestHelpers {
   public static final long CALL_AMS_INTERVAL = 500;
 
   public static OptimizerConfig buildOptimizerConfig(String amsUrl) {
-    String[] optimizerArgs = new String[]{"-a", amsUrl, "-p", "2", "-g", "g1",
-                                          "-id", "test_id", "-hb", "1000"};
+    String[] optimizerArgs =
+        new String[] {"-a", amsUrl, "-p", "2", "-g", "g1", "-id", "test_id", "-hb", "1000"};
     try {
       return new OptimizerConfig(optimizerArgs);
     } catch (CmdLineException e) {

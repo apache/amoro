@@ -20,29 +20,19 @@ package com.netease.arctic.data;
 
 import org.apache.iceberg.DataFile;
 
-/**
- * Files in {@link com.netease.arctic.table.KeyedTable}.
- */
+/** Files in {@link com.netease.arctic.table.KeyedTable}. */
 public interface PrimaryKeyedFile extends DataFile {
 
-  /**
-   * Returns the type of file
-   */
+  /** Returns the type of file */
   DataFileType type();
 
-  /**
-   * Returns the {@link DataTreeNode} file belong
-   */
+  /** Returns the {@link DataTreeNode} file belong */
   DataTreeNode node();
 
-  /**
-   * Returns the id of transaction which file added into table
-   */
+  /** Returns the id of transaction which file added into table */
   Long transactionId();
 
-  /**
-   * File information summary for logging
-   */
+  /** File information summary for logging */
   default String fileInfo() {
     return path() + "[" + fileSizeInBytes() + "]";
   }

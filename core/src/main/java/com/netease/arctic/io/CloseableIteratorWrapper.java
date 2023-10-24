@@ -41,7 +41,7 @@ public class CloseableIteratorWrapper<T> implements CloseableIterator<T> {
   public void close() throws IOException {
     boolean closeFailure = false;
     if (closeables != null) {
-      for (Closeable closeable: closeables) {
+      for (Closeable closeable : closeables) {
         if (closeable != null) {
           try {
             closeable.close();
@@ -54,7 +54,8 @@ public class CloseableIteratorWrapper<T> implements CloseableIterator<T> {
     }
     closeableIterator.close();
     if (closeFailure) {
-      throw new IOException("Some error encounter when close these Closeable. Please see details in error log");
+      throw new IOException(
+          "Some error encounter when close these Closeable. Please see details in error log");
     }
   }
 

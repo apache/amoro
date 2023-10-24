@@ -46,20 +46,21 @@ import java.util.function.Function;
 
 class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
 
-  private static final DynConstructors.Ctor<PageWriteStore> pageStoreCtorParquet = DynConstructors
-      .builder(PageWriteStore.class)
-      .hiddenImpl(
-          "org.apache.parquet.hadoop.ColumnChunkPageWriteStore",
-          CodecFactory.BytesCompressor.class,
-          MessageType.class,
-          ByteBufferAllocator.class,
-          int.class)
-      .build();
+  private static final DynConstructors.Ctor<PageWriteStore> pageStoreCtorParquet =
+      DynConstructors.builder(PageWriteStore.class)
+          .hiddenImpl(
+              "org.apache.parquet.hadoop.ColumnChunkPageWriteStore",
+              CodecFactory.BytesCompressor.class,
+              MessageType.class,
+              ByteBufferAllocator.class,
+              int.class)
+          .build();
 
-  private static final DynMethods.UnboundMethod flushToWriter = DynMethods
-      .builder("flushToFileWriter")
-      .hiddenImpl("org.apache.parquet.hadoop.ColumnChunkPageWriteStore", ParquetFileWriter.class)
-      .build();
+  private static final DynMethods.UnboundMethod flushToWriter =
+      DynMethods.builder("flushToFileWriter")
+          .hiddenImpl(
+              "org.apache.parquet.hadoop.ColumnChunkPageWriteStore", ParquetFileWriter.class)
+          .build();
 
   private final long targetRowGroupSize;
   private final Map<String, String> metadata;
@@ -85,7 +86,10 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
 
   @SuppressWarnings("unchecked")
   AdaptHiveParquetWriter(
-      Configuration conf, OutputFile output, Schema schema, long rowGroupSize,
+      Configuration conf,
+      OutputFile output,
+      Schema schema,
+      long rowGroupSize,
       Map<String, String> metadata,
       Function<MessageType, ParquetValueWriter<?>> createWriterFunc,
       CompressionCodecName codec,
@@ -96,17 +100,19 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
     this.props = properties;
     this.metadata = ImmutableMap.copyOf(metadata);
     this.compressor = new CodecFactory(conf, props.getPageSizeThreshold()).getCompressor(codec);
-    //Change For Arctic
+    // Change For Arctic
     this.parquetSchema = AdaptHiveParquetSchemaUtil.convert(schema, "table");
     this.schema = schema;
-    //Change For Arctic
+    // Change For Arctic
     this.model = (ParquetValueWriter<T>) createWriterFunc.apply(parquetSchema);
     this.metricsConfig = metricsConfig;
-    this.columnIndexTruncateLength = conf.getInt(COLUMN_INDEX_TRUNCATE_LENGTH, DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH);
+    this.columnIndexTruncateLength =
+        conf.getInt(COLUMN_INDEX_TRUNCATE_LENGTH, DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH);
 
     try {
-      this.writer = new ParquetFileWriter(ParquetIO.file(output, conf), parquetSchema,
-          writeMode, rowGroupSize, 0);
+      this.writer =
+          new ParquetFileWriter(
+              ParquetIO.file(output, conf), parquetSchema, writeMode, rowGroupSize, 0);
     } catch (IOException e) {
       throw new RuntimeIOException(e, "Failed to create Parquet file");
     }
@@ -130,19 +136,19 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
 
   @Override
   public Metrics metrics() {
-    //Change For Arctic: Add metrics for int96 type
-    return AdaptHiveParquetUtil.footerMetrics(writer.getFooter(), model.metrics(), metricsConfig, schema);
+    // Change For Arctic: Add metrics for int96 type
+    return AdaptHiveParquetUtil.footerMetrics(
+        writer.getFooter(), model.metrics(), metricsConfig, schema);
   }
 
   /**
    * Returns the approximate length of the output file produced by this writer.
-   * <p>
-   * Prior to calling {@link AdaptHiveParquetWriter#close}, the result is approximate.
-   * After calling close, the length is
-   * exact.
    *
-   * @return the approximate length of the output file produced by this writer or the exact length if this writer is
-   * closed.
+   * <p>Prior to calling {@link AdaptHiveParquetWriter#close}, the result is approximate. After
+   * calling close, the length is exact.
+   *
+   * @return the approximate length of the output file produced by this writer or the exact length
+   *     if this writer is closed.
    */
   @Override
   public long length() {
@@ -150,7 +156,8 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
       if (closed) {
         return writer.getPos();
       } else {
-        return writer.getPos() + (writeStore.isColumnFlushNeeded() ? writeStore.getBufferedSize() : 0);
+        return writer.getPos()
+            + (writeStore.isColumnFlushNeeded() ? writeStore.getBufferedSize() : 0);
       }
     } catch (IOException e) {
       throw new RuntimeIOException(e, "Failed to get file length");
@@ -172,7 +179,8 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
       } else {
         long remainingSpace = nextRowGroupSize - bufferedSize;
         long remainingRecords = (long) (remainingSpace / avgRecordSize);
-        this.nextCheckRecordCount = recordCount + Math.min(Math.max(remainingRecords / 2, 100), 10000);
+        this.nextCheckRecordCount =
+            recordCount + Math.min(Math.max(remainingRecords / 2, 100), 10000);
       }
     }
   }
@@ -204,8 +212,9 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
     this.nextCheckRecordCount = Math.min(Math.max(recordCount / 2, 100), 10000);
     this.recordCount = 0;
 
-    PageWriteStore pageStore = pageStoreCtorParquet.newInstance(
-        compressor, parquetSchema, props.getAllocator(), this.columnIndexTruncateLength);
+    PageWriteStore pageStore =
+        pageStoreCtorParquet.newInstance(
+            compressor, parquetSchema, props.getAllocator(), this.columnIndexTruncateLength);
 
     this.flushPageStoreToWriter = flushToWriter.bind(pageStore);
     this.writeStore = props.newColumnWriteStore(parquetSchema, pageStore);

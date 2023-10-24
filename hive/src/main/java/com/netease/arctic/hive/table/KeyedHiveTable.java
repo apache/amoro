@@ -40,9 +40,7 @@ import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Map;
 
-/**
- * Implementation of {@link com.netease.arctic.table.KeyedTable} with Hive table as base store.
- */
+/** Implementation of {@link com.netease.arctic.table.KeyedTable} with Hive table as base store. */
 public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
 
   private final HMSClientPool hiveClient;
@@ -124,7 +122,9 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
   public static class HiveChangeInternalTable extends BasicUnkeyedTable implements ChangeTable {
 
     public HiveChangeInternalTable(
-        TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,
+        TableIdentifier tableIdentifier,
+        Table changeIcebergTable,
+        ArcticFileIO arcticFileIO,
         Map<String, String> catalogProperties) {
       super(tableIdentifier, changeIcebergTable, arcticFileIO, catalogProperties);
     }
@@ -148,11 +148,20 @@ public class KeyedHiveTable extends BasicKeyedTable implements SupportHive {
   public static class HiveBaseInternalTable extends UnkeyedHiveTable implements BaseTable {
 
     public HiveBaseInternalTable(
-        TableIdentifier tableIdentifier, Table icebergTable,
-        ArcticHadoopFileIO arcticFileIO, String tableLocation,
-        HMSClientPool hiveClient, Map<String, String> catalogProperties,
+        TableIdentifier tableIdentifier,
+        Table icebergTable,
+        ArcticHadoopFileIO arcticFileIO,
+        String tableLocation,
+        HMSClientPool hiveClient,
+        Map<String, String> catalogProperties,
         boolean syncHiveChange) {
-      super(tableIdentifier, icebergTable, arcticFileIO, tableLocation,   hiveClient, catalogProperties,
+      super(
+          tableIdentifier,
+          icebergTable,
+          arcticFileIO,
+          tableLocation,
+          hiveClient,
+          catalogProperties,
           syncHiveChange);
     }
 

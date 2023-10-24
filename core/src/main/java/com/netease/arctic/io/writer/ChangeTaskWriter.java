@@ -31,6 +31,7 @@ import java.io.IOException;
 
 /**
  * Abstract implementation of writer for {@link com.netease.arctic.table.ChangeTable}.
+ *
  * @param <T> to indicate the record data type
  */
 public abstract class ChangeTaskWriter<T> extends BaseTaskWriter<T> {
@@ -49,9 +50,16 @@ public abstract class ChangeTaskWriter<T> extends BaseTaskWriter<T> {
       PrimaryKeySpec primaryKeySpec,
       boolean orderedWriter) {
     super(
-        format, appenderFactory, outputFileFactory, io, targetFileSize,
-        mask, schema, spec, primaryKeySpec, orderedWriter
-    );
+        format,
+        appenderFactory,
+        outputFileFactory,
+        io,
+        targetFileSize,
+        mask,
+        schema,
+        spec,
+        primaryKeySpec,
+        orderedWriter);
   }
 
   @Override
@@ -61,10 +69,12 @@ public abstract class ChangeTaskWriter<T> extends BaseTaskWriter<T> {
     switch (action) {
       case INSERT:
       case UPDATE_AFTER:
-        return new DataWriterKey(key.getPartitionKey(), key.getTreeNode(), DataFileType.INSERT_FILE);
+        return new DataWriterKey(
+            key.getPartitionKey(), key.getTreeNode(), DataFileType.INSERT_FILE);
       case DELETE:
       case UPDATE_BEFORE:
-        return new DataWriterKey(key.getPartitionKey(), key.getTreeNode(), DataFileType.EQ_DELETE_FILE);
+        return new DataWriterKey(
+            key.getPartitionKey(), key.getTreeNode(), DataFileType.EQ_DELETE_FILE);
       default:
         throw new IllegalArgumentException("Unknown action:" + action.name());
     }
@@ -91,6 +101,7 @@ public abstract class ChangeTaskWriter<T> extends BaseTaskWriter<T> {
 
   /**
    * Append row sequence to the end of data
+   *
    * @param data data to be appended
    * @param fileOffset file offset to append
    * @return data with row sequence appended
@@ -99,6 +110,7 @@ public abstract class ChangeTaskWriter<T> extends BaseTaskWriter<T> {
 
   /**
    * Get the {@link ChangeAction} of data
+   *
    * @param data source data
    * @return the action of data
    */

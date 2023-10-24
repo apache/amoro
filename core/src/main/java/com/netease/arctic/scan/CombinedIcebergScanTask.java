@@ -27,9 +27,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
 import java.util.List;
 
-/**
- * Be used in {@link GenericUnkeyedDataReader} to read iceberg for optimizing
- */
+/** Be used in {@link GenericUnkeyedDataReader} to read iceberg for optimizing */
 public class CombinedIcebergScanTask {
 
   private final DataFile[] dataFiles;
@@ -43,7 +41,8 @@ public class CombinedIcebergScanTask {
   public CombinedIcebergScanTask(
       DataFile[] dataFiles,
       DeleteFile[] deleteFiles,
-      PartitionSpec partitionSpec, StructLike partitionData) {
+      PartitionSpec partitionSpec,
+      StructLike partitionData) {
     this.dataFiles = dataFiles == null ? new DataFile[0] : dataFiles;
     this.deleteFiles = deleteFiles == null ? new DeleteFile[0] : deleteFiles;
     this.partitionSpec = partitionSpec;

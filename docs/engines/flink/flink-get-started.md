@@ -40,17 +40,18 @@ Version Description:
 
 | Connector Version | Flink Version | Dependent Iceberg Version                                                                                                                |
 | ----------------- |---------------|  ----------------- |
-| 0.6.0             | 1.14.x        | 1.3.0            |
 | 0.6.0             | 1.15.x        | 1.3.0            |
+| 0.6.0             | 1.16.x        | 1.3.0            |
+| 0.6.0             | 1.17.x        | 1.3.0            |
 
 The Amoro project can be self-compiled to obtain the runtime jar.
 
-`mvn clean package -pl ':amoro-flink-runtime-1.14' -am -DskipTests`
+`mvn clean package -pl ':amoro-flink-runtime-1.15' -am -DskipTests`
 
-The Flink Runtime Jar is located in the `flink/v1.14/flink-runtime/target` directory.
+The Flink Runtime Jar is located in the `flink/v1.15/flink-runtime/target` directory.
 
 ## Environment preparation
-Download Flink and related dependencies, and download Flink 1.14 and 1.15 as needed. Taking Flink 1.15 as an example:
+Download Flink and related dependencies, and download Flink 1.15/1.16/1.17 as needed. Taking Flink 1.15 as an example:
 ```shell
 # Replace version value with the latest Amoro version if needed
 AMORO_VERSION=0.6.0

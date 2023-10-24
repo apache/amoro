@@ -32,9 +32,7 @@ import org.apache.thrift.TException;
 import java.util.List;
 import java.util.Map;
 
-/**
- * A wrapper class around {@link Catalog} and implement {@link ArcticCatalog}.
- */
+/** A wrapper class around {@link Catalog} and implement {@link ArcticCatalog}. */
 public class BasicIcebergCatalog implements ArcticCatalog {
 
   private AmsClient client;
@@ -46,8 +44,7 @@ public class BasicIcebergCatalog implements ArcticCatalog {
   }
 
   @Override
-  public void initialize(
-      AmsClient client, CatalogMeta meta, Map<String, String> properties) {
+  public void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties) {
     this.client = client;
     this.catalogWrapper = new IcebergCatalogWrapper(meta, properties);
   }
@@ -88,8 +85,7 @@ public class BasicIcebergCatalog implements ArcticCatalog {
   }
 
   @Override
-  public TableBuilder newTableBuilder(
-      TableIdentifier identifier, Schema schema) {
+  public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema) {
     return catalogWrapper.newTableBuilder(identifier, schema);
   }
 
@@ -98,7 +94,8 @@ public class BasicIcebergCatalog implements ArcticCatalog {
     try {
       catalogWrapper.refreshCatalogMeta(client.getCatalog(catalogWrapper.name()));
     } catch (TException e) {
-      throw new IllegalStateException(String.format("failed load catalog %s.", catalogWrapper.name()), e);
+      throw new IllegalStateException(
+          String.format("failed load catalog %s.", catalogWrapper.name()), e);
     }
   }
 

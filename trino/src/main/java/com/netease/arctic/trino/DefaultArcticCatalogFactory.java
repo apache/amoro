@@ -34,8 +34,8 @@ public class DefaultArcticCatalogFactory implements ArcticCatalogFactory {
 
   private final ArcticConfig arcticConfig;
 
-  private ArcticCatalog arcticCatalog;
-  private TableMetaStore tableMetaStore;
+  private volatile ArcticCatalog arcticCatalog;
+  private volatile TableMetaStore tableMetaStore;
 
   @Inject
   public DefaultArcticCatalogFactory(ArcticConfig arcticConfig) {

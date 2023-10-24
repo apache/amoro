@@ -41,9 +41,8 @@ public class IcebergCatalog implements FormatCatalog {
   @Override
   public List<String> listDatabases() {
     if (icebergCatalog instanceof SupportsNamespaces) {
-      return ((SupportsNamespaces) icebergCatalog).listNamespaces()
-          .stream().map(ns -> ns.level(0))
-          .collect(Collectors.toList());
+      return ((SupportsNamespaces) icebergCatalog)
+          .listNamespaces().stream().map(ns -> ns.level(0)).collect(Collectors.toList());
     }
     return Lists.newArrayList();
   }
@@ -77,8 +76,7 @@ public class IcebergCatalog implements FormatCatalog {
 
   @Override
   public List<String> listTables(String database) {
-    return icebergCatalog.listTables(Namespace.of(database))
-        .stream()
+    return icebergCatalog.listTables(Namespace.of(database)).stream()
         .map(TableIdentifier::name)
         .collect(Collectors.toList());
   }
@@ -88,7 +86,6 @@ public class IcebergCatalog implements FormatCatalog {
     Table icebergTable = icebergCatalog.loadTable(TableIdentifier.of(database, table));
     return new IcebergTable(
         com.netease.arctic.table.TableIdentifier.of(icebergCatalog.name(), database, table),
-        icebergTable
-    );
+        icebergTable);
   }
 }

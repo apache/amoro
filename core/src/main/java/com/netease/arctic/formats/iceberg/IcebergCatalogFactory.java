@@ -37,7 +37,10 @@ public class IcebergCatalogFactory implements FormatCatalogFactory {
 
   @Override
   public FormatCatalog create(
-      String name, String metastoreType, Map<String, String> properties, Configuration configuration) {
+      String name,
+      String metastoreType,
+      Map<String, String> properties,
+      Configuration configuration) {
     Catalog icebergCatalog = icebergCatalog(name, metastoreType, properties, configuration);
     return new IcebergCatalog(icebergCatalog);
   }
@@ -49,8 +52,8 @@ public class IcebergCatalogFactory implements FormatCatalogFactory {
       Configuration configuration) {
     Preconditions.checkArgument(StringUtils.isNotBlank(metastoreType), "metastore type is blank");
     Map<String, String> icebergProperties = Maps.newHashMap(properties);
-    if (CatalogMetaProperties.CATALOG_TYPE_HADOOP.equalsIgnoreCase(metastoreType) ||
-        CatalogMetaProperties.CATALOG_TYPE_HIVE.equalsIgnoreCase(metastoreType)) {
+    if (CatalogMetaProperties.CATALOG_TYPE_HADOOP.equalsIgnoreCase(metastoreType)
+        || CatalogMetaProperties.CATALOG_TYPE_HIVE.equalsIgnoreCase(metastoreType)) {
       icebergProperties.put(CatalogUtil.ICEBERG_CATALOG_TYPE, metastoreType);
       icebergProperties.remove(CatalogProperties.CATALOG_IMPL);
     } else if (CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(metastoreType)) {
@@ -62,8 +65,7 @@ public class IcebergCatalogFactory implements FormatCatalogFactory {
     } else {
       String icebergCatalogImpl = icebergProperties.get(CatalogProperties.CATALOG_IMPL);
       Preconditions.checkArgument(
-          StringUtils.isNotBlank(icebergCatalogImpl),
-          "iceberg catalog impl is blank");
+          StringUtils.isNotBlank(icebergCatalogImpl), "iceberg catalog impl is blank");
       icebergProperties.remove(CatalogUtil.ICEBERG_CATALOG_TYPE);
       icebergProperties.put(CatalogProperties.CATALOG_IMPL, icebergCatalogImpl);
     }

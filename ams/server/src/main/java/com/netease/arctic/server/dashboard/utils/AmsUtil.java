@@ -20,9 +20,8 @@ package com.netease.arctic.server.dashboard.utils;
 
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableIdentifier;
-import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
 import com.netease.arctic.server.utils.Configurations;
-import org.apache.hadoop.hive.metastore.api.FieldSchema;
+import org.apache.iceberg.SnapshotSummary;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -45,6 +44,9 @@ import static com.netease.arctic.server.ArcticManagementConf.OPTIMIZING_SERVICE_
 import static com.netease.arctic.server.ArcticManagementConf.SERVER_EXPOSE_HOST;
 import static com.netease.arctic.server.ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT;
 
+/**
+ * AMSUtil provides utility methods for working with AMS (Arctic Management Service) related operations.
+ */
 public class AmsUtil {
 
   private static final String ZOOKEEPER_ADDRESS_FORMAT = "zookeeper://%s/%s";
@@ -88,17 +90,6 @@ public class AmsUtil {
     return path == null ? null : new File(path).getName();
   }
 
-  public static List<AMSColumnInfo> transforHiveSchemaToAMSColumnInfos(List<FieldSchema> fields) {
-    return fields.stream()
-        .map(f -> {
-          AMSColumnInfo columnInfo = new AMSColumnInfo();
-          columnInfo.setField(f.getName());
-          columnInfo.setType(f.getType());
-          columnInfo.setComment(f.getComment());
-          return columnInfo;
-        }).collect(Collectors.toList());
-  }
-
   public static Map<String, String> getNotDeprecatedAndNotInternalStaticFields(Class<?> clazz)
       throws IllegalAccessException {
 
@@ -118,13 +109,10 @@ public class AmsUtil {
 
   public static String getStackTrace(Throwable throwable) {
     StringWriter sw = new StringWriter();
-    PrintWriter printWriter = new PrintWriter(sw);
 
-    try {
+    try (PrintWriter printWriter = new PrintWriter(sw)) {
       throwable.printStackTrace(printWriter);
       return sw.toString();
-    } finally {
-      printWriter.close();
     }
   }
 
