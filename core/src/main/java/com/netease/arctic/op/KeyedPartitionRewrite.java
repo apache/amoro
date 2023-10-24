@@ -86,7 +86,7 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation
             .add(
                 ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
                 optimizedSequence,
-                PuffinUtil.createPartitionDataSerializer(keyedTable.spec()))
+                PuffinUtil.createPartitionDataSerializer(keyedTable.spec(), Long.class))
             .complete();
     return Collections.singletonList(statisticsFile);
   }

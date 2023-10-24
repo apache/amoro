@@ -19,8 +19,8 @@
 package com.netease.arctic.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.MapLikeType;
 import org.apache.iceberg.GenericBlobMetadata;
 import org.apache.iceberg.GenericStatisticsFile;
 import org.apache.iceberg.PartitionSpec;
@@ -50,8 +50,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * Util class for write and read optimized sequences/time from Iceberg Puffin files. Puffin are a
- * kind of file format for Iceberg statistics file {@link StatisticsFile}.
+ * Util class for write and read from Iceberg Puffin files. Puffin are a kind of file format for
+ * Iceberg statistics file {@link StatisticsFile}.
  */
 public class PuffinUtil {
 
@@ -211,8 +211,9 @@ public class PuffinUtil {
         statisticsFile.blobMetadata().stream().anyMatch(b -> type.equals(b.type()));
   }
 
-  public static PartitionDataSerializer createPartitionDataSerializer(PartitionSpec spec) {
-    return new PartitionDataSerializer(spec);
+  public static <T> PartitionDataSerializer<T> createPartitionDataSerializer(
+      PartitionSpec spec, Class<T> valueClassType) {
+    return new PartitionDataSerializer<>(spec, valueClassType);
   }
 
   public interface DataSerializer<T> {
@@ -221,17 +222,19 @@ public class PuffinUtil {
     T deserialize(ByteBuffer buffer);
   }
 
-  public static class PartitionDataSerializer implements DataSerializer<StructLikeMap<Long>> {
+  public static class PartitionDataSerializer<T> implements DataSerializer<StructLikeMap<T>> {
 
     private final PartitionSpec spec;
+    private final Class<T> valueClassType;
 
-    public PartitionDataSerializer(PartitionSpec spec) {
+    public PartitionDataSerializer(PartitionSpec spec, Class<T> valueClassType) {
       this.spec = spec;
+      this.valueClassType = valueClassType;
     }
 
     @Override
-    public ByteBuffer serialize(StructLikeMap<Long> data) {
-      Map<String, Long> stringKeyMap = Maps.newHashMap();
+    public ByteBuffer serialize(StructLikeMap<T> data) {
+      Map<String, T> stringKeyMap = Maps.newHashMap();
       for (StructLike pd : data.keySet()) {
         String pathLike = spec.partitionToPath(pd);
         stringKeyMap.put(pathLike, data.get(pd));
@@ -246,12 +249,16 @@ public class PuffinUtil {
     }
 
     @Override
-    public StructLikeMap<Long> deserialize(ByteBuffer buffer) {
+    public StructLikeMap<T> deserialize(ByteBuffer buffer) {
       try {
-        StructLikeMap<Long> results = StructLikeMap.create(spec.partitionType());
-        TypeReference<Map<String, Long>> typeReference = new TypeReference<Map<String, Long>>() {};
-        Map<String, Long> map =
-            new ObjectMapper().readValue(new String(buffer.array()), typeReference);
+        StructLikeMap<T> results = StructLikeMap.create(spec.partitionType());
+        ObjectMapper objectMapper = new ObjectMapper();
+        MapLikeType mapLikeType =
+            objectMapper
+                .getTypeFactory()
+                .constructMapLikeType(Map.class, String.class, valueClassType);
+
+        Map<String, T> map = objectMapper.readValue(new String(buffer.array()), mapLikeType);
         for (String key : map.keySet()) {
           if (spec.isUnpartitioned()) {
             results.put(TablePropertyUtil.EMPTY_STRUCT, map.get(key));

@@ -67,8 +67,8 @@ public class TestPuffinUtil extends TableTestBase {
     StructLikeMap<Long> optimizedTime = buildPartitionOptimizedTime();
     StructLikeMap<Long> optimizedSequence = buildPartitionOptimizedSequence();
 
-    PuffinUtil.PartitionDataSerializer dataSerializer =
-        PuffinUtil.createPartitionDataSerializer(table.spec());
+    PuffinUtil.PartitionDataSerializer<Long> dataSerializer =
+        PuffinUtil.createPartitionDataSerializer(table.spec(), Long.class);
     PuffinUtil.Writer writer =
         PuffinUtil.writer(table, snapshot.snapshotId(), snapshot.sequenceNumber())
             .add(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, optimizedTime, dataSerializer)

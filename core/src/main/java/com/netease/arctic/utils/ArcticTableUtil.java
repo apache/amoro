@@ -91,7 +91,9 @@ public class ArcticTableUtil {
           type);
       return PuffinUtil.reader(table)
           .read(
-              statisticsFiles.get(0), type, PuffinUtil.createPartitionDataSerializer(table.spec()));
+              statisticsFiles.get(0),
+              type,
+              PuffinUtil.createPartitionDataSerializer(table.spec(), Long.class));
     } else {
       return null;
     }

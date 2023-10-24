@@ -284,7 +284,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         result.add(PuffinUtil.copyToSnapshot(statisticsFile, newSnapshot.snapshotId()));
       } else {
         PuffinUtil.PartitionDataSerializer dataSerializer =
-            PuffinUtil.createPartitionDataSerializer(keyedTable.spec());
+            PuffinUtil.createPartitionDataSerializer(keyedTable.spec(), Long.class);
         statisticsFile =
             PuffinUtil.writer(
                     keyedTable.baseTable(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())

@@ -127,7 +127,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Snapshot snapshot = baseTable.currentSnapshot();
     StatisticsFile statisticsFile = PuffinUtil.writer(baseTable, snapshot.snapshotId(), snapshot.sequenceNumber())
         .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence,
-            PuffinUtil.createPartitionDataSerializer(baseTable.spec()))
+            PuffinUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
         .complete();
     baseTable.updateStatistics().setStatistics(snapshot.snapshotId(), statisticsFile).commit();
   }
@@ -371,7 +371,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Snapshot s1 = baseTable.currentSnapshot();
     StatisticsFile file1 = PuffinUtil.writer(baseTable, s1.snapshotId(), s1.sequenceNumber())
         .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, StructLikeMap.create(baseTable.spec().partitionType()), 
-            PuffinUtil.createPartitionDataSerializer(baseTable.spec()))
+            PuffinUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
         .complete();
     baseTable.updateStatistics().setStatistics(s1.snapshotId(), file1).commit();
 
@@ -380,7 +380,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Snapshot s2 = baseTable.currentSnapshot();
     StatisticsFile file2 = PuffinUtil.writer(baseTable, s2.snapshotId(), s2.sequenceNumber())
         .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, StructLikeMap.create(baseTable.spec().partitionType()),
-            PuffinUtil.createPartitionDataSerializer(baseTable.spec()))
+            PuffinUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
         .complete();
     baseTable.updateStatistics().setStatistics(s2.snapshotId(), file2).commit();
     
