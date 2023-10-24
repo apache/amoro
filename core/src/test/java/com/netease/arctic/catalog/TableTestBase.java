@@ -58,9 +58,8 @@ public abstract class TableTestBase extends CatalogTestBase {
   }
 
   private void createMixedFormatTable() {
-    TableBuilder tableBuilder = getCatalog().newTableBuilder(
-        TableTestHelper.TEST_TABLE_ID,
-        tableTestHelper.tableSchema());
+    TableBuilder tableBuilder =
+        getCatalog().newTableBuilder(TableTestHelper.TEST_TABLE_ID, tableTestHelper.tableSchema());
     tableBuilder.withProperties(tableTestHelper.tableProperties());
     if (isKeyedTable()) {
       tableBuilder.withPrimaryKeySpec(tableTestHelper.primaryKeySpec());
@@ -72,11 +71,13 @@ public abstract class TableTestBase extends CatalogTestBase {
   }
 
   private void createIcebergFormatTable() {
-    getIcebergCatalog().createTable(
-        org.apache.iceberg.catalog.TableIdentifier.of(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME),
-        tableTestHelper.tableSchema(),
-        tableTestHelper.partitionSpec(),
-        tableTestHelper.tableProperties());
+    getIcebergCatalog()
+        .createTable(
+            org.apache.iceberg.catalog.TableIdentifier.of(
+                TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME),
+            tableTestHelper.tableSchema(),
+            tableTestHelper.partitionSpec(),
+            tableTestHelper.tableProperties());
     arcticTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
   }
 
@@ -98,11 +99,13 @@ public abstract class TableTestBase extends CatalogTestBase {
   }
 
   protected boolean isKeyedTable() {
-    return tableTestHelper.primaryKeySpec() != null && tableTestHelper.primaryKeySpec().primaryKeyExisted();
+    return tableTestHelper.primaryKeySpec() != null
+        && tableTestHelper.primaryKeySpec().primaryKeyExisted();
   }
 
   protected boolean isPartitionedTable() {
-    return tableTestHelper.partitionSpec() != null && tableTestHelper.partitionSpec().isPartitioned();
+    return tableTestHelper.partitionSpec() != null
+        && tableTestHelper.partitionSpec().isPartitioned();
   }
 
   protected TableTestHelper tableTestHelper() {

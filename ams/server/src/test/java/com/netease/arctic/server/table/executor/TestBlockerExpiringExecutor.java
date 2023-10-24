@@ -19,6 +19,7 @@
 package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
@@ -35,8 +36,9 @@ import java.util.Collections;
 import java.util.List;
 
 public class TestBlockerExpiringExecutor extends TableServiceTestBase {
-  private final ServerTableIdentifier tableIdentifier =
-      ServerTableIdentifier.of(0L, "test_catalog", "test_db", "test_table_blocker");
+  private final ServerTableIdentifier tableIdentifier = ServerTableIdentifier.of(
+      0L, "test_catalog", "test_db", "test_table_blocker", TableFormat.MIXED_ICEBERG);
+
   private final Persistency persistency = new Persistency();
   private TableRuntime tableRuntime;
   private TableManager tableManager;

@@ -24,9 +24,7 @@ import org.apache.iceberg.util.StructLikeWrapper;
 
 import java.util.HashMap;
 
-/**
- * Map implementation for {@link StructLikeWrapper} as the key based on memory.
- */
+/** Map implementation for {@link StructLikeWrapper} as the key based on memory. */
 public class StructLikeMemoryMap<T> extends StructLikeBaseMap<T> {
 
   public static <T> StructLikeMemoryMap<T> create(Types.StructType type) {
@@ -44,7 +42,6 @@ public class StructLikeMemoryMap<T> extends StructLikeBaseMap<T> {
   protected SimpleMap<StructLikeWrapper, T> getInternalMap() {
     return wrapperMap;
   }
-
 
   private static class SimpleMemoryMap<T> implements SimpleMap<StructLikeWrapper, T> {
 
@@ -65,11 +62,9 @@ public class StructLikeMemoryMap<T> extends StructLikeBaseMap<T> {
       return map.get(key);
     }
 
-
     @Override
     public void close() {
-      //do nothing and gc will discard it
+      // do nothing and gc will discard it
     }
   }
 }
-

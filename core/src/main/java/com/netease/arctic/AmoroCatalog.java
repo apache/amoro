@@ -20,9 +20,7 @@ package com.netease.arctic;
 
 import java.util.List;
 
-/**
- * Base Catalog interface for Amoro.
- */
+/** Base Catalog interface for Amoro. */
 public interface AmoroCatalog {
 
   /**
@@ -44,7 +42,7 @@ public interface AmoroCatalog {
    * Check whether table exists.
    *
    * @param database a database name
-   * @param table    a table name
+   * @param table a table name
    * @return true if the table exists, false otherwise
    */
   boolean exist(String database, String table);
@@ -69,10 +67,10 @@ public interface AmoroCatalog {
    * load table from catalog.
    *
    * @param database database name
-   * @param table    table name
+   * @param table table name
    * @return table instance
    * @throws NoSuchDatabaseException when database not exists.
-   * @throws NoSuchTableException    when table not exists.
+   * @throws NoSuchTableException when table not exists.
    */
   AmoroTable<?> loadTable(String database, String table);
 }

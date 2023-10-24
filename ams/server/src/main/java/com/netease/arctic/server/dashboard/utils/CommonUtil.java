@@ -32,7 +32,7 @@ import java.util.Map;
 public class CommonUtil {
   private static final Logger LOG = LoggerFactory.getLogger(CommonUtil.class);
 
-  private static String[] TOKEN_WHITE_LIST = {
+  private static final String[] TOKEN_WHITE_LIST = {
       "/login/current",
       "/versionInfo"
   };
@@ -97,10 +97,10 @@ public class CommonUtil {
   }
 
   /**
-   * check single page access token
+   * Check single page access token.
    *
-   * @param ctx
-   * @return
+   * @param ctx The context object containing the request information.
+   * @throws SignatureCheckException If the token is invalid or missing.
    */
   public static void checkSinglePageToken(Context ctx) {
     // check if query parameters contain  token key
@@ -122,32 +122,40 @@ public class CommonUtil {
           StringUtils.isEmpty(table)) {
         String[] splitResult = url.split("/");
         for (int i = 0; i < splitResult.length; i++) {
-          if (splitResult[i].equals("catalogs")) {
-            catalog = splitResult[i + 1];
-          } else if (splitResult[i].equals("dbs")) {
-            db = splitResult[i + 1];
-          } else if (splitResult[i].equals("tables")) {
-            table = splitResult[i + 1];
+          switch (splitResult[i]) {
+            case "catalogs":
+              catalog = splitResult[i + 1];
+              break;
+            case "dbs":
+              db = splitResult[i + 1];
+              break;
+            case "tables":
+              table = splitResult[i + 1];
+              break;
           }
         }
       }
       if (StringUtils.isEmpty(catalog) ||
-              StringUtils.isEmpty(db) ||
-              StringUtils.isEmpty(table) ||
-              !token.equals(generateTablePageToken(catalog, db, table))) {
+          StringUtils.isEmpty(db) ||
+          StringUtils.isEmpty(table) ||
+          !token.equals(generateTablePageToken(catalog, db, table))) {
         throw new SignatureCheckException();
       }
     }
   }
 
   /**
-   * generate the token for single table page access.
-   * @return
+   * Generate the token for single table page access.
+   *
+   * @param catalog The catalog name.
+   * @param db The database name.
+   * @param table The table name.
+   * @return The generated token.
    */
   public static String generateTablePageToken(String catalog, String db, String table) {
     Map<String, String> params = new HashMap<>();
     params.put("catalog", catalog);
-    params.put("db",  db);
+    params.put("db", db);
     params.put("table", table);
 
     String paramString = ParamSignatureCalculator.generateParamStringWithValue(params);

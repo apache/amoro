@@ -20,19 +20,16 @@ package com.netease.arctic.ams.api;
 
 import java.util.Map;
 
-/**
- * Plugins that need to initialize and close
- */
+/** Plugins that need to initialize and close */
 public interface ActivePlugin extends AmoroPlugin {
 
   /**
    * Initialize and open the plugin
+   *
    * @param properties plugin properties
    */
   void open(Map<String, String> properties);
 
-  /**
-   * Close the plugin
-   */
+  /** Close the plugin */
   void close();
 }

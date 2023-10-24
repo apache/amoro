@@ -28,6 +28,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -35,7 +36,7 @@ import java.util.List;
 @MappedTypes(List.class)
 public class List2StringConverter implements TypeHandler<List> {
 
-  private String separator = ",";
+  private final String separator = ",";
 
   @Override
   public void setParameter(PreparedStatement ps, int i, List parameter, JdbcType jdbcType) throws SQLException {
@@ -66,9 +67,7 @@ public class List2StringConverter implements TypeHandler<List> {
     List set = new ArrayList<>();
     if (res.length() != 0) {
       String[] fields = res.split(separator);
-      for (String field : fields) {
-        set.add(field);
-      }
+      Collections.addAll(set, fields);
     }
 
     return set;
@@ -84,9 +83,7 @@ public class List2StringConverter implements TypeHandler<List> {
     List set = new ArrayList<>();
     if (res.length() != 0) {
       String[] fields = res.split(separator);
-      for (String field : fields) {
-        set.add(field);
-      }
+      Collections.addAll(set, fields);
     }
 
     return set;
@@ -102,9 +99,7 @@ public class List2StringConverter implements TypeHandler<List> {
     List set = new ArrayList<>();
     if (res.length() != 0) {
       String[] fields = res.split(separator);
-      for (String field : fields) {
-        set.add(field);
-      }
+      Collections.addAll(set, fields);
     }
 
     return set;

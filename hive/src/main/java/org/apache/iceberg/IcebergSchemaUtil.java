@@ -21,7 +21,8 @@ package org.apache.iceberg;
 public class IcebergSchemaUtil {
 
   /**
-   * Copy an new partition spec depend on an new schema, new schema should contain the same fields partition spec need.
+   * Copy an new partition spec depend on an new schema, new schema should contain the same fields
+   * partition spec need.
    *
    * @param partitionSpec partition spec to be copied
    * @param copySchema schema new partition spec depend on
@@ -29,17 +30,24 @@ public class IcebergSchemaUtil {
    */
   public static PartitionSpec copyPartitionSpec(PartitionSpec partitionSpec, Schema copySchema) {
     PartitionSpec.Builder builder = PartitionSpec.builderFor(copySchema);
-    // For all tables in the mixed hive format it is necessary to also lowercase the partition name value in the iceberg
+    // For all tables in the mixed hive format it is necessary to also lowercase the partition name
+    // value in the iceberg
     // table, otherwise some case-matching exceptions will be thrown.
-    partitionSpec.fields().forEach(partitionField -> {
-      builder.add(partitionField.sourceId(), partitionField.name().toLowerCase(), partitionField.transform());
-    });
+    partitionSpec
+        .fields()
+        .forEach(
+            partitionField -> {
+              builder.add(
+                  partitionField.sourceId(),
+                  partitionField.name().toLowerCase(),
+                  partitionField.transform());
+            });
     return builder.build();
   }
 
   /**
-   * Copy an new sort order spec depend on an new schema, new schema should contain the same fields sort order spec
-   * need.
+   * Copy an new sort order spec depend on an new schema, new schema should contain the same fields
+   * sort order spec need.
    *
    * @param sortOrder sort order spec to be copied
    * @param copySchema schema new partition spec depend on
@@ -47,26 +55,32 @@ public class IcebergSchemaUtil {
    */
   public static SortOrder copySortOrderSpec(SortOrder sortOrder, Schema copySchema) {
     SortOrder.Builder builder = SortOrder.builderFor(copySchema);
-    sortOrder.fields().forEach(sortField -> {
-      builder.addSortField(
-          sortField.transform(),
-          sortField.sourceId(),
-          sortField.direction(),
-          sortField.nullOrder());
-    });
+    sortOrder
+        .fields()
+        .forEach(
+            sortField -> {
+              builder.addSortField(
+                  sortField.transform(),
+                  sortField.sourceId(),
+                  sortField.direction(),
+                  sortField.nullOrder());
+            });
     return builder.build();
   }
 
   public static PartitionSpec projectPartition(PartitionSpec partitionSpec, Schema schema) {
     PartitionSpec.Builder builder = PartitionSpec.builderFor(schema);
 
-    partitionSpec.fields().forEach(p -> {
-      if (schema.findField(p.sourceId()) == null) {
-        return;
-      }
+    partitionSpec
+        .fields()
+        .forEach(
+            p -> {
+              if (schema.findField(p.sourceId()) == null) {
+                return;
+              }
 
-      builder.add(p.sourceId(), p.name(), p.transform());
-    });
+              builder.add(p.sourceId(), p.name(), p.transform());
+            });
     return builder.build();
   }
 }

@@ -9,10 +9,9 @@ import java.util.Map;
 import java.util.UUID;
 
 public class Resource {
-  /**
-   * Job-Id, This property must be included when registering the optimizer.
-   */
+  /** Job-Id, This property must be included when registering the optimizer. */
   public static final String PROPERTY_JOB_ID = "job-id";
+
   private String resourceId;
   private String containerName;
   private String groupName;
@@ -21,8 +20,7 @@ public class Resource {
   private Map<String, String> properties;
   private ResourceType type;
 
-  protected Resource() {
-  }
+  protected Resource() {}
 
   private Resource(Builder builder) {
     this.resourceId = builder.resourceId;
@@ -69,8 +67,8 @@ public class Resource {
   }
 
   public String getRequiredProperty(String key) {
-    Preconditions.checkState(properties != null && properties.containsKey(key),
-        "Cannot find %s in properties", key);
+    Preconditions.checkState(
+        properties != null && properties.containsKey(key), "Cannot find %s in properties", key);
     String value = properties.get(key);
     Preconditions.checkNotNull(value, "Value of key:%s is null", key);
     return value;
@@ -89,7 +87,7 @@ public class Resource {
     private int memoryMb;
     private Map<String, String> properties = new HashMap<>();
 
-    //build resource object
+    // build resource object
     public Builder(String containerName, String groupName, ResourceType type) {
       this.containerName = containerName;
       this.groupName = groupName;
@@ -107,7 +105,7 @@ public class Resource {
       return this;
     }
 
-    //generate addProperties method
+    // generate addProperties method
     public Builder addProperties(String key, String value) {
       this.properties.put(key, value);
       return this;

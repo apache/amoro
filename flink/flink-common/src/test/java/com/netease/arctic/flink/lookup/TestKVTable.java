@@ -318,8 +318,8 @@ public class TestKVTable extends TestRowDataPredicateBase {
               }
               return v;
             });
-    Assert.assertEquals(new Integer(1), cache.getIfPresent(1));
-    Assert.assertEquals(new Integer(2), cache.getIfPresent(2));
+    Assert.assertEquals(Integer.valueOf(1), cache.getIfPresent(1));
+    Assert.assertEquals(Integer.valueOf(2), cache.getIfPresent(2));
     Thread.sleep(1001);
     Assert.assertEquals(2, cache.size());
     Assert.assertNull(cache.getIfPresent(1));
@@ -328,7 +328,7 @@ public class TestKVTable extends TestRowDataPredicateBase {
     cache.put(3, 3);
     Assert.assertEquals(1, cache.size());
     Assert.assertNull(cache.getIfPresent(1));
-    Assert.assertEquals(new Integer(3), cache.getIfPresent(3));
+    Assert.assertEquals(Integer.valueOf(3), cache.getIfPresent(3));
   }
 
   @Test

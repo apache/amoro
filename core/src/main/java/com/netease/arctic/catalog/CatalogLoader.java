@@ -18,6 +18,12 @@
 
 package com.netease.arctic.catalog;
 
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
@@ -41,20 +47,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
-
-/**
- * Catalogs, create catalog from arctic metastore thrift url.
- */
+/** Catalogs, create catalog from arctic metastore thrift url. */
 public class CatalogLoader {
 
   public static final String AMS_CATALOG_IMPL = BasicArcticCatalog.class.getName();
   public static final String ICEBERG_CATALOG_IMPL = BasicIcebergCatalog.class.getName();
-  public static final String HIVE_CATALOG_IMPL = "com.netease.arctic.hive.catalog.ArcticHiveCatalog";
+  public static final String HIVE_CATALOG_IMPL =
+      "com.netease.arctic.hive.catalog.ArcticHiveCatalog";
   public static final String GLUE_CATALOG_IMPL = "org.apache.iceberg.aws.glue.GlueCatalog";
   public static final String MIXED_ICEBERG_CATALOG_IMP = BasicMixedIcebergCatalog.class.getName();
 
@@ -89,12 +88,13 @@ public class CatalogLoader {
   /**
    * Entrypoint for loading catalog
    *
-   * @param client      arctic metastore client
+   * @param client arctic metastore client
    * @param catalogName arctic catalog name
-   * @param props       client side catalog configs
+   * @param props client side catalog configs
    * @return arctic catalog object
    */
-  public static ArcticCatalog load(AmsClient client, String catalogName, Map<String, String> props) {
+  public static ArcticCatalog load(
+      AmsClient client, String catalogName, Map<String, String> props) {
     try {
       CatalogMeta catalogMeta = client.getCatalog(catalogName);
       String type = catalogMeta.getCatalogType();
@@ -102,8 +102,7 @@ public class CatalogLoader {
       String catalogImpl;
       Set<TableFormat> tableFormats = CatalogUtil.tableFormats(catalogMeta);
       Preconditions.checkArgument(
-          tableFormats.size() == 1,
-          "Catalog support only one table format now.");
+          tableFormats.size() == 1, "Catalog support only one table format now.");
       TableFormat tableFormat = tableFormats.iterator().next();
       switch (type) {
         case CATALOG_TYPE_HADOOP:
@@ -124,7 +123,8 @@ public class CatalogLoader {
           } else if (TableFormat.MIXED_ICEBERG == tableFormat) {
             catalogImpl = MIXED_ICEBERG_CATALOG_IMP;
           } else {
-            throw new IllegalArgumentException("Hive Catalog support iceberg/mixed-iceberg/mixed-hive table only");
+            throw new IllegalArgumentException(
+                "Hive Catalog support iceberg/mixed-iceberg/mixed-hive table only");
           }
           break;
         case CATALOG_TYPE_AMS:
@@ -132,10 +132,12 @@ public class CatalogLoader {
             catalogImpl = AMS_CATALOG_IMPL;
           } else if (TableFormat.ICEBERG == tableFormat) {
             catalogMeta.putToCatalogProperties(CatalogProperties.WAREHOUSE_LOCATION, catalogName);
-            catalogMeta.putToCatalogProperties(CatalogProperties.CATALOG_IMPL, ICEBERG_REST_CATALOG);
+            catalogMeta.putToCatalogProperties(
+                CatalogProperties.CATALOG_IMPL, ICEBERG_REST_CATALOG);
             catalogImpl = ICEBERG_CATALOG_IMPL;
           } else {
-            throw new IllegalArgumentException("Internal Catalog support iceberg or mixed-iceberg table only");
+            throw new IllegalArgumentException(
+                "Internal Catalog support iceberg or mixed-iceberg table only");
           }
 
           break;
@@ -145,7 +147,8 @@ public class CatalogLoader {
           } else if (TableFormat.MIXED_ICEBERG == tableFormat) {
             catalogImpl = MIXED_ICEBERG_CATALOG_IMP;
           } else {
-            throw new IllegalArgumentException("Glue Catalog support iceberg/mixed-iceberg table only");
+            throw new IllegalArgumentException(
+                "Glue Catalog support iceberg/mixed-iceberg table only");
           }
           break;
         case CATALOG_TYPE_CUSTOM:
@@ -201,19 +204,15 @@ public class CatalogLoader {
    */
   public static List<String> catalogs(String metastoreUrl) {
     try {
-      return ((ArcticTableMetastore.Iface) AmsClientPools.getClientPool(metastoreUrl).iface()).getCatalogs()
-          .stream()
-          .map(CatalogMeta::getCatalogName)
-          .collect(Collectors.toList());
+      return ((ArcticTableMetastore.Iface) AmsClientPools.getClientPool(metastoreUrl).iface())
+          .getCatalogs().stream().map(CatalogMeta::getCatalogName).collect(Collectors.toList());
     } catch (TException e) {
       throw new IllegalStateException("failed when load catalogs", e);
     }
   }
 
   private static ArcticCatalog loadCatalog(
-      String metaStoreUrl,
-      String catalogName,
-      Map<String, String> properties) {
+      String metaStoreUrl, String catalogName, Map<String, String> properties) {
     AmsClient client = new PooledAmsClient(metaStoreUrl);
     return load(client, catalogName, properties);
   }
@@ -223,8 +222,9 @@ public class CatalogLoader {
     try {
       ctor = DynConstructors.builder(ArcticCatalog.class).impl(impl).buildChecked();
     } catch (NoSuchMethodException e) {
-      throw new IllegalArgumentException(String.format(
-          "Cannot initialize Catalog implementation %s: %s", impl, e.getMessage()), e);
+      throw new IllegalArgumentException(
+          String.format("Cannot initialize Catalog implementation %s: %s", impl, e.getMessage()),
+          e);
     }
     try {
       return ctor.newInstance();

@@ -21,9 +21,7 @@ package com.netease.arctic.scan;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 
-/**
- * API for configuring a {@link com.netease.arctic.table.KeyedTable} scan.
- */
+/** API for configuring a {@link com.netease.arctic.table.KeyedTable} scan. */
 public interface KeyedTableScan {
 
   /**
@@ -42,9 +40,9 @@ public interface KeyedTableScan {
   CloseableIterable<CombinedScanTask> planTasks();
 
   /**
-   * To enable the feature of splitting tasks based on the delete ratio,
-   * If the delete ratio under a node is less than splitTaskByDeleteRatio value,
-   * the plan will be split into as many tasks as possible during execution.
+   * To enable the feature of splitting tasks based on the delete ratio, If the delete ratio under a
+   * node is less than splitTaskByDeleteRatio value, the plan will be split into as many tasks as
+   * possible during execution.
    */
   KeyedTableScan enableSplitTaskByDeleteRatio(double splitTaskByDeleteRatio);
 
@@ -56,5 +54,4 @@ public interface KeyedTableScan {
    * @throws IllegalArgumentException if a reference with the given name could not be found
    */
   KeyedTableScan useRef(String ref);
-
 }

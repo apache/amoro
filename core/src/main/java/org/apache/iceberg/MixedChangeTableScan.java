@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,8 +27,8 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
 
 /**
- * Table scan for {@link com.netease.arctic.table.ChangeTable}, support filter files with data sequence number
- * and return {@link BasicArcticFileScanTask}.
+ * Table scan for {@link com.netease.arctic.table.ChangeTable}, support filter files with data
+ * sequence number and return {@link BasicArcticFileScanTask}.
  */
 public class MixedChangeTableScan extends DataTableScan implements ChangeTableIncrementalScan {
   private StructLikeMap<Long> fromPartitionSequence;
@@ -56,7 +56,8 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
   }
 
   @Override
-  protected MixedChangeTableScan newRefinedScan(Table table, Schema schema, TableScanContext context) {
+  protected MixedChangeTableScan newRefinedScan(
+      Table table, Schema schema, TableScanContext context) {
     MixedChangeTableScan scan = new MixedChangeTableScan(table, schema, context);
     scan.fromPartitionSequence = this.fromPartitionSequence;
     scan.toSequence = this.toSequence;
@@ -91,24 +92,27 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
 
   @Override
   public CloseableIterable<FileScanTask> doPlanFiles() {
-    CloseableIterable<FileScanTask> filteredTasks = CloseableIterable.filter(
-        super.doPlanFiles(),
-        fileScanTask -> {
-          StructLike partition = fileScanTask.file().partition();
-          long sequenceNumber = fileScanTask.file().dataSequenceNumber();
-          return shouldKeepFile(partition, sequenceNumber);
-        });
-    return CloseableIterable.transform(filteredTasks,
-        fileScanTask -> new BasicArcticFileScanTask(DefaultKeyedFile.parseChange(fileScanTask.file()),
-            null, table().spec(), null));
+    CloseableIterable<FileScanTask> filteredTasks =
+        CloseableIterable.filter(
+            super.doPlanFiles(),
+            fileScanTask -> {
+              StructLike partition = fileScanTask.file().partition();
+              long sequenceNumber = fileScanTask.file().dataSequenceNumber();
+              return shouldKeepFile(partition, sequenceNumber);
+            });
+    return CloseableIterable.transform(
+        filteredTasks,
+        fileScanTask ->
+            new BasicArcticFileScanTask(
+                DefaultKeyedFile.parseChange(fileScanTask.file()), null, table().spec(), null));
   }
-
 
   private boolean shouldKeepFile(StructLike partition, long sequence) {
     if (biggerThanToSequence(sequence)) {
       return false;
     }
-    if (fromSequence == null && (fromPartitionSequence == null || fromPartitionSequence.isEmpty())) {
+    if (fromSequence == null
+        && (fromPartitionSequence == null || fromPartitionSequence.isEmpty())) {
       // if fromPartitionSequence is not set or is empty, return all change files
       return true;
     }
@@ -139,5 +143,4 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
   private boolean biggerThanToSequence(long sequence) {
     return this.toSequence != null && sequence > this.toSequence;
   }
-
 }

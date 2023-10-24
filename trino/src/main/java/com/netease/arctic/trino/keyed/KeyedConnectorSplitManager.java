@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,6 +17,8 @@
  */
 
 package com.netease.arctic.trino.keyed;
+
+import static io.trino.plugin.iceberg.ExpressionConverter.toIcebergExpression;
 
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.CombinedScanTask;
@@ -47,22 +48,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static io.trino.plugin.iceberg.ExpressionConverter.toIcebergExpression;
-
-/**
- * ConnectorSplitManager for Keyed Table
- */
+/** ConnectorSplitManager for Keyed Table */
 public class KeyedConnectorSplitManager implements ConnectorSplitManager {
 
   public static final int ARCTIC_DOMAIN_COMPACTION_THRESHOLD = 1000;
 
   private static final Logger LOG = LoggerFactory.getLogger(KeyedConnectorSplitManager.class);
 
-  private ArcticTransactionManager arcticTransactionManager;
+  private final ArcticTransactionManager arcticTransactionManager;
 
   @Inject
   public KeyedConnectorSplitManager(ArcticTransactionManager arcticTransactionManager) {
@@ -78,49 +76,57 @@ public class KeyedConnectorSplitManager implements ConnectorSplitManager {
       Constraint constraint) {
     KeyedTableHandle keyedTableHandle = (KeyedTableHandle) handle;
     IcebergTableHandle icebergTableHandle = keyedTableHandle.getIcebergTableHandle();
-    KeyedTable arcticTable = (arcticTransactionManager.get(transaction))
-        .getArcticTable(new SchemaTableName(
-            icebergTableHandle.getSchemaName(),
-            icebergTableHandle.getTableName())).asKeyedTable();
+    KeyedTable arcticTable =
+        (arcticTransactionManager.get(transaction))
+            .getArcticTable(
+                new SchemaTableName(
+                    icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName()))
+            .asKeyedTable();
     if (arcticTable == null) {
-      throw new TableNotFoundException(new SchemaTableName(
-          icebergTableHandle.getSchemaName(),
-          icebergTableHandle.getTableName()));
+      throw new TableNotFoundException(
+          new SchemaTableName(
+              icebergTableHandle.getSchemaName(), icebergTableHandle.getTableName()));
     }
 
-    KeyedTableScan tableScan = arcticTable.newScan()
-        .filter(toIcebergExpression(
-            icebergTableHandle.getEnforcedPredicate().intersect(icebergTableHandle.getUnenforcedPredicate())));
+    KeyedTableScan tableScan =
+        arcticTable
+            .newScan()
+            .filter(
+                toIcebergExpression(
+                    icebergTableHandle
+                        .getEnforcedPredicate()
+                        .intersect(icebergTableHandle.getUnenforcedPredicate())));
 
     if (ArcticSessionProperties.enableSplitTaskByDeleteRatio(session)) {
-      tableScan.enableSplitTaskByDeleteRatio(ArcticSessionProperties.splitTaskByDeleteRatio(session));
+      tableScan.enableSplitTaskByDeleteRatio(
+          ArcticSessionProperties.splitTaskByDeleteRatio(session));
     }
 
     ClassLoader pluginClassloader = arcticTable.getClass().getClassLoader();
 
     try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(pluginClassloader)) {
-      //优化
+      // 优化
       CloseableIterable<CombinedScanTask> combinedScanTasks =
-          MetricUtil.duration(() -> tableScan.planTasks(), "plan tasks");
+          MetricUtil.duration(tableScan::planTasks, "plan tasks");
 
       List<KeyedTableScanTask> fileScanTaskList = new ArrayList<>();
       for (CombinedScanTask combinedScanTask : combinedScanTasks) {
-        for (KeyedTableScanTask fileScanTask : combinedScanTask.tasks()) {
-          fileScanTaskList.add(fileScanTask);
-        }
+        fileScanTaskList.addAll(combinedScanTask.tasks());
       }
 
-      List<KeyedConnectorSplit> keyedConnectorSplits = fileScanTaskList.stream().map(
-          s -> {
-            ArcticFileScanTask arcticFileScanTask = s.dataTasks().get(0);
-            KeyedConnectorSplit keyedConnectorSplit = new KeyedConnectorSplit(
-                ObjectSerializerUtil.write(s),
-                PartitionSpecParser.toJson(arcticFileScanTask.spec()),
-                PartitionData.toJson(arcticFileScanTask.file().partition())
-            );
-            return keyedConnectorSplit;
-          }
-      ).collect(Collectors.toList());
+      List<KeyedConnectorSplit> keyedConnectorSplits =
+          fileScanTaskList.stream()
+              .map(
+                  s -> {
+                    ArcticFileScanTask arcticFileScanTask = s.dataTasks().get(0);
+                    KeyedConnectorSplit keyedConnectorSplit =
+                        new KeyedConnectorSplit(
+                            ObjectSerializerUtil.write(s),
+                            PartitionSpecParser.toJson(arcticFileScanTask.spec()),
+                            PartitionData.toJson(arcticFileScanTask.file().partition()));
+                    return keyedConnectorSplit;
+                  })
+              .collect(Collectors.toList());
 
       return new FixedSplitSource(keyedConnectorSplits);
     }

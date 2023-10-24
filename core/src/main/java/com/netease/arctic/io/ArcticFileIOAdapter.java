@@ -27,9 +27,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-/**
- * An adapter class to make a {@link FileIO} object adapt to {@link ArcticFileIO} interface.
- */
+/** An adapter class to make a {@link FileIO} object adapt to {@link ArcticFileIO} interface. */
 public class ArcticFileIOAdapter implements ArcticFileIO {
 
   private final FileIO io;

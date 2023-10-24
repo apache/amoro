@@ -76,12 +76,12 @@ For details, please refer to: [Iceberg Docs](https://iceberg.apache.org/docs/lat
 
 Amoro support multiple processing engines for Mixed format as below:
 
-| Processing Engine | Version                   | Batch Read  | Batch Write | Batch Overwrite | Streaming Read | Streaming Write | Create Table | Alter Table |
-|-------------------|---------------------------|-------------|-------------|-----------------|----------------|-----------------|--------------|-------------|
-| Flink             | 1.14.x, 1.15.x            |  &#x2714;   |   &#x2714;   |       &#x2716;   |      &#x2714;   |       &#x2714;   |    &#x2714;   |   &#x2716;   |
-| Spark             | 3.1, 3.2, 3.3             |  &#x2714;   |   &#x2714;   |       &#x2714;   |      &#x2716;   |       &#x2716;   |    &#x2714;   |   &#x2714;   |
-| Hive              | 2.x, 3.x                  |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
-| Trino             | 406                       |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
+| Processing Engine | Version                | Batch Read  | Batch Write | Batch Overwrite | Streaming Read | Streaming Write | Create Table | Alter Table |
+|-------------------|------------------------|-------------|-------------|-----------------|----------------|-----------------|--------------|-------------|
+| Flink             | 1.15.x, 1.16.x, 1.17.x |  &#x2714;   |   &#x2714;   |       &#x2716;   |      &#x2714;   |       &#x2714;   |    &#x2714;   |   &#x2716;   |
+| Spark             | 3.1, 3.2, 3.3          |  &#x2714;   |   &#x2714;   |       &#x2714;   |      &#x2716;   |       &#x2716;   |    &#x2714;   |   &#x2714;   |
+| Hive              | 2.x, 3.x               |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
+| Trino             | 406                    |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
 
 ## Features
 
@@ -135,8 +135,12 @@ Amoro is built using Maven with Java 1.8 and Java 17(only for `trino` module).
 * To package without trino module and JAVA 17 dependency: `mvn clean package -DskipTests -pl '!trino'`
 * To build with hadoop 2.x(the default is 3.x) `mvn clean package -DskipTests -Dhadoop=v2`
 * To indicate flink version for optimizer(the default is 1.14, 1.15 and 1.16 are available)
-`mvn clean package -DskipTests -Doptimizer.flink=1.15`
+  `mvn clean package -DskipTests -Doptimizer.flink=1.15`
 
+>Spotless is skipped by default in `trino` module. So if you want to perform checkstyle when building `trino` module, you must be in a Java 17 environment.
+
+* To invoke a build include `trino` module in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless`
+* To only build `trino` and its dependent modules in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless -pl 'trino' -am`
 ## Quickstart
 
 Visit [https://amoro.netease.com/quick-demo/](https://amoro.netease.com/quick-demo/) to quickly

@@ -24,6 +24,5 @@ public class HiveLocationKind implements LocationKind {
 
   public static final LocationKind INSTANT = new HiveLocationKind();
 
-  private HiveLocationKind() {
-  }
+  private HiveLocationKind() {}
 }

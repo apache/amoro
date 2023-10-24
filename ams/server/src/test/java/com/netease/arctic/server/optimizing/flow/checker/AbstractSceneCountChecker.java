@@ -29,7 +29,7 @@ import java.util.List;
 
 public abstract class AbstractSceneCountChecker implements CompleteOptimizingFlow.Checker {
 
-  private int except;
+  private final int except;
 
   private int count;
 

@@ -29,10 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Abstract transaction operation on {@link BaseTable} which will change
- * max transaction id map
- */
+/** Abstract transaction operation on {@link BaseTable} which will change max transaction id map */
 public abstract class PartitionTransactionOperation implements PendingUpdate<List<StatisticsFile>> {
 
   KeyedTable keyedTable;
@@ -80,7 +77,6 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Lis
     this.skipEmptyCommit = true;
     return this;
   }
-
 
   public void commit() {
     if (this.skipEmptyCommit && isEmptyCommit()) {

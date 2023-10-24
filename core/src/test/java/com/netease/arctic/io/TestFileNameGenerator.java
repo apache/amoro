@@ -32,7 +32,8 @@ public class TestFileNameGenerator {
   @Test
   public void newBaseFileName() {
     FileNameRules fileNameGenerator = new FileNameRules(FileFormat.PARQUET, 0, 1L, 2L);
-    TaskWriterKey writerKey = new TaskWriterKey(null, DataTreeNode.of(3, 3), DataFileType.BASE_FILE);
+    TaskWriterKey writerKey =
+        new TaskWriterKey(null, DataTreeNode.of(3, 3), DataFileType.BASE_FILE);
     String fileName = fileNameGenerator.fileName(writerKey);
     System.out.println(fileName);
     DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseBase(fileName);
@@ -52,7 +53,8 @@ public class TestFileNameGenerator {
   @Test
   public void flinkChangeFile2Base() {
     FileNameRules fileNameGenerator = new FileNameRules(FileFormat.PARQUET, 0, 1L, null);
-    TaskWriterKey writerKey = new TaskWriterKey(null, DataTreeNode.of(3, 3), DataFileType.INSERT_FILE);
+    TaskWriterKey writerKey =
+        new TaskWriterKey(null, DataTreeNode.of(3, 3), DataFileType.INSERT_FILE);
     String fileName = fileNameGenerator.fileName(writerKey);
     DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseBase(fileName);
     Assert.assertEquals(fileMeta.node(), DataTreeNode.of(3, 3));
@@ -63,7 +65,8 @@ public class TestFileNameGenerator {
   @Test
   public void flinkChangeFile() {
     FileNameRules fileNameGenerator = new FileNameRules(FileFormat.PARQUET, 0, 1L, null);
-    TaskWriterKey writerKey = new TaskWriterKey(null, DataTreeNode.of(3, 3), DataFileType.INSERT_FILE);
+    TaskWriterKey writerKey =
+        new TaskWriterKey(null, DataTreeNode.of(3, 3), DataFileType.INSERT_FILE);
     String fileName = fileNameGenerator.fileName(writerKey);
     DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseChange(fileName, 5L);
     Assert.assertEquals(fileMeta.node(), DataTreeNode.of(3, 3));
@@ -74,7 +77,8 @@ public class TestFileNameGenerator {
   @Test
   public void sparkChangeFile() {
     FileNameRules fileNameGenerator = new FileNameRules(FileFormat.PARQUET, 0, 1L, 5L);
-    TaskWriterKey writerKey = new TaskWriterKey(null, DataTreeNode.of(3, 3), DataFileType.INSERT_FILE);
+    TaskWriterKey writerKey =
+        new TaskWriterKey(null, DataTreeNode.of(3, 3), DataFileType.INSERT_FILE);
     String fileName = fileNameGenerator.fileName(writerKey);
     DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseChange(fileName, 6L);
     Assert.assertEquals(fileMeta.node(), DataTreeNode.of(3, 3));
@@ -84,8 +88,10 @@ public class TestFileNameGenerator {
 
   @Test
   public void adaptOldFileName() {
-    DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseChange(
-        "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/5-I-2-00000-941953957-0000000001.parquet", 6L);
+    DefaultKeyedFile.FileMeta fileMeta =
+        FileNameRules.parseChange(
+            "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/5-I-2-00000-941953957-0000000001.parquet",
+            6L);
     Assert.assertEquals(fileMeta.node(), DataTreeNode.of(3, 1));
     Assert.assertEquals(fileMeta.type(), DataFileType.INSERT_FILE);
     Assert.assertEquals(fileMeta.transactionId(), 2L);

@@ -288,7 +288,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
           allDataFiles.add(new FileTask(dataFile, deleteFiles, false)));
 
       List<List<FileTask>> packed = new BinPacking.ListPacker<FileTask>(
-          config.getMaxTaskSize(), Integer.MAX_VALUE, false)
+          Math.max(config.getTargetSize(), config.getMaxTaskSize()), Integer.MAX_VALUE, false)
           .pack(allDataFiles, f -> f.getFile().fileSizeInBytes());
 
       // collect

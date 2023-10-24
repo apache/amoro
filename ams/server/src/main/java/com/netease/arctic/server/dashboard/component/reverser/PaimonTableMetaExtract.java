@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * TableMetaExtract for paomon table.
+ * TableMetaExtract for paimon table.
  */
 public class PaimonTableMetaExtract implements TableMetaExtract<DataTable> {
 

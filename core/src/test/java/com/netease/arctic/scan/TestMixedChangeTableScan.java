@@ -80,8 +80,10 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
 
   @Test
   public void testIncrementalScanFromPartitionSequence() throws IOException {
-    StructLikeMap<Long> fromSequence = StructLikeMap.create(getArcticTable().spec().partitionType());
-    StructLike partitionData = ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
+    StructLikeMap<Long> fromSequence =
+        StructLikeMap.create(getArcticTable().spec().partitionType());
+    StructLike partitionData =
+        ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
     fromSequence.put(partitionData, 1L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
         getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence);
@@ -110,18 +112,25 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
 
   @Test
   public void testIncrementalScanFromTo() throws IOException {
-    StructLikeMap<Long> fromSequence = StructLikeMap.create(getArcticTable().spec().partitionType());
-    StructLike partitionData = ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
+    StructLikeMap<Long> fromSequence =
+        StructLikeMap.create(getArcticTable().spec().partitionType());
+    StructLike partitionData =
+        ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
     fromSequence.put(partitionData, 1L);
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable().asKeyedTable().changeTable().newScan().fromSequence(fromSequence).toSequence(1);
+        getArcticTable()
+            .asKeyedTable()
+            .changeTable()
+            .newScan()
+            .fromSequence(fromSequence)
+            .toSequence(1);
     try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
       assertFilesSequence(tasks, 0, 0, 0);
     }
   }
-  
 
-  private void assertFiles(CloseableIterable<FileScanTask> tasks, int fileCnt, Predicate<FileScanTask> validator) {
+  private void assertFiles(
+      CloseableIterable<FileScanTask> tasks, int fileCnt, Predicate<FileScanTask> validator) {
     int taskCount = 0;
     for (FileScanTask task : tasks) {
       taskCount++;
@@ -131,9 +140,13 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
     Assert.assertEquals(fileCnt, taskCount);
   }
 
-  private void assertFilesSequence(CloseableIterable<FileScanTask> tasks, int fileCnt,
-                           long minSequence, long maxSequence) {
-    assertFiles(tasks, fileCnt, task ->
-        (task.file().dataSequenceNumber() >= minSequence) && (task.file().dataSequenceNumber() <= maxSequence));
+  private void assertFilesSequence(
+      CloseableIterable<FileScanTask> tasks, int fileCnt, long minSequence, long maxSequence) {
+    assertFiles(
+        tasks,
+        fileCnt,
+        task ->
+            (task.file().dataSequenceNumber() >= minSequence)
+                && (task.file().dataSequenceNumber() <= maxSequence));
   }
 }

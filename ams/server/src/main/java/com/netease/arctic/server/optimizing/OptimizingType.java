@@ -5,7 +5,7 @@ public enum OptimizingType {
   MAJOR(OptimizingStatus.MAJOR_OPTIMIZING),
   FULL(OptimizingStatus.FULL_OPTIMIZING);
 
-  private OptimizingStatus status;
+  private final OptimizingStatus status;
 
   OptimizingType(OptimizingStatus status) {
     this.status = status;

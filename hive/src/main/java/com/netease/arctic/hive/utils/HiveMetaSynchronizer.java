@@ -67,9 +67,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Utils for syncing the metadata between the hive table and the arctic table.
- */
+/** Utils for syncing the metadata between the hive table and the arctic table. */
 public class HiveMetaSynchronizer {
 
   private static final Logger LOG = LoggerFactory.getLogger(HiveMetaSynchronizer.class);
@@ -77,17 +75,24 @@ public class HiveMetaSynchronizer {
   /**
    * Synchronize the schema change of the hive table to arctic table
    *
-   * @param table      arctic table to accept the schema change
+   * @param table arctic table to accept the schema change
    * @param hiveClient hive client
    */
   public static void syncHiveSchemaToArctic(ArcticTable table, HMSClientPool hiveClient) {
     try {
-      Table hiveTable = hiveClient.run(client -> client.getTable(table.id().getDatabase(), table.id().getTableName()));
-      Schema hiveSchema = HiveSchemaUtil.convertHiveSchemaToIcebergSchema(hiveTable, table.isKeyedTable() ?
-          table.asKeyedTable().primaryKeySpec().fieldNames() : new ArrayList<>());
+      Table hiveTable =
+          hiveClient.run(
+              client -> client.getTable(table.id().getDatabase(), table.id().getTableName()));
+      Schema hiveSchema =
+          HiveSchemaUtil.convertHiveSchemaToIcebergSchema(
+              hiveTable,
+              table.isKeyedTable()
+                  ? table.asKeyedTable().primaryKeySpec().fieldNames()
+                  : new ArrayList<>());
       UpdateSchema updateSchema = table.updateSchema();
-      boolean update = updateStructSchema(table.id(), updateSchema, null,
-          table.schema().asStruct(), hiveSchema.asStruct());
+      boolean update =
+          updateStructSchema(
+              table.id(), updateSchema, null, table.schema().asStruct(), hiveSchema.asStruct());
       if (update) {
         updateSchema.commit();
       }
@@ -97,42 +102,57 @@ public class HiveMetaSynchronizer {
   }
 
   private static boolean updateStructSchema(
-      TableIdentifier tableIdentifier, UpdateSchema updateSchema,
-      String parentName, Types.StructType icebergStruct, Types.StructType hiveStruct) {
+      TableIdentifier tableIdentifier,
+      UpdateSchema updateSchema,
+      String parentName,
+      Types.StructType icebergStruct,
+      Types.StructType hiveStruct) {
     boolean update = false;
     for (Types.NestedField hiveField : hiveStruct.fields()) {
       // to check if lowercase matches
-      List<Types.NestedField> fields = icebergStruct
-          .fields()
-          .stream()
-          .filter(f -> f.name().toLowerCase().equals(hiveField.name())).collect(Collectors.toList());
+      List<Types.NestedField> fields =
+          icebergStruct.fields().stream()
+              .filter(f -> f.name().toLowerCase().equals(hiveField.name()))
+              .collect(Collectors.toList());
       if (fields.isEmpty()) {
         updateSchema.addColumn(parentName, hiveField.name(), hiveField.type(), hiveField.doc());
         update = true;
         LOG.info("Table {} sync new hive column {} to arctic", tableIdentifier, hiveField);
       } else if (fields.size() == 1) {
         Types.NestedField icebergField = fields.get(0);
-        if (!icebergField.type().equals(hiveField.type()) ||
-            !Objects.equals(icebergField.doc(), (hiveField.doc()))) {
+        if (!icebergField.type().equals(hiveField.type())
+            || !Objects.equals(icebergField.doc(), (hiveField.doc()))) {
           if (hiveField.type().isPrimitiveType() && icebergField.type().isPrimitiveType()) {
             if (TypeUtil.isPromotionAllowed(
-                icebergField.type().asPrimitiveType(),
-                hiveField.type().asPrimitiveType())) {
-              String columnName = parentName == null ? hiveField.name() : parentName + "." + hiveField.name();
-              updateSchema.updateColumn(columnName, hiveField.type().asPrimitiveType(), hiveField.doc());
+                icebergField.type().asPrimitiveType(), hiveField.type().asPrimitiveType())) {
+              String columnName =
+                  parentName == null ? hiveField.name() : parentName + "." + hiveField.name();
+              updateSchema.updateColumn(
+                  columnName, hiveField.type().asPrimitiveType(), hiveField.doc());
               update = true;
               LOG.info("Table {} sync hive column {} to arctic", tableIdentifier, hiveField);
             } else {
-              LOG.warn("Table {} sync hive column {} to arctic failed, because of type mismatch",
-                  tableIdentifier, hiveField);
+              LOG.warn(
+                  "Table {} sync hive column {} to arctic failed, because of type mismatch",
+                  tableIdentifier,
+                  hiveField);
             }
           } else if (hiveField.type().isStructType() && icebergField.type().isStructType()) {
-            String columnName = parentName == null ? hiveField.name() : parentName + "." + hiveField.name();
-            update = update || updateStructSchema(tableIdentifier, updateSchema,
-                columnName, icebergField.type().asStructType(), hiveField.type().asStructType());
+            String columnName =
+                parentName == null ? hiveField.name() : parentName + "." + hiveField.name();
+            update =
+                update
+                    || updateStructSchema(
+                        tableIdentifier,
+                        updateSchema,
+                        columnName,
+                        icebergField.type().asStructType(),
+                        hiveField.type().asStructType());
           } else {
-            LOG.warn("Table {} sync hive column {} to arctic failed, because of type mismatch",
-                tableIdentifier, hiveField);
+            LOG.warn(
+                "Table {} sync hive column {} to arctic failed, because of type mismatch",
+                tableIdentifier,
+                hiveField);
           }
         }
       } else {
@@ -149,10 +169,11 @@ public class HiveMetaSynchronizer {
   /**
    * Synchronize the data change of the hive table to arctic table
    *
-   * @param table      arctic table to accept the data change
+   * @param table arctic table to accept the data change
    * @param hiveClient hive client
    */
-  public static void syncHiveDataToArctic(SupportHive table, HMSClientPool hiveClient, boolean force) {
+  public static void syncHiveDataToArctic(
+      SupportHive table, HMSClientPool hiveClient, boolean force) {
     UnkeyedTable baseStore;
     if (table.isKeyedTable()) {
       baseStore = table.asKeyedTable().baseTable();
@@ -162,10 +183,11 @@ public class HiveMetaSynchronizer {
     try {
       if (table.spec().isUnpartitioned()) {
         Table hiveTable =
-            hiveClient.run(client -> client.getTable(table.id().getDatabase(), table.id().getTableName()));
+            hiveClient.run(
+                client -> client.getTable(table.id().getDatabase(), table.id().getTableName()));
         if (force || tableHasModified(baseStore, hiveTable)) {
-          List<DataFile> hiveDataFiles = listHivePartitionFiles(table, Maps.newHashMap(),
-              hiveTable.getSd().getLocation());
+          List<DataFile> hiveDataFiles =
+              listHivePartitionFiles(table, Maps.newHashMap(), hiveTable.getSd().getLocation());
           List<DataFile> deleteFiles = Lists.newArrayList();
           try (CloseableIterable<FileScanTask> fileScanTasks = baseStore.newScan().planFiles()) {
             fileScanTasks.forEach(fileScanTask -> deleteFiles.add(fileScanTask.file()));
@@ -176,15 +198,19 @@ public class HiveMetaSynchronizer {
         }
       } else {
         // list all hive partitions.
-        List<Partition> hivePartitions = hiveClient.run(client -> client.listPartitions(table.id().getDatabase(),
-            table.id().getTableName(), Short.MAX_VALUE));
+        List<Partition> hivePartitions =
+            hiveClient.run(
+                client ->
+                    client.listPartitions(
+                        table.id().getDatabase(), table.id().getTableName(), Short.MAX_VALUE));
         // group arctic files by partition.
-        StructLikeMap<Collection<DataFile>> filesGroupedByPartition
-            = StructLikeMap.create(table.spec().partitionType());
+        StructLikeMap<Collection<DataFile>> filesGroupedByPartition =
+            StructLikeMap.create(table.spec().partitionType());
         TableScan tableScan = baseStore.newScan();
         try (CloseableIterable<FileScanTask> fileScanTasks = tableScan.planFiles()) {
           for (org.apache.iceberg.FileScanTask fileScanTask : fileScanTasks) {
-            filesGroupedByPartition.computeIfAbsent(fileScanTask.file().partition(), k -> Lists.newArrayList())
+            filesGroupedByPartition
+                .computeIfAbsent(fileScanTask.file().partition(), k -> Lists.newArrayList())
                 .add(fileScanTask.file());
           }
         } catch (IOException e) {
@@ -194,33 +220,38 @@ public class HiveMetaSynchronizer {
         List<DataFile> filesToAdd = Lists.newArrayList();
         List<StructLike> icebergPartitions = Lists.newArrayList(filesGroupedByPartition.keySet());
         for (Partition hivePartition : hivePartitions) {
-          StructLike partitionData = HivePartitionUtil.buildPartitionData(hivePartition.getValues(), table.spec());
+          StructLike partitionData =
+              HivePartitionUtil.buildPartitionData(hivePartition.getValues(), table.spec());
           icebergPartitions.remove(partitionData);
           if (force || partitionHasModified(baseStore, hivePartition, partitionData)) {
-            List<DataFile> hiveDataFiles = listHivePartitionFiles(
-                table,
-                buildPartitionValueMap(hivePartition.getValues(), table.spec()),
-                hivePartition.getSd().getLocation());
+            List<DataFile> hiveDataFiles =
+                listHivePartitionFiles(
+                    table,
+                    buildPartitionValueMap(hivePartition.getValues(), table.spec()),
+                    hivePartition.getSd().getLocation());
             if (filesGroupedByPartition.get(partitionData) != null) {
               filesToDelete.addAll(filesGroupedByPartition.get(partitionData));
               filesToAdd.addAll(hiveDataFiles);
               // make sure new partition is not created by arctic
-            } else if (hivePartition.getParameters().get(HiveTableProperties.ARCTIC_TABLE_FLAG) == null &&
-                hivePartition.getParameters().get(HiveTableProperties.ARCTIC_TABLE_FLAG_LEGACY) == null) {
+            } else if (hivePartition.getParameters().get(HiveTableProperties.ARCTIC_TABLE_FLAG)
+                    == null
+                && hivePartition.getParameters().get(HiveTableProperties.ARCTIC_TABLE_FLAG_LEGACY)
+                    == null) {
               filesToAdd.addAll(hiveDataFiles);
             }
           }
         }
 
-        icebergPartitions.forEach(partition -> {
-          List<DataFile> dataFiles = Lists.newArrayList(filesGroupedByPartition.get(partition));
-          if (dataFiles.size() > 0) {
-            // make sure dropped partition with no files
-            if (!table.io().exists(dataFiles.get(0).path().toString())) {
-              filesToDelete.addAll(filesGroupedByPartition.get(partition));
-            }
-          }
-        });
+        icebergPartitions.forEach(
+            partition -> {
+              List<DataFile> dataFiles = Lists.newArrayList(filesGroupedByPartition.get(partition));
+              if (dataFiles.size() > 0) {
+                // make sure dropped partition with no files
+                if (!table.io().exists(dataFiles.get(0).path().toString())) {
+                  filesToDelete.addAll(filesGroupedByPartition.get(partition));
+                }
+              }
+            });
         overwriteTable(table, filesToDelete, filesToAdd);
       }
     } catch (TException | InterruptedException e) {
@@ -230,6 +261,7 @@ public class HiveMetaSynchronizer {
 
   /**
    * Synchronize the data change of the arctic table to hive table
+   *
    * @param table support hive table
    */
   public static void syncArcticDataToHive(SupportHive table) {
@@ -253,25 +285,31 @@ public class HiveMetaSynchronizer {
   }
 
   /**
-   * once get location from iceberg property, should update hive table location,
-   * because only arctic update hive table location for unPartitioned table.
+   * once get location from iceberg property, should update hive table location, because only arctic
+   * update hive table location for unPartitioned table.
    */
   private static void syncNoPartitionTable(
-      SupportHive table,
-      StructLikeMap<Map<String, String>> partitionProperty) {
+      SupportHive table, StructLikeMap<Map<String, String>> partitionProperty) {
     Map<String, String> property = partitionProperty.get(TablePropertyUtil.EMPTY_STRUCT);
-    if (property == null || property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) == null) {
+    if (property == null
+        || property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) == null) {
       LOG.debug("{} has no hive location in partition property", table.id());
       return;
     }
 
-    String currentLocation = property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
+    String currentLocation =
+        property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
     String hiveLocation;
     try {
-      hiveLocation = table.getHMSClient().run(client -> {
-        Table hiveTable = client.getTable(table.id().getDatabase(), table.id().getTableName());
-        return hiveTable.getSd().getLocation();
-      });
+      hiveLocation =
+          table
+              .getHMSClient()
+              .run(
+                  client -> {
+                    Table hiveTable =
+                        client.getTable(table.id().getDatabase(), table.id().getTableName());
+                    return hiveTable.getSd().getLocation();
+                  });
     } catch (Exception e) {
       LOG.error("{} get hive location failed", table.id(), e);
       return;
@@ -279,12 +317,16 @@ public class HiveMetaSynchronizer {
 
     if (!Objects.equals(currentLocation, hiveLocation)) {
       try {
-        table.getHMSClient().run(client -> {
-          Table hiveTable = client.getTable(table.id().getDatabase(), table.id().getTableName());
-          hiveTable.getSd().setLocation(currentLocation);
-          client.alterTable(table.id().getDatabase(), table.id().getTableName(), hiveTable);
-          return null;
-        });
+        table
+            .getHMSClient()
+            .run(
+                client -> {
+                  Table hiveTable =
+                      client.getTable(table.id().getDatabase(), table.id().getTableName());
+                  hiveTable.getSd().setLocation(currentLocation);
+                  client.alterTable(table.id().getDatabase(), table.id().getTableName(), hiveTable);
+                  return null;
+                });
       } catch (Exception e) {
         LOG.error("{} alter hive location failed", table.id(), e);
       }
@@ -292,35 +334,51 @@ public class HiveMetaSynchronizer {
   }
 
   private static void syncPartitionTable(
-      SupportHive table,
-      StructLikeMap<Map<String, String>> partitionProperty) throws Exception {
+      SupportHive table, StructLikeMap<Map<String, String>> partitionProperty) throws Exception {
     Map<String, StructLike> icebergPartitionMap = new HashMap<>();
     for (StructLike structLike : partitionProperty.keySet()) {
       icebergPartitionMap.put(table.spec().partitionToPath(structLike), structLike);
     }
     List<String> icebergPartitions = new ArrayList<>(icebergPartitionMap.keySet());
-    List<Partition> hivePartitions = table.getHMSClient().run(client ->
-        client.listPartitions(table.id().getDatabase(), table.id().getTableName(), Short.MAX_VALUE));
-    List<String> hivePartitionNames = table.getHMSClient().run(client ->
-        client.listPartitionNames(table.id().getDatabase(), table.id().getTableName(), Short.MAX_VALUE));
-    List<FieldSchema> partitionKeys = table.getHMSClient().run(client -> {
-      Table hiveTable = client.getTable(table.id().getDatabase(), table.id().getTableName());
-      return hiveTable.getPartitionKeys();
-    });
+    List<Partition> hivePartitions =
+        table
+            .getHMSClient()
+            .run(
+                client ->
+                    client.listPartitions(
+                        table.id().getDatabase(), table.id().getTableName(), Short.MAX_VALUE));
+    List<String> hivePartitionNames =
+        table
+            .getHMSClient()
+            .run(
+                client ->
+                    client.listPartitionNames(
+                        table.id().getDatabase(), table.id().getTableName(), Short.MAX_VALUE));
+    List<FieldSchema> partitionKeys =
+        table
+            .getHMSClient()
+            .run(
+                client -> {
+                  Table hiveTable =
+                      client.getTable(table.id().getDatabase(), table.id().getTableName());
+                  return hiveTable.getPartitionKeys();
+                });
     Map<String, Partition> hivePartitionMap = new HashMap<>();
     for (Partition hivePartition : hivePartitions) {
-      hivePartitionMap.put(Warehouse.makePartName(partitionKeys, hivePartition.getValues()), hivePartition);
+      hivePartitionMap.put(
+          Warehouse.makePartName(partitionKeys, hivePartition.getValues()), hivePartition);
     }
 
-    Set<String> inIcebergNotInHive = icebergPartitions.stream()
-        .filter(partition -> !hivePartitionNames.contains(partition))
-        .collect(Collectors.toSet());
-    Set<String> inHiveNotInIceberg = hivePartitionNames.stream()
-        .filter(partition -> !icebergPartitions.contains(partition))
-        .collect(Collectors.toSet());
-    Set<String> inBoth = icebergPartitions.stream()
-        .filter(hivePartitionNames::contains)
-        .collect(Collectors.toSet());
+    Set<String> inIcebergNotInHive =
+        icebergPartitions.stream()
+            .filter(partition -> !hivePartitionNames.contains(partition))
+            .collect(Collectors.toSet());
+    Set<String> inHiveNotInIceberg =
+        hivePartitionNames.stream()
+            .filter(partition -> !icebergPartitions.contains(partition))
+            .collect(Collectors.toSet());
+    Set<String> inBoth =
+        icebergPartitions.stream().filter(hivePartitionNames::contains).collect(Collectors.toSet());
 
     if (CollectionUtils.isNotEmpty(inIcebergNotInHive)) {
       handleInIcebergPartitions(table, inIcebergNotInHive, icebergPartitionMap, partitionProperty);
@@ -331,51 +389,61 @@ public class HiveMetaSynchronizer {
     }
 
     if (CollectionUtils.isNotEmpty(inBoth)) {
-      handleInBothPartitions(table, inBoth, hivePartitionMap, icebergPartitionMap, partitionProperty);
+      handleInBothPartitions(
+          table, inBoth, hivePartitionMap, icebergPartitionMap, partitionProperty);
     }
   }
 
-  /**
-   * if iceberg partition location is existed, should update hive table location.
-   */
+  /** if iceberg partition location is existed, should update hive table location. */
   private static void handleInIcebergPartitions(
       ArcticTable arcticTable,
       Set<String> inIcebergNotInHive,
       Map<String, StructLike> icebergPartitionMap,
       StructLikeMap<Map<String, String>> partitionProperty) {
-    inIcebergNotInHive.forEach(partition -> {
-      Map<String, String> property = partitionProperty.get(icebergPartitionMap.get(partition));
-      if (property == null || property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) == null) {
-        return;
-      }
-      String currentLocation = property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
+    inIcebergNotInHive.forEach(
+        partition -> {
+          Map<String, String> property = partitionProperty.get(icebergPartitionMap.get(partition));
+          if (property == null
+              || property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) == null) {
+            return;
+          }
+          String currentLocation =
+              property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
 
-      if (arcticTable.io().exists(currentLocation)) {
-        int transientTime = Integer.parseInt(property
-            .getOrDefault(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, "0"));
-        List<DataFile> dataFiles = getIcebergPartitionFiles(arcticTable, icebergPartitionMap.get(partition));
-        HivePartitionUtil.createPartitionIfAbsent(((SupportHive) arcticTable).getHMSClient(),
-            arcticTable,
-            HivePartitionUtil.partitionValuesAsList(
-                icebergPartitionMap.get(partition),
-                arcticTable.spec().partitionType()),
-            currentLocation, dataFiles, transientTime);
-      }
-    });
+          if (arcticTable.io().exists(currentLocation)) {
+            int transientTime =
+                Integer.parseInt(
+                    property.getOrDefault(
+                        HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, "0"));
+            List<DataFile> dataFiles =
+                getIcebergPartitionFiles(arcticTable, icebergPartitionMap.get(partition));
+            HivePartitionUtil.createPartitionIfAbsent(
+                ((SupportHive) arcticTable).getHMSClient(),
+                arcticTable,
+                HivePartitionUtil.partitionValuesAsList(
+                    icebergPartitionMap.get(partition), arcticTable.spec().partitionType()),
+                currentLocation,
+                dataFiles,
+                transientTime);
+          }
+        });
   }
 
   private static void handleInHivePartitions(
       ArcticTable arcticTable,
       Set<String> inHiveNotInIceberg,
       Map<String, Partition> hivePartitionMap) {
-    inHiveNotInIceberg.forEach(partition -> {
-      Partition hivePartition = hivePartitionMap.get(partition);
-      boolean isArctic = CompatibleHivePropertyUtil.propertyAsBoolean(hivePartition.getParameters(),
-          HiveTableProperties.ARCTIC_TABLE_FLAG, false);
-      if (isArctic) {
-        HivePartitionUtil.dropPartition(((SupportHive) arcticTable).getHMSClient(), arcticTable, hivePartition);
-      }
-    });
+    inHiveNotInIceberg.forEach(
+        partition -> {
+          Partition hivePartition = hivePartitionMap.get(partition);
+          boolean isArctic =
+              CompatibleHivePropertyUtil.propertyAsBoolean(
+                  hivePartition.getParameters(), HiveTableProperties.ARCTIC_TABLE_FLAG, false);
+          if (isArctic) {
+            HivePartitionUtil.dropPartition(
+                ((SupportHive) arcticTable).getHMSClient(), arcticTable, hivePartition);
+          }
+        });
   }
 
   private static void handleInBothPartitions(
@@ -385,65 +453,91 @@ public class HiveMetaSynchronizer {
       Map<String, StructLike> icebergPartitionMap,
       StructLikeMap<Map<String, String>> partitionProperty) {
     Set<String> inHiveNotInIceberg = new HashSet<>();
-    inBoth.forEach(partition -> {
-      Map<String, String> property = partitionProperty.get(icebergPartitionMap.get(partition));
-      if (property == null || property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) == null) {
-        inHiveNotInIceberg.add(partition);
-        return;
-      }
+    inBoth.forEach(
+        partition -> {
+          Map<String, String> property = partitionProperty.get(icebergPartitionMap.get(partition));
+          if (property == null
+              || property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) == null) {
+            inHiveNotInIceberg.add(partition);
+            return;
+          }
 
-      String currentLocation = property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
-      Partition hivePartition = hivePartitionMap.get(partition);
+          String currentLocation =
+              property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
+          Partition hivePartition = hivePartitionMap.get(partition);
 
-      if (!Objects.equals(currentLocation, hivePartition.getSd().getLocation())) {
-        int transientTime = Integer.parseInt(property
-            .getOrDefault(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, "0"));
-        List<DataFile> dataFiles = getIcebergPartitionFiles(arcticTable, icebergPartitionMap.get(partition));
-        HivePartitionUtil.updatePartitionLocation(((SupportHive) arcticTable).getHMSClient(),
-            arcticTable, hivePartition, currentLocation, dataFiles, transientTime);
-      }
-    });
+          if (!Objects.equals(currentLocation, hivePartition.getSd().getLocation())) {
+            int transientTime =
+                Integer.parseInt(
+                    property.getOrDefault(
+                        HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, "0"));
+            List<DataFile> dataFiles =
+                getIcebergPartitionFiles(arcticTable, icebergPartitionMap.get(partition));
+            HivePartitionUtil.updatePartitionLocation(
+                ((SupportHive) arcticTable).getHMSClient(),
+                arcticTable,
+                hivePartition,
+                currentLocation,
+                dataFiles,
+                transientTime);
+          }
+        });
 
     handleInHivePartitions(arcticTable, inHiveNotInIceberg, hivePartitionMap);
   }
 
   private static List<DataFile> getIcebergPartitionFiles(
-      ArcticTable arcticTable,
-      StructLike partition) {
+      ArcticTable arcticTable, StructLike partition) {
     UnkeyedTable baseStore;
-    baseStore = arcticTable.isKeyedTable() ? arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
+    baseStore =
+        arcticTable.isKeyedTable()
+            ? arcticTable.asKeyedTable().baseTable()
+            : arcticTable.asUnkeyedTable();
 
     List<DataFile> partitionFiles = new ArrayList<>();
-    arcticTable.io().doAs(() -> {
-      try (CloseableIterable<FileScanTask> fileScanTasks = baseStore.newScan().planFiles()) {
-        for (FileScanTask fileScanTask : fileScanTasks) {
-          if (fileScanTask.file().partition().equals(partition)) {
-            partitionFiles.add(fileScanTask.file());
-          }
-        }
-      }
+    arcticTable
+        .io()
+        .doAs(
+            () -> {
+              try (CloseableIterable<FileScanTask> fileScanTasks =
+                  baseStore.newScan().planFiles()) {
+                for (FileScanTask fileScanTask : fileScanTasks) {
+                  if (fileScanTask.file().partition().equals(partition)) {
+                    partitionFiles.add(fileScanTask.file());
+                  }
+                }
+              }
 
-      return null;
-    });
+              return null;
+            });
 
     return partitionFiles;
   }
 
   @VisibleForTesting
   static boolean partitionHasModified(
-      UnkeyedTable arcticTable, Partition hivePartition,
-      StructLike partitionData) {
+      UnkeyedTable arcticTable, Partition hivePartition, StructLike partitionData) {
     String hiveTransientTime = hivePartition.getParameters().get("transient_lastDdlTime");
-    String arcticTransientTime = arcticTable.partitionProperty().containsKey(partitionData) ?
-        arcticTable.partitionProperty().get(partitionData)
-            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME) : null;
+    String arcticTransientTime =
+        arcticTable.partitionProperty().containsKey(partitionData)
+            ? arcticTable
+                .partitionProperty()
+                .get(partitionData)
+                .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME)
+            : null;
     String hiveLocation = hivePartition.getSd().getLocation();
-    String arcticPartitionLocation = arcticTable.partitionProperty().containsKey(partitionData) ?
-        arcticTable.partitionProperty().get(partitionData)
-            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) : null;
+    String arcticPartitionLocation =
+        arcticTable.partitionProperty().containsKey(partitionData)
+            ? arcticTable
+                .partitionProperty()
+                .get(partitionData)
+                .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION)
+            : null;
 
-    // hive partition location is modified only in arctic full optimize, So if the hive partition location is
-    // different from the arctic partition location, it is not necessary to trigger synchronization from the hive
+    // hive partition location is modified only in arctic full optimize, So if the hive partition
+    // location is
+    // different from the arctic partition location, it is not necessary to trigger synchronization
+    // from the hive
     // side to the arctic
     if (arcticPartitionLocation != null && !arcticPartitionLocation.equals(hiveLocation)) {
       return false;
@@ -460,16 +554,24 @@ public class HiveMetaSynchronizer {
     StructLikeMap<Map<String, String>> structLikeMap = arcticTable.partitionProperty();
     String arcticTransientTime = null;
     if (structLikeMap.get(TablePropertyUtil.EMPTY_STRUCT) != null) {
-      arcticTransientTime = structLikeMap.get(TablePropertyUtil.EMPTY_STRUCT)
-          .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
+      arcticTransientTime =
+          structLikeMap
+              .get(TablePropertyUtil.EMPTY_STRUCT)
+              .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
     }
     String hiveLocation = table.getSd().getLocation();
-    String arcticPartitionLocation = arcticTable.partitionProperty().containsKey(TablePropertyUtil.EMPTY_STRUCT) ?
-        arcticTable.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
-            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) : null;
+    String arcticPartitionLocation =
+        arcticTable.partitionProperty().containsKey(TablePropertyUtil.EMPTY_STRUCT)
+            ? arcticTable
+                .partitionProperty()
+                .get(TablePropertyUtil.EMPTY_STRUCT)
+                .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION)
+            : null;
 
-    // hive partition location is modified only in arctic full optimize, So if the hive partition location is
-    // different from the arctic partition location, it is not necessary to trigger synchronization from the hive
+    // hive partition location is modified only in arctic full optimize, So if the hive partition
+    // location is
+    // different from the arctic partition location, it is not necessary to trigger synchronization
+    // from the hive
     // side to the arctic
     if (arcticPartitionLocation != null && !arcticPartitionLocation.equals(hiveLocation)) {
       return false;
@@ -481,18 +583,30 @@ public class HiveMetaSynchronizer {
   }
 
   private static List<DataFile> listHivePartitionFiles(
-      SupportHive arcticTable, Map<String, String> partitionValueMap,
-      String partitionLocation) {
-    return arcticTable.io().doAs(() -> TableMigrationUtil.listPartition(partitionValueMap, partitionLocation,
-        arcticTable.properties().getOrDefault(
-            TableProperties.DEFAULT_FILE_FORMAT,
-            TableProperties.DEFAULT_FILE_FORMAT_DEFAULT),
-        arcticTable.spec(), arcticTable.io().getConf(),
-        MetricsConfig.fromProperties(arcticTable.properties()), NameMappingParser.fromJson(
-            arcticTable.properties().get(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING))));
+      SupportHive arcticTable, Map<String, String> partitionValueMap, String partitionLocation) {
+    return arcticTable
+        .io()
+        .doAs(
+            () ->
+                TableMigrationUtil.listPartition(
+                    partitionValueMap,
+                    partitionLocation,
+                    arcticTable
+                        .properties()
+                        .getOrDefault(
+                            TableProperties.DEFAULT_FILE_FORMAT,
+                            TableProperties.DEFAULT_FILE_FORMAT_DEFAULT),
+                    arcticTable.spec(),
+                    arcticTable.io().getConf(),
+                    MetricsConfig.fromProperties(arcticTable.properties()),
+                    NameMappingParser.fromJson(
+                        arcticTable
+                            .properties()
+                            .get(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING))));
   }
 
-  private static Map<String, String> buildPartitionValueMap(List<String> partitionValues, PartitionSpec spec) {
+  private static Map<String, String> buildPartitionValueMap(
+      List<String> partitionValues, PartitionSpec spec) {
     Map<String, String> partitionValueMap = Maps.newHashMap();
     for (int i = 0; i < partitionValues.size(); i++) {
       partitionValueMap.put(spec.fields().get(i).name(), partitionValues.get(i));
@@ -500,9 +614,12 @@ public class HiveMetaSynchronizer {
     return partitionValueMap;
   }
 
-  private static void overwriteTable(ArcticTable table, List<DataFile> filesToDelete, List<DataFile> filesToAdd) {
+  private static void overwriteTable(
+      ArcticTable table, List<DataFile> filesToDelete, List<DataFile> filesToAdd) {
     if (filesToDelete.size() > 0 || filesToAdd.size() > 0) {
-      LOG.info("Table {} sync hive data change to arctic, delete files: {}, add files {}", table.id(),
+      LOG.info(
+          "Table {} sync hive data change to arctic, delete files: {}, add files {}",
+          table.id(),
           filesToDelete.stream().map(DataFile::path).collect(Collectors.toList()),
           filesToAdd.stream().map(DataFile::path).collect(Collectors.toList()));
       if (table.isKeyedTable()) {

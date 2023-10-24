@@ -31,7 +31,7 @@
             <span v-else>{{metastoreType}}</span>
           </a-form-item>
           <a-form-item :label="$t('tableFormat')" :name="['tableFormat']" :rules="[{ required: isEdit && isNewCatalog }]">
-            <a-radio-group :disabled="!isEdit || !isNewCatalog" v-model:value="formState.tableFormat" name="radioGroup">
+            <a-radio-group :disabled="!isEdit || !isNewCatalog" v-model:value="formState.tableFormat" name="radioGroup" @change="changeTableFormat">
               <a-radio v-for="item in formatOptions" :key="item" :value="item">{{tableFormatText[item]}}</a-radio>
             </a-radio-group>
           </a-form-item>
@@ -313,6 +313,14 @@ const authConfigMap = {
   'auth.kerberos.krb5': 'Kerberos Krb5'
 }
 
+const defaultPropertiesMap = {
+  ams: ['warehouse'],
+  hadoop: ['warehouse'],
+  custom: ['catalog-impl'],
+  glue: ['warehouse', 'lock-impl', 'lock.table'],
+  PAIMON: ['warehouse']
+}
+
 watch(() => route.query,
   (value) => {
     value && initData()
@@ -358,7 +366,11 @@ async function getConfigInfo() {
       formState.tableFormat = tableFormatMap.MIXED_ICEBERG
       formState.authConfig = { ...newCatalogConfig.authConfig }
       formState.storageConfig = { ...newCatalogConfig.storageConfig }
+      const keys = defaultPropertiesMap[formState.catalog.type] || []
       formState.properties = {}
+      keys.forEach(key => {
+        formState.properties[key] = ''
+      })
       formState.tableProperties = {}
       formState.storageConfigArray.length = 0
       formState.authConfigArray.length = 0
@@ -437,6 +449,28 @@ const formatOptions = computed(() => {
   return storeSupportFormat[type] || []
 })
 
+async function changeProperties() {
+  const properties = await propertiesRef.value.getPropertiesWithoputValidation()
+  const catalogKeys = defaultPropertiesMap[formState.catalog.type] || []
+  catalogKeys.forEach(key => {
+    if (key && !properties[key]) {
+      properties[key] = ''
+    }
+  })
+  const formatKeys = defaultPropertiesMap[formState.tableFormat] || []
+  formatKeys.forEach(key => {
+    if (key && !properties[key]) {
+      properties[key] = ''
+    }
+  })
+  for (const key in properties) {
+    if (!properties[key] && !catalogKeys.includes(key) && !formatKeys.includes(key)) {
+      delete properties[key]
+    }
+  }
+  formState.properties = properties
+}
+
 const storageConfigTypeS3 = reactive<ILableAndValue[]>([{
   label: 'S3',
   value: 'S3'
@@ -479,7 +513,7 @@ const authTypeOptions = computed(() => {
   }
 })
 
-function changeMetastore() {
+async function changeMetastore() {
   formState.tableFormat = formatOptions.value[0]
   if (!isNewCatalog.value) { return }
   const index = formState.storageConfigArray.findIndex(item => item.key === 'hive.site')
@@ -505,7 +539,13 @@ function changeMetastore() {
       delete formState.storageConfig['hive.site']
     }
   }
+  await changeProperties()
 }
+
+async function changeTableFormat() {
+  await changeProperties()
+}
+
 function handleEdit() {
   emit('updateEdit', true)
 }

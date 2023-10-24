@@ -20,11 +20,14 @@ package com.netease.arctic.server.dashboard;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
+import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
-import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
+import org.apache.iceberg.util.Pair;
+
 import java.util.List;
 
 /**
@@ -45,7 +48,7 @@ public interface FormatTableDescriptor {
   /**
    * Get the transaction information of the {@link AmoroTable}.
    */
-  List<TransactionsOfTable> getTransactions(AmoroTable<?> amoroTable);
+  List<AMSTransactionsOfTable> getTransactions(AmoroTable<?> amoroTable);
 
   /**
    * Get the transaction detail information of the {@link AmoroTable}.
@@ -60,10 +63,16 @@ public interface FormatTableDescriptor {
   /**
    * Get the partition information of the {@link AmoroTable}.
    */
-  List<PartitionBaseInfo> getTablePartition(AmoroTable<?> amoroTable);
+  List<PartitionBaseInfo> getTablePartitions(AmoroTable<?> amoroTable);
 
   /**
    * Get the file information of the {@link AmoroTable}.
    */
-  List<PartitionFileBaseInfo> getTableFile(AmoroTable<?> amoroTable, String partition);
+  List<PartitionFileBaseInfo> getTableFiles(AmoroTable<?> amoroTable, String partition);
+
+  /**
+   * Get the paged optimizing process information of the {@link AmoroTable} and total size.
+   */
+  Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
+      AmoroTable<?> amoroTable, int limit, int offset);
 }

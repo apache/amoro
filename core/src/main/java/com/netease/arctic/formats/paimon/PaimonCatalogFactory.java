@@ -34,7 +34,10 @@ import java.util.Map;
 public class PaimonCatalogFactory implements FormatCatalogFactory {
   @Override
   public PaimonCatalog create(
-      String name, String metastoreType, Map<String, String> properties, Configuration configuration) {
+      String name,
+      String metastoreType,
+      Map<String, String> properties,
+      Configuration configuration) {
     return new PaimonCatalog(paimonCatalog(metastoreType, properties, configuration), name);
   }
 

@@ -26,7 +26,8 @@ import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.utils.ArcticDataFiles;
-import com.netease.arctic.utils.PuffinUtil;
+import com.netease.arctic.utils.ArcticTableUtil;
+import com.netease.arctic.utils.StatisticsFileUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StatisticsFile;
@@ -80,9 +81,10 @@ public class TestKeyedTableScan extends TableDataTestBase {
     StructLikeMap<Long> fromSequence = StructLikeMap.create(getArcticTable().spec().partitionType());
     StructLike partitionData = ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
     fromSequence.put(partitionData, 1L);
-    StatisticsFile file = PuffinUtil.writer(baseTable, baseSnapshot.snapshotId(), baseSnapshot.sequenceNumber())
-        .addOptimizedSequence(fromSequence)
-        .write();
+    StatisticsFile file = StatisticsFileUtil.writer(baseTable, baseSnapshot.snapshotId(), baseSnapshot.sequenceNumber())
+        .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, fromSequence,
+            StatisticsFileUtil.createPartitionDataSerializer(getArcticTable().spec(), Long.class))
+        .complete();
     baseTable.updateStatistics()
         .setStatistics(baseSnapshot.snapshotId(), file)
         .commit();
@@ -96,11 +98,14 @@ public class TestKeyedTableScan extends TableDataTestBase {
     try (CloseableIterator<CombinedScanTask> initTasks = combinedScanTasks.iterator()) {
       while (initTasks.hasNext()) {
         CombinedScanTask combinedScanTask = initTasks.next();
-        combinedScanTask.tasks().forEach(task -> {
-          allBaseTasks.addAll(task.baseTasks());
-          allInsertTasks.addAll(task.insertTasks());
-          allEquDeleteTasks.addAll(task.arcticEquityDeletes());
-        });
+        combinedScanTask
+            .tasks()
+            .forEach(
+                task -> {
+                  allBaseTasks.addAll(task.baseTasks());
+                  allInsertTasks.addAll(task.insertTasks());
+                  allEquDeleteTasks.addAll(task.arcticEquityDeletes());
+                });
       }
     }
     Assert.assertEquals(baseFileCnt, allBaseTasks.size());
@@ -114,8 +119,10 @@ public class TestKeyedTableScan extends TableDataTestBase {
     builder.add(MixedDataTestHelpers.createRecord(8, "mack", 0, "2022-01-01T12:00:00"));
     ImmutableList<Record> records = builder.build();
 
-    GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
-        .withTransactionId(5L).buildChangeWriter();
+    GenericChangeTaskWriter writer =
+        GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
+            .withTransactionId(5L)
+            .buildChangeWriter();
     for (Record record : records) {
       writer.write(record);
     }

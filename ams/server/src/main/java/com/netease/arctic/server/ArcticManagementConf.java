@@ -21,6 +21,7 @@ package com.netease.arctic.server;
 
 import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.ConfigOptions;
+
 import java.time.Duration;
 
 public class ArcticManagementConf {
@@ -49,11 +50,29 @@ public class ArcticManagementConf {
           .defaultValue("admin")
           .withDescription("The administrator password");
 
+  public static final ConfigOption<Integer> TABLE_MANIFEST_IO_THREAD_COUNT =
+      ConfigOptions.key("table-manifest-io.thread-count")
+          .intType()
+          .defaultValue(10)
+          .withDescription("The number of threads used to read metadata.");
+
   public static final ConfigOption<Long> REFRESH_EXTERNAL_CATALOGS_INTERVAL =
       ConfigOptions.key("refresh-external-catalogs.interval")
           .longType()
           .defaultValue(3 * 60 * 1000L)
           .withDescription("Interval to refresh the external catalog.");
+
+  public static final ConfigOption<Integer> REFRESH_EXTERNAL_CATALOGS_THREAD_COUNT =
+      ConfigOptions.key("refresh-external-catalogs.thread-count")
+          .intType()
+          .defaultValue(10)
+          .withDescription("The number of threads used for discovering tables in external catalogs.");
+
+  public static final ConfigOption<Integer> REFRESH_EXTERNAL_CATALOGS_QUEUE_SIZE =
+      ConfigOptions.key("refresh-external-catalogs.queue-size")
+          .intType()
+          .defaultValue(1000000)
+          .withDescription("The queue size of the executors of the external catalog explorer.");
 
   public static final ConfigOption<Boolean> EXPIRE_SNAPSHOTS_ENABLED =
       ConfigOptions.key("expire-snapshots.enabled")
@@ -184,21 +203,19 @@ public class ArcticManagementConf {
   public static final ConfigOption<String> DB_TYPE =
       ConfigOptions.key("database.type")
           .stringType()
-          .defaultValue("mysql")
+          .defaultValue("derby")
           .withDescription("Database type.");
 
   public static final ConfigOption<String> DB_CONNECTION_URL =
       ConfigOptions.key("database.url")
           .stringType()
-          .defaultValue("jdbc:mysql://127.0.0.1:3306/metadata?" +
-              "serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=UTF8" +
-              "&autoReconnect=true&useAffectedRows=true")
+          .defaultValue("jdbc:derby:/tmp/amoro/derby;create=true")
           .withDescription("Database connection address");
 
   public static final ConfigOption<String> DB_DRIVER_CLASS_NAME =
       ConfigOptions.key("database.jdbc-driver-class")
           .stringType()
-          .defaultValue("com.mysql.jdbc.Driver")
+          .defaultValue("org.apache.derby.jdbc.EmbeddedDriver")
           .withDescription("The JDBC driver class name for connecting to the database.");
 
   public static final ConfigOption<String> DB_USER_NAME =

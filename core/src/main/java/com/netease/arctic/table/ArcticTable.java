@@ -28,54 +28,34 @@ import org.apache.iceberg.UpdateSchema;
 import java.io.Serializable;
 import java.util.Map;
 
-/**
- * Represents an arctic table.
- */
+/** Represents an arctic table. */
 public interface ArcticTable extends Serializable {
 
-  /**
-   * Returns the {@link TableIdentifier} of this table
-   */
+  /** Returns the {@link TableIdentifier} of this table */
   TableIdentifier id();
 
-  /**
-   * Returns the {@link TableFormat} of this table
-   */
+  /** Returns the {@link TableFormat} of this table */
   TableFormat format();
 
-  /**
-   * Returns the {@link Schema} of this table
-   */
+  /** Returns the {@link Schema} of this table */
   Schema schema();
 
-  /**
-   * Returns the name of this table
-   */
+  /** Returns the name of this table */
   String name();
 
-  /**
-   * Returns the {@link PartitionSpec} of this table
-   */
+  /** Returns the {@link PartitionSpec} of this table */
   PartitionSpec spec();
 
-  /**
-   * Returns a map of string properties of this table
-   */
+  /** Returns a map of string properties of this table */
   Map<String, String> properties();
 
-  /**
-   * Returns the location of this table
-   */
+  /** Returns the location of this table */
   String location();
 
-  /**
-   * Returns a {@link ArcticFileIO} to read and write files in this table
-   */
+  /** Returns a {@link ArcticFileIO} to read and write files in this table */
   ArcticFileIO io();
 
-  /**
-   * Refresh the current table metadata.
-   */
+  /** Refresh the current table metadata. */
   void refresh();
 
   /**
@@ -92,16 +72,12 @@ public interface ArcticTable extends Serializable {
    */
   UpdateProperties updateProperties();
 
-  /**
-   * Returns true if this table is an {@link UnkeyedTable}
-   */
+  /** Returns true if this table is an {@link UnkeyedTable} */
   default boolean isUnkeyedTable() {
     return false;
   }
 
-  /**
-   * Returns true if this table is an {@link KeyedTable}
-   */
+  /** Returns true if this table is an {@link KeyedTable} */
   default boolean isKeyedTable() {
     return false;
   }

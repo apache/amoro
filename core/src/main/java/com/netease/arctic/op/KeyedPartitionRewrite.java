@@ -20,7 +20,8 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.utils.PuffinUtil;
+import com.netease.arctic.utils.ArcticTableUtil;
+import com.netease.arctic.utils.StatisticsFileUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.ReplacePartitions;
@@ -34,14 +35,13 @@ import org.apache.iceberg.util.StructLikeMap;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Replace {@link BaseTable} partition files and change max transaction id map
- */
-public class KeyedPartitionRewrite extends PartitionTransactionOperation implements RewritePartitions {
+/** Replace {@link BaseTable} partition files and change max transaction id map */
+public class KeyedPartitionRewrite extends PartitionTransactionOperation
+    implements RewritePartitions {
 
   protected List<DataFile> addFiles = Lists.newArrayList();
   private Long optimizedSequence;
-  
+
   public KeyedPartitionRewrite(KeyedTable keyedTable) {
     super(keyedTable);
   }
@@ -73,8 +73,7 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
     replacePartitions.commit();
     CreateSnapshotEvent newSnapshot = (CreateSnapshotEvent) replacePartitions.updateEvent();
 
-    PuffinUtil.Reader reader = PuffinUtil.reader(keyedTable.baseTable());
-    StructLikeMap<Long> oldOptimizedSequence = reader.readOptimizedSequence();
+    StructLikeMap<Long> oldOptimizedSequence = ArcticTableUtil.readOptimizedSequence(keyedTable);
     StructLikeMap<Long> optimizedSequence = StructLikeMap.create(spec.partitionType());
     if (oldOptimizedSequence != null) {
       optimizedSequence.putAll(oldOptimizedSequence);
@@ -82,10 +81,13 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
     addFiles.forEach(f -> optimizedSequence.put(f.partition(), this.optimizedSequence));
 
     StatisticsFile statisticsFile =
-        PuffinUtil.writer(keyedTable.baseTable(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
-            .addOptimizedSequence(optimizedSequence)
-            .overwrite()
-            .write();
+        StatisticsFileUtil.writer(
+                keyedTable.baseTable(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
+            .add(
+                ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
+                optimizedSequence,
+                StatisticsFileUtil.createPartitionDataSerializer(keyedTable.spec(), Long.class))
+            .complete();
     return Collections.singletonList(statisticsFile);
   }
 

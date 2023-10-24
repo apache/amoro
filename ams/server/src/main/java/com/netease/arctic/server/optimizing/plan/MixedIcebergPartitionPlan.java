@@ -150,10 +150,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
           return true;
         } else if ((smallFileCount > baseSplitCount || hasChangeFiles) && reachMinorInterval()) {
           return true;
-        } else if (hasChangeFiles && reachBaseRefreshInterval()) {
-          return true;
         } else {
-          return false;
+          return hasChangeFiles && reachBaseRefreshInterval();
         }
       } else {
         return super.isMinorNecessary();
@@ -166,10 +164,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
           delete -> delete.content() == FileContent.EQUALITY_DELETES || delete.content() == FileContent.DATA)) {
         // change equality delete file's content is DATA
         return true;
-      } else if (deletes.stream().filter(delete -> delete.content() == FileContent.POSITION_DELETES).count() >= 2) {
-        return true;
       } else {
-        return false;
+        return deletes.stream().filter(delete -> delete.content() == FileContent.POSITION_DELETES).count() >= 2;
       }
     }
 

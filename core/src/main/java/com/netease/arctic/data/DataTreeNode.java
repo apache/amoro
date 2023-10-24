@@ -21,16 +21,19 @@ package com.netease.arctic.data;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import javax.annotation.Nonnull;
+
 import java.io.Serializable;
 import java.util.Objects;
 
-
 /**
  * Tree node which data shuffle into, consist of two parts.
+ *
  * <ul>
- *   <li>mask: mask code representing the height of tree, validate value:2^n-1(n representing the height of tree)</li>
- *   <li>index: index of tree node(starting from 0)</li>
+ *   <li>mask: mask code representing the height of tree, validate value:2^n-1(n representing the
+ *       height of tree)
+ *   <li>index: index of tree node(starting from 0)
  * </ul>
+ *
  * index = hashCode(data) & mask;
  */
 public final class DataTreeNode implements Serializable {
@@ -112,8 +115,7 @@ public final class DataTreeNode implements Serializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     DataTreeNode treeNode = (DataTreeNode) o;
-    return mask == treeNode.mask &&
-        index == treeNode.index;
+    return mask == treeNode.mask && index == treeNode.index;
   }
 
   @Override

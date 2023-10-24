@@ -18,18 +18,15 @@
 
 package com.netease.arctic.server.dashboard.controller;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.Constants;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.UpgradeHiveTableUtil;
-import com.netease.arctic.server.catalog.IcebergCatalogImpl;
-import com.netease.arctic.server.catalog.InternalIcebergCatalogImpl;
 import com.netease.arctic.server.catalog.MixedHiveCatalogImpl;
-import com.netease.arctic.server.catalog.PaimonServerCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.ServerTableDescriptor;
 import com.netease.arctic.server.dashboard.ServerTableProperties;
@@ -43,7 +40,6 @@ import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TableMeta;
 import com.netease.arctic.server.dashboard.model.TableOperation;
-import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.UpgradeHiveMeta;
 import com.netease.arctic.server.dashboard.model.UpgradeRunningInfo;
 import com.netease.arctic.server.dashboard.model.UpgradeStatus;
@@ -51,9 +47,6 @@ import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.dashboard.response.PageResult;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.CommonUtil;
-import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
-import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
-import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableIdentifier;
@@ -62,11 +55,12 @@ import io.javalin.http.Context;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.relocated.com.google.common.base.Function;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.iceberg.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -78,6 +72,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
 
 /**
  * The controller that handles table requests.
@@ -115,15 +110,15 @@ public class TableController {
 
     String catalog = ctx.pathParam("catalog");
     String database = ctx.pathParam("db");
-    String tableMame = ctx.pathParam("table");
+    String tableName = ctx.pathParam("table");
 
     Preconditions.checkArgument(
-        StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(database) && StringUtils.isNotBlank(tableMame),
+        StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(database) && StringUtils.isNotBlank(tableName),
         "catalog.database.tableName can not be empty in any element");
     Preconditions.checkState(tableService.catalogExist(catalog), "invalid catalog!");
 
     ServerTableMeta serverTableMeta =
-        tableDescriptor.getTableDetail(ServerTableIdentifier.of(catalog, database, tableMame));
+        tableDescriptor.getTableDetail(TableIdentifier.of(catalog, database, tableName).buildTableIdentifier());
 
     ctx.json(OkResponse.of(serverTableMeta));
   }
@@ -253,25 +248,16 @@ public class TableController {
 
     int offset = (page - 1) * pageSize;
     int limit = pageSize;
+    ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
     Preconditions.checkArgument(offset >= 0, "offset[%s] must >= 0", offset);
     Preconditions.checkArgument(limit >= 0, "limit[%s] must >= 0", limit);
-    Preconditions.checkState(tableService.tableExist(new com.netease.arctic.ams.api.TableIdentifier(catalog, db,
-        table)), "no such table");
+    Preconditions.checkState(serverCatalog.exist(db, table), "no such table");
 
-    List<OptimizingProcessMeta> processMetaList = tableDescriptor.getOptimizingProcesses(catalog, db, table);
-    int total = processMetaList.size();
-
-    processMetaList = tableDescriptor.getOptimizingProcesses(catalog, db, table).stream()
-        .skip(offset)
-        .limit(limit)
-        .collect(Collectors.toList());
-
-    Map<Long, List<OptimizingTaskMeta>> optimizingTasks = tableDescriptor.getOptimizingTasks(processMetaList).stream()
-        .collect(Collectors.groupingBy(OptimizingTaskMeta::getProcessId));
-
-    List<OptimizingProcessInfo> result = processMetaList.stream()
-        .map(p -> OptimizingProcessInfo.build(p, optimizingTasks.get(p.getProcessId())))
-        .collect(Collectors.toList());
+    TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
+    Pair<List<OptimizingProcessInfo>, Integer> optimizingProcessesInfo = tableDescriptor.getOptimizingProcessesInfo(
+        tableIdentifier.buildTableIdentifier(), limit, offset);
+    List<OptimizingProcessInfo> result = optimizingProcessesInfo.first();
+    int total = optimizingProcessesInfo.second();
 
     ctx.json(OkResponse.of(PageResult.of(result, total)));
   }
@@ -282,17 +268,17 @@ public class TableController {
    * @param ctx - context for handling the request and response
    */
   public void getTableTransactions(Context ctx) {
-    String catalogName = ctx.pathParam("catalog");
-    String db = ctx.pathParam("db");
+    String catalog = ctx.pathParam("catalog");
+    String database = ctx.pathParam("db");
     String tableName = ctx.pathParam("table");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
-    List<TransactionsOfTable> transactionsOfTables =
-        tableDescriptor.getTransactions(ServerTableIdentifier.of(catalogName, db, tableName));
+    List<AMSTransactionsOfTable> transactionsOfTables =
+        tableDescriptor.getTransactions(TableIdentifier.of(catalog, database, tableName).buildTableIdentifier());
     int offset = (page - 1) * pageSize;
     PageResult<AMSTransactionsOfTable> pageResult = PageResult.of(transactionsOfTables,
-        offset, pageSize, AmsUtil::toTransactionsOfTable);
+        offset, pageSize);
     ctx.json(OkResponse.of(pageResult));
   }
 
@@ -302,15 +288,15 @@ public class TableController {
    * @param ctx - context for handling the request and response
    */
   public void getTransactionDetail(Context ctx) {
-    String catalogName = ctx.pathParam("catalog");
-    String db = ctx.pathParam("db");
+    String catalog = ctx.pathParam("catalog");
+    String database = ctx.pathParam("db");
     String tableName = ctx.pathParam("table");
     String transactionId = ctx.pathParam("transactionId");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
-    List<PartitionFileBaseInfo> result = tableDescriptor.getTransactionDetail(ServerTableIdentifier.of(catalogName, db,
-        tableName), Long.parseLong(transactionId));
+    List<PartitionFileBaseInfo> result = tableDescriptor.getTransactionDetail(
+        TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(), Long.parseLong(transactionId));
     int offset = (page - 1) * pageSize;
     PageResult<PartitionFileBaseInfo> amsPageResult = PageResult.of(result,
         offset, pageSize);
@@ -324,13 +310,13 @@ public class TableController {
    */
   public void getTablePartitions(Context ctx) {
     String catalog = ctx.pathParam("catalog");
-    String db = ctx.pathParam("db");
+    String database = ctx.pathParam("db");
     String table = ctx.pathParam("table");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
     List<PartitionBaseInfo> partitionBaseInfos = tableDescriptor.getTablePartition(
-        ServerTableIdentifier.of(catalog, db, table));
+        TableIdentifier.of(catalog, database, table).buildTableIdentifier());
     int offset = (page - 1) * pageSize;
     PageResult<PartitionBaseInfo> amsPageResult = PageResult.of(partitionBaseInfos,
         offset, pageSize);
@@ -352,7 +338,7 @@ public class TableController {
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
     List<PartitionFileBaseInfo> partitionFileBaseInfos = tableDescriptor.getTableFile(
-        ServerTableIdentifier.of(catalog, db, table), partition);
+        TableIdentifier.of(catalog, db, table).buildTableIdentifier(), partition);
     int offset = (page - 1) * pageSize;
     PageResult<PartitionFileBaseInfo> amsPageResult = PageResult.of(partitionFileBaseInfos,
         offset, pageSize);
@@ -373,8 +359,8 @@ public class TableController {
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
     int offset = (page - 1) * pageSize;
 
-    List<DDLInfo> ddlInfoList = tableDescriptor.getTableOperations(ServerTableIdentifier.of(catalogName, db,
-        tableName));
+    List<DDLInfo> ddlInfoList = tableDescriptor.getTableOperations(
+        TableIdentifier.of(catalogName, db, tableName).buildTableIdentifier());
     Collections.reverse(ddlInfoList);
     PageResult<TableOperation> amsPageResult = PageResult.of(ddlInfoList,
         offset, pageSize, TableOperation::buildFromDDLInfo);
@@ -394,31 +380,36 @@ public class TableController {
         StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(db),
         "catalog.database can not be empty in any element");
 
-    List<com.netease.arctic.ams.api.TableIdentifier> tableIdentifiers = tableService.listTables(catalog, db);
     ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
-    List<TableMeta> tables = new ArrayList<>();
+    Function<TableFormat, String> formatToType = format -> {
+      switch (format) {
+        case MIXED_HIVE:
+        case MIXED_ICEBERG:
+          return TableMeta.TableType.ARCTIC.toString();
+        case PAIMON:
+          return TableMeta.TableType.PAIMON.toString();
+        case ICEBERG:
+          return TableMeta.TableType.ICEBERG.toString();
+        default:
+          throw new IllegalStateException("Unknown format");
+      }
+    };
 
-    if (serverCatalog instanceof IcebergCatalogImpl || serverCatalog instanceof InternalIcebergCatalogImpl) {
-      tableIdentifiers.forEach(e -> tables.add(new TableMeta(
-          e.getTableName(),
-          TableMeta.TableType.ICEBERG.toString())));
-    } else if (serverCatalog instanceof MixedHiveCatalogImpl) {
-      tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.ARCTIC.toString())));
+    List<TableMeta> tables = tableService.listTables(catalog, db).stream()
+        .map(idWithFormat -> new TableMeta(
+            idWithFormat.getIdentifier().getTableName(),
+            formatToType.apply(idWithFormat.getTableFormat())))
+        .collect(Collectors.toList());
+
+    if (serverCatalog instanceof MixedHiveCatalogImpl) {
       List<String> hiveTables = HiveTableUtil.getAllHiveTables(
           ((MixedHiveCatalogImpl) serverCatalog).getHiveClient(),
           db);
-      Set<String> arcticTables =
-          tableIdentifiers.stream()
-              .map(com.netease.arctic.ams.api.TableIdentifier::getTableName)
-              .collect(Collectors.toSet());
-      hiveTables.stream().filter(e -> !arcticTables.contains(e)).forEach(e -> tables.add(new TableMeta(
-          e,
-          TableMeta.TableType.HIVE.toString())));
-    } else if (serverCatalog instanceof PaimonServerCatalog) {
-      tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.PAIMON.toString())));
-    } else {
-      tableIdentifiers.forEach(e -> tables.add(new TableMeta(e.getTableName(), TableMeta.TableType.ARCTIC.toString())));
+      Set<String> arcticTables = tables.stream().map(TableMeta::getName).collect(Collectors.toSet());
+      hiveTables.stream().filter(e -> !arcticTables.contains(e))
+          .forEach(e -> tables.add(new TableMeta(e, TableMeta.TableType.HIVE.toString())));
     }
+
     ctx.json(OkResponse.of(tables.stream().filter(t -> StringUtils.isBlank(keywords) ||
         t.getName().contains(keywords)).collect(Collectors.toList())));
   }

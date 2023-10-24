@@ -41,11 +41,11 @@ import java.util.NoSuchElementException;
 public class UnkeyedInputFormatSourceFunction extends RichParallelSourceFunction<RowData> {
   private static final long serialVersionUID = 1L;
 
-  private TypeInformation<RowData> typeInfo;
+  private final TypeInformation<RowData> typeInfo;
   private transient TypeSerializer<RowData> serializer;
 
   private FlinkInputFormat format;
-  private ProxyFactory<FlinkInputFormat> formatFactory;
+  private final ProxyFactory<FlinkInputFormat> formatFactory;
 
   private transient InputSplitProvider provider;
   private transient Iterator<InputSplit> splitIterator;
@@ -66,7 +66,7 @@ public class UnkeyedInputFormatSourceFunction extends RichParallelSourceFunction
 
     format = formatFactory.getInstance();
     if (format instanceof RichInputFormat) {
-      ((RichInputFormat) format).setRuntimeContext(context);
+      format.setRuntimeContext(context);
     }
     format.configure(parameters);
 
@@ -82,7 +82,7 @@ public class UnkeyedInputFormatSourceFunction extends RichParallelSourceFunction
       Counter completedSplitsCounter =
           getRuntimeContext().getMetricGroup().counter("numSplitsProcessed");
       if (isRunning && format instanceof RichInputFormat) {
-        ((RichInputFormat) format).openInputFormat();
+        format.openInputFormat();
       }
 
       RowData nextElement = serializer.createInstance();
@@ -110,7 +110,7 @@ public class UnkeyedInputFormatSourceFunction extends RichParallelSourceFunction
     } finally {
       format.close();
       if (format instanceof RichInputFormat) {
-        ((RichInputFormat) format).closeInputFormat();
+        format.closeInputFormat();
       }
       isRunning = false;
     }
@@ -125,7 +125,7 @@ public class UnkeyedInputFormatSourceFunction extends RichParallelSourceFunction
   public void close() throws Exception {
     format.close();
     if (format instanceof RichInputFormat) {
-      ((RichInputFormat) format).closeInputFormat();
+      format.closeInputFormat();
     }
   }
 
