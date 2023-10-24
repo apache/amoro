@@ -91,7 +91,6 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
       assertFilesSequence(tasks, 0, 0, 0);
     }
   }
-  
 
   private void assertFiles(
       CloseableIterable<FileScanTask> tasks, int fileCnt, Predicate<FileScanTask> validator) {

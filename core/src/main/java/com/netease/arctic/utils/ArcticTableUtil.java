@@ -28,7 +28,7 @@ public class ArcticTableUtil {
 
   /** Return the base store of the arctic table. */
   public static UnkeyedTable baseStore(ArcticTable arcticTable) {
-    
+
     if (arcticTable.isKeyedTable()) {
       return arcticTable.asKeyedTable().baseTable();
     } else {
@@ -54,7 +54,7 @@ public class ArcticTableUtil {
   public static StructLikeMap<Long> readOptimizedSequence(KeyedTable table, long snapshotId) {
     return readWithLegacy(table.baseTable(), snapshotId, BLOB_TYPE_OPTIMIZED_SEQUENCE);
   }
-  
+
   public static StructLikeMap<Long> readBaseOptimizedTime(KeyedTable table) {
     return readWithLegacy(table.baseTable(), null, BLOB_TYPE_BASE_OPTIMIZED_TIME);
   }
@@ -63,7 +63,8 @@ public class ArcticTableUtil {
     return readWithLegacy(table.baseTable(), snapshotId, BLOB_TYPE_BASE_OPTIMIZED_TIME);
   }
 
-  private static StructLikeMap<Long> readWithLegacy(UnkeyedTable table, Long snapshotId, String type) {
+  private static StructLikeMap<Long> readWithLegacy(
+      UnkeyedTable table, Long snapshotId, String type) {
     if (snapshotId == null) {
       Snapshot snapshot = table.currentSnapshot();
       if (snapshot == null) {
@@ -76,29 +77,38 @@ public class ArcticTableUtil {
     return result != null ? result : readLegacyPartitionProperties(table, type);
   }
 
-  private static StructLikeMap<Long> readFromPuffin(UnkeyedTable table, long snapshotId, String type) {
+  private static StructLikeMap<Long> readFromPuffin(
+      UnkeyedTable table, long snapshotId, String type) {
     Snapshot snapshot = table.snapshot(snapshotId);
     Preconditions.checkArgument(snapshot != null, "Snapshot %s not found", snapshotId);
     List<StatisticsFile> statisticsFiles =
-        PuffinUtil.findLatestValidStatisticsFiles(table, snapshot.snapshotId(), PuffinUtil.containsBlobOfType(type));
+        PuffinUtil.findLatestValidStatisticsFiles(
+            table, snapshot.snapshotId(), PuffinUtil.containsBlobOfType(type));
     if (statisticsFiles != null && !statisticsFiles.isEmpty()) {
-      Preconditions.checkArgument(statisticsFiles.size() == 1,
-          "There should be only one statistics file for blob type %s", type);
+      Preconditions.checkArgument(
+          statisticsFiles.size() == 1,
+          "There should be only one statistics file for blob type %s",
+          type);
       return PuffinUtil.reader(table)
-          .read(statisticsFiles.get(0), type, PuffinUtil.createPartitionDataSerializer(table.spec()));
+          .read(
+              statisticsFiles.get(0), type, PuffinUtil.createPartitionDataSerializer(table.spec()));
     } else {
       return null;
     }
   }
 
-  private static StructLikeMap<Long> readLegacyPartitionProperties(UnkeyedTable table, String type) {
-    // to be compatible with old Amoro version 0.5.0 which didn't use puffin file and stored the statistics in
+  private static StructLikeMap<Long> readLegacyPartitionProperties(
+      UnkeyedTable table, String type) {
+    // to be compatible with old Amoro version 0.5.0 which didn't use puffin file and stored the
+    // statistics in
     // table properties
     switch (type) {
       case BLOB_TYPE_OPTIMIZED_SEQUENCE:
-        return TablePropertyUtil.getPartitionLongProperties(table, TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
+        return TablePropertyUtil.getPartitionLongProperties(
+            table, TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
       case BLOB_TYPE_BASE_OPTIMIZED_TIME:
-        return TablePropertyUtil.getPartitionLongProperties(table, TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
+        return TablePropertyUtil.getPartitionLongProperties(
+            table, TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
       default:
         throw new IllegalArgumentException("Unknown type: " + type);
     }

@@ -72,7 +72,7 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation
     addFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
     CreateSnapshotEvent newSnapshot = (CreateSnapshotEvent) replacePartitions.updateEvent();
-    
+
     StructLikeMap<Long> oldOptimizedSequence = ArcticTableUtil.readOptimizedSequence(keyedTable);
     StructLikeMap<Long> optimizedSequence = StructLikeMap.create(spec.partitionType());
     if (oldOptimizedSequence != null) {
@@ -81,8 +81,11 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation
     addFiles.forEach(f -> optimizedSequence.put(f.partition(), this.optimizedSequence));
 
     StatisticsFile statisticsFile =
-        PuffinUtil.writer(keyedTable.baseTable(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
-            .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence,
+        PuffinUtil.writer(
+                keyedTable.baseTable(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
+            .add(
+                ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
+                optimizedSequence,
                 PuffinUtil.createPartitionDataSerializer(keyedTable.spec()))
             .complete();
     return Collections.singletonList(statisticsFile);

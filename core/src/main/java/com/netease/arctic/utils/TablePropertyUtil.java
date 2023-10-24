@@ -39,7 +39,8 @@ public class TablePropertyUtil {
 
   public static final StructLike EMPTY_STRUCT = GenericRecord.create(new Schema());
 
-  public static StructLikeMap<Map<String, String>> decodePartitionProperties(PartitionSpec spec, String value) {
+  public static StructLikeMap<Map<String, String>> decodePartitionProperties(
+      PartitionSpec spec, String value) {
     try {
       StructLikeMap<Map<String, String>> results = StructLikeMap.create(spec.partitionType());
       TypeReference<Map<String, Map<String, String>>> typeReference =
@@ -75,7 +76,8 @@ public class TablePropertyUtil {
     return value;
   }
 
-  public static StructLikeMap<Long> getPartitionLongProperties(UnkeyedTable unkeyedTable, String key) {
+  public static StructLikeMap<Long> getPartitionLongProperties(
+      UnkeyedTable unkeyedTable, String key) {
     StructLikeMap<Long> result = StructLikeMap.create(unkeyedTable.spec().partitionType());
 
     StructLikeMap<Map<String, String>> partitionProperty = unkeyedTable.partitionProperty();
@@ -122,7 +124,6 @@ public class TablePropertyUtil {
     }
     return result;
   }
-
 
   public static long getTableWatermark(Map<String, String> properties) {
     String watermarkValue = properties.get(TableProperties.WATERMARK_TABLE);

@@ -93,7 +93,7 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
             fileScanTask -> {
               StructLike partition = fileScanTask.file().partition();
               long sequenceNumber = fileScanTask.file().dataSequenceNumber();
-          return shouldKeepFile(partition, sequenceNumber);
+              return shouldKeepFile(partition, sequenceNumber);
             });
     return CloseableIterable.transform(
         filteredTasks,
@@ -106,7 +106,8 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
     if (biggerThanToSequence(sequence)) {
       return false;
     }
-    if (fromSequence == null && (fromPartitionSequence == null || fromPartitionSequence.isEmpty())) {
+    if (fromSequence == null
+        && (fromPartitionSequence == null || fromPartitionSequence.isEmpty())) {
       // if fromPartitionSequence is not set or is empty, return all change files
       return true;
     }
@@ -137,5 +138,4 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
   private boolean biggerThanToSequence(long sequence) {
     return this.toSequence != null && sequence > this.toSequence;
   }
-
 }

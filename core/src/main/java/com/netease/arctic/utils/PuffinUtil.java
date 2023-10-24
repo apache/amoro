@@ -50,8 +50,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * Util class for write and read optimized sequences/time from Iceberg Puffin files.
- * Puffin are a kind of file format for Iceberg statistics file {@link StatisticsFile}.
+ * Util class for write and read optimized sequences/time from Iceberg Puffin files. Puffin are a
+ * kind of file format for Iceberg statistics file {@link StatisticsFile}.
  */
 public class PuffinUtil {
 
@@ -73,14 +73,18 @@ public class PuffinUtil {
     private Writer(Table table, long snapshotId, long sequenceNumber) {
       this.snapshotId = snapshotId;
       this.sequenceNumber = sequenceNumber;
-      this.outputFile = table.io()
-          .newOutputFile(table.location() + "/data/" + snapshotId + "-" + UUID.randomUUID() + ".puffin");
+      this.outputFile =
+          table
+              .io()
+              .newOutputFile(
+                  table.location() + "/data/" + snapshotId + "-" + UUID.randomUUID() + ".puffin");
       this.puffinWriter = Puffin.write(outputFile).build();
     }
 
     public Writer addBlob(String type, ByteBuffer blobData) {
       checkNotClosed();
-      puffinWriter.add(new Blob(type, Collections.emptyList(), snapshotId, sequenceNumber, blobData));
+      puffinWriter.add(
+          new Blob(type, Collections.emptyList(), snapshotId, sequenceNumber, blobData));
       return this;
     }
 
@@ -99,11 +103,7 @@ public class PuffinUtil {
         List<org.apache.iceberg.BlobMetadata> collect =
             blobMetadata.stream().map(GenericBlobMetadata::from).collect(Collectors.toList());
         return new GenericStatisticsFile(
-            snapshotId,
-            outputFile.location(),
-            fileSize,
-            footerSize,
-            collect);
+            snapshotId, outputFile.location(), fileSize, footerSize, collect);
       } catch (IOException e) {
         throw new UncheckedIOException(e);
       } finally {
@@ -143,11 +143,17 @@ public class PuffinUtil {
     }
 
     public ByteBuffer read(StatisticsFile statisticsFile, String type) {
-      try (PuffinReader puffin = Puffin.read(table.io().newInputFile(statisticsFile.path())).build()) {
+      try (PuffinReader puffin =
+          Puffin.read(table.io().newInputFile(statisticsFile.path())).build()) {
         FileMetadata fileMetadata = puffin.fileMetadata();
         BlobMetadata blobMetadata =
-            fileMetadata.blobs().stream().filter(b -> type.equals(b.type())).findFirst().orElseThrow(
-                () -> new IllegalStateException("No blob of type " + type + " found in file " + statisticsFile.path()));
+            fileMetadata.blobs().stream()
+                .filter(b -> type.equals(b.type()))
+                .findFirst()
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "No blob of type " + type + " found in file " + statisticsFile.path()));
         return puffin.readAll(Collections.singletonList(blobMetadata)).iterator().next().second();
       } catch (IOException e) {
         throw new UncheckedIOException(e);
@@ -156,11 +162,11 @@ public class PuffinUtil {
   }
 
   /**
-   * Copy a statistic file with a new snapshot id, and it points to the same file in the file system as the original
-   * file.
+   * Copy a statistic file with a new snapshot id, and it points to the same file in the file system
+   * as the original file.
    *
    * @param statisticsFile - original statistic file
-   * @param snapshotId     - new snapshot id
+   * @param snapshotId - new snapshot id
    * @return a new copied statistic file
    */
   public static StatisticsFile copyToSnapshot(StatisticsFile statisticsFile, long snapshotId) {
@@ -172,9 +178,8 @@ public class PuffinUtil {
         statisticsFile.blobMetadata());
   }
 
-  public static List<StatisticsFile> findLatestValidStatisticsFiles(Table table,
-                                                                    long currentSnapshotId,
-                                                                    Predicate<StatisticsFile> validator) {
+  public static List<StatisticsFile> findLatestValidStatisticsFiles(
+      Table table, long currentSnapshotId, Predicate<StatisticsFile> validator) {
     List<StatisticsFile> statisticsFiles = table.statisticsFiles();
     if (statisticsFiles.isEmpty()) {
       return null;
@@ -185,7 +190,8 @@ public class PuffinUtil {
     while (true) {
       List<StatisticsFile> statisticsFileList = statisticsFilesBySnapshotId.get(snapshotId);
       if (statisticsFileList != null) {
-        List<StatisticsFile> result = statisticsFileList.stream().filter(validator).collect(Collectors.toList());
+        List<StatisticsFile> result =
+            statisticsFileList.stream().filter(validator).collect(Collectors.toList());
         if (!result.isEmpty()) {
           return result;
         }
@@ -201,9 +207,10 @@ public class PuffinUtil {
   }
 
   public static Predicate<StatisticsFile> containsBlobOfType(String type) {
-    return statisticsFile -> statisticsFile.blobMetadata().stream().anyMatch(b -> type.equals(b.type()));
+    return statisticsFile ->
+        statisticsFile.blobMetadata().stream().anyMatch(b -> type.equals(b.type()));
   }
-  
+
   public static PartitionDataSerializer createPartitionDataSerializer(PartitionSpec spec) {
     return new PartitionDataSerializer(spec);
   }
@@ -242,9 +249,9 @@ public class PuffinUtil {
     public StructLikeMap<Long> deserialize(ByteBuffer buffer) {
       try {
         StructLikeMap<Long> results = StructLikeMap.create(spec.partitionType());
-        TypeReference<Map<String, Long>> typeReference = new TypeReference<Map<String, Long>>() {
-        };
-        Map<String, Long> map = new ObjectMapper().readValue(new String(buffer.array()), typeReference);
+        TypeReference<Map<String, Long>> typeReference = new TypeReference<Map<String, Long>>() {};
+        Map<String, Long> map =
+            new ObjectMapper().readValue(new String(buffer.array()), typeReference);
         for (String key : map.keySet()) {
           if (spec.isUnpartitioned()) {
             results.put(TablePropertyUtil.EMPTY_STRUCT, map.get(key));

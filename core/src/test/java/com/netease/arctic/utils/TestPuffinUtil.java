@@ -43,25 +43,24 @@ public class TestPuffinUtil extends TableTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][] {{new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(false, true)},
-        {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-            new BasicTableTestHelper(false, false)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, true)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, false)}};
+    return new Object[][] {
+      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, true)},
+      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, false)},
+      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, true)},
+      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, false)}
+    };
   }
 
-  public TestPuffinUtil(CatalogTestHelper catalogTestHelper,
-                        TableTestHelper tableTestHelper) {
+  public TestPuffinUtil(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Test
   public void testWriteAndReadPuffin() {
-    UnkeyedTable table = getArcticTable().isKeyedTable() ? getArcticTable().asKeyedTable().baseTable() :
-        getArcticTable().asUnkeyedTable();
+    UnkeyedTable table =
+        getArcticTable().isKeyedTable()
+            ? getArcticTable().asKeyedTable().baseTable()
+            : getArcticTable().asUnkeyedTable();
     table.newAppend().commit();
 
     Snapshot snapshot = table.currentSnapshot();
@@ -70,35 +69,48 @@ public class TestPuffinUtil extends TableTestBase {
 
     PuffinUtil.PartitionDataSerializer dataSerializer =
         PuffinUtil.createPartitionDataSerializer(table.spec());
-    PuffinUtil.Writer writer = PuffinUtil.writer(table, snapshot.snapshotId(), snapshot.sequenceNumber())
-        .add(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, optimizedTime, dataSerializer)
-        .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence, dataSerializer);
+    PuffinUtil.Writer writer =
+        PuffinUtil.writer(table, snapshot.snapshotId(), snapshot.sequenceNumber())
+            .add(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, optimizedTime, dataSerializer)
+            .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence, dataSerializer);
     StatisticsFile statisticsFile = writer.complete();
     table.updateStatistics().setStatistics(snapshot.snapshotId(), statisticsFile).commit();
 
     PuffinUtil.Reader reader = PuffinUtil.reader(table);
 
-    assertStructLikeEquals(optimizedTime,
-        reader.read(findValidStatisticFile(table, ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME),
-            ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, dataSerializer));
-    assertStructLikeEquals(optimizedSequence,
-        reader.read(findValidStatisticFile(table, ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE),
-            ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, dataSerializer));
+    assertStructLikeEquals(
+        optimizedTime,
+        reader.read(
+            findValidStatisticFile(table, ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME),
+            ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME,
+            dataSerializer));
+    assertStructLikeEquals(
+        optimizedSequence,
+        reader.read(
+            findValidStatisticFile(table, ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE),
+            ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
+            dataSerializer));
 
     table.newAppend().commit();
 
-    assertStructLikeEquals(optimizedTime,
-        reader.read(findValidStatisticFile(table, ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME),
-            ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, dataSerializer));
-    assertStructLikeEquals(optimizedSequence,
-        reader.read(findValidStatisticFile(table, ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE),
-            ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, dataSerializer));
+    assertStructLikeEquals(
+        optimizedTime,
+        reader.read(
+            findValidStatisticFile(table, ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME),
+            ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME,
+            dataSerializer));
+    assertStructLikeEquals(
+        optimizedSequence,
+        reader.read(
+            findValidStatisticFile(table, ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE),
+            ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
+            dataSerializer));
   }
 
   private StatisticsFile findValidStatisticFile(UnkeyedTable table, String type) {
     List<StatisticsFile> latestValidStatisticsFiles =
-        PuffinUtil.findLatestValidStatisticsFiles(table, table.currentSnapshot().snapshotId(),
-            PuffinUtil.containsBlobOfType(type));
+        PuffinUtil.findLatestValidStatisticsFiles(
+            table, table.currentSnapshot().snapshotId(), PuffinUtil.containsBlobOfType(type));
     return latestValidStatisticsFiles.get(0);
   }
 

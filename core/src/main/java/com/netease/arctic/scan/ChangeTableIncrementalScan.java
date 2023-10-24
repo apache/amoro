@@ -47,7 +47,7 @@ public interface ChangeTableIncrementalScan extends TableScan {
    * @return this for method chaining
    */
   ChangeTableIncrementalScan toSequence(long sequence);
-  
+
   @Override
   ChangeTableIncrementalScan useSnapshot(long snapshotId);
 

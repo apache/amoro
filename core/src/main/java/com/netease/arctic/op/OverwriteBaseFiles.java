@@ -158,7 +158,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
 
   @Override
   protected List<StatisticsFile> apply(Transaction transaction) {
-    Preconditions.checkState(this.dynamic != null,
+    Preconditions.checkState(
+        this.dynamic != null,
         "updateOptimizedSequence() or updateOptimizedSequenceDynamically() must be invoked");
     applyDeleteExpression();
 
@@ -270,9 +271,10 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     } else {
       toChangePartitionSequence = this.partitionOptimizedSequence;
     }
-    toChangePartitionSequence.forEach((partition, sequence) -> {
-      optimizedSequence.put(partition, sequence);
-      optimizedTime.put(partition, commitTime);
+    toChangePartitionSequence.forEach(
+        (partition, sequence) -> {
+          optimizedSequence.put(partition, sequence);
+          optimizedTime.put(partition, commitTime);
         });
 
     StatisticsFile statisticsFile = null;
@@ -284,8 +286,10 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         PuffinUtil.PartitionDataSerializer dataSerializer =
             PuffinUtil.createPartitionDataSerializer(keyedTable.spec());
         statisticsFile =
-            PuffinUtil.writer(keyedTable.baseTable(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
-                .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence, dataSerializer)
+            PuffinUtil.writer(
+                    keyedTable.baseTable(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
+                .add(
+                    ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence, dataSerializer)
                 .add(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, optimizedTime, dataSerializer)
                 .complete();
         result.add(statisticsFile);

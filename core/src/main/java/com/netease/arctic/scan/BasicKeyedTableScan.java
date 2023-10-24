@@ -156,8 +156,8 @@ public class BasicKeyedTableScan implements KeyedTableScan {
       partitionExpressions = new BasicPartitionEvaluator(table.spec()).project(expression);
     }
 
-    ChangeTableIncrementalScan changeTableScan = table.changeTable().newScan()
-        .fromSequence(partitionOptimizedSequence);
+    ChangeTableIncrementalScan changeTableScan =
+        table.changeTable().newScan().fromSequence(partitionOptimizedSequence);
 
     changeTableScan = changeTableScan.filter(partitionExpressions);
 
