@@ -40,8 +40,7 @@ public class TableRuntimeMeta {
 
   private TableRuntime tableRuntime;
 
-  public TableRuntimeMeta() {
-  }
+  public TableRuntimeMeta() {}
 
   public TableRuntime constructTableRuntime(TableManager initializer) {
     if (tableRuntime == null) {

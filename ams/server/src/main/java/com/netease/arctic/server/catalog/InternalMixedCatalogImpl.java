@@ -29,8 +29,11 @@ public class InternalMixedCatalogImpl extends InternalCatalog {
 
   @Override
   public AmoroTable<?> loadTable(String database, String tableName) {
-    TableMetadata tableMetadata = getAs(TableMetaMapper.class, mapper ->
-        mapper.selectTableMetaByName(getMetadata().getCatalogName(), database, tableName));
+    TableMetadata tableMetadata =
+        getAs(
+            TableMetaMapper.class,
+            mapper ->
+                mapper.selectTableMetaByName(getMetadata().getCatalogName(), database, tableName));
     if (tableMetadata == null) {
       return null;
     }

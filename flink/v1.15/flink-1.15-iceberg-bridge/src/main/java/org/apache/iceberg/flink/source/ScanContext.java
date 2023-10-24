@@ -37,17 +37,19 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Copy from Iceberg {@link org.apache.iceberg.flink.source.ScanContext}.
- * only change line 115 and expand the modifier.
- * Context object with optional arguments for a Flink Scan.
+ * Copy from Iceberg {@link org.apache.iceberg.flink.source.ScanContext}. only change line 115 and
+ * expand the modifier. Context object with optional arguments for a Flink Scan.
  */
 public class ScanContext implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
   public static final ConfigOption<Long> SNAPSHOT_ID =
-      ConfigOptions.key("snapshot-id").longType().defaultValue(null)
-        .withDescription("Retrieve the full data of the specified snapshot by ID, used for batch scan mode");
+      ConfigOptions.key("snapshot-id")
+          .longType()
+          .defaultValue(null)
+          .withDescription(
+              "Retrieve the full data of the specified snapshot by ID, used for batch scan mode");
 
   public static final ConfigOption<String> TAG =
       ConfigOptions.key("tag").stringType().defaultValue(null);
@@ -62,59 +64,86 @@ public class ScanContext implements Serializable {
       ConfigOptions.key("end-tag").stringType().defaultValue(null);
 
   public static final ConfigOption<Boolean> CASE_SENSITIVE =
-      ConfigOptions.key("case-sensitive").booleanType().defaultValue(false)
-        .withDescription("Set if column names are case-sensitive");
+      ConfigOptions.key("case-sensitive")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("Set if column names are case-sensitive");
 
   public static final ConfigOption<Long> AS_OF_TIMESTAMP =
-      ConfigOptions.key("as-of-timestamp").longType().defaultValue(null)
-        .withDescription("Retrieve the full data of the specified snapshot at the given timestamp, " +
-          "used for batch scan mode");
+      ConfigOptions.key("as-of-timestamp")
+          .longType()
+          .defaultValue(null)
+          .withDescription(
+              "Retrieve the full data of the specified snapshot at the given timestamp, "
+                  + "used for batch scan mode");
 
   public static final ConfigOption<StreamingStartingStrategy> STARTING_STRATEGY =
       ConfigOptions.key("starting-strategy")
-      .enumType(StreamingStartingStrategy.class)
-      .defaultValue(StreamingStartingStrategy.INCREMENTAL_FROM_LATEST_SNAPSHOT)
-        .withDescription("Specific the starting strategy for streaming execution");
+          .enumType(StreamingStartingStrategy.class)
+          .defaultValue(StreamingStartingStrategy.INCREMENTAL_FROM_LATEST_SNAPSHOT)
+          .withDescription("Specific the starting strategy for streaming execution");
 
   public static final ConfigOption<Long> START_SNAPSHOT_TIMESTAMP =
-      ConfigOptions.key("start-snapshot-timestamp").longType().defaultValue(null)
-        .withDescription("Specific the snapshot timestamp that streaming job starts from");
+      ConfigOptions.key("start-snapshot-timestamp")
+          .longType()
+          .defaultValue(null)
+          .withDescription("Specific the snapshot timestamp that streaming job starts from");
 
   public static final ConfigOption<Long> START_SNAPSHOT_ID =
-      ConfigOptions.key("start-snapshot-id").longType().defaultValue(null)
-        .withDescription("Specific the snapshot id that streaming job starts from");
+      ConfigOptions.key("start-snapshot-id")
+          .longType()
+          .defaultValue(null)
+          .withDescription("Specific the snapshot id that streaming job starts from");
 
   public static final ConfigOption<Long> END_SNAPSHOT_ID =
-      ConfigOptions.key("end-snapshot-id").longType().defaultValue(null)
-        .withDescription("Specific the snapshot id that streaming job to end");
+      ConfigOptions.key("end-snapshot-id")
+          .longType()
+          .defaultValue(null)
+          .withDescription("Specific the snapshot id that streaming job to end");
 
   public static final ConfigOption<Long> SPLIT_SIZE =
-      ConfigOptions.key("split-size").longType().defaultValue(null)
-        .withDescription("Specific the target size when combining data input splits");
+      ConfigOptions.key("split-size")
+          .longType()
+          .defaultValue(null)
+          .withDescription("Specific the target size when combining data input splits");
 
   public static final ConfigOption<Integer> SPLIT_LOOKBACK =
-      ConfigOptions.key("split-lookback").intType().defaultValue(null)
-        .withDescription("Specify the number of bins to consider when combining input splits");
+      ConfigOptions.key("split-lookback")
+          .intType()
+          .defaultValue(null)
+          .withDescription("Specify the number of bins to consider when combining input splits");
 
   public static final ConfigOption<Long> SPLIT_FILE_OPEN_COST =
-      ConfigOptions.key("split-file-open-cost").longType().defaultValue(null)
-        .withDescription("The estimated cost to open a file, used as a minimum weight when combining splits");
+      ConfigOptions.key("split-file-open-cost")
+          .longType()
+          .defaultValue(null)
+          .withDescription(
+              "The estimated cost to open a file, used as a minimum weight when combining splits");
 
   public static final ConfigOption<Boolean> STREAMING =
-      ConfigOptions.key("streaming").booleanType().defaultValue(true)
-        .withDescription("Set if job is bounded or unbounded");
+      ConfigOptions.key("streaming")
+          .booleanType()
+          .defaultValue(true)
+          .withDescription("Set if job is bounded or unbounded");
 
   public static final ConfigOption<Duration> MONITOR_INTERVAL =
-      ConfigOptions.key("monitor-interval").durationType().defaultValue(Duration.ofSeconds(10))
-        .withDescription("Specify the time interval for consecutively monitoring newly committed data files");
+      ConfigOptions.key("monitor-interval")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(10))
+          .withDescription(
+              "Specify the time interval for consecutively monitoring newly committed data files");
 
   public static final ConfigOption<Boolean> INCLUDE_COLUMN_STATS =
-      ConfigOptions.key("include-column-stats").booleanType().defaultValue(false)
-        .withDescription("Set if loads the column stats with each file");
+      ConfigOptions.key("include-column-stats")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("Set if loads the column stats with each file");
 
   public static final ConfigOption<Integer> MAX_PLANNING_SNAPSHOT_COUNT =
-      ConfigOptions.key("max-planning-snapshot-count").intType().defaultValue(Integer.MAX_VALUE)
-        .withDescription("Specify the max planning snapshot count");
+      ConfigOptions.key("max-planning-snapshot-count")
+          .intType()
+          .defaultValue(Integer.MAX_VALUE)
+          .withDescription("Specify the max planning snapshot count");
 
   public static final ConfigOption<Long> LIMIT_OPTION =
       ConfigOptions.key("limit").longType().defaultValue(-1L);
@@ -438,8 +467,7 @@ public class ScanContext implements Serializable {
     private int maxAllowedPlanningFailures =
         FlinkReadOptions.MAX_ALLOWED_PLANNING_FAILURES_OPTION.defaultValue();
 
-    private Builder() {
-    }
+    private Builder() {}
 
     Builder caseSensitive(boolean newCaseSensitive) {
       this.caseSensitive = newCaseSensitive;
@@ -571,27 +599,27 @@ public class ScanContext implements Serializable {
       FlinkReadConf flinkReadConf = new FlinkReadConf(table, readOptions, readableConfig);
 
       return this.useSnapshotId(flinkReadConf.snapshotId())
-        .useTag(flinkReadConf.tag())
-        .useBranch(flinkReadConf.branch())
-        .startTag(flinkReadConf.startTag())
-        .endTag(flinkReadConf.endTag())
-        .caseSensitive(flinkReadConf.caseSensitive())
-        .asOfTimestamp(flinkReadConf.asOfTimestamp())
-        .startingStrategy(flinkReadConf.startingStrategy())
-        .startSnapshotTimestamp(flinkReadConf.startSnapshotTimestamp())
-        .startSnapshotId(flinkReadConf.startSnapshotId())
-        .endSnapshotId(flinkReadConf.endSnapshotId())
-        .splitSize(flinkReadConf.splitSize())
-        .splitLookback(flinkReadConf.splitLookback())
-        .splitOpenFileCost(flinkReadConf.splitFileOpenCost())
-        .streaming(flinkReadConf.streaming())
-        .monitorInterval(flinkReadConf.monitorInterval())
-        .nameMapping(flinkReadConf.nameMapping())
-        .limit(flinkReadConf.limit())
-        .planParallelism(flinkReadConf.workerPoolSize())
-        .includeColumnStats(flinkReadConf.includeColumnStats())
-        .maxPlanningSnapshotCount(flinkReadConf.maxPlanningSnapshotCount())
-        .maxAllowedPlanningFailures(maxAllowedPlanningFailures);
+          .useTag(flinkReadConf.tag())
+          .useBranch(flinkReadConf.branch())
+          .startTag(flinkReadConf.startTag())
+          .endTag(flinkReadConf.endTag())
+          .caseSensitive(flinkReadConf.caseSensitive())
+          .asOfTimestamp(flinkReadConf.asOfTimestamp())
+          .startingStrategy(flinkReadConf.startingStrategy())
+          .startSnapshotTimestamp(flinkReadConf.startSnapshotTimestamp())
+          .startSnapshotId(flinkReadConf.startSnapshotId())
+          .endSnapshotId(flinkReadConf.endSnapshotId())
+          .splitSize(flinkReadConf.splitSize())
+          .splitLookback(flinkReadConf.splitLookback())
+          .splitOpenFileCost(flinkReadConf.splitFileOpenCost())
+          .streaming(flinkReadConf.streaming())
+          .monitorInterval(flinkReadConf.monitorInterval())
+          .nameMapping(flinkReadConf.nameMapping())
+          .limit(flinkReadConf.limit())
+          .planParallelism(flinkReadConf.workerPoolSize())
+          .includeColumnStats(flinkReadConf.includeColumnStats())
+          .maxPlanningSnapshotCount(flinkReadConf.maxPlanningSnapshotCount())
+          .maxAllowedPlanningFailures(maxAllowedPlanningFailures);
     }
 
     public ScanContext build() {

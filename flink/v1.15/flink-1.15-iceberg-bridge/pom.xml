@@ -4,10 +4,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>amoro-parent</artifactId>
+        <artifactId>amoro-flink</artifactId>
         <groupId>com.netease.amoro</groupId>
         <version>0.6.0-SNAPSHOT</version>
-        <relativePath>../../../pom.xml</relativePath>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>amoro-flink-1.15-iceberg-bridge</artifactId>

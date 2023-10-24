@@ -28,6 +28,7 @@ import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 
 import javax.annotation.Nullable;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -69,7 +70,8 @@ public class RandomRecordGenerator {
     this.primary = primary;
     if (this.primary != null) {
       for (Types.NestedField field : primary.columns()) {
-        Preconditions.checkState(field.type().typeId() == Type.TypeID.INTEGER, "primary key must be int type");
+        Preconditions.checkState(
+            field.type().typeId() == Type.TypeID.INTEGER, "primary key must be int type");
         primaryIds.add(field.fieldId());
       }
     }
@@ -78,8 +80,8 @@ public class RandomRecordGenerator {
 
     if (primaryRelationWithPartition != null && !primaryRelationWithPartition.isEmpty()) {
       this.primaryRelationWithPartition = primaryRelationWithPartition;
-      this.partitionValues = primaryRelationWithPartition
-          .values().stream().distinct().collect(Collectors.toList());
+      this.partitionValues =
+          primaryRelationWithPartition.values().stream().distinct().collect(Collectors.toList());
     } else {
       this.primaryRelationWithPartition = new HashMap<>();
       if (!spec.isUnpartitioned()) {
@@ -124,8 +126,7 @@ public class RandomRecordGenerator {
     if (partitionValues != null) {
       partitionValue =
           primaryRelationWithPartition.computeIfAbsent(
-              primaryValue,
-              p -> partitionValues.get(random.nextInt(partitionValues.size())));
+              primaryValue, p -> partitionValues.get(random.nextInt(partitionValues.size())));
     }
     for (int i = 0; i < columns.size(); i++) {
       Types.NestedField field = columns.get(i);
@@ -189,7 +190,8 @@ public class RandomRecordGenerator {
         }
       case DECIMAL:
         Types.DecimalType decimalType = (Types.DecimalType) type;
-        return BigDecimal.valueOf(Double.valueOf(random.nextDouble()).longValue(), decimalType.scale());
+        return BigDecimal.valueOf(
+            Double.valueOf(random.nextDouble()).longValue(), decimalType.scale());
       default:
         throw new RuntimeException("Unsupported type you can add them in code");
     }

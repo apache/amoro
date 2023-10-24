@@ -38,12 +38,10 @@ import java.util.Set;
 
 public class LocalSessionFactory implements TerminalSessionFactory {
 
-  static final Set<String> STATIC_SPARK_CONF = Collections.unmodifiableSet(
-      Sets.newHashSet("spark.sql.extensions")
-  );
-  static final Set<String> EXTERNAL_CONNECTORS = Collections.unmodifiableSet(
-      Sets.newHashSet("iceberg", "paimon")
-  );
+  static final Set<String> STATIC_SPARK_CONF =
+      Collections.unmodifiableSet(Sets.newHashSet("spark.sql.extensions"));
+  static final Set<String> EXTERNAL_CONNECTORS =
+      Collections.unmodifiableSet(Sets.newHashSet("iceberg", "paimon"));
   static final String SPARK_CONF_PREFIX = "spark.";
 
   SparkSession context = null;
@@ -82,19 +80,25 @@ public class LocalSessionFactory implements TerminalSessionFactory {
   }
 
   private boolean isExternalConnector(String catalog, Configurations configurations) {
-    String connector = configurations.get(
-        TerminalSessionFactory.SessionConfigOptions.catalogConnector(catalog)).toLowerCase();
+    String connector =
+        configurations
+            .get(TerminalSessionFactory.SessionConfigOptions.catalogConnector(catalog))
+            .toLowerCase();
     return EXTERNAL_CONNECTORS.contains(connector);
   }
 
-  private void setHadoopConfigToSparkSession(String catalog, SparkSession session, TableMetaStore metaStore) {
+  private void setHadoopConfigToSparkSession(
+      String catalog, SparkSession session, TableMetaStore metaStore) {
     org.apache.hadoop.conf.Configuration metaConf = metaStore.getConfiguration();
     for (Map.Entry<String, String> next : metaConf) {
-      session.conf().set("spark.sql.catalog." + catalog + ".hadoop." + next.getKey(), next.getValue());
+      session
+          .conf()
+          .set("spark.sql.catalog." + catalog + ".hadoop." + next.getKey(), next.getValue());
     }
   }
 
-  private void updateSessionConf(SparkSession session, List<String> logs, String key, String value) {
+  private void updateSessionConf(
+      SparkSession session, List<String> logs, String key, String value) {
     session.conf().set(key, value);
     logs.add(key + "  " + value);
   }
@@ -102,14 +106,13 @@ public class LocalSessionFactory implements TerminalSessionFactory {
   protected synchronized SparkSession lazyInitContext() {
     Preconditions.checkNotNull(this.conf);
     if (context == null) {
-      SparkConf sparkconf = new SparkConf()
-          .setAppName("spark-local-context")
-          .setMaster("local");
+      SparkConf sparkconf = new SparkConf().setAppName("spark-local-context").setMaster("local");
       sparkconf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic");
       sparkconf.set("spark.executor.heartbeatInterval", "100s");
       sparkconf.set("spark.network.timeout", "200s");
-      sparkconf.set("spark.sql.extensions", SparkContextUtil.MIXED_FORMAT_EXTENSION +
-          "," + SparkContextUtil.ICEBERG_EXTENSION);
+      sparkconf.set(
+          "spark.sql.extensions",
+          SparkContextUtil.MIXED_FORMAT_EXTENSION + "," + SparkContextUtil.ICEBERG_EXTENSION);
 
       for (String key : this.conf.keySet()) {
         if (key.startsWith(SPARK_CONF_PREFIX)) {
@@ -118,10 +121,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
         }
       }
 
-      context = SparkSession
-          .builder()
-          .config(sparkconf)
-          .getOrCreate();
+      context = SparkSession.builder().config(sparkconf).getOrCreate();
       context.sparkContext().setLogLevel("WARN");
     }
 

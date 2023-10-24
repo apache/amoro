@@ -40,22 +40,16 @@ public class PaimonServerCatalog extends ExternalCatalog {
   protected PaimonServerCatalog(CatalogMeta metadata) {
     super(metadata);
     this.tableMetaStore = CatalogUtil.buildMetaStore(metadata);
-    this.paimonCatalog = doAs(() -> new CommonUnifiedCatalog(
-        null,
-        metadata,
-        metadata.catalogProperties
-    ));
+    this.paimonCatalog =
+        doAs(() -> new CommonUnifiedCatalog(null, metadata, metadata.catalogProperties));
   }
 
   @Override
   public void updateMetadata(CatalogMeta metadata) {
     super.updateMetadata(metadata);
     this.tableMetaStore = CatalogUtil.buildMetaStore(metadata);
-    this.paimonCatalog = doAs(() -> new CommonUnifiedCatalog(
-        null,
-        metadata,
-        metadata.catalogProperties
-    ));
+    this.paimonCatalog =
+        doAs(() -> new CommonUnifiedCatalog(null, metadata, metadata.catalogProperties));
   }
 
   @Override
@@ -75,11 +69,12 @@ public class PaimonServerCatalog extends ExternalCatalog {
 
   @Override
   public List<TableIDWithFormat> listTables() {
-    return doAs(() -> paimonCatalog.listDatabases()
-        .stream()
-        .map(this::listTables)
-        .flatMap(List::stream)
-        .collect(Collectors.toList()));
+    return doAs(
+        () ->
+            paimonCatalog.listDatabases().stream()
+                .map(this::listTables)
+                .flatMap(List::stream)
+                .collect(Collectors.toList()));
   }
 
   @Override

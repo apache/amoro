@@ -43,22 +43,26 @@ import java.util.Set;
 @RunWith(Parameterized.class)
 public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
 
-  public TestOptimizingEvaluator(CatalogTestHelper catalogTestHelper,
-                                 TableTestHelper tableTestHelper) {
+  public TestOptimizingEvaluator(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[][] parameters() {
     return new Object[][] {
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, true)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, false)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, true)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, false)}};
+      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, true)},
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, false)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(false, true)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(false, false)
+      }
+    };
   }
 
   @Test
@@ -74,10 +78,13 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
     closeFullOptimizingInterval();
     updateBaseHashBucket(1);
     List<DataFile> dataFiles = Lists.newArrayList();
-    List<Record> newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
+    List<Record> newRecords =
+        OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
     long transactionId = beginTransaction();
-    dataFiles.addAll(OptimizingTestHelpers.appendBase(getArcticTable(),
-        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+    dataFiles.addAll(
+        OptimizingTestHelpers.appendBase(
+            getArcticTable(),
+            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
 
     OptimizingEvaluator optimizingEvaluator = buildOptimizingEvaluator();
     Assert.assertFalse(optimizingEvaluator.isNecessary());
@@ -85,10 +92,13 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
     assertEmptyInput(pendingInput);
 
     // add more files
-    newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 5, 8, "2022-01-01T12:00:00");
+    newRecords =
+        OptimizingTestHelpers.generateRecord(tableTestHelper(), 5, 8, "2022-01-01T12:00:00");
     transactionId = beginTransaction();
-    dataFiles.addAll(OptimizingTestHelpers.appendBase(getArcticTable(),
-        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+    dataFiles.addAll(
+        OptimizingTestHelpers.appendBase(
+            getArcticTable(),
+            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
 
     optimizingEvaluator = buildOptimizingEvaluator();
     Assert.assertTrue(optimizingEvaluator.isNecessary());
@@ -118,7 +128,8 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
     Assert.assertEquals(input.getEqualityDeleteBytes(), fileInfo.getEqualityDeleteBytes());
     Assert.assertEquals(input.getEqualityDeleteFileCount(), fileInfo.getEqualityDeleteFileCount());
     Assert.assertEquals(input.getPositionalDeleteBytes(), fileInfo.getPositionalDeleteBytes());
-    Assert.assertEquals(input.getPositionalDeleteFileCount(), fileInfo.getPositionalDeleteFileCount());
+    Assert.assertEquals(
+        input.getPositionalDeleteFileCount(), fileInfo.getPositionalDeleteFileCount());
   }
 
   private static class FileInfo {
@@ -177,12 +188,13 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
   @Override
   protected TableFileScanHelper getTableFileScanHelper() {
     if (getArcticTable().isKeyedTable()) {
-      return new KeyedTableFileScanHelper(getArcticTable().asKeyedTable(),
+      return new KeyedTableFileScanHelper(
+          getArcticTable().asKeyedTable(),
           OptimizingTestHelpers.getCurrentKeyedTableSnapshot(getArcticTable().asKeyedTable()));
     } else {
-      return new UnkeyedTableFileScanHelper(getArcticTable().asUnkeyedTable(),
+      return new UnkeyedTableFileScanHelper(
+          getArcticTable().asUnkeyedTable(),
           OptimizingTestHelpers.getCurrentTableSnapshot(getArcticTable()).snapshotId());
     }
   }
-
 }

@@ -17,7 +17,8 @@ import java.sql.Types;
 public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
 
   @Override
-  public void setParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType) throws SQLException {
+  public void setParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType)
+      throws SQLException {
     if (parameter == null) {
       if (SqlSessionFactoryProvider.getDbType().equals(ArcticManagementConf.DB_TYPE_POSTGRES)) {
         ps.setNull(i, Types.BINARY);
@@ -29,7 +30,8 @@ public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
 
     ps.setBinaryStream(
         i,
-        new ByteArrayInputStream(CompressUtil.gzip(SerializationUtil.simpleSerialize(parameter).array())));
+        new ByteArrayInputStream(
+            CompressUtil.gzip(SerializationUtil.simpleSerialize(parameter).array())));
   }
 
   @Override

@@ -54,11 +54,12 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
 
   protected final Map<DataFile, List<ContentFile<?>>> rewriteDataFiles = Maps.newHashMap();
   protected final Map<DataFile, List<ContentFile<?>>> rewritePosDataFiles = Maps.newHashMap();
-  // reserved Delete files are Delete files which are related to Data files not optimized in this plan
+  // reserved Delete files are Delete files which are related to Data files not optimized in this
+  // plan
   protected final Set<String> reservedDeleteFiles = Sets.newHashSet();
 
-  public AbstractPartitionPlan(TableRuntime tableRuntime,
-                               ArcticTable table, String partition, long planTime) {
+  public AbstractPartitionPlan(
+      TableRuntime tableRuntime, ArcticTable table, String partition, long planTime) {
     this.partition = partition;
     this.tableObject = table;
     this.config = tableRuntime.getOptimizingConfig();
@@ -127,8 +128,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
         .collect(Collectors.toList());
   }
 
-  protected void beforeSplit() {
-  }
+  protected void beforeSplit() {}
 
   protected abstract TaskSplitter buildTaskSplitter();
 
@@ -205,9 +205,10 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     private final Set<DataFile> rewritePosDataFiles = Sets.newHashSet();
     private final Set<ContentFile<?>> deleteFiles = Sets.newHashSet();
 
-    public SplitTask(Set<DataFile> rewriteDataFiles,
-                     Set<DataFile> rewritePosDataFiles,
-                     Set<ContentFile<?>> deleteFiles) {
+    public SplitTask(
+        Set<DataFile> rewriteDataFiles,
+        Set<DataFile> rewritePosDataFiles,
+        Set<ContentFile<?>> deleteFiles) {
       this.rewriteDataFiles.addAll(rewriteDataFiles);
       this.rewritePosDataFiles.addAll(rewritePosDataFiles);
       this.deleteFiles.addAll(deleteFiles);
@@ -235,20 +236,19 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
           rewriteDeleteFiles.add(deleteFile);
         }
       }
-      RewriteFilesInput input = new RewriteFilesInput(
-          rewriteDataFiles.toArray(new DataFile[0]),
-          rewritePosDataFiles.toArray(new DataFile[0]),
-          readOnlyDeleteFiles.toArray(new ContentFile[0]),
-          rewriteDeleteFiles.toArray(new ContentFile[0]),
-          tableObject);
-      return new TaskDescriptor(tableRuntime.getTableIdentifier().getId(),
-          partition, input, properties.getProperties());
+      RewriteFilesInput input =
+          new RewriteFilesInput(
+              rewriteDataFiles.toArray(new DataFile[0]),
+              rewritePosDataFiles.toArray(new DataFile[0]),
+              readOnlyDeleteFiles.toArray(new ContentFile[0]),
+              rewriteDeleteFiles.toArray(new ContentFile[0]),
+              tableObject);
+      return new TaskDescriptor(
+          tableRuntime.getTableIdentifier().getId(), partition, input, properties.getProperties());
     }
   }
 
-  /**
-   * util class for bin-pack
-   */
+  /** util class for bin-pack */
   protected static class FileTask {
     private final DataFile file;
     private final List<ContentFile<?>> deleteFiles;
@@ -283,14 +283,17 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     public List<SplitTask> splitTasks(int targetTaskCount) {
       // bin-packing
       List<FileTask> allDataFiles = Lists.newArrayList();
-      rewriteDataFiles.forEach((dataFile, deleteFiles) ->
-          allDataFiles.add(new FileTask(dataFile, deleteFiles, true)));
-      rewritePosDataFiles.forEach((dataFile, deleteFiles) ->
-          allDataFiles.add(new FileTask(dataFile, deleteFiles, false)));
+      rewriteDataFiles.forEach(
+          (dataFile, deleteFiles) -> allDataFiles.add(new FileTask(dataFile, deleteFiles, true)));
+      rewritePosDataFiles.forEach(
+          (dataFile, deleteFiles) -> allDataFiles.add(new FileTask(dataFile, deleteFiles, false)));
 
-      List<List<FileTask>> packed = new BinPacking.ListPacker<FileTask>(
-          Math.max(config.getTargetSize(), config.getMaxTaskSize()), Integer.MAX_VALUE, false)
-          .pack(allDataFiles, f -> f.getFile().fileSizeInBytes());
+      List<List<FileTask>> packed =
+          new BinPacking.ListPacker<FileTask>(
+                  Math.max(config.getTargetSize(), config.getMaxTaskSize()),
+                  Integer.MAX_VALUE,
+                  false)
+              .pack(allDataFiles, f -> f.getFile().fileSizeInBytes());
 
       // collect
       List<SplitTask> results = Lists.newArrayListWithCapacity(packed.size());
@@ -299,14 +302,20 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
         Set<DataFile> rewritePosDataFiles = Sets.newHashSet();
         Set<ContentFile<?>> deleteFiles = Sets.newHashSet();
 
-        fileTasks.stream().filter(FileTask::isRewriteDataFile).forEach(f -> {
-          rewriteDataFiles.add(f.getFile());
-          deleteFiles.addAll(f.getDeleteFiles());
-        });
-        fileTasks.stream().filter(FileTask::isRewritePosDataFile).forEach(f -> {
-          rewritePosDataFiles.add(f.getFile());
-          deleteFiles.addAll(f.getDeleteFiles());
-        });
+        fileTasks.stream()
+            .filter(FileTask::isRewriteDataFile)
+            .forEach(
+                f -> {
+                  rewriteDataFiles.add(f.getFile());
+                  deleteFiles.addAll(f.getDeleteFiles());
+                });
+        fileTasks.stream()
+            .filter(FileTask::isRewritePosDataFile)
+            .forEach(
+                f -> {
+                  rewritePosDataFiles.add(f.getFile());
+                  deleteFiles.addAll(f.getDeleteFiles());
+                });
         results.add(new SplitTask(rewriteDataFiles, rewritePosDataFiles, deleteFiles));
       }
       return results;

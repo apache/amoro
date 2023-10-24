@@ -31,9 +31,7 @@ public class CatalogRegisterInfo {
   Map<String, String> properties;
   Map<String, String> tableProperties;
 
-  public CatalogRegisterInfo() {
-
-  }
+  public CatalogRegisterInfo() {}
 
   public String getName() {
     return name;

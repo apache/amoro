@@ -22,8 +22,7 @@ public class LatestSessionInfo {
   private String sessionId;
   private String sql;
 
-  public LatestSessionInfo() {
-  }
+  public LatestSessionInfo() {}
 
   public LatestSessionInfo(String sessionId, String sql) {
     this.sessionId = sessionId;

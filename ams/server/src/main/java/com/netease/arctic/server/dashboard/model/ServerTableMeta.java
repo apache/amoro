@@ -25,11 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-
-/**
- * ams table meta.
- *
- */
+/** ams table meta. */
 public class ServerTableMeta {
   private String tableType;
   private TableIdentifier tableIdentifier;
@@ -48,8 +44,7 @@ public class ServerTableMeta {
   private String tableWatermark;
   private String baseWatermark;
 
-  public ServerTableMeta() {
-  }
+  public ServerTableMeta() {}
 
   public String getCreator() {
     return creator;
@@ -111,8 +106,7 @@ public class ServerTableMeta {
     return partitionColumnList;
   }
 
-  public void setPartitionColumnList(
-          List<AMSPartitionField> partitionColumnList) {
+  public void setPartitionColumnList(List<AMSPartitionField> partitionColumnList) {
     this.partitionColumnList = partitionColumnList;
   }
 
@@ -139,7 +133,6 @@ public class ServerTableMeta {
   public void setBaseWatermark(String baseWatermark) {
     this.baseWatermark = baseWatermark;
   }
-
 
   public String getBaseLocation() {
     return baseLocation;
@@ -182,17 +175,16 @@ public class ServerTableMeta {
       return false;
     }
     ServerTableMeta that = (ServerTableMeta) o;
-    return Objects.equals(tableIdentifier, that.tableIdentifier) &&
-            Objects.equals(schema, that.schema) &&
-            Objects.equals(pkList, that.pkList) &&
-            Objects.equals(partitionColumnList, that.partitionColumnList) &&
-            Objects.equals(properties, that.properties);
+    return Objects.equals(tableIdentifier, that.tableIdentifier)
+        && Objects.equals(schema, that.schema)
+        && Objects.equals(pkList, that.pkList)
+        && Objects.equals(partitionColumnList, that.partitionColumnList)
+        && Objects.equals(properties, that.properties);
   }
 
   @Override
   public int hashCode() {
-    return Objects
-            .hash(tableIdentifier, schema, pkList, partitionColumnList, properties);
+    return Objects.hash(tableIdentifier, schema, pkList, partitionColumnList, properties);
   }
 
   @Override

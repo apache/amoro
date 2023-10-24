@@ -60,8 +60,6 @@ public class OkResponse<R> extends Response {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("result", result)
-        .toString();
+    return MoreObjects.toStringHelper(this).add("result", result).toString();
   }
 }

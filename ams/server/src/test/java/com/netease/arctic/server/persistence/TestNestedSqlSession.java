@@ -1,15 +1,5 @@
 package com.netease.arctic.server.persistence;
 
-import org.apache.ibatis.session.SqlSession;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
-import java.lang.reflect.Field;
-import java.util.function.Supplier;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -21,10 +11,19 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.powermock.api.mockito.PowerMockito.verifyZeroInteractions;
 import static org.powermock.api.mockito.PowerMockito.when;
 
+import org.apache.ibatis.session.SqlSession;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.lang.reflect.Field;
+import java.util.function.Supplier;
+
 public class TestNestedSqlSession {
 
-  @Mock
-  private SqlSession sqlSession;
+  @Mock private SqlSession sqlSession;
   private NestedSqlSession nestedSession;
 
   @BeforeEach

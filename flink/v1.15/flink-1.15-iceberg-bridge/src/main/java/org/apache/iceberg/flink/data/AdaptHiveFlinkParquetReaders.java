@@ -58,21 +58,19 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class AdaptHiveFlinkParquetReaders {
-  private AdaptHiveFlinkParquetReaders() {
-  }
+  private AdaptHiveFlinkParquetReaders() {}
 
-  public static ParquetValueReader<RowData> buildReader(Schema expectedSchema, MessageType fileSchema) {
+  public static ParquetValueReader<RowData> buildReader(
+      Schema expectedSchema, MessageType fileSchema) {
     return buildReader(expectedSchema, fileSchema, ImmutableMap.of());
   }
 
   @SuppressWarnings("unchecked")
   public static ParquetValueReader<RowData> buildReader(
-      Schema expectedSchema,
-      MessageType fileSchema,
-      Map<Integer, ?> idToConstant) {
-    return (ParquetValueReader<RowData>) TypeWithSchemaVisitor.visit(expectedSchema.asStruct(), fileSchema,
-        new ReadBuilder(fileSchema, idToConstant)
-    );
+      Schema expectedSchema, MessageType fileSchema, Map<Integer, ?> idToConstant) {
+    return (ParquetValueReader<RowData>)
+        TypeWithSchemaVisitor.visit(
+            expectedSchema.asStruct(), fileSchema, new ReadBuilder(fileSchema, idToConstant));
   }
 
   private static class ReadBuilder extends TypeWithSchemaVisitor<ParquetValueReader<?>> {
@@ -86,15 +84,13 @@ public class AdaptHiveFlinkParquetReaders {
 
     @Override
     public ParquetValueReader<RowData> message(
-        Types.StructType expected, MessageType message,
-        List<ParquetValueReader<?>> fieldReaders) {
+        Types.StructType expected, MessageType message, List<ParquetValueReader<?>> fieldReaders) {
       return struct(expected, message.asGroupType(), fieldReaders);
     }
 
     @Override
     public ParquetValueReader<RowData> struct(
-        Types.StructType expected, GroupType struct,
-        List<ParquetValueReader<?>> fieldReaders) {
+        Types.StructType expected, GroupType struct, List<ParquetValueReader<?>> fieldReaders) {
       // match the expected struct's order
       Map<Integer, ParquetValueReader<?>> readersById = Maps.newHashMap();
       Map<Integer, Type> typesById = Maps.newHashMap();
@@ -111,10 +107,10 @@ public class AdaptHiveFlinkParquetReaders {
         }
       }
 
-      List<Types.NestedField> expectedFields = expected != null ?
-          expected.fields() : ImmutableList.of();
-      List<ParquetValueReader<?>> reorderedFields = Lists.newArrayListWithExpectedSize(
-          expectedFields.size());
+      List<Types.NestedField> expectedFields =
+          expected != null ? expected.fields() : ImmutableList.of();
+      List<ParquetValueReader<?>> reorderedFields =
+          Lists.newArrayListWithExpectedSize(expectedFields.size());
       List<Type> types = Lists.newArrayListWithExpectedSize(expectedFields.size());
       for (Types.NestedField field : expectedFields) {
         int id = field.fieldId();
@@ -145,8 +141,7 @@ public class AdaptHiveFlinkParquetReaders {
 
     @Override
     public ParquetValueReader<?> list(
-        Types.ListType expectedList, GroupType array,
-        ParquetValueReader<?> elementReader) {
+        Types.ListType expectedList, GroupType array, ParquetValueReader<?> elementReader) {
       if (expectedList == null) {
         return null;
       }
@@ -160,12 +155,14 @@ public class AdaptHiveFlinkParquetReaders {
       Type elementType = repeated.getType(0);
       int elementD = type.getMaxDefinitionLevel(path(elementType.getName())) - 1;
 
-      return new ArrayReader<>(repeatedD, repeatedR, ParquetValueReaders.option(elementType, elementD, elementReader));
+      return new ArrayReader<>(
+          repeatedD, repeatedR, ParquetValueReaders.option(elementType, elementD, elementReader));
     }
 
     @Override
     public ParquetValueReader<?> map(
-        Types.MapType expectedMap, GroupType map,
+        Types.MapType expectedMap,
+        GroupType map,
         ParquetValueReader<?> keyReader,
         ParquetValueReader<?> valueReader) {
       if (expectedMap == null) {
@@ -183,7 +180,9 @@ public class AdaptHiveFlinkParquetReaders {
       Type valueType = repeatedKeyValue.getType(1);
       int valueD = type.getMaxDefinitionLevel(path(valueType.getName())) - 1;
 
-      return new MapReader<>(repeatedD, repeatedR,
+      return new MapReader<>(
+          repeatedD,
+          repeatedR,
           ParquetValueReaders.option(keyType, keyD, keyReader),
           ParquetValueReaders.option(valueType, valueD, valueReader));
     }
@@ -191,8 +190,7 @@ public class AdaptHiveFlinkParquetReaders {
     @Override
     @SuppressWarnings("CyclomaticComplexity")
     public ParquetValueReader<?> primitive(
-        org.apache.iceberg.types.Type.PrimitiveType expected,
-        PrimitiveType primitive) {
+        org.apache.iceberg.types.Type.PrimitiveType expected, PrimitiveType primitive) {
       if (expected == null) {
         return null;
       }
@@ -233,7 +231,8 @@ public class AdaptHiveFlinkParquetReaders {
               return new MillisToTimestampReader(desc);
             }
           case DECIMAL:
-            DecimalLogicalTypeAnnotation decimal = (DecimalLogicalTypeAnnotation) primitive.getLogicalTypeAnnotation();
+            DecimalLogicalTypeAnnotation decimal =
+                (DecimalLogicalTypeAnnotation) primitive.getLogicalTypeAnnotation();
             switch (primitive.getPrimitiveTypeName()) {
               case BINARY:
               case FIXED_LEN_BYTE_ARRAY:
@@ -287,7 +286,8 @@ public class AdaptHiveFlinkParquetReaders {
     }
   }
 
-  private static class TimestampIntWithOutTZ96Reader extends ParquetValueReaders.PrimitiveReader<TimestampData> {
+  private static class TimestampIntWithOutTZ96Reader
+      extends ParquetValueReaders.PrimitiveReader<TimestampData> {
     private static final long UNIX_EPOCH_JULIAN = 2_440_588L;
 
     TimestampIntWithOutTZ96Reader(ColumnDescriptor desc) {
@@ -296,17 +296,21 @@ public class AdaptHiveFlinkParquetReaders {
 
     @Override
     public TimestampData read(TimestampData reuse) {
-      final ByteBuffer byteBuffer = column.nextBinary().toByteBuffer().order(ByteOrder.LITTLE_ENDIAN);
+      final ByteBuffer byteBuffer =
+          column.nextBinary().toByteBuffer().order(ByteOrder.LITTLE_ENDIAN);
       final long timeOfDayNanos = byteBuffer.getLong();
       final int julianDay = byteBuffer.getInt();
 
-      return TimestampData.fromLocalDateTime(Instant
-          .ofEpochMilli(TimeUnit.DAYS.toMillis(julianDay - UNIX_EPOCH_JULIAN))
-          .plusNanos(timeOfDayNanos).atZone(ZoneId.systemDefault()).toLocalDateTime());
+      return TimestampData.fromLocalDateTime(
+          Instant.ofEpochMilli(TimeUnit.DAYS.toMillis(julianDay - UNIX_EPOCH_JULIAN))
+              .plusNanos(timeOfDayNanos)
+              .atZone(ZoneId.systemDefault())
+              .toLocalDateTime());
     }
   }
 
-  private static class TimestampIntWithTZ96Reader extends ParquetValueReaders.PrimitiveReader<TimestampData> {
+  private static class TimestampIntWithTZ96Reader
+      extends ParquetValueReaders.PrimitiveReader<TimestampData> {
     private static final long UNIX_EPOCH_JULIAN = 2_440_588L;
 
     private TimestampIntWithTZ96Reader(ColumnDescriptor desc) {
@@ -315,17 +319,19 @@ public class AdaptHiveFlinkParquetReaders {
 
     @Override
     public TimestampData read(TimestampData reuse) {
-      final ByteBuffer byteBuffer = column.nextBinary().toByteBuffer().order(ByteOrder.LITTLE_ENDIAN);
+      final ByteBuffer byteBuffer =
+          column.nextBinary().toByteBuffer().order(ByteOrder.LITTLE_ENDIAN);
       final long timeOfDayNanos = byteBuffer.getLong();
       final int julianDay = byteBuffer.getInt();
 
-      return TimestampData.fromInstant(Instant
-          .ofEpochMilli(TimeUnit.DAYS.toMillis(julianDay - UNIX_EPOCH_JULIAN))
-          .plusNanos(timeOfDayNanos));
+      return TimestampData.fromInstant(
+          Instant.ofEpochMilli(TimeUnit.DAYS.toMillis(julianDay - UNIX_EPOCH_JULIAN))
+              .plusNanos(timeOfDayNanos));
     }
   }
 
-  private static class BinaryDecimalReader extends ParquetValueReaders.PrimitiveReader<DecimalData> {
+  private static class BinaryDecimalReader
+      extends ParquetValueReaders.PrimitiveReader<DecimalData> {
     private final int precision;
     private final int scale;
 
@@ -344,7 +350,8 @@ public class AdaptHiveFlinkParquetReaders {
     }
   }
 
-  private static class IntegerDecimalReader extends ParquetValueReaders.PrimitiveReader<DecimalData> {
+  private static class IntegerDecimalReader
+      extends ParquetValueReaders.PrimitiveReader<DecimalData> {
     private final int precision;
     private final int scale;
 
@@ -376,7 +383,8 @@ public class AdaptHiveFlinkParquetReaders {
     }
   }
 
-  private static class MicrosToTimestampTzReader extends ParquetValueReaders.UnboxedReader<TimestampData> {
+  private static class MicrosToTimestampTzReader
+      extends ParquetValueReaders.UnboxedReader<TimestampData> {
     MicrosToTimestampTzReader(ColumnDescriptor desc) {
       super(desc);
     }
@@ -384,11 +392,11 @@ public class AdaptHiveFlinkParquetReaders {
     @Override
     public TimestampData read(TimestampData ignored) {
       long value = readLong();
-      return TimestampData.fromLocalDateTime(Instant.ofEpochSecond(
-              Math.floorDiv(value, 1000_000L),
-              Math.floorMod(value, 1000_000L) * 1000)
-          .atOffset(ZoneOffset.UTC)
-          .toLocalDateTime());
+      return TimestampData.fromLocalDateTime(
+          Instant.ofEpochSecond(
+                  Math.floorDiv(value, 1000_000L), Math.floorMod(value, 1000_000L) * 1000)
+              .atOffset(ZoneOffset.UTC)
+              .toLocalDateTime());
     }
 
     @Override
@@ -397,7 +405,8 @@ public class AdaptHiveFlinkParquetReaders {
     }
   }
 
-  private static class MicrosToTimestampReader extends ParquetValueReaders.UnboxedReader<TimestampData> {
+  private static class MicrosToTimestampReader
+      extends ParquetValueReaders.UnboxedReader<TimestampData> {
     MicrosToTimestampReader(ColumnDescriptor desc) {
       super(desc);
     }
@@ -405,9 +414,9 @@ public class AdaptHiveFlinkParquetReaders {
     @Override
     public TimestampData read(TimestampData ignored) {
       long value = readLong();
-      return TimestampData.fromInstant(Instant.ofEpochSecond(
-          Math.floorDiv(value, 1000_000L),
-          Math.floorMod(value, 1000_000L) * 1000));
+      return TimestampData.fromInstant(
+          Instant.ofEpochSecond(
+              Math.floorDiv(value, 1000_000L), Math.floorMod(value, 1000_000L) * 1000));
     }
 
     @Override
@@ -416,7 +425,8 @@ public class AdaptHiveFlinkParquetReaders {
     }
   }
 
-  private static class MillisToTimestampReader extends ParquetValueReaders.UnboxedReader<TimestampData> {
+  private static class MillisToTimestampReader
+      extends ParquetValueReaders.UnboxedReader<TimestampData> {
     MillisToTimestampReader(ColumnDescriptor desc) {
       super(desc);
     }
@@ -433,7 +443,8 @@ public class AdaptHiveFlinkParquetReaders {
     }
   }
 
-  private static class MillisToTimestampTzReader extends ParquetValueReaders.UnboxedReader<TimestampData> {
+  private static class MillisToTimestampTzReader
+      extends ParquetValueReaders.UnboxedReader<TimestampData> {
     MillisToTimestampTzReader(ColumnDescriptor desc) {
       super(desc);
     }
@@ -441,9 +452,8 @@ public class AdaptHiveFlinkParquetReaders {
     @Override
     public TimestampData read(TimestampData ignored) {
       long millis = readLong();
-      return TimestampData.fromLocalDateTime(Instant.ofEpochMilli(millis)
-          .atOffset(ZoneOffset.UTC)
-          .toLocalDateTime());
+      return TimestampData.fromLocalDateTime(
+          Instant.ofEpochMilli(millis).atOffset(ZoneOffset.UTC).toLocalDateTime());
     }
 
     @Override
@@ -470,7 +480,8 @@ public class AdaptHiveFlinkParquetReaders {
     }
   }
 
-  private static class LossyMicrosToMillisTimeReader extends ParquetValueReaders.PrimitiveReader<Integer> {
+  private static class LossyMicrosToMillisTimeReader
+      extends ParquetValueReaders.PrimitiveReader<Integer> {
     LossyMicrosToMillisTimeReader(ColumnDescriptor desc) {
       super(desc);
     }
@@ -493,7 +504,8 @@ public class AdaptHiveFlinkParquetReaders {
     }
   }
 
-  private static class ArrayReader<E> extends ParquetValueReaders.RepeatedReader<ArrayData, ReusableArrayData, E> {
+  private static class ArrayReader<E>
+      extends ParquetValueReaders.RepeatedReader<ArrayData, ReusableArrayData, E> {
     private int readPos = 0;
     private int writePos = 0;
 
@@ -544,17 +556,21 @@ public class AdaptHiveFlinkParquetReaders {
     }
   }
 
-  private static class MapReader<K, V> extends
-      ParquetValueReaders.RepeatedKeyValueReader<MapData, ReusableMapData, K, V> {
+  private static class MapReader<K, V>
+      extends ParquetValueReaders.RepeatedKeyValueReader<MapData, ReusableMapData, K, V> {
     private int readPos = 0;
     private int writePos = 0;
 
-    private final ParquetValueReaders.ReusableEntry<K, V> entry = new ParquetValueReaders.ReusableEntry<>();
-    private final ParquetValueReaders.ReusableEntry<K, V> nullEntry = new ParquetValueReaders.ReusableEntry<>();
+    private final ParquetValueReaders.ReusableEntry<K, V> entry =
+        new ParquetValueReaders.ReusableEntry<>();
+    private final ParquetValueReaders.ReusableEntry<K, V> nullEntry =
+        new ParquetValueReaders.ReusableEntry<>();
 
     MapReader(
-        int definitionLevel, int repetitionLevel,
-        ParquetValueReader<K> keyReader, ParquetValueReader<V> valueReader) {
+        int definitionLevel,
+        int repetitionLevel,
+        ParquetValueReader<K> keyReader,
+        ParquetValueReader<V> valueReader) {
       super(definitionLevel, repetitionLevel, keyReader, valueReader);
     }
 
@@ -603,7 +619,8 @@ public class AdaptHiveFlinkParquetReaders {
     }
   }
 
-  private static class RowDataReader extends ParquetValueReaders.StructReader<RowData, GenericRowData> {
+  private static class RowDataReader
+      extends ParquetValueReaders.StructReader<RowData, GenericRowData> {
     private final int numFields;
 
     RowDataReader(List<Type> types, List<ParquetValueReader<?>> readers) {
