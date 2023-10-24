@@ -48,7 +48,7 @@ public class ParallelIcebergGenerics {
     private boolean reuseContainers = false;
 
     public ScanBuilder(Table table, ExecutorService executorService) {
-      this.tableScan = table.newScan();
+      this.tableScan = table.newScan().planWith(executorService);
       this.executorService = executorService;
     }
 
