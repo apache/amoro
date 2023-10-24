@@ -10,10 +10,9 @@ public class IllegalTaskStateException extends ArcticRuntimeException {
   private final OptimizingTaskId taskId;
 
   public IllegalTaskStateException(
-      OptimizingTaskId taskId,
-      TaskRuntime.Status preStatus,
-      TaskRuntime.Status targetStatus) {
-    super(String.format("Illegal Task of %s status from %s to %s", taskId, preStatus, targetStatus));
+      OptimizingTaskId taskId, TaskRuntime.Status preStatus, TaskRuntime.Status targetStatus) {
+    super(
+        String.format("Illegal Task of %s status from %s to %s", taskId, preStatus, targetStatus));
     this.taskId = taskId;
     this.preStatus = preStatus;
     this.targetStatus = targetStatus;

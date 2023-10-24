@@ -39,7 +39,7 @@ public class MinorOptimizingCheck extends AbstractSceneCountChecker {
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit) {
-    return CollectionUtils.isNotEmpty(latestTaskDescriptors) &&
-        latestPlanner.getOptimizingType() == OptimizingType.MINOR;
+    return CollectionUtils.isNotEmpty(latestTaskDescriptors)
+        && latestPlanner.getOptimizingType() == OptimizingType.MINOR;
   }
 }

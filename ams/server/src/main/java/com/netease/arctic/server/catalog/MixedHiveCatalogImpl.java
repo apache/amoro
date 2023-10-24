@@ -48,8 +48,11 @@ public class MixedHiveCatalogImpl extends InternalMixedCatalogImpl {
 
   @Override
   public AmoroTable<?> loadTable(String database, String tableName) {
-    TableMetadata tableMetadata = getAs(TableMetaMapper.class, mapper ->
-        mapper.selectTableMetaByName(getMetadata().getCatalogName(), database, tableName));
+    TableMetadata tableMetadata =
+        getAs(
+            TableMetaMapper.class,
+            mapper ->
+                mapper.selectTableMetaByName(getMetadata().getCatalogName(), database, tableName));
     if (tableMetadata == null) {
       return null;
     }
@@ -79,14 +82,15 @@ public class MixedHiveCatalogImpl extends InternalMixedCatalogImpl {
   @Override
   public boolean exist(String database) {
     try {
-      return hiveClientPool.run(client -> {
-        try {
-          client.getDatabase(database);
-          return true;
-        } catch (NoSuchObjectException exception) {
-          return false;
-        }
-      });
+      return hiveClientPool.run(
+          client -> {
+            try {
+              client.getDatabase(database);
+              return true;
+            } catch (NoSuchObjectException exception) {
+              return false;
+            }
+          });
     } catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to get databases", e);
     }

@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.metrics;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.netease.arctic.ams.api.metrics.MetricType;
 import com.netease.arctic.ams.api.metrics.MetricsContent;
 import org.apache.iceberg.metrics.CommitMetricsResult;
@@ -28,43 +30,42 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 public class TestIcebergMetricsContent {
 
   @Test
   public void testWrap() {
-    CommitReport report = new CommitReport() {
-      @Override
-      public String tableName() {
-        return null;
-      }
+    CommitReport report =
+        new CommitReport() {
+          @Override
+          public String tableName() {
+            return null;
+          }
 
-      @Override
-      public long snapshotId() {
-        return 0;
-      }
+          @Override
+          public long snapshotId() {
+            return 0;
+          }
 
-      @Override
-      public long sequenceNumber() {
-        return 0;
-      }
+          @Override
+          public long sequenceNumber() {
+            return 0;
+          }
 
-      @Override
-      public String operation() {
-        return null;
-      }
+          @Override
+          public String operation() {
+            return null;
+          }
 
-      @Override
-      public CommitMetricsResult commitMetrics() {
-        return null;
-      }
+          @Override
+          public CommitMetricsResult commitMetrics() {
+            return null;
+          }
 
-      @Override
-      public Map<String, String> metadata() {
-        return null;
-      }
-    };
+          @Override
+          public Map<String, String> metadata() {
+            return null;
+          }
+        };
     MetricsContent<MetricsReport> metricsContent = IcebergMetricsContent.wrap(report);
     assertEquals(metricsContent.name(), ReportMetricsRequest.ReportType.COMMIT_REPORT.name());
     assertEquals(metricsContent.type(), MetricType.FORMAT_ICEBERG);

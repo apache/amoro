@@ -31,8 +31,7 @@ public class OptimizerInstance extends Resource {
   private long startTime;
   private long touchTime;
 
-  public OptimizerInstance() {
-  }
+  public OptimizerInstance() {}
 
   public OptimizerInstance(OptimizerRegisterInfo registerInfo, String containerName) {
     super(registerInfo, containerName);
@@ -50,7 +49,6 @@ public class OptimizerInstance extends Resource {
     return token;
   }
 
-
   public long getTouchTime() {
     return touchTime;
   }
@@ -63,7 +61,6 @@ public class OptimizerInstance extends Resource {
   public long getStartTime() {
     return startTime;
   }
-
 
   public OptimizingQueue.OptimizingThread getThread(int threadId) {
     return new OptimizingQueue.OptimizingThread(token, threadId);

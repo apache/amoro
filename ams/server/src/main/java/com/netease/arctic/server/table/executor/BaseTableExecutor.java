@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.table.executor;
 
-
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.table.RuntimeHandlerChain;
@@ -46,11 +45,13 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
 
   protected BaseTableExecutor(TableManager tableManager, int poolSize) {
     this.tableManager = tableManager;
-    this.executor = Executors.newScheduledThreadPool(
-        poolSize,
-        new ThreadFactoryBuilder()
-            .setDaemon(false)
-            .setNameFormat("ASYNC-" + getThreadName() + "-%d").build());
+    this.executor =
+        Executors.newScheduledThreadPool(
+            poolSize,
+            new ThreadFactoryBuilder()
+                .setDaemon(false)
+                .setNameFormat("ASYNC-" + getThreadName() + "-%d")
+                .build());
   }
 
   @Override
@@ -58,11 +59,10 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
     tableRuntimeMetaList.stream()
         .map(tableRuntimeMeta -> tableRuntimeMeta.getTableRuntime())
         .filter(tableRuntime -> enabled(tableRuntime))
-        .forEach(tableRuntime ->
-            executor.schedule(
-                () -> executeTask(tableRuntime),
-                getStartDelay(),
-                TimeUnit.MILLISECONDS));
+        .forEach(
+            tableRuntime ->
+                executor.schedule(
+                    () -> executeTask(tableRuntime), getStartDelay(), TimeUnit.MILLISECONDS));
     logger.info("Table executor {} initialized", getClass().getSimpleName());
   }
 
@@ -71,19 +71,14 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
       try {
         execute(tableRuntime);
       } finally {
-        scheduleIfNecessary(
-            tableRuntime,
-            getNextExecutingTime(tableRuntime));
+        scheduleIfNecessary(tableRuntime, getNextExecutingTime(tableRuntime));
       }
     }
   }
 
   protected final void scheduleIfNecessary(TableRuntime tableRuntime, long millisecondsTime) {
     if (isExecutable(tableRuntime)) {
-      executor.schedule(
-          () -> executeTask(tableRuntime),
-          millisecondsTime,
-          TimeUnit.MILLISECONDS);
+      executor.schedule(() -> executeTask(tableRuntime), millisecondsTime, TimeUnit.MILLISECONDS);
     }
   }
 
@@ -108,12 +103,11 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
 
   @Override
   public void handleTableRemoved(TableRuntime tableRuntime) {
-    //DO nothing, handling would be canceled when calling executeTable
+    // DO nothing, handling would be canceled when calling executeTable
   }
 
   @Override
-  public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
-  }
+  public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {}
 
   @Override
   public void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {

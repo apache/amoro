@@ -29,9 +29,7 @@ public class PartitionBaseInfo {
   // parameters needed for front-end only
   String size;
 
-  public PartitionBaseInfo() {
-
-  }
+  public PartitionBaseInfo() {}
 
   public PartitionBaseInfo(String partition, long fileCount, long fileSize, long lastCommitTime) {
     this.partition = partition;
@@ -63,7 +61,6 @@ public class PartitionBaseInfo {
   public void setFileSize(long fileSize) {
     this.fileSize = fileSize;
     this.size = AmsUtil.byteToXB(fileSize);
-
   }
 
   public long getLastCommitTime() {

@@ -18,9 +18,7 @@
 
 package com.netease.arctic.server.dashboard.utils;
 
-/**
- * Util to desensitize sensitive data.
- */
+/** Util to desensitize sensitive data. */
 public class DesensitizationUtil {
   public static String COMMON_SECRET_FORMAT = "********";
 

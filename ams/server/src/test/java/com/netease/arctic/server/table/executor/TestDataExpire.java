@@ -18,6 +18,9 @@
 
 package com.netease.arctic.server.table.executor;
 
+import static com.netease.arctic.BasicTableTestHelper.PRIMARY_KEY_SPEC;
+import static com.netease.arctic.BasicTableTestHelper.SPEC;
+
 import com.google.common.collect.Lists;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
@@ -69,64 +72,94 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.BasicTableTestHelper.PRIMARY_KEY_SPEC;
-import static com.netease.arctic.BasicTableTestHelper.SPEC;
-
 @RunWith(Parameterized.class)
 public class TestDataExpire extends ExecutorTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
     return new Object[][] {
-        // Mixed format partitioned by timestamp
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(true, true, getDefaultProp())},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(true, false, getDefaultProp())},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(false, true, getDefaultProp())},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(false, false, getDefaultProp())},
-        // Mixed format partitioned by timestampz
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(TABLE_SCHEMA1, PRIMARY_KEY_SPEC, SPEC, getDefaultProp())},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(TABLE_SCHEMA1, PRIMARY_KEY_SPEC, PartitionSpec.unpartitioned(), getDefaultProp())},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(TABLE_SCHEMA1, PrimaryKeySpec.noPrimaryKey(), SPEC, getDefaultProp())},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(TABLE_SCHEMA1, PrimaryKeySpec.noPrimaryKey(), PartitionSpec.unpartitioned(),
-             getDefaultProp())},
-        // Mixed format partitioned by date string
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(TABLE_SCHEMA2, PRIMARY_KEY_SPEC, SPEC2, getDefaultProp())},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(TABLE_SCHEMA2, PRIMARY_KEY_SPEC, PartitionSpec.unpartitioned(), getDefaultProp())},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(TABLE_SCHEMA2, PrimaryKeySpec.noPrimaryKey(), SPEC2, getDefaultProp())},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(TABLE_SCHEMA2, PrimaryKeySpec.noPrimaryKey(), PartitionSpec.unpartitioned(),
-             getDefaultProp())}
+      // Mixed format partitioned by timestamp
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true, getDefaultProp())
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, false, getDefaultProp())
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(false, true, getDefaultProp())
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(false, false, getDefaultProp())
+      },
+      // Mixed format partitioned by timestampz
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(TABLE_SCHEMA1, PRIMARY_KEY_SPEC, SPEC, getDefaultProp())
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(
+            TABLE_SCHEMA1, PRIMARY_KEY_SPEC, PartitionSpec.unpartitioned(), getDefaultProp())
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(
+            TABLE_SCHEMA1, PrimaryKeySpec.noPrimaryKey(), SPEC, getDefaultProp())
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(
+            TABLE_SCHEMA1,
+            PrimaryKeySpec.noPrimaryKey(),
+            PartitionSpec.unpartitioned(),
+            getDefaultProp())
+      },
+      // Mixed format partitioned by date string
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(TABLE_SCHEMA2, PRIMARY_KEY_SPEC, SPEC2, getDefaultProp())
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(
+            TABLE_SCHEMA2, PRIMARY_KEY_SPEC, PartitionSpec.unpartitioned(), getDefaultProp())
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(
+            TABLE_SCHEMA2, PrimaryKeySpec.noPrimaryKey(), SPEC2, getDefaultProp())
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(
+            TABLE_SCHEMA2,
+            PrimaryKeySpec.noPrimaryKey(),
+            PartitionSpec.unpartitioned(),
+            getDefaultProp())
+      }
     };
   }
 
-  public static final Schema TABLE_SCHEMA1 = new Schema(
-      Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "name", Types.StringType.get()),
-      Types.NestedField.required(3, "ts", Types.LongType.get()),
-      Types.NestedField.required(4, "op_time", Types.TimestampType.withZone())
-  );
+  public static final Schema TABLE_SCHEMA1 =
+      new Schema(
+          Types.NestedField.required(1, "id", Types.IntegerType.get()),
+          Types.NestedField.required(2, "name", Types.StringType.get()),
+          Types.NestedField.required(3, "ts", Types.LongType.get()),
+          Types.NestedField.required(4, "op_time", Types.TimestampType.withZone()));
 
-  public static final Schema TABLE_SCHEMA2 = new Schema(
-      Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "name", Types.StringType.get()),
-      Types.NestedField.required(3, "ts", Types.LongType.get()),
-      Types.NestedField.required(4, "op_time", Types.StringType.get())
-  );
+  public static final Schema TABLE_SCHEMA2 =
+      new Schema(
+          Types.NestedField.required(1, "id", Types.IntegerType.get()),
+          Types.NestedField.required(2, "name", Types.StringType.get()),
+          Types.NestedField.required(3, "ts", Types.LongType.get()),
+          Types.NestedField.required(4, "op_time", Types.StringType.get()));
 
-  public static final PartitionSpec SPEC2 = PartitionSpec.builderFor(TABLE_SCHEMA2)
-      .identity("op_time")
-      .build();
+  public static final PartitionSpec SPEC2 =
+      PartitionSpec.builderFor(TABLE_SCHEMA2).identity("op_time").build();
 
   public TestDataExpire(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
@@ -142,21 +175,23 @@ public class TestDataExpire extends ExecutorTestBase {
   }
 
   private void testUnKeyedPartitionLevel() {
-    List<Record> records = Lists.newArrayList(
-        createRecord(1, "111", parseMillis("2022-01-01T12:00:00"), "2022-01-01T12:00:00"),
-        createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),
-        createRecord(3, "333", parseMillis("2022-01-02T12:00:00"), "2022-01-02T12:00:00"),
-        createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00")
-    );
+    List<Record> records =
+        Lists.newArrayList(
+            createRecord(1, "111", parseMillis("2022-01-01T12:00:00"), "2022-01-01T12:00:00"),
+            createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),
+            createRecord(3, "333", parseMillis("2022-01-02T12:00:00"), "2022-01-02T12:00:00"),
+            createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00"));
     OptimizingTestHelpers.appendBase(
-        getArcticTable(),
-        tableTestHelper().writeBaseStore(getArcticTable(), 0, records, false));
+        getArcticTable(), tableTestHelper().writeBaseStore(getArcticTable(), 0, records, false));
 
     DataExpirationConfig config = new DataExpirationConfig(getArcticTable());
-    DataExpiringExecutor.purgeTableFrom(getArcticTable(), config,
+    DataExpiringExecutor.purgeTableFrom(
+        getArcticTable(),
+        config,
         LocalDateTime.parse("2022-01-03T18:00:00.000")
-            .atZone(DataExpiringExecutor
-                .getDefaultZoneId(getArcticTable().schema().findField(config.getExpirationField())))
+            .atZone(
+                DataExpiringExecutor.getDefaultZoneId(
+                    getArcticTable().schema().findField(config.getExpirationField())))
             .toInstant());
 
     List<Record> result = readSortedBaseRecords(getArcticTable());
@@ -164,23 +199,23 @@ public class TestDataExpire extends ExecutorTestBase {
     List<Record> expected;
     if (tableTestHelper().partitionSpec().isPartitioned()) {
       if (expireByStringDate()) {
-        expected = Lists.newArrayList(
-            createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00")
-        );
+        expected =
+            Lists.newArrayList(
+                createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"));
       } else {
-        expected = Lists.newArrayList(
-            createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),
-            createRecord(3, "333", parseMillis("2022-01-02T12:00:00"), "2022-01-02T12:00:00"),
-            createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00")
-        );
+        expected =
+            Lists.newArrayList(
+                createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),
+                createRecord(3, "333", parseMillis("2022-01-02T12:00:00"), "2022-01-02T12:00:00"),
+                createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00"));
       }
     } else {
-      expected = Lists.newArrayList(
-          createRecord(1, "111", parseMillis("2022-01-01T12:00:00"), "2022-01-01T12:00:00"),
-          createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),
-          createRecord(3, "333", parseMillis("2022-01-02T12:00:00"), "2022-01-02T12:00:00"),
-          createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00")
-      );
+      expected =
+          Lists.newArrayList(
+              createRecord(1, "111", parseMillis("2022-01-01T12:00:00"), "2022-01-01T12:00:00"),
+              createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),
+              createRecord(3, "333", parseMillis("2022-01-02T12:00:00"), "2022-01-02T12:00:00"),
+              createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00"));
     }
     Assert.assertEquals(expected, result);
   }
@@ -188,31 +223,37 @@ public class TestDataExpire extends ExecutorTestBase {
   private void testKeyedPartitionLevel() {
     KeyedTable keyedTable = getArcticTable().asKeyedTable();
 
-    ArrayList<Record> baseRecords = Lists.newArrayList(
-        createRecord(1, "111", parseMillis("2022-01-01T12:00:00"), "2022-01-01T12:00:00"),
-        createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00")
-    );
-    OptimizingTestHelpers.appendBase(keyedTable, tableTestHelper().writeBaseStore(keyedTable, 0, baseRecords, false));
+    ArrayList<Record> baseRecords =
+        Lists.newArrayList(
+            createRecord(1, "111", parseMillis("2022-01-01T12:00:00"), "2022-01-01T12:00:00"),
+            createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"));
+    OptimizingTestHelpers.appendBase(
+        keyedTable, tableTestHelper().writeBaseStore(keyedTable, 0, baseRecords, false));
 
-    ArrayList<Record> newRecords = Lists.newArrayList(
-        createRecord(3, "333", parseMillis("2022-01-02T12:00:00"), "2022-01-02T12:00:00"),
-        createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00")
-    );
-    OptimizingTestHelpers.appendChange(keyedTable, tableTestHelper().writeChangeStore(keyedTable, 1L,
-        ChangeAction.INSERT,
-        newRecords, false));
+    ArrayList<Record> newRecords =
+        Lists.newArrayList(
+            createRecord(3, "333", parseMillis("2022-01-02T12:00:00"), "2022-01-02T12:00:00"),
+            createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00"));
+    OptimizingTestHelpers.appendChange(
+        keyedTable,
+        tableTestHelper().writeChangeStore(keyedTable, 1L, ChangeAction.INSERT, newRecords, false));
 
     CloseableIterable<TableFileScanHelper.FileScanResult> scan = buildKeyedFileScanHelper().scan();
     assertScanResult(scan, 4, 0);
 
     // expire partitions that order than 2022-01-02 18:00:00.000
     DataExpirationConfig config = new DataExpirationConfig(keyedTable);
-    DataExpiringExecutor.purgeTableFrom(keyedTable, config,
+    DataExpiringExecutor.purgeTableFrom(
+        keyedTable,
+        config,
         LocalDateTime.parse("2022-01-03T18:00:00.000")
-            .atZone(DataExpiringExecutor.getDefaultZoneId(keyedTable.schema().findField(config.getExpirationField())))
+            .atZone(
+                DataExpiringExecutor.getDefaultZoneId(
+                    keyedTable.schema().findField(config.getExpirationField())))
             .toInstant());
 
-    CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire = buildKeyedFileScanHelper().scan();
+    CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire =
+        buildKeyedFileScanHelper().scan();
     if (tableTestHelper().partitionSpec().isPartitioned()) {
       if (expireByStringDate()) {
         assertScanResult(scanAfterExpire, 1, 0);
@@ -227,23 +268,23 @@ public class TestDataExpire extends ExecutorTestBase {
     List<Record> expected;
     if (tableTestHelper().partitionSpec().isPartitioned()) {
       if (expireByStringDate()) {
-        expected = Lists.newArrayList(
-            createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00")
-        );
+        expected =
+            Lists.newArrayList(
+                createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"));
       } else {
-        expected = Lists.newArrayList(
-            createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),
-            createRecord(3, "333", parseMillis("2022-01-02T12:00:00"), "2022-01-02T12:00:00"),
-            createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00")
-        );
+        expected =
+            Lists.newArrayList(
+                createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),
+                createRecord(3, "333", parseMillis("2022-01-02T12:00:00"), "2022-01-02T12:00:00"),
+                createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00"));
       }
     } else {
-      expected = Lists.newArrayList(
-          createRecord(1, "111", parseMillis("2022-01-01T12:00:00"), "2022-01-01T12:00:00"),
-          createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),
-          createRecord(3, "333", parseMillis("2022-01-02T12:00:00"), "2022-01-02T12:00:00"),
-          createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00")
-      );
+      expected =
+          Lists.newArrayList(
+              createRecord(1, "111", parseMillis("2022-01-01T12:00:00"), "2022-01-01T12:00:00"),
+              createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),
+              createRecord(3, "333", parseMillis("2022-01-02T12:00:00"), "2022-01-02T12:00:00"),
+              createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00"));
     }
     Assert.assertEquals(expected, records);
   }
@@ -251,7 +292,8 @@ public class TestDataExpire extends ExecutorTestBase {
   @Test
   public void testFileLevel() {
     ArcticTable table = getArcticTable();
-    table.updateProperties()
+    table
+        .updateProperties()
         .set(TableProperties.DATA_EXPIRATION_LEVEL, DataExpirationConfig.ExpireLevel.FILE.name())
         .commit();
     if (table.isUnkeyedTable()) {
@@ -264,91 +306,99 @@ public class TestDataExpire extends ExecutorTestBase {
   private void testKeyedFileLevel() {
     KeyedTable keyedTable = getArcticTable().asKeyedTable();
 
-    ArrayList<Record> baseRecords = Lists.newArrayList(
-        createRecord(1, "111", parseMillis("2022-01-01T12:00:00"), "2022-01-01T12:00:00"),
-        createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00")
-    );
-    OptimizingTestHelpers.appendBase(keyedTable, tableTestHelper().writeBaseStore(keyedTable, 0, baseRecords, false));
+    ArrayList<Record> baseRecords =
+        Lists.newArrayList(
+            createRecord(1, "111", parseMillis("2022-01-01T12:00:00"), "2022-01-01T12:00:00"),
+            createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"));
+    OptimizingTestHelpers.appendBase(
+        keyedTable, tableTestHelper().writeBaseStore(keyedTable, 0, baseRecords, false));
 
-    ArrayList<Record> newRecords = Lists.newArrayList(
-        createRecord(3, "333", parseMillis("2022-01-02T18:00:00"), "2022-01-02T18:00:00"),
-        createRecord(4, "444", parseMillis("2021-12-30T19:00:00"), "2021-12-30T19:00:00")
-    );
-    OptimizingTestHelpers.appendChange(keyedTable, tableTestHelper().writeChangeStore(keyedTable, 1L,
-        ChangeAction.INSERT,
-        newRecords, false));
+    ArrayList<Record> newRecords =
+        Lists.newArrayList(
+            createRecord(3, "333", parseMillis("2022-01-02T18:00:00"), "2022-01-02T18:00:00"),
+            createRecord(4, "444", parseMillis("2021-12-30T19:00:00"), "2021-12-30T19:00:00"));
+    OptimizingTestHelpers.appendChange(
+        keyedTable,
+        tableTestHelper().writeChangeStore(keyedTable, 1L, ChangeAction.INSERT, newRecords, false));
 
     CloseableIterable<TableFileScanHelper.FileScanResult> scan = buildKeyedFileScanHelper().scan();
     assertScanResult(scan, 4, 0);
 
     // expire partitions that order than 2022-01-02 18:00:00.000
     DataExpirationConfig config = new DataExpirationConfig(keyedTable);
-    DataExpiringExecutor.purgeTableFrom(keyedTable, config,
+    DataExpiringExecutor.purgeTableFrom(
+        keyedTable,
+        config,
         LocalDateTime.parse("2022-01-03T18:00:00.000")
-            .atZone(DataExpiringExecutor.getDefaultZoneId(keyedTable.schema().findField(config.getExpirationField())))
+            .atZone(
+                DataExpiringExecutor.getDefaultZoneId(
+                    keyedTable.schema().findField(config.getExpirationField())))
             .toInstant());
 
-    CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire = buildKeyedFileScanHelper().scan();
+    CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire =
+        buildKeyedFileScanHelper().scan();
     assertScanResult(scanAfterExpire, 1, 0);
 
     List<Record> records = readSortedKeyedRecords(keyedTable);
-    List<Record> expected = Lists.newArrayList(
-        createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00")
-    );
+    List<Record> expected =
+        Lists.newArrayList(
+            createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"));
     Assert.assertEquals(expected, records);
   }
 
   private void testUnKeyedFileLevel() {
-    List<Record> records = Lists.newArrayList(
-        createRecord(1, "111", parseMillis("2022-01-01T12:00:00"), "2022-01-01T12:00:00"),
-        createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),
-        createRecord(3, "333", parseMillis("2022-01-02T18:00:00"), "2022-01-02T18:00:00"),
-        createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00")
-    );
-    records.forEach(r -> OptimizingTestHelpers.appendBase(
-        getArcticTable(),
-        tableTestHelper().writeBaseStore(getArcticTable(), 0, Lists.newArrayList(r), false)));
+    List<Record> records =
+        Lists.newArrayList(
+            createRecord(1, "111", parseMillis("2022-01-01T12:00:00"), "2022-01-01T12:00:00"),
+            createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),
+            createRecord(3, "333", parseMillis("2022-01-02T18:00:00"), "2022-01-02T18:00:00"),
+            createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00"));
+    records.forEach(
+        r ->
+            OptimizingTestHelpers.appendBase(
+                getArcticTable(),
+                tableTestHelper()
+                    .writeBaseStore(getArcticTable(), 0, Lists.newArrayList(r), false)));
     CloseableIterable<TableFileScanHelper.FileScanResult> scan = getTableFileScanHelper().scan();
     assertScanResult(scan, 4, 0);
 
     // expire partitions that order than 2022-01-02 18:00:00.000
     DataExpirationConfig config = new DataExpirationConfig(getArcticTable());
-    DataExpiringExecutor.purgeTableFrom(getArcticTable(), config,
+    DataExpiringExecutor.purgeTableFrom(
+        getArcticTable(),
+        config,
         LocalDateTime.parse("2022-01-03T18:00:00.000")
-            .atZone(DataExpiringExecutor
-                .getDefaultZoneId(getArcticTable().schema().findField(config.getExpirationField())))
+            .atZone(
+                DataExpiringExecutor.getDefaultZoneId(
+                    getArcticTable().schema().findField(config.getExpirationField())))
             .toInstant());
 
     List<Record> result = readSortedBaseRecords(getArcticTable());
 
     List<Record> expected;
     if (expireByStringDate()) {
-      expected = Lists.newArrayList(
-          createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00")
-      );
+      expected =
+          Lists.newArrayList(
+              createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"));
     } else {
-      expected = Lists.newArrayList(
-          createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),
-          createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00")
-      );
+      expected =
+          Lists.newArrayList(
+              createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"),
+              createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00"));
     }
     Assert.assertEquals(expected, result);
   }
 
   @Test
   public void testNormalFieldPartitionLevel() {
-    getArcticTable().updateProperties()
-        .set(TableProperties.DATA_EXPIRATION_FIELD, "ts")
-        .commit();
+    getArcticTable().updateProperties().set(TableProperties.DATA_EXPIRATION_FIELD, "ts").commit();
 
     testPartitionLevel();
   }
 
   @Test
   public void testNormalFieldFileLevel() {
-    getArcticTable().updateProperties()
-        .set(TableProperties.DATA_EXPIRATION_FIELD, "ts")
-        .commit();
+    getArcticTable().updateProperties().set(TableProperties.DATA_EXPIRATION_FIELD, "ts").commit();
 
     testFileLevel();
   }
@@ -366,16 +416,20 @@ public class TestDataExpire extends ExecutorTestBase {
         }
         break;
       case STRING:
-        time = LocalDateTime.parse(opTime)
-            .atZone(ZoneId.systemDefault()).toLocalDateTime()
-            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        time =
+            LocalDateTime.parse(opTime)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime()
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         break;
       case LONG:
-        time = LocalDateTime.parse(opTime)
-            .atZone(ZoneOffset.UTC)
-            .toLocalDate()
-            .atStartOfDay()
-            .toInstant(ZoneOffset.UTC).toEpochMilli();
+        time =
+            LocalDateTime.parse(opTime)
+                .atZone(ZoneOffset.UTC)
+                .toLocalDate()
+                .atStartOfDay()
+                .toInstant(ZoneOffset.UTC)
+                .toEpochMilli();
         break;
       default:
         time = opTime;
@@ -385,9 +439,7 @@ public class TestDataExpire extends ExecutorTestBase {
   }
 
   protected void assertScanResult(
-      CloseableIterable<TableFileScanHelper.FileScanResult> result,
-      int size,
-      Integer deleteCnt) {
+      CloseableIterable<TableFileScanHelper.FileScanResult> result, int size, Integer deleteCnt) {
     int scanCnt = 0;
     for (TableFileScanHelper.FileScanResult fileScanResult : result) {
       ++scanCnt;
@@ -409,27 +461,33 @@ public class TestDataExpire extends ExecutorTestBase {
   }
 
   protected List<Record> readSortedKeyedRecords(KeyedTable keyedTable) {
-    return tableTestHelper().readKeyedTable(keyedTable, Expressions.alwaysTrue(), null, false, false)
-        .stream().sorted(Comparator.comparing(o -> o.get(0, Integer.class)))
+    return tableTestHelper()
+        .readKeyedTable(keyedTable, Expressions.alwaysTrue(), null, false, false).stream()
+        .sorted(Comparator.comparing(o -> o.get(0, Integer.class)))
         .collect(Collectors.toList());
   }
 
   protected List<Record> readSortedBaseRecords(ArcticTable table) {
-    return tableTestHelper().readBaseStore(table, Expressions.alwaysTrue(), null, false)
-        .stream().sorted(Comparator.comparing(o -> o.get(0, Integer.class)))
+    return tableTestHelper().readBaseStore(table, Expressions.alwaysTrue(), null, false).stream()
+        .sorted(Comparator.comparing(o -> o.get(0, Integer.class)))
         .collect(Collectors.toList());
   }
 
   protected KeyedTableFileScanHelper buildKeyedFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable(), true);
-    long changeSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().changeTable(), true);
+    long baseSnapshotId =
+        IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable(), true);
+    long changeSnapshotId =
+        IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().changeTable(), true);
     StructLikeMap<Long> partitionOptimizedSequence =
         TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable().asKeyedTable());
     StructLikeMap<Long> legacyPartitionMaxTransactionId =
         TablePropertyUtil.getLegacyPartitionMaxTransactionId(getArcticTable().asKeyedTable());
     return new KeyedTableFileScanHelper(
         getArcticTable().asKeyedTable(),
-        new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId, partitionOptimizedSequence,
+        new KeyedTableSnapshot(
+            baseSnapshotId,
+            changeSnapshotId,
+            partitionOptimizedSequence,
             legacyPartitionMaxTransactionId));
   }
 
@@ -451,14 +509,18 @@ public class TestDataExpire extends ExecutorTestBase {
   }
 
   private static Instant parseInstantWithZone(String datetime, ZoneId zoneId) {
-    return LocalDateTime.parse(datetime)
-        .atZone(zoneId)
-        .toInstant();
+    return LocalDateTime.parse(datetime).atZone(zoneId).toInstant();
   }
 
   private boolean expireByStringDate() {
-    String expireField = CompatiblePropertyUtil.propertyAsString(getArcticTable().properties(),
-        TableProperties.DATA_EXPIRATION_FIELD, "");
-    return getArcticTable().schema().findField(expireField).type().typeId().equals(Type.TypeID.STRING);
+    String expireField =
+        CompatiblePropertyUtil.propertyAsString(
+            getArcticTable().properties(), TableProperties.DATA_EXPIRATION_FIELD, "");
+    return getArcticTable()
+        .schema()
+        .findField(expireField)
+        .type()
+        .typeId()
+        .equals(Type.TypeID.STRING);
   }
 }

@@ -21,9 +21,7 @@ package com.netease.arctic.server.dashboard.controller;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import io.javalin.http.Context;
 
-/**
- * The controller that handles health check requests.
- */
+/** The controller that handles health check requests. */
 public class HealthCheckController {
 
   public void healthCheck(Context ctx) {

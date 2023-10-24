@@ -43,23 +43,32 @@ import java.util.Set;
 @RunWith(Parameterized.class)
 public class TestSnapshotExpireHive extends TestSnapshotExpire {
 
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][]{
-        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new HiveTableTestHelper(true, true)},
-        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new HiveTableTestHelper(true, false)},
-        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new HiveTableTestHelper(false, true)},
-        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new HiveTableTestHelper(false, false)}};
+    return new Object[][] {
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, true)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, false)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(false, true)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(false, false)
+      }
+    };
   }
 
-  public TestSnapshotExpireHive(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+  public TestSnapshotExpireHive(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
@@ -68,10 +77,15 @@ public class TestSnapshotExpireHive extends TestSnapshotExpire {
     List<DataFile> hiveFiles = writeAndCommitBaseAndHive(getArcticTable(), 1, true);
     List<DataFile> s2Files = writeAndCommitBaseAndHive(getArcticTable(), 1, false);
 
-    DeleteFiles deleteHiveFiles = isKeyedTable() ?
-        getArcticTable().asKeyedTable().baseTable().newDelete() : getArcticTable().asUnkeyedTable().newDelete();
+    DeleteFiles deleteHiveFiles =
+        isKeyedTable()
+            ? getArcticTable().asKeyedTable().baseTable().newDelete()
+            : getArcticTable().asUnkeyedTable().newDelete();
 
-    getArcticTable().updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0")
+        .commit();
     getArcticTable().updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
 
     for (DataFile hiveFile : hiveFiles) {
@@ -80,8 +94,10 @@ public class TestSnapshotExpireHive extends TestSnapshotExpire {
     }
     deleteHiveFiles.commit();
 
-    DeleteFiles deleteIcebergFiles = isKeyedTable() ?
-        getArcticTable().asKeyedTable().baseTable().newDelete() : getArcticTable().asUnkeyedTable().newDelete();
+    DeleteFiles deleteIcebergFiles =
+        isKeyedTable()
+            ? getArcticTable().asKeyedTable().baseTable().newDelete()
+            : getArcticTable().asUnkeyedTable().newDelete();
     for (DataFile s2File : s2Files) {
       Assert.assertTrue(getArcticTable().io().exists(s2File.path().toString()));
       deleteIcebergFiles.deleteFile(s2File);
@@ -89,26 +105,33 @@ public class TestSnapshotExpireHive extends TestSnapshotExpire {
     deleteIcebergFiles.commit();
 
     List<DataFile> s3Files = writeAndCommitBaseAndHive(getArcticTable(), 1, false);
-    s3Files.forEach(file -> Assert.assertTrue(getArcticTable().io().exists(file.path().toString())));
+    s3Files.forEach(
+        file -> Assert.assertTrue(getArcticTable().io().exists(file.path().toString())));
 
     Set<String> hiveLocation = new HashSet<>();
     String partitionHiveLocation = hiveFiles.get(0).path().toString();
     hiveLocation.add(TableFileUtil.getUriPath(TableFileUtil.getFileDir(partitionHiveLocation)));
     if (isPartitionedTable()) {
-      String anotherHiveLocation = partitionHiveLocation.contains("op_time_day=2022-01-01") ?
-          partitionHiveLocation.replace("op_time_day=2022-01-01", "op_time_day=2022-01-02") :
-          partitionHiveLocation.replace("op_time_day=2022-01-02", "op_time_day=2022-01-01");
+      String anotherHiveLocation =
+          partitionHiveLocation.contains("op_time_day=2022-01-01")
+              ? partitionHiveLocation.replace("op_time_day=2022-01-01", "op_time_day=2022-01-02")
+              : partitionHiveLocation.replace("op_time_day=2022-01-02", "op_time_day=2022-01-01");
       hiveLocation.add(TableFileUtil.getUriPath(TableFileUtil.getFileDir(anotherHiveLocation)));
     }
-    UnkeyedTable unkeyedTable = isKeyedTable() ?
-        getArcticTable().asKeyedTable().baseTable() : getArcticTable().asUnkeyedTable();
+    UnkeyedTable unkeyedTable =
+        isKeyedTable()
+            ? getArcticTable().asKeyedTable().baseTable()
+            : getArcticTable().asUnkeyedTable();
     new MixedTableMaintainer(unkeyedTable)
-        .getBaseMaintainer().expireSnapshots(System.currentTimeMillis(), hiveLocation);
+        .getBaseMaintainer()
+        .expireSnapshots(System.currentTimeMillis(), hiveLocation);
     Assert.assertEquals(1, Iterables.size(unkeyedTable.snapshots()));
 
-    hiveFiles.forEach(file -> Assert.assertTrue(getArcticTable().io().exists(file.path().toString())));
-    s2Files.forEach(file -> Assert.assertFalse(getArcticTable().io().exists(file.path().toString())));
-    s3Files.forEach(file -> Assert.assertTrue(getArcticTable().io().exists(file.path().toString())));
+    hiveFiles.forEach(
+        file -> Assert.assertTrue(getArcticTable().io().exists(file.path().toString())));
+    s2Files.forEach(
+        file -> Assert.assertFalse(getArcticTable().io().exists(file.path().toString())));
+    s3Files.forEach(
+        file -> Assert.assertTrue(getArcticTable().io().exists(file.path().toString())));
   }
-
 }

@@ -36,10 +36,7 @@ public class AMSTransactionsOfTable {
 
   private Map<String, String> filesSummaryForChart;
 
-
-
-  public AMSTransactionsOfTable() {
-  }
+  public AMSTransactionsOfTable() {}
 
   public AMSTransactionsOfTable(
       String transactionId,
@@ -142,16 +139,18 @@ public class AMSTransactionsOfTable {
       return false;
     }
     AMSTransactionsOfTable that = (AMSTransactionsOfTable) o;
-    return fileCount == that.fileCount && commitTime == that.commitTime &&
-        Objects.equal(transactionId, that.transactionId) &&
-        Objects.equal(fileSize, that.fileSize) &&
-        Objects.equal(snapshotId, that.snapshotId) &&
-        Objects.equal(operation, that.operation) &&
-        Objects.equal(summary, that.summary);
+    return fileCount == that.fileCount
+        && commitTime == that.commitTime
+        && Objects.equal(transactionId, that.transactionId)
+        && Objects.equal(fileSize, that.fileSize)
+        && Objects.equal(snapshotId, that.snapshotId)
+        && Objects.equal(operation, that.operation)
+        && Objects.equal(summary, that.summary);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(transactionId, fileCount, fileSize, commitTime, snapshotId, operation, summary);
+    return Objects.hashCode(
+        transactionId, fileCount, fileSize, commitTime, snapshotId, operation, summary);
   }
 }

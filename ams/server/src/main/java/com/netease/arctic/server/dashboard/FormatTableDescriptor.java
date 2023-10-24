@@ -30,49 +30,31 @@ import org.apache.iceberg.util.Pair;
 
 import java.util.List;
 
-/**
- * API for obtaining metadata information of various formats.
- */
+/** API for obtaining metadata information of various formats. */
 public interface FormatTableDescriptor {
 
-  /**
-   *  Get the format supported by this descriptor.
-   */
+  /** Get the format supported by this descriptor. */
   List<TableFormat> supportFormat();
 
-  /**
-   * Get the table metadata information of the {@link AmoroTable}.
-   */
+  /** Get the table metadata information of the {@link AmoroTable}. */
   ServerTableMeta getTableDetail(AmoroTable<?> amoroTable);
 
-  /**
-   * Get the transaction information of the {@link AmoroTable}.
-   */
+  /** Get the transaction information of the {@link AmoroTable}. */
   List<AMSTransactionsOfTable> getTransactions(AmoroTable<?> amoroTable);
 
-  /**
-   * Get the transaction detail information of the {@link AmoroTable}.
-   */
+  /** Get the transaction detail information of the {@link AmoroTable}. */
   List<PartitionFileBaseInfo> getTransactionDetail(AmoroTable<?> amoroTable, long transactionId);
 
-  /**
-   * Get the DDL information of the {@link AmoroTable}.
-   */
+  /** Get the DDL information of the {@link AmoroTable}. */
   List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable);
 
-  /**
-   * Get the partition information of the {@link AmoroTable}.
-   */
+  /** Get the partition information of the {@link AmoroTable}. */
   List<PartitionBaseInfo> getTablePartitions(AmoroTable<?> amoroTable);
 
-  /**
-   * Get the file information of the {@link AmoroTable}.
-   */
+  /** Get the file information of the {@link AmoroTable}. */
   List<PartitionFileBaseInfo> getTableFiles(AmoroTable<?> amoroTable, String partition);
 
-  /**
-   * Get the paged optimizing process information of the {@link AmoroTable} and total size.
-   */
+  /** Get the paged optimizing process information of the {@link AmoroTable} and total size. */
   Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
       AmoroTable<?> amoroTable, int limit, int offset);
 }

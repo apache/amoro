@@ -51,14 +51,12 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Copy from org.apache.paimon.spark.SparkTypeUtilsorg.apache.paimon.spark.SparkTypeUtils.
- * Reason:
+ * Copy from org.apache.paimon.spark.SparkTypeUtilsorg.apache.paimon.spark.SparkTypeUtils. Reason:
  * 1. Ams server don't have paimon-spark dependency.
  */
 public class PaimonTypeToSparkType {
 
-  private PaimonTypeToSparkType() {
-  }
+  private PaimonTypeToSparkType() {}
 
   public static StructType fromPaimonRowType(RowType type) {
     return (StructType) fromPaimonType(type);
@@ -202,12 +200,10 @@ public class PaimonTypeToSparkType {
       return visit(type, new SparkToPaimonTypeVisitor());
     }
 
-    static org.apache.paimon.types.DataType visit(
-        DataType type, SparkToPaimonTypeVisitor visitor) {
+    static org.apache.paimon.types.DataType visit(DataType type, SparkToPaimonTypeVisitor visitor) {
       if (type instanceof StructType) {
         StructField[] fields = ((StructType) type).fields();
-        List<org.apache.paimon.types.DataType> fieldResults =
-            new ArrayList<>(fields.length);
+        List<org.apache.paimon.types.DataType> fieldResults = new ArrayList<>(fields.length);
 
         for (StructField field : fields) {
           fieldResults.add(visit(field.dataType(), visitor));
@@ -222,9 +218,7 @@ public class PaimonTypeToSparkType {
       } else if (type instanceof org.apache.spark.sql.types.ArrayType) {
         return visitor.array(
             (org.apache.spark.sql.types.ArrayType) type,
-            visit(
-                ((org.apache.spark.sql.types.ArrayType) type).elementType(),
-                visitor));
+            visit(((org.apache.spark.sql.types.ArrayType) type).elementType(), visitor));
       } else if (type instanceof UserDefinedType) {
         throw new UnsupportedOperationException("User-defined types are not supported");
       } else {
@@ -238,8 +232,7 @@ public class PaimonTypeToSparkType {
       List<DataField> newFields = new ArrayList<>(fields.length);
       for (int i = 0; i < fields.length; i += 1) {
         StructField field = fields[i];
-        org.apache.paimon.types.DataType fieldType =
-            fieldResults.get(i).copy(field.nullable());
+        org.apache.paimon.types.DataType fieldType = fieldResults.get(i).copy(field.nullable());
         String comment = field.getComment().getOrElse(() -> null);
         newFields.add(new DataField(i, field.name(), fieldType, comment));
       }
@@ -293,8 +286,7 @@ public class PaimonTypeToSparkType {
         return new VarBinaryType(VarBinaryType.MAX_LENGTH);
       }
 
-      throw new UnsupportedOperationException(
-          "Not a supported type: " + atomic.catalogString());
+      throw new UnsupportedOperationException("Not a supported type: " + atomic.catalogString());
     }
   }
 }

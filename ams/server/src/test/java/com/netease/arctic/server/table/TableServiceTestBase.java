@@ -25,8 +25,7 @@ import org.junit.ClassRule;
 
 public abstract class TableServiceTestBase {
 
-  @ClassRule
-  public static DerbyPersistence DERBY = new DerbyPersistence();
+  @ClassRule public static DerbyPersistence DERBY = new DerbyPersistence();
 
   private static DefaultTableService TABLE_SERVICE = null;
 
@@ -44,5 +43,4 @@ public abstract class TableServiceTestBase {
   protected DefaultTableService tableService() {
     return TABLE_SERVICE;
   }
-
 }
