@@ -21,7 +21,7 @@ package com.netease.arctic.server.dashboard.model;
 import org.apache.iceberg.SnapshotRef;
 
 public class TagOrBranchInfo {
-  //todo temporarily responds to the problem of Mixed Format table.
+  // todo temporarily responds to the problem of Mixed Format table.
   public static final TagOrBranchInfo MAIN_BRANCH =
       new TagOrBranchInfo(SnapshotRef.MAIN_BRANCH, -1, -1, 0L, 0L, "branch");
 
@@ -32,8 +32,7 @@ public class TagOrBranchInfo {
   private Long maxRefAgeMs;
   private String type;
 
-  public TagOrBranchInfo() {
-  }
+  public TagOrBranchInfo() {}
 
   private TagOrBranchInfo(
       String name,
@@ -60,7 +59,7 @@ public class TagOrBranchInfo {
       this.type = "tag";
     } else if (snapshotRef.isBranch()) {
       this.type = "branch";
-    }else {
+    } else {
       throw new RuntimeException("Invalid snapshot ref: " + snapshotRef);
     }
   }

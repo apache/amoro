@@ -204,8 +204,12 @@ public class DashboardServer {
             get("/catalogs/{catalog}/databases/{db}/tables", tableController::getTableList);
             get("/catalogs/{catalog}/databases", tableController::getDatabaseList);
             get("/catalogs", tableController::getCatalogs);
-            get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/tags", tableController::getTableTags);
-            get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/branches", tableController::getTableBranchs);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/tags",
+                tableController::getTableTags);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
+                tableController::getTableBranchs);
 
             // catalog controller
             post("/catalogs", catalogController::createCatalog);
@@ -311,9 +315,12 @@ public class DashboardServer {
             get("/catalogs/{catalog}/databases/{db}/tables", tableController::getTableList);
             get("/catalogs/{catalog}/databases", tableController::getDatabaseList);
             get("/catalogs", tableController::getCatalogs);
-            get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/tags", tableController::getTableTags);
-            get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/branches", tableController::getTableBranchs);
-
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/tags",
+                tableController::getTableTags);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
+                tableController::getTableBranchs);
 
             // optimize controller
             get(
