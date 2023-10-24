@@ -82,7 +82,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
             .longValue());
 
     StructLikeMap<Long> partitionOptimizedTime =
-        ArcticTableUtil.readOptimizedSequence(getArcticTable().asKeyedTable());
+        ArcticTableUtil.readBaseOptimizedTime(getArcticTable().asKeyedTable());
     // expect result: all partition with new optimized time
     assertRange(
         before,
@@ -167,7 +167,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
             .longValue());
 
     StructLikeMap<Long> partitionOptimizedTime =
-        ArcticTableUtil.readOptimizedSequence(getArcticTable().asKeyedTable());
+        ArcticTableUtil.readBaseOptimizedTime(getArcticTable().asKeyedTable());
     // expect result: 1,2,4 partition with new optimized time, 3 partition is null
     assertRange(
         before,
