@@ -68,6 +68,7 @@ import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.PropertyUtil;
@@ -82,6 +83,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /** Descriptor for Mixed-Hive, Mixed-Iceberg, Iceberg format tables. */
@@ -386,40 +388,12 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   @Override
   public List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable) {
-    ArcticTable arcticTable = getTable(amoroTable);
-    List<TagOrBranchInfo> result = new ArrayList<>();
-    Map<String, SnapshotRef> snapshotRefs = getSnapshotRefs(arcticTable);
-    snapshotRefs.forEach(
-        (name, snapshotRef) -> {
-          if (snapshotRef.isTag()) {
-            result.add(new TagOrBranchInfo(
-                name,
-                snapshotRef.snapshotId(),
-                snapshotRef.minSnapshotsToKeep(),
-                snapshotRef.maxSnapshotAgeMs(),
-                snapshotRef.maxRefAgeMs()));
-          }
-        });
-    return result;
+    return getTableTagsOrBranchs(amoroTable, SnapshotRef::isTag);
   }
 
   @Override
   public List<TagOrBranchInfo> getTableBranchs(AmoroTable<?> amoroTable) {
-    ArcticTable arcticTable = getTable(amoroTable);
-    List<TagOrBranchInfo> result = new ArrayList<>();
-    Map<String, SnapshotRef> snapshotRefs = getSnapshotRefs(arcticTable);
-    snapshotRefs.forEach(
-        (name, snapshotRef) -> {
-          if (snapshotRef.isBranch()) {
-            result.add(new TagOrBranchInfo(
-                name,
-                snapshotRef.snapshotId(),
-                snapshotRef.minSnapshotsToKeep(),
-                snapshotRef.maxSnapshotAgeMs(),
-                snapshotRef.maxRefAgeMs()));
-          }
-        });
-    return result;
+    return getTableTagsOrBranchs(amoroTable, SnapshotRef::isBranch);
   }
 
   @Override
@@ -614,17 +588,22 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     return (ArcticTable) amoroTable.originalTable();
   }
 
-  private Map<String, SnapshotRef> getSnapshotRefs(ArcticTable table) {
-    if (table.isKeyedTable()) {
-      Map<String, SnapshotRef> baseTableRefs = table.asKeyedTable().baseTable().refs();
-      Map<String, SnapshotRef> changeTableRefs = table.asKeyedTable().changeTable().refs();
-      return new HashMap<String, SnapshotRef>(baseTableRefs) {
-        {
-          putAll(changeTableRefs);
-        }
-      };
+  private List<TagOrBranchInfo> getTableTagsOrBranchs(
+      AmoroTable<?> amoroTable, Predicate<SnapshotRef> predicate) {
+    ArcticTable arcticTable = getTable(amoroTable);
+    List<TagOrBranchInfo> result = new ArrayList<>();
+    Map<String, SnapshotRef> snapshotRefs;
+    if (arcticTable.isKeyedTable()) {
+      return ImmutableList.of(TagOrBranchInfo.MAIN_BRANCH);
     } else {
-      return new HashMap<>(table.asUnkeyedTable().refs());
+      snapshotRefs = arcticTable.asUnkeyedTable().refs();
+      snapshotRefs.forEach(
+          (name, snapshotRef) -> {
+            if (predicate.test(snapshotRef)) {
+              result.add(new TagOrBranchInfo(name, snapshotRef));
+            }
+          });
+      return result;
     }
   }
 }

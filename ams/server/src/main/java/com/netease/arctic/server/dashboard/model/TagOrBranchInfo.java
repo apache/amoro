@@ -18,27 +18,51 @@
 
 package com.netease.arctic.server.dashboard.model;
 
+import org.apache.iceberg.SnapshotRef;
+
 public class TagOrBranchInfo {
+  //todo temporarily responds to the problem of Mixed Format table.
+  public static final TagOrBranchInfo MAIN_BRANCH =
+      new TagOrBranchInfo(SnapshotRef.MAIN_BRANCH, -1, -1, 0L, 0L, "branch");
+
   private String name;
   private long snapshotId;
   private Integer minSnapshotsToKeep;
   private Long maxSnapshotAgeMs;
   private Long maxRefAgeMs;
+  private String type;
 
   public TagOrBranchInfo() {
   }
 
-  public TagOrBranchInfo(
+  private TagOrBranchInfo(
       String name,
       long snapshotId,
       Integer minSnapshotsToKeep,
       Long maxSnapshotAgeMs,
-      Long maxRefAgeMs) {
+      Long maxRefAgeMs,
+      String type) {
     this.name = name;
     this.snapshotId = snapshotId;
     this.minSnapshotsToKeep = minSnapshotsToKeep;
     this.maxSnapshotAgeMs = maxSnapshotAgeMs;
     this.maxRefAgeMs = maxRefAgeMs;
+    this.type = type;
+  }
+
+  public TagOrBranchInfo(String name, SnapshotRef snapshotRef) {
+    this.name = name;
+    this.snapshotId = snapshotRef.snapshotId();
+    this.minSnapshotsToKeep = snapshotRef.minSnapshotsToKeep();
+    this.maxSnapshotAgeMs = snapshotRef.maxSnapshotAgeMs();
+    this.maxRefAgeMs = snapshotRef.maxRefAgeMs();
+    if (snapshotRef.isTag()) {
+      this.type = "tag";
+    } else if (snapshotRef.isBranch()) {
+      this.type = "branch";
+    }else {
+      throw new RuntimeException("Invalid snapshot ref: " + snapshotRef);
+    }
   }
 
   public String getName() {
@@ -79,5 +103,13 @@ public class TagOrBranchInfo {
 
   public void setMaxRefAgeMs(Long maxRefAgeMs) {
     this.maxRefAgeMs = maxRefAgeMs;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String type) {
+    this.type = type;
   }
 }
