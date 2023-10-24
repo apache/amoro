@@ -76,7 +76,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
     Set<DeleteFile> removedDeleteFiles = Sets.newHashSet();
 
     StructLikeMap<Long> partitionOptimizedSequence =
-        ArcticTableUtil.readOptimizedSequence(table.asKeyedTable().baseTable());
+        ArcticTableUtil.readOptimizedSequence(table.asKeyedTable());
 
     for (TaskRuntime taskRuntime : tasks) {
       RewriteFilesInput input = taskRuntime.getInput();

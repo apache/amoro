@@ -35,6 +35,7 @@ import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.PuffinUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
@@ -125,8 +126,9 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     baseTable.newAppend().commit();
     Snapshot snapshot = baseTable.currentSnapshot();
     StatisticsFile statisticsFile = PuffinUtil.writer(baseTable, snapshot.snapshotId(), snapshot.sequenceNumber())
-        .addOptimizedSequence(optimizedSequence)
-        .write();
+        .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence,
+            PuffinUtil.createPartitionDataSerializer(baseTable.spec()))
+        .complete();
     baseTable.updateStatistics().setStatistics(snapshot.snapshotId(), statisticsFile).commit();
   }
 
@@ -368,16 +370,18 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     baseTable.newAppend().commit();
     Snapshot s1 = baseTable.currentSnapshot();
     StatisticsFile file1 = PuffinUtil.writer(baseTable, s1.snapshotId(), s1.sequenceNumber())
-        .addOptimizedSequence(StructLikeMap.create(baseTable.spec().partitionType()))
-        .write();
+        .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, StructLikeMap.create(baseTable.spec().partitionType()), 
+            PuffinUtil.createPartitionDataSerializer(baseTable.spec()))
+        .complete();
     baseTable.updateStatistics().setStatistics(s1.snapshotId(), file1).commit();
 
     // commit an empty snapshot and its statistic file
     baseTable.newAppend().commit();
     Snapshot s2 = baseTable.currentSnapshot();
     StatisticsFile file2 = PuffinUtil.writer(baseTable, s2.snapshotId(), s2.sequenceNumber())
-        .addOptimizedSequence(StructLikeMap.create(baseTable.spec().partitionType()))
-        .write();
+        .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, StructLikeMap.create(baseTable.spec().partitionType()),
+            PuffinUtil.createPartitionDataSerializer(baseTable.spec()))
+        .complete();
     baseTable.updateStatistics().setStatistics(s2.snapshotId(), file2).commit();
     
     long expireTime = waitUntilAfter(s2.timestampMillis());

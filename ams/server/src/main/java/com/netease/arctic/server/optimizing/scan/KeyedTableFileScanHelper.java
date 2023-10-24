@@ -157,11 +157,13 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     UnkeyedTable baseTable = arcticTable.baseTable();
     ChangeTable changeTable = arcticTable.changeTable();
     if (changeSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
-      StructLikeMap<Long> partitionOptimizedSequence = ArcticTableUtil.readOptimizedSequence(baseTable, baseSnapshotId);
-      long maxSequence = getMaxSequenceLimit(arcticTable, changeSnapshotId, partitionOptimizedSequence);
+      StructLikeMap<Long> optimizedSequence = baseSnapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID ?
+          StructLikeMap.create(arcticTable.spec().partitionType()) :
+          ArcticTableUtil.readOptimizedSequence(arcticTable, baseSnapshotId);
+      long maxSequence = getMaxSequenceLimit(arcticTable, changeSnapshotId, optimizedSequence);
       if (maxSequence != Long.MIN_VALUE) {
         ChangeTableIncrementalScan changeTableIncrementalScan = changeTable.newScan()
-            .fromSequence(partitionOptimizedSequence)
+            .fromSequence(optimizedSequence)
             .toSequence(maxSequence)
             .useSnapshot(changeSnapshotId);
         try (CloseableIterable<FileScanTask> fileScanTasks = changeTableIncrementalScan.planFiles()) {
