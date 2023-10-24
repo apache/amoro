@@ -22,11 +22,12 @@ import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.op.SnapshotSummary;
+import com.netease.arctic.io.reader.ParallelIcebergGenerics;
 import com.netease.arctic.server.dashboard.component.reverser.DDLReverser;
 import com.netease.arctic.server.dashboard.component.reverser.IcebergTableMetaExtract;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
 import com.netease.arctic.server.dashboard.model.AMSPartitionField;
+import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
@@ -35,7 +36,6 @@ import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TableBasicInfo;
 import com.netease.arctic.server.dashboard.model.TableStatistics;
-import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.TableStatCollector;
 import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
@@ -57,9 +57,9 @@ import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.GenericRecord;
-import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
@@ -77,7 +77,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
+
+import static com.netease.arctic.server.dashboard.utils.AmsUtil.byteToXB;
 
 /**
  * Descriptor for Mixed-Hive, Mixed-Iceberg, Iceberg format tables.
@@ -85,6 +88,12 @@ import java.util.stream.Collectors;
 public class MixedAndIcebergTableDescriptor extends PersistentBase implements FormatTableDescriptor {
 
   private static final Logger LOG = LoggerFactory.getLogger(MixedAndIcebergTableDescriptor.class);
+
+  private final ExecutorService executorService;
+
+  public MixedAndIcebergTableDescriptor(ExecutorService executorService) {
+    this.executorService = executorService;
+  }
 
   @Override
   public List<TableFormat> supportFormat() {
@@ -103,9 +112,9 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase implements Fo
     FilesStatistics baseFilesStatistics = tableBasicInfo.getBaseStatistics().getTotalFilesStat();
     Map<String, String> baseSummary = tableBasicInfo.getBaseStatistics().getSummary();
     baseMetrics.put("lastCommitTime", AmsUtil.longOrNull(baseSummary.get("visibleTime")));
-    baseMetrics.put("totalSize", AmsUtil.byteToXB(baseFilesStatistics.getTotalSize()));
+    baseMetrics.put("totalSize", byteToXB(baseFilesStatistics.getTotalSize()));
     baseMetrics.put("fileCount", baseFilesStatistics.getFileCnt());
-    baseMetrics.put("averageFileSize", AmsUtil.byteToXB(baseFilesStatistics.getAverageSize()));
+    baseMetrics.put("averageFileSize", byteToXB(baseFilesStatistics.getAverageSize()));
     if (tableBasicInfo.getChangeStatistics() == null) {
       baseMetrics.put("baseWatermark", AmsUtil.longOrNull(serverTableMeta.getTableWatermark()));
     } else {
@@ -120,9 +129,9 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase implements Fo
       FilesStatistics changeFilesStatistics = tableBasicInfo.getChangeStatistics().getTotalFilesStat();
       Map<String, String> changeSummary = tableBasicInfo.getChangeStatistics().getSummary();
       changeMetrics.put("lastCommitTime", AmsUtil.longOrNull(changeSummary.get("visibleTime")));
-      changeMetrics.put("totalSize", AmsUtil.byteToXB(changeFilesStatistics.getTotalSize()));
+      changeMetrics.put("totalSize", byteToXB(changeFilesStatistics.getTotalSize()));
       changeMetrics.put("fileCount", changeFilesStatistics.getFileCnt());
-      changeMetrics.put("averageFileSize", AmsUtil.byteToXB(changeFilesStatistics.getAverageSize()));
+      changeMetrics.put("averageFileSize", byteToXB(changeFilesStatistics.getAverageSize()));
       changeMetrics.put("tableWatermark", AmsUtil.longOrNull(serverTableMeta.getTableWatermark()));
       tableSize += changeFilesStatistics.getTotalSize();
       tableFileCnt += changeFilesStatistics.getFileCnt();
@@ -134,17 +143,17 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase implements Fo
       changeMetrics.put("tableWatermark", null);
     }
     Map<String, Object> tableSummary = new HashMap<>();
-    tableSummary.put("size", AmsUtil.byteToXB(tableSize));
+    tableSummary.put("size", byteToXB(tableSize));
     tableSummary.put("file", tableFileCnt);
-    tableSummary.put("averageFile", AmsUtil.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt));
+    tableSummary.put("averageFile", byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt));
     tableSummary.put("tableFormat", AmsUtil.formatString(amoroTable.format().name()));
     serverTableMeta.setTableSummary(tableSummary);
     return serverTableMeta;
   }
 
-  public List<TransactionsOfTable> getTransactions(AmoroTable<?> amoroTable) {
+  public List<AMSTransactionsOfTable> getTransactions(AmoroTable<?> amoroTable) {
     ArcticTable arcticTable = getTable(amoroTable);
-    List<TransactionsOfTable> transactionsOfTables = new ArrayList<>();
+    List<AMSTransactionsOfTable> transactionsOfTables = new ArrayList<>();
     List<Table> tables = new ArrayList<>();
     if (arcticTable.isKeyedTable()) {
       tables.add(arcticTable.asKeyedTable().changeTable());
@@ -156,28 +165,61 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase implements Fo
       if (snapshot.operation().equals(DataOperations.REPLACE)) {
         return;
       }
-      if (snapshot.summary().containsKey(SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE)) {
+      Map<String, String> summary = snapshot.summary();
+      if (summary.containsKey(com.netease.arctic.op.SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE)) {
         return;
       }
-      TransactionsOfTable transactionsOfTable = new TransactionsOfTable();
-      transactionsOfTable.setTransactionId(snapshot.snapshotId());
+      AMSTransactionsOfTable amsTransactionsOfTable = new AMSTransactionsOfTable();
+      amsTransactionsOfTable.setTransactionId(String.valueOf(snapshot.snapshotId()));
       int fileCount = PropertyUtil
-          .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_FILES_PROP, 0);
+          .propertyAsInt(summary, org.apache.iceberg.SnapshotSummary.ADDED_FILES_PROP, 0);
       fileCount += PropertyUtil
-          .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_DELETE_FILES_PROP, 0);
+          .propertyAsInt(summary, org.apache.iceberg.SnapshotSummary.ADDED_DELETE_FILES_PROP, 0);
       fileCount += PropertyUtil
-          .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.DELETED_FILES_PROP, 0);
+          .propertyAsInt(summary, org.apache.iceberg.SnapshotSummary.DELETED_FILES_PROP, 0);
       fileCount += PropertyUtil
-          .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.REMOVED_DELETE_FILES_PROP, 0);
-      transactionsOfTable.setFileCount(fileCount);
-      transactionsOfTable.setFileSize(PropertyUtil
-          .propertyAsLong(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_FILE_SIZE_PROP, 0) +
-          PropertyUtil
-              .propertyAsLong(snapshot.summary(), org.apache.iceberg.SnapshotSummary.REMOVED_FILE_SIZE_PROP, 0));
-      transactionsOfTable.setCommitTime(snapshot.timestampMillis());
-      transactionsOfTable.setOperation(snapshot.operation());
-      transactionsOfTable.setSummary(snapshot.summary());
-      transactionsOfTables.add(transactionsOfTable);
+          .propertyAsInt(summary, org.apache.iceberg.SnapshotSummary.REMOVED_DELETE_FILES_PROP, 0);
+      amsTransactionsOfTable.setFileCount(fileCount);
+      amsTransactionsOfTable.setFileSize(
+          PropertyUtil.propertyAsLong(
+              summary,
+              org.apache.iceberg.SnapshotSummary.ADDED_FILE_SIZE_PROP, 0) +
+              PropertyUtil.propertyAsLong(
+                  summary,
+                  org.apache.iceberg.SnapshotSummary.REMOVED_FILE_SIZE_PROP, 0));
+      amsTransactionsOfTable.setCommitTime(snapshot.timestampMillis());
+      amsTransactionsOfTable.setOperation(snapshot.operation());
+
+      //normalize summary
+      Map<String, String> normalizeSummary = com.google.common.collect.Maps.newHashMap(summary);
+      summary.computeIfPresent(
+          SnapshotSummary.TOTAL_FILE_SIZE_PROP,
+          (k, v) -> byteToXB(Long.parseLong(summary.get(k))));
+      summary.computeIfPresent(
+          SnapshotSummary.ADDED_FILE_SIZE_PROP,
+          (k, v) -> byteToXB(Long.parseLong(summary.get(k))));
+      summary.computeIfPresent(
+          SnapshotSummary.REMOVED_FILE_SIZE_PROP,
+          (k, v) -> byteToXB(Long.parseLong(summary.get(k))));
+      amsTransactionsOfTable.setSummary(normalizeSummary);
+
+      //Metric in chart
+      Map<String, String> recordsSummaryForChat = new HashMap<>();
+      recordsSummaryForChat.put("total-records", summary.get(SnapshotSummary.TOTAL_RECORDS_PROP));
+      recordsSummaryForChat.put("eq-delete-records", summary.get(SnapshotSummary.TOTAL_EQ_DELETES_PROP));
+      recordsSummaryForChat.put("pos-delete-records", summary.get(SnapshotSummary.TOTAL_POS_DELETES_PROP));
+      amsTransactionsOfTable.setRecordsSummaryForChart(recordsSummaryForChat);
+
+      Map<String, String> filesSummaryForChat = new HashMap<>();
+      filesSummaryForChat.put("data-files", summary.get(SnapshotSummary.TOTAL_DATA_FILES_PROP));
+      filesSummaryForChat.put("delete-files", summary.get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
+      filesSummaryForChat.put(
+          "total-files",
+          PropertyUtil.propertyAsInt(summary, SnapshotSummary.TOTAL_DELETE_FILES_PROP, 0) +
+              PropertyUtil.propertyAsInt(summary, SnapshotSummary.TOTAL_DATA_FILES_PROP, 0) + "");
+      amsTransactionsOfTable.setFilesSummaryForChart(filesSummaryForChat);
+
+      transactionsOfTables.add(amsTransactionsOfTable);
     }));
     transactionsOfTables.sort((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()));
     return transactionsOfTables;
@@ -321,7 +363,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase implements Fo
     Table entriesTable = MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) table).operations(),
         table.name(), table.name() + "#ENTRIES",
         MetadataTableType.ENTRIES);
-    try (CloseableIterable<Record> manifests = IcebergGenerics.read(entriesTable)
+    try (CloseableIterable<Record> manifests = ParallelIcebergGenerics.read(entriesTable, executorService)
         .where(Expressions.notEqual(ManifestEntryFields.STATUS.name(), ManifestEntryFields.Status.DELETED.id()))
         .build()) {
       for (Record record : manifests) {
