@@ -6,6 +6,7 @@ import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
+import com.netease.arctic.hive.utils.HiveCommitUtil;
 import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
@@ -110,6 +111,8 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     this.partitionToAlterLocation = StructLikeMap.create(table.spec().partitionType());
   }
 
+  protected abstract void postHiveDataCommitted(List<DataFile> committedDataFile);
+
   @Override
   public void commit() {
     commitTimestamp = (int) (System.currentTimeMillis() / 1000);
@@ -117,6 +120,11 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     if (syncDataToHive) {
       HiveMetaSynchronizer.syncArcticDataToHive(table);
     }
+    List<DataFile> committedDataFiles = HiveCommitUtil.commitHiveDataFiles(this.addFiles, table.io(), table.spec());
+    this.addFiles.clear();
+    this.addFiles.addAll(committedDataFiles);
+    postHiveDataCommitted(this.addFiles);
+    
     if (table.spec().isUnpartitioned()) {
       generateUnpartitionTableLocation();
     } else {
@@ -132,6 +140,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
         CollectionUtils.isEmpty(addFiles)
             && CollectionUtils.isEmpty(deleteFiles)
             && expr != Expressions.alwaysTrue();
+
 
     delegate.commit();
     if (!noHiveDataFilesChanged) {

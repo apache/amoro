@@ -30,7 +30,9 @@ public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements R
 
   @Override
   public RewriteFiles rewriteFiles(Set<DataFile> filesToDelete, Set<DataFile> filesToAdd) {
-    delegate.rewriteFiles(filesToDelete, filesToAdd);
+    filesToDelete.forEach(delegate::deleteFile);
+    // only add datafile not in hive location
+    filesToAdd.stream().filter(this::notHiveDatafile).forEach(delegate::addFile);
     markHiveFiles(filesToDelete, filesToAdd);
     return this;
   }
@@ -38,7 +40,10 @@ public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements R
   @Override
   public RewriteFiles rewriteFiles(
       Set<DataFile> filesToDelete, Set<DataFile> filesToAdd, long sequenceNumber) {
-    delegate.rewriteFiles(filesToDelete, filesToAdd, sequenceNumber);
+    delegate.dataSequenceNumber(sequenceNumber);
+    filesToDelete.forEach(delegate::deleteFile);
+    // only add datafile not in hive location
+    filesToAdd.stream().filter(this::notHiveDatafile).forEach(delegate::addFile);
     markHiveFiles(filesToDelete, filesToAdd);
     return this;
   }
@@ -49,8 +54,11 @@ public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements R
       Set<DeleteFile> deleteFilesToReplace,
       Set<DataFile> dataFilesToAdd,
       Set<DeleteFile> deleteFilesToAdd) {
-    delegate.rewriteFiles(
-        dataFilesToReplace, deleteFilesToReplace, dataFilesToAdd, deleteFilesToAdd);
+    dataFilesToReplace.forEach(delegate::deleteFile);
+    deleteFilesToReplace.forEach(delegate::deleteFile);
+    deleteFilesToAdd.forEach(delegate::addFile);
+    // only add datafile not in hive location
+    dataFilesToAdd.stream().filter(this::notHiveDatafile).forEach(delegate::addFile);
     markHiveFiles(dataFilesToReplace, dataFilesToAdd);
 
     return this;
@@ -72,6 +80,11 @@ public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements R
   }
 
   @Override
+  protected void postHiveDataCommitted(List<DataFile> committedDataFile) {
+    committedDataFile.forEach(delegate::addFile);
+  }
+
+  @Override
   protected RewriteFiles self() {
     return this;
   }
@@ -87,5 +100,11 @@ public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements R
     }
 
     return result;
+  }
+
+  private boolean notHiveDatafile(DataFile dataFile) {
+    String hiveLocation = table.hiveLocation();
+    String dataFileLocation = dataFile.path().toString();
+    return !dataFileLocation.toLowerCase().contains(hiveLocation.toLowerCase());
   }
 }

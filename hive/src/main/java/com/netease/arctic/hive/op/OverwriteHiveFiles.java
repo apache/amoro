@@ -27,6 +27,8 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
+import java.util.List;
+
 public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implements OverwriteFiles {
 
   public OverwriteHiveFiles(
@@ -61,12 +63,13 @@ public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implemen
 
   @Override
   public OverwriteFiles addFile(DataFile file) {
-    delegate.addFile(file);
     String hiveLocationRoot = table.hiveLocation();
     String dataFileLocation = file.path().toString();
     if (dataFileLocation.toLowerCase().contains(hiveLocationRoot.toLowerCase())) {
       // only handle file in hive location
       this.addFiles.add(file);
+    } else {
+      delegate.addFile(file);
     }
     return this;
   }
@@ -117,5 +120,10 @@ public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implemen
   public OverwriteFiles validateNoConflictingDeletes() {
     delegate.validateNoConflictingDeletes();
     return this;
+  }
+
+  @Override
+  protected void postHiveDataCommitted(List<DataFile> committedDataFile) {
+    committedDataFile.forEach(delegate::addFile);
   }
 }
