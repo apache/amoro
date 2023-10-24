@@ -26,11 +26,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ParamSignatureCalculator {
   public static final Logger LOG = LoggerFactory.getLogger(ParamSignatureCalculator.class);
@@ -57,10 +55,10 @@ public class ParamSignatureCalculator {
   }
 
   /**
-   * To calculate md5
+   * Calculates the MD5 hash of the given value.
    *
-   * @param value
-   * @return
+   * @param value the input value to calculate the MD5 hash
+   * @return the MD5 hash of the given value as a string
    */
   public static String getMD5(String value) {
     String result = "";
@@ -73,69 +71,57 @@ public class ParamSignatureCalculator {
   }
 
   /**
-   * Gets an ascending KeyValue concatenation string based on the request argument pair.
-   * Example：
-   * params: name=&value=111&age=11&sex=1&high=180&nick=
-   * Remove null and arrange in ascending order： age11high180sex1value111
+   * Arranges argument pairs in ascending order, removes null values and concatenates them
+   * Example: params: name=&value=111&age=11&sex=1&high=180&nick=
+   * The result is: age11high180sex1value111
    *
-   * @param map
-   * @return
+   * @param map The map to process
+   * @return The resulting string
    */
   public static String generateParamStringWithValueList(Map<String, List<String>> map) {
-    Set<String> set = map.keySet();
-    String[] keyArray = set.toArray(new String[set.size()]);
-    StringBuffer sb = new StringBuffer();
-    Arrays.sort(keyArray);
-    String firstValue = "";
-    for (int i = 0; i < keyArray.length; i++) {
-      List<String> values = map.get(keyArray[i]);
-      Collections.sort(values);
+    return map.entrySet().stream()
+        .sorted(Map.Entry.comparingByKey())
+        .map(entry -> {
+          List<String> sortedValues = entry.getValue().stream()
+              .filter(value -> !StringUtils.isBlank(value))
+              .sorted()
+              .collect(Collectors.toList());
 
-      if (values.size() >= 1) {
-        if (!StringUtils.isBlank(values.get(0))) {
           try {
-            firstValue = URLDecoder.decode(values.get(0), "utf-8");
+            return sortedValues.isEmpty() ? "" : entry.getKey() + URLDecoder.decode(sortedValues.get(0), "utf-8");
           } catch (UnsupportedEncodingException e) {
-            LOG.error("Failed to caculate signature", e);
+            LOG.error("Failed to calculate signature", e);
             return null;
           }
-          sb.append(keyArray[i]).append(firstValue);
-        }
-      }
-    }
-    return sb.toString();
+        })
+        .collect(Collectors.joining());
   }
 
   /**
-   * Gets an ascending KeyValue concatenation string based on the request argument pair.
-   * Example：
+   * Gets an ascending KeyValue concatenation string based on
+   * the request argument pair.
+   * <p>
+   * Example:
    * params: name=&value=111&age=11&sex=1&high=180&nick=
-   * Remove null and arrange in ascending order： age11high180sex1value111
+   * Remove null and arrange in ascending order: age11high180sex1value111
    *
-   * @param map
-   * @return
+   * @param map input key-value pairs
+   * @return an ascending, concatenated string without nulls; null if error occurs.
    */
   public static String generateParamStringWithValue(Map<String, String> map) {
-    Set<String> set = map.keySet();
-    String[] keyArray = set.toArray(new String[set.size()]);
-    StringBuffer sb = new StringBuffer();
-    Arrays.sort(keyArray);
-    String firstValue = "";
-    for (int i = 0; i < keyArray.length; i++) {
-      String value = map.get(keyArray[i]);
-      if (!StringUtils.isBlank(value)) {
-        try {
-          firstValue = URLDecoder.decode(value, "utf-8");
-        } catch (UnsupportedEncodingException e) {
-          LOG.error("Failed to caculate signature", e);
+    return map.keySet().stream()
+        .sorted()
+        .map(key -> {
+          if (StringUtils.isNotBlank(map.get(key))) {
+            try {
+              return key + URLDecoder.decode(map.get(key), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+              LOG.error("Failed to decode url value: " + map.get(key), e);
+            }
+          }
           return null;
-        }
-        sb.append(keyArray[i]).append(firstValue);
-      }
-    }
-    return sb.toString();
+        })
+        .filter(StringUtils::isNotBlank)
+        .collect(Collectors.joining());
   }
-
-
-
 }
