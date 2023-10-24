@@ -265,7 +265,8 @@ public class MixedTableMaintainer implements TableMaintainer {
                   .collect(Collectors.toList()));
         }
       } else {
-        optimizedSequences.forEach((key, value) -> {
+        optimizedSequences.forEach(
+            (key, value) -> {
               List<IcebergFileEntry> partitionDataFiles =
                   partitionDataFileMap.get(keyedTable.spec().partitionToPath(key));
 

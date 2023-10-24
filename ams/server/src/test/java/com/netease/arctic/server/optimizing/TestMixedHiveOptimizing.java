@@ -64,12 +64,12 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
     assertIdRange(readHiveTableData(), 1, 100);
 
     // Step2: write 1 change delete record
-    writeChange(table, Lists.newArrayList(
-        newRecord(101, "aaa", quickDateWithZone(3))
-    ), Lists.newArrayList(
-        newRecord(1, "aaa", quickDateWithZone(3))
-    ));
-    // wait Minor Optimize result, generate 1 pos-delete file and 1 data file, but not move to hive location
+    writeChange(
+        table,
+        Lists.newArrayList(newRecord(101, "aaa", quickDateWithZone(3))),
+        Lists.newArrayList(newRecord(1, "aaa", quickDateWithZone(3))));
+    // wait Minor Optimize result, generate 1 pos-delete file and 1 data file, but not move to hive
+    // location
     optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 3, 2);
     assertIdRange(readRecords(table), 2, 101);

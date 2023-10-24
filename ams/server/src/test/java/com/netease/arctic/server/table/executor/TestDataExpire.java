@@ -472,11 +472,12 @@ public class TestDataExpire extends ExecutorTestBase {
   }
 
   protected KeyedTableFileScanHelper buildKeyedFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable(), true);
-    long changeSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().changeTable(), true);
+    long baseSnapshotId =
+        IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable(), true);
+    long changeSnapshotId =
+        IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().changeTable(), true);
     return new KeyedTableFileScanHelper(
-        getArcticTable().asKeyedTable(),
-        new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId));
+        getArcticTable().asKeyedTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId));
   }
 
   protected TableFileScanHelper getTableFileScanHelper() {

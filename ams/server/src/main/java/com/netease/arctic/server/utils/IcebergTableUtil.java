@@ -87,8 +87,8 @@ public class IcebergTableUtil {
     if (arcticTable.isUnkeyedTable()) {
       return new BasicTableSnapshot(tableRuntime.getCurrentSnapshotId());
     } else {
-      return new KeyedTableSnapshot(tableRuntime.getCurrentSnapshotId(),
-          tableRuntime.getCurrentChangeSnapshotId());
+      return new KeyedTableSnapshot(
+          tableRuntime.getCurrentSnapshotId(), tableRuntime.getCurrentChangeSnapshotId());
     }
   }
 

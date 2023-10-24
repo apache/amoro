@@ -106,13 +106,16 @@ public class TestSnapshotExpire extends ExecutorTestBase {
       Assert.assertEquals(1, partitions.size());
     }
 
-    StructLikeMap<Long> optimizedSequence = StructLikeMap.create(testKeyedTable.spec().partitionType());
+    StructLikeMap<Long> optimizedSequence =
+        StructLikeMap.create(testKeyedTable.spec().partitionType());
     optimizedSequence.put(partitions.get(0), 3L);
     if (isPartitionedTable()) {
       optimizedSequence.put(partitions.get(1), 1L);
     }
     writeOptimizedSequence(testKeyedTable, optimizedSequence);
-    s1Files.forEach(file -> Assert.assertTrue(testKeyedTable.changeTable().io().exists(file.path().toString())));
+    s1Files.forEach(
+        file ->
+            Assert.assertTrue(testKeyedTable.changeTable().io().exists(file.path().toString())));
 
     MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(testKeyedTable);
     tableMaintainer.getChangeMaintainer().expireFiles(l + 1);
@@ -128,15 +131,18 @@ public class TestSnapshotExpire extends ExecutorTestBase {
             Assert.assertFalse(testKeyedTable.changeTable().io().exists(file.path().toString())));
   }
 
-  private void writeOptimizedSequence(KeyedTable testKeyedTable, StructLikeMap<Long> optimizedSequence) {
+  private void writeOptimizedSequence(
+      KeyedTable testKeyedTable, StructLikeMap<Long> optimizedSequence) {
     BaseTable baseTable = testKeyedTable.baseTable();
     baseTable.newAppend().commit();
     Snapshot snapshot = baseTable.currentSnapshot();
     StatisticsFile statisticsFile =
         StatisticsFileUtil.writer(baseTable, snapshot.snapshotId(), snapshot.sequenceNumber())
-            .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence,
-            StatisticsFileUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
-        .complete();
+            .add(
+                ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
+                optimizedSequence,
+                StatisticsFileUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
+            .complete();
     baseTable.updateStatistics().setStatistics(snapshot.snapshotId(), statisticsFile).commit();
   }
 
@@ -155,7 +161,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
             s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
     Assert.assertEquals(2, partitions.size());
 
-    StructLikeMap<Long> optimizedSequence = StructLikeMap.create(testKeyedTable.spec().partitionType());
+    StructLikeMap<Long> optimizedSequence =
+        StructLikeMap.create(testKeyedTable.spec().partitionType());
     optimizedSequence.put(partitions.get(0), 3L);
     optimizedSequence.put(partitions.get(1), 1L);
     writeOptimizedSequence(testKeyedTable, optimizedSequence);
@@ -344,7 +351,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
       Assert.assertEquals(1, partitions.size());
     }
 
-    StructLikeMap<Long> optimizedSequence = StructLikeMap.create(testKeyedTable.spec().partitionType());
+    StructLikeMap<Long> optimizedSequence =
+        StructLikeMap.create(testKeyedTable.spec().partitionType());
     optimizedSequence.put(partitions.get(0), 3L);
     if (isPartitionedTable()) {
       optimizedSequence.put(partitions.get(1), 3L);
@@ -384,7 +392,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
         .forEach(task -> dataFiles.add(task.file().path()));
     return dataFiles;
   }
-  
+
   @Test
   public void testExpireStatisticsFiles() {
     Assume.assumeTrue(isKeyedTable());
@@ -394,21 +402,27 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     // commit an empty snapshot and its statistic file
     baseTable.newAppend().commit();
     Snapshot s1 = baseTable.currentSnapshot();
-    StatisticsFile file1 = StatisticsFileUtil.writer(baseTable, s1.snapshotId(), s1.sequenceNumber())
-        .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, StructLikeMap.create(baseTable.spec().partitionType()), 
-            StatisticsFileUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
-        .complete();
+    StatisticsFile file1 =
+        StatisticsFileUtil.writer(baseTable, s1.snapshotId(), s1.sequenceNumber())
+            .add(
+                ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
+                StructLikeMap.create(baseTable.spec().partitionType()),
+                StatisticsFileUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
+            .complete();
     baseTable.updateStatistics().setStatistics(s1.snapshotId(), file1).commit();
 
     // commit an empty snapshot and its statistic file
     baseTable.newAppend().commit();
     Snapshot s2 = baseTable.currentSnapshot();
-    StatisticsFile file2 = StatisticsFileUtil.writer(baseTable, s2.snapshotId(), s2.sequenceNumber())
-        .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, StructLikeMap.create(baseTable.spec().partitionType()),
-            StatisticsFileUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
-        .complete();
+    StatisticsFile file2 =
+        StatisticsFileUtil.writer(baseTable, s2.snapshotId(), s2.sequenceNumber())
+            .add(
+                ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
+                StructLikeMap.create(baseTable.spec().partitionType()),
+                StatisticsFileUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
+            .complete();
     baseTable.updateStatistics().setStatistics(s2.snapshotId(), file2).commit();
-    
+
     long expireTime = waitUntilAfter(s2.timestampMillis());
 
     // commit an empty snapshot and its statistic file

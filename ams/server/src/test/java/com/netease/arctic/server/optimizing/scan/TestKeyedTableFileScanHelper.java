@@ -241,7 +241,8 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
   protected KeyedTableFileScanHelper buildFileScanHelper() {
     long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().baseTable(), true);
     long changeSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().changeTable(), true);
-    return new KeyedTableFileScanHelper(getArcticTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId));
+    return new KeyedTableFileScanHelper(
+        getArcticTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId));
   }
 
   private void appendChange(List<DataFile> dataFiles) {

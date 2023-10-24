@@ -212,7 +212,8 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
     // wait Minor Optimize result, no major optimize because there is only 1 base file for each node
     optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 6, 1);
-    assertIds(readRecords(table), 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 25, 29);
+    assertIds(
+        readRecords(table), 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 25, 29);
 
     checker.assertOptimizeHangUp();
   }
