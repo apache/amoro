@@ -190,10 +190,9 @@ public class TableProperties {
           + // v123.metadata.json
           "|.*[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}-m[0-9]+\\.avro"; // UUID-m0.avro
 
-  /**
-   * table tag management related properties
-   */
+  /** table tag management related properties */
   public static final String ENABLE_AUTO_CREATE_TAG = "auto-create-tag.enabled";
+
   public static final boolean ENABLE_AUTO_CREATE_TAG_DEFAULT = false;
 
   public static final String AUTO_CREATE_TAG_TRIGGER_DAY_TIME = "auto-create-tag.trigger.day.time";
@@ -208,7 +207,8 @@ public class TableProperties {
   public static final String AUTO_CREATE_TAG_KEEP_DAYS = "auto-create-tag.keep.days";
   public static final int AUTO_CREATE_TAG_KEEP_DAYS_DEFAULT = -1;
 
-  public static final String AUTO_CREATE_TAG_OPTIMIZE_ENABLED = "auto-create-tag.optimizing.enabled";
+  public static final String AUTO_CREATE_TAG_OPTIMIZE_ENABLED =
+      "auto-create-tag.optimizing.enabled";
   public static final boolean AUTO_CREATE_TAG_OPTIMIZE_ENABLED_DEFAULT = false;
 
   /** table write related properties */

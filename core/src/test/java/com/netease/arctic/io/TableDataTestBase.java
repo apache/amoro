@@ -115,13 +115,14 @@ public abstract class TableDataTestBase extends TableTestBase {
     // write change insert with transaction id:2, (id=5),(id=6)
     writeChangeStore(2L, ChangeAction.INSERT, changeInsertRecords(allRecords));
 
-    //write change delete with transaction id:3, (id=5)
+    // write change delete with transaction id:3, (id=5)
     writeChangeStore(3L, ChangeAction.DELETE, changeDeleteRecords(allRecords));
   }
 
   protected void writeChangeStore(Long txId, ChangeAction insert, List<Record> records) {
-    List<DataFile> insertFiles = tableTestHelper().writeChangeStore(getArcticTable().asKeyedTable(), txId,
-        insert, records, false);
+    List<DataFile> insertFiles =
+        tableTestHelper()
+            .writeChangeStore(getArcticTable().asKeyedTable(), txId, insert, records, false);
     AppendFiles changeAppendInsert = getArcticTable().asKeyedTable().changeTable().newAppend();
     insertFiles.forEach(changeAppendInsert::appendFile);
     changeAppendInsert.commit();

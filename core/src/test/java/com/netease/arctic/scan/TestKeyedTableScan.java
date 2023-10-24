@@ -67,31 +67,47 @@ public class TestKeyedTableScan extends TableDataTestBase {
     BaseTable baseTable = getArcticTable().asKeyedTable().baseTable();
     changeOptimizedSequence();
     String branchName = "test_branch";
-    baseTable.manageSnapshots().createBranch(branchName, baseTable.currentSnapshot().snapshotId()).commit();
+    baseTable
+        .manageSnapshots()
+        .createBranch(branchName, baseTable.currentSnapshot().snapshotId())
+        .commit();
     ChangeTable changeTable = getArcticTable().asKeyedTable().changeTable();
-    changeTable.manageSnapshots().createBranch(branchName, changeTable.currentSnapshot().snapshotId()).commit();
+    changeTable
+        .manageSnapshots()
+        .createBranch(branchName, changeTable.currentSnapshot().snapshotId())
+        .commit();
     writeChangeStore(4L, ChangeAction.INSERT, changeInsertRecords(allRecords));
     assertFileCount(getArcticTable().asKeyedTable().newScan().planTasks(), 4, 2, 1);
-    assertFileCount(getArcticTable().asKeyedTable().newScan().useRef(branchName).planTasks(), 4, 0, 1);
+    assertFileCount(
+        getArcticTable().asKeyedTable().newScan().useRef(branchName).planTasks(), 4, 0, 1);
   }
 
   private void changeOptimizedSequence() {
     BaseTable baseTable = getArcticTable().asKeyedTable().baseTable();
     Snapshot baseSnapshot = baseTable.currentSnapshot();
-    StructLikeMap<Long> fromSequence = StructLikeMap.create(getArcticTable().spec().partitionType());
-    StructLike partitionData = ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
+    StructLikeMap<Long> fromSequence =
+        StructLikeMap.create(getArcticTable().spec().partitionType());
+    StructLike partitionData =
+        ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
     fromSequence.put(partitionData, 1L);
-    StatisticsFile file = StatisticsFileUtil.writer(baseTable, baseSnapshot.snapshotId(), baseSnapshot.sequenceNumber())
-        .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, fromSequence,
-            StatisticsFileUtil.createPartitionDataSerializer(getArcticTable().spec(), Long.class))
-        .complete();
-    baseTable.updateStatistics()
-        .setStatistics(baseSnapshot.snapshotId(), file)
-        .commit();
+    StatisticsFile file =
+        StatisticsFileUtil.writer(
+                baseTable, baseSnapshot.snapshotId(), baseSnapshot.sequenceNumber())
+            .add(
+                ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
+                fromSequence,
+                StatisticsFileUtil.createPartitionDataSerializer(
+                    getArcticTable().spec(), Long.class))
+            .complete();
+    baseTable.updateStatistics().setStatistics(baseSnapshot.snapshotId(), file).commit();
   }
 
-  private void assertFileCount(CloseableIterable<CombinedScanTask> combinedScanTasks, int baseFileCnt,
-                               int insertFileCnt, int equDeleteFileCnt) throws IOException {
+  private void assertFileCount(
+      CloseableIterable<CombinedScanTask> combinedScanTasks,
+      int baseFileCnt,
+      int insertFileCnt,
+      int equDeleteFileCnt)
+      throws IOException {
     final List<ArcticFileScanTask> allBaseTasks = new ArrayList<>();
     final List<ArcticFileScanTask> allInsertTasks = new ArrayList<>();
     final List<ArcticFileScanTask> allEquDeleteTasks = new ArrayList<>();

@@ -47,7 +47,8 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
   public void testIncrementalScanUseSnapshot() {
     Snapshot snapshot = getArcticTable().asKeyedTable().changeTable().currentSnapshot();
     writeChangeStore(4L, ChangeAction.INSERT, changeInsertRecords(allRecords));
-    Assert.assertNotEquals(snapshot.snapshotId(),
+    Assert.assertNotEquals(
+        snapshot.snapshotId(),
         getArcticTable().asKeyedTable().changeTable().currentSnapshot().snapshotId());
 
     ChangeTableIncrementalScan changeTableIncrementalScan =
@@ -62,12 +63,15 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
   public void testIncrementalScanUseRef() {
     Snapshot snapshot = getArcticTable().asKeyedTable().changeTable().currentSnapshot();
     String branchName = "test_branch";
-    getArcticTable().asKeyedTable().changeTable()
+    getArcticTable()
+        .asKeyedTable()
+        .changeTable()
         .manageSnapshots()
         .createBranch(branchName, snapshot.snapshotId())
         .commit();
     writeChangeStore(4L, ChangeAction.INSERT, changeInsertRecords(allRecords));
-    Assert.assertNotEquals(snapshot.snapshotId(),
+    Assert.assertNotEquals(
+        snapshot.snapshotId(),
         getArcticTable().asKeyedTable().changeTable().currentSnapshot().snapshotId());
 
     ChangeTableIncrementalScan changeTableIncrementalScan =
