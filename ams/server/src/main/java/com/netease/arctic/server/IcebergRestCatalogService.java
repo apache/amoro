@@ -1,7 +1,7 @@
 package com.netease.arctic.server;
 
-import static com.netease.arctic.server.utils.IcebergTableUtil.loadIcebergTableMetadata;
-import static com.netease.arctic.server.utils.IcebergTableUtil.newIcebergFileIo;
+import static com.netease.arctic.server.utils.InternalTableUtil.loadIcebergTableStoreMetadata;
+import static com.netease.arctic.server.utils.InternalTableUtil.newIcebergFileIo;
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.head;

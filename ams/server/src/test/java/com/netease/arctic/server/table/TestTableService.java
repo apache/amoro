@@ -46,7 +46,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
 public class TestTableService extends AMSTableTestBase {
@@ -82,9 +81,7 @@ public class TestTableService extends AMSTableTestBase {
     // test list tables
     List<TableIDWithFormat> tableIdentifierList = tableService().listTables(
         TEST_CATALOG_NAME,
-        TEST_DB_NAME).stream()
-        .map(t -> t.getIdentifier().buildTableIdentifier())
-        .collect(Collectors.toList());
+        TEST_DB_NAME);
     Assert.assertEquals(1, tableIdentifierList.size());
     Assert.assertEquals(
         tableMeta().getTableIdentifier(),
