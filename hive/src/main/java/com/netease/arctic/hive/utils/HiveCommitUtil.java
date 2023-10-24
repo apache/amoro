@@ -27,34 +27,32 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
 
-/**
- * Util class to help commit datafile in hive location.
- */
+/** Util class to help commit datafile in hive location. */
 public class HiveCommitUtil {
 
   /**
-   * Under the Hive commit protocol, the writer will write files with the filename ".filename".
-   * In the commit phase, it is necessary to rename it to a visible file to ensure its final consistency.
+   * Under the Hive commit protocol, the writer will write files with the filename ".filename". In
+   * the commit phase, it is necessary to rename it to a visible file to ensure its final
+   * consistency.
    */
-  public static List<DataFile> commitHiveDataFiles(List<DataFile> dataFiles, ArcticHadoopFileIO fileIO,
-      PartitionSpec spec) {
+  public static List<DataFile> commitHiveDataFiles(
+      List<DataFile> dataFiles, ArcticHadoopFileIO fileIO, PartitionSpec spec) {
     List<DataFile> afterCommittedFiles = Lists.newArrayList();
-    for (DataFile file: dataFiles) {
+    for (DataFile file : dataFiles) {
       String filename = TableFileUtil.getFileName(file.path().toString());
       if (!filename.startsWith(".")) {
         afterCommittedFiles.add(file);
         continue;
       }
       String committedFilename = filename.substring(1);
-      String committedLocation = TableFileUtil.getFileDir(file.path().toString()) + "/" + committedFilename;
+      String committedLocation =
+          TableFileUtil.getFileDir(file.path().toString()) + "/" + committedFilename;
 
       if (!fileIO.exists(committedLocation)) {
         fileIO.rename(file.path().toString(), committedLocation);
       }
-      DataFile committedDatafile = DataFiles.builder(spec)
-          .copy(file)
-          .withPath(committedLocation)
-          .build();
+      DataFile committedDatafile =
+          DataFiles.builder(spec).copy(file).withPath(committedLocation).build();
       afterCommittedFiles.add(committedDatafile);
     }
     return afterCommittedFiles;

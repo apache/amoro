@@ -120,11 +120,12 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     if (syncDataToHive) {
       HiveMetaSynchronizer.syncArcticDataToHive(table);
     }
-    List<DataFile> committedDataFiles = HiveCommitUtil.commitHiveDataFiles(this.addFiles, table.io(), table.spec());
+    List<DataFile> committedDataFiles =
+        HiveCommitUtil.commitHiveDataFiles(this.addFiles, table.io(), table.spec());
     this.addFiles.clear();
     this.addFiles.addAll(committedDataFiles);
     postHiveDataCommitted(this.addFiles);
-    
+
     if (table.spec().isUnpartitioned()) {
       generateUnpartitionTableLocation();
     } else {
@@ -140,7 +141,6 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
         CollectionUtils.isEmpty(addFiles)
             && CollectionUtils.isEmpty(deleteFiles)
             && expr != Expressions.alwaysTrue();
-
 
     delegate.commit();
     if (!noHiveDataFilesChanged) {

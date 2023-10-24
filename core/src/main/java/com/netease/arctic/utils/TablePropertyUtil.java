@@ -196,8 +196,6 @@ public class TablePropertyUtil {
   public static boolean usingHiveCommitProtocol(Map<String, String> properties) {
     return TableProperties.HIVE_COMMIT_PROTOCOL_HIVE.equalsIgnoreCase(
         properties.getOrDefault(
-            TableProperties.HIVE_COMMIT_PROTOCOL,
-            TableProperties.HIVE_COMMIT_PROTOCOL_DEFAULT)
-    );
+            TableProperties.HIVE_COMMIT_PROTOCOL, TableProperties.HIVE_COMMIT_PROTOCOL_DEFAULT));
   }
 }

@@ -164,7 +164,7 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
                 partitionId,
                 taskId,
                 transactionId,
-            usingHiveCommitProtocol)
+                usingHiveCommitProtocol)
             : new CommonOutputFileFactory(
                 baseLocation,
                 table.spec(),
