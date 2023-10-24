@@ -32,15 +32,12 @@ import java.util.Map;
 public class CommonUtil {
   private static final Logger LOG = LoggerFactory.getLogger(CommonUtil.class);
 
-  private static final String[] TOKEN_WHITE_LIST = {
-      "/login/current",
-      "/versionInfo"
-  };
+  private static final String[] TOKEN_WHITE_LIST = {"/login/current", "/versionInfo"};
 
   /**
-   * @param addresses support type 127.0.0.1:2181/ddd,host2:2181,host3:2181/service
-   *                  or music-hbase64.jd.163.org,music-hbase65.jd.163.org,
-   *                  music-hbase66.jd.163.org/hbase-music-feature-jd
+   * @param addresses support type 127.0.0.1:2181/ddd,host2:2181,host3:2181/service or
+   *     music-hbase64.jd.163.org,music-hbase65.jd.163.org,
+   *     music-hbase66.jd.163.org/hbase-music-feature-jd
    * @return true if success
    */
   public static boolean telnetOrPing(String addresses) {
@@ -117,9 +114,7 @@ public class CommonUtil {
       String catalog = ctx.queryParam("catalog");
       String db = ctx.queryParam("db");
       String table = ctx.queryParam("table");
-      if (StringUtils.isEmpty(catalog) &&
-          StringUtils.isEmpty(db) &&
-          StringUtils.isEmpty(table)) {
+      if (StringUtils.isEmpty(catalog) && StringUtils.isEmpty(db) && StringUtils.isEmpty(table)) {
         String[] splitResult = url.split("/");
         for (int i = 0; i < splitResult.length; i++) {
           switch (splitResult[i]) {
@@ -135,10 +130,10 @@ public class CommonUtil {
           }
         }
       }
-      if (StringUtils.isEmpty(catalog) ||
-          StringUtils.isEmpty(db) ||
-          StringUtils.isEmpty(table) ||
-          !token.equals(generateTablePageToken(catalog, db, table))) {
+      if (StringUtils.isEmpty(catalog)
+          || StringUtils.isEmpty(db)
+          || StringUtils.isEmpty(table)
+          || !token.equals(generateTablePageToken(catalog, db, table))) {
         throw new SignatureCheckException();
       }
     }

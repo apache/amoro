@@ -39,7 +39,7 @@ public class MajorOptimizingChecker extends AbstractSceneCountChecker {
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit) {
-    return CollectionUtils.isNotEmpty(latestTaskDescriptors) &&
-        latestPlanner.getOptimizingType() == OptimizingType.MAJOR;
+    return CollectionUtils.isNotEmpty(latestTaskDescriptors)
+        && latestPlanner.getOptimizingType() == OptimizingType.MAJOR;
   }
 }

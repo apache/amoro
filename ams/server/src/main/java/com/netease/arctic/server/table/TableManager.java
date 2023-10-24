@@ -24,6 +24,7 @@ public interface TableManager extends TableRuntimeHandler {
 
   /**
    * load a managed table.
+   *
    * @param tableIdentifier managed table identifier
    * @return managed table.
    */

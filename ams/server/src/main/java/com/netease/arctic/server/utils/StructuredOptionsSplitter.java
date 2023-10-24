@@ -1,18 +1,15 @@
 package com.netease.arctic.server.utils;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-/**
- * Helper class for splitting a string on a given delimiter with quoting logic.
- */
+/** Helper class for splitting a string on a given delimiter with quoting logic. */
 public class StructuredOptionsSplitter {
 
-  private StructuredOptionsSplitter() {
-  }
+  private StructuredOptionsSplitter() {}
 
   /**
    * Splits the given string on the given delimiter. It supports quoting parts of the string with
@@ -28,7 +25,7 @@ public class StructuredOptionsSplitter {
    *
    * <p>For more examples check the tests.
    *
-   * @param string    a string to split
+   * @param string a string to split
    * @param delimiter delimiter to split on
    * @return a list of splits
    */
@@ -38,9 +35,9 @@ public class StructuredOptionsSplitter {
   }
 
   /**
-   * Escapes the given string with single quotes, if the input string contains a double quote or
-   * any of the given {@code charsToEscape}. Any single quotes in the input string will be escaped
-   * by doubling.
+   * Escapes the given string with single quotes, if the input string contains a double quote or any
+   * of the given {@code charsToEscape}. Any single quotes in the input string will be escaped by
+   * doubling.
    *
    * <p>Given that the escapeChar is (;)
    *
@@ -54,14 +51,15 @@ public class StructuredOptionsSplitter {
    *   <li>AB'"D:B => 'AB''"D:B'
    * </ul>
    *
-   * @param string        a string which needs to be escaped
+   * @param string a string which needs to be escaped
    * @param charsToEscape escape chars for the escape conditions
    * @return escaped string by single quote
    */
   public static String escapeWithSingleQuote(String string, String... charsToEscape) {
     boolean escape =
-        Arrays.stream(charsToEscape).anyMatch(string::contains) ||
-            string.contains("\"") || string.contains("'");
+        Arrays.stream(charsToEscape).anyMatch(string::contains)
+            || string.contains("\"")
+            || string.contains("'");
 
     if (escape) {
       return "'" + string.replaceAll("'", "''") + "'";
@@ -77,8 +75,7 @@ public class StructuredOptionsSplitter {
       switch (token.getTokenType()) {
         case DOUBLE_QUOTED:
         case SINGLE_QUOTED:
-          if (i + 1 < tokens.size() &&
-              tokens.get(i + 1).getTokenType() != TokenType.DELIMITER) {
+          if (i + 1 < tokens.size() && tokens.get(i + 1).getTokenType() != TokenType.DELIMITER) {
             int illegalPosition = tokens.get(i + 1).getPosition() - 1;
             throw new IllegalArgumentException(
                 "Could not split string. Illegal quoting at position: " + illegalPosition);
@@ -89,8 +86,7 @@ public class StructuredOptionsSplitter {
           splits.add(token.getString());
           break;
         case DELIMITER:
-          if (i + 1 < tokens.size() &&
-              tokens.get(i + 1).getTokenType() == TokenType.DELIMITER) {
+          if (i + 1 < tokens.size() && tokens.get(i + 1).getTokenType() == TokenType.DELIMITER) {
             splits.add("");
           }
           break;
@@ -126,8 +122,7 @@ public class StructuredOptionsSplitter {
     return tokens;
   }
 
-  private static int consumeInQuotes(
-      String string, char quote, int cursor, StringBuilder builder) {
+  private static int consumeInQuotes(String string, char quote, int cursor, StringBuilder builder) {
     for (int i = cursor + 1; i < string.length(); i++) {
       char c = string.charAt(i);
       if (c == quote) {
@@ -142,8 +137,7 @@ public class StructuredOptionsSplitter {
       }
     }
 
-    throw new IllegalArgumentException(
-        "Could not split string. Quoting was not closed properly.");
+    throw new IllegalArgumentException("Could not split string. Quoting was not closed properly.");
   }
 
   private static int consumeUnquoted(

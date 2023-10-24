@@ -25,7 +25,8 @@ import com.netease.arctic.table.ArcticTable;
 
 public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
-  protected IcebergPartitionPlan(TableRuntime tableRuntime, ArcticTable table, String partition, long planTime) {
+  protected IcebergPartitionPlan(
+      TableRuntime tableRuntime, ArcticTable table, String partition, long planTime) {
     super(tableRuntime, table, partition, planTime);
   }
 

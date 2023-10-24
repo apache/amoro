@@ -27,18 +27,15 @@ import org.slf4j.LoggerFactory;
 import java.io.InputStream;
 import java.util.Properties;
 
-/**
- * The controller that handles project version requests.
- */
+/** The controller that handles project version requests. */
 public class VersionController {
   private static final Logger LOG = LoggerFactory.getLogger(VersionController.class);
 
-  /**
-   * Get project version information.
-   */
+  /** Get project version information. */
   public void getVersionInfo(Context ctx) {
     Properties prop = new Properties();
-    InputStream is = VersionController.class.getClassLoader().getResourceAsStream("arctic/git.properties");
+    InputStream is =
+        VersionController.class.getClassLoader().getResourceAsStream("arctic/git.properties");
     String version = "UNKNOWN";
     String commitTime = "UNKNOWN";
     if (is != null) {

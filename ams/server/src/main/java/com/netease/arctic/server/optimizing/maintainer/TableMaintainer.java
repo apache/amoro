@@ -26,18 +26,17 @@ import org.apache.iceberg.Table;
 
 /**
  * API for maintaining table.
- * <p> Includes: clean content files, clean metadata, clean dangling delete files, expire snapshots.
+ *
+ * <p>Includes: clean content files, clean metadata, clean dangling delete files, expire snapshots.
  */
 public interface TableMaintainer {
 
-  /**
-   * Clean table orphan files. Includes: data files, metadata files, dangling delete files.
-   */
+  /** Clean table orphan files. Includes: data files, metadata files, dangling delete files. */
   void cleanOrphanFiles(TableRuntime tableRuntime);
 
   /**
-   * Expire snapshots，The optimizing based on the snapshot that the current table relies
-   * on will not expire according to TableRuntime.
+   * Expire snapshots，The optimizing based on the snapshot that the current table relies on will not
+   * expire according to TableRuntime.
    */
   void expireSnapshots(TableRuntime tableRuntime);
 

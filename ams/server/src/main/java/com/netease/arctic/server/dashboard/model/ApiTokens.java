@@ -24,8 +24,7 @@ public class ApiTokens {
   String secret;
   String applyTime;
 
-  public ApiTokens() {
-  }
+  public ApiTokens() {}
 
   public ApiTokens(String apiKey, String secret) {
     this.apikey = apiKey;

@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server;
 
-
 import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.ConfigOptions;
 
@@ -66,7 +65,8 @@ public class ArcticManagementConf {
       ConfigOptions.key("refresh-external-catalogs.thread-count")
           .intType()
           .defaultValue(10)
-          .withDescription("The number of threads used for discovering tables in external catalogs.");
+          .withDescription(
+              "The number of threads used for discovering tables in external catalogs.");
 
   public static final ConfigOption<Integer> REFRESH_EXTERNAL_CATALOGS_QUEUE_SIZE =
       ConfigOptions.key("refresh-external-catalogs.queue-size")
@@ -236,10 +236,9 @@ public class ArcticManagementConf {
           .defaultValue(30000L)
           .withDescription("Timeout duration for task acknowledgment.");
 
-  /**
-   * config key prefix of terminal
-   */
+  /** config key prefix of terminal */
   public static final String TERMINAL_PREFIX = "terminal.";
+
   public static final ConfigOption<String> TERMINAL_BACKEND =
       ConfigOptions.key("terminal.backend")
           .stringType()
@@ -270,14 +269,13 @@ public class ArcticManagementConf {
           .defaultValue(30)
           .withDescription("session timeout in minute");
 
-  /**
-   * configs of data expiration
-   */
+  /** configs of data expiration */
   public static final ConfigOption<Boolean> DATA_EXPIRATION_ENABLED =
       ConfigOptions.key("data-expiration.enabled")
           .booleanType()
           .defaultValue(false)
           .withDescription("Enable data expiration");
+
   public static final ConfigOption<Integer> DATA_EXPIRATION_THREAD_COUNT =
       ConfigOptions.key("data-expiration.thread-count")
           .intType()
@@ -295,13 +293,13 @@ public class ArcticManagementConf {
   public static final String CATALOG_HDFS_SITE = "hdfs-site";
   public static final String CATALOG_HIVE_SITE = "hive-site";
 
-  //container config
+  // container config
   public static final String CONTAINER_LIST = "containers";
   public static final String CONTAINER_NAME = "name";
   public static final String CONTAINER_IMPL = "container-impl";
   public static final String CONTAINER_PROPERTIES = "properties";
 
-  //optimizer config
+  // optimizer config
   public static final String OPTIMIZER_GROUP_LIST = "optimizer_groups";
   public static final String OPTIMIZER_GROUP_NAME = "name";
   public static final String OPTIMIZER_GROUP_CONTAINER = "container";

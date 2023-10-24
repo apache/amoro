@@ -22,9 +22,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
 
-/**
- * result of single statement.
- */
+/** result of single statement. */
 public class StatementResult {
   private final int lineNumber;
   private final String statement;

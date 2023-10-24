@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.terminal.kyuubi;
 
+import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_USER;
+
 import com.netease.arctic.server.terminal.SparkContextUtil;
 import com.netease.arctic.server.terminal.TerminalSession;
 import com.netease.arctic.server.terminal.TerminalSessionFactory;
@@ -40,37 +42,40 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_USER;
-
-
 public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
 
   private static final Logger LOG = LoggerFactory.getLogger(KyuubiTerminalSessionFactory.class);
 
-  public static ConfigOption<Boolean> KERBEROS_ENABLE = ConfigOptions.key("kerberos.enabled")
-      .booleanType()
-      .defaultValue(false);
+  public static ConfigOption<Boolean> KERBEROS_ENABLE =
+      ConfigOptions.key("kerberos.enabled").booleanType().defaultValue(false);
 
-  public static ConfigOption<Boolean> KERBEROS_PROXY_ENABLE = ConfigOptions.key("kerberos.proxy.enabled")
-      .booleanType()
-      .defaultValue(true)
-      .withDescription("proxy principal to kyuubi server instead of auth by client");
+  public static ConfigOption<Boolean> KERBEROS_PROXY_ENABLE =
+      ConfigOptions.key("kerberos.proxy.enabled")
+          .booleanType()
+          .defaultValue(true)
+          .withDescription("proxy principal to kyuubi server instead of auth by client");
 
-  public static ConfigOption<String> KERBEROS_DEFAULT_PRINCIPAL = ConfigOptions.key("kerberos.default.principal")
-      .stringType().noDefaultValue().withDescription("principal to use when connection kerberos info is lack");
+  public static ConfigOption<String> KERBEROS_DEFAULT_PRINCIPAL =
+      ConfigOptions.key("kerberos.default.principal")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("principal to use when connection kerberos info is lack");
 
-  public static ConfigOption<String> KERBEROS_DEFAULT_KEYTAB = ConfigOptions.key("kerberos.default.keytab")
-      .stringType().noDefaultValue().withDescription("keytab file location to use when connection kerberos info is " +
-          "lack");
+  public static ConfigOption<String> KERBEROS_DEFAULT_KEYTAB =
+      ConfigOptions.key("kerberos.default.keytab")
+          .stringType()
+          .noDefaultValue()
+          .withDescription(
+              "keytab file location to use when connection kerberos info is " + "lack");
 
-  public static ConfigOption<String> KYUUBI_URL = ConfigOptions.key("jdbc.url")
-      .stringType().noDefaultValue();
+  public static ConfigOption<String> KYUUBI_URL =
+      ConfigOptions.key("jdbc.url").stringType().noDefaultValue();
 
-  public static ConfigOption<String> KYUUBI_USERNAME = ConfigOptions.key("jdbc.username")
-      .stringType().noDefaultValue();
+  public static ConfigOption<String> KYUUBI_USERNAME =
+      ConfigOptions.key("jdbc.username").stringType().noDefaultValue();
 
-  public static ConfigOption<String> KYUUBI_PASSWORD = ConfigOptions.key("jdbc.password")
-      .stringType().noDefaultValue();
+  public static ConfigOption<String> KYUUBI_PASSWORD =
+      ConfigOptions.key("jdbc.password").stringType().noDefaultValue();
 
   private String jdbcUrl;
   private boolean kyuubiKerberosEnable;
@@ -83,9 +88,13 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
 
   @Override
   public void initialize(Configurations properties) {
-    this.jdbcUrl = properties.getOptional(KYUUBI_URL).orElseThrow(
-        () -> new IllegalStateException(
-            "lack require properties: jdbc.url. when kyuubi as terminal backend, this is require"));
+    this.jdbcUrl =
+        properties
+            .getOptional(KYUUBI_URL)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "lack require properties: jdbc.url. when kyuubi as terminal backend, this is require"));
     this.kyuubiKerberosEnable = properties.get(KERBEROS_ENABLE);
     this.proxyKerberosEnable = properties.getBoolean(KERBEROS_PROXY_ENABLE);
     this.username = properties.get(KYUUBI_USERNAME);
@@ -95,7 +104,6 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
-
   }
 
   @Override
@@ -123,10 +131,9 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     return new KyuubiSession(connection, logs, sessionConf);
   }
 
-
-
   private String getConnectionUrl(JdbcConnectionParams params) {
-    StringBuilder kyuubiConnectionUrl = new StringBuilder("jdbc:hive2://" + params.getSuppliedURLAuthority() + "/;");
+    StringBuilder kyuubiConnectionUrl =
+        new StringBuilder("jdbc:hive2://" + params.getSuppliedURLAuthority() + "/;");
 
     if (!params.getSessionVars().isEmpty()) {
       kyuubiConnectionUrl.append(mapAsParams(params.getSessionVars()));

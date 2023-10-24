@@ -18,15 +18,13 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-/**
- *  sql execute result
- */
+/** sql execute result */
 public enum SqlStatus {
-  CREATED(1,"Created"),
-  RUNNING(2,"Running"),
-  FINISHED(3,"Finished"),
-  FAILED(4,"Failed"),
-  CANCELED(5,"Canceled");
+  CREATED(1, "Created"),
+  RUNNING(2, "Running"),
+  FINISHED(3, "Finished"),
+  FAILED(4, "Failed"),
+  CANCELED(5, "Canceled");
 
   private final int status;
   private final String name;

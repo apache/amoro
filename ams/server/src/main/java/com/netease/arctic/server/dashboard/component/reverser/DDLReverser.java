@@ -41,11 +41,12 @@ public class DDLReverser<T> {
 
   public List<DDLInfo> reverse(T table, TableIdentifier tableIdentifier) {
 
-    //Currently only spark metadata change
+    // Currently only spark metadata change
     SparkMetadataChangeHandler metadataChangeHandler =
         new SparkMetadataChangeHandler(tableIdentifier.getTableName());
 
-    List<TableMetaExtract.InternalTableMeta> internalTableMetas = tableMetaExtract.extractTable(table);
+    List<TableMetaExtract.InternalTableMeta> internalTableMetas =
+        tableMetaExtract.extractTable(table);
     if (internalTableMetas.isEmpty() || internalTableMetas.size() == 1) {
       return Collections.emptyList();
     }
@@ -57,14 +58,21 @@ public class DDLReverser<T> {
       TableMetaExtract.InternalTableMeta current = internalTableMetas.get(i);
 
       compareProperties(pre.getProperties(), current.getProperties(), metadataChangeHandler)
-          .forEach(sql -> result.add(
-              DDLInfo.of(tableIdentifier, sql, DDLInfo.DDLType.UPDATE_PROPERTIES, current.getTime()))
-          );
+          .forEach(
+              sql ->
+                  result.add(
+                      DDLInfo.of(
+                          tableIdentifier,
+                          sql,
+                          DDLInfo.DDLType.UPDATE_PROPERTIES,
+                          current.getTime())));
 
       compareSchemas(pre.getInternalSchema(), current.getInternalSchema(), metadataChangeHandler)
-          .forEach(sql -> result.add(
-              DDLInfo.of(tableIdentifier, sql, DDLInfo.DDLType.UPDATE_SCHEMA, current.getTime()))
-          );
+          .forEach(
+              sql ->
+                  result.add(
+                      DDLInfo.of(
+                          tableIdentifier, sql, DDLInfo.DDLType.UPDATE_SCHEMA, current.getTime())));
     }
     return result;
   }
@@ -103,53 +111,47 @@ public class DDLReverser<T> {
     return result;
   }
 
-  private List<String> compareSchemas(List<TableMetaExtract.InternalSchema> pre,
-      List<TableMetaExtract.InternalSchema> current, MetadataChangeHandler metadataChangeHandler) {
+  private List<String> compareSchemas(
+      List<TableMetaExtract.InternalSchema> pre,
+      List<TableMetaExtract.InternalSchema> current,
+      MetadataChangeHandler metadataChangeHandler) {
     // Although only one SQL statement can be executed at a time,
     // using the Java API to make modifications can result in the effect of multiple SQL statements.
     List<String> result = new ArrayList<>();
 
-    Map<Integer, TableMetaExtract.InternalSchema> preMap = pre.stream().collect(
-        Collectors.toMap(TableMetaExtract.InternalSchema::getId, v -> v));
-    Map<Integer, TableMetaExtract.InternalSchema> currentMap = current.stream().collect(Collectors.toMap(
-        TableMetaExtract.InternalSchema::getId, v -> v));
-    
-    //Remove columns.
+    Map<Integer, TableMetaExtract.InternalSchema> preMap =
+        pre.stream().collect(Collectors.toMap(TableMetaExtract.InternalSchema::getId, v -> v));
+    Map<Integer, TableMetaExtract.InternalSchema> currentMap =
+        current.stream().collect(Collectors.toMap(TableMetaExtract.InternalSchema::getId, v -> v));
+
+    // Remove columns.
     Set<Integer> removeColumns = Sets.difference(preMap.keySet(), currentMap.keySet());
-    Set<Integer> normalizedRemoveColumns = removeColumns.stream()
-        .filter(s -> !removeColumns.contains(preMap.get(s).getParentId()))
-        .collect(Collectors.toSet());
+    Set<Integer> normalizedRemoveColumns =
+        removeColumns.stream()
+            .filter(s -> !removeColumns.contains(preMap.get(s).getParentId()))
+            .collect(Collectors.toSet());
     if (!normalizedRemoveColumns.isEmpty()) {
       result.add(
-          metadataChangeHandler
-              .dropColumns(
-                  normalizedRemoveColumns
-                      .stream()
-                      .map(preMap::get)
-                      .map(TableMetaExtract.InternalSchema::getName)
-                      .collect(Collectors.toSet())
-              )
-      );
+          metadataChangeHandler.dropColumns(
+              normalizedRemoveColumns.stream()
+                  .map(preMap::get)
+                  .map(TableMetaExtract.InternalSchema::getName)
+                  .collect(Collectors.toSet())));
     }
 
-    //Add new columns.
+    // Add new columns.
     Set<Integer> newColumns = Sets.difference(currentMap.keySet(), preMap.keySet());
-    Set<Integer> normalizedNewColumns = newColumns.stream()
-        .filter(s -> !newColumns.contains(currentMap.get(s).getParentId()))
-        .collect(Collectors.toSet());
+    Set<Integer> normalizedNewColumns =
+        newColumns.stream()
+            .filter(s -> !newColumns.contains(currentMap.get(s).getParentId()))
+            .collect(Collectors.toSet());
     if (!normalizedNewColumns.isEmpty()) {
       result.add(
-          metadataChangeHandler
-              .addNewColumns(
-                  normalizedNewColumns
-                      .stream()
-                      .map(currentMap::get)
-                      .collect(Collectors.toList())
-              )
-      );
+          metadataChangeHandler.addNewColumns(
+              normalizedNewColumns.stream().map(currentMap::get).collect(Collectors.toList())));
     }
 
-    //Change columns.
+    // Change columns.
     for (TableMetaExtract.InternalSchema currentSchema : current) {
       if (!preMap.containsKey(currentSchema.getId())) {
         continue;
@@ -157,16 +159,23 @@ public class DDLReverser<T> {
 
       TableMetaExtract.InternalSchema preSchema = preMap.get(currentSchema.getId());
       if (!Objects.equals(preSchema.getName(), currentSchema.getName())) {
-        result.add(metadataChangeHandler.renameColumnName(preSchema.getName(), currentSchema.getName()));
+        result.add(
+            metadataChangeHandler.renameColumnName(preSchema.getName(), currentSchema.getName()));
       }
       if (!Objects.equals(preSchema.getType(), currentSchema.getType())) {
-        result.add(metadataChangeHandler.changeColumnType(currentSchema.getName(), currentSchema.getType()));
+        result.add(
+            metadataChangeHandler.changeColumnType(
+                currentSchema.getName(), currentSchema.getType()));
       }
       if (!Objects.equals(preSchema.getComment(), currentSchema.getComment())) {
-        result.add(metadataChangeHandler.changeColumnsComment(currentSchema.getName(), currentSchema.getComment()));
+        result.add(
+            metadataChangeHandler.changeColumnsComment(
+                currentSchema.getName(), currentSchema.getComment()));
       }
       if (preSchema.isRequired() != currentSchema.isRequired()) {
-        result.add(metadataChangeHandler.changeColumnsRequire(currentSchema.getName(), currentSchema.isRequired()));
+        result.add(
+            metadataChangeHandler.changeColumnsRequire(
+                currentSchema.getName(), currentSchema.isRequired()));
       }
     }
 
