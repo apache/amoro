@@ -26,8 +26,7 @@ public class UpgradeRunningInfo {
     this.status = status;
   }
 
-  public UpgradeRunningInfo() {
-  }
+  public UpgradeRunningInfo() {}
 
   public String getStatus() {
     return status;

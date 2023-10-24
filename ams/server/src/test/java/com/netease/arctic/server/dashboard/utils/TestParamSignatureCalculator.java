@@ -38,7 +38,7 @@ public class TestParamSignatureCalculator {
     testMap.put("high", Collections.singletonList("180"));
     testMap.put("nick", Collections.singletonList(""));
 
-    //Call the actual method
+    // Call the actual method
     String result = ParamSignatureCalculator.generateParamStringWithValueList(testMap);
 
     // Assert the result

@@ -26,9 +26,7 @@ import io.javalin.http.Context;
 
 import java.io.Serializable;
 
-/**
- * The controller that handles login requests.
- */
+/** The controller that handles login requests. */
 public class LoginController {
 
   private final String adminUser;
@@ -39,24 +37,19 @@ public class LoginController {
     adminPassword = serviceConfig.get(ArcticManagementConf.ADMIN_PASSWORD);
   }
 
-  /**
-   * Get current user.
-   */
+  /** Get current user. */
   public void getCurrent(Context ctx) {
     SessionInfo user = ctx.sessionAttribute("user");
     ctx.json(OkResponse.of(user));
   }
 
-  /**
-   * handle login post request.
-   **/
+  /** handle login post request. */
   public void login(Context ctx) {
     // ok
     JSONObject postBody = ctx.bodyAsClass(JSONObject.class);
-    if (adminUser.equals(postBody.get("user")) &&
-        (adminPassword.equals(postBody.get("password")))) {
-      ctx.sessionAttribute(
-          "user", new SessionInfo(adminUser, System.currentTimeMillis() + ""));
+    if (adminUser.equals(postBody.get("user"))
+        && (adminPassword.equals(postBody.get("password")))) {
+      ctx.sessionAttribute("user", new SessionInfo(adminUser, System.currentTimeMillis() + ""));
       ctx.json(OkResponse.of("success"));
     } else {
       throw new RuntimeException("bad user " + postBody.get("user") + " or password!");

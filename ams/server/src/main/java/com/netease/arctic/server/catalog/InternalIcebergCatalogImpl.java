@@ -33,7 +33,6 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
     this.exposedHost = serverConfiguration.getString(ArcticManagementConf.SERVER_EXPOSE_HOST);
   }
 
-
   @Override
   public CatalogMeta getMetadata() {
     CatalogMeta meta = super.getMetadata();
@@ -56,8 +55,11 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
 
   @Override
   public AmoroTable<?> loadTable(String database, String tableName) {
-    TableMetadata tableMetadata = getAs(TableMetaMapper.class, mapper ->
-        mapper.selectTableMetaByName(getMetadata().getCatalogName(), database, tableName));
+    TableMetadata tableMetadata =
+        getAs(
+            TableMetaMapper.class,
+            mapper ->
+                mapper.selectTableMetaByName(getMetadata().getCatalogName(), database, tableName));
     if (tableMetadata == null) {
       return null;
     }
@@ -67,14 +69,17 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
     BaseTable table = new BaseTable(ops, TableIdentifier.of(database, tableName).toString());
     com.netease.arctic.table.TableIdentifier tableIdentifier =
         com.netease.arctic.table.TableIdentifier.of(name(), database, tableName);
-    return new IcebergTable(tableIdentifier,
+    return new IcebergTable(
+        tableIdentifier,
         new IcebergCatalogWrapper.BasicIcebergTable(
-            tableIdentifier, table, fileIO, getMetadata().getCatalogProperties())
-    );
+            tableIdentifier, table, fileIO, getMetadata().getCatalogProperties()));
   }
 
-
   private String defaultRestURI() {
-    return "http://" + exposedHost + ":" + httpPort + IcebergRestCatalogService.ICEBERG_REST_API_PREFIX;
+    return "http://"
+        + exposedHost
+        + ":"
+        + httpPort
+        + IcebergRestCatalogService.ICEBERG_REST_API_PREFIX;
   }
 }

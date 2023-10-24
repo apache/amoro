@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.optimizing.maintainer;
 
+import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer.FLINK_MAX_COMMITTED_CHECKPOINT_ID;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -61,8 +63,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer.FLINK_MAX_COMMITTED_CHECKPOINT_ID;
-
 @RunWith(Parameterized.class)
 public class TestSnapshotExpire extends ExecutorTestBase {
 
@@ -70,15 +70,19 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][]{
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, true)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, false)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, true)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, false)}};
+    return new Object[][] {
+      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, true)},
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, false)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(false, true)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(false, false)
+      }
+    };
   }
 
   public TestSnapshotExpire(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -94,7 +98,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     List<DataFile> s1Files = insertChangeDataFiles(testKeyedTable, 1);
     long l = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
     List<StructLike> partitions =
-        new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
+        new ArrayList<>(
+            s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
     if (isPartitionedTable()) {
       Assert.assertEquals(2, partitions.size());
     } else {
@@ -112,13 +117,15 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(testKeyedTable);
     tableMaintainer.getChangeMaintainer().expireFiles(l + 1);
 
-    //In order to advance the snapshot
+    // In order to advance the snapshot
     insertChangeDataFiles(testKeyedTable, 2);
 
     tableMaintainer.getChangeMaintainer().expireSnapshots(System.currentTimeMillis());
 
     Assert.assertEquals(1, Iterables.size(testKeyedTable.changeTable().snapshots()));
-    s1Files.forEach(file -> Assert.assertFalse(testKeyedTable.changeTable().io().exists(file.path().toString())));
+    s1Files.forEach(
+        file ->
+            Assert.assertFalse(testKeyedTable.changeTable().io().exists(file.path().toString())));
   }
 
   private void writeOptimizedSequence(KeyedTable testKeyedTable, StructLikeMap<Long> optimizedSequence) {
@@ -144,7 +151,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     long l = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
     testKeyedTable.baseTable().newAppend().appendFile(s1Files.get(0)).commit();
     List<StructLike> partitions =
-        new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
+        new ArrayList<>(
+            s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
     Assert.assertEquals(2, partitions.size());
 
     StructLikeMap<Long> optimizedSequence = StructLikeMap.create(testKeyedTable.spec().partitionType());
@@ -155,7 +163,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(testKeyedTable);
     tableMaintainer.getChangeMaintainer().expireFiles(l + 1);
-    //In order to advance the snapshot
+    // In order to advance the snapshot
     insertChangeDataFiles(testKeyedTable, 2);
     tableMaintainer.getChangeMaintainer().expireSnapshots(System.currentTimeMillis());
 
@@ -185,11 +193,13 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     testKeyedTable.updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
-    Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
-        ServerTableIdentifier.of(AmsUtil.toTableIdentifier(testKeyedTable.id()), getTestFormat()));
+    Mockito.when(tableRuntime.getTableIdentifier())
+        .thenReturn(
+            ServerTableIdentifier.of(
+                AmsUtil.toTableIdentifier(testKeyedTable.id()), getTestFormat()));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
-    Mockito.when(tableRuntime.getTableConfiguration()).thenReturn(
-        TableConfiguration.parseConfig(testKeyedTable.properties()));
+    Mockito.when(tableRuntime.getTableConfiguration())
+        .thenReturn(TableConfiguration.parseConfig(testKeyedTable.properties()));
 
     Assert.assertEquals(5, Iterables.size(testKeyedTable.changeTable().snapshots()));
 
@@ -200,13 +210,16 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     HashSet<Snapshot> expectedSnapshots = new HashSet<>();
     expectedSnapshots.add(checkpointTime2Snapshot);
     expectedSnapshots.add(lastSnapshot);
-    Iterators.elementsEqual(expectedSnapshots.iterator(), testKeyedTable.changeTable().snapshots().iterator());
+    Iterators.elementsEqual(
+        expectedSnapshots.iterator(), testKeyedTable.changeTable().snapshots().iterator());
   }
 
   @Test
   public void testNotExpireFlinkLatestCommit4All() {
-    UnkeyedTable table = isKeyedTable() ? getArcticTable().asKeyedTable().baseTable() :
-        getArcticTable().asUnkeyedTable();
+    UnkeyedTable table =
+        isKeyedTable()
+            ? getArcticTable().asKeyedTable().baseTable()
+            : getArcticTable().asUnkeyedTable();
     writeAndCommitBaseStore(table);
 
     AppendFiles appendFiles = table.newAppend();
@@ -224,11 +237,12 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     table.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
-    Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
-        ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id()), getTestFormat()));
+    Mockito.when(tableRuntime.getTableIdentifier())
+        .thenReturn(
+            ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id()), getTestFormat()));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
-    Mockito.when(tableRuntime.getTableConfiguration()).thenReturn(
-        TableConfiguration.parseConfig(table.properties()));
+    Mockito.when(tableRuntime.getTableConfiguration())
+        .thenReturn(TableConfiguration.parseConfig(table.properties()));
 
     Assert.assertEquals(4, Iterables.size(table.snapshots()));
 
@@ -244,18 +258,21 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
   @Test
   public void testNotExpireOptimizeCommit4All() {
-    UnkeyedTable table = isKeyedTable() ? getArcticTable().asKeyedTable().baseTable() :
-        getArcticTable().asUnkeyedTable();
+    UnkeyedTable table =
+        isKeyedTable()
+            ? getArcticTable().asKeyedTable().baseTable()
+            : getArcticTable().asUnkeyedTable();
     table.newAppend().commit();
     table.newAppend().commit();
     table.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
 
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
-    Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(
-        ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id()), getTestFormat()));
+    Mockito.when(tableRuntime.getTableIdentifier())
+        .thenReturn(
+            ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id()), getTestFormat()));
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
-    Mockito.when(tableRuntime.getTableConfiguration()).thenReturn(
-        TableConfiguration.parseConfig(table.properties()));
+    Mockito.when(tableRuntime.getTableConfiguration())
+        .thenReturn(TableConfiguration.parseConfig(table.properties()));
 
     new MixedTableMaintainer(table).expireSnapshots(tableRuntime);
     Assert.assertEquals(1, Iterables.size(table.snapshots()));
@@ -283,8 +300,10 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
   @Test
   public void testExpireTableFiles4All() {
-    UnkeyedTable table = isKeyedTable() ? getArcticTable().asKeyedTable().baseTable() :
-        getArcticTable().asUnkeyedTable();
+    UnkeyedTable table =
+        isKeyedTable()
+            ? getArcticTable().asKeyedTable().baseTable()
+            : getArcticTable().asUnkeyedTable();
     table.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
     List<DataFile> dataFiles = writeAndCommitBaseStore(table);
 
@@ -317,7 +336,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     long secondCommitTime = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
 
     List<StructLike> partitions =
-        new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
+        new ArrayList<>(
+            s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
     if (isPartitionedTable()) {
       Assert.assertEquals(2, partitions.size());
     } else {
@@ -336,8 +356,10 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Assert.assertEquals(8, top8Files.size());
     Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
 
-    Set<CharSequence> last4File = insertChangeDataFiles(testKeyedTable, 3).stream()
-        .map(DataFile::path).collect(Collectors.toSet());
+    Set<CharSequence> last4File =
+        insertChangeDataFiles(testKeyedTable, 3).stream()
+            .map(DataFile::path)
+            .collect(Collectors.toSet());
     long thirdCommitTime = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
     Assert.assertEquals(12, Iterables.size(testKeyedTable.changeTable().newScan().planFiles()));
     Assert.assertEquals(3, Iterables.size(testKeyedTable.changeTable().snapshots()));
@@ -355,9 +377,11 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   @NotNull
   private static Set<CharSequence> getDataFiles(KeyedTable testKeyedTable) {
     Set<CharSequence> dataFiles = new HashSet<>();
-    testKeyedTable.changeTable().newScan().planFiles().forEach(
-        task -> dataFiles.add(task.file().path())
-    );
+    testKeyedTable
+        .changeTable()
+        .newScan()
+        .planFiles()
+        .forEach(task -> dataFiles.add(task.file().path()));
     return dataFiles;
   }
   
@@ -416,8 +440,9 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   }
 
   private List<DataFile> insertChangeDataFiles(KeyedTable testKeyedTable, long transactionId) {
-    List<DataFile> changeInsertFiles = writeAndCommitChangeStore(
-        testKeyedTable, transactionId, ChangeAction.INSERT, createRecords(1, 100));
+    List<DataFile> changeInsertFiles =
+        writeAndCommitChangeStore(
+            testKeyedTable, transactionId, ChangeAction.INSERT, createRecords(1, 100));
     changeTableFiles.addAll(changeInsertFiles);
     return changeInsertFiles;
   }

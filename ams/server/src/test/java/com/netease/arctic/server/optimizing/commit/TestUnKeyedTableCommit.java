@@ -64,20 +64,17 @@ public class TestUnKeyedTableCommit extends TableTestBase {
 
   protected ArcticTable arcticTable;
 
-  public TestUnKeyedTableCommit(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+  public TestUnKeyedTableCommit(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Parameterized.Parameters(name = "commit_test")
   public static Object[] parameters() {
-    return new Object[][] {{
-                               new BasicCatalogTestHelper(TableFormat.ICEBERG),
-                               new BasicTableTestHelper(false, true)
-                           },
-                           {
-                               new BasicCatalogTestHelper(TableFormat.ICEBERG),
-                               new BasicTableTestHelper(false, false)
-                           }};
+    return new Object[][] {
+      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, true)},
+      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, false)}
+    };
   }
 
   @Before
@@ -92,24 +89,19 @@ public class TestUnKeyedTableCommit extends TableTestBase {
   @Test
   public void test() throws OptimizingCommitException {
 
-    //change:                     change:
+    // change:                     change:
     //  changeDataFile1     =>       null
-    //base:                       base:
+    // base:                       base:
     //   null                        baseDataFile1
     DataFile changeDataFile1 = getChangeDataFile();
     addFile(changeDataFile1);
     DataFile baseDataFile1 = getBaseDataFile();
-    execute(
-        new DataFile[] {changeDataFile1},
-        null,
-        null,
-        new DataFile[] {baseDataFile1},
-        null);
+    execute(new DataFile[] {changeDataFile1}, null, null, new DataFile[] {baseDataFile1}, null);
     checkFile(new ContentFile[] {baseDataFile1});
 
-    //change:                     change:
+    // change:                     change:
     //  changeEquFile2     =>       null
-    //base:                       base:
+    // base:                       base:
     //   baseDataFile1               baseDataFile2
     ContentFile<?> changeEquFile2 = getEqualityDeleteFile();
     addDelete(changeEquFile2);
@@ -122,10 +114,10 @@ public class TestUnKeyedTableCommit extends TableTestBase {
         null);
     checkFile(new ContentFile[] {baseDataFile2});
 
-    //change:                     change:
+    // change:                     change:
     //  changeEquFile3     =>       null
     //  changeDataFile3
-    //base:                       base:
+    // base:                       base:
     //   baseDataFile2               baseDataFile3
     ContentFile<?> changeEquFile3 = getEqualityDeleteFile();
     DataFile changeDataFile3 = getChangeDataFile();
@@ -140,9 +132,9 @@ public class TestUnKeyedTableCommit extends TableTestBase {
         null);
     checkFile(new ContentFile[] {baseDataFile3});
 
-    //change:                     change:
+    // change:                     change:
     //  changeEquFile4     =>       null
-    //base:                       base:
+    // base:                       base:
     //   baseDataFile3               baseDataFile3
     //                               basePosFile4
     ContentFile<?> changeEquFile4 = getEqualityDeleteFile();
@@ -156,10 +148,10 @@ public class TestUnKeyedTableCommit extends TableTestBase {
         new DeleteFile[] {basePosFile4});
     checkFile(new ContentFile[] {baseDataFile3, basePosFile4});
 
-    //change:                     change:
+    // change:                     change:
     //  changeEquFile5     =>       null
     //  changeDataFile5
-    //base:                       base:
+    // base:                       base:
     //   baseDataFile3               baseDataFile3
     //   basePosFile4                basePosFile5
     //                               baseDataFile5
@@ -177,9 +169,9 @@ public class TestUnKeyedTableCommit extends TableTestBase {
         new DeleteFile[] {basePosFile5});
     checkFile(new ContentFile[] {baseDataFile3, basePosFile5, baseDataFile5});
 
-    //change:                     change:
+    // change:                     change:
     //  null               =>       null
-    //base:                       base:
+    // base:                       base:
     //   baseDataFile3              baseDataFile6
     //   basePosFile5
     //   baseDataFile5
@@ -192,38 +184,28 @@ public class TestUnKeyedTableCommit extends TableTestBase {
         null);
     checkFile(new ContentFile[] {baseDataFile6});
 
-    //change:                     change:
+    // change:                     change:
     //  changeEquFile6     =>       null
-    //base:                       base:
+    // base:                       base:
     //   baseDataFile6              null
     ContentFile<?> changeEquFile6 = getEqualityDeleteFile();
     addDelete(changeEquFile6);
-    execute(
-        new DataFile[] {baseDataFile6},
-        null,
-        new ContentFile[] {changeEquFile6},
-        null,
-        null);
+    execute(new DataFile[] {baseDataFile6}, null, new ContentFile[] {changeEquFile6}, null, null);
     checkFile(new ContentFile[0]);
 
-    //change:                     change:
+    // change:                     change:
     //  changeDataFile7     =>       null
-    //base:                       base:
+    // base:                       base:
     //   null                        baseDataFile7
     DataFile changeDataFile7 = getChangeDataFile();
     addFile(changeDataFile7);
     DataFile baseDataFile7 = getBaseDataFile();
-    execute(
-        new DataFile[] {changeDataFile7},
-        null,
-        null,
-        new DataFile[] {baseDataFile7},
-        null);
+    execute(new DataFile[] {changeDataFile7}, null, null, new DataFile[] {baseDataFile7}, null);
     checkFile(new ContentFile[] {baseDataFile7});
 
-    //change:                     change:
+    // change:                     change:
     //  changeEquFile8     =>       null
-    //base:                       base:
+    // base:                       base:
     //   baseDataFile7               baseDataFile7
     //                               basePosFile8
     ContentFile<?> changeEquFile8 = getEqualityDeleteFile();
@@ -237,9 +219,9 @@ public class TestUnKeyedTableCommit extends TableTestBase {
         new DeleteFile[] {basePosFile8});
     checkFile(new ContentFile[] {baseDataFile7, basePosFile8});
 
-    //change:                     change:
+    // change:                     change:
     //  null               =>       null
-    //base:                       base:
+    // base:                       base:
     //   baseDataFile7               baseDataFile9
     //   basePosFile8      =>        basePosFile8
     // DataFile baseDataFile9 = getBaseDataFile();
@@ -253,9 +235,7 @@ public class TestUnKeyedTableCommit extends TableTestBase {
   }
 
   protected void addFile(DataFile dataFile) {
-    arcticTable.asUnkeyedTable().newAppend()
-        .appendFile(dataFile)
-        .commit();
+    arcticTable.asUnkeyedTable().newAppend().appendFile(dataFile).commit();
   }
 
   protected void addDelete(ContentFile<?> contentFile) {
@@ -267,7 +247,8 @@ public class TestUnKeyedTableCommit extends TableTestBase {
       return Collections.emptyMap();
     }
     Map<String, ContentFile<?>> maps = new HashMap<>();
-    CloseableIterable<FileScanTask> fileScanTasks = arcticTable.asUnkeyedTable().newScan().planFiles();
+    CloseableIterable<FileScanTask> fileScanTasks =
+        arcticTable.asUnkeyedTable().newScan().planFiles();
     for (FileScanTask fileScanTask : fileScanTasks) {
       maps.put(fileScanTask.file().path().toString(), fileScanTask.file());
       for (DeleteFile deleteFile : fileScanTask.deletes()) {
@@ -293,54 +274,51 @@ public class TestUnKeyedTableCommit extends TableTestBase {
       DataFile[] rewritePos,
       ContentFile<?>[] deletes,
       DataFile[] dataOutput,
-      DeleteFile[] deleteOutput
-  ) throws OptimizingCommitException {
-    RewriteFilesInput input = getRewriteInput(
-        rewriteData,
-        rewritePos,
-        deletes
-    );
-    RewriteFilesOutput output = new RewriteFilesOutput(
-        dataOutput,
-        deleteOutput,
-        null);
+      DeleteFile[] deleteOutput)
+      throws OptimizingCommitException {
+    RewriteFilesInput input = getRewriteInput(rewriteData, rewritePos, deletes);
+    RewriteFilesOutput output = new RewriteFilesOutput(dataOutput, deleteOutput, null);
 
     TaskRuntime taskRuntime = Mockito.mock(TaskRuntime.class);
     Mockito.when(taskRuntime.getPartition()).thenReturn(partitionPath);
     Mockito.when(taskRuntime.getInput()).thenReturn(input);
     Mockito.when(taskRuntime.getOutput()).thenReturn(output);
-    UnKeyedTableCommit commit = new UnKeyedTableCommit(
-        Optional.ofNullable(arcticTable.asUnkeyedTable().currentSnapshot()).map(Snapshot::snapshotId)
-            .orElse(null),
-        getArcticTable(),
-        Collections.singletonList(taskRuntime));
+    UnKeyedTableCommit commit =
+        new UnKeyedTableCommit(
+            Optional.ofNullable(arcticTable.asUnkeyedTable().currentSnapshot())
+                .map(Snapshot::snapshotId)
+                .orElse(null),
+            getArcticTable(),
+            Collections.singletonList(taskRuntime));
     commit.commit();
   }
 
   private RewriteFilesInput getRewriteInput(
-      DataFile[] rewriteDataFiles, DataFile[] rePositionDataFiles,
-      ContentFile<?>[] deleteFiles) {
+      DataFile[] rewriteDataFiles, DataFile[] rePositionDataFiles, ContentFile<?>[] deleteFiles) {
     Map<String, ContentFile<?>> allFiles = getAllFiles();
 
     DataFile[] rewriteData = null;
     if (rewriteDataFiles != null) {
-      rewriteData = Arrays.stream(rewriteDataFiles)
-          .map(s -> allFiles.get(s.path().toString()))
-          .toArray(DataFile[]::new);
+      rewriteData =
+          Arrays.stream(rewriteDataFiles)
+              .map(s -> allFiles.get(s.path().toString()))
+              .toArray(DataFile[]::new);
     }
 
     DataFile[] rewritePos = null;
     if (rePositionDataFiles != null) {
-      rewritePos = Arrays.stream(rePositionDataFiles)
-          .map(s -> allFiles.get(s.path().toString()))
-          .toArray(DataFile[]::new);
+      rewritePos =
+          Arrays.stream(rePositionDataFiles)
+              .map(s -> allFiles.get(s.path().toString()))
+              .toArray(DataFile[]::new);
     }
 
     ContentFile<?>[] delete = null;
     if (deleteFiles != null) {
-      delete = Arrays.stream(deleteFiles)
-          .map(s -> allFiles.get(s.path().toString()))
-          .toArray(ContentFile[]::new);
+      delete =
+          Arrays.stream(deleteFiles)
+              .map(s -> allFiles.get(s.path().toString()))
+              .toArray(ContentFile[]::new);
     }
     return new RewriteFilesInput(rewriteData, rewritePos, null, delete, arcticTable);
   }

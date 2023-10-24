@@ -37,7 +37,8 @@ public class IcebergMetricsContent implements MetricsContent<MetricsReport> {
 
   public static MetricsContent<MetricsReport> wrap(MetricsReport report) {
     ReportMetricsRequest typedMetric = ReportMetricsRequest.of(report);
-    return new IcebergMetricsContent(typedMetric.reportType().name(), MetricType.FORMAT_ICEBERG, report);
+    return new IcebergMetricsContent(
+        typedMetric.reportType().name(), MetricType.FORMAT_ICEBERG, report);
   }
 
   @Override

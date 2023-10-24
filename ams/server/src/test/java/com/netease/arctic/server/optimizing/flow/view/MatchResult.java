@@ -53,9 +53,9 @@ public class MatchResult {
   }
 
   public boolean isOk() {
-    return CollectionUtils.isEmpty(notInView) &&
-        CollectionUtils.isEmpty(inViewButCountError) &&
-        CollectionUtils.isEmpty(inViewButMiss);
+    return CollectionUtils.isEmpty(notInView)
+        && CollectionUtils.isEmpty(inViewButCountError)
+        && CollectionUtils.isEmpty(inViewButMiss);
   }
 
   @Override

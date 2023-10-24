@@ -24,17 +24,14 @@ import org.apache.iceberg.DataFile;
 
 import java.util.List;
 
-/**
- * PartitionEvaluator is used to evaluate whether a partition is necessary to be optimized.
- */
+/** PartitionEvaluator is used to evaluate whether a partition is necessary to be optimized. */
 public interface PartitionEvaluator {
 
   /**
-   * Weight determines the priority of partition execution, with higher weights having higher priority.
+   * Weight determines the priority of partition execution, with higher weights having higher
+   * priority.
    */
-  interface Weight extends Comparable<Weight> {
-
-  }
+  interface Weight extends Comparable<Weight> {}
 
   /**
    * Get the partition name.
@@ -47,7 +44,7 @@ public interface PartitionEvaluator {
    * Add a Data file and its related Delete files to this evaluator
    *
    * @param dataFile - Data file
-   * @param deletes  - Delete files
+   * @param deletes - Delete files
    * @return true if the file is added successfully, false if the file will not be optimized
    */
   boolean addFile(DataFile dataFile, List<ContentFile<?>> deletes);
@@ -80,44 +77,27 @@ public interface PartitionEvaluator {
    */
   OptimizingType getOptimizingType();
 
-  /**
-   * Get the count of fragment files involved in optimizing.
-   */
+  /** Get the count of fragment files involved in optimizing. */
   int getFragmentFileCount();
 
-  /**
-   * Get the total size of fragment files involved in optimizing.
-   */
+  /** Get the total size of fragment files involved in optimizing. */
   long getFragmentFileSize();
 
-  /**
-   * Get the count of segment files involved in optimizing.
-   */
+  /** Get the count of segment files involved in optimizing. */
   int getSegmentFileCount();
 
-  /**
-   * Get the total size of segment files involved in optimizing.
-   */
+  /** Get the total size of segment files involved in optimizing. */
   long getSegmentFileSize();
 
-  /**
-   * Get the count of equality delete files involved in optimizing.
-   */
+  /** Get the count of equality delete files involved in optimizing. */
   int getEqualityDeleteFileCount();
 
-  /**
-   * Get the total size of equality delete files involved in optimizing.
-   */
+  /** Get the total size of equality delete files involved in optimizing. */
   long getEqualityDeleteFileSize();
 
-  /**
-   * Get the count of positional delete files involved in optimizing.
-   */
+  /** Get the count of positional delete files involved in optimizing. */
   int getPosDeleteFileCount();
 
-  /**
-   * Get the total size of positional delete files involved in optimizing.
-   */
+  /** Get the total size of positional delete files involved in optimizing. */
   long getPosDeleteFileSize();
-
 }

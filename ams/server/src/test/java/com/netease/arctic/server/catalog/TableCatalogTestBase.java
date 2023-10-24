@@ -32,11 +32,9 @@ import java.io.IOException;
 
 public class TableCatalogTestBase extends TableServiceTestBase {
 
-  @Rule
-  public TemporaryFolder temp = new TemporaryFolder();
+  @Rule public TemporaryFolder temp = new TemporaryFolder();
 
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
   private final AmoroCatalogTestHelper<?> amoroCatalogTestHelper;
 

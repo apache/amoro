@@ -15,4 +15,3 @@ public enum OptimizingType {
     return status;
   }
 }
-

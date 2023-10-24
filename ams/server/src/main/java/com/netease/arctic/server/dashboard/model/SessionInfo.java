@@ -25,8 +25,7 @@ public class SessionInfo {
     this.sessionId = sessionId;
   }
 
-  public SessionInfo() {
-  }
+  public SessionInfo() {}
 
   public String getSessionId() {
     return sessionId;

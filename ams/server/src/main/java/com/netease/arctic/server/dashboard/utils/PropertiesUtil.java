@@ -25,7 +25,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class PropertiesUtil {
-  public static void putNotNullProperties(Map<String, String> properties, String key, String value) {
+  public static void putNotNullProperties(
+      Map<String, String> properties, String key, String value) {
     if (value != null) {
       properties.put(key, value);
     }
@@ -41,12 +42,16 @@ public class PropertiesUtil {
     Map<String, String> result = Maps.newHashMap();
     catalogProperties.entrySet().stream()
         .filter(entry -> entry.getKey().startsWith(CatalogMetaProperties.TABLE_PROPERTIES_PREFIX))
-        .forEach(entry -> result.put(entry.getKey().replaceFirst(CatalogMetaProperties.TABLE_PROPERTIES_PREFIX, ""),
-            entry.getValue()));
+        .forEach(
+            entry ->
+                result.put(
+                    entry.getKey().replaceFirst(CatalogMetaProperties.TABLE_PROPERTIES_PREFIX, ""),
+                    entry.getValue()));
     return result;
   }
 
-  public static Map<String, String> extractCatalogMetaProperties(Map<String, String> catalogProperties) {
+  public static Map<String, String> extractCatalogMetaProperties(
+      Map<String, String> catalogProperties) {
     Map<String, String> result = Maps.newHashMap();
     catalogProperties.entrySet().stream()
         .filter(entry -> !entry.getKey().startsWith(CatalogMetaProperties.TABLE_PROPERTIES_PREFIX))
@@ -54,10 +59,11 @@ public class PropertiesUtil {
     return result;
   }
 
-  public static Map<String, String> unionCatalogProperties(Map<String, String> tableProperties,
-                                                           Map<String, String> catalogMetaProperties) {
+  public static Map<String, String> unionCatalogProperties(
+      Map<String, String> tableProperties, Map<String, String> catalogMetaProperties) {
     Map<String, String> result = Maps.newHashMap(catalogMetaProperties);
-    tableProperties.forEach((key, value) -> result.put(CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + key, value));
+    tableProperties.forEach(
+        (key, value) -> result.put(CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + key, value));
     return result;
   }
 }

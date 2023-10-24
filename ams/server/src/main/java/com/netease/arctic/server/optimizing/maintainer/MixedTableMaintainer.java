@@ -53,9 +53,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Table maintainer for mixed-iceberg and mixed-hive tables.
- */
+/** Table maintainer for mixed-iceberg and mixed-hive tables. */
 public class MixedTableMaintainer implements TableMaintainer {
 
   private static final Logger LOG = LoggerFactory.getLogger(MixedTableMaintainer.class);
@@ -77,7 +75,8 @@ public class MixedTableMaintainer implements TableMaintainer {
     if (arcticTable.isKeyedTable()) {
       changeMaintainer = new ChangeTableMaintainer(arcticTable.asKeyedTable().changeTable());
       baseMaintainer = new BaseTableMaintainer(arcticTable.asKeyedTable().baseTable());
-      changeFiles = IcebergTableUtil.getAllContentFilePath(arcticTable.asKeyedTable().changeTable());
+      changeFiles =
+          IcebergTableUtil.getAllContentFilePath(arcticTable.asKeyedTable().changeTable());
       baseFiles = IcebergTableUtil.getAllContentFilePath(arcticTable.asKeyedTable().baseTable());
     } else {
       baseMaintainer = new BaseTableMaintainer(arcticTable.asUnkeyedTable());
@@ -198,25 +197,28 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     private long getChangeTTLPoint() {
-      return System.currentTimeMillis() - CompatiblePropertyUtil.propertyAsLong(
-          unkeyedTable.properties(),
-          TableProperties.CHANGE_DATA_TTL,
-          TableProperties.CHANGE_DATA_TTL_DEFAULT) * 60 * 1000;
+      return System.currentTimeMillis()
+          - CompatiblePropertyUtil.propertyAsLong(
+                  unkeyedTable.properties(),
+                  TableProperties.CHANGE_DATA_TTL,
+                  TableProperties.CHANGE_DATA_TTL_DEFAULT)
+              * 60
+              * 1000;
     }
 
     private List<IcebergFileEntry> getExpiredDataFileEntries(long ttlPoint) {
-      TableEntriesScan entriesScan = TableEntriesScan.builder(unkeyedTable)
-          .includeFileContent(FileContent.DATA)
-          .build();
+      TableEntriesScan entriesScan =
+          TableEntriesScan.builder(unkeyedTable).includeFileContent(FileContent.DATA).build();
       List<IcebergFileEntry> changeTTLFileEntries = new ArrayList<>();
 
       try (CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
-        entries.forEach(entry -> {
-          Snapshot snapshot = unkeyedTable.snapshot(entry.getSnapshotId());
-          if (snapshot == null || snapshot.timestampMillis() < ttlPoint) {
-            changeTTLFileEntries.add(entry);
-          }
-        });
+        entries.forEach(
+            entry -> {
+              Snapshot snapshot = unkeyedTable.snapshot(entry.getSnapshotId());
+              if (snapshot == null || snapshot.timestampMillis() < ttlPoint) {
+                changeTTLFileEntries.add(entry);
+              }
+            });
       } catch (IOException e) {
         throw new UncheckedIOException("Failed to close manifest entry scan of " + table.name(), e);
       }
@@ -235,37 +237,51 @@ public class MixedTableMaintainer implements TableMaintainer {
         return;
       }
 
-      Map<String, List<IcebergFileEntry>> partitionDataFileMap = expiredDataFileEntries.stream()
-          .collect(Collectors.groupingBy(entry ->
-              keyedTable.spec().partitionToPath(entry.getFile().partition()), Collectors.toList()));
+      Map<String, List<IcebergFileEntry>> partitionDataFileMap =
+          expiredDataFileEntries.stream()
+              .collect(
+                  Collectors.groupingBy(
+                      entry -> keyedTable.spec().partitionToPath(entry.getFile().partition()),
+                      Collectors.toList()));
 
       List<DataFile> changeDeleteFiles = new ArrayList<>();
       if (keyedTable.spec().isUnpartitioned()) {
         List<IcebergFileEntry> partitionDataFiles =
-            partitionDataFileMap.get(keyedTable.spec().partitionToPath(
-                expiredDataFileEntries.get(0).getFile().partition()));
+            partitionDataFileMap.get(
+                keyedTable
+                    .spec()
+                    .partitionToPath(expiredDataFileEntries.get(0).getFile().partition()));
 
         Long optimizedSequence = optimizedSequences.get(TablePropertyUtil.EMPTY_STRUCT);
         if (optimizedSequence != null && CollectionUtils.isNotEmpty(partitionDataFiles)) {
-          changeDeleteFiles.addAll(partitionDataFiles.stream()
-              .filter(entry -> FileNameRules.parseChangeTransactionId(
-                  entry.getFile().path().toString(), entry.getSequenceNumber()) <= optimizedSequence)
-              .map(entry -> (DataFile) entry.getFile())
-              .collect(Collectors.toList()));
+          changeDeleteFiles.addAll(
+              partitionDataFiles.stream()
+                  .filter(
+                      entry ->
+                          FileNameRules.parseChangeTransactionId(
+                                  entry.getFile().path().toString(), entry.getSequenceNumber())
+                              <= optimizedSequence)
+                  .map(entry -> (DataFile) entry.getFile())
+                  .collect(Collectors.toList()));
         }
       } else {
         optimizedSequences.forEach((key, value) -> {
-          List<IcebergFileEntry> partitionDataFiles =
-              partitionDataFileMap.get(keyedTable.spec().partitionToPath(key));
+              List<IcebergFileEntry> partitionDataFiles =
+                  partitionDataFileMap.get(keyedTable.spec().partitionToPath(key));
 
-          if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
-            changeDeleteFiles.addAll(partitionDataFiles.stream()
-                .filter(entry -> FileNameRules.parseChangeTransactionId(
-                    entry.getFile().path().toString(), entry.getSequenceNumber()) <= value)
-                .map(entry -> (DataFile) entry.getFile())
-                .collect(Collectors.toList()));
-          }
-        });
+              if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
+                changeDeleteFiles.addAll(
+                    partitionDataFiles.stream()
+                        .filter(
+                            entry ->
+                                FileNameRules.parseChangeTransactionId(
+                                        entry.getFile().path().toString(),
+                                        entry.getSequenceNumber())
+                                    <= value)
+                        .map(entry -> (DataFile) entry.getFile())
+                        .collect(Collectors.toList()));
+              }
+            });
       }
       tryClearChangeFiles(changeDeleteFiles);
     }
@@ -275,7 +291,9 @@ public class MixedTableMaintainer implements TableMaintainer {
         return;
       }
       try {
-        for (int startIndex = 0; startIndex < changeFiles.size(); startIndex += DATA_FILE_LIST_SPLIT) {
+        for (int startIndex = 0;
+            startIndex < changeFiles.size();
+            startIndex += DATA_FILE_LIST_SPLIT) {
           int end = Math.min(startIndex + DATA_FILE_LIST_SPLIT, changeFiles.size());
           List<DataFile> tableFiles = changeFiles.subList(startIndex, end);
           LOG.info("{} delete {} change files", unkeyedTable.name(), tableFiles.size());
@@ -284,8 +302,12 @@ public class MixedTableMaintainer implements TableMaintainer {
             changeFiles.forEach(changeDelete::deleteFile);
             changeDelete.commit();
           }
-          LOG.info("{} change committed, delete {} files, complete {}/{}", unkeyedTable.name(),
-              tableFiles.size(), end, changeFiles.size());
+          LOG.info(
+              "{} change committed, delete {} files, complete {}/{}",
+              unkeyedTable.name(),
+              tableFiles.size(),
+              end,
+              changeFiles.size());
         }
       } catch (Throwable t) {
         LOG.error(unkeyedTable.name() + " failed to delete change files, ignore", t);

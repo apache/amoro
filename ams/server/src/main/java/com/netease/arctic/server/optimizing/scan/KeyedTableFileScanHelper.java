@@ -74,17 +74,18 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
   }
 
   /**
-   * Select all the files whose sequence <= maxSequence as Selected-Files, seek the maxSequence to find as many
-   * Selected-Files as possible, and also
-   * - the cnt of these Selected-Files must <= maxFileCntLimit
-   * - the max TransactionId of the Selected-Files must > the min TransactionId of all the left files
+   * Select all the files whose sequence <= maxSequence as Selected-Files, seek the maxSequence to
+   * find as many Selected-Files as possible, and also - the cnt of these Selected-Files must <=
+   * maxFileCntLimit - the max TransactionId of the Selected-Files must > the min TransactionId of
+   * all the left files
    *
    * @param snapshotFileGroups snapshotFileGroups
-   * @param maxFileCntLimit    maxFileCntLimit
-   * @return the max sequence of selected file, return Long.MAX_VALUE if all files should be selected,
-   * Long.MIN_VALUE means no files should be selected
+   * @param maxFileCntLimit maxFileCntLimit
+   * @return the max sequence of selected file, return Long.MAX_VALUE if all files should be
+   *     selected, Long.MIN_VALUE means no files should be selected
    */
-  static long getMaxSequenceKeepingTxIdInOrder(List<SnapshotFileGroup> snapshotFileGroups, long maxFileCntLimit) {
+  static long getMaxSequenceKeepingTxIdInOrder(
+      List<SnapshotFileGroup> snapshotFileGroups, long maxFileCntLimit) {
     if (maxFileCntLimit <= 0 || snapshotFileGroups == null || snapshotFileGroups.isEmpty()) {
       return Long.MIN_VALUE;
     }
@@ -105,19 +106,22 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     if (fileCnt <= maxFileCntLimit) {
       return Long.MAX_VALUE;
     }
-    // if only check the first file groups, then the file cnt > maxFileCntLimit, no files should be selected
+    // if only check the first file groups, then the file cnt > maxFileCntLimit, no files should be
+    // selected
     if (index == -1) {
       return Long.MIN_VALUE;
     }
 
     // 3.wrap file group with the max TransactionId before and min TransactionId after
-    List<SnapshotFileGroupWrapper> snapshotFileGroupWrappers = wrapMinMaxTransactionId(snapshotFileGroups);
+    List<SnapshotFileGroupWrapper> snapshotFileGroupWrappers =
+        wrapMinMaxTransactionId(snapshotFileGroups);
     // 4.find the valid snapshotFileGroup
     while (true) {
       SnapshotFileGroupWrapper current = snapshotFileGroupWrappers.get(index);
-      // check transaction id inorder: max transaction id before(inclusive) < min transaction id after
-      if (Math.max(current.getFileGroup().getTransactionId(), current.getMaxTransactionIdBefore()) <
-          current.getMinTransactionIdAfter()) {
+      // check transaction id inorder: max transaction id before(inclusive) < min transaction id
+      // after
+      if (Math.max(current.getFileGroup().getTransactionId(), current.getMaxTransactionIdBefore())
+          < current.getMinTransactionIdAfter()) {
         return current.getFileGroup().getSequence();
       }
       index--;
@@ -127,7 +131,8 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     }
   }
 
-  private static List<SnapshotFileGroupWrapper> wrapMinMaxTransactionId(List<SnapshotFileGroup> snapshotFileGroups) {
+  private static List<SnapshotFileGroupWrapper> wrapMinMaxTransactionId(
+      List<SnapshotFileGroup> snapshotFileGroups) {
     List<SnapshotFileGroupWrapper> wrappedList = new ArrayList<>();
     for (SnapshotFileGroup snapshotFileGroup : snapshotFileGroups) {
       wrappedList.add(new SnapshotFileGroupWrapper(snapshotFileGroup));
@@ -164,9 +169,10 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
       if (maxSequence != Long.MIN_VALUE) {
         ChangeTableIncrementalScan changeTableIncrementalScan = changeTable.newScan()
             .fromSequence(optimizedSequence)
-            .toSequence(maxSequence)
-            .useSnapshot(changeSnapshotId);
-        try (CloseableIterable<FileScanTask> fileScanTasks = changeTableIncrementalScan.planFiles()) {
+                .toSequence(maxSequence)
+                .useSnapshot(changeSnapshotId);
+        try (CloseableIterable<FileScanTask> fileScanTasks =
+            changeTableIncrementalScan.planFiles()) {
           for (FileScanTask fileScanTask : fileScanTasks) {
             changeFiles.addFile(wrapChangeFile(fileScanTask.file()));
           }
@@ -174,31 +180,37 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
           throw new UncheckedIOException(e);
         }
         PartitionSpec partitionSpec = changeTable.spec();
-        changeScanResult = CloseableIterable.withNoopClose(
-            changeFiles.allInsertFiles().filter(
-                insertFile -> filterFilePartition(partitionSpec, insertFile))
-                .map(insertFile -> {
-                  List<ContentFile<?>> relatedDeleteFiles = changeFiles.getRelatedDeleteFiles(insertFile);
-                  return new FileScanResult(insertFile, relatedDeleteFiles);
-                }).collect(Collectors.toList())
-        );
+        changeScanResult =
+            CloseableIterable.withNoopClose(
+                changeFiles
+                    .allInsertFiles()
+                    .filter(insertFile -> filterFilePartition(partitionSpec, insertFile))
+                    .map(
+                        insertFile -> {
+                          List<ContentFile<?>> relatedDeleteFiles =
+                              changeFiles.getRelatedDeleteFiles(insertFile);
+                          return new FileScanResult(insertFile, relatedDeleteFiles);
+                        })
+                    .collect(Collectors.toList()));
       }
     }
 
     CloseableIterable<FileScanResult> baseScanResult = CloseableIterable.empty();
     if (baseSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
       PartitionSpec partitionSpec = baseTable.spec();
-      baseScanResult = CloseableIterable.transform(
-          CloseableIterable.filter(
-              baseTable.newScan().useSnapshot(baseSnapshotId).planFiles(),
-              fileScanTask -> filterFilePartition(partitionSpec, fileScanTask.file())),
-          fileScanTask -> {
-            DataFile dataFile = wrapBaseFile(fileScanTask.file());
-            List<ContentFile<?>> deleteFiles = new ArrayList<>(fileScanTask.deletes());
-            List<ContentFile<?>> relatedChangeDeleteFiles = changeFiles.getRelatedDeleteFiles(dataFile);
-            deleteFiles.addAll(relatedChangeDeleteFiles);
-            return new FileScanResult(dataFile, deleteFiles);
-          });
+      baseScanResult =
+          CloseableIterable.transform(
+              CloseableIterable.filter(
+                  baseTable.newScan().useSnapshot(baseSnapshotId).planFiles(),
+                  fileScanTask -> filterFilePartition(partitionSpec, fileScanTask.file())),
+              fileScanTask -> {
+                DataFile dataFile = wrapBaseFile(fileScanTask.file());
+                List<ContentFile<?>> deleteFiles = new ArrayList<>(fileScanTask.deletes());
+                List<ContentFile<?>> relatedChangeDeleteFiles =
+                    changeFiles.getRelatedDeleteFiles(dataFile);
+                deleteFiles.addAll(relatedChangeDeleteFiles);
+                return new FileScanResult(dataFile, deleteFiles);
+              });
     }
 
     return CloseableIterable.concat(Lists.newArrayList(changeScanResult, baseScanResult));
@@ -234,29 +246,36 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
       StructLikeMap<Long> partitionOptimizedSequence) {
     ChangeTable changeTable = arcticTable.changeTable();
     Snapshot changeSnapshot = changeTable.snapshot(changeSnapshotId);
-    int totalFilesInSummary = PropertyUtil
-        .propertyAsInt(changeSnapshot.summary(), SnapshotSummary.TOTAL_DATA_FILES_PROP, 0);
-    int maxFileCntLimit = CompatiblePropertyUtil.propertyAsInt(arcticTable.properties(),
-        TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT);
+    int totalFilesInSummary =
+        PropertyUtil.propertyAsInt(
+            changeSnapshot.summary(), SnapshotSummary.TOTAL_DATA_FILES_PROP, 0);
+    int maxFileCntLimit =
+        CompatiblePropertyUtil.propertyAsInt(
+            arcticTable.properties(),
+            TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT,
+            TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT);
     // not scan files to improve performance
     if (totalFilesInSummary <= maxFileCntLimit) {
       return Long.MAX_VALUE;
     }
     // scan and get all change files grouped by sequence(snapshot)
     ChangeTableIncrementalScan changeTableIncrementalScan =
-        changeTable.newScan()
+        changeTable
+            .newScan()
             .fromSequence(partitionOptimizedSequence)
             .useSnapshot(changeSnapshot.snapshotId());
     Map<Long, SnapshotFileGroup> changeFilesGroupBySequence = new HashMap<>();
     try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
       for (FileScanTask task : tasks) {
         SnapshotFileGroup fileGroup =
-            changeFilesGroupBySequence.computeIfAbsent(task.file().dataSequenceNumber(), key -> {
-              long txId = FileNameRules.parseChangeTransactionId(
-                  task.file().path().toString(),
-                  task.file().dataSequenceNumber());
-              return new SnapshotFileGroup(task.file().dataSequenceNumber(), txId);
-            });
+            changeFilesGroupBySequence.computeIfAbsent(
+                task.file().dataSequenceNumber(),
+                key -> {
+                  long txId =
+                      FileNameRules.parseChangeTransactionId(
+                          task.file().path().toString(), task.file().dataSequenceNumber());
+                  return new SnapshotFileGroup(task.file().dataSequenceNumber(), txId);
+                });
         fileGroup.addFile();
       }
     } catch (IOException e) {
@@ -264,19 +283,27 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     }
 
     if (changeFilesGroupBySequence.isEmpty()) {
-      LOG.debug("{} get no change files to optimize with partitionOptimizedSequence {}", arcticTable.name(),
+      LOG.debug(
+          "{} get no change files to optimize with partitionOptimizedSequence {}",
+          arcticTable.name(),
           partitionOptimizedSequence);
       return Long.MIN_VALUE;
     }
 
     long maxSequence =
-        getMaxSequenceKeepingTxIdInOrder(new ArrayList<>(changeFilesGroupBySequence.values()), maxFileCntLimit);
+        getMaxSequenceKeepingTxIdInOrder(
+            new ArrayList<>(changeFilesGroupBySequence.values()), maxFileCntLimit);
     if (maxSequence == Long.MIN_VALUE) {
-      LOG.warn("{} get no change files with self-optimizing.max-file-count={}, change it to a bigger value",
-          arcticTable.name(), maxFileCntLimit);
+      LOG.warn(
+          "{} get no change files with self-optimizing.max-file-count={}, change it to a bigger value",
+          arcticTable.name(),
+          maxFileCntLimit);
     } else if (maxSequence != Long.MAX_VALUE) {
-      LOG.warn("{} not all change files optimized with self-optimizing.max-file-count={}, maxSequence={}",
-          arcticTable.name(), maxFileCntLimit, maxSequence);
+      LOG.warn(
+          "{} not all change files optimized with self-optimizing.max-file-count={}, maxSequence={}",
+          arcticTable.name(),
+          maxFileCntLimit,
+          maxSequence);
     }
     return maxSequence;
   }
@@ -286,7 +313,8 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     private final Map<String, Map<DataTreeNode, List<ContentFile<?>>>> cachedRelatedDeleteFiles =
         Maps.newHashMap();
 
-    private final Map<String, Map<DataTreeNode, Set<ContentFile<?>>>> equalityDeleteFiles = Maps.newHashMap();
+    private final Map<String, Map<DataTreeNode, Set<ContentFile<?>>>> equalityDeleteFiles =
+        Maps.newHashMap();
     private final Map<String, Map<DataTreeNode, Set<DataFile>>> insertFiles = Maps.newHashMap();
 
     public ChangeFiles(KeyedTable arcticTable) {
@@ -299,12 +327,14 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
       DataFileType type = FileNameRules.parseFileTypeForChange(file.path().toString());
       switch (type) {
         case EQ_DELETE_FILE:
-          equalityDeleteFiles.computeIfAbsent(partition, key -> Maps.newHashMap())
+          equalityDeleteFiles
+              .computeIfAbsent(partition, key -> Maps.newHashMap())
               .computeIfAbsent(node, key -> Sets.newHashSet())
               .add(file);
           break;
         case INSERT_FILE:
-          insertFiles.computeIfAbsent(partition, key -> Maps.newHashMap())
+          insertFiles
+              .computeIfAbsent(partition, key -> Maps.newHashMap())
               .computeIfAbsent(node, key -> Sets.newHashSet())
               .add(file);
           break;
@@ -331,8 +361,8 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
         return partitionDeleteFiles.get(node);
       } else {
         List<ContentFile<?>> result = Lists.newArrayList();
-        for (Map.Entry<DataTreeNode, Set<ContentFile<?>>> entry : equalityDeleteFiles.get(partition)
-            .entrySet()) {
+        for (Map.Entry<DataTreeNode, Set<ContentFile<?>>> entry :
+            equalityDeleteFiles.get(partition).entrySet()) {
           DataTreeNode deleteNode = entry.getKey();
           if (node.isSonOf(deleteNode) || deleteNode.isSonOf(node)) {
             result.addAll(entry.getValue());
@@ -344,9 +374,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     }
   }
 
-  /**
-   * Files grouped by snapshot, but only with the file cnt.
-   */
+  /** Files grouped by snapshot, but only with the file cnt. */
   static class SnapshotFileGroup implements Comparable<SnapshotFileGroup> {
     private final long sequence;
     private final long transactionId;
@@ -385,14 +413,14 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     }
   }
 
-  /**
-   * Wrap SnapshotFileGroup with max and min Transaction Id
-   */
+  /** Wrap SnapshotFileGroup with max and min Transaction Id */
   private static class SnapshotFileGroupWrapper {
     private final SnapshotFileGroup fileGroup;
-    // in the ordered file group list, the max transaction before this file group, Long.MIN_VALUE for the first
+    // in the ordered file group list, the max transaction before this file group, Long.MIN_VALUE
+    // for the first
     private long maxTransactionIdBefore;
-    // in the ordered file group list, the min transaction after this file group, Long.MAX_VALUE for the last
+    // in the ordered file group list, the min transaction after this file group, Long.MAX_VALUE for
+    // the last
     private long minTransactionIdAfter;
 
     public SnapshotFileGroupWrapper(SnapshotFileGroup fileGroup) {

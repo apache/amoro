@@ -25,9 +25,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
-/**
- * result of execution a script.
- */
+/** result of execution a script. */
 public class ExecutionResult {
   static final SimpleDateFormat patten = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 

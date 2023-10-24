@@ -21,7 +21,6 @@ package com.netease.arctic.server.dashboard.model;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.Schema;
 
-
 public class AMSPartitionField {
   String field;
   String sourceField;
@@ -29,10 +28,10 @@ public class AMSPartitionField {
   Integer fieldId;
   Integer sourceFieldId;
 
-  public AMSPartitionField() {
-  }
+  public AMSPartitionField() {}
 
-  public AMSPartitionField(String field, String sourceField, String transform, Integer fieldId, Integer sourceFieldId) {
+  public AMSPartitionField(
+      String field, String sourceField, String transform, Integer fieldId, Integer sourceFieldId) {
     this.field = field;
     this.sourceField = sourceField;
     this.transform = transform;
@@ -82,12 +81,12 @@ public class AMSPartitionField {
 
   public static AMSPartitionField buildFromPartitionSpec(Schema schema, PartitionField pf) {
     return new Builder()
-            .field(pf.name())
-            .sourceField(schema.findColumnName(pf.sourceId()))
-            .transform(pf.transform().toString())
-            .fieldId(pf.fieldId())
-            .sourceFieldId(pf.sourceId())
-            .build();
+        .field(pf.name())
+        .sourceField(schema.findColumnName(pf.sourceId()))
+        .transform(pf.transform().toString())
+        .fieldId(pf.fieldId())
+        .sourceFieldId(pf.sourceId())
+        .build();
   }
 
   public static class Builder {

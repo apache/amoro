@@ -36,14 +36,14 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
   @Parameterized.Parameters(name = "{0}")
   public static Object[] parameters() {
     return new Object[] {
-        IcebergHadoopCatalogTestHelper.defaultHelper(),
-        IcebergHiveCatalogTestHelper.defaultHelper()
+      IcebergHadoopCatalogTestHelper.defaultHelper(), IcebergHiveCatalogTestHelper.defaultHelper()
     };
   }
 
   @Override
   protected void tableOperationsAddColumns() {
-    getTable().updateSchema()
+    getTable()
+        .updateSchema()
         .allowIncompatibleChanges()
         .addColumn("new_col", Types.IntegerType.get())
         .commit();
@@ -51,38 +51,30 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
 
   @Override
   protected void tableOperationsRenameColumns() {
-    getTable().updateSchema()
-        .renameColumn("new_col", "renamed_col")
-        .commit();
+    getTable().updateSchema().renameColumn("new_col", "renamed_col").commit();
   }
 
   @Override
   protected void tableOperationsChangeColumnType() {
-    getTable().updateSchema()
-        .updateColumn("renamed_col", Types.LongType.get())
-        .commit();
+    getTable().updateSchema().updateColumn("renamed_col", Types.LongType.get()).commit();
   }
 
   @Override
   protected void tableOperationsChangeColumnComment() {
-    getTable().updateSchema()
+    getTable()
+        .updateSchema()
         .updateColumn("renamed_col", Types.LongType.get(), "new comment")
         .commit();
   }
 
   @Override
   protected void tableOperationsChangeColumnRequired() {
-    getTable().updateSchema()
-        .allowIncompatibleChanges()
-        .requireColumn("renamed_col")
-        .commit();
+    getTable().updateSchema().allowIncompatibleChanges().requireColumn("renamed_col").commit();
   }
 
   @Override
   protected void tableOperationsDropColumn() {
-    getTable().updateSchema()
-        .deleteColumn("renamed_col")
-        .commit();
+    getTable().updateSchema().deleteColumn("renamed_col").commit();
   }
 
   private Table getTable() {
