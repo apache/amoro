@@ -12,7 +12,7 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and 
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
@@ -32,8 +32,6 @@ public class FlinkToucher extends RichParallelSourceFunction<String> {
 
   private final OptimizerToucher toucher;
 
-
-
   public FlinkToucher(OptimizerToucher toucher) {
     this.toucher = toucher;
   }
@@ -41,7 +39,8 @@ public class FlinkToucher extends RichParallelSourceFunction<String> {
   @Override
   public void run(SourceContext<String> sourceContext) {
     String jobId = FLINK_TASK_RUNTIME_FIELDS.bind(getRuntimeContext()).get().getJobID().toString();
-    toucher.withTokenChangeListener(sourceContext::collect)
+    toucher
+        .withTokenChangeListener(sourceContext::collect)
         .withRegisterProperty(Resource.PROPERTY_JOB_ID, jobId)
         .start();
   }

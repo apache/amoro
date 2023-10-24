@@ -15,7 +15,8 @@ public class ArcticZookeeperFactory implements ZookeeperFactory {
   }
 
   @Override
-  public ZooKeeper newZooKeeper(String connectString, int sessionTimeout, Watcher watcher, boolean canBeReadOnly)
+  public ZooKeeper newZooKeeper(
+      String connectString, int sessionTimeout, Watcher watcher, boolean canBeReadOnly)
       throws Exception {
     return new ZooKeeperAdmin(connectString, sessionTimeout, watcher, canBeReadOnly, config);
   }
