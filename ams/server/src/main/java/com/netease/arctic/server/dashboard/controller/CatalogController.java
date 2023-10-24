@@ -538,7 +538,8 @@ public class CatalogController {
   /** Delete some catalog and information associate with the catalog */
   public void deleteCatalog(Context ctx) {
     String catalogName = ctx.pathParam("catalogName");
-    Preconditions.checkArgument(StringUtils.isNotEmpty(ctx.pathParam("catalogName")), "Catalog name is empty!");
+    Preconditions.checkArgument(
+        StringUtils.isNotEmpty(ctx.pathParam("catalogName")), "Catalog name is empty!");
     tableService.dropCatalog(catalogName);
     ctx.json(OkResponse.of("OK"));
   }
