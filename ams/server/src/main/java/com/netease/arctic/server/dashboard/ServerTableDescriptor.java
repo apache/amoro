@@ -23,12 +23,12 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.catalog.ServerCatalog;
+import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
-import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import com.netease.arctic.server.dashboard.utils.FilesStatisticsBuilder;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
@@ -41,6 +41,7 @@ import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Streams;
+import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.paimon.AbstractFileStore;
 import org.apache.paimon.Snapshot;
 import org.apache.paimon.manifest.FileKind;
@@ -56,6 +57,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class ServerTableDescriptor extends PersistentBase {
@@ -66,9 +69,14 @@ public class ServerTableDescriptor extends PersistentBase {
 
   public ServerTableDescriptor(TableService tableService, Configurations serviceConfig) {
     this.tableService = tableService;
+
+    ExecutorService executorService = Executors.newFixedThreadPool(
+        serviceConfig.getInteger(ArcticManagementConf.TABLE_MANIFEST_IO_THREAD_COUNT),
+        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("table-manifest-io-%d").build());
+
     FormatTableDescriptor[] formatTableDescriptors = new FormatTableDescriptor[] {
-        new MixedAndIcebergTableDescriptor(),
-        new PaimonTableDescriptor(serviceConfig.getInteger(ArcticManagementConf.DASHBOARD_THREAD_COUNT))
+        new MixedAndIcebergTableDescriptor(executorService),
+        new PaimonTableDescriptor(executorService)
     };
     for (FormatTableDescriptor formatTableDescriptor : formatTableDescriptors) {
       for (TableFormat format : formatTableDescriptor.supportFormat()) {
@@ -83,7 +91,7 @@ public class ServerTableDescriptor extends PersistentBase {
     return formatTableDescriptor.getTableDetail(amoroTable);
   }
 
-  public List<TransactionsOfTable> getTransactions(TableIdentifier tableIdentifier) {
+  public List<AMSTransactionsOfTable> getTransactions(TableIdentifier tableIdentifier) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getTransactions(amoroTable);
@@ -141,8 +149,10 @@ public class ServerTableDescriptor extends PersistentBase {
     List<OptimizingProcessInfo> processInfoList = new ArrayList<>();
     FileStoreTable fileStoreTable = (FileStoreTable) amoroTable.originalTable();
     AbstractFileStore<?> store = (AbstractFileStore<?>) fileStoreTable.store();
-    ServerTableIdentifier serverTableIdentifier = getAs(TableMetaMapper.class,
-        mapper -> mapper.selectTableIdentifier(tableIdentifier.getCatalog(),
+    ServerTableIdentifier serverTableIdentifier = getAs(
+        TableMetaMapper.class,
+        mapper -> mapper.selectTableIdentifier(
+            tableIdentifier.getCatalog(),
             tableIdentifier.getDatabase(),
             tableIdentifier.getTableName()));
     try {

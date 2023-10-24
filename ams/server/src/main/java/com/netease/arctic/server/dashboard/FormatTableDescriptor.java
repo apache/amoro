@@ -20,11 +20,12 @@ package com.netease.arctic.server.dashboard;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
-import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
+
 import java.util.List;
 
 /**
@@ -45,7 +46,7 @@ public interface FormatTableDescriptor {
   /**
    * Get the transaction information of the {@link AmoroTable}.
    */
-  List<TransactionsOfTable> getTransactions(AmoroTable<?> amoroTable);
+  List<AMSTransactionsOfTable> getTransactions(AmoroTable<?> amoroTable);
 
   /**
    * Get the transaction detail information of the {@link AmoroTable}.

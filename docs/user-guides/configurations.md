@@ -115,9 +115,3 @@ If using Iceberg Format，please refer to [Iceberg configurations](https://icebe
 | ---------------------------------- | ---------------- | ----------------------------------       |
 | base.hive.auto-sync-schema-change  | true             | Whether synchronize schema changes of Hive Table from HMS             |
 | base.hive.auto-sync-data-write     | false            | Whether synchronize data changes of Hive Table from HMS, this should be true when writing to Hive    |
-
-### Dashboard configurations
-
-| Key                                | Default | Description                                                                                                                          |
-|------------------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------|
-| dashboard.mainfest.io.thread-count | 20      | The number of threads used for dashboard to read metadata. Currently only using for 'Files' and 'Transactions' page of paimon format |

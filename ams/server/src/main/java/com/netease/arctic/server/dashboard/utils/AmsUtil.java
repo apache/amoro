@@ -18,15 +18,11 @@
 
 package com.netease.arctic.server.dashboard.utils;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
-import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
-import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import com.netease.arctic.server.utils.Configurations;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
-import org.apache.iceberg.SnapshotSummary;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -60,28 +56,6 @@ public class AmsUtil {
     }
     return new TableIdentifier(tableIdentifier.getCatalog(), tableIdentifier.getDatabase(),
         tableIdentifier.getTableName());
-  }
-
-  public static AMSTransactionsOfTable toTransactionsOfTable(
-      TransactionsOfTable info) {
-    AMSTransactionsOfTable transactionsOfTable = new AMSTransactionsOfTable();
-    transactionsOfTable.setTransactionId(info.getTransactionId() + "");
-    transactionsOfTable.setFileCount(info.getFileCount());
-    transactionsOfTable.setFileSize(byteToXB(info.getFileSize()));
-    transactionsOfTable.setCommitTime(info.getCommitTime());
-    transactionsOfTable.setSnapshotId(info.getTransactionId() + "");
-    transactionsOfTable.setOperation(info.getOperation());
-    Map<String, String> summary = Maps.newHashMap(info.getSummary());
-    summary.computeIfPresent(SnapshotSummary.TOTAL_FILE_SIZE_PROP,
-        (k, v) -> byteToXB(Long.parseLong(info.getSummary().get(k))));
-    summary.computeIfPresent(SnapshotSummary.ADDED_FILE_SIZE_PROP,
-        (k, v) -> byteToXB(Long.parseLong(info.getSummary().get(k))));
-    summary.computeIfPresent(SnapshotSummary.REMOVED_FILE_SIZE_PROP,
-        (k, v) -> byteToXB(Long.parseLong(info.getSummary().get(k))));
-    transactionsOfTable.setSummary(summary);
-    transactionsOfTable.setFilesSummaryForChart(info.getFilesSummaryForChart());
-    transactionsOfTable.setRecordsSummaryForChart(info.getRecordsSummaryForChart());
-    return transactionsOfTable;
   }
 
   public static Long longOrNull(String value) {

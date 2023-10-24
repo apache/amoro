@@ -19,13 +19,14 @@
 package com.netease.arctic.server.dashboard.model;
 
 import com.google.common.base.Objects;
+import com.netease.arctic.server.dashboard.utils.AmsUtil;
 
 import java.util.Map;
 
 public class AMSTransactionsOfTable {
   private String transactionId;
   private int fileCount;
-  private String fileSize;
+  private long fileSize;
   private long commitTime;
   private String snapshotId;
   private String operation;
@@ -43,7 +44,7 @@ public class AMSTransactionsOfTable {
   public AMSTransactionsOfTable(
       String transactionId,
       int fileCount,
-      String fileSize,
+      long fileSize,
       long commitTime,
       String operation,
       Map<String, String> summary) {
@@ -73,10 +74,14 @@ public class AMSTransactionsOfTable {
   }
 
   public String getFileSize() {
+    return AmsUtil.byteToXB(fileSize);
+  }
+
+  public long getOriginalFileSize() {
     return fileSize;
   }
 
-  public void setFileSize(String fileSize) {
+  public void setFileSize(long fileSize) {
     this.fileSize = fileSize;
   }
 
