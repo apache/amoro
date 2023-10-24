@@ -492,9 +492,7 @@ public class CatalogController {
    * Check whether we could delete the catalog
    */
   public void catalogDeleteCheck(Context ctx) {
-    Preconditions.checkArgument(StringUtils.isNotEmpty(ctx.pathParam("catalogName")), "Catalog name is empty!");
-    int tblCount = tableService.listManagedTables(ctx.pathParam("catalogName")).size();
-    ctx.json(OkResponse.of(tblCount == 0));
+    ctx.json(OkResponse.of(true));
   }
 
   /**
@@ -503,13 +501,8 @@ public class CatalogController {
   public void deleteCatalog(Context ctx) {
     String catalogName = ctx.pathParam("catalogName");
     Preconditions.checkArgument(StringUtils.isNotEmpty(ctx.pathParam("catalogName")), "Catalog name is empty!");
-    List<String> dbs = tableService.listDatabases(catalogName);
-    if (dbs != null && dbs.isEmpty()) {
-      tableService.dropCatalog(catalogName);
-      ctx.json(OkResponse.of("OK"));
-    } else {
-      throw new RuntimeException("Some tables in catalog!");
-    }
+    tableService.dropCatalog(catalogName);
+    ctx.json(OkResponse.of("OK"));
   }
 
   /**
