@@ -27,10 +27,7 @@ public class DDLInfo {
   private Long commitTime;
 
   public static DDLInfo of(
-      TableIdentifier tableIdentifier,
-      String ddl,
-      DDLType ddlType,
-      Long commitTime) {
+      TableIdentifier tableIdentifier, String ddl, DDLType ddlType, Long commitTime) {
     DDLInfo ddlInfo = new DDLInfo();
     ddlInfo.setTableIdentifier(tableIdentifier);
     ddlInfo.setDdl(ddl);

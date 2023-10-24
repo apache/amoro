@@ -46,7 +46,8 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
 
   @Before
   public void startOptimizer() {
-    OptimizerConfig optimizerConfig = OptimizerTestHelpers.buildOptimizerConfig(TEST_AMS.getServerUrl());
+    OptimizerConfig optimizerConfig =
+        OptimizerTestHelpers.buildOptimizerConfig(TEST_AMS.getServerUrl());
     optimizerExecutor = new OptimizerExecutor(optimizerConfig, 0);
     new Thread(optimizerExecutor::start).start();
   }
@@ -66,7 +67,8 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
   @Test
   public void testExecuteTaskSuccess() throws InterruptedException, TException {
     TEST_AMS.getOptimizerHandler().authenticate(new OptimizerRegisterInfo());
-    String token = TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().keySet().iterator().next();
+    String token =
+        TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().keySet().iterator().next();
     TEST_AMS.getOptimizerHandler().offerTask(TestOptimizingInput.successInput(1).toTask(0, 0));
     Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getPendingTasks().size());
     optimizerExecutor.setToken(token);
@@ -74,7 +76,8 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
     Assert.assertEquals(0, TEST_AMS.getOptimizerHandler().getPendingTasks().size());
     Assert.assertTrue(TEST_AMS.getOptimizerHandler().getCompletedTasks().containsKey(token));
     Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token).size());
-    OptimizingTaskResult taskResult = TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token).get(0);
+    OptimizingTaskResult taskResult =
+        TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token).get(0);
     Assert.assertEquals(new OptimizingTaskId(0, 0), taskResult.getTaskId());
     Assert.assertNull(taskResult.getErrorMessage());
     TestOptimizingOutput output = SerializationUtil.simpleDeserialize(taskResult.getTaskOutput());
@@ -84,7 +87,8 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
   @Test
   public void testExecuteTaskFailed() throws InterruptedException, TException {
     TEST_AMS.getOptimizerHandler().authenticate(new OptimizerRegisterInfo());
-    String token = TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().keySet().iterator().next();
+    String token =
+        TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().keySet().iterator().next();
     TEST_AMS.getOptimizerHandler().offerTask(TestOptimizingInput.failedInput(1).toTask(0, 0));
     Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getPendingTasks().size());
     optimizerExecutor.setToken(token);
@@ -92,7 +96,8 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
     Assert.assertEquals(0, TEST_AMS.getOptimizerHandler().getPendingTasks().size());
     Assert.assertTrue(TEST_AMS.getOptimizerHandler().getCompletedTasks().containsKey(token));
     Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token).size());
-    OptimizingTaskResult taskResult = TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token).get(0);
+    OptimizingTaskResult taskResult =
+        TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token).get(0);
     Assert.assertEquals(new OptimizingTaskId(0, 0), taskResult.getTaskId());
     Assert.assertNull(taskResult.getTaskOutput());
     Assert.assertTrue(taskResult.getErrorMessage().contains(FAILED_TASK_MESSAGE));
@@ -123,19 +128,19 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
       OptimizingTask optimizingTask = new OptimizingTask(new OptimizingTaskId(processId, taskId));
       optimizingTask.setTaskInput(SerializationUtil.simpleSerialize(this));
       Map<String, String> inputProperties = Maps.newHashMap();
-      inputProperties.put(OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL,
+      inputProperties.put(
+          OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL,
           TestOptimizingExecutorFactory.class.getName());
       optimizingTask.setProperties(inputProperties);
       return optimizingTask;
     }
   }
 
-  public static class TestOptimizingExecutorFactory implements OptimizingExecutorFactory<TestOptimizingInput> {
+  public static class TestOptimizingExecutorFactory
+      implements OptimizingExecutorFactory<TestOptimizingInput> {
 
     @Override
-    public void initialize(Map<String, String> properties) {
-
-    }
+    public void initialize(Map<String, String> properties) {}
 
     @Override
     public OptimizingExecutor createExecutor(TestOptimizingInput input) {
@@ -158,7 +163,6 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
       } else {
         throw new IllegalStateException(FAILED_TASK_MESSAGE);
       }
-
     }
   }
 

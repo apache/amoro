@@ -18,17 +18,17 @@
 
 package com.netease.arctic.server.utils;
 
-import com.netease.arctic.server.ArcticManagementConf;
-
 import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.netease.arctic.server.ArcticManagementConf;
 
 /**
  * A {@code ConfigOption} describes a configuration parameter. It encapsulates the configuration
  * key, deprecated older versions of the key, and an optional default value for the configuration
  * parameter.
  *
- * <p>{@code ConfigOptions} are built via the {@link ArcticManagementConf} class. Once created, a config
- * option is immutable.
+ * <p>{@code ConfigOptions} are built via the {@link ArcticManagementConf} class. Once created, a
+ * config option is immutable.
  *
  * @param <T> The type of value associated with the configuration option.
  */
@@ -37,19 +37,13 @@ public class ConfigOption<T> {
   // ------------------------------------------------------------------------
   static final String EMPTY_DESCRIPTION = "";
 
-  /**
-   * The current key for that config option.
-   */
+  /** The current key for that config option. */
   private final String key;
 
-  /**
-   * The default value for this option.
-   */
+  /** The default value for this option. */
   private final T defaultValue;
 
-  /**
-   * The description for this option.
-   */
+  /** The description for this option. */
   private final String description;
 
   /**
@@ -70,19 +64,14 @@ public class ConfigOption<T> {
   /**
    * Creates a new config option with fallback keys.
    *
-   * @param key          The current key for that config option
-   * @param clazz        describes type of the ConfigOption, see description of the clazz field
-   * @param description  Description for that option
+   * @param key The current key for that config option
+   * @param clazz describes type of the ConfigOption, see description of the clazz field
+   * @param description Description for that option
    * @param defaultValue The default value for this option
-   * @param isList       tells if the ConfigOption describes a list option, see description of the clazz
-   *                     field
+   * @param isList tells if the ConfigOption describes a list option, see description of the clazz
+   *     field
    */
-  ConfigOption(
-      String key,
-      Class<?> clazz,
-      String description,
-      T defaultValue,
-      boolean isList) {
+  ConfigOption(String key, Class<?> clazz, String description, T defaultValue, boolean isList) {
     this.key = checkNotNull(key);
     this.description = description;
     this.defaultValue = defaultValue;
@@ -157,10 +146,10 @@ public class ConfigOption<T> {
       return true;
     } else if (o != null && o.getClass() == ConfigOption.class) {
       ConfigOption<?> that = (ConfigOption<?>) o;
-      return this.key.equals(that.key) &&
-          (this.defaultValue == null ?
-              that.defaultValue == null :
-              (that.defaultValue != null && this.defaultValue.equals(that.defaultValue)));
+      return this.key.equals(that.key)
+          && (this.defaultValue == null
+              ? that.defaultValue == null
+              : (that.defaultValue != null && this.defaultValue.equals(that.defaultValue)));
     } else {
       return false;
     }
@@ -168,14 +157,11 @@ public class ConfigOption<T> {
 
   @Override
   public int hashCode() {
-    return 31 * key.hashCode() +
-        (defaultValue != null ? defaultValue.hashCode() : 0);
+    return 31 * key.hashCode() + (defaultValue != null ? defaultValue.hashCode() : 0);
   }
 
   @Override
   public String toString() {
-    return String.format(
-        "Key: '%s' , default: %s",
-        key, defaultValue);
+    return String.format("Key: '%s' , default: %s", key, defaultValue);
   }
 }

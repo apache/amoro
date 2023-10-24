@@ -55,8 +55,11 @@ public class BlockerExpiringExecutor extends BaseTableExecutor {
   private static class Persistency extends PersistentBase {
 
     public void doExpiring(TableRuntime tableRuntime) {
-      doAs(TableBlockerMapper.class,
-          mapper -> mapper.deleteExpiredBlockers(tableRuntime.getTableIdentifier(), System.currentTimeMillis()));
+      doAs(
+          TableBlockerMapper.class,
+          mapper ->
+              mapper.deleteExpiredBlockers(
+                  tableRuntime.getTableIdentifier(), System.currentTimeMillis()));
     }
   }
 }

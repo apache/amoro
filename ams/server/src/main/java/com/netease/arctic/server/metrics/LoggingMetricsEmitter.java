@@ -34,12 +34,12 @@ public class LoggingMetricsEmitter implements MetricsEmitter {
 
   @Override
   public void open(Map<String, String> properties) {
-    //do nothing
+    // do nothing
   }
 
   @Override
   public void close() {
-    //do nothing
+    // do nothing
   }
 
   @Override
@@ -49,7 +49,11 @@ public class LoggingMetricsEmitter implements MetricsEmitter {
 
   @Override
   public void emit(MetricsContent<?> metrics) {
-    LOG.info("Received metrics named {} type {} data: {}", metrics.name(), metrics.type().name(), metrics.data());
+    LOG.info(
+        "Received metrics named {} type {} data: {}",
+        metrics.name(),
+        metrics.type().name(),
+        metrics.data());
   }
 
   @Override

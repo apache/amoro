@@ -18,8 +18,5 @@
 
 package com.netease.arctic.server.exception;
 
-/**
- * SignatureCheckException
- */
-public class SignatureCheckException extends ArcticRuntimeException {
-}
+/** SignatureCheckException */
+public class SignatureCheckException extends ArcticRuntimeException {}

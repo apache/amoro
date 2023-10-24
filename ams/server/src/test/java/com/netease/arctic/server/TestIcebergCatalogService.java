@@ -100,11 +100,11 @@ public class TestIcebergCatalogService extends InternalCatalogServiceTestBase {
   @Nested
   public class TableTests {
     RESTCatalog nsCatalog;
-    List<Record> newRecords = Lists.newArrayList(
-        MixedDataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
-        MixedDataTestHelpers.createRecord(8, "888", 0, "2022-01-02T12:00:00"),
-        MixedDataTestHelpers.createRecord(9, "999", 0, "2022-01-03T12:00:00")
-    );
+    List<Record> newRecords =
+        Lists.newArrayList(
+            MixedDataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
+            MixedDataTestHelpers.createRecord(8, "888", 0, "2022-01-02T12:00:00"),
+            MixedDataTestHelpers.createRecord(9, "999", 0, "2022-01-03T12:00:00"));
 
     @BeforeEach
     public void setup() {
@@ -152,7 +152,8 @@ public class TestIcebergCatalogService extends InternalCatalogServiceTestBase {
       appendFiles.commit();
 
       tbl = nsCatalog.loadTable(identifier);
-      List<FileScanTask> tasks = Streams.stream(tbl.newScan().planFiles()).collect(Collectors.toList());
+      List<FileScanTask> tasks =
+          Streams.stream(tbl.newScan().planFiles()).collect(Collectors.toList());
       Assertions.assertEquals(files.length, tasks.size());
     }
 
@@ -173,7 +174,8 @@ public class TestIcebergCatalogService extends InternalCatalogServiceTestBase {
 
       Table loadedTable = nsCatalog.loadTable(identifier);
       Assertions.assertNull(loadedTable.currentSnapshot());
-      List<FileScanTask> tasks = Streams.stream(tbl.newScan().planFiles()).collect(Collectors.toList());
+      List<FileScanTask> tasks =
+          Streams.stream(tbl.newScan().planFiles()).collect(Collectors.toList());
       Assertions.assertEquals(0, tasks.size());
 
       tx.commitTransaction();
@@ -194,21 +196,23 @@ public class TestIcebergCatalogService extends InternalCatalogServiceTestBase {
       appendFiles.commit();
 
       ArcticCatalog catalog = ams.catalog(AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
-      ArcticTable arcticTable = catalog.loadTable(com.netease.arctic.table.TableIdentifier.of(
-          AmsEnvironment.INTERNAL_ICEBERG_CATALOG, database, table));
+      ArcticTable arcticTable =
+          catalog.loadTable(
+              com.netease.arctic.table.TableIdentifier.of(
+                  AmsEnvironment.INTERNAL_ICEBERG_CATALOG, database, table));
 
       Assertions.assertEquals(TableFormat.ICEBERG, arcticTable.format());
-      GenericUnkeyedDataReader reader = new GenericUnkeyedDataReader(
-          arcticTable.io(),
-          arcticTable.schema(),
-          arcticTable.schema(),
-          null,
-          false,
-          IdentityPartitionConverters::convertConstant,
-          false
-      );
-      List<Record> records = MixedDataTestHelpers.readBaseStore(
-          arcticTable, reader, Expressions.alwaysTrue());
+      GenericUnkeyedDataReader reader =
+          new GenericUnkeyedDataReader(
+              arcticTable.io(),
+              arcticTable.schema(),
+              arcticTable.schema(),
+              null,
+              false,
+              IdentityPartitionConverters::convertConstant,
+              false);
+      List<Record> records =
+          MixedDataTestHelpers.readBaseStore(arcticTable, reader, Expressions.alwaysTrue());
       Assertions.assertEquals(newRecords.size(), records.size());
     }
   }
@@ -220,9 +224,11 @@ public class TestIcebergCatalogService extends InternalCatalogServiceTestBase {
     CatalogMeta catalogMeta = serverCatalog.getMetadata();
     TableMetaStore store = com.netease.arctic.utils.CatalogUtil.buildMetaStore(catalogMeta);
 
-    return (RESTCatalog) CatalogUtil.loadCatalog(
-        "org.apache.iceberg.rest.RESTCatalog", "test",
-        clientProperties, store.getConfiguration()
-    );
+    return (RESTCatalog)
+        CatalogUtil.loadCatalog(
+            "org.apache.iceberg.rest.RESTCatalog",
+            "test",
+            clientProperties,
+            store.getConfiguration());
   }
 }

@@ -14,7 +14,6 @@ public class OptimizingCommitException extends Exception {
     this.retryable = false;
   }
 
-
   public boolean isRetryable() {
     return retryable;
   }

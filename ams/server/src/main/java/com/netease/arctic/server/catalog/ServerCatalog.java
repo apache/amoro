@@ -20,7 +20,6 @@ public abstract class ServerCatalog extends PersistentBase {
     return metadata.getCatalogName();
   }
 
-
   public CatalogMeta getMetadata() {
     return metadata;
   }

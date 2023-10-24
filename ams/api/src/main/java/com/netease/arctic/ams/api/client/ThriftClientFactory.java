@@ -24,8 +24,7 @@ import org.apache.thrift.transport.TTransport;
 public interface ThriftClientFactory {
 
   /**
-   * return a new client using transport<br/>
-   *
+   * return a new client using transport<br>
    * <code>
    * <pre>
    *     public TServiceClient makeClient(TTransport transport) {

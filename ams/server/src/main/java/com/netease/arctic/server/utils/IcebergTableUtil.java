@@ -88,7 +88,8 @@ public class IcebergTableUtil {
           TablePropertyUtil.getPartitionOptimizedSequence(arcticTable.asKeyedTable());
       StructLikeMap<Long> legacyPartitionMaxTransactionId =
           TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
-      return new KeyedTableSnapshot(tableRuntime.getCurrentSnapshotId(),
+      return new KeyedTableSnapshot(
+          tableRuntime.getCurrentSnapshotId(),
           tableRuntime.getCurrentChangeSnapshotId(),
           partitionOptimizedSequence,
           legacyPartitionMaxTransactionId);
@@ -105,9 +106,12 @@ public class IcebergTableUtil {
   public static Set<String> getAllContentFilePath(Table internalTable) {
     Set<String> validFilesPath = new HashSet<>();
 
-    TableEntriesScan entriesScan = TableEntriesScan.builder(internalTable)
-        .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES, FileContent.EQUALITY_DELETES)
-        .allEntries().build();
+    TableEntriesScan entriesScan =
+        TableEntriesScan.builder(internalTable)
+            .includeFileContent(
+                FileContent.DATA, FileContent.POSITION_DELETES, FileContent.EQUALITY_DELETES)
+            .allEntries()
+            .build();
     try (CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
       for (IcebergFileEntry entry : entries) {
         validFilesPath.add(TableFileUtil.getUriPath(entry.getFile().path().toString()));
@@ -137,10 +141,11 @@ public class IcebergTableUtil {
     }
 
     Set<DeleteFile> danglingDeleteFiles = new HashSet<>();
-    TableEntriesScan entriesScan = TableEntriesScan.builder(internalTable)
-        .useSnapshot(internalTable.currentSnapshot().snapshotId())
-        .includeFileContent(FileContent.EQUALITY_DELETES, FileContent.POSITION_DELETES)
-        .build();
+    TableEntriesScan entriesScan =
+        TableEntriesScan.builder(internalTable)
+            .useSnapshot(internalTable.currentSnapshot().snapshotId())
+            .includeFileContent(FileContent.EQUALITY_DELETES, FileContent.POSITION_DELETES)
+            .build();
 
     for (IcebergFileEntry entry : entriesScan.entries()) {
       ContentFile<?> file = entry.getFile();

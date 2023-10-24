@@ -96,7 +96,8 @@ public class AmsEnvironment {
   public AmsEnvironment(String rootPath) throws Exception {
     this.rootPath = rootPath;
     LOG.info("ams environment root path: " + rootPath);
-    String path = Objects.requireNonNull(this.getClass().getClassLoader().getResource("")).getPath();
+    String path =
+        Objects.requireNonNull(this.getClass().getClassLoader().getResource("")).getPath();
     FileUtils.writeStringToFile(new File(rootPath + "/conf/config.yaml"), getAmsConfig());
     System.setProperty(Environments.AMORO_HOME, rootPath);
     System.setProperty("derby.init.sql.dir", path + "../classes/sql/derby/");
@@ -194,11 +195,17 @@ public class AmsEnvironment {
     Map<String, String> properties = Maps.newHashMap();
     createDirIfNotExist(warehouseDir);
     properties.put(CatalogMetaProperties.KEY_WAREHOUSE, warehouseDir);
-    CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(INTERNAL_ICEBERG_CATALOG,
-        CatalogMetaProperties.CATALOG_TYPE_AMS, properties, TableFormat.ICEBERG);
+    CatalogMeta catalogMeta =
+        CatalogTestHelpers.buildCatalogMeta(
+            INTERNAL_ICEBERG_CATALOG,
+            CatalogMetaProperties.CATALOG_TYPE_AMS,
+            properties,
+            TableFormat.ICEBERG);
 
     tableService.createCatalog(catalogMeta);
-    catalogs.put(INTERNAL_ICEBERG_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" + INTERNAL_ICEBERG_CATALOG));
+    catalogs.put(
+        INTERNAL_ICEBERG_CATALOG,
+        CatalogLoader.load(getTableServiceUrl() + "/" + INTERNAL_ICEBERG_CATALOG));
   }
 
   private void createExternalIcebergCatalog() {
@@ -206,8 +213,12 @@ public class AmsEnvironment {
     Map<String, String> properties = Maps.newHashMap();
     createDirIfNotExist(warehouseDir);
     properties.put(CatalogMetaProperties.KEY_WAREHOUSE, warehouseDir);
-    CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(ICEBERG_CATALOG,
-        CatalogMetaProperties.CATALOG_TYPE_HADOOP, properties, TableFormat.ICEBERG);
+    CatalogMeta catalogMeta =
+        CatalogTestHelpers.buildCatalogMeta(
+            ICEBERG_CATALOG,
+            CatalogMetaProperties.CATALOG_TYPE_HADOOP,
+            properties,
+            TableFormat.ICEBERG);
     tableService.createCatalog(catalogMeta);
     catalogs.put(ICEBERG_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" + ICEBERG_CATALOG));
   }
@@ -227,10 +238,12 @@ public class AmsEnvironment {
 
   private void createMixHiveCatalog() {
     Map<String, String> properties = Maps.newHashMap();
-    CatalogMeta catalogMeta = CatalogTestHelpers.buildHiveCatalogMeta(MIXED_HIVE_CATALOG,
-        properties, testHMS.hiveConf(), TableFormat.MIXED_HIVE);
+    CatalogMeta catalogMeta =
+        CatalogTestHelpers.buildHiveCatalogMeta(
+            MIXED_HIVE_CATALOG, properties, testHMS.hiveConf(), TableFormat.MIXED_HIVE);
     tableService.createCatalog(catalogMeta);
-    catalogs.put(MIXED_HIVE_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" + MIXED_HIVE_CATALOG));
+    catalogs.put(
+        MIXED_HIVE_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" + MIXED_HIVE_CATALOG));
   }
 
   private void createDirIfNotExist(String warehouseDir) {
@@ -251,24 +264,30 @@ public class AmsEnvironment {
         new ResourceGroup.Builder("default", "localContainer")
             .addProperty("memory", "1024")
             .build());
-    new Thread(() -> {
-      String[] startArgs = {"-a", getOptimizingServiceUrl(), "-p", "1", "-g", "default"};
-      try {
-        StandaloneOptimizer.main(startArgs);
-      } catch (CmdLineException e) {
-        throw new RuntimeException(e);
-      }
-    }).start();
+    new Thread(
+            () -> {
+              String[] startArgs = {"-a", getOptimizingServiceUrl(), "-p", "1", "-g", "default"};
+              try {
+                StandaloneOptimizer.main(startArgs);
+              } catch (CmdLineException e) {
+                throw new RuntimeException(e);
+              }
+            })
+        .start();
     optimizingStarted = true;
   }
 
   public void stopOptimizer() {
     DynFields.UnboundField<DefaultOptimizingService> field =
         DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "optimizingService").build();
-    field.bind(arcticService).get().listOptimizers()
-        .forEach(resource -> {
-          ResourceContainers.get(resource.getContainerName()).releaseOptimizer(resource);
-        });
+    field
+        .bind(arcticService)
+        .get()
+        .listOptimizers()
+        .forEach(
+            resource -> {
+              ResourceContainers.get(resource.getContainerName()).releaseOptimizer(resource);
+            });
   }
 
   public String getTableServiceUrl() {
@@ -284,48 +303,61 @@ public class AmsEnvironment {
   }
 
   private void startAms() throws Exception {
-    Thread amsRunner = new Thread(() -> {
-      int retry = 10;
-      try {
-        while (true) {
-          try {
-            LOG.info("start ams");
-            genThriftBindPort();
-            DynFields.UnboundField<Configurations> field =
-                DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "serviceConfig").build();
-            serviceConfig = field.bind(arcticService).get();
-            serviceConfig.set(ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT, tableServiceBindPort);
-            serviceConfig.set(ArcticManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT, optimizingServiceBindPort);
-            serviceConfig.set(ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL, 1000L);
-            arcticService.startService();
-            break;
-          } catch (TTransportException e) {
-            if (e.getCause() instanceof BindException) {
-              LOG.error("start ams failed", e);
-              if (retry-- < 0) {
-                throw e;
-              } else {
-                Thread.sleep(1000);
+    Thread amsRunner =
+        new Thread(
+            () -> {
+              int retry = 10;
+              try {
+                while (true) {
+                  try {
+                    LOG.info("start ams");
+                    genThriftBindPort();
+                    DynFields.UnboundField<Configurations> field =
+                        DynFields.builder()
+                            .hiddenImpl(ArcticServiceContainer.class, "serviceConfig")
+                            .build();
+                    serviceConfig = field.bind(arcticService).get();
+                    serviceConfig.set(
+                        ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT, tableServiceBindPort);
+                    serviceConfig.set(
+                        ArcticManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT,
+                        optimizingServiceBindPort);
+                    serviceConfig.set(
+                        ArcticManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL, 1000L);
+                    arcticService.startService();
+                    break;
+                  } catch (TTransportException e) {
+                    if (e.getCause() instanceof BindException) {
+                      LOG.error("start ams failed", e);
+                      if (retry-- < 0) {
+                        throw e;
+                      } else {
+                        Thread.sleep(1000);
+                      }
+                    } else {
+                      throw e;
+                    }
+                  } catch (Throwable e) {
+                    throw e;
+                  }
+                }
+              } catch (Throwable t) {
+                LOG.error("start ams failed", t);
+              } finally {
+                amsExit.set(true);
               }
-            } else {
-              throw e;
-            }
-          } catch (Throwable e) {
-            throw e;
-          }
-        }
-      } catch (Throwable t) {
-        LOG.error("start ams failed", t);
-      } finally {
-        amsExit.set(true);
-      }
-    }, "ams-runner");
+            },
+            "ams-runner");
     amsRunner.start();
 
     DynFields.UnboundField<TServer> tableManagementServerField =
-        DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "tableManagementServer").build();
+        DynFields.builder()
+            .hiddenImpl(ArcticServiceContainer.class, "tableManagementServer")
+            .build();
     DynFields.UnboundField<TServer> optimizingServiceServerField =
-        DynFields.builder().hiddenImpl(ArcticServiceContainer.class, "optimizingServiceServer").build();
+        DynFields.builder()
+            .hiddenImpl(ArcticServiceContainer.class, "optimizingServiceServer")
+            .build();
     while (true) {
       if (amsExit.get()) {
         LOG.error("ams exit");
@@ -333,8 +365,10 @@ public class AmsEnvironment {
       }
       TServer tableManagementServer = tableManagementServerField.bind(arcticService).get();
       TServer optimizingServiceServer = optimizingServiceServerField.bind(arcticService).get();
-      if (tableManagementServer != null && tableManagementServer.isServing() && optimizingServiceServer != null &&
-          optimizingServiceServer.isServing()) {
+      if (tableManagementServer != null
+          && tableManagementServer.isServing()
+          && optimizingServiceServer != null
+          && optimizingServiceServer.isServing()) {
         LOG.info("ams start");
         break;
       }
@@ -356,56 +390,60 @@ public class AmsEnvironment {
   }
 
   private String getAmsConfig() {
-    return "ams:\n" +
-        "  admin-username: \"admin\"\n" +
-        "  admin-passowrd: \"admin\"\n" +
-        "  server-bind-host: \"0.0.0.0\"\n" +
-        "  server-expose-host: \"127.0.0.1\"\n" +
-        "  refresh-external-catalog-interval: 180000 # 3min\n" +
-        "  refresh-table-thread-count: 10\n" +
-        "  refresh-table-interval: 60000 #1min\n" +
-        "  expire-table-thread-count: 10\n" +
-        "  clean-orphan-file-thread-count: 10\n" +
-        "  sync-hive-tables-thread-count: 10\n" +
-        "\n" +
-        "  thrift-server:\n" +
-        "    max-message-size: 104857600 # 100MB\n" +
-        "    selector-thread-count: 2\n" +
-        "    selector-queue-size: 4\n" +
-        "    table-service:\n" +
-        "      bind-port: 1260\n" +
-        "      worker-thread-count: 20\n" +
-        "    optimizing-service:\n" +
-        "      bind-port: 1261\n" +
-        "\n" +
-        "  http-server:\n" +
-        "    bind-port: 1630\n" +
-        "\n" +
-        "  self-optimizing:\n" +
-        "    commit-thread-count: 10\n" +
-        "\n" +
-        "  database:\n" +
-        "    type: \"derby\"\n" +
-        "    jdbc-driver-class: \"org.apache.derby.jdbc.EmbeddedDriver\"\n" +
-        "    url: \"jdbc:derby:" + rootPath.replace("\\", "\\\\") + "/derby;create=true\"\n" +
-        "\n" +
-        "  terminal:\n" +
-        "    backend: local\n" +
-        "    local.spark.sql.session.timeZone: UTC\n" +
-        "    local.spark.sql.iceberg.handle-timestamp-without-timezone: false\n" +
-        "\n" +
-        "containers:\n" +
-        "  - name: localContainer\n" +
-        "    container-impl: com.netease.arctic.server.manager.LocalOptimizerContainer\n" +
-        "    properties:\n" +
-        "      memory: \"1024\"\n" +
-        "      hadoop_home: /opt/hadoop\n" +
-        "      # java_home: /opt/java\n" +
-        "\n" +
-        "optimizer_groups:\n" +
-        "  - name: " + OPTIMIZE_GROUP + "\n" +
-        "    container: localContainer\n" +
-        "    properties:\n" +
-        "      memory: 1024 # MB\n";
+    return "ams:\n"
+        + "  admin-username: \"admin\"\n"
+        + "  admin-passowrd: \"admin\"\n"
+        + "  server-bind-host: \"0.0.0.0\"\n"
+        + "  server-expose-host: \"127.0.0.1\"\n"
+        + "  refresh-external-catalog-interval: 180000 # 3min\n"
+        + "  refresh-table-thread-count: 10\n"
+        + "  refresh-table-interval: 60000 #1min\n"
+        + "  expire-table-thread-count: 10\n"
+        + "  clean-orphan-file-thread-count: 10\n"
+        + "  sync-hive-tables-thread-count: 10\n"
+        + "\n"
+        + "  thrift-server:\n"
+        + "    max-message-size: 104857600 # 100MB\n"
+        + "    selector-thread-count: 2\n"
+        + "    selector-queue-size: 4\n"
+        + "    table-service:\n"
+        + "      bind-port: 1260\n"
+        + "      worker-thread-count: 20\n"
+        + "    optimizing-service:\n"
+        + "      bind-port: 1261\n"
+        + "\n"
+        + "  http-server:\n"
+        + "    bind-port: 1630\n"
+        + "\n"
+        + "  self-optimizing:\n"
+        + "    commit-thread-count: 10\n"
+        + "\n"
+        + "  database:\n"
+        + "    type: \"derby\"\n"
+        + "    jdbc-driver-class: \"org.apache.derby.jdbc.EmbeddedDriver\"\n"
+        + "    url: \"jdbc:derby:"
+        + rootPath.replace("\\", "\\\\")
+        + "/derby;create=true\"\n"
+        + "\n"
+        + "  terminal:\n"
+        + "    backend: local\n"
+        + "    local.spark.sql.session.timeZone: UTC\n"
+        + "    local.spark.sql.iceberg.handle-timestamp-without-timezone: false\n"
+        + "\n"
+        + "containers:\n"
+        + "  - name: localContainer\n"
+        + "    container-impl: com.netease.arctic.server.manager.LocalOptimizerContainer\n"
+        + "    properties:\n"
+        + "      memory: \"1024\"\n"
+        + "      hadoop_home: /opt/hadoop\n"
+        + "      # java_home: /opt/java\n"
+        + "\n"
+        + "optimizer_groups:\n"
+        + "  - name: "
+        + OPTIMIZE_GROUP
+        + "\n"
+        + "    container: localContainer\n"
+        + "    properties:\n"
+        + "      memory: 1024 # MB\n";
   }
 }

@@ -36,8 +36,7 @@ public class TableBlocker {
   private long expirationTime;
   private Map<String, String> properties;
 
-  public TableBlocker() {
-  }
+  public TableBlocker() {}
 
   public ServerTableIdentifier getTableIdentifier() {
     return tableIdentifier;

@@ -36,7 +36,6 @@ public class InternalTableStoreOperations extends PersistentBase implements Tabl
     this.changeStore = changeStore;
   }
 
-
   @Override
   public TableMetadata current() {
     if (this.current == null) {
@@ -48,7 +47,9 @@ public class InternalTableStoreOperations extends PersistentBase implements Tabl
   @Override
   public TableMetadata refresh() {
     if (this.tableMetadata == null) {
-      this.tableMetadata = getAs(TableMetaMapper.class, mapper -> mapper.selectTableMetaById(this.identifier.getId()));
+      this.tableMetadata =
+          getAs(
+              TableMetaMapper.class, mapper -> mapper.selectTableMetaById(this.identifier.getId()));
     }
     if (this.tableMetadata == null) {
       return null;
@@ -59,11 +60,11 @@ public class InternalTableStoreOperations extends PersistentBase implements Tabl
 
   @Override
   public void commit(TableMetadata base, TableMetadata metadata) {
-    Preconditions.checkArgument(base != null,
-        "Invalid table metadata for create transaction, base is null");
+    Preconditions.checkArgument(
+        base != null, "Invalid table metadata for create transaction, base is null");
 
-    Preconditions.checkArgument(metadata != null,
-        "Invalid table metadata for create transaction, new metadata is null");
+    Preconditions.checkArgument(
+        metadata != null, "Invalid table metadata for create transaction, new metadata is null");
     if (base != current()) {
       throw new CommitFailedException("Cannot commit: stale table metadata");
     }
@@ -93,7 +94,6 @@ public class InternalTableStoreOperations extends PersistentBase implements Tabl
     return InternalTableUtil.genMetadataFileLocation(current(), fileName);
   }
 
-
   @Override
   public LocationProvider locationProvider() {
     return LocationProviders.locationsFor(current().location(), current().properties());
@@ -107,22 +107,26 @@ public class InternalTableStoreOperations extends PersistentBase implements Tabl
   private com.netease.arctic.server.table.TableMetadata doCommit() {
     ServerTableIdentifier tableIdentifier = tableMetadata.getTableIdentifier();
     AtomicInteger effectRows = new AtomicInteger();
-    AtomicReference<com.netease.arctic.server.table.TableMetadata> metadataRef = new AtomicReference<>();
+    AtomicReference<com.netease.arctic.server.table.TableMetadata> metadataRef =
+        new AtomicReference<>();
     doAsTransaction(
         () -> {
-          int effects = getAs(TableMetaMapper.class,
-              mapper -> mapper.commitTableChange(tableIdentifier.getId(), tableMetadata));
+          int effects =
+              getAs(
+                  TableMetaMapper.class,
+                  mapper -> mapper.commitTableChange(tableIdentifier.getId(), tableMetadata));
           effectRows.set(effects);
         },
         () -> {
-          com.netease.arctic.server.table.TableMetadata m = getAs(TableMetaMapper.class,
-              mapper -> mapper.selectTableMetaById(tableIdentifier.getId()));
+          com.netease.arctic.server.table.TableMetadata m =
+              getAs(
+                  TableMetaMapper.class,
+                  mapper -> mapper.selectTableMetaById(tableIdentifier.getId()));
           metadataRef.set(m);
-        }
-    );
+        });
     if (effectRows.get() == 0) {
-      throw new CommitFailedException("commit failed for version: " +
-          tableMetadata.getMetaVersion() + " has been committed");
+      throw new CommitFailedException(
+          "commit failed for version: " + tableMetadata.getMetaVersion() + " has been committed");
     }
     return metadataRef.get();
   }
