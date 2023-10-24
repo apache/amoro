@@ -40,7 +40,6 @@ import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TableMeta;
 import com.netease.arctic.server.dashboard.model.TableOperation;
-import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.UpgradeHiveMeta;
 import com.netease.arctic.server.dashboard.model.UpgradeRunningInfo;
 import com.netease.arctic.server.dashboard.model.UpgradeStatus;
@@ -275,11 +274,11 @@ public class TableController {
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
-    List<TransactionsOfTable> transactionsOfTables =
+    List<AMSTransactionsOfTable> transactionsOfTables =
         tableDescriptor.getTransactions(TableIdentifier.of(catalog, database, tableName).buildTableIdentifier());
     int offset = (page - 1) * pageSize;
     PageResult<AMSTransactionsOfTable> pageResult = PageResult.of(transactionsOfTables,
-        offset, pageSize, AmsUtil::toTransactionsOfTable);
+        offset, pageSize);
     ctx.json(OkResponse.of(pageResult));
   }
 

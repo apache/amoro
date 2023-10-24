@@ -19,17 +19,23 @@
 package com.netease.arctic.server.dashboard.model;
 
 import com.google.common.base.Objects;
+import com.netease.arctic.server.dashboard.utils.AmsUtil;
 
 import java.util.Map;
 
 public class AMSTransactionsOfTable {
   private String transactionId;
   private int fileCount;
-  private String fileSize;
+  private long fileSize;
   private long commitTime;
   private String snapshotId;
   private String operation;
   private Map<String, String> summary;
+
+  private Map<String, String> recordsSummaryForChart;
+
+  private Map<String, String> filesSummaryForChart;
+
 
 
   public AMSTransactionsOfTable() {
@@ -38,7 +44,7 @@ public class AMSTransactionsOfTable {
   public AMSTransactionsOfTable(
       String transactionId,
       int fileCount,
-      String fileSize,
+      long fileSize,
       long commitTime,
       String operation,
       Map<String, String> summary) {
@@ -68,10 +74,14 @@ public class AMSTransactionsOfTable {
   }
 
   public String getFileSize() {
+    return AmsUtil.byteToXB(fileSize);
+  }
+
+  public long getOriginalFileSize() {
     return fileSize;
   }
 
-  public void setFileSize(String fileSize) {
+  public void setFileSize(long fileSize) {
     this.fileSize = fileSize;
   }
 
@@ -105,6 +115,22 @@ public class AMSTransactionsOfTable {
 
   public void setSummary(Map<String, String> summary) {
     this.summary = summary;
+  }
+
+  public Map<String, String> getRecordsSummaryForChart() {
+    return recordsSummaryForChart;
+  }
+
+  public void setRecordsSummaryForChart(Map<String, String> recordsSummaryForChart) {
+    this.recordsSummaryForChart = recordsSummaryForChart;
+  }
+
+  public Map<String, String> getFilesSummaryForChart() {
+    return filesSummaryForChart;
+  }
+
+  public void setFilesSummaryForChart(Map<String, String> filesSummaryForChart) {
+    this.filesSummaryForChart = filesSummaryForChart;
   }
 
   @Override
