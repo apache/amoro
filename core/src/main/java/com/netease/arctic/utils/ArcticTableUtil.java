@@ -82,18 +82,24 @@ public class ArcticTableUtil {
     Snapshot snapshot = table.snapshot(snapshotId);
     Preconditions.checkArgument(snapshot != null, "Snapshot %s not found", snapshotId);
     List<StatisticsFile> statisticsFiles =
-        PuffinUtil.findLatestValidStatisticsFiles(
-            table, snapshot.snapshotId(), PuffinUtil.containsBlobOfType(type));
-    if (statisticsFiles != null && !statisticsFiles.isEmpty()) {
-      Preconditions.checkArgument(
-          statisticsFiles.size() == 1,
-          "There should be only one statistics file for blob type %s",
-          type);
-      return PuffinUtil.reader(table)
-          .read(
-              statisticsFiles.get(0),
-              type,
-              PuffinUtil.createPartitionDataSerializer(table.spec(), Long.class));
+        StatisticsFileUtil.findLatestValidStatisticsFiles(
+            table, snapshot.snapshotId(), StatisticsFileUtil.containsBlobOfType(type));
+    if (!statisticsFiles.isEmpty()) {
+      if (statisticsFiles.size() != 1) {
+        throw new IllegalStateException(
+            "There should be only one statistics file for blob type " + type);
+      }
+      List<StructLikeMap<Long>> result =
+          StatisticsFileUtil.reader(table)
+              .read(
+                  statisticsFiles.get(0),
+                  type,
+                  StatisticsFileUtil.createPartitionDataSerializer(table.spec(), Long.class));
+      if (result.size() != 1) {
+        throw new IllegalStateException(
+            "There should be only one partition data in statistics file for blob type " + type);
+      }
+      return result.get(0);
     } else {
       return null;
     }

@@ -36,7 +36,7 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.PuffinUtil;
+import com.netease.arctic.utils.StatisticsFileUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -125,9 +125,10 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     BaseTable baseTable = testKeyedTable.baseTable();
     baseTable.newAppend().commit();
     Snapshot snapshot = baseTable.currentSnapshot();
-    StatisticsFile statisticsFile = PuffinUtil.writer(baseTable, snapshot.snapshotId(), snapshot.sequenceNumber())
-        .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence,
-            PuffinUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
+    StatisticsFile statisticsFile =
+        StatisticsFileUtil.writer(baseTable, snapshot.snapshotId(), snapshot.sequenceNumber())
+            .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence,
+            StatisticsFileUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
         .complete();
     baseTable.updateStatistics().setStatistics(snapshot.snapshotId(), statisticsFile).commit();
   }
@@ -369,18 +370,18 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     // commit an empty snapshot and its statistic file
     baseTable.newAppend().commit();
     Snapshot s1 = baseTable.currentSnapshot();
-    StatisticsFile file1 = PuffinUtil.writer(baseTable, s1.snapshotId(), s1.sequenceNumber())
+    StatisticsFile file1 = StatisticsFileUtil.writer(baseTable, s1.snapshotId(), s1.sequenceNumber())
         .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, StructLikeMap.create(baseTable.spec().partitionType()), 
-            PuffinUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
+            StatisticsFileUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
         .complete();
     baseTable.updateStatistics().setStatistics(s1.snapshotId(), file1).commit();
 
     // commit an empty snapshot and its statistic file
     baseTable.newAppend().commit();
     Snapshot s2 = baseTable.currentSnapshot();
-    StatisticsFile file2 = PuffinUtil.writer(baseTable, s2.snapshotId(), s2.sequenceNumber())
+    StatisticsFile file2 = StatisticsFileUtil.writer(baseTable, s2.snapshotId(), s2.sequenceNumber())
         .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, StructLikeMap.create(baseTable.spec().partitionType()),
-            PuffinUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
+            StatisticsFileUtil.createPartitionDataSerializer(baseTable.spec(), Long.class))
         .complete();
     baseTable.updateStatistics().setStatistics(s2.snapshotId(), file2).commit();
     
@@ -390,7 +391,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     baseTable.newAppend().commit();
     Snapshot s3 = baseTable.currentSnapshot();
     // note: s2 ans s3 use the same statistics file
-    StatisticsFile file3 = PuffinUtil.copyToSnapshot(file2, s3.snapshotId());
+    StatisticsFile file3 = StatisticsFileUtil.copyToSnapshot(file2, s3.snapshotId());
     baseTable.updateStatistics().setStatistics(s3.snapshotId(), file3).commit();
 
     Assert.assertEquals(3, Iterables.size(baseTable.snapshots()));

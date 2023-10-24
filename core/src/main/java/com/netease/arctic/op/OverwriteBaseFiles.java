@@ -22,7 +22,7 @@ import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.PuffinUtil;
+import com.netease.arctic.utils.StatisticsFileUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.iceberg.DataFile;
@@ -281,12 +281,12 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     List<StatisticsFile> result = Lists.newArrayList();
     for (CreateSnapshotEvent newSnapshot : newSnapshots) {
       if (statisticsFile != null) {
-        result.add(PuffinUtil.copyToSnapshot(statisticsFile, newSnapshot.snapshotId()));
+        result.add(StatisticsFileUtil.copyToSnapshot(statisticsFile, newSnapshot.snapshotId()));
       } else {
-        PuffinUtil.PartitionDataSerializer dataSerializer =
-            PuffinUtil.createPartitionDataSerializer(keyedTable.spec(), Long.class);
+        StatisticsFileUtil.PartitionDataSerializer dataSerializer =
+            StatisticsFileUtil.createPartitionDataSerializer(keyedTable.spec(), Long.class);
         statisticsFile =
-            PuffinUtil.writer(
+            StatisticsFileUtil.writer(
                     keyedTable.baseTable(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
                 .add(
                     ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence, dataSerializer)

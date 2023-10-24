@@ -21,7 +21,7 @@ package com.netease.arctic.op;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.PuffinUtil;
+import com.netease.arctic.utils.StatisticsFileUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.ReplacePartitions;
@@ -81,12 +81,12 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation
     addFiles.forEach(f -> optimizedSequence.put(f.partition(), this.optimizedSequence));
 
     StatisticsFile statisticsFile =
-        PuffinUtil.writer(
+        StatisticsFileUtil.writer(
                 keyedTable.baseTable(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
             .add(
                 ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
                 optimizedSequence,
-                PuffinUtil.createPartitionDataSerializer(keyedTable.spec(), Long.class))
+                StatisticsFileUtil.createPartitionDataSerializer(keyedTable.spec(), Long.class))
             .complete();
     return Collections.singletonList(statisticsFile);
   }

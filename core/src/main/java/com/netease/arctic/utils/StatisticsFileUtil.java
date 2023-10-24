@@ -36,7 +36,10 @@ import org.apache.iceberg.puffin.Puffin;
 import org.apache.iceberg.puffin.PuffinReader;
 import org.apache.iceberg.puffin.PuffinWriter;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.io.IOException;
@@ -49,11 +52,8 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-/**
- * Util class for write and read from Iceberg Puffin files. Puffin are a kind of file format for
- * Iceberg statistics file {@link StatisticsFile}.
- */
-public class PuffinUtil {
+/** Util class for write and read Iceberg statistics file {@link StatisticsFile}. */
+public class StatisticsFileUtil {
 
   public static Writer writer(Table table, long snapshotId, long sequenceNumber) {
     return new Writer(table, snapshotId, sequenceNumber);
@@ -81,16 +81,19 @@ public class PuffinUtil {
       this.puffinWriter = Puffin.write(outputFile).build();
     }
 
-    public Writer addBlob(String type, ByteBuffer blobData) {
+    public Writer add(Blob blob) {
       checkNotClosed();
-      puffinWriter.add(
-          new Blob(type, Collections.emptyList(), snapshotId, sequenceNumber, blobData));
+      puffinWriter.add(blob);
+      return this;
+    }
+
+    public Writer add(String type, ByteBuffer blobData) {
+      add(new Blob(type, Collections.emptyList(), snapshotId, sequenceNumber, blobData));
       return this;
     }
 
     public <T> Writer add(String type, T data, DataSerializer<T> serializer) {
-      checkNotClosed();
-      return addBlob(type, serializer.serialize(data));
+      return add(type, serializer.serialize(data));
     }
 
     public StatisticsFile complete() {
@@ -134,27 +137,22 @@ public class PuffinUtil {
       this.table = table;
     }
 
-    public <T> T read(StatisticsFile statisticsFile, String type, DataSerializer<T> deserializer) {
-      ByteBuffer blobData = read(statisticsFile, type);
-      if (blobData == null) {
-        return null;
-      }
-      return deserializer.deserialize(blobData);
+    public <T> List<T> read(
+        StatisticsFile statisticsFile, String type, DataSerializer<T> deserializer) {
+      return read(statisticsFile, type).stream()
+          .map(deserializer::deserialize)
+          .collect(Collectors.toList());
     }
 
-    public ByteBuffer read(StatisticsFile statisticsFile, String type) {
+    public List<ByteBuffer> read(StatisticsFile statisticsFile, String type) {
       try (PuffinReader puffin =
           Puffin.read(table.io().newInputFile(statisticsFile.path())).build()) {
         FileMetadata fileMetadata = puffin.fileMetadata();
-        BlobMetadata blobMetadata =
+        List<BlobMetadata> blobs =
             fileMetadata.blobs().stream()
                 .filter(b -> type.equals(b.type()))
-                .findFirst()
-                .orElseThrow(
-                    () ->
-                        new IllegalStateException(
-                            "No blob of type " + type + " found in file " + statisticsFile.path()));
-        return puffin.readAll(Collections.singletonList(blobMetadata)).iterator().next().second();
+                .collect(Collectors.toList());
+        return Lists.newArrayList(Iterables.transform(puffin.readAll(blobs), Pair::second));
       } catch (IOException e) {
         throw new UncheckedIOException(e);
       }
@@ -178,11 +176,19 @@ public class PuffinUtil {
         statisticsFile.blobMetadata());
   }
 
+  /**
+   * Find the statistics file that satisfies the condition and belongs to the latest snapshot.
+   *
+   * @param table - Iceberg Table
+   * @param currentSnapshotId - find from this snapshot to its ancestors
+   * @param condition - the condition to filter the statistics file
+   * @return the statistics file, return null if not found
+   */
   public static List<StatisticsFile> findLatestValidStatisticsFiles(
-      Table table, long currentSnapshotId, Predicate<StatisticsFile> validator) {
+      Table table, long currentSnapshotId, Predicate<StatisticsFile> condition) {
     List<StatisticsFile> statisticsFiles = table.statisticsFiles();
     if (statisticsFiles.isEmpty()) {
-      return null;
+      return Collections.emptyList();
     }
     Map<Long, List<StatisticsFile>> statisticsFilesBySnapshotId =
         statisticsFiles.stream().collect(Collectors.groupingBy(StatisticsFile::snapshotId));
@@ -191,7 +197,7 @@ public class PuffinUtil {
       List<StatisticsFile> statisticsFileList = statisticsFilesBySnapshotId.get(snapshotId);
       if (statisticsFileList != null) {
         List<StatisticsFile> result =
-            statisticsFileList.stream().filter(validator).collect(Collectors.toList());
+            statisticsFileList.stream().filter(condition).collect(Collectors.toList());
         if (!result.isEmpty()) {
           return result;
         }
@@ -199,7 +205,7 @@ public class PuffinUtil {
       // seek parent snapshot
       Snapshot snapshot = table.snapshot(snapshotId);
       if (snapshot == null) {
-        return null;
+        return Collections.emptyList();
       } else {
         snapshotId = snapshot.parentId();
       }
@@ -216,6 +222,11 @@ public class PuffinUtil {
     return new PartitionDataSerializer<>(spec, valueClassType);
   }
 
+  /**
+   * A serializer to serialize and deserialize data between ByteBuffer and Type T.
+   *
+   * @param <T> - the class type of the data
+   */
   public interface DataSerializer<T> {
     ByteBuffer serialize(T data);
 
@@ -269,7 +280,7 @@ public class PuffinUtil {
         }
         return results;
       } catch (JsonProcessingException e) {
-        throw new UnsupportedOperationException("Failed to decode partition max txId ", e);
+        throw new UnsupportedOperationException("Failed to decode partition data ", e);
       }
     }
   }

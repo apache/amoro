@@ -30,6 +30,8 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Table;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Test;
@@ -39,7 +41,7 @@ import org.junit.runners.Parameterized;
 import java.util.List;
 
 @RunWith(Parameterized.class)
-public class TestPuffinUtil extends TableTestBase {
+public class TestStatisticsFileUtil extends TableTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
@@ -51,7 +53,8 @@ public class TestPuffinUtil extends TableTestBase {
     };
   }
 
-  public TestPuffinUtil(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+  public TestStatisticsFileUtil(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
@@ -67,51 +70,49 @@ public class TestPuffinUtil extends TableTestBase {
     StructLikeMap<Long> optimizedTime = buildPartitionOptimizedTime();
     StructLikeMap<Long> optimizedSequence = buildPartitionOptimizedSequence();
 
-    PuffinUtil.PartitionDataSerializer<Long> dataSerializer =
-        PuffinUtil.createPartitionDataSerializer(table.spec(), Long.class);
-    PuffinUtil.Writer writer =
-        PuffinUtil.writer(table, snapshot.snapshotId(), snapshot.sequenceNumber())
+    StatisticsFileUtil.PartitionDataSerializer<Long> dataSerializer =
+        StatisticsFileUtil.createPartitionDataSerializer(table.spec(), Long.class);
+    StatisticsFileUtil.Writer writer =
+        StatisticsFileUtil.writer(table, snapshot.snapshotId(), snapshot.sequenceNumber())
             .add(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, optimizedTime, dataSerializer)
             .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence, dataSerializer);
     StatisticsFile statisticsFile = writer.complete();
     table.updateStatistics().setStatistics(snapshot.snapshotId(), statisticsFile).commit();
 
-    PuffinUtil.Reader reader = PuffinUtil.reader(table);
+    StatisticsFileUtil.Reader reader = StatisticsFileUtil.reader(table);
 
     assertStructLikeEquals(
-        optimizedTime,
-        reader.read(
-            findValidStatisticFile(table, ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME),
-            ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME,
-            dataSerializer));
+        optimizedTime, readPartitionData(table, ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME));
     assertStructLikeEquals(
-        optimizedSequence,
-        reader.read(
-            findValidStatisticFile(table, ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE),
-            ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
-            dataSerializer));
+        optimizedSequence, readPartitionData(table, ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE));
 
     table.newAppend().commit();
 
     assertStructLikeEquals(
-        optimizedTime,
-        reader.read(
-            findValidStatisticFile(table, ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME),
-            ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME,
-            dataSerializer));
+        optimizedTime, readPartitionData(table, ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME));
     assertStructLikeEquals(
-        optimizedSequence,
-        reader.read(
-            findValidStatisticFile(table, ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE),
-            ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
-            dataSerializer));
+        optimizedSequence, readPartitionData(table, ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE));
   }
 
-  private StatisticsFile findValidStatisticFile(UnkeyedTable table, String type) {
+  private StatisticsFile findValidStatisticFile(Table table, String type) {
     List<StatisticsFile> latestValidStatisticsFiles =
-        PuffinUtil.findLatestValidStatisticsFiles(
-            table, table.currentSnapshot().snapshotId(), PuffinUtil.containsBlobOfType(type));
+        StatisticsFileUtil.findLatestValidStatisticsFiles(
+            table,
+            table.currentSnapshot().snapshotId(),
+            StatisticsFileUtil.containsBlobOfType(type));
+    Preconditions.checkArgument(
+        latestValidStatisticsFiles.size() == 1, "Expect one valid statistics file");
     return latestValidStatisticsFiles.get(0);
+  }
+
+  private StructLikeMap<Long> readPartitionData(Table table, String type) {
+    StatisticsFileUtil.PartitionDataSerializer<Long> dataSerializer =
+        StatisticsFileUtil.createPartitionDataSerializer(table.spec(), Long.class);
+    List<StructLikeMap<Long>> result =
+        StatisticsFileUtil.reader(table)
+            .read(findValidStatisticFile(table, type), type, dataSerializer);
+    Assert.assertEquals(1, result.size());
+    return result.get(0);
   }
 
   private void assertStructLikeEquals(StructLikeMap<Long> expected, StructLikeMap<Long> actual) {
