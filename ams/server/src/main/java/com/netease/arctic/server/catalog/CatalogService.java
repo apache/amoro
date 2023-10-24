@@ -4,9 +4,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 
 import java.util.List;
 
-/**
- * The CatalogService interface defines the operations that can be performed on catalogs.
- */
+/** The CatalogService interface defines the operations that can be performed on catalogs. */
 public interface CatalogService {
   /**
    * Returns a list of CatalogMeta objects.
@@ -39,8 +37,8 @@ public interface CatalogService {
   ServerCatalog getServerCatalog(String catalogName);
 
   /**
-   * Creates a catalog based on the provided catalog meta information.
-   * The catalog name is obtained from the catalog meta.
+   * Creates a catalog based on the provided catalog meta information. The catalog name is obtained
+   * from the catalog meta.
    *
    * @param catalogMeta the catalog meta information used to create the catalog
    */

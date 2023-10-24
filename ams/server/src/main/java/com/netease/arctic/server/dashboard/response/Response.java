@@ -52,9 +52,6 @@ public class Response {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("message", message)
-        .add("code", code)
-        .toString();
+    return MoreObjects.toStringHelper(this).add("message", message).add("code", code).toString();
   }
 }

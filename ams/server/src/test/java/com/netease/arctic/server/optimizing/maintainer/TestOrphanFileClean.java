@@ -18,6 +18,9 @@
 
 package com.netease.arctic.server.optimizing.maintainer;
 
+import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer.DATA_FOLDER_NAME;
+import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer.FLINK_JOB_ID;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -52,23 +55,24 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer.DATA_FOLDER_NAME;
-import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer.FLINK_JOB_ID;
-
 @RunWith(Parameterized.class)
 public class TestOrphanFileClean extends ExecutorTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
     return new Object[][] {
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(true, true)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(true, false)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(false, true)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(false, false)}};
+      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, true)},
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, false)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(false, true)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(false, false)
+      }
+    };
   }
 
   public TestOrphanFileClean(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -83,18 +87,26 @@ public class TestOrphanFileClean extends ExecutorTestBase {
       writeAndCommitBaseStore(getArcticTable());
     }
 
-    UnkeyedTable baseTable = isKeyedTable() ?
-        getArcticTable().asKeyedTable().baseTable() : getArcticTable().asUnkeyedTable();
-    String baseOrphanFileDir = baseTable.location() +
-        File.separator + DATA_FOLDER_NAME + File.separator + "testLocation";
+    UnkeyedTable baseTable =
+        isKeyedTable()
+            ? getArcticTable().asKeyedTable().baseTable()
+            : getArcticTable().asUnkeyedTable();
+    String baseOrphanFileDir =
+        baseTable.location() + File.separator + DATA_FOLDER_NAME + File.separator + "testLocation";
     String baseOrphanFilePath = baseOrphanFileDir + File.separator + "orphan.parquet";
     OutputFile baseOrphanDataFile = getArcticTable().io().newOutputFile(baseOrphanFilePath);
     baseOrphanDataFile.createOrOverwrite().close();
     Assert.assertTrue(getArcticTable().io().exists(baseOrphanFileDir));
     Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
 
-    String changeOrphanFilePath = isKeyedTable() ? getArcticTable().asKeyedTable().changeTable().location() +
-        File.separator + DATA_FOLDER_NAME + File.separator + "orphan.parquet" : "";
+    String changeOrphanFilePath =
+        isKeyedTable()
+            ? getArcticTable().asKeyedTable().changeTable().location()
+                + File.separator
+                + DATA_FOLDER_NAME
+                + File.separator
+                + "orphan.parquet"
+            : "";
     if (isKeyedTable()) {
       OutputFile changeOrphanDataFile = getArcticTable().io().newOutputFile(changeOrphanFilePath);
       changeOrphanDataFile.createOrOverwrite().close();
@@ -103,9 +115,11 @@ public class TestOrphanFileClean extends ExecutorTestBase {
 
     MixedTableMaintainer maintainer = new MixedTableMaintainer(getArcticTable());
     maintainer.cleanContentFiles(
-        System.currentTimeMillis() - TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT * 60 * 1000);
+        System.currentTimeMillis()
+            - TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT * 60 * 1000);
     maintainer.cleanMetadata(
-        System.currentTimeMillis() - TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT * 60 * 1000);
+        System.currentTimeMillis()
+            - TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT * 60 * 1000);
 
     Assert.assertTrue(getArcticTable().io().exists(baseOrphanFileDir));
     Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
@@ -119,12 +133,21 @@ public class TestOrphanFileClean extends ExecutorTestBase {
 
     Assert.assertFalse(getArcticTable().io().exists(baseOrphanFileDir));
     Assert.assertFalse(getArcticTable().io().exists(baseOrphanFilePath));
-    baseTable.newScan().planFiles().forEach(
-        task -> Assert.assertTrue(getArcticTable().io().exists(task.file().path().toString())));
+    baseTable
+        .newScan()
+        .planFiles()
+        .forEach(
+            task -> Assert.assertTrue(getArcticTable().io().exists(task.file().path().toString())));
     if (isKeyedTable()) {
       Assert.assertFalse(getArcticTable().io().exists(changeOrphanFilePath));
-      getArcticTable().asKeyedTable().changeTable().newScan().planFiles().forEach(
-          task -> Assert.assertTrue(getArcticTable().io().exists(task.file().path().toString())));
+      getArcticTable()
+          .asKeyedTable()
+          .changeTable()
+          .newScan()
+          .planFiles()
+          .forEach(
+              task ->
+                  Assert.assertTrue(getArcticTable().io().exists(task.file().path().toString())));
     }
   }
 
@@ -136,20 +159,34 @@ public class TestOrphanFileClean extends ExecutorTestBase {
       writeAndCommitBaseStore(getArcticTable());
     }
 
-    UnkeyedTable baseTable = isKeyedTable() ?
-        getArcticTable().asKeyedTable().baseTable() : getArcticTable().asUnkeyedTable();
-    String baseOrphanFilePath = baseTable.location() + File.separator + "metadata" +
-        File.separator + "orphan.avro";
+    UnkeyedTable baseTable =
+        isKeyedTable()
+            ? getArcticTable().asKeyedTable().baseTable()
+            : getArcticTable().asUnkeyedTable();
+    String baseOrphanFilePath =
+        baseTable.location() + File.separator + "metadata" + File.separator + "orphan.avro";
 
-    String changeOrphanFilePath = isKeyedTable() ? getArcticTable().asKeyedTable().changeTable().location() +
-        File.separator + "metadata" + File.separator + "orphan.avro" : "";
+    String changeOrphanFilePath =
+        isKeyedTable()
+            ? getArcticTable().asKeyedTable().changeTable().location()
+                + File.separator
+                + "metadata"
+                + File.separator
+                + "orphan.avro"
+            : "";
 
     OutputFile baseOrphanDataFile = getArcticTable().io().newOutputFile(baseOrphanFilePath);
     baseOrphanDataFile.createOrOverwrite().close();
     Assert.assertTrue(getArcticTable().io().exists(baseOrphanFilePath));
 
-    String changeInvalidMetadataJson = isKeyedTable() ? getArcticTable().asKeyedTable().changeTable().location() +
-        File.separator + "metadata" + File.separator + "v0.metadata.json" : "";
+    String changeInvalidMetadataJson =
+        isKeyedTable()
+            ? getArcticTable().asKeyedTable().changeTable().location()
+                + File.separator
+                + "metadata"
+                + File.separator
+                + "v0.metadata.json"
+            : "";
     if (isKeyedTable()) {
       OutputFile changeOrphanDataFile = getArcticTable().io().newOutputFile(changeOrphanFilePath);
       changeOrphanDataFile.createOrOverwrite().close();
@@ -173,8 +210,10 @@ public class TestOrphanFileClean extends ExecutorTestBase {
   public void orphanChangeDataFileInBaseClean() {
     Assume.assumeTrue(isKeyedTable());
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
-    List<DataFile> dataFiles = tableTestHelper().writeChangeStore(
-        testKeyedTable, 1L, ChangeAction.INSERT, createRecords(1, 100), false);
+    List<DataFile> dataFiles =
+        tableTestHelper()
+            .writeChangeStore(
+                testKeyedTable, 1L, ChangeAction.INSERT, createRecords(1, 100), false);
     Set<String> pathAll = new HashSet<>();
     Set<String> fileInBaseStore = new HashSet<>();
     Set<String> fileOnlyInChangeLocation = new HashSet<>();
@@ -210,17 +249,44 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     String flinkJobId = "flinkJobTest";
     String fakeFlinkJobId = "fakeFlinkJobTest";
 
-    UnkeyedTable baseTable = isKeyedTable() ?
-        getArcticTable().asKeyedTable().baseTable() : getArcticTable().asUnkeyedTable();
-    String baseOrphanFilePath = baseTable.location() + File.separator + "metadata" +
-        File.separator + flinkJobId + "orphan.avro";
+    UnkeyedTable baseTable =
+        isKeyedTable()
+            ? getArcticTable().asKeyedTable().baseTable()
+            : getArcticTable().asUnkeyedTable();
+    String baseOrphanFilePath =
+        baseTable.location()
+            + File.separator
+            + "metadata"
+            + File.separator
+            + flinkJobId
+            + "orphan.avro";
 
-    String changeOrphanFilePath = isKeyedTable() ? getArcticTable().asKeyedTable().changeTable().location() +
-        File.separator + "metadata" + File.separator + flinkJobId + "orphan.avro" : "";
-    String fakeChangeOrphanFilePath = isKeyedTable() ? getArcticTable().asKeyedTable().changeTable().location() +
-        File.separator + "metadata" + File.separator + fakeFlinkJobId + "orphan.avro" : "";
-    String changeInvalidMetadataJson = isKeyedTable() ? getArcticTable().asKeyedTable().changeTable().location() +
-        File.separator + "metadata" + File.separator + "v0.metadata.json" : "";
+    String changeOrphanFilePath =
+        isKeyedTable()
+            ? getArcticTable().asKeyedTable().changeTable().location()
+                + File.separator
+                + "metadata"
+                + File.separator
+                + flinkJobId
+                + "orphan.avro"
+            : "";
+    String fakeChangeOrphanFilePath =
+        isKeyedTable()
+            ? getArcticTable().asKeyedTable().changeTable().location()
+                + File.separator
+                + "metadata"
+                + File.separator
+                + fakeFlinkJobId
+                + "orphan.avro"
+            : "";
+    String changeInvalidMetadataJson =
+        isKeyedTable()
+            ? getArcticTable().asKeyedTable().changeTable().location()
+                + File.separator
+                + "metadata"
+                + File.separator
+                + "v0.metadata.json"
+            : "";
 
     OutputFile baseOrphanDataFile = getArcticTable().io().newOutputFile(baseOrphanFilePath);
     baseOrphanDataFile.createOrOverwrite().close();
@@ -229,7 +295,8 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     if (isKeyedTable()) {
       OutputFile changeOrphanDataFile = getArcticTable().io().newOutputFile(changeOrphanFilePath);
       changeOrphanDataFile.createOrOverwrite().close();
-      OutputFile fakeChangeOrphanDataFile = getArcticTable().io().newOutputFile(fakeChangeOrphanFilePath);
+      OutputFile fakeChangeOrphanDataFile =
+          getArcticTable().io().newOutputFile(fakeChangeOrphanFilePath);
       fakeChangeOrphanDataFile.createOrOverwrite().close();
 
       getArcticTable().io().newOutputFile(changeInvalidMetadataJson).createOrOverwrite().close();
@@ -279,7 +346,9 @@ public class TestOrphanFileClean extends ExecutorTestBase {
 
   private StatisticsFile writeStatisticsFile(UnkeyedTable table, Snapshot snapshot) {
     OutputFile outputFile =
-        table.io().newOutputFile(table.location() + "/metadata/" + snapshot.snapshotId() + ".puffin");
+        table
+            .io()
+            .newOutputFile(table.location() + "/metadata/" + snapshot.snapshotId() + ".puffin");
     List<BlobMetadata> blobMetadata;
     long fileSize;
     long footerSize;
@@ -294,10 +363,6 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     List<org.apache.iceberg.BlobMetadata> collect =
         blobMetadata.stream().map(GenericBlobMetadata::from).collect(Collectors.toList());
     return new GenericStatisticsFile(
-        snapshot.snapshotId(),
-        outputFile.location(),
-        fileSize,
-        footerSize,
-        collect);
+        snapshot.snapshotId(), outputFile.location(), fileSize, footerSize, collect);
   }
 }

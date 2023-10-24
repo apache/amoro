@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.optimizing.maintainer;
 
+import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer.DATA_FOLDER_NAME;
+
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
@@ -35,35 +37,46 @@ import org.junit.runners.Parameterized;
 import java.io.File;
 import java.io.IOException;
 
-import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer.DATA_FOLDER_NAME;
-
 @RunWith(Parameterized.class)
 public class TestOrphanFileCleanHive extends TestOrphanFileClean {
 
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][]{
-        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new HiveTableTestHelper(true, true)},
-        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new HiveTableTestHelper(true, false)},
-        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new HiveTableTestHelper(false, true)},
-        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new HiveTableTestHelper(false, false)}};
+    return new Object[][] {
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, true)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, false)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(false, true)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(false, false)
+      }
+    };
   }
 
-  public TestOrphanFileCleanHive(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+  public TestOrphanFileCleanHive(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Test
   public void hiveLocationOrphanDataFileClean() throws IOException {
-    String hiveOrphanFilePath = ((SupportHive) getArcticTable()).hiveLocation() +
-        File.separator + DATA_FOLDER_NAME + File.separator + "orphan.parquet";
+    String hiveOrphanFilePath =
+        ((SupportHive) getArcticTable()).hiveLocation()
+            + File.separator
+            + DATA_FOLDER_NAME
+            + File.separator
+            + "orphan.parquet";
     OutputFile changeOrphanDataFile = getArcticTable().io().newOutputFile(hiveOrphanFilePath);
     changeOrphanDataFile.createOrOverwrite().close();
     Assert.assertTrue(getArcticTable().io().exists(hiveOrphanFilePath));
@@ -72,6 +85,4 @@ public class TestOrphanFileCleanHive extends TestOrphanFileClean {
     maintainer.cleanContentFiles(System.currentTimeMillis());
     Assert.assertTrue(getArcticTable().io().exists(hiveOrphanFilePath));
   }
-
-
 }

@@ -18,6 +18,13 @@
 
 package com.netease.arctic.server.dashboard.utils;
 
+import static com.netease.arctic.server.ArcticManagementConf.HA_CLUSTER_NAME;
+import static com.netease.arctic.server.ArcticManagementConf.HA_ENABLE;
+import static com.netease.arctic.server.ArcticManagementConf.HA_ZOOKEEPER_ADDRESS;
+import static com.netease.arctic.server.ArcticManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT;
+import static com.netease.arctic.server.ArcticManagementConf.SERVER_EXPOSE_HOST;
+import static com.netease.arctic.server.ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT;
+
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.utils.Configurations;
@@ -36,26 +43,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.server.ArcticManagementConf.HA_CLUSTER_NAME;
-import static com.netease.arctic.server.ArcticManagementConf.HA_ENABLE;
-import static com.netease.arctic.server.ArcticManagementConf.HA_ZOOKEEPER_ADDRESS;
-import static com.netease.arctic.server.ArcticManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT;
-import static com.netease.arctic.server.ArcticManagementConf.SERVER_EXPOSE_HOST;
-import static com.netease.arctic.server.ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT;
-
 /**
- * AMSUtil provides utility methods for working with AMS (Arctic Management Service) related operations.
+ * AMSUtil provides utility methods for working with AMS (Arctic Management Service) related
+ * operations.
  */
 public class AmsUtil {
 
   private static final String ZOOKEEPER_ADDRESS_FORMAT = "zookeeper://%s/%s";
   private static final String THRIFT_ADDRESS_FORMAT = "thrift://%s:%s";
 
-  public static TableIdentifier toTableIdentifier(com.netease.arctic.table.TableIdentifier tableIdentifier) {
+  public static TableIdentifier toTableIdentifier(
+      com.netease.arctic.table.TableIdentifier tableIdentifier) {
     if (tableIdentifier == null) {
       return null;
     }
-    return new TableIdentifier(tableIdentifier.getCatalog(), tableIdentifier.getDatabase(),
+    return new TableIdentifier(
+        tableIdentifier.getCatalog(),
+        tableIdentifier.getDatabase(),
         tableIdentifier.getTableName());
   }
 
@@ -67,9 +71,7 @@ public class AmsUtil {
     }
   }
 
-  /**
-   * Convert size to a different unit, ensuring that the converted value is > 1
-   */
+  /** Convert size to a different unit, ensuring that the converted value is > 1 */
   public static String byteToXB(long size) {
     String[] units = new String[] {"B", "KB", "MB", "GB", "TB", "PB", "EB"};
     float result = size, tmpResult = size;
@@ -92,12 +94,13 @@ public class AmsUtil {
   public static Map<String, String> getNotDeprecatedAndNotInternalStaticFields(Class<?> clazz)
       throws IllegalAccessException {
 
-    List<Field> fields = Arrays.stream(clazz.getDeclaredFields())
-        // filter out the non-static fields
-        .filter(f -> Modifier.isStatic(f.getModifiers()))
-        .filter(f -> f.getAnnotation(Deprecated.class) == null)
-        // collect to list
-        .collect(Collectors.toList());
+    List<Field> fields =
+        Arrays.stream(clazz.getDeclaredFields())
+            // filter out the non-static fields
+            .filter(f -> Modifier.isStatic(f.getModifiers()))
+            .filter(f -> f.getAnnotation(Deprecated.class) == null)
+            // collect to list
+            .collect(Collectors.toList());
 
     Map<String, String> result = new HashMap<>();
     for (Field field : fields) {
@@ -117,15 +120,14 @@ public class AmsUtil {
 
   public static InetAddress lookForBindHost(String prefix) {
     if (prefix.startsWith("0")) {
-      throw new RuntimeException(
-          "config " + SERVER_EXPOSE_HOST.key() + " can't start with 0");
+      throw new RuntimeException("config " + SERVER_EXPOSE_HOST.key() + " can't start with 0");
     }
     try {
       Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
       while (networkInterfaces.hasMoreElements()) {
         NetworkInterface networkInterface = networkInterfaces.nextElement();
         for (Enumeration<InetAddress> enumeration = networkInterface.getInetAddresses();
-             enumeration.hasMoreElements(); ) {
+            enumeration.hasMoreElements(); ) {
           InetAddress inetAddress = enumeration.nextElement();
           if (checkHostAddress(inetAddress, prefix)) {
             return inetAddress;
@@ -140,14 +142,20 @@ public class AmsUtil {
 
   public static String getAMSThriftAddress(Configurations conf, String serviceName) {
     if (conf.getBoolean(HA_ENABLE)) {
-      return String.format(ZOOKEEPER_ADDRESS_FORMAT, conf.getString(HA_ZOOKEEPER_ADDRESS),
+      return String.format(
+          ZOOKEEPER_ADDRESS_FORMAT,
+          conf.getString(HA_ZOOKEEPER_ADDRESS),
           conf.getString(HA_CLUSTER_NAME));
     } else {
       if (Constants.THRIFT_TABLE_SERVICE_NAME.equals(serviceName)) {
-        return String.format(THRIFT_ADDRESS_FORMAT, conf.getString(SERVER_EXPOSE_HOST),
+        return String.format(
+            THRIFT_ADDRESS_FORMAT,
+            conf.getString(SERVER_EXPOSE_HOST),
             conf.getInteger(TABLE_SERVICE_THRIFT_BIND_PORT));
       } else if (Constants.THRIFT_OPTIMIZING_SERVICE_NAME.equals(serviceName)) {
-        return String.format(THRIFT_ADDRESS_FORMAT, conf.getString(SERVER_EXPOSE_HOST),
+        return String.format(
+            THRIFT_ADDRESS_FORMAT,
+            conf.getString(SERVER_EXPOSE_HOST),
             conf.getInteger(OPTIMIZING_SERVICE_THRIFT_BIND_PORT));
       } else {
         throw new IllegalArgumentException(String.format("Unknown service name %s", serviceName));

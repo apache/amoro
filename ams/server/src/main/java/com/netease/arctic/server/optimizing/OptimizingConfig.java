@@ -13,62 +13,61 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class OptimizingConfig {
 
-  //self-optimizing.enabled
+  // self-optimizing.enabled
   private boolean enabled;
 
-  //self-optimizing.quota
+  // self-optimizing.quota
   private double targetQuota;
 
-  //self-optimizing.group
+  // self-optimizing.group
   private String optimizerGroup;
 
-  //self-optimizing.execute.num-retries
+  // self-optimizing.execute.num-retries
   private int maxExecuteRetryCount;
 
-  //self-optimizing.commit.num-retries
+  // self-optimizing.commit.num-retries
   private int maxCommitRetryCount;
 
-  //self-optimizing.target-size
+  // self-optimizing.target-size
   private long targetSize;
 
-  //self-optimizing.max-task-size-bytes
+  // self-optimizing.max-task-size-bytes
   private long maxTaskSize;
 
-  //self-optimizing.max-file-count
+  // self-optimizing.max-file-count
   private int maxFileCount;
 
-  //read.split.open-file-cost
+  // read.split.open-file-cost
   private long openFileCost;
 
-  //self-optimizing.fragment-ratio
+  // self-optimizing.fragment-ratio
   private int fragmentRatio;
 
-  //self-optimizing.minor.trigger.file-count
+  // self-optimizing.minor.trigger.file-count
   private int minorLeastFileCount;
 
-  //self-optimizing.minor.trigger.interval
+  // self-optimizing.minor.trigger.interval
   private int minorLeastInterval;
 
-  //self-optimizing.major.trigger.duplicate-ratio
+  // self-optimizing.major.trigger.duplicate-ratio
   private double majorDuplicateRatio;
 
-  //self-optimizing.full.trigger.interval
+  // self-optimizing.full.trigger.interval
   private int fullTriggerInterval;
 
-  //self-optimizing.full.rewrite-all-files
+  // self-optimizing.full.rewrite-all-files
   private boolean fullRewriteAllFiles;
 
-  //base.file-index.hash-bucket
+  // base.file-index.hash-bucket
   private int baseHashBucket;
 
-  //base.refresh-interval
+  // base.refresh-interval
   private long baseRefreshInterval;
 
-  //base.hive.refresh-interval
+  // base.hive.refresh-interval
   private long hiveRefreshInterval;
 
-  public OptimizingConfig() {
-  }
+  public OptimizingConfig() {}
 
   public boolean isEnabled() {
     return enabled;
@@ -236,23 +235,46 @@ public class OptimizingConfig {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     OptimizingConfig that = (OptimizingConfig) o;
-    return enabled == that.enabled && Double.compare(that.targetQuota, targetQuota) == 0 &&
-        maxExecuteRetryCount == that.maxExecuteRetryCount && maxCommitRetryCount == that.maxCommitRetryCount &&
-        targetSize == that.targetSize && maxTaskSize == that.maxTaskSize && maxFileCount == that.maxFileCount &&
-        openFileCost == that.openFileCost && fragmentRatio == that.fragmentRatio &&
-        minorLeastFileCount == that.minorLeastFileCount && minorLeastInterval == that.minorLeastInterval &&
-        Double.compare(that.majorDuplicateRatio, majorDuplicateRatio) == 0 &&
-        fullTriggerInterval == that.fullTriggerInterval && fullRewriteAllFiles == that.fullRewriteAllFiles &&
-        baseHashBucket == that.baseHashBucket && baseRefreshInterval == that.baseRefreshInterval &&
-        hiveRefreshInterval == that.hiveRefreshInterval &&
-        Objects.equal(optimizerGroup, that.optimizerGroup);
+    return enabled == that.enabled
+        && Double.compare(that.targetQuota, targetQuota) == 0
+        && maxExecuteRetryCount == that.maxExecuteRetryCount
+        && maxCommitRetryCount == that.maxCommitRetryCount
+        && targetSize == that.targetSize
+        && maxTaskSize == that.maxTaskSize
+        && maxFileCount == that.maxFileCount
+        && openFileCost == that.openFileCost
+        && fragmentRatio == that.fragmentRatio
+        && minorLeastFileCount == that.minorLeastFileCount
+        && minorLeastInterval == that.minorLeastInterval
+        && Double.compare(that.majorDuplicateRatio, majorDuplicateRatio) == 0
+        && fullTriggerInterval == that.fullTriggerInterval
+        && fullRewriteAllFiles == that.fullRewriteAllFiles
+        && baseHashBucket == that.baseHashBucket
+        && baseRefreshInterval == that.baseRefreshInterval
+        && hiveRefreshInterval == that.hiveRefreshInterval
+        && Objects.equal(optimizerGroup, that.optimizerGroup);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(enabled, targetQuota, optimizerGroup, maxExecuteRetryCount, maxCommitRetryCount, targetSize,
-        maxTaskSize, maxFileCount, openFileCost, fragmentRatio, minorLeastFileCount, minorLeastInterval,
-        majorDuplicateRatio, fullTriggerInterval, fullRewriteAllFiles, baseHashBucket, baseRefreshInterval,
+    return Objects.hashCode(
+        enabled,
+        targetQuota,
+        optimizerGroup,
+        maxExecuteRetryCount,
+        maxCommitRetryCount,
+        targetSize,
+        maxTaskSize,
+        maxFileCount,
+        openFileCost,
+        fragmentRatio,
+        minorLeastFileCount,
+        minorLeastInterval,
+        majorDuplicateRatio,
+        fullTriggerInterval,
+        fullRewriteAllFiles,
+        baseHashBucket,
+        baseRefreshInterval,
         hiveRefreshInterval);
   }
 
@@ -281,73 +303,91 @@ public class OptimizingConfig {
   }
 
   public static OptimizingConfig parseOptimizingConfig(Map<String, String> properties) {
-    return new OptimizingConfig().setEnabled(CompatiblePropertyUtil.propertyAsBoolean(
-            properties,
-            TableProperties.ENABLE_SELF_OPTIMIZING,
-            TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT))
-        .setMaxExecuteRetryCount(CompatiblePropertyUtil.propertyAsInt(
-            properties,
-            TableProperties.SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER,
-            TableProperties.SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER_DEFAULT))
-        .setOptimizerGroup(CompatiblePropertyUtil.propertyAsString(
-            properties,
-            TableProperties.SELF_OPTIMIZING_GROUP,
-            TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT))
-        .setFragmentRatio(CompatiblePropertyUtil.propertyAsInt(
-            properties,
-            TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
-            TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT))
-        .setMaxFileCount(CompatiblePropertyUtil.propertyAsInt(
-            properties,
-            TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT,
-            TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT))
-        .setOpenFileCost(CompatiblePropertyUtil.propertyAsLong(
-            properties,
-            TableProperties.SPLIT_OPEN_FILE_COST,
-            TableProperties.SPLIT_OPEN_FILE_COST_DEFAULT))
-        .setTargetSize(CompatiblePropertyUtil.propertyAsLong(
-            properties,
-            TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
-            TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT))
-        .setMaxTaskSize(CompatiblePropertyUtil.propertyAsLong(
-            properties,
-            TableProperties.SELF_OPTIMIZING_MAX_TASK_SIZE,
-            TableProperties.SELF_OPTIMIZING_MAX_TASK_SIZE_DEFAULT))
-        .setTargetQuota(CompatiblePropertyUtil.propertyAsDouble(
-            properties,
-            TableProperties.SELF_OPTIMIZING_QUOTA,
-            TableProperties.SELF_OPTIMIZING_QUOTA_DEFAULT))
-        .setMinorLeastFileCount(CompatiblePropertyUtil.propertyAsInt(
-            properties,
-            TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT,
-            TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT))
-        .setMinorLeastInterval(CompatiblePropertyUtil.propertyAsInt(
-            properties,
-            TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL,
-            TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT))
-        .setMajorDuplicateRatio(CompatiblePropertyUtil.propertyAsDouble(
-            properties,
-            TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO,
-            TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT))
-        .setFullTriggerInterval(CompatiblePropertyUtil.propertyAsInt(
-            properties,
-            TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL,
-            TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT))
-        .setFullRewriteAllFiles(CompatiblePropertyUtil.propertyAsBoolean(
-            properties,
-            TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES,
-            TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT))
-        .setBaseHashBucket(CompatiblePropertyUtil.propertyAsInt(
-            properties,
-            TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
-            TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT))
-        .setBaseRefreshInterval(PropertyUtil.propertyAsLong(
-            properties,
-            TableProperties.BASE_REFRESH_INTERVAL,
-            TableProperties.BASE_REFRESH_INTERVAL_DEFAULT))
-        .setHiveRefreshInterval(PropertyUtil.propertyAsLong(
-            properties,
-            HiveTableProperties.REFRESH_HIVE_INTERVAL,
-            HiveTableProperties.REFRESH_HIVE_INTERVAL_DEFAULT));
+    return new OptimizingConfig()
+        .setEnabled(
+            CompatiblePropertyUtil.propertyAsBoolean(
+                properties,
+                TableProperties.ENABLE_SELF_OPTIMIZING,
+                TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT))
+        .setMaxExecuteRetryCount(
+            CompatiblePropertyUtil.propertyAsInt(
+                properties,
+                TableProperties.SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER,
+                TableProperties.SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER_DEFAULT))
+        .setOptimizerGroup(
+            CompatiblePropertyUtil.propertyAsString(
+                properties,
+                TableProperties.SELF_OPTIMIZING_GROUP,
+                TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT))
+        .setFragmentRatio(
+            CompatiblePropertyUtil.propertyAsInt(
+                properties,
+                TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
+                TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT))
+        .setMaxFileCount(
+            CompatiblePropertyUtil.propertyAsInt(
+                properties,
+                TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT,
+                TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT))
+        .setOpenFileCost(
+            CompatiblePropertyUtil.propertyAsLong(
+                properties,
+                TableProperties.SPLIT_OPEN_FILE_COST,
+                TableProperties.SPLIT_OPEN_FILE_COST_DEFAULT))
+        .setTargetSize(
+            CompatiblePropertyUtil.propertyAsLong(
+                properties,
+                TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+                TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT))
+        .setMaxTaskSize(
+            CompatiblePropertyUtil.propertyAsLong(
+                properties,
+                TableProperties.SELF_OPTIMIZING_MAX_TASK_SIZE,
+                TableProperties.SELF_OPTIMIZING_MAX_TASK_SIZE_DEFAULT))
+        .setTargetQuota(
+            CompatiblePropertyUtil.propertyAsDouble(
+                properties,
+                TableProperties.SELF_OPTIMIZING_QUOTA,
+                TableProperties.SELF_OPTIMIZING_QUOTA_DEFAULT))
+        .setMinorLeastFileCount(
+            CompatiblePropertyUtil.propertyAsInt(
+                properties,
+                TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT,
+                TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT))
+        .setMinorLeastInterval(
+            CompatiblePropertyUtil.propertyAsInt(
+                properties,
+                TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL,
+                TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT))
+        .setMajorDuplicateRatio(
+            CompatiblePropertyUtil.propertyAsDouble(
+                properties,
+                TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO,
+                TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT))
+        .setFullTriggerInterval(
+            CompatiblePropertyUtil.propertyAsInt(
+                properties,
+                TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL,
+                TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT))
+        .setFullRewriteAllFiles(
+            CompatiblePropertyUtil.propertyAsBoolean(
+                properties,
+                TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES,
+                TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT))
+        .setBaseHashBucket(
+            CompatiblePropertyUtil.propertyAsInt(
+                properties,
+                TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
+                TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT))
+        .setBaseRefreshInterval(
+            PropertyUtil.propertyAsLong(
+                properties,
+                TableProperties.BASE_REFRESH_INTERVAL,
+                TableProperties.BASE_REFRESH_INTERVAL_DEFAULT))
+        .setHiveRefreshInterval(
+            PropertyUtil.propertyAsLong(
+                properties,
+                HiveTableProperties.REFRESH_HIVE_INTERVAL,
+                HiveTableProperties.REFRESH_HIVE_INTERVAL_DEFAULT));
   }
 }

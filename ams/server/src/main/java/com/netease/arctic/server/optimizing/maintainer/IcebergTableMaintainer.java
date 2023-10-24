@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.optimizing.maintainer;
 
+import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
+
 import com.google.common.base.Strings;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
@@ -55,11 +57,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
-
-/**
- * Table maintainer for iceberg tables.
- */
+/** Table maintainer for iceberg tables. */
 public class IcebergTableMaintainer implements TableMaintainer {
 
   private static final Logger LOG = LoggerFactory.getLogger(IcebergTableMaintainer.class);
@@ -68,7 +66,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
   public static final String DATA_FOLDER_NAME = "data";
   public static final String FLINK_JOB_ID = "flink.job-id";
 
-  public static final String FLINK_MAX_COMMITTED_CHECKPOINT_ID = "flink.max-committed-checkpoint-id";
+  public static final String FLINK_MAX_COMMITTED_CHECKPOINT_ID =
+      "flink.max-committed-checkpoint-id";
 
   protected Table table;
 
@@ -88,7 +87,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
     cleanContentFiles(System.currentTimeMillis() - keepTime);
 
-    //refresh
+    // refresh
     table.refresh();
 
     // clear metadata files
@@ -98,7 +97,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
       return;
     }
 
-    //refresh
+    // refresh
     table.refresh();
 
     // clear dangling delete files
@@ -110,11 +109,13 @@ public class IcebergTableMaintainer implements TableMaintainer {
     if (!tableConfiguration.isExpireSnapshotEnabled()) {
       return;
     }
-    expireSnapshots(olderThanSnapshotNeedToExpire(tableRuntime), expireSnapshotNeedToExcludeFiles());
+    expireSnapshots(
+        olderThanSnapshotNeedToExpire(tableRuntime), expireSnapshotNeedToExcludeFiles());
   }
 
   public void expireSnapshots(long mustOlderThan) {
-    expireSnapshots(olderThanSnapshotNeedToExpire(mustOlderThan), expireSnapshotNeedToExcludeFiles());
+    expireSnapshots(
+        olderThanSnapshotNeedToExpire(mustOlderThan), expireSnapshotNeedToExcludeFiles());
   }
 
   @VisibleForTesting
@@ -123,33 +124,38 @@ public class IcebergTableMaintainer implements TableMaintainer {
     final AtomicInteger toDeleteFiles = new AtomicInteger(0);
     final AtomicInteger deleteFiles = new AtomicInteger(0);
     Set<String> parentDirectory = new HashSet<>();
-    table.expireSnapshots()
+    table
+        .expireSnapshots()
         .retainLast(1)
         .expireOlderThan(olderThan)
-        .deleteWith(file -> {
-          try {
-            String filePath = TableFileUtil.getUriPath(file);
-            if (!exclude.contains(filePath) && !exclude.contains(new Path(filePath).getParent().toString())) {
-              arcticFileIO().deleteFile(file);
-            }
-            parentDirectory.add(new Path(file).getParent().toString());
-            deleteFiles.incrementAndGet();
-          } catch (Throwable t) {
-            LOG.warn("failed to delete file " + file, t);
-          } finally {
-            toDeleteFiles.incrementAndGet();
-          }
-        })
+        .deleteWith(
+            file -> {
+              try {
+                String filePath = TableFileUtil.getUriPath(file);
+                if (!exclude.contains(filePath)
+                    && !exclude.contains(new Path(filePath).getParent().toString())) {
+                  arcticFileIO().deleteFile(file);
+                }
+                parentDirectory.add(new Path(file).getParent().toString());
+                deleteFiles.incrementAndGet();
+              } catch (Throwable t) {
+                LOG.warn("failed to delete file " + file, t);
+              } finally {
+                toDeleteFiles.incrementAndGet();
+              }
+            })
         .cleanExpiredFiles(true)
         .commit();
     if (arcticFileIO().supportFileSystemOperations()) {
-      parentDirectory.forEach(parent -> TableFileUtil.deleteEmptyDirectory(arcticFileIO(), parent, exclude));
+      parentDirectory.forEach(
+          parent -> TableFileUtil.deleteEmptyDirectory(arcticFileIO(), parent, exclude));
     }
     LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
   }
 
   protected void cleanContentFiles(long lastTime) {
-    // For clean data files, should getRuntime valid files in the base store and the change store, so acquire in advance
+    // For clean data files, should getRuntime valid files in the base store and the change store,
+    // so acquire in advance
     // to prevent repeated acquisition
     Set<String> validFiles = orphanFileCleanNeedToExcludeFiles();
     LOG.info("{} start clean content files of change store", table.name());
@@ -175,10 +181,13 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   protected long olderThanSnapshotNeedToExpire(long mustOlderThan) {
-    long baseSnapshotsKeepTime = CompatiblePropertyUtil.propertyAsLong(
-        table.properties(),
-        TableProperties.BASE_SNAPSHOT_KEEP_MINUTES,
-        TableProperties.BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT) * 60 * 1000;
+    long baseSnapshotsKeepTime =
+        CompatiblePropertyUtil.propertyAsLong(
+                table.properties(),
+                TableProperties.BASE_SNAPSHOT_KEEP_MINUTES,
+                TableProperties.BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT)
+            * 60
+            * 1000;
     // Latest checkpoint of flink need retain. If Flink does not continuously commit new snapshots,
     // it can lead to issues with table partitions not expiring.
     long latestFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(table);
@@ -202,7 +211,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
     String dataLocation = table.location() + File.separator + DATA_FOLDER_NAME;
 
     try (ArcticFileIO io = arcticFileIO()) {
-      // listPrefix will not return the directory and the orphan file clean should clean the empty dir.
+      // listPrefix will not return the directory and the orphan file clean should clean the empty
+      // dir.
       if (io.supportFileSystemOperations()) {
         SupportsFileSystemOperations fio = io.asFileSystemIO();
         return deleteInvalidFilesInFs(fio, dataLocation, lastTime, exclude);
@@ -210,10 +220,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
         SupportsPrefixOperations pio = io.asPrefixFileIO();
         return deleteInvalidFilesByPrefix(pio, dataLocation, lastTime, exclude);
       } else {
-        LOG.warn(String.format(
-            "Table %s doesn't support a fileIo with listDirectory or listPrefix, so skip clear files.",
-            table.name()
-        ));
+        LOG.warn(
+            String.format(
+                "Table %s doesn't support a fileIo with listDirectory or listPrefix, so skip clear files.",
+                table.name()));
       }
     }
 
@@ -224,19 +234,21 @@ public class IcebergTableMaintainer implements TableMaintainer {
     Set<String> validFiles = getValidMetadataFiles(table);
     LOG.info("{} table getRuntime {} valid files", table.name(), validFiles.size());
     Pattern excludeFileNameRegex = getExcludeFileNameRegex(table);
-    LOG.info("{} table getRuntime exclude file name pattern {}", table.name(), excludeFileNameRegex);
+    LOG.info(
+        "{} table getRuntime exclude file name pattern {}", table.name(), excludeFileNameRegex);
     String metadataLocation = table.location() + File.separator + METADATA_FOLDER_NAME;
     LOG.info("start orphan files clean in {}", metadataLocation);
 
     try (ArcticFileIO io = arcticFileIO()) {
       if (io.supportPrefixOperations()) {
         SupportsPrefixOperations pio = io.asPrefixFileIO();
-        return deleteInvalidMetadataFile(pio, metadataLocation, lastTime, validFiles, excludeFileNameRegex);
+        return deleteInvalidMetadataFile(
+            pio, metadataLocation, lastTime, validFiles, excludeFileNameRegex);
       } else {
-        LOG.warn(String.format(
-            "Table %s doesn't support a fileIo with listDirectory or listPrefix, so skip clear files.",
-            table.name()
-        ));
+        LOG.warn(
+            String.format(
+                "Table %s doesn't support a fileIo with listDirectory or listPrefix, so skip clear files.",
+                table.name()));
       }
     }
     return 0;
@@ -249,8 +261,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
     }
     RewriteFiles rewriteFiles = table.newRewrite();
     rewriteFiles.rewriteFiles(
-        Collections.emptySet(), danglingDeleteFiles,
-        Collections.emptySet(), Collections.emptySet());
+        Collections.emptySet(),
+        danglingDeleteFiles,
+        Collections.emptySet(),
+        Collections.emptySet());
     try {
       rewriteFiles.commit();
     } catch (ValidationException e) {
@@ -261,8 +275,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   /**
-   * When committing a snapshot, Flink will write a checkpoint id into the snapshot summary.
-   * The latest snapshot with checkpoint id should not be expired or the flink job can't recover from state.
+   * When committing a snapshot, Flink will write a checkpoint id into the snapshot summary. The
+   * latest snapshot with checkpoint id should not be expired or the flink job can't recover from
+   * state.
    *
    * @param table -
    * @return commit time of snapshot with the latest flink checkpointId in summary
@@ -278,8 +293,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   /**
-   * When optimizing tasks are not committed, the snapshot with which it planned should not be expired, since
-   * it will use the snapshot to check conflict when committing.
+   * When optimizing tasks are not committed, the snapshot with which it planned should not be
+   * expired, since it will use the snapshot to check conflict when committing.
    *
    * @param table - table
    * @return commit time of snapshot for optimizing
@@ -298,8 +313,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   private static int deleteInvalidFilesInFs(
-      SupportsFileSystemOperations fio, String location, long lastTime, Set<String> excludes
-  ) {
+      SupportsFileSystemOperations fio, String location, long lastTime, Set<String> excludes) {
     if (!fio.exists(location)) {
       return 0;
     }
@@ -310,18 +324,18 @@ public class IcebergTableMaintainer implements TableMaintainer {
       if (p.isDirectory()) {
         int deleted = deleteInvalidFilesInFs(fio, p.location(), lastTime, excludes);
         deleteCount += deleted;
-        if (!p.location().endsWith(METADATA_FOLDER_NAME) &&
-            !p.location().endsWith(DATA_FOLDER_NAME) &&
-            p.createdAtMillis() < lastTime &&
-            fio.isEmptyDirectory(p.location())) {
+        if (!p.location().endsWith(METADATA_FOLDER_NAME)
+            && !p.location().endsWith(DATA_FOLDER_NAME)
+            && p.createdAtMillis() < lastTime
+            && fio.isEmptyDirectory(p.location())) {
           TableFileUtil.deleteEmptyDirectory(fio, p.location(), excludes);
         }
       } else {
         String parentLocation = TableFileUtil.getParent(p.location());
         String parentUriPath = TableFileUtil.getUriPath(parentLocation);
-        if (!excludes.contains(uriPath) &&
-            !excludes.contains(parentUriPath) &&
-            p.createdAtMillis() < lastTime) {
+        if (!excludes.contains(uriPath)
+            && !excludes.contains(parentUriPath)
+            && p.createdAtMillis() < lastTime) {
           fio.deleteFile(p.location());
           deleteCount += 1;
         }
@@ -331,8 +345,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   private static int deleteInvalidFilesByPrefix(
-      SupportsPrefixOperations pio, String prefix, long lastTime, Set<String> excludes
-  ) {
+      SupportsPrefixOperations pio, String prefix, long lastTime, Set<String> excludes) {
     int deleteCount = 0;
     for (FileInfo fileInfo : pio.listPrefix(prefix)) {
       String uriPath = TableFileUtil.getUriPath(fileInfo.location());
@@ -401,15 +414,18 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   private static int deleteInvalidMetadataFile(
-      SupportsPrefixOperations pio, String location, long lastTime, Set<String> exclude, Pattern excludeRegex
-  ) {
+      SupportsPrefixOperations pio,
+      String location,
+      long lastTime,
+      Set<String> exclude,
+      Pattern excludeRegex) {
     int count = 0;
     for (FileInfo fileInfo : pio.listPrefix(location)) {
       String uriPath = TableFileUtil.getUriPath(fileInfo.location());
-      if (!exclude.contains(uriPath) &&
-          fileInfo.createdAtMillis() < lastTime &&
-          (excludeRegex == null || !excludeRegex.matcher(
-              TableFileUtil.getFileName(fileInfo.location())).matches())) {
+      if (!exclude.contains(uriPath)
+          && fileInfo.createdAtMillis() < lastTime
+          && (excludeRegex == null
+              || !excludeRegex.matcher(TableFileUtil.getFileName(fileInfo.location())).matches())) {
         pio.deleteFile(fileInfo.location());
         count += 1;
       }
@@ -418,6 +434,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   private static String formatTime(long timestamp) {
-    return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault()).toString();
+    return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault())
+        .toString();
   }
 }

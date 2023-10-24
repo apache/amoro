@@ -13,9 +13,8 @@ public class ServerTableIdentifier {
   private String tableName;
   private TableFormat format;
 
-  //used by the MyBatis framework.
-  private ServerTableIdentifier() {
-  }
+  // used by the MyBatis framework.
+  private ServerTableIdentifier() {}
 
   private ServerTableIdentifier(TableIdentifier tableIdentifier, TableFormat format) {
     this.catalog = tableIdentifier.getCatalog();
@@ -24,14 +23,16 @@ public class ServerTableIdentifier {
     this.format = format;
   }
 
-  private ServerTableIdentifier(String catalog, String database, String tableName, TableFormat format) {
+  private ServerTableIdentifier(
+      String catalog, String database, String tableName, TableFormat format) {
     this.catalog = catalog;
     this.database = database;
     this.tableName = tableName;
     this.format = format;
   }
 
-  private ServerTableIdentifier(Long id, String catalog, String database, String tableName, TableFormat format) {
+  private ServerTableIdentifier(
+      Long id, String catalog, String database, String tableName, TableFormat format) {
     this.id = id;
     this.catalog = catalog;
     this.database = database;
@@ -88,8 +89,10 @@ public class ServerTableIdentifier {
       return false;
     }
     ServerTableIdentifier that = (ServerTableIdentifier) o;
-    return Objects.equals(id, that.id) && Objects.equals(catalog, that.catalog) &&
-        Objects.equals(database, that.database) && Objects.equals(tableName, that.tableName);
+    return Objects.equals(id, that.id)
+        && Objects.equals(catalog, that.catalog)
+        && Objects.equals(database, that.database)
+        && Objects.equals(tableName, that.tableName);
   }
 
   @Override
@@ -106,7 +109,8 @@ public class ServerTableIdentifier {
     return new ServerTableIdentifier(tableIdentifier, format);
   }
 
-  public static ServerTableIdentifier of(String catalog, String database, String tableName, TableFormat format) {
+  public static ServerTableIdentifier of(
+      String catalog, String database, String tableName, TableFormat format) {
     return new ServerTableIdentifier(catalog, database, tableName, format);
   }
 
@@ -118,5 +122,4 @@ public class ServerTableIdentifier {
   public TableIdentifier getIdentifier() {
     return new TableIdentifier(catalog, database, tableName);
   }
-
 }

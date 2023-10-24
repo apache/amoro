@@ -31,7 +31,8 @@ public class UnkeyedTableFileScanHelper extends IcebergTableFileScanHelper {
 
   private ContentFile<?> wrapDeleteFile(DeleteFile deleteFile) {
     if (deleteFile.content() == FileContent.EQUALITY_DELETES) {
-      throw new UnsupportedOperationException("optimizing unkeyed table not support equality-delete");
+      throw new UnsupportedOperationException(
+          "optimizing unkeyed table not support equality-delete");
     }
     return deleteFile;
   }

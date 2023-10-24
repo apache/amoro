@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.formats.mixed.MixedIcebergTable;
 import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,7 +49,8 @@ public class MixedIcebergCatalogImpl extends ExternalCatalog {
 
   @Override
   public boolean exist(String database, String tableName) {
-    return mixedIcebergCatalog.tableExists(com.netease.arctic.table.TableIdentifier.of(name(), database, tableName));
+    return mixedIcebergCatalog.tableExists(
+        com.netease.arctic.table.TableIdentifier.of(name(), database, tableName));
   }
 
   @Override
@@ -66,15 +68,15 @@ public class MixedIcebergCatalogImpl extends ExternalCatalog {
 
   @Override
   public List<TableIDWithFormat> listTables(String database) {
-    return mixedIcebergCatalog.listTables(database)
-        .stream()
+    return mixedIcebergCatalog.listTables(database).stream()
         .map(id -> TableIDWithFormat.of(id, TableFormat.MIXED_ICEBERG))
         .collect(Collectors.toList());
   }
 
   @Override
   public AmoroTable<?> loadTable(String database, String tableName) {
-    return new MixedIcebergTable(mixedIcebergCatalog.loadTable(
-        com.netease.arctic.table.TableIdentifier.of(name(), database, tableName)));
+    return new MixedIcebergTable(
+        mixedIcebergCatalog.loadTable(
+            com.netease.arctic.table.TableIdentifier.of(name(), database, tableName)));
   }
 }

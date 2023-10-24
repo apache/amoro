@@ -32,9 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * TableMetaExtract for paimon table.
- */
+/** TableMetaExtract for paimon table. */
 public class PaimonTableMetaExtract implements TableMetaExtract<DataTable> {
 
   @Override
@@ -43,10 +41,10 @@ public class PaimonTableMetaExtract implements TableMetaExtract<DataTable> {
     List<TableSchema> tableSchemas = schemaManager.listAll();
     return tableSchemas.stream()
         .sorted((o1, o2) -> Long.compare(o1.timeMillis(), o2.timeMillis()))
-        .map(schema -> new InternalTableMeta(
-            schema.timeMillis(),
-            transform(schema.fields()),
-            schema.options()))
+        .map(
+            schema ->
+                new InternalTableMeta(
+                    schema.timeMillis(), transform(schema.fields()), schema.options()))
         .collect(Collectors.toList());
   }
 
@@ -69,8 +67,7 @@ public class PaimonTableMetaExtract implements TableMetaExtract<DataTable> {
                 formatName(name),
                 dateTypeToSparkString(fieldType),
                 field.description(),
-                !field.type().isNullable()
-            ));
+                !field.type().isNullable()));
         result.addAll(transform(field.id(), name, field.type()));
       }
     } else if (type instanceof ArrayType) {

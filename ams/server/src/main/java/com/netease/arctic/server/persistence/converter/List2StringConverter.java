@@ -39,7 +39,8 @@ public class List2StringConverter implements TypeHandler<List> {
   private final String separator = ",";
 
   @Override
-  public void setParameter(PreparedStatement ps, int i, List parameter, JdbcType jdbcType) throws SQLException {
+  public void setParameter(PreparedStatement ps, int i, List parameter, JdbcType jdbcType)
+      throws SQLException {
     if (parameter == null) {
       ps.setString(i, null);
       return;
@@ -54,7 +55,6 @@ public class List2StringConverter implements TypeHandler<List> {
       }
     }
     ps.setString(i, builder.toString());
-
   }
 
   @Override
@@ -105,4 +105,3 @@ public class List2StringConverter implements TypeHandler<List> {
     return set;
   }
 }
-

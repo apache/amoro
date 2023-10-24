@@ -42,21 +42,22 @@ public abstract class ActivePluginManager<T extends ActivePlugin> implements Plu
 
   private final Map<String, T> installedPlugins = new ConcurrentHashMap<>();
 
-  protected ActivePluginManager() {
-  }
+  protected ActivePluginManager() {}
 
   protected abstract Map<String, String> loadProperties(String pluginName);
 
   @Override
   public void install(String pluginName) {
-    PreconditionUtils.checkNotExist(installedPlugins.containsKey(pluginName),
-        "Plugin " + pluginName);
+    PreconditionUtils.checkNotExist(
+        installedPlugins.containsKey(pluginName), "Plugin " + pluginName);
     Map<String, String> properties = loadProperties(pluginName);
-    installedPlugins.computeIfAbsent(pluginName, k -> {
-      T plugin = loadPlugin(properties);
-      plugin.open(properties);
-      return plugin;
-    });
+    installedPlugins.computeIfAbsent(
+        pluginName,
+        k -> {
+          T plugin = loadPlugin(properties);
+          plugin.open(properties);
+          return plugin;
+        });
   }
 
   @SuppressWarnings("unchecked")
@@ -67,13 +68,13 @@ public abstract class ActivePluginManager<T extends ActivePlugin> implements Plu
       ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
       if (jarPath != null) {
         if (jarPath.endsWith("jar")) {
-          classLoader = new URLClassLoader(new URL[]{new URL(jarPath)}, classLoader);
+          classLoader = new URLClassLoader(new URL[] {new URL(jarPath)}, classLoader);
         } else {
-          URL[] jarFiles = Optional.ofNullable(new File(jarPath)
-                  .listFiles((dir, name) -> name.endsWith(".jar")))
-              .map(Arrays::asList)
-              .map(files -> files.stream().map(this::fileToURL).toArray(URL[]::new))
-              .orElse(null);
+          URL[] jarFiles =
+              Optional.ofNullable(new File(jarPath).listFiles((dir, name) -> name.endsWith(".jar")))
+                  .map(Arrays::asList)
+                  .map(files -> files.stream().map(this::fileToURL).toArray(URL[]::new))
+                  .orElse(null);
           if (jarFiles != null) {
             classLoader = new URLClassLoader(jarFiles, classLoader);
           }
@@ -96,8 +97,7 @@ public abstract class ActivePluginManager<T extends ActivePlugin> implements Plu
 
   @Override
   public void uninstall(String pluginName) {
-    PreconditionUtils.checkExist(installedPlugins.containsKey(pluginName),
-        "Plugin " + pluginName);
+    PreconditionUtils.checkExist(installedPlugins.containsKey(pluginName), "Plugin " + pluginName);
     T plugin = installedPlugins.remove(pluginName);
     if (plugin != null) {
       plugin.close();
@@ -110,6 +110,7 @@ public abstract class ActivePluginManager<T extends ActivePlugin> implements Plu
     return new Iterator<T>() {
 
       final Iterator<T> iterator = installedPlugins.values().iterator();
+
       @Override
       public boolean hasNext() {
         return iterator.hasNext();

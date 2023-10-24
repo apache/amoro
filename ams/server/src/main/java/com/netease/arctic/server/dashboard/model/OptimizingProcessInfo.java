@@ -184,13 +184,12 @@ public class OptimizingProcessInfo {
     this.summary = summary;
   }
 
-  public static OptimizingProcessInfo build(OptimizingProcessMeta meta,
-                                            List<OptimizingTaskMeta> optimizingTaskStats) {
+  public static OptimizingProcessInfo build(
+      OptimizingProcessMeta meta, List<OptimizingTaskMeta> optimizingTaskStats) {
     if (meta == null) {
       return null;
     }
     OptimizingProcessInfo result = new OptimizingProcessInfo();
-
 
     if (optimizingTaskStats != null) {
       int successTasks = 0;
@@ -233,8 +232,10 @@ public class OptimizingProcessInfo {
     result.setOptimizingType(meta.getOptimizingType());
     result.setStatus(meta.getStatus());
     result.setFailReason(meta.getFailReason());
-    result.setDuration(meta.getEndTime() > 0 ? meta.getEndTime() - meta.getPlanTime() :
-        System.currentTimeMillis() - meta.getPlanTime());
+    result.setDuration(
+        meta.getEndTime() > 0
+            ? meta.getEndTime() - meta.getPlanTime()
+            : System.currentTimeMillis() - meta.getPlanTime());
     result.setFinishTime(meta.getEndTime());
     result.setSummary(meta.getSummary());
     return result;

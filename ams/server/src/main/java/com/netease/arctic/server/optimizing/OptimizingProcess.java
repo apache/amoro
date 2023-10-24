@@ -9,7 +9,7 @@ public interface OptimizingProcess {
   boolean isClosed();
 
   long getTargetSnapshotId();
-  
+
   long getTargetChangeSnapshotId();
 
   long getPlanTime();

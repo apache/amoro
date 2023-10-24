@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Plugin manager based on SPI
+ *
  * @param <T> plugin type
  */
 public abstract class SpiPluginManager<T extends AmoroPlugin> implements PluginManager<T> {
@@ -51,15 +52,15 @@ public abstract class SpiPluginManager<T extends AmoroPlugin> implements PluginM
       Type[] typeArguments = parameterizedType.getActualTypeArguments();
       return (Class<T>) typeArguments[0];
     } catch (Throwable throwable) {
-      throw new IllegalStateException("Cannot determine service type for " +
-          getClass().getName(), throwable);
+      throw new IllegalStateException(
+          "Cannot determine service type for " + getClass().getName(), throwable);
     }
   }
 
   @Override
   public void install(String pluginName) {
-    PreconditionUtils.checkNotExist(installedPlugins.containsKey(pluginName),
-        "Plugin " + pluginName);
+    PreconditionUtils.checkNotExist(
+        installedPlugins.containsKey(pluginName), "Plugin " + pluginName);
     for (T plugin : pluginLoader) {
       if (plugin.name().equals(pluginName)) {
         installedPlugins.put(pluginName, plugin);
@@ -69,8 +70,7 @@ public abstract class SpiPluginManager<T extends AmoroPlugin> implements PluginM
 
   @Override
   public void uninstall(String pluginName) {
-    PreconditionUtils.checkExist(installedPlugins.containsKey(pluginName),
-        "Plugin " + pluginName);
+    PreconditionUtils.checkExist(installedPlugins.containsKey(pluginName), "Plugin " + pluginName);
     installedPlugins.remove(pluginName);
   }
 
@@ -80,6 +80,7 @@ public abstract class SpiPluginManager<T extends AmoroPlugin> implements PluginM
     return new Iterator<T>() {
 
       final Iterator<T> iterator = installedPlugins.values().iterator();
+
       @Override
       public boolean hasNext() {
         return iterator.hasNext();
