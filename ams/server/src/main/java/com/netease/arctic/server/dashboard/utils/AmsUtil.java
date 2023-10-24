@@ -21,7 +21,6 @@ package com.netease.arctic.server.dashboard.utils;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.utils.Configurations;
-import org.apache.iceberg.SnapshotSummary;
 
 import java.io.File;
 import java.io.PrintWriter;

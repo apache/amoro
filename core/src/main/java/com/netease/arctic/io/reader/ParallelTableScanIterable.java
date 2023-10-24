@@ -33,13 +33,13 @@ import java.util.concurrent.ExecutorService;
 public class ParallelTableScanIterable extends CloseableGroup implements CloseableIterable<Record> {
   private final ParallelIterable<Record> parallelIterable;
 
-  ParallelTableScanIterable(TableScan scan, boolean reuseContainers, ExecutorService executorService) {
+  ParallelTableScanIterable(
+      TableScan scan, boolean reuseContainers, ExecutorService executorService) {
     PublicGenericReader reader = new PublicGenericReader(scan, reuseContainers);
     // start planning tasks in the background
     CloseableIterable<FileScanTask> tasks = scan.planFiles();
-    CloseableIterable<CloseableIterable<Record>> transform = CloseableIterable.transform(
-        tasks, reader::open
-    );
+    CloseableIterable<CloseableIterable<Record>> transform =
+        CloseableIterable.transform(tasks, reader::open);
     this.parallelIterable = new ParallelIterable<>(transform, executorService);
   }
 

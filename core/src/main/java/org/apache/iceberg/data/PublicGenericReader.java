@@ -20,9 +20,7 @@ package org.apache.iceberg.data;
 
 import org.apache.iceberg.TableScan;
 
-/**
- * Make GenericReader from default to public.
- */
+/** Make GenericReader from default to public. */
 public class PublicGenericReader extends GenericReader {
   public PublicGenericReader(TableScan scan, boolean reuseContainers) {
     super(scan, reuseContainers);

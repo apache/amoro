@@ -31,6 +31,8 @@ import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.table.TableService;
+import com.netease.arctic.server.utils.Configurations;
+import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.iceberg.util.Pair;
 
 import java.util.HashMap;
@@ -38,7 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 
 public class ServerTableDescriptor extends PersistentBase {
 

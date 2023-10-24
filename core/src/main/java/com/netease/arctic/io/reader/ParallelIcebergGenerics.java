@@ -30,8 +30,7 @@ import java.util.concurrent.ExecutorService;
 
 public class ParallelIcebergGenerics {
 
-  private ParallelIcebergGenerics() {
-  }
+  private ParallelIcebergGenerics() {}
 
   /**
    * Returns a builder to configure a read of the given table that produces generic records.
