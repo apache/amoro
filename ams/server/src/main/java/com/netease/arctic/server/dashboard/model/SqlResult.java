@@ -20,9 +20,7 @@ package com.netease.arctic.server.dashboard.model;
 
 import java.util.List;
 
-/**
- * sql result for termial request
- */
+/** sql result for termial request */
 public class SqlResult {
   private String id;
   private String status = SqlStatus.CREATED.name();

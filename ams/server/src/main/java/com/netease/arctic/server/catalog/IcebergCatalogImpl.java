@@ -58,10 +58,8 @@ public class IcebergCatalogImpl extends ExternalCatalog {
 
   @Override
   public AmoroTable<Table> loadTable(String database, String tableName) {
-    com.netease.arctic.table.TableIdentifier identifier = com.netease.arctic.table.TableIdentifier.of(
-        catalogWrapper.name(),
-        database,
-        tableName);
+    com.netease.arctic.table.TableIdentifier identifier =
+        com.netease.arctic.table.TableIdentifier.of(catalogWrapper.name(), database, tableName);
     return new IcebergTable(identifier, catalogWrapper.loadTable(identifier).asUnkeyedTable());
   }
 }

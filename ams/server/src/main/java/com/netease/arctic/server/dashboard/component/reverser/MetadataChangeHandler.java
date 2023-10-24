@@ -29,6 +29,7 @@ interface MetadataChangeHandler {
 
   /**
    * Change and add properties.
+   *
    * @param diffProperties the properties to be changed and added
    * @return DDL statement
    */
@@ -36,6 +37,7 @@ interface MetadataChangeHandler {
 
   /**
    * Remove properties.
+   *
    * @param removeKeys the properties to be removed
    * @return DDL statement
    */
@@ -43,13 +45,15 @@ interface MetadataChangeHandler {
 
   /**
    * Add new columns.
-   * @param newSchemas  the new columns to be added
-   * @return  DDL statement
+   *
+   * @param newSchemas the new columns to be added
+   * @return DDL statement
    */
   String addNewColumns(List<TableMetaExtract.InternalSchema> newSchemas);
 
   /**
    * Rename column.
+   *
    * @param oldName the old column name
    * @param newName the new column name
    * @return DDL statement
@@ -58,6 +62,7 @@ interface MetadataChangeHandler {
 
   /**
    * Drop columns.
+   *
    * @param dropColumns the columns to be dropped
    * @return DDL statement
    */
@@ -65,6 +70,7 @@ interface MetadataChangeHandler {
 
   /**
    * Change columns' require.
+   *
    * @param columnName the column name
    * @param required true if the column is required, false otherwise
    * @return DDL statement
@@ -73,6 +79,7 @@ interface MetadataChangeHandler {
 
   /**
    * Change columns' comment.
+   *
    * @param columnName the column name
    * @param comment the comment of column
    * @return DDL statement
@@ -81,6 +88,7 @@ interface MetadataChangeHandler {
 
   /**
    * Change columns' type.
+   *
    * @param columnName the column name
    * @param newType the new type of column
    * @return DDL statement

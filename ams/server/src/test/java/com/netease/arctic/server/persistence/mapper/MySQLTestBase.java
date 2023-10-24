@@ -1,6 +1,3 @@
 package com.netease.arctic.server.persistence.mapper;
 
-public class MySQLTestBase {
-
-
-}
+public class MySQLTestBase {}

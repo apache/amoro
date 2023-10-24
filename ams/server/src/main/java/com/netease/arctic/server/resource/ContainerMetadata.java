@@ -11,7 +11,8 @@ public class ContainerMetadata {
   private Map<String, String> properties;
 
   public ContainerMetadata(String name, String implClass) {
-    Preconditions.checkArgument(name != null && implClass != null,
+    Preconditions.checkArgument(
+        name != null && implClass != null,
         "Resource container name and implementation class can not be null");
     this.name = name;
     this.implClass = implClass;

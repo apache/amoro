@@ -87,8 +87,8 @@ public class IcebergTableUtil {
     if (arcticTable.isUnkeyedTable()) {
       return new BasicTableSnapshot(tableRuntime.getCurrentSnapshotId());
     } else {
-      return new KeyedTableSnapshot(tableRuntime.getCurrentSnapshotId(),
-          tableRuntime.getCurrentChangeSnapshotId());
+      return new KeyedTableSnapshot(
+          tableRuntime.getCurrentSnapshotId(), tableRuntime.getCurrentChangeSnapshotId());
     }
   }
 
@@ -102,9 +102,12 @@ public class IcebergTableUtil {
   public static Set<String> getAllContentFilePath(Table internalTable) {
     Set<String> validFilesPath = new HashSet<>();
 
-    TableEntriesScan entriesScan = TableEntriesScan.builder(internalTable)
-        .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES, FileContent.EQUALITY_DELETES)
-        .allEntries().build();
+    TableEntriesScan entriesScan =
+        TableEntriesScan.builder(internalTable)
+            .includeFileContent(
+                FileContent.DATA, FileContent.POSITION_DELETES, FileContent.EQUALITY_DELETES)
+            .allEntries()
+            .build();
     try (CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
       for (IcebergFileEntry entry : entries) {
         validFilesPath.add(TableFileUtil.getUriPath(entry.getFile().path().toString()));
@@ -134,10 +137,11 @@ public class IcebergTableUtil {
     }
 
     Set<DeleteFile> danglingDeleteFiles = new HashSet<>();
-    TableEntriesScan entriesScan = TableEntriesScan.builder(internalTable)
-        .useSnapshot(internalTable.currentSnapshot().snapshotId())
-        .includeFileContent(FileContent.EQUALITY_DELETES, FileContent.POSITION_DELETES)
-        .build();
+    TableEntriesScan entriesScan =
+        TableEntriesScan.builder(internalTable)
+            .useSnapshot(internalTable.currentSnapshot().snapshotId())
+            .includeFileContent(FileContent.EQUALITY_DELETES, FileContent.POSITION_DELETES)
+            .build();
 
     for (IcebergFileEntry entry : entriesScan.entries()) {
       ContentFile<?> file = entry.getFile();
@@ -150,9 +154,9 @@ public class IcebergTableUtil {
     return danglingDeleteFiles;
   }
 
-
   /**
    * create an iceberg file io instance
+   *
    * @param meta catalog meta
    * @return iceberg file io
    */
@@ -160,16 +164,16 @@ public class IcebergTableUtil {
     Map<String, String> catalogProperties = meta.getCatalogProperties();
     TableMetaStore store = CatalogUtil.buildMetaStore(meta);
     Configuration conf = store.getConfiguration();
-    String ioImpl = catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, DEFAULT_FILE_IO_IMPL);
+    String ioImpl =
+        catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, DEFAULT_FILE_IO_IMPL);
     FileIO fileIO = org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
     return ArcticFileIOs.buildAdaptIcebergFileIO(store, fileIO);
   }
 
-
   /**
    * load iceberg table metadata by given ams table metadata
    *
-   * @param io        - iceberg file io
+   * @param io - iceberg file io
    * @param tableMeta - table metadata
    * @return iceberg table metadata object
    */
@@ -182,11 +186,10 @@ public class IcebergTableUtil {
     return TableMetadataParser.read(io, metadataFileLocation);
   }
 
-
   /**
    * generate metadata file location with version
    *
-   * @param meta       - iceberg table metadata
+   * @param meta - iceberg table metadata
    * @param newVersion - version of table metadata
    * @return - file location
    */
@@ -202,8 +205,8 @@ public class IcebergTableUtil {
   /**
    * generate metadata file location with version
    *
-   * @param base       - iceberg table metadata
-   * @param current    - new iceberg table metadata
+   * @param base - iceberg table metadata
+   * @param current - new iceberg table metadata
    * @return - file location
    */
   public static String genNewMetadataFileLocation(TableMetadata base, TableMetadata current) {
@@ -232,15 +235,14 @@ public class IcebergTableUtil {
     }
   }
 
-
   /**
    * create iceberg table and return an AMS table metadata object to commit.
    *
-   * @param identifier           - table identifier
-   * @param catalogMeta          - catalog meta
+   * @param identifier - table identifier
+   * @param catalogMeta - catalog meta
    * @param icebergTableMetadata - iceberg table metadata object
    * @param metadataFileLocation - iceberg table metadata file location
-   * @param io                   - iceberg table file io
+   * @param io - iceberg table file io
    * @return AMS table metadata object
    */
   public static com.netease.arctic.server.table.TableMetadata createTableInternal(
@@ -248,8 +250,7 @@ public class IcebergTableUtil {
       CatalogMeta catalogMeta,
       TableMetadata icebergTableMetadata,
       String metadataFileLocation,
-      FileIO io
-  ) {
+      FileIO io) {
     OutputFile outputFile = io.newOutputFile(metadataFileLocation);
     TableMetadataParser.overwrite(icebergTableMetadata, outputFile);
     TableMeta meta = new TableMeta();
@@ -259,10 +260,8 @@ public class IcebergTableUtil {
 
     meta.setFormat(TableFormat.ICEBERG.name());
     meta.putToProperties(PROPERTIES_METADATA_LOCATION, metadataFileLocation);
-    return new com.netease.arctic.server.table.TableMetadata(
-        identifier, meta, catalogMeta);
+    return new com.netease.arctic.server.table.TableMetadata(identifier, meta, catalogMeta);
   }
-
 
   private static long parseMetadataFileVersion(String metadataLocation) {
     int fileNameStart = metadataLocation.lastIndexOf('/') + 1; // if '/' isn't found, this will be 0
@@ -282,23 +281,21 @@ public class IcebergTableUtil {
     }
   }
 
-
   /**
    * write iceberg table metadata and apply changes to AMS tableMetadata to commit.
    *
-   * @param amsTableMetadata         ams table metadata
+   * @param amsTableMetadata ams table metadata
    * @param baseIcebergTableMetadata base iceberg table metadata
-   * @param icebergTableMetadata     iceberg table metadata to commit
-   * @param newMetadataFileLocation  new metadata file location
-   * @param io                       iceberg file io
+   * @param icebergTableMetadata iceberg table metadata to commit
+   * @param newMetadataFileLocation new metadata file location
+   * @param io iceberg file io
    */
   public static void commitTableInternal(
       com.netease.arctic.server.table.TableMetadata amsTableMetadata,
       TableMetadata baseIcebergTableMetadata,
       TableMetadata icebergTableMetadata,
       String newMetadataFileLocation,
-      FileIO io
-  ) {
+      FileIO io) {
     if (!Objects.equals(icebergTableMetadata.location(), baseIcebergTableMetadata.location())) {
       throw new UnsupportedOperationException("SetLocation is not supported.");
     }
@@ -306,7 +303,8 @@ public class IcebergTableUtil {
     TableMetadataParser.overwrite(icebergTableMetadata, outputFile);
 
     Map<String, String> properties = amsTableMetadata.getProperties();
-    properties.put(PROPERTIES_PREV_METADATA_LOCATION, baseIcebergTableMetadata.metadataFileLocation());
+    properties.put(
+        PROPERTIES_PREV_METADATA_LOCATION, baseIcebergTableMetadata.metadataFileLocation());
     properties.put(PROPERTIES_METADATA_LOCATION, newMetadataFileLocation);
     amsTableMetadata.setProperties(properties);
   }
@@ -314,7 +312,8 @@ public class IcebergTableUtil {
   public static void checkCommitSuccess(
       com.netease.arctic.server.table.TableMetadata updatedTableMetadata,
       String metadataFileLocation) {
-    String metaLocationInDatabase = updatedTableMetadata.getProperties().get(PROPERTIES_METADATA_LOCATION);
+    String metaLocationInDatabase =
+        updatedTableMetadata.getProperties().get(PROPERTIES_METADATA_LOCATION);
     if (!Objects.equals(metaLocationInDatabase, metadataFileLocation)) {
       throw new CommitFailedException(
           "commit conflict, some other commit happened during this commit. ");

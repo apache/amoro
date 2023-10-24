@@ -60,8 +60,7 @@ public class FilesStatistics {
     }
   }
 
-  public FilesStatistics() {
-  }
+  public FilesStatistics() {}
 
   public FilesStatistics(Integer fileCnt, Long totalSize) {
     this.fileCnt = fileCnt;

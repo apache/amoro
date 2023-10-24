@@ -22,8 +22,7 @@ public class TableOperation {
   long ts;
   String operation;
 
-  public TableOperation() {
-  }
+  public TableOperation() {}
 
   public TableOperation(long ts, String operation) {
     this.ts = ts;

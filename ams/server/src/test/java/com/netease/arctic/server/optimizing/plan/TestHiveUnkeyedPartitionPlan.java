@@ -44,21 +44,25 @@ import java.util.Map;
 
 @RunWith(Parameterized.class)
 public class TestHiveUnkeyedPartitionPlan extends TestUnkeyedPartitionPlan {
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
-  public TestHiveUnkeyedPartitionPlan(CatalogTestHelper catalogTestHelper,
-                                      TableTestHelper tableTestHelper) {
+  public TestHiveUnkeyedPartitionPlan(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[][] parameters() {
     return new Object[][] {
-        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new HiveTableTestHelper(false, true)},
-        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new HiveTableTestHelper(false, false)}};
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(false, true)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(false, false)
+      }
+    };
   }
 
   @Override
@@ -75,7 +79,11 @@ public class TestHiveUnkeyedPartitionPlan extends TestUnkeyedPartitionPlan {
   protected AbstractPartitionPlan getPartitionPlan() {
     SupportHive hiveTable = (SupportHive) getArcticTable();
     String hiveLocation = hiveTable.hiveLocation();
-    return new MixedHivePartitionPlan(getTableRuntime(), getArcticTable(), getPartition(), hiveLocation,
+    return new MixedHivePartitionPlan(
+        getTableRuntime(),
+        getArcticTable(),
+        getPartition(),
+        hiveLocation,
         System.currentTimeMillis());
   }
 
@@ -87,10 +95,13 @@ public class TestHiveUnkeyedPartitionPlan extends TestUnkeyedPartitionPlan {
     long transactionId;
     List<DataFile> dataFiles = Lists.newArrayList();
     // write fragment file
-    newRecords = OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
+    newRecords =
+        OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
     transactionId = beginTransaction();
-    dataFiles.addAll(OptimizingTestHelpers.appendBase(getArcticTable(),
-        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
+    dataFiles.addAll(
+        OptimizingTestHelpers.appendBase(
+            getArcticTable(),
+            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false)));
     StructLike partition = dataFiles.get(0).partition();
 
     // not trigger optimize
@@ -99,10 +110,14 @@ public class TestHiveUnkeyedPartitionPlan extends TestUnkeyedPartitionPlan {
     // update hive delay
     updateTableProperty(HiveTableProperties.REFRESH_HIVE_INTERVAL, 1 + "");
     Assert.assertEquals(1, planWithCurrentFiles().size());
-    updatePartitionProperty(partition, HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+    updatePartitionProperty(
+        partition,
+        HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
         (System.currentTimeMillis() / 1000 - 10) + "");
     Assert.assertEquals(1, planWithCurrentFiles().size());
-    updatePartitionProperty(partition, HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+    updatePartitionProperty(
+        partition,
+        HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
         (System.currentTimeMillis() / 1000 + 1000) + "");
     Assert.assertEquals(0, planWithCurrentFiles().size());
   }

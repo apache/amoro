@@ -8,15 +8,14 @@ import java.io.Closeable;
 import java.util.function.Supplier;
 
 public final class NestedSqlSession implements Closeable {
-  @VisibleForTesting
-  private static final int MAX_NEST_BEGIN_COUNT = 5;
+  @VisibleForTesting private static final int MAX_NEST_BEGIN_COUNT = 5;
+
   @VisibleForTesting
   private static final ThreadLocal<NestedSqlSession> sessions = new ThreadLocal<>();
 
   private int nestCount = 0;
   private boolean isRollingback = false;
   private SqlSession sqlSession;
-
 
   public static NestedSqlSession openSession(Supplier<SqlSession> sessionSupplier) {
     NestedSqlSession session = sessions.get();
@@ -39,7 +38,8 @@ public final class NestedSqlSession implements Closeable {
 
   NestedSqlSession openNestedSession() {
     checkState(true);
-    Preconditions.checkState(nestCount < MAX_NEST_BEGIN_COUNT && nestCount >= 0,
+    Preconditions.checkState(
+        nestCount < MAX_NEST_BEGIN_COUNT && nestCount >= 0,
         "openNestedSession() has not been properly called for nest count is " + nestCount);
     nestCount++;
     return this;
@@ -64,8 +64,8 @@ public final class NestedSqlSession implements Closeable {
   private void checkState(boolean checkRollingback) {
     Preconditions.checkState(sqlSession != null, "session already closed");
     if (checkRollingback) {
-      Preconditions.checkState(!isRollingback,
-          "session is rolling back, can not execute operation");
+      Preconditions.checkState(
+          !isRollingback, "session is rolling back, can not execute operation");
     }
   }
 

@@ -19,23 +19,21 @@
 package com.netease.arctic.server.dashboard.component.reverser;
 
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+
 import javax.annotation.Nullable;
 
 import java.util.List;
 import java.util.Map;
 
-
 /**
- * An interface for returning the historical metadata of a table.
- * The table can be iceberg,mixed-iceberg,mixed-hive,paimon and so on.
+ * An interface for returning the historical metadata of a table. The table can be
+ * iceberg,mixed-iceberg,mixed-hive,paimon and so on.
  *
  * @param <T> Table type
  */
 interface TableMetaExtract<T> {
 
-  /**
-   * Extract the historical metadata of a table.
-   */
+  /** Extract the historical metadata of a table. */
   List<InternalTableMeta> extractTable(T table);
 
   class InternalTableMeta {
@@ -46,7 +44,8 @@ interface TableMetaExtract<T> {
 
     private final Map<String, String> properties;
 
-    public InternalTableMeta(long time, List<InternalSchema> internalSchemas, Map<String, String> properties) {
+    public InternalTableMeta(
+        long time, List<InternalSchema> internalSchemas, Map<String, String> properties) {
       this.time = time;
       this.internalSchemas = internalSchemas;
       this.properties = properties;

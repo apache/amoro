@@ -24,9 +24,7 @@ import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 
-/**
- * Service for expiring tables periodically.
- */
+/** Service for expiring tables periodically. */
 public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   // 1 minutes
@@ -51,7 +49,9 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
       OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, table);
       if (evaluator.isNecessary()) {
         OptimizingEvaluator.PendingInput pendingInput = evaluator.getPendingInput();
-        logger.debug("{} optimizing is necessary and get pending input {}", tableRuntime.getTableIdentifier(),
+        logger.debug(
+            "{} optimizing is necessary and get pending input {}",
+            tableRuntime.getTableIdentifier(),
             pendingInput);
         tableRuntime.setPendingInput(pendingInput);
       }
@@ -65,8 +65,8 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
       long lastOptimizedChangeSnapshotId = tableRuntime.getLastOptimizedChangeSnapshotId();
       AmoroTable<?> table = loadTable(tableRuntime);
       tableRuntime.refresh(table);
-      if (lastOptimizedSnapshotId != tableRuntime.getCurrentSnapshotId() ||
-          lastOptimizedChangeSnapshotId != tableRuntime.getCurrentChangeSnapshotId()) {
+      if (lastOptimizedSnapshotId != tableRuntime.getCurrentSnapshotId()
+          || lastOptimizedChangeSnapshotId != tableRuntime.getCurrentChangeSnapshotId()) {
         tryEvaluatingPendingInput(tableRuntime, (ArcticTable) table.originalTable());
       }
     } catch (Throwable throwable) {

@@ -50,14 +50,19 @@ public class ServerTableDescriptor extends PersistentBase {
   public ServerTableDescriptor(TableService tableService, Configurations serviceConfig) {
     this.tableService = tableService;
 
-    ExecutorService executorService = Executors.newFixedThreadPool(
-        serviceConfig.getInteger(ArcticManagementConf.TABLE_MANIFEST_IO_THREAD_COUNT),
-        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("table-manifest-io-%d").build());
+    ExecutorService executorService =
+        Executors.newFixedThreadPool(
+            serviceConfig.getInteger(ArcticManagementConf.TABLE_MANIFEST_IO_THREAD_COUNT),
+            new ThreadFactoryBuilder()
+                .setDaemon(true)
+                .setNameFormat("table-manifest-io-%d")
+                .build());
 
-    FormatTableDescriptor[] formatTableDescriptors = new FormatTableDescriptor[] {
-        new MixedAndIcebergTableDescriptor(executorService),
-        new PaimonTableDescriptor(executorService)
-    };
+    FormatTableDescriptor[] formatTableDescriptors =
+        new FormatTableDescriptor[] {
+          new MixedAndIcebergTableDescriptor(executorService),
+          new PaimonTableDescriptor(executorService)
+        };
     for (FormatTableDescriptor formatTableDescriptor : formatTableDescriptors) {
       for (TableFormat format : formatTableDescriptor.supportFormat()) {
         formatDescriptorMap.put(format, formatTableDescriptor);
@@ -77,7 +82,8 @@ public class ServerTableDescriptor extends PersistentBase {
     return formatTableDescriptor.getTransactions(amoroTable);
   }
 
-  public List<PartitionFileBaseInfo> getTransactionDetail(TableIdentifier tableIdentifier, long transactionId) {
+  public List<PartitionFileBaseInfo> getTransactionDetail(
+      TableIdentifier tableIdentifier, long transactionId) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getTransactionDetail(amoroTable, transactionId);
@@ -95,7 +101,8 @@ public class ServerTableDescriptor extends PersistentBase {
     return formatTableDescriptor.getTablePartitions(amoroTable);
   }
 
-  public List<PartitionFileBaseInfo> getTableFile(TableIdentifier tableIdentifier, String partition) {
+  public List<PartitionFileBaseInfo> getTableFile(
+      TableIdentifier tableIdentifier, String partition) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getTableFiles(amoroTable, partition);
