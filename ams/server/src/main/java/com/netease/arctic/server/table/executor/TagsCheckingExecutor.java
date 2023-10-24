@@ -64,7 +64,8 @@ public class TagsCheckingExecutor extends BaseTableExecutor {
   protected void execute(TableRuntime tableRuntime) {
     try {
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
-      new Checker(amoroTable, TagConfig.fromTableProperties(amoroTable.properties()), LocalDate.now())
+      new Checker(
+              amoroTable, TagConfig.fromTableProperties(amoroTable.properties()), LocalDate.now())
           .checkAndCreateTodayTag();
     } catch (Throwable t) {
       LOG.error("unexpected tag checking error of table {} ", tableRuntime.getTableIdentifier(), t);
@@ -76,8 +77,7 @@ public class TagsCheckingExecutor extends BaseTableExecutor {
     private final TagConfig tagConfig;
     private final LocalDate now;
 
-    public Checker(AmoroTable<?> amoroTable,
-                   TagConfig tagConfig, LocalDate now) {
+    public Checker(AmoroTable<?> amoroTable, TagConfig tagConfig, LocalDate now) {
       this.amoroTable = amoroTable;
       this.tagConfig = tagConfig;
       this.now = now;
@@ -115,7 +115,9 @@ public class TagsCheckingExecutor extends BaseTableExecutor {
         return (Table) amoroTable.originalTable();
       } else if (amoroTable.originalTable() instanceof ArcticTable) {
         ArcticTable arcticTable = (ArcticTable) amoroTable.originalTable();
-        return arcticTable.isKeyedTable() ? arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
+        return arcticTable.isKeyedTable()
+            ? arcticTable.asKeyedTable().baseTable()
+            : arcticTable.asUnkeyedTable();
       } else {
         throw new UnsupportedOperationException("only support Iceberg/Mixed Format");
       }
@@ -144,17 +146,19 @@ public class TagsCheckingExecutor extends BaseTableExecutor {
         return false;
       }
       if (!tagConfig.isOptimizingTag()) {
-        table.manageSnapshots()
-            .createTag(getTodayTagName(), snapshot.snapshotId())
-            .commit();
-        LOG.info("{} create today's tag {} on snapshot {} {}", amoroTable.name(), getTodayTagName(),
+        table.manageSnapshots().createTag(getTodayTagName(), snapshot.snapshotId()).commit();
+        LOG.info(
+            "{} create today's tag {} on snapshot {} {}",
+            amoroTable.name(),
+            getTodayTagName(),
             snapshot.snapshotId(),
             snapshot.timestampMillis());
       } else {
-        table.manageSnapshots()
-            .createBranch(getTodayBranchName(), snapshot.snapshotId())
-            .commit();
-        LOG.info("{} create today's branch {} on snapshot {} {}", amoroTable.name(), getTodayBranchName(),
+        table.manageSnapshots().createBranch(getTodayBranchName(), snapshot.snapshotId()).commit();
+        LOG.info(
+            "{} create today's branch {} on snapshot {} {}",
+            amoroTable.name(),
+            getTodayBranchName(),
             snapshot.snapshotId(),
             snapshot.timestampMillis());
       }
@@ -204,17 +208,25 @@ public class TagsCheckingExecutor extends BaseTableExecutor {
         }
         if (branchOfChange == null) {
           // create change branch if branch not exists
-          changeStore.manageSnapshots()
+          changeStore
+              .manageSnapshots()
               .createBranch(getTodayBranchName(), changeSnapshot.snapshotId())
               .commit();
-          LOG.info("{} create today's change branch {} on snapshot {} {}", amoroTable.name(), getTodayBranchName(),
+          LOG.info(
+              "{} create today's change branch {} on snapshot {} {}",
+              amoroTable.name(),
+              getTodayBranchName(),
               changeSnapshot.snapshotId(),
               changeSnapshot.timestampMillis());
         }
-        baseStore.manageSnapshots()
+        baseStore
+            .manageSnapshots()
             .createBranch(getTodayBranchName(), baseSnapshot.snapshotId())
             .commit();
-        LOG.info("{} create today's base branch {} on snapshot {} {}", amoroTable.name(), getTodayBranchName(),
+        LOG.info(
+            "{} create today's base branch {} on snapshot {} {}",
+            amoroTable.name(),
+            getTodayBranchName(),
             baseSnapshot.snapshotId(),
             baseSnapshot.timestampMillis());
         return true;
@@ -305,26 +317,31 @@ public class TagsCheckingExecutor extends BaseTableExecutor {
 
     public static TagConfig fromTableProperties(Map<String, String> tableProperties) {
       TagConfig tagConfig = new TagConfig();
-      tagConfig.setAutoCreateTag(CompatiblePropertyUtil.propertyAsBoolean(
-          tableProperties,
-          TableProperties.ENABLE_AUTO_CREATE_TAG,
-          TableProperties.ENABLE_AUTO_CREATE_TAG_DEFAULT));
-      tagConfig.setTagFormat(CompatiblePropertyUtil.propertyAsString(
-          tableProperties,
-          TableProperties.AUTO_CREATE_TAG_FORMAT,
-          TableProperties.AUTO_CREATE_TAG_FORMAT_DEFAULT));
-      tagConfig.setTriggerDayTime(CompatiblePropertyUtil.propertyAsString(
-          tableProperties,
-          TableProperties.AUTO_CREATE_TAG_TRIGGER_DAY_TIME,
-          TableProperties.AUTO_CREATE_TAG_TRIGGER_DAY_TIME_DEFAULT));
-      tagConfig.setOptimizingTag(CompatiblePropertyUtil.propertyAsBoolean(
-          tableProperties,
-          TableProperties.AUTO_CREATE_TAG_OPTIMIZE_ENABLED,
-          TableProperties.AUTO_CREATE_TAG_OPTIMIZE_ENABLED_DEFAULT));
-      tagConfig.setBranchFormat(CompatiblePropertyUtil.propertyAsString(
-          tableProperties,
-          TableProperties.AUTO_CREATE_TAG_BRANCH_FORMAT,
-          TableProperties.AUTO_CREATE_TAG_BRANCH_FORMAT_DEFAULT));
+      tagConfig.setAutoCreateTag(
+          CompatiblePropertyUtil.propertyAsBoolean(
+              tableProperties,
+              TableProperties.ENABLE_AUTO_CREATE_TAG,
+              TableProperties.ENABLE_AUTO_CREATE_TAG_DEFAULT));
+      tagConfig.setTagFormat(
+          CompatiblePropertyUtil.propertyAsString(
+              tableProperties,
+              TableProperties.AUTO_CREATE_TAG_FORMAT,
+              TableProperties.AUTO_CREATE_TAG_FORMAT_DEFAULT));
+      tagConfig.setTriggerDayTime(
+          CompatiblePropertyUtil.propertyAsString(
+              tableProperties,
+              TableProperties.AUTO_CREATE_TAG_TRIGGER_DAY_TIME,
+              TableProperties.AUTO_CREATE_TAG_TRIGGER_DAY_TIME_DEFAULT));
+      tagConfig.setOptimizingTag(
+          CompatiblePropertyUtil.propertyAsBoolean(
+              tableProperties,
+              TableProperties.AUTO_CREATE_TAG_OPTIMIZE_ENABLED,
+              TableProperties.AUTO_CREATE_TAG_OPTIMIZE_ENABLED_DEFAULT));
+      tagConfig.setBranchFormat(
+          CompatiblePropertyUtil.propertyAsString(
+              tableProperties,
+              TableProperties.AUTO_CREATE_TAG_BRANCH_FORMAT,
+              TableProperties.AUTO_CREATE_TAG_BRANCH_FORMAT_DEFAULT));
       return tagConfig;
     }
   }

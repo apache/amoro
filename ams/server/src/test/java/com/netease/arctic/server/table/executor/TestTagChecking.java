@@ -48,17 +48,25 @@ public class TestTagChecking extends ExecutorTestBase {
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
     return new Object[][] {
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, false), CUSTOM_FORMAT},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, true), null}};
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, false),
+        CUSTOM_FORMAT
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(false, true),
+        null
+      }
+    };
   }
 
-  public TestTagChecking(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, String format) {
+  public TestTagChecking(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, String format) {
     super(catalogTestHelper, tableTestHelper);
     this.format = format;
   }
-  
+
   public AmoroTable<?> getAmoroTable() {
     return new MixedIcebergTable(getArcticTable());
   }
@@ -66,7 +74,8 @@ public class TestTagChecking extends ExecutorTestBase {
   @Before
   public void before() {
     if (format != null) {
-      getArcticTable().updateProperties()
+      getArcticTable()
+          .updateProperties()
           .set(TableProperties.AUTO_CREATE_TAG_FORMAT, format)
           .set(TableProperties.AUTO_CREATE_TAG_BRANCH_FORMAT, format)
           .commit();
@@ -74,7 +83,9 @@ public class TestTagChecking extends ExecutorTestBase {
   }
 
   private String getCustomFormat(LocalDate date) {
-    return "custom_format" + date.minusDays(1).format(DateTimeFormatter.ofPattern("-yyyy-MM-dd=")) + "ssss";
+    return "custom_format"
+        + date.minusDays(1).format(DateTimeFormatter.ofPattern("-yyyy-MM-dd="))
+        + "ssss";
   }
 
   @Test
@@ -86,93 +97,132 @@ public class TestTagChecking extends ExecutorTestBase {
     LocalDate now = LocalDate.now();
 
     // not enabled
-    new TagsCheckingExecutor.Checker(getAmoroTable(),
-        TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
-        now).checkAndCreateTodayTag();
+    new TagsCheckingExecutor.Checker(
+            getAmoroTable(),
+            TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
+            now)
+        .checkAndCreateTodayTag();
     assertNoRef(table);
 
     // enabled and create a tag
-    getArcticTable().updateProperties().set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true").commit();
-    new TagsCheckingExecutor.Checker(getAmoroTable(),
-        TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
-        now).checkAndCreateTodayTag();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .commit();
+    new TagsCheckingExecutor.Checker(
+            getAmoroTable(),
+            TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
+            now)
+        .checkAndCreateTodayTag();
     assertTag(table, snapshot, now);
-    
+
     // recheck and should not create new tag
-    new TagsCheckingExecutor.Checker(getAmoroTable(),
-        TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
-        now).checkAndCreateTodayTag();
+    new TagsCheckingExecutor.Checker(
+            getAmoroTable(),
+            TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
+            now)
+        .checkAndCreateTodayTag();
     assertTag(table, snapshot, now);
   }
 
   @Test
   public void testUnkeyedTableCreateBranch() {
     Assume.assumeFalse(isKeyedTable());
-    getArcticTable().updateProperties().set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true").commit();
-    getArcticTable().updateProperties().set(TableProperties.AUTO_CREATE_TAG_OPTIMIZE_ENABLED, "true").commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.AUTO_CREATE_TAG_OPTIMIZE_ENABLED, "true")
+        .commit();
     UnkeyedTable table = getArcticTable().asUnkeyedTable();
     table.newAppend().commit();
     Snapshot snapshot = table.currentSnapshot();
     LocalDate now = LocalDate.now();
-    new TagsCheckingExecutor.Checker(getAmoroTable(),
-        TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
-        now).checkAndCreateTodayTag();
+    new TagsCheckingExecutor.Checker(
+            getAmoroTable(),
+            TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
+            now)
+        .checkAndCreateTodayTag();
     assertBranch(table, snapshot, now);
   }
 
   @Test
   public void testUnkeyedTableNotCreateOldTag() {
     Assume.assumeFalse(isKeyedTable());
-    getArcticTable().updateProperties().set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true").commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .commit();
     UnkeyedTable table = getArcticTable().asUnkeyedTable();
     table.newAppend().commit();
     LocalDate tomorrow = LocalDate.now().plusDays(1);
-    new TagsCheckingExecutor.Checker(getAmoroTable(),
-        TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
-        tomorrow).checkAndCreateTodayTag();
+    new TagsCheckingExecutor.Checker(
+            getAmoroTable(),
+            TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
+            tomorrow)
+        .checkAndCreateTodayTag();
     assertNoRef(table);
   }
 
   @Test
   public void testKeyedTableCreateTag() {
     Assume.assumeTrue(isKeyedTable());
-    getArcticTable().updateProperties().set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true").commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .commit();
     UnkeyedTable baseTable = getArcticTable().asKeyedTable().baseTable();
     baseTable.newAppend().commit();
     Snapshot baseSnapshot = baseTable.currentSnapshot();
     LocalDate now = LocalDate.now();
-    new TagsCheckingExecutor.Checker(getAmoroTable(),
-        TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
-        now).checkAndCreateTodayTag();
+    new TagsCheckingExecutor.Checker(
+            getAmoroTable(),
+            TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
+            now)
+        .checkAndCreateTodayTag();
     assertTag(baseTable, baseSnapshot, now);
 
     // recheck and should not create new tag
-    new TagsCheckingExecutor.Checker(getAmoroTable(),
-        TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
-        now).checkAndCreateTodayTag();
+    new TagsCheckingExecutor.Checker(
+            getAmoroTable(),
+            TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
+            now)
+        .checkAndCreateTodayTag();
     assertTag(baseTable, baseSnapshot, now);
   }
 
   @Test
   public void testKeyedTableCreateBranch() {
     Assume.assumeTrue(isKeyedTable());
-    getArcticTable().updateProperties().set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true").commit();
-    getArcticTable().updateProperties().set(TableProperties.AUTO_CREATE_TAG_OPTIMIZE_ENABLED, "true").commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.AUTO_CREATE_TAG_OPTIMIZE_ENABLED, "true")
+        .commit();
     UnkeyedTable changeTable = getArcticTable().asKeyedTable().changeTable();
     UnkeyedTable baseTable = getArcticTable().asKeyedTable().baseTable();
     changeTable.newAppend().commit();
     Snapshot changeSnapshot = changeTable.currentSnapshot();
     LocalDate now = LocalDate.now();
-    new TagsCheckingExecutor.Checker(getAmoroTable(),
-        TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
-        now).checkAndCreateTodayTag();
+    new TagsCheckingExecutor.Checker(
+            getAmoroTable(),
+            TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
+            now)
+        .checkAndCreateTodayTag();
     assertBranch(changeTable, changeSnapshot, now);
     assertBranch(baseTable, baseTable.currentSnapshot(), now);
 
     // recheck and should not create new branch
-    new TagsCheckingExecutor.Checker(getAmoroTable(),
-        TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
-        now).checkAndCreateTodayTag();
+    new TagsCheckingExecutor.Checker(
+            getAmoroTable(),
+            TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
+            now)
+        .checkAndCreateTodayTag();
     assertBranch(changeTable, changeSnapshot, now);
     assertBranch(baseTable, baseTable.currentSnapshot(), now);
   }
@@ -180,8 +230,14 @@ public class TestTagChecking extends ExecutorTestBase {
   @Test
   public void testKeyedTableCreateBranch2() throws InterruptedException {
     Assume.assumeTrue(isKeyedTable());
-    getArcticTable().updateProperties().set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true").commit();
-    getArcticTable().updateProperties().set(TableProperties.AUTO_CREATE_TAG_OPTIMIZE_ENABLED, "true").commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.AUTO_CREATE_TAG_OPTIMIZE_ENABLED, "true")
+        .commit();
     UnkeyedTable changeTable = getArcticTable().asKeyedTable().changeTable();
     UnkeyedTable baseTable = getArcticTable().asKeyedTable().baseTable();
     baseTable.newAppend().commit();
@@ -191,16 +247,20 @@ public class TestTagChecking extends ExecutorTestBase {
     changeTable.newAppend().commit();
     Snapshot changeSnapshot = changeTable.currentSnapshot();
     LocalDate now = LocalDate.now();
-    new TagsCheckingExecutor.Checker(getAmoroTable(),
-        TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
-        now).checkAndCreateTodayTag();
+    new TagsCheckingExecutor.Checker(
+            getAmoroTable(),
+            TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
+            now)
+        .checkAndCreateTodayTag();
     assertBranch(changeTable, changeSnapshot, now);
     assertBranch(baseTable, baseSnapshot, now);
 
     // recheck and should not create new branch
-    new TagsCheckingExecutor.Checker(getAmoroTable(),
-        TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
-        now).checkAndCreateTodayTag();
+    new TagsCheckingExecutor.Checker(
+            getAmoroTable(),
+            TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
+            now)
+        .checkAndCreateTodayTag();
     assertBranch(changeTable, changeSnapshot, now);
     assertBranch(baseTable, baseSnapshot, now);
   }
@@ -208,14 +268,19 @@ public class TestTagChecking extends ExecutorTestBase {
   @Test
   public void testKeyedTableNotCreateOldTag() {
     Assume.assumeTrue(isKeyedTable());
-    getArcticTable().updateProperties().set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true").commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .commit();
     UnkeyedTable changeTable = getArcticTable().asKeyedTable().changeTable();
     UnkeyedTable baseTable = getArcticTable().asKeyedTable().baseTable();
     changeTable.newAppend().commit();
     LocalDate now = LocalDate.now().plusDays(1);
-    new TagsCheckingExecutor.Checker(getAmoroTable(),
-        TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
-        now).checkAndCreateTodayTag();
+    new TagsCheckingExecutor.Checker(
+            getAmoroTable(),
+            TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
+            now)
+        .checkAndCreateTodayTag();
     assertNoRef(changeTable);
     assertNoRef(baseTable);
   }
@@ -223,17 +288,25 @@ public class TestTagChecking extends ExecutorTestBase {
   @Test
   public void testKeyedTableNotCreateBranch() throws InterruptedException {
     Assume.assumeTrue(isKeyedTable());
-    getArcticTable().updateProperties().set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true").commit();
-    getArcticTable().updateProperties().set(TableProperties.AUTO_CREATE_TAG_OPTIMIZE_ENABLED, "true").commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.AUTO_CREATE_TAG_OPTIMIZE_ENABLED, "true")
+        .commit();
     UnkeyedTable changeTable = getArcticTable().asKeyedTable().changeTable();
     UnkeyedTable baseTable = getArcticTable().asKeyedTable().baseTable();
     changeTable.newAppend().commit();
     Thread.sleep(2);
     baseTable.newAppend().commit();
     LocalDate now = LocalDate.now();
-    new TagsCheckingExecutor.Checker(getAmoroTable(),
-        TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
-        now).checkAndCreateTodayTag();
+    new TagsCheckingExecutor.Checker(
+            getAmoroTable(),
+            TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
+            now)
+        .checkAndCreateTodayTag();
     assertNoRef(changeTable);
     assertNoRef(baseTable);
   }
@@ -241,15 +314,23 @@ public class TestTagChecking extends ExecutorTestBase {
   @Test
   public void testKeyedTableNotCreateBranch2() {
     Assume.assumeTrue(isKeyedTable());
-    getArcticTable().updateProperties().set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true").commit();
-    getArcticTable().updateProperties().set(TableProperties.AUTO_CREATE_TAG_OPTIMIZE_ENABLED, "true").commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.AUTO_CREATE_TAG_OPTIMIZE_ENABLED, "true")
+        .commit();
     UnkeyedTable changeTable = getArcticTable().asKeyedTable().changeTable();
     UnkeyedTable baseTable = getArcticTable().asKeyedTable().baseTable();
     baseTable.newAppend().commit();
     LocalDate now = LocalDate.now();
-    new TagsCheckingExecutor.Checker(getAmoroTable(),
-        TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
-        now).checkAndCreateTodayTag();
+    new TagsCheckingExecutor.Checker(
+            getAmoroTable(),
+            TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
+            now)
+        .checkAndCreateTodayTag();
     assertNoRef(changeTable);
     assertNoRef(baseTable);
   }
@@ -257,8 +338,14 @@ public class TestTagChecking extends ExecutorTestBase {
   @Test
   public void testKeyedTableBranchCompensation() throws InterruptedException {
     Assume.assumeTrue(isKeyedTable());
-    getArcticTable().updateProperties().set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true").commit();
-    getArcticTable().updateProperties().set(TableProperties.AUTO_CREATE_TAG_OPTIMIZE_ENABLED, "true").commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.AUTO_CREATE_TAG_OPTIMIZE_ENABLED, "true")
+        .commit();
     UnkeyedTable changeTable = getArcticTable().asKeyedTable().changeTable();
     UnkeyedTable baseTable = getArcticTable().asKeyedTable().baseTable();
     baseTable.newAppend().commit();
@@ -268,24 +355,28 @@ public class TestTagChecking extends ExecutorTestBase {
     changeTable.newAppend().commit();
     Snapshot changeSnapshot = changeTable.currentSnapshot();
     LocalDate now = LocalDate.now();
-    new TagsCheckingExecutor.Checker(getAmoroTable(),
-        TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
-        now).checkAndCreateTodayTag();
+    new TagsCheckingExecutor.Checker(
+            getAmoroTable(),
+            TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
+            now)
+        .checkAndCreateTodayTag();
     assertBranch(changeTable, changeSnapshot, now);
     assertBranch(baseTable, baseSnapshot, now);
-    
+
     // remove branch on tag
     baseTable.manageSnapshots().removeBranch(branchName(now)).commit();
     assertNoRef(baseTable);
 
     // compensate branch
-    new TagsCheckingExecutor.Checker(getAmoroTable(),
-        TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
-        now).checkAndCreateTodayTag();
+    new TagsCheckingExecutor.Checker(
+            getAmoroTable(),
+            TagsCheckingExecutor.TagConfig.fromTableProperties(getArcticTable().properties()),
+            now)
+        .checkAndCreateTodayTag();
     assertBranch(changeTable, changeSnapshot, now);
     assertBranch(baseTable, baseSnapshot, now);
   }
-  
+
   private void assertNoRef(Table table) {
     Assert.assertTrue(table.refs().size() <= 1);
     if (table.refs().size() == 1) {
@@ -300,17 +391,19 @@ public class TestTagChecking extends ExecutorTestBase {
   private void assertRef(Table table, Snapshot snapshot, LocalDate now, boolean isTag) {
     Assert.assertEquals(2, table.refs().size());
     // check ref, whose name is not 'main'
-    table.refs().entrySet().stream().filter(entry -> !entry.getKey().equals("main"))
-        .forEach(entry -> {
-          String name = entry.getKey();
-          SnapshotRef snapshotRef = entry.getValue();
-          Assert.assertEquals(isTag, snapshotRef.isTag());
-          Assert.assertEquals(isTag ? tagName(now) : branchName(now), name);
-          Assert.assertEquals(snapshot.snapshotId(), snapshotRef.snapshotId());
-          Assert.assertNull(snapshotRef.minSnapshotsToKeep());
-          Assert.assertNull(snapshotRef.maxSnapshotAgeMs());
-          Assert.assertNull(snapshotRef.maxRefAgeMs());
-        });
+    table.refs().entrySet().stream()
+        .filter(entry -> !entry.getKey().equals("main"))
+        .forEach(
+            entry -> {
+              String name = entry.getKey();
+              SnapshotRef snapshotRef = entry.getValue();
+              Assert.assertEquals(isTag, snapshotRef.isTag());
+              Assert.assertEquals(isTag ? tagName(now) : branchName(now), name);
+              Assert.assertEquals(snapshot.snapshotId(), snapshotRef.snapshotId());
+              Assert.assertNull(snapshotRef.minSnapshotsToKeep());
+              Assert.assertNull(snapshotRef.maxSnapshotAgeMs());
+              Assert.assertNull(snapshotRef.maxRefAgeMs());
+            });
   }
 
   private void assertBranch(Table table, Snapshot snapshot, LocalDate now) {
@@ -332,5 +425,4 @@ public class TestTagChecking extends ExecutorTestBase {
       return getCustomFormat(date);
     }
   }
-
 }

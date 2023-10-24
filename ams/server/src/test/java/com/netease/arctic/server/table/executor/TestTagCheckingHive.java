@@ -32,20 +32,26 @@ import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 public class TestTagCheckingHive extends TestTagChecking {
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
     return new Object[][] {
-        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new HiveTableTestHelper(true, true), null},
-        {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new HiveTableTestHelper(false, false), CUSTOM_FORMAT}};
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, true),
+        null
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(false, false),
+        CUSTOM_FORMAT
+      }
+    };
   }
 
-  public TestTagCheckingHive(CatalogTestHelper catalogTestHelper,
-                             TableTestHelper tableTestHelper, String format) {
+  public TestTagCheckingHive(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, String format) {
     super(catalogTestHelper, tableTestHelper, format);
   }
 

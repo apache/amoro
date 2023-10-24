@@ -109,16 +109,25 @@ public class TableConfiguration {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     TableConfiguration that = (TableConfiguration) o;
-    return expireSnapshotEnabled == that.expireSnapshotEnabled && snapshotTTLMinutes == that.snapshotTTLMinutes &&
-        changeDataTTLMinutes == that.changeDataTTLMinutes && cleanOrphanEnabled == that.cleanOrphanEnabled &&
-        orphanExistingMinutes == that.orphanExistingMinutes && autoCreateTagEnabled == that.autoCreateTagEnabled &&
-        Objects.equal(optimizingConfig, that.optimizingConfig);
+    return expireSnapshotEnabled == that.expireSnapshotEnabled
+        && snapshotTTLMinutes == that.snapshotTTLMinutes
+        && changeDataTTLMinutes == that.changeDataTTLMinutes
+        && cleanOrphanEnabled == that.cleanOrphanEnabled
+        && orphanExistingMinutes == that.orphanExistingMinutes
+        && autoCreateTagEnabled == that.autoCreateTagEnabled
+        && Objects.equal(optimizingConfig, that.optimizingConfig);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(expireSnapshotEnabled, snapshotTTLMinutes, changeDataTTLMinutes, cleanOrphanEnabled,
-        orphanExistingMinutes, autoCreateTagEnabled, optimizingConfig);
+    return Objects.hashCode(
+        expireSnapshotEnabled,
+        snapshotTTLMinutes,
+        changeDataTTLMinutes,
+        cleanOrphanEnabled,
+        orphanExistingMinutes,
+        autoCreateTagEnabled,
+        optimizingConfig);
   }
 
   public static TableConfiguration parseConfig(Map<String, String> properties) {
@@ -148,11 +157,13 @@ public class TableConfiguration {
                 properties,
                 TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME,
                 TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT))
-        .setAutoCreateTagEnabled(CompatiblePropertyUtil.propertyAsBoolean(
-            properties,
-            TableProperties.ENABLE_AUTO_CREATE_TAG,
-            TableProperties.ENABLE_AUTO_CREATE_TAG_DEFAULT))
-        .setDeleteDanglingDeleteFilesEnabled(CompatiblePropertyUtil.propertyAsBoolean(
+        .setAutoCreateTagEnabled(
+            CompatiblePropertyUtil.propertyAsBoolean(
+                properties,
+                TableProperties.ENABLE_AUTO_CREATE_TAG,
+                TableProperties.ENABLE_AUTO_CREATE_TAG_DEFAULT))
+        .setDeleteDanglingDeleteFilesEnabled(
+            CompatiblePropertyUtil.propertyAsBoolean(
                 properties,
                 TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN,
                 TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT))

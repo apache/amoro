@@ -33,15 +33,20 @@ public class TestTagCheckingIceberg extends TestTagChecking {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][]{
-        {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-            new BasicTableTestHelper(false, true), null},
-        {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-            new BasicTableTestHelper(false, false), CUSTOM_FORMAT}};
+    return new Object[][] {
+      {
+        new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, true), null
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.ICEBERG),
+        new BasicTableTestHelper(false, false),
+        CUSTOM_FORMAT
+      }
+    };
   }
 
-  public TestTagCheckingIceberg(CatalogTestHelper catalogTestHelper,
-                                TableTestHelper tableTestHelper, String format) {
+  public TestTagCheckingIceberg(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, String format) {
     super(catalogTestHelper, tableTestHelper, format);
   }
 
