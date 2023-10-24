@@ -47,14 +47,12 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAG
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_S3;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.TABLE_FORMATS;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.ArcticManagementConf;
+import com.netease.arctic.server.catalog.InternalCatalog;
+import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.PlatformFileManager;
 import com.netease.arctic.server.dashboard.model.CatalogRegisterInfo;
 import com.netease.arctic.server.dashboard.model.CatalogSettingInfo;
@@ -69,6 +67,10 @@ import io.javalin.http.Context;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.relocated.com.google.common.base.Objects;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.paimon.options.CatalogOptions;
 
@@ -532,7 +534,15 @@ public class CatalogController {
 
   /** Check whether we could delete the catalog */
   public void catalogDeleteCheck(Context ctx) {
-    ctx.json(OkResponse.of(true));
+    String catalogName = ctx.pathParam("catalogName");
+    Preconditions.checkArgument(
+        StringUtils.isNotEmpty(ctx.pathParam("catalogName")), "Catalog name is empty!");
+    ServerCatalog serverCatalog = tableService.getServerCatalog(catalogName);
+    if (serverCatalog instanceof InternalCatalog) {
+      ctx.json(OkResponse.of(tableService.listManagedTables(catalogName).size() == 0));
+    } else {
+      ctx.json(OkResponse.of(true));
+    }
   }
 
   /** Delete some catalog and information associate with the catalog */
