@@ -19,6 +19,7 @@
 package com.netease.arctic.server.dashboard;
 
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.server.dashboard.component.reverser.DDLReverser;
@@ -181,7 +182,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         continue;
       }
       futures.add(
-          CompletableFuture.supplyAsync(() -> getTransactionsOfTable(store, snapshot), executor));
+          CompletableFuture.supplyAsync(() -> getSnapshotsOfTable(store, snapshot), executor));
     }
     for (CompletableFuture<AmoroSnapshotsOfTable> completableFuture : futures) {
       try {
@@ -387,7 +388,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @NotNull
-  private AmoroSnapshotsOfTable getTransactionsOfTable(
+  private AmoroSnapshotsOfTable getSnapshotsOfTable(
       AbstractFileStore<?> store, Snapshot snapshot) {
     Map<String, String> summary = new HashMap<>();
     summary.put("commitUser", snapshot.commitUser());
@@ -408,9 +409,9 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     }
 
     // file number
-    AmoroSnapshotsOfTable deltaTransactionsOfTable =
+    AmoroSnapshotsOfTable deltaSnapshotsOfTable =
         manifestListInfo(store, snapshot, (m, s) -> s.deltaManifests(m));
-    int deltaFileCount = deltaTransactionsOfTable.getFileCount();
+    int deltaFileCount = deltaSnapshotsOfTable.getFileCount();
     int dataFileCount =
         manifestListInfo(store, snapshot, (m, s) -> s.dataManifests(m)).getFileCount();
     int changeLogFileCount =
@@ -422,14 +423,14 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     // Summary in chart
     Map<String, String> recordsSummaryForChat =
         extractSummary(summary, "total-records", "delta-records", "changelog-records");
-    deltaTransactionsOfTable.setRecordsSummaryForChart(recordsSummaryForChat);
+    deltaSnapshotsOfTable.setRecordsSummaryForChart(recordsSummaryForChat);
 
     Map<String, String> filesSummaryForChat =
         extractSummary(summary, "delta-files", "data-files", "changelogs");
-    deltaTransactionsOfTable.setFilesSummaryForChart(filesSummaryForChat);
+    deltaSnapshotsOfTable.setFilesSummaryForChart(filesSummaryForChat);
 
-    deltaTransactionsOfTable.setSummary(summary);
-    return deltaTransactionsOfTable;
+    deltaSnapshotsOfTable.setSummary(summary);
+    return deltaSnapshotsOfTable;
   }
 
   @NotNull
@@ -461,12 +462,16 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         }
       }
     }
+    Long totalRecordCount = snapshot.totalRecordCount();
     return new AmoroSnapshotsOfTable(
         String.valueOf(snapshot.id()),
         fileCount,
         fileSize,
+        totalRecordCount == null ? 0L : totalRecordCount,
         snapshot.timeMillis(),
         snapshot.commitKind().toString(),
+        snapshot.commitKind() == Snapshot.CommitKind.COMPACT ? CommitMetaProducer.OPTIMIZE.name() :
+            CommitMetaProducer.INGESTION.name(),
         new HashMap<>());
   }
 

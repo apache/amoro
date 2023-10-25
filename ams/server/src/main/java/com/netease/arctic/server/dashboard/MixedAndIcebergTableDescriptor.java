@@ -51,7 +51,6 @@ import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ManifestEntryFields;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.MetadataTableUtils;
@@ -167,45 +166,34 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                 .snapshots()
                 .forEach(
                     snapshot -> {
-                      if (snapshot.operation().equals(DataOperations.REPLACE)) {
-                        return;
-                      }
                       Map<String, String> summary = snapshot.summary();
                       if (summary.containsKey(
                           com.netease.arctic.op.SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE)) {
                         return;
                       }
-                      AmoroSnapshotsOfTable amsTransactionsOfTable = new AmoroSnapshotsOfTable();
-                      amsTransactionsOfTable.setSnapshotId(
+                      AmoroSnapshotsOfTable amoroSnapshotsOfTable = new AmoroSnapshotsOfTable();
+                      amoroSnapshotsOfTable.setSnapshotId(
                           String.valueOf(snapshot.snapshotId()));
-                      int fileCount =
-                          PropertyUtil.propertyAsInt(
-                              summary, org.apache.iceberg.SnapshotSummary.ADDED_FILES_PROP, 0);
-                      fileCount +=
-                          PropertyUtil.propertyAsInt(
-                              summary,
-                              org.apache.iceberg.SnapshotSummary.ADDED_DELETE_FILES_PROP,
-                              0);
-                      fileCount +=
-                          PropertyUtil.propertyAsInt(
-                              summary, org.apache.iceberg.SnapshotSummary.DELETED_FILES_PROP, 0);
-                      fileCount +=
-                          PropertyUtil.propertyAsInt(
-                              summary,
-                              org.apache.iceberg.SnapshotSummary.REMOVED_DELETE_FILES_PROP,
-                              0);
-                      amsTransactionsOfTable.setFileCount(fileCount);
-                      amsTransactionsOfTable.setFileSize(
+                      int fileCount = PropertyUtil.propertyAsInt(
+                          summary, SnapshotSummary.TOTAL_DELETE_FILES_PROP, 0)
+                          + PropertyUtil.propertyAsInt(
+                          summary, SnapshotSummary.TOTAL_DATA_FILES_PROP, 0);
+                      amoroSnapshotsOfTable.setFileCount(fileCount);
+                      amoroSnapshotsOfTable.setFileSize(
                           PropertyUtil.propertyAsLong(
-                                  summary,
-                                  org.apache.iceberg.SnapshotSummary.ADDED_FILE_SIZE_PROP,
-                                  0)
+                              summary,
+                              SnapshotSummary.ADDED_FILE_SIZE_PROP, 0L)
                               + PropertyUtil.propertyAsLong(
-                                  summary,
-                                  org.apache.iceberg.SnapshotSummary.REMOVED_FILE_SIZE_PROP,
-                                  0));
-                      amsTransactionsOfTable.setCommitTime(snapshot.timestampMillis());
-                      amsTransactionsOfTable.setOperation(snapshot.operation());
+                              summary,
+                              SnapshotSummary.REMOVED_FILE_SIZE_PROP, 0L));
+                      long totalRecords = PropertyUtil.propertyAsLong(
+                          summary, SnapshotSummary.TOTAL_RECORDS_PROP, 0L);
+                      amoroSnapshotsOfTable.setRecords(totalRecords);
+                      amoroSnapshotsOfTable.setCommitTime(snapshot.timestampMillis());
+                      amoroSnapshotsOfTable.setOperation(snapshot.operation());
+                      amoroSnapshotsOfTable.setProducer(PropertyUtil.propertyAsString(
+                          summary, com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER,
+                          com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT));
 
                       // normalize summary
                       Map<String, String> normalizeSummary =
@@ -219,18 +207,17 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                       normalizeSummary.computeIfPresent(
                           SnapshotSummary.REMOVED_FILE_SIZE_PROP,
                           (k, v) -> byteToXB(Long.parseLong(summary.get(k))));
-                      amsTransactionsOfTable.setSummary(normalizeSummary);
+                      amoroSnapshotsOfTable.setSummary(normalizeSummary);
 
                       // Metric in chart
                       Map<String, String> recordsSummaryForChat = new HashMap<>();
-                      recordsSummaryForChat.put(
-                          "total-records", summary.get(SnapshotSummary.TOTAL_RECORDS_PROP));
+                      recordsSummaryForChat.put("total-records", totalRecords + "");
                       recordsSummaryForChat.put(
                           "eq-delete-records", summary.get(SnapshotSummary.TOTAL_EQ_DELETES_PROP));
                       recordsSummaryForChat.put(
                           "pos-delete-records",
                           summary.get(SnapshotSummary.TOTAL_POS_DELETES_PROP));
-                      amsTransactionsOfTable.setRecordsSummaryForChart(recordsSummaryForChat);
+                      amoroSnapshotsOfTable.setRecordsSummaryForChart(recordsSummaryForChat);
 
                       Map<String, String> filesSummaryForChat = new HashMap<>();
                       filesSummaryForChat.put(
@@ -238,15 +225,10 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                       filesSummaryForChat.put(
                           "delete-files", summary.get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
                       filesSummaryForChat.put(
-                          "total-files",
-                          PropertyUtil.propertyAsInt(
-                                  summary, SnapshotSummary.TOTAL_DELETE_FILES_PROP, 0)
-                              + PropertyUtil.propertyAsInt(
-                                  summary, SnapshotSummary.TOTAL_DATA_FILES_PROP, 0)
-                              + "");
-                      amsTransactionsOfTable.setFilesSummaryForChart(filesSummaryForChat);
+                          "total-files", fileCount + "");
+                      amoroSnapshotsOfTable.setFilesSummaryForChart(filesSummaryForChat);
 
-                      snapshotsOfTables.add(amsTransactionsOfTable);
+                      snapshotsOfTables.add(amoroSnapshotsOfTable);
                     }));
     snapshotsOfTables.sort((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()));
     return snapshotsOfTables;

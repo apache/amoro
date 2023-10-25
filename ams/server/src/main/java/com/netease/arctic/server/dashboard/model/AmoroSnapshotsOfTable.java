@@ -27,8 +27,10 @@ public class AmoroSnapshotsOfTable {
   private String snapshotId;
   private int fileCount;
   private long fileSize;
+  private long records;
   private long commitTime;
   private String operation;
+  private String producer;
   private Map<String, String> summary;
 
   private Map<String, String> recordsSummaryForChart;
@@ -41,14 +43,18 @@ public class AmoroSnapshotsOfTable {
       String snapshotId,
       int fileCount,
       long fileSize,
+      long records,
       long commitTime,
       String operation,
+      String producer,
       Map<String, String> summary) {
     this.fileCount = fileCount;
     this.fileSize = fileSize;
     this.commitTime = commitTime;
+    this.records = records;
     this.snapshotId = snapshotId;
     this.operation = operation;
+    this.producer = producer;
     this.summary = summary;
   }
 
@@ -120,14 +126,31 @@ public class AmoroSnapshotsOfTable {
     this.filesSummaryForChart = filesSummaryForChart;
   }
 
+  public long getRecords() {
+    return records;
+  }
+
+  public void setRecords(long records) {
+    this.records = records;
+  }
+
+  public String getProducer() {
+    return producer;
+  }
+
+  public void setProducer(String producer) {
+    this.producer = producer;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     AmoroSnapshotsOfTable that = (AmoroSnapshotsOfTable) o;
-    return fileCount == that.fileCount && fileSize == that.fileSize && commitTime == that.commitTime &&
-        Objects.equal(snapshotId, that.snapshotId) &&
+    return fileCount == that.fileCount && fileSize == that.fileSize && records == that.records &&
+        commitTime == that.commitTime && Objects.equal(snapshotId, that.snapshotId) &&
         Objects.equal(operation, that.operation) &&
+        Objects.equal(producer, that.producer) &&
         Objects.equal(summary, that.summary) &&
         Objects.equal(recordsSummaryForChart, that.recordsSummaryForChart) &&
         Objects.equal(filesSummaryForChart, that.filesSummaryForChart);
@@ -135,7 +158,7 @@ public class AmoroSnapshotsOfTable {
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(snapshotId, fileCount, fileSize, commitTime, operation, summary, recordsSummaryForChart,
-        filesSummaryForChart);
+    return Objects.hashCode(snapshotId, fileCount, fileSize, records, commitTime, operation, producer, summary,
+        recordsSummaryForChart, filesSummaryForChart);
   }
 }
