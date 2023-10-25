@@ -77,8 +77,8 @@ const { t } = useI18n()
 const columns: IColumns[] = shallowReactive([
   { title: t('snapshotId'), dataIndex: 'snapshotId', ellipsis: true },
   { title: t('operation'), dataIndex: 'operation' },
+  { title: t('records'), dataIndex: 'records' },
   { title: t('fileCount'), dataIndex: 'fileCount' },
-  { title: t('size'), dataIndex: 'fileSize' },
   { title: t('commitTime'), dataIndex: 'commitTime' }
 ])
 const breadcrumbColumns = shallowReactive([
@@ -125,6 +125,9 @@ async function getTableInfo() {
       const { recordsSummaryForChart, filesSummaryForChart, commitTime } = p
       rcData[commitTime] = recordsSummaryForChart || {}
       fcData[commitTime] = filesSummaryForChart || {}
+      if (p.producer === 'OPTIMIZE') {
+        p.operation = p.operation + '(optimize)'
+      }
       p.commitTime = p.commitTime ? dateFormat(p.commitTime) : ''
       dataSource.push(p)
     })

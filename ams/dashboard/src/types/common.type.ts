@@ -145,8 +145,10 @@ export interface SnapshotItemSummary {
 
 export interface SnapshotItem {
   snapshotId: string
+  operation: string
+  producer: string
   fileCount: number
-  fileSize: string
+  records: number
   commitTime: string
   summary: SnapshotItemSummary
   filesSummaryForChart: Record<string, number>

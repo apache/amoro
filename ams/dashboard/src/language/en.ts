@@ -103,6 +103,7 @@ export default {
   release: 'Release',
   optimizeStatus: 'Optimize Status',
   fileSize: 'File Size',
+  records: 'Records',
   occupation: 'Occupation',
   optimizerGroup: 'Optimizer Group',
   optimizerGroups: 'Optimizer Groups',
