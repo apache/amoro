@@ -31,7 +31,7 @@ or just build only one image.
 ./build.sh amoro
 ```
 
-- NOTICE: The amoro image and optimizer-flink image required the project had been packaged. 
+- NOTICE: The amoro image, quickdemo image and optimizer-flink image required the project had been packaged. 
 so run `mvn package -pl '!trino'` before build amoro or optimizer-flink image.
 
 You can speed up image building via 
