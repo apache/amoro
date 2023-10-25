@@ -21,7 +21,6 @@ package com.netease.arctic.server.dashboard.model;
 import org.apache.iceberg.SnapshotRef;
 
 public class TagOrBranchInfo {
-  // todo temporarily responds to the problem of Mixed Format table.
   public static final TagOrBranchInfo MAIN_BRANCH =
       new TagOrBranchInfo(SnapshotRef.MAIN_BRANCH, -1, -1, 0L, 0L, "branch");
 

@@ -594,7 +594,12 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     List<TagOrBranchInfo> result = new ArrayList<>();
     Map<String, SnapshotRef> snapshotRefs;
     if (arcticTable.isKeyedTable()) {
-      return ImmutableList.of(TagOrBranchInfo.MAIN_BRANCH);
+      // todo temporarily responds to the problem of Mixed Format table.
+      if (predicate.test(SnapshotRef.branchBuilder(-1).build())) {
+        return ImmutableList.of(TagOrBranchInfo.MAIN_BRANCH);
+      } else {
+        return Collections.emptyList();
+      }
     } else {
       snapshotRefs = arcticTable.asUnkeyedTable().refs();
       snapshotRefs.forEach(
