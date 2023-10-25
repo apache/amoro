@@ -28,7 +28,7 @@ You can build all image via script in current dir.
 or just build only one image.
 
 ```shell
-./build.sh ams
+./build.sh amoro
 ```
 
 - NOTICE: The ams image and flink image required the project had been packaged. 
