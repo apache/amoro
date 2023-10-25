@@ -76,7 +76,6 @@ export default {
   commitId: 'Commit ID',
   path: 'Path',
   snapshotId: 'Snapshot ID',
-  transactionId: 'Transaction ID',
   fileType: 'File Type',
   fileContent: 'File Content',
   startTime: 'Start Time',

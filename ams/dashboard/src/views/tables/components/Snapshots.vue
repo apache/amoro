@@ -1,5 +1,5 @@
 <template>
-  <div class="table-transactions">
+  <div class="table-snapshots">
     <template v-if="!hasBreadcrumb">
       <a-row>
         <a-col :span="12">
@@ -10,7 +10,7 @@
         </a-col>
       </a-row>
       <a-table
-        rowKey="transactionId"
+        rowKey="snapshotId"
         :columns="columns"
         :data-source="dataSource"
         :pagination="pagination"
@@ -18,9 +18,9 @@
         @change="change"
       >
         <template #bodyCell="{ column, record }">
-          <template v-if="column.dataIndex === 'transactionId'">
+          <template v-if="column.dataIndex === 'snapshotId'">
             <a-button type="link" @click="toggleBreadcrumb(record)">
-              {{ record.transactionId }}
+              {{ record.snapshotId }}
             </a-button>
           </template>
         </template>
@@ -35,7 +35,7 @@
     <template v-else>
       <a-breadcrumb separator=">">
         <a-breadcrumb-item @click="toggleBreadcrumb" class="text-active">All</a-breadcrumb-item>
-        <a-breadcrumb-item>{{ `${$t('transactionId')} ${transactionId}`}}</a-breadcrumb-item>
+        <a-breadcrumb-item>{{ `${$t('snapshotId')} ${snapshotId}`}}</a-breadcrumb-item>
       </a-breadcrumb>
       <a-table
         rowKey="file"
@@ -64,8 +64,8 @@
 import { onMounted, reactive, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'
-import { BreadcrumbTransactionItem, IColumns, ILineChartOriginalData, TransactionItem } from '@/types/common.type'
-import { getDetailByTransactionId, getTransactions } from '@/services/table.service'
+import { BreadcrumbSnapshotItem, IColumns, ILineChartOriginalData, SnapshotItem } from '@/types/common.type'
+import { getDetailBySnapshotId, getSnapshots } from '@/services/table.service'
 import { useRoute } from 'vue-router'
 import { dateFormat } from '@/utils'
 import Chart from '@/components/echarts/Chart.vue'
@@ -75,12 +75,11 @@ import { generateLineChartOption } from '@/utils/chart'
 const hasBreadcrumb = ref<boolean>(false)
 const { t } = useI18n()
 const columns: IColumns[] = shallowReactive([
-  { title: t('transactionId'), dataIndex: 'transactionId', ellipsis: true },
+  { title: t('snapshotId'), dataIndex: 'snapshotId', ellipsis: true },
   { title: t('operation'), dataIndex: 'operation' },
   { title: t('fileCount'), dataIndex: 'fileCount' },
   { title: t('size'), dataIndex: 'fileSize' },
-  { title: t('commitTime'), dataIndex: 'commitTime' },
-  { title: t('snapshotId'), dataIndex: 'snapshotId', ellipsis: true }
+  { title: t('commitTime'), dataIndex: 'commitTime' }
 ])
 const breadcrumbColumns = shallowReactive([
   { title: t('operation'), dataIndex: 'operation', width: 120, ellipsis: true },
@@ -92,9 +91,9 @@ const breadcrumbColumns = shallowReactive([
   { title: t('commitTime'), dataIndex: 'commitTime', width: 200, ellipsis: true },
   { title: t('path'), dataIndex: 'path', ellipsis: true }
 ])
-const dataSource = reactive<TransactionItem[]>([])
-const breadcrumbDataSource = reactive<BreadcrumbTransactionItem[]>([])
-const transactionId = ref<string>('')
+const dataSource = reactive<SnapshotItem[]>([])
+const breadcrumbDataSource = reactive<BreadcrumbSnapshotItem[]>([])
+const snapshotId = ref<string>('')
 const loading = ref<boolean>(false)
 const pagination = reactive(usePagination())
 const breadcrumbPagination = reactive(usePagination())
@@ -113,7 +112,7 @@ async function getTableInfo() {
   try {
     loading.value = true
     dataSource.length = 0
-    const result = await getTransactions({
+    const result = await getSnapshots({
       ...sourceData,
       page: pagination.current,
       pageSize: pagination.pageSize
@@ -121,7 +120,7 @@ async function getTableInfo() {
     const { list = [], total } = result
     const rcData: ILineChartOriginalData = {}
     const fcData: ILineChartOriginalData = {}
-    list.forEach((p: TransactionItem) => {
+    list.forEach((p: SnapshotItem) => {
       // Assume that the time will not conflict and use the time as the unique key without formatting it.
       const { recordsSummaryForChart, filesSummaryForChart, commitTime } = p
       rcData[commitTime] = recordsSummaryForChart || {}
@@ -169,14 +168,14 @@ async function getBreadcrumbTable() {
     loading.value = true
     const params = {
       ...sourceData,
-      transactionId: transactionId.value,
+      snapshotId: snapshotId.value,
       page: breadcrumbPagination.current,
       pageSize: breadcrumbPagination.pageSize
     }
-    const result = await getDetailByTransactionId(params)
+    const result = await getDetailBySnapshotId(params)
     const { list, total } = result
     breadcrumbPagination.total = total
-    list.forEach((p: BreadcrumbTransactionItem) => {
+    list.forEach((p: BreadcrumbSnapshotItem) => {
       p.commitTime = p.commitTime ? dateFormat(p.commitTime) : ''
       breadcrumbDataSource.push(p)
     })
@@ -186,8 +185,8 @@ async function getBreadcrumbTable() {
   }
 }
 
-function toggleBreadcrumb(record: TransactionItem) {
-  transactionId.value = record.transactionId
+function toggleBreadcrumb(record: SnapshotItem) {
+  snapshotId.value = record.snapshotId
   hasBreadcrumb.value = !hasBreadcrumb.value
   if (hasBreadcrumb.value) {
     breadcrumbPagination.current = 1
@@ -203,7 +202,7 @@ onMounted(() => {
 </script>
 
 <style lang="less" scoped>
-.table-transactions {
+.table-snapshots {
   padding: 18px 24px;
   .text-active {
     color: #1890ff;
