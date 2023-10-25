@@ -18,9 +18,6 @@
 
 package com.netease.arctic.server.dashboard;
 
-import static com.netease.arctic.data.DataFileType.INSERT_FILE;
-import static org.apache.paimon.operation.FileStoreScan.Plan.groupByPartFiles;
-
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.DataFileType;
@@ -28,7 +25,7 @@ import com.netease.arctic.server.dashboard.component.reverser.DDLReverser;
 import com.netease.arctic.server.dashboard.component.reverser.PaimonTableMetaExtract;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
 import com.netease.arctic.server.dashboard.model.AMSPartitionField;
-import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
+import com.netease.arctic.server.dashboard.model.AmoroSnapshotsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
@@ -71,6 +68,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+
+import static com.netease.arctic.data.DataFileType.INSERT_FILE;
+import static org.apache.paimon.operation.FileStoreScan.Plan.groupByPartFiles;
 
 /** Descriptor for Paimon format tables. */
 public class PaimonTableDescriptor implements FormatTableDescriptor {
@@ -128,11 +128,11 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     tableSummary.put("tableFormat", AmsUtil.formatString(amoroTable.format().name()));
     Snapshot snapshot = store.snapshotManager().latestSnapshot();
     if (snapshot != null) {
-      AMSTransactionsOfTable transactionsOfTable =
+      AmoroSnapshotsOfTable snapshotsOfTable =
           manifestListInfo(store, snapshot, (m, s) -> s.dataManifests(m));
-      long fileSize = transactionsOfTable.getOriginalFileSize();
+      long fileSize = snapshotsOfTable.getOriginalFileSize();
       String totalSize = AmsUtil.byteToXB(fileSize);
-      int fileCount = transactionsOfTable.getFileCount();
+      int fileCount = snapshotsOfTable.getFileCount();
 
       String averageFileSize = AmsUtil.byteToXB(fileCount == 0 ? 0 : fileSize / fileCount);
 
@@ -164,9 +164,9 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public List<AMSTransactionsOfTable> getTransactions(AmoroTable<?> amoroTable) {
+  public List<AmoroSnapshotsOfTable> getSnapshots(AmoroTable<?> amoroTable) {
     FileStoreTable table = getTable(amoroTable);
-    List<AMSTransactionsOfTable> transactionsOfTables = new ArrayList<>();
+    List<AmoroSnapshotsOfTable> snapshotsOfTables = new ArrayList<>();
     Iterator<Snapshot> snapshots;
     try {
       snapshots = table.snapshotManager().snapshots();
@@ -174,7 +174,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
       throw new RuntimeException(e);
     }
     AbstractFileStore<?> store = (AbstractFileStore<?>) table.store();
-    List<CompletableFuture<AMSTransactionsOfTable>> futures = new ArrayList<>();
+    List<CompletableFuture<AmoroSnapshotsOfTable>> futures = new ArrayList<>();
     while (snapshots.hasNext()) {
       Snapshot snapshot = snapshots.next();
       if (snapshot.commitKind() == Snapshot.CommitKind.COMPACT) {
@@ -183,24 +183,24 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
       futures.add(
           CompletableFuture.supplyAsync(() -> getTransactionsOfTable(store, snapshot), executor));
     }
-    for (CompletableFuture<AMSTransactionsOfTable> completableFuture : futures) {
+    for (CompletableFuture<AmoroSnapshotsOfTable> completableFuture : futures) {
       try {
-        transactionsOfTables.add(completableFuture.get());
+        snapshotsOfTables.add(completableFuture.get());
       } catch (InterruptedException e) {
         // ignore
       } catch (ExecutionException e) {
         throw new RuntimeException(e);
       }
     }
-    return transactionsOfTables;
+    return snapshotsOfTables;
   }
 
   @Override
-  public List<PartitionFileBaseInfo> getTransactionDetail(
-      AmoroTable<?> amoroTable, long transactionId) {
+  public List<PartitionFileBaseInfo> getSnapshotDetail(
+      AmoroTable<?> amoroTable, long snapshotId) {
     FileStoreTable table = getTable(amoroTable);
     List<PartitionFileBaseInfo> amsDataFileInfos = new ArrayList<>();
-    Snapshot snapshot = table.snapshotManager().snapshot(transactionId);
+    Snapshot snapshot = table.snapshotManager().snapshot(snapshotId);
     AbstractFileStore<?> store = (AbstractFileStore<?>) table.store();
     FileStorePathFactory fileStorePathFactory = store.pathFactory();
     ManifestList manifestList = store.manifestListFactory().create();
@@ -387,7 +387,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @NotNull
-  private AMSTransactionsOfTable getTransactionsOfTable(
+  private AmoroSnapshotsOfTable getTransactionsOfTable(
       AbstractFileStore<?> store, Snapshot snapshot) {
     Map<String, String> summary = new HashMap<>();
     summary.put("commitUser", snapshot.commitUser());
@@ -408,7 +408,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     }
 
     // file number
-    AMSTransactionsOfTable deltaTransactionsOfTable =
+    AmoroSnapshotsOfTable deltaTransactionsOfTable =
         manifestListInfo(store, snapshot, (m, s) -> s.deltaManifests(m));
     int deltaFileCount = deltaTransactionsOfTable.getFileCount();
     int dataFileCount =
@@ -440,7 +440,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
-  private AMSTransactionsOfTable manifestListInfo(
+  private AmoroSnapshotsOfTable manifestListInfo(
       AbstractFileStore<?> store,
       Snapshot snapshot,
       BiFunction<ManifestList, Snapshot, List<ManifestFileMeta>> biFunction) {
@@ -461,7 +461,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         }
       }
     }
-    return new AMSTransactionsOfTable(
+    return new AmoroSnapshotsOfTable(
         String.valueOf(snapshot.id()),
         fileCount,
         fileSize,

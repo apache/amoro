@@ -31,7 +31,7 @@ import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.ServerTableDescriptor;
 import com.netease.arctic.server.dashboard.ServerTableProperties;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
-import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
+import com.netease.arctic.server.dashboard.model.AmoroSnapshotsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.HiveTableInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
@@ -286,43 +286,43 @@ public class TableController {
   }
 
   /**
-   * get list of transactions.
+   * get list of snapshots.
    *
    * @param ctx - context for handling the request and response
    */
-  public void getTableTransactions(Context ctx) {
+  public void getTableSnapshots(Context ctx) {
     String catalog = ctx.pathParam("catalog");
     String database = ctx.pathParam("db");
     String tableName = ctx.pathParam("table");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
-    List<AMSTransactionsOfTable> transactionsOfTables =
-        tableDescriptor.getTransactions(
+    List<AmoroSnapshotsOfTable> snapshotsOfTables =
+        tableDescriptor.getSnapshots(
             TableIdentifier.of(catalog, database, tableName).buildTableIdentifier());
     int offset = (page - 1) * pageSize;
-    PageResult<AMSTransactionsOfTable> pageResult =
-        PageResult.of(transactionsOfTables, offset, pageSize);
+    PageResult<AmoroSnapshotsOfTable> pageResult =
+        PageResult.of(snapshotsOfTables, offset, pageSize);
     ctx.json(OkResponse.of(pageResult));
   }
 
   /**
-   * get detail of transaction.
+   * get detail of snapshot.
    *
    * @param ctx - context for handling the request and response
    */
-  public void getTransactionDetail(Context ctx) {
+  public void getSnapshotDetail(Context ctx) {
     String catalog = ctx.pathParam("catalog");
     String database = ctx.pathParam("db");
     String tableName = ctx.pathParam("table");
-    String transactionId = ctx.pathParam("transactionId");
+    String snapshotId = ctx.pathParam("snapshotId");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
     List<PartitionFileBaseInfo> result =
-        tableDescriptor.getTransactionDetail(
+        tableDescriptor.getSnapshotDetail(
             TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(),
-            Long.parseLong(transactionId));
+            Long.parseLong(snapshotId));
     int offset = (page - 1) * pageSize;
     PageResult<PartitionFileBaseInfo> amsPageResult = PageResult.of(result, offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));

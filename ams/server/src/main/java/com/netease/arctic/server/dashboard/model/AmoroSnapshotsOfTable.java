@@ -23,12 +23,11 @@ import com.netease.arctic.server.dashboard.utils.AmsUtil;
 
 import java.util.Map;
 
-public class AMSTransactionsOfTable {
-  private String transactionId;
+public class AmoroSnapshotsOfTable {
+  private String snapshotId;
   private int fileCount;
   private long fileSize;
   private long commitTime;
-  private String snapshotId;
   private String operation;
   private Map<String, String> summary;
 
@@ -36,30 +35,21 @@ public class AMSTransactionsOfTable {
 
   private Map<String, String> filesSummaryForChart;
 
-  public AMSTransactionsOfTable() {}
+  public AmoroSnapshotsOfTable() {}
 
-  public AMSTransactionsOfTable(
-      String transactionId,
+  public AmoroSnapshotsOfTable(
+      String snapshotId,
       int fileCount,
       long fileSize,
       long commitTime,
       String operation,
       Map<String, String> summary) {
-    this.transactionId = transactionId;
     this.fileCount = fileCount;
     this.fileSize = fileSize;
     this.commitTime = commitTime;
-    this.snapshotId = this.transactionId;
+    this.snapshotId = snapshotId;
     this.operation = operation;
     this.summary = summary;
-  }
-
-  public String getTransactionId() {
-    return transactionId;
-  }
-
-  public void setTransactionId(String transactionId) {
-    this.transactionId = transactionId;
   }
 
   public int getFileCount() {
@@ -132,25 +122,20 @@ public class AMSTransactionsOfTable {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof AMSTransactionsOfTable)) {
-      return false;
-    }
-    AMSTransactionsOfTable that = (AMSTransactionsOfTable) o;
-    return fileCount == that.fileCount
-        && commitTime == that.commitTime
-        && Objects.equal(transactionId, that.transactionId)
-        && Objects.equal(fileSize, that.fileSize)
-        && Objects.equal(snapshotId, that.snapshotId)
-        && Objects.equal(operation, that.operation)
-        && Objects.equal(summary, that.summary);
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    AmoroSnapshotsOfTable that = (AmoroSnapshotsOfTable) o;
+    return fileCount == that.fileCount && fileSize == that.fileSize && commitTime == that.commitTime &&
+        Objects.equal(snapshotId, that.snapshotId) &&
+        Objects.equal(operation, that.operation) &&
+        Objects.equal(summary, that.summary) &&
+        Objects.equal(recordsSummaryForChart, that.recordsSummaryForChart) &&
+        Objects.equal(filesSummaryForChart, that.filesSummaryForChart);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(
-        transactionId, fileCount, fileSize, commitTime, snapshotId, operation, summary);
+    return Objects.hashCode(snapshotId, fileCount, fileSize, commitTime, operation, summary, recordsSummaryForChart,
+        filesSummaryForChart);
   }
 }

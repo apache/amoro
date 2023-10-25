@@ -18,8 +18,6 @@
 
 package com.netease.arctic.server.dashboard;
 
-import static com.netease.arctic.server.dashboard.utils.AmsUtil.byteToXB;
-
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.DataFileType;
@@ -29,7 +27,7 @@ import com.netease.arctic.server.dashboard.component.reverser.DDLReverser;
 import com.netease.arctic.server.dashboard.component.reverser.IcebergTableMetaExtract;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
 import com.netease.arctic.server.dashboard.model.AMSPartitionField;
-import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
+import com.netease.arctic.server.dashboard.model.AmoroSnapshotsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
@@ -81,6 +79,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
+
+import static com.netease.arctic.server.dashboard.utils.AmsUtil.byteToXB;
 
 /** Descriptor for Mixed-Hive, Mixed-Iceberg, Iceberg format tables. */
 public class MixedAndIcebergTableDescriptor extends PersistentBase
@@ -151,9 +151,9 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     return serverTableMeta;
   }
 
-  public List<AMSTransactionsOfTable> getTransactions(AmoroTable<?> amoroTable) {
+  public List<AmoroSnapshotsOfTable> getSnapshots(AmoroTable<?> amoroTable) {
     ArcticTable arcticTable = getTable(amoroTable);
-    List<AMSTransactionsOfTable> transactionsOfTables = new ArrayList<>();
+    List<AmoroSnapshotsOfTable> snapshotsOfTables = new ArrayList<>();
     List<Table> tables = new ArrayList<>();
     if (arcticTable.isKeyedTable()) {
       tables.add(arcticTable.asKeyedTable().changeTable());
@@ -175,8 +175,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                           com.netease.arctic.op.SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE)) {
                         return;
                       }
-                      AMSTransactionsOfTable amsTransactionsOfTable = new AMSTransactionsOfTable();
-                      amsTransactionsOfTable.setTransactionId(
+                      AmoroSnapshotsOfTable amsTransactionsOfTable = new AmoroSnapshotsOfTable();
+                      amsTransactionsOfTable.setSnapshotId(
                           String.valueOf(snapshot.snapshotId()));
                       int fileCount =
                           PropertyUtil.propertyAsInt(
@@ -210,13 +210,13 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                       // normalize summary
                       Map<String, String> normalizeSummary =
                           com.google.common.collect.Maps.newHashMap(summary);
-                      summary.computeIfPresent(
+                      normalizeSummary.computeIfPresent(
                           SnapshotSummary.TOTAL_FILE_SIZE_PROP,
                           (k, v) -> byteToXB(Long.parseLong(summary.get(k))));
-                      summary.computeIfPresent(
+                      normalizeSummary.computeIfPresent(
                           SnapshotSummary.ADDED_FILE_SIZE_PROP,
                           (k, v) -> byteToXB(Long.parseLong(summary.get(k))));
-                      summary.computeIfPresent(
+                      normalizeSummary.computeIfPresent(
                           SnapshotSummary.REMOVED_FILE_SIZE_PROP,
                           (k, v) -> byteToXB(Long.parseLong(summary.get(k))));
                       amsTransactionsOfTable.setSummary(normalizeSummary);
@@ -246,31 +246,31 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                               + "");
                       amsTransactionsOfTable.setFilesSummaryForChart(filesSummaryForChat);
 
-                      transactionsOfTables.add(amsTransactionsOfTable);
+                      snapshotsOfTables.add(amsTransactionsOfTable);
                     }));
-    transactionsOfTables.sort((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()));
-    return transactionsOfTables;
+    snapshotsOfTables.sort((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()));
+    return snapshotsOfTables;
   }
 
-  public List<PartitionFileBaseInfo> getTransactionDetail(
-      AmoroTable<?> amoroTable, long transactionId) {
+  public List<PartitionFileBaseInfo> getSnapshotDetail(
+      AmoroTable<?> amoroTable, long snapshotId) {
     ArcticTable arcticTable = getTable(amoroTable);
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     Snapshot snapshot;
     if (arcticTable.isKeyedTable()) {
-      snapshot = arcticTable.asKeyedTable().changeTable().snapshot(transactionId);
+      snapshot = arcticTable.asKeyedTable().changeTable().snapshot(snapshotId);
       if (snapshot == null) {
-        snapshot = arcticTable.asKeyedTable().baseTable().snapshot(transactionId);
+        snapshot = arcticTable.asKeyedTable().baseTable().snapshot(snapshotId);
       }
     } else {
-      snapshot = arcticTable.asUnkeyedTable().snapshot(transactionId);
+      snapshot = arcticTable.asUnkeyedTable().snapshot(snapshotId);
     }
     if (snapshot == null) {
       throw new IllegalArgumentException(
-          "unknown snapshot " + transactionId + " of " + amoroTable.id());
+          "unknown snapshot " + snapshotId + " of " + amoroTable.id());
     }
     final long snapshotTime = snapshot.timestampMillis();
-    String commitId = String.valueOf(transactionId);
+    String commitId = String.valueOf(snapshotId);
     snapshot
         .addedDataFiles(arcticTable.io())
         .forEach(
