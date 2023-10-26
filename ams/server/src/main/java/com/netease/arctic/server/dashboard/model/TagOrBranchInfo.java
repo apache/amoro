@@ -21,8 +21,10 @@ package com.netease.arctic.server.dashboard.model;
 import org.apache.iceberg.SnapshotRef;
 
 public class TagOrBranchInfo {
+  public static final String TAG = "tag";
+  public static final String BRANCH = "branch";
   public static final TagOrBranchInfo MAIN_BRANCH =
-      new TagOrBranchInfo(SnapshotRef.MAIN_BRANCH, -1, -1, 0L, 0L, "branch");
+      new TagOrBranchInfo(SnapshotRef.MAIN_BRANCH, -1, -1, 0L, 0L, BRANCH);
 
   private String name;
   private long snapshotId;
@@ -55,9 +57,9 @@ public class TagOrBranchInfo {
     this.maxSnapshotAgeMs = snapshotRef.maxSnapshotAgeMs();
     this.maxRefAgeMs = snapshotRef.maxRefAgeMs();
     if (snapshotRef.isTag()) {
-      this.type = "tag";
+      this.type = TAG;
     } else if (snapshotRef.isBranch()) {
-      this.type = "branch";
+      this.type = BRANCH;
     } else {
       throw new RuntimeException("Invalid snapshot ref: " + snapshotRef);
     }
