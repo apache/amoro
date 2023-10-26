@@ -27,6 +27,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.mapping.MappingUtil;
 import org.apache.iceberg.mapping.NameMappingParser;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 
@@ -420,7 +421,10 @@ public class MixedHiveTables extends MixedTables {
       org.apache.hadoop.hive.metastore.api.Table hiveTable,
       PrimaryKeySpec primaryKeySpec,
       TableMeta meta) {
-    Map<String, String> parameters = constructProperties(primaryKeySpec, meta);
+    Map<String, String> hiveTableProperties = constructProperties(primaryKeySpec, meta);
+    Map<String, String> parameters = Maps.newHashMap();
+    parameters.putAll(hiveTable.getParameters());
+    parameters.putAll(hiveTableProperties);
     hiveTable.setParameters(parameters);
   }
 
