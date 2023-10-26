@@ -197,7 +197,6 @@ public class CatalogController {
     ctx.json(OkResponse.of(catalogTypes));
   }
 
-  /** fill server auth config to CatalogMeta */
   private void fillAuthConfigs2CatalogMeta(
       CatalogMeta catalogMeta, Map<String, String> serverAuthConfig, CatalogMeta oldCatalogMeta) {
     Map<String, String> metaAuthConfig = new HashMap<>();
