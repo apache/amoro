@@ -19,7 +19,16 @@
 package com.netease.arctic.flink.catalog;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static com.netease.arctic.flink.FlinkSchemaUtil.COMPUTED_COLUMNS;
+import static com.netease.arctic.flink.FlinkSchemaUtil.FLINK_PREFIX;
+import static com.netease.arctic.flink.FlinkSchemaUtil.WATERMARK;
 import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
+import static org.apache.flink.table.descriptors.DescriptorProperties.DATA_TYPE;
+import static org.apache.flink.table.descriptors.DescriptorProperties.EXPR;
+import static org.apache.flink.table.descriptors.DescriptorProperties.NAME;
+import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_ROWTIME;
+import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_STRATEGY_DATA_TYPE;
+import static org.apache.flink.table.descriptors.DescriptorProperties.WATERMARK_STRATEGY_EXPR;
 
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -43,6 +52,7 @@ import org.apache.flink.util.CollectionUtil;
 import org.apache.iceberg.flink.MiniClusterResource;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -52,9 +62,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TestCatalog extends CatalogTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(TestCatalog.class);
@@ -68,6 +81,7 @@ public class TestCatalog extends CatalogTestBase {
 
   private static final String DB = TableTestHelper.TEST_DB_NAME;
   private static final String TABLE = TableTestHelper.TEST_TABLE_NAME;
+  private static final String CATALOG = "arcticCatalog";
   private volatile StreamExecutionEnvironment env = null;
   private volatile StreamTableEnvironment tEnv = null;
 
@@ -76,16 +90,26 @@ public class TestCatalog extends CatalogTestBase {
     props = Maps.newHashMap();
     props.put("type", ArcticCatalogFactoryOptions.IDENTIFIER);
     props.put(ArcticCatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
+    sql("CREATE CATALOG " + CATALOG + " WITH %s", toWithClause(props));
+    sql("USE CATALOG " + CATALOG);
+    sql("CREATE DATABASE " + CATALOG + "." + DB);
+  }
+
+  @After
+  public void after() {
+    sql("DROP TABLE " + CATALOG + "." + DB + "." + TABLE);
+    sql("DROP DATABASE " + CATALOG + "." + DB);
+    Assert.assertTrue(CollectionUtil.isNullOrEmpty(getCatalog().listDatabases()));
+    sql("USE CATALOG default_catalog");
+    sql("DROP CATALOG " + CATALOG);
   }
 
   @Test
   public void testDDL() throws IOException {
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
-    sql("USE CATALOG arcticCatalog");
-    sql("CREATE DATABASE arcticCatalog." + DB);
-
     sql(
-        "CREATE TABLE arcticCatalog."
+        "CREATE TABLE "
+            + CATALOG
+            + "."
             + DB
             + "."
             + TABLE
@@ -103,19 +127,100 @@ public class TestCatalog extends CatalogTestBase {
 
     Assert.assertTrue(
         getCatalog().loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE)).isKeyedTable());
-    sql("DROP TABLE " + DB + "." + TABLE);
+  }
 
-    sql("DROP DATABASE " + DB);
+  @Test
+  public void testDDLWithVirtualColumn() throws IOException {
+    // create arctic table with compute columns and watermark under arctic catalog
+    sql(
+        "CREATE TABLE "
+            + CATALOG
+            + "."
+            + DB
+            + "."
+            + TABLE
+            + " ("
+            + " id INT,"
+            + " name STRING,"
+            + " t TIMESTAMP(6),"
+            + " t3 as cast(t as TIMESTAMP(3)),"
+            + " compute_id as id+5 ,"
+            + " proc as PROCTIME() ,"
+            + " watermark FOR t3 AS t3 - INTERVAL '5' SECOND, "
+            + " PRIMARY KEY (id) NOT ENFORCED "
+            + ") PARTITIONED BY(t) "
+            + " WITH ("
+            + " 'connector' = 'arctic'"
+            + ")");
 
-    Assert.assertTrue(CollectionUtil.isNullOrEmpty(getCatalog().listDatabases()));
-    sql("USE CATALOG default_catalog");
-    sql("DROP CATALOG arcticCatalog");
+    Map<String, String> properties =
+        getCatalog().loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE)).properties();
+
+    // index for compute columns
+    int[] computedIndex = {3, 4, 5};
+    Arrays.stream(computedIndex)
+        .forEach(
+            x -> {
+              Assert.assertTrue(
+                  properties.containsKey(compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, x, NAME)));
+              Assert.assertTrue(
+                  properties.containsKey(compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, x, EXPR)));
+              Assert.assertTrue(
+                  properties.containsKey(
+                      compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, x, DATA_TYPE)));
+            });
+
+    Assert.assertTrue(
+        properties.containsKey(compoundKey(FLINK_PREFIX, WATERMARK, WATERMARK_ROWTIME)));
+    Assert.assertTrue(
+        properties.containsKey(compoundKey(FLINK_PREFIX, WATERMARK, WATERMARK_STRATEGY_EXPR)));
+    Assert.assertTrue(
+        properties.containsKey(compoundKey(FLINK_PREFIX, WATERMARK, WATERMARK_STRATEGY_DATA_TYPE)));
+  }
+
+  @Test
+  public void testDMLWithVirtualColumn() throws IOException {
+    // create arctic table with compute columns under arctic catalog
+    sql(
+        "CREATE TABLE "
+            + CATALOG
+            + "."
+            + DB
+            + "."
+            + TABLE
+            + " ("
+            + " id INT,"
+            + " t TIMESTAMP(6),"
+            + " compute_id as id+5 ,"
+            + " proc as PROCTIME(), "
+            + " PRIMARY KEY (id) NOT ENFORCED "
+            + ") PARTITIONED BY(t) "
+            + " WITH ("
+            + " 'connector' = 'arctic'"
+            + ")");
+
+    // insert values into arctic table
+    insertValue();
+
+    // select from arctic table with compute columns under arctic catalog
+    List<Row> rows =
+        sql(
+            "SELECT * FROM "
+                + CATALOG
+                + "."
+                + DB
+                + "."
+                + TABLE
+                + " /*+ OPTIONS("
+                + "'streaming'='false'"
+                + ") */");
+    checkRows(rows);
   }
 
   @Test
   public void testDML() throws IOException {
     sql(
-        "CREATE TABLE "
+        "CREATE TABLE default_catalog.default_database."
             + TABLE
             + " ("
             + " id INT,"
@@ -129,12 +234,10 @@ public class TestCatalog extends CatalogTestBase {
             + " 'fields.id.start'='1',"
             + " 'fields.id.end'='1'"
             + ")");
-
-    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
-    sql("USE CATALOG arcticCatalog");
-    sql("CREATE DATABASE arcticCatalog." + DB);
     sql(
-        "CREATE TABLE arcticCatalog."
+        "CREATE TABLE "
+            + CATALOG
+            + "."
             + DB
             + "."
             + TABLE
@@ -149,7 +252,9 @@ public class TestCatalog extends CatalogTestBase {
             + ")");
 
     sql(
-        "INSERT INTO arcticCatalog."
+        "INSERT INTO "
+            + CATALOG
+            + "."
             + DB
             + "."
             + TABLE
@@ -157,7 +262,9 @@ public class TestCatalog extends CatalogTestBase {
             + TABLE);
     List<Row> rows =
         sql(
-            "SELECT * FROM arcticCatalog."
+            "SELECT * FROM "
+                + CATALOG
+                + "."
                 + DB
                 + "."
                 + TABLE
@@ -166,13 +273,72 @@ public class TestCatalog extends CatalogTestBase {
                 + ") */");
     Assert.assertEquals(1, rows.size());
 
-    sql("DROP TABLE " + DB + "." + TABLE);
-    sql("DROP DATABASE " + DB);
     sql("DROP TABLE default_catalog.default_database." + TABLE);
-    sql("DROP DATABASE arcticCatalog");
-    sql("SHOW CATALOGS");
-    sql("USE CATALOG default_catalog");
-    sql("DROP CATALOG arcticCatalog");
+  }
+
+  @Test
+  public void testDefaultCatalogDDLWithVirtualColumn() {
+
+    // create arctic table with only physical columns
+    sql(
+        "CREATE TABLE "
+            + CATALOG
+            + "."
+            + DB
+            + "."
+            + TABLE
+            + " ("
+            + " id INT,"
+            + " t TIMESTAMP(6),"
+            + " PRIMARY KEY (id) NOT ENFORCED "
+            + ") PARTITIONED BY(t) "
+            + " WITH ("
+            + " 'connector' = 'arctic'"
+            + ")");
+
+    // insert values into arctic table
+    insertValue();
+
+    // create Table with compute columns under default catalog
+    props = Maps.newHashMap();
+    props.put("connector", ArcticCatalogFactoryOptions.IDENTIFIER);
+    props.put(ArcticCatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
+    props.put(ArcticCatalogFactoryOptions.IDENTIFIER + ".catalog", CATALOG);
+    props.put(ArcticCatalogFactoryOptions.IDENTIFIER + ".database", DB);
+    props.put(ArcticCatalogFactoryOptions.IDENTIFIER + ".table", TABLE);
+
+    sql(
+        "CREATE TABLE default_catalog.default_database."
+            + TABLE
+            + " ("
+            + " id INT,"
+            + " t TIMESTAMP(6),"
+            + " compute_id as id+5 ,"
+            + " proc as PROCTIME(), "
+            + " PRIMARY KEY (id) NOT ENFORCED "
+            + ") PARTITIONED BY(t) "
+            + "WITH %s",
+        toWithClause(props));
+
+    // select from arctic table with compute columns under default catalog
+    List<Row> rows =
+        sql(
+            "SELECT * FROM default_catalog.default_database."
+                + TABLE
+                + " /*+ OPTIONS("
+                + "'streaming'='false'"
+                + ") */");
+    checkRows(rows);
+  }
+
+  private void checkRows(List<Row> rows) {
+    Assert.assertEquals(1, rows.size());
+    int id = (int) rows.get(0).getField("id");
+    int computeId = (int) rows.get(0).getField("compute_id");
+    Assert.assertEquals(1, id);
+    // computeId should be id+5
+    Assert.assertEquals(id + 5, computeId);
+    Assert.assertEquals(4, rows.get(0).getFieldNames(true).size());
   }
 
   protected List<Row> sql(String query, Object... args) {
@@ -256,5 +422,38 @@ public class TestCatalog extends CatalogTestBase {
     }
     builder.append(")");
     return builder.toString();
+  }
+
+  private String compoundKey(Object... components) {
+    return Stream.of(components).map(Object::toString).collect(Collectors.joining("."));
+  }
+
+  private void insertValue() {
+    sql(
+        "CREATE TABLE default_catalog.default_database."
+            + TABLE
+            + " ("
+            + " id INT,"
+            + " t TIMESTAMP,"
+            + " PRIMARY KEY (id) NOT ENFORCED "
+            + ") PARTITIONED BY(t) "
+            + " WITH ("
+            + " 'connector' = 'datagen',"
+            + " 'fields.id.kind'='sequence',"
+            + " 'fields.id.start'='1',"
+            + " 'fields.id.end'='1'"
+            + ")");
+
+    sql(
+        "INSERT INTO "
+            + CATALOG
+            + "."
+            + DB
+            + "."
+            + TABLE
+            + " SELECT * FROM default_catalog.default_database."
+            + TABLE);
+
+    sql("DROP TABLE default_catalog.default_database." + TABLE);
   }
 }

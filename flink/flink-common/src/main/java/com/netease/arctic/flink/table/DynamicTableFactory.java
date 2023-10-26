@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink.table;
 
+import static com.netease.arctic.flink.FlinkSchemaUtil.addSchemaProperties;
 import static com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema;
 import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.METASTORE_URL;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.createKeyFormatProjection;
@@ -145,8 +146,13 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
       objectPath = new ObjectPath(identifier.getDatabaseName(), identifier.getObjectName());
     }
 
+    // update computed columns and watermark to properties
+    Map<String, String> properties = options.toMap();
+    Map<String, String> updatedProperties = addSchemaProperties(catalogTable.getSchema());
+    properties.putAll(updatedProperties);
+
     ArcticTableLoader tableLoader =
-        createTableLoader(objectPath, actualCatalogName, actualBuilder, options.toMap());
+        createTableLoader(objectPath, actualCatalogName, actualBuilder, properties);
     ArcticTable arcticTable = ArcticUtils.loadArcticTable(tableLoader);
 
     Configuration confWithAll = Configuration.fromMap(arcticTable.properties());
@@ -164,7 +170,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
             arcticTable.properties(),
             ArcticValidator.DIM_TABLE_ENABLE.key(),
             ArcticValidator.DIM_TABLE_ENABLE.defaultValue());
-    TableSchema tableSchema = getPhysicalSchema(catalogTable.getSchema(), dimTable);
+    TableSchema tableSchema = getPhysicalSchema(catalogTable.getSchema());
     switch (readMode) {
       case ArcticValidator.ARCTIC_READ_FILE:
         boolean batchMode = context.getConfiguration().get(RUNTIME_MODE).equals(BATCH);
