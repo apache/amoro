@@ -18,6 +18,9 @@
 
 package com.netease.arctic.server.dashboard;
 
+import static com.netease.arctic.data.DataFileType.INSERT_FILE;
+import static org.apache.paimon.operation.FileStoreScan.Plan.groupByPartFiles;
+
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.TableFormat;
@@ -69,9 +72,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
-
-import static com.netease.arctic.data.DataFileType.INSERT_FILE;
-import static org.apache.paimon.operation.FileStoreScan.Plan.groupByPartFiles;
 
 /** Descriptor for Paimon format tables. */
 public class PaimonTableDescriptor implements FormatTableDescriptor {
@@ -200,8 +200,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public List<PartitionFileBaseInfo> getSnapshotDetail(
-      AmoroTable<?> amoroTable, long snapshotId) {
+  public List<PartitionFileBaseInfo> getSnapshotDetail(AmoroTable<?> amoroTable, long snapshotId) {
     FileStoreTable table = getTable(amoroTable);
     List<PartitionFileBaseInfo> amsDataFileInfos = new ArrayList<>();
     Snapshot snapshot = table.snapshotManager().snapshot(snapshotId);
@@ -391,8 +390,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @NotNull
-  private AmoroSnapshotsOfTable getSnapshotsOfTable(
-      AbstractFileStore<?> store, Snapshot snapshot) {
+  private AmoroSnapshotsOfTable getSnapshotsOfTable(AbstractFileStore<?> store, Snapshot snapshot) {
     Map<String, String> summary = new HashMap<>();
     summary.put("commitUser", snapshot.commitUser());
     summary.put("commitIdentifier", String.valueOf(snapshot.commitIdentifier()));
@@ -473,8 +471,9 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         totalRecordCount == null ? 0L : totalRecordCount,
         snapshot.timeMillis(),
         snapshot.commitKind().toString(),
-        snapshot.commitKind() == Snapshot.CommitKind.COMPACT ? CommitMetaProducer.OPTIMIZE.name() :
-            CommitMetaProducer.INGESTION.name(),
+        snapshot.commitKind() == Snapshot.CommitKind.COMPACT
+            ? CommitMetaProducer.OPTIMIZE.name()
+            : CommitMetaProducer.INGESTION.name(),
         new HashMap<>());
   }
 

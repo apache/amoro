@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.dashboard;
 
+import static com.netease.arctic.server.dashboard.utils.AmsUtil.byteToXB;
+
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.DataFileType;
@@ -80,8 +82,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
-
-import static com.netease.arctic.server.dashboard.utils.AmsUtil.byteToXB;
 
 /** Descriptor for Mixed-Hive, Mixed-Iceberg, Iceberg format tables. */
 public class MixedAndIcebergTableDescriptor extends PersistentBase
@@ -151,7 +151,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     serverTableMeta.setTableSummary(tableSummary);
     return serverTableMeta;
   }
-  
+
   private Long snapshotIdOfTable(Table table, String ref) {
     if (ref == null) {
       ref = SnapshotRef.MAIN_BRANCH;
@@ -179,16 +179,18 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
               snapshotIdOfTable(arcticTable.asKeyedTable().baseTable(), ref)));
     } else {
       tablesWithLatestSnapshotId.add(
-          Pair.of(arcticTable.asUnkeyedTable(), snapshotIdOfTable(arcticTable.asUnkeyedTable(), ref)));
+          Pair.of(
+              arcticTable.asUnkeyedTable(), snapshotIdOfTable(arcticTable.asUnkeyedTable(), ref)));
     }
     tablesWithLatestSnapshotId.forEach(
-        tableWithLatestSnapshotId -> collectSnapshots(snapshotsOfTables, tableWithLatestSnapshotId)
-    );
+        tableWithLatestSnapshotId ->
+            collectSnapshots(snapshotsOfTables, tableWithLatestSnapshotId));
     snapshotsOfTables.sort((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()));
     return snapshotsOfTables;
   }
 
-  private void collectSnapshots(List<AmoroSnapshotsOfTable> snapshotsOfTables, Pair<Table, Long> tableWithSnapshotId) {
+  private void collectSnapshots(
+      List<AmoroSnapshotsOfTable> snapshotsOfTables, Pair<Table, Long> tableWithSnapshotId) {
     Table table = tableWithSnapshotId.first();
     Long snapshotId = tableWithSnapshotId.second();
     if (snapshotId != null) {
@@ -201,28 +203,26 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                   return;
                 }
                 AmoroSnapshotsOfTable amoroSnapshotsOfTable = new AmoroSnapshotsOfTable();
-                amoroSnapshotsOfTable.setSnapshotId(
-                    String.valueOf(snapshot.snapshotId()));
-                int fileCount = PropertyUtil.propertyAsInt(
-                    summary, SnapshotSummary.TOTAL_DELETE_FILES_PROP, 0)
-                    + PropertyUtil.propertyAsInt(
-                    summary, SnapshotSummary.TOTAL_DATA_FILES_PROP, 0);
+                amoroSnapshotsOfTable.setSnapshotId(String.valueOf(snapshot.snapshotId()));
+                int fileCount =
+                    PropertyUtil.propertyAsInt(summary, SnapshotSummary.TOTAL_DELETE_FILES_PROP, 0)
+                        + PropertyUtil.propertyAsInt(
+                            summary, SnapshotSummary.TOTAL_DATA_FILES_PROP, 0);
                 amoroSnapshotsOfTable.setFileCount(fileCount);
                 amoroSnapshotsOfTable.setFileSize(
-                    PropertyUtil.propertyAsLong(
-                        summary,
-                        SnapshotSummary.ADDED_FILE_SIZE_PROP, 0L)
+                    PropertyUtil.propertyAsLong(summary, SnapshotSummary.ADDED_FILE_SIZE_PROP, 0L)
                         + PropertyUtil.propertyAsLong(
-                        summary,
-                        SnapshotSummary.REMOVED_FILE_SIZE_PROP, 0L));
-                long totalRecords = PropertyUtil.propertyAsLong(
-                    summary, SnapshotSummary.TOTAL_RECORDS_PROP, 0L);
+                            summary, SnapshotSummary.REMOVED_FILE_SIZE_PROP, 0L));
+                long totalRecords =
+                    PropertyUtil.propertyAsLong(summary, SnapshotSummary.TOTAL_RECORDS_PROP, 0L);
                 amoroSnapshotsOfTable.setRecords(totalRecords);
                 amoroSnapshotsOfTable.setCommitTime(snapshot.timestampMillis());
                 amoroSnapshotsOfTable.setOperation(snapshot.operation());
-                amoroSnapshotsOfTable.setProducer(PropertyUtil.propertyAsString(
-                    summary, com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER,
-                    com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT));
+                amoroSnapshotsOfTable.setProducer(
+                    PropertyUtil.propertyAsString(
+                        summary,
+                        com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER,
+                        com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT));
 
                 // normalize summary
                 Map<String, String> normalizeSummary =
@@ -244,8 +244,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                 recordsSummaryForChat.put(
                     "eq-delete-records", summary.get(SnapshotSummary.TOTAL_EQ_DELETES_PROP));
                 recordsSummaryForChat.put(
-                    "pos-delete-records",
-                    summary.get(SnapshotSummary.TOTAL_POS_DELETES_PROP));
+                    "pos-delete-records", summary.get(SnapshotSummary.TOTAL_POS_DELETES_PROP));
                 amoroSnapshotsOfTable.setRecordsSummaryForChart(recordsSummaryForChat);
 
                 Map<String, String> filesSummaryForChat = new HashMap<>();
@@ -253,19 +252,16 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                     "data-files", summary.get(SnapshotSummary.TOTAL_DATA_FILES_PROP));
                 filesSummaryForChat.put(
                     "delete-files", summary.get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
-                filesSummaryForChat.put(
-                    "total-files", fileCount + "");
+                filesSummaryForChat.put("total-files", fileCount + "");
                 amoroSnapshotsOfTable.setFilesSummaryForChart(filesSummaryForChat);
 
                 snapshotsOfTables.add(amoroSnapshotsOfTable);
-              }
-          );
+              });
     }
   }
 
   @Override
-  public List<PartitionFileBaseInfo> getSnapshotDetail(
-      AmoroTable<?> amoroTable, long snapshotId) {
+  public List<PartitionFileBaseInfo> getSnapshotDetail(AmoroTable<?> amoroTable, long snapshotId) {
     ArcticTable arcticTable = getTable(amoroTable);
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     Snapshot snapshot;

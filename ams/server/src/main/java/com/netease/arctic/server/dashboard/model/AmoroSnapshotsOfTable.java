@@ -147,18 +147,30 @@ public class AmoroSnapshotsOfTable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     AmoroSnapshotsOfTable that = (AmoroSnapshotsOfTable) o;
-    return fileCount == that.fileCount && fileSize == that.fileSize && records == that.records &&
-        commitTime == that.commitTime && Objects.equal(snapshotId, that.snapshotId) &&
-        Objects.equal(operation, that.operation) &&
-        Objects.equal(producer, that.producer) &&
-        Objects.equal(summary, that.summary) &&
-        Objects.equal(recordsSummaryForChart, that.recordsSummaryForChart) &&
-        Objects.equal(filesSummaryForChart, that.filesSummaryForChart);
+    return fileCount == that.fileCount
+        && fileSize == that.fileSize
+        && records == that.records
+        && commitTime == that.commitTime
+        && Objects.equal(snapshotId, that.snapshotId)
+        && Objects.equal(operation, that.operation)
+        && Objects.equal(producer, that.producer)
+        && Objects.equal(summary, that.summary)
+        && Objects.equal(recordsSummaryForChart, that.recordsSummaryForChart)
+        && Objects.equal(filesSummaryForChart, that.filesSummaryForChart);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(snapshotId, fileCount, fileSize, records, commitTime, operation, producer, summary,
-        recordsSummaryForChart, filesSummaryForChart);
+    return Objects.hashCode(
+        snapshotId,
+        fileCount,
+        fileSize,
+        records,
+        commitTime,
+        operation,
+        producer,
+        summary,
+        recordsSummaryForChart,
+        filesSummaryForChart);
   }
 }
