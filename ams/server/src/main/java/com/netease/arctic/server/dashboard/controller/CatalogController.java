@@ -67,6 +67,8 @@ import com.netease.arctic.utils.CatalogUtil;
 import io.javalin.http.Context;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.aws.AwsClientProperties;
+import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.apache.iceberg.relocated.com.google.common.base.Objects;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
@@ -176,8 +178,8 @@ public class CatalogController {
   }
 
   /** Convert server auth config to metaAuthConfig */
-  private Map<String, String> authConvertFromServerToMeta(
-      Map<String, String> serverAuthConfig, CatalogMeta oldCatalogMeta) {
+  private void authConvertFromServerToMeta(
+      CatalogMeta catalogMeta, Map<String, String> serverAuthConfig, CatalogMeta oldCatalogMeta) {
     Map<String, String> metaAuthConfig = new HashMap<>();
     String authType =
         serverAuthConfig
@@ -216,17 +218,26 @@ public class CatalogController {
             AUTH_CONFIGS_KEY_PRINCIPAL, serverAuthConfig.get(AUTH_CONFIGS_KEY_PRINCIPAL));
         break;
       case AUTH_CONFIGS_VALUE_TYPE_AK_SK:
-        CatalogUtil.copyProperty(serverAuthConfig, metaAuthConfig, AUTH_CONFIGS_KEY_ACCESS_KEY);
-        CatalogUtil.copyProperty(serverAuthConfig, metaAuthConfig, AUTH_CONFIGS_KEY_SECRET_KEY);
+        CatalogUtil.copyProperty(
+            serverAuthConfig,
+            catalogMeta.getCatalogProperties(),
+            AUTH_CONFIGS_KEY_ACCESS_KEY,
+            S3FileIOProperties.ACCESS_KEY_ID);
+        CatalogUtil.copyProperty(
+            serverAuthConfig,
+            catalogMeta.getCatalogProperties(),
+            AUTH_CONFIGS_KEY_SECRET_KEY,
+            S3FileIOProperties.SECRET_ACCESS_KEY);
         break;
     }
-    return metaAuthConfig;
+    catalogMeta.setAuthConfigs(metaAuthConfig);
   }
 
   /** Convert meta auth config to server auth config DTO */
   private Map<String, Object> authConvertFromMetaToServer(
-      String catalogName, Map<String, String> metaAuthConfig) {
+      String catalogName, CatalogMeta catalogMeta) {
     Map<String, Object> serverAuthConfig = new HashMap<>();
+    Map<String, String> metaAuthConfig = catalogMeta.getAuthConfigs();
     String authType =
         metaAuthConfig.getOrDefault(AUTH_CONFIGS_KEY_TYPE, AUTH_CONFIGS_VALUE_TYPE_SIMPLE);
     serverAuthConfig.put(AUTH_CONFIGS_KEY_TYPE, authType.toUpperCase());
@@ -254,8 +265,18 @@ public class CatalogController {
                     catalogName, CONFIG_TYPE_AUTH, AUTH_CONFIGS_KEY_KRB5.replace("\\.", "-"))));
         break;
       case AUTH_CONFIGS_VALUE_TYPE_AK_SK:
-        CatalogUtil.copyProperty(metaAuthConfig, serverAuthConfig, AUTH_CONFIGS_KEY_ACCESS_KEY);
-        CatalogUtil.copyProperty(metaAuthConfig, serverAuthConfig, AUTH_CONFIGS_KEY_SECRET_KEY);
+        CatalogUtil.copyProperty(
+            catalogMeta.getCatalogProperties(),
+            serverAuthConfig,
+            S3FileIOProperties.ACCESS_KEY_ID,
+            AUTH_CONFIGS_KEY_ACCESS_KEY);
+        catalogMeta.getCatalogProperties().remove(S3FileIOProperties.ACCESS_KEY_ID);
+        CatalogUtil.copyProperty(
+            catalogMeta.getCatalogProperties(),
+            serverAuthConfig,
+            S3FileIOProperties.SECRET_ACCESS_KEY,
+            AUTH_CONFIGS_KEY_SECRET_KEY);
+        catalogMeta.getCatalogProperties().remove(S3FileIOProperties.SECRET_ACCESS_KEY);
         break;
     }
 
@@ -263,8 +284,9 @@ public class CatalogController {
   }
 
   private Map<String, Object> storageConvertFromMetaToServer(
-      String catalogName, Map<String, String> config) {
+      String catalogName, CatalogMeta catalogMeta) {
     Map<String, Object> storageConfig = new HashMap<>();
+    Map<String, String> config = catalogMeta.getStorageConfigs();
     String storageType = CatalogUtil.getCompatibleStorageType(config);
     storageConfig.put(STORAGE_CONFIGS_KEY_TYPE, storageType);
     if (STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equals(storageType)) {
@@ -295,8 +317,18 @@ public class CatalogController {
                   CONFIG_TYPE_STORAGE,
                   STORAGE_CONFIGS_KEY_HIVE_SITE.replace("\\.", "-"))));
     } else if (STORAGE_CONFIGS_VALUE_TYPE_S3.equals(storageType)) {
-      CatalogUtil.copyProperty(config, storageConfig, STORAGE_CONFIGS_KEY_REGION);
-      CatalogUtil.copyProperty(config, storageConfig, STORAGE_CONFIGS_KEY_ENDPOINT);
+      CatalogUtil.copyProperty(
+          catalogMeta.getCatalogProperties(),
+          storageConfig,
+          AwsClientProperties.CLIENT_REGION,
+          STORAGE_CONFIGS_KEY_REGION);
+      catalogMeta.getCatalogProperties().remove(AwsClientProperties.CLIENT_REGION);
+      CatalogUtil.copyProperty(
+          catalogMeta.getCatalogProperties(),
+          storageConfig,
+          S3FileIOProperties.ENDPOINT,
+          STORAGE_CONFIGS_KEY_ENDPOINT);
+      catalogMeta.getCatalogProperties().remove(S3FileIOProperties.ENDPOINT);
     }
 
     return storageConfig;
@@ -326,7 +358,7 @@ public class CatalogController {
     catalogMeta
         .getCatalogProperties()
         .put(CatalogMetaProperties.TABLE_FORMATS, tableFormats.toString());
-    catalogMeta.setAuthConfigs(authConvertFromServerToMeta(info.getAuthConfig(), oldCatalogMeta));
+    authConvertFromServerToMeta(catalogMeta, info.getAuthConfig(), oldCatalogMeta);
     // change fileId to base64Code
     Map<String, String> metaStorageConfig = new HashMap<>();
     String storageType =
@@ -361,9 +393,15 @@ public class CatalogController {
       }
     } else if (storageType.equals(STORAGE_CONFIGS_VALUE_TYPE_S3)) {
       CatalogUtil.copyProperty(
-          info.getStorageConfig(), metaStorageConfig, STORAGE_CONFIGS_KEY_REGION);
+          info.getStorageConfig(),
+          catalogMeta.getCatalogProperties(),
+          STORAGE_CONFIGS_KEY_REGION,
+          AwsClientProperties.CLIENT_REGION);
       CatalogUtil.copyProperty(
-          info.getStorageConfig(), metaStorageConfig, STORAGE_CONFIGS_KEY_ENDPOINT);
+          info.getStorageConfig(),
+          catalogMeta.getCatalogProperties(),
+          STORAGE_CONFIGS_KEY_ENDPOINT,
+          S3FileIOProperties.ENDPOINT);
     } else {
       throw new RuntimeException("Invalid storage type " + storageType);
     }
@@ -429,13 +467,13 @@ public class CatalogController {
       Object secretKey = newInfo.getAuthConfig().get(AUTH_CONFIGS_KEY_SECRET_KEY);
       if (DesensitizationUtil.isDesensitized(secretKey)) {
         Preconditions.checkArgument(
-            oldCatalogMeta.getAuthConfigs().containsKey(AUTH_CONFIGS_KEY_SECRET_KEY),
+            oldCatalogMeta.getCatalogProperties().containsKey(S3FileIOProperties.SECRET_ACCESS_KEY),
             "Secret key is not set before，must provide a valid secret key");
         newInfo
             .getAuthConfig()
             .put(
                 AUTH_CONFIGS_KEY_SECRET_KEY,
-                oldCatalogMeta.getAuthConfigs().get(AUTH_CONFIGS_KEY_SECRET_KEY));
+                oldCatalogMeta.getCatalogProperties().get(S3FileIOProperties.SECRET_ACCESS_KEY));
       }
     }
   }
@@ -492,9 +530,8 @@ public class CatalogController {
       } else {
         info.setType(catalogMeta.getCatalogType());
       }
-      info.setAuthConfig(authConvertFromMetaToServer(catalogName, catalogMeta.getAuthConfigs()));
-      info.setStorageConfig(
-          storageConvertFromMetaToServer(catalogName, catalogMeta.getStorageConfigs()));
+      info.setAuthConfig(authConvertFromMetaToServer(catalogName, catalogMeta));
+      info.setStorageConfig(storageConvertFromMetaToServer(catalogName, catalogMeta));
       // we put the table format single
       String tableFormat =
           catalogMeta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS);
