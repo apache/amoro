@@ -69,6 +69,63 @@ import java.util.stream.Collectors;
 
 public class HiveDataTestHelpers {
 
+  public static WriterHelper forWriter(ArcticTable table) {
+    return new WriterHelper(table);
+  }
+
+  public static class WriterHelper {
+    ArcticTable table;
+
+    public WriterHelper(ArcticTable table) {
+      this.table = table;
+    }
+
+    boolean orderedWrite = false;
+    String customHiveLocation = null;
+
+    Long txId = null;
+
+    Boolean usingHiveCommitProtocol = null;
+
+    public WriterHelper customHiveLocation(String customHiveLocation) {
+      this.customHiveLocation = customHiveLocation;
+      return this;
+    }
+
+    public WriterHelper transactionId(Long txId) {
+      this.txId = txId;
+      return this;
+    }
+
+    public WriterHelper usingHiveCommitProtocol(boolean usingHiveCommitProtocol) {
+      this.usingHiveCommitProtocol = usingHiveCommitProtocol;
+      return this;
+    }
+
+    public List<DataFile> writeHive(List<Record> records) {
+      AdaptHiveGenericTaskWriterBuilder builder =
+          AdaptHiveGenericTaskWriterBuilder.builderFor(table);
+      if (table.isKeyedTable()) {
+        builder.withTransactionId(txId);
+      }
+      if (orderedWrite) {
+        builder.withOrdered();
+      }
+      if (customHiveLocation != null) {
+        builder.withCustomHiveSubdirectory(customHiveLocation);
+      }
+      if (this.usingHiveCommitProtocol != null) {
+        builder.usingHiveCommitProtocol(this.usingHiveCommitProtocol);
+      }
+      LocationKind writeLocationKind = HiveLocationKind.INSTANT;
+      try (TaskWriter<Record> writer = builder.buildWriter(writeLocationKind)) {
+        return MixedDataTestHelpers.writeRecords(writer, records);
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+    }
+  }
+
   public static List<DataFile> writeChangeStore(
       KeyedTable keyedTable,
       Long txId,
@@ -89,6 +146,8 @@ public class HiveDataTestHelpers {
     }
   }
 
+  /** Using {@link #forWriter(ArcticTable)} instead. */
+  @Deprecated
   public static List<DataFile> writeBaseStore(
       ArcticTable table,
       long txId,

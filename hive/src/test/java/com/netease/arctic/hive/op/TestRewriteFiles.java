@@ -71,12 +71,15 @@ public class TestRewriteFiles extends TableTestBase {
     List<Record> insertRecords = Lists.newArrayList();
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
-    initDataFiles =
+    List<DataFile> initDataFiles =
         HiveDataTestHelpers.writeBaseStore(getArcticTable(), 1L, insertRecords, false, true);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     initDataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
+
+    this.initDataFiles =
+        UpdateHiveFilesTestHelpers.applyHiveCommitProtocol(getArcticTable(), initDataFiles);
   }
 
   @Test

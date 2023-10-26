@@ -19,6 +19,7 @@
 package com.netease.arctic.hive.op;
 
 import com.netease.arctic.hive.HiveTableProperties;
+import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -30,6 +31,7 @@ import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.FileInfo;
@@ -48,14 +50,42 @@ public class UpdateHiveFilesTestHelpers {
   public static void validateHiveTableValues(
       HiveMetaStoreClient hiveClient, ArcticTable table, List<DataFile> exceptFiles)
       throws TException {
+    exceptFiles = applyHiveCommitProtocol(table, exceptFiles);
     if (table.spec().isPartitioned()) {
-      UpdateHiveFilesTestHelpers.assertHivePartitionValues(hiveClient, table, exceptFiles);
+      assertHivePartitionValues(hiveClient, table, exceptFiles);
     } else {
-      UpdateHiveFilesTestHelpers.assertHiveTableValue(hiveClient, table, exceptFiles);
+      assertHiveTableValue(hiveClient, table, exceptFiles);
     }
   }
 
-  public static void assertHivePartitionValues(
+  public static List<DataFile> applyHiveCommitProtocol(ArcticTable table, List<DataFile> files) {
+    if (!TablePropertyUtil.usingHiveCommitProtocol(table.properties())) {
+      return files;
+    }
+    String hiveLocation = ((SupportHive) table).hiveLocation();
+    List<DataFile> committedFiles = Lists.newArrayList();
+    for (DataFile file : files) {
+      String location = file.path().toString();
+      if (location.toLowerCase().startsWith(hiveLocation.toLowerCase())) {
+        String filename = TableFileUtil.getFileName(location);
+        if (filename.startsWith(".")) {
+          filename = filename.substring(1);
+          String fileDir = TableFileUtil.getFileDir(location);
+
+          DataFile committedFile =
+              DataFiles.builder(table.spec()).copy(file).withPath(fileDir + "/" + filename).build();
+          committedFiles.add(committedFile);
+        } else {
+          committedFiles.add(file);
+        }
+      } else {
+        committedFiles.add(file);
+      }
+    }
+    return committedFiles;
+  }
+
+  private static void assertHivePartitionValues(
       HiveMetaStoreClient hiveClient, ArcticTable table, List<DataFile> files) throws TException {
     StructLikeMap<List<DataFile>> filesByPartition = groupFilesByPartition(table.spec(), files);
     StructLikeMap<String> pathByPartition = pathByPartition(table.spec(), filesByPartition);
@@ -92,7 +122,7 @@ public class UpdateHiveFilesTestHelpers {
     }
   }
 
-  public static void assertHiveTableValue(
+  private static void assertHiveTableValue(
       HiveMetaStoreClient hiveClient, ArcticTable table, List<DataFile> files) throws TException {
     TableIdentifier identifier = table.id();
     final String database = identifier.getDatabase();

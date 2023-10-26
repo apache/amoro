@@ -67,6 +67,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   private String customHiveSubdirectory;
   private Long targetFileSize;
   private boolean orderedWriter = false;
+  private Boolean usingHiveCommitProtocol;
 
   private AdaptHiveGenericTaskWriterBuilder(ArcticTable table) {
     this.table = table;
@@ -105,6 +106,12 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
 
   public AdaptHiveGenericTaskWriterBuilder withOrdered() {
     this.orderedWriter = true;
+    return this;
+  }
+
+  public AdaptHiveGenericTaskWriterBuilder usingHiveCommitProtocol(
+      boolean usingHiveCommitProtocol) {
+    this.usingHiveCommitProtocol = usingHiveCommitProtocol;
     return this;
   }
 
@@ -210,7 +217,12 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
       encryptionManager = table.encryption();
       schema = table.schema();
     }
-    boolean usingHiveCommitProtocol = TablePropertyUtil.usingHiveCommitProtocol(table.properties());
+    boolean usingHiveCommitProtocol;
+    if (this.usingHiveCommitProtocol != null) {
+      usingHiveCommitProtocol = this.usingHiveCommitProtocol;
+    } else {
+      usingHiveCommitProtocol = TablePropertyUtil.usingHiveCommitProtocol(table.properties());
+    }
 
     OutputFileFactory outputFileFactory =
         locationKind == HiveLocationKind.INSTANT
