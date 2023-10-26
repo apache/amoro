@@ -25,7 +25,7 @@ import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
-import com.netease.arctic.ams.api.metrics.SelfOptimizingTotalCostReport;
+import com.netease.arctic.server.metrics.SelfOptimizingTotalCostContent;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.optimizing.RewriteFilesInput;
@@ -89,7 +89,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   private final Map<String, OptimizerInstance> authOptimizers = new ConcurrentHashMap<>();
 
   private final TableManager tableManager;
-  private final MetricsManager metricsManager;
 
   public OptimizingQueue(
       TableManager tableManager,
@@ -97,8 +96,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       List<TableRuntimeMeta> tableRuntimeMetaList,
       List<OptimizerInstance> authOptimizers,
       long optimizerTouchTimeout,
-      long taskAckTimeout,
-      MetricsManager metricsManager) {
+      long taskAckTimeout) {
     Preconditions.checkNotNull(optimizerGroup, "optimizerGroup can not be null");
     this.optimizerTouchTimeout = optimizerTouchTimeout;
     this.taskAckTimeout = taskAckTimeout;
@@ -109,7 +107,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         authOptimizers.stream()
             .collect(Collectors.toMap(OptimizerInstance::getToken, optimizer -> optimizer)));
     tableRuntimeMetaList.forEach(this::initTableRuntime);
-    this.metricsManager = metricsManager;
   }
 
   private void initTableRuntime(TableRuntimeMeta tableRuntimeMeta) {
@@ -371,7 +368,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
                 tableRuntime.refresh(table),
                 (ArcticTable) table.originalTable(),
                 getAvailableCore(),
-                metricsManager
+                tableRuntime.getMetricsManager()
                 );
         if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
           LOG.info("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
@@ -600,17 +597,17 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           tableRuntime.getTableIdentifier(),
           taskMap.size(),
           taskMap.values());
-      SelfOptimizingTotalCostReport selfOptimizingTotalCostReport =
-          new SelfOptimizingTotalCostReport(
+      SelfOptimizingTotalCostContent selfOptimizingTotalCostContent =
+          new SelfOptimizingTotalCostContent(
               tableRuntime.getTableIdentifier().toString(),
               processId,
               optimizingType.name());
       taskMap.values().forEach(
           taskRuntime ->
-              selfOptimizingTotalCostReport.tableOptimizingTotalCostDuration()
+              selfOptimizingTotalCostContent.tableOptimizingTotalCostDuration()
                   .update(taskRuntime.getCostTime(), TimeUnit.MILLISECONDS)
       );
-      metricsManager.emit(selfOptimizingTotalCostReport);
+      tableRuntime.getMetricsManager().emit(selfOptimizingTotalCostContent);
 
       lock.lock();
       try {

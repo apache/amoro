@@ -16,11 +16,14 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.metrics;
+package com.netease.arctic.server.metrics;
 
 import com.codahale.metrics.Timer;
+import com.netease.arctic.ams.api.metrics.MetricType;
+import com.netease.arctic.ams.api.metrics.MetricsContent;
+import com.netease.arctic.ams.api.metrics.TaggedMetrics;
 
-public class SelfOptimizingPlanDurationReport implements MetricsContent<SelfOptimizingPlanDurationReport> {
+public class SelfOptimizingPlanDurationContent implements MetricsContent<SelfOptimizingPlanDurationContent> {
   public static final String SELF_OPTIMIZING_PLAN_DURATION_REPORT_NAME = "self_optimizing_plan_duration_report";
 
   public static final String TABLE_NAME = "table-name";
@@ -31,7 +34,7 @@ public class SelfOptimizingPlanDurationReport implements MetricsContent<SelfOpti
 
   private final Timer tableOptimizingPlanDuration = new Timer();
 
-  public SelfOptimizingPlanDurationReport(String tableName) {
+  public SelfOptimizingPlanDurationContent(String tableName) {
     this.tableName = tableName;
   }
 
@@ -56,7 +59,7 @@ public class SelfOptimizingPlanDurationReport implements MetricsContent<SelfOpti
   }
 
   @Override
-  public SelfOptimizingPlanDurationReport data() {
+  public SelfOptimizingPlanDurationContent data() {
     return this;
   }
 }

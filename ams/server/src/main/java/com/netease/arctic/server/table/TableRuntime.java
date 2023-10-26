@@ -21,7 +21,7 @@ package com.netease.arctic.server.table;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.metrics.SelfOptimizingStatusDurationReport;
+import com.netease.arctic.server.metrics.SelfOptimizingStatusDurationContent;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.BlockerConflictException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
@@ -263,16 +263,16 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   private void updateOptimizingStatus(OptimizingStatus status) {
-    SelfOptimizingStatusDurationReport selfOptimizingStatusDurationReport =
-        new SelfOptimizingStatusDurationReport(tableIdentifier.toString(), optimizingStatus.displayValue());
-    selfOptimizingStatusDurationReport.tableOptimizingStatusDuration()
+    SelfOptimizingStatusDurationContent selfOptimizingStatusDurationContent =
+        new SelfOptimizingStatusDurationContent(tableIdentifier.toString(), optimizingStatus.displayValue());
+    selfOptimizingStatusDurationContent.tableOptimizingStatusDuration()
         .update((System.currentTimeMillis() - currentStatusStartTime), TimeUnit.MILLISECONDS);
     if (optimizingStatus == OptimizingStatus.COMMITTING) {
-      selfOptimizingStatusDurationReport.setOptimizingType(optimizingProcess.getOptimizingType().name());
-      selfOptimizingStatusDurationReport.setOptimizingProcessId(optimizingProcess.getProcessId());
-      selfOptimizingStatusDurationReport.setTargetSnapshotId(optimizingProcess.getTargetSnapshotId());
+      selfOptimizingStatusDurationContent.setOptimizingType(optimizingProcess.getOptimizingType().name());
+      selfOptimizingStatusDurationContent.setOptimizingProcessId(optimizingProcess.getProcessId());
+      selfOptimizingStatusDurationContent.setTargetSnapshotId(optimizingProcess.getTargetSnapshotId());
     }
-    metricsManager.emit(selfOptimizingStatusDurationReport);
+    metricsManager.emit(selfOptimizingStatusDurationContent);
     this.optimizingStatus = status;
     this.currentStatusStartTime = System.currentTimeMillis();
   }
@@ -359,6 +359,10 @@ public class TableRuntime extends StatedPersistentBase {
 
   public TableFormat getFormat() {
     return tableIdentifier.getFormat();
+  }
+
+  public MetricsManager getMetricsManager() {
+    return metricsManager;
   }
 
   public OptimizingStatus getOptimizingStatus() {

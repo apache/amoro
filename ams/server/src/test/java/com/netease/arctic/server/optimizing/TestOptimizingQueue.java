@@ -64,8 +64,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntimeMeta),
             Collections.emptyList(),
             60000,
-            3000,
-            metricsManager());
+            3000);
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingTask optimizingTask = queue.pollTask(authToken, 1);
     Assert.assertNull(optimizingTask);
@@ -80,8 +79,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.emptyList(),
             Collections.emptyList(),
             60000,
-            3000,
-            metricsManager());
+            3000);
     Assert.assertEquals(0, queue.getSchedulingPolicy().getTableRuntimeMap().size());
     TableRuntimeMeta tableRuntimeMeta =
         buildTableRuntimeMeta(OptimizingStatus.IDLE, defaultResourceGroup());
@@ -105,8 +103,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntimeMeta),
             Collections.emptyList(),
             60000,
-            3000,
-            metricsManager());
+            3000);
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -156,8 +153,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntimeMeta),
             Collections.emptyList(),
             60000,
-            3000,
-            metricsManager());
+            3000);
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -179,8 +175,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntimeMeta),
             Collections.emptyList(),
             60000,
-            3000,
-            metricsManager());
+            3000);
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -215,8 +210,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntimeMeta),
             Collections.emptyList(),
             60000,
-            3000,
-            metricsManager());
+            3000);
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -235,8 +229,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             tableRuntimeMetas,
             queue.getOptimizers(),
             60000,
-            3000,
-            metricsManager());
+            3000);
 
     Assert.assertEquals(1, queue.getExecutingTaskMap().size());
     TaskRuntime taskRuntime = queue.getExecutingTaskMap().get(task.getTaskId());
@@ -260,8 +253,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntimeMeta),
             Collections.emptyList(),
             60000,
-            3000,
-            metricsManager());
+            3000);
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -283,8 +275,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             tableRuntimeMetas,
             queue.getOptimizers(),
             60000,
-            3000,
-            metricsManager());
+            3000);
 
     Assert.assertEquals(1, queue.getExecutingTaskMap().size());
     TaskRuntime taskRuntime = queue.getExecutingTaskMap().get(task.getTaskId());
@@ -305,8 +296,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntimeMeta),
             Collections.emptyList(),
             60000,
-            3000,
-            metricsManager());
+            3000);
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -331,8 +321,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             tableRuntimeMetas,
             Collections.emptyList(),
             60000,
-            3000,
-            metricsManager());
+            3000);
 
     Assert.assertEquals(0, queue.getExecutingTaskMap().size());
   }
@@ -348,8 +337,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntimeMeta),
             Collections.emptyList(),
             60000,
-            3000,
-            metricsManager());
+            3000);
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -374,8 +362,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             tableRuntimeMetas,
             queue.getOptimizers(),
             60000,
-            3000,
-            metricsManager());
+            3000);
 
     Assert.assertEquals(0, queue.getExecutingTaskMap().size());
 
@@ -461,8 +448,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.emptyList(),
             Collections.emptyList(),
             60000,
-            3000,
-            metricsManager());
+            3000);
     OptimizerRegisterInfo registerInfo = buildRegisterInfo();
 
     // authenticate
