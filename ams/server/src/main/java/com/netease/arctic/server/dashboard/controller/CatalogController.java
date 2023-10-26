@@ -150,10 +150,30 @@ public class CatalogController {
     return Sets.newHashSet(TableProperties.SELF_OPTIMIZING_GROUP);
   }
 
-  private static Set<String> getHiddenCatalogProperties(String type) {
+  private static Set<String> getHiddenCatalogProperties(CatalogRegisterInfo info) {
+    return getHiddenCatalogProperties(
+        info.getType(), info.getAuthConfig(), info.getStorageConfig());
+  }
+
+  private static Set<String> getHiddenCatalogProperties(CatalogSettingInfo info) {
+    return getHiddenCatalogProperties(
+        info.getType(), info.getAuthConfig(), info.getStorageConfig());
+  }
+
+  private static Set<String> getHiddenCatalogProperties(
+      String type, Map<String, ?> authConfig, Map<String, ?> storageConfig) {
     Set<String> hiddenProperties = Sets.newHashSet(TABLE_FORMATS);
     if (!CATALOG_TYPE_CUSTOM.equals(type)) {
       hiddenProperties.add(CatalogProperties.CATALOG_IMPL);
+    }
+    if (AUTH_CONFIGS_VALUE_TYPE_AK_SK.equalsIgnoreCase(
+        String.valueOf(authConfig.get(AUTH_CONFIGS_KEY_TYPE)))) {
+      hiddenProperties.add(S3FileIOProperties.ACCESS_KEY_ID);
+      hiddenProperties.add(S3FileIOProperties.SECRET_ACCESS_KEY);
+    }
+    if (STORAGE_CONFIGS_VALUE_TYPE_S3.equals(storageConfig.get(STORAGE_CONFIGS_KEY_TYPE))) {
+      hiddenProperties.add(AwsClientProperties.CLIENT_REGION);
+      hiddenProperties.add(S3FileIOProperties.ENDPOINT);
     }
     return hiddenProperties;
   }
@@ -270,13 +290,11 @@ public class CatalogController {
             serverAuthConfig,
             S3FileIOProperties.ACCESS_KEY_ID,
             AUTH_CONFIGS_KEY_ACCESS_KEY);
-        catalogMeta.getCatalogProperties().remove(S3FileIOProperties.ACCESS_KEY_ID);
         CatalogUtil.copyProperty(
             catalogMeta.getCatalogProperties(),
             serverAuthConfig,
             S3FileIOProperties.SECRET_ACCESS_KEY,
             AUTH_CONFIGS_KEY_SECRET_KEY);
-        catalogMeta.getCatalogProperties().remove(S3FileIOProperties.SECRET_ACCESS_KEY);
         break;
     }
 
@@ -322,13 +340,11 @@ public class CatalogController {
           storageConfig,
           AwsClientProperties.CLIENT_REGION,
           STORAGE_CONFIGS_KEY_REGION);
-      catalogMeta.getCatalogProperties().remove(AwsClientProperties.CLIENT_REGION);
       CatalogUtil.copyProperty(
           catalogMeta.getCatalogProperties(),
           storageConfig,
           S3FileIOProperties.ENDPOINT,
           STORAGE_CONFIGS_KEY_ENDPOINT);
-      catalogMeta.getCatalogProperties().remove(S3FileIOProperties.ENDPOINT);
     }
 
     return storageConfig;
@@ -436,7 +452,7 @@ public class CatalogController {
                   String.format(
                       "Table property %s is not allowed to set", hiddenCatalogTableProperty));
             });
-    getHiddenCatalogProperties(info.getType()).stream()
+    getHiddenCatalogProperties(info).stream()
         .filter(info.getProperties()::containsKey)
         .findAny()
         .ifPresent(
@@ -449,7 +465,7 @@ public class CatalogController {
 
   private void removeHiddenProperties(CatalogSettingInfo info) {
     getHiddenCatalogTableProperties().forEach(info.getTableProperties()::remove);
-    getHiddenCatalogProperties(info.getType()).forEach(info.getProperties()::remove);
+    getHiddenCatalogProperties(info).forEach(info.getProperties()::remove);
   }
 
   private void maskSensitiveData(CatalogSettingInfo info) {
