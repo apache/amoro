@@ -152,7 +152,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     return serverTableMeta;
   }
 
-  private Long snapshotIdOfTable(Table table, String ref) {
+  private Long snapshotIdOfTableRef(Table table, String ref) {
     if (ref == null) {
       ref = SnapshotRef.MAIN_BRANCH;
     }
@@ -167,32 +167,32 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   public List<AmoroSnapshotsOfTable> getSnapshots(AmoroTable<?> amoroTable, String ref) {
     ArcticTable arcticTable = getTable(amoroTable);
     List<AmoroSnapshotsOfTable> snapshotsOfTables = new ArrayList<>();
-    List<Pair<Table, Long>> tablesWithLatestSnapshotId = new ArrayList<>();
+    List<Pair<Table, Long>> tableAndSnapshotIdList = new ArrayList<>();
     if (arcticTable.isKeyedTable()) {
-      tablesWithLatestSnapshotId.add(
+      tableAndSnapshotIdList.add(
           Pair.of(
               arcticTable.asKeyedTable().changeTable(),
-              snapshotIdOfTable(arcticTable.asKeyedTable().changeTable(), ref)));
-      tablesWithLatestSnapshotId.add(
+              snapshotIdOfTableRef(arcticTable.asKeyedTable().changeTable(), ref)));
+      tableAndSnapshotIdList.add(
           Pair.of(
               arcticTable.asKeyedTable().baseTable(),
-              snapshotIdOfTable(arcticTable.asKeyedTable().baseTable(), ref)));
+              snapshotIdOfTableRef(arcticTable.asKeyedTable().baseTable(), ref)));
     } else {
-      tablesWithLatestSnapshotId.add(
+      tableAndSnapshotIdList.add(
           Pair.of(
-              arcticTable.asUnkeyedTable(), snapshotIdOfTable(arcticTable.asUnkeyedTable(), ref)));
+              arcticTable.asUnkeyedTable(),
+              snapshotIdOfTableRef(arcticTable.asUnkeyedTable(), ref)));
     }
-    tablesWithLatestSnapshotId.forEach(
-        tableWithLatestSnapshotId ->
-            collectSnapshots(snapshotsOfTables, tableWithLatestSnapshotId));
+    tableAndSnapshotIdList.forEach(
+        tableAndSnapshotId -> collectSnapshots(snapshotsOfTables, tableAndSnapshotId));
     snapshotsOfTables.sort((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()));
     return snapshotsOfTables;
   }
 
   private void collectSnapshots(
-      List<AmoroSnapshotsOfTable> snapshotsOfTables, Pair<Table, Long> tableWithSnapshotId) {
-    Table table = tableWithSnapshotId.first();
-    Long snapshotId = tableWithSnapshotId.second();
+      List<AmoroSnapshotsOfTable> snapshotsOfTables, Pair<Table, Long> tableAndSnapshotId) {
+    Table table = tableAndSnapshotId.first();
+    Long snapshotId = tableAndSnapshotId.second();
     if (snapshotId != null) {
       SnapshotUtil.ancestorsOf(snapshotId, table::snapshot)
           .forEach(
