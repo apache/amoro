@@ -165,7 +165,10 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public List<AmoroSnapshotsOfTable> getSnapshots(AmoroTable<?> amoroTable) {
+  public List<AmoroSnapshotsOfTable> getSnapshots(AmoroTable<?> amoroTable, String ref) {
+    if (ref != null) {
+      throw new UnsupportedOperationException("Paimon not support tag and branch");
+    }
     FileStoreTable table = getTable(amoroTable);
     List<AmoroSnapshotsOfTable> snapshotsOfTables = new ArrayList<>();
     Iterator<Snapshot> snapshots;

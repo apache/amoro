@@ -296,10 +296,12 @@ public class TableController {
     String tableName = ctx.pathParam("table");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    // ref means tag/branch
+    String ref = ctx.queryParamAsClass("ref", String.class).getOrDefault(null);
 
     List<AmoroSnapshotsOfTable> snapshotsOfTables =
         tableDescriptor.getSnapshots(
-            TableIdentifier.of(catalog, database, tableName).buildTableIdentifier());
+            TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(), ref);
     int offset = (page - 1) * pageSize;
     PageResult<AmoroSnapshotsOfTable> pageResult =
         PageResult.of(snapshotsOfTables, offset, pageSize);

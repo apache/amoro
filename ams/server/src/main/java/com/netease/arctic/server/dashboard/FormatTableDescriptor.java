@@ -40,7 +40,7 @@ public interface FormatTableDescriptor {
   ServerTableMeta getTableDetail(AmoroTable<?> amoroTable);
 
   /** Get the snapshot information of the {@link AmoroTable}. */
-  List<AmoroSnapshotsOfTable> getSnapshots(AmoroTable<?> amoroTable);
+  List<AmoroSnapshotsOfTable> getSnapshots(AmoroTable<?> amoroTable, String ref);
 
   /** Get the snapshot detail information of the {@link AmoroTable}. */
   List<PartitionFileBaseInfo> getSnapshotDetail(AmoroTable<?> amoroTable, long snapshotId);
