@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.server;
 
 import com.netease.arctic.ams.api.CatalogMeta;
@@ -8,9 +26,7 @@ import com.netease.arctic.io.IcebergDataTestHelpers;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.io.reader.GenericUnkeyedDataReader;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableMetaStore;
 import org.apache.iceberg.AppendFiles;
-import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Table;
@@ -62,7 +78,7 @@ public class TestIcebergCatalogService extends InternalCatalogServiceTestBase {
       clientSideConfiguration.put("warehouse", "/tmp");
       clientSideConfiguration.put("cache-enabled", "true");
 
-      try (RESTCatalog catalog = loadCatalog(clientSideConfiguration)) {
+      try (RESTCatalog catalog = loadIcebergCatalog(clientSideConfiguration)) {
         Map<String, String> finallyConfigs = catalog.properties();
         // overwrites properties using value from ams
         Assertions.assertEquals(warehouseInAMS, finallyConfigs.get("warehouse"));
@@ -79,13 +95,6 @@ public class TestIcebergCatalogService extends InternalCatalogServiceTestBase {
 
   @Nested
   public class NamespaceTests {
-    RESTCatalog nsCatalog;
-
-    @BeforeEach
-    public void setup() {
-      nsCatalog = loadCatalog(Maps.newHashMap());
-    }
-
     @Test
     public void testNamespaceOperations() throws IOException {
       Assertions.assertTrue(nsCatalog.listNamespaces().isEmpty());
@@ -99,7 +108,6 @@ public class TestIcebergCatalogService extends InternalCatalogServiceTestBase {
 
   @Nested
   public class TableTests {
-    RESTCatalog nsCatalog;
     List<Record> newRecords =
         Lists.newArrayList(
             MixedDataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
@@ -108,7 +116,6 @@ public class TestIcebergCatalogService extends InternalCatalogServiceTestBase {
 
     @BeforeEach
     public void setup() {
-      nsCatalog = loadCatalog(Maps.newHashMap());
       serverCatalog.createDatabase(database);
     }
 
@@ -215,20 +222,5 @@ public class TestIcebergCatalogService extends InternalCatalogServiceTestBase {
           MixedDataTestHelpers.readBaseStore(arcticTable, reader, Expressions.alwaysTrue());
       Assertions.assertEquals(newRecords.size(), records.size());
     }
-  }
-
-  private RESTCatalog loadCatalog(Map<String, String> clientProperties) {
-    clientProperties.put("uri", ams.getHttpUrl() + restCatalogUri);
-    clientProperties.put("warehouse", AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
-
-    CatalogMeta catalogMeta = serverCatalog.getMetadata();
-    TableMetaStore store = com.netease.arctic.utils.CatalogUtil.buildMetaStore(catalogMeta);
-
-    return (RESTCatalog)
-        CatalogUtil.loadCatalog(
-            "org.apache.iceberg.rest.RESTCatalog",
-            "test",
-            clientProperties,
-            store.getConfiguration());
   }
 }
