@@ -91,11 +91,11 @@ ams:
 #    cluster-name: default
 #    zookeeper-address: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183
 
-#containers:
-#  - name: localContainer
-#    container-impl: com.netease.arctic.server.manager.LocalOptimizerContainer
-#    properties:
-#      export.JAVA_HOME: "/opt/java"   # JDK environment
+containers:
+  - name: localContainer
+    container-impl: com.netease.arctic.server.manager.LocalOptimizerContainer
+    properties:
+      export.JAVA_HOME: "/opt/java"   # JDK environment
 
 #containers:
 #  - name: flinkContainer
