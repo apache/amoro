@@ -197,8 +197,8 @@ public class CatalogController {
     ctx.json(OkResponse.of(catalogTypes));
   }
 
-  /** Convert server auth config to metaAuthConfig */
-  private void authConvertFromServerToMeta(
+  /** fill server auth config to CatalogMeta */
+  private void fillAuthConfigs2CatalogMeta(
       CatalogMeta catalogMeta, Map<String, String> serverAuthConfig, CatalogMeta oldCatalogMeta) {
     Map<String, String> metaAuthConfig = new HashMap<>();
     String authType =
@@ -253,8 +253,8 @@ public class CatalogController {
     catalogMeta.setAuthConfigs(metaAuthConfig);
   }
 
-  /** Convert meta auth config to server auth config DTO */
-  private Map<String, Object> authConvertFromMetaToServer(
+  /** Extract auth config for CatalogSettingInfo from CatalogMeta */
+  private Map<String, Object> extractAuthConfigsFromCatalogMeta(
       String catalogName, CatalogMeta catalogMeta) {
     Map<String, Object> serverAuthConfig = new HashMap<>();
     Map<String, String> metaAuthConfig = catalogMeta.getAuthConfigs();
@@ -301,7 +301,8 @@ public class CatalogController {
     return serverAuthConfig;
   }
 
-  private Map<String, Object> storageConvertFromMetaToServer(
+  /** Extract storage config for CatalogSettingInfo from CatalogMeta */
+  private Map<String, Object> extractStorageConfigsFromCatalogMeta(
       String catalogName, CatalogMeta catalogMeta) {
     Map<String, Object> storageConfig = new HashMap<>();
     Map<String, String> config = catalogMeta.getStorageConfigs();
@@ -374,7 +375,7 @@ public class CatalogController {
     catalogMeta
         .getCatalogProperties()
         .put(CatalogMetaProperties.TABLE_FORMATS, tableFormats.toString());
-    authConvertFromServerToMeta(catalogMeta, info.getAuthConfig(), oldCatalogMeta);
+    fillAuthConfigs2CatalogMeta(catalogMeta, info.getAuthConfig(), oldCatalogMeta);
     // change fileId to base64Code
     Map<String, String> metaStorageConfig = new HashMap<>();
     String storageType =
@@ -546,8 +547,8 @@ public class CatalogController {
       } else {
         info.setType(catalogMeta.getCatalogType());
       }
-      info.setAuthConfig(authConvertFromMetaToServer(catalogName, catalogMeta));
-      info.setStorageConfig(storageConvertFromMetaToServer(catalogName, catalogMeta));
+      info.setAuthConfig(extractAuthConfigsFromCatalogMeta(catalogName, catalogMeta));
+      info.setStorageConfig(extractStorageConfigsFromCatalogMeta(catalogName, catalogMeta));
       // we put the table format single
       String tableFormat =
           catalogMeta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS);
