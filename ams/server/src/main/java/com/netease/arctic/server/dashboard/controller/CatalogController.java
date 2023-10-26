@@ -252,7 +252,6 @@ public class CatalogController {
     catalogMeta.setAuthConfigs(metaAuthConfig);
   }
 
-  /** Extract auth config for CatalogSettingInfo from CatalogMeta */
   private Map<String, Object> extractAuthConfigsFromCatalogMeta(
       String catalogName, CatalogMeta catalogMeta) {
     Map<String, Object> serverAuthConfig = new HashMap<>();
@@ -300,7 +299,6 @@ public class CatalogController {
     return serverAuthConfig;
   }
 
-  /** Extract storage config for CatalogSettingInfo from CatalogMeta */
   private Map<String, Object> extractStorageConfigsFromCatalogMeta(
       String catalogName, CatalogMeta catalogMeta) {
     Map<String, Object> storageConfig = new HashMap<>();
