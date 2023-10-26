@@ -79,7 +79,7 @@ public class TestRewriteFiles extends TableTestBase {
     overwriteFiles.commit();
 
     this.initDataFiles =
-        UpdateHiveFilesTestHelpers.applyHiveCommitProtocol(getArcticTable(), initDataFiles);
+        HiveDataTestHelpers.applyHiveCommitProtocol(getArcticTable(), initDataFiles);
   }
 
   @Test

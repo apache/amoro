@@ -37,6 +37,18 @@ public class HiveCommitUtil {
    */
   public static List<DataFile> commitHiveDataFiles(
       List<DataFile> dataFiles, ArcticHadoopFileIO fileIO, PartitionSpec spec) {
+    return applyCommitHiveDataFile(
+        dataFiles,
+        spec,
+        (location, committed) -> {
+          if (!fileIO.exists(committed)) {
+            fileIO.rename(location, committed);
+          }
+        });
+  }
+
+  public static List<DataFile> applyCommitHiveDataFile(
+      List<DataFile> dataFiles, PartitionSpec spec, HiveFileCommitter hiveFileCommitter) {
     List<DataFile> afterCommittedFiles = Lists.newArrayList();
     for (DataFile file : dataFiles) {
       String filename = TableFileUtil.getFileName(file.path().toString());
@@ -48,13 +60,16 @@ public class HiveCommitUtil {
       String committedLocation =
           TableFileUtil.getFileDir(file.path().toString()) + "/" + committedFilename;
 
-      if (!fileIO.exists(committedLocation)) {
-        fileIO.rename(file.path().toString(), committedLocation);
-      }
+      hiveFileCommitter.commit(file.path().toString(), committedLocation);
       DataFile committedDatafile =
           DataFiles.builder(spec).copy(file).withPath(committedLocation).build();
       afterCommittedFiles.add(committedDatafile);
     }
     return afterCommittedFiles;
+  }
+
+  @FunctionalInterface
+  public interface HiveFileCommitter {
+    void commit(String fileLocation, String committedLocation);
   }
 }

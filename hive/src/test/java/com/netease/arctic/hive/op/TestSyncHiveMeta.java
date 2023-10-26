@@ -127,7 +127,7 @@ public class TestSyncHiveMeta extends TableTestBase {
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
 
-    dataFiles = UpdateHiveFilesTestHelpers.applyHiveCommitProtocol(getArcticTable(), dataFiles);
+    dataFiles = HiveDataTestHelpers.applyHiveCommitProtocol(getArcticTable(), dataFiles);
     Assert.assertEquals(1, dataFiles.size());
     String dataFilePath = dataFiles.get(0).path().toString();
     FileSystem fs = Util.getFs(new Path(dataFilePath), new Configuration());
@@ -183,7 +183,7 @@ public class TestSyncHiveMeta extends TableTestBase {
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
-    dataFiles = UpdateHiveFilesTestHelpers.applyHiveCommitProtocol(getArcticTable(), dataFiles);
+    dataFiles = HiveDataTestHelpers.applyHiveCommitProtocol(getArcticTable(), dataFiles);
 
     Table hiveTable =
         TEST_HMS

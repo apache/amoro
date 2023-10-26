@@ -24,6 +24,8 @@ import com.netease.arctic.hive.io.reader.AdaptHiveGenericKeyedDataReader;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
+import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.hive.utils.HiveCommitUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.scan.ArcticFileScanTask;
@@ -38,6 +40,7 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.utils.TablePropertyUtil;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -124,6 +127,26 @@ public class HiveDataTestHelpers {
         throw new UncheckedIOException(e);
       }
     }
+  }
+
+  public static List<DataFile> applyHiveCommitProtocol(ArcticTable table, List<DataFile> files) {
+    if (!TablePropertyUtil.usingHiveCommitProtocol(table.properties())) {
+      return files;
+    }
+    String hiveLocation = ((SupportHive) table).hiveLocation();
+    List<DataFile> nonHiveFiles = Lists.newArrayList();
+    List<DataFile> hiveFiles = Lists.newArrayList();
+    for (DataFile f : files) {
+      String location = f.path().toString();
+      if (location.toLowerCase().startsWith(hiveLocation.toLowerCase())) {
+        hiveFiles.add(f);
+      } else {
+        nonHiveFiles.add(f);
+      }
+    }
+    hiveFiles = HiveCommitUtil.applyCommitHiveDataFile(hiveFiles, table.spec(), (l, c) -> {});
+    nonHiveFiles.addAll(hiveFiles);
+    return nonHiveFiles;
   }
 
   public static List<DataFile> writeChangeStore(

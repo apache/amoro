@@ -19,7 +19,7 @@
 package com.netease.arctic.hive.op;
 
 import com.netease.arctic.hive.HiveTableProperties;
-import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -31,7 +31,6 @@ import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.FileInfo;
@@ -50,39 +49,12 @@ public class UpdateHiveFilesTestHelpers {
   public static void validateHiveTableValues(
       HiveMetaStoreClient hiveClient, ArcticTable table, List<DataFile> exceptFiles)
       throws TException {
-    exceptFiles = applyHiveCommitProtocol(table, exceptFiles);
+    exceptFiles = HiveDataTestHelpers.applyHiveCommitProtocol(table, exceptFiles);
     if (table.spec().isPartitioned()) {
       assertHivePartitionValues(hiveClient, table, exceptFiles);
     } else {
       assertHiveTableValue(hiveClient, table, exceptFiles);
     }
-  }
-
-  public static List<DataFile> applyHiveCommitProtocol(ArcticTable table, List<DataFile> files) {
-    if (!TablePropertyUtil.usingHiveCommitProtocol(table.properties())) {
-      return files;
-    }
-    String hiveLocation = ((SupportHive) table).hiveLocation();
-    List<DataFile> committedFiles = Lists.newArrayList();
-    for (DataFile file : files) {
-      String location = file.path().toString();
-      if (location.toLowerCase().startsWith(hiveLocation.toLowerCase())) {
-        String filename = TableFileUtil.getFileName(location);
-        if (filename.startsWith(".")) {
-          filename = filename.substring(1);
-          String fileDir = TableFileUtil.getFileDir(location);
-
-          DataFile committedFile =
-              DataFiles.builder(table.spec()).copy(file).withPath(fileDir + "/" + filename).build();
-          committedFiles.add(committedFile);
-        } else {
-          committedFiles.add(file);
-        }
-      } else {
-        committedFiles.add(file);
-      }
-    }
-    return committedFiles;
   }
 
   private static void assertHivePartitionValues(
