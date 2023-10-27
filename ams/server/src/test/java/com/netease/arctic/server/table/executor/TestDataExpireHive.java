@@ -82,17 +82,4 @@ public class TestDataExpireHive extends TestDataExpire {
         new BigDecimal("0"),
         opTime.substring(0, 10));
   }
-
-  public List<DataFile> writeAndCommitBaseAndHive(ArcticTable table, long txId, boolean writeHive) {
-    String hiveSubDir = HiveTableUtil.newHiveSubdirectory(txId);
-    List<DataFile> dataFiles =
-        HiveDataTestHelpers.writeBaseStore(
-            table, txId, createRecords(1, 100), false, writeHive, hiveSubDir);
-    UnkeyedTable baseTable =
-        table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
-    AppendFiles baseAppend = baseTable.newAppend();
-    dataFiles.forEach(baseAppend::appendFile);
-    baseAppend.commit();
-    return dataFiles;
-  }
 }
