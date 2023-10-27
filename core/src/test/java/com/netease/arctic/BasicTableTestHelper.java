@@ -37,7 +37,6 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
