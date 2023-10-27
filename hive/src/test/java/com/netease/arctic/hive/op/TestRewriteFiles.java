@@ -123,7 +123,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     rewriteFiles.rewriteFiles(Sets.newHashSet(initDataFiles), Sets.newHashSet(newFiles));
     HiveDataTestHelpers.assertWriteConsistentFilesName(getArcticTable(), newFiles);
     rewriteFiles.commit();
-    HiveDataTestHelpers.assertWriteConsistentFilesCommit(newFiles);
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(getArcticTable());
 
     String key = "test-overwrite-transaction";
     UpdateProperties updateProperties = transaction.updateProperties();

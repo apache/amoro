@@ -101,7 +101,7 @@ public class TestRewritePartitions extends MixedHiveTableTestBase {
     ReplacePartitions replacePartitions = baseStore.newReplacePartitions();
     dataFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
-    HiveDataTestHelpers.assertWriteConsistentFilesCommit(dataFiles);
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(getArcticTable());
 
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);

@@ -32,6 +32,8 @@ import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.MetadataColumns;
+import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import com.netease.arctic.utils.map.StructLikeCollections;
@@ -177,12 +179,13 @@ public class HiveDataTestHelpers {
   }
 
   /** Assert the consistent-write commit, all file will not be hidden file after commit. */
-  public static void assertWriteConsistentFilesCommit(List<DataFile> files) {
-    files.forEach(
-        f -> {
-          String filename = TableFileUtil.getFileName(f.path().toString());
-          Assert.assertFalse(filename.startsWith("."));
-        });
+  public static void assertWriteConsistentFilesCommit(ArcticTable table) {
+    table.refresh();
+    UnkeyedTable unkeyedTable = ArcticTableUtil.baseStore(table);
+    unkeyedTable.newScan().planFiles().forEach(t -> {
+      String filename = TableFileUtil.getFileName(t.file().path().toString());
+      Assert.assertFalse(filename.startsWith("."));
+    });
   }
 
   public static boolean isHiveFile(String hiveLocation, DataFile file) {

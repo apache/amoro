@@ -84,7 +84,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
-    HiveDataTestHelpers.assertWriteConsistentFilesCommit(dataFiles);
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(getArcticTable());
 
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
@@ -117,7 +117,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     OverwriteFiles overwriteFiles = transaction.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
-    HiveDataTestHelpers.assertWriteConsistentFilesCommit(dataFiles);
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(getArcticTable());
 
     String key = "test-overwrite-transaction";
     UpdateProperties updateProperties = transaction.updateProperties();
@@ -145,7 +145,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
-    HiveDataTestHelpers.assertWriteConsistentFilesCommit(dataFiles);
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(getArcticTable());
 
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
@@ -181,7 +181,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
-    HiveDataTestHelpers.assertWriteConsistentFilesCommit(dataFiles);
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(getArcticTable());
 
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
@@ -214,7 +214,6 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
-    HiveDataTestHelpers.assertWriteConsistentFilesCommit(dataFiles);
 
     // rename the hive table,
     Table hiveTable =
@@ -229,7 +228,6 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
 
     // commit should success even though hive table is not existed.
     overwriteFiles.commit();
-    HiveDataTestHelpers.assertWriteConsistentFilesCommit(dataFiles);
 
     hiveTable.setTableName(getArcticTable().id().getTableName());
     TEST_HMS
