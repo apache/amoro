@@ -24,4 +24,5 @@ public class MetaTableProperties {
   public static final String LOCATION_KEY_CHANGE = "change";
 
   public static final String MIXED_FORMAT_TABLE_STORE_SEPARATOR = "@";
+  public static final String MIXED_FORMAT_CHANGE_STORE_SUFFIX = "change";
 }

@@ -166,9 +166,9 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
       if (tables.isBaseStore(table)) {
         mixedTables.add(TableIdentifier.of(meta.getCatalogName(), database, identifier.name()));
         visited.add(identifier);
-        PrimaryKeySpec keySpec = tables.getPrimaryKeySpec(table);
+        PrimaryKeySpec keySpec = PrimaryKeySpec.parse(table.schema(), table.properties());
         if (keySpec.primaryKeyExisted()) {
-          visited.add(tables.generateChangeStoreIdentifier(table));
+          visited.add(tables.parseChangeIdentifier(table));
         }
       }
     }
@@ -207,7 +207,7 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     boolean changeDeleted = false;
     if (table.isKeyedTable()) {
       try {
-        changeDeleted = dropTableInternal(tables.generateChangeStoreIdentifier(base.asUnkeyedTable()), purge);
+        changeDeleted = dropTableInternal(tables.parseChangeIdentifier(base.asUnkeyedTable()), purge);
       } catch (Exception e) {
         // pass
       }

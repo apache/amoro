@@ -21,6 +21,7 @@ package com.netease.arctic.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -28,11 +29,14 @@ import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.io.UncheckedIOException;
+import java.util.List;
 import java.util.Map;
 
 /** Utils to handle table properties. */
@@ -191,5 +195,31 @@ public class TablePropertyUtil {
     } else {
       return Long.parseLong(watermarkValue);
     }
+  }
+
+  /**
+   * Check if the given table properties is the base store of mixed-format,
+   * @param properties properties of the table.
+   * @param format - {@link TableFormat#MIXED_ICEBERG} or {@link TableFormat#MIXED_HIVE}
+   * @return true if this is a base store of mixed-format.
+   */
+  public static boolean isBaseStore(Map<String, String> properties, TableFormat format) {
+    String tableFormat = properties.get(TableProperties.TABLE_FORMAT);
+    String tableStore = properties.get(TableProperties.MIXED_FORMAT_TABLE_STORE);
+    return format.name().equalsIgnoreCase(tableFormat)
+        && TableProperties.MIXED_FORMAT_TABLE_STORE_BASE.equalsIgnoreCase(tableStore);
+  }
+
+  /**
+   * parse change store table identifier for base store table properties
+   * @param properties - table properties of base store
+   * @return - table identifier of change store.
+   */
+  public static TableIdentifier parseChangeIdentifier(Map<String, String> properties) {
+    Preconditions.checkArgument(
+        properties.containsKey(TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER),
+        "can read change store identifier from base store properties");
+    String change = properties.get(TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER);
+    return TableIdentifier.parse(change);
   }
 }

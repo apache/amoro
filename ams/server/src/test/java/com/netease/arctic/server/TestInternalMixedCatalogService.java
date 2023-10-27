@@ -131,6 +131,6 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
 
   private ArcticCatalog loadMixedIcebergCatalog() {
     return CatalogLoader.load(
-        ams.getTableServiceUrl() + "/" + AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
+        ams.getTableServiceUrl() + "/" + AmsEnvironment.INTERNAL_MIXED_ICEBERG_CATALOG);
   }
 }

@@ -33,11 +33,8 @@ public class MixedIcebergAmoroCatalog extends BasicMixedIcebergCatalog {
     Preconditions.checkNotNull(properties.containsKey(CatalogProperties.URI),
         "lack required properties: %s", CatalogProperties.URI);
 
-    if (!properties.containsKey(CatalogProperties.WAREHOUSE_LOCATION)) {
-      // set AMS catalog name as iceberg rest catalog warehouse.
-      properties = Maps.newHashMap(properties);
-      properties.put(CatalogProperties.WAREHOUSE_LOCATION, name);
-    }
+    properties = Maps.newHashMap(properties);
+    properties.put(CatalogProperties.WAREHOUSE_LOCATION, name);
 
     // add table-filter to http header.
     // list table only return mixed-iceberg table.

@@ -32,6 +32,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -39,7 +40,6 @@ import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
@@ -57,34 +57,11 @@ public class MixedTables {
   }
 
   public boolean isBaseStore(Table table) {
-    String format = table.properties().get(TableProperties.TABLE_FORMAT);
-    String tableStore = table.properties().get(TableProperties.MIXED_FORMAT_TABLE_STORE);
-    return TableFormat.MIXED_ICEBERG.name().equalsIgnoreCase(format)
-        && TableProperties.MIXED_FORMAT_TABLE_STORE_BASE.equalsIgnoreCase(tableStore);
+    return TablePropertyUtil.isBaseStore(table.properties(), TableFormat.MIXED_ICEBERG);
   }
 
-  public PrimaryKeySpec getPrimaryKeySpec(Table table) {
-    Preconditions.checkArgument(isBaseStore(table), "table is not a mixed table");
-    PrimaryKeySpec keySpec = PrimaryKeySpec.noPrimaryKey();
-    if (table.properties().containsKey(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS)) {
-      PrimaryKeySpec.Builder keyBuilder = PrimaryKeySpec.builderFor(table.schema());
-      String fieldString = table.properties().get(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS);
-      String[] fields = fieldString.split(",");
-      for (String field : fields) {
-        keyBuilder = keyBuilder.addColumn(field);
-      }
-      keySpec = keyBuilder.build();
-    }
-    return keySpec;
-  }
-
-  public TableIdentifier generateChangeStoreIdentifier(Table base) {
-    if (!base.properties().containsKey(TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER)) {
-      throw new IllegalStateException(
-          "can read change store identifier from base store properties");
-    }
-    String change = base.properties().get(TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER);
-    return TableIdentifier.parse(change);
+  public TableIdentifier parseChangeIdentifier(Table base) {
+    return TablePropertyUtil.parseChangeIdentifier(base.properties());
   }
 
   protected TableIdentifier generateChangeStoreIdentifier(TableIdentifier baseIdentifier) {
@@ -99,7 +76,7 @@ public class MixedTables {
   public ArcticTable loadTable(
       Table base, com.netease.arctic.table.TableIdentifier tableIdentifier) {
     ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
-    PrimaryKeySpec keySpec = getPrimaryKeySpec(base);
+    PrimaryKeySpec keySpec = PrimaryKeySpec.parse(base.schema(), base.properties());
     if (!keySpec.primaryKeyExisted()) {
       return new BasicUnkeyedTable(
           tableIdentifier,
@@ -194,7 +171,7 @@ public class MixedTables {
   }
 
   protected Table loadChangeStore(Table base) {
-    TableIdentifier changeIdentifier = generateChangeStoreIdentifier(base);
+    TableIdentifier changeIdentifier = parseChangeIdentifier(base);
     return tableMetaStore.doAs(
         () -> icebergCatalog.loadTable(changeIdentifier));
   }

@@ -28,6 +28,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -57,6 +58,26 @@ public class PrimaryKeySpec implements Serializable {
 
   public static Builder builderFor(Schema schema) {
     return new Builder(schema);
+  }
+
+  /**
+   * parse primary key spec from table properties
+   * @param schema - base store table schema
+   * @param tableProperties - base store table properties
+   * @return primary key spec.
+   */
+  public static PrimaryKeySpec parse(Schema schema, Map<String, String> tableProperties) {
+    PrimaryKeySpec keySpec = PrimaryKeySpec.noPrimaryKey();
+    if (tableProperties.containsKey(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS)) {
+      PrimaryKeySpec.Builder keyBuilder = PrimaryKeySpec.builderFor(schema);
+      String fieldString = tableProperties.get(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS);
+      String[] fields = fieldString.split(",");
+      for (String field : fields) {
+        keyBuilder = keyBuilder.addColumn(field);
+      }
+      keySpec = keyBuilder.build();
+    }
+    return keySpec;
   }
 
   public List<PrimaryKeyField> fields() {

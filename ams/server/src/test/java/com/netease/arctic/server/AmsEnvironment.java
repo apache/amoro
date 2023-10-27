@@ -56,11 +56,11 @@ public class AmsEnvironment {
   private final HMSMockServer testHMS;
   private final Map<String, ArcticCatalog> catalogs = new HashMap<>();
 
-  public static final String INTERNAL_ICEBERG_CATALOG = "internal_iceberg";
+  public static final String INTERNAL_ICEBERG_CATALOG = "internal_iceberg_catalog";
   public static final String INTERNAL_ICEBERG_CATALOG_WAREHOUSE = "/internal_iceberg/warehouse";
   public static final String ICEBERG_CATALOG = "iceberg_catalog";
   public static String ICEBERG_CATALOG_DIR = "/iceberg/warehouse";
-  public static final String INTERNAL_MIXED_ICEBERG_CATALOG = "mixed_iceberg_catalog";
+  public static final String INTERNAL_MIXED_ICEBERG_CATALOG = "internal_mixed_iceberg_catalog";
   public static String MIXED_ICEBERG_CATALOG_DIR = "/mixed_iceberg/warehouse";
   public static final String MIXED_HIVE_CATALOG = "mixed_hive_catalog";
   private boolean started = false;
@@ -186,7 +186,7 @@ public class AmsEnvironment {
   private void initCatalog() {
     createExternalIcebergCatalog();
     createInternalIceberg();
-    createMixIcebergCatalog();
+    createInternalMixIcebergCatalog();
     createMixHiveCatalog();
   }
 
@@ -223,7 +223,7 @@ public class AmsEnvironment {
     catalogs.put(ICEBERG_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" + ICEBERG_CATALOG));
   }
 
-  private void createMixIcebergCatalog() {
+  private void createInternalMixIcebergCatalog() {
     String warehouseDir = rootPath + MIXED_ICEBERG_CATALOG_DIR;
     Map<String, String> properties = Maps.newHashMap();
     createDirIfNotExist(warehouseDir);

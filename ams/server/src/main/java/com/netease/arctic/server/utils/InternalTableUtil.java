@@ -10,8 +10,10 @@ import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.iceberg.InternalTableStoreOperations;
 import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
@@ -19,6 +21,7 @@ import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.TableProperties;
+import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.exceptions.NotFoundException;
@@ -54,6 +57,7 @@ public class InternalTableUtil {
 
   /**
    * Check is this a change store table name
+   *
    * @param tableName table name to create or load.
    * @return is this match the change store name pattern
    */
@@ -71,13 +75,13 @@ public class InternalTableUtil {
     return true;
   }
 
-
   /**
    * get the real table location.
-   * @param catalog - internal server catalog to create the table.
-   * @param database - database of table to be created
-   * @param tableName - tableName of table to be created.
-   * @param location - the requested location.
+   *
+   * @param catalog     - internal server catalog to create the table.
+   * @param database    - database of table to be created
+   * @param tableName   - tableName of table to be created.
+   * @param location    - the requested location.
    * @param changeStore - is this table is a change store
    * @return - the real table location.
    */
@@ -101,7 +105,6 @@ public class InternalTableUtil {
     return location;
   }
 
-
   public static void validateTableNameForCreating(
       InternalCatalog catalog, String database, String tableName, boolean changeStore
   ) {
@@ -117,19 +120,22 @@ public class InternalTableUtil {
       }
       com.netease.arctic.server.table.TableMetadata internalMetadata =
           catalog.loadTableMetadata(database, internalTableName);
-      Preconditions.checkState(StringUtils.isEmpty(internalMetadata.getChangeLocation()),
+      Preconditions.checkState(
+          StringUtils.isEmpty(internalMetadata.getChangeLocation()),
           "The change store of table: " + internalTableName + " has already been created.");
     }
   }
 
   /**
    * get the internal table name
+   *
    * @param tableName requested table name
    * @return internal table name
    */
   public static String internalTableName(String tableName) {
     if (isMatchChangeStoreNamePattern(tableName)) {
-      String suffix = MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR + "change";
+      String suffix = MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR
+          + MetaTableProperties.MIXED_FORMAT_CHANGE_STORE_SUFFIX;
       return tableName.substring(0, tableName.length() - suffix.length());
     }
     return tableName;
@@ -137,6 +143,7 @@ public class InternalTableUtil {
 
   /**
    * create an iceberg file io instance
+   *
    * @param meta catalog meta
    * @return iceberg file io
    */
@@ -148,7 +155,6 @@ public class InternalTableUtil {
     FileIO fileIO = org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
     return ArcticFileIOs.buildAdaptIcebergFileIO(store, fileIO);
   }
-
 
   /**
    * load iceberg table metadata by given ams table metadata
@@ -164,8 +170,9 @@ public class InternalTableUtil {
 
   /**
    * load iceberg table metadata by given ams table metadata
-   * @param io        - iceberg file io
-   * @param tableMeta - table metadata
+   *
+   * @param io          - iceberg file io
+   * @param tableMeta   - table metadata
    * @param changeStore - set true to load a change store metadata for mixed-format.
    * @return iceberg table metadata object
    */
@@ -188,8 +195,6 @@ public class InternalTableUtil {
     return TableMetadataParser.read(io, metadataFileLocation);
   }
 
-
-
   /**
    * generate metadata file location with version
    *
@@ -209,8 +214,8 @@ public class InternalTableUtil {
   /**
    * generate metadata file location with version
    *
-   * @param base       - iceberg table metadata
-   * @param current    - new iceberg table metadata
+   * @param base    - iceberg table metadata
+   * @param current - new iceberg table metadata
    * @return - file location
    */
   public static String genNewMetadataFileLocation(TableMetadata base, TableMetadata current) {
@@ -239,7 +244,6 @@ public class InternalTableUtil {
     }
   }
 
-
   /**
    * create iceberg table and return an AMS table metadata object to commit.
    *
@@ -251,26 +255,43 @@ public class InternalTableUtil {
    * @return AMS table metadata object
    */
   public static com.netease.arctic.server.table.TableMetadata createTableInternal(
-      ServerTableIdentifier identifier,
+      TableIdentifier identifier,
       CatalogMeta catalogMeta,
-
       TableMetadata icebergTableMetadata,
       String metadataFileLocation,
       FileIO io
   ) {
-    OutputFile outputFile = io.newOutputFile(metadataFileLocation);
-    TableMetadataParser.overwrite(icebergTableMetadata, outputFile);
     TableMeta meta = new TableMeta();
-    meta.setTableIdentifier(identifier.getIdentifier());
     meta.putToLocations(MetaTableProperties.LOCATION_KEY_TABLE, icebergTableMetadata.location());
     meta.putToLocations(MetaTableProperties.LOCATION_KEY_BASE, icebergTableMetadata.location());
 
-    meta.setFormat(TableFormat.ICEBERG.name());
+    Map<String, String> properties = icebergTableMetadata.properties();
+    TableFormat format = TableFormat.ICEBERG;
+    if (TablePropertyUtil.isBaseStore(properties, TableFormat.MIXED_ICEBERG)) {
+      format = TableFormat.MIXED_ICEBERG;
+      PrimaryKeySpec keySpec = PrimaryKeySpec.parse(icebergTableMetadata.schema(), properties);
+      if (keySpec.primaryKeyExisted()) {
+        TableIdentifier changeIdentifier = TablePropertyUtil.parseChangeIdentifier(properties);
+        String expectChangeStoreName = identifier.name() + MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR +
+            MetaTableProperties.MIXED_FORMAT_CHANGE_STORE_SUFFIX;
+        TableIdentifier expectChangeIdentifier = TableIdentifier.of(identifier.namespace(), expectChangeStoreName);
+        Preconditions.checkArgument(
+            expectChangeIdentifier.equals(changeIdentifier),
+            "the change store identifier is not expected. expected: %s, but found %s",
+            expectChangeIdentifier.toString(), changeIdentifier.toString()
+        );
+      }
+    }
+    meta.setFormat(format.name());
     meta.putToProperties(PROPERTIES_METADATA_LOCATION, metadataFileLocation);
-    return new com.netease.arctic.server.table.TableMetadata(
-        identifier, meta, catalogMeta);
+    ServerTableIdentifier serverTableIdentifier = ServerTableIdentifier.of(
+        catalogMeta.getCatalogName(), identifier.namespace().level(0), identifier.name(), format);
+    meta.setTableIdentifier(serverTableIdentifier.getIdentifier());
+    // write metadata file.
+    OutputFile outputFile = io.newOutputFile(metadataFileLocation);
+    TableMetadataParser.overwrite(icebergTableMetadata, outputFile);
+    return new com.netease.arctic.server.table.TableMetadata(serverTableIdentifier, meta, catalogMeta);
   }
-
 
   private static long parseMetadataFileVersion(String metadataLocation) {
     int fileNameStart = metadataLocation.lastIndexOf('/') + 1; // if '/' isn't found, this will be 0
@@ -289,7 +310,6 @@ public class InternalTableUtil {
       return 0;
     }
   }
-
 
   /**
    * write iceberg table metadata and apply changes to AMS tableMetadata to commit.
@@ -321,7 +341,6 @@ public class InternalTableUtil {
       prevLocationKey = CHANGE_STORE_PREFIX + PROPERTIES_PREV_METADATA_LOCATION;
       metadataLocationKey = CHANGE_STORE_PREFIX + PROPERTIES_METADATA_LOCATION;
     }
-
 
     properties.put(prevLocationKey, baseIcebergTableMetadata.metadataFileLocation());
     properties.put(metadataLocationKey, newMetadataFileLocation);
