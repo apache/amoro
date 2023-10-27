@@ -168,7 +168,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
             : getArcticTable().asUnkeyedTable();
     StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
     Assert.assertEquals(0, partitionProperty.size());
-    List<DataFile> dataFiles = writeAndCommitBaseAndHive(getArcticTable(), 1, true);
+    List<DataFile> dataFiles = writeAndCommitHive(getArcticTable(), 1);
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     baseTable
         .updatePartitionProperties(null)
@@ -216,7 +216,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
     StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
     Assert.assertEquals(0, partitionProperty.size());
 
-    List<DataFile> dataFiles = writeAndCommitBaseAndHive(getArcticTable(), 1, true);
+    List<DataFile> dataFiles = writeAndCommitHive(getArcticTable(), 1);
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(
@@ -291,7 +291,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
     StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
     Assert.assertEquals(0, partitionProperty.size());
 
-    List<DataFile> dataFiles = writeAndCommitBaseAndHive(getArcticTable(), 1, true);
+    List<DataFile> dataFiles = writeAndCommitHive(getArcticTable(), 1);
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(
@@ -364,7 +364,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
     StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
     Assert.assertEquals(0, partitionProperty.size());
 
-    List<DataFile> dataFiles = writeAndCommitBaseAndHive(getArcticTable(), 1, true);
+    List<DataFile> dataFiles = writeAndCommitHive(getArcticTable(), 1);
     String partitionLocation = TableFileUtil.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(
@@ -413,7 +413,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
                         partitionValues));
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
 
-    List<DataFile> newDataFiles = writeAndCommitBaseAndHive(getArcticTable(), 2, true);
+    List<DataFile> newDataFiles = writeAndCommitHive(getArcticTable(), 2);
     String newPartitionLocation = TableFileUtil.getFileDir(newDataFiles.get(0).path().toString());
     baseTable
         .updatePartitionProperties(null)
@@ -451,12 +451,13 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
     return newLocation;
   }
 
-  private List<DataFile> writeAndCommitBaseAndHive(
-      ArcticTable table, long txId, boolean writeHive) {
+  private List<DataFile> writeAndCommitHive(ArcticTable table, long txId) {
     String hiveSubDir = HiveTableUtil.newHiveSubdirectory(txId);
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writeBaseStore(
-            table, txId, createRecords(1, 100), false, writeHive, hiveSubDir);
+        HiveDataTestHelpers.writeOf(table)
+            .transactionId(txId)
+            .customHiveLocation(hiveSubDir)
+            .writeHive(createRecords(1, 100));
     UnkeyedTable baseTable =
         table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
     AppendFiles baseAppend = baseTable.newAppend();

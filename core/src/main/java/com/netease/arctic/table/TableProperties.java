@@ -272,12 +272,10 @@ public class TableProperties {
 
   public static final String OWNER = "owner";
 
-  /** commit protocol for hive location of mixed-hive table. validate values are [hive, iceberg] */
-  public static final String HIVE_COMMIT_PROTOCOL = "hive.commit.protocol";
+  /** enable consistent write for hive store */
+  public static final String HIVE_CONSISTENT_WRITE_ENABLED = "hive.consistent-write.enabled";
 
-  public static final String HIVE_COMMIT_PROTOCOL_HIVE = "hive";
-  public static final String HIVE_COMMIT_PROTOCOL_ICEBERG = "iceberg";
-  public static final String HIVE_COMMIT_PROTOCOL_DEFAULT = HIVE_COMMIT_PROTOCOL_HIVE;
+  public static final String HIVE_CONSISTENT_WRITE_ENABLED_DEFAULT = "true";
 
   /** table format related properties */
   public static final String TABLE_FORMAT = "table-format";

@@ -60,7 +60,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   private final ArcticFileIO io;
   private final EncryptionManager encryptionManager;
   private final FileNameRules fileNameGenerator;
-  private final boolean usingHiveCommitProtocol;
+  private final boolean hiveConsistentWrite;
 
   public AdaptHiveOutputFileFactory(
       String hiveLocation,
@@ -71,7 +71,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       int partitionId,
       long taskId,
       Long transactionId,
-      boolean usingHiveCommitProtocol) {
+      boolean hiveConsistentWrite) {
     this(
         hiveLocation,
         partitionSpec,
@@ -82,7 +82,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
         taskId,
         transactionId,
         null,
-        usingHiveCommitProtocol);
+        hiveConsistentWrite);
   }
 
   public AdaptHiveOutputFileFactory(
@@ -95,7 +95,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       long taskId,
       Long transactionId,
       String hiveSubDirectory,
-      boolean usingHiveCommitProtocol) {
+      boolean hiveConsistentWrite) {
     this.hiveLocation = hiveLocation;
     this.partitionSpec = partitionSpec;
     this.io = io;
@@ -109,12 +109,12 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       this.hiveSubDirectory = hiveSubDirectory;
     }
     this.fileNameGenerator = new FileNameRules(format, partitionId, taskId, transactionId);
-    this.usingHiveCommitProtocol = usingHiveCommitProtocol;
+    this.hiveConsistentWrite = hiveConsistentWrite;
   }
 
   private String generateFilename(TaskWriterKey key) {
     String filename = fileNameGenerator.fileName(key);
-    if (usingHiveCommitProtocol) {
+    if (hiveConsistentWrite) {
       filename = "." + filename;
     }
     return filename;

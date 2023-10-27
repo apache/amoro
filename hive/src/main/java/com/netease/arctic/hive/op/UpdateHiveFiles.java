@@ -121,7 +121,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
       HiveMetaSynchronizer.syncArcticDataToHive(table);
     }
     List<DataFile> committedDataFiles =
-        HiveCommitUtil.commitHiveDataFiles(this.addFiles, table.io(), table.spec());
+        HiveCommitUtil.commitConsistentWriteFiles(this.addFiles, table.io(), table.spec());
     this.addFiles.clear();
     this.addFiles.addAll(committedDataFiles);
     postHiveDataCommitted(this.addFiles);

@@ -31,13 +31,13 @@ import java.util.List;
 public class HiveCommitUtil {
 
   /**
-   * Under the Hive commit protocol, the writer will write files with the filename ".filename". In
-   * the commit phase, it is necessary to rename it to a visible file to ensure its final
+   * When hive consistent write enabled, the writer will write files with the filename ".filename".
+   * During commit phase, it is necessary to rename it to a visible file to ensure its final
    * consistency.
    */
-  public static List<DataFile> commitHiveDataFiles(
+  public static List<DataFile> commitConsistentWriteFiles(
       List<DataFile> dataFiles, ArcticHadoopFileIO fileIO, PartitionSpec spec) {
-    return applyCommitHiveDataFile(
+    return applyConsistentWriteFile(
         dataFiles,
         spec,
         (location, committed) -> {
@@ -47,7 +47,7 @@ public class HiveCommitUtil {
         });
   }
 
-  public static List<DataFile> applyCommitHiveDataFile(
+  public static List<DataFile> applyConsistentWriteFile(
       List<DataFile> dataFiles, PartitionSpec spec, HiveFileCommitter hiveFileCommitter) {
     List<DataFile> afterCommittedFiles = Lists.newArrayList();
     for (DataFile file : dataFiles) {

@@ -175,7 +175,7 @@ public class ReplaceHivePartitions implements ReplacePartitions {
   public void commit() {
     if (!addFiles.isEmpty()) {
       List<DataFile> dataFiles =
-          HiveCommitUtil.commitHiveDataFiles(this.addFiles, table.io(), table.spec());
+          HiveCommitUtil.commitConsistentWriteFiles(this.addFiles, table.io(), table.spec());
       this.addFiles.clear();
       this.addFiles.addAll(dataFiles);
       this.addFiles.forEach(delegate::addFile);

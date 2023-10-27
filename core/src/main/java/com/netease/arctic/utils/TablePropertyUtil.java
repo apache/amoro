@@ -193,9 +193,10 @@ public class TablePropertyUtil {
     }
   }
 
-  public static boolean usingHiveCommitProtocol(Map<String, String> properties) {
-    return TableProperties.HIVE_COMMIT_PROTOCOL_HIVE.equalsIgnoreCase(
+  public static boolean hiveConsistentWriteEnabled(Map<String, String> properties) {
+    return Boolean.parseBoolean(
         properties.getOrDefault(
-            TableProperties.HIVE_COMMIT_PROTOCOL, TableProperties.HIVE_COMMIT_PROTOCOL_DEFAULT));
+            TableProperties.HIVE_CONSISTENT_WRITE_ENABLED,
+            TableProperties.HIVE_CONSISTENT_WRITE_ENABLED_DEFAULT));
   }
 }

@@ -49,7 +49,7 @@ public class UpdateHiveFilesTestHelpers {
   public static void validateHiveTableValues(
       HiveMetaStoreClient hiveClient, ArcticTable table, List<DataFile> exceptFiles)
       throws TException {
-    exceptFiles = HiveDataTestHelpers.applyHiveCommitProtocol(table, exceptFiles);
+    exceptFiles = HiveDataTestHelpers.applyConsistentWriteFiles(table, exceptFiles);
     if (table.spec().isPartitioned()) {
       assertHivePartitionValues(hiveClient, table, exceptFiles);
     } else {

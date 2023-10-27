@@ -67,10 +67,11 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   private String customHiveSubdirectory;
   private Long targetFileSize;
   private boolean orderedWriter = false;
-  private Boolean usingHiveCommitProtocol;
+  private Boolean hiveConsistentWrite;
 
   private AdaptHiveGenericTaskWriterBuilder(ArcticTable table) {
     this.table = table;
+    this.hiveConsistentWrite = TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
   }
 
   public AdaptHiveGenericTaskWriterBuilder withTransactionId(Long transactionId) {
@@ -109,9 +110,8 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     return this;
   }
 
-  public AdaptHiveGenericTaskWriterBuilder usingHiveCommitProtocol(
-      boolean usingHiveCommitProtocol) {
-    this.usingHiveCommitProtocol = usingHiveCommitProtocol;
+  public AdaptHiveGenericTaskWriterBuilder hiveConsistentWrite(boolean enabled) {
+    this.hiveConsistentWrite = enabled;
     return this;
   }
 
@@ -217,12 +217,6 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
       encryptionManager = table.encryption();
       schema = table.schema();
     }
-    boolean usingHiveCommitProtocol;
-    if (this.usingHiveCommitProtocol != null) {
-      usingHiveCommitProtocol = this.usingHiveCommitProtocol;
-    } else {
-      usingHiveCommitProtocol = TablePropertyUtil.usingHiveCommitProtocol(table.properties());
-    }
 
     OutputFileFactory outputFileFactory =
         locationKind == HiveLocationKind.INSTANT
@@ -236,7 +230,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
                 taskId,
                 transactionId,
                 customHiveSubdirectory,
-                usingHiveCommitProtocol)
+                hiveConsistentWrite)
             : new CommonOutputFileFactory(
                 baseLocation,
                 table.spec(),

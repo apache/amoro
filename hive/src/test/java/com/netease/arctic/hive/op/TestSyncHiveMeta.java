@@ -121,13 +121,13 @@ public class TestSyncHiveMeta extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
 
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.forWriter(getArcticTable()).transactionId(1L).writeHive(insertRecords);
+        HiveDataTestHelpers.writeOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
 
-    dataFiles = HiveDataTestHelpers.applyHiveCommitProtocol(getArcticTable(), dataFiles);
+    dataFiles = HiveDataTestHelpers.applyConsistentWriteFiles(getArcticTable(), dataFiles);
     Assert.assertEquals(1, dataFiles.size());
     String dataFilePath = dataFiles.get(0).path().toString();
     FileSystem fs = Util.getFs(new Path(dataFilePath), new Configuration());
@@ -178,12 +178,12 @@ public class TestSyncHiveMeta extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.forWriter(getArcticTable()).transactionId(1L).writeHive(insertRecords);
+        HiveDataTestHelpers.writeOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
-    dataFiles = HiveDataTestHelpers.applyHiveCommitProtocol(getArcticTable(), dataFiles);
+    dataFiles = HiveDataTestHelpers.applyConsistentWriteFiles(getArcticTable(), dataFiles);
 
     Table hiveTable =
         TEST_HMS
@@ -194,7 +194,7 @@ public class TestSyncHiveMeta extends TableTestBase {
     insertRecords.clear();
     insertRecords.add(tableTestHelper().generateTestRecord(3, "lily", 0, "2022-01-03T12:00:00"));
     List<DataFile> newFiles =
-        HiveDataTestHelpers.forWriter(getArcticTable())
+        HiveDataTestHelpers.writeOf(getArcticTable())
             .transactionId(1L)
             .usingHiveCommitProtocol(false)
             .writeHive(insertRecords);

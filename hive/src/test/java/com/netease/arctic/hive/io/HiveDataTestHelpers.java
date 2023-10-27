@@ -72,7 +72,7 @@ import java.util.stream.Collectors;
 
 public class HiveDataTestHelpers {
 
-  public static WriterHelper forWriter(ArcticTable table) {
+  public static WriterHelper writeOf(ArcticTable table) {
     return new WriterHelper(table);
   }
 
@@ -118,7 +118,7 @@ public class HiveDataTestHelpers {
         builder.withCustomHiveSubdirectory(customHiveLocation);
       }
       if (this.usingHiveCommitProtocol != null) {
-        builder.usingHiveCommitProtocol(this.usingHiveCommitProtocol);
+        builder.hiveConsistentWrite(this.usingHiveCommitProtocol);
       }
       LocationKind writeLocationKind = HiveLocationKind.INSTANT;
       try (TaskWriter<Record> writer = builder.buildWriter(writeLocationKind)) {
@@ -129,8 +129,8 @@ public class HiveDataTestHelpers {
     }
   }
 
-  public static List<DataFile> applyHiveCommitProtocol(ArcticTable table, List<DataFile> files) {
-    if (!TablePropertyUtil.usingHiveCommitProtocol(table.properties())) {
+  public static List<DataFile> applyConsistentWriteFiles(ArcticTable table, List<DataFile> files) {
+    if (!TablePropertyUtil.hiveConsistentWriteEnabled(table.properties())) {
       return files;
     }
     String hiveLocation = ((SupportHive) table).hiveLocation();
@@ -144,7 +144,7 @@ public class HiveDataTestHelpers {
         nonHiveFiles.add(f);
       }
     }
-    hiveFiles = HiveCommitUtil.applyCommitHiveDataFile(hiveFiles, table.spec(), (l, c) -> {});
+    hiveFiles = HiveCommitUtil.applyConsistentWriteFile(hiveFiles, table.spec(), (l, c) -> {});
     nonHiveFiles.addAll(hiveFiles);
     return nonHiveFiles;
   }
@@ -169,7 +169,7 @@ public class HiveDataTestHelpers {
     }
   }
 
-  /** Using {@link #forWriter(ArcticTable)} instead. */
+  /** Using {@link #writeOf(ArcticTable)} instead. */
   @Deprecated
   public static List<DataFile> writeBaseStore(
       ArcticTable table,
