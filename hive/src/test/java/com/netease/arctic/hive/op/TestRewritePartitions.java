@@ -90,7 +90,7 @@ public class TestRewritePartitions extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writeOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
+        HiveDataTestHelpers.writeOf(getArcticTable()).transactionId(2L).writeHive(insertRecords);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     ReplacePartitions replacePartitions = baseStore.newReplacePartitions();
     dataFiles.forEach(replacePartitions::addFile);
