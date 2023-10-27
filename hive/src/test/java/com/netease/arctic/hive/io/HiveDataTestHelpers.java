@@ -182,10 +182,14 @@ public class HiveDataTestHelpers {
   public static void assertWriteConsistentFilesCommit(ArcticTable table) {
     table.refresh();
     UnkeyedTable unkeyedTable = ArcticTableUtil.baseStore(table);
-    unkeyedTable.newScan().planFiles().forEach(t -> {
-      String filename = TableFileUtil.getFileName(t.file().path().toString());
-      Assert.assertFalse(filename.startsWith("."));
-    });
+    unkeyedTable
+        .newScan()
+        .planFiles()
+        .forEach(
+            t -> {
+              String filename = TableFileUtil.getFileName(t.file().path().toString());
+              Assert.assertFalse(filename.startsWith("."));
+            });
   }
 
   public static boolean isHiveFile(String hiveLocation, DataFile file) {
