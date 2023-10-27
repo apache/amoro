@@ -25,7 +25,7 @@
 #        .
 ARG AMORO_TAG=master-snapshot
 
-FROM eclipse-temurin:8-jdk-jammy as builder
+FROM alpine as builder
 ARG FLINK_VERSION=1.15.3
 
 ADD . /workspace/amoro
@@ -47,7 +47,6 @@ ARG HIVE_VERSION=2.1.1
 ARG ICEBERG_VERSION=1.1.0
 ARG APACHE_ARCHIVE=https://archive.apache.org/dist
 ARG MAVEN_URL=https://maven.aliyun.com/repository/central
-ARG DEBIAN_MIRROR=http://deb.debian.org
 
 
 RUN apt-get update \

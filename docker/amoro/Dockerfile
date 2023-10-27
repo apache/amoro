@@ -1,4 +1,3 @@
-
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -23,7 +22,7 @@
 #        --tag arctic163/amoro:tagname
 #        .
 
-FROM eclipse-temurin:8-jdk-jammy as builder
+FROM alpine as builder
 
 # Add the entire project to the build container, unzip it,
 # and remove flink-optimizer to reduce the container size.
@@ -31,8 +30,8 @@ FROM eclipse-temurin:8-jdk-jammy as builder
 ADD . /workspace/amoro
 WORKDIR /workspace/amoro
 
-RUN apt-get update \
-    && apt-get install -y unzip
+RUN apk update \
+    && apk add zip
 
 RUN AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'` \
     && cp dist/target/*.zip /usr/local \
@@ -51,7 +50,7 @@ EXPOSE 1630 1260 1261
 
 COPY ./docker/amoro/entrypoint.sh /
 RUN chmod +x /entrypoint.sh
-COPY --from=builder "/usr/local/amoro" "/usr/local/amoro"
+COPY --from=builder ${AMORO_HOME} ${AMORO_HOME}
 
 WORKDIR ${AMORO_HOME}
 
@@ -60,4 +59,3 @@ RUN cd ${AMORO_HOME}/lib \
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["help"]
-
