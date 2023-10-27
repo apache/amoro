@@ -5,7 +5,7 @@ import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_F
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.hive.MixedHiveTableTestBase;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
@@ -21,6 +21,7 @@ import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.thrift.TException;
@@ -35,7 +36,7 @@ import java.util.List;
 import java.util.Set;
 
 @RunWith(Parameterized.class)
-public class TestRewriteFiles extends TableTestBase {
+public class TestRewriteFiles extends MixedHiveTableTestBase {
 
   @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
@@ -54,7 +55,8 @@ public class TestRewriteFiles extends TableTestBase {
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(true, false)
+        new HiveTableTestHelper(true, false,
+            ImmutableMap.of(com.netease.arctic.table.TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
@@ -62,7 +64,8 @@ public class TestRewriteFiles extends TableTestBase {
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(false, false)
+        new HiveTableTestHelper(false, false,
+            ImmutableMap.of(com.netease.arctic.table.TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
       }
     };
   }
@@ -112,7 +115,9 @@ public class TestRewriteFiles extends TableTestBase {
     Transaction transaction = baseStore.newTransaction();
     RewriteFiles rewriteFiles = transaction.newRewrite();
     rewriteFiles.rewriteFiles(Sets.newHashSet(initDataFiles), Sets.newHashSet(newFiles));
+    HiveDataTestHelpers.assertWriteConsistentFilesName(getArcticTable(), newFiles);
     rewriteFiles.commit();
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(newFiles);
 
     String key = "test-overwrite-transaction";
     UpdateProperties updateProperties = transaction.updateProperties();

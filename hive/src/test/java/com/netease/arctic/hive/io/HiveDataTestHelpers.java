@@ -25,6 +25,7 @@ import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HiveCommitUtil;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
@@ -32,6 +33,7 @@ import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.MetadataColumns;
+import com.netease.arctic.utils.TableFileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import java.io.IOException;
@@ -44,6 +46,7 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.junit.Assert;
 
 public class HiveDataTestHelpers {
 
@@ -135,16 +138,18 @@ public class HiveDataTestHelpers {
     }
   }
 
+  /**
+   * Simulate the consistent-write-commit process to convert a hidden file to a visible file.
+   */
   public static List<DataFile> applyConsistentWriteFiles(ArcticTable table, List<DataFile> files) {
     if (!TablePropertyUtil.hiveConsistentWriteEnabled(table.properties())) {
       return files;
     }
-    String hiveLocation = ((SupportHive) table).hiveLocation();
     List<DataFile> nonHiveFiles = Lists.newArrayList();
     List<DataFile> hiveFiles = Lists.newArrayList();
     for (DataFile f : files) {
       String location = f.path().toString();
-      if (location.toLowerCase().startsWith(hiveLocation.toLowerCase())) {
+      if (isHiveFile(location, f)) {
         hiveFiles.add(f);
       } else {
         nonHiveFiles.add(f);
@@ -153,8 +158,36 @@ public class HiveDataTestHelpers {
     hiveFiles = HiveCommitUtil.applyConsistentWriteFile(hiveFiles, table.spec(), (l, c) -> {});
     nonHiveFiles.addAll(hiveFiles);
     return nonHiveFiles;
-  } 
+  }
 
+  /**
+   * Assert the consistent-write process, with this parameter enabled, the written file is a hidden file.
+   */
+  public static void assertWriteConsistentFilesName(SupportHive table, List<DataFile> files) {
+    boolean consistentWriteEnabled = TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
+    String hiveLocation = table.hiveLocation();
+    for (DataFile f: files) {
+      if (isHiveFile(hiveLocation, f)) {
+        String filename = TableFileUtil.getFileName(f.path().toString());
+        Assert.assertEquals(consistentWriteEnabled, filename.startsWith("."));
+      }
+    }
+  }
+
+  /**
+   * Assert the consistent-write commit, all file will not be hidden file after commit.
+   */
+  public static void assertWriteConsistentFilesCommit(List<DataFile> files) {
+    files.forEach(f -> {
+      String filename = TableFileUtil.getFileName(f.path().toString());
+      Assert.assertFalse(filename.startsWith("."));
+    });
+  }
+
+  public static boolean isHiveFile(String hiveLocation, DataFile file) {
+    String location = file.path().toString();
+    return location.toLowerCase().startsWith(hiveLocation.toLowerCase());
+  }
 
   public static List<Record> readKeyedTable(
       KeyedTable keyedTable,

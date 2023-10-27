@@ -5,7 +5,7 @@ import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_F
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.hive.MixedHiveTableTestBase;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
@@ -13,6 +13,7 @@ import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
+import org.apache.commons.collections.MapUtils;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
@@ -21,7 +22,9 @@ import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -33,7 +36,7 @@ import org.junit.runners.Parameterized;
 import java.util.List;
 
 @RunWith(Parameterized.class)
-public class TestOverwriteFiles extends TableTestBase {
+public class TestOverwriteFiles extends MixedHiveTableTestBase {
 
   @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
@@ -50,7 +53,8 @@ public class TestOverwriteFiles extends TableTestBase {
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(true, false)
+        new HiveTableTestHelper(true, false,
+            ImmutableMap.of(com.netease.arctic.table.TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
@@ -58,7 +62,8 @@ public class TestOverwriteFiles extends TableTestBase {
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(false, false)
+        new HiveTableTestHelper(false, false,
+            ImmutableMap.of(com.netease.arctic.table.TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
       }
     };
   }
@@ -70,10 +75,12 @@ public class TestOverwriteFiles extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
         HiveDataTestHelpers.writeOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
+    HiveDataTestHelpers.assertWriteConsistentFilesName(getArcticTable(), dataFiles);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(dataFiles);
 
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
@@ -100,11 +107,13 @@ public class TestOverwriteFiles extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
         HiveDataTestHelpers.writeOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
+    HiveDataTestHelpers.assertWriteConsistentFilesName(getArcticTable(), dataFiles);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     Transaction transaction = baseStore.newTransaction();
     OverwriteFiles overwriteFiles = transaction.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(dataFiles);
 
     String key = "test-overwrite-transaction";
     UpdateProperties updateProperties = transaction.updateProperties();
@@ -132,6 +141,7 @@ public class TestOverwriteFiles extends TableTestBase {
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(dataFiles);
 
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
@@ -167,6 +177,7 @@ public class TestOverwriteFiles extends TableTestBase {
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(dataFiles);
 
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
@@ -199,6 +210,7 @@ public class TestOverwriteFiles extends TableTestBase {
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(dataFiles);
 
     // rename the hive table,
     Table hiveTable =
@@ -213,6 +225,7 @@ public class TestOverwriteFiles extends TableTestBase {
 
     // commit should success even though hive table is not existed.
     overwriteFiles.commit();
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(dataFiles);
 
     hiveTable.setTableName(getArcticTable().id().getTableName());
     TEST_HMS

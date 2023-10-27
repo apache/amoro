@@ -23,7 +23,7 @@ import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_F
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.hive.MixedHiveTableTestBase;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
@@ -35,6 +35,7 @@ import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.thrift.TException;
 import org.junit.ClassRule;
@@ -45,7 +46,7 @@ import org.junit.runners.Parameterized;
 import java.util.List;
 
 @RunWith(Parameterized.class)
-public class TestRewritePartitions extends TableTestBase {
+public class TestRewritePartitions extends MixedHiveTableTestBase {
 
   @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
@@ -65,7 +66,8 @@ public class TestRewritePartitions extends TableTestBase {
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(false, true)
+        new HiveTableTestHelper(false, true,
+            ImmutableMap.of(com.netease.arctic.table.TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
       }
     };
   }
@@ -91,10 +93,12 @@ public class TestRewritePartitions extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
     List<DataFile> dataFiles =
         HiveDataTestHelpers.writeOf(getArcticTable()).transactionId(2L).writeHive(insertRecords);
+    HiveDataTestHelpers.assertWriteConsistentFilesName(getArcticTable(), dataFiles);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     ReplacePartitions replacePartitions = baseStore.newReplacePartitions();
     dataFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(dataFiles);
 
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
