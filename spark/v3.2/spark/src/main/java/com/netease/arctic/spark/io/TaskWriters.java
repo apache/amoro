@@ -144,8 +144,7 @@ public class TaskWriters {
         InternalRowFileAppenderFactory.builderFor(icebergTable, schema, dsSchema)
             .writeHive(isHiveTable)
             .build();
-    boolean hiveConsistentWrite =
-        TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
+    boolean hiveConsistentWrite = TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
     OutputFileFactory outputFileFactory;
     if (isHiveTable && isOverwrite) {
       outputFileFactory =

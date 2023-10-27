@@ -24,7 +24,8 @@ import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.hive.table.SupportHive;
 
 public class MixedHiveTableTestBase extends TableTestBase {
-  public MixedHiveTableTestBase(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+  public MixedHiveTableTestBase(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 

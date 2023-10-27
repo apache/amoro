@@ -13,7 +13,6 @@ import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
-import org.apache.commons.collections.MapUtils;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
@@ -24,7 +23,6 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -53,8 +51,11 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(true, false,
-            ImmutableMap.of(com.netease.arctic.table.TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
+        new HiveTableTestHelper(
+            true,
+            false,
+            ImmutableMap.of(
+                com.netease.arctic.table.TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
@@ -62,8 +63,11 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(false, false,
-            ImmutableMap.of(com.netease.arctic.table.TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
+        new HiveTableTestHelper(
+            false,
+            false,
+            ImmutableMap.of(
+                com.netease.arctic.table.TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
       }
     };
   }

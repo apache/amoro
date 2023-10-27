@@ -55,8 +55,11 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(true, false,
-            ImmutableMap.of(com.netease.arctic.table.TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
+        new HiveTableTestHelper(
+            true,
+            false,
+            ImmutableMap.of(
+                com.netease.arctic.table.TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
@@ -64,8 +67,11 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(false, false,
-            ImmutableMap.of(com.netease.arctic.table.TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
+        new HiveTableTestHelper(
+            false,
+            false,
+            ImmutableMap.of(
+                com.netease.arctic.table.TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
       }
     };
   }

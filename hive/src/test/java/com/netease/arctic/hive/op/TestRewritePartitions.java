@@ -66,8 +66,11 @@ public class TestRewritePartitions extends MixedHiveTableTestBase {
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(false, true,
-            ImmutableMap.of(com.netease.arctic.table.TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
+        new HiveTableTestHelper(
+            false,
+            true,
+            ImmutableMap.of(
+                com.netease.arctic.table.TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
       }
     };
   }
