@@ -22,10 +22,10 @@ metadata:
   labels:
     {{- include "amoro.labels" . | nindent 4 }}
 data:
-  {{- with .Values.jvmOptions }}
+    {{- with .Values.jvmOptions }}
   jvm.properties: |
-    {{- tpl . $ | nindent 4 }}
-  {{- end }}
+    {{- . | nindent 4 }}
+    {{- end }}
   ## Helm chart provided Amoro configurations
   config.yaml: |
     ams:
