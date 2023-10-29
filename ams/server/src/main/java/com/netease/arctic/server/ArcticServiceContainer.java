@@ -477,9 +477,6 @@ public class ArcticServiceContainer {
     private void initContainerConfig() {
       LOG.info("initializing container configuration...");
       JSONArray containers = yamlConfig.getJSONArray(ArcticManagementConf.CONTAINER_LIST);
-      if (containers == null) {
-        containers = new JSONArray();
-      }
       List<ContainerMetadata> containerList = new ArrayList<>();
       for (int i = 0; i < containers.size(); i++) {
         JSONObject containerConfig = containers.getJSONObject(i);
