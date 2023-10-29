@@ -6,7 +6,7 @@
     </p>
     <h2 class="sub-title">What is Arctic</h2>
     <p class="desc">
-      Currently, Arctic is a LakeHouse management system on top of iceberg format. Benefit from the thriving ecology of Apache Iceberg, Arctic could be used on kinds of data lakes on premise or clouds with varities of engines. Several concepts should be known before your deeper steps:
+      Currently, Arctic is a LakeHouse management system on top of iceberg format. Benefit from the thriving ecology of Apache Iceberg, Arctic could be used on kinds of data lakes on premise or clouds with varieties of engines. Several concepts should be known before your deeper steps:
     </p>
     <img
       src="@/assets/images/introduce_arctic.png"
@@ -52,9 +52,9 @@
       <li>Management features - dashboard UI to support catalog/table management, SQL terminal and all kinds of metrics
       </li>
       <li>Formats compatible - Hive/Iceberg format compatible means writing and reading through native Hive/Iceberg connector</li>
-      <li>Better data pipeline SLA - using LogStore like kafka to accelarate streaming data pipeline to ms/s latency</li>
-      <li>Better OLAP performace - provides auto-bucket feature for better compaction and merge-on-read performance</li>
-      <li>Concurrent conflicts resovling - Flink or Spark could concurrent write data without worring about conflicts</li>
+      <li>Better data pipeline SLA - using LogStore like kafka to accelerate streaming data pipeline to ms/s latency</li>
+      <li>Better OLAP performance - provides auto-bucket feature for better compaction and merge-on-read performance</li>
+      <li>Concurrent conflicts resolving - Flink or Spark could concurrent write data without worring about conflicts</li>
     </ol>
     <h2 class="sub-title">Engines supported</h2>
     <p class="desc">Arctic support multiple processing engines as below:</p>
