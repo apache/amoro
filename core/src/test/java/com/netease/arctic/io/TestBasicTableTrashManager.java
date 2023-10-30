@@ -85,7 +85,7 @@ public class TestBasicTableTrashManager extends TableTestBase {
 
   @Test
   public void testDeleteAndRestore() throws IOException {
-    String tableRootLocation = getTableRootLocation(getArcticTable());
+    String tableRootLocation = getArcticTable().location();
     TableTrashManager tableTrashManager = build();
     String trashLocation = tableTrashManager.getTrashLocation();
 
@@ -112,7 +112,7 @@ public class TestBasicTableTrashManager extends TableTestBase {
 
   @Test
   public void testMoveAndOverwrite() throws IOException {
-    String tableRootLocation = getTableRootLocation(getArcticTable());
+    String tableRootLocation = getArcticTable().location();
     TableTrashManager tableTrashManager = build();
 
     String relativeFilePath = "base/test/test1.parquet";
@@ -128,7 +128,7 @@ public class TestBasicTableTrashManager extends TableTestBase {
 
   @Test
   public void testDeleteDirectory() throws IOException {
-    String tableRootLocation = getTableRootLocation(getArcticTable());
+    String tableRootLocation = getArcticTable().location();
     TableTrashManager tableTrashManager = build();
     String trashLocation = tableTrashManager.getTrashLocation();
     String relativeFilePath = "base/test/test1.parquet";
@@ -153,7 +153,7 @@ public class TestBasicTableTrashManager extends TableTestBase {
 
   @Test
   public void testRestoreDirectory() throws IOException {
-    String tableRootLocation = getTableRootLocation(getArcticTable());
+    String tableRootLocation = getArcticTable().location();
     TableTrashManager tableTrashManager = build();
     String trashLocation = tableTrashManager.getTrashLocation();
     String relativeFilePath = "base/test/test1.parquet";
@@ -173,7 +173,7 @@ public class TestBasicTableTrashManager extends TableTestBase {
 
   @Test
   public void testCleanFiles() throws IOException {
-    String tableRootLocation = getTableRootLocation(getArcticTable());
+    String tableRootLocation = getArcticTable().location();
     BasicTableTrashManager tableTrashManager = ((BasicTableTrashManager) build());
     String trashLocation = tableTrashManager.getTrashLocation();
     String file1 = fullLocation(tableRootLocation, "base/test/test1.parquet");
@@ -246,7 +246,7 @@ public class TestBasicTableTrashManager extends TableTestBase {
 
   @Test
   public void testDeleteTrashLocation() throws IOException {
-    String tableRootLocation = getTableRootLocation(getArcticTable());
+    String tableRootLocation = getArcticTable().location();
     String customTrashLocation = tempTrashLocation.newFolder().getPath().replace('\\', '/');
 
     getArcticTable()
@@ -270,7 +270,7 @@ public class TestBasicTableTrashManager extends TableTestBase {
     Assert.assertTrue(table.io() instanceof ArcticHadoopFileIO);
     return TableTrashManagers.build(
         table.id(),
-        getTableRootLocation(table),
+        getArcticTable().location(),
         table.properties(),
         (ArcticHadoopFileIO) table.io());
   }
@@ -279,14 +279,6 @@ public class TestBasicTableTrashManager extends TableTestBase {
     OutputFile baseOrphanDataFile = io.newOutputFile(path);
     baseOrphanDataFile.createOrOverwrite().close();
     return path;
-  }
-
-  private String getTableRootLocation(ArcticTable table) {
-    if (!ArcticTableUtil.isIcebergTableFormat(table) && table.isUnkeyedTable()) {
-      return TableFileUtil.getFileDir(table.location());
-    } else {
-      return table.location();
-    }
   }
 
   private String fullLocation(String dir, String relativeLocation) {
