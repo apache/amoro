@@ -41,7 +41,7 @@ public abstract class TestServerTableDescriptor extends TableCatalogTestBase {
 
   @Before
   public void before() {
-      getAmoroCatalog().createDatabase(TEST_DB);
+    getAmoroCatalog().createDatabase(TEST_DB);
     try {
       getAmoroCatalogTestHelper().createTable(TEST_DB, TEST_TABLE);
     } catch (Exception e) {
