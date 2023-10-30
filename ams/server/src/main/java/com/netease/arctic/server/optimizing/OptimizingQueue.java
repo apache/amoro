@@ -32,7 +32,7 @@ import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.OptimizingClosedException;
 import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.exception.TaskNotFoundException;
-import com.netease.arctic.server.metrics.SelfOptimizingTotalCostContent;
+import com.netease.arctic.server.metrics.SelfOptimizingTotalCostMsContent;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.persistence.PersistentBase;
@@ -593,17 +593,17 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           tableRuntime.getTableIdentifier(),
           taskMap.size(),
           taskMap.values());
-      SelfOptimizingTotalCostContent selfOptimizingTotalCostContent =
-          new SelfOptimizingTotalCostContent(
+      SelfOptimizingTotalCostMsContent selfOptimizingTotalCostMsContent =
+          new SelfOptimizingTotalCostMsContent(
               tableRuntime.getTableIdentifier().toString(), processId, optimizingType.name());
       taskMap
           .values()
           .forEach(
               taskRuntime ->
-                  selfOptimizingTotalCostContent
-                      .tableOptimizingTotalCostDurationMs()
+                  selfOptimizingTotalCostMsContent
+                      .tableOptimizingTotalCostMs()
                       .inc(taskRuntime.getCostTime()));
-      tableRuntime.getMetricsManager().emit(selfOptimizingTotalCostContent);
+      tableRuntime.getMetricsManager().emit(selfOptimizingTotalCostMsContent);
 
       lock.lock();
       try {

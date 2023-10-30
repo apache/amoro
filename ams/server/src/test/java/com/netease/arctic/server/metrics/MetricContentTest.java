@@ -51,37 +51,38 @@ public class MetricContentTest {
 
   @Test
   public void selfOptimizingStatusDurationContentTest() {
-    SelfOptimizingStatusDurationContent selfOptimizingStatusDurationContent =
-        new SelfOptimizingStatusDurationContent("tableName", "idle");
-    selfOptimizingStatusDurationContent.setOptimizingProcessId(1L);
-    selfOptimizingStatusDurationContent.setTargetSnapshotId(1L);
-    selfOptimizingStatusDurationContent.setOptimizingType("major");
-    Counter counter = selfOptimizingStatusDurationContent.tableOptimizingStatusDurationMs();
+    SelfOptimizingStatusDurationMsContent selfOptimizingStatusDurationMsContent =
+        new SelfOptimizingStatusDurationMsContent("tableName", "idle");
+    selfOptimizingStatusDurationMsContent.setOptimizingProcessId(1L);
+    selfOptimizingStatusDurationMsContent.setTargetSnapshotId(1L);
+    selfOptimizingStatusDurationMsContent.setOptimizingType("major");
+    Counter counter = selfOptimizingStatusDurationMsContent.tableOptimizingStatusDurationMs();
     counter.inc(100);
-    TaggedMetrics taggedMetrics = TaggedMetrics.from(selfOptimizingStatusDurationContent);
-    Assert.assertNotNull(taggedMetrics.tags().get(SelfOptimizingStatusDurationContent.TABLE_NAME));
+    TaggedMetrics taggedMetrics = TaggedMetrics.from(selfOptimizingStatusDurationMsContent);
+    Assert.assertNotNull(
+        taggedMetrics.tags().get(SelfOptimizingStatusDurationMsContent.TABLE_NAME));
     Assert.assertEquals(
         ((Counter)
                 taggedMetrics
                     .metrics()
-                    .get(SelfOptimizingStatusDurationContent.TABLE_OPTIMIZING_STATUS_DURATION))
+                    .get(SelfOptimizingStatusDurationMsContent.TABLE_OPTIMIZING_STATUS_DURATION_MS))
             .getCount(),
         100);
   }
 
   @Test
   public void selfOptimizingTotalCostContentTest() {
-    SelfOptimizingTotalCostContent selfOptimizingTotalCostContent =
-        new SelfOptimizingTotalCostContent("tableName", 1L, "major");
-    Counter counter = selfOptimizingTotalCostContent.tableOptimizingTotalCostDurationMs();
+    SelfOptimizingTotalCostMsContent selfOptimizingTotalCostMsContent =
+        new SelfOptimizingTotalCostMsContent("tableName", 1L, "major");
+    Counter counter = selfOptimizingTotalCostMsContent.tableOptimizingTotalCostMs();
     counter.inc(100);
-    TaggedMetrics taggedMetrics = TaggedMetrics.from(selfOptimizingTotalCostContent);
-    Assert.assertNotNull(taggedMetrics.tags().get(SelfOptimizingTotalCostContent.TABLE_NAME));
+    TaggedMetrics taggedMetrics = TaggedMetrics.from(selfOptimizingTotalCostMsContent);
+    Assert.assertNotNull(taggedMetrics.tags().get(SelfOptimizingTotalCostMsContent.TABLE_NAME));
     Assert.assertEquals(
         ((Counter)
                 taggedMetrics
                     .metrics()
-                    .get(SelfOptimizingTotalCostContent.TABLE_OPTIMIZING_TOTAL_COST_DURATION))
+                    .get(SelfOptimizingTotalCostMsContent.TABLE_OPTIMIZING_TOTAL_COST_MS))
             .getCount(),
         100);
   }

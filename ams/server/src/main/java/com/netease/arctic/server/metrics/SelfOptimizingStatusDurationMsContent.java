@@ -24,10 +24,10 @@ import com.netease.arctic.ams.api.metrics.MetricsContent;
 import com.netease.arctic.ams.api.metrics.TaggedMetrics;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 
-public class SelfOptimizingStatusDurationContent
-    implements MetricsContent<SelfOptimizingStatusDurationContent> {
-  public static final String SELF_OPTIMIZING_STATUS_DURATION_REPORT_NAME =
-      "self_optimizing_status_duration_content";
+public class SelfOptimizingStatusDurationMsContent
+    implements MetricsContent<SelfOptimizingStatusDurationMsContent> {
+  public static final String SELF_OPTIMIZING_STATUS_DURATION_MS_REPORT_NAME =
+      "self_optimizing_status_duration_ms_content";
 
   public static final String TABLE_NAME = "table-name";
   public static final String OPTIMIZING_STATUS = "optimizing-status";
@@ -36,7 +36,8 @@ public class SelfOptimizingStatusDurationContent
   public static final String TARGET_SNAPSHOT_ID = "target-snapshot-id";
 
   @VisibleForTesting
-  public static final String TABLE_OPTIMIZING_STATUS_DURATION = "table-optimizing-status-duration";
+  public static final String TABLE_OPTIMIZING_STATUS_DURATION_MS =
+      "table-optimizing-status-duration-ms";
 
   private final String tableName;
   private final String optimizingStatus;
@@ -46,7 +47,7 @@ public class SelfOptimizingStatusDurationContent
 
   private final Counter tableOptimizingStatusDurationMs = new Counter();
 
-  public SelfOptimizingStatusDurationContent(String tableName, String optimizingStatus) {
+  public SelfOptimizingStatusDurationMsContent(String tableName, String optimizingStatus) {
     this.tableName = tableName;
     this.optimizingStatus = optimizingStatus;
   }
@@ -88,14 +89,14 @@ public class SelfOptimizingStatusDurationContent
     return targetSnapshotId;
   }
 
-  @TaggedMetrics.Metric(name = TABLE_OPTIMIZING_STATUS_DURATION)
+  @TaggedMetrics.Metric(name = TABLE_OPTIMIZING_STATUS_DURATION_MS)
   public Counter tableOptimizingStatusDurationMs() {
     return tableOptimizingStatusDurationMs;
   }
 
   @Override
   public String name() {
-    return SELF_OPTIMIZING_STATUS_DURATION_REPORT_NAME;
+    return SELF_OPTIMIZING_STATUS_DURATION_MS_REPORT_NAME;
   }
 
   @Override
@@ -104,7 +105,7 @@ public class SelfOptimizingStatusDurationContent
   }
 
   @Override
-  public SelfOptimizingStatusDurationContent data() {
+  public SelfOptimizingStatusDurationMsContent data() {
     return this;
   }
 }

@@ -24,26 +24,25 @@ import com.netease.arctic.ams.api.metrics.MetricsContent;
 import com.netease.arctic.ams.api.metrics.TaggedMetrics;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 
-public class SelfOptimizingTotalCostContent
-    implements MetricsContent<SelfOptimizingTotalCostContent> {
-  public static final String SELF_OPTIMIZING_TOTAL_COST_REPORT =
-      "self_optimizing_total_cost_content";
+public class SelfOptimizingTotalCostMsContent
+    implements MetricsContent<SelfOptimizingTotalCostMsContent> {
+  public static final String SELF_OPTIMIZING_TOTAL_COST_MS_CONTENT =
+      "self_optimizing_total_cost_ms_content";
 
   public static final String TABLE_NAME = "table-name";
   public static final String OPTIMIZING_PROCESS_ID = "optimizing-process-id";
   public static final String OPTIMIZING_TYPE = "optimizing-type";
 
   @VisibleForTesting
-  public static final String TABLE_OPTIMIZING_TOTAL_COST_DURATION =
-      "table-optimizing-total-cost-duration";
+  public static final String TABLE_OPTIMIZING_TOTAL_COST_MS = "table-optimizing-total-cost-ms";
 
   private final String tableName;
   private final Long optimizingProcessId;
   private final String optimizingType;
 
-  private final Counter tableOptimizingTotalCostDurationMs = new Counter();
+  private final Counter tableOptimizingTotalCostMs = new Counter();
 
-  public SelfOptimizingTotalCostContent(
+  public SelfOptimizingTotalCostMsContent(
       String tableName, Long optimizingProcessId, String optimizingType) {
     this.tableName = tableName;
     this.optimizingProcessId = optimizingProcessId;
@@ -65,14 +64,14 @@ public class SelfOptimizingTotalCostContent
     return optimizingType;
   }
 
-  @TaggedMetrics.Metric(name = TABLE_OPTIMIZING_TOTAL_COST_DURATION)
-  public Counter tableOptimizingTotalCostDurationMs() {
-    return this.tableOptimizingTotalCostDurationMs;
+  @TaggedMetrics.Metric(name = TABLE_OPTIMIZING_TOTAL_COST_MS)
+  public Counter tableOptimizingTotalCostMs() {
+    return this.tableOptimizingTotalCostMs;
   }
 
   @Override
   public String name() {
-    return SELF_OPTIMIZING_TOTAL_COST_REPORT;
+    return SELF_OPTIMIZING_TOTAL_COST_MS_CONTENT;
   }
 
   @Override
@@ -81,7 +80,7 @@ public class SelfOptimizingTotalCostContent
   }
 
   @Override
-  public SelfOptimizingTotalCostContent data() {
+  public SelfOptimizingTotalCostMsContent data() {
     return this;
   }
 }

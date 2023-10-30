@@ -25,7 +25,7 @@ import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.BlockerConflictException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.manager.MetricsManager;
-import com.netease.arctic.server.metrics.SelfOptimizingStatusDurationContent;
+import com.netease.arctic.server.metrics.SelfOptimizingStatusDurationMsContent;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
@@ -265,20 +265,21 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   private void updateOptimizingStatus(OptimizingStatus status) {
-    SelfOptimizingStatusDurationContent selfOptimizingStatusDurationContent =
-        new SelfOptimizingStatusDurationContent(
+    SelfOptimizingStatusDurationMsContent selfOptimizingStatusDurationMsContent =
+        new SelfOptimizingStatusDurationMsContent(
             tableIdentifier.toString(), optimizingStatus.displayValue());
-    selfOptimizingStatusDurationContent
+    selfOptimizingStatusDurationMsContent
         .tableOptimizingStatusDurationMs()
         .inc(System.currentTimeMillis() - currentStatusStartTime);
     if (optimizingStatus == OptimizingStatus.COMMITTING) {
-      selfOptimizingStatusDurationContent.setOptimizingType(
+      selfOptimizingStatusDurationMsContent.setOptimizingType(
           optimizingProcess.getOptimizingType().name());
-      selfOptimizingStatusDurationContent.setOptimizingProcessId(optimizingProcess.getProcessId());
-      selfOptimizingStatusDurationContent.setTargetSnapshotId(
+      selfOptimizingStatusDurationMsContent.setOptimizingProcessId(
+          optimizingProcess.getProcessId());
+      selfOptimizingStatusDurationMsContent.setTargetSnapshotId(
           optimizingProcess.getTargetSnapshotId());
     }
-    metricsManager.emit(selfOptimizingStatusDurationContent);
+    metricsManager.emit(selfOptimizingStatusDurationMsContent);
     this.optimizingStatus = status;
     this.currentStatusStartTime = System.currentTimeMillis();
   }
