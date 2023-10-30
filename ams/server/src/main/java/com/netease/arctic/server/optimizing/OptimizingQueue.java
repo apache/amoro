@@ -25,7 +25,6 @@ import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
-import com.netease.arctic.server.metrics.SelfOptimizingTotalCostContent;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.optimizing.RewriteFilesInput;
@@ -33,7 +32,7 @@ import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.OptimizingClosedException;
 import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.exception.TaskNotFoundException;
-import com.netease.arctic.server.manager.MetricsManager;
+import com.netease.arctic.server.metrics.SelfOptimizingTotalCostContent;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.persistence.PersistentBase;
@@ -69,7 +68,6 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedTransferQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -367,9 +365,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
             new OptimizingPlanner(
                 tableRuntime.refresh(table),
                 (ArcticTable) table.originalTable(),
-                getAvailableCore(),
-                tableRuntime.getMetricsManager()
-                );
+                getAvailableCore());
         if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
           LOG.info("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
           continue;
@@ -599,14 +595,14 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           taskMap.values());
       SelfOptimizingTotalCostContent selfOptimizingTotalCostContent =
           new SelfOptimizingTotalCostContent(
-              tableRuntime.getTableIdentifier().toString(),
-              processId,
-              optimizingType.name());
-      taskMap.values().forEach(
-          taskRuntime ->
-              selfOptimizingTotalCostContent.tableOptimizingTotalCostDuration()
-                  .update(taskRuntime.getCostTime(), TimeUnit.MILLISECONDS)
-      );
+              tableRuntime.getTableIdentifier().toString(), processId, optimizingType.name());
+      taskMap
+          .values()
+          .forEach(
+              taskRuntime ->
+                  selfOptimizingTotalCostContent
+                      .tableOptimizingTotalCostDurationMs()
+                      .inc(taskRuntime.getCostTime()));
       tableRuntime.getMetricsManager().emit(selfOptimizingTotalCostContent);
 
       lock.lock();

@@ -18,28 +18,30 @@
 
 package com.netease.arctic.server.metrics;
 
-import com.codahale.metrics.Timer;
+import com.codahale.metrics.Counter;
 import com.netease.arctic.ams.api.metrics.MetricType;
 import com.netease.arctic.ams.api.metrics.MetricsContent;
 import com.netease.arctic.ams.api.metrics.TaggedMetrics;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 
 public class SelfOptimizingTotalCostContent
     implements MetricsContent<SelfOptimizingTotalCostContent> {
   public static final String SELF_OPTIMIZING_TOTAL_COST_REPORT =
-      "self_optimizing_total_cost_report";
+      "self_optimizing_total_cost_content";
 
   public static final String TABLE_NAME = "table-name";
   public static final String OPTIMIZING_PROCESS_ID = "optimizing-process-id";
   public static final String OPTIMIZING_TYPE = "optimizing-type";
 
-  private static final String TABLE_OPTIMIZING_TOTAL_COST_DURATION =
+  @VisibleForTesting
+  public static final String TABLE_OPTIMIZING_TOTAL_COST_DURATION =
       "table-optimizing-total-cost-duration";
 
   private final String tableName;
   private final Long optimizingProcessId;
   private final String optimizingType;
 
-  private final Timer tableOptimizingTotalCostDuration = new Timer();
+  private final Counter tableOptimizingTotalCostDurationMs = new Counter();
 
   public SelfOptimizingTotalCostContent(
       String tableName, Long optimizingProcessId, String optimizingType) {
@@ -64,8 +66,8 @@ public class SelfOptimizingTotalCostContent
   }
 
   @TaggedMetrics.Metric(name = TABLE_OPTIMIZING_TOTAL_COST_DURATION)
-  public Timer tableOptimizingTotalCostDuration() {
-    return this.tableOptimizingTotalCostDuration;
+  public Counter tableOptimizingTotalCostDurationMs() {
+    return this.tableOptimizingTotalCostDurationMs;
   }
 
   @Override

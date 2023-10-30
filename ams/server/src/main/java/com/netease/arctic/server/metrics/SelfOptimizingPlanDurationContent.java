@@ -22,13 +22,17 @@ import com.codahale.metrics.Timer;
 import com.netease.arctic.ams.api.metrics.MetricType;
 import com.netease.arctic.ams.api.metrics.MetricsContent;
 import com.netease.arctic.ams.api.metrics.TaggedMetrics;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 
-public class SelfOptimizingPlanDurationContent implements MetricsContent<SelfOptimizingPlanDurationContent> {
-  public static final String SELF_OPTIMIZING_PLAN_DURATION_REPORT_NAME = "self_optimizing_plan_duration_report";
+public class SelfOptimizingPlanDurationContent
+    implements MetricsContent<SelfOptimizingPlanDurationContent> {
+  public static final String SELF_OPTIMIZING_PLAN_DURATION_REPORT_NAME =
+      "self_optimizing_plan_duration_content";
 
   public static final String TABLE_NAME = "table-name";
 
-  private static final String TABLE_OPTIMIZING_PLAN_DURATION = "table-optimizing-plan-duration";
+  @VisibleForTesting
+  public static final String TABLE_OPTIMIZING_PLAN_DURATION = "table-optimizing-plan-duration";
 
   private final String tableName;
 

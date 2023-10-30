@@ -43,7 +43,8 @@ public class TableRuntimeMeta {
 
   public TableRuntimeMeta() {}
 
-  public TableRuntime constructTableRuntime(TableManager initializer, MetricsManager metricsManager) {
+  public TableRuntime constructTableRuntime(
+      TableManager initializer, MetricsManager metricsManager) {
     if (tableRuntime == null) {
       tableRuntime = new TableRuntime(this, initializer, metricsManager);
     }

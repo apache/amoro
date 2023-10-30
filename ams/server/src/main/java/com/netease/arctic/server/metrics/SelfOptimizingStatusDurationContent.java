@@ -18,13 +18,16 @@
 
 package com.netease.arctic.server.metrics;
 
-import com.codahale.metrics.Timer;
+import com.codahale.metrics.Counter;
 import com.netease.arctic.ams.api.metrics.MetricType;
 import com.netease.arctic.ams.api.metrics.MetricsContent;
 import com.netease.arctic.ams.api.metrics.TaggedMetrics;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 
-public class SelfOptimizingStatusDurationContent implements MetricsContent<SelfOptimizingStatusDurationContent> {
-  public static final String SELF_OPTIMIZING_STATUS_DURATION_REPORT_NAME = "self_optimizing_status_duration_report";
+public class SelfOptimizingStatusDurationContent
+    implements MetricsContent<SelfOptimizingStatusDurationContent> {
+  public static final String SELF_OPTIMIZING_STATUS_DURATION_REPORT_NAME =
+      "self_optimizing_status_duration_content";
 
   public static final String TABLE_NAME = "table-name";
   public static final String OPTIMIZING_STATUS = "optimizing-status";
@@ -32,7 +35,8 @@ public class SelfOptimizingStatusDurationContent implements MetricsContent<SelfO
   public static final String OPTIMIZING_TYPE = "optimizing-type";
   public static final String TARGET_SNAPSHOT_ID = "target-snapshot-id";
 
-  private static final String TABLE_OPTIMIZING_STATUS_DURATION = "table-optimizing-status-duration";
+  @VisibleForTesting
+  public static final String TABLE_OPTIMIZING_STATUS_DURATION = "table-optimizing-status-duration";
 
   private final String tableName;
   private final String optimizingStatus;
@@ -40,7 +44,7 @@ public class SelfOptimizingStatusDurationContent implements MetricsContent<SelfO
   private String optimizingType;
   private Long targetSnapshotId;
 
-  private final Timer tableOptimizingStatusDuration = new Timer();
+  private final Counter tableOptimizingStatusDurationMs = new Counter();
 
   public SelfOptimizingStatusDurationContent(String tableName, String optimizingStatus) {
     this.tableName = tableName;
@@ -85,8 +89,8 @@ public class SelfOptimizingStatusDurationContent implements MetricsContent<SelfO
   }
 
   @TaggedMetrics.Metric(name = TABLE_OPTIMIZING_STATUS_DURATION)
-  public Timer tableOptimizingStatusDuration() {
-    return tableOptimizingStatusDuration;
+  public Counter tableOptimizingStatusDurationMs() {
+    return tableOptimizingStatusDurationMs;
   }
 
   @Override

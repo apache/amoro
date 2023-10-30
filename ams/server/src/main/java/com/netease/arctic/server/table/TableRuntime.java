@@ -21,11 +21,11 @@ package com.netease.arctic.server.table;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.server.metrics.SelfOptimizingStatusDurationContent;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.BlockerConflictException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.manager.MetricsManager;
+import com.netease.arctic.server.metrics.SelfOptimizingStatusDurationContent;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
@@ -57,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
@@ -110,7 +109,10 @@ public class TableRuntime extends StatedPersistentBase {
     persistTableRuntime();
   }
 
-  protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler, MetricsManager metricsManager) {
+  protected TableRuntime(
+      TableRuntimeMeta tableRuntimeMeta,
+      TableRuntimeHandler tableHandler,
+      MetricsManager metricsManager) {
     Preconditions.checkNotNull(tableRuntimeMeta, tableHandler);
     this.tableHandler = tableHandler;
     this.tableIdentifier =
@@ -264,13 +266,17 @@ public class TableRuntime extends StatedPersistentBase {
 
   private void updateOptimizingStatus(OptimizingStatus status) {
     SelfOptimizingStatusDurationContent selfOptimizingStatusDurationContent =
-        new SelfOptimizingStatusDurationContent(tableIdentifier.toString(), optimizingStatus.displayValue());
-    selfOptimizingStatusDurationContent.tableOptimizingStatusDuration()
-        .update((System.currentTimeMillis() - currentStatusStartTime), TimeUnit.MILLISECONDS);
+        new SelfOptimizingStatusDurationContent(
+            tableIdentifier.toString(), optimizingStatus.displayValue());
+    selfOptimizingStatusDurationContent
+        .tableOptimizingStatusDurationMs()
+        .inc(System.currentTimeMillis() - currentStatusStartTime);
     if (optimizingStatus == OptimizingStatus.COMMITTING) {
-      selfOptimizingStatusDurationContent.setOptimizingType(optimizingProcess.getOptimizingType().name());
+      selfOptimizingStatusDurationContent.setOptimizingType(
+          optimizingProcess.getOptimizingType().name());
       selfOptimizingStatusDurationContent.setOptimizingProcessId(optimizingProcess.getProcessId());
-      selfOptimizingStatusDurationContent.setTargetSnapshotId(optimizingProcess.getTargetSnapshotId());
+      selfOptimizingStatusDurationContent.setTargetSnapshotId(
+          optimizingProcess.getTargetSnapshotId());
     }
     metricsManager.emit(selfOptimizingStatusDurationContent);
     this.optimizingStatus = status;
