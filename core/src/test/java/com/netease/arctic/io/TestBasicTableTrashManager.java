@@ -31,6 +31,7 @@ import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFile;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -263,6 +264,25 @@ public class TestBasicTableTrashManager extends TableTestBase {
     getCatalog().dropTable(getArcticTable().id(), true);
     Assert.assertFalse(getArcticTable().io().exists(trashParentLocation));
     Assert.assertFalse(tableTrashManager.fileExistInTrash(file1));
+  }
+
+  @After
+  public void cleanDirectory() throws IOException {
+    String tableRootLocation = getTableRootLocation(getArcticTable());
+    cleanFile(fullLocation(tableRootLocation, "base"));
+    cleanFile(fullLocation(tableRootLocation, ".trash"));
+  }
+
+  private void cleanFile(String path) throws IOException {
+    SupportsFileSystemOperations supportsFileSystemOperations =
+        getArcticTable().io().asFileSystemIO();
+    if (supportsFileSystemOperations.isDirectory(path)) {
+      Iterable<PathInfo> pathInfos = supportsFileSystemOperations.listDirectory(path);
+      for (PathInfo pathInfo : pathInfos) {
+        cleanFile(pathInfo.location());
+      }
+    }
+    supportsFileSystemOperations.deleteFile(path);
   }
 
   private TableTrashManager build() {
