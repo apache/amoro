@@ -214,13 +214,13 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                       // normalize summary
                       Map<String, String> normalizeSummary =
                           com.google.common.collect.Maps.newHashMap(summary);
-                      summary.computeIfPresent(
+                      normalizeSummary.computeIfPresent(
                           SnapshotSummary.TOTAL_FILE_SIZE_PROP,
                           (k, v) -> byteToXB(Long.parseLong(summary.get(k))));
-                      summary.computeIfPresent(
+                      normalizeSummary.computeIfPresent(
                           SnapshotSummary.ADDED_FILE_SIZE_PROP,
                           (k, v) -> byteToXB(Long.parseLong(summary.get(k))));
-                      summary.computeIfPresent(
+                      normalizeSummary.computeIfPresent(
                           SnapshotSummary.REMOVED_FILE_SIZE_PROP,
                           (k, v) -> byteToXB(Long.parseLong(summary.get(k))));
                       amsTransactionsOfTable.setSummary(normalizeSummary);
