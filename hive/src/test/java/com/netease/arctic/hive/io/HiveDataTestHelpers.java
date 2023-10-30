@@ -52,7 +52,7 @@ import java.util.List;
 
 public class HiveDataTestHelpers {
 
-  public static WriterHelper writeOf(ArcticTable table) {
+  public static WriterHelper writerOf(ArcticTable table) {
     return new WriterHelper(table);
   }
 

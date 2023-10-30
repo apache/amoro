@@ -454,7 +454,7 @@ public class TestHiveMetaSynchronizer extends TableTestBase {
   private List<DataFile> writeAndCommitHive(ArcticTable table, long txId) {
     String hiveSubDir = HiveTableUtil.newHiveSubdirectory(txId);
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writeOf(table)
+        HiveDataTestHelpers.writerOf(table)
             .transactionId(txId)
             .customHiveLocation(hiveSubDir)
             .writeHive(createRecords(1, 100));

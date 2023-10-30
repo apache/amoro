@@ -80,7 +80,7 @@ public class TestRewritePartitions extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     initDataFiles =
-        HiveDataTestHelpers.writeOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
+        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     initDataFiles.forEach(overwriteFiles::addFile);
@@ -97,7 +97,7 @@ public class TestRewritePartitions extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writeOf(getArcticTable()).transactionId(2L).writeHive(insertRecords);
+        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(2L).writeHive(insertRecords);
     HiveDataTestHelpers.assertWriteConsistentFilesName(getArcticTable(), dataFiles);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     ReplacePartitions replacePartitions = baseStore.newReplacePartitions();
@@ -122,7 +122,7 @@ public class TestRewritePartitions extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writeOf(getArcticTable()).transactionId(2L).writeHive(insertRecords);
+        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(2L).writeHive(insertRecords);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     ReplacePartitions replacePartitions = baseStore.newReplacePartitions();
     dataFiles.forEach(replacePartitions::addFile);
@@ -144,7 +144,7 @@ public class TestRewritePartitions extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writeOf(getArcticTable()).transactionId(2L).writeHive(insertRecords);
+        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(2L).writeHive(insertRecords);
     Transaction transaction = getBaseStore().newTransaction();
     ReplacePartitions replacePartitions = transaction.newReplacePartitions();
     dataFiles.forEach(replacePartitions::addFile);
@@ -164,13 +164,13 @@ public class TestRewritePartitions extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
 
     String hiveLocation = "test_hive_location";
-    HiveDataTestHelpers.writeOf(getArcticTable())
+    HiveDataTestHelpers.writerOf(getArcticTable())
         .transactionId(1L)
         .customHiveLocation(hiveLocation)
         .writeHive(insertRecords);
     // rewrite data files
     List<DataFile> rewriteDataFiles =
-        HiveDataTestHelpers.writeOf(getArcticTable())
+        HiveDataTestHelpers.writerOf(getArcticTable())
             .transactionId(2L)
             .customHiveLocation(hiveLocation)
             .writeHive(insertRecords);

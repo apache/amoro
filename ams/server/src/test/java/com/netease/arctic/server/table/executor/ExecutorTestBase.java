@@ -81,7 +81,7 @@ public class ExecutorTestBase extends TableTestBase {
   public List<DataFile> writeAndCommitBaseAndHive(ArcticTable table, long txId, boolean writeHive) {
     String hiveSubDir = HiveTableUtil.newHiveSubdirectory(txId);
     HiveDataTestHelpers.WriterHelper writerHelper =
-        HiveDataTestHelpers.writeOf(table).customHiveLocation(hiveSubDir).transactionId(txId);
+        HiveDataTestHelpers.writerOf(table).customHiveLocation(hiveSubDir).transactionId(txId);
     List<Record> records = createRecords(1, 100);
     List<DataFile> dataFiles;
     if (writeHive) {

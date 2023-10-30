@@ -121,7 +121,7 @@ public class TestSyncHiveMeta extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
 
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writeOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
+        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
@@ -178,7 +178,7 @@ public class TestSyncHiveMeta extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writeOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
+        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
@@ -194,7 +194,7 @@ public class TestSyncHiveMeta extends TableTestBase {
     insertRecords.clear();
     insertRecords.add(tableTestHelper().generateTestRecord(3, "lily", 0, "2022-01-03T12:00:00"));
     List<DataFile> newFiles =
-        HiveDataTestHelpers.writeOf(getArcticTable())
+        HiveDataTestHelpers.writerOf(getArcticTable())
             .transactionId(1L)
             .consistentWriteEnabled(false)
             .writeHive(insertRecords);
