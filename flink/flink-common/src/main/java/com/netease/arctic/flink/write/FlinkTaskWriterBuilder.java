@@ -151,7 +151,7 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
     Schema selectSchema =
         TypeUtil.reassignIds(
             FlinkSchemaUtil.convert(FlinkSchemaUtil.toSchema(flinkSchema)), schema);
-    boolean usingHiveCommitProtocol =
+    boolean hiveConsistentWriteEnabled =
         TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
 
     OutputFileFactory outputFileFactory =
@@ -165,7 +165,7 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
                 partitionId,
                 taskId,
                 transactionId,
-                usingHiveCommitProtocol)
+                hiveConsistentWriteEnabled)
             : new CommonOutputFileFactory(
                 baseLocation,
                 table.spec(),
