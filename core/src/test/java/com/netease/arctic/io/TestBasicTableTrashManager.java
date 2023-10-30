@@ -27,7 +27,6 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFile;
