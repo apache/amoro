@@ -72,7 +72,6 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
-import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.flink.FlinkFilters;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
@@ -359,7 +358,7 @@ public class ArcticCatalog extends AbstractCatalog {
     ArcticTable arcticTable;
     try {
       arcticTable = internalCatalog.loadTable(tableIdentifier);
-    } catch (NoSuchTableException e) {
+    } catch (org.apache.iceberg.exceptions.NoSuchTableException e) {
       if (!ignoreIfNotExists) {
         throw new TableNotExistException(internalCatalog.name(), tablePath, e);
       } else {
@@ -403,28 +402,16 @@ public class ArcticCatalog extends AbstractCatalog {
 
   private void commitKeyedChanges(KeyedTable table, Map<String, String> setProperties) {
     if (!setProperties.isEmpty()) {
-      UpdateProperties baseTableUpdateProperties = table.baseTable().updateProperties();
+      UpdateProperties updateProperties = table.updateProperties();
       setProperties.forEach(
           (k, v) -> {
             if (v == null) {
-              baseTableUpdateProperties.remove(k);
+              updateProperties.remove(k);
             } else {
-              baseTableUpdateProperties.set(k, v);
+              updateProperties.set(k, v);
             }
           });
-      baseTableUpdateProperties.commit();
-      if (table.changeTable() != null) {
-        UpdateProperties changeTableUpdateProperties = table.changeTable().updateProperties();
-        setProperties.forEach(
-            (k, v) -> {
-              if (v == null) {
-                changeTableUpdateProperties.remove(k);
-              } else {
-                changeTableUpdateProperties.set(k, v);
-              }
-            });
-        changeTableUpdateProperties.commit();
-      }
+      updateProperties.commit();
     }
   }
 
