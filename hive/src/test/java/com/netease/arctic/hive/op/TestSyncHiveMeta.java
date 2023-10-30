@@ -127,7 +127,7 @@ public class TestSyncHiveMeta extends TableTestBase {
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
 
-    dataFiles = HiveDataTestHelpers.applyConsistentWriteFiles(getArcticTable(), dataFiles);
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(getBaseStore());
     Assert.assertEquals(1, dataFiles.size());
     String dataFilePath = dataFiles.get(0).path().toString();
     FileSystem fs = Util.getFs(new Path(dataFilePath), new Configuration());
@@ -183,7 +183,7 @@ public class TestSyncHiveMeta extends TableTestBase {
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
-    dataFiles = HiveDataTestHelpers.applyConsistentWriteFiles(getArcticTable(), dataFiles);
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(getBaseStore());
 
     Table hiveTable =
         TEST_HMS
@@ -196,7 +196,7 @@ public class TestSyncHiveMeta extends TableTestBase {
     List<DataFile> newFiles =
         HiveDataTestHelpers.writeOf(getArcticTable())
             .transactionId(1L)
-            .usingHiveCommitProtocol(false)
+            .consistentWriteEnabled(false)
             .writeHive(insertRecords);
     Assert.assertEquals(1, newFiles.size());
     Partition newPartition =

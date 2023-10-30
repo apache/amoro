@@ -86,6 +86,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     overwriteFiles.commit();
     HiveDataTestHelpers.assertWriteConsistentFilesCommit(getArcticTable());
 
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
 
@@ -99,6 +100,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     overwriteFiles.overwriteByRowFilter(Expressions.alwaysTrue());
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
 
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
@@ -130,6 +132,8 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
 
     transaction.commitTransaction();
     Assert.assertTrue(getArcticTable().properties().containsKey(key));
+
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
   }
@@ -146,7 +150,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
     HiveDataTestHelpers.assertWriteConsistentFilesCommit(getArcticTable());
-
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
 
@@ -160,7 +164,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     overwriteFiles.overwriteByRowFilter(Expressions.alwaysTrue());
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
-
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
   }
@@ -182,7 +186,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
     HiveDataTestHelpers.assertWriteConsistentFilesCommit(getArcticTable());
-
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
 
@@ -197,7 +201,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     overwriteFiles = baseStore.newOverwrite();
     newFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
-
+    newFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     List<DataFile> expectFiles = Lists.newArrayList(dataFiles);
     expectFiles.addAll(newFiles);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
@@ -260,7 +264,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     rewriteDataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
     overwriteFiles.commit();
-
+    rewriteDataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), rewriteDataFiles);
   }
@@ -284,7 +288,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
-
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
 
@@ -335,7 +339,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
-
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
 
@@ -364,7 +368,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
-
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
 

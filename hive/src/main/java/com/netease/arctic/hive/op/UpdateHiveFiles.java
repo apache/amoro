@@ -547,6 +547,12 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
         + ")";
   }
 
+  protected boolean isHiveDataFile(DataFile dataFile) {
+    String hiveLocation = table.hiveLocation();
+    String dataFileLocation = dataFile.path().toString();
+    return dataFileLocation.toLowerCase().contains(hiveLocation.toLowerCase());
+  }
+
   @Override
   public T scanManifestsWith(ExecutorService executorService) {
     delegate.scanManifestsWith(executorService);

@@ -19,7 +19,6 @@
 package com.netease.arctic.hive.op;
 
 import com.netease.arctic.hive.HiveTableProperties;
-import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -49,7 +48,6 @@ public class UpdateHiveFilesTestHelpers {
   public static void validateHiveTableValues(
       HiveMetaStoreClient hiveClient, ArcticTable table, List<DataFile> exceptFiles)
       throws TException {
-    exceptFiles = HiveDataTestHelpers.applyConsistentWriteFiles(table, exceptFiles);
     if (table.spec().isPartitioned()) {
       assertHivePartitionValues(hiveClient, table, exceptFiles);
     } else {

@@ -87,8 +87,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     initDataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
 
-    this.initDataFiles =
-        HiveDataTestHelpers.applyConsistentWriteFiles(getArcticTable(), initDataFiles);
+    this.initDataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
   }
 
   @Test
@@ -103,7 +102,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     RewriteFiles rewriteFiles = baseStore.newRewrite();
     rewriteFiles.rewriteFiles(Sets.newHashSet(initDataFiles), Sets.newHashSet(newFiles));
     rewriteFiles.commit();
-
+    newFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), newFiles);
   }
@@ -136,6 +135,8 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
 
     transaction.commitTransaction();
     Assert.assertTrue(getArcticTable().properties().containsKey(key));
+
+    newFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), newFiles);
   }
@@ -200,6 +201,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     rewriteFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
     rewriteFiles.commit();
 
+    rewriteDataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), rewriteDataFiles);
   }
@@ -222,6 +224,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     initDataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
 
+    initDataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
     Assert.assertEquals(2, initDataFiles.size());
     DataFile deleteFile = initDataFiles.get(0);
 

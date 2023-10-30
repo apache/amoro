@@ -24,7 +24,6 @@ import com.netease.arctic.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.hive.utils.HiveCommitUtil;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
@@ -39,6 +38,7 @@ import com.netease.arctic.utils.TablePropertyUtil;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
@@ -68,7 +68,7 @@ public class HiveDataTestHelpers {
 
     Long txId = null;
 
-    Boolean usingHiveCommitProtocol = null;
+    Boolean consistentWriteEnabled = null;
 
     public WriterHelper customHiveLocation(String customHiveLocation) {
       this.customHiveLocation = customHiveLocation;
@@ -80,8 +80,8 @@ public class HiveDataTestHelpers {
       return this;
     }
 
-    public WriterHelper usingHiveCommitProtocol(boolean usingHiveCommitProtocol) {
-      this.usingHiveCommitProtocol = usingHiveCommitProtocol;
+    public WriterHelper consistentWriteEnabled(boolean consistentWriteEnabled) {
+      this.consistentWriteEnabled = consistentWriteEnabled;
       return this;
     }
 
@@ -133,31 +133,16 @@ public class HiveDataTestHelpers {
       if (customHiveLocation != null) {
         builder.withCustomHiveSubdirectory(customHiveLocation);
       }
-      if (this.usingHiveCommitProtocol != null) {
-        builder.hiveConsistentWrite(this.usingHiveCommitProtocol);
+      if (this.consistentWriteEnabled != null) {
+        builder.hiveConsistentWrite(this.consistentWriteEnabled);
       }
       return builder.buildWriter(writeLocationKind);
     }
   }
 
-  /** Simulate the consistent-write-commit process to convert a hidden file to a visible file. */
-  public static List<DataFile> applyConsistentWriteFiles(ArcticTable table, List<DataFile> files) {
-    if (!TablePropertyUtil.hiveConsistentWriteEnabled(table.properties())) {
-      return files;
-    }
-    List<DataFile> nonHiveFiles = Lists.newArrayList();
-    List<DataFile> hiveFiles = Lists.newArrayList();
-    for (DataFile f : files) {
-      String location = f.path().toString();
-      if (isHiveFile(location, f)) {
-        hiveFiles.add(f);
-      } else {
-        nonHiveFiles.add(f);
-      }
-    }
-    hiveFiles = HiveCommitUtil.applyConsistentWriteFile(hiveFiles, table.spec(), (l, c) -> {});
-    nonHiveFiles.addAll(hiveFiles);
-    return nonHiveFiles;
+  public static List<DataFile> lastedAddedFiles(Table tableStore) {
+    tableStore.refresh();
+    return Lists.newArrayList(tableStore.currentSnapshot().addedDataFiles(tableStore.io()));
   }
 
   /**

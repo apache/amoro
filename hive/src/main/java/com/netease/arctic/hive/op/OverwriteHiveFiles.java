@@ -63,13 +63,11 @@ public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implemen
 
   @Override
   public OverwriteFiles addFile(DataFile file) {
-    String hiveLocationRoot = table.hiveLocation();
-    String dataFileLocation = file.path().toString();
-    if (dataFileLocation.toLowerCase().contains(hiveLocationRoot.toLowerCase())) {
-      // only handle file in hive location
-      this.addFiles.add(file);
-    } else {
+    if (!isHiveDataFile(file)) {
       delegate.addFile(file);
+    } else {
+      // handle file in hive location when commit
+      this.addFiles.add(file);
     }
     return this;
   }
@@ -77,9 +75,7 @@ public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implemen
   @Override
   public OverwriteFiles deleteFile(DataFile file) {
     delegate.deleteFile(file);
-    String hiveLocation = table.hiveLocation();
-    String dataFileLocation = file.path().toString();
-    if (dataFileLocation.toLowerCase().contains(hiveLocation.toLowerCase())) {
+    if (isHiveDataFile(file)) {
       // only handle file in hive location
       this.deleteFiles.add(file);
     }
