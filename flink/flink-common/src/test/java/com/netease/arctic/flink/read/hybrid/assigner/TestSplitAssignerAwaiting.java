@@ -95,7 +95,7 @@ public class TestSplitAssignerAwaiting extends TestShuffleSplitAssigner {
 
     // now add some splits
     addSplitsRunnable.run();
-    Assert.assertEquals(true, futureCompleted.get());
+    Assert.assertTrue(futureCompleted.get());
 
     for (int i = 0; i < 1; ++i) {
       assertGetNext(assigner, Split.Status.AVAILABLE);

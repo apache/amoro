@@ -39,35 +39,59 @@ public class WatermarkGenerator {
   public static final String EVENT_TIME_TIMESTAMP_MS = "TIMESTAMP_MS";
   public static final String EVENT_TIME_TIMESTAMP_S = "TIMESTAMP_S";
 
-  private static final Types.NestedField INGEST_TIME_FIELD = Types.NestedField.required(Integer.MAX_VALUE - 2000,
-      INGEST_TIME, Types.LongType.get(), "virtual ingest time field ");
+  private static final Types.NestedField INGEST_TIME_FIELD =
+      Types.NestedField.required(
+          Integer.MAX_VALUE - 2000,
+          INGEST_TIME,
+          Types.LongType.get(),
+          "virtual ingest time field ");
 
-  private long watermark = -1;                            // timestamp in milliseconds
+  private long watermark = -1; // timestamp in milliseconds
   private final Types.NestedField eventTimeField;
-  private final long lateness;                       // in milliseconds
+  private final long lateness; // in milliseconds
   private final SimpleDateFormat eventTimeStringFormat;
   private final String eventTimeNumberFormat;
 
   public static WatermarkGenerator forTable(ArcticTable table) {
     Types.NestedField eventTimeField = INGEST_TIME_FIELD;
-    String eventTimeName = table.properties().getOrDefault(TableProperties.TABLE_EVENT_TIME_FIELD,
-        TableProperties.TABLE_EVENT_TIME_FIELD_DEFAULT);
+    String eventTimeName =
+        table
+            .properties()
+            .getOrDefault(
+                TableProperties.TABLE_EVENT_TIME_FIELD,
+                TableProperties.TABLE_EVENT_TIME_FIELD_DEFAULT);
     if (!eventTimeName.equals(INGEST_TIME)) {
       eventTimeField = table.schema().findField(eventTimeName);
       if (eventTimeField == null) {
-        throw new IllegalStateException("Unknown event time field " + eventTimeName + " in table " + table.id());
+        throw new IllegalStateException(
+            "Unknown event time field " + eventTimeName + " in table " + table.id());
       }
     }
-    long lateness = PropertyUtil.propertyAsLong(table.properties(), TableProperties.TABLE_WATERMARK_ALLOWED_LATENESS,
-        TableProperties.TABLE_WATERMARK_ALLOWED_LATENESS_DEFAULT) * 1000;
-    return new WatermarkGenerator(eventTimeField, lateness,
-        table.properties().getOrDefault(TableProperties.TABLE_EVENT_TIME_STRING_FORMAT,
-            TableProperties.TABLE_EVENT_TIME_STRING_FORMAT_DEFAULT),
-        table.properties().getOrDefault(TableProperties.TABLE_EVENT_TIME_NUMBER_FORMAT,
-            TableProperties.TABLE_EVENT_TIME_NUMBER_FORMAT_DEFAULT));
+    long lateness =
+        PropertyUtil.propertyAsLong(
+                table.properties(),
+                TableProperties.TABLE_WATERMARK_ALLOWED_LATENESS,
+                TableProperties.TABLE_WATERMARK_ALLOWED_LATENESS_DEFAULT)
+            * 1000;
+    return new WatermarkGenerator(
+        eventTimeField,
+        lateness,
+        table
+            .properties()
+            .getOrDefault(
+                TableProperties.TABLE_EVENT_TIME_STRING_FORMAT,
+                TableProperties.TABLE_EVENT_TIME_STRING_FORMAT_DEFAULT),
+        table
+            .properties()
+            .getOrDefault(
+                TableProperties.TABLE_EVENT_TIME_NUMBER_FORMAT,
+                TableProperties.TABLE_EVENT_TIME_NUMBER_FORMAT_DEFAULT));
   }
 
-  private WatermarkGenerator(Types.NestedField eventTimeField, long lateness, String eventTimeStringFormat,
+  private WatermarkGenerator(
+      Types.NestedField eventTimeField,
+      long lateness,
+      String eventTimeStringFormat,
       String eventTimeNumberFormat) {
     this.eventTimeField = eventTimeField;
     this.lateness = lateness;
@@ -87,7 +111,8 @@ public class WatermarkGenerator {
         long maxEventTime = -1L;
         switch (eventTimeField.type().typeId()) {
           case INTEGER:
-            Integer eventTimeIntegerValue = Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer);
+            Integer eventTimeIntegerValue =
+                Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer);
             maxEventTime = eventTimeFromInteger(eventTimeIntegerValue);
             break;
           case LONG:
@@ -95,19 +120,23 @@ public class WatermarkGenerator {
             maxEventTime = eventTimeFromLong(eventTimeLongValue);
             break;
           case DECIMAL:
-            BigDecimal eventTimeDecimalValue = Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer);
+            BigDecimal eventTimeDecimalValue =
+                Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer);
             maxEventTime = eventTimeFromDecimal(eventTimeDecimalValue);
             break;
           case TIMESTAMP:
-            Long eventTimeTimestampValue = Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer);
+            Long eventTimeTimestampValue =
+                Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer);
             maxEventTime = eventTimeFromTimestamp(eventTimeTimestampValue);
             break;
           case STRING:
-            String eventTimeStringValue = Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer).toString();
+            String eventTimeStringValue =
+                Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer).toString();
             maxEventTime = eventTimeFromString(eventTimeStringValue);
             break;
           default:
-            throw new UnsupportedOperationException("Unsupported event time type:" + eventTimeField.type());
+            throw new UnsupportedOperationException(
+                "Unsupported event time type:" + eventTimeField.type());
         }
         long watermark = maxEventTime - lateness;
         this.watermark = Math.max(watermark, this.watermark);
@@ -124,7 +153,8 @@ public class WatermarkGenerator {
     if (eventTimeNumberFormat.equals(EVENT_TIME_TIMESTAMP_S)) {
       return integerValue * 1000;
     } else {
-      throw new IllegalArgumentException("Illegal datetime number format " + eventTimeNumberFormat + " for int type");
+      throw new IllegalArgumentException(
+          "Illegal datetime number format " + eventTimeNumberFormat + " for int type");
     }
   }
 
@@ -134,7 +164,8 @@ public class WatermarkGenerator {
     } else if (eventTimeNumberFormat.equals(EVENT_TIME_TIMESTAMP_MS)) {
       return longValue;
     } else {
-      throw new IllegalArgumentException("Illegal datetime number format " + eventTimeNumberFormat + " for long type");
+      throw new IllegalArgumentException(
+          "Illegal datetime number format " + eventTimeNumberFormat + " for long type");
     }
   }
 
@@ -144,8 +175,8 @@ public class WatermarkGenerator {
     } else if (eventTimeNumberFormat.equals(EVENT_TIME_TIMESTAMP_MS)) {
       return decimalValue.longValue();
     } else {
-      throw new IllegalArgumentException("Illegal datetime number format " + eventTimeNumberFormat + " for decimal " +
-          "type");
+      throw new IllegalArgumentException(
+          "Illegal datetime number format " + eventTimeNumberFormat + " for decimal " + "type");
     }
   }
 
@@ -157,8 +188,11 @@ public class WatermarkGenerator {
     try {
       return eventTimeStringFormat.parse(stringValue).getTime();
     } catch (ParseException e) {
-      throw new RuntimeException("Fail to parse event time for string value:" + stringValue +
-          ", with format: " + eventTimeStringFormat.toPattern());
+      throw new RuntimeException(
+          "Fail to parse event time for string value:"
+              + stringValue
+              + ", with format: "
+              + eventTimeStringFormat.toPattern());
     }
   }
 }

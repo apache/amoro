@@ -19,6 +19,8 @@
 
 package org.apache.iceberg.parquet;
 
+import static java.time.Instant.EPOCH;
+
 import com.netease.arctic.hive.utils.TimeUtil;
 import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.types.Type;
@@ -39,14 +41,11 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static java.time.Instant.EPOCH;
-
 /**
  * Copy from iceberg {@link org.apache.iceberg.parquet.ParquetConversions} to resolve int96 type.
  */
 class AdaptHiveParquetConversions {
-  private AdaptHiveParquetConversions() {
-  }
+  private AdaptHiveParquetConversions() {}
 
   @SuppressWarnings("unchecked")
   static <T> Literal<T> fromParquetPrimitive(Type type, PrimitiveType parquetType, Object value) {
@@ -59,10 +58,10 @@ class AdaptHiveParquetConversions {
       case LONG:
       case TIME:
       case TIMESTAMP:
-        //Change For Arctic: Add metrics for int96 type
+        // Change For Arctic: Add metrics for int96 type
         Function<Object, Object> timeConversion = converterFromParquet(parquetType, type);
         return (Literal<T>) Literal.of((Long) timeConversion.apply(value));
-        //Change For Arctic
+        // Change For Arctic
       case FLOAT:
         return (Literal<T>) Literal.of((Float) value);
       case DOUBLE:
@@ -85,43 +84,47 @@ class AdaptHiveParquetConversions {
     }
   }
 
-  static Function<Object, Object> converterFromParquet(PrimitiveType parquetType, Type icebergType) {
+  static Function<Object, Object> converterFromParquet(
+      PrimitiveType parquetType, Type icebergType) {
 
-    //Change For Arctic:Adapt int 96 and bytes string
-    //int96
+    // Change For Arctic:Adapt int 96 and bytes string
+    // int96
     if (parquetType.getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.INT96) {
       return binary -> {
-        final ByteBuffer byteBuffer = ByteBuffer.wrap(((Binary) binary).getBytes()).order(ByteOrder.LITTLE_ENDIAN);
+        final ByteBuffer byteBuffer =
+            ByteBuffer.wrap(((Binary) binary).getBytes()).order(ByteOrder.LITTLE_ENDIAN);
         final long timeOfDayNanos = byteBuffer.getLong();
         final int julianDay = byteBuffer.getInt();
-        Instant instant = Instant
-            .ofEpochMilli(TimeUnit.DAYS.toMillis(julianDay - 2_440_588L))
-            .plusNanos(timeOfDayNanos);
+        Instant instant =
+            Instant.ofEpochMilli(TimeUnit.DAYS.toMillis(julianDay - 2_440_588L))
+                .plusNanos(timeOfDayNanos);
 
         if (!((Types.TimestampType) icebergType).shouldAdjustToUTC()) {
-          //iceberg org.apache.iceberg.expressions.Literals resolve timestamp without tz use UTC, but in fact it is
-          // local time zone
-          instant = LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toInstant(ZoneOffset.UTC);
+          // iceberg org.apache.iceberg.expressions.Literals resolve timestamp without tz use UTC,
+          // but in fact it is local time zone
+          instant =
+              LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toInstant(ZoneOffset.UTC);
         }
         return TimeUtil.microsBetween(EPOCH, instant);
       };
     }
 
-    //string
-    if (icebergType != null && icebergType.typeId() == Type.TypeID.STRING &&
-        parquetType.getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.BINARY) {
+    // string
+    if (icebergType != null
+        && icebergType.typeId() == Type.TypeID.STRING
+        && parquetType.getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.BINARY) {
       return binary -> StandardCharsets.UTF_8.decode(((Binary) binary).toByteBuffer());
     }
-    //Change For Arctic
+    // Change For Arctic
 
     Function<Object, Object> fromParquet = converterFromParquet(parquetType);
 
     if (icebergType != null) {
-      if (icebergType.typeId() == Type.TypeID.LONG &&
-          parquetType.getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.INT32) {
+      if (icebergType.typeId() == Type.TypeID.LONG
+          && parquetType.getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.INT32) {
         return value -> ((Integer) fromParquet.apply(value)).longValue();
-      } else if (icebergType.typeId() == Type.TypeID.DOUBLE &&
-          parquetType.getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.FLOAT) {
+      } else if (icebergType.typeId() == Type.TypeID.DOUBLE
+          && parquetType.getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.FLOAT) {
         return value -> ((Float) fromParquet.apply(value)).doubleValue();
       }
     }

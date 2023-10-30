@@ -18,6 +18,8 @@
 
 package com.netease.arctic.trino.unkeyed;
 
+import static java.util.Objects.requireNonNull;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
@@ -35,8 +37,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static java.util.Objects.requireNonNull;
-
 public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
 
   private final String schemaName;
@@ -44,7 +44,8 @@ public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
   private final TableType tableType;
   private final Optional<Long> snapshotId;
   private final String tableSchemaJson;
-  // Empty means the partitioning spec is not known (can be the case for certain time travel queries).
+  // Empty means the partitioning spec is not known (can be the case for certain time travel
+  // queries).
   private final Optional<String> partitionSpecJson;
   private final int formatVersion;
   private final String tableLocation;
@@ -54,7 +55,8 @@ public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
   // UPDATE only
   private final List<IcebergColumnHandle> updatedColumns;
 
-  // Filter used during split generation and table scan, but not required to be strictly enforced by Iceberg Connector
+  // Filter used during split generation and table scan, but not required to be strictly enforced by
+  // Iceberg Connector
   private final TupleDomain<IcebergColumnHandle> unenforcedPredicate;
 
   // Filter guaranteed to be enforced by Iceberg connector
@@ -149,18 +151,21 @@ public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
     this.formatVersion = formatVersion;
     this.unenforcedPredicate = requireNonNull(unenforcedPredicate, "unenforcedPredicate is null");
     this.enforcedPredicate = requireNonNull(enforcedPredicate, "enforcedPredicate is null");
-    this.projectedColumns = ImmutableSet.copyOf(requireNonNull(projectedColumns, "projectedColumns is null"));
+    this.projectedColumns =
+        ImmutableSet.copyOf(requireNonNull(projectedColumns, "projectedColumns is null"));
     this.nameMappingJson = requireNonNull(nameMappingJson, "nameMappingJson is null");
     this.tableLocation = requireNonNull(tableLocation, "tableLocation is null");
-    this.storageProperties = ImmutableMap.copyOf(requireNonNull(storageProperties, "storageProperties is null"));
+    this.storageProperties =
+        ImmutableMap.copyOf(requireNonNull(storageProperties, "storageProperties is null"));
     this.retryMode = requireNonNull(retryMode, "retryMode is null");
-    this.updatedColumns = ImmutableList.copyOf(requireNonNull(updatedColumns, "updatedColumns is null"));
+    this.updatedColumns =
+        ImmutableList.copyOf(requireNonNull(updatedColumns, "updatedColumns is null"));
     this.recordScannedFiles = recordScannedFiles;
     this.maxScannedFileSize = requireNonNull(maxScannedFileSize, "maxScannedFileSize is null");
   }
 
-
-  public AdaptHiveIcebergTableHandle withProjectedColumns(Set<IcebergColumnHandle> projectedColumns) {
+  public AdaptHiveIcebergTableHandle withProjectedColumns(
+      Set<IcebergColumnHandle> projectedColumns) {
     return new AdaptHiveIcebergTableHandle(
         schemaName,
         tableName,
@@ -202,7 +207,8 @@ public class AdaptHiveIcebergTableHandle extends IcebergTableHandle {
         Optional.empty());
   }
 
-  public AdaptHiveIcebergTableHandle forOptimize(boolean recordScannedFiles, DataSize maxScannedFileSize) {
+  public AdaptHiveIcebergTableHandle forOptimize(
+      boolean recordScannedFiles, DataSize maxScannedFileSize) {
     return new AdaptHiveIcebergTableHandle(
         schemaName,
         tableName,

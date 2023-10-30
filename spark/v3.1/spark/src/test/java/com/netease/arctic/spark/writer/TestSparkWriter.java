@@ -37,6 +37,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -168,7 +169,7 @@ public class TestSparkWriter extends SparkTableTestBase {
     DataWriter<InternalRow> writer = batchWrite.createBatchWriterFactory(null).createWriter(0, 0);
     // create record
     InternalRow record = geneRowData();
-    List<InternalRow> records = Arrays.asList(record);
+    List<InternalRow> records = Collections.singletonList(record);
     writer.write(record);
     WriteTaskCommit commit = (WriteTaskCommit) writer.commit();
     DataFile[] files = commit.files();

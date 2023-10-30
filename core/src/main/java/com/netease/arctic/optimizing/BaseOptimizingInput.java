@@ -34,7 +34,7 @@ public abstract class BaseOptimizingInput implements TableOptimizing.OptimizingI
 
   @Override
   public void options(Map<String, String> options) {
-    options.putAll(options);
+    this.options.putAll(options);
   }
 
   @Override
@@ -44,8 +44,6 @@ public abstract class BaseOptimizingInput implements TableOptimizing.OptimizingI
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("options", options)
-        .toString();
+    return MoreObjects.toStringHelper(this).add("options", options).toString();
   }
 }

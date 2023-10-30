@@ -43,7 +43,8 @@ public abstract class TestAmoroCatalogBase extends AmoroCatalogTestBase {
 
   protected abstract void createDatabase(String dbName);
 
-  protected abstract void createTable(String dbName, String tableName, Map<String, String> properties);
+  protected abstract void createTable(
+      String dbName, String tableName, Map<String, String> properties);
 
   protected abstract List<String> listDatabases();
 
@@ -93,9 +94,9 @@ public abstract class TestAmoroCatalogBase extends AmoroCatalogTestBase {
     createTable(DB1, TABLE, properties);
     AmoroTable<?> amoroTable = amoroCatalog.loadTable(DB1, TABLE);
     Assert.assertEquals(amoroTable.properties().get("key1"), "value1");
-    Assert.assertEquals(amoroTable.name(), catalogTestHelper.catalogName() + "." + DB1 + "." + TABLE);
     Assert.assertEquals(
-        amoroTable.id(),
-        TableIdentifier.of(catalogTestHelper.catalogName(), DB1, TABLE));
+        amoroTable.name(), catalogTestHelper.catalogName() + "." + DB1 + "." + TABLE);
+    Assert.assertEquals(
+        amoroTable.id(), TableIdentifier.of(catalogTestHelper.catalogName(), DB1, TABLE));
   }
 }

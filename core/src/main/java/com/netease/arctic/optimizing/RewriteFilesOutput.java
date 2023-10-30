@@ -28,7 +28,8 @@ public class RewriteFilesOutput implements TableOptimizing.OptimizingOutput {
   private final DeleteFile[] deleteFiles;
   private final Map<String, String> summary;
 
-  public RewriteFilesOutput(DataFile[] dataFiles, DeleteFile[] deleteFiles, Map<String, String> summary) {
+  public RewriteFilesOutput(
+      DataFile[] dataFiles, DeleteFile[] deleteFiles, Map<String, String> summary) {
     this.dataFiles = dataFiles;
     this.deleteFiles = deleteFiles;
     this.summary = summary;
@@ -49,10 +50,13 @@ public class RewriteFilesOutput implements TableOptimizing.OptimizingOutput {
 
   @Override
   public String toString() {
-    return "RewriteFilesOutput{" +
-        "dataFilesSize=" + (dataFiles == null ? 0 : dataFiles.length) +
-        ", deleteFilesSize=" + (deleteFiles == null ? 0 : deleteFiles.length) +
-        ", summary=" + summary +
-        '}';
+    return "RewriteFilesOutput{"
+        + "dataFilesSize="
+        + (dataFiles == null ? 0 : dataFiles.length)
+        + ", deleteFilesSize="
+        + (deleteFiles == null ? 0 : deleteFiles.length)
+        + ", summary="
+        + summary
+        + '}';
   }
 }

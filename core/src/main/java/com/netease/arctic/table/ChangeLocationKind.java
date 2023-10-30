@@ -4,6 +4,5 @@ public final class ChangeLocationKind implements LocationKind {
 
   public static final LocationKind INSTANT = new ChangeLocationKind();
 
-  private ChangeLocationKind() {
-  }
+  private ChangeLocationKind() {}
 }

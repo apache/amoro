@@ -45,7 +45,7 @@ export const mbToSize = (size: number): string => {
  */
 export const formatMS2Time = (time: number, fromHour?: boolean): string => {
   if (time === null || time === undefined || isNaN(time)) {
-    return ''
+    return '-'
   }
   // 3h 34min 12s
   const Second = 1000

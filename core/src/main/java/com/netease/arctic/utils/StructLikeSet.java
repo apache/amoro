@@ -25,6 +25,7 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
 
 import javax.annotation.Nullable;
+
 import java.io.Closeable;
 import java.io.IOException;
 
@@ -34,9 +35,8 @@ public class StructLikeSet implements Closeable {
     return new StructLikeSet(type);
   }
 
-  public static StructLikeSet createSpillableSet(Types.StructType type,
-                                                 Long maxInMemorySizeInBytes,
-                                                 @Nullable String backendBaseDir) {
+  public static StructLikeSet createSpillableSet(
+      Types.StructType type, Long maxInMemorySizeInBytes, @Nullable String backendBaseDir) {
     return new StructLikeSet(type, maxInMemorySizeInBytes, backendBaseDir);
   }
 
@@ -44,11 +44,13 @@ public class StructLikeSet implements Closeable {
   private final StructLikeBaseMap<Integer> structLikeMap;
 
   private StructLikeSet(Types.StructType type) {
-    this.structLikeMap =  StructLikeMemoryMap.create(type);
+    this.structLikeMap = StructLikeMemoryMap.create(type);
   }
 
-  private StructLikeSet(Types.StructType type, Long maxInMemorySizeInBytes, @Nullable String backendBaseDir) {
-    this.structLikeMap =  StructLikeSpillableMap.create(type, maxInMemorySizeInBytes, backendBaseDir);
+  private StructLikeSet(
+      Types.StructType type, Long maxInMemorySizeInBytes, @Nullable String backendBaseDir) {
+    this.structLikeMap =
+        StructLikeSpillableMap.create(type, maxInMemorySizeInBytes, backendBaseDir);
   }
 
   public boolean contains(StructLike key) {

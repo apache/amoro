@@ -34,17 +34,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 public class AdaptHiveParquetSchemaUtil {
-  private AdaptHiveParquetSchemaUtil() {
-  }
+  private AdaptHiveParquetSchemaUtil() {}
 
   public static MessageType convert(Schema schema, String name) {
-    //Change For Arctic
+    // Change For Arctic
     return new AdaptHiveTypeToMessageType().convert(schema, name);
   }
 
-
   /**
-   * Converts a Parquet schema to an Iceberg schema. Fields without IDs are kept and assigned fallback IDs.
+   * Converts a Parquet schema to an Iceberg schema. Fields without IDs are kept and assigned
+   * fallback IDs.
    *
    * @param parquetSchema a Parquet schema
    * @return a matching Iceberg schema for the provided Parquet schema
@@ -52,7 +51,8 @@ public class AdaptHiveParquetSchemaUtil {
   public static Schema convert(MessageType parquetSchema) {
     // if the Parquet schema does not contain ids, we assign fallback ids to top-level fields
     // all remaining fields will get ids >= 1000 to avoid pruning columns without ids
-    MessageType parquetSchemaWithIds = hasIds(parquetSchema) ? parquetSchema : addFallbackIds(parquetSchema);
+    MessageType parquetSchemaWithIds =
+        hasIds(parquetSchema) ? parquetSchema : addFallbackIds(parquetSchema);
     AtomicInteger nextId = new AtomicInteger(1000);
     return convertInternal(parquetSchemaWithIds, name -> nextId.getAndIncrement());
   }
@@ -67,7 +67,8 @@ public class AdaptHiveParquetSchemaUtil {
     return convertInternal(parquetSchema, name -> null);
   }
 
-  private static Schema convertInternal(MessageType parquetSchema, Function<String[], Integer> nameToIdFunc) {
+  private static Schema convertInternal(
+      MessageType parquetSchema, Function<String[], Integer> nameToIdFunc) {
     MessageTypeToType converter = new MessageTypeToType(nameToIdFunc);
     return new Schema(
         ParquetTypeVisitor.visit(parquetSchema, converter).asNestedType().fields(),
@@ -82,11 +83,11 @@ public class AdaptHiveParquetSchemaUtil {
 
   /**
    * Prunes columns from a Parquet file schema that was written without field ids.
-   * <p>
-   * Files that were written without field ids are read assuming that schema evolution preserved
+   *
+   * <p>Files that were written without field ids are read assuming that schema evolution preserved
    * column order. Deleting columns was not allowed.
-   * <p>
-   * The order of columns in the resulting Parquet schema matches the Parquet file.
+   *
+   * <p>The order of columns in the resulting Parquet schema matches the Parquet file.
    *
    * @param fileSchema schema from a Parquet file that does not have field ids.
    * @param expectedSchema expected schema
@@ -99,7 +100,8 @@ public class AdaptHiveParquetSchemaUtil {
       selectedIds.add(field.fieldId());
     }
 
-    org.apache.parquet.schema.Types.MessageTypeBuilder builder = org.apache.parquet.schema.Types.buildMessage();
+    org.apache.parquet.schema.Types.MessageTypeBuilder builder =
+        org.apache.parquet.schema.Types.buildMessage();
 
     int ordinal = 1;
     for (Type type : fileSchema.getFields()) {
@@ -117,7 +119,8 @@ public class AdaptHiveParquetSchemaUtil {
   }
 
   public static MessageType addFallbackIds(MessageType fileSchema) {
-    org.apache.parquet.schema.Types.MessageTypeBuilder builder = org.apache.parquet.schema.Types.buildMessage();
+    org.apache.parquet.schema.Types.MessageTypeBuilder builder =
+        org.apache.parquet.schema.Types.buildMessage();
 
     int ordinal = 1; // ids are assigned starting at 1
     for (Type type : fileSchema.getFields()) {
@@ -163,5 +166,4 @@ public class AdaptHiveParquetSchemaUtil {
       return primitive.getId() != null;
     }
   }
-
 }

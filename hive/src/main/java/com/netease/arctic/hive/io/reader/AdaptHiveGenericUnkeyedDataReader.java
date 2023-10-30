@@ -47,10 +47,18 @@ public class AdaptHiveGenericUnkeyedDataReader extends AbstractAdaptHiveUnkeyedD
       Schema projectedSchema,
       String nameMapping,
       boolean caseSensitive,
-      BiFunction<Type, Object, Object> convertConstant, boolean reuseContainer,
+      BiFunction<Type, Object, Object> convertConstant,
+      boolean reuseContainer,
       StructLikeCollections structLikeCollections) {
-    super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive,
-        convertConstant, reuseContainer, structLikeCollections);
+    super(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        nameMapping,
+        caseSensitive,
+        convertConstant,
+        reuseContainer,
+        structLikeCollections);
   }
 
   public AdaptHiveGenericUnkeyedDataReader(
@@ -59,8 +67,16 @@ public class AdaptHiveGenericUnkeyedDataReader extends AbstractAdaptHiveUnkeyedD
       Schema projectedSchema,
       String nameMapping,
       boolean caseSensitive,
-      BiFunction<Type, Object, Object> convertConstant, boolean reuseContainer) {
-    super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive, convertConstant, reuseContainer);
+      BiFunction<Type, Object, Object> convertConstant,
+      boolean reuseContainer) {
+    super(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        nameMapping,
+        caseSensitive,
+        convertConstant,
+        reuseContainer);
   }
 
   public AdaptHiveGenericUnkeyedDataReader(
@@ -87,15 +103,14 @@ public class AdaptHiveGenericUnkeyedDataReader extends AbstractAdaptHiveUnkeyedD
 
   @Override
   protected Function<MessageType, ParquetValueReader<?>> getParquetReaderFunction(
-      Schema projectedSchema,
-      Map<Integer, ?> idToConstant) {
-    return fileSchema -> AdaptHiveGenericParquetReaders.buildReader(projectedSchema, fileSchema, idToConstant);
+      Schema projectedSchema, Map<Integer, ?> idToConstant) {
+    return fileSchema ->
+        AdaptHiveGenericParquetReaders.buildReader(projectedSchema, fileSchema, idToConstant);
   }
 
   @Override
   protected Function<TypeDescription, OrcRowReader<?>> getOrcReaderFunction(
-      Schema projectSchema,
-      Map<Integer, ?> idToConstant) {
+      Schema projectSchema, Map<Integer, ?> idToConstant) {
     return fileSchema -> new GenericOrcReader(projectSchema, fileSchema, idToConstant);
   }
 

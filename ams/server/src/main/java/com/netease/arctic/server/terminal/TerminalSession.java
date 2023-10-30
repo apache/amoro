@@ -25,66 +25,53 @@ import java.util.Map;
 
 public interface TerminalSession {
 
-  /**
-   * ResultSet of single statement execute result.
-   */
+  /** ResultSet of single statement execute result. */
   interface ResultSet {
-    /**
-     * @return - list of column name for result-set.
-     */
+    /** @return - list of column name for result-set. */
     List<String> columns();
 
     /**
      * fetch row from result-set
+     *
      * @return - return false if there is no more data.
      */
     boolean next();
 
-    /**
-     * @return current row
-     */
+    /** @return current row */
     Object[] rowData();
 
-    /**
-     * @return - return true if current statement shouldn't return result-set.
-     */
+    /** @return - return true if current statement shouldn't return result-set. */
     default boolean empty() {
       List<String> columns = columns();
       return columns == null || columns.isEmpty();
     }
 
-    /**
-     * close current statement and ignore data not fetched.
-     */
+    /** close current statement and ignore data not fetched. */
     void close();
   }
 
-  /**
-   * get current session configs for logs
-   */
+  /** get current session configs for logs */
   Map<String, String> configs();
 
   /**
    * execute a statement and return result set.
+   *
    * @param statement single statement.
    * @return result set
    */
   ResultSet executeStatement(String catalog, String statement);
 
-  /**
-   * @return - return logs during execution and clean logs
-   */
+  /** @return - return logs during execution and clean logs */
   List<String> logs();
 
   /**
    * to check current session is alive. DO-NOT-THROW-ANYTHING of this method.
+   *
    * @return - false if session is not able to execute statement.
    */
   boolean active();
 
-  /**
-   * close session and release resources.
-   */
+  /** close session and release resources. */
   void release();
 
   static boolean canUseSparkSessionCatalog(Map<String, String> sessionConf, String catalog) {
@@ -93,7 +80,9 @@ public interface TerminalSession {
     String usingSessionCatalogForHive =
         sessionConf.getOrDefault(usingSessionCatalogForHiveKey, "false");
     String type =
-        sessionConf.get(TerminalSessionFactory.SessionConfigOptions.catalogProperty(catalog, "type"));
-    return usingSessionCatalogForHive.equals("true") && CatalogType.HIVE.name().equalsIgnoreCase(type);
+        sessionConf.get(
+            TerminalSessionFactory.SessionConfigOptions.catalogProperty(catalog, "type").key());
+    return usingSessionCatalogForHive.equals("true")
+        && CatalogType.HIVE.name().equalsIgnoreCase(type);
   }
 }

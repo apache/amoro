@@ -36,9 +36,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Basic implementation of {@link TableTrashManager}.
- */
+/** Basic implementation of {@link TableTrashManager}. */
 class BasicTableTrashManager implements TableTrashManager {
   private static final Logger LOG = LoggerFactory.getLogger(BasicTableTrashManager.class);
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
@@ -48,8 +46,10 @@ class BasicTableTrashManager implements TableTrashManager {
   private final String trashLocation;
 
   BasicTableTrashManager(
-      TableIdentifier tableIdentifier, ArcticHadoopFileIO arcticFileIO,
-      String tableRootLocation, String trashLocation) {
+      TableIdentifier tableIdentifier,
+      ArcticHadoopFileIO arcticFileIO,
+      String tableRootLocation,
+      String trashLocation) {
     this.tableIdentifier = tableIdentifier;
     this.arcticFileIO = arcticFileIO;
     this.tableRootLocation = tableRootLocation;
@@ -60,14 +60,13 @@ class BasicTableTrashManager implements TableTrashManager {
    * Generate file location in trash
    *
    * @param relativeFileLocation - relative location of file
-   * @param trashLocation        - trash location
-   * @param deleteTime           - time the file deleted
+   * @param trashLocation - trash location
+   * @param deleteTime - time the file deleted
    * @return file location in trash
    */
   @VisibleForTesting
   static String generateFileLocationInTrash(
-      String relativeFileLocation, String trashLocation,
-      long deleteTime) {
+      String relativeFileLocation, String trashLocation, long deleteTime) {
     return trashLocation + "/" + formatDate(deleteTime) + "/" + relativeFileLocation;
   }
 
@@ -85,7 +84,8 @@ class BasicTableTrashManager implements TableTrashManager {
   }
 
   private static String formatDate(long time) {
-    LocalDate localDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(time), ZoneId.systemDefault()).toLocalDate();
+    LocalDate localDate =
+        LocalDateTime.ofInstant(Instant.ofEpochMilli(time), ZoneId.systemDefault()).toLocalDate();
     return localDate.format(DATE_FORMATTER);
   }
 
@@ -102,12 +102,14 @@ class BasicTableTrashManager implements TableTrashManager {
   public void moveFileToTrash(String path) {
     try {
       Preconditions.checkArgument(
-          !arcticFileIO.supportFileSystemOperations() || !arcticFileIO.asFileSystemIO().isDirectory(path),
+          !arcticFileIO.supportFileSystemOperations()
+              || !arcticFileIO.asFileSystemIO().isDirectory(path),
           "should not move a directory to trash " + path);
-      String targetFileLocation = generateFileLocationInTrash(
-          getRelativeFileLocation(this.tableRootLocation, path),
-          this.trashLocation,
-          System.currentTimeMillis());
+      String targetFileLocation =
+          generateFileLocationInTrash(
+              getRelativeFileLocation(this.tableRootLocation, path),
+              this.trashLocation,
+              System.currentTimeMillis());
       String targetFileDir = TableFileUtil.getFileDir(targetFileLocation);
       if (!arcticFileIO.exists(targetFileDir)) {
         arcticFileIO.makeDirectories(targetFileDir);
@@ -161,10 +163,16 @@ class BasicTableTrashManager implements TableTrashManager {
       }
       if (localDate.isBefore(expirationDate)) {
         arcticFileIO.deletePrefix(datePath.location());
-        LOG.info("{} delete files in trash for date {} success, {}", tableIdentifier, localDate,
+        LOG.info(
+            "{} delete files in trash for date {} success, {}",
+            tableIdentifier,
+            localDate,
             datePath.location());
       } else {
-        LOG.info("{} should not delete files in trash for date {},  {}", tableIdentifier, localDate,
+        LOG.info(
+            "{} should not delete files in trash for date {},  {}",
+            tableIdentifier,
+            localDate,
             datePath.location());
       }
     }
@@ -188,8 +196,7 @@ class BasicTableTrashManager implements TableTrashManager {
       }
     }
 
-    return targetLocationsInTrash.stream()
-        .max(Comparator.naturalOrder());
+    return targetLocationsInTrash.stream().max(Comparator.naturalOrder());
   }
 
   @Override

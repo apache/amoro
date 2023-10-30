@@ -90,7 +90,8 @@
         <iceberg.version>1.3.0</iceberg.version>
         <paimon.version>0.5.0-incubating</paimon.version>
         <hive.version>3.1.1</hive.version>
-        <hadoop.version>3.2.2</hadoop.version>
+        <hadoop.version>3.2.4</hadoop.version>
+        <kerby.version>2.0.3</kerby.version>
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>
         <slf4j.version>1.7.30</slf4j.version>
@@ -115,7 +116,7 @@
         <dropwizard.metrics.version>4.2.19</dropwizard.metrics.version>
         <thrift.version>0.13.0</thrift.version>
         <caffeine.version>2.8.4</caffeine.version>
-        <snakeyaml.version>1.30</snakeyaml.version>
+        <snakeyaml.version>2.2</snakeyaml.version>
         <mybatis.version>3.5.6</mybatis.version>
         <postgres-jdbc.version>42.5.1</postgres-jdbc.version>
         <derby-jdbc.version>10.13.1.1</derby-jdbc.version>
@@ -249,6 +250,10 @@
                         <artifactId>log4j</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.apache.kerby</groupId>
+                        <artifactId>kerb-simplekdc</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.apache.zookeeper</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
@@ -296,7 +301,17 @@
                         <groupId>log4j</groupId>
                         <artifactId>log4j</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.kerby</groupId>
+                        <artifactId>kerb-simplekdc</artifactId>
+                    </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.kerby</groupId>
+                <artifactId>kerb-simplekdc</artifactId>
+                <version>${kerby.version}</version>
             </dependency>
 
             <dependency>
@@ -587,6 +602,26 @@
                     <exclusion>
                         <groupId>org.apache.hive</groupId>
                         <artifactId>hive-orc</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-yarn-server-resourcemanager</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-yarn-server-applicationhistoryservice</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-yarn-registry</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-common</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hbase</groupId>
+                        <artifactId>hbase-hadoop2-compat</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.zookeeper</groupId>
@@ -936,15 +971,15 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
@@ -961,7 +996,7 @@
             <properties>
                 <guava.version>14.0.1</guava.version>
                 <hive.version>2.1.1</hive.version>
-                <hadoop.version>2.9.2</hadoop.version>
+                <hadoop.version>2.10.2</hadoop.version>
                 <terminal.spark.version>3.1.2</terminal.spark.version>
                 <terminal.spark.major.version>3.1</terminal.spark.major.version>
             </properties>
@@ -976,7 +1011,7 @@
             <properties>
                 <guava.version>32.1.1-jre</guava.version>
                 <hive.version>3.1.1</hive.version>
-                <hadoop.version>3.2.2</hadoop.version>
+                <hadoop.version>3.2.4</hadoop.version>
                 <terminal.spark.version>3.3.2</terminal.spark.version>
                 <terminal.spark.major.version>3.3</terminal.spark.major.version>
             </properties>

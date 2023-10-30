@@ -44,8 +44,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Copy from iceberg {@ling org.apache.iceberg.parquet.ReadConf} to use {@link AdaptHiveParquetMetricsRowGroupFilter}
- * and {@link AdaptHiveParquetDictionaryRowGroupFilter}
+ * Copy from iceberg {@ling org.apache.iceberg.parquet.ReadConf} to use {@link
+ * AdaptHiveParquetMetricsRowGroupFilter} and {@link AdaptHiveParquetDictionaryRowGroupFilter}
  */
 class AdaptHiveReadConf<T> {
   private final ParquetFileReader reader;
@@ -65,10 +65,17 @@ class AdaptHiveReadConf<T> {
   private final List<Map<ColumnPath, ColumnChunkMetaData>> columnChunkMetaDataForRowGroups;
 
   @SuppressWarnings("unchecked")
-  AdaptHiveReadConf(InputFile file, ParquetReadOptions options, Schema expectedSchema, Expression filter,
-      Function<MessageType, ParquetValueReader<?>> readerFunc, Function<MessageType,
-      VectorizedReader<?>> batchedReaderFunc, NameMapping nameMapping, boolean reuseContainers,
-      boolean caseSensitive, Integer batchSize) {
+  AdaptHiveReadConf(
+      InputFile file,
+      ParquetReadOptions options,
+      Schema expectedSchema,
+      Expression filter,
+      Function<MessageType, ParquetValueReader<?>> readerFunc,
+      Function<MessageType, VectorizedReader<?>> batchedReaderFunc,
+      NameMapping nameMapping,
+      boolean reuseContainers,
+      boolean caseSensitive,
+      Integer batchSize) {
     this.file = file;
     this.options = options;
     this.reader = newReader(file, options);
@@ -79,7 +86,9 @@ class AdaptHiveReadConf<T> {
       typeWithIds = fileSchema;
       this.projection = ParquetSchemaUtil.pruneColumns(fileSchema, expectedSchema);
     } else if (nameMapping != null) {
-      typeWithIds = (MessageType) ParquetTypeVisitor.visit(fileSchema, new AdaptHiveApplyNameMapping(nameMapping));
+      typeWithIds =
+          (MessageType)
+              ParquetTypeVisitor.visit(fileSchema, new AdaptHiveApplyNameMapping(nameMapping));
       this.projection = ParquetSchemaUtil.pruneColumns(typeWithIds, expectedSchema);
     } else {
       typeWithIds = ParquetSchemaUtil.addFallbackIds(fileSchema);
@@ -93,22 +102,27 @@ class AdaptHiveReadConf<T> {
     // Fetch all row groups starting positions to compute the row offsets of the filtered row groups
     Map<Long, Long> offsetToStartPos = generateOffsetToStartPos(expectedSchema);
 
-    //Change For Arctic: use arctic filter
+    // Change For Arctic: use arctic filter
     AdaptHiveParquetMetricsRowGroupFilter statsFilter = null;
     AdaptHiveParquetDictionaryRowGroupFilter dictFilter = null;
     if (filter != null) {
-      statsFilter = new AdaptHiveParquetMetricsRowGroupFilter(expectedSchema, filter, caseSensitive);
-      dictFilter = new AdaptHiveParquetDictionaryRowGroupFilter(expectedSchema, filter, caseSensitive);
+      statsFilter =
+          new AdaptHiveParquetMetricsRowGroupFilter(expectedSchema, filter, caseSensitive);
+      dictFilter =
+          new AdaptHiveParquetDictionaryRowGroupFilter(expectedSchema, filter, caseSensitive);
     }
-    //Change For Arctic
+    // Change For Arctic
 
     long computedTotalValues = 0L;
     for (int i = 0; i < shouldSkip.length; i += 1) {
       BlockMetaData rowGroup = rowGroups.get(i);
-      startRowPositions[i] = offsetToStartPos == null ? 0 : offsetToStartPos.get(rowGroup.getStartingPos());
-      boolean shouldRead = filter == null || (
-          statsFilter.shouldRead(typeWithIds, rowGroup) &&
-              dictFilter.shouldRead(typeWithIds, rowGroup, reader.getDictionaryReader(rowGroup)));
+      startRowPositions[i] =
+          offsetToStartPos == null ? 0 : offsetToStartPos.get(rowGroup.getStartingPos());
+      boolean shouldRead =
+          filter == null
+              || (statsFilter.shouldRead(typeWithIds, rowGroup)
+                  && dictFilter.shouldRead(
+                      typeWithIds, rowGroup, reader.getDictionaryReader(rowGroup)));
       this.shouldSkip[i] = !shouldRead;
       if (shouldRead) {
         computedTotalValues += rowGroup.getRowCount();
@@ -224,16 +238,21 @@ class AdaptHiveReadConf<T> {
   }
 
   private List<Map<ColumnPath, ColumnChunkMetaData>> getColumnChunkMetadataForRowGroups() {
-    Set<ColumnPath> projectedColumns = projection.getColumns().stream()
-        .map(columnDescriptor -> ColumnPath.get(columnDescriptor.getPath())).collect(Collectors.toSet());
-    ImmutableList.Builder<Map<ColumnPath, ColumnChunkMetaData>> listBuilder = ImmutableList.builder();
+    Set<ColumnPath> projectedColumns =
+        projection.getColumns().stream()
+            .map(columnDescriptor -> ColumnPath.get(columnDescriptor.getPath()))
+            .collect(Collectors.toSet());
+    ImmutableList.Builder<Map<ColumnPath, ColumnChunkMetaData>> listBuilder =
+        ImmutableList.builder();
     for (int i = 0; i < rowGroups.size(); i++) {
       if (!shouldSkip[i]) {
         BlockMetaData blockMetaData = rowGroups.get(i);
         ImmutableMap.Builder<ColumnPath, ColumnChunkMetaData> mapBuilder = ImmutableMap.builder();
         blockMetaData.getColumns().stream()
             .filter(columnChunkMetaData -> projectedColumns.contains(columnChunkMetaData.getPath()))
-            .forEach(columnChunkMetaData -> mapBuilder.put(columnChunkMetaData.getPath(), columnChunkMetaData));
+            .forEach(
+                columnChunkMetaData ->
+                    mapBuilder.put(columnChunkMetaData.getPath(), columnChunkMetaData));
         listBuilder.add(mapBuilder.build());
       } else {
         listBuilder.add(ImmutableMap.of());

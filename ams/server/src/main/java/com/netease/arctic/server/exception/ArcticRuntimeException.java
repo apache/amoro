@@ -17,7 +17,8 @@ import java.util.function.Function;
 
 public class ArcticRuntimeException extends RuntimeException {
 
-  private static final Map<Class<? extends ArcticRuntimeException>, Integer> CODE_MAP = new HashMap<>();
+  private static final Map<Class<? extends ArcticRuntimeException>, Integer> CODE_MAP =
+      new HashMap<>();
 
   static {
     CODE_MAP.put(PersistenceException.class, ErrorCodes.PERSISTENCE_ERROR_CODE);
@@ -76,23 +77,21 @@ public class ArcticRuntimeException extends RuntimeException {
   }
 
   protected static String getObjectName(TableIdentifier tableIdentifier) {
-    return new StringBuilder().append("Table ")
-            .append(tableIdentifier.getCatalog())
-            .append('.')
-            .append(tableIdentifier.getDatabase())
-            .append('.')
-            .append(tableIdentifier.getTableName())
-            .toString();
+    return "Table "
+        + tableIdentifier.getCatalog()
+        + '.'
+        + tableIdentifier.getDatabase()
+        + '.'
+        + tableIdentifier.getTableName();
   }
 
   protected static String getObjectName(ServerTableIdentifier tableIdentifier) {
-    return new StringBuilder().append("Table ")
-            .append(tableIdentifier.getCatalog())
-            .append('.')
-            .append(tableIdentifier.getDatabase())
-            .append('.')
-            .append(tableIdentifier.getTableName())
-            .toString();
+    return "Table "
+        + tableIdentifier.getCatalog()
+        + '.'
+        + tableIdentifier.getDatabase()
+        + '.'
+        + tableIdentifier.getTableName();
   }
 
   public static ArcticException normalize(Throwable throwable) {
@@ -104,8 +103,8 @@ public class ArcticRuntimeException extends RuntimeException {
       return new NoSuchObjectException(throwable.getMessage());
     } else if (throwable.getClass().equals(AlreadyExistsException.class)) {
       return new com.netease.arctic.ams.api.AlreadyExistsException(throwable.getMessage());
-    } else if (throwable.getClass().equals(IllegalMetadataException.class) ||
-        throwable.getClass().equals(PersistenceException.class)) {
+    } else if (throwable.getClass().equals(IllegalMetadataException.class)
+        || throwable.getClass().equals(PersistenceException.class)) {
       return new MetaException(throwable.getMessage());
     } else if (throwable.getClass().equals(IllegalArgumentException.class)) {
       return new InvalidObjectException(throwable.getMessage());
@@ -115,8 +114,8 @@ public class ArcticRuntimeException extends RuntimeException {
     return new TException(throwable.getMessage());
   }
 
-  public static ArcticRuntimeException wrap(Throwable throwable,
-                                            Function<Throwable, ArcticRuntimeException> exceptionTransform) {
+  public static ArcticRuntimeException wrap(
+      Throwable throwable, Function<Throwable, ArcticRuntimeException> exceptionTransform) {
     if (throwable instanceof ArcticRuntimeException) {
       return (ArcticRuntimeException) throwable;
     } else {

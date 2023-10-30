@@ -29,9 +29,7 @@ import java.util.Map;
 
 public class IcebergHiveCatalogTestHelper extends IcebergHadoopCatalogTestHelper {
 
-  public IcebergHiveCatalogTestHelper(
-      String catalogName,
-      Map<String, String> catalogProperties) {
+  public IcebergHiveCatalogTestHelper(String catalogName, Map<String, String> catalogProperties) {
     super(catalogName, catalogProperties);
   }
 
@@ -45,8 +43,6 @@ public class IcebergHiveCatalogTestHelper extends IcebergHadoopCatalogTestHelper
   }
 
   public static IcebergHiveCatalogTestHelper defaultHelper() {
-    return new IcebergHiveCatalogTestHelper(
-        "test_iceberg_catalog",
-        new HashMap<>());
+    return new IcebergHiveCatalogTestHelper("test_iceberg_catalog", new HashMap<>());
   }
 }

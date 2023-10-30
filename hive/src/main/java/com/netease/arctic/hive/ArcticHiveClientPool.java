@@ -32,8 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Extended implementation of {@link ClientPoolImpl} with {@link TableMetaStore} to support authenticated hive
- * cluster.
+ * Extended implementation of {@link ClientPoolImpl} with {@link TableMetaStore} to support
+ * authenticated hive cluster.
  */
 public class ArcticHiveClientPool extends ClientPoolImpl<HMSClient, TException> {
   private final TableMetaStore metaStore;
@@ -41,10 +41,11 @@ public class ArcticHiveClientPool extends ClientPoolImpl<HMSClient, TException> 
   private final HiveConf hiveConf;
   private static final Logger LOG = LoggerFactory.getLogger(ArcticHiveClientPool.class);
 
-  private static final DynConstructors.Ctor<HiveMetaStoreClient> CLIENT_CTOR = DynConstructors.builder()
-      .impl(HiveMetaStoreClient.class, HiveConf.class)
-      .impl(HiveMetaStoreClient.class, Configuration.class)
-      .build();
+  private static final DynConstructors.Ctor<HiveMetaStoreClient> CLIENT_CTOR =
+      DynConstructors.builder()
+          .impl(HiveMetaStoreClient.class, HiveConf.class)
+          .impl(HiveMetaStoreClient.class, Configuration.class)
+          .build();
 
   public ArcticHiveClientPool(TableMetaStore tableMetaStore, int poolSize) {
     super(poolSize, TTransportException.class, true);
@@ -56,13 +57,15 @@ public class ArcticHiveClientPool extends ClientPoolImpl<HMSClient, TException> 
 
   @Override
   protected HMSClient newClient() {
-    return metaStore.doAs(() -> {
+    return metaStore.doAs(
+        () -> {
           try {
             try {
               HiveMetaStoreClient client = CLIENT_CTOR.newInstance(hiveConf);
               return new HMSClientImpl(client);
             } catch (RuntimeException e) {
-              // any MetaException would be wrapped into RuntimeException during reflection, so let's double-check type
+              // any MetaException would be wrapped into RuntimeException during reflection, so
+              // let's double-check type
               // here
               if (e.getCause() instanceof MetaException) {
                 throw (MetaException) e.getCause();
@@ -73,29 +76,31 @@ public class ArcticHiveClientPool extends ClientPoolImpl<HMSClient, TException> 
             throw new RuntimeMetaException(e, "Failed to connect to Hive Metastore");
           } catch (Throwable t) {
             if (t.getMessage().contains("Another instance of Derby may have already booted")) {
-              throw new RuntimeMetaException(t, "Failed to start an embedded metastore because embedded " +
-                  "Derby supports only one client at a time. To fix this, use a metastore that supports " +
-                  "multiple clients.");
+              throw new RuntimeMetaException(
+                  t,
+                  "Failed to start an embedded metastore because embedded "
+                      + "Derby supports only one client at a time. To fix this, use a metastore that supports "
+                      + "multiple clients.");
             }
 
             throw new RuntimeMetaException(t, "Failed to connect to Hive Metastore");
           }
-        }
-    );
+        });
   }
 
   @Override
   protected HMSClient reconnect(HMSClient client) {
     try {
-      return metaStore.doAs(() -> {
-        try {
-          client.close();
-          client.reconnect();
-        } catch (MetaException e) {
-          throw new RuntimeMetaException(e, "Failed to reconnect to Hive Metastore");
-        }
-        return client;
-      });
+      return metaStore.doAs(
+          () -> {
+            try {
+              client.close();
+              client.reconnect();
+            } catch (MetaException e) {
+              throw new RuntimeMetaException(e, "Failed to reconnect to Hive Metastore");
+            }
+            return client;
+          });
     } catch (Exception e) {
       LOG.error("hive metastore client reconnected failed", e);
       throw e;
@@ -104,8 +109,11 @@ public class ArcticHiveClientPool extends ClientPoolImpl<HMSClient, TException> 
 
   @Override
   protected boolean isConnectionException(Exception e) {
-    return super.isConnectionException(e) || (e != null && e instanceof MetaException &&
-        e.getMessage().contains("Got exception: org.apache.thrift.transport.TTransportException"));
+    return super.isConnectionException(e)
+        || (e != null
+            && e instanceof MetaException
+            && e.getMessage()
+                .contains("Got exception: org.apache.thrift.transport.TTransportException"));
   }
 
   @Override

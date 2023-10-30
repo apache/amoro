@@ -20,8 +20,7 @@ public class MetricsSummary {
   private int eqDeleteFileCnt = 0;
   private int posDeleteFileCnt = 0;
 
-  public MetricsSummary() {
-  }
+  public MetricsSummary() {}
 
   protected MetricsSummary(RewriteFilesInput input) {
     rewriteDataFileCnt = input.rewrittenDataFiles().length;
@@ -44,18 +43,21 @@ public class MetricsSummary {
   }
 
   public MetricsSummary(Collection<TaskRuntime> taskRuntimes) {
-    taskRuntimes.stream().map(TaskRuntime::getMetricsSummary).forEach(metrics -> {
-      rewriteDataFileCnt += metrics.getRewriteDataFileCnt();
-      reRowDeletedDataFileCnt += metrics.getReRowDeletedDataFileCnt();
-      rewriteDataSize += metrics.getRewriteDataSize();
-      rewritePosDataSize += metrics.getRewritePosDataSize();
-      posDeleteFileCnt += metrics.getPosDeleteFileCnt();
-      positionalDeleteSize += metrics.getPositionalDeleteSize();
-      eqDeleteFileCnt += metrics.getEqDeleteFileCnt();
-      equalityDeleteSize += metrics.getEqualityDeleteSize();
-      newFileCnt += metrics.getNewFileCnt();
-      newFileSize += metrics.getNewFileSize();
-    });
+    taskRuntimes.stream()
+        .map(TaskRuntime::getMetricsSummary)
+        .forEach(
+            metrics -> {
+              rewriteDataFileCnt += metrics.getRewriteDataFileCnt();
+              reRowDeletedDataFileCnt += metrics.getReRowDeletedDataFileCnt();
+              rewriteDataSize += metrics.getRewriteDataSize();
+              rewritePosDataSize += metrics.getRewritePosDataSize();
+              posDeleteFileCnt += metrics.getPosDeleteFileCnt();
+              positionalDeleteSize += metrics.getPositionalDeleteSize();
+              eqDeleteFileCnt += metrics.getEqDeleteFileCnt();
+              equalityDeleteSize += metrics.getEqualityDeleteSize();
+              newFileCnt += metrics.getNewFileCnt();
+              newFileSize += metrics.getNewFileSize();
+            });
   }
 
   public long getNewFileSize() {

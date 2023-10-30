@@ -42,9 +42,7 @@ public class TestIcebergAmoroCatalog extends TestAmoroCatalogBase {
 
   @Parameterized.Parameters(name = "{0}")
   public static Object[] parameters() {
-    return new Object[] {
-        IcebergHadoopCatalogTestHelper.defaultHelper()
-    };
+    return new Object[] {IcebergHadoopCatalogTestHelper.defaultHelper()};
   }
 
   @Override
@@ -59,21 +57,21 @@ public class TestIcebergAmoroCatalog extends TestAmoroCatalogBase {
   protected void createTable(String dbName, String tableName, Map<String, String> properties) {
     TableIdentifier identifier = TableIdentifier.of(dbName, tableName);
 
-    Schema schema = new Schema(
-        Types.NestedField.of(1, false, "id", Types.IntegerType.get()),
-        Types.NestedField.of(2, false, "data", Types.StringType.get())
-    );
+    Schema schema =
+        new Schema(
+            Types.NestedField.of(1, false, "id", Types.IntegerType.get()),
+            Types.NestedField.of(2, false, "data", Types.StringType.get()));
 
-    catalog().newCreateTableTransaction(identifier, schema, PartitionSpec.unpartitioned(), properties)
+    catalog()
+        .newCreateTableTransaction(identifier, schema, PartitionSpec.unpartitioned(), properties)
         .commitTransaction();
   }
 
   @Override
   protected List<String> listDatabases() {
     if (catalog() instanceof SupportsNamespaces) {
-      return ((SupportsNamespaces) catalog()).listNamespaces()
-          .stream().map(ns -> ns.level(0))
-          .collect(Collectors.toList());
+      return ((SupportsNamespaces) catalog())
+          .listNamespaces().stream().map(ns -> ns.level(0)).collect(Collectors.toList());
     }
     return Lists.newArrayList();
   }

@@ -33,31 +33,34 @@ public class TableTrashManagers {
    * Build {@link TableTrashManager}.
    *
    * @param tableIdentifier - table identifier
-   * @param tableLocation   - table root location
+   * @param tableLocation - table root location
    * @param tableProperties - table properties
-   * @param fileIO          - table file io
+   * @param fileIO - table file io
    * @return - built table trash manager
    */
   public static TableTrashManager build(
-      TableIdentifier tableIdentifier, String tableLocation,
-      Map<String, String> tableProperties, ArcticHadoopFileIO fileIO) {
-    String customTrashRootLocation = tableProperties.get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
-    String trashLocation = getTrashLocation(tableIdentifier, tableLocation, customTrashRootLocation);
+      TableIdentifier tableIdentifier,
+      String tableLocation,
+      Map<String, String> tableProperties,
+      ArcticHadoopFileIO fileIO) {
+    String customTrashRootLocation =
+        tableProperties.get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
+    String trashLocation =
+        getTrashLocation(tableIdentifier, tableLocation, customTrashRootLocation);
     return new BasicTableTrashManager(tableIdentifier, fileIO, tableLocation, trashLocation);
   }
 
   /**
    * Get trash location.
    *
-   * @param tableIdentifier         - table identifier
-   * @param tableLocation           - table root location
+   * @param tableIdentifier - table identifier
+   * @param tableLocation - table root location
    * @param customTrashRootLocation - from the table property table-trash.custom-root-location
    * @return trash location
    */
   @VisibleForTesting
   public static String getTrashLocation(
-      TableIdentifier tableIdentifier, String tableLocation,
-      String customTrashRootLocation) {
+      TableIdentifier tableIdentifier, String tableLocation, String customTrashRootLocation) {
     String trashParentLocation;
     if (Strings.isNullOrEmpty(customTrashRootLocation)) {
       trashParentLocation = tableLocation;
@@ -70,16 +73,21 @@ public class TableTrashManagers {
   /**
    * Get trash parent location, when table are deleted, the trash parent location should be deleted.
    *
-   * @param tableIdentifier         - table identifier
+   * @param tableIdentifier - table identifier
    * @param customTrashRootLocation - from the table property table-trash.custom-root-location
    * @return trash parent location.
    */
-  public static String getTrashParentLocation(TableIdentifier tableIdentifier, String customTrashRootLocation) {
+  public static String getTrashParentLocation(
+      TableIdentifier tableIdentifier, String customTrashRootLocation) {
     Preconditions.checkNotNull(customTrashRootLocation);
     if (!customTrashRootLocation.endsWith("/")) {
       customTrashRootLocation = customTrashRootLocation + "/";
     }
-    return customTrashRootLocation + tableIdentifier.getCatalog() + "/" + tableIdentifier.getDatabase() + "/" +
-        tableIdentifier.getTableName();
+    return customTrashRootLocation
+        + tableIdentifier.getCatalog()
+        + "/"
+        + tableIdentifier.getDatabase()
+        + "/"
+        + tableIdentifier.getTableName();
   }
 }

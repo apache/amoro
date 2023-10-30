@@ -18,12 +18,12 @@
 
 package com.netease.arctic.server.utils;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * {@code ConfigOptions} are used to build a {@link ConfigOption}. The option is typically built in
@@ -65,11 +65,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class ConfigOptions {
 
-  /**
-   * Not intended to be instantiated.
-   */
-  private ConfigOptions() {
-  }
+  /** Not intended to be instantiated. */
+  private ConfigOptions() {}
 
   // ------------------------------------------------------------------------
 
@@ -97,9 +94,7 @@ public class ConfigOptions {
     private static final Class<Map<String, String>> PROPERTIES_MAP_CLASS =
         (Class<Map<String, String>>) (Class<?>) Map.class;
 
-    /**
-     * The key for the config option.
-     */
+    /** The key for the config option. */
     private final String key;
 
     /**
@@ -111,51 +106,37 @@ public class ConfigOptions {
       this.key = key;
     }
 
-    /**
-     * Defines that the value of the option should be of {@link Boolean} type.
-     */
+    /** Defines that the value of the option should be of {@link Boolean} type. */
     public TypedConfigOptionBuilder<Boolean> booleanType() {
       return new TypedConfigOptionBuilder<>(key, Boolean.class);
     }
 
-    /**
-     * Defines that the value of the option should be of {@link Integer} type.
-     */
+    /** Defines that the value of the option should be of {@link Integer} type. */
     public TypedConfigOptionBuilder<Integer> intType() {
       return new TypedConfigOptionBuilder<>(key, Integer.class);
     }
 
-    /**
-     * Defines that the value of the option should be of {@link Long} type.
-     */
+    /** Defines that the value of the option should be of {@link Long} type. */
     public TypedConfigOptionBuilder<Long> longType() {
       return new TypedConfigOptionBuilder<>(key, Long.class);
     }
 
-    /**
-     * Defines that the value of the option should be of {@link Float} type.
-     */
+    /** Defines that the value of the option should be of {@link Float} type. */
     public TypedConfigOptionBuilder<Float> floatType() {
       return new TypedConfigOptionBuilder<>(key, Float.class);
     }
 
-    /**
-     * Defines that the value of the option should be of {@link Double} type.
-     */
+    /** Defines that the value of the option should be of {@link Double} type. */
     public TypedConfigOptionBuilder<Double> doubleType() {
       return new TypedConfigOptionBuilder<>(key, Double.class);
     }
 
-    /**
-     * Defines that the value of the option should be of {@link String} type.
-     */
+    /** Defines that the value of the option should be of {@link String} type. */
     public TypedConfigOptionBuilder<String> stringType() {
       return new TypedConfigOptionBuilder<>(key, String.class);
     }
 
-    /**
-     * Defines that the value of the option should be of {@link Duration} type.
-     */
+    /** Defines that the value of the option should be of {@link Duration} type. */
     public TypedConfigOptionBuilder<Duration> durationType() {
       return new TypedConfigOptionBuilder<>(key, Duration.class);
     }
@@ -170,8 +151,8 @@ public class ConfigOptions {
     }
 
     /**
-     * Defines that the value of the option should be a set of properties, which can be
-     * represented as {@code Map<String, String>}.
+     * Defines that the value of the option should be a set of properties, which can be represented
+     * as {@code Map<String, String>}.
      */
     public TypedConfigOptionBuilder<Map<String, String>> mapType() {
       return new TypedConfigOptionBuilder<>(key, PROPERTIES_MAP_CLASS);
@@ -180,14 +161,13 @@ public class ConfigOptions {
     /**
      * Creates a ConfigOption with the given default value.
      *
-     * <p>This method does not accept "null". For options with no default value, choose one of
-     * the {@code noDefaultValue} methods.
+     * <p>This method does not accept "null". For options with no default value, choose one of the
+     * {@code noDefaultValue} methods.
      *
      * @param value The default value for the config option
-     * @param <T>   The type of the default value.
+     * @param <T> The type of the default value.
      * @return The config option with the default value.
-     * @deprecated define the type explicitly first with one of the intType(), stringType(),
-     * etc.
+     * @deprecated define the type explicitly first with one of the intType(), stringType(), etc.
      */
     @Deprecated
     public <T> ConfigOption<T> defaultValue(T value) {
@@ -197,17 +177,15 @@ public class ConfigOptions {
     }
 
     /**
-     * Creates a string-valued option with no default value. String-valued options are the only
-     * ones that can have no default value.
+     * Creates a string-valued option with no default value. String-valued options are the only ones
+     * that can have no default value.
      *
      * @return The created ConfigOption.
-     * @deprecated define the type explicitly first with one of the intType(), stringType(),
-     * etc.
+     * @deprecated define the type explicitly first with one of the intType(), stringType(), etc.
      */
     @Deprecated
     public ConfigOption<String> noDefaultValue() {
-      return new ConfigOption<>(
-          key, String.class, ConfigOption.EMPTY_DESCRIPTION, null, false);
+      return new ConfigOption<>(key, String.class, ConfigOption.EMPTY_DESCRIPTION, null, false);
     }
   }
 
@@ -225,9 +203,7 @@ public class ConfigOptions {
       this.clazz = clazz;
     }
 
-    /**
-     * Defines that the option's type should be a list of previously defined atomic type.
-     */
+    /** Defines that the option's type should be a list of previously defined atomic type. */
     public ListConfigOptionBuilder<T> asList() {
       return new ListConfigOptionBuilder<>(key, clazz);
     }
@@ -248,8 +224,7 @@ public class ConfigOptions {
      * @return The config option without a default value.
      */
     public ConfigOption<T> noDefaultValue() {
-      return new ConfigOption<>(
-          key, clazz, ConfigOption.EMPTY_DESCRIPTION, null, false);
+      return new ConfigOption<>(key, clazz, ConfigOption.EMPTY_DESCRIPTION, null, false);
     }
   }
 

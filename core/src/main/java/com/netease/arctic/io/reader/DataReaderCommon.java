@@ -23,18 +23,19 @@ import java.util.function.BiFunction;
 
 public class DataReaderCommon {
 
-  public static Map<Integer, ?> getIdToConstant(FileScanTask task, Schema projectedSchema,
-      BiFunction<Type, Object, Object> convertConstant) {
+  public static Map<Integer, ?> getIdToConstant(
+      FileScanTask task, Schema projectedSchema, BiFunction<Type, Object, Object> convertConstant) {
     Schema partitionSchema = TypeUtil.select(projectedSchema, task.spec().identitySourceIds());
     Map<Integer, Object> idToConstant = new HashMap<>();
     if (!partitionSchema.columns().isEmpty()) {
       idToConstant.putAll(PartitionUtil.constantsMap(task, convertConstant));
     }
-    idToConstant.put(org.apache.iceberg.MetadataColumns.FILE_PATH.fieldId(),
+    idToConstant.put(
+        org.apache.iceberg.MetadataColumns.FILE_PATH.fieldId(),
         convertConstant.apply(Types.StringType.get(), task.file().path().toString()));
 
     if (task instanceof ArcticFileScanTask) {
-      ArcticFileScanTask arcticFileScanTask = (ArcticFileScanTask)task;
+      ArcticFileScanTask arcticFileScanTask = (ArcticFileScanTask) task;
       idToConstant.put(
           MetadataColumns.TRANSACTION_ID_FILED_ID,
           convertConstant.apply(Types.LongType.get(), arcticFileScanTask.file().transactionId()));
@@ -49,26 +50,29 @@ public class DataReaderCommon {
             convertConstant.apply(Types.LongType.get(), Long.MAX_VALUE));
       }
       if (arcticFileScanTask.fileType() == DataFileType.EQ_DELETE_FILE) {
-        idToConstant.put(MetadataColumns.CHANGE_ACTION_ID, convertConstant.apply(
-            Types.StringType.get(),
-            ChangeAction.DELETE.toString()));
+        idToConstant.put(
+            MetadataColumns.CHANGE_ACTION_ID,
+            convertConstant.apply(Types.StringType.get(), ChangeAction.DELETE.toString()));
       } else if (arcticFileScanTask.fileType() == DataFileType.INSERT_FILE) {
-        idToConstant.put(MetadataColumns.CHANGE_ACTION_ID, convertConstant.apply(
-            Types.StringType.get(),
-            ChangeAction.INSERT.toString()));
+        idToConstant.put(
+            MetadataColumns.CHANGE_ACTION_ID,
+            convertConstant.apply(Types.StringType.get(), ChangeAction.INSERT.toString()));
       }
     }
     return idToConstant;
   }
 
   protected static Map<Integer, ?> getIdToConstant(
-      DataFile dataFile, Schema projectedSchema, PartitionSpec spec,
+      DataFile dataFile,
+      Schema projectedSchema,
+      PartitionSpec spec,
       BiFunction<Type, Object, Object> convertConstant) {
-    Map<Integer, Object> idToConstant = new HashMap<>();
 
-    idToConstant.putAll(partitionMap(dataFile, spec, convertConstant));
+    Map<Integer, Object> idToConstant =
+        new HashMap<>(partitionMap(dataFile, spec, convertConstant));
 
-    idToConstant.put(org.apache.iceberg.MetadataColumns.FILE_PATH.fieldId(),
+    idToConstant.put(
+        org.apache.iceberg.MetadataColumns.FILE_PATH.fieldId(),
         convertConstant.apply(Types.StringType.get(), dataFile.path().toString()));
 
     idToConstant.put(
@@ -78,8 +82,8 @@ public class DataReaderCommon {
     return idToConstant;
   }
 
-  public static Map<Integer, ?> partitionMap(DataFile dataFile, PartitionSpec spec,
-      BiFunction<Type, Object, Object> convertConstant) {
+  public static Map<Integer, ?> partitionMap(
+      DataFile dataFile, PartitionSpec spec, BiFunction<Type, Object, Object> convertConstant) {
     StructLike partitionData = dataFile.partition();
 
     // use java.util.HashMap because partition data may contain null values
@@ -90,7 +94,9 @@ public class DataReaderCommon {
     for (int pos = 0; pos < fields.size(); pos += 1) {
       PartitionField field = fields.get(pos);
       if (field.transform().isIdentity()) {
-        Object converted = convertConstant.apply(partitionFields.get(pos).type(), partitionData.get(pos, Object.class));
+        Object converted =
+            convertConstant.apply(
+                partitionFields.get(pos).type(), partitionData.get(pos, Object.class));
         idToConstant.put(field.sourceId(), converted);
       }
     }

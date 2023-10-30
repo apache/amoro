@@ -22,8 +22,10 @@ public class OptimizingUtil {
     OptimizingProcess process = optimizingTableRuntime.getOptimizingProcess();
     TableOptimizingInfo tableOptimizeInfo =
         new TableOptimizingInfo(optimizingTableRuntime.getTableIdentifier());
-    tableOptimizeInfo.setOptimizeStatus(optimizingTableRuntime.getOptimizingStatus().displayValue());
-    tableOptimizeInfo.setDuration(System.currentTimeMillis() - optimizingTableRuntime.getCurrentStatusStartTime());
+    tableOptimizeInfo.setOptimizeStatus(
+        optimizingTableRuntime.getOptimizingStatus().displayValue());
+    tableOptimizeInfo.setDuration(
+        System.currentTimeMillis() - optimizingTableRuntime.getCurrentStatusStartTime());
     tableOptimizeInfo.setQuota(optimizingTableRuntime.getTargetQuota());
     tableOptimizeInfo.setQuotaOccupation(optimizingTableRuntime.calculateQuotaOccupy());
     FilesStatistics optimizeFileInfo;
@@ -42,14 +44,16 @@ public class OptimizingUtil {
     return tableOptimizeInfo;
   }
 
-  private static FilesStatistics collectPendingFileInfo(OptimizingEvaluator.PendingInput pendingInput) {
+  private static FilesStatistics collectPendingFileInfo(
+      OptimizingEvaluator.PendingInput pendingInput) {
     if (pendingInput == null) {
       return null;
     }
     return FilesStatistics.builder()
         .addFiles(pendingInput.getDataFileSize(), pendingInput.getDataFileCount())
         .addFiles(pendingInput.getEqualityDeleteBytes(), pendingInput.getEqualityDeleteFileCount())
-        .addFiles(pendingInput.getPositionalDeleteBytes(), pendingInput.getPositionalDeleteFileCount())
+        .addFiles(
+            pendingInput.getPositionalDeleteBytes(), pendingInput.getPositionalDeleteFileCount())
         .build();
   }
 

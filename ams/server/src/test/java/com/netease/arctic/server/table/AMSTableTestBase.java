@@ -43,11 +43,9 @@ import org.junit.rules.TemporaryFolder;
 import java.io.IOException;
 
 public class AMSTableTestBase extends TableServiceTestBase {
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
-  @Rule
-  public TemporaryFolder temp = new TemporaryFolder();
+  @Rule public TemporaryFolder temp = new TemporaryFolder();
   private final CatalogTestHelper catalogTestHelper;
   private final TableTestHelper tableTestHelper;
   private String catalogWarehouse;
@@ -65,8 +63,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
   }
 
   public AMSTableTestBase(
-      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper,
-      boolean autoInitTable) {
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean autoInitTable) {
     this.catalogTestHelper = catalogTestHelper;
     this.tableTestHelper = tableTestHelper;
     this.autoInitTable = autoInitTable;
@@ -98,7 +95,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
       database.setName(TableTestHelper.TEST_DB_NAME);
       TEST_HMS.getHiveClient().createDatabase(database);
     } catch (AlreadyExistsException e) {
-      //pass
+      // pass
     }
     if (autoInitTable) {
       createDatabase();
@@ -120,10 +117,14 @@ public class AMSTableTestBase extends TableServiceTestBase {
 
   protected TableMeta buildTableMeta() {
     ConvertStructUtil.TableMetaBuilder builder =
-        new ConvertStructUtil.TableMetaBuilder(TableTestHelper.TEST_TABLE_ID, tableTestHelper.tableSchema());
-    String tableLocation = String.format("%s/%s/%s", catalogWarehouse, TableTestHelper.TEST_DB_NAME,
-        TableTestHelper.TEST_TABLE_NAME);
-    return builder.withPrimaryKeySpec(tableTestHelper.primaryKeySpec())
+        new ConvertStructUtil.TableMetaBuilder(
+            TableTestHelper.TEST_TABLE_ID, tableTestHelper.tableSchema());
+    String tableLocation =
+        String.format(
+            "%s/%s/%s",
+            catalogWarehouse, TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME);
+    return builder
+        .withPrimaryKeySpec(tableTestHelper.primaryKeySpec())
         .withProperties(tableTestHelper.tableProperties())
         .withTableLocation(tableLocation)
         .withFormat(catalogTestHelper.tableFormat())
@@ -134,9 +135,11 @@ public class AMSTableTestBase extends TableServiceTestBase {
 
   protected void createDatabase() {
     if (externalCatalog == null) {
-      if (!tableService().listDatabases(TableTestHelper.TEST_CATALOG_NAME)
+      if (!tableService()
+          .listDatabases(TableTestHelper.TEST_CATALOG_NAME)
           .contains(TableTestHelper.TEST_DB_NAME)) {
-        tableService().createDatabase(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME);
+        tableService()
+            .createDatabase(TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME);
       }
     } else {
       externalCatalog.createDatabase(TableTestHelper.TEST_DB_NAME);
@@ -153,12 +156,16 @@ public class AMSTableTestBase extends TableServiceTestBase {
 
   protected void createTable() {
     if (externalCatalog == null) {
-      mixedTables.createTableByMeta(tableMeta, tableTestHelper.tableSchema(), tableTestHelper.primaryKeySpec(),
+      mixedTables.createTableByMeta(
+          tableMeta,
+          tableTestHelper.tableSchema(),
+          tableTestHelper.primaryKeySpec(),
           tableTestHelper.partitionSpec());
       TableMetadata tableMetadata = tableMetadata();
       tableService().createTable(catalogMeta.getCatalogName(), tableMetadata);
     } else {
-      externalCatalog.newTableBuilder(tableTestHelper.id(), tableTestHelper.tableSchema())
+      externalCatalog
+          .newTableBuilder(tableTestHelper.id(), tableTestHelper.tableSchema())
           .withPartitionSpec(tableTestHelper.partitionSpec())
           .withProperties(tableTestHelper.tableProperties())
           .withPrimaryKeySpec(tableTestHelper.primaryKeySpec())
@@ -196,7 +203,10 @@ public class AMSTableTestBase extends TableServiceTestBase {
   }
 
   protected TableMetadata tableMetadata() {
-    return new TableMetadata(ServerTableIdentifier.of(tableMeta.getTableIdentifier()), tableMeta, catalogMeta);
+    return new TableMetadata(
+        ServerTableIdentifier.of(tableMeta.getTableIdentifier(), catalogTestHelper.tableFormat()),
+        tableMeta,
+        catalogMeta);
   }
 
   protected ServerTableIdentifier serverTableIdentifier() {
@@ -206,9 +216,11 @@ public class AMSTableTestBase extends TableServiceTestBase {
   protected void validateArcticTable(ArcticTable arcticTable) {
     Assert.assertEquals(catalogTestHelper().tableFormat(), arcticTable.format());
     Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, arcticTable.id());
-    Assert.assertEquals(tableTestHelper().tableSchema().asStruct(), arcticTable.schema().asStruct());
+    Assert.assertEquals(
+        tableTestHelper().tableSchema().asStruct(), arcticTable.schema().asStruct());
     Assert.assertEquals(tableTestHelper().partitionSpec(), arcticTable.spec());
-    Assert.assertEquals(tableTestHelper().primaryKeySpec().primaryKeyExisted(), arcticTable.isKeyedTable());
+    Assert.assertEquals(
+        tableTestHelper().primaryKeySpec().primaryKeyExisted(), arcticTable.isKeyedTable());
   }
 
   protected void validateTableRuntime(TableRuntime tableRuntime) {

@@ -34,6 +34,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import javax.annotation.Nonnull;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,8 +42,8 @@ import java.util.function.Predicate;
 
 public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
 
-  public MixedIcebergPartitionPlan(TableRuntime tableRuntime,
-                                   ArcticTable table, String partition, long planTime) {
+  public MixedIcebergPartitionPlan(
+      TableRuntime tableRuntime, ArcticTable table, String partition, long planTime) {
     super(tableRuntime, table, partition, planTime);
   }
 
@@ -73,7 +74,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     properties.setExecutorFactoryImpl(MixFormatRewriteExecutorFactory.class.getName());
     return properties;
   }
-  
+
   protected boolean isKeyedTable() {
     return tableObject.isKeyedTable();
   }
@@ -89,8 +90,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
 
   @Override
   protected CommonPartitionEvaluator buildEvaluator() {
-    return new MixedIcebergPartitionEvaluator(tableRuntime, partition, partitionProperties, planTime,
-        isKeyedTable());
+    return new MixedIcebergPartitionEvaluator(
+        tableRuntime, partition, partitionProperties, planTime, isKeyedTable());
   }
 
   protected static class MixedIcebergPartitionEvaluator extends CommonPartitionEvaluator {
@@ -98,15 +99,19 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     protected boolean hasChangeFiles = false;
     private final boolean reachBaseRefreshInterval;
 
-    public MixedIcebergPartitionEvaluator(TableRuntime tableRuntime, String partition,
-                                          Map<String, String> partitionProperties, long planTime,
-                                          boolean keyedTable) {
+    public MixedIcebergPartitionEvaluator(
+        TableRuntime tableRuntime,
+        String partition,
+        Map<String, String> partitionProperties,
+        long planTime,
+        boolean keyedTable) {
       super(tableRuntime, partition, partitionProperties, planTime);
       this.keyedTable = keyedTable;
       String optimizedTime = partitionProperties.get(TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
       long lastBaseOptimizedTime = optimizedTime == null ? 0 : Long.parseLong(optimizedTime);
       this.reachBaseRefreshInterval =
-          config.getBaseRefreshInterval() >= 0 && planTime - lastBaseOptimizedTime > config.getBaseRefreshInterval();
+          config.getBaseRefreshInterval() >= 0
+              && planTime - lastBaseOptimizedTime > config.getBaseRefreshInterval();
     }
 
     @Override
@@ -150,10 +155,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
           return true;
         } else if ((smallFileCount > baseSplitCount || hasChangeFiles) && reachMinorInterval()) {
           return true;
-        } else if (hasChangeFiles && reachBaseRefreshInterval()) {
-          return true;
         } else {
-          return false;
+          return hasChangeFiles && reachBaseRefreshInterval();
         }
       } else {
         return super.isMinorNecessary();
@@ -162,14 +165,18 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
 
     @Override
     public boolean segmentFileShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
-      if (deletes.stream().anyMatch(
-          delete -> delete.content() == FileContent.EQUALITY_DELETES || delete.content() == FileContent.DATA)) {
+      if (deletes.stream()
+          .anyMatch(
+              delete ->
+                  delete.content() == FileContent.EQUALITY_DELETES
+                      || delete.content() == FileContent.DATA)) {
         // change equality delete file's content is DATA
         return true;
-      } else if (deletes.stream().filter(delete -> delete.content() == FileContent.POSITION_DELETES).count() >= 2) {
-        return true;
       } else {
-        return false;
+        return deletes.stream()
+                .filter(delete -> delete.content() == FileContent.POSITION_DELETES)
+                .count()
+            >= 2;
       }
     }
 
@@ -219,9 +226,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
   }
 
-  /**
-   * split task with {@link DataTreeNode}
-   */
+  /** split task with {@link DataTreeNode} */
   private class TreeNodeTaskSplitter implements TaskSplitter {
     @Override
     public List<SplitTask> splitTasks(int targetTaskCount) {
@@ -240,7 +245,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
         subTree.collectRewritePosDataFiles(rewritePosDataFiles);
         rewriteDataFiles.forEach((f, deletes) -> deleteFiles.addAll(deletes));
         rewritePosDataFiles.forEach((f, deletes) -> deleteFiles.addAll(deletes));
-        result.add(new SplitTask(rewriteDataFiles.keySet(), rewritePosDataFiles.keySet(), deleteFiles));
+        result.add(
+            new SplitTask(rewriteDataFiles.keySet(), rewritePosDataFiles.keySet(), deleteFiles));
       }
       return result;
     }
@@ -286,7 +292,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
      * split file tree with split condition.
      *
      * @param collector - collect result
-     * @param canSplit  - if this tree can split
+     * @param canSplit - if this tree can split
      */
     public void splitFileTree(List<FileTree> collector, Predicate<FileTree> canSplit) {
       if (canSplit.test(this)) {
@@ -342,13 +348,14 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
 
     /**
-     * Complete this binary tree to make every subTree of this Tree As a Full Binary Tree(FBT), if any data exists in
-     * this subTree.
-     * <p>
-     * A Full Binary Tree(FBT) is a binary tree in which all the nodes have either 0 or 2 offspring. In other terms, it
-     * is a binary tree in which all nodes, except the leaf nodes, have two offspring.
-     * <p>
-     * To Complete the tree is to avoid ancestor node's data can't be covered when split subTree.
+     * Complete this binary tree to make every subTree of this Tree As a Full Binary Tree(FBT), if
+     * any data exists in this subTree.
+     *
+     * <p>A Full Binary Tree(FBT) is a binary tree in which all the nodes have either 0 or 2
+     * offspring. In other terms, it is a binary tree in which all nodes, except the leaf nodes,
+     * have two offspring.
+     *
+     * <p>To Complete the tree is to avoid ancestor node's data can't be covered when split subTree.
      */
     public void completeTree() {
       completeTree(false);
@@ -358,7 +365,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       if (left == null && right == null) {
         return;
       }
-      // if any ancestor of this node or this node itself contains any file, this node must be balance
+      // if any ancestor of this node or this node itself contains any file, this node must be
+      // balance
       boolean thisNodeMustBalance = ancestorFileExist || fileExist();
       if (thisNodeMustBalance) {
         // fill and empty node if left or right node not exist
@@ -384,13 +392,10 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
 
   private static class SplitIfNoFileExists implements Predicate<FileTree> {
 
-    public SplitIfNoFileExists() {
-    }
+    public SplitIfNoFileExists() {}
 
     /**
-     * file tree can split if:
-     * - root node isn't leaf node
-     * - and no file exists in the root node
+     * file tree can split if: - root node isn't leaf node - and no file exists in the root node
      *
      * @param fileTree - file tree to split
      * @return true if this fileTree need split

@@ -38,18 +38,18 @@ public class TestPaimonServerTableDescriptor extends TestServerTableDescriptor {
   @Parameterized.Parameters(name = "{0}")
   public static Object[] parameters() {
     return new Object[] {
-        PaimonHadoopCatalogTestHelper.defaultHelper(),
-        PaimonHiveCatalogTestHelper.defaultHelper()
+      PaimonHadoopCatalogTestHelper.defaultHelper(), PaimonHiveCatalogTestHelper.defaultHelper()
     };
   }
 
   @Override
   protected void tableOperationsAddColumns() {
     try {
-      getCatalog().alterTable(
-          Identifier.create(TEST_DB, TEST_TABLE),
-          SchemaChange.addColumn("new_col", DataTypes.INT()),
-          false);
+      getCatalog()
+          .alterTable(
+              Identifier.create(TEST_DB, TEST_TABLE),
+              SchemaChange.addColumn("new_col", DataTypes.INT()),
+              false);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -58,10 +58,11 @@ public class TestPaimonServerTableDescriptor extends TestServerTableDescriptor {
   @Override
   protected void tableOperationsRenameColumns() {
     try {
-      getCatalog().alterTable(
-          Identifier.create(TEST_DB, TEST_TABLE),
-          SchemaChange.renameColumn("new_col", "renamed_col"),
-          false);
+      getCatalog()
+          .alterTable(
+              Identifier.create(TEST_DB, TEST_TABLE),
+              SchemaChange.renameColumn("new_col", "renamed_col"),
+              false);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -70,10 +71,11 @@ public class TestPaimonServerTableDescriptor extends TestServerTableDescriptor {
   @Override
   protected void tableOperationsChangeColumnType() {
     try {
-      getCatalog().alterTable(
-          Identifier.create(TEST_DB, TEST_TABLE),
-          SchemaChange.updateColumnType("renamed_col", DataTypes.BIGINT()),
-          false);
+      getCatalog()
+          .alterTable(
+              Identifier.create(TEST_DB, TEST_TABLE),
+              SchemaChange.updateColumnType("renamed_col", DataTypes.BIGINT()),
+              false);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -82,10 +84,11 @@ public class TestPaimonServerTableDescriptor extends TestServerTableDescriptor {
   @Override
   protected void tableOperationsChangeColumnComment() {
     try {
-      getCatalog().alterTable(
-          Identifier.create(TEST_DB, TEST_TABLE),
-          SchemaChange.updateColumnComment("renamed_col", "new comment"),
-          false);
+      getCatalog()
+          .alterTable(
+              Identifier.create(TEST_DB, TEST_TABLE),
+              SchemaChange.updateColumnComment("renamed_col", "new comment"),
+              false);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -94,10 +97,11 @@ public class TestPaimonServerTableDescriptor extends TestServerTableDescriptor {
   @Override
   protected void tableOperationsChangeColumnRequired() {
     try {
-      getCatalog().alterTable(
-          Identifier.create(TEST_DB, TEST_TABLE),
-          SchemaChange.updateColumnNullability("renamed_col", false),
-          false);
+      getCatalog()
+          .alterTable(
+              Identifier.create(TEST_DB, TEST_TABLE),
+              SchemaChange.updateColumnNullability("renamed_col", false),
+              false);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -106,10 +110,11 @@ public class TestPaimonServerTableDescriptor extends TestServerTableDescriptor {
   @Override
   protected void tableOperationsDropColumn() {
     try {
-      getCatalog().alterTable(
-          Identifier.create(TEST_DB, TEST_TABLE),
-          SchemaChange.dropColumn("renamed_col"),
-          false);
+      getCatalog()
+          .alterTable(
+              Identifier.create(TEST_DB, TEST_TABLE),
+              SchemaChange.dropColumn("renamed_col"),
+              false);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

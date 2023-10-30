@@ -18,6 +18,8 @@
 
 package com.netease.arctic.hive.table;
 
+import static com.netease.arctic.hive.HiveTableProperties.BASE_HIVE_LOCATION_ROOT;
+
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
@@ -40,8 +42,6 @@ import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Map;
-
-import static com.netease.arctic.hive.HiveTableProperties.BASE_HIVE_LOCATION_ROOT;
 
 /**
  * Implementation of {@link com.netease.arctic.table.UnkeyedTable} with Hive table as base store.
@@ -120,8 +120,7 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
 
   @Override
   public ReplacePartitions newReplacePartitions() {
-    return new ReplaceHivePartitions(super.newTransaction(),
-        false, this, hiveClient, hiveClient);
+    return new ReplaceHivePartitions(super.newTransaction(), false, this, hiveClient, hiveClient);
   }
 
   @Override
@@ -131,9 +130,9 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
 
   @Override
   public String hiveLocation() {
-    return properties().containsKey(BASE_HIVE_LOCATION_ROOT) ?
-        properties().get(BASE_HIVE_LOCATION_ROOT) :
-        HiveTableUtil.hiveRootLocation(tableLocation);
+    return properties().containsKey(BASE_HIVE_LOCATION_ROOT)
+        ? properties().get(BASE_HIVE_LOCATION_ROOT)
+        : HiveTableUtil.hiveRootLocation(tableLocation);
   }
 
   @Override
@@ -159,16 +158,16 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
 
   @Override
   public UpdateSchema updateSchema() {
-    return new HiveSchemaUpdate(this,
-        hiveClient, hiveClient, super.updateSchema());
+    return new HiveSchemaUpdate(this, hiveClient, hiveClient, super.updateSchema());
   }
 
   @Override
   public boolean enableSyncHiveSchemaToArctic() {
-    return syncHiveChange && PropertyUtil.propertyAsBoolean(
-        properties(),
-        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE,
-        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE_DEFAULT);
+    return syncHiveChange
+        && PropertyUtil.propertyAsBoolean(
+            properties(),
+            HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE,
+            HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE_DEFAULT);
   }
 
   @Override
@@ -178,10 +177,11 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
 
   @Override
   public boolean enableSyncHiveDataToArctic() {
-    return syncHiveChange && PropertyUtil.propertyAsBoolean(
-        properties(),
-        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE,
-        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT);
+    return syncHiveChange
+        && PropertyUtil.propertyAsBoolean(
+            properties(),
+            HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE,
+            HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT);
   }
 
   @Override

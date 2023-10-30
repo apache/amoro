@@ -10,13 +10,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-
 public class OptimizerToucher extends AbstractOptimizerOperator {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerToucher.class);
 
   private TokenChangeListener tokenChangeListener;
   private final Map<String, String> registerProperties = Maps.newHashMap();
-  private long startTime;
+  private final long startTime;
 
   public OptimizerToucher(OptimizerConfig config) {
     super(config);
@@ -52,16 +51,18 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
   private boolean checkToken() {
     if (!tokenIsReady()) {
       try {
-        String token = callAms(client -> {
-          OptimizerRegisterInfo registerInfo = new OptimizerRegisterInfo();
-          registerInfo.setThreadCount(getConfig().getExecutionParallel());
-          registerInfo.setMemoryMb(getConfig().getMemorySize());
-          registerInfo.setGroupName(getConfig().getGroupName());
-          registerInfo.setProperties(registerProperties);
-          registerInfo.setResourceId(getConfig().getResourceId());
-          registerInfo.setStartTime(startTime);
-          return client.authenticate(registerInfo);
-        });
+        String token =
+            callAms(
+                client -> {
+                  OptimizerRegisterInfo registerInfo = new OptimizerRegisterInfo();
+                  registerInfo.setThreadCount(getConfig().getExecutionParallel());
+                  registerInfo.setMemoryMb(getConfig().getMemorySize());
+                  registerInfo.setGroupName(getConfig().getGroupName());
+                  registerInfo.setProperties(registerProperties);
+                  registerInfo.setResourceId(getConfig().getResourceId());
+                  registerInfo.setStartTime(startTime);
+                  return client.authenticate(registerInfo);
+                });
         setToken(token);
         if (tokenChangeListener != null) {
           tokenChangeListener.tokenChange(token);
@@ -78,14 +79,15 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
 
   private void touch() {
     try {
-      callAms(client -> {
-        client.touch(getToken());
-        return null;
-      });
+      callAms(
+          client -> {
+            client.touch(getToken());
+            return null;
+          });
       LOG.debug("Optimizer[{}] touch ams", getToken());
     } catch (TException e) {
-      if (e instanceof ArcticException &&
-          ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE == ((ArcticException)e).getErrorCode()) {
+      if (e instanceof ArcticException
+          && ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE == ((ArcticException) e).getErrorCode()) {
         setToken(null);
         LOG.error("Got authorization error from ams, try to register later", e);
       } else {
@@ -97,5 +99,4 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
   public interface TokenChangeListener {
     void tokenChange(String newToken);
   }
-
 }

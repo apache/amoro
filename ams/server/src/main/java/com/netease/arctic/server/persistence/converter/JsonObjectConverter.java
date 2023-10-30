@@ -25,7 +25,8 @@ public class JsonObjectConverter<T> extends BaseTypeHandler<T> {
   }
 
   @Override
-  public void setNonNullParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType) throws SQLException {
+  public void setNonNullParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType)
+      throws SQLException {
     try {
       ps.setString(i, mapper.writeValueAsString(parameter));
     } catch (JsonProcessingException e) {

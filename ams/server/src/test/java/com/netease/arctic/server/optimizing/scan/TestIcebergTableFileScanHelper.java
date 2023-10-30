@@ -12,18 +12,17 @@ import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 public class TestIcebergTableFileScanHelper extends TestUnkeyedTableFileScanHelper {
-  public TestIcebergTableFileScanHelper(CatalogTestHelper catalogTestHelper,
-                                        TableTestHelper tableTestHelper) {
+  public TestIcebergTableFileScanHelper(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[][] parameters() {
     return new Object[][] {
-        {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-            new BasicTableTestHelper(false, true)},
-        {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-            new BasicTableTestHelper(false, false)}};
+      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, true)},
+      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, false)}
+    };
   }
 
   @Override
@@ -34,6 +33,6 @@ public class TestIcebergTableFileScanHelper extends TestUnkeyedTableFileScanHelp
 
   @Override
   protected void assertDataFileClass(DataFile file) {
-    //do nothing
+    // do nothing
   }
 }

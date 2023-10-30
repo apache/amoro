@@ -31,7 +31,7 @@ import java.util.Map;
 /** Integrate flinkTable properties */
 public class FlinkTablePropertiesInvocationHandler implements InvocationHandler, Serializable {
 
-  private ArcticTable arcticTable;
+  private final ArcticTable arcticTable;
   private final Map<String, String> flinkTableProperties = new HashMap<>();
   protected Map<String, String> tablePropertiesCombined = new HashMap<>();
 

@@ -19,6 +19,8 @@ ams:
 
   refresh-external-catalogs:
     interval: 180000 # 3min
+    thread-count: 10
+    queue-size: 1000000
 
   refresh-tables:
     thread-count: 10

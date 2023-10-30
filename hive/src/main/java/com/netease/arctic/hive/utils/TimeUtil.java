@@ -27,10 +27,10 @@ public class TimeUtil {
   public static final long NANO_PER_MICRO = 1000L;
 
   /**
-   * Returns the microseconds between two instants.
-   * If jdk version less than 18 there is a bug in calculating microsecond intervals between two times using methods
-   * like 'ChronoUnit.MICROS.between(start, end)', this method is used instead.
-   * see: <a href="https://bugs.openjdk.org/browse/JDK-8273369">...</a>
+   * Returns the microseconds between two instants. If jdk version less than 18 there is a bug in
+   * calculating microsecond intervals between two times using methods like
+   * 'ChronoUnit.MICROS.between(start, end)', this method is used instead. see: <a
+   * href="https://bugs.openjdk.org/browse/JDK-8273369">...</a>
    */
   public static long microsBetween(Instant start, Instant end) {
     long secsDiff = Math.subtractExact(end.getEpochSecond(), start.getEpochSecond());

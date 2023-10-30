@@ -47,32 +47,35 @@ public class HiveTableUtil {
   public static org.apache.hadoop.hive.metastore.api.Table loadHmsTable(
       HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
     try {
-      return hiveClient.run(client -> client.getTable(
-          tableIdentifier.getDatabase(),
-          tableIdentifier.getTableName()));
+      return hiveClient.run(
+          client -> client.getTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName()));
     } catch (NoSuchObjectException nte) {
       LOG.trace("Table not found {}", tableIdentifier.toString(), nte);
       return null;
     } catch (TException e) {
-      throw new RuntimeException(String.format("Metastore operation failed for %s", tableIdentifier.toString()), e);
+      throw new RuntimeException(
+          String.format("Metastore operation failed for %s", tableIdentifier.toString()), e);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new RuntimeException("Interrupted during commit", e);
     }
   }
 
-  public static void persistTable(HMSClientPool hiveClient, org.apache.hadoop.hive.metastore.api.Table tbl) {
+  public static void persistTable(
+      HMSClientPool hiveClient, org.apache.hadoop.hive.metastore.api.Table tbl) {
     try {
-      hiveClient.run(client -> {
-        client.alterTable(tbl.getDbName(), tbl.getTableName(), tbl);
-        return null;
-      });
+      hiveClient.run(
+          client -> {
+            client.alterTable(tbl.getDbName(), tbl.getTableName(), tbl);
+            return null;
+          });
     } catch (TException | InterruptedException e) {
       throw new RuntimeException(e);
     }
   }
 
-  public static Map<String, String> generateTableProperties(int accessTimeInSeconds, List<DataFile> files) {
+  public static Map<String, String> generateTableProperties(
+      int accessTimeInSeconds, List<DataFile> files) {
     Map<String, String> properties = Maps.newHashMap();
     long totalSize = files.stream().map(DataFile::fileSizeInBytes).reduce(0L, Long::sum);
     long numRows = files.stream().map(DataFile::recordCount).reduce(0L, Long::sum);
@@ -88,15 +91,19 @@ public class HiveTableUtil {
     return tableLocation + "/hive";
   }
 
-  public static String newHiveDataLocation(String hiveLocation, PartitionSpec partitionSpec,
-                                           StructLike partitionData, String hiveSubdirectory) {
+  public static String newHiveDataLocation(
+      String hiveLocation,
+      PartitionSpec partitionSpec,
+      StructLike partitionData,
+      String hiveSubdirectory) {
     if (partitionSpec.isUnpartitioned()) {
       return String.format("%s/%s", hiveLocation, hiveSubdirectory);
     } else {
-      return String.format("%s/%s/%s", hiveLocation, partitionSpec.partitionToPath(partitionData), hiveSubdirectory);
+      return String.format(
+          "%s/%s/%s", hiveLocation, partitionSpec.partitionToPath(partitionData), hiveSubdirectory);
     }
   }
-  
+
   public static String newHiveSubdirectory(long transactionId) {
     return System.currentTimeMillis() + "_" + transactionId;
   }
@@ -106,8 +113,7 @@ public class HiveTableUtil {
   }
 
   public static StorageDescriptor storageDescriptor(
-      Schema schema, PartitionSpec partitionSpec, String location,
-      FileFormat format) {
+      Schema schema, PartitionSpec partitionSpec, String location, FileFormat format) {
     final StorageDescriptor storageDescriptor = new StorageDescriptor();
     storageDescriptor.setCols(HiveSchemaUtil.hiveTableFields(schema, partitionSpec));
     storageDescriptor.setLocation(location);
@@ -178,15 +184,18 @@ public class HiveTableUtil {
    * @param hiveClient Hive client from ArcticHiveCatalog
    * @param tableIdentifier A table identifier
    */
-  public static void alterTableLocation(HMSClientPool hiveClient, TableIdentifier tableIdentifier,
-                                        String newPath) throws IOException {
+  public static void alterTableLocation(
+      HMSClientPool hiveClient, TableIdentifier tableIdentifier, String newPath)
+      throws IOException {
     try {
-      hiveClient.run(client -> {
-        Table newTable = loadHmsTable(hiveClient, tableIdentifier);
-        newTable.getSd().setLocation(newPath);
-        client.alterTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), newTable);
-        return null;
-      });
+      hiveClient.run(
+          client -> {
+            Table newTable = loadHmsTable(hiveClient, tableIdentifier);
+            newTable.getSd().setLocation(newPath);
+            client.alterTable(
+                tableIdentifier.getDatabase(), tableIdentifier.getTableName(), newTable);
+            return null;
+          });
     } catch (Exception e) {
       throw new IOException(e);
     }

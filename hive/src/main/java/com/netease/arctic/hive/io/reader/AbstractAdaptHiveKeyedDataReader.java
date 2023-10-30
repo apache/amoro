@@ -39,9 +39,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-/**
- * AdaptHive can read all Data.
- */
+/** AdaptHive can read all Data. */
 public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedDataReader<T> {
 
   public AbstractAdaptHiveKeyedDataReader(
@@ -112,23 +110,31 @@ public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedD
 
   @Override
   protected ArcticDeleteFilter<T> createArcticDeleteFilter(
-      KeyedTableScanTask keyedTableScanTask, Schema tableSchema,
-      Schema projectedSchema, PrimaryKeySpec primaryKeySpec,
-      Set<DataTreeNode> sourceNodes, StructLikeCollections structLikeCollections
-  ) {
-    return new AdaptHiveGenericArcticDeleteFilter(keyedTableScanTask, tableSchema, projectedSchema,
-        primaryKeySpec, sourceNodes, structLikeCollections);
+      KeyedTableScanTask keyedTableScanTask,
+      Schema tableSchema,
+      Schema projectedSchema,
+      PrimaryKeySpec primaryKeySpec,
+      Set<DataTreeNode> sourceNodes,
+      StructLikeCollections structLikeCollections) {
+    return new AdaptHiveGenericArcticDeleteFilter(
+        keyedTableScanTask,
+        tableSchema,
+        projectedSchema,
+        primaryKeySpec,
+        sourceNodes,
+        structLikeCollections);
   }
 
   @Override
   protected CloseableIterable<T> newParquetIterable(
       FileScanTask task, Schema schema, Map<Integer, ?> idToConstant) {
-    AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(fileIO.newInputFile(task.file().path().toString()))
-        .split(task.start(), task.length())
-        .project(schema)
-        .createReaderFunc(getParquetReaderFunction(schema, idToConstant))
-        .filter(task.residual())
-        .caseSensitive(caseSensitive);
+    AdaptHiveParquet.ReadBuilder builder =
+        AdaptHiveParquet.read(fileIO.newInputFile(task.file().path().toString()))
+            .split(task.start(), task.length())
+            .project(schema)
+            .createReaderFunc(getParquetReaderFunction(schema, idToConstant))
+            .filter(task.residual())
+            .caseSensitive(caseSensitive);
 
     if (reuseContainer) {
       builder.reuseContainers();
@@ -146,9 +152,12 @@ public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedD
 
     protected AdaptHiveGenericArcticDeleteFilter(
         KeyedTableScanTask keyedTableScanTask,
-        Schema tableSchema, Schema requestedSchema, PrimaryKeySpec primaryKeySpec) {
+        Schema tableSchema,
+        Schema requestedSchema,
+        PrimaryKeySpec primaryKeySpec) {
       super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec);
-      this.asStructLike = AbstractAdaptHiveKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      this.asStructLike =
+          AbstractAdaptHiveKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     protected AdaptHiveGenericArcticDeleteFilter(
@@ -158,9 +167,15 @@ public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedD
         PrimaryKeySpec primaryKeySpec,
         Set<DataTreeNode> sourceNodes,
         StructLikeCollections structLikeCollections) {
-      super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec,
-          sourceNodes, structLikeCollections);
-      this.asStructLike = AbstractAdaptHiveKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      super(
+          keyedTableScanTask,
+          tableSchema,
+          requestedSchema,
+          primaryKeySpec,
+          sourceNodes,
+          structLikeCollections);
+      this.asStructLike =
+          AbstractAdaptHiveKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     protected AdaptHiveGenericArcticDeleteFilter(
@@ -170,7 +185,8 @@ public abstract class AbstractAdaptHiveKeyedDataReader<T> extends AbstractKeyedD
         PrimaryKeySpec primaryKeySpec,
         Set<DataTreeNode> sourceNodes) {
       super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec, sourceNodes);
-      this.asStructLike = AbstractAdaptHiveKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
+      this.asStructLike =
+          AbstractAdaptHiveKeyedDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     @Override

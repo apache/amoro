@@ -54,9 +54,9 @@ public class ExecUtil {
   }
 
   private static class OutputBufferThread extends Thread {
-    private List<String> output;
+    private final List<String> output;
 
-    private InputStream is;
+    private final InputStream is;
 
     public OutputBufferThread(InputStream is) {
       this.setDaemon(true);

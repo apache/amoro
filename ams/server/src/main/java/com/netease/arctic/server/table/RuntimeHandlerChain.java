@@ -21,8 +21,10 @@ public abstract class RuntimeHandlerChain {
 
   protected void appendNext(RuntimeHandlerChain handler) {
     Preconditions.checkNotNull(handler);
-    Preconditions.checkArgument(!Objects.equals(handler, this),
-        "Cannot add the same runtime handler:{} twice", handler.getClass().getSimpleName());
+    Preconditions.checkArgument(
+        !Objects.equals(handler, this),
+        "Cannot add the same runtime handler:{} twice",
+        handler.getClass().getSimpleName());
     if (next == null) {
       next = handler;
     } else {
@@ -31,9 +33,11 @@ public abstract class RuntimeHandlerChain {
   }
 
   public final void initialize(List<TableRuntimeMeta> tableRuntimeMetaList) {
-    List<TableRuntimeMeta> supportedtableRuntimeMetaList = tableRuntimeMetaList.stream()
-        .filter(tableRuntimeMeta -> formatSupported(tableRuntimeMeta.getTableRuntime().getFormat()))
-        .collect(Collectors.toList());
+    List<TableRuntimeMeta> supportedtableRuntimeMetaList =
+        tableRuntimeMetaList.stream()
+            .filter(
+                tableRuntimeMeta -> formatSupported(tableRuntimeMeta.getTableRuntime().getFormat()))
+            .collect(Collectors.toList());
     initHandler(supportedtableRuntimeMetaList);
     initialized = true;
     if (next != null) {
@@ -53,7 +57,8 @@ public abstract class RuntimeHandlerChain {
     }
   }
 
-  public final void fireConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
+  public final void fireConfigChanged(
+      TableRuntime tableRuntime, TableConfiguration originalConfig) {
     if (!initialized) {
       return;
     }
@@ -108,14 +113,16 @@ public abstract class RuntimeHandlerChain {
     }
   }
 
-  //Currently, paimon is unsupported
+  // Currently, paimon is unsupported
   protected boolean formatSupported(TableFormat format) {
     return format.in(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE);
   }
 
-  protected abstract void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus);
+  protected abstract void handleStatusChanged(
+      TableRuntime tableRuntime, OptimizingStatus originalStatus);
 
-  protected abstract void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig);
+  protected abstract void handleConfigChanged(
+      TableRuntime tableRuntime, TableConfiguration originalConfig);
 
   protected abstract void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime);
 

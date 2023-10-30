@@ -29,7 +29,7 @@ public class TestSimpleSpillableMap {
   @Test
   public void testMemoryMap() {
     SimpleSpillableMap<Key, Value> map = testMap(10, 10);
-    Assert.assertTrue(map.getSizeOfFileOnDiskInBytes() == 0);
+    Assert.assertEquals(0, map.getSizeOfFileOnDiskInBytes());
     map.close();
   }
 
@@ -49,11 +49,12 @@ public class TestSimpleSpillableMap {
 
   @Test
   public void testSpillableMapConsistency() {
-    SimpleSpillableMap<Key, Value> actualMap = new SimpleSpillableMap<>(
-        5 * (keySize + valueSize),
-        null,
-        new DefaultSizeEstimator<>(),
-        new DefaultSizeEstimator<>());
+    SimpleSpillableMap<Key, Value> actualMap =
+        new SimpleSpillableMap<>(
+            5 * (keySize + valueSize),
+            null,
+            new DefaultSizeEstimator<>(),
+            new DefaultSizeEstimator<>());
 
     Map<Key, Value> expectedMap = Maps.newHashMap();
     for (int i = 0; i < 10; i++) {
@@ -68,28 +69,31 @@ public class TestSimpleSpillableMap {
 
     // update new value
     Sets.newHashSet(expectedMap.keySet())
-        .forEach(k -> {
-          Value newValue = new Value();
-          actualMap.put(k, newValue);
-          expectedMap.put(k, newValue);
-          assertSimpleMaps(actualMap, expectedMap);
-        });
+        .forEach(
+            k -> {
+              Value newValue = new Value();
+              actualMap.put(k, newValue);
+              expectedMap.put(k, newValue);
+              assertSimpleMaps(actualMap, expectedMap);
+            });
 
     Sets.newHashSet(expectedMap.keySet())
-        .forEach(k -> {
-          actualMap.delete(k);
-          expectedMap.remove(k);
-          assertSimpleMaps(actualMap, expectedMap);
-        });
+        .forEach(
+            k -> {
+              actualMap.delete(k);
+              expectedMap.remove(k);
+              assertSimpleMaps(actualMap, expectedMap);
+            });
   }
 
   @Test
   public void testSpillableMapRePut() {
-    SimpleSpillableMap<Key, Value> actualMap = new SimpleSpillableMap<>(
-        (keySize + valueSize),
-        null,
-        new DefaultSizeEstimator<>(),
-        new DefaultSizeEstimator<>());
+    SimpleSpillableMap<Key, Value> actualMap =
+        new SimpleSpillableMap<>(
+            (keySize + valueSize),
+            null,
+            new DefaultSizeEstimator<>(),
+            new DefaultSizeEstimator<>());
 
     Key k1 = new Key();
     Value v1 = new Value();
@@ -113,9 +117,13 @@ public class TestSimpleSpillableMap {
   }
 
   private SimpleSpillableMap<Key, Value> testMap(long expectMemorySize, int expectKeyCount) {
-    SimpleSpillableMap<Key, Value> actualMap = new SimpleSpillableMap<>(expectMemorySize * (keySize + valueSize),
-        null, new DefaultSizeEstimator<>(), new DefaultSizeEstimator<>());
-    Assert.assertTrue(actualMap.getSizeOfFileOnDiskInBytes() == 0);
+    SimpleSpillableMap<Key, Value> actualMap =
+        new SimpleSpillableMap<>(
+            expectMemorySize * (keySize + valueSize),
+            null,
+            new DefaultSizeEstimator<>(),
+            new DefaultSizeEstimator<>());
+    Assert.assertEquals(0, actualMap.getSizeOfFileOnDiskInBytes());
     Map<Key, Value> expectedMap = Maps.newHashMap();
     for (int i = 0; i < expectKeyCount; i++) {
       Key key = new Key();
@@ -126,8 +134,7 @@ public class TestSimpleSpillableMap {
     assertSimpleMaps(actualMap, expectedMap);
     Assert.assertEquals(expectMemorySize, actualMap.getMemoryMapSize());
     Assert.assertEquals(
-        expectMemorySize * (keySize + valueSize),
-        actualMap.getMemoryMapSpaceSize());
+        expectMemorySize * (keySize + valueSize), actualMap.getMemoryMapSpaceSize());
     return actualMap;
   }
 
@@ -172,4 +179,3 @@ public class TestSimpleSpillableMap {
     }
   }
 }
-

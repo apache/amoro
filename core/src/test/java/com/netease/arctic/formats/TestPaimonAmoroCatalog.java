@@ -37,9 +37,7 @@ public class TestPaimonAmoroCatalog extends TestAmoroCatalogBase {
 
   @Parameterized.Parameters(name = "{0}")
   public static Object[] parameters() {
-    return new Object[] {
-        PaimonHadoopCatalogTestHelper.defaultHelper()
-    };
+    return new Object[] {PaimonHadoopCatalogTestHelper.defaultHelper()};
   }
 
   @Override
@@ -53,12 +51,13 @@ public class TestPaimonAmoroCatalog extends TestAmoroCatalogBase {
 
   @Override
   protected void createTable(String dbName, String tableName, Map<String, String> properties) {
-    Schema schema = Schema.newBuilder()
-        .column("id", DataTypes.INT())
-        .column("name", DataTypes.STRING())
-        .primaryKey("id", "name")
-        .options(properties)
-        .build();
+    Schema schema =
+        Schema.newBuilder()
+            .column("id", DataTypes.INT())
+            .column("name", DataTypes.STRING())
+            .primaryKey("id", "name")
+            .options(properties)
+            .build();
     try (Catalog catalog = catalog()) {
       catalog.createTable(Identifier.create(dbName, tableName), schema, false);
     } catch (Exception e) {

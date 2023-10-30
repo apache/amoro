@@ -18,6 +18,8 @@
 
 package com.netease.arctic.hive.catalog;
 
+import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.HiveDataTestHelpers;
@@ -36,7 +38,6 @@ import org.apache.iceberg.types.Types;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 
 public class HiveTableTestHelper extends BasicTableTestHelper {
 
@@ -44,18 +45,20 @@ public class HiveTableTestHelper extends BasicTableTestHelper {
   public static final String COLUMN_NAME_D = "d$d";
   public static final String COLUMN_NAME_OP_DAY = "op_time_day";
 
-  public static final Schema HIVE_TABLE_SCHEMA = TypeUtil.join(
-      BasicTableTestHelper.TABLE_SCHEMA, new Schema(
-          Types.NestedField.required(5, COLUMN_NAME_OP_TIME_WITH_ZONE, Types.TimestampType.withZone()),
-          Types.NestedField.required(6, COLUMN_NAME_D, Types.DecimalType.of(10, 0)),
-          Types.NestedField.required(7, COLUMN_NAME_OP_DAY, Types.StringType.get()))
-  );
+  public static final Schema HIVE_TABLE_SCHEMA =
+      TypeUtil.join(
+          BasicTableTestHelper.TABLE_SCHEMA,
+          new Schema(
+              Types.NestedField.required(
+                  5, COLUMN_NAME_OP_TIME_WITH_ZONE, Types.TimestampType.withZone()),
+              Types.NestedField.required(6, COLUMN_NAME_D, Types.DecimalType.of(10, 0)),
+              Types.NestedField.required(7, COLUMN_NAME_OP_DAY, Types.StringType.get())));
 
   public static final PrimaryKeySpec HIVE_PRIMARY_KEY_SPEC =
       PrimaryKeySpec.builderFor(HIVE_TABLE_SCHEMA).addColumn("id").build();
 
-  public static final PartitionSpec HIVE_SPEC = PartitionSpec.builderFor(HIVE_TABLE_SCHEMA)
-      .identity(COLUMN_NAME_OP_DAY).build();
+  public static final PartitionSpec HIVE_SPEC =
+      PartitionSpec.builderFor(HIVE_TABLE_SCHEMA).identity(COLUMN_NAME_OP_DAY).build();
 
   public HiveTableTestHelper(
       Schema tableSchema,
@@ -66,11 +69,12 @@ public class HiveTableTestHelper extends BasicTableTestHelper {
   }
 
   public HiveTableTestHelper(
-      boolean hasPrimaryKey,
-      boolean hasPartition,
-      Map<String, String> tableProperties) {
-    this(HIVE_TABLE_SCHEMA, hasPrimaryKey ? HIVE_PRIMARY_KEY_SPEC : PrimaryKeySpec.noPrimaryKey(),
-        hasPartition ? HIVE_SPEC : PartitionSpec.unpartitioned(), tableProperties);
+      boolean hasPrimaryKey, boolean hasPartition, Map<String, String> tableProperties) {
+    this(
+        HIVE_TABLE_SCHEMA,
+        hasPrimaryKey ? HIVE_PRIMARY_KEY_SPEC : PrimaryKeySpec.noPrimaryKey(),
+        hasPartition ? HIVE_SPEC : PartitionSpec.unpartitioned(),
+        tableProperties);
   }
 
   public HiveTableTestHelper(boolean hasPrimaryKey, boolean hasPartition, String fileFormat) {
@@ -83,13 +87,24 @@ public class HiveTableTestHelper extends BasicTableTestHelper {
 
   @Override
   public Record generateTestRecord(int id, String name, long ts, String opTime) {
-    return MixedDataTestHelpers.createRecord(HIVE_TABLE_SCHEMA, id, name, ts, opTime,
-        opTime + "Z", new BigDecimal("0"), opTime.substring(0, 10));
+    return MixedDataTestHelpers.createRecord(
+        HIVE_TABLE_SCHEMA,
+        id,
+        name,
+        ts,
+        opTime,
+        opTime + "Z",
+        new BigDecimal("0"),
+        opTime.substring(0, 10));
   }
 
   @Override
   public List<DataFile> writeChangeStore(
-      KeyedTable keyedTable, Long txId, ChangeAction action, List<Record> records, boolean orderedWrite) {
+      KeyedTable keyedTable,
+      Long txId,
+      ChangeAction action,
+      List<Record> records,
+      boolean orderedWrite) {
     return HiveDataTestHelpers.writeChangeStore(keyedTable, txId, action, records, orderedWrite);
   }
 
@@ -101,8 +116,13 @@ public class HiveTableTestHelper extends BasicTableTestHelper {
 
   @Override
   public List<Record> readKeyedTable(
-      KeyedTable keyedTable, Expression expression, Schema projectSchema, boolean useDiskMap, boolean readDeletedData) {
-    return HiveDataTestHelpers.readKeyedTable(keyedTable, expression, projectSchema, useDiskMap, readDeletedData);
+      KeyedTable keyedTable,
+      Expression expression,
+      Schema projectSchema,
+      boolean useDiskMap,
+      boolean readDeletedData) {
+    return HiveDataTestHelpers.readKeyedTable(
+        keyedTable, expression, projectSchema, useDiskMap, readDeletedData);
   }
 
   @Override
@@ -113,10 +133,7 @@ public class HiveTableTestHelper extends BasicTableTestHelper {
 
   @Override
   public List<Record> readBaseStore(
-      ArcticTable table,
-      Expression expression,
-      Schema projectSchema,
-      boolean useDiskMap) {
+      ArcticTable table, Expression expression, Schema projectSchema, boolean useDiskMap) {
     return HiveDataTestHelpers.readBaseStore(table, expression, projectSchema, useDiskMap);
   }
 }

@@ -60,14 +60,14 @@ public class TestOrphanFileCleanIceberg extends TestOrphanFileClean {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][]{
-        {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-            new BasicTableTestHelper(false, true)},
-        {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-            new BasicTableTestHelper(false, false)}};
+    return new Object[][] {
+      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, true)},
+      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, false)}
+    };
   }
 
-  public TestOrphanFileCleanIceberg(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+  public TestOrphanFileCleanIceberg(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
@@ -75,25 +75,29 @@ public class TestOrphanFileCleanIceberg extends TestOrphanFileClean {
   public void cleanDanglingDeleteFiles() throws IOException {
     List<Record> records = Lists.newArrayListWithCapacity(3);
     records.add(tableTestHelper().generateTestRecord(1, "test1", 0, "2022-01-01T00:00:00"));
-    List<DataFile> dataFiles1 = tableTestHelper().writeBaseStore(getArcticTable().asUnkeyedTable(), 1L,
-        records, false);
+    List<DataFile> dataFiles1 =
+        tableTestHelper().writeBaseStore(getArcticTable().asUnkeyedTable(), 1L, records, false);
     UnkeyedTable testTable = getArcticTable().asUnkeyedTable();
     AppendFiles appendFiles = testTable.newAppend();
     dataFiles1.forEach(appendFiles::appendFile);
     appendFiles.commit();
     assertDanglingDeleteFiles(testTable, 0);
-    SortedPosDeleteWriter<Record> posDeleteWriter = AdaptHiveGenericTaskWriterBuilder.builderFor(testTable)
-        .buildBasePosDeleteWriter(0, 0, dataFiles1.get(0).partition());
+    SortedPosDeleteWriter<Record> posDeleteWriter =
+        AdaptHiveGenericTaskWriterBuilder.builderFor(testTable)
+            .buildBasePosDeleteWriter(0, 0, dataFiles1.get(0).partition());
     posDeleteWriter.delete(dataFiles1.get(0).path(), 0);
     List<DeleteFile> posDelete = posDeleteWriter.complete();
     testTable.newRowDelta().addDeletes(posDelete.get(0)).commit();
     records.clear();
     records.add(tableTestHelper().generateTestRecord(3, "test3", 0, "2022-01-02T00:00:00"));
-    List<DataFile> dataFiles2 = tableTestHelper().writeBaseStore(getArcticTable().asUnkeyedTable(), 1L,
-        records, false);
-    testTable.newRewrite().rewriteFiles(Collections.singleton(dataFiles1.get(0)),
-            Collections.singleton(dataFiles2.get(0)))
-      .validateFromSnapshot(testTable.currentSnapshot().snapshotId()).commit();
+    List<DataFile> dataFiles2 =
+        tableTestHelper().writeBaseStore(getArcticTable().asUnkeyedTable(), 1L, records, false);
+    testTable
+        .newRewrite()
+        .rewriteFiles(
+            Collections.singleton(dataFiles1.get(0)), Collections.singleton(dataFiles2.get(0)))
+        .validateFromSnapshot(testTable.currentSnapshot().snapshotId())
+        .commit();
     assertDanglingDeleteFiles(testTable, 1);
 
     MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(testTable);
@@ -113,9 +117,11 @@ public class TestOrphanFileCleanIceberg extends TestOrphanFileClean {
     }
     Set<String> danglingDeleteFiles = new HashSet<>();
     Table manifestTable =
-        MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) unkeyedTable).operations(),
-          unkeyedTable.name(), metadataTableName(unkeyedTable.name(), MetadataTableType.ENTRIES),
-          MetadataTableType.ENTRIES);
+        MetadataTableUtils.createMetadataTableInstance(
+            ((HasTableOperations) unkeyedTable).operations(),
+            unkeyedTable.name(),
+            metadataTableName(unkeyedTable.name(), MetadataTableType.ENTRIES),
+            MetadataTableType.ENTRIES);
     try (CloseableIterable<Record> entries = IcebergGenerics.read(manifestTable).build()) {
       for (Record entry : entries) {
         GenericRecord dataFile = (GenericRecord) entry.get(4);

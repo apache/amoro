@@ -31,20 +31,16 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * The controller that handles file requests.
- */
+/** The controller that handles file requests. */
 public class PlatformFileInfoController {
 
-  private PlatformFileManager platformFileInfoService;
+  private final PlatformFileManager platformFileInfoService;
 
   public PlatformFileInfoController(PlatformFileManager platformFileInfoService) {
     this.platformFileInfoService = platformFileInfoService;
   }
 
-  /**
-   * Upload file.
-   */
+  /** Upload file. */
   public void uploadFile(Context ctx) throws IOException {
     InputStream bodyAsInputStream = ctx.uploadedFile("file").getContent();
     String name = ctx.uploadedFile("file").getFilename();
@@ -57,9 +53,7 @@ public class PlatformFileInfoController {
     ctx.json(OkResponse.of(result));
   }
 
-  /**
-   * Download file.
-   */
+  /** Download file. */
   public void downloadFile(Context ctx) {
     String fileId = ctx.pathParam("fileId");
     Preconditions.checkArgument(StringUtils.isNumeric(fileId), "Invalid file id");
