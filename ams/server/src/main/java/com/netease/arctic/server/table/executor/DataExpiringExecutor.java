@@ -93,9 +93,6 @@ public class DataExpiringExecutor extends BaseTableExecutor {
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
-    if (null == tableRuntime.getTableConfiguration().getExpiringDataConfig()) {
-      return false;
-    }
     return tableRuntime.getTableConfiguration().getExpiringDataConfig().isEnabled();
   }
 
