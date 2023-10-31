@@ -32,8 +32,8 @@ public abstract class InternalCatalogServiceTestBase {
 
   protected final Schema schema = BasicTableTestHelper.TABLE_SCHEMA;
   protected final PartitionSpec spec = BasicTableTestHelper.SPEC;
-  protected final PrimaryKeySpec keySpec = PrimaryKeySpec.builderFor(schema)
-      .addColumn("id").build();
+  protected final PrimaryKeySpec keySpec =
+      PrimaryKeySpec.builderFor(schema).addColumn("id").build();
 
   protected String location;
 
@@ -58,11 +58,14 @@ public abstract class InternalCatalogServiceTestBase {
   public void before() {
     service = ams.serviceContainer().getTableService();
     serverCatalog = (InternalCatalog) service.getServerCatalog(catalogName());
-    location = serverCatalog.getMetadata().getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE) +
-        "/" + database + "/" + table;
+    location =
+        serverCatalog.getMetadata().getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE)
+            + "/"
+            + database
+            + "/"
+            + table;
     nsCatalog = loadIcebergCatalog(Maps.newHashMap());
   }
-
 
   protected RESTCatalog loadIcebergCatalog(Map<String, String> clientProperties) {
     clientProperties.put("uri", ams.getHttpUrl() + restCatalogUri);

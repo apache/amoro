@@ -23,5 +23,4 @@ import com.netease.arctic.server.table.ServerTableIdentifier;
 public interface TableEventListener {
 
   void onTableCreated(ServerTableIdentifier identifier);
-
 }

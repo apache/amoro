@@ -36,7 +36,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.io.UncheckedIOException;
-import java.util.List;
 import java.util.Map;
 
 /** Utils to handle table properties. */
@@ -199,6 +198,7 @@ public class TablePropertyUtil {
 
   /**
    * Check if the given table properties is the base store of mixed-format,
+   *
    * @param properties properties of the table.
    * @param format - {@link TableFormat#MIXED_ICEBERG} or {@link TableFormat#MIXED_HIVE}
    * @return true if this is a base store of mixed-format.
@@ -212,6 +212,7 @@ public class TablePropertyUtil {
 
   /**
    * parse change store table identifier for base store table properties
+   *
    * @param properties - table properties of base store
    * @return - table identifier of change store.
    */

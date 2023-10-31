@@ -7,7 +7,6 @@ import com.netease.arctic.formats.iceberg.IcebergTable;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.IcebergRestCatalogService;
-import com.netease.arctic.server.iceberg.InternalTableStoreOperations;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.utils.Configurations;
@@ -73,15 +72,17 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
 
   protected BaseTable loadIcebergTable(ArcticFileIO fileIO, TableMetadata tableMetadata) {
     TableOperations ops = InternalTableUtil.newTableOperations(tableMetadata, fileIO, false);
-    return new BaseTable(ops, TableIdentifier.of(
-        tableMetadata.getTableIdentifier().getDatabase(),
-        tableMetadata.getTableIdentifier().getTableName()).toString());
+    return new BaseTable(
+        ops,
+        TableIdentifier.of(
+                tableMetadata.getTableIdentifier().getDatabase(),
+                tableMetadata.getTableIdentifier().getTableName())
+            .toString());
   }
 
   protected ArcticFileIO fileIO(CatalogMeta catalogMeta) {
     return InternalTableUtil.newIcebergFileIo(catalogMeta);
   }
-
 
   private String defaultRestURI() {
     return "http://"

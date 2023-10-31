@@ -28,8 +28,7 @@ public class InternalTableStoreOperations extends PersistentBase implements Tabl
       ServerTableIdentifier identifier,
       com.netease.arctic.server.table.TableMetadata tableMetadata,
       FileIO io,
-      boolean changeStore
-  ) {
+      boolean changeStore) {
     this.io = io;
     this.tableMetadata = tableMetadata;
     this.identifier = identifier;
@@ -54,7 +53,8 @@ public class InternalTableStoreOperations extends PersistentBase implements Tabl
     if (this.tableMetadata == null) {
       return null;
     }
-    this.current = InternalTableUtil.loadIcebergTableStoreMetadata(io, this.tableMetadata, this.changeStore);
+    this.current =
+        InternalTableUtil.loadIcebergTableStoreMetadata(io, this.tableMetadata, this.changeStore);
     return this.current;
   }
 

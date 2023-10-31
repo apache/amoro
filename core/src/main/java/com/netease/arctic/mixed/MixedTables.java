@@ -68,10 +68,12 @@ public class MixedTables {
   }
 
   protected TableIdentifier generateChangeStoreIdentifier(TableIdentifier baseIdentifier) {
-    String separator = catalogMeta.getCatalogProperties().getOrDefault(
-        CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR,
-        CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR_DEFAULT
-    );
+    String separator =
+        catalogMeta
+            .getCatalogProperties()
+            .getOrDefault(
+                CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR,
+                CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR_DEFAULT);
     return TableIdentifier.of(
         baseIdentifier.namespace(), baseIdentifier.name() + separator + "change" + separator);
   }
@@ -110,7 +112,8 @@ public class MixedTables {
       PrimaryKeySpec keySpec,
       Map<String, String> properties) {
     Map<String, String> tableStoreProperties = tableStoreProperties(keySpec, properties);
-    TableIdentifier baseIdentifier = TableIdentifier.of(identifier.getDatabase(), identifier.getTableName());
+    TableIdentifier baseIdentifier =
+        TableIdentifier.of(identifier.getDatabase(), identifier.getTableName());
     TableIdentifier changeIdentifier = generateChangeStoreIdentifier(baseIdentifier);
     if (keySpec.primaryKeyExisted() && tableStoreExists(changeIdentifier)) {
       throw new AlreadyExistsException("change store already exists");
@@ -128,7 +131,6 @@ public class MixedTables {
       baseBuilder.withProperty(
           TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER, changeIdentifier.toString());
     }
-
 
     if (!keySpec.primaryKeyExisted()) {
       Table base = tableMetaStore.doAs(baseBuilder::create);
@@ -186,8 +188,7 @@ public class MixedTables {
 
   private Table loadChangeStore(Table base) {
     TableIdentifier changeIdentifier = parseChangeIdentifier(base);
-    return tableMetaStore.doAs(
-        () -> icebergCatalog.loadTable(changeIdentifier));
+    return tableMetaStore.doAs(() -> icebergCatalog.loadTable(changeIdentifier));
   }
 
   private boolean tableStoreExists(TableIdentifier identifier) {

@@ -102,10 +102,12 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     }
 
     TableMetaStore metaStore = CatalogUtil.buildMetaStore(catalogMeta);
-    Catalog icebergCatalog = metaStore.doAs(() -> buildIcebergCatalog(
-        catalogMeta.getCatalogName(), catalogMeta.getCatalogType(),
-        catalogMeta.getCatalogProperties(), metaStore.getConfiguration()
-    ));
+    Catalog icebergCatalog =
+        metaStore.doAs(
+            () ->
+                buildIcebergCatalog(
+                    catalogMeta.getCatalogName(), catalogMeta.getCatalogType(),
+                    catalogMeta.getCatalogProperties(), metaStore.getConfiguration()));
     Pattern databaseFilterPattern = null;
     if (catalogMeta
         .getCatalogProperties()
@@ -177,8 +179,9 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
 
   @Override
   public ArcticTable loadTable(TableIdentifier tableIdentifier) {
-    Table base = tableMetaStore.doAs(
-        () -> icebergCatalog().loadTable(toIcebergTableIdentifier(tableIdentifier)));
+    Table base =
+        tableMetaStore.doAs(
+            () -> icebergCatalog().loadTable(toIcebergTableIdentifier(tableIdentifier)));
     if (!tables.isBaseStore(base)) {
       throw new NoSuchTableException("table " + base.name() + " is not a mixed iceberg table");
     }
@@ -207,7 +210,8 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     boolean changeDeleted = false;
     if (table.isKeyedTable()) {
       try {
-        changeDeleted = dropTableInternal(tables.parseChangeIdentifier(base.asUnkeyedTable()), purge);
+        changeDeleted =
+            dropTableInternal(tables.parseChangeIdentifier(base.asUnkeyedTable()), purge);
       } catch (Exception e) {
         // pass
       }
@@ -261,15 +265,19 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     return org.apache.iceberg.CatalogUtil.buildIcebergCatalog(name, properties, hadoopConf);
   }
 
-  protected MixedTables newMixedTables(TableMetaStore metaStore, CatalogMeta meta, Catalog icebergCatalog) {
+  protected MixedTables newMixedTables(
+      TableMetaStore metaStore, CatalogMeta meta, Catalog icebergCatalog) {
     return new MixedTables(metaStore, meta, icebergCatalog);
   }
 
-  private org.apache.iceberg.catalog.TableIdentifier toIcebergTableIdentifier(TableIdentifier identifier) {
-    return org.apache.iceberg.catalog.TableIdentifier.of(identifier.getDatabase(), identifier.getTableName());
+  private org.apache.iceberg.catalog.TableIdentifier toIcebergTableIdentifier(
+      TableIdentifier identifier) {
+    return org.apache.iceberg.catalog.TableIdentifier.of(
+        identifier.getDatabase(), identifier.getTableName());
   }
 
-  private boolean dropTableInternal(org.apache.iceberg.catalog.TableIdentifier tableIdentifier, boolean purge) {
+  private boolean dropTableInternal(
+      org.apache.iceberg.catalog.TableIdentifier tableIdentifier, boolean purge) {
     return tableMetaStore.doAs(() -> icebergCatalog().dropTable(tableIdentifier, purge));
   }
 
@@ -310,7 +318,8 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     @Override
     public TableBuilder withSortOrder(SortOrder sortOrder) {
       if (sortOrder.isSorted()) {
-        throw new UnsupportedOperationException("SortOrder is not supported by mixed-iceberg format");
+        throw new UnsupportedOperationException(
+            "SortOrder is not supported by mixed-iceberg format");
       }
       return this;
     }
@@ -340,9 +349,14 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
 
     @Override
     public Transaction createTransaction() {
-      Transaction transaction = icebergCatalog().newCreateTableTransaction(
-          org.apache.iceberg.catalog.TableIdentifier.of(identifier.getDatabase(), identifier.getTableName()),
-          schema, partitionSpec, properties);
+      Transaction transaction =
+          icebergCatalog()
+              .newCreateTableTransaction(
+                  org.apache.iceberg.catalog.TableIdentifier.of(
+                      identifier.getDatabase(), identifier.getTableName()),
+                  schema,
+                  partitionSpec,
+                  properties);
       return new CreateTableTransaction(
           transaction, this::create, () -> dropTable(identifier, true));
     }

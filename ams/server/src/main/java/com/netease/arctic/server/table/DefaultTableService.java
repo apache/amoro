@@ -48,7 +48,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class DefaultTableService extends StatedPersistentBase implements TableService, TableEventListener {
+public class DefaultTableService extends StatedPersistentBase
+    implements TableService, TableEventListener {
 
   public static final Logger LOG = LoggerFactory.getLogger(DefaultTableService.class);
   private final long externalCatalogRefreshingInterval;
@@ -165,7 +166,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   public TableMetadata loadTableMetadata(TableIdentifier tableIdentifier) {
     validateTableExists(tableIdentifier);
     InternalCatalog internalCatalog = getInternalCatalog(tableIdentifier.getCatalog());
-    return internalCatalog.loadTableMetadata(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
+    return internalCatalog.loadTableMetadata(
+        tableIdentifier.getDatabase(), tableIdentifier.getTableName());
   }
 
   @Override
@@ -569,9 +571,11 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     }
   }
 
-  private void triggerTableAdded(ServerCatalog catalog, ServerTableIdentifier serverTableIdentifier) {
+  private void triggerTableAdded(
+      ServerCatalog catalog, ServerTableIdentifier serverTableIdentifier) {
     AmoroTable<?> table =
-        catalog.loadTable(serverTableIdentifier.getDatabase(), serverTableIdentifier.getTableName());
+        catalog.loadTable(
+            serverTableIdentifier.getDatabase(), serverTableIdentifier.getTableName());
     TableRuntime tableRuntime = new TableRuntime(serverTableIdentifier, this, table.properties());
     tableRuntimeMap.put(serverTableIdentifier, tableRuntime);
     if (headHandler != null) {

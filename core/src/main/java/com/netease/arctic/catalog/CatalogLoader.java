@@ -57,7 +57,8 @@ public class CatalogLoader {
   public static final String GLUE_CATALOG_IMPL = "org.apache.iceberg.aws.glue.GlueCatalog";
   public static final String MIXED_ICEBERG_CATALOG_IMP = BasicMixedIcebergCatalog.class.getName();
 
-  public static final String MIXED_ICEBERG_AMORO_CATALOG_IMPL = MixedIcebergAmoroCatalog.class.getName();
+  public static final String MIXED_ICEBERG_AMORO_CATALOG_IMPL =
+      MixedIcebergAmoroCatalog.class.getName();
 
   public static final String ICEBERG_REST_CATALOG = RESTCatalog.class.getName();
 

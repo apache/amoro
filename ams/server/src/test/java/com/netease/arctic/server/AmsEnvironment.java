@@ -228,12 +228,16 @@ public class AmsEnvironment {
     Map<String, String> properties = Maps.newHashMap();
     createDirIfNotExist(warehouseDir);
     properties.put(CatalogMetaProperties.KEY_WAREHOUSE, warehouseDir);
-    CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(
-        INTERNAL_MIXED_ICEBERG_CATALOG,
-        CatalogMetaProperties.CATALOG_TYPE_AMS, properties, TableFormat.MIXED_ICEBERG);
+    CatalogMeta catalogMeta =
+        CatalogTestHelpers.buildCatalogMeta(
+            INTERNAL_MIXED_ICEBERG_CATALOG,
+            CatalogMetaProperties.CATALOG_TYPE_AMS,
+            properties,
+            TableFormat.MIXED_ICEBERG);
     tableService.createCatalog(catalogMeta);
-    catalogs.put(INTERNAL_MIXED_ICEBERG_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" +
-        INTERNAL_MIXED_ICEBERG_CATALOG));
+    catalogs.put(
+        INTERNAL_MIXED_ICEBERG_CATALOG,
+        CatalogLoader.load(getTableServiceUrl() + "/" + INTERNAL_MIXED_ICEBERG_CATALOG));
   }
 
   private void createMixHiveCatalog() {

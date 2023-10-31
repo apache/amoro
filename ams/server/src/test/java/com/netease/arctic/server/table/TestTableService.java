@@ -79,9 +79,8 @@ public class TestTableService extends AMSTableTestBase {
         tableService().loadTableMetadata(tableMeta().getTableIdentifier()).buildTableMeta());
 
     // test list tables
-    List<TableIDWithFormat> tableIdentifierList = tableService().listTables(
-        TEST_CATALOG_NAME,
-        TEST_DB_NAME);
+    List<TableIDWithFormat> tableIdentifierList =
+        tableService().listTables(TEST_CATALOG_NAME, TEST_DB_NAME);
     Assert.assertEquals(1, tableIdentifierList.size());
     Assert.assertEquals(
         tableMeta().getTableIdentifier(),

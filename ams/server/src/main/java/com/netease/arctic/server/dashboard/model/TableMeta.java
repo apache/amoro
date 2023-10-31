@@ -18,8 +18,6 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-import com.netease.arctic.ams.api.TableFormat;
-
 import java.util.Objects;
 
 public class TableMeta {

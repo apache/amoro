@@ -62,6 +62,7 @@ public class PrimaryKeySpec implements Serializable {
 
   /**
    * parse primary key spec from table properties
+   *
    * @param schema - base store table schema
    * @param tableProperties - base store table properties
    * @return primary key spec.

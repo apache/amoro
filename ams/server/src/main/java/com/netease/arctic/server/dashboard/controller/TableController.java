@@ -286,8 +286,8 @@ public class TableController {
   }
 
   /**
-   * get list of transactions.String newMetadataFileLocation = IcebergTableUtil.genNewMetadataFileLocation(null, tableMetadata);
-
+   * get list of transactions.String newMetadataFileLocation =
+   * IcebergTableUtil.genNewMetadataFileLocation(null, tableMetadata);
    *
    * @param ctx - context for handling the request and response
    */

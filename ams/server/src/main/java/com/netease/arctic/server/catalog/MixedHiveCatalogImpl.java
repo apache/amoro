@@ -40,7 +40,6 @@ public class MixedHiveCatalogImpl extends InternalCatalog {
     super(catalogMeta);
     this.tables = new MixedHiveTables(catalogMeta);
     hiveClientPool = ((MixedHiveTables) tables()).getHiveClientPool();
-
   }
 
   @Override
