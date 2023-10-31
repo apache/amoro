@@ -93,6 +93,30 @@ public class ArcticRewriteFiles extends ArcticUpdate<RewriteFiles> implements Re
   }
 
   @Override
+  public RewriteFiles addFile(DataFile dataFile) {
+    rewriteFiles.addFile(dataFile);
+    return this;
+  }
+
+  @Override
+  public RewriteFiles addFile(DeleteFile deleteFile) {
+    rewriteFiles.addFile(deleteFile);
+    return this;
+  }
+
+  @Override
+  public RewriteFiles addFile(DeleteFile deleteFile, long dataSequenceNumber) {
+    rewriteFiles.addFile(deleteFile, dataSequenceNumber);
+    return this;
+  }
+
+  @Override
+  public RewriteFiles dataSequenceNumber(long sequenceNumber) {
+    rewriteFiles.dataSequenceNumber(sequenceNumber);
+    return this;
+  }
+
+  @Override
   protected RewriteFiles self() {
     return this;
   }

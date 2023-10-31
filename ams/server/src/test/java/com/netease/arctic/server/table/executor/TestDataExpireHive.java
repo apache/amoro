@@ -24,20 +24,13 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
-import com.netease.arctic.hive.io.HiveDataTestHelpers;
-import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.MixedDataTestHelpers;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.UnkeyedTable;
-import org.apache.iceberg.AppendFiles;
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @RunWith(Parameterized.class)
 public class TestDataExpireHive extends TestDataExpire {
@@ -81,18 +74,5 @@ public class TestDataExpireHive extends TestDataExpire {
         opTime + "Z",
         new BigDecimal("0"),
         opTime.substring(0, 10));
-  }
-
-  public List<DataFile> writeAndCommitBaseAndHive(ArcticTable table, long txId, boolean writeHive) {
-    String hiveSubDir = HiveTableUtil.newHiveSubdirectory(txId);
-    List<DataFile> dataFiles =
-        HiveDataTestHelpers.writeBaseStore(
-            table, txId, createRecords(1, 100), false, writeHive, hiveSubDir);
-    UnkeyedTable baseTable =
-        table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
-    AppendFiles baseAppend = baseTable.newAppend();
-    dataFiles.forEach(baseAppend::appendFile);
-    baseAppend.commit();
-    return dataFiles;
   }
 }

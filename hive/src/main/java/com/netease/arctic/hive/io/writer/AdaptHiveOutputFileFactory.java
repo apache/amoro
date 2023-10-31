@@ -54,36 +54,16 @@ import org.apache.iceberg.io.OutputFile;
  */
 public class AdaptHiveOutputFileFactory implements OutputFileFactory {
 
-  private final String baseLocation;
+  private final String hiveLocation;
   private final String hiveSubDirectory;
   private final PartitionSpec partitionSpec;
   private final ArcticFileIO io;
   private final EncryptionManager encryptionManager;
   private final FileNameRules fileNameGenerator;
+  private final boolean hiveConsistentWrite;
 
   public AdaptHiveOutputFileFactory(
-      String baseLocation,
-      PartitionSpec partitionSpec,
-      FileFormat format,
-      ArcticFileIO io,
-      EncryptionManager encryptionManager,
-      int partitionId,
-      long taskId,
-      Long transactionId) {
-    this(
-        baseLocation,
-        partitionSpec,
-        format,
-        io,
-        encryptionManager,
-        partitionId,
-        taskId,
-        transactionId,
-        null);
-  }
-
-  public AdaptHiveOutputFileFactory(
-      String baseLocation,
+      String hiveLocation,
       PartitionSpec partitionSpec,
       FileFormat format,
       ArcticFileIO io,
@@ -91,8 +71,32 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       int partitionId,
       long taskId,
       Long transactionId,
-      String hiveSubDirectory) {
-    this.baseLocation = baseLocation;
+      boolean hiveConsistentWrite) {
+    this(
+        hiveLocation,
+        partitionSpec,
+        format,
+        io,
+        encryptionManager,
+        partitionId,
+        taskId,
+        transactionId,
+        null,
+        hiveConsistentWrite);
+  }
+
+  public AdaptHiveOutputFileFactory(
+      String hiveLocation,
+      PartitionSpec partitionSpec,
+      FileFormat format,
+      ArcticFileIO io,
+      EncryptionManager encryptionManager,
+      int partitionId,
+      long taskId,
+      Long transactionId,
+      String hiveSubDirectory,
+      boolean hiveConsistentWrite) {
+    this.hiveLocation = hiveLocation;
     this.partitionSpec = partitionSpec;
     this.io = io;
     this.encryptionManager = encryptionManager;
@@ -105,17 +109,22 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       this.hiveSubDirectory = hiveSubDirectory;
     }
     this.fileNameGenerator = new FileNameRules(format, partitionId, taskId, transactionId);
+    this.hiveConsistentWrite = hiveConsistentWrite;
   }
 
   private String generateFilename(TaskWriterKey key) {
-    return fileNameGenerator.fileName(key);
+    String filename = fileNameGenerator.fileName(key);
+    if (hiveConsistentWrite) {
+      filename = "." + filename;
+    }
+    return filename;
   }
 
   private String fileLocation(StructLike partitionData, String fileName) {
     return String.format(
         "%s/%s",
         HiveTableUtil.newHiveDataLocation(
-            baseLocation, partitionSpec, partitionData, hiveSubDirectory),
+            hiveLocation, partitionSpec, partitionData, hiveSubDirectory),
         fileName);
   }
 
