@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.server;
 
 import static com.netease.arctic.server.utils.InternalTableUtil.loadIcebergTableStoreMetadata;
@@ -17,6 +35,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
@@ -283,11 +302,14 @@ public class IcebergRestCatalogService extends PersistentBase {
           internalTableMetadata = InternalTableUtil.createTableInternal(
               identifier, catalog.getMetadata(), tableMetadata, newMetadataFileLocation, io
           );
-          tableService.createTable(catalog.name(), internalTableMetadata);
+          catalog.createTable(internalTableMetadata);
         } else {
           String internalTableName = InternalTableUtil.internalTableName(tableName);
           internalTableMetadata = catalog.loadTableMetadata(database, internalTableName);
-          // TODO: upgrade to mixed-iceberg.
+          internalTableMetadata = InternalTableUtil.upgradeToMixedTableInternal(
+              identifier, catalog.getMetadata(), internalTableMetadata, tableMetadata, newMetadataFileLocation, io);
+          internalTableMetadata = catalog.commitStageCreateTable(internalTableMetadata);
+          InternalTableUtil.checkCommitSuccess(internalTableMetadata, newMetadataFileLocation, true);
         }
         TableMetadata current = loadIcebergTableStoreMetadata(io, internalTableMetadata, changeStore);
         return LoadTableResponse.builder()
@@ -306,10 +328,10 @@ public class IcebergRestCatalogService extends PersistentBase {
    * GET PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}
    */
   public void loadTable(Context ctx) {
-    handleTable(ctx, (catalog, tableMeta) -> {
+    handleTable(ctx, (catalog, tableMeta, changeStore) -> {
       TableMetadata tableMetadata = null;
       try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
-        tableMetadata = InternalTableUtil.loadIcebergTableStoreMetadata(io, tableMeta);
+        tableMetadata = InternalTableUtil.loadIcebergTableStoreMetadata(io, tableMeta, changeStore);
       }
       if (tableMetadata == null) {
         throw new NoSuchTableException("failed to load table from metadata file.");
@@ -324,10 +346,10 @@ public class IcebergRestCatalogService extends PersistentBase {
    * POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}
    */
   public void commitTable(Context ctx) {
-    handleTable(ctx, (catalog, tableMeta) -> {
+    handleTable(ctx, (catalog, tableMeta, changeStore) -> {
       UpdateTableRequest request = bodyAsClass(ctx, UpdateTableRequest.class);
       try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
-        TableOperations ops = InternalTableUtil.newTableOperations(tableMeta, io, false);
+        TableOperations ops = InternalTableUtil.newTableOperations(tableMeta, io, changeStore);
         TableMetadata base = ops.current();
         if (base == null) {
           throw new CommitFailedException("table metadata lost.");
@@ -351,11 +373,15 @@ public class IcebergRestCatalogService extends PersistentBase {
    * DELETE PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}
    */
   public void deleteTable(Context ctx) {
-    handleTable(ctx, (catalog, tableMetadata) -> {
+    handleTable(ctx, (catalog, tableMetadata, changeStore) -> {
       boolean purge = Boolean.parseBoolean(
           Optional.ofNullable(ctx.req.getParameter("purgeRequested")).orElse("false"));
       TableMetadata current = null;
-      try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
+      if (changeStore) {
+        // skip drop change store
+        return null;
+      }
+      try (ArcticFileIO io = newIcebergFileIo(catalog.getMetadata())) {
         try {
           current = InternalTableUtil.loadIcebergTableStoreMetadata(io, tableMetadata);
         } catch (Exception e) {
@@ -366,6 +392,9 @@ public class IcebergRestCatalogService extends PersistentBase {
             tableMetadata.getTableIdentifier().getIdentifier(), true);
         if (purge && current != null) {
           org.apache.iceberg.CatalogUtil.dropTableData(io, current);
+          if (io.supportPrefixOperations()) {
+            io.asPrefixFileIO().deletePrefix(current.location());
+          }
         }
       }
 
@@ -378,7 +407,7 @@ public class IcebergRestCatalogService extends PersistentBase {
    * HEAD PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table}
    */
   public void tableExists(Context ctx) {
-    handleTable(ctx, ((catalog, tableMeta) -> null));
+    handleTable(ctx, ((catalog, tableMeta, change) -> null));
   }
 
   /**
@@ -394,7 +423,7 @@ public class IcebergRestCatalogService extends PersistentBase {
   public void reportMetrics(Context ctx) {
     handleTable(
         ctx,
-        (catalog, tableMeta) -> {
+        (catalog, tableMeta, change) -> {
           String bodyJson = ctx.body();
           ReportMetricsRequest metricsRequest = ReportMetricsRequestParser.fromJson(bodyJson);
           metricsManager.emit(IcebergMetricsContent.wrap(metricsRequest.report()));
@@ -432,20 +461,31 @@ public class IcebergRestCatalogService extends PersistentBase {
     });
   }
 
+  @FunctionalInterface
+  private interface TriFunction<T1, T2, T3, R> {
+    R apply(T1 t1, T2 t2, T3 t3);
+  }
+
   private void handleTable(
       Context ctx,
-      BiFunction<InternalCatalog, com.netease.arctic.server.table.TableMetadata, ? extends RESTResponse> handler) {
+      TriFunction<
+          InternalCatalog,
+          com.netease.arctic.server.table.TableMetadata,
+          Boolean,
+          ? extends RESTResponse> handler) {
     handleNamespace(ctx, (catalog, database) -> {
-
       String tableName = ctx.pathParam("table");
       Preconditions.checkNotNull(tableName, "table name is null");
+      String internalTableName = InternalTableUtil.internalTableName(tableName);
+      boolean changeStore = InternalTableUtil.isMatchChangeStoreNamePattern(tableName);
       com.netease.arctic.server.table.TableMetadata metadata = tableService.loadTableMetadata(
-          com.netease.arctic.table.TableIdentifier.of(catalog.name(), database, tableName).buildTableIdentifier()
+          com.netease.arctic.table.TableIdentifier.of(catalog.name(), database, internalTableName)
+              .buildTableIdentifier()
       );
       Preconditions.checkArgument(
-          metadata.getFormat() == TableFormat.ICEBERG,
-          "it's not an iceberg table");
-      return handler.apply(catalog, metadata);
+          metadata.getFormat() == TableFormat.ICEBERG || metadata.getFormat() == TableFormat.MIXED_ICEBERG,
+          "it's not an iceberg/mixed-iceberg table");
+      return handler.apply(catalog, metadata, changeStore);
     });
   }
 

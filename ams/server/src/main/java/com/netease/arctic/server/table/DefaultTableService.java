@@ -17,6 +17,7 @@ import com.netease.arctic.server.catalog.CatalogBuilder;
 import com.netease.arctic.server.catalog.ExternalCatalog;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
+import com.netease.arctic.server.catalog.TableEventListener;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.IllegalMetadataException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
@@ -47,7 +48,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class DefaultTableService extends StatedPersistentBase implements TableService {
+public class DefaultTableService extends StatedPersistentBase implements TableService, TableEventListener {
 
   public static final Logger LOG = LoggerFactory.getLogger(DefaultTableService.class);
   private final long externalCatalogRefreshingInterval;
@@ -131,6 +132,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private void initServerCatalog(CatalogMeta catalogMeta) {
     ServerCatalog catalog = CatalogBuilder.buildServerCatalog(catalogMeta, serverConfiguration);
     if (catalog instanceof InternalCatalog) {
+      ((InternalCatalog) catalog).addEventListener(this);
       internalCatalogMap.put(catalogMeta.getCatalogName(), (InternalCatalog) catalog);
     } else {
       externalCatalogMap.put(catalogMeta.getCatalogName(), (ExternalCatalog) catalog);
@@ -189,14 +191,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     validateTableNotExists(tableMetadata.getTableIdentifier().getIdentifier());
 
     InternalCatalog catalog = getInternalCatalog(catalogName);
-    ServerTableIdentifier tableIdentifier = catalog.createTable(tableMetadata);
-    AmoroTable<?> table =
-        catalog.loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
-    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
-    tableRuntimeMap.put(tableIdentifier, tableRuntime);
-    if (headHandler != null) {
-      headHandler.fireTableAdded(table, tableRuntime);
-    }
+    catalog.createTable(tableMetadata);
   }
 
   @Override
@@ -367,7 +362,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     initialized.complete(true);
   }
 
-  public TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
+  private TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
     Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier cannot be null");
     TableRuntime tableRuntime = getRuntime(tableIdentifier);
     if (tableRuntime == null) {
@@ -562,22 +557,23 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
                   tableIdentity.getDatabase(),
                   tableIdentity.getTableName(),
                   tableIdentity.getFormat()),
-          () -> handleTableRuntimeAdded(externalCatalog, tableIdentity));
+          () -> {
+            ServerTableIdentifier tableIdentifier =
+                externalCatalog.getServerTableIdentifier(
+                    tableIdentity.getDatabase(), tableIdentity.getTableName());
+            triggerTableAdded(externalCatalog, tableIdentifier);
+          });
     } catch (Throwable t) {
       revertTableRuntimeAdded(externalCatalog, tableIdentity);
       throw t;
     }
   }
 
-  private void handleTableRuntimeAdded(
-      ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
-    ServerTableIdentifier tableIdentifier =
-        externalCatalog.getServerTableIdentifier(
-            tableIdentity.getDatabase(), tableIdentity.getTableName());
+  private void triggerTableAdded(ServerCatalog catalog, ServerTableIdentifier serverTableIdentifier) {
     AmoroTable<?> table =
-        externalCatalog.loadTable(tableIdentity.getDatabase(), tableIdentity.getTableName());
-    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
-    tableRuntimeMap.put(tableIdentifier, tableRuntime);
+        catalog.loadTable(serverTableIdentifier.getDatabase(), serverTableIdentifier.getTableName());
+    TableRuntime tableRuntime = new TableRuntime(serverTableIdentifier, this, table.properties());
+    tableRuntimeMap.put(serverTableIdentifier, tableRuntime);
     if (headHandler != null) {
       headHandler.fireTableAdded(table, tableRuntime);
     }
@@ -604,6 +600,12 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
               }
               tableRuntime.dispose();
             });
+  }
+
+  @Override
+  public void onTableCreated(ServerTableIdentifier identifier) {
+    InternalCatalog catalog = getInternalCatalog(identifier.getCatalog());
+    triggerTableAdded(catalog, identifier);
   }
 
   private static class TableIdentity {

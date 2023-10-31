@@ -32,9 +32,14 @@ import org.apache.iceberg.util.LocationUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
+import static com.netease.arctic.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DELIMITER;
 
 /**
  * Util class for internal table operations.
@@ -47,6 +52,8 @@ public class InternalTableUtil {
   public static final String PROPERTIES_PREV_METADATA_LOCATION = "iceberg.metadata.prev-location";
 
   public static final String CHANGE_STORE_PREFIX = "change-store.";
+
+  public static final String MIXED_ICEBERG_BASED_REST = "mixed-iceberg.based-on-rest-catalog";
 
   public static TableOperations newTableOperations(
       com.netease.arctic.server.table.TableMetadata tableMeta,
@@ -280,7 +287,12 @@ public class InternalTableUtil {
             "the change store identifier is not expected. expected: %s, but found %s",
             expectChangeIdentifier.toString(), changeIdentifier.toString()
         );
+        com.netease.arctic.ams.api.PrimaryKeySpec apiKeySpec =
+            new com.netease.arctic.ams.api.PrimaryKeySpec();
+        apiKeySpec.setFields(keySpec.fieldNames());
+        meta.setKeySpec(apiKeySpec);
       }
+      meta.putToProperties(MIXED_ICEBERG_BASED_REST, Boolean.toString(true));
     }
     meta.setFormat(format.name());
     meta.putToProperties(PROPERTIES_METADATA_LOCATION, metadataFileLocation);
@@ -291,6 +303,22 @@ public class InternalTableUtil {
     OutputFile outputFile = io.newOutputFile(metadataFileLocation);
     TableMetadataParser.overwrite(icebergTableMetadata, outputFile);
     return new com.netease.arctic.server.table.TableMetadata(serverTableIdentifier, meta, catalogMeta);
+  }
+
+
+  public static com.netease.arctic.server.table.TableMetadata upgradeToMixedTableInternal(
+      TableIdentifier identifier, CatalogMeta catalogMeta,
+      com.netease.arctic.server.table.TableMetadata internalTableMetadata,
+      TableMetadata changeTableStoreMetadata, String changeMetadataFileLocation, FileIO io
+  ) {
+    internalTableMetadata.setChangeLocation(changeTableStoreMetadata.location());
+    Map<String, String> properties = internalTableMetadata.getProperties();
+    String metadataLocationKey = CHANGE_STORE_PREFIX + PROPERTIES_METADATA_LOCATION;
+    properties.put(metadataLocationKey, changeMetadataFileLocation);
+
+    OutputFile outputFile = io.newOutputFile(changeMetadataFileLocation);
+    TableMetadataParser.overwrite(changeTableStoreMetadata, outputFile);
+    return internalTableMetadata;
   }
 
   private static long parseMetadataFileVersion(String metadataLocation) {

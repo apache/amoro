@@ -1,5 +1,24 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.server.catalog;
 
+import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
@@ -11,9 +30,12 @@ import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
+import org.apache.iceberg.exceptions.CommitFailedException;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public abstract class InternalCatalog extends ServerCatalog {
@@ -22,10 +44,16 @@ public abstract class InternalCatalog extends ServerCatalog {
     super(metadata);
   }
 
+  protected final List<TableEventListener> tableEventListeners = Lists.newArrayList();
+
   @Override
   public List<String> listDatabases() {
     return getAs(
         TableMetaMapper.class, mapper -> mapper.selectDatabases(getMetadata().getCatalogName()));
+  }
+
+  public void addEventListener(TableEventListener listener) {
+    tableEventListeners.add(listener);
   }
 
   public void createDatabase(String databaseName) {
@@ -71,8 +99,8 @@ public abstract class InternalCatalog extends ServerCatalog {
   @Override
   public List<TableIDWithFormat> listTables(String database) {
     return getAs(
-            TableMetaMapper.class,
-            mapper -> mapper.selectTableIdentifiersByDb(getMetadata().getCatalogName(), database))
+        TableMetaMapper.class,
+        mapper -> mapper.selectTableIdentifiersByDb(getMetadata().getCatalogName(), database))
         .stream()
         .map(
             sid ->
@@ -85,8 +113,8 @@ public abstract class InternalCatalog extends ServerCatalog {
   @Override
   public List<TableIDWithFormat> listTables() {
     return getAs(
-            TableMetaMapper.class,
-            mapper -> mapper.selectTableIdentifiersByCatalog(getMetadata().getCatalogName()))
+        TableMetaMapper.class,
+        mapper -> mapper.selectTableIdentifiersByCatalog(getMetadata().getCatalogName()))
         .stream()
         .map(
             sid ->
@@ -96,25 +124,60 @@ public abstract class InternalCatalog extends ServerCatalog {
         .collect(Collectors.toList());
   }
 
-  public ServerTableIdentifier createTable(TableMetadata tableMetadata) {
+  public void createTable(TableMetadata tableMetadata) {
     validateTableIdentifier(tableMetadata.getTableIdentifier().getIdentifier());
     ServerTableIdentifier tableIdentifier = tableMetadata.getTableIdentifier();
     doAsTransaction(
         () -> doAs(TableMetaMapper.class, mapper -> mapper.insertTable(tableIdentifier)),
         () -> doAs(TableMetaMapper.class, mapper -> mapper.insertTableMeta(tableMetadata)),
-        () ->
-            doAsExisted(
-                CatalogMetaMapper.class,
-                mapper -> mapper.incTableCount(1, name()),
-                () -> new ObjectNotExistsException(name())),
+        () -> doAsExisted(
+            CatalogMetaMapper.class,
+            mapper -> mapper.incTableCount(1, name()),
+            () -> new ObjectNotExistsException(name())),
         () -> increaseDatabaseTableCount(tableIdentifier.getDatabase()));
-    return getAs(
+
+    TableMetadata createdMetadata = getAs(
         TableMetaMapper.class,
-        mapper ->
-            mapper.selectTableIdentifier(
-                tableIdentifier.getCatalog(),
-                tableIdentifier.getDatabase(),
-                tableIdentifier.getTableName()));
+        mapper -> mapper.selectTableMetaByName(
+            tableIdentifier.getCatalog(), tableIdentifier.getDatabase(), tableIdentifier.getTableName()));
+    if (!isStageCreate(createdMetadata)) {
+      tableEventListeners.forEach(listener -> listener.onTableCreated(createdMetadata.getTableIdentifier()));
+    }
+  }
+
+  protected boolean isStageCreate(TableMetadata metadata) {
+    return false;
+  }
+
+  public TableMetadata commitStageCreateTable(TableMetadata metadata) {
+    TableMetadata committed = commitTable(metadata);
+    tableEventListeners.forEach(listener -> listener.onTableCreated(committed.getTableIdentifier()));
+    return committed;
+  }
+
+  public TableMetadata commitTable(TableMetadata metadata) {
+    ServerTableIdentifier tableIdentifier = metadata.getTableIdentifier();
+    AtomicInteger effectRows = new AtomicInteger();
+    AtomicReference<TableMetadata> metadataRef =
+        new AtomicReference<>();
+    doAsTransaction(
+        () -> {
+          int effects =
+              getAs(
+                  TableMetaMapper.class,
+                  mapper -> mapper.commitTableChange(tableIdentifier.getId(), metadata));
+          effectRows.set(effects);
+        },
+        () -> {
+          com.netease.arctic.server.table.TableMetadata m =
+              getAs(TableMetaMapper.class, mapper -> mapper.selectTableMetaById(tableIdentifier.getId()));
+          metadataRef.set(m);
+        });
+    if (effectRows.get() == 0) {
+      throw new CommitFailedException(
+          "commit failed for version: " + metadata.getMetaVersion() + " has been committed");
+    }
+    return metadataRef.get();
   }
 
   public ServerTableIdentifier dropTable(String databaseName, String tableName) {
@@ -151,8 +214,8 @@ public abstract class InternalCatalog extends ServerCatalog {
   @Override
   public boolean exist(String database) {
     return getAs(
-            TableMetaMapper.class,
-            mapper -> mapper.selectDatabase(getMetadata().getCatalogName(), database))
+        TableMetaMapper.class,
+        mapper -> mapper.selectDatabase(getMetadata().getCatalogName(), database))
         != null;
   }
 
@@ -165,16 +228,16 @@ public abstract class InternalCatalog extends ServerCatalog {
                 mapper.selectTableIdentifier(getMetadata().getCatalogName(), database, tableName));
     return tableIdentifier != null
         && getAs(
-                TableMetaMapper.class,
-                mapper -> mapper.selectTableMetaById(tableIdentifier.getId()))
-            != null;
+        TableMetaMapper.class,
+        mapper -> mapper.selectTableMetaById(tableIdentifier.getId()))
+        != null;
   }
-
 
   public TableMetadata loadTableMetadata(String database, String table) {
     return Optional.ofNullable(
-        getAs(TableMetaMapper.class,
-            mapper -> mapper.selectTableMetaByName(name(), database, table)))
+            getAs(
+                TableMetaMapper.class,
+                mapper -> mapper.selectTableMetaByName(name(), database, table)))
         .orElseThrow(() -> new ObjectNotExistsException(
             com.netease.arctic.table.TableIdentifier.of(name(), database, table).toString()));
   }

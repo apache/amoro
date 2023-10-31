@@ -33,7 +33,7 @@ public interface TableService extends CatalogService, TableManager {
 
   /**
    * create table metadata
-   *
+   * @param catalogName internal catalog to create the table
    * @param tableMeta table metadata info
    */
   void createTable(String catalogName, TableMetadata tableMeta);

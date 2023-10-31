@@ -52,8 +52,13 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
       org.apache.iceberg.catalog.TableIdentifier.of(database, icebergTable);
 
   @BeforeEach
-  public void before() {
+  public void setMixedCatalog() {
     catalog = loadMixedIcebergCatalog();
+  }
+
+  @Override
+  protected String catalogName() {
+    return AmsEnvironment.INTERNAL_MIXED_ICEBERG_CATALOG;
   }
 
   @Nested
@@ -83,17 +88,13 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
 
     @AfterEach
     public void after() {
-      catalog.dropDatabase(database);
+      LOG.info("Test finished.");
       try {
         catalog.dropTable(tableIdentifier, true);
       } catch (Exception e) {
         // pass
       }
-      try {
-        nsCatalog.dropTable(icebergTableIdentifier, true);
-      } catch (Exception e) {
-        // pass
-      }
+      catalog.dropDatabase(database);
     }
 
     @ParameterizedTest(name = "CatalogTableOperationTest[withPrimaryKey={0}]")
@@ -106,21 +107,20 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
       }
       // create mixed-iceberg
       builder.create();
-      // create iceberg
-      nsCatalog.createTable(icebergTableIdentifier, schema);
+
 
       // assert 1 table in mixed-iceberg catalog
       Assertions.assertEquals(1, catalog.listTables(database).size());
       Assertions.assertTrue(catalog.tableExists(tableIdentifier));
 
-      // assert 2 tables in iceberg catalog
-      Assertions.assertEquals(2, nsCatalog.listTables(Namespace.of(database)).size());
+      // assert 1 tables in iceberg catalog
+      Assertions.assertEquals(1, nsCatalog.listTables(Namespace.of(database)).size());
       Set<String> tables =
           nsCatalog.listTables(Namespace.of(database))
               .stream()
               .map(org.apache.iceberg.catalog.TableIdentifier::name)
               .collect(Collectors.toSet());
-      Set<String> expects = Sets.newHashSet(table, icebergTable);
+      Set<String> expects = Sets.newHashSet(table);
       Assertions.assertEquals(expects, tables);
 
      // assert load table

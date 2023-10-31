@@ -47,6 +47,8 @@ public abstract class InternalCatalogServiceTestBase {
     ams.stop();
   }
 
+  protected abstract String catalogName();
+
   protected TableService service;
   protected InternalCatalog serverCatalog;
 
@@ -55,7 +57,7 @@ public abstract class InternalCatalogServiceTestBase {
   @BeforeEach
   public void before() {
     service = ams.serviceContainer().getTableService();
-    serverCatalog = (InternalCatalog) service.getServerCatalog(AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
+    serverCatalog = (InternalCatalog) service.getServerCatalog(catalogName());
     location = serverCatalog.getMetadata().getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE) +
         "/" + database + "/" + table;
     nsCatalog = loadIcebergCatalog(Maps.newHashMap());
@@ -64,7 +66,7 @@ public abstract class InternalCatalogServiceTestBase {
 
   protected RESTCatalog loadIcebergCatalog(Map<String, String> clientProperties) {
     clientProperties.put("uri", ams.getHttpUrl() + restCatalogUri);
-    clientProperties.put("warehouse", AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
+    clientProperties.putIfAbsent("warehouse", catalogName());
 
     CatalogMeta catalogMeta = serverCatalog.getMetadata();
     TableMetaStore store = com.netease.arctic.utils.CatalogUtil.buildMetaStore(catalogMeta);

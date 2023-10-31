@@ -62,6 +62,10 @@ public class TestIcebergCatalogService extends InternalCatalogServiceTestBase {
   private final Namespace ns = Namespace.of(database);
   private final TableIdentifier identifier = TableIdentifier.of(ns, table);
 
+  @Override
+  protected String catalogName() {
+    return AmsEnvironment.INTERNAL_ICEBERG_CATALOG;
+  }
 
   @Nested
   public class CatalogPropertiesTest {
@@ -75,7 +79,6 @@ public class TestIcebergCatalogService extends InternalCatalogServiceTestBase {
       String warehouseInAMS = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
 
       Map<String, String> clientSideConfiguration = Maps.newHashMap();
-      clientSideConfiguration.put("warehouse", "/tmp");
       clientSideConfiguration.put("cache-enabled", "true");
 
       try (RESTCatalog catalog = loadIcebergCatalog(clientSideConfiguration)) {

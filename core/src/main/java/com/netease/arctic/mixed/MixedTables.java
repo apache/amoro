@@ -41,10 +41,13 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 public class MixedTables {
+  private static final Logger LOG = LoggerFactory.getLogger(MixedTables.class);
 
   protected TableMetaStore tableMetaStore;
   protected CatalogMeta catalogMeta;
@@ -125,13 +128,17 @@ public class MixedTables {
       baseBuilder.withProperty(
           TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER, changeIdentifier.toString());
     }
-    Table base = tableMetaStore.doAs(baseBuilder::create);
-    ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
+
 
     if (!keySpec.primaryKeyExisted()) {
+      Table base = tableMetaStore.doAs(baseBuilder::create);
+      ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
       return new BasicUnkeyedTable(
           identifier, useArcticTableOperation(base, io), io, catalogMeta.getCatalogProperties());
     }
+
+    Table base = tableMetaStore.doAs(baseBuilder::create);
+    ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
 
     Catalog.TableBuilder changeBuilder =
         icebergCatalog
@@ -141,7 +148,14 @@ public class MixedTables {
             .withProperty(
                 TableProperties.MIXED_FORMAT_TABLE_STORE,
                 TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE);
-    Table change = tableMetaStore.doAs(changeBuilder::create);
+    Table change;
+    try {
+      change = tableMetaStore.doAs(changeBuilder::create);
+    } catch (RuntimeException e) {
+      LOG.warn("Create base store failed for reason: " + e.getMessage());
+      tableMetaStore.doAs(() -> icebergCatalog.dropTable(baseIdentifier, true));
+      throw e;
+    }
     BaseTable baseStore =
         new BasicKeyedTable.BaseInternalTable(
             identifier, useArcticTableOperation(base, io), io, catalogMeta.getCatalogProperties());
@@ -154,7 +168,7 @@ public class MixedTables {
     return new BasicKeyedTable(keySpec, baseStore, changeStore);
   }
 
-  protected Map<String, String> tableStoreProperties(
+  private Map<String, String> tableStoreProperties(
       PrimaryKeySpec keySpec, Map<String, String> tableProperties) {
     Map<String, String> properties = Maps.newHashMap(tableProperties);
     properties.put(TableProperties.TABLE_FORMAT, TableFormat.MIXED_ICEBERG.name());
@@ -170,7 +184,7 @@ public class MixedTables {
     return properties;
   }
 
-  protected Table loadChangeStore(Table base) {
+  private Table loadChangeStore(Table base) {
     TableIdentifier changeIdentifier = parseChangeIdentifier(base);
     return tableMetaStore.doAs(
         () -> icebergCatalog.loadTable(changeIdentifier));
