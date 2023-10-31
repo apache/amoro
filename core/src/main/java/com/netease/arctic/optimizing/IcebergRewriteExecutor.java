@@ -51,6 +51,17 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
   }
 
   @Override
+  protected StructLike partition() {
+    StructLike partitionData = super.partition();
+    if (partitionData != null && partitionData.size() == 0) {
+      // Cast empty partition data to NULL to avoid creating empty partition directory.
+      return null;
+    } else {
+      return partitionData;
+    }
+  }
+
+  @Override
   protected OptimizingDataReader dataReader() {
     return new GenericCombinedIcebergDataReader(
         io,
