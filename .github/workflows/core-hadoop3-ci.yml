@@ -3,6 +3,10 @@
 
 name: Core/hadoop3 CI with Maven
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
@@ -19,7 +23,6 @@ on:
       - "flink/**"
       - "hive/**"
       - "spark/**"
-      - "trino/**"
       - "pom.xml"
 
 jobs:

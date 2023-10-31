@@ -46,19 +46,24 @@ public class TestKeyedTableScan extends TableDataTestBase {
     assertFileCount(6, 2, 1);
   }
 
-  private void assertFileCount(int baseFileCnt, int insertFileCnt, int equDeleteFileCnt) throws IOException {
-    CloseableIterable<CombinedScanTask> combinedScanTasks = getArcticTable().asKeyedTable().newScan().planTasks();
+  private void assertFileCount(int baseFileCnt, int insertFileCnt, int equDeleteFileCnt)
+      throws IOException {
+    CloseableIterable<CombinedScanTask> combinedScanTasks =
+        getArcticTable().asKeyedTable().newScan().planTasks();
     final List<ArcticFileScanTask> allBaseTasks = new ArrayList<>();
     final List<ArcticFileScanTask> allInsertTasks = new ArrayList<>();
     final List<ArcticFileScanTask> allEquDeleteTasks = new ArrayList<>();
     try (CloseableIterator<CombinedScanTask> initTasks = combinedScanTasks.iterator()) {
       while (initTasks.hasNext()) {
         CombinedScanTask combinedScanTask = initTasks.next();
-        combinedScanTask.tasks().forEach(task -> {
-          allBaseTasks.addAll(task.baseTasks());
-          allInsertTasks.addAll(task.insertTasks());
-          allEquDeleteTasks.addAll(task.arcticEquityDeletes());
-        });
+        combinedScanTask
+            .tasks()
+            .forEach(
+                task -> {
+                  allBaseTasks.addAll(task.baseTasks());
+                  allInsertTasks.addAll(task.insertTasks());
+                  allEquDeleteTasks.addAll(task.arcticEquityDeletes());
+                });
       }
     }
     Assert.assertEquals(baseFileCnt, allBaseTasks.size());
@@ -72,8 +77,10 @@ public class TestKeyedTableScan extends TableDataTestBase {
     builder.add(MixedDataTestHelpers.createRecord(8, "mack", 0, "2022-01-01T12:00:00"));
     ImmutableList<Record> records = builder.build();
 
-    GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
-        .withTransactionId(5L).buildChangeWriter();
+    GenericChangeTaskWriter writer =
+        GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
+            .withTransactionId(5L)
+            .buildChangeWriter();
     for (Record record : records) {
       writer.write(record);
     }

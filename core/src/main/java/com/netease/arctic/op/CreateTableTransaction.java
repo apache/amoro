@@ -50,7 +50,8 @@ public class CreateTableTransaction implements Transaction {
   private final Runnable rollback;
   private final Transaction transaction;
 
-  public CreateTableTransaction(Transaction transaction, Supplier<ArcticTable> tableSupplier, Runnable rollback) {
+  public CreateTableTransaction(
+      Transaction transaction, Supplier<ArcticTable> tableSupplier, Runnable rollback) {
     this.transaction = transaction;
     this.tableCreator = tableSupplier;
     this.rollback = rollback;
@@ -73,17 +74,20 @@ public class CreateTableTransaction implements Transaction {
 
   @Override
   public UpdateProperties updateProperties() {
-    throw new UnsupportedOperationException("create table transaction unsupported updateProperties");
+    throw new UnsupportedOperationException(
+        "create table transaction unsupported updateProperties");
   }
 
   @Override
   public ReplaceSortOrder replaceSortOrder() {
-    throw new UnsupportedOperationException("create table transaction unsupported updateProperties");
+    throw new UnsupportedOperationException(
+        "create table transaction unsupported updateProperties");
   }
 
   @Override
   public UpdateLocation updateLocation() {
-    throw new UnsupportedOperationException("create table transaction unsupported updateProperties");
+    throw new UnsupportedOperationException(
+        "create table transaction unsupported updateProperties");
   }
 
   @Override
@@ -99,32 +103,38 @@ public class CreateTableTransaction implements Transaction {
 
       @Override
       public AppendFiles appendManifest(ManifestFile file) {
-        throw new UnsupportedOperationException("create table transaction AppendFiles unsupported ManifestFile");
+        throw new UnsupportedOperationException(
+            "create table transaction AppendFiles unsupported ManifestFile");
       }
 
       @Override
       public AppendFiles set(String property, String value) {
-        throw new UnsupportedOperationException("create table transaction AppendFiles unsupported set");
+        throw new UnsupportedOperationException(
+            "create table transaction AppendFiles unsupported set");
       }
 
       @Override
       public AppendFiles deleteWith(Consumer<String> deleteFunc) {
-        throw new UnsupportedOperationException("create table transaction AppendFiles unsupported deleteWith");
+        throw new UnsupportedOperationException(
+            "create table transaction AppendFiles unsupported deleteWith");
       }
 
       @Override
       public AppendFiles stageOnly() {
-        throw new UnsupportedOperationException("create table transaction AppendFiles unsupported stageOnly");
+        throw new UnsupportedOperationException(
+            "create table transaction AppendFiles unsupported stageOnly");
       }
 
       @Override
       public AppendFiles scanManifestsWith(ExecutorService executorService) {
-        throw new UnsupportedOperationException("create table transaction AppendFiles unsupported scanManifestsWith");
+        throw new UnsupportedOperationException(
+            "create table transaction AppendFiles unsupported scanManifestsWith");
       }
 
       @Override
       public Snapshot apply() {
-        throw new UnsupportedOperationException("create table transaction AppendFiles unsupported apply");
+        throw new UnsupportedOperationException(
+            "create table transaction AppendFiles unsupported apply");
       }
 
       @Override
@@ -141,7 +151,8 @@ public class CreateTableTransaction implements Transaction {
 
   @Override
   public RewriteManifests rewriteManifests() {
-    throw new UnsupportedOperationException("create table transaction unsupported rewriteManifests");
+    throw new UnsupportedOperationException(
+        "create table transaction unsupported rewriteManifests");
   }
 
   @Override
@@ -156,17 +167,20 @@ public class CreateTableTransaction implements Transaction {
 
   @Override
   public ReplacePartitions newReplacePartitions() {
-    throw new UnsupportedOperationException("create table transaction unsupported newReplacePartitions");
+    throw new UnsupportedOperationException(
+        "create table transaction unsupported newReplacePartitions");
   }
 
   @Override
   public DeleteFiles newDelete() {
-    throw new UnsupportedOperationException("create table transaction unsupported newReplacePartitions");
+    throw new UnsupportedOperationException(
+        "create table transaction unsupported newReplacePartitions");
   }
 
   @Override
   public ExpireSnapshots expireSnapshots() {
-    throw new UnsupportedOperationException("create table transaction unsupported newReplacePartitions");
+    throw new UnsupportedOperationException(
+        "create table transaction unsupported newReplacePartitions");
   }
 
   @Override

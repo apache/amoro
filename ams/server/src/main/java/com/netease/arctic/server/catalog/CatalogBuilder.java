@@ -1,5 +1,11 @@
 package com.netease.arctic.server.catalog;
 
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+
 import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
@@ -9,15 +15,11 @@ import org.apache.iceberg.CatalogProperties;
 
 import java.util.Set;
 
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
-
 public class CatalogBuilder {
 
-  //TODO: use internal or external concepts
-  public static ServerCatalog buildServerCatalog(CatalogMeta catalogMeta, Configurations serverConfiguration) {
+  // TODO: use internal or external concepts
+  public static ServerCatalog buildServerCatalog(
+      CatalogMeta catalogMeta, Configurations serverConfiguration) {
     String type = catalogMeta.getCatalogType();
     Set<TableFormat> tableFormats = CatalogUtil.tableFormats(catalogMeta);
     TableFormat tableFormat = tableFormats.iterator().next();
@@ -30,11 +32,11 @@ public class CatalogBuilder {
       case CATALOG_TYPE_HADOOP:
         if (TableFormat.ICEBERG == tableFormat) {
           return new IcebergCatalogImpl(catalogMeta);
-        }
-        if (TableFormat.MIXED_ICEBERG == tableFormat) {
+        } else if (TableFormat.MIXED_ICEBERG == tableFormat) {
           return new MixedIcebergCatalogImpl(catalogMeta);
         } else {
-          throw new IllegalStateException("Hadoop catalog support iceberg/mixed-iceberg table only.");
+          throw new IllegalStateException(
+              "Hadoop catalog support iceberg/mixed-iceberg table only.");
         }
 
       case CATALOG_TYPE_HIVE:
@@ -45,7 +47,8 @@ public class CatalogBuilder {
         } else if (TableFormat.MIXED_ICEBERG == tableFormat) {
           return new MixedIcebergCatalogImpl(catalogMeta);
         } else {
-          throw new IllegalArgumentException("Hive Catalog support iceberg/mixed-hive/mixed-iceberg table only");
+          throw new IllegalArgumentException(
+              "Hive Catalog support iceberg/mixed-hive/mixed-iceberg table only");
         }
       case CATALOG_TYPE_AMS:
         if (tableFormat.equals(TableFormat.MIXED_ICEBERG)) {
@@ -55,17 +58,25 @@ public class CatalogBuilder {
         } else {
           throw new IllegalStateException("AMS catalog support iceberg/mixed-iceberg table only.");
         }
+      case CATALOG_TYPE_GLUE:
+        if (TableFormat.ICEBERG == tableFormat) {
+          return new IcebergCatalogImpl(catalogMeta);
+        } else if (TableFormat.MIXED_ICEBERG == tableFormat) {
+          return new MixedIcebergCatalogImpl(catalogMeta);
+        } else {
+          throw new IllegalStateException("Glue catalog support iceberg table only.");
+        }
       case CATALOG_TYPE_CUSTOM:
         Preconditions.checkArgument(
             catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL),
             "Custom catalog properties must contains " + CatalogProperties.CATALOG_IMPL);
         if (TableFormat.ICEBERG == tableFormat) {
           return new IcebergCatalogImpl(catalogMeta);
-        }
-        if (TableFormat.MIXED_ICEBERG == tableFormat) {
+        } else if (TableFormat.MIXED_ICEBERG == tableFormat) {
           return new MixedIcebergCatalogImpl(catalogMeta);
         } else {
-          throw new IllegalStateException("Custom catalog support iceberg/mixed-iceberg table only.");
+          throw new IllegalStateException(
+              "Custom catalog support iceberg/mixed-iceberg table only.");
         }
       default:
         throw new IllegalStateException("unsupported catalog type:" + type);

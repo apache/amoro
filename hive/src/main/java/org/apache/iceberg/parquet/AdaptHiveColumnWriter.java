@@ -27,60 +27,67 @@ public abstract class AdaptHiveColumnWriter<T> implements TripleWriter<T> {
   public static <T> AdaptHiveColumnWriter<T> newWriter(ColumnDescriptor desc) {
     switch (desc.getPrimitiveType().getPrimitiveTypeName()) {
       case BOOLEAN:
-        return (AdaptHiveColumnWriter<T>) new AdaptHiveColumnWriter<Boolean>(desc) {
-          @Override
-          public void write(int rl, Boolean value) {
-            writeBoolean(rl, value);
-          }
-        };
+        return (AdaptHiveColumnWriter<T>)
+            new AdaptHiveColumnWriter<Boolean>(desc) {
+              @Override
+              public void write(int rl, Boolean value) {
+                writeBoolean(rl, value);
+              }
+            };
       case INT32:
-        return (AdaptHiveColumnWriter<T>) new AdaptHiveColumnWriter<Integer>(desc) {
-          @Override
-          public void write(int rl, Integer value) {
-            writeInteger(rl, value);
-          }
-        };
+        return (AdaptHiveColumnWriter<T>)
+            new AdaptHiveColumnWriter<Integer>(desc) {
+              @Override
+              public void write(int rl, Integer value) {
+                writeInteger(rl, value);
+              }
+            };
       case INT64:
-        return (AdaptHiveColumnWriter<T>) new AdaptHiveColumnWriter<Long>(desc) {
-          @Override
-          public void write(int rl, Long value) {
-            writeLong(rl, value);
-          }
-        };
-      //Change For Arctic
+        return (AdaptHiveColumnWriter<T>)
+            new AdaptHiveColumnWriter<Long>(desc) {
+              @Override
+              public void write(int rl, Long value) {
+                writeLong(rl, value);
+              }
+            };
+        // Change For Arctic
       case INT96:
-        return (AdaptHiveColumnWriter<T>) new AdaptHiveColumnWriter<Binary>(desc) {
-          @Override
-          public void write(int rl, Binary value) {
-            writeBinary(rl, value);
-          }
-        };
-      //Change For Arctic
+        return (AdaptHiveColumnWriter<T>)
+            new AdaptHiveColumnWriter<Binary>(desc) {
+              @Override
+              public void write(int rl, Binary value) {
+                writeBinary(rl, value);
+              }
+            };
+        // Change For Arctic
       case FLOAT:
-        return (AdaptHiveColumnWriter<T>) new AdaptHiveColumnWriter<Float>(desc) {
-          @Override
-          public void write(int rl, Float value) {
-            writeFloat(rl, value);
-          }
-        };
+        return (AdaptHiveColumnWriter<T>)
+            new AdaptHiveColumnWriter<Float>(desc) {
+              @Override
+              public void write(int rl, Float value) {
+                writeFloat(rl, value);
+              }
+            };
       case DOUBLE:
-        return (AdaptHiveColumnWriter<T>) new AdaptHiveColumnWriter<Double>(desc) {
-          @Override
-          public void write(int rl, Double value) {
-            writeDouble(rl, value);
-          }
-        };
+        return (AdaptHiveColumnWriter<T>)
+            new AdaptHiveColumnWriter<Double>(desc) {
+              @Override
+              public void write(int rl, Double value) {
+                writeDouble(rl, value);
+              }
+            };
       case FIXED_LEN_BYTE_ARRAY:
       case BINARY:
-        return (AdaptHiveColumnWriter<T>) new AdaptHiveColumnWriter<Binary>(desc) {
-          @Override
-          public void write(int rl, Binary value) {
-            writeBinary(rl, value);
-          }
-        };
+        return (AdaptHiveColumnWriter<T>)
+            new AdaptHiveColumnWriter<Binary>(desc) {
+              @Override
+              public void write(int rl, Binary value) {
+                writeBinary(rl, value);
+              }
+            };
       default:
-        throw new UnsupportedOperationException("Unsupported primitive type: " +
-            desc.getPrimitiveType().getPrimitiveTypeName());
+        throw new UnsupportedOperationException(
+            "Unsupported primitive type: " + desc.getPrimitiveType().getPrimitiveTypeName());
     }
   }
 

@@ -55,12 +55,13 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
       tableServiceMasterPath = AmsHAProperties.getTableServiceMasterPath(haClusterName);
       optimizingServiceMasterPath = AmsHAProperties.getOptimizingServiceMasterPath(haClusterName);
       ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3, 5000);
-      this.zkClient = CuratorFrameworkFactory.builder()
-          .connectString(zkServerAddress)
-          .sessionTimeoutMs(5000)
-          .connectionTimeoutMs(5000)
-          .retryPolicy(retryPolicy)
-          .build();
+      this.zkClient =
+          CuratorFrameworkFactory.builder()
+              .connectString(zkServerAddress)
+              .sessionTimeoutMs(5000)
+              .connectionTimeoutMs(5000)
+              .retryPolicy(retryPolicy)
+              .build();
       zkClient.start();
       createPathIfNeeded(tableServiceMasterPath);
       createPathIfNeeded(optimizingServiceMasterPath);
@@ -69,12 +70,14 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
       leaderLatch = new LeaderLatch(zkClient, leaderPath);
       leaderLatch.addListener(this);
       leaderLatch.start();
-      this.tableServiceServerInfo = buildServerInfo(
-          serviceConfig.getString(ArcticManagementConf.SERVER_EXPOSE_HOST),
-          serviceConfig.getInteger(ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT));
-      this.optimizingServiceServerInfo = buildServerInfo(
-          serviceConfig.getString(ArcticManagementConf.SERVER_EXPOSE_HOST),
-          serviceConfig.getInteger(ArcticManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT));
+      this.tableServiceServerInfo =
+          buildServerInfo(
+              serviceConfig.getString(ArcticManagementConf.SERVER_EXPOSE_HOST),
+              serviceConfig.getInteger(ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT));
+      this.optimizingServiceServerInfo =
+          buildServerInfo(
+              serviceConfig.getString(ArcticManagementConf.SERVER_EXPOSE_HOST),
+              serviceConfig.getInteger(ArcticManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT));
     } else {
       leaderLatch = null;
       zkClient = null;
@@ -92,14 +95,17 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
     if (leaderLatch != null) {
       leaderLatch.await();
       if (leaderLatch.hasLeadership()) {
-        zkClient.setData()
+        zkClient
+            .setData()
             .forPath(
                 tableServiceMasterPath,
                 JSONObject.toJSONString(tableServiceServerInfo).getBytes(StandardCharsets.UTF_8));
-        zkClient.setData()
+        zkClient
+            .setData()
             .forPath(
                 optimizingServiceMasterPath,
-                JSONObject.toJSONString(optimizingServiceServerInfo).getBytes(StandardCharsets.UTF_8));
+                JSONObject.toJSONString(optimizingServiceServerInfo)
+                    .getBytes(StandardCharsets.UTF_8));
       }
     }
     LOG.info("Became the leader of AMS");
@@ -126,15 +132,19 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
 
   @Override
   public void isLeader() {
-    LOG.info("Table service server {} and optimizing service server {} got leadership",
-        tableServiceServerInfo.toString(), optimizingServiceServerInfo.toString());
+    LOG.info(
+        "Table service server {} and optimizing service server {} got leadership",
+        tableServiceServerInfo.toString(),
+        optimizingServiceServerInfo.toString());
     followerLath = new CountDownLatch(1);
   }
 
   @Override
   public void notLeader() {
-    LOG.info("Table service server {} and optimizing service server {} lost leadership",
-        tableServiceServerInfo.toString(), optimizingServiceServerInfo.toString());
+    LOG.info(
+        "Table service server {} and optimizing service server {} lost leadership",
+        tableServiceServerInfo.toString(),
+        optimizingServiceServerInfo.toString());
     followerLath.countDown();
   }
 

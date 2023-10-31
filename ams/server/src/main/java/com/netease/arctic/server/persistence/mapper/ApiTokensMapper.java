@@ -29,11 +29,13 @@ public interface ApiTokensMapper {
   @Select("SELECT secret FROM " + TABLE_NAME + " WHERE apikey = #{apikey}")
   String getSecretByKey(String apikey);
 
-  @Insert("INSERT INTO " + TABLE_NAME + " (apikey, secret, apply_time) VALUES(#{apiTokens.apikey}, " +
-          "#{apiTokens.secret}, #{apiTokens.applyTime})")
+  @Insert(
+      "INSERT INTO "
+          + TABLE_NAME
+          + " (apikey, secret, apply_time) VALUES(#{apiTokens.apikey}, "
+          + "#{apiTokens.secret}, #{apiTokens.applyTime})")
   void insert(@Param("apiTokens") ApiTokens apiTokens);
 
   @Insert("DELETE FROM " + TABLE_NAME + " WHERE id = #{id}")
   void delToken(@Param("id") Integer id);
-
 }

@@ -5,13 +5,9 @@ import org.apache.parquet.format.LogicalType;
 import org.apache.parquet.format.SchemaElement;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 
-/**
- * Copy from hive-apache package, because include hive-apache will cause class conflict
- */
+/** Copy from hive-apache package, because include hive-apache will cause class conflict */
 public final class ParquetMetadataConverterUtil {
-  private ParquetMetadataConverterUtil() {
-
-  }
+  private ParquetMetadataConverterUtil() {}
 
   public static LogicalTypeAnnotation getLogicalTypeAnnotation(
       ParquetMetadataConverter parquetMetadataConverter,
@@ -21,8 +17,7 @@ public final class ParquetMetadataConverterUtil {
   }
 
   public static LogicalTypeAnnotation getLogicalTypeAnnotation(
-      ParquetMetadataConverter parquetMetadataConverter,
-      LogicalType logicalType) {
+      ParquetMetadataConverter parquetMetadataConverter, LogicalType logicalType) {
     return parquetMetadataConverter.getLogicalTypeAnnotation(logicalType);
   }
 

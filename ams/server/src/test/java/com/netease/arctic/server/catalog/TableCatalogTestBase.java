@@ -32,17 +32,15 @@ import java.io.IOException;
 
 public class TableCatalogTestBase extends TableServiceTestBase {
 
-  @Rule
-  public TemporaryFolder temp = new TemporaryFolder();
+  @Rule public TemporaryFolder temp = new TemporaryFolder();
 
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
   private final AmoroCatalogTestHelper<?> amoroCatalogTestHelper;
 
   private AmoroCatalog amoroCatalog;
 
-  private Object originalTableCatalog;
+  private Object originalCatalog;
 
   public TableCatalogTestBase(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
     this.amoroCatalogTestHelper = amoroCatalogTestHelper;
@@ -55,7 +53,7 @@ public class TableCatalogTestBase extends TableServiceTestBase {
     amoroCatalogTestHelper.initHiveConf(TEST_HMS.getHiveConf());
     this.amoroCatalog = amoroCatalogTestHelper.amoroCatalog();
     tableService().createCatalog(amoroCatalogTestHelper.getCatalogMeta());
-    this.originalTableCatalog = amoroCatalogTestHelper.originalCatalog();
+    this.originalCatalog = amoroCatalogTestHelper.originalCatalog();
   }
 
   @After
@@ -68,8 +66,8 @@ public class TableCatalogTestBase extends TableServiceTestBase {
     return amoroCatalog;
   }
 
-  public Object getOriginalTableCatalog() {
-    return originalTableCatalog;
+  public Object getOriginalCatalog() {
+    return originalCatalog;
   }
 
   public AmoroCatalogTestHelper<?> getAmoroCatalogTestHelper() {

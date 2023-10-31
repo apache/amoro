@@ -33,7 +33,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 /**
- * TODO: this class will be removed when we support using restCatalog as base store for InternalCatalog
+ * TODO: this class will be removed when we support using restCatalog as base store for
+ * InternalCatalog
  */
 public class MixedTables {
 
@@ -49,13 +50,15 @@ public class MixedTables {
 
   private void initialize(CatalogMeta meta) {
     this.catalogMeta = meta;
-    if (meta.getStorageConfigs() != null &&
-        CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS.equalsIgnoreCase(
-            meta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE))) {
-      if (!meta.getStorageConfigs().containsKey(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE)) {
+    if (meta.getStorageConfigs() != null
+        && CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equalsIgnoreCase(
+            CatalogUtil.getCompatibleStorageType(meta.getStorageConfigs()))) {
+      if (!meta.getStorageConfigs()
+          .containsKey(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE)) {
         throw new IllegalStateException("lack hdfs.site config");
       }
-      if (!meta.getStorageConfigs().containsKey(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE)) {
+      if (!meta.getStorageConfigs()
+          .containsKey(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE)) {
         throw new IllegalStateException("lack core.site config");
       }
     }
@@ -64,9 +67,9 @@ public class MixedTables {
   }
 
   public ArcticTable loadTableByMeta(TableMeta tableMeta) {
-    if (tableMeta.getKeySpec() != null &&
-        tableMeta.getKeySpec().getFields() != null &&
-        tableMeta.getKeySpec().getFields().size() > 0) {
+    if (tableMeta.getKeySpec() != null
+        && tableMeta.getKeySpec().getFields() != null
+        && tableMeta.getKeySpec().getFields().size() > 0) {
       return loadKeyedTable(tableMeta);
     } else {
       return loadUnKeyedTable(tableMeta);
@@ -79,20 +82,30 @@ public class MixedTables {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
-    ArcticFileIO fileIO = ArcticFileIOs.buildRecoverableHadoopFileIO(
-        tableIdentifier, tableLocation, tableMeta.getProperties(),
-        tableMetaStore, catalogMeta.getCatalogProperties());
+    ArcticFileIO fileIO =
+        ArcticFileIOs.buildRecoverableHadoopFileIO(
+            tableIdentifier,
+            tableLocation,
+            tableMeta.getProperties(),
+            tableMetaStore,
+            catalogMeta.getCatalogProperties());
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
-    BaseTable baseTable = new BasicKeyedTable.BaseInternalTable(tableIdentifier,
-        CatalogUtil.useArcticTableOperations(
-            baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
-        fileIO, catalogMeta.getCatalogProperties());
+    BaseTable baseTable =
+        new BasicKeyedTable.BaseInternalTable(
+            tableIdentifier,
+            CatalogUtil.useArcticTableOperations(
+                baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
+            fileIO,
+            catalogMeta.getCatalogProperties());
 
     Table changeIcebergTable = tableMetaStore.doAs(() -> tables.load(changeLocation));
-    ChangeTable changeTable = new BasicKeyedTable.ChangeInternalTable(tableIdentifier,
-        CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
-            tableMetaStore.getConfiguration()),
-        fileIO, catalogMeta.getCatalogProperties());
+    ChangeTable changeTable =
+        new BasicKeyedTable.ChangeInternalTable(
+            tableIdentifier,
+            CatalogUtil.useArcticTableOperations(
+                changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
+            fileIO,
+            catalogMeta.getCatalogProperties());
     PrimaryKeySpec keySpec = buildPrimaryKeySpec(baseTable.schema(), tableMeta);
     return new BasicKeyedTable(tableLocation, keySpec, baseTable, changeTable);
   }
@@ -105,9 +118,9 @@ public class MixedTables {
 
   protected PrimaryKeySpec buildPrimaryKeySpec(Schema schema, TableMeta tableMeta) {
     PrimaryKeySpec.Builder builder = PrimaryKeySpec.builderFor(schema);
-    if (tableMeta.getKeySpec() != null &&
-        tableMeta.getKeySpec().getFields() != null &&
-        tableMeta.getKeySpec().getFields().size() > 0) {
+    if (tableMeta.getKeySpec() != null
+        && tableMeta.getKeySpec().getFields() != null
+        && tableMeta.getKeySpec().getFields().size() > 0) {
       for (String field : tableMeta.getKeySpec().getFields()) {
         builder.addColumn(field);
       }
@@ -121,15 +134,26 @@ public class MixedTables {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
 
-    ArcticFileIO fileIO = ArcticFileIOs.buildRecoverableHadoopFileIO(
-        tableIdentifier, tableLocation, tableMeta.getProperties(),
-        tableMetaStore, catalogMeta.getCatalogProperties());
-    return new BasicUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
-        fileIO, tableMetaStore.getConfiguration()), fileIO, catalogMeta.getCatalogProperties());
+    ArcticFileIO fileIO =
+        ArcticFileIOs.buildRecoverableHadoopFileIO(
+            tableIdentifier,
+            tableLocation,
+            tableMeta.getProperties(),
+            tableMetaStore,
+            catalogMeta.getCatalogProperties());
+    return new BasicUnkeyedTable(
+        tableIdentifier,
+        CatalogUtil.useArcticTableOperations(
+            table, baseLocation, fileIO, tableMetaStore.getConfiguration()),
+        fileIO,
+        catalogMeta.getCatalogProperties());
   }
 
-  public ArcticTable createTableByMeta(TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
-                                       PartitionSpec partitionSpec) {
+  public ArcticTable createTableByMeta(
+      TableMeta tableMeta,
+      Schema schema,
+      PrimaryKeySpec primaryKeySpec,
+      PartitionSpec partitionSpec) {
     if (primaryKeySpec.primaryKeyExisted()) {
       return createKeyedTable(tableMeta, schema, primaryKeySpec, partitionSpec);
     } else {
@@ -137,69 +161,105 @@ public class MixedTables {
     }
   }
 
-  protected KeyedTable createKeyedTable(TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
-                                        PartitionSpec partitionSpec) {
+  protected KeyedTable createKeyedTable(
+      TableMeta tableMeta,
+      Schema schema,
+      PrimaryKeySpec primaryKeySpec,
+      PartitionSpec partitionSpec) {
     TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
     fillTableProperties(tableMeta);
-    ArcticFileIO fileIO = ArcticFileIOs.buildRecoverableHadoopFileIO(
-        tableIdentifier, tableLocation, tableMeta.getProperties(),
-        tableMetaStore, catalogMeta.getCatalogProperties());
-    Table baseIcebergTable = tableMetaStore.doAs(() -> {
-      try {
-        return tables.create(schema, partitionSpec, tableMeta.getProperties(), baseLocation);
-      } catch (Exception e) {
-        throw new IllegalStateException("create base table failed", e);
-      }
-    });
-    BaseTable baseTable = new BasicKeyedTable.BaseInternalTable(tableIdentifier,
-        CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO,
-            tableMetaStore.getConfiguration()),
-        fileIO, catalogMeta.getCatalogProperties());
+    ArcticFileIO fileIO =
+        ArcticFileIOs.buildRecoverableHadoopFileIO(
+            tableIdentifier,
+            tableLocation,
+            tableMeta.getProperties(),
+            tableMetaStore,
+            catalogMeta.getCatalogProperties());
+    Table baseIcebergTable =
+        tableMetaStore.doAs(
+            () -> {
+              try {
+                return tables.create(
+                    schema, partitionSpec, tableMeta.getProperties(), baseLocation);
+              } catch (Exception e) {
+                throw new IllegalStateException("create base table failed", e);
+              }
+            });
+    BaseTable baseTable =
+        new BasicKeyedTable.BaseInternalTable(
+            tableIdentifier,
+            CatalogUtil.useArcticTableOperations(
+                baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
+            fileIO,
+            catalogMeta.getCatalogProperties());
 
-    Table changeIcebergTable = tableMetaStore.doAs(() -> {
-      try {
-        return tables.create(schema, partitionSpec, tableMeta.getProperties(), changeLocation);
-      } catch (Exception e) {
-        throw new IllegalStateException("create change table failed", e);
-      }
-    });
-    ChangeTable changeTable = new BasicKeyedTable.ChangeInternalTable(tableIdentifier,
-        CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
-            tableMetaStore.getConfiguration()),
-        fileIO, catalogMeta.getCatalogProperties());
+    Table changeIcebergTable =
+        tableMetaStore.doAs(
+            () -> {
+              try {
+                return tables.create(
+                    schema, partitionSpec, tableMeta.getProperties(), changeLocation);
+              } catch (Exception e) {
+                throw new IllegalStateException("create change table failed", e);
+              }
+            });
+    ChangeTable changeTable =
+        new BasicKeyedTable.ChangeInternalTable(
+            tableIdentifier,
+            CatalogUtil.useArcticTableOperations(
+                changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
+            fileIO,
+            catalogMeta.getCatalogProperties());
     return new BasicKeyedTable(tableLocation, primaryKeySpec, baseTable, changeTable);
   }
 
   protected void fillTableProperties(TableMeta tableMeta) {
-    tableMeta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
+    tableMeta.putToProperties(
+        TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
     tableMeta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
-    tableMeta.putToProperties(org.apache.iceberg.TableProperties.METADATA_DELETE_AFTER_COMMIT_ENABLED, "true");
-    tableMeta.putToProperties("flink.max-continuous-empty-commits", String.valueOf(Integer.MAX_VALUE));
+    tableMeta.putToProperties(
+        org.apache.iceberg.TableProperties.METADATA_DELETE_AFTER_COMMIT_ENABLED, "true");
+    tableMeta.putToProperties(
+        "flink.max-continuous-empty-commits", String.valueOf(Integer.MAX_VALUE));
   }
 
-  protected UnkeyedTable createUnKeyedTable(TableMeta tableMeta, Schema schema, PrimaryKeySpec primaryKeySpec,
-                                            PartitionSpec partitionSpec) {
+  protected UnkeyedTable createUnKeyedTable(
+      TableMeta tableMeta,
+      Schema schema,
+      PrimaryKeySpec primaryKeySpec,
+      PartitionSpec partitionSpec) {
     TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
 
     fillTableProperties(tableMeta);
-    Table table = tableMetaStore.doAs(() -> {
-      try {
-        return tables.create(schema, partitionSpec, tableMeta.getProperties(), baseLocation);
-      } catch (Exception e) {
-        throw new IllegalStateException("create table failed", e);
-      }
-    });
-    ArcticFileIO fileIO = ArcticFileIOs.buildRecoverableHadoopFileIO(
-        tableIdentifier, tableLocation, tableMeta.getProperties(),
-        tableMetaStore, catalogMeta.getCatalogProperties());
-    return new BasicUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
-        tableMetaStore.getConfiguration()), fileIO, catalogMeta.getCatalogProperties());
+    Table table =
+        tableMetaStore.doAs(
+            () -> {
+              try {
+                return tables.create(
+                    schema, partitionSpec, tableMeta.getProperties(), baseLocation);
+              } catch (Exception e) {
+                throw new IllegalStateException("create table failed", e);
+              }
+            });
+    ArcticFileIO fileIO =
+        ArcticFileIOs.buildRecoverableHadoopFileIO(
+            tableIdentifier,
+            tableLocation,
+            tableMeta.getProperties(),
+            tableMetaStore,
+            catalogMeta.getCatalogProperties());
+    return new BasicUnkeyedTable(
+        tableIdentifier,
+        CatalogUtil.useArcticTableOperations(
+            table, baseLocation, fileIO, tableMetaStore.getConfiguration()),
+        fileIO,
+        catalogMeta.getCatalogProperties());
   }
 
   public void dropTableByMeta(TableMeta tableMeta, boolean purge) {
@@ -216,13 +276,14 @@ public class MixedTables {
       // If purge is true, all manifest/data files must be located under the table directory.
       if (!purge) {
         String baseLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_BASE);
-        String changeLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_CHANGE);
+        String changeLocation =
+            tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_CHANGE);
         try {
           if (StringUtils.isNotBlank(baseLocation)) {
-            dropInternalTable(tableMetaStore, baseLocation, purge);
+            dropInternalTable(tableMetaStore, baseLocation, false);
           }
           if (StringUtils.isNotBlank(changeLocation)) {
-            dropInternalTable(tableMetaStore, changeLocation, purge);
+            dropInternalTable(tableMetaStore, changeLocation, false);
           }
         } catch (Exception e) {
           LOG.warn("drop base/change iceberg table fail ", e);
@@ -236,10 +297,12 @@ public class MixedTables {
       }
 
       // delete custom trash location
-      String customTrashLocation = tableProperties.get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
+      String customTrashLocation =
+          tableProperties.get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION);
       if (customTrashLocation != null) {
         TableIdentifier tableId = TableIdentifier.of(tableMeta.getTableIdentifier());
-        String trashParentLocation = TableTrashManagers.getTrashParentLocation(tableId, customTrashLocation);
+        String trashParentLocation =
+            TableTrashManagers.getTrashParentLocation(tableId, customTrashLocation);
         if (fileIO.exists(trashParentLocation)) {
           fileIO.asPrefixFileIO().deletePrefix(trashParentLocation);
         }
@@ -249,12 +312,14 @@ public class MixedTables {
     }
   }
 
-  private void dropInternalTable(TableMetaStore tableMetaStore, String internalTableLocation, boolean purge) {
+  private void dropInternalTable(
+      TableMetaStore tableMetaStore, String internalTableLocation, boolean purge) {
     final HadoopTables internalTables = new HadoopTables(tableMetaStore.getConfiguration());
-    tableMetaStore.doAs(() -> {
-      internalTables.dropTable(internalTableLocation, purge);
-      return null;
-    });
+    tableMetaStore.doAs(
+        () -> {
+          internalTables.dropTable(internalTableLocation, purge);
+          return null;
+        });
   }
 
   public void refreshCatalogMeta(CatalogMeta meta) {

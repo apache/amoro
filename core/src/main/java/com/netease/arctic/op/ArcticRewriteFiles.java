@@ -49,7 +49,8 @@ public class ArcticRewriteFiles extends ArcticUpdate<RewriteFiles> implements Re
   }
 
   @Override
-  public RewriteFiles rewriteFiles(Set<DataFile> filesToDelete, Set<DataFile> filesToAdd, long sequenceNumber) {
+  public RewriteFiles rewriteFiles(
+      Set<DataFile> filesToDelete, Set<DataFile> filesToAdd, long sequenceNumber) {
     rewriteFiles.rewriteFiles(filesToDelete, filesToAdd, sequenceNumber);
     filesToAdd.forEach(this::addIcebergDataFile);
     filesToDelete.forEach(this::deleteIcebergDataFile);
@@ -58,9 +59,12 @@ public class ArcticRewriteFiles extends ArcticUpdate<RewriteFiles> implements Re
 
   @Override
   public RewriteFiles rewriteFiles(
-      Set<DataFile> dataFilesToReplace, Set<DeleteFile> deleteFilesToReplace,
-      Set<DataFile> dataFilesToAdd, Set<DeleteFile> deleteFilesToAdd) {
-    rewriteFiles.rewriteFiles(dataFilesToReplace, deleteFilesToReplace, dataFilesToAdd, deleteFilesToAdd);
+      Set<DataFile> dataFilesToReplace,
+      Set<DeleteFile> deleteFilesToReplace,
+      Set<DataFile> dataFilesToAdd,
+      Set<DeleteFile> deleteFilesToAdd) {
+    rewriteFiles.rewriteFiles(
+        dataFilesToReplace, deleteFilesToReplace, dataFilesToAdd, deleteFilesToAdd);
     dataFilesToAdd.forEach(this::addIcebergDataFile);
     dataFilesToReplace.forEach(this::deleteIcebergDataFile);
     deleteFilesToAdd.forEach(this::addIcebergDeleteFile);
@@ -69,8 +73,46 @@ public class ArcticRewriteFiles extends ArcticUpdate<RewriteFiles> implements Re
   }
 
   @Override
+  public RewriteFiles deleteFile(DataFile dataFile) {
+    this.deleteIcebergDataFile(dataFile);
+    rewriteFiles.deleteFile(dataFile);
+    return this;
+  }
+
+  @Override
+  public RewriteFiles deleteFile(DeleteFile deleteFile) {
+    this.deleteIcebergDeleteFile(deleteFile);
+    rewriteFiles.deleteFile(deleteFile);
+    return this;
+  }
+
+  @Override
   public RewriteFiles validateFromSnapshot(long snapshotId) {
     rewriteFiles.validateFromSnapshot(snapshotId);
+    return this;
+  }
+
+  @Override
+  public RewriteFiles addFile(DataFile dataFile) {
+    rewriteFiles.addFile(dataFile);
+    return this;
+  }
+
+  @Override
+  public RewriteFiles addFile(DeleteFile deleteFile) {
+    rewriteFiles.addFile(deleteFile);
+    return this;
+  }
+
+  @Override
+  public RewriteFiles addFile(DeleteFile deleteFile, long dataSequenceNumber) {
+    rewriteFiles.addFile(deleteFile, dataSequenceNumber);
+    return this;
+  }
+
+  @Override
+  public RewriteFiles dataSequenceNumber(long sequenceNumber) {
+    rewriteFiles.dataSequenceNumber(sequenceNumber);
     return this;
   }
 
@@ -87,8 +129,7 @@ public class ArcticRewriteFiles extends ArcticUpdate<RewriteFiles> implements Re
 
     @Override
     protected ArcticRewriteFiles updateWithWatermark(
-        Transaction transaction,
-        boolean autoCommitTransaction) {
+        Transaction transaction, boolean autoCommitTransaction) {
       return new ArcticRewriteFiles(table, transaction.newRewrite());
     }
 

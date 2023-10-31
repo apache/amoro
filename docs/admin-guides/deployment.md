@@ -15,7 +15,7 @@ You can choose to download the stable release package from [download page](../..
 ## System requirements
 
 - Java 8 is required. Java 17 is required for Trino.
-- Optional: MySQL 5.5 or higher, or MySQL 8
+- Optional: MySQL 5.5 or higher
 - Optional: PostgreSQL 14.x or higher
 - Optional: ZooKeeper 3.4.x or higher
 - Optional: Hive (2.x or 3.x)
@@ -44,11 +44,11 @@ dist-x.y.z.jar
 archive-tmp/
 maven-archiver/
 
-cd ${base_dir}/flink/v1.12/flink-runtime/target
+cd ${base_dir}/flink/v1.15/flink-runtime/target
 ls 
-amoro-flink-runtime-1.12-x.y.z-tests.jar
-amoro-flink-runtime-1.12-x.y.z.jar # Flink 1.12 runtime package
-original-amoro-flink-runtime-1.12-x.y.z.jar
+amoro-flink-runtime-1.15-x.y.z-tests.jar
+amoro-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
+original-amoro-flink-runtime-1.15-x.y.z.jar
 maven-archiver/
 
 cd ${base_dir}/spark/v3.1/spark-runtime/target
@@ -111,7 +111,16 @@ Make sure the port is not used before configuring it.
 
 ### Configure system database
 
-You can use MySQL/PostgreSQL as the system database instead of the default Derby. 
+You can use MySQL/PostgreSQL as the system database instead of the default Derby.
+
+If you would like to use MySQL as the system database, you need to manually download the [MySQL JDBC Connector](https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.1.0/mysql-connector-j-8.1.0.jar) 
+and move it into the `{AMORO_HOME}/lib/` directory. You can use the following command to complete these operations:
+```shell
+cd ${AMORO_HOME}
+MYSQL_JDBC_DRIVER_VERSION=8.0.30
+wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_JDBC_DRIVER_VERSION}/mysql-connector-java-${MYSQL_JDBC_DRIVER_VERSION}.jar
+mv mysql-connector-java-${MYSQL_JDBC_DRIVER_VERSION}.jar lib
+```
 
 Create an empty database in MySQL/PostgreSQL, then AMS will automatically create table structures in this MySQL/PostgreSQL database when it first started.
 

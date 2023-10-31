@@ -1,4 +1,3 @@
 package com.netease.arctic.table;
 
-public interface LocationKind {
-}
+public interface LocationKind {}

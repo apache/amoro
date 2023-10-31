@@ -20,18 +20,12 @@ package com.netease.arctic;
 
 public interface TableSnapshot {
 
-  /**
-   * Returns the watermark of this snapshot. Return -1 if the watermark does not exist.
-   */
+  /** Returns the watermark of this snapshot. Return -1 if the watermark does not exist. */
   long watermark();
 
-  /**
-   * Returns the commit time of this snapshot.
-   */
+  /** Returns the commit time of this snapshot. */
   long commitTime();
 
-  /**
-   * Returns the id of this snapshot.
-   */
+  /** Returns the id of this snapshot. */
   String id();
 }

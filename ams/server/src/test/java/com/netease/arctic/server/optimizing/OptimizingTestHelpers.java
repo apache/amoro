@@ -54,11 +54,15 @@ public class OptimizingTestHelpers {
     StructLikeMap<Long> legacyPartitionMaxTransactionId =
         TablePropertyUtil.getLegacyPartitionMaxTransactionId(keyedTable);
 
-    return new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId,
-        partitionOptimizedSequence, legacyPartitionMaxTransactionId);
+    return new KeyedTableSnapshot(
+        baseSnapshotId,
+        changeSnapshotId,
+        partitionOptimizedSequence,
+        legacyPartitionMaxTransactionId);
   }
 
-  public static List<Record> generateRecord(TableTestHelper tableTestHelper, int from, int to, String opTime) {
+  public static List<Record> generateRecord(
+      TableTestHelper tableTestHelper, int from, int to, String opTime) {
     List<Record> newRecords = Lists.newArrayList();
     for (int i = from; i <= to; i++) {
       newRecords.add(tableTestHelper.generateTestRecord(i, i + "", 0, opTime));
@@ -78,7 +82,8 @@ public class OptimizingTestHelpers {
     return dataFiles;
   }
 
-  public static List<DeleteFile> appendBasePosDelete(ArcticTable arcticTable, List<DeleteFile> deleteFiles) {
+  public static List<DeleteFile> appendBasePosDelete(
+      ArcticTable arcticTable, List<DeleteFile> deleteFiles) {
     RowDelta rowDelta;
     if (arcticTable.isKeyedTable()) {
       rowDelta = arcticTable.asKeyedTable().baseTable().newRowDelta();

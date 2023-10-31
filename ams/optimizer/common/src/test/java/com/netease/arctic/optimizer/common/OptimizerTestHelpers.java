@@ -18,15 +18,14 @@
 
 package com.netease.arctic.optimizer.common;
 
-import org.apache.iceberg.common.DynFields;
 import org.kohsuke.args4j.CmdLineException;
 
 public class OptimizerTestHelpers {
   public static final long CALL_AMS_INTERVAL = 500;
 
   public static OptimizerConfig buildOptimizerConfig(String amsUrl) {
-    String[] optimizerArgs = new String[]{"-a", amsUrl, "-p", "2", "-g", "g1",
-                                          "-id", "test_id", "-hb", "1000"};
+    String[] optimizerArgs =
+        new String[] {"-a", amsUrl, "-p", "2", "-g", "g1", "-id", "test_id", "-hb", "1000"};
     try {
       return new OptimizerConfig(optimizerArgs);
     } catch (CmdLineException e) {
@@ -35,7 +34,6 @@ public class OptimizerTestHelpers {
   }
 
   public static void setCallAmsIntervalForTest() {
-    DynFields.builder().hiddenImpl(AbstractOptimizerOperator.class, "CALL_AMS_INTERVAL")
-        .buildStatic().set(CALL_AMS_INTERVAL);
+    AbstractOptimizerOperator.setCallAmsInterval(CALL_AMS_INTERVAL);
   }
 }

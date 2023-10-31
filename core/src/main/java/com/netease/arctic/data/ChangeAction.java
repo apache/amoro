@@ -18,38 +18,28 @@
 
 package com.netease.arctic.data;
 
-/**
- * Lists all kinds of changes that a row can describe in a changelog.
- */
+/** Lists all kinds of changes that a row can describe in a changelog. */
 public enum ChangeAction {
   // Note: Enums have no stable hash code across different JVMs, use toByteValue() for
   // this purpose.
 
-  /**
-   * Insertion operation.
-   */
+  /** Insertion operation. */
   INSERT((byte) 0),
 
-  /**
-   * Update operation with the previous content of the updated row.
-   */
+  /** Update operation with the previous content of the updated row. */
   UPDATE_BEFORE((byte) 1),
 
-  /**
-   * Update operation with new content of the updated row.
-   */
+  /** Update operation with new content of the updated row. */
   UPDATE_AFTER((byte) 2),
 
-  /**
-   * Deletion operation.
-   */
+  /** Deletion operation. */
   DELETE((byte) 3);
 
   private final byte value;
 
   /**
-   * Creates a {@link ChangeAction} enum with the given short string and byte value representation of
-   * the {@link ChangeAction}.
+   * Creates a {@link ChangeAction} enum with the given short string and byte value representation
+   * of the {@link ChangeAction}.
    */
   ChangeAction(byte value) {
     this.value = value;
@@ -73,8 +63,8 @@ public enum ChangeAction {
   }
 
   /**
-   * Creates a {@link ChangeAction} from the given byte value. Each {@link ChangeAction} has a byte value
-   * representation.
+   * Creates a {@link ChangeAction} from the given byte value. Each {@link ChangeAction} has a byte
+   * value representation.
    *
    * @see #toByteValue() for mapping of byte value and {@link ChangeAction}.
    */

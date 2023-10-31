@@ -135,13 +135,14 @@ public class ExpectResultUtil {
   }
 
   public static class MergeResult {
-    private List<Record> target;
-    private List<Record> source;
-    private Function<Record, Object> keyExtractor;
+    private final List<Record> target;
+    private final List<Record> source;
+    private final Function<Record, Object> keyExtractor;
 
-    private List<Pair<BiFunction<Record, Record, Boolean>, BiFunction<Record, Record, Record>>>
+    private final List<
+            Pair<BiFunction<Record, Record, Boolean>, BiFunction<Record, Record, Record>>>
         matchActions = Lists.newArrayList();
-    private List<Pair<Predicate<Record>, Function<Record, Record>>> notMatchedActions =
+    private final List<Pair<Predicate<Record>, Function<Record, Record>>> notMatchedActions =
         Lists.newArrayList();
 
     protected MergeResult(

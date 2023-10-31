@@ -19,11 +19,11 @@
 package com.netease.arctic.spark.test.utils;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
-import com.netease.arctic.hive.io.reader.GenericAdaptHiveIcebergDataReader;
+import com.netease.arctic.hive.io.reader.AdaptHiveGenericKeyedDataReader;
+import com.netease.arctic.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.MixedDataTestHelpers;
-import com.netease.arctic.io.reader.GenericIcebergDataReader;
+import com.netease.arctic.io.reader.GenericUnkeyedDataReader;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.ArcticTable;
@@ -51,9 +51,13 @@ import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
+import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.catalyst.encoders.RowEncoder;
+import org.apache.spark.sql.types.StructType;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -69,7 +73,7 @@ import java.util.stream.Collectors;
 
 public class TestTableUtil {
 
-  public static Row recordToRow(Record record) {
+  private static Object[] recordToObjects(Record record) {
     Object[] values = new Object[record.size()];
     for (int i = 0; i < values.length; i++) {
       Object v = record.get(i);
@@ -84,7 +88,18 @@ public class TestTableUtil {
       }
       values[i] = v;
     }
+    return values;
+  }
+
+  public static Row recordToRow(Record record) {
+    Object[] values = recordToObjects(record);
     return RowFactory.create(values);
+  }
+
+  public static InternalRow recordToInternalRow(Schema schema, Record record) {
+    StructType structType = SparkSchemaUtil.convert(schema);
+    Row row = recordToRow(record);
+    return RowEncoder.apply(structType).createSerializer().apply(row);
   }
 
   public static Record rowToRecord(Row row, Types.StructType type) {
@@ -233,8 +248,8 @@ public class TestTableUtil {
   }
 
   public static List<Record> unkeyedTableRecords(UnkeyedTable table, Expression expression) {
-    GenericAdaptHiveIcebergDataReader reader =
-        new GenericAdaptHiveIcebergDataReader(
+    AdaptHiveGenericUnkeyedDataReader reader =
+        new AdaptHiveGenericUnkeyedDataReader(
             table.io(),
             table.schema(),
             table.schema(),
@@ -267,8 +282,8 @@ public class TestTableUtil {
   }
 
   public static List<Record> readKeyedTable(KeyedTable keyedTable, Expression expression) {
-    AdaptHiveGenericArcticDataReader reader =
-        new AdaptHiveGenericArcticDataReader(
+    AdaptHiveGenericKeyedDataReader reader =
+        new AdaptHiveGenericKeyedDataReader(
             keyedTable.io(),
             keyedTable.schema(),
             keyedTable.schema(),
@@ -370,8 +385,8 @@ public class TestTableUtil {
     columns.add(MetadataColumns.CHANGE_ACTION_FIELD);
     Schema expectSchema = new Schema(columns);
 
-    GenericIcebergDataReader reader =
-        new GenericIcebergDataReader(
+    GenericUnkeyedDataReader reader =
+        new GenericUnkeyedDataReader(
             keyedTable.io(),
             keyedTable.schema(),
             expectSchema,

@@ -29,6 +29,7 @@ import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.options.CatalogOptions;
 import org.apache.paimon.schema.Schema;
+import org.apache.paimon.schema.SchemaChange;
 import org.apache.paimon.types.DataTypes;
 
 import java.util.HashMap;
@@ -36,22 +37,21 @@ import java.util.Map;
 
 public class PaimonHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Catalog> {
 
-  public static final Schema schema = Schema.newBuilder()
-      .column("id", DataTypes.INT())
-      .column("name", DataTypes.STRING())
-      .column("age", DataTypes.INT())
-      .primaryKey("id", "age")
-      .partitionKeys("age")
-      .option("amoro.test.key", "amoro.test.value")
-      .build();
+  public static final Schema schema =
+      Schema.newBuilder()
+          .column("id", DataTypes.INT())
+          .column("name", DataTypes.STRING())
+          .column("age", DataTypes.INT())
+          .primaryKey("id", "age")
+          .partitionKeys("age")
+          .option("amoro.test.key", "amoro.test.value")
+          .build();
 
   protected final String catalogName;
 
   protected final Map<String, String> catalogProperties;
 
-  public PaimonHadoopCatalogTestHelper(
-      String catalogName,
-      Map<String, String> catalogProperties) {
+  public PaimonHadoopCatalogTestHelper(String catalogName, Map<String, String> catalogProperties) {
     this.catalogName = catalogName;
     this.catalogProperties = catalogProperties == null ? new HashMap<>() : catalogProperties;
   }
@@ -62,27 +62,20 @@ public class PaimonHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Cat
 
   @Override
   public void initHiveConf(Configuration hiveConf) {
-    //Do nothing
+    // Do nothing
   }
 
   @Override
   public CatalogMeta getCatalogMeta() {
     return CatalogTestHelpers.buildCatalogMeta(
-        catalogName,
-        getMetastoreType(),
-        catalogProperties,
-        TableFormat.PAIMON);
+        catalogName, getMetastoreType(), catalogProperties, TableFormat.PAIMON);
   }
 
   @Override
   public AmoroCatalog amoroCatalog() {
     PaimonCatalogFactory paimonCatalogFactory = new PaimonCatalogFactory();
     return paimonCatalogFactory.create(
-        catalogName,
-        getMetastoreType(),
-        catalogProperties,
-        new Configuration()
-    );
+        catalogName, getMetastoreType(), catalogProperties, new Configuration());
   }
 
   @Override
@@ -96,6 +89,26 @@ public class PaimonHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Cat
   }
 
   @Override
+  public void setTableProperties(String db, String tableName, String key, String value) {
+    try {
+      originalCatalog()
+          .alterTable(Identifier.create(db, tableName), SchemaChange.setOption(key, value), true);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void removeTableProperties(String db, String tableName, String key) {
+    try {
+      originalCatalog()
+          .alterTable(Identifier.create(db, tableName), SchemaChange.removeOption(key), true);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
   public void clean() {
     try (Catalog catalog = originalCatalog()) {
       for (String dbName : catalog.listDatabases()) {
@@ -103,7 +116,8 @@ public class PaimonHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Cat
           catalog.dropDatabase(dbName, true, true);
           continue;
         } catch (Exception e) {
-          // If drop database failed, drop all tables in this database. Because 'default' database can not be
+          // If drop database failed, drop all tables in this database. Because 'default' database
+          // can not be
           // dropped in hive catalog.
         }
         for (String tableName : catalog.listTables(dbName)) {
@@ -116,8 +130,7 @@ public class PaimonHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Cat
   }
 
   @Override
-  public void createTable(String db, String tableName)
-      throws Exception {
+  public void createTable(String db, String tableName) throws Exception {
     try (Catalog catalog = originalCatalog()) {
       catalog.createTable(Identifier.create(db, tableName), schema, false);
     } catch (Exception e) {
@@ -130,8 +143,6 @@ public class PaimonHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Cat
   }
 
   public static PaimonHadoopCatalogTestHelper defaultHelper() {
-    return new PaimonHadoopCatalogTestHelper(
-        "test_paimon_catalog",
-        new HashMap<>());
+    return new PaimonHadoopCatalogTestHelper("test_paimon_catalog", new HashMap<>());
   }
 }

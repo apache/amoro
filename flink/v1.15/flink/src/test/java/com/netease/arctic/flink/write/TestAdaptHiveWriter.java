@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.write;
 
+import static com.netease.arctic.table.TableProperties.FILE_FORMAT_ORC;
+
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
@@ -40,9 +42,11 @@ import org.apache.flink.table.data.TimestampData;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
+import org.apache.iceberg.flink.data.FlinkOrcReader;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
+import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -91,6 +95,22 @@ public class TestAdaptHiveWriter extends TableTestBase {
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
         new HiveTableTestHelper(false, false)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, true, FILE_FORMAT_ORC)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, false, FILE_FORMAT_ORC)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(false, true, FILE_FORMAT_ORC)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(false, false, FILE_FORMAT_ORC)
       }
     };
   }
@@ -250,7 +270,18 @@ public class TestAdaptHiveWriter extends TableTestBase {
     CloseableIterable<RowData> concat =
         CloseableIterable.concat(
             Arrays.stream(complete.dataFiles())
-                .map(s -> readParquet(table.schema(), s.path().toString()))
+                .map(
+                    s -> {
+                      switch (s.format()) {
+                        case PARQUET:
+                          return readParquet(table.schema(), s.path().toString());
+                        case ORC:
+                          return readOrc(table.schema(), s.path().toString());
+                        default:
+                          throw new UnsupportedOperationException(
+                              "Cannot read unknown format: " + s.format());
+                      }
+                    })
                 .collect(Collectors.toList()));
     Set<RowData> result = new HashSet<>();
     Iterators.addAll(result, concat.iterator());
@@ -264,6 +295,17 @@ public class TestAdaptHiveWriter extends TableTestBase {
             .createReaderFunc(
                 fileSchema ->
                     AdaptHiveFlinkParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
+            .caseSensitive(false);
+
+    CloseableIterable<RowData> iterable = builder.build();
+    return iterable;
+  }
+
+  private CloseableIterable<RowData> readOrc(Schema schema, String path) {
+    ORC.ReadBuilder builder =
+        ORC.read(Files.localInput(path))
+            .project(schema)
+            .createReaderFunc(fileSchema -> new FlinkOrcReader(schema, fileSchema, new HashMap<>()))
             .caseSensitive(false);
 
     CloseableIterable<RowData> iterable = builder.build();

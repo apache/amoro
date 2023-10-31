@@ -18,9 +18,15 @@
 
 package com.netease.arctic.server.manager;
 
+import static com.netease.arctic.ams.api.Environments.AMORO_HOME;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.netease.arctic.ams.api.metrics.MetricType;
 import com.netease.arctic.ams.api.metrics.MetricsContent;
 import com.netease.arctic.ams.api.metrics.MetricsEmitter;
+import com.netease.arctic.server.metrics.LoggingMetricsEmitter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,29 +34,26 @@ import org.mockito.Mock;
 
 import java.util.Collections;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.Objects;
 
 public class TestMetricsManager {
 
-  @Mock
-  private MetricsEmitterTest emitter1;
-  @Mock
-  private MetricsEmitterTest emitter2;
+  @Mock private MetricsEmitterTest emitter1;
+  @Mock private MetricsEmitterTest emitter2;
 
   private MetricsManager manager;
 
   @BeforeEach
   public void build() {
-    Map<String, String> expectedProperties = Collections.singletonMap(
-        "impl", "com.netease.arctic.server.manager.TestMetricsManager$MetricsEmitterTest"
-    );
-    manager = new MetricsManager("config/path") {
-      protected Map<String, String> loadProperties(String pluginName) {
-        return expectedProperties;
-      }
-    };
+    Map<String, String> expectedProperties =
+        Collections.singletonMap(
+            "impl", "com.netease.arctic.server.manager.TestMetricsManager$MetricsEmitterTest");
+    manager =
+        new MetricsManager("config/path") {
+          protected Map<String, String> loadProperties(String pluginName) {
+            return expectedProperties;
+          }
+        };
     manager.install("emitter1");
     manager.install("emitter2");
     emitter1 = (MetricsEmitterTest) manager.get("emitter1");
@@ -64,24 +67,36 @@ public class TestMetricsManager {
   }
 
   @Test
+  public void testInitialize() {
+    System.setProperty(
+        AMORO_HOME,
+        Objects.requireNonNull(this.getClass().getClassLoader().getResource("")).getPath());
+    MetricsManager testManager = new MetricsManager();
+    testManager.initialize();
+
+    assertNotNull(testManager.get(LoggingMetricsEmitter.NAME));
+  }
+
+  @Test
   public void testEmit() {
-    MetricsContent<?> metrics = new MetricsContent<String>() {
+    MetricsContent<?> metrics =
+        new MetricsContent<String>() {
 
-      @Override
-      public String name() {
-        return null;
-      }
+          @Override
+          public String name() {
+            return null;
+          }
 
-      @Override
-      public MetricType type() {
-        return null;
-      }
+          @Override
+          public MetricType type() {
+            return null;
+          }
 
-      @Override
-      public String data() {
-        return null;
-      }
-    };
+          @Override
+          public String data() {
+            return null;
+          }
+        };
 
     manager.emit(metrics);
     assertTrue(emitter1.isEmitted());
@@ -99,8 +114,7 @@ public class TestMetricsManager {
     }
 
     @Override
-    public void open(Map<String, String> properties) {
-    }
+    public void open(Map<String, String> properties) {}
 
     @Override
     public void emit(MetricsContent<?> metrics) {
@@ -121,7 +135,6 @@ public class TestMetricsManager {
     }
 
     @Override
-    public void close() {
-    }
+    public void close() {}
   }
 }

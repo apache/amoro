@@ -18,6 +18,9 @@
 
 package com.netease.arctic.trino;
 
+import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
+import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
 import com.netease.arctic.catalog.ArcticCatalog;
@@ -65,21 +68,18 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
-import static io.trino.plugin.hive.util.HiveUtil.isHiveSystemSchema;
-import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
-
 /**
- * {@link ArcticConnectorMetadata} is a Union {@link ConnectorMetadata} contain {@link KeyedConnectorMetadata}  and
- * {@link IcebergMetadata}.
- * This is final {@link ConnectorMetadata} provided to Trino
+ * {@link ArcticConnectorMetadata} is a Union {@link ConnectorMetadata} contain {@link
+ * KeyedConnectorMetadata} and {@link IcebergMetadata}. This is final {@link ConnectorMetadata}
+ * provided to Trino
  */
 public class ArcticConnectorMetadata implements ConnectorMetadata {
 
-  private KeyedConnectorMetadata keyedConnectorMetadata;
+  private final KeyedConnectorMetadata keyedConnectorMetadata;
 
-  private IcebergMetadata icebergMetadata;
+  private final IcebergMetadata icebergMetadata;
 
-  private ArcticCatalog arcticCatalog;
+  private final ArcticCatalog arcticCatalog;
 
   public ArcticConnectorMetadata(
       KeyedConnectorMetadata keyedConnectorMetadata,
@@ -92,12 +92,14 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
 
   @Override
   public List<String> listSchemaNames(ConnectorSession session) {
-    return arcticCatalog.listDatabases().stream().map(s -> s.toLowerCase(Locale.ROOT)).collect(Collectors.toList());
+    return arcticCatalog.listDatabases().stream()
+        .map(s -> s.toLowerCase(Locale.ROOT))
+        .collect(Collectors.toList());
   }
 
   @Override
   public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName) {
-    //需要缓存
+    // 需要缓存
     ArcticTable arcticTable = null;
     try {
       arcticTable = getArcticTable(tableName);
@@ -116,7 +118,8 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
     return icebergMetadata.getSystemTable(session, tableName);
   }
 
-  public ConnectorTableProperties getTableProperties(ConnectorSession session, ConnectorTableHandle table) {
+  public ConnectorTableProperties getTableProperties(
+      ConnectorSession session, ConnectorTableHandle table) {
     if (table instanceof KeyedTableHandle) {
       return new ConnectorTableProperties();
     } else {
@@ -125,7 +128,8 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   }
 
   @Override
-  public ConnectorTableMetadata getTableMetadata(ConnectorSession session, ConnectorTableHandle table) {
+  public ConnectorTableMetadata getTableMetadata(
+      ConnectorSession session, ConnectorTableHandle table) {
     if (table instanceof KeyedTableHandle) {
       return keyedConnectorMetadata.getTableMetadata(session, table);
     } else {
@@ -135,15 +139,15 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
 
   @Override
   public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> schemaName) {
-    return listNamespaces(session, schemaName)
-        .stream()
+    return listNamespaces(session, schemaName).stream()
         .flatMap(s -> arcticCatalog.listTables(s).stream())
         .map(s -> new SchemaTableName(s.getDatabase(), s.getTableName()))
         .collect(Collectors.toList());
   }
 
   @Override
-  public Map<String, ColumnHandle> getColumnHandles(ConnectorSession session, ConnectorTableHandle tableHandle) {
+  public Map<String, ColumnHandle> getColumnHandles(
+      ConnectorSession session, ConnectorTableHandle tableHandle) {
     if (tableHandle instanceof KeyedTableHandle) {
       return keyedConnectorMetadata.getColumnHandles(session, tableHandle);
     } else {
@@ -153,9 +157,7 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
 
   @Override
   public ColumnMetadata getColumnMetadata(
-      ConnectorSession session,
-      ConnectorTableHandle tableHandle,
-      ColumnHandle columnHandle) {
+      ConnectorSession session, ConnectorTableHandle tableHandle, ColumnHandle columnHandle) {
     if (tableHandle instanceof KeyedTableHandle) {
       return keyedConnectorMetadata.getColumnMetadata(session, tableHandle, columnHandle);
     } else {
@@ -164,11 +166,13 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   }
 
   @Override
-  public Iterator<TableColumnsMetadata> streamTableColumns(ConnectorSession session, SchemaTablePrefix prefix) {
+  public Iterator<TableColumnsMetadata> streamTableColumns(
+      ConnectorSession session, SchemaTablePrefix prefix) {
     if (prefix.getTable().isPresent()) {
       ArcticTable arcticTable = null;
       try {
-        arcticTable = getArcticTable(new SchemaTableName(prefix.getSchema().get(), prefix.getTable().get()));
+        arcticTable =
+            getArcticTable(new SchemaTableName(prefix.getSchema().get(), prefix.getTable().get()));
       } catch (NoSuchTableException e) {
         List<TableColumnsMetadata> schemaTableNames = ImmutableList.of();
         return schemaTableNames.iterator();
@@ -186,14 +190,14 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   }
 
   @Override
-  public void createTable(ConnectorSession session, ConnectorTableMetadata tableMetadata, boolean ignoreExisting) {
+  public void createTable(
+      ConnectorSession session, ConnectorTableMetadata tableMetadata, boolean ignoreExisting) {
     icebergMetadata.createTable(session, tableMetadata, ignoreExisting);
   }
 
   @Override
   public Optional<ConnectorTableLayout> getNewTableLayout(
-      ConnectorSession session,
-      ConnectorTableMetadata tableMetadata) {
+      ConnectorSession session, ConnectorTableMetadata tableMetadata) {
     return icebergMetadata.getNewTableLayout(session, tableMetadata);
   }
 
@@ -216,7 +220,8 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   }
 
   @Override
-  public Optional<ConnectorTableLayout> getInsertLayout(ConnectorSession session, ConnectorTableHandle tableHandle) {
+  public Optional<ConnectorTableLayout> getInsertLayout(
+      ConnectorSession session, ConnectorTableHandle tableHandle) {
     return icebergMetadata.getInsertLayout(session, tableHandle);
   }
 
@@ -247,29 +252,25 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
       RetryMode retryMode) {
     if (connectorTableHandle instanceof KeyedTableHandle) {
       return ConnectorMetadata.super.getTableHandleForExecute(
-          session,
-          connectorTableHandle,
-          procedureName,
-          executeProperties,
-          retryMode);
+          session, connectorTableHandle, procedureName, executeProperties, retryMode);
     } else {
-      return icebergMetadata.getTableHandleForExecute(session, connectorTableHandle,
-          procedureName, executeProperties, retryMode);
+      return icebergMetadata.getTableHandleForExecute(
+          session, connectorTableHandle, procedureName, executeProperties, retryMode);
     }
   }
 
   @Override
   public Optional<ConnectorTableLayout> getLayoutForTableExecute(
-      ConnectorSession session,
-      ConnectorTableExecuteHandle tableExecuteHandle) {
+      ConnectorSession session, ConnectorTableExecuteHandle tableExecuteHandle) {
     return icebergMetadata.getLayoutForTableExecute(session, tableExecuteHandle);
   }
 
   @Override
-  public BeginTableExecuteResult<ConnectorTableExecuteHandle, ConnectorTableHandle> beginTableExecute(
-      ConnectorSession session,
-      ConnectorTableExecuteHandle tableExecuteHandle,
-      ConnectorTableHandle updatedSourceTableHandle) {
+  public BeginTableExecuteResult<ConnectorTableExecuteHandle, ConnectorTableHandle>
+      beginTableExecute(
+          ConnectorSession session,
+          ConnectorTableExecuteHandle tableExecuteHandle,
+          ConnectorTableHandle updatedSourceTableHandle) {
     return icebergMetadata.beginTableExecute(session, tableExecuteHandle, updatedSourceTableHandle);
   }
 
@@ -283,7 +284,8 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   }
 
   @Override
-  public void executeTableExecute(ConnectorSession session, ConnectorTableExecuteHandle tableExecuteHandle) {
+  public void executeTableExecute(
+      ConnectorSession session, ConnectorTableExecuteHandle tableExecuteHandle) {
     icebergMetadata.executeTableExecute(session, tableExecuteHandle);
   }
 
@@ -318,7 +320,8 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   }
 
   @Override
-  public void addColumn(ConnectorSession session, ConnectorTableHandle tableHandle, ColumnMetadata column) {
+  public void addColumn(
+      ConnectorSession session, ConnectorTableHandle tableHandle, ColumnMetadata column) {
     if (tableHandle instanceof KeyedTableHandle) {
       throw new TrinoException(NOT_SUPPORTED, "key table UnSupport add column");
     } else {
@@ -327,7 +330,8 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   }
 
   @Override
-  public void dropColumn(ConnectorSession session, ConnectorTableHandle tableHandle, ColumnHandle column) {
+  public void dropColumn(
+      ConnectorSession session, ConnectorTableHandle tableHandle, ColumnHandle column) {
     if (tableHandle instanceof KeyedTableHandle) {
       throw new TrinoException(NOT_SUPPORTED, "key table UnSupport drop column");
     } else {
@@ -336,7 +340,8 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   }
 
   @Override
-  public Optional<ConnectorTableHandle> applyDelete(ConnectorSession session, ConnectorTableHandle handle) {
+  public Optional<ConnectorTableHandle> applyDelete(
+      ConnectorSession session, ConnectorTableHandle handle) {
     if (handle instanceof KeyedTableHandle) {
       throw new TrinoException(NOT_SUPPORTED, "key table UnSupport apply delete");
     } else {
@@ -355,9 +360,7 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
 
   @Override
   public Optional<ConstraintApplicationResult<ConnectorTableHandle>> applyFilter(
-      ConnectorSession session,
-      ConnectorTableHandle handle,
-      Constraint constraint) {
+      ConnectorSession session, ConnectorTableHandle handle, Constraint constraint) {
     if (handle instanceof KeyedTableHandle) {
       return keyedConnectorMetadata.applyFilter(session, handle, constraint);
     } else {
@@ -379,7 +382,8 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   }
 
   @Override
-  public TableStatistics getTableStatistics(ConnectorSession session, ConnectorTableHandle tableHandle) {
+  public TableStatistics getTableStatistics(
+      ConnectorSession session, ConnectorTableHandle tableHandle) {
     if (tableHandle instanceof KeyedTableHandle) {
       return keyedConnectorMetadata.getTableStatistics(session, tableHandle);
     } else {
@@ -395,12 +399,14 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
     if (tableHandle instanceof KeyedTableHandle) {
       throw new TrinoException(NOT_SUPPORTED, "This connector does not support analyze");
     } else {
-      return icebergMetadata.getStatisticsCollectionMetadata(session, tableHandle, analyzeProperties);
+      return icebergMetadata.getStatisticsCollectionMetadata(
+          session, tableHandle, analyzeProperties);
     }
   }
 
   @Override
-  public ConnectorTableHandle beginStatisticsCollection(ConnectorSession session, ConnectorTableHandle tableHandle) {
+  public ConnectorTableHandle beginStatisticsCollection(
+      ConnectorSession session, ConnectorTableHandle tableHandle) {
     if (tableHandle instanceof KeyedTableHandle) {
       throw new TrinoException(NOT_SUPPORTED, "This connector does not support analyze");
     } else {
@@ -409,7 +415,8 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   }
 
   @Override
-  public ColumnHandle getMergeRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle) {
+  public ColumnHandle getMergeRowIdColumnHandle(
+      ConnectorSession session, ConnectorTableHandle tableHandle) {
     if (tableHandle instanceof KeyedTableHandle) {
       throw new TrinoException(NOT_SUPPORTED, "Key table does not support modifying table rows");
     } else {
@@ -419,8 +426,7 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
 
   @Override
   public ConnectorMergeTableHandle beginMerge(
-      ConnectorSession session,
-      ConnectorTableHandle tableHandle, RetryMode retryMode) {
+      ConnectorSession session, ConnectorTableHandle tableHandle, RetryMode retryMode) {
     if (tableHandle instanceof KeyedTableHandle) {
       throw new TrinoException(NOT_SUPPORTED, "Key table does not support beginMerge");
     } else {
@@ -450,8 +456,8 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   }
 
   private TableIdentifier getTableIdentifier(SchemaTableName schemaTableName) {
-    return TableIdentifier.of(arcticCatalog.name(),
-        schemaTableName.getSchemaName(), schemaTableName.getTableName());
+    return TableIdentifier.of(
+        arcticCatalog.name(), schemaTableName.getSchemaName(), schemaTableName.getTableName());
   }
 
   private List<String> listNamespaces(ConnectorSession session, Optional<String> namespace) {

@@ -47,14 +47,20 @@ Self-optimizing configurations are applicable to both Iceberg Format and Mixed s
 
 Data-cleaning configurations are applicable to both Iceberg Format and Mixed streaming Format.
 
-| Key                                                 | Default          | Description                                              |
-|---------------------------------------------|-----------|------------------------------------|
-| table-expire.enabled                        | true      | Enables periodically expire table                      |
-| change.data.ttl.minutes                     | 10080(7 days) | Time to live in minutes for data of ChangeStore                |
-| snapshot.base.keep.minutes                  | 720(12 hours) | Table-Expiration keeps the latest snapshots of BaseStore within a specified time in minutes                |
-| clean-orphan-file.enabled                   | false     | Enables periodically clean orphan files                       |
-| clean-orphan-file.min-existing-time-minutes | 2880(2 days)  | Cleaning orphan files keeps the files modified within a specified time in minutes |
-| clean-dangling-delete-files.enabled         | true      | Whether to enable cleaning of dangling delete files |
+| Key                                         | Default       | Description                                                                                                 |
+|---------------------------------------------|---------------|-------------------------------------------------------------------------------------------------------------|
+| table-expire.enabled                        | true          | Enables periodically expire table                                                                           |
+| change.data.ttl.minutes                     | 10080(7 days) | Time to live in minutes for data of ChangeStore                                                             |
+| snapshot.base.keep.minutes                  | 720(12 hours) | Table-Expiration keeps the latest snapshots of BaseStore within a specified time in minutes                 |
+| clean-orphan-file.enabled                   | false         | Enables periodically clean orphan files                                                                     |
+| clean-orphan-file.min-existing-time-minutes | 2880(2 days)  | Cleaning orphan files keeps the files modified within a specified time in minutes                           |
+| clean-dangling-delete-files.enabled         | true          | Whether to enable cleaning of dangling delete files                                                         |
+| data-expire.enabled                         | false         | Whether to enable data expiration                                                                           |
+| data-expire.level                           | partition     | Level of data expiration. Including partition and file                                                      |
+| data-expire.field                           | NULL          | Field used to determine data expiration, supporting timestamp/timestampz/long type and string type field in date format |
+| data-expire.datetime-string-pattern         | yyyy-MM-dd    | Pattern used for matching string datetime |
+| data-expire.datetime-number-format          | TIMESTAMP_MS  | Timestamp unit for long field. Including TIMESTAMP_MS and TIMESTAMP_S |
+| data-expire.retention-time                  | NULL          | Retention period for data expiration. For example, 1d means retaining data for 1 day. Other supported units include h (hour), min (minute), s (second), ms (millisecond), etc. |
 
 ## Mixed Format configurations
 
@@ -71,17 +77,18 @@ If using Iceberg Format，please refer to [Iceberg configurations](https://icebe
 
 ### Writing configurations
 
-| Key                                                 | Default          | Description                                              |
-| ---------------------------------- | ---------------- | ----------------------------------       |
-| base.write.format                  | parquet          | File format for the table for BaseStore, applicable to KeyedTable       |
-| change.write.format                | parquet          | File format for the table for ChangeStore, applicable to KeyedTable    |
-| write.format.default               | parquet          | Default file format for the table, applicable to UnkeyedTable          |
-| base.file-index.hash-bucket        | 4                | Initial number of buckets for BaseStore auto-bucket         |
-| change.file-index.hash-bucket      | 4                | Initial number of buckets for ChangeStore auto-bucket       |
-| write.target-file-size-bytes       | 134217728(128MB)| Target size when writing                     |
-| write.upsert.enabled               | false            | Enable upsert mode, multiple insert data with the same primary key will be merged if enabled   |
-| write.distribution-mode            | hash             | Shuffle rules for writing. UnkeyedTable can choose between none and hash, while KeyedTable can only choose hash           |
-| write.distribution.hash-mode       | auto             | Auto-bucket mode, which supports primary-key, partition-key, primary-partition-key, and auto  |
+| Key                            | Default         | Description                                                                                                     |
+|--------------------------------|-----------------|-----------------------------------------------------------------------------------------------------------------|
+| base.write.format              | parquet         | File format for the table for BaseStore, applicable to KeyedTable                                               |
+| change.write.format            | parquet         | File format for the table for ChangeStore, applicable to KeyedTable                                             |
+| write.format.default           | parquet         | Default file format for the table, applicable to UnkeyedTable                                                   |
+| base.file-index.hash-bucket    | 4               | Initial number of buckets for BaseStore auto-bucket                                                             |
+| change.file-index.hash-bucket  | 4               | Initial number of buckets for ChangeStore auto-bucket                                                           |
+| write.target-file-size-bytes   | 134217728(128MB) | Target size when writing                                                                                        |
+| write.upsert.enabled           | false           | Enable upsert mode, multiple insert data with the same primary key will be merged if enabled                    |
+| write.distribution-mode        | hash            | Shuffle rules for writing. UnkeyedTable can choose between none and hash, while KeyedTable can only choose hash |
+| write.distribution.hash-mode   | auto            | Auto-bucket mode, which supports primary-key, partition-key, primary-partition-key, and auto                    |
+
 
 ### LogStore configurations
 
@@ -105,7 +112,8 @@ If using Iceberg Format，please refer to [Iceberg configurations](https://icebe
 
 ### Mixed-Hive format configurations
 
-| Key                                | Default          | Description                                              |
-| ---------------------------------- | ---------------- | ----------------------------------       |
-| base.hive.auto-sync-schema-change  | true             | Whether synchronize schema changes of Hive Table from HMS             |
-| base.hive.auto-sync-data-write     | false            | Whether synchronize data changes of Hive Table from HMS, this should be true when writing to Hive    |
+| Key                               | Default          | Description                                                                                            |
+|-----------------------------------|------------------|--------------------------------------------------------------------------------------------------------|
+| base.hive.auto-sync-schema-change | true             | Whether synchronize schema changes of Hive Table from HMS                                              |
+| base.hive.auto-sync-data-write    | false            | Whether synchronize data changes of Hive Table from HMS, this should be true when writing to Hive      |
+| hive.consitent-write.enabled      | true             | The files written to the Hive directory will be hidden files and renamed to visible files upon commit. |

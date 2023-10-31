@@ -27,11 +27,9 @@ import org.apache.iceberg.util.StructLikeMap;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Abstract transaction operation on {@link BaseTable} which will change
- * max transaction id map
- */
-public abstract class PartitionTransactionOperation implements PendingUpdate<StructLikeMap<Map<String, String>>> {
+/** Abstract transaction operation on {@link BaseTable} which will change max transaction id map */
+public abstract class PartitionTransactionOperation
+    implements PendingUpdate<StructLikeMap<Map<String, String>>> {
 
   KeyedTable keyedTable;
   private Transaction tx;
@@ -79,7 +77,6 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Str
     return this;
   }
 
-
   public void commit() {
     if (this.skipEmptyCommit && isEmptyCommit()) {
       return;
@@ -87,9 +84,12 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Str
     this.tx = keyedTable.baseTable().newTransaction();
 
     StructLikeMap<Map<String, String>> changedPartitionProperties = apply();
-    UpdatePartitionProperties updatePartitionProperties = keyedTable.baseTable().updatePartitionProperties(tx);
-    changedPartitionProperties.forEach((partition, properties) ->
-        properties.forEach((key, value) -> updatePartitionProperties.set(partition, key, value)));
+    UpdatePartitionProperties updatePartitionProperties =
+        keyedTable.baseTable().updatePartitionProperties(tx);
+    changedPartitionProperties.forEach(
+        (partition, properties) ->
+            properties.forEach(
+                (key, value) -> updatePartitionProperties.set(partition, key, value)));
     updatePartitionProperties.commit();
 
     tx.commitTransaction();

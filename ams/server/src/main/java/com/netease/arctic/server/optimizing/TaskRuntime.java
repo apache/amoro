@@ -100,39 +100,41 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   private void finish(RewriteFilesOutput filesOutput) {
-    invokeConsisitency(() -> {
-      statusMachine.accept(Status.SUCCESS);
-      summary.setNewFileCnt(OptimizingUtil.getFileCount(filesOutput));
-      summary.setNewFileSize(OptimizingUtil.getFileSize(filesOutput));
-      endTime = System.currentTimeMillis();
-      costTime += endTime - startTime;
-      output = filesOutput;
-      persistTaskRuntime(this);
-    });
+    invokeConsisitency(
+        () -> {
+          statusMachine.accept(Status.SUCCESS);
+          summary.setNewFileCnt(OptimizingUtil.getFileCount(filesOutput));
+          summary.setNewFileSize(OptimizingUtil.getFileSize(filesOutput));
+          endTime = System.currentTimeMillis();
+          costTime += endTime - startTime;
+          output = filesOutput;
+          persistTaskRuntime(this);
+        });
   }
 
   void fail(String errorMessage) {
-    invokeConsisitency(() -> {
-      statusMachine.accept(Status.FAILED);
-      failReason = errorMessage;
-      endTime = System.currentTimeMillis();
-      costTime += endTime - startTime;
-      persistTaskRuntime(this);
-    });
+    invokeConsisitency(
+        () -> {
+          statusMachine.accept(Status.FAILED);
+          failReason = errorMessage;
+          endTime = System.currentTimeMillis();
+          costTime += endTime - startTime;
+          persistTaskRuntime(this);
+        });
   }
 
   void reset(boolean incRetryCount) {
-    invokeConsisitency(() -> {
-      if (!incRetryCount && status == Status.PLANNED) {
-        return;
-      }
-      if (incRetryCount) {
-        retry++;
-      }
-      statusMachine.accept(Status.PLANNED);
-      doAs(OptimizingMapper.class, mapper ->
-          mapper.updateTaskStatus(this, Status.PLANNED));
-    });
+    invokeConsisitency(
+        () -> {
+          if (!incRetryCount && status == Status.PLANNED) {
+            return;
+          }
+          if (incRetryCount) {
+            retry++;
+          }
+          statusMachine.accept(Status.PLANNED);
+          doAs(OptimizingMapper.class, mapper -> mapper.updateTaskStatus(this, Status.PLANNED));
+        });
   }
 
   public void schedule(OptimizerThread thread) {
@@ -155,15 +157,15 @@ public class TaskRuntime extends StatedPersistentBase {
     });
   }
 
-  public void tryCanceling() {
-    invokeConsisitency(() -> {
-      if (statusMachine.tryAccepting(Status.CANCELED)) {
-        costTime = System.currentTimeMillis() - startTime;
-        persistTaskRuntime(this);
-      }
-    });
+  void tryCanceling() {
+    invokeConsisitency(
+        () -> {
+          if (statusMachine.tryAccepting(Status.CANCELED)) {
+            costTime = System.currentTimeMillis() - startTime;
+            persistTaskRuntime(this);
+          }
+        });
   }
-
 
   public TaskRuntime claimOwnership(TaskOwner owner) {
     this.owner = owner;
@@ -171,7 +173,9 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   public boolean finished() {
-    return this.status == Status.SUCCESS || this.status == Status.FAILED || this.status == Status.CANCELED;
+    return this.status == Status.SUCCESS
+        || this.status == Status.FAILED
+        || this.status == Status.CANCELED;
   }
 
   protected void setInput(RewriteFilesInput input) {
@@ -265,7 +269,8 @@ public class TaskRuntime extends StatedPersistentBase {
       return 0;
     }
     calculatingStartTime = Math.max(startTime, calculatingStartTime);
-    calculatingEndTime = costTime == ArcticServiceConstants.INVALID_TIME ? calculatingEndTime : costTime + startTime;
+    calculatingEndTime =
+        costTime == ArcticServiceConstants.INVALID_TIME ? calculatingEndTime : costTime + startTime;
     long lastingTime = calculatingEndTime - calculatingStartTime;
     return Math.max(0, lastingTime);
   }
@@ -315,7 +320,8 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   public TaskQuota getCurrentQuota() {
-    if (startTime == ArcticServiceConstants.INVALID_TIME || endTime == ArcticServiceConstants.INVALID_TIME) {
+    if (startTime == ArcticServiceConstants.INVALID_TIME
+        || endTime == ArcticServiceConstants.INVALID_TIME) {
       throw new IllegalStateException("start time or end time is not correctly set");
     }
     return new TaskQuota(this);
@@ -403,8 +409,7 @@ public class TaskRuntime extends StatedPersistentBase {
     private String failReason;
     private long tableId;
 
-    public TaskQuota() {
-    }
+    public TaskQuota() {}
 
     public TaskQuota(TaskRuntime task) {
       this.startTime = task.getStartTime();
@@ -421,6 +426,26 @@ public class TaskRuntime extends StatedPersistentBase {
 
     public long getProcessId() {
       return processId;
+    }
+
+    public int getTaskId() {
+      return taskId;
+    }
+
+    public int getRetryNum() {
+      return retryNum;
+    }
+
+    public long getEndTime() {
+      return endTime;
+    }
+
+    public String getFailReason() {
+      return failReason;
+    }
+
+    public long getTableId() {
+      return tableId;
     }
 
     public long getQuotaTime(long calculatingStartTime) {

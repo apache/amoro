@@ -36,16 +36,18 @@ import java.io.UncheckedIOException;
 import java.util.List;
 
 public abstract class TableFileScanHelperTestBase extends TableTestBase {
-  public TableFileScanHelperTestBase(CatalogTestHelper catalogTestHelper,
-                                     TableTestHelper tableTestHelper) {
+  public TableFileScanHelperTestBase(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
-  protected void assertScanResult(List<TableFileScanHelper.FileScanResult> result, int size, Integer deleteCnt) {
+  protected void assertScanResult(
+      List<TableFileScanHelper.FileScanResult> result, int size, Integer deleteCnt) {
     assertScanResult(result, size, null, deleteCnt);
   }
 
-  protected void assertScanResult(List<TableFileScanHelper.FileScanResult> result, int size, Long sequence) {
+  protected void assertScanResult(
+      List<TableFileScanHelper.FileScanResult> result, int size, Long sequence) {
     assertScanResult(result, size, sequence, null);
   }
 
@@ -53,8 +55,8 @@ public abstract class TableFileScanHelperTestBase extends TableTestBase {
     assertScanResult(result, size, null, null);
   }
 
-  protected void assertScanResult(List<TableFileScanHelper.FileScanResult> result, int size, Long sequence,
-                                  Integer deleteCnt) {
+  protected void assertScanResult(
+      List<TableFileScanHelper.FileScanResult> result, int size, Long sequence, Integer deleteCnt) {
     Assert.assertEquals(size, result.size());
     for (TableFileScanHelper.FileScanResult fileScanResult : result) {
       DataFile file = fileScanResult.file();

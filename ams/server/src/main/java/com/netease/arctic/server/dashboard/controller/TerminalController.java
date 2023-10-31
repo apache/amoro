@@ -31,9 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * The controller that handles terminal requests.
- */
+/** The controller that handles terminal requests. */
 public class TerminalController {
 
   private final TerminalManager terminalManager;
@@ -44,11 +42,12 @@ public class TerminalController {
 
   /** Get sql example list */
   public void getExamples(Context ctx) {
-    List<String> examples = Arrays.stream(SqlExample.values()).map(SqlExample::getName).collect(Collectors.toList());
+    List<String> examples =
+        Arrays.stream(SqlExample.values()).map(SqlExample::getName).collect(Collectors.toList());
     ctx.json(OkResponse.of(examples));
   }
 
-  /** Get sql examples*/
+  /** Get sql examples */
   public void getSqlExamples(Context ctx) {
     String exampleName = ctx.pathParam("exampleName");
 
@@ -61,7 +60,7 @@ public class TerminalController {
     throw new IllegalArgumentException("can not get example name : " + exampleName);
   }
 
-  /** Execute some sql*/
+  /** Execute some sql */
   public void executeScript(Context ctx) {
     String catalog = ctx.pathParam("catalog");
     Map<String, String> bodyParams = ctx.bodyAsClass(Map.class);
@@ -78,21 +77,21 @@ public class TerminalController {
     ctx.json(OkResponse.of(terminalManager.getExecutionLog(sessionId)));
   }
 
-  /** Get execute result of some session*/
+  /** Get execute result of some session */
   public void getSqlResult(Context ctx) {
     String sessionId = ctx.pathParamAsClass("sessionId", String.class).get();
     List<SqlResult> results = terminalManager.getExecutionResults(sessionId);
     ctx.json(OkResponse.of(results));
   }
 
-  /** Stop some sql*/
+  /** Stop some sql */
   public void stopSql(Context ctx) {
     String sessionId = ctx.pathParamAsClass("sessionId", String.class).get();
     terminalManager.cancelExecution(sessionId);
     ctx.json(OkResponse.ok());
   }
 
-  /** Get latest sql information **/
+  /** Get latest sql information * */
   public void getLatestInfo(Context ctx) {
     String terminalId = ctx.cookie("JSESSIONID");
     LatestSessionInfo sessionInfo = terminalManager.getLastSessionInfo(terminalId);

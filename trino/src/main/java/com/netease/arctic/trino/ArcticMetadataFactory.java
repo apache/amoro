@@ -18,6 +18,8 @@
 
 package com.netease.arctic.trino;
 
+import static java.util.Objects.requireNonNull;
+
 import com.netease.arctic.trino.keyed.KeyedConnectorMetadata;
 import com.netease.arctic.trino.unkeyed.IcebergMetadata;
 import io.airlift.json.JsonCodec;
@@ -29,11 +31,7 @@ import io.trino.spi.type.TypeManager;
 
 import javax.inject.Inject;
 
-import static java.util.Objects.requireNonNull;
-
-/**
- * A factory to generate {@link ArcticConnectorMetadata}
- */
+/** A factory to generate {@link ArcticConnectorMetadata} */
 public class ArcticMetadataFactory {
   private final TypeManager typeManager;
   private final JsonCodec<CommitTaskData> commitTaskCodec;
@@ -53,19 +51,23 @@ public class ArcticMetadataFactory {
     this.typeManager = requireNonNull(typeManager, "typeManager is null");
     this.commitTaskCodec = requireNonNull(commitTaskCodec, "commitTaskCodec is null");
     this.fileSystemFactory = requireNonNull(fileSystemFactory, "fileSystemFactory is null");
-    this.tableStatisticsWriter = requireNonNull(tableStatisticsWriter, "tableStatisticsWriter is null");
+    this.tableStatisticsWriter =
+        requireNonNull(tableStatisticsWriter, "tableStatisticsWriter is null");
     this.arcticCatalogFactory = arcticCatalogFactory;
     this.arcticTrinoCatalogFactory = arcticTrinoCatalogFactory;
   }
 
   public ArcticConnectorMetadata create() {
-    IcebergMetadata icebergMetadata = new IcebergMetadata(typeManager, commitTaskCodec,
-        arcticTrinoCatalogFactory.create(null), fileSystemFactory, tableStatisticsWriter);
+    IcebergMetadata icebergMetadata =
+        new IcebergMetadata(
+            typeManager,
+            commitTaskCodec,
+            arcticTrinoCatalogFactory.create(null),
+            fileSystemFactory,
+            tableStatisticsWriter);
     KeyedConnectorMetadata arcticConnectorMetadata =
         new KeyedConnectorMetadata(arcticCatalogFactory.getArcticCatalog(), typeManager);
     return new ArcticConnectorMetadata(
-        arcticConnectorMetadata,
-        icebergMetadata,
-        arcticCatalogFactory.getArcticCatalog());
+        arcticConnectorMetadata, icebergMetadata, arcticCatalogFactory.getArcticCatalog());
   }
 }

@@ -19,9 +19,9 @@ import java.util.stream.Collectors;
 
 public class SchedulingPolicy {
 
-  protected static final String SCHEDULING_POLICY_PROPERTY_NAME = "scheduling-policy";
-  protected static final String QUOTA = "quota";
-  protected static final String BALANCED = "balanced";
+  private static final String SCHEDULING_POLICY_PROPERTY_NAME = "scheduling-policy";
+  private static final String QUOTA = "quota";
+  private static final String BALANCED = "balanced";
 
   private final Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap = new HashMap<>();
   private Comparator<TableRuntime> tableSorter;
@@ -32,9 +32,10 @@ public class SchedulingPolicy {
   }
 
   public void setTableSorterIfNeeded(ResourceGroup optimizerGroup) {
-    String schedulingPolicy = Optional.ofNullable(optimizerGroup.getProperties())
-        .orElseGet(Maps::newHashMap)
-        .getOrDefault(SCHEDULING_POLICY_PROPERTY_NAME, QUOTA);
+    String schedulingPolicy =
+        Optional.ofNullable(optimizerGroup.getProperties())
+            .orElseGet(Maps::newHashMap)
+            .getOrDefault(SCHEDULING_POLICY_PROPERTY_NAME, QUOTA);
     if (schedulingPolicy.equalsIgnoreCase(QUOTA)) {
       if (tableSorter == null || !(tableSorter instanceof QuotaOccupySorter)) {
         tableSorter = new QuotaOccupySorter();
@@ -115,15 +116,11 @@ public class SchedulingPolicy {
       return Long.compare(
           Math.max(
               one.getLastFullOptimizingTime(),
-              Math.max(
-                  one.getLastMinorOptimizingTime(),
-                  one.getLastMajorOptimizingTime())),
+              Math.max(one.getLastMinorOptimizingTime(), one.getLastMajorOptimizingTime())),
           Math.max(
               another.getLastFullOptimizingTime(),
               Math.max(
-                  another.getLastMinorOptimizingTime(),
-                  another.getLastMajorOptimizingTime()))
-      );
+                  another.getLastMinorOptimizingTime(), another.getLastMajorOptimizingTime())));
     }
   }
 }

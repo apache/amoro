@@ -22,74 +22,67 @@ import com.netease.arctic.AmoroCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
 import org.apache.hadoop.conf.Configuration;
 
-/**
- * Helper Interface for testing AmoroCatalog.
- */
+/** Helper Interface for testing AmoroCatalog. */
 public interface AmoroCatalogTestHelper<T> {
 
-  /**
-   * Table option key when using {@link #createTable(String, String)} to create table.
-   */
+  /** Table option key when using {@link #createTable(String, String)} to create table. */
   String DEFAULT_TABLE_OPTION_KEY = "amoro.test.key";
 
-  /**
-   * Table option value when using {@link #createTable(String, String)} to create table.
-   */
+  /** Table option value when using {@link #createTable(String, String)} to create table. */
   String DEFAULT_TABLE_OPTION_VALUE = "amoro.test.value";
 
-  /**
-   * Table column named 'id' when using {@link #createTable(String, String)} to create table.
-   */
+  /** Table column named 'id' when using {@link #createTable(String, String)} to create table. */
   String DEFAULT_SCHEMA_ID_NAME = "id";
 
-  /**
-   * Table column named 'name' when using {@link #createTable(String, String)} to create table.
-   */
+  /** Table column named 'name' when using {@link #createTable(String, String)} to create table. */
   String DEFAULT_SCHEMA_NAME_NAME = "name";
 
-  /**
-   * Table column named 'age' when using {@link #createTable(String, String)} to create table.
-   */
+  /** Table column named 'age' when using {@link #createTable(String, String)} to create table. */
   String DEFAULT_SCHEMA_AGE_NAME = "age";
 
-  /**
-   * Will be called first to inject the warehouse location.
-   */
+  /** Will be called first to inject the warehouse location. */
   void initWarehouse(String warehouseLocation);
 
-  /**
-   * Will be called first to inject the hive configuration.
-   */
+  /** Will be called first to inject the hive configuration. */
   void initHiveConf(Configuration hiveConf);
 
-  /**
-   * Get the {@link CatalogMeta} for the catalog.
-   */
+  /** Get the {@link CatalogMeta} for the catalog. */
   CatalogMeta getCatalogMeta();
 
-  /**
-   * Get the {@link AmoroCatalog} for the catalog.
-   */
+  /** Get the {@link AmoroCatalog} for the catalog. */
   AmoroCatalog amoroCatalog();
 
   /**
-   * Get the original catalog for the catalog. It will be paimon catalog or iceberg catalog or other.
+   * Get the original catalog for the catalog. It will be paimon catalog or iceberg catalog or
+   * other.
    */
   T originalCatalog();
 
-  /**
-   * Get the catalog name.
-   */
+  /** Get the catalog name. */
   String catalogName();
 
   /**
-   * Clean the catalog. drop databases and tables.
+   * Set table property.
+   *
+   * @param db database name
+   * @param tableName table name
+   * @param key property key
+   * @param value property value
    */
-  void clean();
+  void setTableProperties(String db, String tableName, String key, String value);
 
   /**
-   * Create a table. The schema, properties, etc. of a table depend on its implementation.
+   * Remove table property.
+   *
+   * @param db database name
+   * @param tableName table name
+   * @param key property key
    */
-  void createTable(String db, String tableName)
-      throws Exception;
+  void removeTableProperties(String db, String tableName, String key);
+
+  /** Clean the catalog. drop databases and tables. */
+  void clean();
+
+  /** Create a table. The schema, properties, etc. of a table depend on its implementation. */
+  void createTable(String db, String tableName) throws Exception;
 }

@@ -20,7 +20,6 @@ package com.netease.arctic.server.optimizing;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.iceberg.InternalRecordWrapper;
 import com.netease.arctic.server.AmsEnvironment;
 import com.netease.arctic.server.IcebergRestCatalogService;
 import com.netease.arctic.server.catalog.InternalCatalog;
@@ -36,6 +35,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.hadoop.HadoopCatalog;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -55,13 +55,12 @@ import java.util.Set;
 @Disabled
 public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
-  private static final Schema SCHEMA = new Schema(
-      Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "name", Types.StringType.get()),
-      Types.NestedField.required(3, "op_time", Types.TimestampType.withZone())
-  );
-  private static final PartitionSpec SPEC = PartitionSpec.builderFor(SCHEMA)
-      .day("op_time").build();
+  private static final Schema SCHEMA =
+      new Schema(
+          Types.NestedField.required(1, "id", Types.IntegerType.get()),
+          Types.NestedField.required(2, "name", Types.StringType.get()),
+          Types.NestedField.required(3, "op_time", Types.TimestampType.withZone()));
+  private static final PartitionSpec SPEC = PartitionSpec.builderFor(SCHEMA).day("op_time").build();
 
   private static final String DATABASE = "iceberg_optimizing_test_db";
   private static final String TABLE = "iceberg_test_tbl";
@@ -87,17 +86,20 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     StructLike partitionData = partitionData(table.schema(), table.spec(), quickDateWithZone(3));
 
     // Step 1: insert 2 data file and Minor Optimize
-    insertDataFile(table, Lists.newArrayList(
-        newRecord(1, "aaa", quickDateWithZone(3)),
-        newRecord(2, "bbb", quickDateWithZone(3)),
-        newRecord(3, "aaa", quickDateWithZone(3)),
-        newRecord(4, "bbb", quickDateWithZone(3))
-    ), partitionData);
+    insertDataFile(
+        table,
+        Lists.newArrayList(
+            newRecord(1, "aaa", quickDateWithZone(3)),
+            newRecord(2, "bbb", quickDateWithZone(3)),
+            newRecord(3, "aaa", quickDateWithZone(3)),
+            newRecord(4, "bbb", quickDateWithZone(3))),
+        partitionData);
 
-    insertDataFile(table, Lists.newArrayList(
-        newRecord(5, "ccc", quickDateWithZone(3)),
-        newRecord(6, "ddd", quickDateWithZone(3))
-    ), partitionData);
+    insertDataFile(
+        table,
+        Lists.newArrayList(
+            newRecord(5, "ccc", quickDateWithZone(3)), newRecord(6, "ddd", quickDateWithZone(3))),
+        partitionData);
 
     // wait Minor Optimize result
     OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
@@ -105,9 +107,8 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     checker.assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
 
     // Step 2: insert delete file and Minor Optimize
-    insertEqDeleteFiles(table, Lists.newArrayList(
-        newRecord(1, "aaa", quickDateWithZone(3))
-    ), partitionData);
+    insertEqDeleteFiles(
+        table, Lists.newArrayList(newRecord(1, "aaa", quickDateWithZone(3))), partitionData);
 
     // wait Minor Optimize result
     optimizeHistory = checker.waitOptimizeResult();
@@ -116,16 +117,16 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     // Step 3: insert 2 delete file and Minor Optimize(big file)
     long dataFileSize = getDataFileSize(table);
-    updateProperties(table, TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
+    updateProperties(
+        table,
+        TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
         String.valueOf(TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / (dataFileSize - 100)));
 
-    insertEqDeleteFiles(table, Lists.newArrayList(
-        newRecord(2, "aaa", quickDateWithZone(3))
-    ), partitionData);
+    insertEqDeleteFiles(
+        table, Lists.newArrayList(newRecord(2, "aaa", quickDateWithZone(3))), partitionData);
 
-    insertEqDeleteFiles(table, Lists.newArrayList(
-        newRecord(3, "aaa", quickDateWithZone(3))
-    ), partitionData);
+    insertEqDeleteFiles(
+        table, Lists.newArrayList(newRecord(3, "aaa", quickDateWithZone(3))), partitionData);
 
     // wait Minor Optimize result
     optimizeHistory = checker.waitOptimizeResult();
@@ -137,12 +138,12 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     // insertEqDeleteFiles(table, Lists.newArrayList(
     //     newRecord(4, "bbb", quickDateWithZone(3))
     // ));
-    rowDelta(table, Lists.newArrayList(
-        newRecord(7, "aaa", quickDateWithZone(3)),
-        newRecord(8, "aaa", quickDateWithZone(3))
-    ), Lists.newArrayList(
-        newRecord(4, "aaa", quickDateWithZone(3))
-    ), partitionData);
+    rowDelta(
+        table,
+        Lists.newArrayList(
+            newRecord(7, "aaa", quickDateWithZone(3)), newRecord(8, "aaa", quickDateWithZone(3))),
+        Lists.newArrayList(newRecord(4, "aaa", quickDateWithZone(3))),
+        partitionData);
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0");
 
     // wait FullMajor Optimize result
@@ -161,17 +162,20 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     StructLike partitionData = partitionData(table.schema(), table.spec(), quickDateWithZone(3));
 
     // Step 1: insert 2 data file and Minor Optimize
-    insertDataFile(table, Lists.newArrayList(
-        newRecord(1, "aaa", quickDateWithZone(3)),
-        newRecord(2, "bbb", quickDateWithZone(3)),
-        newRecord(3, "aaa", quickDateWithZone(3)),
-        newRecord(4, "bbb", quickDateWithZone(3))
-    ), partitionData);
+    insertDataFile(
+        table,
+        Lists.newArrayList(
+            newRecord(1, "aaa", quickDateWithZone(3)),
+            newRecord(2, "bbb", quickDateWithZone(3)),
+            newRecord(3, "aaa", quickDateWithZone(3)),
+            newRecord(4, "bbb", quickDateWithZone(3))),
+        partitionData);
 
-    insertDataFile(table, Lists.newArrayList(
-        newRecord(5, "ccc", quickDateWithZone(3)),
-        newRecord(6, "ddd", quickDateWithZone(3))
-    ), partitionData);
+    insertDataFile(
+        table,
+        Lists.newArrayList(
+            newRecord(5, "ccc", quickDateWithZone(3)), newRecord(6, "ddd", quickDateWithZone(3))),
+        partitionData);
 
     // wait Minor Optimize result
     OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
@@ -179,10 +183,11 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
 
     // Step 1: insert 2 data file and Minor Optimize
-    insertDataFile(table, Lists.newArrayList(
-        newRecord(7, "ccc", quickDateWithZone(3)),
-        newRecord(8, "ddd", quickDateWithZone(3))
-    ), partitionData);
+    insertDataFile(
+        table,
+        Lists.newArrayList(
+            newRecord(7, "ccc", quickDateWithZone(3)), newRecord(8, "ddd", quickDateWithZone(3))),
+        partitionData);
 
     // wait Minor Optimize result
     optimizeHistory = checker.waitOptimizeResult();
@@ -199,17 +204,20 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     StructLike partitionData = partitionData(table.schema(), table.spec(), quickDateWithZone(3));
 
     // Step 1: insert 2 data file and Minor Optimize
-    insertDataFile(table, Lists.newArrayList(
-        newRecord(1, "aaa", quickDateWithZone(3)),
-        newRecord(2, "bbb", quickDateWithZone(3)),
-        newRecord(3, "aaa", quickDateWithZone(3)),
-        newRecord(4, "bbb", quickDateWithZone(3))
-    ), partitionData);
+    insertDataFile(
+        table,
+        Lists.newArrayList(
+            newRecord(1, "aaa", quickDateWithZone(3)),
+            newRecord(2, "bbb", quickDateWithZone(3)),
+            newRecord(3, "aaa", quickDateWithZone(3)),
+            newRecord(4, "bbb", quickDateWithZone(3))),
+        partitionData);
 
-    insertDataFile(table, Lists.newArrayList(
-        newRecord(5, "ccc", quickDateWithZone(3)),
-        newRecord(6, "ddd", quickDateWithZone(3))
-    ), partitionData);
+    insertDataFile(
+        table,
+        Lists.newArrayList(
+            newRecord(5, "ccc", quickDateWithZone(3)), newRecord(6, "ddd", quickDateWithZone(3))),
+        partitionData);
 
     // wait Minor Optimize result
     OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
@@ -217,9 +225,8 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
 
     // Step 2: insert delete file and Minor Optimize
-    insertEqDeleteFiles(table, Lists.newArrayList(
-        newRecord(1, "aaa", quickDateWithZone(3))
-    ), partitionData);
+    insertEqDeleteFiles(
+        table, Lists.newArrayList(newRecord(1, "aaa", quickDateWithZone(3))), partitionData);
 
     // wait Minor Optimize result
     optimizeHistory = checker.waitOptimizeResult();
@@ -228,16 +235,16 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     // Step 3: insert 2 delete file and Minor Optimize(big file)
     long dataFileSize = getDataFileSize(table);
-    updateProperties(table, TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
+    updateProperties(
+        table,
+        TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
         String.valueOf(TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / (dataFileSize - 100)));
 
-    insertEqDeleteFiles(table, Lists.newArrayList(
-        newRecord(2, "aaa", quickDateWithZone(3))
-    ), partitionData);
+    insertEqDeleteFiles(
+        table, Lists.newArrayList(newRecord(2, "aaa", quickDateWithZone(3))), partitionData);
 
-    insertEqDeleteFiles(table, Lists.newArrayList(
-        newRecord(3, "aaa", quickDateWithZone(3))
-    ), partitionData);
+    insertEqDeleteFiles(
+        table, Lists.newArrayList(newRecord(3, "aaa", quickDateWithZone(3))), partitionData);
 
     // wait Minor Optimize result
     optimizeHistory = checker.waitOptimizeResult();
@@ -245,12 +252,12 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     assertIds(readRecords(table), 4, 5, 6);
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "10");
 
-    rowDelta(table, Lists.newArrayList(
-        newRecord(7, "aaa", quickDateWithZone(3)),
-        newRecord(8, "aaa", quickDateWithZone(3))
-    ), Lists.newArrayList(
-        newRecord(4, "aaa", quickDateWithZone(3))
-    ), partitionData);
+    rowDelta(
+        table,
+        Lists.newArrayList(
+            newRecord(7, "aaa", quickDateWithZone(3)), newRecord(8, "aaa", quickDateWithZone(3))),
+        Lists.newArrayList(newRecord(4, "aaa", quickDateWithZone(3))),
+        partitionData);
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0");
 
     // wait FullMajor Optimize result
@@ -271,50 +278,56 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "100");
 
-    insertDataFile(table, Lists.newArrayList(
-        newRecord(1, "aaa", quickDateWithZone(3)),
-        newRecord(2, "aaa", quickDateWithZone(3)),
-        newRecord(3, "aaa", quickDateWithZone(3)),
-        newRecord(4, "aaa", quickDateWithZone(3))
-    ), partitionData);
+    insertDataFile(
+        table,
+        Lists.newArrayList(
+            newRecord(1, "aaa", quickDateWithZone(3)),
+            newRecord(2, "aaa", quickDateWithZone(3)),
+            newRecord(3, "aaa", quickDateWithZone(3)),
+            newRecord(4, "aaa", quickDateWithZone(3))),
+        partitionData);
 
-    rowDelta(table, Lists.newArrayList(
-        newRecord(1, "aaa", quickDateWithZone(3)),
-        newRecord(2, "aaa", quickDateWithZone(3)),
-        newRecord(3, "aaa", quickDateWithZone(3)),
-        newRecord(4, "aaa", quickDateWithZone(3))
-    ), Lists.newArrayList(
-        newRecord(1, "aaa", quickDateWithZone(3)),
-        newRecord(2, "aaa", quickDateWithZone(3)),
-        newRecord(3, "aaa", quickDateWithZone(3)),
-        newRecord(4, "aaa", quickDateWithZone(3))
-    ), partitionData);
+    rowDelta(
+        table,
+        Lists.newArrayList(
+            newRecord(1, "aaa", quickDateWithZone(3)),
+            newRecord(2, "aaa", quickDateWithZone(3)),
+            newRecord(3, "aaa", quickDateWithZone(3)),
+            newRecord(4, "aaa", quickDateWithZone(3))),
+        Lists.newArrayList(
+            newRecord(1, "aaa", quickDateWithZone(3)),
+            newRecord(2, "aaa", quickDateWithZone(3)),
+            newRecord(3, "aaa", quickDateWithZone(3)),
+            newRecord(4, "aaa", quickDateWithZone(3))),
+        partitionData);
 
-    rowDelta(table, Lists.newArrayList(
-        newRecord(1, "aaa", quickDateWithZone(3)),
-        newRecord(2, "aaa", quickDateWithZone(3)),
-        newRecord(3, "aaa", quickDateWithZone(3)),
-        newRecord(4, "aaa", quickDateWithZone(3))
-    ), Lists.newArrayList(
-        newRecord(1, "aaa", quickDateWithZone(3)),
-        newRecord(2, "aaa", quickDateWithZone(3)),
-        newRecord(3, "aaa", quickDateWithZone(3)),
-        newRecord(4, "aaa", quickDateWithZone(3))
-    ), partitionData);
+    rowDelta(
+        table,
+        Lists.newArrayList(
+            newRecord(1, "aaa", quickDateWithZone(3)),
+            newRecord(2, "aaa", quickDateWithZone(3)),
+            newRecord(3, "aaa", quickDateWithZone(3)),
+            newRecord(4, "aaa", quickDateWithZone(3))),
+        Lists.newArrayList(
+            newRecord(1, "aaa", quickDateWithZone(3)),
+            newRecord(2, "aaa", quickDateWithZone(3)),
+            newRecord(3, "aaa", quickDateWithZone(3)),
+            newRecord(4, "aaa", quickDateWithZone(3))),
+        partitionData);
 
-    rowDeltaWithPos(table, Lists.newArrayList(
-        newRecord(3, "aaa", quickDateWithZone(3)),
-        newRecord(4, "aaa", quickDateWithZone(3))
-    ), Lists.newArrayList(
-        newRecord(1, "aaa", quickDateWithZone(3)),
-        newRecord(2, "aaa", quickDateWithZone(3)),
-        newRecord(3, "aaa", quickDateWithZone(3)),
-        newRecord(4, "aaa", quickDateWithZone(3))
-    ), partitionData);
+    rowDeltaWithPos(
+        table,
+        Lists.newArrayList(
+            newRecord(3, "aaa", quickDateWithZone(3)), newRecord(4, "aaa", quickDateWithZone(3))),
+        Lists.newArrayList(
+            newRecord(1, "aaa", quickDateWithZone(3)),
+            newRecord(2, "aaa", quickDateWithZone(3)),
+            newRecord(3, "aaa", quickDateWithZone(3)),
+            newRecord(4, "aaa", quickDateWithZone(3))),
+        partitionData);
 
-    insertDataFile(table, Lists.newArrayList(
-        newRecord(5, "eee", quickDateWithZone(3))
-    ), partitionData);
+    insertDataFile(
+        table, Lists.newArrayList(newRecord(5, "eee", quickDateWithZone(3))), partitionData);
 
     assertIds(readRecords(table), 4, 5);
 
@@ -328,7 +341,6 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     checker.assertOptimizeHangUp();
   }
 
-
   @ParameterizedTest
   @ValueSource(strings = {AmsEnvironment.ICEBERG_CATALOG, AmsEnvironment.INTERNAL_ICEBERG_CATALOG})
   public void testPartitionIcebergTablePartialOptimizing(String catalog) throws IOException {
@@ -336,26 +348,20 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     BaseOptimizingChecker checker = newOptimizingChecker(catalog);
     // Step 1: insert 6 data files for two partitions
     StructLike partitionData1 = partitionData(table.schema(), table.spec(), quickDateWithZone(1));
-    insertDataFile(table, Lists.newArrayList(
-        newRecord(1, "aaa", quickDateWithZone(1))
-    ), partitionData1);
-    insertDataFile(table, Lists.newArrayList(
-        newRecord(2, "bbb", quickDateWithZone(1))
-    ), partitionData1);
+    insertDataFile(
+        table, Lists.newArrayList(newRecord(1, "aaa", quickDateWithZone(1))), partitionData1);
+    insertDataFile(
+        table, Lists.newArrayList(newRecord(2, "bbb", quickDateWithZone(1))), partitionData1);
     StructLike partitionData2 = partitionData(table.schema(), table.spec(), quickDateWithZone(2));
-    insertDataFile(table, Lists.newArrayList(
-        newRecord(3, "ccc", quickDateWithZone(2))
-    ), partitionData2);
-    insertDataFile(table, Lists.newArrayList(
-        newRecord(4, "ddd", quickDateWithZone(2))
-    ), partitionData2);
+    insertDataFile(
+        table, Lists.newArrayList(newRecord(3, "ccc", quickDateWithZone(2))), partitionData2);
+    insertDataFile(
+        table, Lists.newArrayList(newRecord(4, "ddd", quickDateWithZone(2))), partitionData2);
     StructLike partitionData3 = partitionData(table.schema(), table.spec(), quickDateWithZone(3));
-    insertDataFile(table, Lists.newArrayList(
-        newRecord(5, "eee", quickDateWithZone(3))
-    ), partitionData3);
-    insertDataFile(table, Lists.newArrayList(
-        newRecord(6, "fff", quickDateWithZone(3))
-    ), partitionData3);
+    insertDataFile(
+        table, Lists.newArrayList(newRecord(5, "eee", quickDateWithZone(3))), partitionData3);
+    insertDataFile(
+        table, Lists.newArrayList(newRecord(6, "fff", quickDateWithZone(3))), partitionData3);
 
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "2");
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "4");
@@ -372,7 +378,8 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     return newRecord(SCHEMA, val);
   }
 
-  private StructLike partitionData(Schema tableSchema, PartitionSpec spec, Object... partitionValues) {
+  private StructLike partitionData(
+      Schema tableSchema, PartitionSpec spec, Object... partitionValues) {
     GenericRecord record = GenericRecord.create(tableSchema);
     int index = 0;
     Set<Integer> partitionField = Sets.newHashSet();
@@ -397,9 +404,9 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     return pd;
   }
 
-
   private Table createIcebergTable(String catalog, PartitionSpec spec, int formatVersion) {
-    ServerCatalog serverCatalog = amsEnv.serviceContainer().getTableService().getServerCatalog(catalog);
+    ServerCatalog serverCatalog =
+        amsEnv.serviceContainer().getTableService().getServerCatalog(catalog);
     if (serverCatalog instanceof InternalCatalog) {
       this.serverCatalog = (InternalCatalog) serverCatalog;
       if (!this.serverCatalog.exist(DATABASE)) {
@@ -407,28 +414,33 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
       }
     }
 
-    String impl = null;
+    String impl;
     Map<String, String> properties = Maps.newHashMap();
     if (catalog.equalsIgnoreCase(AmsEnvironment.ICEBERG_CATALOG)) {
       impl = HadoopCatalog.class.getName();
-      String warehouse = serverCatalog.getMetadata().getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
+      String warehouse =
+          serverCatalog
+              .getMetadata()
+              .getCatalogProperties()
+              .get(CatalogMetaProperties.KEY_WAREHOUSE);
       properties.put(CatalogMetaProperties.KEY_WAREHOUSE, warehouse);
     } else if (catalog.equalsIgnoreCase(AmsEnvironment.INTERNAL_ICEBERG_CATALOG)) {
       impl = RESTCatalog.class.getName();
-      properties.put("uri", amsEnv.getHttpUrl() + IcebergRestCatalogService.ICEBERG_REST_API_PREFIX);
+      properties.put(
+          "uri", amsEnv.getHttpUrl() + IcebergRestCatalogService.ICEBERG_REST_API_PREFIX);
       properties.put(CatalogMetaProperties.KEY_WAREHOUSE, AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
     } else {
       throw new IllegalStateException("unknown catalog");
     }
 
-
-    TableMetaStore tms = com.netease.arctic.utils.CatalogUtil.buildMetaStore(serverCatalog.getMetadata());
-    Catalog icebergCatalog = CatalogUtil.loadCatalog(
-        impl, catalog, properties, tms.getConfiguration()
-    );
+    TableMetaStore tms =
+        com.netease.arctic.utils.CatalogUtil.buildMetaStore(serverCatalog.getMetadata());
+    Catalog icebergCatalog =
+        CatalogUtil.loadCatalog(impl, catalog, properties, tms.getConfiguration());
 
     Map<String, String> tableProperties = Maps.newHashMap();
-    tableProperties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, Integer.toString(formatVersion));
+    tableProperties.put(
+        org.apache.iceberg.TableProperties.FORMAT_VERSION, Integer.toString(formatVersion));
     tableProperties.put(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "2");
 
     TableIdentifier identifier = TableIdentifier.of(DATABASE, TABLE);
@@ -439,7 +451,6 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
   public BaseOptimizingChecker newOptimizingChecker(String catalog) {
     return new BaseOptimizingChecker(
-        com.netease.arctic.table.TableIdentifier.of(catalog, DATABASE, TABLE)
-    );
+        com.netease.arctic.table.TableIdentifier.of(catalog, DATABASE, TABLE));
   }
 }

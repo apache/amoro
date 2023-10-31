@@ -41,18 +41,22 @@ import java.util.List;
 
 @RunWith(Parameterized.class)
 public class TestUnkeyedTableFileScanHelper extends TableFileScanHelperTestBase {
-  public TestUnkeyedTableFileScanHelper(CatalogTestHelper catalogTestHelper,
-                                        TableTestHelper tableTestHelper) {
+  public TestUnkeyedTableFileScanHelper(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[][] parameters() {
     return new Object[][] {
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, true)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, false)}};
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(false, true)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(false, false)
+      }
+    };
   }
 
   @Test
@@ -63,7 +67,8 @@ public class TestUnkeyedTableFileScanHelper extends TableFileScanHelperTestBase 
 
   @Test
   public void testScanEmptySnapshot() {
-    OptimizingTestHelpers.appendBase(getArcticTable(),
+    OptimizingTestHelpers.appendBase(
+        getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), 0L, Collections.emptyList(), false));
 
     List<TableFileScanHelper.FileScanResult> scan = scanFiles();
@@ -72,15 +77,17 @@ public class TestUnkeyedTableFileScanHelper extends TableFileScanHelperTestBase 
 
   @Test
   public void testScan() {
-    ArrayList<Record> newRecords = Lists.newArrayList(
-        tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-02T12:00:00"),
-        tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-02T12:00:00")
-    );
-    OptimizingTestHelpers.appendBase(getArcticTable(),
+    ArrayList<Record> newRecords =
+        Lists.newArrayList(
+            tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-02T12:00:00"),
+            tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-02T12:00:00"));
+    OptimizingTestHelpers.appendBase(
+        getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), 0L, newRecords, false));
-    OptimizingTestHelpers.appendBase(getArcticTable(),
+    OptimizingTestHelpers.appendBase(
+        getArcticTable(),
         tableTestHelper().writeBaseStore(getArcticTable(), 0L, newRecords, false));
 
     List<TableFileScanHelper.FileScanResult> scan = scanFiles();
@@ -92,26 +99,30 @@ public class TestUnkeyedTableFileScanHelper extends TableFileScanHelperTestBase 
     }
 
     // test partition filter
-    scan = scanFiles(buildFileScanHelper().withPartitionFilter(
-        partition -> getPartition().equals(partition)));
+    scan =
+        scanFiles(
+            buildFileScanHelper()
+                .withPartitionFilter(partition -> getPartition().equals(partition)));
     assertScanResult(scan, 2, null, 0);
   }
 
   @Test
   public void testScanWithPosDelete() {
-    ArrayList<Record> newRecords = Lists.newArrayList(
-        tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00")
-    );
-    List<DataFile> dataFiles = OptimizingTestHelpers.appendBase(getArcticTable(),
-        tableTestHelper().writeBaseStore(getArcticTable(), 0L, newRecords, false));
+    ArrayList<Record> newRecords =
+        Lists.newArrayList(
+            tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00"));
+    List<DataFile> dataFiles =
+        OptimizingTestHelpers.appendBase(
+            getArcticTable(),
+            tableTestHelper().writeBaseStore(getArcticTable(), 0L, newRecords, false));
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
-          MixedDataTestHelpers.writeBaseStorePosDelete(getArcticTable(), 0L, dataFile,
-              Collections.singletonList(0L)));
+          MixedDataTestHelpers.writeBaseStorePosDelete(
+              getArcticTable(), 0L, dataFile, Collections.singletonList(0L)));
     }
     OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
 

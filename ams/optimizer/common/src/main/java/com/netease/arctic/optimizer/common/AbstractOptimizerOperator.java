@@ -16,7 +16,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class AbstractOptimizerOperator implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractOptimizerOperator.class);
-  private static long CALL_AMS_INTERVAL = 5000;//5s
+
+  // Call ams every 5 seconds by default
+  private static long callAmsInterval = TimeUnit.SECONDS.toMillis(5);
 
   private final OptimizerConfig config;
   private final AtomicReference<String> token = new AtomicReference<>();
@@ -48,11 +50,11 @@ public class AbstractOptimizerOperator implements Serializable {
   private boolean shouldRetryLater(Throwable t) {
     if (t instanceof ArcticException) {
       ArcticException arcticException = (ArcticException) t;
-      //Call ams again when got a persistence/undefined error
-      return ErrorCodes.PERSISTENCE_ERROR_CODE == arcticException.getErrorCode() ||
-          ErrorCodes.UNDEFINED_ERROR_CODE == arcticException.getErrorCode();
+      // Call ams again when got a persistence/undefined error
+      return ErrorCodes.PERSISTENCE_ERROR_CODE == arcticException.getErrorCode()
+          || ErrorCodes.UNDEFINED_ERROR_CODE == arcticException.getErrorCode();
     } else {
-      //Call ams again when got an unexpected error
+      // Call ams again when got an unexpected error
       return true;
     }
   }
@@ -66,17 +68,21 @@ public class AbstractOptimizerOperator implements Serializable {
     return false;
   }
 
-  protected <T> T callAuthenticatedAms(AmsAuthenticatedCallOperation<T> operation) throws TException {
+  protected <T> T callAuthenticatedAms(AmsAuthenticatedCallOperation<T> operation)
+      throws TException {
     while (isStarted()) {
       if (tokenIsReady()) {
         String token = getToken();
         try {
           return operation.call(OptimizingClientPools.getClient(config.getAmsUrl()), token);
         } catch (Throwable t) {
-          if (t instanceof ArcticException &&
-              ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE == ((ArcticException) (t)).getErrorCode()) {
-            //Reset the token when got a authorization error
-            LOG.error("Got a authorization error while calling ams, reset token and wait for a new one", t);
+          if (t instanceof ArcticException
+              && ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE
+                  == ((ArcticException) (t)).getErrorCode()) {
+            // Reset the token when got a authorization error
+            LOG.error(
+                "Got a authorization error while calling ams, reset token and wait for a new one",
+                t);
             resetToken(token);
           } else if (shouldReturnNull(t)) {
             return null;
@@ -93,6 +99,10 @@ public class AbstractOptimizerOperator implements Serializable {
       }
     }
     throw new IllegalStateException("Operator is stopped");
+  }
+
+  public static void setCallAmsInterval(long callAmsInterval) {
+    AbstractOptimizerOperator.callAmsInterval = callAmsInterval;
   }
 
   protected OptimizerConfig getConfig() {
@@ -124,7 +134,7 @@ public class AbstractOptimizerOperator implements Serializable {
   }
 
   protected void waitAShortTime() {
-    waitAShortTime(CALL_AMS_INTERVAL);
+    waitAShortTime(callAmsInterval);
   }
 
   protected void waitAShortTime(long waitTime) {

@@ -18,7 +18,13 @@
 
 package com.netease.arctic.trino.unkeyed;
 
-import com.netease.arctic.iceberg.DeleteFilter;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Throwables.throwIfInstanceOf;
+import static io.trino.plugin.base.util.Closables.closeAllSuppress;
+import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
+import static java.util.Objects.requireNonNull;
+
+import com.netease.arctic.io.reader.DeleteFilter;
 import com.netease.arctic.trino.delete.TrinoRow;
 import io.trino.plugin.hive.ReaderProjectionsAdapter;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
@@ -30,6 +36,7 @@ import io.trino.spi.type.Type;
 import org.apache.iceberg.io.CloseableIterable;
 
 import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
@@ -37,17 +44,11 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.function.Supplier;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Throwables.throwIfInstanceOf;
-import static io.trino.plugin.base.util.Closables.closeAllSuppress;
-import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
-import static java.util.Objects.requireNonNull;
-
 /**
- * Iceberg original IcebergPageSource has some problems for arctic, such as iceberg version, table type.
+ * Iceberg original IcebergPageSource has some problems for arctic, such as iceberg version, table
+ * type.
  */
-public class IcebergPageSource
-    implements ConnectorPageSource {
+public class IcebergPageSource implements ConnectorPageSource {
   private final Type[] columnTypes;
   private final int[] expectedColumnIndexes;
   private final ConnectorPageSource delegate;
@@ -55,8 +56,7 @@ public class IcebergPageSource
   private final Optional<DeleteFilter<TrinoRow>> deleteFilter;
   private final Supplier<IcebergPositionDeletePageSink> positionDeleteSinkSupplier;
 
-  @Nullable
-  private IcebergPositionDeletePageSink positionDeleteSink;
+  @Nullable private IcebergPositionDeletePageSink positionDeleteSink;
 
   public IcebergPageSource(
       List<IcebergColumnHandle> expectedColumns,
@@ -66,7 +66,8 @@ public class IcebergPageSource
       Optional<DeleteFilter<TrinoRow>> deleteFilter,
       Supplier<IcebergPositionDeletePageSink> positionDeleteSinkSupplier) {
     // expectedColumns should contain columns which should be in the final Page
-    // requiredColumns should include all expectedColumns as well as any columns needed by the DeleteFilter
+    // requiredColumns should include all expectedColumns as well as any columns needed by the
+    // DeleteFilter
     requireNonNull(expectedColumns, "expectedColumns is null");
     requireNonNull(requiredColumns, "requiredColumns is null");
     this.expectedColumnIndexes = new int[expectedColumns.size()];
@@ -77,13 +78,13 @@ public class IcebergPageSource
       expectedColumnIndexes[i] = i;
     }
 
-    this.columnTypes = requiredColumns.stream()
-        .map(IcebergColumnHandle::getType)
-        .toArray(Type[]::new);
+    this.columnTypes =
+        requiredColumns.stream().map(IcebergColumnHandle::getType).toArray(Type[]::new);
     this.delegate = requireNonNull(delegate, "delegate is null");
     this.projectionsAdapter = requireNonNull(projectionsAdapter, "projectionsAdapter is null");
     this.deleteFilter = requireNonNull(deleteFilter, "deleteFilter is null");
-    this.positionDeleteSinkSupplier = requireNonNull(positionDeleteSinkSupplier, "positionDeleteSinkSupplier is null");
+    this.positionDeleteSinkSupplier =
+        requireNonNull(positionDeleteSinkSupplier, "positionDeleteSinkSupplier is null");
   }
 
   @Override
@@ -120,16 +121,24 @@ public class IcebergPageSource
       if (deleteFilter.isPresent()) {
         int positionCount = dataPage.getPositionCount();
         int[] positionsToKeep = new int[positionCount];
-        try (CloseableIterable<TrinoRow> filteredRows = deleteFilter.get()
-            .filter(CloseableIterable.withNoopClose(TrinoRow.fromPage(columnTypes, dataPage, positionCount)))) {
+        try (CloseableIterable<TrinoRow> filteredRows =
+            deleteFilter
+                .get()
+                .filter(
+                    CloseableIterable.withNoopClose(
+                        TrinoRow.fromPage(columnTypes, dataPage, positionCount)))) {
           int positionsToKeepCount = 0;
           for (TrinoRow rowToKeep : filteredRows) {
             positionsToKeep[positionsToKeepCount] = rowToKeep.getPosition();
             positionsToKeepCount++;
           }
-          dataPage = dataPage.getPositions(positionsToKeep, 0, positionsToKeepCount).getColumns(expectedColumnIndexes);
+          dataPage =
+              dataPage
+                  .getPositions(positionsToKeep, 0, positionsToKeepCount)
+                  .getColumns(expectedColumnIndexes);
         } catch (IOException e) {
-          throw new TrinoException(ICEBERG_BAD_DATA, "Failed to filter rows during merge-on-read operation", e);
+          throw new TrinoException(
+              ICEBERG_BAD_DATA, "Failed to filter rows during merge-on-read operation", e);
         }
       }
 

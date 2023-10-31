@@ -29,6 +29,7 @@ public class CatalogSettingInfo {
   Map<String, Object> storageConfig;
   Map<String, Object> authConfig;
   Map<String, String> properties;
+  Map<String, String> tableProperties;
 
   public List<String> getTableFormatList() {
     return tableFormatList;
@@ -86,6 +87,14 @@ public class CatalogSettingInfo {
     this.properties = properties;
   }
 
+  public Map<String, String> getTableProperties() {
+    return tableProperties;
+  }
+
+  public void setTableProperties(Map<String, String> tableProperties) {
+    this.tableProperties = tableProperties;
+  }
+
   public static class ConfigFileItem {
     String fileName;
     String fileUrl;
@@ -112,5 +121,3 @@ public class CatalogSettingInfo {
     }
   }
 }
-
-

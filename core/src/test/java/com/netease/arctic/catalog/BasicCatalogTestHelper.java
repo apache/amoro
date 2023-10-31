@@ -18,6 +18,10 @@
 
 package com.netease.arctic.catalog;
 
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
+import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
+import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
+
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
@@ -27,10 +31,6 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
-
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
-import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
-import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
 
 public class BasicCatalogTestHelper implements CatalogTestHelper {
 
@@ -47,10 +47,13 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
   }
 
   public BasicCatalogTestHelper(
-      String metastoreType, Map<String, String> catalogProperties, TableFormat... supportedFormats) {
+      String metastoreType,
+      Map<String, String> catalogProperties,
+      TableFormat... supportedFormats) {
     Preconditions.checkArgument(supportedFormats.length == 1, "Only support one table format");
     this.tableFormat = supportedFormats[0];
-    this.catalogProperties = catalogProperties == null ? Maps.newHashMap() : Maps.newHashMap(catalogProperties);
+    this.catalogProperties =
+        catalogProperties == null ? Maps.newHashMap() : Maps.newHashMap(catalogProperties);
     this.metastoreType = metastoreType;
   }
 
@@ -63,8 +66,8 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
   public CatalogMeta buildCatalogMeta(String baseDir) {
     Map<String, String> properties = Maps.newHashMap(catalogProperties);
     properties.put(CatalogMetaProperties.KEY_WAREHOUSE, baseDir);
-    return CatalogTestHelpers.buildCatalogMeta(TEST_CATALOG_NAME, metastoreType(),
-        properties, tableFormat());
+    return CatalogTestHelpers.buildCatalogMeta(
+        TEST_CATALOG_NAME, metastoreType(), properties, tableFormat());
   }
 
   @Override
@@ -75,18 +78,20 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
   @Override
   public Catalog buildIcebergCatalog(CatalogMeta catalogMeta) {
     if (!TableFormat.ICEBERG.equals(tableFormat)) {
-      throw new UnsupportedOperationException("Cannot build iceberg catalog for table format:" + tableFormat);
+      throw new UnsupportedOperationException(
+          "Cannot build iceberg catalog for table format:" + tableFormat);
     }
     Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
     catalogProperties.put(ICEBERG_CATALOG_TYPE, ICEBERG_CATALOG_TYPE_HADOOP);
-    return org.apache.iceberg.CatalogUtil.buildIcebergCatalog(TEST_CATALOG_NAME,
-        catalogProperties, new Configuration());
+    return org.apache.iceberg.CatalogUtil.buildIcebergCatalog(
+        TEST_CATALOG_NAME, catalogProperties, new Configuration());
   }
 
   @Override
   public MixedTables buildMixedTables(CatalogMeta catalogMeta) {
     if (!TableFormat.MIXED_ICEBERG.equals(tableFormat)) {
-      throw new UnsupportedOperationException("Cannot build mixed-tables for table format:" + tableFormat);
+      throw new UnsupportedOperationException(
+          "Cannot build mixed-tables for table format:" + tableFormat);
     }
     return new MixedTables(catalogMeta);
   }

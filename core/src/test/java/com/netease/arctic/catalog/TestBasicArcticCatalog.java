@@ -44,8 +44,10 @@ public class TestBasicArcticCatalog extends CatalogTestBase {
 
   @Parameterized.Parameters(name = "tableFormat = {0}")
   public static Object[] parameters() {
-    return new Object[] {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-                         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG)};
+    return new Object[] {
+      new BasicCatalogTestHelper(TableFormat.ICEBERG),
+      new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG)
+    };
   }
 
   @Test
@@ -65,22 +67,28 @@ public class TestBasicArcticCatalog extends CatalogTestBase {
     getCatalog().createDatabase(createDbName);
     Assert.assertTrue(getCatalog().listDatabases().contains(createDbName));
     Assert.assertThrows(
-        AlreadyExistsException.class,
-        () -> getCatalog().createDatabase(createDbName));
+        AlreadyExistsException.class, () -> getCatalog().createDatabase(createDbName));
     getCatalog().dropDatabase(createDbName);
   }
 
   @Test
   public void testCreateTableWithCatalogTableProperties() throws TException {
-    CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
-    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
-        "false");
+    CatalogMeta testCatalogMeta =
+        TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
+    TEST_AMS
+        .getAmsHandler()
+        .updateMeta(
+            testCatalogMeta,
+            CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
+            "false");
     getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     createTestTable();
     ArcticTable createTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
-    Assert.assertFalse(PropertyUtil.propertyAsBoolean(createTable.properties(),
-        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
+    Assert.assertFalse(
+        PropertyUtil.propertyAsBoolean(
+            createTable.properties(),
+            TableProperties.ENABLE_SELF_OPTIMIZING,
+            TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
   }
 
   @Test
@@ -89,17 +97,27 @@ public class TestBasicArcticCatalog extends CatalogTestBase {
     createTestTable();
     ArcticTable createTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
 
-    Assert.assertTrue(PropertyUtil.propertyAsBoolean(createTable.properties(),
-        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
+    Assert.assertTrue(
+        PropertyUtil.propertyAsBoolean(
+            createTable.properties(),
+            TableProperties.ENABLE_SELF_OPTIMIZING,
+            TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
 
-    CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
-    TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
-        "false");
+    CatalogMeta testCatalogMeta =
+        TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
+    TEST_AMS
+        .getAmsHandler()
+        .updateMeta(
+            testCatalogMeta,
+            CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
+            "false");
     getCatalog().refresh();
     ArcticTable loadTable = getCatalog().loadTable(createTable.id());
-    Assert.assertFalse(PropertyUtil.propertyAsBoolean(loadTable.properties(),
-        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
+    Assert.assertFalse(
+        PropertyUtil.propertyAsBoolean(
+            loadTable.properties(),
+            TableProperties.ENABLE_SELF_OPTIMIZING,
+            TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
   }
 
   @After
@@ -113,9 +131,10 @@ public class TestBasicArcticCatalog extends CatalogTestBase {
   protected void createTestTable() {
     switch (getTestFormat()) {
       case ICEBERG:
-        getIcebergCatalog().createTable(
-            TableIdentifier.of(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME),
-            BasicTableTestHelper.TABLE_SCHEMA);
+        getIcebergCatalog()
+            .createTable(
+                TableIdentifier.of(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME),
+                BasicTableTestHelper.TABLE_SCHEMA);
         break;
       case MIXED_ICEBERG:
       case MIXED_HIVE:

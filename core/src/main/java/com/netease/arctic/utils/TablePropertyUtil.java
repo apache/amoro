@@ -35,9 +35,7 @@ import org.apache.iceberg.util.StructLikeMap;
 import java.io.UncheckedIOException;
 import java.util.Map;
 
-/**
- * Utils to handle table properties.
- */
+/** Utils to handle table properties. */
 public class TablePropertyUtil {
 
   public static final StructLike EMPTY_STRUCT = GenericRecord.create(new Schema());
@@ -68,7 +66,8 @@ public class TablePropertyUtil {
     }
   }
 
-  public static StructLikeMap<Map<String, String>> decodePartitionProperties(PartitionSpec spec, String value) {
+  public static StructLikeMap<Map<String, String>> decodePartitionProperties(
+      PartitionSpec spec, String value) {
     try {
       StructLikeMap<Map<String, String>> results = StructLikeMap.create(spec.partitionType());
       TypeReference<Map<String, Map<String, String>>> typeReference =
@@ -88,8 +87,8 @@ public class TablePropertyUtil {
     }
   }
 
-  public static String encodePartitionProperties(PartitionSpec spec,
-      StructLikeMap<Map<String, String>> partitionProperties) {
+  public static String encodePartitionProperties(
+      PartitionSpec spec, StructLikeMap<Map<String, String>> partitionProperties) {
     Map<String, Map<String, String>> stringKeyMap = Maps.newHashMap();
     for (StructLike pd : partitionProperties.keySet()) {
       String pathLike = spec.partitionToPath(pd);
@@ -105,35 +104,45 @@ public class TablePropertyUtil {
   }
 
   public static StructLikeMap<Long> getPartitionBaseOptimizedTime(KeyedTable keyedTable) {
-    return getPartitionLongProperties(keyedTable.baseTable(), TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
+    return getPartitionLongProperties(
+        keyedTable.baseTable(), TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
   }
 
   public static StructLikeMap<Long> getPartitionOptimizedSequence(KeyedTable keyedTable) {
-    return getPartitionLongProperties(keyedTable.baseTable(), TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
+    return getPartitionLongProperties(
+        keyedTable.baseTable(), TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
   }
 
-  public static StructLikeMap<Long> getPartitionLongProperties(UnkeyedTable unkeyedTable, String key) {
+  public static StructLikeMap<Long> getPartitionLongProperties(
+      UnkeyedTable unkeyedTable, String key) {
     StructLikeMap<Long> result = StructLikeMap.create(unkeyedTable.spec().partitionType());
 
     StructLikeMap<Map<String, String>> partitionProperty = unkeyedTable.partitionProperty();
-    partitionProperty.forEach((partitionKey, propertyValue) -> {
-      Long longValue = (propertyValue == null || propertyValue.get(key) == null) ?
-          null : Long.parseLong(propertyValue.get(key));
-      if (longValue != null) {
-        result.put(partitionKey, longValue);
-      }
-    });
+    partitionProperty.forEach(
+        (partitionKey, propertyValue) -> {
+          Long longValue =
+              (propertyValue == null || propertyValue.get(key) == null)
+                  ? null
+                  : Long.parseLong(propertyValue.get(key));
+          if (longValue != null) {
+            result.put(partitionKey, longValue);
+          }
+        });
 
     return result;
   }
 
-  public static Map<String, String> getPartitionProperties(ArcticTable arcticTable, String partitionPath) {
+  public static Map<String, String> getPartitionProperties(
+      ArcticTable arcticTable, String partitionPath) {
     return getPartitionProperties(
-        arcticTable.isKeyedTable() ? arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable(),
+        arcticTable.isKeyedTable()
+            ? arcticTable.asKeyedTable().baseTable()
+            : arcticTable.asUnkeyedTable(),
         partitionPath);
   }
 
-  public static Map<String, String> getPartitionProperties(UnkeyedTable unkeyedTable, String partitionPath) {
+  public static Map<String, String> getPartitionProperties(
+      UnkeyedTable unkeyedTable, String partitionPath) {
     StructLike partitionData;
     if (unkeyedTable.spec().isUnpartitioned()) {
       partitionData = TablePropertyUtil.EMPTY_STRUCT;
@@ -143,7 +152,8 @@ public class TablePropertyUtil {
     return getPartitionProperties(unkeyedTable, partitionData);
   }
 
-  public static Map<String, String> getPartitionProperties(UnkeyedTable unkeyedTable, StructLike partitionData) {
+  public static Map<String, String> getPartitionProperties(
+      UnkeyedTable unkeyedTable, StructLike partitionData) {
     Map<String, String> result = Maps.newHashMap();
     StructLikeMap<Map<String, String>> partitionProperty = unkeyedTable.partitionProperty();
     if (partitionProperty.containsKey(partitionData)) {
@@ -153,21 +163,26 @@ public class TablePropertyUtil {
   }
 
   public static StructLikeMap<Long> getLegacyPartitionMaxTransactionId(KeyedTable keyedTable) {
-    StructLikeMap<Long> baseTableMaxTransactionId = StructLikeMap.create(keyedTable.spec().partitionType());
+    StructLikeMap<Long> baseTableMaxTransactionId =
+        StructLikeMap.create(keyedTable.spec().partitionType());
 
-    StructLikeMap<Map<String, String>> partitionProperty = keyedTable.asKeyedTable().baseTable().partitionProperty();
-    partitionProperty.forEach((partitionKey, propertyValue) -> {
-      Long maxTxId = (propertyValue == null ||
-          propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID) == null) ?
-          null : Long.parseLong(propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID));
-      if (maxTxId != null) {
-        baseTableMaxTransactionId.put(partitionKey, maxTxId);
-      }
-    });
+    StructLikeMap<Map<String, String>> partitionProperty =
+        keyedTable.asKeyedTable().baseTable().partitionProperty();
+    partitionProperty.forEach(
+        (partitionKey, propertyValue) -> {
+          Long maxTxId =
+              (propertyValue == null
+                      || propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID) == null)
+                  ? null
+                  : Long.parseLong(
+                      propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID));
+          if (maxTxId != null) {
+            baseTableMaxTransactionId.put(partitionKey, maxTxId);
+          }
+        });
 
     return baseTableMaxTransactionId;
   }
-
 
   public static long getTableWatermark(Map<String, String> properties) {
     String watermarkValue = properties.get(TableProperties.WATERMARK_TABLE);
@@ -176,5 +191,12 @@ public class TablePropertyUtil {
     } else {
       return Long.parseLong(watermarkValue);
     }
+  }
+
+  public static boolean hiveConsistentWriteEnabled(Map<String, String> properties) {
+    return Boolean.parseBoolean(
+        properties.getOrDefault(
+            TableProperties.HIVE_CONSISTENT_WRITE_ENABLED,
+            TableProperties.HIVE_CONSISTENT_WRITE_ENABLED_DEFAULT));
   }
 }

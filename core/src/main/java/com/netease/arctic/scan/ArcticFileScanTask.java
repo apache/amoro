@@ -22,20 +22,17 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import org.apache.iceberg.FileScanTask;
 
-/**
- * A scan task over a single data file with some positional delete files
- */
+/** A scan task over a single data file with some positional delete files */
 public interface ArcticFileScanTask extends FileScanTask {
 
   /**
    * The {@link PrimaryKeyedFile} to scan.
+   *
    * @return the file to scan
    */
   PrimaryKeyedFile file();
 
-  /**
-   * Returns the type of file to scan
-   */
+  /** Returns the type of file to scan */
   default DataFileType fileType() {
     return file().type();
   }

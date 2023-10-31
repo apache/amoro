@@ -36,8 +36,8 @@ import java.net.URL;
 import java.util.HashMap;
 
 /**
- * Impala may write string type column with binary value in parquet file,
- * which is okay for Hive readers, Arctic need to support it too for mixed-hive format tables.
+ * Impala may write string type column with binary value in parquet file, which is okay for Hive
+ * readers, Arctic need to support it too for mixed-hive format tables.
  */
 public class TestImpalaParquet {
 
@@ -47,12 +47,14 @@ public class TestImpalaParquet {
   public void testReadParquetFileProducedByImpala() {
     NameMapping mapping = NameMapping.of(MappedField.of(1, "str"));
     Schema schema = new Schema(Types.NestedField.of(1, true, "str", Types.StringType.get()));
-    AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
-            Files.localInput(loadParquetFilePath()))
-        .project(schema)
-        .withNameMapping(mapping)
-        .createReaderFunc(fileSchema -> AdaptHiveGenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
-        .caseSensitive(false);
+    AdaptHiveParquet.ReadBuilder builder =
+        AdaptHiveParquet.read(Files.localInput(loadParquetFilePath()))
+            .project(schema)
+            .withNameMapping(mapping)
+            .createReaderFunc(
+                fileSchema ->
+                    AdaptHiveGenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
+            .caseSensitive(false);
     for (Object o : builder.build()) {
       Record next = (Record) o;
       Assert.assertEquals("hello parquet", next.get(0));
@@ -63,13 +65,15 @@ public class TestImpalaParquet {
   public void testReadParquetFileProducedByImpalaWithFilter() {
     NameMapping mapping = NameMapping.of(MappedField.of(1, "str"));
     Schema schema = new Schema(Types.NestedField.of(1, true, "str", Types.StringType.get()));
-    AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
-            Files.localInput(loadParquetFilePath()))
-        .project(schema)
-        .withNameMapping(mapping)
-        .filter(Expressions.in("str", "aa"))
-        .createReaderFunc(fileSchema -> AdaptHiveGenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
-        .caseSensitive(false);
+    AdaptHiveParquet.ReadBuilder builder =
+        AdaptHiveParquet.read(Files.localInput(loadParquetFilePath()))
+            .project(schema)
+            .withNameMapping(mapping)
+            .filter(Expressions.in("str", "aa"))
+            .createReaderFunc(
+                fileSchema ->
+                    AdaptHiveGenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
+            .caseSensitive(false);
     CloseableIterator<Object> iterator = builder.build().iterator();
     Assert.assertEquals(0, Iterators.size(iterator));
   }

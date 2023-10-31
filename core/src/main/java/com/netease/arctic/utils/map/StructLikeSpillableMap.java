@@ -18,31 +18,36 @@
 
 package com.netease.arctic.utils.map;
 
-import com.netease.arctic.iceberg.StructLikeWrapper;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.StructLikeWrapper;
 
 import javax.annotation.Nullable;
 
 /**
- * Copy form iceberg {@link org.apache.iceberg.util.StructLikeMap}. Make using StructLikeWrapper more cheap
+ * Copy form iceberg {@link org.apache.iceberg.util.StructLikeMap}. Make using StructLikeWrapper
+ * more cheap
  */
 public class StructLikeSpillableMap<T> extends StructLikeBaseMap<T> {
 
-  public static <T> StructLikeSpillableMap<T> create(Types.StructType type,
-                                                     Long maxInMemorySizeInBytes,
-                                                     @Nullable String backendBaseDir) {
+  public static <T> StructLikeSpillableMap<T> create(
+      Types.StructType type, Long maxInMemorySizeInBytes, @Nullable String backendBaseDir) {
     return new StructLikeSpillableMap<>(type, maxInMemorySizeInBytes, backendBaseDir);
   }
 
   private final SimpleMap<StructLikeWrapper, T> wrapperMap;
 
-  private StructLikeSpillableMap(Types.StructType type, Long maxInMemorySizeInBytes, @Nullable String backendBaseDir) {
+  private StructLikeSpillableMap(
+      Types.StructType type, Long maxInMemorySizeInBytes, @Nullable String backendBaseDir) {
     super(type);
-    this.wrapperMap = new SimpleSpillableMap<>(maxInMemorySizeInBytes, backendBaseDir,
-        SerializationUtil.createStructLikeWrapperSerializer(structLikeWrapperFactory),
-        SerializationUtil.createJavaSimpleSerializer(),
-        new StructLikeWrapperSizeEstimator(), new DefaultSizeEstimator<>());
+    this.wrapperMap =
+        new SimpleSpillableMap<>(
+            maxInMemorySizeInBytes,
+            backendBaseDir,
+            SerializationUtil.createStructLikeWrapperSerializer(structLikeWrapper),
+            SerializationUtil.createJavaSimpleSerializer(),
+            new StructLikeWrapperSizeEstimator(),
+            new DefaultSizeEstimator<>());
   }
 
   @Override
@@ -50,4 +55,3 @@ public class StructLikeSpillableMap<T> extends StructLikeBaseMap<T> {
     return wrapperMap;
   }
 }
-

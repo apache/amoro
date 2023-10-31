@@ -31,9 +31,9 @@ import java.util.List;
 
 /**
  * A struct of primary key values.
- * <p>
- * Instances of this class can produce primary key values from a data row passed to {@link #primaryKey(StructLike)}
- * and calculate th tree node of data by passing to {@link #treeNode(long)}
+ *
+ * <p>Instances of this class can produce primary key values from a data row passed to {@link
+ * #primaryKey(StructLike)} and calculate th tree node of data by passing to {@link #treeNode(long)}
  */
 public class PrimaryKeyData implements StructLike, Serializable {
 
@@ -54,8 +54,10 @@ public class PrimaryKeyData implements StructLike, Serializable {
     Schema schema = primaryKeySpec.getSchema();
     for (int i = 0; i < size; i += 1) {
       PrimaryKeySpec.PrimaryKeyField field = fields.get(i);
-      Accessor<StructLike> accessor = inputSchema.accessorForField(inputSchema.findField(field.fieldName()).fieldId());
-      Preconditions.checkArgument(accessor != null,
+      Accessor<StructLike> accessor =
+          inputSchema.accessorForField(inputSchema.findField(field.fieldName()).fieldId());
+      Preconditions.checkArgument(
+          accessor != null,
           "Cannot build accessor for field: " + schema.findField(field.fieldName()));
       this.accessors[i] = accessor;
     }

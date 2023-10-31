@@ -44,9 +44,7 @@ import org.apache.iceberg.SchemaParser;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * ConnectorPageSourceProvider for Keyed Table
- */
+/** ConnectorPageSourceProvider for Keyed Table */
 public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
 
   private final IcebergPageSourceProvider icebergPageSourceProvider;
@@ -73,32 +71,38 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
       DynamicFilter dynamicFilter) {
     KeyedConnectorSplit keyedConnectorSplit = (KeyedConnectorSplit) split;
     KeyedTableHandle keyedTableHandle = (KeyedTableHandle) table;
-    List<IcebergColumnHandle> icebergColumnHandles = columns.stream().map(IcebergColumnHandle.class::cast)
-        .collect(Collectors.toList());
+    List<IcebergColumnHandle> icebergColumnHandles =
+        columns.stream().map(IcebergColumnHandle.class::cast).collect(Collectors.toList());
     KeyedTableScanTask keyedTableScanTask = keyedConnectorSplit.getKeyedTableScanTask();
-    List<PrimaryKeyedFile> equDeleteFiles = keyedTableScanTask.arcticEquityDeletes().stream()
-        .map(ArcticFileScanTask::file).collect(Collectors.toList());
-    Schema tableSchema = SchemaParser.fromJson(keyedTableHandle.getIcebergTableHandle().getTableSchemaJson());
-    List<IcebergColumnHandle> deleteFilterRequiredSchema = IcebergUtil.getColumns(new KeyedDeleteFilter(
-        keyedTableScanTask,
-        tableSchema,
-        ImmutableList.of(),
-        keyedTableHandle.getPrimaryKeySpec(),
-        fileSystemFactory.create(session).toFileIo()
-    ).requiredSchema(), typeManager);
+    List<PrimaryKeyedFile> equDeleteFiles =
+        keyedTableScanTask.arcticEquityDeletes().stream()
+            .map(ArcticFileScanTask::file)
+            .collect(Collectors.toList());
+    Schema tableSchema =
+        SchemaParser.fromJson(keyedTableHandle.getIcebergTableHandle().getTableSchemaJson());
+    List<IcebergColumnHandle> deleteFilterRequiredSchema =
+        IcebergUtil.getColumns(
+            new KeyedDeleteFilter(
+                    keyedTableScanTask,
+                    tableSchema,
+                    ImmutableList.of(),
+                    keyedTableHandle.getPrimaryKeySpec(),
+                    fileSystemFactory.create(session).toFileIo())
+                .requiredSchema(),
+            typeManager);
     ImmutableList.Builder<IcebergColumnHandle> requiredColumnsBuilder = ImmutableList.builder();
     requiredColumnsBuilder.addAll(icebergColumnHandles);
     deleteFilterRequiredSchema.stream()
         .filter(column -> !columns.contains(column))
         .forEach(requiredColumnsBuilder::add);
     List<IcebergColumnHandle> requiredColumns = requiredColumnsBuilder.build();
-    AdaptHiveArcticDeleteFilter<TrinoRow> arcticDeleteFilter = new KeyedDeleteFilter(
-        keyedTableScanTask,
-        tableSchema,
-        requiredColumns,
-        keyedTableHandle.getPrimaryKeySpec(),
-        fileSystemFactory.create(session).toFileIo()
-    );
+    AdaptHiveArcticDeleteFilter<TrinoRow> arcticDeleteFilter =
+        new KeyedDeleteFilter(
+            keyedTableScanTask,
+            tableSchema,
+            requiredColumns,
+            keyedTableHandle.getPrimaryKeySpec(),
+            fileSystemFactory.create(session).toFileIo());
 
     return new KeyedConnectorPageSource(
         icebergColumnHandles,
@@ -110,7 +114,6 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
         keyedTableHandle,
         dynamicFilter,
         typeManager,
-        arcticDeleteFilter
-    );
+        arcticDeleteFilter);
   }
 }

@@ -35,16 +35,22 @@ public class TestOptimizer extends OptimizerTestBase {
 
   @Test
   public void testStartOptimizer() throws InterruptedException {
-    OptimizerConfig optimizerConfig = OptimizerTestHelpers.buildOptimizerConfig(TEST_AMS.getServerUrl());
+    OptimizerConfig optimizerConfig =
+        OptimizerTestHelpers.buildOptimizerConfig(TEST_AMS.getServerUrl());
     Optimizer optimizer = new Optimizer(optimizerConfig);
     new Thread(optimizer::startOptimizing).start();
     TimeUnit.SECONDS.sleep(1);
     Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().size());
-    TEST_AMS.getOptimizerHandler().offerTask(TestOptimizerExecutor.TestOptimizingInput.successInput(1).toTask(0, 0));
-    TEST_AMS.getOptimizerHandler().offerTask(TestOptimizerExecutor.TestOptimizingInput.successInput(2).toTask(0, 1));
+    TEST_AMS
+        .getOptimizerHandler()
+        .offerTask(TestOptimizerExecutor.TestOptimizingInput.successInput(1).toTask(0, 0));
+    TEST_AMS
+        .getOptimizerHandler()
+        .offerTask(TestOptimizerExecutor.TestOptimizingInput.successInput(2).toTask(0, 1));
     TimeUnit.MILLISECONDS.sleep(OptimizerTestHelpers.CALL_AMS_INTERVAL * 10);
     String token = optimizer.getToucher().getToken();
-    List<OptimizingTaskResult> taskResults = TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token);
+    List<OptimizingTaskResult> taskResults =
+        TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token);
     Assert.assertEquals(2, taskResults.size());
     optimizer.stopOptimizing();
   }

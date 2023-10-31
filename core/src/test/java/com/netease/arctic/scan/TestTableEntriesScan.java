@@ -51,9 +51,8 @@ public class TestTableEntriesScan extends TableDataTestBase {
     // change table commit 2 insert files, then commit 1 delete file
     Table changeTable = getArcticTable().asKeyedTable().changeTable();
     Map<String, Entry> expectedEntries = getExpectedCurrentEntries(changeTable);
-    TableEntriesScan dataFileScan = TableEntriesScan.builder(changeTable)
-        .includeFileContent(FileContent.DATA)
-        .build();
+    TableEntriesScan dataFileScan =
+        TableEntriesScan.builder(changeTable).includeFileContent(FileContent.DATA).build();
     int cnt = 0;
     for (IcebergFileEntry entry : dataFileScan.entries()) {
       cnt++;
@@ -66,9 +65,10 @@ public class TestTableEntriesScan extends TableDataTestBase {
   public void testScanEntriesForPosDeleteFiles() {
     // base table commit 4 insert files, then commit 1 pos-delete file
     Table baseTable = getArcticTable().asKeyedTable().baseTable();
-    TableEntriesScan deleteFileScan = TableEntriesScan.builder(baseTable)
-        .includeFileContent(FileContent.POSITION_DELETES)
-        .build();
+    TableEntriesScan deleteFileScan =
+        TableEntriesScan.builder(baseTable)
+            .includeFileContent(FileContent.POSITION_DELETES)
+            .build();
     Map<String, Entry> expectedEntries = getExpectedCurrentEntries(baseTable);
     int cnt = 0;
     for (IcebergFileEntry entry : deleteFileScan.entries()) {
@@ -94,11 +94,13 @@ public class TestTableEntriesScan extends TableDataTestBase {
     Map<String, Entry> expectedEntries2 = getExpectedCurrentEntries(baseTable);
 
     // using snapshot
-    TableEntriesScan entryScan1 = TableEntriesScan.builder(baseTable)
-        .includeFileContent(FileContent.POSITION_DELETES, FileContent.DATA, FileContent.EQUALITY_DELETES)
-        .useSnapshot(snapshot1.snapshotId())
-        .withAliveEntry(false)
-        .build();
+    TableEntriesScan entryScan1 =
+        TableEntriesScan.builder(baseTable)
+            .includeFileContent(
+                FileContent.POSITION_DELETES, FileContent.DATA, FileContent.EQUALITY_DELETES)
+            .useSnapshot(snapshot1.snapshotId())
+            .withAliveEntry(false)
+            .build();
     int cnt = 0;
     for (IcebergFileEntry entry : entryScan1.entries()) {
       cnt++;
@@ -107,10 +109,12 @@ public class TestTableEntriesScan extends TableDataTestBase {
     Assert.assertEquals(5, cnt);
 
     // current
-    TableEntriesScan entryScan2 = TableEntriesScan.builder(baseTable)
-        .includeFileContent(FileContent.POSITION_DELETES, FileContent.DATA, FileContent.EQUALITY_DELETES)
-        .withAliveEntry(false)
-        .build();
+    TableEntriesScan entryScan2 =
+        TableEntriesScan.builder(baseTable)
+            .includeFileContent(
+                FileContent.POSITION_DELETES, FileContent.DATA, FileContent.EQUALITY_DELETES)
+            .withAliveEntry(false)
+            .build();
     cnt = 0;
     for (IcebergFileEntry entry : entryScan2.entries()) {
       cnt++;
@@ -119,11 +123,13 @@ public class TestTableEntriesScan extends TableDataTestBase {
     Assert.assertEquals(9, cnt);
 
     // all entries (in all snapshots)
-    TableEntriesScan entryScan3 = TableEntriesScan.builder(baseTable)
-        .includeFileContent(FileContent.POSITION_DELETES, FileContent.DATA, FileContent.EQUALITY_DELETES)
-        .withAliveEntry(false)
-        .allEntries()
-        .build();
+    TableEntriesScan entryScan3 =
+        TableEntriesScan.builder(baseTable)
+            .includeFileContent(
+                FileContent.POSITION_DELETES, FileContent.DATA, FileContent.EQUALITY_DELETES)
+            .withAliveEntry(false)
+            .allEntries()
+            .build();
     Assert.assertEquals(13, Iterables.size(entryScan3.entries()));
   }
 
@@ -131,10 +137,11 @@ public class TestTableEntriesScan extends TableDataTestBase {
   public void testScanEntriesWithFilter() {
     // change table commit 2 insert files, then commit 1 delete file
     Table changeTable = getArcticTable().asKeyedTable().changeTable();
-    TableEntriesScan dataFileScan = TableEntriesScan.builder(changeTable)
-        .includeFileContent(FileContent.DATA)
-        .withDataFilter(Expressions.equal("id", 5))
-        .build();
+    TableEntriesScan dataFileScan =
+        TableEntriesScan.builder(changeTable)
+            .includeFileContent(FileContent.DATA)
+            .withDataFilter(Expressions.equal("id", 5))
+            .build();
     Map<String, Entry> expectedEntries = getExpectedCurrentEntries(changeTable);
     int cnt = 0;
     for (IcebergFileEntry entry : dataFileScan.entries()) {
@@ -148,9 +155,8 @@ public class TestTableEntriesScan extends TableDataTestBase {
   public void testScanEntriesFromSequence() throws IOException {
     // change table commit 2 insert files, then commit 1 delete file
     Table changeTable = getArcticTable().asKeyedTable().changeTable();
-    TableEntriesScan.Builder builder = TableEntriesScan.builder(changeTable)
-        .includeFileContent(FileContent.DATA)
-        .fromSequence(2L);
+    TableEntriesScan.Builder builder =
+        TableEntriesScan.builder(changeTable).includeFileContent(FileContent.DATA).fromSequence(2L);
     Map<String, Entry> expectedEntries = getExpectedCurrentEntries(changeTable);
     int cnt = 0;
 
@@ -162,12 +168,12 @@ public class TestTableEntriesScan extends TableDataTestBase {
     }
     Assert.assertEquals(1, cnt);
 
-
     // base table commit 4 insert files, then commit 1 pos-delete file
     Table baseTable = getArcticTable().asKeyedTable().baseTable();
-    builder = TableEntriesScan.builder(baseTable)
-        .includeFileContent(FileContent.POSITION_DELETES)
-        .fromSequence(2L);
+    builder =
+        TableEntriesScan.builder(baseTable)
+            .includeFileContent(FileContent.POSITION_DELETES)
+            .fromSequence(2L);
     expectedEntries = getExpectedCurrentEntries(baseTable);
     cnt = 0;
 
@@ -182,8 +188,10 @@ public class TestTableEntriesScan extends TableDataTestBase {
 
   private List<DataFile> writeIntoBase() throws IOException {
     long transactionId = getArcticTable().asKeyedTable().beginTransaction("");
-    GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
-        .withTransactionId(transactionId).buildBaseWriter();
+    GenericBaseTaskWriter writer =
+        GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
+            .withTransactionId(transactionId)
+            .buildBaseWriter();
 
     for (Record record : baseRecords(allRecords)) {
       writer.write(record);
@@ -198,9 +206,11 @@ public class TestTableEntriesScan extends TableDataTestBase {
   private void assertEntry(Map<String, Entry> expected, IcebergFileEntry entry) {
     Entry expectEntry = expected.get(entry.getFile().path().toString());
     Assert.assertNotNull(expectEntry);
-    Assert.assertEquals("fail file " + entry, expectEntry.getSequenceNumber(), entry.getSequenceNumber());
+    Assert.assertEquals(
+        "fail file " + entry, expectEntry.getSequenceNumber(), entry.getSequenceNumber());
     Assert.assertEquals("fail file " + entry, expectEntry.getSnapshotId(), entry.getSnapshotId());
-    Assert.assertEquals("fail file " + entry, expectEntry.getFileContent(), entry.getFile().content());
+    Assert.assertEquals(
+        "fail file " + entry, expectEntry.getFileContent(), entry.getFile().content());
     if (expectEntry.isAliveEntry()) {
       assertAliveEntry(entry);
     } else {
@@ -215,21 +225,27 @@ public class TestTableEntriesScan extends TableDataTestBase {
       long snapshotId = snapshot.snapshotId();
       long sequenceNumber = snapshot.sequenceNumber();
       for (DataFile addFile : snapshot.addedDataFiles(table.io())) {
-        result.put(addFile.path().toString(), new Entry(snapshotId, sequenceNumber, addFile.content(), true));
+        result.put(
+            addFile.path().toString(),
+            new Entry(snapshotId, sequenceNumber, addFile.content(), true));
       }
       for (DeleteFile addFile : snapshot.addedDeleteFiles(table.io())) {
-        result.put(addFile.path().toString(), new Entry(snapshotId, sequenceNumber, addFile.content(), true));
+        result.put(
+            addFile.path().toString(),
+            new Entry(snapshotId, sequenceNumber, addFile.content(), true));
       }
       for (DataFile removedFile : snapshot.removedDataFiles(table.io())) {
         Entry entry = result.get(removedFile.path().toString());
         // sequence for removed file is the sequence it added
-        result.put(removedFile.path().toString(),
+        result.put(
+            removedFile.path().toString(),
             new Entry(snapshotId, entry.getSequenceNumber(), removedFile.content(), false));
       }
       for (DeleteFile removedFile : snapshot.removedDeleteFiles(table.io())) {
         Entry entry = result.get(removedFile.path().toString());
         // sequence for removed file is the sequence it added
-        result.put(removedFile.path().toString(),
+        result.put(
+            removedFile.path().toString(),
             new Entry(snapshotId, entry.getSequenceNumber(), removedFile.content(), false));
       }
     }
@@ -242,7 +258,8 @@ public class TestTableEntriesScan extends TableDataTestBase {
     private final boolean aliveEntry;
     private final FileContent fileContent;
 
-    public Entry(Long snapshotId, Long sequenceNumber, FileContent fileContent, boolean aliveEntry) {
+    public Entry(
+        Long snapshotId, Long sequenceNumber, FileContent fileContent, boolean aliveEntry) {
       this.snapshotId = snapshotId;
       this.sequenceNumber = sequenceNumber;
       this.fileContent = fileContent;
@@ -267,8 +284,10 @@ public class TestTableEntriesScan extends TableDataTestBase {
   }
 
   private void assertAliveEntry(IcebergFileEntry entry) {
-    Assert.assertTrue("fail file " + entry, entry.getStatus() == ManifestEntryFields.Status.ADDED ||
-        entry.getStatus() == ManifestEntryFields.Status.EXISTING);
+    Assert.assertTrue(
+        "fail file " + entry,
+        entry.getStatus() == ManifestEntryFields.Status.ADDED
+            || entry.getStatus() == ManifestEntryFields.Status.EXISTING);
   }
 
   private void assertDeletedEntry(IcebergFileEntry entry) {

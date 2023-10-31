@@ -93,8 +93,8 @@ public class LogKafkaSourceBuilder {
   // The configurations.
   protected Properties kafkaProperties;
 
-  private Schema schema;
-  private Map<String, String> tableProperties;
+  private final Schema schema;
+  private final Map<String, String> tableProperties;
 
   /**
    * @param schema read schema, only contains the selected fields

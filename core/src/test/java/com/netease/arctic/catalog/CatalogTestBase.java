@@ -34,11 +34,9 @@ import java.io.IOException;
 
 public abstract class CatalogTestBase {
 
-  @ClassRule
-  public static TestAms TEST_AMS = new TestAms();
+  @ClassRule public static TestAms TEST_AMS = new TestAms();
   private final CatalogTestHelper testHelper;
-  @Rule
-  public TemporaryFolder temp = new TemporaryFolder();
+  @Rule public TemporaryFolder temp = new TemporaryFolder();
   private ArcticCatalog catalog;
   private CatalogMeta catalogMeta;
   private Catalog icebergCatalog;

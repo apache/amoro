@@ -22,14 +22,13 @@ import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 
 import javax.annotation.Nullable;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 
-/**
- * An internal data structure representing data of array.
- */
+/** An internal data structure representing data of array. */
 public interface LogArrayData {
 
   boolean getBoolean(int pos);
@@ -141,9 +140,7 @@ public interface LogArrayData {
     Object getElementOrNull(LogArrayData array, int pos);
   }
 
-  /**
-   * used by log deserialization
-   */
+  /** used by log deserialization */
   interface Factory extends Serializable {
     LogArrayData create(Object[] array);
   }

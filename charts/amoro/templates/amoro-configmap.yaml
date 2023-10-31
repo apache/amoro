@@ -22,11 +22,10 @@ metadata:
   labels:
     {{- include "amoro.labels" . | nindent 4 }}
 data:
-  {{- with .Values.amoroConf.amoroEnv }}
-  config.sh: |
-    #!/usr/bin/env bash
-    {{- tpl . $ | nindent 4 }}
-  {{- end }}
+    {{- with .Values.jvmOptions }}
+  jvm.properties: |
+    {{- . | nindent 4 }}
+    {{- end }}
   ## Helm chart provided Amoro configurations
   config.yaml: |
     ams:
@@ -86,50 +85,26 @@ data:
         username: {{ .Values.amoroConf.database.username | quote }}
         {{- end }}
 
-      #  MySQL database configuration.
-      #  database:
-      #    type: mysql
-      #    jdbc-driver-class: com.mysql.cj.jdbc.Driver
-      #    url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
-      #    username: root
-      #    password: root
 
       terminal:
         backend: local
         local.spark.sql.iceberg.handle-timestamp-without-timezone: false
 
-      #  Kyuubi terminal backend configuration.
-      #  terminal:
-      #    backend: kyuubi
-      #    kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:10009/
-
-    #  High availability configuration.
-    #  ha:
-    #    enabled: true
-    #    cluster-name: default
-    #    zookeeper-address: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183
-
     containers:
-      - name: localContainer
-        container-impl: com.netease.arctic.server.manager.LocalOptimizerContainer
-        properties:
-          export.JAVA_HOME: "/opt/java"   # JDK environment
+      {{- if .Values.optimizer.flink.enabled }}
+      - name: {{ .Values.optimizer.flink.name | default "flink" }}
+        {{- include "amoro.optimizer.container.flink" . | nindent 8 }}
+      {{ end }}
+      {{- if .Values.optimizer.local.enabled }}
+      - name: {{ .Values.optimizer.local.name | default "local" }}
+        {{- include "amoro.optimizer.container.local" . | nindent 8 }}
+      {{ end }}
 
-            #containers:
-            #  - name: flinkContainer
-            #    container-impl: com.netease.arctic.server.manager.FlinkOptimizerContainer
-            #    properties:
-            #      flink-home: "/opt/flink/"                                     # Flink install home
-            #      export.JVM_ARGS: "-Djava.security.krb5.conf=/opt/krb5.conf"   # Flink launch jvm args, like kerberos config when ues kerberos
-            #      export.HADOOP_CONF_DIR: "/etc/hadoop/conf/"                   # Hadoop config dir
-            #      export.HADOOP_USER_NAME: "hadoop"                             # Hadoop user submit on yarn
-          #      export.FLINK_CONF_DIR: "/etc/hadoop/conf/"                    # Flink config dir
 
-      ## User provided Amoro configurations
     {{- with .Values.amoroConf.amoroDefaults }}
       {{- tpl . $ | nindent 4 }}
     {{- end }}
-  {{- with .Values.amoroConf.log4j2 }}
+    {{- with .Values.amoroConf.log4j2 }}
   log4j2.xml: |
     {{- tpl . $ | nindent 4 }}
 ---

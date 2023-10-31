@@ -29,6 +29,7 @@ import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.data.Record;
 
 import javax.annotation.Nullable;
+
 import java.util.List;
 
 public class DataConcurrencyChecker implements CompleteOptimizingFlow.Checker {
@@ -61,8 +62,8 @@ public class DataConcurrencyChecker implements CompleteOptimizingFlow.Checker {
       ArcticTable table,
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
-      @Nullable UnKeyedTableCommit latestCommit
-  ) throws Exception {
+      @Nullable UnKeyedTableCommit latestCommit)
+      throws Exception {
     table.refresh();
     List<Record> records = new DataReader(table).allData();
 

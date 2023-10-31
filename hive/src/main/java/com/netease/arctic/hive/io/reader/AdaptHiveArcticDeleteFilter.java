@@ -40,23 +40,35 @@ import java.util.Set;
  */
 public abstract class AdaptHiveArcticDeleteFilter<T> extends ArcticDeleteFilter<T> {
 
-
   protected AdaptHiveArcticDeleteFilter(
-      KeyedTableScanTask keyedTableScanTask, Schema tableSchema,
-      Schema requestedSchema, PrimaryKeySpec primaryKeySpec) {
+      KeyedTableScanTask keyedTableScanTask,
+      Schema tableSchema,
+      Schema requestedSchema,
+      PrimaryKeySpec primaryKeySpec) {
     super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec);
   }
 
   protected AdaptHiveArcticDeleteFilter(
-      KeyedTableScanTask keyedTableScanTask, Schema tableSchema,
-      Schema requestedSchema, PrimaryKeySpec primaryKeySpec,
-      Set<DataTreeNode> sourceNodes, StructLikeCollections structLikeCollections) {
-    super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec, sourceNodes, structLikeCollections);
+      KeyedTableScanTask keyedTableScanTask,
+      Schema tableSchema,
+      Schema requestedSchema,
+      PrimaryKeySpec primaryKeySpec,
+      Set<DataTreeNode> sourceNodes,
+      StructLikeCollections structLikeCollections) {
+    super(
+        keyedTableScanTask,
+        tableSchema,
+        requestedSchema,
+        primaryKeySpec,
+        sourceNodes,
+        structLikeCollections);
   }
 
   protected AdaptHiveArcticDeleteFilter(
-      KeyedTableScanTask keyedTableScanTask, Schema tableSchema,
-      Schema requestedSchema, PrimaryKeySpec primaryKeySpec,
+      KeyedTableScanTask keyedTableScanTask,
+      Schema tableSchema,
+      Schema requestedSchema,
+      PrimaryKeySpec primaryKeySpec,
       Set<DataTreeNode> sourceNodes) {
     super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec, sourceNodes);
   }
@@ -64,13 +76,15 @@ public abstract class AdaptHiveArcticDeleteFilter<T> extends ArcticDeleteFilter<
   @Override
   protected CloseableIterable<Record> openParquet(
       InputFile input, Schema deleteSchema, Map<Integer, Object> idToConstant) {
-    AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(input)
-        .project(deleteSchema)
-        .reuseContainers()
-        .createReaderFunc(fileSchema ->
-            AdaptHiveGenericParquetReaders.buildReader(deleteSchema, fileSchema, idToConstant));
+    AdaptHiveParquet.ReadBuilder builder =
+        AdaptHiveParquet.read(input)
+            .project(deleteSchema)
+            .reuseContainers()
+            .createReaderFunc(
+                fileSchema ->
+                    AdaptHiveGenericParquetReaders.buildReader(
+                        deleteSchema, fileSchema, idToConstant));
 
     return builder.build();
-
   }
 }

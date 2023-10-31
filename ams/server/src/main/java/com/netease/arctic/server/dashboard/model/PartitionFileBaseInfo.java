@@ -32,8 +32,13 @@ public class PartitionFileBaseInfo {
   private long fileSize;
   private String operation;
 
-  public PartitionFileBaseInfo(String commitId, DataFileType fileType, Long commitTime,
-      String partition, String path, long fileSize) {
+  public PartitionFileBaseInfo(
+      String commitId,
+      DataFileType fileType,
+      Long commitTime,
+      String partition,
+      String path,
+      long fileSize) {
     this.commitId = commitId;
     this.fileType = fileType;
     this.commitTime = commitTime;
@@ -42,8 +47,14 @@ public class PartitionFileBaseInfo {
     setFileSize(fileSize);
   }
 
-  public PartitionFileBaseInfo(String commitId, DataFileType fileType, Long commitTime,
-                               String partition, String path, long fileSize, String operation) {
+  public PartitionFileBaseInfo(
+      String commitId,
+      DataFileType fileType,
+      Long commitTime,
+      String partition,
+      String path,
+      long fileSize,
+      String operation) {
     this.commitId = commitId;
     this.fileType = fileType;
     this.commitTime = commitTime;

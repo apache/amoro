@@ -16,8 +16,9 @@ import java.util.stream.Collectors;
 
 public abstract class StatedPersistentBase extends PersistentBase {
 
-  private static final Map<Class<? extends PersistentBase>, List<State>> stateMetaCache = Maps.newConcurrentMap();
-  private Lock stateLock = new ReentrantLock();
+  private static final Map<Class<? extends PersistentBase>, List<State>> stateMetaCache =
+      Maps.newConcurrentMap();
+  private final Lock stateLock = new ReentrantLock();
   private List<State> states = Lists.newArrayList();
 
   protected StatedPersistentBase() {
@@ -54,8 +55,6 @@ public abstract class StatedPersistentBase extends PersistentBase {
     stateLock.lock();
     try {
       runnable.run();
-    } catch (Throwable throwable) {
-      throw throwable;
     } finally {
       stateLock.unlock();
     }
@@ -73,20 +72,25 @@ public abstract class StatedPersistentBase extends PersistentBase {
   }
 
   private void initStateFields() {
-    states = stateMetaCache.computeIfAbsent(getClass(), clz -> {
-      List<State> states = new ArrayList<>();
-      while (clz != PersistentBase.class) {
-        for (Field field : clz.getDeclaredFields()) {
-          if (field.isAnnotationPresent(StateField.class)) {
-            states.add(new State(field));
-          }
-        }
-        clz = clz.getSuperclass().asSubclass(PersistentBase.class);
-      }
-      return states;
-    }).stream()
-        .map(state -> new State(state.field))
-        .collect(Collectors.toList());
+    states =
+        stateMetaCache
+            .computeIfAbsent(
+                getClass(),
+                clz -> {
+                  List<State> states = new ArrayList<>();
+                  while (clz != PersistentBase.class) {
+                    for (Field field : clz.getDeclaredFields()) {
+                      if (field.isAnnotationPresent(StateField.class)) {
+                        states.add(new State(field));
+                      }
+                    }
+                    clz = clz.getSuperclass().asSubclass(PersistentBase.class);
+                  }
+                  return states;
+                })
+            .stream()
+            .map(state -> new State(state.field))
+            .collect(Collectors.toList());
   }
 
   private void retainStates() {
@@ -99,7 +103,7 @@ public abstract class StatedPersistentBase extends PersistentBase {
 
   private class State {
     private Object value;
-    private Field field;
+    private final Field field;
 
     State(Field field) {
       this.field = field;
@@ -124,7 +128,5 @@ public abstract class StatedPersistentBase extends PersistentBase {
   }
 
   @Retention(RetentionPolicy.RUNTIME)
-  public @interface StateField {
-  }
+  public @interface StateField {}
 }
-

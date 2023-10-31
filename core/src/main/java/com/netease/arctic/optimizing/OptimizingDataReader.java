@@ -23,23 +23,21 @@ import org.apache.iceberg.io.CloseableIterable;
 
 import java.io.Closeable;
 
-/**
- * An interface to read the data and delete data.
- */
+/** An interface to read the data and delete data. */
 public interface OptimizingDataReader extends Closeable {
 
   /**
-   * Reading data of optimizing task, If a task contains a delete operation, then the read result is MOR.
+   * Reading data of optimizing task, If a task contains a delete operation, then the read result is
+   * MOR.
    */
   CloseableIterable<Record> readData();
 
   /**
-   * Reading data that needs to be deleted during MOR. If there is no delete file, then the result is empty.
+   * Reading data that needs to be deleted during MOR. If there is no delete file, then the result
+   * is empty.
    */
   CloseableIterable<Record> readDeletedData();
 
-  /**
-   * Close the reader
-   */
+  /** Close the reader */
   void close();
 }

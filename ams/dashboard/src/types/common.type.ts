@@ -150,6 +150,8 @@ export interface TransactionItem {
   commitTime: string
   snapshotId: string
   summary: TransactionItemSummary
+  filesSummaryForChart: Record<string, number>
+  recordsSummaryForChart: Record<string, number>
 }
 
 export interface OperationItem {
@@ -312,7 +314,8 @@ export enum upgradeStatusMap {
 export enum tableTypeIconMap {
   ICEBERG = 'iceberg',
   ARCTIC = 'amoro',
-  HIVE = 'hive'
+  HIVE = 'hive',
+  PAIMON = 'paimon'
 }
 
 export type ILineChartOriginalData = Record<string, Record<string, number>>

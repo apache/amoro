@@ -40,17 +40,16 @@ import java.util.Map;
 
 public class IcebergHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Catalog> {
 
-  public static final Schema schema = new Schema(
-      Lists.newArrayList(
-          Types.NestedField.required(1, DEFAULT_SCHEMA_ID_NAME, Types.LongType.get()),
-          Types.NestedField.required(2, DEFAULT_SCHEMA_NAME_NAME, Types.StringType.get()),
-          Types.NestedField.optional(3, DEFAULT_SCHEMA_AGE_NAME, Types.IntegerType.get())),
-      Sets.newHashSet(1)
-  );
+  public static final Schema schema =
+      new Schema(
+          Lists.newArrayList(
+              Types.NestedField.required(1, DEFAULT_SCHEMA_ID_NAME, Types.LongType.get()),
+              Types.NestedField.required(2, DEFAULT_SCHEMA_NAME_NAME, Types.StringType.get()),
+              Types.NestedField.optional(3, DEFAULT_SCHEMA_AGE_NAME, Types.IntegerType.get())),
+          Sets.newHashSet(1));
 
-  public static final PartitionSpec spec = PartitionSpec.builderFor(schema)
-      .identity(DEFAULT_SCHEMA_AGE_NAME)
-      .build();
+  public static final PartitionSpec spec =
+      PartitionSpec.builderFor(schema).identity(DEFAULT_SCHEMA_AGE_NAME).build();
 
   public static final Map<String, String> properties = new HashMap<>();
 
@@ -74,41 +73,49 @@ public class IcebergHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Ca
 
   @Override
   public void initHiveConf(Configuration hiveConf) {
-    //Do nothing
+    // Do nothing
   }
 
   @Override
   public CatalogMeta getCatalogMeta() {
     return CatalogTestHelpers.buildCatalogMeta(
-        catalogName,
-        getMetastoreType(),
-        catalogProperties,
-        TableFormat.ICEBERG);
+        catalogName, getMetastoreType(), catalogProperties, TableFormat.ICEBERG);
   }
 
   @Override
   public AmoroCatalog amoroCatalog() {
     IcebergCatalogFactory icebergCatalogFactory = new IcebergCatalogFactory();
     return icebergCatalogFactory.create(
-        catalogName,
-        getMetastoreType(),
-        catalogProperties,
-        new Configuration()
-    );
+        catalogName, getMetastoreType(), catalogProperties, new Configuration());
   }
 
   @Override
   public Catalog originalCatalog() {
     return IcebergCatalogFactory.icebergCatalog(
-        catalogName,
-        getMetastoreType(),
-        catalogProperties,
-        new Configuration());
+        catalogName, getMetastoreType(), catalogProperties, new Configuration());
   }
 
   @Override
   public String catalogName() {
     return catalogName;
+  }
+
+  @Override
+  public void setTableProperties(String db, String tableName, String key, String value) {
+    originalCatalog()
+        .loadTable(TableIdentifier.of(db, tableName))
+        .updateProperties()
+        .set(key, value)
+        .commit();
+  }
+
+  @Override
+  public void removeTableProperties(String db, String tableName, String key) {
+    originalCatalog()
+        .loadTable(TableIdentifier.of(db, tableName))
+        .updateProperties()
+        .remove(key)
+        .commit();
   }
 
   @Override
@@ -120,7 +127,7 @@ public class IcebergHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Ca
         try {
           ((SupportsNamespaces) catalog).dropNamespace(ns);
         } catch (Exception e) {
-          //'default' database can not be dropped in hive catalog.
+          // 'default' database can not be dropped in hive catalog.
         }
       }
     }

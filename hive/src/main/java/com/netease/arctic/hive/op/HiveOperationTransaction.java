@@ -64,9 +64,7 @@ public class HiveOperationTransaction implements Transaction {
   private final TransactionalTable transactionalTable;
 
   public HiveOperationTransaction(
-      UnkeyedHiveTable unkeyedHiveTable,
-      Transaction wrapped,
-      HMSClientPool client) {
+      UnkeyedHiveTable unkeyedHiveTable, Transaction wrapped, HMSClientPool client) {
     this.unkeyedHiveTable = unkeyedHiveTable;
     this.wrapped = wrapped;
     this.client = client;
@@ -81,7 +79,8 @@ public class HiveOperationTransaction implements Transaction {
 
   @Override
   public UpdateSchema updateSchema() {
-    return new HiveSchemaUpdate(unkeyedHiveTable, client, transactionalClient, wrapped.updateSchema());
+    return new HiveSchemaUpdate(
+        unkeyedHiveTable, client, transactionalClient, wrapped.updateSchema());
   }
 
   @Override
@@ -165,7 +164,8 @@ public class HiveOperationTransaction implements Transaction {
     }
 
     @Override
-    public <R> R run(Action<R, HMSClient, TException> action, boolean retry) throws TException, InterruptedException {
+    public <R> R run(Action<R, HMSClient, TException> action, boolean retry)
+        throws TException, InterruptedException {
       pendingActions.add(action);
       return null;
     }

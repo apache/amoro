@@ -20,9 +20,7 @@ package com.netease.arctic.server.optimizing;
 
 import java.util.Map;
 
-/**
- * A simplified meta of task, not include input/output files.
- */
+/** A simplified meta of task, not include input/output files. */
 public class OptimizingTaskMeta {
   private long processId;
   private int taskId;
@@ -40,8 +38,7 @@ public class OptimizingTaskMeta {
   private MetricsSummary metricsSummary;
   private Map<String, String> properties;
 
-  public OptimizingTaskMeta() {
-  }
+  public OptimizingTaskMeta() {}
 
   public long getProcessId() {
     return processId;

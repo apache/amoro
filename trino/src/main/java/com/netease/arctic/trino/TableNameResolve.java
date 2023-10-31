@@ -20,23 +20,21 @@ package com.netease.arctic.trino;
 
 import com.netease.arctic.ams.api.Constants;
 
-/**
- * To resolve sub table name, such as "tableName#base", "tableName#change"
- */
+/** To resolve sub table name, such as "tableName#base", "tableName#change" */
 public class TableNameResolve {
 
   private static final String SPLIT = "#";
   private static final String DOT_SPIT = ".";
   private static final String REGEX_DOT_SPLIT = "\\.";
 
-  private String original;
+  private final String original;
   private String tableName;
   private Boolean isBase;
 
   public TableNameResolve(String original) {
     this.original = original;
     if (original.contains(SPLIT)) {
-      //use actual db name
+      // use actual db name
       if (original.contains(DOT_SPIT)) {
         String[] tableString = original.split(REGEX_DOT_SPLIT);
         if (tableString.length == 2) {

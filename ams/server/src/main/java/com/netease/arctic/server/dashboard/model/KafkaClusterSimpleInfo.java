@@ -30,8 +30,7 @@ public class KafkaClusterSimpleInfo {
   private String zkAddress;
   private String brokerList;
 
-  public KafkaClusterSimpleInfo() {
-  }
+  public KafkaClusterSimpleInfo() {}
 
   public String getName() {
     return name;
@@ -66,8 +65,9 @@ public class KafkaClusterSimpleInfo {
       return false;
     }
     KafkaClusterSimpleInfo that = (KafkaClusterSimpleInfo) o;
-    return Objects.equals(name, that.name) && Objects.equals(zkAddress, that.zkAddress) &&
-        Objects.equals(brokerList, that.brokerList);
+    return Objects.equals(name, that.name)
+        && Objects.equals(zkAddress, that.zkAddress)
+        && Objects.equals(brokerList, that.brokerList);
   }
 
   @Override
@@ -84,17 +84,14 @@ public class KafkaClusterSimpleInfo {
         .toString();
   }
 
-  /**
-   * validate.
-   */
+  /** validate. */
   public void validate() {
-    Preconditions
-        .checkArgument(StringUtils.isNotBlank(zkAddress) || StringUtils.isNotBlank(brokerList),
-            "both zk and broker address is blank");
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(zkAddress) || StringUtils.isNotBlank(brokerList),
+        "both zk and broker address is blank");
     if (StringUtils.isNotBlank(brokerList)) {
-      Preconditions
-          .checkArgument(CommonUtil.telnetOrPing(brokerList), "telnet broker address timeout! " + brokerList);
+      Preconditions.checkArgument(
+          CommonUtil.telnetOrPing(brokerList), "telnet broker address timeout! " + brokerList);
     }
-
   }
 }

@@ -49,18 +49,16 @@ import java.util.List;
 @RunWith(Parameterized.class)
 public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
   public TestKeyedTableFileScanHelper(
-      CatalogTestHelper catalogTestHelper,
-      TableTestHelper tableTestHelper) {
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[][] parameters() {
     return new Object[][] {
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(true, true)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-         new BasicTableTestHelper(true, false)}};
+      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, true)},
+      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, false)}
+    };
   }
 
   @Test
@@ -74,7 +72,8 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
     long transactionId = getArcticTable().beginTransaction("");
     OptimizingTestHelpers.appendBase(
         getArcticTable(),
-        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, Collections.emptyList(), false));
+        tableTestHelper()
+            .writeBaseStore(getArcticTable(), transactionId, Collections.emptyList(), false));
 
     List<TableFileScanHelper.FileScanResult> scan = scanFiles();
     assertScanResult(scan, 0);
@@ -82,12 +81,12 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
 
   @Test
   public void testScanOnlyBase() {
-    ArrayList<Record> newRecords = Lists.newArrayList(
-        tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00")
-    );
+    ArrayList<Record> newRecords =
+        Lists.newArrayList(
+            tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00"));
     long transactionId = getArcticTable().beginTransaction("");
     OptimizingTestHelpers.appendBase(
         getArcticTable(),
@@ -100,15 +99,17 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
 
   @Test
   public void testScanOnlyChange() {
-    ArrayList<Record> newRecords = Lists.newArrayList(
-        tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00")
-    );
+    ArrayList<Record> newRecords =
+        Lists.newArrayList(
+            tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00"));
     long transactionId = getArcticTable().beginTransaction("");
-    appendChange(tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
-        newRecords, false));
+    appendChange(
+        tableTestHelper()
+            .writeChangeStore(
+                getArcticTable(), transactionId, ChangeAction.INSERT, newRecords, false));
     long sequenceNumber = getArcticTable().changeTable().currentSnapshot().sequenceNumber();
 
     List<TableFileScanHelper.FileScanResult> scan = scanFiles();
@@ -118,12 +119,12 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
 
   @Test
   public void testScanChangeAndBase() {
-    ArrayList<Record> newRecords = Lists.newArrayList(
-        tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-02T12:00:00"),
-        tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-02T12:00:00")
-    );
+    ArrayList<Record> newRecords =
+        Lists.newArrayList(
+            tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-02T12:00:00"),
+            tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-02T12:00:00"));
 
     long transactionId = getArcticTable().beginTransaction("");
     OptimizingTestHelpers.appendBase(
@@ -131,27 +132,33 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
         tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
 
     transactionId = getArcticTable().beginTransaction("");
-    appendChange(tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.DELETE,
-        newRecords, false));
+    appendChange(
+        tableTestHelper()
+            .writeChangeStore(
+                getArcticTable(), transactionId, ChangeAction.DELETE, newRecords, false));
 
-    newRecords = Lists.newArrayList(
-        tableTestHelper().generateTestRecord(1, "1111", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(2, "2222", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(3, "3333", 0, "2022-01-02T12:00:00"),
-        tableTestHelper().generateTestRecord(4, "4444", 0, "2022-01-02T12:00:00")
-    );
+    newRecords =
+        Lists.newArrayList(
+            tableTestHelper().generateTestRecord(1, "1111", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(2, "2222", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(3, "3333", 0, "2022-01-02T12:00:00"),
+            tableTestHelper().generateTestRecord(4, "4444", 0, "2022-01-02T12:00:00"));
 
     transactionId = getArcticTable().beginTransaction("");
-    appendChange(tableTestHelper().writeChangeStore(getArcticTable(), transactionId, ChangeAction.INSERT,
-        newRecords, false));
+    appendChange(
+        tableTestHelper()
+            .writeChangeStore(
+                getArcticTable(), transactionId, ChangeAction.INSERT, newRecords, false));
 
     List<TableFileScanHelper.FileScanResult> scan = scanFiles();
 
     assertScanResult(scan, 8, 1);
 
     // test partition filter
-    scan = scanFiles(buildFileScanHelper().withPartitionFilter(
-        partition -> getPartition().equals(partition)));
+    scan =
+        scanFiles(
+            buildFileScanHelper()
+                .withPartitionFilter(partition -> getPartition().equals(partition)));
     if (isPartitionedTable()) {
       assertScanResult(scan, 4, 1);
     } else {
@@ -161,21 +168,22 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
 
   @Test
   public void testScanWithPosDelete() {
-    ArrayList<Record> newRecords = Lists.newArrayList(
-        tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00")
-    );
+    ArrayList<Record> newRecords =
+        Lists.newArrayList(
+            tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-01T12:00:00"));
     long transactionId = getArcticTable().beginTransaction("");
-    List<DataFile> dataFiles = OptimizingTestHelpers.appendBase(
-        getArcticTable(),
-        tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
+    List<DataFile> dataFiles =
+        OptimizingTestHelpers.appendBase(
+            getArcticTable(),
+            tableTestHelper().writeBaseStore(getArcticTable(), transactionId, newRecords, false));
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
-          MixedDataTestHelpers.writeBaseStorePosDelete(getArcticTable(), transactionId, dataFile,
-              Collections.singletonList(0L)));
+          MixedDataTestHelpers.writeBaseStorePosDelete(
+              getArcticTable(), transactionId, dataFile, Collections.singletonList(0L)));
     }
     OptimizingTestHelpers.appendBasePosDelete(getArcticTable(), posDeleteFiles);
 
@@ -186,22 +194,25 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
 
   @Test
   public void testScanPartialChange() {
-    ArrayList<Record> newRecords = Lists.newArrayList(
-        tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
-        tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-02T12:00:00"),
-        tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-02T12:00:00")
-    );
+    ArrayList<Record> newRecords =
+        Lists.newArrayList(
+            tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"),
+            tableTestHelper().generateTestRecord(3, "333", 0, "2022-01-02T12:00:00"),
+            tableTestHelper().generateTestRecord(4, "444", 0, "2022-01-02T12:00:00"));
 
-    appendChange(tableTestHelper().writeChangeStore(getArcticTable(), null, ChangeAction.INSERT,
-        newRecords, false));
+    appendChange(
+        tableTestHelper()
+            .writeChangeStore(getArcticTable(), null, ChangeAction.INSERT, newRecords, false));
     long sequenceNumber = getArcticTable().changeTable().currentSnapshot().sequenceNumber();
 
-    appendChange(tableTestHelper().writeChangeStore(getArcticTable(), null, ChangeAction.INSERT,
-        newRecords, false));
+    appendChange(
+        tableTestHelper()
+            .writeChangeStore(getArcticTable(), null, ChangeAction.INSERT, newRecords, false));
 
-    appendChange(tableTestHelper().writeChangeStore(getArcticTable(), null, ChangeAction.INSERT,
-        newRecords, false));
+    appendChange(
+        tableTestHelper()
+            .writeChangeStore(getArcticTable(), null, ChangeAction.INSERT, newRecords, false));
 
     // check all files
     List<TableFileScanHelper.FileScanResult> scan = scanFiles();
@@ -209,14 +220,20 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
     assertScanResult(scan, 12, 0);
 
     // keep at most 5 files, actually 4 files
-    getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "5").commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "5")
+        .commit();
 
     scan = scanFiles();
 
     assertScanResult(scan, 4, sequenceNumber, 0);
 
     // keep at most 3 files, actually 0 files
-    getArcticTable().updateProperties().set(TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "3").commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "3")
+        .commit();
 
     scan = scanFiles();
 
@@ -230,8 +247,13 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
         TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable());
     StructLikeMap<Long> legacyPartitionMaxTransactionId =
         TablePropertyUtil.getLegacyPartitionMaxTransactionId(getArcticTable());
-    return new KeyedTableFileScanHelper(getArcticTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId,
-        partitionOptimizedSequence, legacyPartitionMaxTransactionId));
+    return new KeyedTableFileScanHelper(
+        getArcticTable(),
+        new KeyedTableSnapshot(
+            baseSnapshotId,
+            changeSnapshotId,
+            partitionOptimizedSequence,
+            legacyPartitionMaxTransactionId));
   }
 
   private void appendChange(List<DataFile> dataFiles) {
@@ -249,30 +271,54 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
   public void testGetMaxSequenceLimit() {
     List<KeyedTableFileScanHelper.SnapshotFileGroup> sequenceGroups = new ArrayList<>();
     sequenceGroups.add(buildSequenceGroup(1, 100, 2));
-    Assert.assertEquals(Long.MIN_VALUE, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 0));
-    Assert.assertEquals(Long.MIN_VALUE, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 1));
-    Assert.assertEquals(Long.MAX_VALUE, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 2));
-    Assert.assertEquals(Long.MAX_VALUE, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 3));
+    Assert.assertEquals(
+        Long.MIN_VALUE,
+        KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 0));
+    Assert.assertEquals(
+        Long.MIN_VALUE,
+        KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 1));
+    Assert.assertEquals(
+        Long.MAX_VALUE,
+        KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 2));
+    Assert.assertEquals(
+        Long.MAX_VALUE,
+        KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 3));
 
     sequenceGroups.add(buildSequenceGroup(2, 101, 1));
-    Assert.assertEquals(1, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 2));
-    Assert.assertEquals(Long.MAX_VALUE, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 3));
+    Assert.assertEquals(
+        1, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 2));
+    Assert.assertEquals(
+        Long.MAX_VALUE,
+        KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 3));
 
     // disorder
     sequenceGroups.add(buildSequenceGroup(5, 103, 2));
     sequenceGroups.add(buildSequenceGroup(4, 102, 2));
     sequenceGroups.add(buildSequenceGroup(3, 99, 1));
-    Assert.assertEquals(Long.MIN_VALUE, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 2));
-    Assert.assertEquals(Long.MIN_VALUE, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 3));
-    Assert.assertEquals(3, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 4));
-    Assert.assertEquals(3, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 5));
-    Assert.assertEquals(4, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 6));
-    Assert.assertEquals(4, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 7));
-    Assert.assertEquals(Long.MAX_VALUE, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 8));
-    Assert.assertEquals(Long.MAX_VALUE, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 9));
+    Assert.assertEquals(
+        Long.MIN_VALUE,
+        KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 2));
+    Assert.assertEquals(
+        Long.MIN_VALUE,
+        KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 3));
+    Assert.assertEquals(
+        3, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 4));
+    Assert.assertEquals(
+        3, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 5));
+    Assert.assertEquals(
+        4, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 6));
+    Assert.assertEquals(
+        4, KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 7));
+    Assert.assertEquals(
+        Long.MAX_VALUE,
+        KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 8));
+    Assert.assertEquals(
+        Long.MAX_VALUE,
+        KeyedTableFileScanHelper.getMaxSequenceKeepingTxIdInOrder(sequenceGroups, 9));
   }
 
-  private static KeyedTableFileScanHelper.SnapshotFileGroup buildSequenceGroup(long sequence, long txId, int cnt) {
+  private static KeyedTableFileScanHelper.SnapshotFileGroup buildSequenceGroup(
+      long sequence, long txId, int cnt) {
     return new KeyedTableFileScanHelper.SnapshotFileGroup(sequence, txId, cnt);
   }
 }
