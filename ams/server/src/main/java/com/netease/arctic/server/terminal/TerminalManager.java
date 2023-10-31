@@ -257,6 +257,8 @@ public class TerminalManager {
       }
     } else if (catalogType.equalsIgnoreCase(CatalogType.CUSTOM.name())) {
       return "iceberg";
+    } else if (catalogType.equalsIgnoreCase(CatalogType.GLUE.name())) {
+      return "iceberg";
     }
     throw new IllegalStateException("unknown catalog type: " + catalogType);
   }
