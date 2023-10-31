@@ -98,19 +98,19 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
         new FileWriterFactory<Record>() {
 
           @Override
-          public DataWriter newDataWriter(
+          public DataWriter<Record> newDataWriter(
               EncryptedOutputFile file, PartitionSpec spec, StructLike partition) {
             return appenderFactory.newDataWriter(file, dataFileFormat(), partition);
           }
 
           @Override
-          public EqualityDeleteWriter newEqualityDeleteWriter(
+          public EqualityDeleteWriter<Record> newEqualityDeleteWriter(
               EncryptedOutputFile file, PartitionSpec spec, StructLike partition) {
             return null;
           }
 
           @Override
-          public PositionDeleteWriter newPositionDeleteWriter(
+          public PositionDeleteWriter<Record> newPositionDeleteWriter(
               EncryptedOutputFile file, PartitionSpec spec, StructLike partition) {
             return null;
           }
