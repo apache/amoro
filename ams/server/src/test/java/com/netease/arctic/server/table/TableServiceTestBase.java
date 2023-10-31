@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.server.ArcticManagementConf;
+import com.netease.arctic.server.DefaultOptimizingService;
 import com.netease.arctic.server.utils.Configurations;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -29,10 +31,15 @@ public abstract class TableServiceTestBase {
   public static DerbyPersistence DERBY = new DerbyPersistence();
 
   private static DefaultTableService TABLE_SERVICE = null;
+  private static DefaultOptimizingService OPTIMIZING_SERVICE = null;
 
   @BeforeClass
   public static void initTableService() {
+    Configurations configurations = new Configurations();
+    configurations.set(ArcticManagementConf.OPTIMIZER_HB_TIMEOUT, 500L);
     TABLE_SERVICE = new DefaultTableService(new Configurations());
+    OPTIMIZING_SERVICE = new DefaultOptimizingService(configurations, TABLE_SERVICE);
+    TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());
     TABLE_SERVICE.initialize();
   }
 
@@ -45,4 +52,12 @@ public abstract class TableServiceTestBase {
     return TABLE_SERVICE;
   }
 
+  protected DefaultOptimizingService optimizingService() {
+    return OPTIMIZING_SERVICE;
+  }
+
+  protected static void reload() {
+    disposeTableService();
+    initTableService();
+  }
 }

@@ -293,6 +293,10 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     }
   }
 
+  protected List<TableRuntimeMeta> loadTableRuntimeMetadata() {
+    return getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
+  }
+
   @Override
   public void initialize() {
     checkNotStarted();
@@ -300,8 +304,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
         getAs(CatalogMetaMapper.class, CatalogMetaMapper::getCatalogs);
     catalogMetas.forEach(this::initServerCatalog);
 
-    List<TableRuntimeMeta> tableRuntimeMetaList =
-        getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
+    List<TableRuntimeMeta> tableRuntimeMetaList = loadTableRuntimeMetadata();
     tableRuntimeMetaList.forEach(tableRuntimeMeta -> {
       TableRuntime tableRuntime = tableRuntimeMeta.constructTableRuntime(this);
       tableRuntimeMap.put(tableRuntime.getTableIdentifier(), tableRuntime);

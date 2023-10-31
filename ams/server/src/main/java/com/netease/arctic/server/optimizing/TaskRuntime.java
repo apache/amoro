@@ -33,6 +33,7 @@ import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
+import com.netease.arctic.server.resource.OptimizerThread;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
@@ -56,7 +57,9 @@ public class TaskRuntime extends StatedPersistentBase {
   @StateField
   private long costTime = 0;
   @StateField
-  private OptimizingQueue.OptimizingThread optimizingThread;
+  private String token;
+  @StateField
+  private int threadId = -1;
   @StateField
   private String failReason;
   private TaskOwner owner;
@@ -82,7 +85,7 @@ public class TaskRuntime extends StatedPersistentBase {
     this.properties = properties;
   }
 
-  public void complete(OptimizingQueue.OptimizingThread thread, OptimizingTaskResult result) {
+  public void complete(OptimizerThread thread, OptimizingTaskResult result) {
     invokeConsisitency(() -> {
       validThread(thread);
       if (result.getErrorMessage() != null) {
@@ -91,7 +94,8 @@ public class TaskRuntime extends StatedPersistentBase {
         finish(TaskFilesPersistence.loadTaskOutput(result.getTaskOutput()));
       }
       owner.acceptResult(this);
-      optimizingThread = null;
+      token = null;
+      threadId = -1;
     });
   }
 
@@ -131,16 +135,17 @@ public class TaskRuntime extends StatedPersistentBase {
     });
   }
 
-  void schedule(OptimizingQueue.OptimizingThread thread) {
+  public void schedule(OptimizerThread thread) {
     invokeConsisitency(() -> {
       statusMachine.accept(Status.SCHEDULED);
-      optimizingThread = thread;
+      token = thread.getToken();
+      threadId = thread.getThreadId();
       startTime = System.currentTimeMillis();
       persistTaskRuntime(this);
     });
   }
 
-  void ack(OptimizingQueue.OptimizingThread thread) {
+  public void ack(OptimizerThread thread) {
     invokeConsisitency(() -> {
       validThread(thread);
       statusMachine.accept(Status.ACKED);
@@ -150,7 +155,7 @@ public class TaskRuntime extends StatedPersistentBase {
     });
   }
 
-  void tryCanceling() {
+  public void tryCanceling() {
     invokeConsisitency(() -> {
       if (statusMachine.tryAccepting(Status.CANCELED)) {
         costTime = System.currentTimeMillis() - startTime;
@@ -196,8 +201,16 @@ public class TaskRuntime extends StatedPersistentBase {
     return taskId.getProcessId();
   }
 
-  public OptimizingQueue.OptimizingThread getOptimizingThread() {
-    return optimizingThread;
+  public String getResourceDesc() {
+    return token + ":" + threadId;
+  }
+
+  public String getToken() {
+    return token;
+  }
+
+  public int getThreadId() {
+    return threadId;
   }
 
   public OptimizingTask getOptimizingTask() {
@@ -284,15 +297,15 @@ public class TaskRuntime extends StatedPersistentBase {
         .add("startTime", startTime)
         .add("endTime", endTime)
         .add("costTime", costTime)
-        .add("optimizingThread", optimizingThread)
+        .add("resourceThread", getResourceDesc())
         .add("failReason", failReason)
         .add("summary", summary)
         .add("properties", properties)
         .toString();
   }
 
-  private void validThread(OptimizingQueue.OptimizingThread thread) {
-    if (!thread.equals(this.optimizingThread)) {
+  private void validThread(OptimizerThread thread) {
+    if (!thread.getToken().equals(getToken()) || thread.getThreadId() != threadId) {
       throw new DuplicateRuntimeException("Task already acked by optimizer thread + " + thread);
     }
   }
@@ -306,11 +319,6 @@ public class TaskRuntime extends StatedPersistentBase {
       throw new IllegalStateException("start time or end time is not correctly set");
     }
     return new TaskQuota(this);
-  }
-
-  public boolean isSuspending(long determineTime, long ackTimeout) {
-    return status == TaskRuntime.Status.SCHEDULED &&
-        determineTime - startTime > ackTimeout;
   }
 
   private static final Map<Status, Set<Status>> nextStatusMap = new HashMap<>();
@@ -396,7 +404,6 @@ public class TaskRuntime extends StatedPersistentBase {
     private long tableId;
 
     public TaskQuota() {
-
     }
 
     public TaskQuota(TaskRuntime task) {
@@ -414,27 +421,6 @@ public class TaskRuntime extends StatedPersistentBase {
 
     public long getProcessId() {
       return processId;
-    }
-
-    public int getTaskId() {
-      return taskId;
-    }
-
-
-    public int getRetryNum() {
-      return retryNum;
-    }
-
-    public long getEndTime() {
-      return endTime;
-    }
-
-    public String getFailReason() {
-      return failReason;
-    }
-
-    public long getTableId() {
-      return tableId;
     }
 
     public long getQuotaTime(long calculatingStartTime) {

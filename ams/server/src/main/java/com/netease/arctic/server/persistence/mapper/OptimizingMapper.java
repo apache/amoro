@@ -109,7 +109,7 @@ public interface OptimizingMapper {
           "#{taskRuntime.startTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
           " #{taskRuntime.endTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}, " +
           "#{taskRuntime.status}, #{taskRuntime.failReason, jdbcType=VARCHAR}," +
-          " #{taskRuntime.optimizingThread.token, jdbcType=VARCHAR}, #{taskRuntime.optimizingThread.threadId, " +
+          " #{taskRuntime.token, jdbcType=VARCHAR}, #{taskRuntime.threadId, " +
           "jdbcType=INTEGER}, #{taskRuntime.output, jdbcType=BLOB, " +
           " typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert}," +
           " #{taskRuntime.summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}," +
