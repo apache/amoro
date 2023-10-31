@@ -298,10 +298,15 @@ public class TableProperties {
 
   public static final String LOG_STORE_DATA_VERSION = "log-store.data-version";
   public static final String LOG_STORE_DATA_VERSION_DEFAULT = "v1";
-  
+
   public static final String LOG_STORE_PROPERTIES_PREFIX = "properties.";
 
   public static final String OWNER = "owner";
+
+  /** enable consistent write for hive store */
+  public static final String HIVE_CONSISTENT_WRITE_ENABLED = "hive.consistent-write.enabled";
+
+  public static final String HIVE_CONSISTENT_WRITE_ENABLED_DEFAULT = "true";
 
   /**
    * Protected properties which should not be read by user.

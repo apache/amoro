@@ -29,6 +29,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.SchemaUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -94,7 +95,7 @@ public class TaskWriters {
     this.dsSchema = dsSchema;
     return this;
   }
-  
+
   public TaskWriters withHiveSubdirectory(String hiveSubdirectory) {
     this.hiveSubdirectory = hiveSubdirectory;
     return this;
@@ -129,16 +130,25 @@ public class TaskWriters {
       icebergTable = table;
     }
 
-    FileAppenderFactory<InternalRow> appenderFactory = InternalRowFileAppenderFactory
-        .builderFor(icebergTable, schema, dsSchema)
-        .writeHive(isHiveTable)
-        .build();
-
+    FileAppenderFactory<InternalRow> appenderFactory =
+        InternalRowFileAppenderFactory.builderFor(icebergTable, schema, dsSchema)
+            .writeHive(isHiveTable)
+            .build();
+    boolean hiveConsistentWrite = TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
     OutputFileFactory outputFileFactory;
     if (isHiveTable && isOverwrite) {
-      outputFileFactory = new AdaptHiveOutputFileFactory(
-          ((SupportHive) table).hiveLocation(), table.spec(), fileFormat, table.io(),
-          encryptionManager, partitionId, taskId, transactionId, hiveSubdirectory);
+      outputFileFactory =
+          new AdaptHiveOutputFileFactory(
+              ((SupportHive) table).hiveLocation(),
+              table.spec(),
+              fileFormat,
+              table.io(),
+              encryptionManager,
+              partitionId,
+              taskId,
+              transactionId,
+              hiveSubdirectory,
+              hiveConsistentWrite);
     } else {
       outputFileFactory = new CommonOutputFileFactory(
           baseLocation, table.spec(), fileFormat, table.io(),

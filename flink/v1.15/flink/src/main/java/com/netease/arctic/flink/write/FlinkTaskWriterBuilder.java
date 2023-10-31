@@ -37,6 +37,7 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WriteOperationKind;
 import com.netease.arctic.utils.SchemaUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.FileFormat;
@@ -135,18 +136,46 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
       schema = table.schema();
     }
 
-    Schema selectSchema = TypeUtil.reassignIds(
-        FlinkSchemaUtil.convert(FlinkSchemaUtil.toSchema(flinkSchema)), schema);
+    Schema selectSchema =
+        TypeUtil.reassignIds(
+            FlinkSchemaUtil.convert(FlinkSchemaUtil.toSchema(flinkSchema)), schema);
+    boolean hiveConsistentWriteEnabled =
+        TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
 
-    OutputFileFactory outputFileFactory = locationKind == HiveLocationKind.INSTANT ?
-        new AdaptHiveOutputFileFactory(((SupportHive) table).hiveLocation(), table.spec(), fileFormat, table.io(),
-            encryptionManager, partitionId, taskId, transactionId) :
-        new CommonOutputFileFactory(baseLocation, table.spec(), fileFormat, table.io(),
-            encryptionManager, partitionId, taskId, transactionId);
-    FileAppenderFactory<RowData> appenderFactory = TableTypeUtil.isHive(table) ?
-        new AdaptHiveFlinkAppenderFactory(schema, flinkSchema, table.properties(), table.spec()) :
-        new FlinkAppenderFactory(
-            schema, flinkSchema, table.properties(), table.spec());
+    OutputFileFactory outputFileFactory =
+        locationKind == HiveLocationKind.INSTANT
+            ? new AdaptHiveOutputFileFactory(
+                ((SupportHive) table).hiveLocation(),
+                table.spec(),
+                fileFormat,
+                table.io(),
+                encryptionManager,
+                partitionId,
+                taskId,
+                transactionId,
+                hiveConsistentWriteEnabled)
+            : new CommonOutputFileFactory(
+                baseLocation,
+                table.spec(),
+                fileFormat,
+                table.io(),
+                encryptionManager,
+                partitionId,
+                taskId,
+                transactionId);
+    FileAppenderFactory<RowData> appenderFactory =
+        TableTypeUtil.isHive(table)
+            ? new AdaptHiveFlinkAppenderFactory(
+                schema, flinkSchema, table.properties(), table.spec())
+            : new FlinkAppenderFactory(
+                icebergTable,
+                schema,
+                flinkSchema,
+                table.properties(),
+                table.spec(),
+                null,
+                null,
+                null);
     return new FlinkBaseTaskWriter(
         fileFormat,
         appenderFactory,

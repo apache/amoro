@@ -38,6 +38,7 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WriteOperationKind;
 import com.netease.arctic.utils.SchemaUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.MetricsModes;
@@ -68,9 +69,11 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   private String customHiveSubdirectory;
   private Long targetFileSize;
   private boolean orderedWriter = false;
+  private Boolean hiveConsistentWrite;
 
   private AdaptHiveGenericTaskWriterBuilder(ArcticTable table) {
     this.table = table;
+    this.hiveConsistentWrite = TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
   }
 
   public AdaptHiveGenericTaskWriterBuilder withTransactionId(Long transactionId) {
@@ -97,7 +100,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     this.customHiveSubdirectory = customHiveSubdirectory;
     return this;
   }
-  
+
   public AdaptHiveGenericTaskWriterBuilder withTargetFileSize(long targetFileSize) {
     this.targetFileSize = targetFileSize;
     return this;
@@ -105,6 +108,11 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
 
   public AdaptHiveGenericTaskWriterBuilder withOrdered() {
     this.orderedWriter = true;
+    return this;
+  }
+
+  public AdaptHiveGenericTaskWriterBuilder hiveConsistentWrite(boolean enabled) {
+    this.hiveConsistentWrite = enabled;
     return this;
   }
 
@@ -179,17 +187,43 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
       schema = table.schema();
     }
 
-    OutputFileFactory outputFileFactory = locationKind == HiveLocationKind.INSTANT ?
-        new AdaptHiveOutputFileFactory(((SupportHive) table).hiveLocation(), table.spec(), fileFormat,
-            table.io(), encryptionManager, partitionId, taskId, transactionId, customHiveSubdirectory) :
-        new CommonOutputFileFactory(baseLocation, table.spec(), fileFormat, table.io(),
-            encryptionManager, partitionId, taskId, transactionId);
-    FileAppenderFactory<Record> appenderFactory = TableTypeUtil.isHive(table) ?
-        new AdaptHiveGenericAppenderFactory(schema, table.spec()) :
-        new GenericAppenderFactory(schema, table.spec());
-    return new GenericBaseTaskWriter(fileFormat, appenderFactory,
+    OutputFileFactory outputFileFactory =
+        locationKind == HiveLocationKind.INSTANT
+            ? new AdaptHiveOutputFileFactory(
+                ((SupportHive) table).hiveLocation(),
+                table.spec(),
+                fileFormat,
+                table.io(),
+                encryptionManager,
+                partitionId,
+                taskId,
+                transactionId,
+                customHiveSubdirectory,
+                hiveConsistentWrite)
+            : new CommonOutputFileFactory(
+                baseLocation,
+                table.spec(),
+                fileFormat,
+                table.io(),
+                encryptionManager,
+                partitionId,
+                taskId,
+                transactionId);
+    FileAppenderFactory<Record> appenderFactory =
+        TableTypeUtil.isHive(table)
+            ? new AdaptHiveGenericAppenderFactory(schema, table.spec())
+            : new GenericAppenderFactory(schema, table.spec());
+    return new GenericBaseTaskWriter(
+        fileFormat,
+        appenderFactory,
         outputFileFactory,
-        table.io(), fileSizeBytes, mask, schema, table.spec(), primaryKeySpec, orderedWriter);
+        table.io(),
+        fileSizeBytes,
+        mask,
+        schema,
+        table.spec(),
+        primaryKeySpec,
+        orderedWriter);
   }
 
   private GenericChangeTaskWriter buildChangeWriter() {
