@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.service;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
@@ -97,11 +96,14 @@ public class ServiceContainer {
 
   private static volatile TerminalManager terminalManager;
 
-  public static volatile  PlatformFileInfoService platformFileInfoService;
+  private static volatile PlatformFileInfoService platformFileInfoService;
+
+  private static volatile TableBlockerService tableBlockerService;
   
-  public static volatile TableBlockerService tableBlockerService;
+  private static volatile boolean closed = false;
 
   public static IOptimizeService getOptimizeService() {
+    checkNotClosed();
     if (optimizeService == null) {
       synchronized (ServiceContainer.class) {
         if (optimizeService == null) {
@@ -114,6 +116,7 @@ public class ServiceContainer {
   }
 
   public static ITableExpireService getTableExpireService() {
+    checkNotClosed();
     if (tableExpireService == null) {
       synchronized (ServiceContainer.class) {
         if (tableExpireService == null) {
@@ -126,6 +129,7 @@ public class ServiceContainer {
   }
 
   public static IOrphanFilesCleanService getOrphanFilesCleanService() {
+    checkNotClosed();
     if (orphanFilesCleanService == null) {
       synchronized (ServiceContainer.class) {
         if (orphanFilesCleanService == null) {
@@ -138,6 +142,7 @@ public class ServiceContainer {
   }
 
   public static TrashCleanService getTrashCleanService() {
+    checkNotClosed();
     if (trashCleanService == null) {
       synchronized (ServiceContainer.class) {
         if (trashCleanService == null) {
@@ -150,6 +155,7 @@ public class ServiceContainer {
   }
 
   public static OptimizerService getOptimizerService() {
+    checkNotClosed();
     if (optimizerService == null) {
       synchronized (ServiceContainer.class) {
         if (optimizerService == null) {
@@ -161,6 +167,7 @@ public class ServiceContainer {
   }
 
   public static OptimizeManagerHandler getOptimizeManagerHandler() {
+    checkNotClosed();
     if (optimizeManagerHandler == null) {
       synchronized (ServiceContainer.class) {
         if (optimizeManagerHandler == null) {
@@ -172,6 +179,7 @@ public class ServiceContainer {
   }
 
   public static OptimizeQueueService getOptimizeQueueService() {
+    checkNotClosed();
     if (optimizeQueueService == null) {
       synchronized (ServiceContainer.class) {
         if (optimizeQueueService == null) {
@@ -184,6 +192,7 @@ public class ServiceContainer {
   }
 
   public static IMetaService getMetaService() {
+    checkNotClosed();
     if (metaService == null) {
       synchronized (ServiceContainer.class) {
         if (metaService == null) {
@@ -196,6 +205,7 @@ public class ServiceContainer {
   }
 
   public static IQuotaService getQuotaService() {
+    checkNotClosed();
     if (quotaService == null) {
       synchronized (ServiceContainer.class) {
         if (quotaService == null) {
@@ -208,6 +218,7 @@ public class ServiceContainer {
   }
 
   public static CatalogMetadataService getCatalogMetadataService() {
+    checkNotClosed();
     if (catalogMetadataService == null) {
       synchronized (ServiceContainer.class) {
         if (catalogMetadataService == null) {
@@ -220,6 +231,7 @@ public class ServiceContainer {
   }
 
   public static FileInfoCacheService getFileInfoCacheService() {
+    checkNotClosed();
     if (fileInfoCacheService == null) {
       synchronized (ServiceContainer.class) {
         if (fileInfoCacheService == null) {
@@ -232,6 +244,7 @@ public class ServiceContainer {
   }
 
   public static ArcticTransactionService getArcticTransactionService() {
+    checkNotClosed();
     if (arcticTransactionService == null) {
       synchronized (ServiceContainer.class) {
         if (arcticTransactionService == null) {
@@ -244,6 +257,7 @@ public class ServiceContainer {
   }
 
   public static ITableTaskHistoryService getTableTaskHistoryService() {
+    checkNotClosed();
     if (tableTaskHistoryService == null) {
       synchronized (ServiceContainer.class) {
         if (tableTaskHistoryService == null) {
@@ -256,6 +270,7 @@ public class ServiceContainer {
   }
 
   public static ITableInfoService getTableInfoService() {
+    checkNotClosed();
     if (tableInfoService == null) {
       synchronized (ServiceContainer.class) {
         if (tableInfoService == null) {
@@ -267,6 +282,7 @@ public class ServiceContainer {
   }
 
   public static ArcticTableMetastoreHandler getTableMetastoreHandler() {
+    checkNotClosed();
     if (tableMetastoreHandler == null) {
       synchronized (ServiceContainer.class) {
         if (tableMetastoreHandler == null) {
@@ -278,6 +294,7 @@ public class ServiceContainer {
   }
 
   public static RuntimeDataExpireService getRuntimeDataExpireService() {
+    checkNotClosed();
     if (runtimeDataExpireService == null) {
       synchronized (ServiceContainer.class) {
         if (runtimeDataExpireService == null) {
@@ -289,6 +306,7 @@ public class ServiceContainer {
   }
 
   public static AdaptHiveService getAdaptHiveService() {
+    checkNotClosed();
     if (adaptHiveService == null) {
       synchronized (AdaptHiveService.class) {
         if (adaptHiveService == null) {
@@ -300,6 +318,7 @@ public class ServiceContainer {
   }
 
   public static ISupportHiveSyncService getSupportHiveSyncService() {
+    checkNotClosed();
     if (supportHiveSyncService == null) {
       synchronized (ServiceContainer.class) {
         if (supportHiveSyncService == null) {
@@ -312,6 +331,7 @@ public class ServiceContainer {
   }
 
   public static DDLTracerService getDdlTracerService() {
+    checkNotClosed();
     if (ddlTracerService == null) {
       synchronized (ServiceContainer.class) {
         if (ddlTracerService == null) {
@@ -324,6 +344,7 @@ public class ServiceContainer {
   }
 
   public static TerminalManager getTerminalManager() {
+    checkNotClosed();
     if (terminalManager == null) {
       synchronized (ServiceContainer.class) {
         if (terminalManager == null) {
@@ -334,27 +355,8 @@ public class ServiceContainer {
     return terminalManager;
   }
 
-  @VisibleForTesting
-  public static void setMetaService(IMetaService imetaService) {
-    metaService = imetaService;
-  }
-
-  @VisibleForTesting
-  public static void setFileInfoCacheService(FileInfoCacheService testFileInfoCacheService) {
-    fileInfoCacheService = testFileInfoCacheService;
-  }
-
-  @VisibleForTesting
-  public static void setOptimizeService(IOptimizeService optimizeService) {
-    ServiceContainer.optimizeService = optimizeService;
-  }
-
-  @VisibleForTesting
-  public static void setTableTaskHistoryService(ITableTaskHistoryService tableHistoryService) {
-    tableTaskHistoryService = tableHistoryService;
-  }
-
   public static OptimizeExecuteService getOptimizeExecuteService() {
+    checkNotClosed();
     if (optimizeExecuteService == null) {
       synchronized (ServiceContainer.class) {
         if (optimizeExecuteService == null) {
@@ -366,6 +368,7 @@ public class ServiceContainer {
   }
 
   public static ContainerMetaService getContainerMetaService() {
+    checkNotClosed();
     if (containerMetaService == null) {
       synchronized (ServiceContainer.class) {
         if (containerMetaService == null) {
@@ -377,6 +380,7 @@ public class ServiceContainer {
   }
 
   public static PlatformFileInfoService getPlatformFileInfoService() {
+    checkNotClosed();
     if (platformFileInfoService == null) {
       synchronized (ServiceContainer.class) {
         if (platformFileInfoService == null) {
@@ -388,6 +392,7 @@ public class ServiceContainer {
   }
 
   public static TableBlockerService getTableBlockerService() {
+    checkNotClosed();
     if (tableBlockerService == null) {
       synchronized (ServiceContainer.class) {
         if (tableBlockerService == null) {
@@ -396,6 +401,12 @@ public class ServiceContainer {
       }
     }
     return tableBlockerService;
+  }
+
+  private static void checkNotClosed() {
+    if (closed) {
+      throw new IllegalStateException("ServiceContainer has been closed");
+    }
   }
 
   private static void close(Closeable closeable) {
@@ -408,8 +419,15 @@ public class ServiceContainer {
       LOG.warn("failed to close {}, ignore", closeable);
     }
   }
+  
+  public static void reset() {
+    clear();
+    closed = false;
+  }
 
   public static void clear() {
+    closed = true;
+
     close(optimizeService);
     optimizeService = null;
 
