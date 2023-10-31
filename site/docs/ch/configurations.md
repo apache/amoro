@@ -90,10 +90,11 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 
 ### Mixed Hive format 相关配置
 
-| 配置名称                            | 默认值             | 描述                                     |
-| ---------------------------------- | ---------------- | ----------------------------------       |
-| base.hive.auto-sync-schema-change  | true             | 是否从 HMS 自动同步 Hive 的 schema 变更             |
-| base.hive.auto-sync-data-write     | false            | 是否自动同步 Hive 的原生的数据写入，有 Hive 原生数据写入时需要打开             |
+| 配置名称                              | 默认值   | 描述                                          |
+|-----------------------------------|-------|---------------------------------------------|
+| base.hive.auto-sync-schema-change | true  | 是否从 HMS 自动同步 Hive 的 schema 变更               |
+| base.hive.auto-sync-data-write    | false | 是否自动同步 Hive 的原生的数据写入，有 Hive 原生数据写入时需要打开     |
+| hive.consistent-write.enabled     | true  | 写入 hive 路径的文件会先写隐藏文件，commit 期间 rename 为可见文件 |
 
 ### Trash 相关配置
 

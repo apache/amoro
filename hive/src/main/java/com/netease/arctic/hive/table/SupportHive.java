@@ -19,11 +19,12 @@
 package com.netease.arctic.hive.table;
 
 import com.netease.arctic.hive.HMSClientPool;
+import com.netease.arctic.table.ArcticTable;
 
 /**
  * Mix-in interface to mark task use hive as base store
  */
-public interface SupportHive {
+public interface SupportHive extends ArcticTable {
 
   /**
    * Base path to store hive data files

@@ -4,7 +4,9 @@ import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.MockDataFileBuilder;
 import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
+import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
+import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -18,6 +20,7 @@ import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateProperties;
+import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
@@ -379,6 +382,28 @@ public class TestRewriteFiles extends HiveTableTestBase {
 
     Assert.assertThrows(CannotAlterHiveLocationException.class, rewriteFiles::commit);
   }
+
+
+  @Test
+  public void testConsistentWriteCommit() {
+    UnkeyedHiveTable table = testHiveTable;
+    List<Record> records = records("p1", "p2");
+    List<DataFile> files = HiveDataTestHelpers.writerOf(table)
+        .transactionId(1L)
+        .writeHive(records);
+    OverwriteFiles overwriteFiles = table.newOverwrite();
+    files.forEach(overwriteFiles::addFile);
+    overwriteFiles.commit();
+    files = HiveDataTestHelpers.lastedAddedFiles(table);
+
+    List<DataFile> newDataFiles = HiveDataTestHelpers.writerOf(table)
+        .transactionId(2L)
+        .writeHive(records);
+    RewriteFiles rewriteFiles = table.newRewrite();
+    rewriteFiles.rewriteFiles(Sets.newHashSet(files), Sets.newHashSet(newDataFiles));
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(table);
+  }
+
 
   private void applyUpdateHiveFiles(
       Map<String, String> partitionAndLocations,

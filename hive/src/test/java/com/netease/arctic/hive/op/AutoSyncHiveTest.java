@@ -22,6 +22,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.HiveTableTestBase;
+import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
@@ -81,8 +82,10 @@ public class AutoSyncHiveTest extends HiveTableTestBase {
 
   private void testAutoSyncUnpartitionedTableHiveDataWrite(ArcticTable testTable) throws TException, IOException {
     testTable.updateProperties().set(HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE, "true").commit();
-    List<DataFile> dataFiles = writeDataFiles(testTable, HiveLocationKind.INSTANT,
-        writeRecords("p1"));
+    List<DataFile> dataFiles =  HiveDataTestHelpers.writerOf(testTable)
+        .transactionId(1L)
+        .consistentWriteEnabled(false)
+        .writeHive(records("p1"));
     UnkeyedTable tableStore;
     if (testTable.isKeyedTable()) {
       tableStore = testTable.asKeyedTable().baseTable();
@@ -111,8 +114,11 @@ public class AutoSyncHiveTest extends HiveTableTestBase {
   private void testAutoSyncPartitionedTableHiveDataWrite(ArcticTable testTable) throws TException, IOException {
     testTable.updateProperties().set(HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE, "true").commit();
     Table hiveTable = hms.getClient().getTable(testTable.id().getDatabase(), testTable.id().getTableName());
-    List<DataFile> dataFiles = writeDataFiles(testTable, HiveLocationKind.INSTANT,
-        writeRecords("p1", "p2"));
+    List<DataFile> dataFiles = HiveDataTestHelpers.writerOf(testTable)
+        .transactionId(1L)
+        .consistentWriteEnabled(false)
+        .writeHive(records("p1", "p2"));
+
     UnkeyedTable tableStore;
     if (testTable.isKeyedTable()) {
       tableStore = testTable.asKeyedTable().baseTable();
@@ -124,8 +130,10 @@ public class AutoSyncHiveTest extends HiveTableTestBase {
     overwriteFiles.commit();
 
     //test add new hive partition
-    List<DataFile> newFiles = writeDataFiles(testTable, HiveLocationKind.INSTANT,
-        writeRecords("p3"));
+    List<DataFile> newFiles = HiveDataTestHelpers.writerOf(testTable)
+        .transactionId(2L)
+        .consistentWriteEnabled(false)
+        .writeHive(records("p3"));
     dataFiles.addAll(newFiles);
     Partition newPartition = HivePartitionUtil.newPartition(hiveTable, Lists.newArrayList("p3"),
         TableFileUtils.getFileDir(newFiles.get(0).path().toString()), newFiles,

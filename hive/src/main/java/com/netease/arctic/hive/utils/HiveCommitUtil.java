@@ -18,8 +18,8 @@
 
 package com.netease.arctic.hive.utils;
 
-import com.netease.arctic.io.ArcticHadoopFileIO;
-import com.netease.arctic.utils.TableFileUtil;
+import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
@@ -36,7 +36,7 @@ public class HiveCommitUtil {
    * consistency.
    */
   public static List<DataFile> commitConsistentWriteFiles(
-      List<DataFile> dataFiles, ArcticHadoopFileIO fileIO, PartitionSpec spec) {
+      List<DataFile> dataFiles, ArcticFileIO fileIO, PartitionSpec spec) {
     return applyConsistentWriteFile(
         dataFiles,
         spec,
@@ -51,14 +51,14 @@ public class HiveCommitUtil {
       List<DataFile> dataFiles, PartitionSpec spec, HiveFileCommitter hiveFileCommitter) {
     List<DataFile> afterCommittedFiles = Lists.newArrayList();
     for (DataFile file : dataFiles) {
-      String filename = TableFileUtil.getFileName(file.path().toString());
+      String filename = TableFileUtils.getFileName(file.path().toString());
       if (!filename.startsWith(".")) {
         afterCommittedFiles.add(file);
         continue;
       }
       String committedFilename = filename.substring(1);
       String committedLocation =
-          TableFileUtil.getFileDir(file.path().toString()) + "/" + committedFilename;
+          TableFileUtils.getFileDir(file.path().toString()) + "/" + committedFilename;
 
       hiveFileCommitter.commit(file.path().toString(), committedLocation);
       DataFile committedDatafile =

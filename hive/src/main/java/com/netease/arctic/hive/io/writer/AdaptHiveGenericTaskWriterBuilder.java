@@ -188,8 +188,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     }
 
     OutputFileFactory outputFileFactory =
-        locationKind == HiveLocationKind.INSTANT
-            ? new AdaptHiveOutputFileFactory(
+        locationKind == HiveLocationKind.INSTANT ? new AdaptHiveOutputFileFactory(
                 ((SupportHive) table).hiveLocation(),
                 table.spec(),
                 fileFormat,
@@ -210,8 +209,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
                 taskId,
                 transactionId);
     FileAppenderFactory<Record> appenderFactory =
-        TableTypeUtil.isHive(table)
-            ? new AdaptHiveGenericAppenderFactory(schema, table.spec())
+        TableTypeUtil.isHive(table) ? new AdaptHiveGenericAppenderFactory(schema, table.spec())
             : new GenericAppenderFactory(schema, table.spec());
     return new GenericBaseTaskWriter(
         fileFormat,

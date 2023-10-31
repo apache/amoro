@@ -102,7 +102,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     } else {
       this.hiveSubDirectory = hiveSubDirectory;
     }
-    this.fileNameGenerator = new FileNameRules(format, partitionId, taskId, transactionId);
+    this.fileNameGenerator = new FileNameGenerator(format, partitionId, taskId, transactionId);
     this.hiveConsistentWrite = hiveConsistentWrite;
   }
 

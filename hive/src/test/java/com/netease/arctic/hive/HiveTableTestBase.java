@@ -37,7 +37,11 @@ import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
@@ -51,6 +55,10 @@ import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -286,5 +294,19 @@ public class HiveTableTestBase extends TableTestBase {
           getLocation()).stream().map(f -> f.getPath().getName()).collect(Collectors.toList()));
     }
     Assert.assertEquals(exceptedFiles, fileNameList);
+  }
+
+  public List<Record> records(String... partitionValues) {
+    GenericRecord record = GenericRecord.create(HIVE_TABLE_SCHEMA);
+
+    ImmutableList.Builder<Record> builder = ImmutableList.builder();
+    for (String partitionValue : partitionValues) {
+      builder.add(record.copy(ImmutableMap.of(COLUMN_NAME_ID, 1, COLUMN_NAME_NAME, partitionValue,
+          COLUMN_NAME_OP_TIME, LocalDateTime.of(2022, 1, 1, 12, 0, 0),
+          COLUMN_NAME_OP_TIME_WITH_ZONE, OffsetDateTime.of(
+              LocalDateTime.of(2022, 1, 1, 12, 0, 0), ZoneOffset.UTC),
+          COLUMN_NAME_D, new BigDecimal("100"))));
+    }
+    return builder.build();
   }
 }

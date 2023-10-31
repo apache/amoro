@@ -130,31 +130,22 @@ public class TaskWriters {
       icebergTable = table;
     }
 
-    FileAppenderFactory<InternalRow> appenderFactory =
-        InternalRowFileAppenderFactory.builderFor(icebergTable, schema, dsSchema)
-            .writeHive(isHiveTable)
-            .build();
-    boolean hiveConsistentWrite = TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
+    FileAppenderFactory<InternalRow> appenderFactory = InternalRowFileAppenderFactory
+        .builderFor(icebergTable, schema, dsSchema)
+        .writeHive(isHiveTable)
+        .build();
+    boolean consistentWriteEnabled = TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
+
     OutputFileFactory outputFileFactory;
     if (isHiveTable && isOverwrite) {
-      outputFileFactory =
-          new AdaptHiveOutputFileFactory(
-              ((SupportHive) table).hiveLocation(),
-              table.spec(),
-              fileFormat,
-              table.io(),
-              encryptionManager,
-              partitionId,
-              taskId,
-              transactionId,
-              hiveSubdirectory,
-              hiveConsistentWrite);
+      outputFileFactory = new AdaptHiveOutputFileFactory(
+          ((SupportHive) table).hiveLocation(), table.spec(), fileFormat, table.io(),
+          encryptionManager, partitionId, taskId, transactionId, hiveSubdirectory, consistentWriteEnabled);
     } else {
       outputFileFactory = new CommonOutputFileFactory(
           baseLocation, table.spec(), fileFormat, table.io(),
           encryptionManager, partitionId, taskId, transactionId);
     }
-
     return new ArcticSparkBaseTaskWriter(
         fileFormat, appenderFactory,
         outputFileFactory, table.io(), fileSize, mask, schema,

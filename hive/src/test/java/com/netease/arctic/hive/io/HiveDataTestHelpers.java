@@ -19,36 +19,26 @@
 package com.netease.arctic.hive.io;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.hive.io.reader.AdaptHiveGenericKeyedDataReader;
-import com.netease.arctic.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.io.MixedDataTestHelpers;
+import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.LocationKind;
-import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.TableFileUtil;
+import com.netease.arctic.utils.TableFileUtils;
 import com.netease.arctic.utils.TablePropertyUtil;
-import com.netease.arctic.utils.map.StructLikeCollections;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.Table;
-import org.apache.iceberg.data.IdentityPartitionConverters;
-import org.apache.iceberg.data.Record;
-import org.apache.iceberg.expressions.Expression;
-import org.apache.iceberg.io.TaskWriter;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.junit.Assert;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.Table;
+import org.apache.iceberg.data.Record;
+import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.junit.Assert;
 
 public class HiveDataTestHelpers {
 
@@ -99,7 +89,7 @@ public class HiveDataTestHelpers {
         builder.withOrdered();
       }
       try (TaskWriter<Record> writer = builder.buildWriter(ChangeLocationKind.INSTANT)) {
-        return MixedDataTestHelpers.writeRecords(writer, records);
+        return DataTestHelpers.writeRecords(writer, records);
       } catch (IOException e) {
         throw new UncheckedIOException(e);
       }
@@ -115,7 +105,7 @@ public class HiveDataTestHelpers {
 
     private List<DataFile> writeRecords(LocationKind writeLocationKind, List<Record> records) {
       try (TaskWriter<Record> writer = newBaseWriter(writeLocationKind)) {
-        return MixedDataTestHelpers.writeRecords(writer, records);
+        return DataTestHelpers.writeRecords(writer, records);
       } catch (IOException e) {
         throw new UncheckedIOException(e);
       }
@@ -142,7 +132,7 @@ public class HiveDataTestHelpers {
 
   public static List<DataFile> lastedAddedFiles(Table tableStore) {
     tableStore.refresh();
-    return Lists.newArrayList(tableStore.currentSnapshot().addedDataFiles(tableStore.io()));
+    return Lists.newArrayList(tableStore.currentSnapshot().addedFiles());
   }
 
   /**
@@ -154,7 +144,7 @@ public class HiveDataTestHelpers {
         TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
     String hiveLocation = table.hiveLocation();
     for (DataFile f : files) {
-      String filename = TableFileUtil.getFileName(f.path().toString());
+      String filename = TableFileUtils.getFileName(f.path().toString());
       if (isHiveFile(hiveLocation, f)) {
         Assert.assertEquals(consistentWriteEnabled, filename.startsWith("."));
       } else {
@@ -166,13 +156,13 @@ public class HiveDataTestHelpers {
   /** Assert the consistent-write commit, all file will not be hidden file after commit. */
   public static void assertWriteConsistentFilesCommit(ArcticTable table) {
     table.refresh();
-    UnkeyedTable unkeyedTable = ArcticTableUtil.baseStore(table);
+    UnkeyedTable unkeyedTable = baseStore(table);
     unkeyedTable
         .newScan()
         .planFiles()
         .forEach(
             t -> {
-              String filename = TableFileUtil.getFileName(t.file().path().toString());
+              String filename = TableFileUtils.getFileName(t.file().path().toString());
               Assert.assertFalse(filename.startsWith("."));
             });
   }
@@ -182,111 +172,12 @@ public class HiveDataTestHelpers {
     return location.toLowerCase().startsWith(hiveLocation.toLowerCase());
   }
 
-  public static List<Record> readKeyedTable(
-      KeyedTable keyedTable,
-      Expression expression,
-      Schema projectSchema,
-      boolean useDiskMap,
-      boolean readDeletedData) {
-    AdaptHiveGenericKeyedDataReader reader;
-    if (projectSchema == null) {
-      projectSchema = keyedTable.schema();
-    }
-    if (useDiskMap) {
-      reader =
-          new AdaptHiveGenericKeyedDataReader(
-              keyedTable.io(),
-              keyedTable.schema(),
-              projectSchema,
-              keyedTable.primaryKeySpec(),
-              null,
-              true,
-              IdentityPartitionConverters::convertConstant,
-              null,
-              false,
-              new StructLikeCollections(true, 0L));
+  /** Return the base store of the arctic table. */
+  private static UnkeyedTable baseStore(ArcticTable arcticTable) {
+    if (arcticTable.isKeyedTable()) {
+      return arcticTable.asKeyedTable().baseTable();
     } else {
-      reader =
-          new AdaptHiveGenericKeyedDataReader(
-              keyedTable.io(),
-              keyedTable.schema(),
-              projectSchema,
-              keyedTable.primaryKeySpec(),
-              null,
-              true,
-              IdentityPartitionConverters::convertConstant);
+      return arcticTable.asUnkeyedTable();
     }
-
-    return MixedDataTestHelpers.readKeyedTable(
-        keyedTable, reader, expression, projectSchema, readDeletedData);
-  }
-
-  public static List<Record> readChangeStore(
-      KeyedTable keyedTable, Expression expression, Schema projectSchema, boolean useDiskMap) {
-    if (projectSchema == null) {
-      projectSchema = keyedTable.schema();
-    }
-    Schema expectTableSchema =
-        MetadataColumns.appendChangeStoreMetadataColumns(keyedTable.schema());
-    Schema expectProjectSchema = MetadataColumns.appendChangeStoreMetadataColumns(projectSchema);
-
-    AdaptHiveGenericUnkeyedDataReader reader;
-    if (useDiskMap) {
-      reader =
-          new AdaptHiveGenericUnkeyedDataReader(
-              keyedTable.asKeyedTable().io(),
-              expectTableSchema,
-              expectProjectSchema,
-              null,
-              false,
-              IdentityPartitionConverters::convertConstant,
-              false,
-              new StructLikeCollections(true, 0L));
-    } else {
-      reader =
-          new AdaptHiveGenericUnkeyedDataReader(
-              keyedTable.asKeyedTable().io(),
-              expectTableSchema,
-              expectProjectSchema,
-              null,
-              false,
-              IdentityPartitionConverters::convertConstant,
-              false);
-    }
-
-    return MixedDataTestHelpers.readChangeStore(keyedTable, reader, expression);
-  }
-
-  public static List<Record> readBaseStore(
-      ArcticTable table, Expression expression, Schema projectSchema, boolean useDiskMap) {
-    if (projectSchema == null) {
-      projectSchema = table.schema();
-    }
-
-    AdaptHiveGenericUnkeyedDataReader reader;
-    if (useDiskMap) {
-      reader =
-          new AdaptHiveGenericUnkeyedDataReader(
-              table.io(),
-              table.schema(),
-              projectSchema,
-              null,
-              false,
-              IdentityPartitionConverters::convertConstant,
-              false,
-              new StructLikeCollections(true, 0L));
-    } else {
-      reader =
-          new AdaptHiveGenericUnkeyedDataReader(
-              table.io(),
-              table.schema(),
-              projectSchema,
-              null,
-              false,
-              IdentityPartitionConverters::convertConstant,
-              false);
-    }
-
-    return MixedDataTestHelpers.readBaseStore(table, reader, expression);
   }
 }
