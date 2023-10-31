@@ -50,6 +50,7 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
     super(input, table, structLikeCollections);
   }
 
+  // TODO We can remove this override method after upgrading Iceberg version to 1.5+.
   @Override
   protected StructLike partition() {
     StructLike partitionData = super.partition();
