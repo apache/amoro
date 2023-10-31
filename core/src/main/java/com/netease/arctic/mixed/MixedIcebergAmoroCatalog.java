@@ -7,6 +7,7 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -42,6 +43,7 @@ public class MixedIcebergAmoroCatalog extends BasicMixedIcebergCatalog {
     headers.put(HTTP_HEADER_LIST_TABLE_FILTER, TableFormat.MIXED_ICEBERG.name());
     String uri = properties.get(CatalogProperties.URI);
     Catalog catalog = new RESTCatalog(config -> HTTPClient.builder(config).uri(uri).withHeaders(headers).build());
+    CatalogUtil.configureHadoopConf(catalog, hadoopConf);
     catalog.initialize(name, properties);
     return catalog;
   }

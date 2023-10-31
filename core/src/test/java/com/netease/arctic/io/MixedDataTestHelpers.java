@@ -343,6 +343,10 @@ public class MixedDataTestHelpers {
     return builder.build();
   }
 
+  public static List<Record> readBaseStore(ArcticTable table, Expression expression) {
+    return readBaseStore(table, expression, null, false);
+  }
+
   public static List<Record> readBaseStore(
       ArcticTable table, Expression expression, Schema projectSchema, boolean useDiskMap) {
     if (projectSchema == null) {
