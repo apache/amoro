@@ -105,13 +105,19 @@ public class HiveTableTestHelper extends BasicTableTestHelper {
       ChangeAction action,
       List<Record> records,
       boolean orderedWrite) {
-    return HiveDataTestHelpers.writeChangeStore(keyedTable, txId, action, records, orderedWrite);
+    return HiveDataTestHelpers.writerOf(keyedTable)
+        .transactionId(txId)
+        .orderedWrite(orderedWrite)
+        .writeChange(records, action);
   }
 
   @Override
   public List<DataFile> writeBaseStore(
       ArcticTable table, long txId, List<Record> records, boolean orderedWrite) {
-    return HiveDataTestHelpers.writeBaseStore(table, txId, records, orderedWrite, false);
+    return HiveDataTestHelpers.writerOf(table)
+        .transactionId(txId)
+        .orderedWrite(orderedWrite)
+        .writeBase(records);
   }
 
   @Override

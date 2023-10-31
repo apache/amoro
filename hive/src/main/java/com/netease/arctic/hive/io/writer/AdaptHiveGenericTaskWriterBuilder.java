@@ -38,6 +38,7 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WriteOperationKind;
 import com.netease.arctic.utils.SchemaUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.MetricsModes;
@@ -66,9 +67,11 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   private String customHiveSubdirectory;
   private Long targetFileSize;
   private boolean orderedWriter = false;
+  private Boolean hiveConsistentWrite;
 
   private AdaptHiveGenericTaskWriterBuilder(ArcticTable table) {
     this.table = table;
+    this.hiveConsistentWrite = TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
   }
 
   public AdaptHiveGenericTaskWriterBuilder withTransactionId(Long transactionId) {
@@ -104,6 +107,11 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
 
   public AdaptHiveGenericTaskWriterBuilder withOrdered() {
     this.orderedWriter = true;
+    return this;
+  }
+
+  public AdaptHiveGenericTaskWriterBuilder hiveConsistentWrite(boolean enabled) {
+    this.hiveConsistentWrite = enabled;
     return this;
   }
 
@@ -221,7 +229,8 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
                 partitionId,
                 taskId,
                 transactionId,
-                customHiveSubdirectory)
+                customHiveSubdirectory,
+                hiveConsistentWrite)
             : new CommonOutputFileFactory(
                 baseLocation,
                 table.spec(),

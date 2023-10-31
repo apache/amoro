@@ -29,6 +29,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.SchemaUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -143,7 +144,7 @@ public class TaskWriters {
         InternalRowFileAppenderFactory.builderFor(icebergTable, schema, dsSchema)
             .writeHive(isHiveTable)
             .build();
-
+    boolean hiveConsistentWrite = TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
     OutputFileFactory outputFileFactory;
     if (isHiveTable && isOverwrite) {
       outputFileFactory =
@@ -156,7 +157,8 @@ public class TaskWriters {
               partitionId,
               taskId,
               transactionId,
-              hiveSubdirectory);
+              hiveSubdirectory,
+              hiveConsistentWrite);
     } else {
       outputFileFactory =
           new CommonOutputFileFactory(
