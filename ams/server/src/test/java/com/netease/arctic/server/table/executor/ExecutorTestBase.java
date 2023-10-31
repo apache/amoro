@@ -80,9 +80,16 @@ public class ExecutorTestBase extends TableTestBase {
 
   public List<DataFile> writeAndCommitBaseAndHive(ArcticTable table, long txId, boolean writeHive) {
     String hiveSubDir = HiveTableUtil.newHiveSubdirectory(txId);
-    List<DataFile> dataFiles =
-        HiveDataTestHelpers.writeBaseStore(
-            table, txId, createRecords(1, 100), false, writeHive, hiveSubDir);
+    HiveDataTestHelpers.WriterHelper writerHelper =
+        HiveDataTestHelpers.writerOf(table).customHiveLocation(hiveSubDir).transactionId(txId);
+    List<Record> records = createRecords(1, 100);
+    List<DataFile> dataFiles;
+    if (writeHive) {
+      dataFiles = writerHelper.writeHive(records);
+    } else {
+      dataFiles = writerHelper.writeBase(records);
+    }
+
     UnkeyedTable baseTable =
         table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
     AppendFiles baseAppend = baseTable.newAppend();

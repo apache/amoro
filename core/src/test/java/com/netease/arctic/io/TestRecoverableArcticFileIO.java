@@ -110,7 +110,7 @@ public class TestRecoverableArcticFileIO extends TableTestBase {
 
   @Test
   public void isEmptyDirectory() {
-    String dir = getArcticTable().location() + "location";
+    String dir = getArcticTable().location() + "/location";
     arcticFileIO.asFileSystemIO().makeDirectories(dir);
     Assert.assertTrue(recoverableArcticFileIO.isEmptyDirectory(dir));
     Assert.assertFalse(recoverableArcticFileIO.isEmptyDirectory(getArcticTable().location()));

@@ -285,8 +285,8 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
             break;
           }
           LOG.info("{}", readLine);
-          if (commandReader != null) {
-            value = commandReader.apply(readLine);
+          if ((value = commandReader.apply(readLine)) != null) {
+            break;
           }
         }
         return value;
@@ -317,8 +317,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
       String releaseCmd = exportCmd + " && " + releaseCommand;
       String[] cmd = {"/bin/sh", "-c", releaseCmd};
       LOG.info("Releasing flink optimizer using command: " + releaseCmd);
-      Process exec = Runtime.getRuntime().exec(cmd);
-      fetchCommandOutput(exec, null);
+      Runtime.getRuntime().exec(cmd);
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to release flink optimizer.", e);
     }
