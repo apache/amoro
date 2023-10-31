@@ -5,19 +5,29 @@ import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
 import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
 
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.hive.io.HiveDataTestHelpers;
+import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.spark.reader.SparkParquetReaders;
 import com.netease.arctic.spark.test.SparkTableTestBase;
+import com.netease.arctic.spark.test.utils.RecordGenerator;
+import com.netease.arctic.spark.test.utils.TestTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.spark.data.SparkOrcReader;
 import org.apache.iceberg.types.Types;
@@ -221,5 +231,45 @@ public class TestSparkWriter extends SparkTableTestBase {
   private InternalRow geneRowData() {
     return new GenericInternalRow(
         new Object[] {1, UTF8String.fromString("aaa"), UTF8String.fromString("AAA")});
+  }
+
+  public static Stream<Arguments> testConsistentWrite() {
+    return Stream.of(
+        Arguments.of(TableFormat.MIXED_HIVE, true), Arguments.of(TableFormat.MIXED_HIVE, false));
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  public void testConsistentWrite(TableFormat format, boolean enableConsistentWrite) {
+    ArcticTable table =
+        createTarget(
+            schema,
+            builder ->
+                builder.withProperty(
+                    TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, enableConsistentWrite + ""));
+    StructType dsSchema = SparkSchemaUtil.convert(schema);
+    List<Record> records = RecordGenerator.buildFor(schema).build().records(10);
+    try (TaskWriter<InternalRow> writer =
+        TaskWriters.of(table)
+            .withOrderedWriter(false)
+            .withDataSourceSchema(dsSchema)
+            .newBaseWriter(true)) {
+      records.stream()
+          .map(r -> TestTableUtil.recordToInternalRow(schema, r))
+          .forEach(
+              i -> {
+                try {
+                  writer.write(i);
+                } catch (IOException e) {
+                  throw new RuntimeException(e);
+                }
+              });
+      WriteResult result = writer.complete();
+      DataFile[] dataFiles = result.dataFiles();
+      HiveDataTestHelpers.assertWriteConsistentFilesName(
+          (SupportHive) table, Lists.newArrayList(dataFiles));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
