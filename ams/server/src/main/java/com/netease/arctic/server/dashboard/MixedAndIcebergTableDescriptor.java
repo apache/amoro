@@ -47,7 +47,6 @@ import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
@@ -137,7 +136,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
         changeMetrics.put("totalSize", byteToXB(changeFilesStatistics.getTotalSize()));
         changeMetrics.put("fileCount", changeFilesStatistics.getFileCnt());
         changeMetrics.put("averageFileSize", byteToXB(changeFilesStatistics.getAverageSize()));
-        changeMetrics.put("tableWatermark", AmsUtil.longOrNull(serverTableMeta.getTableWatermark()));
+        changeMetrics.put(
+            "tableWatermark", AmsUtil.longOrNull(serverTableMeta.getTableWatermark()));
         tableSize += changeFilesStatistics.getTotalSize();
         tableFileCnt += changeFilesStatistics.getFileCnt();
       } else {
