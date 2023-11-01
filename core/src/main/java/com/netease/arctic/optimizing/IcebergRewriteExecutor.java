@@ -50,6 +50,18 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
     super(input, table, structLikeCollections);
   }
 
+  // TODO We can remove this override method after upgrading Iceberg version to 1.5+.
+  @Override
+  protected StructLike partition() {
+    StructLike partitionData = super.partition();
+    if (partitionData != null && partitionData.size() == 0) {
+      // Cast empty partition data to NULL to avoid creating empty partition directory.
+      return null;
+    } else {
+      return partitionData;
+    }
+  }
+
   @Override
   protected OptimizingDataReader dataReader() {
     return new GenericCombinedIcebergDataReader(
@@ -87,19 +99,19 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
         new FileWriterFactory<Record>() {
 
           @Override
-          public DataWriter newDataWriter(
+          public DataWriter<Record> newDataWriter(
               EncryptedOutputFile file, PartitionSpec spec, StructLike partition) {
             return appenderFactory.newDataWriter(file, dataFileFormat(), partition);
           }
 
           @Override
-          public EqualityDeleteWriter newEqualityDeleteWriter(
+          public EqualityDeleteWriter<Record> newEqualityDeleteWriter(
               EncryptedOutputFile file, PartitionSpec spec, StructLike partition) {
             return null;
           }
 
           @Override
-          public PositionDeleteWriter newPositionDeleteWriter(
+          public PositionDeleteWriter<Record> newPositionDeleteWriter(
               EncryptedOutputFile file, PartitionSpec spec, StructLike partition) {
             return null;
           }

@@ -47,7 +47,6 @@ import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
@@ -127,24 +126,28 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     tableFileCnt += baseFilesStatistics.getFileCnt();
     serverTableMeta.setBaseMetrics(baseMetrics);
 
-    Map<String, Object> changeMetrics = Maps.newHashMap();
-    if (tableBasicInfo.getChangeStatistics() != null) {
-      FilesStatistics changeFilesStatistics =
-          tableBasicInfo.getChangeStatistics().getTotalFilesStat();
-      Map<String, String> changeSummary = tableBasicInfo.getChangeStatistics().getSummary();
-      changeMetrics.put("lastCommitTime", AmsUtil.longOrNull(changeSummary.get("visibleTime")));
-      changeMetrics.put("totalSize", byteToXB(changeFilesStatistics.getTotalSize()));
-      changeMetrics.put("fileCount", changeFilesStatistics.getFileCnt());
-      changeMetrics.put("averageFileSize", byteToXB(changeFilesStatistics.getAverageSize()));
-      changeMetrics.put("tableWatermark", AmsUtil.longOrNull(serverTableMeta.getTableWatermark()));
-      tableSize += changeFilesStatistics.getTotalSize();
-      tableFileCnt += changeFilesStatistics.getFileCnt();
-    } else {
-      changeMetrics.put("lastCommitTime", null);
-      changeMetrics.put("totalSize", null);
-      changeMetrics.put("fileCount", null);
-      changeMetrics.put("averageFileSize", null);
-      changeMetrics.put("tableWatermark", null);
+    if (table.isKeyedTable()) {
+      Map<String, Object> changeMetrics = Maps.newHashMap();
+      if (tableBasicInfo.getChangeStatistics() != null) {
+        FilesStatistics changeFilesStatistics =
+            tableBasicInfo.getChangeStatistics().getTotalFilesStat();
+        Map<String, String> changeSummary = tableBasicInfo.getChangeStatistics().getSummary();
+        changeMetrics.put("lastCommitTime", AmsUtil.longOrNull(changeSummary.get("visibleTime")));
+        changeMetrics.put("totalSize", byteToXB(changeFilesStatistics.getTotalSize()));
+        changeMetrics.put("fileCount", changeFilesStatistics.getFileCnt());
+        changeMetrics.put("averageFileSize", byteToXB(changeFilesStatistics.getAverageSize()));
+        changeMetrics.put(
+            "tableWatermark", AmsUtil.longOrNull(serverTableMeta.getTableWatermark()));
+        tableSize += changeFilesStatistics.getTotalSize();
+        tableFileCnt += changeFilesStatistics.getFileCnt();
+      } else {
+        changeMetrics.put("lastCommitTime", null);
+        changeMetrics.put("totalSize", null);
+        changeMetrics.put("fileCount", null);
+        changeMetrics.put("averageFileSize", null);
+        changeMetrics.put("tableWatermark", null);
+      }
+      serverTableMeta.setChangeMetrics(changeMetrics);
     }
     Map<String, Object> tableSummary = new HashMap<>();
     tableSummary.put("size", byteToXB(tableSize));
@@ -497,9 +500,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
         TableStatCollector.fillTableStatistics(baseInfo, unkeyedTable, table);
       } else if (table.isKeyedTable()) {
         KeyedTable keyedTable = table.asKeyedTable();
-        if (!PrimaryKeySpec.noPrimaryKey().equals(keyedTable.primaryKeySpec())) {
-          changeInfo = TableStatCollector.collectChangeTableInfo(keyedTable);
-        }
+        changeInfo = TableStatCollector.collectChangeTableInfo(keyedTable);
         baseInfo = TableStatCollector.collectBaseTableInfo(keyedTable);
       } else {
         throw new IllegalStateException("unknown type of table");
