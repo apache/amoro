@@ -63,5 +63,5 @@ public interface FormatTableDescriptor {
   List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable);
 
   /** Get the branch information of the {@link AmoroTable}. */
-  List<TagOrBranchInfo> getTableBranchs(AmoroTable<?> amoroTable);
+  List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable);
 }

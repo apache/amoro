@@ -115,10 +115,10 @@ public class ServerTableDescriptor extends PersistentBase {
     return formatTableDescriptor.getTableTags(amoroTable);
   }
 
-  public List<TagOrBranchInfo> getTableBranchs(TableIdentifier tableIdentifier) {
+  public List<TagOrBranchInfo> getTableBranches(TableIdentifier tableIdentifier) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
-    return formatTableDescriptor.getTableBranchs(amoroTable);
+    return formatTableDescriptor.getTableBranches(amoroTable);
   }
 
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(

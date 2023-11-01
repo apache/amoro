@@ -449,7 +449,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public List<TagOrBranchInfo> getTableBranchs(AmoroTable<?> amoroTable) {
+  public List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable) {
     throw new UnsupportedOperationException();
   }
 

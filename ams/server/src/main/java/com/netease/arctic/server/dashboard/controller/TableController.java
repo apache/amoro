@@ -508,14 +508,14 @@ public class TableController {
     ctx.json(OkResponse.of(amsPageResult));
   }
 
-  public void getTableBranchs(Context ctx) {
+  public void getTableBranches(Context ctx) {
     String catalog = ctx.pathParam("catalog");
     String database = ctx.pathParam("db");
     String table = ctx.pathParam("table");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
     List<TagOrBranchInfo> partitionBaseInfos =
-        tableDescriptor.getTableBranchs(
+        tableDescriptor.getTableBranches(
             TableIdentifier.of(catalog, database, table).buildTableIdentifier());
     int offset = (page - 1) * pageSize;
     PageResult<TagOrBranchInfo> amsPageResult = PageResult.of(partitionBaseInfos, offset, pageSize);

@@ -399,12 +399,12 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   @Override
   public List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable) {
-    return getTableTagsOrBranchs(amoroTable, SnapshotRef::isTag);
+    return getTableTagsOrBranches(amoroTable, SnapshotRef::isTag);
   }
 
   @Override
-  public List<TagOrBranchInfo> getTableBranchs(AmoroTable<?> amoroTable) {
-    return getTableTagsOrBranchs(amoroTable, SnapshotRef::isBranch);
+  public List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable) {
+    return getTableTagsOrBranches(amoroTable, SnapshotRef::isBranch);
   }
 
   @Override
@@ -597,7 +597,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     return (ArcticTable) amoroTable.originalTable();
   }
 
-  private List<TagOrBranchInfo> getTableTagsOrBranchs(
+  private List<TagOrBranchInfo> getTableTagsOrBranches(
       AmoroTable<?> amoroTable, Predicate<SnapshotRef> predicate) {
     ArcticTable arcticTable = getTable(amoroTable);
     List<TagOrBranchInfo> result = new ArrayList<>();

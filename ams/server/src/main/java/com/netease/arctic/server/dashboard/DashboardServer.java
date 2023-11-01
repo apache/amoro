@@ -209,7 +209,7 @@ public class DashboardServer {
                 tableController::getTableTags);
             get(
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
-                tableController::getTableBranchs);
+                tableController::getTableBranches);
 
             // catalog controller
             post("/catalogs", catalogController::createCatalog);
@@ -323,7 +323,7 @@ public class DashboardServer {
                 tableController::getTableTags);
             get(
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
-                tableController::getTableBranchs);
+                tableController::getTableBranches);
 
             // optimize controller
             get(
