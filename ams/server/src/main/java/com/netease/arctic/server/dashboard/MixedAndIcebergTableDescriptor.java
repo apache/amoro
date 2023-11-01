@@ -38,6 +38,7 @@ import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TableBasicInfo;
 import com.netease.arctic.server.dashboard.model.TableStatistics;
+import com.netease.arctic.server.dashboard.model.TagOrBranchInfo;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.TableStatCollector;
 import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
@@ -59,6 +60,7 @@ import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.GenericRecord;
@@ -66,6 +68,7 @@ import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.PropertyUtil;
@@ -80,6 +83,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /** Descriptor for Mixed-Hive, Mixed-Iceberg, Iceberg format tables. */
@@ -383,6 +387,16 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   @Override
+  public List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable) {
+    return getTableTagsOrBranchs(amoroTable, SnapshotRef::isTag);
+  }
+
+  @Override
+  public List<TagOrBranchInfo> getTableBranchs(AmoroTable<?> amoroTable) {
+    return getTableTagsOrBranchs(amoroTable, SnapshotRef::isBranch);
+  }
+
+  @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
       AmoroTable<?> amoroTable, int limit, int offset) {
     TableIdentifier tableIdentifier = amoroTable.id();
@@ -572,5 +586,29 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   private ArcticTable getTable(AmoroTable<?> amoroTable) {
     return (ArcticTable) amoroTable.originalTable();
+  }
+
+  private List<TagOrBranchInfo> getTableTagsOrBranchs(
+      AmoroTable<?> amoroTable, Predicate<SnapshotRef> predicate) {
+    ArcticTable arcticTable = getTable(amoroTable);
+    List<TagOrBranchInfo> result = new ArrayList<>();
+    Map<String, SnapshotRef> snapshotRefs;
+    if (arcticTable.isKeyedTable()) {
+      // todo temporarily responds to the problem of Mixed Format table.
+      if (predicate.test(SnapshotRef.branchBuilder(-1).build())) {
+        return ImmutableList.of(TagOrBranchInfo.MAIN_BRANCH);
+      } else {
+        return Collections.emptyList();
+      }
+    } else {
+      snapshotRefs = arcticTable.asUnkeyedTable().refs();
+      snapshotRefs.forEach(
+          (name, snapshotRef) -> {
+            if (predicate.test(snapshotRef)) {
+              result.add(new TagOrBranchInfo(name, snapshotRef));
+            }
+          });
+      return result;
+    }
   }
 }
