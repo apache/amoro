@@ -18,10 +18,10 @@
 
 package com.netease.arctic.utils;
 
-import com.google.common.collect.Maps;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
@@ -31,20 +31,23 @@ import java.util.Map;
 
 public class TestTablePropertyUtil {
 
-  private static final Schema SCHEMA = new Schema(
-      Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "name", Types.StringType.get())
-  );
-  private static final PartitionSpec SPEC = PartitionSpec.builderFor(SCHEMA)
-      .identity("name").build();
+  private static final Schema SCHEMA =
+      new Schema(
+          Types.NestedField.required(1, "id", Types.IntegerType.get()),
+          Types.NestedField.required(2, "name", Types.StringType.get()));
+  private static final PartitionSpec SPEC =
+      PartitionSpec.builderFor(SCHEMA).identity("name").build();
 
-  private static final String JSON_VALUE = "{\"name=p0\":{\"key1\":\"p0_value1\",\"key0\":\"p0_value0\"}," +
-      "\"name=p1\":{\"key0\":\"p1_value0\"}}";
+  private static final String JSON_VALUE =
+      "{\"name=p0\":{\"key1\":\"p0_value1\",\"key0\":\"p0_value0\"},"
+          + "\"name=p1\":{\"key0\":\"p1_value0\"}}";
 
-  private static final StructLikeMap<Map<String, String>> PARTITION_PROPERTIES = buildPartitionProperties();
+  private static final StructLikeMap<Map<String, String>> PARTITION_PROPERTIES =
+      buildPartitionProperties();
 
   private static StructLikeMap<Map<String, String>> buildPartitionProperties() {
-    StructLikeMap<Map<String, String>> partitionProperties = StructLikeMap.create(SPEC.partitionType());
+    StructLikeMap<Map<String, String>> partitionProperties =
+        StructLikeMap.create(SPEC.partitionType());
     GenericRecord partition0 = GenericRecord.create(SPEC.partitionType());
     partition0.set(0, "p0");
     GenericRecord partition1 = GenericRecord.create(SPEC.partitionType());
@@ -61,11 +64,13 @@ public class TestTablePropertyUtil {
 
   @Test
   public void testEncodePartitionProperties() {
-    Assert.assertEquals(JSON_VALUE, TablePropertyUtil.encodePartitionProperties(SPEC, PARTITION_PROPERTIES));
+    Assert.assertEquals(
+        JSON_VALUE, TablePropertyUtil.encodePartitionProperties(SPEC, PARTITION_PROPERTIES));
   }
 
   @Test
   public void testDecodePartitionProperties() {
-    Assert.assertEquals(PARTITION_PROPERTIES, TablePropertyUtil.decodePartitionProperties(SPEC, JSON_VALUE));
+    Assert.assertEquals(
+        PARTITION_PROPERTIES, TablePropertyUtil.decodePartitionProperties(SPEC, JSON_VALUE));
   }
 }

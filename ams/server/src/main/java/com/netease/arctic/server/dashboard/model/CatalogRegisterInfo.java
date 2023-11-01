@@ -24,14 +24,14 @@ import java.util.Map;
 public class CatalogRegisterInfo {
   String name;
   String type;
+  String optimizerGroup;
   List<String> tableFormatList;
   Map<String, String> storageConfig;
   Map<String, String> authConfig;
   Map<String, String> properties;
+  Map<String, String> tableProperties;
 
-  public CatalogRegisterInfo() {
-
-  }
+  public CatalogRegisterInfo() {}
 
   public String getName() {
     return name;
@@ -47,6 +47,14 @@ public class CatalogRegisterInfo {
 
   public void setType(String type) {
     this.type = type;
+  }
+
+  public String getOptimizerGroup() {
+    return optimizerGroup;
+  }
+
+  public void setOptimizerGroup(String optimizerGroup) {
+    this.optimizerGroup = optimizerGroup;
   }
 
   public Map<String, String> getStorageConfig() {
@@ -79,5 +87,13 @@ public class CatalogRegisterInfo {
 
   public void setTableFormatList(List<String> tableFormatList) {
     this.tableFormatList = tableFormatList;
+  }
+
+  public Map<String, String> getTableProperties() {
+    return tableProperties;
+  }
+
+  public void setTableProperties(Map<String, String> tableProperties) {
+    this.tableProperties = tableProperties;
   }
 }

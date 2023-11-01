@@ -1,7 +1,5 @@
 package com.netease.arctic.server.optimizing;
 
-import java.util.Map;
-
 public interface OptimizingProcess {
 
   long getProcessId();
@@ -11,7 +9,7 @@ public interface OptimizingProcess {
   boolean isClosed();
 
   long getTargetSnapshotId();
-  
+
   long getTargetChangeSnapshotId();
 
   long getPlanTime();
@@ -28,14 +26,10 @@ public interface OptimizingProcess {
 
   MetricsSummary getSummary();
 
-  Map<String, Long> getFromSequence();
-
-  Map<String, Long> getToSequence();
-
   enum Status {
     RUNNING,
     CLOSED,
     SUCCESS,
-    FAILED;
+    FAILED
   }
 }

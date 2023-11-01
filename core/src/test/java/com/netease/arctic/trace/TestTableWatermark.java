@@ -50,7 +50,8 @@ public class TestTableWatermark extends TableTestBase {
   private UnkeyedTable operationTable;
 
   public TestTableWatermark(boolean keyedTable, boolean onBaseTable) {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(keyedTable, true));
     this.onBaseTable = onBaseTable;
   }
@@ -82,96 +83,116 @@ public class TestTableWatermark extends TableTestBase {
 
   @Test
   public void testChangeWatermarkWithAppendFiles() {
-    testTableWatermark(addFile -> {
-      getOperationTable().newAppend().appendFile(addFile).commit();
-      return null;
-    });
+    testTableWatermark(
+        addFile -> {
+          getOperationTable().newAppend().appendFile(addFile).commit();
+          return null;
+        });
   }
 
   @Test
   public void testChangeWatermarkWithAppendFilesInTx() {
-    testTableWatermark(addFile -> {
-      Transaction transaction = getOperationTable().newTransaction();
-      transaction.newAppend().appendFile(addFile).commit();
-      transaction.commitTransaction();
-      return null;
-    });
+    testTableWatermark(
+        addFile -> {
+          Transaction transaction = getOperationTable().newTransaction();
+          transaction.newAppend().appendFile(addFile).commit();
+          transaction.commitTransaction();
+          return null;
+        });
   }
 
   @Test
   public void testChangeWatermarkWithOverwriteFiles() {
-    testTableWatermark(addFile -> {
-      getOperationTable().newOverwrite().addFile(addFile).commit();
-      return null;
-    });
+    testTableWatermark(
+        addFile -> {
+          getOperationTable().newOverwrite().addFile(addFile).commit();
+          return null;
+        });
   }
 
   @Test
   public void testChangeWatermarkWithOverwriteFilesInTx() {
-    testTableWatermark(addFile -> {
-      Transaction transaction = getOperationTable().newTransaction();
-      transaction.newOverwrite().addFile(addFile).commit();
-      transaction.commitTransaction();
-      return null;
-    });
+    testTableWatermark(
+        addFile -> {
+          Transaction transaction = getOperationTable().newTransaction();
+          transaction.newOverwrite().addFile(addFile).commit();
+          transaction.commitTransaction();
+          return null;
+        });
   }
 
   @Test
   public void testChangeWatermarkWithReplacePartitions() {
-    testTableWatermark(addFile -> {
-      getOperationTable().newReplacePartitions().addFile(addFile).commit();
-      return null;
-    });
+    testTableWatermark(
+        addFile -> {
+          getOperationTable().newReplacePartitions().addFile(addFile).commit();
+          return null;
+        });
   }
 
   @Test
   public void testChangeWatermarkWithReplacePartitionsInTx() {
-    testTableWatermark(addFile -> {
-      Transaction transaction = getOperationTable().newTransaction();
-      transaction.newReplacePartitions().addFile(addFile).commit();
-      transaction.commitTransaction();
-      return null;
-    });
+    testTableWatermark(
+        addFile -> {
+          Transaction transaction = getOperationTable().newTransaction();
+          transaction.newReplacePartitions().addFile(addFile).commit();
+          transaction.commitTransaction();
+          return null;
+        });
   }
 
   @Test
   public void testChangeWatermarkWithRowDelta() {
-    testTableWatermark(addFile -> {
-      getOperationTable().newRowDelta().addRows(addFile).commit();
-      return null;
-    });
+    testTableWatermark(
+        addFile -> {
+          getOperationTable().newRowDelta().addRows(addFile).commit();
+          return null;
+        });
   }
 
   @Test
   public void testChangeWatermarkWithRowDeltaFilesInTx() {
-    testTableWatermark(addFile -> {
-      Transaction transaction = getOperationTable().newTransaction();
-      transaction.newRowDelta().addRows(addFile).commit();
-      transaction.commitTransaction();
-      return null;
-    });
+    testTableWatermark(
+        addFile -> {
+          Transaction transaction = getOperationTable().newTransaction();
+          transaction.newRowDelta().addRows(addFile).commit();
+          transaction.commitTransaction();
+          return null;
+        });
   }
 
   private void testTableWatermark(Function<DataFile, Void> tableOperation) {
     long start = System.currentTimeMillis();
-    getArcticTable().updateProperties().set(TableProperties.TABLE_EVENT_TIME_FIELD, "op_time")
-        .set(TableProperties.TABLE_WATERMARK_ALLOWED_LATENESS, "10").commit();
+    getArcticTable()
+        .updateProperties()
+        .set(TableProperties.TABLE_EVENT_TIME_FIELD, "op_time")
+        .set(TableProperties.TABLE_WATERMARK_ALLOWED_LATENESS, "10")
+        .commit();
 
     Map<Integer, ByteBuffer> lowerBounds = Maps.newHashMap();
     Map<Integer, ByteBuffer> upperBounds = Maps.newHashMap();
     lowerBounds.put(4, Conversions.toByteBuffer(Types.TimestampType.withoutZone(), start - 30000));
     upperBounds.put(4, Conversions.toByteBuffer(Types.TimestampType.withoutZone(), start - 10000));
 
-    Metrics metrics = new Metrics(2L, Maps.newHashMap(), Maps.newHashMap(),
-        Maps.newHashMap(), null, lowerBounds, upperBounds);
+    Metrics metrics =
+        new Metrics(
+            2L,
+            Maps.newHashMap(),
+            Maps.newHashMap(),
+            Maps.newHashMap(),
+            null,
+            lowerBounds,
+            upperBounds);
 
-    DataFile file1 = DataFiles.builder(getArcticTable().spec())
-        .withPath("/path/to/file1.parquet")
-        .withFileSizeInBytes(0)
-        .withPartitionPath("op_time_day=2022-01-01")
-        .withMetrics(metrics)
-        .build();
+    DataFile file1 =
+        DataFiles.builder(getArcticTable().spec())
+            .withPath("/path/to/file1.parquet")
+            .withFileSizeInBytes(0)
+            .withPartitionPath("op_time_day=2022-01-01")
+            .withMetrics(metrics)
+            .build();
     tableOperation.apply(file1);
-    Assert.assertEquals(start - 20000, TablePropertyUtil.getTableWatermark(getArcticTable().properties()));
+    Assert.assertEquals(
+        start - 20000, TablePropertyUtil.getTableWatermark(getArcticTable().properties()));
   }
 }

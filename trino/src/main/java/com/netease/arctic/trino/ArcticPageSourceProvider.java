@@ -31,19 +31,19 @@ import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.DynamicFilter;
 
 import javax.inject.Inject;
+
 import java.util.List;
 
 /**
- * {@link ArcticPageSourceProvider} is a Union {@link ConnectorPageSourceProvider}
- * contain {@link KeyedPageSourceProvider}  and
- * {@link IcebergPageSourceProvider}.
- * This is final {@link ConnectorPageSourceProvider} provided to Trino
+ * {@link ArcticPageSourceProvider} is a Union {@link ConnectorPageSourceProvider} contain {@link
+ * KeyedPageSourceProvider} and {@link IcebergPageSourceProvider}. This is final {@link
+ * ConnectorPageSourceProvider} provided to Trino
  */
 public class ArcticPageSourceProvider implements ConnectorPageSourceProvider {
 
-  private KeyedPageSourceProvider keyedPageSourceProvider;
+  private final KeyedPageSourceProvider keyedPageSourceProvider;
 
-  private IcebergPageSourceProvider icebergPageSourceProvider;
+  private final IcebergPageSourceProvider icebergPageSourceProvider;
 
   @Inject
   public ArcticPageSourceProvider(
@@ -56,14 +56,17 @@ public class ArcticPageSourceProvider implements ConnectorPageSourceProvider {
   @Override
   public ConnectorPageSource createPageSource(
       ConnectorTransactionHandle transaction,
-      ConnectorSession session, ConnectorSplit split,
-      ConnectorTableHandle table, List<ColumnHandle> columns,
+      ConnectorSession session,
+      ConnectorSplit split,
+      ConnectorTableHandle table,
+      List<ColumnHandle> columns,
       DynamicFilter dynamicFilter) {
     if (table instanceof KeyedTableHandle) {
-      return keyedPageSourceProvider
-          .createPageSource(transaction, session, split, table, columns, dynamicFilter);
+      return keyedPageSourceProvider.createPageSource(
+          transaction, session, split, table, columns, dynamicFilter);
     } else {
-      return icebergPageSourceProvider.createPageSource(transaction, session, split, table, columns, dynamicFilter);
+      return icebergPageSourceProvider.createPageSource(
+          transaction, session, split, table, columns, dynamicFilter);
     }
   }
 }

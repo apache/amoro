@@ -72,12 +72,14 @@ export interface IBaseDetailInfo {
 export interface DetailColumnItem {
   field: string
   type: string
+  required: boolean
   comment: string
 }
 
 export interface IField {
   field: string
   type: string
+  required: boolean
   description: string
 }
 
@@ -133,12 +135,23 @@ export interface BreadcrumbTransactionItem {
   commitTime: number | string
 }
 
+export interface TransactionItemSummary {
+  'total-data-files': number
+  'total-delete-files': number
+  'total-records': number
+  'total-position-deletes': number
+  'total-equality-deletes': number
+}
+
 export interface TransactionItem {
   transactionId: string
   fileCount: number
   fileSize: string
   commitTime: string
   snapshotId: string
+  summary: TransactionItemSummary
+  filesSummaryForChart: Record<string, number>
+  recordsSummaryForChart: Record<string, number>
 }
 
 export interface OperationItem {
@@ -200,6 +213,19 @@ export interface IOptimizeTableItem {
   fileSizeDesc: string
   tableIdentifier: ITableIdentifier
   tableNameOnly?: string
+}
+
+export interface IIOptimizeGroupItem {
+  resourceGroup: {
+    name: string;
+    container: string;
+    properties: {[prop: string]: string};
+  }
+  occupationCore: number;
+  occupationMemory: number;
+  name: string;
+  container: string;
+  resourceOccupation: string
 }
 
 export interface IOptimizeResourceTableItem {
@@ -287,6 +313,9 @@ export enum upgradeStatusMap {
 
 export enum tableTypeIconMap {
   ICEBERG = 'iceberg',
-  ARCTIC = 'arctic',
-  HIVE = 'hive'
+  ARCTIC = 'amoro',
+  HIVE = 'hive',
+  PAIMON = 'paimon'
 }
+
+export type ILineChartOriginalData = Record<string, Record<string, number>>

@@ -18,9 +18,9 @@
 
 package com.netease.arctic.server.terminal.local;
 
-import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.server.terminal.SimpleResultSet;
 import com.netease.arctic.server.terminal.TerminalSession;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -41,8 +41,11 @@ public class LocalTerminalSession implements TerminalSession {
 
   Map<String, String> sessionConfigs;
 
-  LocalTerminalSession(List<String> supportedCatalogs, SparkSession session, List<String> initLogs, Map<String,
-      String> sessionConfigs) {
+  LocalTerminalSession(
+      List<String> supportedCatalogs,
+      SparkSession session,
+      List<String> initLogs,
+      Map<String, String> sessionConfigs) {
     this.session = session;
     this.catalogs = supportedCatalogs;
     this.logs.addAll(initLogs);
@@ -59,10 +62,12 @@ public class LocalTerminalSession implements TerminalSession {
     if (currentCatalog == null || !currentCatalog.equalsIgnoreCase(catalog)) {
       if (TerminalSession.canUseSparkSessionCatalog(sessionConfigs, catalog)) {
         session.sql("use `spark_catalog`");
-        logs.add(String.format("current catalog is %s, " +
-                "since it's a hive type catalog and can use spark session catalog, " +
-                "switch to spark_catalog before execution",
-            currentCatalog));
+        logs.add(
+            String.format(
+                "current catalog is %s, "
+                    + "since it's a hive type catalog and can use spark session catalog, "
+                    + "switch to spark_catalog before execution",
+                currentCatalog));
       } else {
         session.sql("use `" + catalog + "`");
         logs.add("switch to new catalog via: use " + catalog);
@@ -71,10 +76,10 @@ public class LocalTerminalSession implements TerminalSession {
     }
 
     Dataset<Row> ds = session.sql(statement);
-    List<Object[]> rows = ds.collectAsList()
-        .stream()
-        .map(r -> JavaConverters.seqAsJavaList(r.toSeq()).toArray(new Object[0]))
-        .collect(Collectors.toList());
+    List<Object[]> rows =
+        ds.collectAsList().stream()
+            .map(r -> JavaConverters.seqAsJavaList(r.toSeq()).toArray(new Object[0]))
+            .collect(Collectors.toList());
 
     return new SimpleResultSet(Arrays.asList(ds.columns()), rows);
   }

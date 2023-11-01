@@ -29,6 +29,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.SchemaUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -57,18 +58,28 @@ public class TaskWriters {
   private final long fileSize;
   private final long mask;
 
-
   protected TaskWriters(ArcticTable table) {
     this.table = table;
     this.isHiveTable = table instanceof SupportHive;
 
-    this.fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
-        TableProperties.BASE_FILE_FORMAT,
-        TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
-    this.fileSize = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
-        TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
-    this.mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
-        TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
+    this.fileFormat =
+        FileFormat.valueOf(
+            (table
+                .properties()
+                .getOrDefault(
+                    TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT)
+                .toUpperCase(Locale.ENGLISH)));
+    this.fileSize =
+        PropertyUtil.propertyAsLong(
+            table.properties(),
+            TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
+            TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+    this.mask =
+        PropertyUtil.propertyAsLong(
+                table.properties(),
+                TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
+                TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT)
+            - 1;
   }
 
   public static TaskWriters of(ArcticTable table) {
@@ -94,7 +105,7 @@ public class TaskWriters {
     this.dsSchema = dsSchema;
     return this;
   }
-  
+
   public TaskWriters withHiveSubdirectory(String hiveSubdirectory) {
     this.hiveSubdirectory = hiveSubdirectory;
     return this;
@@ -129,26 +140,49 @@ public class TaskWriters {
       icebergTable = table;
     }
 
-    FileAppenderFactory<InternalRow> appenderFactory = InternalRowFileAppenderFactory
-        .builderFor(icebergTable, schema, dsSchema)
-        .writeHive(isHiveTable)
-        .build();
-
+    FileAppenderFactory<InternalRow> appenderFactory =
+        InternalRowFileAppenderFactory.builderFor(icebergTable, schema, dsSchema)
+            .writeHive(isHiveTable)
+            .build();
+    boolean hiveConsistentWrite = TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
     OutputFileFactory outputFileFactory;
     if (isHiveTable && isOverwrite) {
-      outputFileFactory = new AdaptHiveOutputFileFactory(
-          ((SupportHive) table).hiveLocation(), table.spec(), fileFormat, table.io(),
-          encryptionManager, partitionId, taskId, transactionId, hiveSubdirectory);
+      outputFileFactory =
+          new AdaptHiveOutputFileFactory(
+              ((SupportHive) table).hiveLocation(),
+              table.spec(),
+              fileFormat,
+              table.io(),
+              encryptionManager,
+              partitionId,
+              taskId,
+              transactionId,
+              hiveSubdirectory,
+              hiveConsistentWrite);
     } else {
-      outputFileFactory = new CommonOutputFileFactory(
-          baseLocation, table.spec(), fileFormat, table.io(),
-          encryptionManager, partitionId, taskId, transactionId);
+      outputFileFactory =
+          new CommonOutputFileFactory(
+              baseLocation,
+              table.spec(),
+              fileFormat,
+              table.io(),
+              encryptionManager,
+              partitionId,
+              taskId,
+              transactionId);
     }
 
     return new ArcticSparkBaseTaskWriter(
-        fileFormat, appenderFactory,
-        outputFileFactory, table.io(), fileSize, mask, schema,
-        table.spec(), primaryKeySpec, orderedWriter);
+        fileFormat,
+        appenderFactory,
+        outputFileFactory,
+        table.io(),
+        fileSize,
+        mask,
+        schema,
+        table.spec(),
+        primaryKeySpec,
+        orderedWriter);
   }
 
   public ChangeTaskWriter<InternalRow> newChangeWriter() {
@@ -169,46 +203,86 @@ public class TaskWriters {
     } else {
       throw new UnsupportedOperationException("Unkeyed table does not support change writer");
     }
-    FileAppenderFactory<InternalRow> appenderFactory = InternalRowFileAppenderFactory
-        .builderFor(icebergTable, schema, SparkSchemaUtil.convert(schema))
-        .writeHive(isHiveTable)
-        .build();
+    FileAppenderFactory<InternalRow> appenderFactory =
+        InternalRowFileAppenderFactory.builderFor(
+                icebergTable, schema, SparkSchemaUtil.convert(schema))
+            .writeHive(isHiveTable)
+            .build();
 
     OutputFileFactory outputFileFactory;
-    outputFileFactory = new CommonOutputFileFactory(
-        changeLocation, table.spec(), fileFormat, table.io(),
-        encryptionManager, partitionId, taskId, transactionId);
+    outputFileFactory =
+        new CommonOutputFileFactory(
+            changeLocation,
+            table.spec(),
+            fileFormat,
+            table.io(),
+            encryptionManager,
+            partitionId,
+            taskId,
+            transactionId);
 
-    return new ArcticSparkChangeTaskWriter(fileFormat, appenderFactory,
+    return new ArcticSparkChangeTaskWriter(
+        fileFormat,
+        appenderFactory,
         outputFileFactory,
-        table.io(), fileSize, mask, schema, table.spec(), primaryKeySpec, orderedWriter);
+        table.io(),
+        fileSize,
+        mask,
+        schema,
+        table.spec(),
+        primaryKeySpec,
+        orderedWriter);
   }
 
   public TaskWriter<InternalRow> newUnkeyedUpsertWriter() {
     preconditions();
     Schema schema = table.schema();
-    InternalRowFileAppenderFactory build = new InternalRowFileAppenderFactory.Builder(table.asUnkeyedTable(),
-        schema, dsSchema).build();
-    long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
-        TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
-    long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
-        TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
-    CommonOutputFileFactory commonOutputFileFactory = new CommonOutputFileFactory(table.location(),
-        table.spec(), fileFormat, table.io(),
-        table.asUnkeyedTable().encryption(), partitionId, taskId, transactionId);
-    ArcticSparkBaseTaskWriter arcticSparkBaseTaskWriter = new ArcticSparkBaseTaskWriter(fileFormat, build,
-        commonOutputFileFactory,
-        table.io(), fileSizeBytes, mask, schema, table.spec(), null, orderedWriter);
-    return new UnkeyedUpsertSparkWriter<>(table, build,
-        commonOutputFileFactory,
-        fileFormat, schema, arcticSparkBaseTaskWriter);
+    InternalRowFileAppenderFactory build =
+        new InternalRowFileAppenderFactory.Builder(table.asUnkeyedTable(), schema, dsSchema)
+            .build();
+    long fileSizeBytes =
+        PropertyUtil.propertyAsLong(
+            table.properties(),
+            TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
+            TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+    long mask =
+        PropertyUtil.propertyAsLong(
+                table.properties(),
+                TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
+                TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT)
+            - 1;
+    CommonOutputFileFactory commonOutputFileFactory =
+        new CommonOutputFileFactory(
+            table.location(),
+            table.spec(),
+            fileFormat,
+            table.io(),
+            table.asUnkeyedTable().encryption(),
+            partitionId,
+            taskId,
+            transactionId);
+    ArcticSparkBaseTaskWriter arcticSparkBaseTaskWriter =
+        new ArcticSparkBaseTaskWriter(
+            fileFormat,
+            build,
+            commonOutputFileFactory,
+            table.io(),
+            fileSizeBytes,
+            mask,
+            schema,
+            table.spec(),
+            null,
+            orderedWriter);
+    return new UnkeyedUpsertSparkWriter<>(
+        table, build, commonOutputFileFactory, fileFormat, schema, arcticSparkBaseTaskWriter);
   }
 
   private void preconditions() {
     if (table.isKeyedTable()) {
       Preconditions.checkState(transactionId != null, "Transaction id is not set for KeyedTable");
     } else {
-      Preconditions.checkState(transactionId == null, "Transaction id should be null for UnkeyedTable");
+      Preconditions.checkState(
+          transactionId == null, "Transaction id should be null for UnkeyedTable");
     }
     Preconditions.checkState(partitionId >= 0, "Partition id is not set");
     Preconditions.checkState(taskId >= 0, "Task id is not set");

@@ -179,9 +179,12 @@ onMounted(() => {
   getTableDetails()
 })
 
+defineExpose({ getTableDetails })
+
 const primaryColumns: IColumns[] = shallowReactive([
   { title: t('field'), dataIndex: 'field', width: '30%' },
-  { title: t('type'), dataIndex: 'type', width: '30%' },
+  { title: t('type'), dataIndex: 'type', width: '20%' },
+  { title: t('required'), dataIndex: 'required', width: '20%', customRender: text => String(text?.value) },
   { title: t('description'), dataIndex: 'comment', ellipsis: true }
 ])
 const partitionColumns: IColumns[] = shallowReactive([

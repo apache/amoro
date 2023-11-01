@@ -5,6 +5,8 @@ import com.netease.arctic.server.dashboard.model.FilesStatistics;
 import com.netease.arctic.server.dashboard.model.TableOptimizingInfo;
 import com.netease.arctic.server.optimizing.MetricsSummary;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
+import com.netease.arctic.server.optimizing.OptimizingStatus;
+import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
 import com.netease.arctic.server.table.TableRuntime;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -20,12 +22,20 @@ public class OptimizingUtil {
     OptimizingProcess process = optimizingTableRuntime.getOptimizingProcess();
     TableOptimizingInfo tableOptimizeInfo =
         new TableOptimizingInfo(optimizingTableRuntime.getTableIdentifier());
-    tableOptimizeInfo.setOptimizeStatus(optimizingTableRuntime.getOptimizingStatus().displayValue());
-    tableOptimizeInfo.setDuration(System.currentTimeMillis() - optimizingTableRuntime.getCurrentStatusStartTime());
+    tableOptimizeInfo.setOptimizeStatus(
+        optimizingTableRuntime.getOptimizingStatus().displayValue());
+    tableOptimizeInfo.setDuration(
+        System.currentTimeMillis() - optimizingTableRuntime.getCurrentStatusStartTime());
     tableOptimizeInfo.setQuota(optimizingTableRuntime.getTargetQuota());
-    tableOptimizeInfo.setQuotaOccupation(process == null ? 0 : optimizingTableRuntime.calculateQuotaOccupy());
-    FilesStatistics optimizeFileInfo =
-        collectOptimizingFileInfo(process == null ? new MetricsSummary() : process.getSummary());
+    tableOptimizeInfo.setQuotaOccupation(optimizingTableRuntime.calculateQuotaOccupy());
+    FilesStatistics optimizeFileInfo;
+    if (optimizingTableRuntime.getOptimizingStatus().isProcessing()) {
+      optimizeFileInfo = collectOptimizingFileInfo(process == null ? null : process.getSummary());
+    } else if (optimizingTableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING) {
+      optimizeFileInfo = collectPendingFileInfo(optimizingTableRuntime.getPendingInput());
+    } else {
+      optimizeFileInfo = null;
+    }
     if (optimizeFileInfo != null) {
       tableOptimizeInfo.setFileCount(optimizeFileInfo.getFileCnt());
       tableOptimizeInfo.setFileSize(optimizeFileInfo.getTotalSize());
@@ -34,7 +44,23 @@ public class OptimizingUtil {
     return tableOptimizeInfo;
   }
 
+  private static FilesStatistics collectPendingFileInfo(
+      OptimizingEvaluator.PendingInput pendingInput) {
+    if (pendingInput == null) {
+      return null;
+    }
+    return FilesStatistics.builder()
+        .addFiles(pendingInput.getDataFileSize(), pendingInput.getDataFileCount())
+        .addFiles(pendingInput.getEqualityDeleteBytes(), pendingInput.getEqualityDeleteFileCount())
+        .addFiles(
+            pendingInput.getPositionalDeleteBytes(), pendingInput.getPositionalDeleteFileCount())
+        .build();
+  }
+
   private static FilesStatistics collectOptimizingFileInfo(MetricsSummary metricsSummary) {
+    if (metricsSummary == null) {
+      return null;
+    }
     return FilesStatistics.builder()
         .addFiles(metricsSummary.getEqualityDeleteSize(), metricsSummary.getEqDeleteFileCnt())
         .addFiles(metricsSummary.getPositionalDeleteSize(), metricsSummary.getPosDeleteFileCnt())
@@ -43,7 +69,7 @@ public class OptimizingUtil {
   }
 
   public static long getFileSize(RewriteFilesOutput output) {
-    int size = 0;
+    long size = 0;
     if (output.getDataFiles() != null) {
       for (DataFile dataFile : output.getDataFiles()) {
         size += dataFile.fileSizeInBytes();

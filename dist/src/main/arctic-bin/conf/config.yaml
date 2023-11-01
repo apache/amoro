@@ -5,17 +5,22 @@ ams:
   server-expose-host: "127.0.0.1"
 
   thrift-server:
-    bind-port: 1260
     max-message-size: 104857600 # 100MB
-    worker-thread-count: 20
     selector-thread-count: 2
     selector-queue-size: 4
+    table-service:
+      bind-port: 1260
+      worker-thread-count: 20
+    optimizing-service:
+      bind-port: 1261
 
   http-server:
     bind-port: 1630
 
   refresh-external-catalogs:
     interval: 180000 # 3min
+    thread-count: 10
+    queue-size: 1000000
 
   refresh-tables:
     thread-count: 10
@@ -44,22 +49,34 @@ ams:
     enabled: true
     thread-count: 10
 
+  data-expiration:
+    enabled: false
+    thread-count: 10
+    interval: 1d
+
   database:
     type: derby
     jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
-    url: jdbc:derby:/tmp/arctic/derby;create=true
+    url: jdbc:derby:/tmp/amoro/derby;create=true
 
-  #  MySQL database configuration.
+#    MySQL database configuration.
+#    database:
+#      type: mysql
+#      jdbc-driver-class: com.mysql.cj.jdbc.Driver
+#      url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
+#      username: root
+#      password: root
+
+  #  Postgres database configuration.
   #  database:
-  #    type: mysql
-  #    jdbc-driver-class: com.mysql.cj.jdbc.Driver
-  #    url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
-  #    username: root
-  #    password: root
+  #    type: postgres
+  #    jdbc-driver-class: org.postgresql.Driver
+  #    url: jdbc:postgresql://127.0.0.1:5432/db
+  #    username: user
+  #    password: passwd
 
   terminal:
     backend: local
-    local.spark.sql.session.timeZone: UTC
     local.spark.sql.iceberg.handle-timestamp-without-timezone: false
 
 #  Kyuubi terminal backend configuration.
@@ -76,31 +93,21 @@ ams:
 
 containers:
   - name: localContainer
-    container-impl: com.netease.arctic.optimizer.LocalOptimizerContainer
+    container-impl: com.netease.arctic.server.manager.LocalOptimizerContainer
     properties:
       export.JAVA_HOME: "/opt/java"   # JDK environment
 
 #containers:
 #  - name: flinkContainer
-#    container-impl: com.netease.arctic.optimizer.FlinkOptimizerContainer
+#    container-impl: com.netease.arctic.server.manager.FlinkOptimizerContainer
 #    properties:
-#      flink-home: "/opt/flink/"                                     # Flink install home
-#      export.JVM_ARGS: "-Djava.security.krb5.conf=/opt/krb5.conf"   # Flink launch jvm args, like kerberos config when ues kerberos
-#      export.HADOOP_CONF_DIR: "/etc/hadoop/conf/"                   # Hadoop config dir
-#      export.HADOOP_USER_NAME: "hadoop"                             # Hadoop user submit on yarn
-#      export.FLINK_CONF_DIR: "/etc/hadoop/conf/"                    # Flink config dir
-
-optimizer_groups:
-  - name: default
-    container: localContainer
-    properties:
-      memory: "1024" # The size of memory allocated for each parallel
-
-  - name: external-group
-    container: external # The external container is used to host all externally launched optimizers.
-
-#  - name: flinkGroup
-#    container: flinkContainer
-#    properties:
-#      taskmanager.memory: "2048"
-#      jobmanager.memory: "1024"
+#      flink-home: /opt/flink/                                     # Flink install home
+#      target: yarn-per-job                                        # Flink run target, (yarn-per-job, yarn-application, kubernetes-application)
+#      export.JVM_ARGS: -Djava.security.krb5.conf=/opt/krb5.conf   # Flink launch jvm args, like kerberos config when ues kerberos
+#      export.HADOOP_CONF_DIR: /etc/hadoop/conf/                   # Hadoop config dir
+#      export.HADOOP_USER_NAME: hadoop                             # Hadoop user submit on yarn
+#      export.FLINK_CONF_DIR: /opt/flink/conf/                     # Flink config dir
+#      # flink kubernetes application properties.
+#      job-uri: "local:///opt/flink/usrlib/optimizer-job.jar"      # Optimizer job main jar for kubernetes application
+#      flink-conf.kubernetes.container.image: "arctic163/optimizer-flink:{version}"   # Optimizer image ref
+#      flink-conf.kubernetes.service-account: flink                # Service account that is used within kubernetes cluster.

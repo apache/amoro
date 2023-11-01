@@ -55,15 +55,16 @@ CREATE TABLE table_identifier (
     catalog_name    VARCHAR(64) NOT NULL,
     db_name         VARCHAR(128) NOT NULL,
     table_name      VARCHAR(128) NOT NULL,
+    format          VARCHAR(32)  NOT NULL,
     CONSTRAINT table_identifier_pk PRIMARY KEY (table_id),
     CONSTRAINT table_name_idx UNIQUE (catalog_name, db_name, table_name)
 );
 
 CREATE TABLE table_metadata (
     table_id         BIGINT NOT NULL,
-    catalog_name     VARCHAR(256),
-    db_name          VARCHAR(256),
-    table_name       VARCHAR(256),
+    catalog_name     VARCHAR(256) NOT NULL,
+    db_name          VARCHAR(256) NOT NULL,
+    table_name       VARCHAR(256) NOT NULL,
     primary_key      VARCHAR(256),
     sort_key         VARCHAR(256),
     table_location   VARCHAR(256),
@@ -79,6 +80,7 @@ CREATE TABLE table_metadata (
     krb_conf         CLOB(64m),
     krb_principal    CLOB(64m),
     current_schema_id INT NOT NULL DEFAULT 0,
+    meta_version     BIGINT NOT NULL DEFAULT 0,
     CONSTRAINT table_metadata_pk PRIMARY KEY (table_id)
 );
 
@@ -94,12 +96,13 @@ CREATE TABLE table_runtime (
     last_major_optimizing_time  TIMESTAMP,
     last_minor_optimizing_time  TIMESTAMP,
     last_full_optimizing_time   TIMESTAMP,
-    optimizing_status           VARCHAR(20) DEFAULT 'Idle',
+    optimizing_status           VARCHAR(20) DEFAULT 'IDLE',
     optimizing_status_start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     optimizing_process_id       BIGINT NOT NULL,
     optimizer_group             VARCHAR(64) NOT NULL,
     table_config                CLOB(64m),
     optimizing_config           CLOB(64m),
+    pending_input               CLOB(64m),
     CONSTRAINT table_runtime_pk PRIMARY KEY (table_id),
     CONSTRAINT table_runtime_table_name_idx UNIQUE (catalog_name, db_name, table_name)
 );
@@ -115,7 +118,7 @@ CREATE TABLE table_optimizing_process (
     status              VARCHAR(10) NOT NULL,
     optimizing_type     VARCHAR(10) NOT NULL,
     plan_time           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    end_time            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    end_time            TIMESTAMP DEFAULT NULL,
     fail_reason         VARCHAR(4096),
     rewrite_input       BLOB(64m),
     summary             CLOB(64m),
@@ -184,5 +187,3 @@ CREATE TABLE table_blocker (
   properties clob(64m),
   PRIMARY KEY (blocker_id)
 );
-
-INSERT INTO catalog_metadata(catalog_name,catalog_metastore,storage_configs,auth_configs, catalog_properties) VALUES ('local_catalog','ams','{"storage.type":"hdfs","hive.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==","hadoop.core.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==","hadoop.hdfs.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg=="}','{"auth.type":"simple","auth.simple.hadoop_username":"root"}','{"warehouse":"/tmp/arctic/warehouse","table-formats":"MIXED_ICEBERG"}');

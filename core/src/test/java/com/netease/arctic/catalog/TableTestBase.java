@@ -43,9 +43,7 @@ public abstract class TableTestBase extends CatalogTestBase {
   public void setupTable() {
     this.tableMetaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
 
-    if (!getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
-      getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
-    }
+    getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     switch (getTestFormat()) {
       case MIXED_HIVE:
       case MIXED_ICEBERG:
@@ -58,9 +56,8 @@ public abstract class TableTestBase extends CatalogTestBase {
   }
 
   private void createMixedFormatTable() {
-    TableBuilder tableBuilder = getCatalog().newTableBuilder(
-        TableTestHelper.TEST_TABLE_ID,
-        tableTestHelper.tableSchema());
+    TableBuilder tableBuilder =
+        getCatalog().newTableBuilder(TableTestHelper.TEST_TABLE_ID, tableTestHelper.tableSchema());
     tableBuilder.withProperties(tableTestHelper.tableProperties());
     if (isKeyedTable()) {
       tableBuilder.withPrimaryKeySpec(tableTestHelper.primaryKeySpec());
@@ -72,17 +69,24 @@ public abstract class TableTestBase extends CatalogTestBase {
   }
 
   private void createIcebergFormatTable() {
-    getIcebergCatalog().createTable(
-        org.apache.iceberg.catalog.TableIdentifier.of(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME),
-        tableTestHelper.tableSchema(),
-        tableTestHelper.partitionSpec(),
-        tableTestHelper.tableProperties());
+    getIcebergCatalog()
+        .createTable(
+            org.apache.iceberg.catalog.TableIdentifier.of(
+                TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME),
+            tableTestHelper.tableSchema(),
+            tableTestHelper.partitionSpec(),
+            tableTestHelper.tableProperties());
     arcticTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
   }
 
   @After
   public void dropTable() {
-    getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
+    getCatalog().dropTable(tableTestHelper.id(), true);
+    try {
+      getCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
   protected ArcticTable getArcticTable() {
@@ -98,11 +102,13 @@ public abstract class TableTestBase extends CatalogTestBase {
   }
 
   protected boolean isKeyedTable() {
-    return tableTestHelper.primaryKeySpec() != null && tableTestHelper.primaryKeySpec().primaryKeyExisted();
+    return tableTestHelper.primaryKeySpec() != null
+        && tableTestHelper.primaryKeySpec().primaryKeyExisted();
   }
 
   protected boolean isPartitionedTable() {
-    return tableTestHelper.partitionSpec() != null && tableTestHelper.partitionSpec().isPartitioned();
+    return tableTestHelper.partitionSpec() != null
+        && tableTestHelper.partitionSpec().isPartitioned();
   }
 
   protected TableTestHelper tableTestHelper() {

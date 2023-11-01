@@ -18,7 +18,8 @@
 
 package com.netease.arctic.hive.table;
 
-import com.netease.arctic.AmsClient;
+import static com.netease.arctic.hive.HiveTableProperties.BASE_HIVE_LOCATION_ROOT;
+
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
@@ -39,8 +40,8 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.PropertyUtil;
+
 import java.util.Map;
-import static com.netease.arctic.hive.HiveTableProperties.BASE_HIVE_LOCATION_ROOT;
 
 /**
  * Implementation of {@link com.netease.arctic.table.UnkeyedTable} with Hive table as base store.
@@ -58,7 +59,6 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
       Table icebergTable,
       ArcticHadoopFileIO arcticFileIO,
       String tableLocation,
-      AmsClient client,
       HMSClientPool hiveClient,
       Map<String, String> catalogProperties) {
     this(
@@ -66,7 +66,6 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
         icebergTable,
         arcticFileIO,
         tableLocation,
-        client,
         hiveClient,
         catalogProperties,
         true);
@@ -77,11 +76,10 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
       Table icebergTable,
       ArcticHadoopFileIO arcticFileIO,
       String tableLocation,
-      AmsClient client,
       HMSClientPool hiveClient,
       Map<String, String> catalogProperties,
       boolean syncHiveChange) {
-    super(tableIdentifier, icebergTable, arcticFileIO, client, catalogProperties);
+    super(tableIdentifier, icebergTable, arcticFileIO, catalogProperties);
     this.fileIO = arcticFileIO;
     this.hiveClient = hiveClient;
     this.tableLocation = tableLocation;
@@ -122,8 +120,7 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
 
   @Override
   public ReplacePartitions newReplacePartitions() {
-    return new ReplaceHivePartitions(super.newTransaction(),
-        false, this, hiveClient, hiveClient);
+    return new ReplaceHivePartitions(super.newTransaction(), false, this, hiveClient, hiveClient);
   }
 
   @Override
@@ -133,9 +130,9 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
 
   @Override
   public String hiveLocation() {
-    return properties().containsKey(BASE_HIVE_LOCATION_ROOT) ?
-        properties().get(BASE_HIVE_LOCATION_ROOT) :
-        HiveTableUtil.hiveRootLocation(tableLocation);
+    return properties().containsKey(BASE_HIVE_LOCATION_ROOT)
+        ? properties().get(BASE_HIVE_LOCATION_ROOT)
+        : HiveTableUtil.hiveRootLocation(tableLocation);
   }
 
   @Override
@@ -161,16 +158,16 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
 
   @Override
   public UpdateSchema updateSchema() {
-    return new HiveSchemaUpdate(this,
-        hiveClient, hiveClient, super.updateSchema());
+    return new HiveSchemaUpdate(this, hiveClient, hiveClient, super.updateSchema());
   }
 
   @Override
   public boolean enableSyncHiveSchemaToArctic() {
-    return syncHiveChange && PropertyUtil.propertyAsBoolean(
-        properties(),
-        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE,
-        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE_DEFAULT);
+    return syncHiveChange
+        && PropertyUtil.propertyAsBoolean(
+            properties(),
+            HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE,
+            HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE_DEFAULT);
   }
 
   @Override
@@ -180,10 +177,11 @@ public class UnkeyedHiveTable extends BasicUnkeyedTable implements BaseTable, Su
 
   @Override
   public boolean enableSyncHiveDataToArctic() {
-    return syncHiveChange && PropertyUtil.propertyAsBoolean(
-        properties(),
-        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE,
-        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT);
+    return syncHiveChange
+        && PropertyUtil.propertyAsBoolean(
+            properties(),
+            HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE,
+            HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT);
   }
 
   @Override

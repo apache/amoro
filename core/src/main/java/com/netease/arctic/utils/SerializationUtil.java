@@ -18,16 +18,17 @@
 
 package com.netease.arctic.utils;
 
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.netease.arctic.iceberg.StructLikeWrapper;
-import com.netease.arctic.iceberg.StructLikeWrapperFactory;
 import org.apache.avro.util.Utf8;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.ByteBuffers;
+import org.apache.iceberg.util.StructLikeWrapper;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import java.io.ByteArrayInputStream;
@@ -38,13 +39,11 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
-
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class SerializationUtil {
 
   private static final ThreadLocal<KryoSerializerInstance> KRYO_SERIALIZER =
-          ThreadLocal.withInitial(KryoSerializerInstance::new);
+      ThreadLocal.withInitial(KryoSerializerInstance::new);
 
   public static ByteBuffer simpleSerialize(Object obj) {
     try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -93,29 +92,29 @@ public class SerializationUtil {
   }
 
   public static SimpleSerializer<StructLikeWrapper> createStructLikeWrapperSerializer(
-      StructLikeWrapperFactory structLikeWrapperFactory) {
-    return new StructLikeWrapperSerializer(structLikeWrapperFactory);
+      StructLikeWrapper structLikeWrapper) {
+    return new StructLikeWrapperSerializer(structLikeWrapper);
   }
 
   private static class KryoSerializerInstance implements Serializable {
     public static final int KRYO_SERIALIZER_INITIAL_BUFFER_SIZE = 1048576;
     private final Kryo kryo;
-    private final ByteArrayOutputStream baos;
+    private final ByteArrayOutputStream outputStream;
 
     KryoSerializerInstance() {
       KryoInstantiator kryoInstantiator = new KryoInstantiator();
       kryo = kryoInstantiator.newKryo();
-      baos = new ByteArrayOutputStream(KRYO_SERIALIZER_INITIAL_BUFFER_SIZE);
+      outputStream = new ByteArrayOutputStream(KRYO_SERIALIZER_INITIAL_BUFFER_SIZE);
       kryo.setRegistrationRequired(false);
     }
 
     byte[] serialize(Object obj) {
       kryo.reset();
-      baos.reset();
-      Output output = new Output(baos);
+      outputStream.reset();
+      Output output = new Output(outputStream);
       this.kryo.writeClassAndObject(output, obj);
       output.close();
-      return baos.toByteArray();
+      return outputStream.toByteArray();
     }
 
     Object deserialize(byte[] objectData) {
@@ -130,10 +129,11 @@ public class SerializationUtil {
 
       // This instance of Kryo should not require prior registration of classes
       kryo.setRegistrationRequired(false);
-      Kryo.DefaultInstantiatorStrategy instantiatorStrategy = new Kryo.DefaultInstantiatorStrategy();
+      Kryo.DefaultInstantiatorStrategy instantiatorStrategy =
+          new Kryo.DefaultInstantiatorStrategy();
       instantiatorStrategy.setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
       kryo.setInstantiatorStrategy(instantiatorStrategy);
-      // Handle cases where we may have an odd classloader setup like with libjars
+      // Handle cases where we may have an odd classloader setup like with lib jars
       // for hadoop
       kryo.setClassLoader(Thread.currentThread().getContextClassLoader());
 
@@ -142,7 +142,6 @@ public class SerializationUtil {
 
       return kryo;
     }
-
   }
 
   private static class AvroUtf8Serializer extends Serializer<Utf8> {
@@ -163,7 +162,6 @@ public class SerializationUtil {
     }
   }
 
-
   public interface SimpleSerializer<T> {
 
     byte[] serialize(T t);
@@ -173,14 +171,14 @@ public class SerializationUtil {
 
   public static class StructLikeWrapperSerializer implements SimpleSerializer<StructLikeWrapper> {
 
-    protected final StructLikeWrapperFactory structLikeWrapperFactory;
+    protected final StructLikeWrapper structLikeWrapper;
 
-    public StructLikeWrapperSerializer(StructLikeWrapperFactory structLikeWrapperFactory) {
-      this.structLikeWrapperFactory = structLikeWrapperFactory;
+    public StructLikeWrapperSerializer(StructLikeWrapper structLikeWrapper) {
+      this.structLikeWrapper = structLikeWrapper;
     }
 
     public StructLikeWrapperSerializer(Types.StructType type) {
-      this.structLikeWrapperFactory = new StructLikeWrapperFactory(type);
+      this.structLikeWrapper = StructLikeWrapper.forType(type);
     }
 
     @Override
@@ -200,7 +198,7 @@ public class SerializationUtil {
         return null;
       }
       SerializationUtil.StructLikeCopy structLike = SerializationUtil.kryoDeserialize(bytes);
-      return structLikeWrapperFactory.create().set(structLike);
+      return structLikeWrapper.copyFor(structLike);
     }
   }
 

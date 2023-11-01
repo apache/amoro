@@ -18,9 +18,7 @@
 
 package com.netease.arctic.log;
 
-/**
- * An util class for appending bytes array.
- */
+/** An util class for appending bytes array. */
 public class MessageBytes {
   private byte[] data;
 

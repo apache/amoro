@@ -18,6 +18,10 @@
 
 package com.netease.arctic.trino.delete;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static io.trino.plugin.iceberg.IcebergPageSink.getIcebergValue;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.AbstractIterator;
 import io.trino.spi.Page;
 import io.trino.spi.type.Type;
@@ -25,15 +29,8 @@ import org.apache.iceberg.StructLike;
 
 import javax.annotation.Nullable;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static io.trino.plugin.iceberg.IcebergPageSink.getIcebergValue;
-import static java.util.Objects.requireNonNull;
-
-/**
- * Copy from trino-iceberg TrinoRow and do some change to adapt Arctic
- */
-public class TrinoRow
-    implements StructLike {
+/** Copy from trino-iceberg TrinoRow and do some change to adapt Arctic */
+public class TrinoRow implements StructLike {
   private final Type[] types;
   private final Page page;
   private final int position;
@@ -45,9 +42,7 @@ public class TrinoRow
     this.position = position;
   }
 
-  /**
-   * Gets the position in the Block this row was originally created from.
-   */
+  /** Gets the position in the Block this row was originally created from. */
   public int getPosition() {
     return position;
   }
@@ -68,20 +63,20 @@ public class TrinoRow
   }
 
   public static Iterable<TrinoRow> fromPage(Type[] types, Page page, int positionCount) {
-    return () -> new AbstractIterator<>() {
-      private int nextPosition;
+    return () ->
+        new AbstractIterator<>() {
+          private int nextPosition;
 
-      @Nullable
-      @Override
-      protected TrinoRow computeNext() {
-        if (nextPosition == positionCount) {
-          return endOfData();
-        }
-        int position = nextPosition;
-        nextPosition++;
-        return new TrinoRow(types, page, position);
-      }
-    };
+          @Nullable
+          @Override
+          protected TrinoRow computeNext() {
+            if (nextPosition == positionCount) {
+              return endOfData();
+            }
+            int position = nextPosition;
+            nextPosition++;
+            return new TrinoRow(types, page, position);
+          }
+        };
   }
 }
-

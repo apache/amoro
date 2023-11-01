@@ -19,324 +19,274 @@
 package com.netease.arctic.hive.io;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
-import com.netease.arctic.hive.io.reader.GenericAdaptHiveIcebergDataReader;
+import com.netease.arctic.hive.io.reader.AdaptHiveGenericKeyedDataReader;
+import com.netease.arctic.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
-import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.DataTestHelpers;
-import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.scan.BasicArcticFileScanTask;
-import com.netease.arctic.scan.CombinedScanTask;
-import com.netease.arctic.scan.KeyedTableScanTask;
-import com.netease.arctic.scan.NodeFileScanTask;
+import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.MetadataColumns;
-import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticTableUtil;
+import com.netease.arctic.utils.TableFileUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import com.netease.arctic.utils.map.StructLikeCollections;
-import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.Files;
-import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders;
 import org.apache.iceberg.expressions.Expression;
-import org.apache.iceberg.expressions.Expressions;
-import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.TaskWriter;
-import org.apache.iceberg.io.WriteResult;
-import org.apache.iceberg.parquet.AdaptHiveParquet;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class HiveDataTestHelpers {
 
-  public static List<DataFile> writeChangeStore(
-      KeyedTable keyedTable, Long txId, ChangeAction action,
-      List<Record> records, boolean orderedWrite) {
-    AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder.builderFor(keyedTable)
-        .withChangeAction(action)
-        .withTransactionId(txId);
-    if (orderedWrite) {
-      builder.withOrdered();
+  public static WriterHelper writerOf(ArcticTable table) {
+    return new WriterHelper(table);
+  }
+
+  public static class WriterHelper {
+    ArcticTable table;
+
+    public WriterHelper(ArcticTable table) {
+      this.table = table;
     }
-    try (TaskWriter<Record> writer = builder.buildWriter(ChangeLocationKind.INSTANT)) {
-      return DataTestHelpers.writeRecords(writer, records);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
+
+    boolean orderedWrite = false;
+    String customHiveLocation = null;
+
+    Long txId = null;
+
+    Boolean consistentWriteEnabled = null;
+
+    public WriterHelper customHiveLocation(String customHiveLocation) {
+      this.customHiveLocation = customHiveLocation;
+      return this;
+    }
+
+    public WriterHelper transactionId(Long txId) {
+      this.txId = txId;
+      return this;
+    }
+
+    public WriterHelper consistentWriteEnabled(boolean consistentWriteEnabled) {
+      this.consistentWriteEnabled = consistentWriteEnabled;
+      return this;
+    }
+
+    public WriterHelper orderedWrite(boolean orderedWrite) {
+      this.orderedWrite = orderedWrite;
+      return this;
+    }
+
+    public List<DataFile> writeChange(List<Record> records, ChangeAction action) {
+      AdaptHiveGenericTaskWriterBuilder builder =
+          AdaptHiveGenericTaskWriterBuilder.builderFor(table)
+              .withChangeAction(action)
+              .withTransactionId(txId);
+      if (orderedWrite) {
+        builder.withOrdered();
+      }
+      try (TaskWriter<Record> writer = builder.buildWriter(ChangeLocationKind.INSTANT)) {
+        return MixedDataTestHelpers.writeRecords(writer, records);
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+    }
+
+    public List<DataFile> writeBase(List<Record> records) {
+      return writeRecords(BaseLocationKind.INSTANT, records);
+    }
+
+    public List<DataFile> writeHive(List<Record> records) {
+      return writeRecords(HiveLocationKind.INSTANT, records);
+    }
+
+    private List<DataFile> writeRecords(LocationKind writeLocationKind, List<Record> records) {
+      try (TaskWriter<Record> writer = newBaseWriter(writeLocationKind)) {
+        return MixedDataTestHelpers.writeRecords(writer, records);
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+    }
+
+    private TaskWriter<Record> newBaseWriter(LocationKind writeLocationKind) {
+      AdaptHiveGenericTaskWriterBuilder builder =
+          AdaptHiveGenericTaskWriterBuilder.builderFor(table);
+      if (table.isKeyedTable()) {
+        builder.withTransactionId(txId);
+      }
+      if (orderedWrite) {
+        builder.withOrdered();
+      }
+      if (customHiveLocation != null) {
+        builder.withCustomHiveSubdirectory(customHiveLocation);
+      }
+      if (this.consistentWriteEnabled != null) {
+        builder.hiveConsistentWrite(this.consistentWriteEnabled);
+      }
+      return builder.buildWriter(writeLocationKind);
     }
   }
 
-  public static List<DataFile> writeBaseStore(
-      ArcticTable table, long txId, List<Record> records,
-      boolean orderedWrite, boolean writeHiveLocation) {
-    return writeBaseStore(table, txId, records, orderedWrite, writeHiveLocation, null);
+  public static List<DataFile> lastedAddedFiles(Table tableStore) {
+    tableStore.refresh();
+    return Lists.newArrayList(tableStore.currentSnapshot().addedDataFiles(tableStore.io()));
   }
 
-  public static List<DataFile> writeBaseStore(
-      ArcticTable table, long txId, List<Record> records,
-      boolean orderedWrite, boolean writeHiveLocation, String hiveLocation) {
-    AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder.builderFor(table);
-    if (table.isKeyedTable()) {
-      builder.withTransactionId(txId);
+  /**
+   * Assert the consistent-write process, with this parameter enabled, the written file is a hidden
+   * file.
+   */
+  public static void assertWriteConsistentFilesName(SupportHive table, List<DataFile> files) {
+    boolean consistentWriteEnabled =
+        TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
+    String hiveLocation = table.hiveLocation();
+    for (DataFile f : files) {
+      String filename = TableFileUtil.getFileName(f.path().toString());
+      if (isHiveFile(hiveLocation, f)) {
+        Assert.assertEquals(consistentWriteEnabled, filename.startsWith("."));
+      } else {
+        Assert.assertFalse(filename.startsWith("."));
+      }
     }
-    if (orderedWrite) {
-      builder.withOrdered();
-    }
-    if (hiveLocation != null) {
-      builder.withCustomHiveSubdirectory(hiveLocation);
-    }
-    LocationKind writeLocationKind = writeHiveLocation ? HiveLocationKind.INSTANT : BaseLocationKind.INSTANT;
-    try (TaskWriter<Record> writer = builder.buildWriter(writeLocationKind)) {
-      return DataTestHelpers.writeRecords(writer, records);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
+  }
+
+  /** Assert the consistent-write commit, all file will not be hidden file after commit. */
+  public static void assertWriteConsistentFilesCommit(ArcticTable table) {
+    table.refresh();
+    UnkeyedTable unkeyedTable = ArcticTableUtil.baseStore(table);
+    unkeyedTable
+        .newScan()
+        .planFiles()
+        .forEach(
+            t -> {
+              String filename = TableFileUtil.getFileName(t.file().path().toString());
+              Assert.assertFalse(filename.startsWith("."));
+            });
+  }
+
+  public static boolean isHiveFile(String hiveLocation, DataFile file) {
+    String location = file.path().toString();
+    return location.toLowerCase().startsWith(hiveLocation.toLowerCase());
   }
 
   public static List<Record> readKeyedTable(
-      KeyedTable keyedTable, Expression expression,
-      Schema projectSchema, boolean useDiskMap, boolean readDeletedData) {
-    AdaptHiveGenericArcticDataReader reader;
+      KeyedTable keyedTable,
+      Expression expression,
+      Schema projectSchema,
+      boolean useDiskMap,
+      boolean readDeletedData) {
+    AdaptHiveGenericKeyedDataReader reader;
     if (projectSchema == null) {
       projectSchema = keyedTable.schema();
     }
     if (useDiskMap) {
-      reader = new AdaptHiveGenericArcticDataReader(
-          keyedTable.io(),
-          keyedTable.schema(),
-          projectSchema,
-          keyedTable.primaryKeySpec(),
-          null,
-          true,
-          IdentityPartitionConverters::convertConstant,
-          null, false, new StructLikeCollections(true, 0L)
-      );
+      reader =
+          new AdaptHiveGenericKeyedDataReader(
+              keyedTable.io(),
+              keyedTable.schema(),
+              projectSchema,
+              keyedTable.primaryKeySpec(),
+              null,
+              true,
+              IdentityPartitionConverters::convertConstant,
+              null,
+              false,
+              new StructLikeCollections(true, 0L));
     } else {
-      reader = new AdaptHiveGenericArcticDataReader(
-          keyedTable.io(),
-          keyedTable.schema(),
-          projectSchema,
-          keyedTable.primaryKeySpec(),
-          null,
-          true,
-          IdentityPartitionConverters::convertConstant
-      );
+      reader =
+          new AdaptHiveGenericKeyedDataReader(
+              keyedTable.io(),
+              keyedTable.schema(),
+              projectSchema,
+              keyedTable.primaryKeySpec(),
+              null,
+              true,
+              IdentityPartitionConverters::convertConstant);
     }
 
-    return DataTestHelpers.readKeyedTable(keyedTable, reader, expression, projectSchema, readDeletedData);
+    return MixedDataTestHelpers.readKeyedTable(
+        keyedTable, reader, expression, projectSchema, readDeletedData);
   }
 
   public static List<Record> readChangeStore(
-      KeyedTable keyedTable, Expression expression, Schema projectSchema,
-      boolean useDiskMap) {
+      KeyedTable keyedTable, Expression expression, Schema projectSchema, boolean useDiskMap) {
     if (projectSchema == null) {
       projectSchema = keyedTable.schema();
     }
-    Schema expectTableSchema = MetadataColumns.appendChangeStoreMetadataColumns(keyedTable.schema());
+    Schema expectTableSchema =
+        MetadataColumns.appendChangeStoreMetadataColumns(keyedTable.schema());
     Schema expectProjectSchema = MetadataColumns.appendChangeStoreMetadataColumns(projectSchema);
 
-    GenericAdaptHiveIcebergDataReader reader;
+    AdaptHiveGenericUnkeyedDataReader reader;
     if (useDiskMap) {
-      reader = new GenericAdaptHiveIcebergDataReader(
-          keyedTable.asKeyedTable().io(),
-          expectTableSchema,
-          expectProjectSchema,
-          null,
-          false,
-          IdentityPartitionConverters::convertConstant,
-          false,
-          new StructLikeCollections(true, 0L));
+      reader =
+          new AdaptHiveGenericUnkeyedDataReader(
+              keyedTable.asKeyedTable().io(),
+              expectTableSchema,
+              expectProjectSchema,
+              null,
+              false,
+              IdentityPartitionConverters::convertConstant,
+              false,
+              new StructLikeCollections(true, 0L));
     } else {
-      reader = new GenericAdaptHiveIcebergDataReader(
-          keyedTable.asKeyedTable().io(),
-          expectTableSchema,
-          expectProjectSchema,
-          null,
-          false,
-          IdentityPartitionConverters::convertConstant,
-          false
-      );
+      reader =
+          new AdaptHiveGenericUnkeyedDataReader(
+              keyedTable.asKeyedTable().io(),
+              expectTableSchema,
+              expectProjectSchema,
+              null,
+              false,
+              IdentityPartitionConverters::convertConstant,
+              false);
     }
 
-    return DataTestHelpers.readChangeStore(keyedTable, reader, expression);
+    return MixedDataTestHelpers.readChangeStore(keyedTable, reader, expression);
   }
 
   public static List<Record> readBaseStore(
-      ArcticTable table, Expression expression, Schema projectSchema,
-      boolean useDiskMap) {
+      ArcticTable table, Expression expression, Schema projectSchema, boolean useDiskMap) {
     if (projectSchema == null) {
       projectSchema = table.schema();
     }
 
-    GenericAdaptHiveIcebergDataReader reader;
+    AdaptHiveGenericUnkeyedDataReader reader;
     if (useDiskMap) {
-      reader = new GenericAdaptHiveIcebergDataReader(
-          table.io(),
-          table.schema(),
-          projectSchema,
-          null,
-          false,
-          IdentityPartitionConverters::convertConstant,
-          false,
-          new StructLikeCollections(true, 0L));
+      reader =
+          new AdaptHiveGenericUnkeyedDataReader(
+              table.io(),
+              table.schema(),
+              projectSchema,
+              null,
+              false,
+              IdentityPartitionConverters::convertConstant,
+              false,
+              new StructLikeCollections(true, 0L));
     } else {
-      reader = new GenericAdaptHiveIcebergDataReader(
-          table.io(),
-          table.schema(),
-          projectSchema,
-          null,
-          false,
-          IdentityPartitionConverters::convertConstant,
-          false
-      );
+      reader =
+          new AdaptHiveGenericUnkeyedDataReader(
+              table.io(),
+              table.schema(),
+              projectSchema,
+              null,
+              false,
+              IdentityPartitionConverters::convertConstant,
+              false);
     }
 
-    return DataTestHelpers.readBaseStore(table, reader, expression);
-  }
-
-  public static void testWrite(ArcticTable table, LocationKind locationKind, List<Record> records, String pathFeature)
-      throws IOException {
-    testWrite(table, locationKind, records, pathFeature, null, null);
-  }
-
-  public static void testWrite(
-      ArcticTable table, LocationKind locationKind, List<Record> records, String pathFeature,
-      Expression expression, List<Record> readRecords) throws IOException {
-    AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
-        .builderFor(table)
-        .withTransactionId(table.isKeyedTable() ? 1L : null);
-
-    TaskWriter<Record> changeWrite = builder.buildWriter(locationKind);
-    for (Record record : records) {
-      changeWrite.write(record);
-    }
-    WriteResult complete = changeWrite.complete();
-    Arrays.stream(complete.dataFiles()).forEach(s -> Assert.assertTrue(s.path().toString().contains(pathFeature)));
-    CloseableIterator<Record> iterator = readParquet(
-        table.schema(),
-        complete.dataFiles(),
-        expression,
-        table.io(),
-        table.isKeyedTable() ? table.asKeyedTable().primaryKeySpec() : null,
-        table.spec()
-    );
-    Set<Record> result = new HashSet<>();
-    Iterators.addAll(result, iterator);
-    if (readRecords == null) {
-      Assert.assertEquals(result, new HashSet<>(records));
-    } else {
-      Assert.assertEquals(result, new HashSet<>(readRecords));
-    }
-  }
-
-  public static void testWriteChange(
-      KeyedTable table, long txId, List<Record> records, ChangeAction action) throws IOException {
-    AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
-        .builderFor(table)
-        .withChangeAction(action)
-        .withTransactionId(txId);
-
-    TaskWriter<Record> changeWrite = builder.buildWriter(ChangeLocationKind.INSTANT);
-    for (Record record : records) {
-      changeWrite.write(record);
-    }
-    DataFile[] dataFiles = changeWrite.complete().dataFiles();
-    AppendFiles appendFiles = table.changeTable().newAppend();
-    Arrays.asList(dataFiles).forEach(appendFiles::appendFile);
-    appendFiles.commit();
-  }
-
-  public static List<Record> readHiveKeyedTable(KeyedTable keyedTable, Expression expression) {
-    AdaptHiveGenericArcticDataReader reader = new AdaptHiveGenericArcticDataReader(
-        keyedTable.io(),
-        keyedTable.schema(),
-        keyedTable.schema(),
-        keyedTable.primaryKeySpec(),
-        null,
-        true,
-        IdentityPartitionConverters::convertConstant
-    );
-    List<Record> result = Lists.newArrayList();
-    try (CloseableIterable<CombinedScanTask> combinedScanTasks = keyedTable.newScan().filter(expression).planTasks()) {
-      combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
-        try (CloseableIterator<Record> records = reader.readData(scTask)) {
-          while (records.hasNext()) {
-            result.add(records.next());
-          }
-        } catch (IOException e) {
-          throw new UncheckedIOException(e);
-        }
-      }));
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
-    return result;
-  }
-
-  private static CloseableIterable<Record> readParquet(Schema schema, String path, Expression expression) {
-    AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
-        Files.localInput(path))
-        .project(schema)
-        .filter(expression == null ? Expressions.alwaysTrue() : expression)
-        .createReaderFunc(fileSchema -> AdaptHiveGenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
-        .caseSensitive(false);
-
-    CloseableIterable<Record> iterable = builder.build();
-    return iterable;
-  }
-
-  private static CloseableIterator<Record> readParquet(
-      Schema schema, DataFile[] dataFiles, Expression expression,
-      ArcticFileIO fileIO, PrimaryKeySpec primaryKeySpec, PartitionSpec partitionSpec) {
-    List<ArcticFileScanTask> arcticFileScanTasks = Arrays.stream(dataFiles).map(s -> new BasicArcticFileScanTask(
-        DefaultKeyedFile.parseBase(s),
-        null,
-        partitionSpec,
-        expression
-    )).collect(Collectors.toList());
-    if (primaryKeySpec != null) {
-      KeyedTableScanTask keyedTableScanTask = new NodeFileScanTask(arcticFileScanTasks);
-      AdaptHiveGenericArcticDataReader genericArcticDataReader = new AdaptHiveGenericArcticDataReader(
-          fileIO,
-          schema,
-          schema,
-          primaryKeySpec,
-          null,
-          true,
-          IdentityPartitionConverters::convertConstant
-      );
-      return genericArcticDataReader.readData(keyedTableScanTask);
-    } else {
-      GenericAdaptHiveIcebergDataReader genericArcticDataReader = new GenericAdaptHiveIcebergDataReader(
-          fileIO,
-          schema,
-          schema,
-          null,
-          true,
-          IdentityPartitionConverters::convertConstant,
-          false
-      );
-      return CloseableIterable.concat(arcticFileScanTasks.stream()
-          .map(s -> genericArcticDataReader.readData(s)).collect(Collectors.toList())).iterator();
-    }
+    return MixedDataTestHelpers.readBaseStore(table, reader, expression);
   }
 }

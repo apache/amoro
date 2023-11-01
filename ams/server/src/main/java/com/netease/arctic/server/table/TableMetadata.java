@@ -18,8 +18,11 @@
 
 package com.netease.arctic.server.table;
 
+import static com.netease.arctic.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DELIMITER;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
@@ -28,6 +31,8 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -37,57 +42,68 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DELIMITER;
-
 public class TableMetadata implements Serializable {
 
-  private TableMetadata() {
-  }
+  private TableMetadata() {}
 
-  public TableMetadata(ServerTableIdentifier identifier, TableMeta tableMeta, CatalogMeta catalogMeta) {
+  public TableMetadata(
+      ServerTableIdentifier identifier, TableMeta tableMeta, CatalogMeta catalogMeta) {
     this.tableIdentifier = identifier;
-    if (tableMeta.getLocations() != null &&
-        tableMeta.getLocations().containsKey(MetaTableProperties.LOCATION_KEY_TABLE)) {
+    Map<String, String> properties = Maps.newHashMap(tableMeta.getProperties());
+    Preconditions.checkNotNull(tableMeta.getFormat(), "lack require field: table format");
+    if (tableMeta.getLocations() != null
+        && tableMeta.getLocations().containsKey(MetaTableProperties.LOCATION_KEY_TABLE)) {
       this.tableLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE);
     }
-    if (tableMeta.getLocations() != null &&
-        tableMeta.getLocations().containsKey(MetaTableProperties.LOCATION_KEY_BASE)) {
+    if (tableMeta.getLocations() != null
+        && tableMeta.getLocations().containsKey(MetaTableProperties.LOCATION_KEY_BASE)) {
       this.baseLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_BASE);
     }
-    if (tableMeta.getLocations() != null &&
-        tableMeta.getLocations().containsKey(MetaTableProperties.LOCATION_KEY_CHANGE)) {
+    if (tableMeta.getLocations() != null
+        && tableMeta.getLocations().containsKey(MetaTableProperties.LOCATION_KEY_CHANGE)) {
       this.changeLocation = tableMeta.getLocations().get(MetaTableProperties.LOCATION_KEY_CHANGE);
     }
     if (StringUtils.isBlank(this.tableLocation) || StringUtils.isBlank(this.baseLocation)) {
       throw new IllegalArgumentException("table location is required");
     }
 
-    if (tableMeta.getKeySpec() == null || CollectionUtils.isEmpty(tableMeta.getKeySpec().getFields())) {
+    if (tableMeta.getKeySpec() == null
+        || CollectionUtils.isEmpty(tableMeta.getKeySpec().getFields())) {
       this.primaryKey = PrimaryKeySpec.noPrimaryKey().description();
     } else {
-      this.primaryKey = String.join(PRIMARY_KEY_COLUMN_JOIN_DELIMITER, tableMeta.getKeySpec().getFields());
+      this.primaryKey =
+          String.join(PRIMARY_KEY_COLUMN_JOIN_DELIMITER, tableMeta.getKeySpec().getFields());
     }
-    this.metaStoreSite = catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE);
-    this.hdfsSite = catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE);
-    this.coreSite = catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE);
+    this.metaStoreSite =
+        catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE);
+    this.hdfsSite =
+        catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE);
+    this.coreSite =
+        catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE);
     this.authMethod = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
     if (this.authMethod != null) {
       this.authMethod = this.authMethod.toUpperCase(Locale.ROOT);
     }
-    this.hadoopUsername = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
-    this.krbKeytab = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
+    this.hadoopUsername =
+        catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
+    this.krbKeytab =
+        catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
     this.krbConf = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5);
-    this.krbPrincipal = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
-    this.properties = tableMeta.getProperties();
+    this.krbPrincipal =
+        catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
+    this.properties = properties;
   }
 
   public TableMeta buildTableMeta() {
     TableMeta meta = new TableMeta();
     meta.setTableIdentifier(tableIdentifier.getIdentifier());
     Map<String, String> locations = new HashMap<>();
-    PropertiesUtil.putNotNullProperties(locations, MetaTableProperties.LOCATION_KEY_TABLE, tableLocation);
-    PropertiesUtil.putNotNullProperties(locations, MetaTableProperties.LOCATION_KEY_CHANGE, changeLocation);
-    PropertiesUtil.putNotNullProperties(locations, MetaTableProperties.LOCATION_KEY_BASE, baseLocation);
+    PropertiesUtil.putNotNullProperties(
+        locations, MetaTableProperties.LOCATION_KEY_TABLE, tableLocation);
+    PropertiesUtil.putNotNullProperties(
+        locations, MetaTableProperties.LOCATION_KEY_CHANGE, changeLocation);
+    PropertiesUtil.putNotNullProperties(
+        locations, MetaTableProperties.LOCATION_KEY_BASE, baseLocation);
     meta.setLocations(locations);
 
     Map<String, String> newProperties = new HashMap<>(properties);
@@ -96,11 +112,13 @@ public class TableMetadata implements Serializable {
     if (StringUtils.isNotBlank(primaryKey)) {
       com.netease.arctic.ams.api.PrimaryKeySpec keySpec =
           new com.netease.arctic.ams.api.PrimaryKeySpec();
-      List<String> fields = Arrays.stream(primaryKey.split(PRIMARY_KEY_COLUMN_JOIN_DELIMITER))
-          .collect(Collectors.toList());
+      List<String> fields =
+          Arrays.stream(primaryKey.split(PRIMARY_KEY_COLUMN_JOIN_DELIMITER))
+              .collect(Collectors.toList());
       keySpec.setFields(fields);
       meta.setKeySpec(keySpec);
     }
+    meta.setFormat(this.getFormat().name());
     return meta;
   }
 
@@ -132,7 +150,13 @@ public class TableMetadata implements Serializable {
 
   private Map<String, String> properties;
 
+  private long metaVersion;
+
   private volatile TableMetaStore metaStore;
+
+  public TableFormat getFormat() {
+    return this.tableIdentifier.getFormat();
+  }
 
   public String getTableLocation() {
     return tableLocation;
@@ -182,12 +206,13 @@ public class TableMetadata implements Serializable {
     if (metaStore == null) {
       synchronized (this) {
         if (metaStore == null) {
-          this.metaStore = TableMetaStore.builder()
-              .withBase64MetaStoreSite(metaStoreSite)
-              .withBase64CoreSite(coreSite)
-              .withBase64HdfsSite(hdfsSite)
-              .withBase64Auth(authMethod, hadoopUsername, krbKeytab, krbConf, krbPrincipal)
-              .build();
+          this.metaStore =
+              TableMetaStore.builder()
+                  .withBase64MetaStoreSite(metaStoreSite)
+                  .withBase64CoreSite(coreSite)
+                  .withBase64HdfsSite(hdfsSite)
+                  .withBase64Auth(authMethod, hadoopUsername, krbKeytab, krbConf, krbPrincipal)
+                  .build();
         }
       }
     }
@@ -264,5 +289,13 @@ public class TableMetadata implements Serializable {
 
   public void setKrbPrincipal(String krbPrincipal) {
     this.krbPrincipal = krbPrincipal;
+  }
+
+  public long getMetaVersion() {
+    return metaVersion;
+  }
+
+  public void setMetaVersion(long metaVersion) {
+    this.metaVersion = metaVersion;
   }
 }

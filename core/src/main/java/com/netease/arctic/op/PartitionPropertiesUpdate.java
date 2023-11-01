@@ -54,16 +54,17 @@ public class PartitionPropertiesUpdate implements UpdatePartitionProperties {
   }
 
   @Override
-  public PartitionPropertiesUpdate set(
-      StructLike partitionData, String key, String value) {
+  public PartitionPropertiesUpdate set(StructLike partitionData, String key, String value) {
     Preconditions.checkNotNull(partitionData, "partition cannot be null");
     Preconditions.checkNotNull(key, "Key cannot be null");
     Preconditions.checkNotNull(key, "Value cannot be null");
     Set<String> removePropertiesForPartition = removeProperties.get(partitionData);
-    Preconditions.checkArgument(removePropertiesForPartition == null ||
-            !removePropertiesForPartition.contains(key),
-        "Cannot remove and update the same key: %s", key);
-    Map<String, String> properties = setProperties.computeIfAbsent(partitionData, k -> Maps.newHashMap());
+    Preconditions.checkArgument(
+        removePropertiesForPartition == null || !removePropertiesForPartition.contains(key),
+        "Cannot remove and update the same key: %s",
+        key);
+    Map<String, String> properties =
+        setProperties.computeIfAbsent(partitionData, k -> Maps.newHashMap());
     properties.put(key, value);
     return this;
   }
@@ -73,10 +74,12 @@ public class PartitionPropertiesUpdate implements UpdatePartitionProperties {
     Preconditions.checkNotNull(partitionData, "partition cannot be null");
     Preconditions.checkNotNull(key, "Key cannot be null");
     Map<String, String> setPropertiesForPartition = setProperties.get(partitionData);
-    Preconditions.checkArgument(setPropertiesForPartition == null ||
-            !setPropertiesForPartition.containsKey(key),
-        "Cannot remove and update the same key: %s", key);
-    Set<String> properties = removeProperties.computeIfAbsent(partitionData, k -> Sets.newHashSet());
+    Preconditions.checkArgument(
+        setPropertiesForPartition == null || !setPropertiesForPartition.containsKey(key),
+        "Cannot remove and update the same key: %s",
+        key);
+    Set<String> properties =
+        removeProperties.computeIfAbsent(partitionData, k -> Sets.newHashSet());
     properties.add(key);
     return this;
   }
@@ -94,16 +97,19 @@ public class PartitionPropertiesUpdate implements UpdatePartitionProperties {
     } else {
       partitionProperties = table.partitionProperty();
     }
-    setProperties.forEach((partitionData, properties) -> {
-      Map<String, String> oldProperties = partitionProperties.computeIfAbsent(partitionData, k -> Maps.newHashMap());
-      oldProperties.putAll(properties);
-    });
-    removeProperties.forEach((partitionData, keys) -> {
-      Map<String, String> oldProperties = partitionProperties.get(partitionData);
-      if (oldProperties != null) {
-        keys.forEach(oldProperties::remove);
-      }
-    });
+    setProperties.forEach(
+        (partitionData, properties) -> {
+          Map<String, String> oldProperties =
+              partitionProperties.computeIfAbsent(partitionData, k -> Maps.newHashMap());
+          oldProperties.putAll(properties);
+        });
+    removeProperties.forEach(
+        (partitionData, keys) -> {
+          Map<String, String> oldProperties = partitionProperties.get(partitionData);
+          if (oldProperties != null) {
+            keys.forEach(oldProperties::remove);
+          }
+        });
     return partitionProperties;
   }
 

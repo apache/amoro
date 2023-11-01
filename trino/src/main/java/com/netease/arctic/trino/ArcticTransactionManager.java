@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,26 +18,26 @@
 
 package com.netease.arctic.trino;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
+
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.inject.Inject;
+
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.Objects.requireNonNull;
-
-/**
- * This is used to guarantee one transaction to one {@link ArcticConnectorMetadata}
- */
+/** This is used to guarantee one transaction to one {@link ArcticConnectorMetadata} */
 public class ArcticTransactionManager {
   private final ArcticMetadataFactory metadataFactory;
   private final ClassLoader classLoader;
-  private final ConcurrentMap<ConnectorTransactionHandle, MemoizedMetadata> transactions = new ConcurrentHashMap<>();
+  private final ConcurrentMap<ConnectorTransactionHandle, MemoizedMetadata> transactions =
+      new ConcurrentHashMap<>();
 
   @Inject
   public ArcticTransactionManager(ArcticMetadataFactory metadataFactory) {
@@ -51,7 +50,8 @@ public class ArcticTransactionManager {
   }
 
   public void begin(ConnectorTransactionHandle transactionHandle) {
-    MemoizedMetadata previousValue = transactions.putIfAbsent(transactionHandle, new MemoizedMetadata());
+    MemoizedMetadata previousValue =
+        transactions.putIfAbsent(transactionHandle, new MemoizedMetadata());
     checkState(previousValue == null);
   }
 
@@ -67,11 +67,14 @@ public class ArcticTransactionManager {
   public void rollback(ConnectorTransactionHandle transaction) {
     MemoizedMetadata transactionalMetadata = transactions.remove(transaction);
     checkArgument(transactionalMetadata != null, "no such transaction: %s", transaction);
-    transactionalMetadata.optionalGet().ifPresent(metadata -> {
-      try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
-        metadata.rollback();
-      }
-    });
+    transactionalMetadata
+        .optionalGet()
+        .ifPresent(
+            metadata -> {
+              try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(classLoader)) {
+                metadata.rollback();
+              }
+            });
   }
 
   private class MemoizedMetadata {

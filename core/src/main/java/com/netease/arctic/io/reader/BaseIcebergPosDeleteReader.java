@@ -25,26 +25,25 @@ import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.data.orc.GenericOrcReader;
 import org.apache.iceberg.data.parquet.GenericParquetReaders;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
+import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
 
-/**
- * Reader for positional delete files.
- */
+/** Reader for positional delete files. */
 public class BaseIcebergPosDeleteReader {
 
-  private static final Schema POS_DELETE_SCHEMA = new Schema(
-      MetadataColumns.DELETE_FILE_PATH,
-      MetadataColumns.DELETE_FILE_POS);
-  private static final Accessor<StructLike> FILENAME_ACCESSOR = POS_DELETE_SCHEMA
-      .accessorForField(MetadataColumns.DELETE_FILE_PATH.fieldId());
-  private static final Accessor<StructLike> POSITION_ACCESSOR = POS_DELETE_SCHEMA
-      .accessorForField(MetadataColumns.DELETE_FILE_POS.fieldId());
+  private static final Schema POS_DELETE_SCHEMA =
+      new Schema(MetadataColumns.DELETE_FILE_PATH, MetadataColumns.DELETE_FILE_POS);
+  private static final Accessor<StructLike> FILENAME_ACCESSOR =
+      POS_DELETE_SCHEMA.accessorForField(MetadataColumns.DELETE_FILE_PATH.fieldId());
+  private static final Accessor<StructLike> POSITION_ACCESSOR =
+      POS_DELETE_SCHEMA.accessorForField(MetadataColumns.DELETE_FILE_POS.fieldId());
 
   protected final ArcticFileIO fileIO;
   protected final List<DeleteFile> posDeleteFiles;
@@ -71,15 +70,25 @@ public class BaseIcebergPosDeleteReader {
     InputFile input = fileIO.newInputFile(deleteFile.path().toString());
     switch (deleteFile.format()) {
       case PARQUET:
-        Parquet.ReadBuilder builder = Parquet.read(input)
-            .project(POS_DELETE_SCHEMA)
-            .reuseContainers()
-            .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(POS_DELETE_SCHEMA, fileSchema));
+        Parquet.ReadBuilder builder =
+            Parquet.read(input)
+                .project(POS_DELETE_SCHEMA)
+                .reuseContainers()
+                .createReaderFunc(
+                    fileSchema -> GenericParquetReaders.buildReader(POS_DELETE_SCHEMA, fileSchema));
 
         return fileIO.doAs(builder::build);
+      case ORC:
+        return ORC.read(input)
+            .project(POS_DELETE_SCHEMA)
+            .createReaderFunc(
+                fileSchema -> GenericOrcReader.buildReader(POS_DELETE_SCHEMA, fileSchema))
+            .build();
       default:
-        throw new UnsupportedOperationException(String.format(
-            "Cannot read deletes, %s is not a supported format: %s", deleteFile.format().name(), deleteFile.path()));
+        throw new UnsupportedOperationException(
+            String.format(
+                "Cannot read deletes, %s is not a supported format: %s",
+                deleteFile.format().name(), deleteFile.path()));
     }
   }
 }

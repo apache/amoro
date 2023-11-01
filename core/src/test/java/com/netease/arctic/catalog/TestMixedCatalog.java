@@ -32,8 +32,10 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import com.netease.arctic.utils.ArcticTableUtil;
+import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 import org.junit.After;
@@ -55,7 +57,6 @@ public class TestMixedCatalog extends CatalogTestBase {
     return new Object[] {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG)};
   }
 
-
   @Before
   public void before() {
     if (!getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
@@ -63,165 +64,196 @@ public class TestMixedCatalog extends CatalogTestBase {
     }
   }
 
-  @Test
-  public void testCreateUnkeyedTable() {
-
-    UnkeyedTable createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
-        .withPartitionSpec(getCreateTableSpec())
-        .create()
-        .asUnkeyedTable();
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), createTable.schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), createTable.spec());
-    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, createTable.id());
-
-    UnkeyedTable loadTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID).asUnkeyedTable();
-    Assert.assertEquals(getCreateTableSchema().asStruct(), loadTable.schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), loadTable.spec());
-    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, loadTable.id());
+  protected void validateCreatedTable(ArcticTable table) throws TException {
+    Assert.assertEquals(getCreateTableSchema().asStruct(), table.schema().asStruct());
+    Assert.assertEquals(getCreateTableSpec(), table.spec());
+    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, table.id());
+    if (table.isKeyedTable()) {
+      KeyedTable keyedTable = (KeyedTable) table;
+      Assert.assertEquals(BasicTableTestHelper.PRIMARY_KEY_SPEC, keyedTable.primaryKeySpec());
+      Assert.assertEquals(
+          getCreateTableSchema().asStruct(), keyedTable.baseTable().schema().asStruct());
+      Assert.assertEquals(getCreateTableSpec(), keyedTable.baseTable().spec());
+      Assert.assertEquals(
+          getCreateTableSchema().asStruct(), keyedTable.changeTable().schema().asStruct());
+      Assert.assertEquals(getCreateTableSpec(), keyedTable.changeTable().spec());
+      assertIcebergTableStore(table.asKeyedTable().baseTable(), true, true);
+      assertIcebergTableStore(table.asKeyedTable().changeTable(), false, true);
+    } else {
+      assertIcebergTableStore(table.asUnkeyedTable(), true, false);
+    }
   }
 
   @Test
-  public void testCreateKeyedTable() {
-    KeyedTable createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
-        .withPartitionSpec(getCreateTableSpec())
-        .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
-        .create()
-        .asKeyedTable();
+  public void testCreateUnkeyedTable() throws TException {
+    UnkeyedTable createTable =
+        getCatalog()
+            .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+            .withPartitionSpec(getCreateTableSpec())
+            .create()
+            .asUnkeyedTable();
+    validateCreatedTable(createTable);
 
-    Assert.assertEquals(getCreateTableSchema().asStruct(), createTable.schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), createTable.spec());
-    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, createTable.id());
-    Assert.assertEquals(BasicTableTestHelper.PRIMARY_KEY_SPEC, createTable.primaryKeySpec());
+    UnkeyedTable loadTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID).asUnkeyedTable();
+    validateCreatedTable(loadTable);
+  }
 
-    Assert.assertEquals(getCreateTableSchema().asStruct(), createTable.baseTable().schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), createTable.baseTable().spec());
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), createTable.changeTable().schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), createTable.changeTable().spec());
+  @Test
+  public void testCreateKeyedTable() throws TException {
+    KeyedTable createTable =
+        getCatalog()
+            .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+            .withPartitionSpec(getCreateTableSpec())
+            .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
+            .create()
+            .asKeyedTable();
+    validateCreatedTable(createTable);
 
     KeyedTable loadTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID).asKeyedTable();
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), loadTable.schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), loadTable.spec());
-    Assert.assertEquals(TableTestHelper.TEST_TABLE_ID, loadTable.id());
-    Assert.assertEquals(BasicTableTestHelper.PRIMARY_KEY_SPEC, loadTable.primaryKeySpec());
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), loadTable.baseTable().schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), loadTable.baseTable().spec());
-
-    Assert.assertEquals(getCreateTableSchema().asStruct(), loadTable.changeTable().schema().asStruct());
-    Assert.assertEquals(getCreateTableSpec(), loadTable.changeTable().spec());
+    validateCreatedTable(loadTable);
   }
 
   @Test
   public void testCreateTableWithNewCatalogProperties() throws TException {
-    UnkeyedTable createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
-        .withPartitionSpec(getCreateTableSpec())
-        .create()
-        .asUnkeyedTable();
-    Assert.assertTrue(PropertyUtil.propertyAsBoolean(createTable.properties(),
-        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
+    UnkeyedTable createTable =
+        getCatalog()
+            .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+            .withPartitionSpec(getCreateTableSpec())
+            .create()
+            .asUnkeyedTable();
+    Assert.assertTrue(
+        PropertyUtil.propertyAsBoolean(
+            createTable.properties(),
+            TableProperties.ENABLE_SELF_OPTIMIZING,
+            TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
     getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
 
-    CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
-    TEST_AMS.getAmsHandler().updateMeta(
-        testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
-        "false");
+    CatalogMeta testCatalogMeta =
+        TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
+    TEST_AMS
+        .getAmsHandler()
+        .updateMeta(
+            testCatalogMeta,
+            CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
+            "false");
     getCatalog().refresh();
-    createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
-        .withPartitionSpec(getCreateTableSpec())
-        .create()
-        .asUnkeyedTable();
-    Assert.assertFalse(PropertyUtil.propertyAsBoolean(createTable.properties(),
-        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
+    createTable =
+        getCatalog()
+            .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+            .withPartitionSpec(getCreateTableSpec())
+            .create()
+            .asUnkeyedTable();
+    Assert.assertFalse(
+        PropertyUtil.propertyAsBoolean(
+            createTable.properties(),
+            TableProperties.ENABLE_SELF_OPTIMIZING,
+            TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
   }
 
   @Test
   public void testCreateTableWithNewCatalogLogProperties() throws TException {
-    UnkeyedTable createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
-        .withPartitionSpec(getCreateTableSpec())
-        .create()
-        .asUnkeyedTable();
-    Assert.assertTrue(PropertyUtil.propertyAsBoolean(createTable.properties(),
-        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
+    UnkeyedTable createTable =
+        getCatalog()
+            .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+            .withPartitionSpec(getCreateTableSpec())
+            .create()
+            .asUnkeyedTable();
+    Assert.assertTrue(
+        PropertyUtil.propertyAsBoolean(
+            createTable.properties(),
+            TableProperties.ENABLE_SELF_OPTIMIZING,
+            TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
     getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
 
-    CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
-    TEST_AMS.getAmsHandler().updateMeta(
-        testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.LOG_STORE_ADDRESS,
-        "1.1.1.1");
-    TEST_AMS.getAmsHandler().updateMeta(
-        testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.LOG_STORE_MESSAGE_TOPIC,
-        "test-topic");
-    TEST_AMS.getAmsHandler().updateMeta(
-        testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
-        "false");
+    CatalogMeta testCatalogMeta =
+        TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
+    TEST_AMS
+        .getAmsHandler()
+        .updateMeta(
+            testCatalogMeta,
+            CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.LOG_STORE_ADDRESS,
+            "1.1.1.1");
+    TEST_AMS
+        .getAmsHandler()
+        .updateMeta(
+            testCatalogMeta,
+            CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.LOG_STORE_MESSAGE_TOPIC,
+            "test-topic");
+    TEST_AMS
+        .getAmsHandler()
+        .updateMeta(
+            testCatalogMeta,
+            CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
+            "false");
     getCatalog().refresh();
-    createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
-        .withPartitionSpec(getCreateTableSpec())
-        .withProperty(TableProperties.ENABLE_LOG_STORE, "true")
-        .create()
-        .asUnkeyedTable();
-    Assert.assertFalse(PropertyUtil.propertyAsBoolean(createTable.properties(),
-        TableProperties.ENABLE_SELF_OPTIMIZING, TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
+    createTable =
+        getCatalog()
+            .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+            .withPartitionSpec(getCreateTableSpec())
+            .withProperty(TableProperties.ENABLE_LOG_STORE, "true")
+            .create()
+            .asUnkeyedTable();
+    Assert.assertFalse(
+        PropertyUtil.propertyAsBoolean(
+            createTable.properties(),
+            TableProperties.ENABLE_SELF_OPTIMIZING,
+            TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
   }
 
   @Test
   public void testUnkeyedRecoverableFileIO() throws TException {
-    UnkeyedTable createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
-        .withPartitionSpec(getCreateTableSpec())
-        .create()
-        .asUnkeyedTable();
+    UnkeyedTable createTable =
+        getCatalog()
+            .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+            .withPartitionSpec(getCreateTableSpec())
+            .create()
+            .asUnkeyedTable();
     Assert.assertFalse(createTable.io() instanceof RecoverableHadoopFileIO);
 
-    CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
-    TEST_AMS.getAmsHandler().updateMeta(
-        testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
-        "true");
+    CatalogMeta testCatalogMeta =
+        TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
+    TEST_AMS
+        .getAmsHandler()
+        .updateMeta(
+            testCatalogMeta,
+            CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
+            "true");
     getCatalog().refresh();
 
     ArcticTable table = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
     assertRecoverableFileIO(table);
 
     getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
-    createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
-        .withPartitionSpec(getCreateTableSpec())
-        .create()
-        .asUnkeyedTable();
+    createTable =
+        getCatalog()
+            .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+            .withPartitionSpec(getCreateTableSpec())
+            .create()
+            .asUnkeyedTable();
     assertRecoverableFileIO(createTable);
   }
 
   @Test
   public void testKeyedRecoverableFileIO() throws TException {
-    KeyedTable createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
-        .withPartitionSpec(getCreateTableSpec())
-        .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
-        .create()
-        .asKeyedTable();
+    KeyedTable createTable =
+        getCatalog()
+            .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+            .withPartitionSpec(getCreateTableSpec())
+            .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
+            .create()
+            .asKeyedTable();
     Assert.assertFalse(createTable.io() instanceof RecoverableHadoopFileIO);
     Assert.assertFalse(createTable.changeTable().io() instanceof RecoverableHadoopFileIO);
     Assert.assertFalse(createTable.baseTable().io() instanceof RecoverableHadoopFileIO);
 
-    CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
-    TEST_AMS.getAmsHandler().updateMeta(
-        testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
-        "true");
+    CatalogMeta testCatalogMeta =
+        TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
+    TEST_AMS
+        .getAmsHandler()
+        .updateMeta(
+            testCatalogMeta,
+            CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
+            "true");
     getCatalog().refresh();
 
     ArcticTable table = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
@@ -230,12 +262,13 @@ public class TestMixedCatalog extends CatalogTestBase {
     assertRecoverableFileIO(table.asKeyedTable().baseTable());
 
     getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
-    createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
-        .withPartitionSpec(getCreateTableSpec())
-        .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
-        .create()
-        .asKeyedTable();
+    createTable =
+        getCatalog()
+            .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+            .withPartitionSpec(getCreateTableSpec())
+            .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
+            .create()
+            .asKeyedTable();
     assertRecoverableFileIO(createTable);
     assertRecoverableFileIO(table.asKeyedTable().changeTable());
     assertRecoverableFileIO(table.asKeyedTable().baseTable());
@@ -250,8 +283,11 @@ public class TestMixedCatalog extends CatalogTestBase {
     RecoverableHadoopFileIO io = (RecoverableHadoopFileIO) arcticTable.io();
 
     String tableRootLocation = ArcticTableUtil.tableRootLocation(arcticTable);
-    String trashLocation = TableTrashManagers.getTrashLocation(arcticTable.id(), tableRootLocation,
-        arcticTable.properties().get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION));
+    String trashLocation =
+        TableTrashManagers.getTrashLocation(
+            arcticTable.id(),
+            tableRootLocation,
+            arcticTable.properties().get(TableProperties.TABLE_TRASH_CUSTOM_ROOT_LOCATION));
     Assert.assertEquals(trashLocation, io.getTrashManager().getTrashLocation());
     Assert.assertEquals(arcticTable.id(), io.getTrashManager().tableId());
     Assert.assertEquals(TableProperties.TABLE_TRASH_FILE_PATTERN_DEFAULT, io.getTrashFilePattern());
@@ -259,12 +295,13 @@ public class TestMixedCatalog extends CatalogTestBase {
 
   @Test
   public void testGetTableBlockerManager() {
-    KeyedTable createTable = getCatalog()
-        .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
-        .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
-        .withPartitionSpec(getCreateTableSpec())
-        .create()
-        .asKeyedTable();
+    KeyedTable createTable =
+        getCatalog()
+            .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
+            .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
+            .withPartitionSpec(getCreateTableSpec())
+            .create()
+            .asKeyedTable();
     TableBlockerManager tableBlockerManager = getCatalog().getTableBlockerManager(createTable.id());
     Assert.assertEquals(createTable.id(), tableBlockerManager.tableIdentifier());
     Assert.assertTrue(tableBlockerManager.getBlockers().isEmpty());
@@ -282,5 +319,36 @@ public class TestMixedCatalog extends CatalogTestBase {
 
   protected PartitionSpec getCreateTableSpec() {
     return BasicTableTestHelper.SPEC;
+  }
+
+  protected void assertIcebergTableStore(
+      Table tableStore, boolean isBaseStore, boolean isKeyedTable) {
+    Assert.assertEquals(
+        2, ((HasTableOperations) tableStore).operations().current().formatVersion());
+    Assert.assertNotNull(tableStore.properties().get(TableProperties.TABLE_CREATE_TIME));
+    Assert.assertEquals(
+        "true",
+        tableStore
+            .properties()
+            .get(org.apache.iceberg.TableProperties.METADATA_DELETE_AFTER_COMMIT_ENABLED));
+    Assert.assertEquals(
+        String.valueOf(Integer.MAX_VALUE),
+        tableStore.properties().get("flink.max-continuous-empty-commits"));
+
+    String expectTableStore =
+        isBaseStore
+            ? TableProperties.MIXED_FORMAT_TABLE_STORE_BASE
+            : TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE;
+    Assert.assertEquals(
+        expectTableStore, tableStore.properties().get(TableProperties.MIXED_FORMAT_TABLE_STORE));
+
+    if (isKeyedTable) {
+      Assert.assertNotNull(
+          tableStore.properties().get(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS));
+      if (isBaseStore) {
+        Assert.assertNotNull(
+            tableStore.properties().get(TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER));
+      }
+    }
   }
 }

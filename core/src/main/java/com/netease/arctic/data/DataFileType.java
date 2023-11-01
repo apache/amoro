@@ -18,14 +18,19 @@
 
 package com.netease.arctic.data;
 
+import org.apache.iceberg.FileContent;
+
 /**
  * Data file type, one of:
+ *
  * <ul>
- *   <li>BASE_FILE: store data record in {@link com.netease.arctic.table.BaseTable}</li>
- *   <li>INSERT_LINE: store data record in {@link com.netease.arctic.table.ChangeTable}</li>
- *   <li>EQ_DELETE_FILE: store equality delete record in {@link com.netease.arctic.table.ChangeTable}</li>
- *   <li>POS_DELETE_FILE: store positional delete record in {@link com.netease.arctic.table.BaseTable}</li>
- *   <li>ICEBERG_EQ_DELETE_FILE: store equality delete record in native iceberg table</li>
+ *   <li>BASE_FILE: store data record in {@link com.netease.arctic.table.BaseTable}
+ *   <li>INSERT_LINE: store data record in {@link com.netease.arctic.table.ChangeTable}
+ *   <li>EQ_DELETE_FILE: store equality delete record in {@link
+ *       com.netease.arctic.table.ChangeTable}
+ *   <li>POS_DELETE_FILE: store positional delete record in {@link
+ *       com.netease.arctic.table.BaseTable}
+ *   <li>ICEBERG_EQ_DELETE_FILE: store equality delete record in native iceberg table
  * </ul>
  */
 public enum DataFileType {
@@ -61,6 +66,20 @@ public enum DataFileType {
     throw new IllegalArgumentException("Unknown file type id:" + id);
   }
 
+  public static DataFileType ofContentId(Integer id) {
+    if (id == null) {
+      // For v1 iceberg table
+      return DataFileType.BASE_FILE;
+    } else if (id == FileContent.DATA.id()) {
+      return DataFileType.BASE_FILE;
+    } else if (id == FileContent.POSITION_DELETES.id()) {
+      return DataFileType.POS_DELETE_FILE;
+    } else if (id == FileContent.EQUALITY_DELETES.id()) {
+      return DataFileType.EQ_DELETE_FILE;
+    }
+    throw new IllegalArgumentException("Unknown file content id:" + id);
+  }
+
   public static DataFileType ofShortName(String shortName) {
     for (DataFileType type : DataFileType.values()) {
       if (type.shortName().equals(shortName)) {
@@ -69,5 +88,4 @@ public enum DataFileType {
     }
     throw new IllegalArgumentException("Unknown file type short name:" + shortName);
   }
-
 }

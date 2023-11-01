@@ -22,33 +22,53 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 
 public class PartitionFileBaseInfo {
-  private long commitId;
+  private String commitId;
   private DataFileType fileType;
   private Long commitTime;
   private String size;
-  private String partitionName;
+  private String partition;
   private String path;
   private String file;
   private long fileSize;
+  private String operation;
 
-  public PartitionFileBaseInfo() {
-  }
-
-  public PartitionFileBaseInfo(long commitId, DataFileType fileType, Long commitTime,
-                               String partitionName, String path, long fileSize) {
+  public PartitionFileBaseInfo(
+      String commitId,
+      DataFileType fileType,
+      Long commitTime,
+      String partition,
+      String path,
+      long fileSize) {
     this.commitId = commitId;
     this.fileType = fileType;
     this.commitTime = commitTime;
-    this.partitionName = partitionName;
+    this.partition = partition;
     setPath(path);
     setFileSize(fileSize);
   }
 
-  public long getCommitId() {
+  public PartitionFileBaseInfo(
+      String commitId,
+      DataFileType fileType,
+      Long commitTime,
+      String partition,
+      String path,
+      long fileSize,
+      String operation) {
+    this.commitId = commitId;
+    this.fileType = fileType;
+    this.commitTime = commitTime;
+    this.partition = partition;
+    this.operation = operation;
+    setPath(path);
+    setFileSize(fileSize);
+  }
+
+  public String getCommitId() {
     return commitId;
   }
 
-  public void setCommitId(long commitId) {
+  public void setCommitId(String commitId) {
     this.commitId = commitId;
   }
 
@@ -72,12 +92,12 @@ public class PartitionFileBaseInfo {
     return size;
   }
 
-  public String getPartitionName() {
-    return partitionName;
+  public String getPartition() {
+    return partition;
   }
 
-  public void setPartitionName(String partitionName) {
-    this.partitionName = partitionName;
+  public void setPartition(String partition) {
+    this.partition = partition;
   }
 
   public String getPath() {
@@ -100,5 +120,13 @@ public class PartitionFileBaseInfo {
   public void setFileSize(long fileSize) {
     this.fileSize = fileSize;
     this.size = AmsUtil.byteToXB(fileSize);
+  }
+
+  public String getOperation() {
+    return operation;
+  }
+
+  public void setOperation(String operation) {
+    this.operation = operation;
   }
 }

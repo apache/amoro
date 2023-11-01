@@ -110,7 +110,7 @@ export function getTransactions(
     table: string,
     page: number
     pageSize: number
-    token: string
+    token?: string
   }
 ) {
   const { catalog, db, table, page, pageSize, token } = params
@@ -126,7 +126,7 @@ export function getDetailByTransactionId(
     transactionId: string,
     page: number
     pageSize: number
-    token: string
+    token?: string
   }
 ) {
   const { catalog, db, table, transactionId, page, pageSize, token } = params
@@ -158,7 +158,7 @@ export function getOptimizes(
   }
 ) {
   const { catalog, db, table, page, pageSize, token } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimize`, { params: { page, pageSize, token } })
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes`, { params: { page, pageSize, token } })
 }
 
 export function upgradeHiveTable(

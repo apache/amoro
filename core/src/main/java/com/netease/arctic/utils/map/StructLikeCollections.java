@@ -21,7 +21,9 @@ package com.netease.arctic.utils.map;
 import com.netease.arctic.utils.StructLikeSet;
 import org.apache.iceberg.types.Types;
 
-public class StructLikeCollections {
+import java.io.Serializable;
+
+public class StructLikeCollections implements Serializable {
 
   public static final StructLikeCollections DEFAULT = new StructLikeCollections(false, 0L);
 
@@ -40,7 +42,8 @@ public class StructLikeCollections {
     }
   }
 
-  public StructLikeCollections(boolean enableSpillableMap, long maxInMemorySizeInBytes, String backendBaseDir) {
+  public StructLikeCollections(
+      boolean enableSpillableMap, long maxInMemorySizeInBytes, String backendBaseDir) {
     this.enableSpillableMap = enableSpillableMap;
     this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
     this.backendBaseDir = backendBaseDir;

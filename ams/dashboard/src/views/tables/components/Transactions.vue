@@ -1,22 +1,37 @@
 <template>
   <div class="table-transactions">
-    <a-table
-      rowKey="id"
-      :columns="columns"
-      :data-source="dataSource"
-      :pagination="pagination"
-      v-if="!hasBreadcrumb"
-      :loading="loading"
-      @change="change"
-    >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.dataIndex === 'transactionId'">
-          <a-button type="link" @click="toggleBreadcrumb(record)">
-            {{ record.transactionId }}
-          </a-button>
+    <template v-if="!hasBreadcrumb">
+      <a-row>
+        <a-col :span="12">
+          <Chart :loading="loading" :options="recordChartOption" />
+        </a-col>
+        <a-col :span="12">
+          <Chart :loading="loading" :options="fileChartOption" />
+        </a-col>
+      </a-row>
+      <a-table
+        rowKey="transactionId"
+        :columns="columns"
+        :data-source="dataSource"
+        :pagination="pagination"
+        :loading="loading"
+        @change="change"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'transactionId'">
+            <a-button type="link" @click="toggleBreadcrumb(record)">
+              {{ record.transactionId }}
+            </a-button>
+          </template>
         </template>
-      </template>
-    </a-table>
+        <template #expandedRowRender="{ record }">
+          <a-row type="flex" :gutter="16" v-for="(value, key) in record.summary" :key="key">
+            <a-col flex="220px" style="text-align: right;">{{ key }} :</a-col>
+            <a-col flex="auto">{{ value }}</a-col>
+          </a-row>
+        </template>
+      </a-table>
+    </template>
     <template v-else>
       <a-breadcrumb separator=">">
         <a-breadcrumb-item @click="toggleBreadcrumb" class="text-active">All</a-breadcrumb-item>
@@ -49,15 +64,19 @@
 import { onMounted, reactive, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'
-import { BreadcrumbTransactionItem, IColumns, TransactionItem } from '@/types/common.type'
+import { BreadcrumbTransactionItem, IColumns, ILineChartOriginalData, TransactionItem } from '@/types/common.type'
 import { getDetailByTransactionId, getTransactions } from '@/services/table.service'
 import { useRoute } from 'vue-router'
 import { dateFormat } from '@/utils'
+import Chart from '@/components/echarts/Chart.vue'
+import { ECOption } from '@/components/echarts'
+import { generateLineChartOption } from '@/utils/chart'
 
 const hasBreadcrumb = ref<boolean>(false)
 const { t } = useI18n()
 const columns: IColumns[] = shallowReactive([
   { title: t('transactionId'), dataIndex: 'transactionId', ellipsis: true },
+  { title: t('operation'), dataIndex: 'operation' },
   { title: t('fileCount'), dataIndex: 'fileCount' },
   { title: t('size'), dataIndex: 'fileSize' },
   { title: t('commitTime'), dataIndex: 'commitTime' },
@@ -68,7 +87,7 @@ const breadcrumbColumns = shallowReactive([
   { title: t('file'), dataIndex: 'file', ellipsis: true },
   // { title: t('fsn'), dataIndex: 'fsn' },
   { title: t('partition'), dataIndex: 'partition', width: 120 },
-  { title: t('fileContent'), dataIndex: 'type', width: 120 },
+  { title: t('fileType'), dataIndex: 'fileType', width: 120, ellipsis: true },
   { title: t('size'), dataIndex: 'size', width: 120 },
   { title: t('commitTime'), dataIndex: 'commitTime', width: 200, ellipsis: true },
   { title: t('path'), dataIndex: 'path', ellipsis: true }
@@ -87,6 +106,8 @@ const sourceData = reactive({
   table: '',
   ...query
 })
+const recordChartOption = ref<ECOption>({})
+const fileChartOption = ref<ECOption>({})
 
 async function getTableInfo() {
   try {
@@ -98,10 +119,18 @@ async function getTableInfo() {
       pageSize: pagination.pageSize
     })
     const { list = [], total } = result
+    const rcData: ILineChartOriginalData = {}
+    const fcData: ILineChartOriginalData = {}
     list.forEach((p: TransactionItem) => {
+      // Assume that the time will not conflict and use the time as the unique key without formatting it.
+      const { recordsSummaryForChart, filesSummaryForChart, commitTime } = p
+      rcData[commitTime] = recordsSummaryForChart || {}
+      fcData[commitTime] = filesSummaryForChart || {}
       p.commitTime = p.commitTime ? dateFormat(p.commitTime) : ''
       dataSource.push(p)
     })
+    recordChartOption.value = generateLineChartOption(t('recordChartTitle'), rcData)
+    fileChartOption.value = generateLineChartOption(t('fileChartTitle'), fcData)
     pagination.total = total
   } catch (error) {
   } finally {
@@ -182,6 +211,9 @@ onMounted(() => {
   }
   :deep(.ant-btn-link) {
     padding: 0;
+  }
+  .ant-table-wrapper {
+    margin-top: 24px;
   }
 }
 </style>

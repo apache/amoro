@@ -22,12 +22,11 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
 
-/**
- * AMS server column info.
- */
+/** AMS server column info. */
 public class AMSColumnInfo {
   String field;
   String type;
+  boolean required;
   String comment;
 
   public String getField() {
@@ -46,6 +45,14 @@ public class AMSColumnInfo {
     this.type = type;
   }
 
+  public boolean isRequired() {
+    return required;
+  }
+
+  public void setRequired(boolean required) {
+    this.required = required;
+  }
+
   public String getComment() {
     return comment;
   }
@@ -54,12 +61,12 @@ public class AMSColumnInfo {
     this.comment = comment;
   }
 
-  public AMSColumnInfo() {
-  }
+  public AMSColumnInfo() {}
 
-  public AMSColumnInfo(String field, String type, String comment) {
+  public AMSColumnInfo(String field, String type, boolean required, String comment) {
     this.field = field;
     this.type = type;
+    this.required = required;
     this.comment = comment;
   }
 
@@ -68,26 +75,24 @@ public class AMSColumnInfo {
       return null;
     }
     return new Builder()
-            .field(field.name())
-            .type(field.type().toString())
-            .comment(field.doc())
-            .build();
+        .field(field.name())
+        .type(field.type().toString())
+        .required(field.isRequired())
+        .comment(field.doc())
+        .build();
   }
 
-  /**
-   * Construct ColumnInfo based on schema and primary key field.
-   */
-  public static AMSColumnInfo buildFromPartitionSpec(Schema schema, PrimaryKeySpec.PrimaryKeyField pkf) {
+  /** Construct ColumnInfo based on schema and primary key field. */
+  public static AMSColumnInfo buildFromPartitionSpec(
+      Schema schema, PrimaryKeySpec.PrimaryKeyField pkf) {
     return buildFromNestedField(schema.findField(pkf.fieldName()));
-
   }
-
 
   public static class Builder {
     String field;
     String type;
+    boolean required;
     String comment;
-
 
     public Builder field(String field) {
       this.field = field;
@@ -99,13 +104,18 @@ public class AMSColumnInfo {
       return this;
     }
 
+    public Builder required(Boolean isRequired) {
+      this.required = isRequired;
+      return this;
+    }
+
     public Builder comment(String comment) {
       this.comment = comment;
       return this;
     }
 
     public AMSColumnInfo build() {
-      return new AMSColumnInfo(field, type, comment);
+      return new AMSColumnInfo(field, type, required, comment);
     }
   }
 }

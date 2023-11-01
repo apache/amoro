@@ -24,9 +24,7 @@ import org.apache.iceberg.Transaction;
 
 import java.util.Map;
 
-/**
- * A builder used to create valid {@link ArcticTable}.
- */
+/** A builder used to create valid {@link ArcticTable}. */
 public interface TableBuilder {
   /**
    * Sets a partition spec for table.
@@ -55,7 +53,7 @@ public interface TableBuilder {
   /**
    * Adds a key/value property to the table.
    *
-   * @param key   a key
+   * @param key a key
    * @param value a value
    * @return this object for chaining call
    */
@@ -76,8 +74,6 @@ public interface TableBuilder {
    */
   ArcticTable create();
 
-  /**
-   * Create a transaction for create table;
-   */
-  Transaction newCreateTableTransaction();
+  /** Create a transaction for create table; */
+  Transaction createTransaction();
 }

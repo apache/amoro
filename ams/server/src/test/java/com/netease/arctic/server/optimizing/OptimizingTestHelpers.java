@@ -22,7 +22,7 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.server.table.BasicTableSnapshot;
 import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.TableSnapshot;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -41,24 +41,28 @@ public class OptimizingTestHelpers {
     if (table.isKeyedTable()) {
       return getCurrentKeyedTableSnapshot(table.asKeyedTable());
     } else {
-      long baseSnapshotId = IcebergTableUtils.getSnapshotId(table.asUnkeyedTable(), true);
+      long baseSnapshotId = IcebergTableUtil.getSnapshotId(table.asUnkeyedTable(), true);
       return new BasicTableSnapshot(baseSnapshotId);
     }
   }
 
   public static KeyedTableSnapshot getCurrentKeyedTableSnapshot(KeyedTable keyedTable) {
-    long baseSnapshotId = IcebergTableUtils.getSnapshotId(keyedTable.baseTable(), true);
-    long changeSnapshotId = IcebergTableUtils.getSnapshotId(keyedTable.changeTable(), true);
+    long baseSnapshotId = IcebergTableUtil.getSnapshotId(keyedTable.baseTable(), true);
+    long changeSnapshotId = IcebergTableUtil.getSnapshotId(keyedTable.changeTable(), true);
     StructLikeMap<Long> partitionOptimizedSequence =
         TablePropertyUtil.getPartitionOptimizedSequence(keyedTable);
     StructLikeMap<Long> legacyPartitionMaxTransactionId =
         TablePropertyUtil.getLegacyPartitionMaxTransactionId(keyedTable);
 
-    return new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId,
-        partitionOptimizedSequence, legacyPartitionMaxTransactionId);
+    return new KeyedTableSnapshot(
+        baseSnapshotId,
+        changeSnapshotId,
+        partitionOptimizedSequence,
+        legacyPartitionMaxTransactionId);
   }
 
-  public static List<Record> generateRecord(TableTestHelper tableTestHelper, int from, int to, String opTime) {
+  public static List<Record> generateRecord(
+      TableTestHelper tableTestHelper, int from, int to, String opTime) {
     List<Record> newRecords = Lists.newArrayList();
     for (int i = from; i <= to; i++) {
       newRecords.add(tableTestHelper.generateTestRecord(i, i + "", 0, opTime));
@@ -78,7 +82,8 @@ public class OptimizingTestHelpers {
     return dataFiles;
   }
 
-  public static List<DeleteFile> appendBasePosDelete(ArcticTable arcticTable, List<DeleteFile> deleteFiles) {
+  public static List<DeleteFile> appendBasePosDelete(
+      ArcticTable arcticTable, List<DeleteFile> deleteFiles) {
     RowDelta rowDelta;
     if (arcticTable.isKeyedTable()) {
       rowDelta = arcticTable.asKeyedTable().baseTable().newRowDelta();

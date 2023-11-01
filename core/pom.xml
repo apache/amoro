@@ -21,46 +21,31 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.netease.arctic</groupId>
-        <artifactId>arctic-parent</artifactId>
-        <version>0.5.0-SNAPSHOT</version>
+        <groupId>com.netease.amoro</groupId>
+        <artifactId>amoro-parent</artifactId>
+        <version>0.6.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>arctic-core</artifactId>
+    <artifactId>amoro-core</artifactId>
     <packaging>jar</packaging>
-    <name>Arctic Project Core</name>
-    <url>https://arctic.netease.com</url>
-
-    <properties>
-        <rocksdb.version>5.17.2</rocksdb.version>
-        <kryo.version>2.24.0</kryo.version>
-        <jol.version>0.16</jol.version>
-    </properties>
+    <name>Amoro Project Core</name>
+    <url>https://amoro.netease.com</url>
 
     <dependencies>
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-ams-api</artifactId>
-            <version>${project.version}</version>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-ams-api</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.rocksdb</groupId>
             <artifactId>rocksdbjni</artifactId>
-            <version>${rocksdb.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.esotericsoftware.kryo</groupId>
             <artifactId>kryo</artifactId>
-            <version>${kryo.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.openjdk.jol</groupId>
-            <artifactId>jol-core</artifactId>
-            <version>${jol.version}</version>
         </dependency>
 
         <dependency>
@@ -89,6 +74,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>iceberg-aws</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.parquet</groupId>
             <artifactId>parquet-avro</artifactId>
         </dependency>
@@ -96,24 +86,47 @@
         <dependency>
             <groupId>org.apache.parquet</groupId>
             <artifactId>parquet-hadoop</artifactId>
-            <version>${parquet-hadoop.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-auth</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kerby</groupId>
+            <artifactId>kerb-simplekdc</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.apache.orc</groupId>
             <artifactId>orc-core</artifactId>
             <classifier>nohive</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.paimon</groupId>
+            <artifactId>paimon-bundle</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.roaringbitmap</groupId>
+            <artifactId>RoaringBitmap</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
         </dependency>
 
         <!-- test dependencies -->
@@ -145,12 +158,11 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-ams-api</artifactId>
+            <groupId>com.netease.amoro</groupId>
+            <artifactId>amoro-ams-api</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
@@ -180,62 +192,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <configuration>
-                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
-    <profiles>
-        <profile>
-            <id>aws</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.iceberg</groupId>
-                    <artifactId>iceberg-aws</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>s3</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>glue</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>kms</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>dynamodb</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>sts</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>url-connection-client</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
-
 </project>

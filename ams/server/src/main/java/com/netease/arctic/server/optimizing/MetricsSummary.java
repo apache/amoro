@@ -1,8 +1,8 @@
 package com.netease.arctic.server.optimizing;
 
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.optimizing.RewriteFilesInput;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
@@ -20,20 +20,18 @@ public class MetricsSummary {
   private int eqDeleteFileCnt = 0;
   private int posDeleteFileCnt = 0;
 
-  public MetricsSummary() {
-  }
+  public MetricsSummary() {}
 
   protected MetricsSummary(RewriteFilesInput input) {
     rewriteDataFileCnt = input.rewrittenDataFiles().length;
     reRowDeletedDataFileCnt = input.rePosDeletedDataFiles().length;
-    ;
-    for (IcebergDataFile rewriteFile : input.rewrittenDataFiles()) {
+    for (DataFile rewriteFile : input.rewrittenDataFiles()) {
       rewriteDataSize += rewriteFile.fileSizeInBytes();
     }
-    for (IcebergDataFile rewritePosDataFile : input.rePosDeletedDataFiles()) {
+    for (DataFile rewritePosDataFile : input.rePosDeletedDataFiles()) {
       rewritePosDataSize += rewritePosDataFile.fileSizeInBytes();
     }
-    for (IcebergContentFile<?> delete : input.deleteFiles()) {
+    for (ContentFile<?> delete : input.deleteFiles()) {
       if (delete.content() == FileContent.POSITION_DELETES) {
         positionalDeleteSize += delete.fileSizeInBytes();
         posDeleteFileCnt++;
@@ -45,18 +43,21 @@ public class MetricsSummary {
   }
 
   public MetricsSummary(Collection<TaskRuntime> taskRuntimes) {
-    taskRuntimes.stream().map(TaskRuntime::getMetricsSummary).forEach(metrics -> {
-      rewriteDataFileCnt += metrics.getRewriteDataFileCnt();
-      reRowDeletedDataFileCnt += metrics.getReRowDeletedDataFileCnt();
-      rewriteDataSize += metrics.getRewriteDataSize();
-      rewritePosDataSize += metrics.getRewritePosDataSize();
-      posDeleteFileCnt += metrics.getPosDeleteFileCnt();
-      positionalDeleteSize += metrics.getPositionalDeleteSize();
-      eqDeleteFileCnt += metrics.getEqDeleteFileCnt();
-      equalityDeleteSize += metrics.getEqualityDeleteSize();
-      newFileCnt += metrics.getNewFileCnt();
-      newFileSize += metrics.getNewFileSize();
-    });
+    taskRuntimes.stream()
+        .map(TaskRuntime::getMetricsSummary)
+        .forEach(
+            metrics -> {
+              rewriteDataFileCnt += metrics.getRewriteDataFileCnt();
+              reRowDeletedDataFileCnt += metrics.getReRowDeletedDataFileCnt();
+              rewriteDataSize += metrics.getRewriteDataSize();
+              rewritePosDataSize += metrics.getRewritePosDataSize();
+              posDeleteFileCnt += metrics.getPosDeleteFileCnt();
+              positionalDeleteSize += metrics.getPositionalDeleteSize();
+              eqDeleteFileCnt += metrics.getEqDeleteFileCnt();
+              equalityDeleteSize += metrics.getEqualityDeleteSize();
+              newFileCnt += metrics.getNewFileCnt();
+              newFileSize += metrics.getNewFileSize();
+            });
   }
 
   public long getNewFileSize() {

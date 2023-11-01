@@ -5,7 +5,7 @@ public class PropertyNames {
   public static final String RESOURCE_ID = "resource-id";
   public static final String EXPORT_PROPERTY_PREFIX = "export.";
 
-  public static final String OPTIMIZER_AMS_URL = "ams-url";
+  public static final String AMS_OPTIMIZER_URI = "ams-optimizing-uri";
   public static final String AMS_HOME = "ams-home";
   public static final String OPTIMIZER_EXECUTION_PARALLEL = "execution-parallel";
   public static final String OPTIMIZER_MEMORY_SIZE = "memory-size";

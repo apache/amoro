@@ -1,10 +1,11 @@
 package com.netease.arctic.utils.map;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import org.apache.lucene.util.RamUsageEstimator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.openjdk.jol.info.GraphLayout;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -21,14 +22,14 @@ public class TestSimpleSpillableMap {
 
   @Before
   public void initSizes() {
-    keySize = GraphLayout.parseInstance(new Key()).totalSize();
-    valueSize = GraphLayout.parseInstance(new Value()).totalSize();
+    keySize = RamUsageEstimator.sizeOfObject(new Key(), 0);
+    valueSize = RamUsageEstimator.sizeOfObject(new Value(), 0);
   }
 
   @Test
   public void testMemoryMap() {
     SimpleSpillableMap<Key, Value> map = testMap(10, 10);
-    Assert.assertTrue(map.getSizeOfFileOnDiskInBytes() == 0);
+    Assert.assertEquals(0, map.getSizeOfFileOnDiskInBytes());
     map.close();
   }
 
@@ -46,10 +47,83 @@ public class TestSimpleSpillableMap {
     map.close();
   }
 
+  @Test
+  public void testSpillableMapConsistency() {
+    SimpleSpillableMap<Key, Value> actualMap =
+        new SimpleSpillableMap<>(
+            5 * (keySize + valueSize),
+            null,
+            new DefaultSizeEstimator<>(),
+            new DefaultSizeEstimator<>());
+
+    Map<Key, Value> expectedMap = Maps.newHashMap();
+    for (int i = 0; i < 10; i++) {
+      Key key = new Key();
+      Value value = new Value();
+      expectedMap.put(key, value);
+      actualMap.put(key, value);
+    }
+    Assert.assertTrue(actualMap.getSizeOfFileOnDiskInBytes() > 0);
+    Assert.assertTrue(actualMap.getMemoryMapSize() < expectedMap.size());
+    assertSimpleMaps(actualMap, expectedMap);
+
+    // update new value
+    Sets.newHashSet(expectedMap.keySet())
+        .forEach(
+            k -> {
+              Value newValue = new Value();
+              actualMap.put(k, newValue);
+              expectedMap.put(k, newValue);
+              assertSimpleMaps(actualMap, expectedMap);
+            });
+
+    Sets.newHashSet(expectedMap.keySet())
+        .forEach(
+            k -> {
+              actualMap.delete(k);
+              expectedMap.remove(k);
+              assertSimpleMaps(actualMap, expectedMap);
+            });
+  }
+
+  @Test
+  public void testSpillableMapRePut() {
+    SimpleSpillableMap<Key, Value> actualMap =
+        new SimpleSpillableMap<>(
+            (keySize + valueSize),
+            null,
+            new DefaultSizeEstimator<>(),
+            new DefaultSizeEstimator<>());
+
+    Key k1 = new Key();
+    Value v1 = new Value();
+    Key k2 = new Key();
+    Value v2 = new Value();
+
+    actualMap.put(k1, v1);
+    actualMap.put(k2, v2);
+
+    // remove k1 from memory
+    actualMap.delete(k1);
+    Assert.assertEquals(v2, actualMap.get(k2));
+    // put a new value for k2
+    Value v3 = new Value();
+    actualMap.put(k2, v3);
+    Assert.assertEquals(v3, actualMap.get(k2));
+
+    actualMap.delete(k2);
+    // should not exist in memory or on disk
+    Assert.assertNull(actualMap.get(k2));
+  }
+
   private SimpleSpillableMap<Key, Value> testMap(long expectMemorySize, int expectKeyCount) {
-    SimpleSpillableMap<Key, Value> actualMap = new SimpleSpillableMap<>(expectMemorySize * (keySize + valueSize),
-        null, new DefaultSizeEstimator<>(), new DefaultSizeEstimator<>());
-    Assert.assertTrue(actualMap.getSizeOfFileOnDiskInBytes() == 0);
+    SimpleSpillableMap<Key, Value> actualMap =
+        new SimpleSpillableMap<>(
+            expectMemorySize * (keySize + valueSize),
+            null,
+            new DefaultSizeEstimator<>(),
+            new DefaultSizeEstimator<>());
+    Assert.assertEquals(0, actualMap.getSizeOfFileOnDiskInBytes());
     Map<Key, Value> expectedMap = Maps.newHashMap();
     for (int i = 0; i < expectKeyCount; i++) {
       Key key = new Key();
@@ -57,20 +131,21 @@ public class TestSimpleSpillableMap {
       expectedMap.put(key, value);
       actualMap.put(key, value);
     }
-    for (Key key : expectedMap.keySet()) {
-      Assert.assertEquals(expectedMap.get(key), actualMap.get(key));
-    }
+    assertSimpleMaps(actualMap, expectedMap);
     Assert.assertEquals(expectMemorySize, actualMap.getMemoryMapSize());
     Assert.assertEquals(
-        expectMemorySize * (keySize + valueSize),
-        actualMap.getMemoryMapSpaceSize());
+        expectMemorySize * (keySize + valueSize), actualMap.getMemoryMapSpaceSize());
     return actualMap;
+  }
+
+  private <K, V> void assertSimpleMaps(SimpleMap<K, V> actualMap, Map<K, V> expectedMap) {
+    for (K key : expectedMap.keySet()) {
+      Assert.assertEquals(expectedMap.get(key), actualMap.get(key));
+    }
   }
 
   private static class Key implements Serializable {
     String id = UUID.randomUUID().toString();
-
-    Long num = random.nextLong();
 
     @Override
     public int hashCode() {
@@ -104,4 +179,3 @@ public class TestSimpleSpillableMap {
     }
   }
 }
-

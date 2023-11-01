@@ -25,7 +25,7 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.UnkeyedTable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,18 +34,22 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class TestUnkeyedPartitionPlan extends MixedTablePlanTestBase {
 
-  public TestUnkeyedPartitionPlan(CatalogTestHelper catalogTestHelper,
-                                  TableTestHelper tableTestHelper) {
+  public TestUnkeyedPartitionPlan(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[][] parameters() {
     return new Object[][] {
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, true)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, false)}};
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(false, true)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(false, false)
+      }
+    };
   }
 
   @Test
@@ -70,13 +74,13 @@ public class TestUnkeyedPartitionPlan extends MixedTablePlanTestBase {
 
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
-    return new MixedIcebergPartitionPlan(getTableRuntime(), getArcticTable(), getPartition(),
-        System.currentTimeMillis());
+    return new MixedIcebergPartitionPlan(
+        getTableRuntime(), getArcticTable(), getPartition(), System.currentTimeMillis());
   }
 
   @Override
   protected TableFileScanHelper getTableFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtils.getSnapshotId(getArcticTable(), true);
+    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable(), true);
     return new UnkeyedTableFileScanHelper(getArcticTable(), baseSnapshotId);
   }
 

@@ -18,15 +18,18 @@
 
 package com.netease.arctic.spark.reader;
 
-import com.netease.arctic.hive.io.reader.AbstractAdaptHiveArcticDataReader;
+import com.netease.arctic.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.spark.SparkInternalRowWrapper;
 import com.netease.arctic.spark.util.ArcticSparkUtils;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.orc.OrcRowReader;
 import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.spark.SparkSchemaUtil;
+import org.apache.iceberg.spark.data.SparkOrcReader;
+import org.apache.orc.TypeDescription;
 import org.apache.parquet.schema.MessageType;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.types.StructType;
@@ -34,7 +37,7 @@ import org.apache.spark.sql.types.StructType;
 import java.util.Map;
 import java.util.function.Function;
 
-public class ArcticSparkKeyedDataReader extends AbstractAdaptHiveArcticDataReader<InternalRow> {
+public class ArcticSparkKeyedDataReader extends AbstractAdaptHiveKeyedDataReader<InternalRow> {
 
   public ArcticSparkKeyedDataReader(
       ArcticFileIO fileIO,
@@ -43,15 +46,27 @@ public class ArcticSparkKeyedDataReader extends AbstractAdaptHiveArcticDataReade
       PrimaryKeySpec primaryKeySpec,
       String nameMapping,
       boolean caseSensitive) {
-    super(fileIO, tableSchema, projectedSchema, primaryKeySpec, nameMapping, caseSensitive,
-        ArcticSparkUtils::convertConstant, true);
+    super(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        primaryKeySpec,
+        nameMapping,
+        caseSensitive,
+        ArcticSparkUtils::convertConstant,
+        true);
   }
 
   @Override
-  protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
-      Schema projectSchema,
-      Map<Integer, ?> idToConstant) {
+  protected Function<MessageType, ParquetValueReader<?>> getParquetReaderFunction(
+      Schema projectSchema, Map<Integer, ?> idToConstant) {
     return fileSchema -> SparkParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
+  }
+
+  @Override
+  protected Function<TypeDescription, OrcRowReader<?>> getOrcReaderFunction(
+      Schema projectSchema, Map<Integer, ?> idToConstant) {
+    return fileSchema -> new SparkOrcReader(projectSchema, fileSchema, idToConstant);
   }
 
   @Override

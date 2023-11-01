@@ -1,6 +1,5 @@
 package com.netease.arctic.server.optimizing;
 
-import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.table.TableIdentifier;
@@ -68,7 +67,7 @@ public class BaseOptimizingChecker extends PersistentBase {
   }
 
   protected void assertOptimizingProcess(
-      TableOptimizingProcess optimizingProcess,
+      OptimizingProcessMeta optimizingProcess,
       OptimizingType optimizeType,
       int fileCntBefore,
       int fileCntAfter) {
@@ -76,52 +75,67 @@ public class BaseOptimizingChecker extends PersistentBase {
     Assert.assertEquals(optimizeType, optimizingProcess.getOptimizingType());
     Assert.assertEquals(
         fileCntBefore,
-        optimizingProcess.getSummary().getRewriteDataFileCnt() + optimizingProcess.getSummary().getEqDeleteFileCnt() +
-            optimizingProcess.getSummary().getPosDeleteFileCnt());
+        optimizingProcess.getSummary().getRewriteDataFileCnt()
+            + optimizingProcess.getSummary().getEqDeleteFileCnt()
+            + optimizingProcess.getSummary().getPosDeleteFileCnt());
     Assert.assertEquals(fileCntAfter, optimizingProcess.getSummary().getNewFileCnt());
   }
 
-  protected TableOptimizingProcess waitOptimizeResult() {
+  protected OptimizingProcessMeta waitOptimizeResult() {
     boolean success;
     try {
-      success = waitUntilFinish(() -> {
-        List<TableOptimizingProcess> tableOptimizingProcesses = getAs(
-            OptimizingMapper.class,
-            mapper -> mapper.selectSuccessOptimizingProcesses(tableIdentifier.getCatalog(),
-                tableIdentifier.getDatabase(), tableIdentifier.getTableName()));
-        if (tableOptimizingProcesses == null || tableOptimizingProcesses.isEmpty()) {
-          LOG.info("optimize history is empty");
-          return Status.RUNNING;
-        }
-        Optional<TableOptimizingProcess> any =
-            tableOptimizingProcesses.stream()
-                .filter(p -> p.getProcessId() > lastProcessId)
-                .filter(p -> p.getStatus().equals(OptimizingProcess.Status.SUCCESS.name()))
-                .findAny();
+      success =
+          waitUntilFinish(
+              () -> {
+                List<OptimizingProcessMeta> tableOptimizingProcesses =
+                    getAs(
+                        OptimizingMapper.class,
+                        mapper ->
+                            mapper.selectOptimizingProcesses(
+                                tableIdentifier.getCatalog(),
+                                tableIdentifier.getDatabase(),
+                                tableIdentifier.getTableName()));
+                if (tableOptimizingProcesses == null || tableOptimizingProcesses.isEmpty()) {
+                  LOG.info("optimize history is empty");
+                  return Status.RUNNING;
+                }
+                Optional<OptimizingProcessMeta> any =
+                    tableOptimizingProcesses.stream()
+                        .filter(p -> p.getProcessId() > lastProcessId)
+                        .filter(p -> p.getStatus().equals(OptimizingProcess.Status.SUCCESS))
+                        .findAny();
 
-        if (any.isPresent()) {
-          return Status.SUCCESS;
-        } else {
-          LOG.info(
-              "optimize max process id {}",
-              tableOptimizingProcesses.stream()
-                  .map(TableOptimizingProcess::getProcessId)
-                  .max(Comparator.naturalOrder())
-                  .get());
-          return Status.RUNNING;
-        }
-      }, WAIT_SUCCESS_TIMEOUT);
+                if (any.isPresent()) {
+                  return Status.SUCCESS;
+                } else {
+                  LOG.info(
+                      "optimize max process id {}",
+                      tableOptimizingProcesses.stream()
+                          .map(OptimizingProcessMeta::getProcessId)
+                          .max(Comparator.naturalOrder())
+                          .get());
+                  return Status.RUNNING;
+                }
+              },
+              WAIT_SUCCESS_TIMEOUT);
     } catch (TimeoutException e) {
-      throw new IllegalStateException("wait optimize result timeout expectRecordId " + lastProcessId, e);
+      throw new IllegalStateException(
+          "wait optimize result timeout expectRecordId " + lastProcessId, e);
     }
 
     if (success) {
-      List<TableOptimizingProcess> result = getAs(
-          OptimizingMapper.class,
-          mapper -> mapper.selectSuccessOptimizingProcesses(tableIdentifier.getCatalog(),
-              tableIdentifier.getDatabase(), tableIdentifier.getTableName())).stream()
-          .filter(p -> p.getProcessId() > lastProcessId).collect(Collectors.toList());
-      result.sort(Comparator.comparingLong(TableOptimizingProcess::getProcessId).reversed());
+      List<OptimizingProcessMeta> result =
+          getAs(
+                  OptimizingMapper.class,
+                  mapper ->
+                      mapper.selectOptimizingProcesses(
+                          tableIdentifier.getCatalog(),
+                          tableIdentifier.getDatabase(),
+                          tableIdentifier.getTableName()))
+              .stream()
+              .filter(p -> p.getProcessId() > lastProcessId)
+              .filter(p -> p.getStatus().equals(OptimizingProcess.Status.SUCCESS))
+              .collect(Collectors.toList());
       if (result.size() == 1) {
         this.lastProcessId = result.get(0).getProcessId();
         return result.get(0);
@@ -139,11 +153,17 @@ public class BaseOptimizingChecker extends PersistentBase {
     } catch (InterruptedException e) {
       throw new IllegalStateException("waiting result was interrupted");
     }
-    List<TableOptimizingProcess> tableOptimizingProcesses = getAs(
-        OptimizingMapper.class,
-        mapper -> mapper.selectSuccessOptimizingProcesses(tableIdentifier.getCatalog(),
-            tableIdentifier.getDatabase(), tableIdentifier.getTableName())).stream()
-        .filter(p -> p.getProcessId() > lastProcessId).collect(Collectors.toList());
+    List<OptimizingProcessMeta> tableOptimizingProcesses =
+        getAs(
+                OptimizingMapper.class,
+                mapper ->
+                    mapper.selectOptimizingProcesses(
+                        tableIdentifier.getCatalog(),
+                        tableIdentifier.getDatabase(),
+                        tableIdentifier.getTableName()))
+            .stream()
+            .filter(p -> p.getProcessId() > lastProcessId)
+            .collect(Collectors.toList());
     Assert.assertFalse("optimize is not stopped", tableOptimizingProcesses.size() > 0);
   }
 

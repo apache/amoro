@@ -22,39 +22,29 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * A scan task for {@link com.netease.arctic.table.KeyedTable} over some base files, positional delete files,
- * insert files and equality delete files.
+ * A scan task for {@link com.netease.arctic.table.KeyedTable} over some base files, positional
+ * delete files, insert files and equality delete files.
  */
 public interface KeyedTableScanTask extends Serializable {
 
   /**
-   * Returns the estimated cost of reading the task, used to split and combine task to {@link CombinedScanTask}
+   * Returns the estimated cost of reading the task, used to split and combine task to {@link
+   * CombinedScanTask}
    */
   long cost();
 
-  /**
-   * Returns the estimated count of record reading from the task
-   */
+  /** Returns the estimated count of record reading from the task */
   long recordCount();
 
-  /**
-   * Returns a list of {@link ArcticFileScanTask} for base files
-   */
+  /** Returns a list of {@link ArcticFileScanTask} for base files */
   List<ArcticFileScanTask> baseTasks();
 
-  /**
-   * Returns a list of {@link ArcticFileScanTask} for insert files
-   */
+  /** Returns a list of {@link ArcticFileScanTask} for insert files */
   List<ArcticFileScanTask> insertTasks();
 
-  /**
-   * Returns a list of {@link ArcticFileScanTask} for equality delete files
-   */
+  /** Returns a list of {@link ArcticFileScanTask} for equality delete files */
   List<ArcticFileScanTask> arcticEquityDeletes();
 
-  /**
-   * Returns a list of {@link ArcticFileScanTask} for insert files and base files
-   */
+  /** Returns a list of {@link ArcticFileScanTask} for insert files and base files */
   List<ArcticFileScanTask> dataTasks();
-
 }

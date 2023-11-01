@@ -26,9 +26,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * Base implementation of {@link CombinedScanTask}
- */
+/** Base implementation of {@link CombinedScanTask} */
 public class BaseCombinedScanTask implements CombinedScanTask {
   private final NodeFileScanTask[] tasks;
 

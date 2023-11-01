@@ -1,9 +1,12 @@
 *.swp
 .DS_Store
 .cache
+*dependency-reduced-pom.xml
 
 # intellij files
-.idea
+.idea/*
+!.idea/vcs.xml
+!.idea/icon.svg
 .idea_modules/
 *.ipr
 *.iws
@@ -15,9 +18,6 @@ build
 gradle/
 out
 gradle/wrapper/gradle-wrapper.jar
-
-# web site build
-site/site
 
 __pycache__/
 *.py[cod]
@@ -51,30 +51,19 @@ python/.mypy_cache/
 # logs
 logs/
 core/derby.log
+*.log
 
 # target
 target/
 
+# keberos configs
 *arctic_krb_conf/
 
-*.log
-
-deploy.sh
-install.sh
-
-${sys:LOG_PATH}
-flink-executor/dependency-reduced-pom.xml
-
-ddb_key/
-
-ddb_log*/
-
-compact/compaction2/flink-job/package.sh
-
-warehouse/
-unit_test_base_tmp/
-pom.xml.versionsBackup
-
-ams/ams-server/src/test/java/com/netease/arctic/ams/server/sql/mydb1/*
+# local config
 conf/
-/site/generated/
+
+# test resources
+*unit_test_base_tmp/
+
+*/.gitignore
+*.tgz

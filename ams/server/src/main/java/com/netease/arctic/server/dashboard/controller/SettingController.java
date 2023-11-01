@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+/** The controller that handles setting requests. */
 public class SettingController {
   private static final String MASK_STRING = "******";
   private static final Set<String> MASK_CONFIGURATION_SET = Sets.newHashSet();
@@ -53,14 +54,10 @@ public class SettingController {
     this.serviceConfig = serviceConfig;
   }
 
-  /**
-   * getRuntime system settings.
-   */
+  /** Get system settings. */
   public void getSystemSetting(Context ctx) {
     LinkedHashMap<String, String> result = new LinkedHashMap<>();
-    serviceConfig.toMap()
-        .entrySet()
-        .stream()
+    serviceConfig.toMap().entrySet().stream()
         .sorted(Map.Entry.comparingByKey())
         .forEachOrdered(entry -> putSetting(result, entry.getKey(), entry.getValue()));
     ctx.json(OkResponse.of(result));
@@ -73,21 +70,22 @@ public class SettingController {
     settingMap.put(key, String.valueOf(value));
   }
 
-  /**
-   * getRuntime container settings.
-   */
+  /** Get container settings. */
   public void getContainerSetting(Context ctx) {
     List<ContainerMetadata> containerMetas = ResourceContainers.getMetadataList();
     List<Map<String, Object>> result = new ArrayList<>();
-    Objects.requireNonNull(containerMetas).forEach(container -> {
-      List<ResourceGroup> optimizeGroups = optimizerManager.listResourceGroups(container.getName());
-      Map<String, Object> obj = new HashMap<>();
-      obj.put("name", container.getName());
-      obj.put("classpath", container.getImplClass());
-      obj.put("properties", container.getProperties());
-      obj.put("optimizeGroup", optimizeGroups);
-      result.add(obj);
-    });
+    Objects.requireNonNull(containerMetas)
+        .forEach(
+            container -> {
+              List<ResourceGroup> optimizeGroups =
+                  optimizerManager.listResourceGroups(container.getName());
+              Map<String, Object> obj = new HashMap<>();
+              obj.put("name", container.getName());
+              obj.put("classpath", container.getImplClass());
+              obj.put("properties", container.getProperties());
+              obj.put("optimizeGroup", optimizeGroups);
+              result.add(obj);
+            });
 
     ctx.json(OkResponse.of(result));
   }

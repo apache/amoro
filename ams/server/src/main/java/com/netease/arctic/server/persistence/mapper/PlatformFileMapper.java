@@ -27,17 +27,16 @@ import org.apache.ibatis.annotations.Select;
 public interface PlatformFileMapper {
   String TABLE_NAME = "platform_file";
 
-  /**
-   * add a file with content encoded by base64
-   */
-  @Insert("INSERT INTO " + TABLE_NAME + "(file_name, file_content_b64)" +
-          " VALUES(#{fileInfo.fileName}, #{fileInfo.fileContent})")
+  /** add a file with content encoded by base64 */
+  @Insert(
+      "INSERT INTO "
+          + TABLE_NAME
+          + "(file_name, file_content_b64)"
+          + " VALUES(#{fileInfo.fileName}, #{fileInfo.fileContent})")
   @Options(useGeneratedKeys = true, keyProperty = "fileInfo.fileId")
   void addFile(@Param("fileInfo") PlatformFileInfo platformFileInfo);
 
-  /**
-   * getRuntime file content encoded by base64 by fileId
-   */
+  /** get file content encoded by base64 by fileId */
   @Select("SELECT file_content_b64 FROM " + TABLE_NAME + " WHERE id = #{fileId}")
   String getFileById(@Param("fileId") Integer fileId);
 }

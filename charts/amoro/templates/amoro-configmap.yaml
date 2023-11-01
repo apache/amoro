@@ -1,0 +1,111 @@
+{{/*
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  {{ include "common.names.fullname" . }}
+  labels:
+    {{- include "amoro.labels" . | nindent 4 }}
+data:
+    {{- with .Values.jvmOptions }}
+  jvm.properties: |
+    {{- . | nindent 4 }}
+    {{- end }}
+  ## Helm chart provided Amoro configurations
+  config.yaml: |
+    ams:
+      admin-username: admin
+      admin-password: admin
+      server-bind-host: "0.0.0.0"
+      server-expose-host: "127.0.0.1"
+
+      thrift-server:
+        max-message-size: 104857600 # 100MB
+        selector-thread-count: 2
+        selector-queue-size: 4
+        table-service:
+          bind-port: {{ .Values.server.table.port }}
+          worker-thread-count: 20
+        optimizing-service:
+          bind-port: {{ .Values.server.optimizing.port }}
+
+      http-server:
+        bind-port: {{ .Values.server.rest.port }}
+
+      refresh-external-catalogs:
+        interval: 180000 # 3min
+
+      refresh-tables:
+        thread-count: 10
+        interval: 60000 # 1min
+
+      self-optimizing:
+        commit-thread-count: 10
+
+      optimizer:
+        heart-beat-timeout: 60000 # 1min
+        task-ack-timeout: 30000 # 30s
+
+      blocker:
+        timeout: 60000 # 1min
+
+      # optional features
+      expire-snapshots:
+        enabled: true
+        thread-count: 10
+
+      clean-orphan-files:
+        enabled: true
+        thread-count: 10
+
+      sync-hive-tables:
+        enabled: true
+        thread-count: 10
+
+      database:
+        type: {{ .Values.amoroConf.database.type }}
+        url: {{ .Values.amoroConf.database.url }}
+        jdbc-driver-class: {{ .Values.amoroConf.database.driver | quote }}
+        {{- if eq .Values.amoroConf.database.type "mysql" }}
+        username: {{ .Values.amoroConf.database.username | quote }}
+        {{- end }}
+
+
+      terminal:
+        backend: local
+        local.spark.sql.iceberg.handle-timestamp-without-timezone: false
+
+    containers:
+      {{- if .Values.optimizer.flink.enabled }}
+      - name: {{ .Values.optimizer.flink.name | default "flink" }}
+        {{- include "amoro.optimizer.container.flink" . | nindent 8 }}
+      {{ end }}
+      {{- if .Values.optimizer.local.enabled }}
+      - name: {{ .Values.optimizer.local.name | default "local" }}
+        {{- include "amoro.optimizer.container.local" . | nindent 8 }}
+      {{ end }}
+
+
+    {{- with .Values.amoroConf.amoroDefaults }}
+      {{- tpl . $ | nindent 4 }}
+    {{- end }}
+    {{- with .Values.amoroConf.log4j2 }}
+  log4j2.xml: |
+    {{- tpl . $ | nindent 4 }}
+---
+  {{- end }}

@@ -32,18 +32,18 @@ import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
-/**
- * optimize mapper.
- */
+/** optimize mapper. */
 @Mapper
 public interface OptimizerMapper {
 
-  @Insert("INSERT INTO optimizer (token, resource_id, group_name, start_time, touch_time, thread_count, total_memory," +
-      " properties) VALUES (#{optimizer.token}, #{optimizer.resourceId, jdbcType=VARCHAR},  #{optimizer.groupName}," +
-      " #{optimizer.startTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
-      " #{optimizer.touchTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
-      " #{optimizer.threadCount}, #{optimizer.memoryMb}," +
-      " #{optimizer.properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter})")
+  @Insert(
+      "INSERT INTO optimizer (token, resource_id, group_name,container_name, start_time, touch_time, "
+          + "thread_count, total_memory, properties) VALUES (#{optimizer.token}, #{optimizer.resourceId, jdbcType=VARCHAR},"
+          + " #{optimizer.groupName}, #{optimizer.containerName},"
+          + " #{optimizer.startTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
+          + " #{optimizer.touchTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
+          + " #{optimizer.threadCount}, #{optimizer.memoryMb},"
+          + " #{optimizer.properties, typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter})")
   void insertOptimizer(@Param("optimizer") OptimizerInstance optimizer);
 
   @Update("UPDATE optimizer SET touch_time = CURRENT_TIMESTAMP WHERE token = #{token}")
@@ -52,34 +52,41 @@ public interface OptimizerMapper {
   @Delete("DELETE FROM optimizer WHERE token = #{token}")
   void deleteOptimizer(@Param("token") String token);
 
-  @Select("SELECT token, resource_id, group_name, container_name, start_time, touch_time," +
-      "thread_count, total_memory, properties FROM optimizer")
+  @Select(
+      "SELECT token, resource_id, group_name, container_name, start_time, touch_time,"
+          + "thread_count, total_memory, properties FROM optimizer")
   @Results({
-      @Result(property = "token", column = "token"),
-      @Result(property = "resourceId", column = "resource_id"),
-      @Result(property = "groupName", column = "group_name"),
-      @Result(property = "containerName", column = "container_name"),
-      @Result(property = "startTime", column = "start_time", typeHandler = Long2TsConverter.class),
-      @Result(property = "touchTime", column = "touch_time", typeHandler = Long2TsConverter.class),
-      @Result(property = "threadCount", column = "thread_count"),
-      @Result(property = "memoryMb", column = "total_memory"),
-      @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class),
+    @Result(property = "token", column = "token"),
+    @Result(property = "resourceId", column = "resource_id"),
+    @Result(property = "groupName", column = "group_name"),
+    @Result(property = "containerName", column = "container_name"),
+    @Result(property = "startTime", column = "start_time", typeHandler = Long2TsConverter.class),
+    @Result(property = "touchTime", column = "touch_time", typeHandler = Long2TsConverter.class),
+    @Result(property = "threadCount", column = "thread_count"),
+    @Result(property = "memoryMb", column = "total_memory"),
+    @Result(
+        property = "properties",
+        column = "properties",
+        typeHandler = Map2StringConverter.class),
   })
   List<OptimizerInstance> selectAll();
 
-  @Select("SELECT token, resource_id, group_name, container_name, start_time, touch_time," +
-      "thread_count, total_memory, properties FROM optimizer WHERE resource_id = #{resourceId}")
+  @Select(
+      "SELECT token, resource_id, group_name, container_name, start_time, touch_time,"
+          + "thread_count, total_memory, properties FROM optimizer WHERE resource_id = #{resourceId}")
   @Results({
-      @Result(property = "token", column = "token"),
-      @Result(property = "resourceId", column = "resource_id"),
-      @Result(property = "groupName", column = "group_name"),
-      @Result(property = "containerName", column = "container_name"),
-      @Result(property = "startTime", column = "start_time", typeHandler = Long2TsConverter.class),
-      @Result(property = "touchTime", column = "touch_time", typeHandler = Long2TsConverter.class),
-      @Result(property = "threadCount", column = "thread_count"),
-      @Result(property = "memoryMb", column = "total_memory"),
-      @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class),
+    @Result(property = "token", column = "token"),
+    @Result(property = "resourceId", column = "resource_id"),
+    @Result(property = "groupName", column = "group_name"),
+    @Result(property = "containerName", column = "container_name"),
+    @Result(property = "startTime", column = "start_time", typeHandler = Long2TsConverter.class),
+    @Result(property = "touchTime", column = "touch_time", typeHandler = Long2TsConverter.class),
+    @Result(property = "threadCount", column = "thread_count"),
+    @Result(property = "memoryMb", column = "total_memory"),
+    @Result(
+        property = "properties",
+        column = "properties",
+        typeHandler = Map2StringConverter.class),
   })
   List<OptimizerInstance> selectByResourceId(@Param("resourceId") String resourceId);
 }
-

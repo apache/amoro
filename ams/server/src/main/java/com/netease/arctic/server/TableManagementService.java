@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server;
 
-import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
@@ -26,8 +25,10 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.ams.api.TableCommitMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.table.TableService;
 import org.apache.thrift.TException;
@@ -36,8 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-
-public class TableManagementService implements AmsClient, ArcticTableMetastore.Iface {
+public class TableManagementService implements ArcticTableMetastore.Iface {
 
   private final TableService tableService;
 
@@ -46,8 +46,7 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
   }
 
   @Override
-  public void ping() {
-  }
+  public void ping() {}
 
   @Override
   public List<CatalogMeta> getCatalogs() {
@@ -79,16 +78,20 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
     if (tableMeta == null) {
       throw new IllegalArgumentException("table meta should not be null");
     }
-
-    tableService.createTable(tableMeta.tableIdentifier.getCatalog(), tableMeta);
+    ServerTableIdentifier identifier =
+        ServerTableIdentifier.of(
+            tableMeta.getTableIdentifier(), TableFormat.valueOf(tableMeta.getFormat()));
+    CatalogMeta catalogMeta = getCatalog(identifier.getCatalog());
+    TableMetadata tableMetadata = new TableMetadata(identifier, tableMeta, catalogMeta);
+    tableService.createTable(tableMeta.tableIdentifier.getCatalog(), tableMetadata);
   }
 
   @Override
   public List<TableMeta> listTables(String catalogName, String database) {
     List<TableMetadata> tableMetadataList = tableService.listTableMetas(catalogName, database);
     return tableMetadataList.stream()
-            .map(TableMetadata::buildTableMeta)
-            .collect(Collectors.toList());
+        .map(TableMetadata::buildTableMeta)
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -102,17 +105,19 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
   }
 
   @Override
-  public void tableCommit(TableCommitMeta commit) {
-  }
+  public void tableCommit(TableCommitMeta commit) {}
 
   @Override
-  public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) throws TException {
+  public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature)
+      throws TException {
     throw new UnsupportedOperationException("allocate TransactionId from AMS is not supported now");
   }
 
   @Override
   public Blocker block(
-      TableIdentifier tableIdentifier, List<BlockableOperation> operations, Map<String, String> properties)
+      TableIdentifier tableIdentifier,
+      List<BlockableOperation> operations,
+      Map<String, String> properties)
       throws OperationConflictException {
     return tableService.block(tableIdentifier, operations, properties);
   }
@@ -123,7 +128,8 @@ public class TableManagementService implements AmsClient, ArcticTableMetastore.I
   }
 
   @Override
-  public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException {
+  public long renewBlocker(TableIdentifier tableIdentifier, String blockerId)
+      throws NoSuchObjectException {
     return tableService.renewBlocker(tableIdentifier, blockerId);
   }
 

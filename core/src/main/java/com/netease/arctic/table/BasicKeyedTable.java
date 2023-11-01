@@ -18,22 +18,21 @@
 
 package com.netease.arctic.table;
 
-import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.KeyedPartitionRewrite;
 import com.netease.arctic.op.KeyedSchemaUpdate;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
+import com.netease.arctic.op.SnapshotSummary;
 import com.netease.arctic.op.UpdateKeyedTableProperties;
 import com.netease.arctic.scan.BasicKeyedTableScan;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.scan.KeyedTableScan;
-import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.AppendFiles;
-import org.apache.iceberg.ArcticChangeTableScan;
+import org.apache.iceberg.MixedChangeTableScan;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -41,34 +40,31 @@ import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
-import org.apache.thrift.TException;
 
 import java.util.Map;
 
 /**
- * Basic implementation of {@link KeyedTable}, wrapping a {@link BaseTable} and a {@link ChangeTable}.
+ * Basic implementation of {@link KeyedTable}, wrapping a {@link BaseTable} and a {@link
+ * ChangeTable}.
  */
 public class BasicKeyedTable implements KeyedTable {
   private final String tableLocation;
   private final PrimaryKeySpec primaryKeySpec;
 
-  /**
-   * @deprecated since 0.5.0, will be removed in 0.6.0;
-   */
-  @Deprecated
-  protected final AmsClient client;
-
   protected final BaseTable baseTable;
   protected final ChangeTable changeTable;
-  protected TableMeta tableMeta;
 
   public BasicKeyedTable(
-      TableMeta tableMeta, String tableLocation,
-      PrimaryKeySpec primaryKeySpec, AmsClient client, BaseTable baseTable, ChangeTable changeTable) {
-    this.tableMeta = tableMeta;
+      String tableLocation, PrimaryKeySpec keySpec, BaseTable baseTable, ChangeTable changeTable) {
     this.tableLocation = tableLocation;
-    this.primaryKeySpec = primaryKeySpec;
-    this.client = client;
+    this.primaryKeySpec = keySpec;
+    this.baseTable = baseTable;
+    this.changeTable = changeTable;
+  }
+
+  public BasicKeyedTable(PrimaryKeySpec keySpec, BaseTable baseTable, ChangeTable changeTable) {
+    this.tableLocation = null;
+    this.primaryKeySpec = keySpec;
     this.baseTable = baseTable;
     this.changeTable = changeTable;
   }
@@ -86,7 +82,7 @@ public class BasicKeyedTable implements KeyedTable {
 
   @Override
   public TableIdentifier id() {
-    return TableIdentifier.of(tableMeta.getTableIdentifier());
+    return baseTable.id();
   }
 
   @Override
@@ -101,7 +97,11 @@ public class BasicKeyedTable implements KeyedTable {
 
   @Override
   public String location() {
-    return tableLocation;
+    if (StringUtils.isEmpty(this.tableLocation)) {
+      return this.baseTable.location();
+    } else {
+      return this.tableLocation;
+    }
   }
 
   @Override
@@ -121,11 +121,14 @@ public class BasicKeyedTable implements KeyedTable {
 
     ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
     if (changeWatermark > baseWatermark) {
-      baseTable.properties().forEach((k, v) -> {
-        if (!TableProperties.WATERMARK_TABLE.equals(k)) {
-          builder.put(k, v);
-        }
-      });
+      baseTable
+          .properties()
+          .forEach(
+              (k, v) -> {
+                if (!TableProperties.WATERMARK_TABLE.equals(k)) {
+                  builder.put(k, v);
+                }
+              });
       builder.put(TableProperties.WATERMARK_TABLE, String.valueOf(changeWatermark));
     } else {
       builder.putAll(baseTable.properties());
@@ -141,14 +144,6 @@ public class BasicKeyedTable implements KeyedTable {
 
   @Override
   public void refresh() {
-    try {
-      if (client != null) {
-        this.tableMeta = client.getTable(this.tableMeta.getTableIdentifier());
-      }
-    } catch (TException e) {
-      throw new IllegalStateException("failed refresh table from ams", e);
-    }
-
     baseTable.refresh();
     if (primaryKeySpec().primaryKeyExisted()) {
       changeTable.refresh();
@@ -180,14 +175,16 @@ public class BasicKeyedTable implements KeyedTable {
 
   @Override
   public UpdateProperties updateProperties() {
-    return new UpdateKeyedTableProperties(this, tableMeta);
+    return new UpdateKeyedTableProperties(this);
   }
 
   @Override
   public long beginTransaction(String signature) {
-    // commit an empty snapshot to ChangeStore, and use the sequence of this empty snapshot as TransactionId
+    // commit an empty snapshot to ChangeStore, and use the sequence of this empty snapshot as
+    // TransactionId
     AppendFiles appendFiles = changeTable.newAppend();
-    appendFiles.set(SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE, signature == null ? "" : signature);
+    appendFiles.set(
+        SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE, signature == null ? "" : signature);
     appendFiles.commit();
     CreateSnapshotEvent createSnapshotEvent = (CreateSnapshotEvent) appendFiles.updateEvent();
     return createSnapshotEvent.sequenceNumber();
@@ -211,23 +208,27 @@ public class BasicKeyedTable implements KeyedTable {
   public static class BaseInternalTable extends BasicUnkeyedTable implements BaseTable {
 
     public BaseInternalTable(
-        TableIdentifier tableIdentifier, Table baseIcebergTable, ArcticFileIO arcticFileIO,
-        AmsClient client, Map<String, String> catalogProperties) {
-      super(tableIdentifier, baseIcebergTable, arcticFileIO, client, catalogProperties);
+        TableIdentifier tableIdentifier,
+        Table baseIcebergTable,
+        ArcticFileIO arcticFileIO,
+        Map<String, String> catalogProperties) {
+      super(tableIdentifier, baseIcebergTable, arcticFileIO, catalogProperties);
     }
   }
 
   public static class ChangeInternalTable extends BasicUnkeyedTable implements ChangeTable {
 
     public ChangeInternalTable(
-        TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,
-        AmsClient client, Map<String, String> catalogProperties) {
-      super(tableIdentifier, changeIcebergTable, arcticFileIO, client, catalogProperties);
+        TableIdentifier tableIdentifier,
+        Table changeIcebergTable,
+        ArcticFileIO arcticFileIO,
+        Map<String, String> catalogProperties) {
+      super(tableIdentifier, changeIcebergTable, arcticFileIO, catalogProperties);
     }
 
     @Override
     public ChangeTableIncrementalScan newScan() {
-      return new ArcticChangeTableScan(operations(), this);
+      return new MixedChangeTableScan(this, schema());
     }
   }
 }

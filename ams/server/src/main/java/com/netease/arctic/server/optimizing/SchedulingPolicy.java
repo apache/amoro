@@ -4,7 +4,6 @@ import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 
 import java.util.Comparator;
@@ -23,17 +22,26 @@ public class SchedulingPolicy {
   private static final String BALANCED = "balanced";
 
   private final Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap = new HashMap<>();
-  private final Comparator<TableRuntime> tableSorter;
+  private Comparator<TableRuntime> tableSorter;
   private final Lock tableLock = new ReentrantLock();
 
   public SchedulingPolicy(ResourceGroup group) {
-    String schedulingPolicy = Optional.ofNullable(group.getProperties())
+    setTableSorterIfNeeded(group);
+  }
+
+  public void setTableSorterIfNeeded(ResourceGroup optimizerGroup) {
+    String schedulingPolicy =
+        Optional.ofNullable(optimizerGroup.getProperties())
             .orElseGet(Maps::newHashMap)
-            .get(SCHEDULING_POLICY_PROPERTY_NAME);
-    if (StringUtils.isBlank(schedulingPolicy) || schedulingPolicy.equalsIgnoreCase(QUOTA)) {
-      tableSorter = new QuotaOccupySorter();
+            .getOrDefault(SCHEDULING_POLICY_PROPERTY_NAME, QUOTA);
+    if (schedulingPolicy.equalsIgnoreCase(QUOTA)) {
+      if (tableSorter == null || !(tableSorter instanceof QuotaOccupySorter)) {
+        tableSorter = new QuotaOccupySorter();
+      }
     } else if (schedulingPolicy.equalsIgnoreCase(BALANCED)) {
-      tableSorter = new BalancedSorter();
+      if (tableSorter == null || !(tableSorter instanceof BalancedSorter)) {
+        tableSorter = new BalancedSorter();
+      }
     } else {
       throw new IllegalArgumentException("Illegal scheduling policy: " + schedulingPolicy);
     }
@@ -43,9 +51,13 @@ public class SchedulingPolicy {
     tableLock.lock();
     try {
       return tableRuntimeMap.values().stream()
-          .filter(tableRuntime -> tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING &&
-              (tableRuntime.getLastOptimizedSnapshotId() != tableRuntime.getCurrentSnapshotId() ||
-                  tableRuntime.getLastOptimizedChangeSnapshotId() != tableRuntime.getCurrentChangeSnapshotId()))
+          .filter(
+              tableRuntime ->
+                  tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING
+                      && (tableRuntime.getLastOptimizedSnapshotId()
+                              != tableRuntime.getCurrentSnapshotId()
+                          || tableRuntime.getLastOptimizedChangeSnapshotId()
+                              != tableRuntime.getCurrentChangeSnapshotId()))
           .sorted(tableSorter)
           .collect(Collectors.toList());
     } finally {
@@ -71,6 +83,10 @@ public class SchedulingPolicy {
     }
   }
 
+  public boolean containsTable(ServerTableIdentifier tableIdentifier) {
+    return tableRuntimeMap.containsKey(tableIdentifier);
+  }
+
   @VisibleForTesting
   Map<ServerTableIdentifier, TableRuntime> getTableRuntimeMap() {
     return tableRuntimeMap;
@@ -94,15 +110,11 @@ public class SchedulingPolicy {
       return Long.compare(
           Math.max(
               one.getLastFullOptimizingTime(),
-              Math.max(
-                  one.getLastMinorOptimizingTime(),
-                  one.getLastMajorOptimizingTime())),
+              Math.max(one.getLastMinorOptimizingTime(), one.getLastMajorOptimizingTime())),
           Math.max(
               another.getLastFullOptimizingTime(),
               Math.max(
-                  another.getLastMinorOptimizingTime(),
-                  another.getLastMajorOptimizingTime()))
-      );
+                  another.getLastMinorOptimizingTime(), another.getLastMajorOptimizingTime())));
     }
   }
 }

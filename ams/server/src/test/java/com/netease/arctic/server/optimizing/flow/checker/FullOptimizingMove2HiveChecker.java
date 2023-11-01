@@ -28,6 +28,7 @@ import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.collections.CollectionUtils;
 
 import javax.annotation.Nullable;
+
 import java.util.List;
 
 public class FullOptimizingMove2HiveChecker extends AbstractHiveChecker {
@@ -42,9 +43,10 @@ public class FullOptimizingMove2HiveChecker extends AbstractHiveChecker {
       @Nullable List<TaskDescriptor> latestTaskDescriptors,
       OptimizingPlanner latestPlanner,
       @Nullable UnKeyedTableCommit latestCommit) {
-    return CollectionUtils.isNotEmpty(latestTaskDescriptors) &&
-        latestPlanner.getOptimizingType() == OptimizingType.FULL_MAJOR &&
-        OptimizingInputProperties.parse(latestTaskDescriptors.stream().findAny().get().properties())
+    return CollectionUtils.isNotEmpty(latestTaskDescriptors)
+        && latestPlanner.getOptimizingType() == OptimizingType.FULL
+        && OptimizingInputProperties.parse(
+                latestTaskDescriptors.stream().findAny().get().properties())
             .getMoveFile2HiveLocation();
   }
 }

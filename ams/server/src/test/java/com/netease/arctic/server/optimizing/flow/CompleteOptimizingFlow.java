@@ -18,6 +18,11 @@
 
 package com.netease.arctic.server.optimizing.flow;
 
+import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO;
+import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO;
+import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT;
+import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE;
+
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutor;
 import com.netease.arctic.optimizing.IcebergRewriteExecutor;
@@ -34,7 +39,7 @@ import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ArcticDataFiles;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -47,6 +52,7 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.mockito.Mockito;
 
 import javax.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -55,11 +61,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
-
-import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO;
-import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO;
-import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT;
-import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE;
 
 public class CompleteOptimizingFlow {
 
@@ -115,32 +116,39 @@ public class CompleteOptimizingFlow {
 
     asyncExecute(taskRuntimes);
 
-    UnKeyedTableCommit committer = committer(taskRuntimes, planner.getFromSequence(),
-        planner.getToSequence(), planner.getTargetSnapshotId());
+    UnKeyedTableCommit committer =
+        committer(
+            taskRuntimes,
+            planner.getFromSequence(),
+            planner.getToSequence(),
+            planner.getTargetSnapshotId());
     committer.commit();
     check(taskDescriptors, planner, null);
   }
 
   public List<Checker> unTriggerChecker() {
-    return checkers.stream().filter(s -> !s.senseHasChecked())
-        .collect(Collectors.toList());
+    return checkers.stream().filter(s -> !s.senseHasChecked()).collect(Collectors.toList());
   }
 
-  private void asyncExecute(List<TaskRuntime> taskRuntimes) throws InterruptedException, ExecutionException {
+  private void asyncExecute(List<TaskRuntime> taskRuntimes)
+      throws InterruptedException, ExecutionException {
     CompletableFuture.allOf(
-        taskRuntimes.stream()
-            .map(taskRuntime -> {
-              OptimizingExecutor<RewriteFilesOutput> optimizingExecutor = optimizingExecutor(taskRuntime);
-              return CompletableFuture.supplyAsync(optimizingExecutor::execute, executorPool)
-                  .thenAccept(s -> Mockito.when(taskRuntime.getOutput()).thenReturn(s));
-            }).toArray(CompletableFuture[]::new)
-    ).get();
+            taskRuntimes.stream()
+                .map(
+                    taskRuntime -> {
+                      OptimizingExecutor<RewriteFilesOutput> optimizingExecutor =
+                          optimizingExecutor(taskRuntime);
+                      return CompletableFuture.supplyAsync(
+                              optimizingExecutor::execute, executorPool)
+                          .thenAccept(s -> Mockito.when(taskRuntime.getOutput()).thenReturn(s));
+                    })
+                .toArray(CompletableFuture[]::new))
+        .get();
   }
 
   private void check(
-      List<TaskDescriptor> taskDescriptors,
-      OptimizingPlanner planner,
-      UnKeyedTableCommit commit) throws Exception {
+      List<TaskDescriptor> taskDescriptors, OptimizingPlanner planner, UnKeyedTableCommit commit)
+      throws Exception {
     for (Checker checker : checkers) {
       if (checker.condition(table, taskDescriptors, planner, commit)) {
         checker.check(table, taskDescriptors, planner, commit);
@@ -164,14 +172,16 @@ public class CompleteOptimizingFlow {
     table.refresh();
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
     Mockito.when(tableRuntime.getCurrentSnapshotId()).thenAnswer(f -> getCurrentSnapshotId());
+    Mockito.when(tableRuntime.getCurrentChangeSnapshotId())
+        .thenAnswer(f -> getCurrentChangeSnapshotId());
     Mockito.when(tableRuntime.getNewestProcessId()).thenReturn(1L);
     Mockito.when(tableRuntime.getPendingInput()).thenReturn(null);
     Mockito.doCallRealMethod().when(tableRuntime).getLastMinorOptimizingTime();
     Mockito.doCallRealMethod().when(tableRuntime).getLastMajorOptimizingTime();
     Mockito.doCallRealMethod().when(tableRuntime).getLastFullOptimizingTime();
     Mockito.when(tableRuntime.getOptimizingConfig()).thenAnswer(f -> optimizingConfig());
-    Mockito.when(tableRuntime.getCurrentChangeSnapshotId()).thenAnswer(f -> getCurrentChangeSnapshotId());
-    Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(ServerTableIdentifier.of(1L, "a", "b", "c"));
+    Mockito.when(tableRuntime.getTableIdentifier())
+        .thenReturn(ServerTableIdentifier.of(1L, "a", "b", "c", table.format()));
     return new OptimizingPlanner(tableRuntime, table, availableCore);
   }
 
@@ -182,9 +192,13 @@ public class CompleteOptimizingFlow {
 
   private OptimizingExecutor<RewriteFilesOutput> optimizingExecutor(TaskRuntime taskRuntime) {
     if (table.format() == TableFormat.ICEBERG) {
-      return new IcebergRewriteExecutor(taskRuntime.getInput(), table, StructLikeCollections.DEFAULT);
+      return new IcebergRewriteExecutor(
+          taskRuntime.getInput(), table, StructLikeCollections.DEFAULT);
     } else {
-      return new MixFormatRewriteExecutor(taskRuntime.getInput(), table, StructLikeCollections.DEFAULT,
+      return new MixFormatRewriteExecutor(
+          taskRuntime.getInput(),
+          table,
+          StructLikeCollections.DEFAULT,
           OptimizingInputProperties.parse(taskRuntime.getProperties()).getOutputDir());
     }
   }
@@ -209,15 +223,15 @@ public class CompleteOptimizingFlow {
 
   private long getCurrentSnapshotId() {
     if (table.isKeyedTable()) {
-      return IcebergTableUtils.getSnapshotId(table.asKeyedTable().baseTable(), false);
+      return IcebergTableUtil.getSnapshotId(table.asKeyedTable().baseTable(), false);
     } else {
-      return IcebergTableUtils.getSnapshotId(table.asUnkeyedTable(), false);
+      return IcebergTableUtil.getSnapshotId(table.asUnkeyedTable(), false);
     }
   }
 
   private long getCurrentChangeSnapshotId() {
     if (table.isKeyedTable()) {
-      return IcebergTableUtils.getSnapshotId(table.asKeyedTable().changeTable(), false);
+      return IcebergTableUtil.getSnapshotId(table.asKeyedTable().changeTable(), false);
     } else {
       return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
     }
@@ -226,14 +240,15 @@ public class CompleteOptimizingFlow {
   private StructLikeMap<Long> getStructLike(Map<String, Long> partitionSequence) {
     PartitionSpec spec = table.spec();
     StructLikeMap<Long> results = StructLikeMap.create(spec.partitionType());
-    partitionSequence.forEach((partition, sequence) -> {
-      if (spec.isUnpartitioned()) {
-        results.put(TablePropertyUtil.EMPTY_STRUCT, sequence);
-      } else {
-        StructLike partitionData = ArcticDataFiles.data(spec, partition);
-        results.put(partitionData, sequence);
-      }
-    });
+    partitionSequence.forEach(
+        (partition, sequence) -> {
+          if (spec.isUnpartitioned()) {
+            results.put(TablePropertyUtil.EMPTY_STRUCT, sequence);
+          } else {
+            StructLike partitionData = ArcticDataFiles.data(spec, partition);
+            results.put(partitionData, sequence);
+          }
+        });
     return results;
   }
 
@@ -251,7 +266,8 @@ public class CompleteOptimizingFlow {
         ArcticTable table,
         @Nullable List<TaskDescriptor> latestTaskDescriptors,
         OptimizingPlanner latestPlanner,
-        @Nullable UnKeyedTableCommit latestCommit) throws Exception;
+        @Nullable UnKeyedTableCommit latestCommit)
+        throws Exception;
   }
 
   public static final class Builder {
@@ -264,9 +280,7 @@ public class CompleteOptimizingFlow {
 
     private final List<Checker> checkers = new ArrayList<>();
 
-    public Builder(
-        ArcticTable table,
-        int availableCore) {
+    public Builder(ArcticTable table, int availableCore) {
       this.table = table;
       this.availableCore = availableCore;
     }
@@ -304,8 +318,7 @@ public class CompleteOptimizingFlow {
           fragmentRatio,
           duplicateRatio,
           minorTriggerFileCount,
-          checkers
-      );
+          checkers);
     }
   }
 }

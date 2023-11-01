@@ -25,8 +25,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class PageResult<T,R> {
-  private static final PageResult<?,?> EMPTY = new PageResult<>(0);
+public class PageResult<R> {
+  private static final PageResult<?> EMPTY = new PageResult<>(0);
   private List<R> list;
   private int total;
 
@@ -48,7 +48,7 @@ public class PageResult<T,R> {
     this.total = total;
   }
 
-  public static PageResult<?,?> empty() {
+  public static PageResult<?> empty() {
     return EMPTY;
   }
 
@@ -62,38 +62,40 @@ public class PageResult<T,R> {
 
   /**
    * x.
-   * @param list  the results have been intercepted
+   *
+   * @param list the results have been intercepted
    * @param total original size
-   * @param <T>   type
    * @return response contains paging information response
    */
-  public static <T,R> PageResult<T,R> of(List<R> list, int total) {
-    return new PageResult<T,R>(list, total);
+  public static <R> PageResult<R> of(List<R> list, int total) {
+    return new PageResult<>(list, total);
   }
 
   /**
    * generate paging results.
-   * @param list   original queue
+   *
+   * @param list original queue
    * @param offset offset
-   * @param limit  limit
-   * @param <T>    queue element type
+   * @param limit limit
    * @return response containing paging information
    */
-  public static <T,R> PageResult<T,R> of(List<R> list, int offset, int limit) {
+  public static <R> PageResult<R> of(List<R> list, int offset, int limit) {
     if (CollectionUtils.isEmpty(list)) {
       return new PageResult<>(Collections.emptyList(), 0);
     } else {
       List<R> result = list.stream().skip(offset).limit(limit).collect(Collectors.toList());
-      return new PageResult<T,R>(result, list.size());
+      return new PageResult<>(result, list.size());
     }
   }
 
-  public static <T,R> PageResult<T,R> of(List<T> list, int offset, int limit, Function<T,R> convert) {
+  public static <T, R> PageResult<R> of(
+      List<T> list, int offset, int limit, Function<T, R> convert) {
     if (CollectionUtils.isEmpty(list)) {
-      return new PageResult<T,R>(Collections.emptyList(), 0);
+      return new PageResult<>(Collections.emptyList(), 0);
     } else {
-      List<R> result = list.stream().skip(offset).limit(limit).map(convert).collect(Collectors.toList());
-      return new PageResult<T,R>(result, list.size());
+      List<R> result =
+          list.stream().skip(offset).limit(limit).map(convert).collect(Collectors.toList());
+      return new PageResult<>(result, list.size());
     }
   }
 }

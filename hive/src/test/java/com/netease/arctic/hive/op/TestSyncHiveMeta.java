@@ -61,8 +61,7 @@ import java.util.stream.Stream;
 @RunWith(Parameterized.class)
 public class TestSyncHiveMeta extends TableTestBase {
 
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
   public TestSyncHiveMeta(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
@@ -70,62 +69,96 @@ public class TestSyncHiveMeta extends TableTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][] {{new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-                            new HiveTableTestHelper(true, true)},
-                           {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-                            new HiveTableTestHelper(true, false)},
-                           {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-                            new HiveTableTestHelper(false, true)},
-                           {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-                            new HiveTableTestHelper(false, false)}
+    return new Object[][] {
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, true)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, false)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(false, true)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(false, false)
+      }
     };
   }
 
   @Test
   public void testSyncHiveSchemaChange() throws TException {
-    Table hiveTable = TEST_HMS.getHiveClient().getTable(
-        getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
+    Table hiveTable =
+        TEST_HMS
+            .getHiveClient()
+            .getTable(getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
     hiveTable.getSd().getCols().add(new FieldSchema("add_column", "bigint", "add column"));
-    TEST_HMS.getHiveClient().alter_table(getArcticTable().id().getDatabase(),
-        getArcticTable().id().getTableName(), hiveTable);
-    hiveTable = TEST_HMS.getHiveClient().getTable(
-        getArcticTable().id().getDatabase(),
-        getArcticTable().id().getTableName());
+    TEST_HMS
+        .getHiveClient()
+        .alter_table(
+            getArcticTable().id().getDatabase(), getArcticTable().id().getTableName(), hiveTable);
+    hiveTable =
+        TEST_HMS
+            .getHiveClient()
+            .getTable(getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
     getArcticTable().refresh();
-    Assert.assertEquals(hiveTable.getSd().getCols(), HiveSchemaUtil.hiveTableFields(
-        getArcticTable().schema(), getArcticTable().spec()));
+    Assert.assertEquals(
+        hiveTable.getSd().getCols(),
+        HiveSchemaUtil.hiveTableFields(getArcticTable().schema(), getArcticTable().spec()));
   }
 
   @Test
   public void testSyncHiveDataChange() throws TException, IOException, InterruptedException {
-    getArcticTable().updateProperties().set(HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE, "true").commit();
-    List<Record> insertRecords = org.apache.iceberg.relocated.com.google.common.collect.Lists.newArrayList();
+    getArcticTable()
+        .updateProperties()
+        .set(HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE, "true")
+        .commit();
+    List<Record> insertRecords =
+        org.apache.iceberg.relocated.com.google.common.collect.Lists.newArrayList();
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
 
-    List<DataFile> dataFiles = HiveDataTestHelpers.writeBaseStore(getArcticTable(), 1L, insertRecords, false, true);
+    List<DataFile> dataFiles =
+        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
 
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(getBaseStore());
     Assert.assertEquals(1, dataFiles.size());
     String dataFilePath = dataFiles.get(0).path().toString();
     FileSystem fs = Util.getFs(new Path(dataFilePath), new Configuration());
     fs.rename(new Path(dataFilePath), new Path(dataFilePath + ".bak"));
     if (isPartitionedTable()) {
-      Partition partition = TEST_HMS.getHiveClient().getPartition(getArcticTable().id().getDatabase(),
-          getArcticTable().id().getTableName(), Lists.newArrayList("2022-01-01"));
+      Partition partition =
+          TEST_HMS
+              .getHiveClient()
+              .getPartition(
+                  getArcticTable().id().getDatabase(),
+                  getArcticTable().id().getTableName(),
+                  Lists.newArrayList("2022-01-01"));
       TimeUnit.SECONDS.sleep(1);
       partition.getParameters().clear();
-      TEST_HMS.getHiveClient().alter_partition(getArcticTable().id().getDatabase(),
-          getArcticTable().id().getTableName(), partition, null);
+      TEST_HMS
+          .getHiveClient()
+          .alter_partition(
+              getArcticTable().id().getDatabase(),
+              getArcticTable().id().getTableName(),
+              partition,
+              null);
     } else {
-      Table hiveTable = TEST_HMS.getHiveClient().getTable(
-          getArcticTable().id().getDatabase(),
-          getArcticTable().id().getTableName());
+      Table hiveTable =
+          TEST_HMS
+              .getHiveClient()
+              .getTable(getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
       hiveTable.putToParameters("transient_lastDdlTime", "0");
-      TEST_HMS.getHiveClient().alter_table(getArcticTable().id().getDatabase(),
-          getArcticTable().id().getTableName(), hiveTable);
+      TEST_HMS
+          .getHiveClient()
+          .alter_table(
+              getArcticTable().id().getDatabase(), getArcticTable().id().getTableName(), hiveTable);
     }
 
     getArcticTable().refresh();
@@ -137,35 +170,52 @@ public class TestSyncHiveMeta extends TableTestBase {
   @Test
   public void testSyncHivePartitionChange() throws TException {
     Assume.assumeTrue(isPartitionedTable());
-    getArcticTable().updateProperties().set(HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE, "true").commit();
+    getArcticTable()
+        .updateProperties()
+        .set(HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE, "true")
+        .commit();
     List<Record> insertRecords = Lists.newArrayList();
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
-    List<DataFile> dataFiles = HiveDataTestHelpers.writeBaseStore(getArcticTable(), 1L, insertRecords, false, true);
+    List<DataFile> dataFiles =
+        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(getBaseStore());
 
-    Table hiveTable = TEST_HMS.getHiveClient().getTable(
-        getArcticTable().id().getDatabase(),
-        getArcticTable().id().getTableName());
+    Table hiveTable =
+        TEST_HMS
+            .getHiveClient()
+            .getTable(getArcticTable().id().getDatabase(), getArcticTable().id().getTableName());
 
-    //test add new hive partition
+    // test add new hive partition
     insertRecords.clear();
     insertRecords.add(tableTestHelper().generateTestRecord(3, "lily", 0, "2022-01-03T12:00:00"));
-    List<DataFile> newFiles = HiveDataTestHelpers.writeBaseStore(getArcticTable(), 1L, insertRecords, false, true);
+    List<DataFile> newFiles =
+        HiveDataTestHelpers.writerOf(getArcticTable())
+            .transactionId(1L)
+            .consistentWriteEnabled(false)
+            .writeHive(insertRecords);
     Assert.assertEquals(1, newFiles.size());
-    Partition newPartition = HivePartitionUtil.newPartition(hiveTable, Lists.newArrayList("2022-01-03"),
-        TableFileUtil.getFileDir(newFiles.get(0).path().toString()), newFiles,
-        (int) (System.currentTimeMillis() / 1000));
+    Partition newPartition =
+        HivePartitionUtil.newPartition(
+            hiveTable,
+            Lists.newArrayList("2022-01-03"),
+            TableFileUtil.getFileDir(newFiles.get(0).path().toString()),
+            newFiles,
+            (int) (System.currentTimeMillis() / 1000));
     newPartition.getParameters().remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
     TEST_HMS.getHiveClient().add_partition(newPartition);
     getArcticTable().refresh();
 
+    List<DataFile> listTableFiles = listTableFiles(baseStore);
     Assert.assertEquals(
-        Stream.concat(dataFiles.stream(), newFiles.stream()).map(DataFile::path).collect(Collectors.toSet()),
-        listTableFiles(baseStore).stream().map(DataFile::path).collect(Collectors.toSet()));
+        Stream.concat(dataFiles.stream(), newFiles.stream())
+            .map(DataFile::path)
+            .collect(Collectors.toSet()),
+        listTableFiles.stream().map(DataFile::path).collect(Collectors.toSet()));
   }
 
   private List<DataFile> listTableFiles(UnkeyedTable table) {

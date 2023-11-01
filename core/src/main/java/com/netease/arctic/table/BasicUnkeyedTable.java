@@ -18,22 +18,17 @@
 
 package com.netease.arctic.table;
 
-import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.op.ArcticAppendFiles;
+import com.netease.arctic.op.ArcticDeleteFiles;
+import com.netease.arctic.op.ArcticOverwriteFiles;
+import com.netease.arctic.op.ArcticReplacePartitions;
+import com.netease.arctic.op.ArcticRewriteFiles;
+import com.netease.arctic.op.ArcticRowDelta;
+import com.netease.arctic.op.ArcticTransaction;
 import com.netease.arctic.op.PartitionPropertiesUpdate;
 import com.netease.arctic.op.UpdatePartitionProperties;
-import com.netease.arctic.trace.AmsTableTracer;
-import com.netease.arctic.trace.ArcticAppendFiles;
-import com.netease.arctic.trace.ArcticDeleteFiles;
-import com.netease.arctic.trace.ArcticOverwriteFiles;
-import com.netease.arctic.trace.ArcticReplacePartitions;
-import com.netease.arctic.trace.ArcticRewriteFiles;
-import com.netease.arctic.trace.ArcticRowDelta;
-import com.netease.arctic.trace.ArcticTransaction;
-import com.netease.arctic.trace.TraceOperations;
-import com.netease.arctic.trace.TracedSchemaUpdate;
-import com.netease.arctic.trace.TracedUpdateProperties;
 import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
@@ -63,6 +58,7 @@ import org.apache.iceberg.UpdateLocation;
 import org.apache.iceberg.UpdatePartitionSpec;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
+import org.apache.iceberg.UpdateStatistics;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.util.StructLikeMap;
@@ -70,9 +66,7 @@ import org.apache.iceberg.util.StructLikeMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Basic implementation of {@link UnkeyedTable}, wrapping a {@link Table}.
- */
+/** Basic implementation of {@link UnkeyedTable}, wrapping a {@link Table}. */
 public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   private final Map<String, String> catalogProperties;
@@ -80,19 +74,14 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   protected final Table icebergTable;
   protected final ArcticFileIO arcticFileIO;
 
-  /**
-   * @deprecated since 0.5.0, will be removed in 0.6.0;
-   */
-  @Deprecated
-  private final AmsClient client;
-
   public BasicUnkeyedTable(
-      TableIdentifier tableIdentifier, Table icebergTable, ArcticFileIO arcticFileIO,
-      AmsClient client, Map<String, String> catalogProperties) {
+      TableIdentifier tableIdentifier,
+      Table icebergTable,
+      ArcticFileIO arcticFileIO,
+      Map<String, String> catalogProperties) {
     this.tableIdentifier = tableIdentifier;
     this.icebergTable = icebergTable;
     this.arcticFileIO = arcticFileIO;
-    this.client = client;
     this.catalogProperties = catalogProperties;
   }
 
@@ -127,6 +116,11 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   }
 
   @Override
+  public String name() {
+    return icebergTable.name();
+  }
+
+  @Override
   public Map<Integer, Schema> schemas() {
     return icebergTable.schemas();
   }
@@ -156,7 +150,8 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
     if (catalogProperties == null) {
       return icebergTable.properties();
     } else {
-      return CatalogUtil.mergeCatalogPropertiesToTable(icebergTable.properties(), catalogProperties);
+      return CatalogUtil.mergeCatalogPropertiesToTable(
+          icebergTable.properties(), catalogProperties);
     }
   }
 
@@ -187,12 +182,7 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public UpdateSchema updateSchema() {
-    if (client != null) {
-      return new TracedSchemaUpdate(icebergTable.updateSchema(),
-          new AmsTableTracer(this, TraceOperations.UPDATE_SCHEMA, client, false));
-    } else {
-      return icebergTable.updateSchema();
-    }
+    return icebergTable.updateSchema();
   }
 
   @Override
@@ -202,13 +192,7 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public UpdateProperties updateProperties() {
-    UpdateProperties updateProperties = icebergTable.updateProperties();
-    if (client != null) {
-      AmsTableTracer tracer = new AmsTableTracer(this, TraceOperations.UPDATE_PROPERTIES, client, false);
-      return new TracedUpdateProperties(updateProperties, tracer);
-    } else {
-      return updateProperties;
-    }
+    return icebergTable.updateProperties();
   }
 
   @Override
@@ -223,26 +207,17 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public AppendFiles newAppend() {
-    return ArcticAppendFiles.buildFor(this, false)
-        .traceTable(client, this)
-        .onTableStore(icebergTable)
-        .build();
+    return ArcticAppendFiles.buildFor(this, false).onTableStore(icebergTable).build();
   }
 
   @Override
   public AppendFiles newFastAppend() {
-    return ArcticAppendFiles.buildFor(this, true)
-        .traceTable(client, this)
-        .onTableStore(icebergTable)
-        .build();
+    return ArcticAppendFiles.buildFor(this, true).onTableStore(icebergTable).build();
   }
 
   @Override
   public RewriteFiles newRewrite() {
-    return ArcticRewriteFiles.buildFor(this)
-        .traceTable(client, this)
-        .onTableStore(icebergTable)
-        .build();
+    return ArcticRewriteFiles.buildFor(this).onTableStore(icebergTable).build();
   }
 
   @Override
@@ -252,28 +227,22 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public OverwriteFiles newOverwrite() {
-    return ArcticOverwriteFiles.buildFor(this)
-        .traceTable(client, this).onTableStore(icebergTable).build();
+    return ArcticOverwriteFiles.buildFor(this).onTableStore(icebergTable).build();
   }
 
   @Override
   public RowDelta newRowDelta() {
-    return ArcticRowDelta.buildFor(this)
-        .traceTable(client, this).onTableStore(icebergTable).build();
+    return ArcticRowDelta.buildFor(this).onTableStore(icebergTable).build();
   }
 
   @Override
   public ReplacePartitions newReplacePartitions() {
-    return ArcticReplacePartitions.buildFor(this)
-        .traceTable(client, this).onTableStore(icebergTable).build();
+    return ArcticReplacePartitions.buildFor(this).onTableStore(icebergTable).build();
   }
 
   @Override
   public DeleteFiles newDelete() {
-    return ArcticDeleteFiles.buildFor(this)
-        .traceTable(client, this)
-        .onTableStore(icebergTable)
-        .build();
+    return ArcticDeleteFiles.buildFor(this).onTableStore(icebergTable).build();
   }
 
   @Override
@@ -289,11 +258,7 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public Transaction newTransaction() {
     Transaction transaction = icebergTable.newTransaction();
-    AmsTableTracer tableTracer = null;
-    if (client != null) {
-      tableTracer = new AmsTableTracer(this, client, false);
-    }
-    return new ArcticTransaction(this, transaction, tableTracer);
+    return new ArcticTransaction(this, transaction);
   }
 
   @Override
@@ -342,5 +307,10 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public UpdatePartitionProperties updatePartitionProperties(Transaction transaction) {
     return new PartitionPropertiesUpdate(this, transaction);
+  }
+
+  @Override
+  public UpdateStatistics updateStatistics() {
+    return icebergTable.updateStatistics();
   }
 }

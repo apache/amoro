@@ -25,34 +25,32 @@ import org.apache.iceberg.types.Types.NestedField;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Addition metadata columns for {@link ArcticTable}
- */
+/** Addition metadata columns for {@link ArcticTable} */
 public class MetadataColumns {
 
   // IDs Integer.MAX_VALUE - (1001-9999) are used for arctic metadata columns
   public static final String TRANSACTION_ID_FILED_NAME = "_transaction_id";
   public static final int TRANSACTION_ID_FILED_ID = Integer.MAX_VALUE - 1001;
-  public static final NestedField TRANSACTION_ID_FILED = NestedField
-      .optional(TRANSACTION_ID_FILED_ID, TRANSACTION_ID_FILED_NAME, Types.LongType.get());
+  public static final NestedField TRANSACTION_ID_FILED =
+      NestedField.optional(
+          TRANSACTION_ID_FILED_ID, TRANSACTION_ID_FILED_NAME, Types.LongType.get());
 
   public static final String FILE_OFFSET_FILED_NAME = "_file_offset";
   public static final int FILE_OFFSET_FILED_ID = Integer.MAX_VALUE - 1002;
-  public static final NestedField FILE_OFFSET_FILED = NestedField
-      .optional(FILE_OFFSET_FILED_ID, FILE_OFFSET_FILED_NAME, Types.LongType.get());
+  public static final NestedField FILE_OFFSET_FILED =
+      NestedField.optional(FILE_OFFSET_FILED_ID, FILE_OFFSET_FILED_NAME, Types.LongType.get());
 
   public static final String CHANGE_ACTION_NAME = "_change_action";
   public static final int CHANGE_ACTION_ID = Integer.MAX_VALUE - 1003;
-  public static final NestedField CHANGE_ACTION_FIELD = NestedField
-      .optional(CHANGE_ACTION_ID, CHANGE_ACTION_NAME, Types.StringType.get());
+  public static final NestedField CHANGE_ACTION_FIELD =
+      NestedField.optional(CHANGE_ACTION_ID, CHANGE_ACTION_NAME, Types.StringType.get());
 
   public static final String TREE_NODE_NAME = "_tree_node";
   public static final int TREE_NODE_ID = Integer.MAX_VALUE - 1004;
-  public static final NestedField TREE_NODE_FIELD = NestedField
-      .optional(TREE_NODE_ID, TREE_NODE_NAME, Types.LongType.get());
+  public static final NestedField TREE_NODE_FIELD =
+      NestedField.optional(TREE_NODE_ID, TREE_NODE_NAME, Types.LongType.get());
 
-  private MetadataColumns() {
-  }
+  private MetadataColumns() {}
 
   public static Schema appendChangeStoreMetadataColumns(Schema sourceSchema) {
     List<NestedField> columns = new ArrayList<>(sourceSchema.columns());

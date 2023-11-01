@@ -37,22 +37,26 @@ import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
 public class TestOptimizingPlanner extends TestOptimizingEvaluator {
-  public TestOptimizingPlanner(CatalogTestHelper catalogTestHelper,
-                               TableTestHelper tableTestHelper) {
+  public TestOptimizingPlanner(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[][] parameters() {
     return new Object[][] {
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, true)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, false)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, true)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, false)}};
+      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, true)},
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, false)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(false, true)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(false, false)
+      }
+    };
   }
 
   @Test
@@ -64,17 +68,27 @@ public class TestOptimizingPlanner extends TestOptimizingEvaluator {
     List<TaskDescriptor> taskDescriptors = optimizingEvaluator.planTasks();
     Assert.assertEquals(1, taskDescriptors.size());
     List<DataFile> dataFiles =
-        scanFiles().stream().map(TableFileScanHelper.FileScanResult::file).collect(Collectors.toList());
-    assertTask(taskDescriptors.get(0), dataFiles, Collections.emptyList(), Collections.emptyList(),
+        scanFiles().stream()
+            .map(TableFileScanHelper.FileScanResult::file)
+            .collect(Collectors.toList());
+    assertTask(
+        taskDescriptors.get(0),
+        dataFiles,
+        Collections.emptyList(),
+        Collections.emptyList(),
         Collections.emptyList());
 
     openFullOptimizing();
     optimizingEvaluator = buildOptimizingEvaluator();
     Assert.assertTrue(optimizingEvaluator.isNecessary());
-    Assert.assertEquals(OptimizingType.FULL_MAJOR, optimizingEvaluator.getOptimizingType());
+    Assert.assertEquals(OptimizingType.FULL, optimizingEvaluator.getOptimizingType());
     taskDescriptors = optimizingEvaluator.planTasks();
     Assert.assertEquals(1, taskDescriptors.size());
-    assertTask(taskDescriptors.get(0), dataFiles, Collections.emptyList(), Collections.emptyList(),
+    assertTask(
+        taskDescriptors.get(0),
+        dataFiles,
+        Collections.emptyList(),
+        Collections.emptyList(),
         Collections.emptyList());
   }
 

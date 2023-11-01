@@ -20,9 +20,7 @@ package com.netease.arctic.table;
 
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 
-/**
- * Change table store of an {@link KeyedTable}, storing change records in it.
- */
+/** Change table store of an {@link KeyedTable}, storing change records in it. */
 public interface ChangeTable extends UnkeyedTable {
   /**
    * Create a new {@link ChangeTableIncrementalScan scan} for this table.

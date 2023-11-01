@@ -25,16 +25,13 @@ import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.events.PreEventContext;
 
-/**
- * Copy from package jar "hive-exec" to avoid class check error
- */
+/** Copy from package jar "hive-exec" to avoid class check error */
 public class AuthorizationPreEventListener extends MetaStorePreEventListener {
   public AuthorizationPreEventListener(Configuration config) {
     super(config);
   }
 
   @Override
-  public void onEvent(PreEventContext context) throws MetaException, NoSuchObjectException, InvalidOperationException {
-
-  }
+  public void onEvent(PreEventContext context)
+      throws MetaException, NoSuchObjectException, InvalidOperationException {}
 }

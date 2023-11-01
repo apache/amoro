@@ -24,13 +24,13 @@
       </div>
       <div class="content">
         <a-tabs v-model:activeKey="activeKey" destroyInactiveTabPane @change="onChangeTab">
-          <a-tab-pane key="Details" tab="Details">
-            <u-details @setBaseDetailInfo="setBaseDetailInfo" />
+          <a-tab-pane key="Details" tab="Details" forceRender>
+            <u-details @setBaseDetailInfo="setBaseDetailInfo" ref="detailRef"/>
           </a-tab-pane>
           <a-tab-pane v-if="detailLoaded" key="Files" tab="Files">
             <u-files :hasPartition="baseInfo.hasPartition"/>
           </a-tab-pane>
-          <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="`${tab.key}`">
+          <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="`${tab.label}`">
             <component :is="`U${tab.key}`"></component>
           </a-tab-pane>
         </a-tabs>
@@ -42,7 +42,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, toRefs, watch, shallowReactive, computed, onMounted } from 'vue'
+import { defineComponent, reactive, toRefs, watch, shallowReactive, computed, onMounted, ref, nextTick } from 'vue'
 // import { EditOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import UDetails from './components/Details.vue'
 import UFiles from './components/Files.vue'
@@ -69,12 +69,14 @@ export default defineComponent({
     const route = useRoute()
     const store = useStore()
 
-    const tabConfigs: IMap<string>[] = shallowReactive([
+    const detailRef = ref()
+
+    const tabConfigs = shallowReactive([
       // { key: 'Details' },
       // { key: 'Files' },
-      { key: 'Transactions' },
-      { key: 'Optimized' },
-      { key: 'Operations' }
+      { key: 'Transactions', label: 'Transactions' },
+      { key: 'Optimized', label: 'Optimizing' },
+      { key: 'Operations', label: 'Operations' }
     ])
 
     const state = reactive({
@@ -139,6 +141,11 @@ export default defineComponent({
 
     onMounted(() => {
       state.activeKey = (route.query?.tab as string) || 'Details'
+      nextTick(() => {
+        if (detailRef.value) {
+          detailRef.value.getTableDetails()
+        }
+      })
     })
 
     return {

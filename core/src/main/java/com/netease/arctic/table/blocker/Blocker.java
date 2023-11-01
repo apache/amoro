@@ -23,9 +23,7 @@ import com.netease.arctic.ams.api.BlockableOperation;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Blocker is an object to block some operations of table.
- */
+/** Blocker is an object to block some operations of table. */
 public interface Blocker {
   /**
    * Unique identifier of blocker.

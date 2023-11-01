@@ -1,8 +1,10 @@
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.OptimizingType;
+import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
 
 import java.util.Map;
 
@@ -11,6 +13,7 @@ public class TableRuntimeMeta {
   private String catalogName;
   private String dbName;
   private String tableName;
+  private TableFormat format;
   private long currentSnapshotId;
   private long lastOptimizedSnapshotId;
   private long lastOptimizedChangeSnapshotId;
@@ -22,6 +25,7 @@ public class TableRuntimeMeta {
   private long currentStatusStartTime;
   private String optimizerGroup;
   private TableConfiguration tableConfig;
+  private OptimizingEvaluator.PendingInput pendingInput;
   private long optimizingProcessId = 0;
   private OptimizingProcess.Status processStatus;
   private OptimizingType optimizingType;
@@ -36,8 +40,7 @@ public class TableRuntimeMeta {
 
   private TableRuntime tableRuntime;
 
-  public TableRuntimeMeta() {
-  }
+  public TableRuntimeMeta() {}
 
   public TableRuntime constructTableRuntime(TableManager initializer) {
     if (tableRuntime == null) {
@@ -87,6 +90,10 @@ public class TableRuntimeMeta {
 
   public String getTableName() {
     return tableName;
+  }
+
+  public TableFormat getFormat() {
+    return format;
   }
 
   public long getCurrentSnapshotId() {
@@ -163,6 +170,10 @@ public class TableRuntimeMeta {
 
   public void setTableName(String tableName) {
     this.tableName = tableName;
+  }
+
+  public void setFormat(TableFormat format) {
+    this.format = format;
   }
 
   public void setCurrentSnapshotId(long currentSnapshotId) {
@@ -259,5 +270,13 @@ public class TableRuntimeMeta {
 
   public void setSummary(String summary) {
     this.summary = summary;
+  }
+
+  public OptimizingEvaluator.PendingInput getPendingInput() {
+    return pendingInput;
+  }
+
+  public void setPendingInput(OptimizingEvaluator.PendingInput pendingInput) {
+    this.pendingInput = pendingInput;
   }
 }

@@ -10,7 +10,7 @@ import com.netease.arctic.optimizing.IcebergRewriteExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.optimizing.scan.IcebergTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
-import com.netease.arctic.server.utils.IcebergTableUtils;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -19,20 +19,18 @@ import java.util.Map;
 
 @RunWith(Parameterized.class)
 public class TestIcebergPartitionPlan extends TestUnkeyedPartitionPlan {
-  public TestIcebergPartitionPlan(CatalogTestHelper catalogTestHelper,
-                                  TableTestHelper tableTestHelper) {
+  public TestIcebergPartitionPlan(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[][] parameters() {
     return new Object[][] {
-        {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-            new BasicTableTestHelper(false, true)},
-        {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-            new BasicTableTestHelper(false, false)}};
+      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, true)},
+      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, false)}
+    };
   }
-
 
   @Test
   public void testFragmentFiles() {
@@ -56,19 +54,20 @@ public class TestIcebergPartitionPlan extends TestUnkeyedPartitionPlan {
 
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
-    return new IcebergPartitionPlan(getTableRuntime(), getArcticTable(), getPartition(),
-        System.currentTimeMillis());
+    return new IcebergPartitionPlan(
+        getTableRuntime(), getArcticTable(), getPartition(), System.currentTimeMillis());
   }
 
   @Override
   protected TableFileScanHelper getTableFileScanHelper() {
-    long baseSnapshotId = IcebergTableUtils.getSnapshotId(getArcticTable(), true);
+    long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable(), true);
     return new IcebergTableFileScanHelper(getArcticTable(), baseSnapshotId);
   }
 
   protected Map<String, String> buildProperties() {
     Map<String, String> properties = Maps.newHashMap();
-    properties.put(OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL,
+    properties.put(
+        OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL,
         IcebergRewriteExecutorFactory.class.getName());
     return properties;
   }

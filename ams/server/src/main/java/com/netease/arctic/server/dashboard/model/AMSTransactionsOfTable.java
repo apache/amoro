@@ -18,26 +18,40 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-import java.util.Objects;
+import com.google.common.base.Objects;
+import com.netease.arctic.server.dashboard.utils.AmsUtil;
 
+import java.util.Map;
 
 public class AMSTransactionsOfTable {
   private String transactionId;
   private int fileCount;
-  private String fileSize;
+  private long fileSize;
   private long commitTime;
   private String snapshotId;
+  private String operation;
+  private Map<String, String> summary;
 
+  private Map<String, String> recordsSummaryForChart;
 
-  public AMSTransactionsOfTable() {
-  }
+  private Map<String, String> filesSummaryForChart;
 
-  public AMSTransactionsOfTable(String transactionId, int fileCount, String fileSize, long commitTime) {
+  public AMSTransactionsOfTable() {}
+
+  public AMSTransactionsOfTable(
+      String transactionId,
+      int fileCount,
+      long fileSize,
+      long commitTime,
+      String operation,
+      Map<String, String> summary) {
     this.transactionId = transactionId;
     this.fileCount = fileCount;
     this.fileSize = fileSize;
     this.commitTime = commitTime;
     this.snapshotId = this.transactionId;
+    this.operation = operation;
+    this.summary = summary;
   }
 
   public String getTransactionId() {
@@ -57,10 +71,14 @@ public class AMSTransactionsOfTable {
   }
 
   public String getFileSize() {
+    return AmsUtil.byteToXB(fileSize);
+  }
+
+  public long getOriginalFileSize() {
     return fileSize;
   }
 
-  public void setFileSize(String fileSize) {
+  public void setFileSize(long fileSize) {
     this.fileSize = fileSize;
   }
 
@@ -80,20 +98,59 @@ public class AMSTransactionsOfTable {
     this.snapshotId = snapshotId;
   }
 
+  public String getOperation() {
+    return operation;
+  }
+
+  public void setOperation(String operation) {
+    this.operation = operation;
+  }
+
+  public Map<String, String> getSummary() {
+    return summary;
+  }
+
+  public void setSummary(Map<String, String> summary) {
+    this.summary = summary;
+  }
+
+  public Map<String, String> getRecordsSummaryForChart() {
+    return recordsSummaryForChart;
+  }
+
+  public void setRecordsSummaryForChart(Map<String, String> recordsSummaryForChart) {
+    this.recordsSummaryForChart = recordsSummaryForChart;
+  }
+
+  public Map<String, String> getFilesSummaryForChart() {
+    return filesSummaryForChart;
+  }
+
+  public void setFilesSummaryForChart(Map<String, String> filesSummaryForChart) {
+    this.filesSummaryForChart = filesSummaryForChart;
+  }
+
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof AMSTransactionsOfTable)) {
+      return false;
+    }
     AMSTransactionsOfTable that = (AMSTransactionsOfTable) o;
-    return transactionId == that.transactionId &&
-            fileCount == that.fileCount &&
-            fileSize == that.fileSize &&
-            commitTime == that.commitTime &&
-            snapshotId == that.snapshotId;
+    return fileCount == that.fileCount
+        && commitTime == that.commitTime
+        && Objects.equal(transactionId, that.transactionId)
+        && Objects.equal(fileSize, that.fileSize)
+        && Objects.equal(snapshotId, that.snapshotId)
+        && Objects.equal(operation, that.operation)
+        && Objects.equal(summary, that.summary);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(transactionId, fileCount, fileSize, commitTime, snapshotId);
+    return Objects.hashCode(
+        transactionId, fileCount, fileSize, commitTime, snapshotId, operation, summary);
   }
 }

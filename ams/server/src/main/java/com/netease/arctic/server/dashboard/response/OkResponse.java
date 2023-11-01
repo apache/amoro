@@ -29,6 +29,11 @@ public class OkResponse<R> extends Response {
     this.result = result;
   }
 
+  protected OkResponse(String message, R result) {
+    super(200, message);
+    this.result = result;
+  }
+
   protected OkResponse() {
     this(null);
   }
@@ -41,6 +46,10 @@ public class OkResponse<R> extends Response {
     return new OkResponse<>(result);
   }
 
+  public static <R> OkResponse<R> of(String message, R result) {
+    return new OkResponse<>(message, result);
+  }
+
   public R getResult() {
     return result;
   }
@@ -51,8 +60,6 @@ public class OkResponse<R> extends Response {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("result", result)
-        .toString();
+    return MoreObjects.toStringHelper(this).add("result", result).toString();
   }
 }

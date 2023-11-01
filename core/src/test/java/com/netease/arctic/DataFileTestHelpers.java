@@ -18,11 +18,12 @@
 
 package com.netease.arctic;
 
-import com.google.common.collect.Maps;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Metrics;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 
@@ -31,16 +32,33 @@ public class DataFileTestHelpers {
   private static final Map<String, DataFile> DATA_FILE_MAP = Maps.newHashMap();
 
   public static DataFile getFile(
-      String basePath, int number, PartitionSpec spec, String partitionPath,
-      Metrics metrics, boolean fromCache) {
+      String basePath,
+      int number,
+      PartitionSpec spec,
+      String partitionPath,
+      Metrics metrics,
+      boolean fromCache) {
+    return getFile(basePath, number, spec, partitionPath, metrics, fromCache, FileFormat.PARQUET);
+  }
+
+  public static DataFile getFile(
+      String basePath,
+      int number,
+      PartitionSpec spec,
+      String partitionPath,
+      Metrics metrics,
+      boolean fromCache,
+      FileFormat fileFormat) {
     String filePath;
     if (partitionPath != null) {
-      filePath = String.format("%s/%s/data-%d.parquet", basePath, partitionPath, number);
+      filePath =
+          fileFormat.addExtension(String.format("%s/%s/data-%d.", basePath, partitionPath, number));
     } else {
-      filePath = String.format("%s/data-%d.parquet", basePath, number);
+      filePath = fileFormat.addExtension(String.format("%s/data-%d.", basePath, number));
     }
     if (fromCache) {
-      return DATA_FILE_MAP.computeIfAbsent(filePath, path -> buildDataFile(filePath, spec, partitionPath, metrics));
+      return DATA_FILE_MAP.computeIfAbsent(
+          filePath, path -> buildDataFile(filePath, spec, partitionPath, metrics));
     } else {
       return buildDataFile(filePath, spec, partitionPath, metrics);
     }
@@ -54,14 +72,19 @@ public class DataFileTestHelpers {
     return getFile("/data", number, BasicTableTestHelper.SPEC, partitionPath, null, true);
   }
 
+  public static DataFile getFile(int number, FileFormat fileFormat) {
+    return getFile("/data", number, PartitionSpec.unpartitioned(), null, null, true, fileFormat);
+  }
+
+  public static DataFile getFile(int number, String partitionPath, FileFormat fileFormat) {
+    return getFile(
+        "/data", number, BasicTableTestHelper.SPEC, partitionPath, null, true, fileFormat);
+  }
+
   private static DataFile buildDataFile(
-      String filePath, PartitionSpec spec, String partitionPath,
-      Metrics metrics) {
+      String filePath, PartitionSpec spec, String partitionPath, Metrics metrics) {
     DataFiles.Builder fileBuilder = DataFiles.builder(spec);
-    fileBuilder
-        .withPath(filePath)
-        .withFileSizeInBytes(10)
-        .withRecordCount(2);
+    fileBuilder.withPath(filePath).withFileSizeInBytes(10).withRecordCount(2);
     if (partitionPath != null) {
       fileBuilder.withPartitionPath(partitionPath);
     }

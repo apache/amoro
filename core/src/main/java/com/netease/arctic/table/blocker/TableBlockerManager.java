@@ -26,9 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-/**
- * A manager for table level blocker.
- */
+/** A manager for table level blocker. */
 public interface TableBlockerManager {
 
   /**
@@ -46,7 +44,8 @@ public interface TableBlockerManager {
    * @return return the blocker if success
    * @throws OperationConflictException when operations to block are conflict
    */
-  Blocker block(List<BlockableOperation> operations, Map<String, String> properties) throws OperationConflictException;
+  Blocker block(List<BlockableOperation> operations, Map<String, String> properties)
+      throws OperationConflictException;
 
   default Blocker block(List<BlockableOperation> operations) throws OperationConflictException {
     return block(operations, Collections.emptyMap());

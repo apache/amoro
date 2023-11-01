@@ -21,26 +21,44 @@ package com.netease.arctic.optimizing;
 import java.io.Serializable;
 import java.util.Map;
 
-public interface TableOptimizing<I extends TableOptimizing.OptimizingInput,
-    O extends TableOptimizing.OptimizingOutput> {
+/**
+ * The TableOptimizing interface defines the plan, execute, commit, and other processes required
+ * during the optimizing process, as well as the input and output. Currently, these processes are
+ * still scattered throughout various parts of AMS, so this interface has not yet been formally
+ * used.
+ */
+public interface TableOptimizing<
+    I extends TableOptimizing.OptimizingInput, O extends TableOptimizing.OptimizingOutput> {
 
+  /** The input will be execute by {@link OptimizingExecutor}. */
   I[] planInputs();
 
+  /** Create an {@link OptimizingExecutorFactory}. */
   OptimizingExecutorFactory<I> createExecutorFactory();
 
+  /** Create an {@link OptimizingCommitterFactory}. */
   OptimizingCommitterFactory<O> createCommitterFactory();
 
+  /**
+   * An interface represent all input of optimizing that will be executed by {@link
+   * OptimizingExecutor}. OptimizingInput contains some options information that can be used to
+   * control the behavior of {@link OptimizingExecutor}. such as whether to enable RocksDB, whether
+   * to move files to Hive, and other parameters.
+   */
   interface OptimizingInput extends Serializable {
 
+    /** Set propertity for this OptimizingInput. */
     void option(String name, String value);
 
+    /** Set properties for this OptimizingInput. */
     void options(Map<String, String> options);
 
+    /** Get properties. */
     Map<String, String> getOptions();
   }
 
+  /** Produced by {@link OptimizingExecutor} represent compaction result. */
   interface OptimizingOutput extends Serializable {
     Map<String, String> summary();
   }
-
 }

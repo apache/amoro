@@ -19,7 +19,9 @@
 package com.netease.arctic.ams.api.client;
 
 import com.alibaba.fastjson.JSONObject;
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.properties.AmsHAProperties;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Locale;
@@ -52,8 +55,7 @@ public class ArcticThriftUrl {
   private final String url;
 
   private ArcticThriftUrl(
-      String schema, String host, int port, String catalogName, int socketTimeout,
-      String url) {
+      String schema, String host, int port, String catalogName, int socketTimeout, String url) {
     this.schema = schema;
     this.host = host;
     this.port = port;
@@ -63,18 +65,19 @@ public class ArcticThriftUrl {
   }
 
   /**
-   * parse thrift url, now support thrift://host:port/{catalogName} and zookeeper://host:port/{cluster}/{catalogName}
-   * . parse to ArcticThriftUrl that contains properties schema, host, port, catalogName, socketTimeout, url.
+   * parse thrift url, now support thrift://host:port/{catalogName} and
+   * zookeeper://host:port/{cluster}/{catalogName} . parse to ArcticThriftUrl that contains
+   * properties schema, host, port, catalogName, socketTimeout, url.
    *
    * @param url - thrift url
    * @return -
    */
-  public static ArcticThriftUrl parse(String url) {
+  public static ArcticThriftUrl parse(String url, String serviceName) {
     if (url == null) {
       throw new IllegalArgumentException("thrift url is null");
     }
     if (url.startsWith(ZOOKEEPER_FLAG)) {
-      return parserZookeeperUrl(url);
+      return parserZookeeperUrl(url, serviceName);
     } else {
       return parserThriftUrl(url);
     }
@@ -108,7 +111,7 @@ public class ArcticThriftUrl {
     }
   }
 
-  private static ArcticThriftUrl parserZookeeperUrl(String url) {
+  private static ArcticThriftUrl parserZookeeperUrl(String url, String serviceName) {
     String thriftUrl = url;
     String query = "";
     if (url.contains("?")) {
@@ -131,12 +134,14 @@ public class ArcticThriftUrl {
       int retryCount = 0;
       while (retryCount < maxRetries) {
         try {
-          AmsServerInfo serverInfo = JSONObject.parseObject(
-              ZookeeperService.getInstance(zkServerAddress)
-                  .getData(AmsHAProperties.getMasterPath(cluster)),
-              AmsServerInfo.class);
-          url = String.format(THRIFT_URL_FORMAT, serverInfo.getHost(),
-              serverInfo.getThriftBindPort(), catalog, query);
+          AmsServerInfo serverInfo = findAmsServerInfo(serviceName, zkServerAddress, cluster);
+          url =
+              String.format(
+                  THRIFT_URL_FORMAT,
+                  serverInfo.getHost(),
+                  serverInfo.getThriftBindPort(),
+                  catalog,
+                  query);
           int socketTimeout = DEFAULT_SOCKET_TIMEOUT;
           for (String paramExpression : query.replace("?", "").split("&")) {
             String[] paramSplit = paramExpression.split("=");
@@ -146,11 +151,17 @@ public class ArcticThriftUrl {
               }
             }
           }
-          return new ArcticThriftUrl("thrift",
-              serverInfo.getHost(), serverInfo.getThriftBindPort(), catalog.toLowerCase(), socketTimeout, url);
+          return new ArcticThriftUrl(
+              "thrift",
+              serverInfo.getHost(),
+              serverInfo.getThriftBindPort(),
+              catalog.toLowerCase(),
+              socketTimeout,
+              url);
         } catch (KeeperException.AuthFailedException authFailedException) {
           // If kerberos authentication is not enabled on the zk,
-          // an error occurs when the thread carrying kerberos authentication information accesses the zk.
+          // an error occurs when the thread carrying kerberos authentication information accesses
+          // the zk.
           // Therefore, clear the authentication information and try again
           retryCount++;
           logger.error(
@@ -168,7 +179,8 @@ public class ArcticThriftUrl {
           }
         } catch (Exception e) {
           retryCount++;
-          logger.error(String.format("Caught exception, retrying... (retry count: %s)", retryCount), e);
+          logger.error(
+              String.format("Caught exception, retrying... (retry count: %s)", retryCount), e);
           throw new RuntimeException(String.format("invalid ams url %s", url));
         }
       }
@@ -176,6 +188,24 @@ public class ArcticThriftUrl {
       throw new RuntimeException(String.format("invalid ams url %s", url));
     }
     return null;
+  }
+
+  private static AmsServerInfo findAmsServerInfo(
+      String serviceName, String zkServerAddress, String cluster) throws Exception {
+    switch (serviceName) {
+      case Constants.THRIFT_TABLE_SERVICE_NAME:
+        return JSONObject.parseObject(
+            ZookeeperService.getInstance(zkServerAddress)
+                .getData(AmsHAProperties.getTableServiceMasterPath(cluster)),
+            AmsServerInfo.class);
+      case Constants.THRIFT_OPTIMIZING_SERVICE_NAME:
+        return JSONObject.parseObject(
+            ZookeeperService.getInstance(zkServerAddress)
+                .getData(AmsHAProperties.getOptimizingServiceMasterPath(cluster)),
+            AmsServerInfo.class);
+      default:
+        throw new RuntimeException(String.format("invalid service name %s", serviceName));
+    }
   }
 
   public String schema() {
@@ -208,13 +238,13 @@ public class ArcticThriftUrl {
 
   @Override
   public String toString() {
-    return "ArcticThriftUrl{" +
-        "schema='" + schema + '\'' +
-        ", host='" + host + '\'' +
-        ", port=" + port +
-        ", catalogName='" + catalogName + '\'' +
-        ", socketTimeout=" + socketTimeout +
-        ", url='" + url + '\'' +
-        '}';
+    return MoreObjects.toStringHelper(this)
+        .add("schema", schema)
+        .add("host", host)
+        .add("port", port)
+        .add("catalogName", catalogName)
+        .add("socketTimeout", socketTimeout)
+        .add("url", url)
+        .toString();
   }
 }

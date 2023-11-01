@@ -18,8 +18,15 @@
 
 package com.netease.arctic.server.dashboard;
 
+import static io.javalin.apibuilder.ApiBuilder.delete;
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.path;
+import static io.javalin.apibuilder.ApiBuilder.post;
+import static io.javalin.apibuilder.ApiBuilder.put;
+
 import com.alibaba.fastjson.JSONObject;
-import com.netease.arctic.server.ArcticManagementConf;
+import com.netease.arctic.server.DefaultOptimizingService;
+import com.netease.arctic.server.IcebergRestCatalogService;
 import com.netease.arctic.server.dashboard.controller.CatalogController;
 import com.netease.arctic.server.dashboard.controller.HealthCheckController;
 import com.netease.arctic.server.dashboard.controller.LoginController;
@@ -30,19 +37,19 @@ import com.netease.arctic.server.dashboard.controller.TableController;
 import com.netease.arctic.server.dashboard.controller.TerminalController;
 import com.netease.arctic.server.dashboard.controller.VersionController;
 import com.netease.arctic.server.dashboard.response.ErrorResponse;
-import com.netease.arctic.server.dashboard.utils.CommonUtil;
 import com.netease.arctic.server.dashboard.utils.ParamSignatureCalculator;
 import com.netease.arctic.server.exception.ForbiddenException;
 import com.netease.arctic.server.exception.SignatureCheckException;
-import com.netease.arctic.server.resource.OptimizerManager;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.terminal.TerminalManager;
 import com.netease.arctic.server.utils.Configurations;
-import io.javalin.Javalin;
+import io.javalin.apibuilder.EndpointGroup;
+import io.javalin.http.ContentType;
+import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
+import io.javalin.http.staticfiles.StaticFileConfig;
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.jetty.server.session.SessionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,18 +61,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import static io.javalin.apibuilder.ApiBuilder.delete;
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.path;
-import static io.javalin.apibuilder.ApiBuilder.post;
-import static io.javalin.apibuilder.ApiBuilder.put;
+import java.util.function.Consumer;
 
 public class DashboardServer {
 
   public static final Logger LOG = LoggerFactory.getLogger(DashboardServer.class);
 
-  private final Configurations serviceConfig;
   private final CatalogController catalogController;
   private final HealthCheckController healthCheckController;
   private final LoginController loginController;
@@ -75,38 +76,39 @@ public class DashboardServer {
   private final TableController tableController;
   private final TerminalController terminalController;
   private final VersionController versionController;
-  private final TerminalManager terminalManager;
 
-  public DashboardServer(Configurations serviceConfig, TableService tableService,
-                         OptimizerManager optimizerManager) {
+  public DashboardServer(
+      Configurations serviceConfig,
+      TableService tableService,
+      DefaultOptimizingService optimizerManager,
+      TerminalManager terminalManager) {
     PlatformFileManager platformFileManager = new PlatformFileManager();
-    this.serviceConfig = serviceConfig;
     this.catalogController = new CatalogController(tableService, platformFileManager);
     this.healthCheckController = new HealthCheckController();
     this.loginController = new LoginController(serviceConfig);
     this.optimizerController = new OptimizerController(tableService, optimizerManager);
     this.platformFileInfoController = new PlatformFileInfoController(platformFileManager);
     this.settingController = new SettingController(serviceConfig, optimizerManager);
-    ServerTableDescriptor tableDescriptor = new ServerTableDescriptor(tableService);
+    ServerTableDescriptor tableDescriptor = new ServerTableDescriptor(tableService, serviceConfig);
     this.tableController = new TableController(tableService, tableDescriptor, serviceConfig);
-    this.terminalManager = new TerminalManager(serviceConfig, tableService);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
   }
 
-  private Javalin app;
   private String indexHtml = "";
 
   // read index.html content
   public String getFileContent() throws IOException {
     if ("".equals(indexHtml)) {
-      try (InputStream fileName = DashboardServer.class.getClassLoader().getResourceAsStream("static/index.html")) {
-        try (InputStreamReader isr = new InputStreamReader(fileName, StandardCharsets.UTF_8.newDecoder());
+      try (InputStream fileName =
+          DashboardServer.class.getClassLoader().getResourceAsStream("static/index.html")) {
+        try (InputStreamReader isr =
+                new InputStreamReader(fileName, StandardCharsets.UTF_8.newDecoder());
             BufferedReader br = new BufferedReader(isr)) {
           StringBuilder sb = new StringBuilder();
           String line;
           while ((line = br.readLine()) != null) {
-            //process the line
+            // process the line
             sb.append(line);
           }
           indexHtml = sb.toString();
@@ -116,239 +118,316 @@ public class DashboardServer {
     return indexHtml;
   }
 
-  public void startRestServer() {
-    app = Javalin.create(config -> {
-      config.addStaticFiles(staticFiles -> {
-        staticFiles.hostedPath = "/";
-        // change to host files on a sub path, like '/assets'
-        staticFiles.directory = "/static";
-        // the directory where your files are located
-        staticFiles.location = Location.CLASSPATH;
-        // Location.CLASSPATH (jar) or Location.EXTERNAL (file system)
-        staticFiles.precompress = false;
-        // if the files should be pre-compressed and cached in memory (optimization)
-        staticFiles.aliasCheck = null;
-        // you can configure this to enable symlinks (= ContextHandler.ApproveAliases())
-        //staticFiles.headers = Map.of(...);
-        // headers that will be set for the files
-        staticFiles.skipFileFunction = req -> false;
-        // you can use this to skip certain files in the dir, based on the HttpServletRequest
-      });
-      config.sessionHandler(SessionHandler::new);
-      config.enableCorsForAllOrigins();
-    });
-    int port = serviceConfig.getInteger(ArcticManagementConf.HTTP_SERVER_PORT);
-    app.start(port);
-    LOG.info("Javalin Rest server start at {}!!!", port);
-
-    // before
-    app.before(ctx -> {
-      String uriPath = ctx.path();
-      String token = ctx.queryParam("token");
-      // if token of api request is not empty, so we check the query by token first
-      if (StringUtils.isNotEmpty(token)) {
-        CommonUtil.checkSinglePageToken(ctx);
-      } else {
-        if (needApiKeyCheck(uriPath)) {
-          checkApiToken(ctx.method(), ctx.url(), ctx.queryParam("apiKey"),
-              ctx.queryParam("signature"), ctx.queryParamMap());
-        } else if (needLoginCheck(uriPath)) {
-          if (null == ctx.sessionAttribute("user")) {
-            ctx.sessionAttributeMap();
-            LOG.info("session info: {}", JSONObject.toJSONString(
-                            ctx.sessionAttributeMap()));
-            throw new ForbiddenException();
-          }
-        }
-      }
-    });
-
-    app.routes(() -> {
-      /*backend routers*/
-      path("", () -> {
-        //  /docs/latest can't be located to the index.html, so we add rule to redirect to it.
-        get("/docs/latest", ctx -> ctx.redirect("/docs/latest/index.html"));
-        // unify all addSinglePageRoot(like /tables, /optimizers etc) configure here
-        get("/{page}", ctx -> ctx.html(getFileContent()));
-        get("/hive-tables/upgrade", ctx -> ctx.html(getFileContent()));
-      });
-      path("/ams/v1", () -> {
-        // login controller
-        get("/login/current", loginController::getCurrent);
-        post("/login", loginController::login);
-
-        // table controller
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/details", tableController::getTableDetail);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/hive/details", tableController::getHiveTableDetail);
-        post("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade", tableController::upgradeHiveTable);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade/status", tableController::getUpgradeStatus);
-        get("/upgrade/properties", tableController::getUpgradeHiveTableProperties);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimize", tableController::getOptimizeInfo);
-        get(
-            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
-            tableController::getTableTransactions);
-        get(
-            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions/{transactionId}/detail",
-            tableController::getTransactionDetail);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions", tableController::getTablePartitions);
-        get(
-            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
-            tableController::getPartitionFileListInfo);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/operations", tableController::getTableOperations);
-        get("/catalogs/{catalog}/databases/{db}/tables", tableController::getTableList);
-        get("/catalogs/{catalog}/databases", tableController::getDatabaseList);
-        get("/catalogs", tableController::getCatalogs);
-        // catalog controller
-        post("/catalogs", catalogController::createCatalog);
-        // make sure types is before
-        get("/catalogs/types", catalogController::getCatalogTypeList);
-        get("/catalog/metastore/types", catalogController::getCatalogTypeList);
-
-        get("/catalogs/{catalogName}", catalogController::getCatalogDetail);
-        delete("/catalogs/{catalogName}", catalogController::deleteCatalog);
-        put("/catalogs/{catalogName}", catalogController::updateCatalog);
-        get("/catalogs/{catalogName}/delete/check", catalogController::catalogDeleteCheck);
-        get("/catalogs/{catalogName}/config/{type}/{key}", catalogController::getCatalogConfFileContent);
-        // optimize controller
-        get("/optimize/optimizerGroups/{optimizerGroup}/tables", optimizerController::getOptimizerTables);
-        get("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::getOptimizers);
-        get("/optimize/optimizerGroups", optimizerController::getOptimizerGroups);
-        get("/optimize/optimizerGroups/{optimizerGroup}/info", optimizerController::getOptimizerGroupInfo);
-        delete("/optimize/optimizerGroups/{optimizerGroup}/optimizers/{jobId}", optimizerController::releaseOptimizer);
-        post("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::scaleOutOptimizer);
-
-        // console controller
-        get("/terminal/examples", terminalController::getExamples);
-        get("/terminal/examples/{exampleName}", terminalController::getSqlExamples);
-        post("/terminal/catalogs/{catalog}/execute", terminalController::executeScript);
-        get("/terminal/{sessionId}/logs", terminalController::getLogs);
-        get("/terminal/{sessionId}/result", terminalController::getSqlResult);
-        put("/terminal/{sessionId}/stop", terminalController::stopSql);
-        get("/terminal/latestInfos/", terminalController::getLatestInfo);
-
-        // file controller
-        post("/files", platformFileInfoController::uploadFile);
-        get("/files/{fileId}", platformFileInfoController::downloadFile);
-
-        // setting controller
-        get("/settings/containers", settingController::getContainerSetting);
-        get("/settings/system", settingController::getSystemSetting);
-
-        // health check
-        get("/health/status", healthCheckController::healthCheck);
-
-        // version controller
-        get("/versionInfo", versionController::getVersionInfo);
-      });
-      // for open api
-      path("/api/ams/v1", () -> {
-
-        // table controller
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/details", tableController::getTableDetail);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/hive/details", tableController::getHiveTableDetail);
-        post("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade", tableController::upgradeHiveTable);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade/status", tableController::getUpgradeStatus);
-        get("/upgrade/properties", tableController::getUpgradeHiveTableProperties);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimize", tableController::getOptimizeInfo);
-        get(
-            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
-            tableController::getTableTransactions);
-        get(
-            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions/{transactionId}/detail",
-            tableController::getTransactionDetail);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions", tableController::getTablePartitions);
-        get(
-            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
-            tableController::getPartitionFileListInfo);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/signature", tableController::getTableDetailTabToken);
-        get("/catalogs/{catalog}/databases/{db}/tables", tableController::getTableList);
-        get("/catalogs/{catalog}/databases", tableController::getDatabaseList);
-        get("/catalogs", tableController::getCatalogs);
-
-        // optimize controller
-        get("/optimize/optimizerGroups/{optimizerGroup}/tables", optimizerController::getOptimizerTables);
-        get("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::getOptimizers);
-        get("/optimize/optimizerGroups", optimizerController::getOptimizerGroups);
-        get("/optimize/optimizerGroups/{optimizerGroup}/info", optimizerController::getOptimizerGroupInfo);
-        delete("/optimize/optimizerGroups/{optimizerGroup}/optimizers/{jobId}", optimizerController::releaseOptimizer);
-        post("/optimize/optimizerGroups/{optimizerGroup}/optimizers", optimizerController::scaleOutOptimizer);
-
-        // console controller
-        get("/terminal/examples", terminalController::getExamples);
-        get("/terminal/examples/{exampleName}", terminalController::getSqlExamples);
-        post("/terminal/catalogs/{catalog}/execute", terminalController::executeScript);
-        get("/terminal/{sessionId}/logs", terminalController::getLogs);
-        get("/terminal/{sessionId}/result", terminalController::getSqlResult);
-        put("/terminal/{sessionId}/stop", terminalController::stopSql);
-        get("/terminal/latestInfos/", terminalController::getLatestInfo);
-
-        // health check
-        get("/health/status", healthCheckController::healthCheck);
-
-        // version controller
-        get("/versionInfo", versionController::getVersionInfo);
-      });
-    });
-
-    // after-handler
-    app.after(ctx -> {
-    });
-
-    // exception-handler
-    app.exception(Exception.class, (e, ctx) -> {
-      if (e instanceof ForbiddenException) {
-        try {
-          // request doesn't start with /ams is  page request. we return index.html
-          if (!ctx.req.getRequestURI().startsWith("/ams")) {
-            ctx.html(getFileContent());
-          } else {
-            ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "need login before request", ""));
-          }
-        } catch (Exception fe) {
-          LOG.error("Failed to getRuntime index.html {}", fe.getMessage(), fe);
-        }
-      } else if (e instanceof SignatureCheckException) {
-        ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Signature Exception  before request", ""));
-      } else {
-        LOG.error("Failed to handle request", e);
-        ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, e.getMessage(), ""));
-      }
-    });
-
-    // default response handle
-    app.error(HttpCode.NOT_FOUND.getStatus(), ctx ->
-        ctx.json(new ErrorResponse(HttpCode.NOT_FOUND, "page not found!", "")));
-
-    app.error(HttpCode.INTERNAL_SERVER_ERROR.getStatus(), ctx ->
-        ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, "internal error!", "")));
+  public Consumer<StaticFileConfig> configStaticFiles() {
+    return staticFiles -> {
+      staticFiles.hostedPath = "/";
+      // change to host files on a sub path, like '/assets'
+      staticFiles.directory = "/static";
+      // the directory where your files are located
+      staticFiles.location = Location.CLASSPATH;
+      // Location.CLASSPATH (jar) or Location.EXTERNAL (file system)
+      staticFiles.precompress = false;
+      // if the files should be pre-compressed and cached in memory (optimization)
+      staticFiles.aliasCheck = null;
+      // you can configure this to enable symlinks (= ContextHandler.ApproveAliases())
+      // staticFiles.headers = Map.of(...);
+      // headers that will be set for the files
+      staticFiles.skipFileFunction = req -> false;
+      // you can use this to skip certain files in the dir, based on the HttpServletRequest
+    };
   }
 
-  public void stopRestServer() {
-    if (app != null) {
-      app.stop();
+  public EndpointGroup endpoints() {
+    return () -> {
+      /*backend routers*/
+      path(
+          "",
+          () -> {
+            //  /docs/latest can't be located to the index.html, so we add rule to redirect to it.
+            get("/docs/latest", ctx -> ctx.redirect("/docs/latest/index.html"));
+            // unify all addSinglePageRoot(like /tables, /optimizers etc) configure here
+            get(
+                "/{page}",
+                ctx -> {
+                  String fileName = ctx.pathParam("page");
+                  if (fileName != null && fileName.endsWith("ico")) {
+                    ctx.contentType(ContentType.IMAGE_ICO);
+                    ctx.result(
+                        DashboardServer.class
+                            .getClassLoader()
+                            .getResourceAsStream("static/" + fileName));
+                  } else {
+                    ctx.html(getFileContent());
+                  }
+                });
+            get("/hive-tables/upgrade", ctx -> ctx.html(getFileContent()));
+          });
+      path(
+          "/ams/v1",
+          () -> {
+            // login controller
+            get("/login/current", loginController::getCurrent);
+            post("/login", loginController::login);
+
+            // table controller
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/details",
+                tableController::getTableDetail);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/hive/details",
+                tableController::getHiveTableDetail);
+            post(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade",
+                tableController::upgradeHiveTable);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade/status",
+                tableController::getUpgradeStatus);
+            get("/upgrade/properties", tableController::getUpgradeHiveTableProperties);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
+                tableController::getOptimizingProcesses);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
+                tableController::getTableTransactions);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions/{transactionId}/detail",
+                tableController::getTransactionDetail);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions",
+                tableController::getTablePartitions);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
+                tableController::getPartitionFileListInfo);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/operations",
+                tableController::getTableOperations);
+            get("/catalogs/{catalog}/databases/{db}/tables", tableController::getTableList);
+            get("/catalogs/{catalog}/databases", tableController::getDatabaseList);
+            get("/catalogs", tableController::getCatalogs);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/tags",
+                tableController::getTableTags);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
+                tableController::getTableBranchs);
+
+            // catalog controller
+            post("/catalogs", catalogController::createCatalog);
+            // make sure types is before
+            get("/catalogs/types", catalogController::getCatalogTypeList);
+            get("/catalog/metastore/types", catalogController::getCatalogTypeList);
+
+            get("/catalogs/{catalogName}", catalogController::getCatalogDetail);
+            delete("/catalogs/{catalogName}", catalogController::deleteCatalog);
+            put("/catalogs/{catalogName}", catalogController::updateCatalog);
+            get("/catalogs/{catalogName}/delete/check", catalogController::catalogDeleteCheck);
+            get(
+                "/catalogs/{catalogName}/config/{type}/{key}",
+                catalogController::getCatalogConfFileContent);
+            // optimize controller
+            get(
+                "/optimize/optimizerGroups/{optimizerGroup}/tables",
+                optimizerController::getOptimizerTables);
+            get(
+                "/optimize/optimizerGroups/{optimizerGroup}/optimizers",
+                optimizerController::getOptimizers);
+            get("/optimize/optimizerGroups", optimizerController::getOptimizerGroups);
+            get(
+                "/optimize/optimizerGroups/{optimizerGroup}/info",
+                optimizerController::getOptimizerGroupInfo);
+            delete(
+                "/optimize/optimizerGroups/{optimizerGroup}/optimizers/{jobId}",
+                optimizerController::releaseOptimizer);
+            post(
+                "/optimize/optimizerGroups/{optimizerGroup}/optimizers",
+                optimizerController::scaleOutOptimizer);
+            get("/optimize/resourceGroups", optimizerController::getResourceGroup);
+            post("/optimize/resourceGroups", optimizerController::createResourceGroup);
+            put("/optimize/resourceGroups", optimizerController::updateResourceGroup);
+            delete(
+                "/optimize/resourceGroups/{resourceGroupName}",
+                optimizerController::deleteResourceGroup);
+            get(
+                "/optimize/resourceGroups/{resourceGroupName}/delete/check",
+                optimizerController::deleteCheckResourceGroup);
+            get("/optimize/containers/get", optimizerController::getContainers);
+
+            // console controller
+            get("/terminal/examples", terminalController::getExamples);
+            get("/terminal/examples/{exampleName}", terminalController::getSqlExamples);
+            post("/terminal/catalogs/{catalog}/execute", terminalController::executeScript);
+            get("/terminal/{sessionId}/logs", terminalController::getLogs);
+            get("/terminal/{sessionId}/result", terminalController::getSqlResult);
+            put("/terminal/{sessionId}/stop", terminalController::stopSql);
+            get("/terminal/latestInfos/", terminalController::getLatestInfo);
+
+            // file controller
+            post("/files", platformFileInfoController::uploadFile);
+            get("/files/{fileId}", platformFileInfoController::downloadFile);
+
+            // setting controller
+            get("/settings/containers", settingController::getContainerSetting);
+            get("/settings/system", settingController::getSystemSetting);
+
+            // health check
+            get("/health/status", healthCheckController::healthCheck);
+
+            // version controller
+            get("/versionInfo", versionController::getVersionInfo);
+          });
+      // for open api
+      path(
+          "/api/ams/v1",
+          () -> {
+
+            // table controller
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/details",
+                tableController::getTableDetail);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/hive/details",
+                tableController::getHiveTableDetail);
+            post(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade",
+                tableController::upgradeHiveTable);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade/status",
+                tableController::getUpgradeStatus);
+            get("/upgrade/properties", tableController::getUpgradeHiveTableProperties);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
+                tableController::getOptimizingProcesses);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
+                tableController::getTableTransactions);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions/{transactionId}/detail",
+                tableController::getTransactionDetail);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions",
+                tableController::getTablePartitions);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
+                tableController::getPartitionFileListInfo);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/operations",
+                tableController::getTableOperations);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/signature",
+                tableController::getTableDetailTabToken);
+            get("/catalogs/{catalog}/databases/{db}/tables", tableController::getTableList);
+            get("/catalogs/{catalog}/databases", tableController::getDatabaseList);
+            get("/catalogs", tableController::getCatalogs);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/tags",
+                tableController::getTableTags);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
+                tableController::getTableBranchs);
+
+            // optimize controller
+            get(
+                "/optimize/optimizerGroups/{optimizerGroup}/tables",
+                optimizerController::getOptimizerTables);
+            get(
+                "/optimize/optimizerGroups/{optimizerGroup}/optimizers",
+                optimizerController::getOptimizers);
+            get("/optimize/optimizerGroups", optimizerController::getOptimizerGroups);
+            get(
+                "/optimize/optimizerGroups/{optimizerGroup}/info",
+                optimizerController::getOptimizerGroupInfo);
+            delete(
+                "/optimize/optimizerGroups/{optimizerGroup}/optimizers/{jobId}",
+                optimizerController::releaseOptimizer);
+            post(
+                "/optimize/optimizerGroups/{optimizerGroup}/optimizers",
+                optimizerController::scaleOutOptimizer);
+            get("/optimize/resourceGroups", optimizerController::getResourceGroup);
+            post("/optimize/resourceGroups", optimizerController::createResourceGroup);
+            put("/optimize/resourceGroups", optimizerController::updateResourceGroup);
+            delete(
+                "/optimize/resourceGroups/{resourceGroupName}",
+                optimizerController::deleteResourceGroup);
+            get(
+                "/optimize/resourceGroups/{resourceGroupName}/delete/check",
+                optimizerController::deleteCheckResourceGroup);
+            get("/optimize/containers/get", optimizerController::getContainers);
+
+            // console controller
+            get("/terminal/examples", terminalController::getExamples);
+            get("/terminal/examples/{exampleName}", terminalController::getSqlExamples);
+            post("/terminal/catalogs/{catalog}/execute", terminalController::executeScript);
+            get("/terminal/{sessionId}/logs", terminalController::getLogs);
+            get("/terminal/{sessionId}/result", terminalController::getSqlResult);
+            put("/terminal/{sessionId}/stop", terminalController::stopSql);
+            get("/terminal/latestInfos/", terminalController::getLatestInfo);
+
+            // health check
+            get("/health/status", healthCheckController::healthCheck);
+
+            // version controller
+            get("/versionInfo", versionController::getVersionInfo);
+          });
+    };
+  }
+
+  public void preHandleRequest(Context ctx) {
+    String uriPath = ctx.path();
+    if (needApiKeyCheck(uriPath)) {
+      checkApiToken(
+          ctx.method(),
+          ctx.url(),
+          ctx.queryParam("apiKey"),
+          ctx.queryParam("signature"),
+          ctx.queryParamMap());
+    } else if (needLoginCheck(uriPath)) {
+      if (null == ctx.sessionAttribute("user")) {
+        ctx.sessionAttributeMap();
+        LOG.info("session info: {}", JSONObject.toJSONString(ctx.sessionAttributeMap()));
+        throw new ForbiddenException();
+      }
     }
-    if (terminalManager != null) {
-      terminalManager.dispose();
+  }
+
+  public void handleException(Exception e, Context ctx) {
+    if (e instanceof ForbiddenException) {
+      try {
+        // request doesn't start with /ams is  page request. we return index.html
+        if (!ctx.req.getRequestURI().startsWith("/ams")) {
+          ctx.html(getFileContent());
+        } else {
+          ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "need login before request", ""));
+        }
+      } catch (Exception fe) {
+        LOG.error("Failed to handle request", fe);
+      }
+    } else if (e instanceof SignatureCheckException) {
+      ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Signature Exception  before request", ""));
+    } else {
+      LOG.error("Failed to handle request", e);
+      ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, e.getMessage(), ""));
     }
   }
 
   private static final String[] urlWhiteList = {
-      "/ams/v1/versionInfo",
-      "/ams/v1/login",
-      "/",
-      "/overview",
-      "/introduce",
-      "/tables",
-      "/optimizers",
-      "/login",
-      "/terminal",
-      "/hive-tables/upgrade",
-      "/hive-tables",
-      "/index.html",
-      "/favicon.ico",
-      "/js/*",
-      "/img/*",
-      "/css/*"
+    "/ams/v1/versionInfo",
+    "/ams/v1/login",
+    "/ams/v1/health/status",
+    "/",
+    "/overview",
+    "/introduce",
+    "/tables",
+    "/optimizers",
+    "/login",
+    "/terminal",
+    "/hive-tables/upgrade",
+    "/hive-tables",
+    "/index.html",
+    "/favicon.ico",
+    "/js/*",
+    "/img/*",
+    "/css/*",
+    IcebergRestCatalogService.ICEBERG_REST_API_PREFIX + "/*"
   };
 
   private static boolean needLoginCheck(String uri) {
@@ -367,11 +446,14 @@ public class DashboardServer {
   }
 
   private boolean needApiKeyCheck(String uri) {
-    return uri.startsWith("/api");
+    return uri.startsWith("/api/ams");
   }
 
   private void checkApiToken(
-      String requestMethod, String requestUrl, String apiKey, String signature,
+      String requestMethod,
+      String requestUrl,
+      String apiKey,
+      String signature,
       Map<String, List<String>> params) {
     String plainText;
     String encryptString;
@@ -381,7 +463,6 @@ public class DashboardServer {
     long receive = System.currentTimeMillis();
     APITokenManager apiTokenService = new APITokenManager();
     try {
-      //getRuntime secret
       String secrete = apiTokenService.getSecretByKey(apiKey);
 
       if (secrete == null) {
@@ -405,7 +486,11 @@ public class DashboardServer {
 
       plainText = String.format("%s%s%s", apiKey, encryptString, secrete);
       signCal = ParamSignatureCalculator.getMD5(plainText);
-      LOG.info("calculate:  plainText:{}, signCal:{}, signFromRequest: {}", plainText, signCal, signature);
+      LOG.info(
+          "calculate:  plainText:{}, signCal:{}, signFromRequest: {}",
+          plainText,
+          signCal,
+          signature);
 
       if (!signature.equals(signCal)) {
         LOG.error(String.format("Signature Check Failed!!, req:%s, cal:%s", signature, signCal));
@@ -415,7 +500,11 @@ public class DashboardServer {
       LOG.error("api doFilter error.", e);
       throw new SignatureCheckException();
     } finally {
-      LOG.debug("[finish] in {} ms, [{}] {}", System.currentTimeMillis() - receive, requestMethod, requestUrl);
+      LOG.debug(
+          "[finish] in {} ms, [{}] {}",
+          System.currentTimeMillis() - receive,
+          requestMethod,
+          requestUrl);
     }
   }
 }

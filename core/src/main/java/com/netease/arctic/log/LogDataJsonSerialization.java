@@ -25,26 +25,21 @@ import org.apache.iceberg.Schema;
 
 import java.io.Serializable;
 
-/**
- * Serialization that serializes an instance of {@link LogData} into a JSON bytes.
- */
+/** Serialization that serializes an instance of {@link LogData} into a JSON bytes. */
 public class LogDataJsonSerialization<T> implements Serializable {
   private static final long serialVersionUID = 66420071549145794L;
   private transient LogDataToJsonConverters.LogDataToJsonConverter<T> logDataToJsonConverter;
 
-  private Schema schema;
-  private LogData.FieldGetterFactory<T> fieldGetterFactory;
+  private final Schema schema;
+  private final LogData.FieldGetterFactory<T> fieldGetterFactory;
 
-  /**
-   * Reusable object node.
-   */
+  /** Reusable object node. */
   private transient ObjectNode node;
-  /**
-   * Object mapper that is used to create output JSON objects.
-   */
+  /** Object mapper that is used to create output JSON objects. */
   private final ObjectMapper mapper = new ObjectMapper();
 
-  private transient LogDataToJsonConverters.LogDataToJsonConverter.FormatConverterContext converterContext;
+  private transient LogDataToJsonConverters.LogDataToJsonConverter.FormatConverterContext
+      converterContext;
 
   public LogDataJsonSerialization(Schema schema, FieldGetterFactory<T> fieldGetterFactory) {
     this.schema = schema;
@@ -53,12 +48,14 @@ public class LogDataJsonSerialization<T> implements Serializable {
 
   public void init() {
     if (this.logDataToJsonConverter == null) {
-      this.logDataToJsonConverter = LogDataToJsonConverters.createConverter(schema.asStruct(), fieldGetterFactory);
+      this.logDataToJsonConverter =
+          LogDataToJsonConverters.createConverter(schema.asStruct(), fieldGetterFactory);
     }
   }
 
   public byte[] serialize(LogData<T> element) {
-    // 4 bytes version + 4 bytes upstreamId + 8 bytes EpicNo + 1 byte flip + 1 byte rowKind + n bytes object data
+    // 4 bytes version + 4 bytes upstreamId + 8 bytes EpicNo + 1 byte flip + 1 byte rowKind + n
+    // bytes object data
     MessageBytes messageBytes = new MessageBytes();
 
     messageBytes
@@ -77,9 +74,7 @@ public class LogDataJsonSerialization<T> implements Serializable {
     if (node == null) {
       node = mapper.createObjectNode();
       converterContext =
-          new LogDataToJsonConverters.LogDataToJsonConverter.FormatConverterContext(
-              mapper, node
-          );
+          new LogDataToJsonConverters.LogDataToJsonConverter.FormatConverterContext(mapper, node);
     }
 
     try {

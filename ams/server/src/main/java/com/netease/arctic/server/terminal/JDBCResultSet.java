@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.terminal;
 
-import com.clearspring.analytics.util.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -27,10 +27,10 @@ import java.util.List;
 
 public class JDBCResultSet implements TerminalSession.ResultSet {
 
-  private ResultSet rs;
-  private Statement statement;
+  private final ResultSet rs;
+  private final Statement statement;
 
-  private List<String> columns = Lists.newArrayList();
+  private final List<String> columns = Lists.newArrayList();
 
   public JDBCResultSet(ResultSet rs, Statement sts) {
     this.rs = rs;

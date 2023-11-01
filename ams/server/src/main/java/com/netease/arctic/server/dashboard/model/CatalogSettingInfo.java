@@ -24,10 +24,12 @@ import java.util.Map;
 public class CatalogSettingInfo {
   String name;
   String type;
+  String optimizerGroup;
   List<String> tableFormatList;
   Map<String, Object> storageConfig;
   Map<String, Object> authConfig;
   Map<String, String> properties;
+  Map<String, String> tableProperties;
 
   public List<String> getTableFormatList() {
     return tableFormatList;
@@ -53,6 +55,14 @@ public class CatalogSettingInfo {
     this.type = type;
   }
 
+  public String getOptimizerGroup() {
+    return optimizerGroup;
+  }
+
+  public void setOptimizerGroup(String optimizerGroup) {
+    this.optimizerGroup = optimizerGroup;
+  }
+
   public Map<String, Object> getStorageConfig() {
     return storageConfig;
   }
@@ -75,6 +85,14 @@ public class CatalogSettingInfo {
 
   public void setProperties(Map<String, String> properties) {
     this.properties = properties;
+  }
+
+  public Map<String, String> getTableProperties() {
+    return tableProperties;
+  }
+
+  public void setTableProperties(Map<String, String> tableProperties) {
+    this.tableProperties = tableProperties;
   }
 
   public static class ConfigFileItem {
@@ -103,5 +121,3 @@ public class CatalogSettingInfo {
     }
   }
 }
-
-

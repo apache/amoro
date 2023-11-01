@@ -26,7 +26,9 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 
-public class MixFormatRewriteExecutorFactory implements OptimizingExecutorFactory<RewriteFilesInput> {
+/** A factory to create {@link MixFormatRewriteExecutor} */
+public class MixFormatRewriteExecutorFactory
+    implements OptimizingExecutorFactory<RewriteFilesInput> {
 
   private Map<String, String> properties;
 
@@ -38,7 +40,10 @@ public class MixFormatRewriteExecutorFactory implements OptimizingExecutorFactor
   @Override
   public OptimizingExecutor createExecutor(RewriteFilesInput input) {
     OptimizingInputProperties optimizingConfig = OptimizingInputProperties.parse(properties);
-    return new MixFormatRewriteExecutor(input, input.getTable(), optimizingConfig.getStructLikeCollections(),
+    return new MixFormatRewriteExecutor(
+        input,
+        input.getTable(),
+        optimizingConfig.getStructLikeCollections(),
         optimizingConfig.getOutputDir());
   }
 }

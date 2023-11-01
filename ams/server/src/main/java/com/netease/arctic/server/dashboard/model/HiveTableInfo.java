@@ -31,8 +31,13 @@ public class HiveTableInfo {
   private Map<String, String> properties;
   private int createTime;
 
-  public HiveTableInfo(TableIdentifier tableIdentifier, TableMeta.TableType tableType, List<AMSColumnInfo> schema,
-                       List<AMSColumnInfo> partitionColumnList, Map<String, String> properties, int createTime) {
+  public HiveTableInfo(
+      TableIdentifier tableIdentifier,
+      TableMeta.TableType tableType,
+      List<AMSColumnInfo> schema,
+      List<AMSColumnInfo> partitionColumnList,
+      Map<String, String> properties,
+      int createTime) {
     this.tableIdentifier = tableIdentifier;
     this.tableType = tableType;
     this.schema = schema;
@@ -41,8 +46,7 @@ public class HiveTableInfo {
     this.createTime = createTime;
   }
 
-  public HiveTableInfo() {
-  }
+  public HiveTableInfo() {}
 
   public TableIdentifier getTableIdentifier() {
     return tableIdentifier;

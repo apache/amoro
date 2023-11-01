@@ -41,6 +41,10 @@ public interface TableTestHelper {
   TableIdentifier TEST_TABLE_ID =
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, TEST_TABLE_NAME);
 
+  default TableIdentifier id() {
+    return TEST_TABLE_ID;
+  }
+
   Schema tableSchema();
 
   PartitionSpec partitionSpec();
@@ -51,15 +55,26 @@ public interface TableTestHelper {
 
   Record generateTestRecord(int id, String name, long ts, String opTime);
 
-  List<DataFile> writeChangeStore(KeyedTable keyedTable, Long txId, ChangeAction action,
-      List<Record> records, boolean orderedWrite);
+  List<DataFile> writeChangeStore(
+      KeyedTable keyedTable,
+      Long txId,
+      ChangeAction action,
+      List<Record> records,
+      boolean orderedWrite);
 
-  List<DataFile> writeBaseStore(ArcticTable keyedTable, long txId, List<Record> records, boolean orderedWrite);
+  List<DataFile> writeBaseStore(
+      ArcticTable keyedTable, long txId, List<Record> records, boolean orderedWrite);
 
-  List<Record> readKeyedTable(KeyedTable keyedTable, Expression expression, Schema projectSchema, boolean useDiskMap,
+  List<Record> readKeyedTable(
+      KeyedTable keyedTable,
+      Expression expression,
+      Schema projectSchema,
+      boolean useDiskMap,
       boolean readDeletedData);
 
-  List<Record> readChangeStore(KeyedTable keyedTable, Expression expression, Schema projectSchema, boolean useDiskMap);
+  List<Record> readChangeStore(
+      KeyedTable keyedTable, Expression expression, Schema projectSchema, boolean useDiskMap);
 
-  List<Record> readBaseStore(ArcticTable table, Expression expression, Schema projectSchema, boolean useDiskMap);
+  List<Record> readBaseStore(
+      ArcticTable table, Expression expression, Schema projectSchema, boolean useDiskMap);
 }

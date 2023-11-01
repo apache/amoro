@@ -20,8 +20,7 @@ package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.ArcticHadoopFileIO;
-import com.netease.arctic.io.DataTestHelpers;
-import com.netease.arctic.server.dashboard.model.TableOptimizingProcess;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -58,16 +57,14 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
     updateProperties(table, TableProperties.BASE_FILE_INDEX_HASH_BUCKET, 1 + "");
     writeBase(table, rangeFromTo(1, 100, "aaa", quickDateWithZone(3)));
     // wait Full Optimize result
-    TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL_MAJOR, 1, 1);
+    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL, 1, 1);
     assertIdRange(readRecords(table), 1, 100);
     // assert file are in hive location
     // assertIdRange(readHiveTableData(), 1, 100);
 
     // Step2: write 1 change delete record
-    writeChange(table, null, Lists.newArrayList(
-        newRecord(1, "aaa", quickDateWithZone(3))
-    ));
+    writeChange(table, null, Lists.newArrayList(newRecord(1, "aaa", quickDateWithZone(3))));
     // wait Minor Optimize result, generate 1 pos-delete file
     optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
@@ -80,7 +77,8 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
     optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
     writeBase(table, rangeFromTo(103, 104, "aaa", quickDateWithZone(3)));
-    // wait Major Optimize result, generate 1 data file from 2 small files, but not move to hive location
+    // wait Major Optimize result, generate 1 data file from 2 small files, but not move to hive
+    // location
     optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 3, 1);
     assertIdRange(readRecords(table), 2, 104);
@@ -94,15 +92,16 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
     updateProperties(table, TableProperties.BASE_FILE_INDEX_HASH_BUCKET, 1 + "");
     writeBase(table, rangeFromTo(1, 100, "aaa", quickDateWithZone(3)));
     // wait Full Optimize result
-    TableOptimizingProcess optimizeHistory = checker.waitOptimizeResult();
-    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL_MAJOR, 1, 1);
+    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
+    checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL, 1, 1);
     assertIdRange(readRecords(table), 1, 100);
     // assert file are in hive location
     // assertIdRange(readHiveTableData(), 1, 100);
 
     // Step2: write 1 small file to base
     writeBase(table, rangeFromTo(101, 102, "aaa", quickDateWithZone(3)));
-    // wait Major Optimize result, generate 1 data file from 2 small files, but not move to hive location
+    // wait Major Optimize result, generate 1 data file from 2 small files, but not move to hive
+    // location
     optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
     assertIdRange(readRecords(table), 1, 102);
@@ -129,12 +128,14 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
   }
 
   private List<Record> readHiveTableData() throws TException, IOException {
-    Table table = hiveClient.getTable(arcticTable.id().getDatabase(), arcticTable.id().getTableName());
+    Table table =
+        hiveClient.getTable(arcticTable.id().getDatabase(), arcticTable.id().getTableName());
     String location = table.getSd().getLocation();
     List<String> files = filesInLocation(location);
     List<Record> records = new ArrayList<>();
     for (String file : files) {
-      records.addAll(DataTestHelpers.readDataFile(FileFormat.PARQUET, arcticTable.schema(), file));
+      records.addAll(
+          MixedDataTestHelpers.readDataFile(FileFormat.PARQUET, arcticTable.schema(), file));
     }
     return records;
   }

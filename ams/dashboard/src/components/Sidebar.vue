@@ -1,8 +1,8 @@
 <template>
   <div :class="{'side-bar-collapsed': collapsed}" class="side-bar">
-    <div :class="{'logo-collapsed': collapsed}" @mouseenter="toggleTablesMenu(false)" @click="viewIntroduce" class="logo g-flex-ac">
-      <img src="../assets/images/logo.svg" class="logo-img" alt="">
-      <img v-show="!collapsed" src="../assets/images/arctic-dashboard.svg" class="arctic-name" alt="">
+    <div :class="{'logo-collapsed': collapsed}" @mouseenter="toggleTablesMenu(false)" @click="viewIntroduce" class="logo g-flex-ae">
+      <img src="../assets/images/logo1.svg" class="logo-img" alt="">
+      <img v-show="!collapsed" src="../assets/images/arctic-dashboard1.svg" class="arctic-name" alt="">
     </div>
     <a-menu
       v-model:selectedKeys="selectedKeys"
@@ -83,8 +83,8 @@ export default defineComponent({
           icon: 'catalogs'
         },
         {
-          key: 'optimizers',
-          title: t('optimizers'),
+          key: 'optimizing',
+          title: t('Optimizing'),
           icon: 'optimizers'
         },
         {
@@ -97,6 +97,11 @@ export default defineComponent({
           title: t('settings'),
           icon: 'settings'
         }
+        // {
+        //   key: 'resource',
+        //   title: t('resource'),
+        //   icon: 'settings'
+        // }
       ]
       return hasToken.value ? menu : allMenu
     })
@@ -230,14 +235,15 @@ export default defineComponent({
       overflow: hidden;
       background-color: #001529;
       cursor: pointer;
+      padding: 12px 20px;
     }
     .logo-img {
-      width: 32px;
-      height: 32px;
+      width: 24px;
+      height: 24px;
     }
     .arctic-name {
-      width: 112px;
-      margin: 4px 0 0 8px;
+      width: 66px;
+      margin: 4px 0 0 4px;
     }
     .toggle-btn {
       position: absolute;

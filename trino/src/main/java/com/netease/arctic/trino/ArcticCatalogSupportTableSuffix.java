@@ -22,7 +22,6 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
@@ -33,7 +32,6 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
@@ -69,11 +67,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * A wrapper of {@link ArcticCatalog} to resolve sub table, such as "tableName#change","tableName#base"
+ * A wrapper of {@link ArcticCatalog} to resolve sub table, such as
+ * "tableName#change","tableName#base"
  */
 public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
 
-  private ArcticCatalog arcticCatalog;
+  private final ArcticCatalog arcticCatalog;
 
   public ArcticCatalogSupportTableSuffix(ArcticCatalog arcticCatalog) {
     this.arcticCatalog = arcticCatalog;
@@ -85,8 +84,7 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   }
 
   @Override
-  public void initialize(
-      AmsClient client, CatalogMeta meta, Map<String, String> properties) {
+  public void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties) {
     arcticCatalog.initialize(client, meta, properties);
   }
 
@@ -114,12 +112,18 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   public ArcticTable loadTable(TableIdentifier tableIdentifier) {
     TableNameResolve tableNameResolve = new TableNameResolve(tableIdentifier.getTableName());
     if (tableNameResolve.withSuffix()) {
-      TableIdentifier newTableIdentifier = TableIdentifier.of(tableIdentifier.getCatalog(),
-          tableIdentifier.getDatabase(), tableNameResolve.getTableName());
+      TableIdentifier newTableIdentifier =
+          TableIdentifier.of(
+              tableIdentifier.getCatalog(),
+              tableIdentifier.getDatabase(),
+              tableNameResolve.getTableName());
       ArcticTable arcticTable = arcticCatalog.loadTable(newTableIdentifier);
       if (arcticTable.isUnkeyedTable()) {
-        throw new IllegalArgumentException("table " + newTableIdentifier + " is not keyed table can not use " +
-            "change or base suffix");
+        throw new IllegalArgumentException(
+            "table "
+                + newTableIdentifier
+                + " is not keyed table can not use "
+                + "change or base suffix");
       }
       KeyedTable keyedTable = arcticTable.asKeyedTable();
       if (tableNameResolve.isBase()) {
@@ -142,8 +146,7 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   }
 
   @Override
-  public TableBuilder newTableBuilder(
-      TableIdentifier identifier, Schema schema) {
+  public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema) {
     return arcticCatalog.newTableBuilder(identifier, schema);
   }
 
@@ -160,10 +163,6 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   @Override
   public Map<String, String> properties() {
     return arcticCatalog.properties();
-  }
-
-  public TableMetaStore getTableMetaStore() {
-    return ((BasicArcticCatalog) arcticCatalog).getTableMetaStore();
   }
 
   private static class ChangeTableWithExternalSchemas implements ChangeTable, HasTableOperations {
@@ -197,6 +196,11 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
       columns.add(MetadataColumns.FILE_OFFSET_FILED);
       columns.add(MetadataColumns.CHANGE_ACTION_FIELD);
       return new Schema(columns);
+    }
+
+    @Override
+    public String name() {
+      return table.name();
     }
 
     @Override

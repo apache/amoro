@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.api;
 
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import org.apache.thrift.TException;
 import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -53,8 +52,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
-
 public class MockArcticMetastoreServer implements Runnable {
   private static final Logger LOG = LoggerFactory.getLogger(MockArcticMetastoreServer.class);
   public static final String TEST_CATALOG_NAME = "test_catalog";
@@ -74,47 +71,13 @@ public class MockArcticMetastoreServer implements Runnable {
   public static MockArcticMetastoreServer getInstance() {
     if (!INSTANCE.isStarted()) {
       INSTANCE.start();
-      Map<String, String> storageConfig = new HashMap<>();
-      storageConfig.put(
-          CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE,
-          CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS);
-      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE, getHadoopSite());
-      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE, getHadoopSite());
-
-      Map<String, String> authConfig = new HashMap<>();
-      authConfig.put(
-          CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE,
-          CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE);
-      authConfig.put(
-          CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME,
-          System.getProperty("user.name"));
-
-      Map<String, String> catalogProperties = new HashMap<>();
-      catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE, "/tmp");
-
-      CatalogMeta catalogMeta = new CatalogMeta(TEST_CATALOG_NAME, CATALOG_TYPE_HADOOP,
-          storageConfig, authConfig, catalogProperties);
-      INSTANCE.handler().createCatalog(catalogMeta);
-
-      try {
-        INSTANCE.handler().createDatabase(TEST_CATALOG_NAME, TEST_DB_NAME);
-      } catch (TException e) {
-        throw new RuntimeException(e);
-      }
     }
     return INSTANCE;
   }
 
-  public void createCatalogIfAbsent(CatalogMeta catalogMeta) {
-    MockArcticMetastoreServer server = getInstance();
-    if (server.handler().getCatalogs().stream()
-        .noneMatch(meta -> meta.getCatalogName().equals(catalogMeta.getCatalogName()))) {
-      server.handler().createCatalog(catalogMeta);
-    }
-  }
-
   public static String getHadoopSite() {
-    return Base64.getEncoder().encodeToString("<configuration></configuration>".getBytes(StandardCharsets.UTF_8));
+    return Base64.getEncoder()
+        .encodeToString("<configuration></configuration>".getBytes(StandardCharsets.UTF_8));
   }
 
   public String getServerUrl() {
@@ -190,26 +153,29 @@ public class MockArcticMetastoreServer implements Runnable {
 
       SynchronousQueue<Runnable> executorQueue = new SynchronousQueue<>();
       AtomicInteger threadCount = new AtomicInteger(0);
-      ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
-          1,
-          10,
-          60,
-          TimeUnit.SECONDS,
-          executorQueue,
-          r -> {
-            Thread thread = new Thread(r);
-            String threadName = "AMS-pool-" + threadCount.incrementAndGet();
-            thread.setName(threadName);
-            LOG.info("Mock AMS create thread: " + threadName);
-            return thread;
-          }, new ThreadPoolExecutor.AbortPolicy());
+      ThreadPoolExecutor threadPoolExecutor =
+          new ThreadPoolExecutor(
+              1,
+              10,
+              60,
+              TimeUnit.SECONDS,
+              executorQueue,
+              r -> {
+                Thread thread = new Thread(r);
+                String threadName = "AMS-pool-" + threadCount.incrementAndGet();
+                thread.setName(threadName);
+                LOG.info("Mock AMS create thread: " + threadName);
+                return thread;
+              },
+              new ThreadPoolExecutor.AbortPolicy());
 
-      TThreadPoolServer.Args args = new TThreadPoolServer.Args(socket)
-          .processor(processor)
-          .transportFactory(new TFramedTransport.Factory())
-          .protocolFactory(protocolFactory)
-          .inputProtocolFactory(inputProtoFactory)
-          .executorService(threadPoolExecutor);
+      TThreadPoolServer.Args args =
+          new TThreadPoolServer.Args(socket)
+              .processor(processor)
+              .transportFactory(new TFramedTransport.Factory())
+              .protocolFactory(protocolFactory)
+              .inputProtocolFactory(inputProtoFactory)
+              .executorService(threadPoolExecutor);
       server = new TThreadPoolServer(args);
       server.serve();
 
@@ -248,10 +214,13 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     public void createCatalog(CatalogMeta catalogMeta) {
+      dropCatalog(catalogMeta.getCatalogName());
       catalogs.add(catalogMeta);
     }
 
     public void dropCatalog(String catalogName) {
+      tables.removeIf(tableMeta -> tableMeta.getTableIdentifier().getCatalog().equals(catalogName));
+      databases.remove(catalogName);
       catalogs.removeIf(catalogMeta -> catalogMeta.getCatalogName().equals(catalogName));
     }
 
@@ -260,9 +229,7 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     @Override
-    public void ping() {
-
-    }
+    public void ping() {}
 
     @Override
     public List<CatalogMeta> getCatalogs() {
@@ -271,8 +238,11 @@ public class MockArcticMetastoreServer implements Runnable {
 
     @Override
     public CatalogMeta getCatalog(String name) throws TException {
-      return catalogs.stream().filter(c -> name.equals(c.getCatalogName()))
-          .findFirst().orElseThrow(() -> new NoSuchObjectException("catalog with name: " + name + " non-exists."));
+      return catalogs.stream()
+          .filter(c -> name.equals(c.getCatalogName()))
+          .findFirst()
+          .orElseThrow(
+              () -> new NoSuchObjectException("catalog with name: " + name + " non-exists."));
     }
 
     @Override
@@ -286,11 +256,13 @@ public class MockArcticMetastoreServer implements Runnable {
       if (databases.get(catalogName).contains(database)) {
         throw new AlreadyExistsException("database exist");
       }
-      databases.computeIfPresent(catalogName, (c, dbList) -> {
-        List<String> newList = new ArrayList<>(dbList);
-        newList.add(database);
-        return newList;
-      });
+      databases.computeIfPresent(
+          catalogName,
+          (c, dbList) -> {
+            List<String> newList = new ArrayList<>(dbList);
+            newList.add(database);
+            return newList;
+          });
     }
 
     @Override
@@ -299,23 +271,23 @@ public class MockArcticMetastoreServer implements Runnable {
       if (dbList == null || !dbList.contains(database)) {
         throw new NoSuchObjectException();
       }
-      databases.computeIfPresent(catalogName, (c, dbs) -> {
-        List<String> databaseList = new ArrayList<>(dbs);
-        databaseList.remove(database);
-        return databaseList;
-      });
+      databases.computeIfPresent(
+          catalogName,
+          (c, dbs) -> {
+            List<String> databaseList = new ArrayList<>(dbs);
+            databaseList.remove(database);
+            return databaseList;
+          });
     }
 
     @Override
-    public void createTableMeta(TableMeta tableMeta)
-        throws TException {
+    public void createTableMeta(TableMeta tableMeta) throws TException {
       TableIdentifier identifier = tableMeta.getTableIdentifier();
       String catalog = identifier.getCatalog();
       String database = identifier.getDatabase();
       CatalogMeta catalogMeta = getCatalog(catalog);
-      if (
-          !"hive".equalsIgnoreCase(catalogMeta.getCatalogType()) &&
-              (databases.get(catalog) == null || !databases.get(catalog).contains(database))) {
+      if (!"hive".equalsIgnoreCase(catalogMeta.getCatalogType())
+          && (databases.get(catalog) == null || !databases.get(catalog).contains(database))) {
         throw new NoSuchObjectException("database non-exists");
       }
       tables.add(tableMeta);
@@ -353,14 +325,20 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     @Override
-    public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) {
-      throw new UnsupportedOperationException("allocate TransactionId from AMS is not supported now");
+    public long allocateTransactionId(
+        TableIdentifier tableIdentifier, String transactionSignature) {
+      throw new UnsupportedOperationException(
+          "allocate TransactionId from AMS is not supported now");
     }
 
     @Override
-    public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
-        Map<String, String> properties) throws TException {
-      Map<String, Blocker> blockers = this.tableBlockers.computeIfAbsent(tableIdentifier, t -> new HashMap<>());
+    public Blocker block(
+        TableIdentifier tableIdentifier,
+        List<BlockableOperation> operations,
+        Map<String, String> properties)
+        throws TException {
+      Map<String, Blocker> blockers =
+          this.tableBlockers.computeIfAbsent(tableIdentifier, t -> new HashMap<>());
       long now = System.currentTimeMillis();
       properties.put("create.time", now + "");
       properties.put("expiration.time", (now + DEFAULT_BLOCKER_TIMEOUT) + "");
@@ -382,11 +360,13 @@ public class MockArcticMetastoreServer implements Runnable {
     public long renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
       Map<String, Blocker> blockers = this.tableBlockers.get(tableIdentifier);
       if (blockers == null) {
-        throw new NoSuchObjectException("illegal blockerId " + blockerId + ", it may be released or expired");
+        throw new NoSuchObjectException(
+            "illegal blockerId " + blockerId + ", it may be released or expired");
       }
       Blocker blocker = blockers.get(blockerId);
       if (blocker == null) {
-        throw new NoSuchObjectException("illegal blockerId " + blockerId + ", it may be released or expired");
+        throw new NoSuchObjectException(
+            "illegal blockerId " + blockerId + ", it may be released or expired");
       }
       long expirationTime = System.currentTimeMillis() + DEFAULT_BLOCKER_TIMEOUT;
       blocker.getProperties().put("expiration.time", expirationTime + "");
@@ -410,18 +390,18 @@ public class MockArcticMetastoreServer implements Runnable {
 
   public static class OptimizerManagerHandler implements OptimizingService.Iface {
 
-    private final Map<String, OptimizerRegisterInfo> registeredOptimizers = new ConcurrentHashMap<>();
+    private final Map<String, OptimizerRegisterInfo> registeredOptimizers =
+        new ConcurrentHashMap<>();
     private final Queue<OptimizingTask> pendingTasks = new ArrayBlockingQueue<>(100);
-    private final Map<String, Map<Integer, OptimizingTaskId>> executingTasks = new ConcurrentHashMap<>();
-    private final Map<String, List<OptimizingTaskResult>> completedTasks = new ConcurrentHashMap<>();
+    private final Map<String, Map<Integer, OptimizingTaskId>> executingTasks =
+        new ConcurrentHashMap<>();
+    private final Map<String, List<OptimizingTaskResult>> completedTasks =
+        new ConcurrentHashMap<>();
 
-    public void cleanUp() {
-    }
+    public void cleanUp() {}
 
     @Override
-    public void ping() {
-
-    }
+    public void ping() {}
 
     @Override
     public void touch(String authToken) throws TException {
@@ -442,8 +422,11 @@ public class MockArcticMetastoreServer implements Runnable {
       }
       Map<Integer, OptimizingTaskId> executingTasksMap = executingTasks.get(authToken);
       if (executingTasksMap.containsKey(threadId)) {
-        throw new ArcticException(ErrorCodes.DUPLICATED_TASK_ERROR_CODE, "DuplicateTask", String.format("Optimizer:%s" +
-            " thread:%d is executing another task", authToken, threadId));
+        throw new ArcticException(
+            ErrorCodes.DUPLICATED_TASK_ERROR_CODE,
+            "DuplicateTask",
+            String.format(
+                "Optimizer:%s" + " thread:%d is executing another task", authToken, threadId));
       }
       executingTasksMap.put(threadId, taskId);
     }
@@ -488,7 +471,8 @@ public class MockArcticMetastoreServer implements Runnable {
 
     private void checkToken(String token) throws ArcticException {
       if (!registeredOptimizers.containsKey(token)) {
-        throw new ArcticException(ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE, "unknown token", "unknown token");
+        throw new ArcticException(
+            ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE, "unknown token", "unknown token");
       }
     }
   }

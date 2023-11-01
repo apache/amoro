@@ -19,7 +19,6 @@
 package com.netease.arctic.io.writer;
 
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.iceberg.InternalRecordWrapper;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.SchemaUtil;
@@ -28,12 +27,11 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.FileAppenderFactory;
 
-/**
- * Implementation of {@link ChangeTaskWriter} to write {@link Record}.
- */
+/** Implementation of {@link ChangeTaskWriter} to write {@link Record}. */
 public class GenericChangeTaskWriter extends ChangeTaskWriter<Record> {
 
   private final Schema joinSchema;
@@ -53,9 +51,16 @@ public class GenericChangeTaskWriter extends ChangeTaskWriter<Record> {
       ChangeAction writeAction,
       boolean orderedWriter) {
     super(
-        format, appenderFactory, outputFileFactory, io,
-        targetFileSize, mask, schema, spec, primaryKeySpec,orderedWriter
-    );
+        format,
+        appenderFactory,
+        outputFileFactory,
+        io,
+        targetFileSize,
+        mask,
+        schema,
+        spec,
+        primaryKeySpec,
+        orderedWriter);
     this.joinSchema = SchemaUtil.changeWriteSchema(schema);
     this.wrapper = new InternalRecordWrapper(schema.asStruct());
     this.writeAction = writeAction;
@@ -80,7 +85,7 @@ public class GenericChangeTaskWriter extends ChangeTaskWriter<Record> {
   @Override
   protected ChangeAction action(Record data) {
     if (data instanceof RecordWithAction) {
-      return ((RecordWithAction)data).getAction();
+      return ((RecordWithAction) data).getAction();
     }
     return writeAction;
   }

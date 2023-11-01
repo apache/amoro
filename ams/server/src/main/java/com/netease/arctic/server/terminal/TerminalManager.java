@@ -19,6 +19,7 @@
 package com.netease.arctic.server.terminal;
 
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.ArcticManagementConf;
@@ -34,7 +35,9 @@ import com.netease.arctic.server.terminal.local.LocalSessionFactory;
 import com.netease.arctic.server.utils.ConfigOptions;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.commons.lang.StringUtils;
+import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
@@ -43,6 +46,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -69,10 +73,14 @@ public class TerminalManager {
   private final Thread gcThread;
   private boolean stop = false;
 
-  private final ThreadPoolExecutor executionPool = new ThreadPoolExecutor(
-      1, 50, 30, TimeUnit.MINUTES,
-      new LinkedBlockingQueue<>(),
-      r -> new Thread(null, r, "terminal-execute-" + threadPoolCount.incrementAndGet()));
+  private final ThreadPoolExecutor executionPool =
+      new ThreadPoolExecutor(
+          1,
+          50,
+          30,
+          TimeUnit.MINUTES,
+          new LinkedBlockingQueue<>(),
+          r -> new Thread(null, r, "terminal-execute-" + threadPoolCount.incrementAndGet()));
 
   public TerminalManager(Configurations conf, TableService tableService) {
     this.serviceConfig = conf;
@@ -90,8 +98,8 @@ public class TerminalManager {
    * execute script, return terminal sessionId
    *
    * @param terminalId - id to mark different terminal windows
-   * @param catalog    - current catalog to execute script
-   * @param script     - sql script to be executed
+   * @param catalog - current catalog to execute script
+   * @param script - sql script to be executed
    * @return - sessionId, session refer to a sql execution context
    */
   public String executeScript(String terminalId, String catalog, String script) {
@@ -99,58 +107,39 @@ public class TerminalManager {
     TableMetaStore metaStore = getCatalogTableMetaStore(catalogMeta);
     String sessionId = getSessionId(terminalId, metaStore, catalog);
     String connectorType = catalogConnectorType(catalogMeta);
+    applyClientProperties(catalogMeta);
     Configurations configuration = new Configurations();
     configuration.setInteger(SessionConfigOptions.FETCH_SIZE, resultLimits);
     configuration.set(SessionConfigOptions.CATALOGS, Lists.newArrayList(catalog));
     configuration.set(SessionConfigOptions.catalogConnector(catalog), connectorType);
-    configuration.set(SessionConfigOptions.CATALOG_URL_BASE, AmsUtil.getAMSThriftAddress(serviceConfig));
+    configuration.set(
+        SessionConfigOptions.CATALOG_URL_BASE,
+        AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_TABLE_SERVICE_NAME));
     for (String key : catalogMeta.getCatalogProperties().keySet()) {
       String value = catalogMeta.getCatalogProperties().get(key);
       configuration.set(SessionConfigOptions.catalogProperty(catalog, key), value);
     }
-    configuration.set(
-        SessionConfigOptions.catalogProperty(catalog, "type"),
-        catalogMeta.getCatalogType());
 
     TerminalSessionContext context;
     synchronized (sessionMapLock) {
       sessionMap.computeIfAbsent(
-          sessionId, id -> new TerminalSessionContext(id, metaStore, executionPool, sessionFactory, configuration)
-      );
+          sessionId,
+          id ->
+              new TerminalSessionContext(
+                  id, metaStore, executionPool, sessionFactory, configuration));
 
       context = sessionMap.get(sessionId);
     }
 
     if (!context.isReadyToExecute()) {
-      throw new IllegalStateException("current session is not ready to execute script. status:" + context.getStatus());
+      throw new IllegalStateException(
+          "current session is not ready to execute script. status:" + context.getStatus());
     }
     context.submit(catalog, script, resultLimits, stopOnError);
     return sessionId;
   }
 
-  private String catalogConnectorType(CatalogMeta catalogMeta) {
-    String catalogType = catalogMeta.getCatalogType();
-    String tableFormats = catalogMeta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS);
-    if (catalogType.equalsIgnoreCase(CatalogType.AMS.name())) {
-      return "arctic";
-    } else if (catalogType.equalsIgnoreCase(CatalogType.HIVE.name()) ||
-        catalogType.equalsIgnoreCase(CatalogType.HADOOP.name())) {
-
-      if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_HIVE.name()) ||
-          StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_ICEBERG.name())) {
-        return "arctic";
-      } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.ICEBERG.name())) {
-        return "iceberg";
-      }
-    } else if (catalogType.equalsIgnoreCase(CatalogType.CUSTOM.name())) {
-      return "iceberg";
-    }
-    throw new IllegalStateException("unknown catalog type: " + catalogType);
-  }
-
-  /**
-   * getRuntime execution status and logs
-   */
+  /** Get execution status and logs */
   public LogInfo getExecutionLog(String sessionId) {
     if (sessionId == null) {
       return new LogInfo(ExecutionStatus.Expired.name(), Lists.newArrayList());
@@ -165,9 +154,7 @@ public class TerminalManager {
     return new LogInfo(sessionContext.getStatus().name(), sessionContext.getLogs());
   }
 
-  /**
-   * getRuntime execution result.
-   */
+  /** Get execution result. */
   public List<SqlResult> getExecutionResults(String sessionId) {
     if (sessionId == null) {
       return Lists.newArrayList();
@@ -179,19 +166,23 @@ public class TerminalManager {
     if (context == null) {
       return Lists.newArrayList();
     }
-    return context.getStatementResults().stream().map(statement -> {
-      SqlResult sql = new SqlResult();
-      sql.setId("line:" + statement.getLineNumber() + " - " + statement.getStatement());
-      sql.setColumns(statement.getColumns());
-      sql.setRowData(statement.getDataAsStringList());
-      sql.setStatus(statement.isSuccess() ? ExecutionStatus.Finished.name() : ExecutionStatus.Failed.name());
-      return sql;
-    }).collect(Collectors.toList());
+    return context.getStatementResults().stream()
+        .map(
+            statement -> {
+              SqlResult sql = new SqlResult();
+              sql.setId("line:" + statement.getLineNumber() + " - " + statement.getStatement());
+              sql.setColumns(statement.getColumns());
+              sql.setRowData(statement.getDataAsStringList());
+              sql.setStatus(
+                  statement.isSuccess()
+                      ? ExecutionStatus.Finished.name()
+                      : ExecutionStatus.Failed.name());
+              return sql;
+            })
+        .collect(Collectors.toList());
   }
 
-  /**
-   * cancel execution
-   */
+  /** cancel execution */
   public void cancelExecution(String sessionId) {
     if (sessionId == null) {
       return;
@@ -206,7 +197,7 @@ public class TerminalManager {
   }
 
   /**
-   * getRuntime last execution info
+   * Get last execution info
    *
    * @param terminalId - id of terminal window
    * @return last session info
@@ -244,6 +235,34 @@ public class TerminalManager {
 
   // ========================== private method =========================
 
+  private String catalogConnectorType(CatalogMeta catalogMeta) {
+    String catalogType = catalogMeta.getCatalogType();
+    String tableFormats =
+        catalogMeta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS);
+    if (catalogType.equalsIgnoreCase(CatalogType.AMS.name())) {
+      if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_ICEBERG.name())) {
+        return "arctic";
+      } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.ICEBERG.name())) {
+        return "iceberg";
+      }
+    } else if (catalogType.equalsIgnoreCase(CatalogType.HIVE.name())
+        || catalogType.equalsIgnoreCase(CatalogType.HADOOP.name())) {
+      if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_HIVE.name())
+          || StringUtils.containsIgnoreCase(tableFormats, TableFormat.MIXED_ICEBERG.name())) {
+        return "arctic";
+      } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.ICEBERG.name())) {
+        return "iceberg";
+      } else if (StringUtils.containsIgnoreCase(tableFormats, TableFormat.PAIMON.name())) {
+        return "paimon";
+      }
+    } else if (catalogType.equalsIgnoreCase(CatalogType.CUSTOM.name())) {
+      return "iceberg";
+    } else if (catalogType.equalsIgnoreCase(CatalogType.GLUE.name())) {
+      return "iceberg";
+    }
+    throw new IllegalStateException("unknown catalog type: " + catalogType);
+  }
+
   private String getSessionId(String loginId, TableMetaStore auth, String catalog) {
     String authName = auth.getHadoopUsername();
     if (auth.isKerberosAuthMethod()) {
@@ -255,19 +274,31 @@ public class TerminalManager {
   }
 
   private TableMetaStore getCatalogTableMetaStore(CatalogMeta catalogMeta) {
-    TableMetaStore.Builder builder = TableMetaStore.builder()
-        .withBase64MetaStoreSite(
-            catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE))
-        .withBase64CoreSite(
-            catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE))
-        .withBase64HdfsSite(
-            catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE));
-    if (catalogMeta.getAuthConfigs()
-        .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE)
-        .equalsIgnoreCase(CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE)) {
-      builder.withSimpleAuth(catalogMeta.getAuthConfigs()
-          .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME));
-    } else {
+    TableMetaStore.Builder builder = TableMetaStore.builder();
+    if (catalogMeta.getStorageConfigs() != null) {
+      Map<String, String> storageConfigs = catalogMeta.getStorageConfigs();
+      if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equalsIgnoreCase(
+          CatalogUtil.getCompatibleStorageType(storageConfigs))) {
+        builder
+            .withBase64MetaStoreSite(
+                catalogMeta
+                    .getStorageConfigs()
+                    .get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE))
+            .withBase64CoreSite(
+                catalogMeta
+                    .getStorageConfigs()
+                    .get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE))
+            .withBase64HdfsSite(
+                catalogMeta
+                    .getStorageConfigs()
+                    .get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE));
+      }
+    }
+    String authType = catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
+    if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE.equalsIgnoreCase(authType)) {
+      builder.withSimpleAuth(
+          catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME));
+    } else if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_KERBEROS.equalsIgnoreCase(authType)) {
       builder.withBase64Auth(
           catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE),
           catalogMeta.getAuthConfigs().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME),
@@ -292,16 +323,18 @@ public class TerminalManager {
         backendImplement = KyuubiTerminalSessionFactory.class.getName();
         break;
       case "custom":
-        Optional<String> customFactoryClz = conf.getOptional(ArcticManagementConf.TERMINAL_SESSION_FACTORY);
+        Optional<String> customFactoryClz =
+            conf.getOptional(ArcticManagementConf.TERMINAL_SESSION_FACTORY);
         if (!customFactoryClz.isPresent()) {
-          throw new IllegalArgumentException("terminal backend type is custom, but terminal session factory is not " +
-              "configured");
+          throw new IllegalArgumentException(
+              "terminal backend type is custom, but terminal session factory is not "
+                  + "configured");
         }
         backendImplement = customFactoryClz.get();
         break;
       default:
-        throw new IllegalArgumentException("illegal terminal implement: " + backend + ", local, kyuubi, " +
-            "custom is available");
+        throw new IllegalArgumentException(
+            "illegal terminal implement: " + backend + ", local, kyuubi, " + "custom is available");
     }
     TerminalSessionFactory factory;
     try {
@@ -326,13 +359,29 @@ public class TerminalManager {
     return factory;
   }
 
+  private void applyClientProperties(CatalogMeta catalogMeta) {
+    Set<TableFormat> formats = CatalogUtil.tableFormats(catalogMeta);
+    String catalogType = catalogMeta.getCatalogType();
+    if (formats.contains(TableFormat.ICEBERG)) {
+      if (CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(catalogType)) {
+        catalogMeta.putToCatalogProperties(
+            CatalogMetaProperties.KEY_WAREHOUSE, catalogMeta.getCatalogName());
+      } else if (!catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
+        catalogMeta.putToCatalogProperties("type", catalogType);
+      }
+    } else if (formats.contains(TableFormat.PAIMON) && "hive".equals(catalogType)) {
+      catalogMeta.putToCatalogProperties("metastore", catalogType);
+    }
+  }
+
   private class SessionCleanTask implements Runnable {
     private static final long MINUTE_IN_MILLIS = 60 * 1000;
 
     @Override
     public void run() {
       LOG.info("Terminal Session Clean Task started");
-      LOG.info("Terminal Session Clean Task, check interval: " + SESSION_TIMEOUT_CHECK_INTERVAL + " ms");
+      LOG.info(
+          "Terminal Session Clean Task, check interval: " + SESSION_TIMEOUT_CHECK_INTERVAL + " ms");
       LOG.info("Terminal Session Timeout: " + sessionTimeout + " minutes");
       while (!stop) {
         try {

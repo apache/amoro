@@ -18,12 +18,11 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -43,6 +42,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   protected final OptimizingConfig config;
   protected final long fragmentSize;
   protected final long planTime;
+  protected final Map<String, String> partitionProperties;
+  private final boolean reachFullInterval;
 
   // fragment files
   protected int fragmentFileCount = 0;
@@ -67,12 +68,21 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   private OptimizingType optimizingType = null;
   private String name;
 
-  public CommonPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
+  public CommonPartitionEvaluator(
+      TableRuntime tableRuntime,
+      String partition,
+      Map<String, String> partitionProperties,
+      long planTime) {
     this.partition = partition;
     this.tableRuntime = tableRuntime;
     this.config = tableRuntime.getOptimizingConfig();
     this.fragmentSize = config.getTargetSize() / config.getFragmentRatio();
     this.planTime = planTime;
+    this.reachFullInterval =
+        config.getFullTriggerInterval() >= 0
+            && planTime - tableRuntime.getLastFullOptimizingTime()
+                > config.getFullTriggerInterval();
+    this.partitionProperties = partitionProperties;
   }
 
   @Override
@@ -80,24 +90,23 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     return partition;
   }
 
-  protected boolean isFragmentFile(IcebergDataFile dataFile) {
+  protected boolean isFragmentFile(DataFile dataFile) {
     return dataFile.fileSizeInBytes() <= fragmentSize;
   }
 
   @Override
-  public void addFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+  public boolean addFile(DataFile dataFile, List<ContentFile<?>> deletes) {
+    if (!config.isEnabled()) {
+      return false;
+    }
     if (isFragmentFile(dataFile)) {
-      addFragmentFile(dataFile, deletes);
+      return addFragmentFile(dataFile, deletes);
     } else {
-      addSegmentFile(dataFile, deletes);
+      return addSegmentFile(dataFile, deletes);
     }
   }
 
-  @Override
-  public void addPartitionProperties(Map<String, String> properties) {
-  }
-
-  private boolean isDuplicateDelete(IcebergContentFile<?> delete) {
+  private boolean isDuplicateDelete(ContentFile<?> delete) {
     boolean deleteExist = deleteFileSet.contains(delete.path().toString());
     if (!deleteExist) {
       deleteFileSet.add(delete.path().toString());
@@ -105,50 +114,99 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     return deleteExist;
   }
 
-  private void addFragmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
+  private boolean addFragmentFile(DataFile dataFile, List<ContentFile<?>> deletes) {
+    if (!fileShouldRewrite(dataFile, deletes)) {
+      return false;
+    }
     fragmentFileSize += dataFile.fileSizeInBytes();
     fragmentFileCount += 1;
 
-    for (IcebergContentFile<?> delete : deletes) {
+    for (ContentFile<?> delete : deletes) {
       addDelete(delete);
     }
+    return true;
   }
 
-  private void addSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-    segmentFileSize += dataFile.fileSizeInBytes();
-    segmentFileCount += 1;
-
-    if (shouldRewriteSegmentFile(dataFile, deletes)) {
+  private boolean addSegmentFile(DataFile dataFile, List<ContentFile<?>> deletes) {
+    if (fileShouldRewrite(dataFile, deletes)) {
       rewriteSegmentFileSize += dataFile.fileSizeInBytes();
       rewriteSegmentFileCount += 1;
-    } else if (shouldRewritePosForSegmentFile(dataFile, deletes)) {
+    } else if (segmentFileShouldRewritePos(dataFile, deletes)) {
       rewritePosSegmentFileSize += dataFile.fileSizeInBytes();
       rewritePosSegmentFileCount += 1;
-    }
-    for (IcebergContentFile<?> delete : deletes) {
-      addDelete(delete);
-    }
-  }
-
-  public boolean shouldRewriteSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-    return getRecordCount(deletes) > dataFile.recordCount() * config.getMajorDuplicateRatio();
-  }
-
-  public boolean shouldRewritePosForSegmentFile(IcebergDataFile dataFile, List<IcebergContentFile<?>> deletes) {
-    if (deletes.stream().anyMatch(delete -> delete.content() == FileContent.EQUALITY_DELETES)) {
-      return true;
-    } else if (deletes.stream().filter(delete -> delete.content() == FileContent.POSITION_DELETES).count() >= 2) {
-      return true;
     } else {
       return false;
     }
+
+    segmentFileSize += dataFile.fileSizeInBytes();
+    segmentFileCount += 1;
+    for (ContentFile<?> delete : deletes) {
+      addDelete(delete);
+    }
+    return true;
   }
 
-  private long getRecordCount(List<IcebergContentFile<?>> files) {
-    return files.stream().mapToLong(ContentFile::recordCount).sum();
+  protected boolean fileShouldFullOptimizing(DataFile dataFile, List<ContentFile<?>> deleteFiles) {
+    if (config.isFullRewriteAllFiles()) {
+      return true;
+    }
+    if (isFragmentFile(dataFile)) {
+      return true;
+    }
+    // if a file is related any delete files or is not big enough, it should full optimizing
+    return !deleteFiles.isEmpty() || dataFile.fileSizeInBytes() < config.getTargetSize() * 0.9;
   }
 
-  private void addDelete(IcebergContentFile<?> delete) {
+  public boolean fileShouldRewrite(DataFile dataFile, List<ContentFile<?>> deletes) {
+    if (isFullOptimizing()) {
+      return fileShouldFullOptimizing(dataFile, deletes);
+    }
+    if (isFragmentFile(dataFile)) {
+      return true;
+    }
+    // When Upsert writing is enabled in the Flink engine, both INSERT and UPDATE_AFTER will
+    // generate deletes files
+    // (Most are eq-delete), and eq-delete file will be associated with the data file before the
+    // current snapshot.
+    // The eq-delete does not accurately reflect how much data has been deleted in the current
+    // segment file
+    // (That is, whether the segment file needs to be rewritten).
+    // And the eq-delete file will be converted to pos-delete during minor optimizing, so only
+    // pos-delete record
+    // count is calculated here.
+    return getPosDeletesRecordCount(deletes)
+        > dataFile.recordCount() * config.getMajorDuplicateRatio();
+  }
+
+  public boolean segmentFileShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
+    if (isFullOptimizing()) {
+      return false;
+    }
+    if (isFragmentFile(dataFile)) {
+      return false;
+    }
+    if (deletes.stream().anyMatch(delete -> delete.content() == FileContent.EQUALITY_DELETES)) {
+      return true;
+    } else {
+      return deletes.stream()
+              .filter(delete -> delete.content() == FileContent.POSITION_DELETES)
+              .count()
+          >= 2;
+    }
+  }
+
+  protected boolean isFullOptimizing() {
+    return reachFullInterval();
+  }
+
+  private long getPosDeletesRecordCount(List<ContentFile<?>> files) {
+    return files.stream()
+        .filter(file -> file.content() == FileContent.POSITION_DELETES)
+        .mapToLong(ContentFile::recordCount)
+        .sum();
+  }
+
+  private void addDelete(ContentFile<?> delete) {
     if (isDuplicateDelete(delete)) {
       return;
     }
@@ -164,10 +222,12 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   @Override
   public boolean isNecessary() {
     if (necessary == null) {
-      necessary = isFullNecessary() || isMajorNecessary() || isMinorNecessary();
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("{} necessary = {}, {}", name(), necessary, this);
+      if (isFullOptimizing()) {
+        necessary = isFullNecessary();
+      } else {
+        necessary = isMajorNecessary() || isMinorNecessary();
       }
+      LOG.debug("{} necessary = {}, {}", name(), necessary, this);
     }
     return necessary;
   }
@@ -176,10 +236,17 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   public long getCost() {
     if (cost < 0) {
       // We estimate that the cost of writing is 3 times that of reading
-      cost = (rewriteSegmentFileSize + fragmentFileSize) * 4 +
-          rewritePosSegmentFileSize / 10 + posDeleteFileSize + equalityDeleteFileSize;
-      int fileCnt = rewriteSegmentFileCount + rewritePosSegmentFileCount + fragmentFileCount + posDeleteFileCount +
-          equalityDeleteFileCount;
+      cost =
+          (rewriteSegmentFileSize + fragmentFileSize) * 4
+              + rewritePosSegmentFileSize / 10
+              + posDeleteFileSize
+              + equalityDeleteFileSize;
+      int fileCnt =
+          rewriteSegmentFileCount
+              + rewritePosSegmentFileCount
+              + fragmentFileCount
+              + posDeleteFileCount
+              + equalityDeleteFileCount;
       cost += fileCnt * config.getOpenFileCost();
     }
     return cost;
@@ -193,8 +260,10 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   @Override
   public OptimizingType getOptimizingType() {
     if (optimizingType == null) {
-      optimizingType = isFullNecessary() ? OptimizingType.FULL_MAJOR :
-          isMajorNecessary() ? OptimizingType.MAJOR : OptimizingType.MINOR;
+      optimizingType =
+          isFullNecessary()
+              ? OptimizingType.FULL
+              : isMajorNecessary() ? OptimizingType.MAJOR : OptimizingType.MINOR;
       LOG.debug("{} optimizingType = {} ", name(), optimizingType);
     }
     return optimizingType;
@@ -206,17 +275,17 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
   public boolean isMinorNecessary() {
     int smallFileCount = fragmentFileCount + equalityDeleteFileCount;
-    return smallFileCount >= config.getMinorLeastFileCount() || (smallFileCount > 1 && reachMinorInterval());
+    return smallFileCount >= config.getMinorLeastFileCount()
+        || (smallFileCount > 1 && reachMinorInterval());
   }
 
   protected boolean reachMinorInterval() {
-    return config.getMinorLeastInterval() >= 0 &&
-        planTime - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval();
+    return config.getMinorLeastInterval() >= 0
+        && planTime - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval();
   }
 
   protected boolean reachFullInterval() {
-    return config.getFullTriggerInterval() >= 0 &&
-        planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
+    return reachFullInterval;
   }
 
   public boolean isFullNecessary() {
@@ -228,7 +297,9 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
   protected String name() {
     if (name == null) {
-      name = String.format("partition %s of %s", partition, tableRuntime.getTableIdentifier().toString());
+      name =
+          String.format(
+              "partition %s of %s", partition, tableRuntime.getTableIdentifier().toString());
     }
     return name;
   }
@@ -309,26 +380,46 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
   @Override
   public String toString() {
-    return "CommonPartitionEvaluator{" +
-        "partition='" + partition + '\'' +
-        ", config=" + config +
-        ", fragmentSize=" + fragmentSize +
-        ", planTime=" + planTime +
-        ", lastMinorOptimizeTime=" + tableRuntime.getLastMinorOptimizingTime() +
-        ", lastMajorOptimizeTime=" + tableRuntime.getLastMajorOptimizingTime() +
-        ", lastFullOptimizeTime=" + tableRuntime.getLastFullOptimizingTime() +
-        ", fragmentFileCount=" + fragmentFileCount +
-        ", fragmentFileSize=" + fragmentFileSize +
-        ", segmentFileCount=" + segmentFileCount +
-        ", segmentFileSize=" + segmentFileSize +
-        ", rewriteSegmentFileCount=" + rewriteSegmentFileCount +
-        ", rewriteSegmentFileSize=" + rewriteSegmentFileSize +
-        ", rewritePosSegmentFileCount=" + rewritePosSegmentFileCount +
-        ", rewritePosSegmentFileSize=" + rewritePosSegmentFileSize +
-        ", equalityDeleteFileCount=" + equalityDeleteFileCount +
-        ", equalityDeleteFileSize=" + equalityDeleteFileSize +
-        ", posDeleteFileCount=" + posDeleteFileCount +
-        ", posDeleteFileSize=" + posDeleteFileSize +
-        '}';
+    return "CommonPartitionEvaluator{"
+        + "partition='"
+        + partition
+        + '\''
+        + ", config="
+        + config
+        + ", fragmentSize="
+        + fragmentSize
+        + ", planTime="
+        + planTime
+        + ", lastMinorOptimizeTime="
+        + tableRuntime.getLastMinorOptimizingTime()
+        + ", lastMajorOptimizeTime="
+        + tableRuntime.getLastMajorOptimizingTime()
+        + ", lastFullOptimizeTime="
+        + tableRuntime.getLastFullOptimizingTime()
+        + ", fragmentFileCount="
+        + fragmentFileCount
+        + ", fragmentFileSize="
+        + fragmentFileSize
+        + ", segmentFileCount="
+        + segmentFileCount
+        + ", segmentFileSize="
+        + segmentFileSize
+        + ", rewriteSegmentFileCount="
+        + rewriteSegmentFileCount
+        + ", rewriteSegmentFileSize="
+        + rewriteSegmentFileSize
+        + ", rewritePosSegmentFileCount="
+        + rewritePosSegmentFileCount
+        + ", rewritePosSegmentFileSize="
+        + rewritePosSegmentFileSize
+        + ", equalityDeleteFileCount="
+        + equalityDeleteFileCount
+        + ", equalityDeleteFileSize="
+        + equalityDeleteFileSize
+        + ", posDeleteFileCount="
+        + posDeleteFileCount
+        + ", posDeleteFileSize="
+        + posDeleteFileSize
+        + '}';
   }
 }

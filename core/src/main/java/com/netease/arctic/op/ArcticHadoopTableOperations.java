@@ -19,20 +19,20 @@
 package com.netease.arctic.op;
 
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.utils.IcebergInMemoryLockManager;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.exceptions.CommitStateUnknownException;
 import org.apache.iceberg.hadoop.HadoopTableOperations;
-import org.apache.iceberg.util.LockManagers;
 
 public class ArcticHadoopTableOperations extends HadoopTableOperations {
 
   private final ArcticFileIO arcticFileIO;
 
   public ArcticHadoopTableOperations(Path location, ArcticFileIO fileIO, Configuration conf) {
-    super(location, fileIO, conf, LockManagers.defaultLockManager());
+    super(location, fileIO, conf, IcebergInMemoryLockManager.instance());
     this.arcticFileIO = fileIO;
   }
 
@@ -43,24 +43,27 @@ public class ArcticHadoopTableOperations extends HadoopTableOperations {
 
   @Override
   public void commit(TableMetadata base, TableMetadata metadata) {
-    arcticFileIO.doAs(() -> {
-      try {
-        super.commit(base, metadata);
+    arcticFileIO.doAs(
+        () -> {
+          try {
+            super.commit(base, metadata);
 
-        // HadoopTableOperations#commit will throw CommitFailedException even though rename metadata file successfully
-        // in hdfs, it may be not safe. So transform all RuntimeException to CommitStateUnknownException to avoid
-        // delete the committed metadata and manifest files.
-        //
-        // But this change may invalid the retry action for some commit operation.
-      } catch (CommitFailedException e) {
-        if (e.getCause() != null) {
-          throw new CommitStateUnknownException(e);
-        } else {
-          // Do to wrap the direct CommitFailedException, we should retry committing.
-          throw e;
-        }
-      }
-      return null;
-    });
+            // HadoopTableOperations#commit will throw CommitFailedException even though rename
+            // metadata file successfully
+            // in hdfs, it may be not safe. So transform all RuntimeException to
+            // CommitStateUnknownException to avoid
+            // delete the committed metadata and manifest files.
+            //
+            // But this change may invalid the retry action for some commit operation.
+          } catch (CommitFailedException e) {
+            if (e.getCause() != null) {
+              throw new CommitStateUnknownException(e);
+            } else {
+              // Do to wrap the direct CommitFailedException, we should retry committing.
+              throw e;
+            }
+          }
+          return null;
+        });
   }
 }

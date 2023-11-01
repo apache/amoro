@@ -20,7 +20,8 @@ package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
+import com.netease.arctic.server.AmsEnvironment;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
@@ -46,6 +47,8 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.Pair;
 import org.junit.Assert;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +64,19 @@ import java.util.List;
 import java.util.Set;
 
 public abstract class AbstractOptimizingTest {
+  protected static AmsEnvironment amsEnv = AmsEnvironment.getIntegrationInstances();
+
+  @BeforeAll
+  public static void before() throws Exception {
+    amsEnv.start();
+    amsEnv.startOptimizer();
+  }
+
+  @AfterAll
+  public static void after() throws IOException {
+    amsEnv.stop();
+  }
+
   private static final Logger LOG = LoggerFactory.getLogger(AbstractOptimizingTest.class);
 
   protected static OffsetDateTime ofDateWithZone(int year, int mon, int day, int hour) {
@@ -80,15 +96,16 @@ public abstract class AbstractOptimizingTest {
     return record;
   }
 
-  protected static DataFile insertDataFile(Table table, List<Record> records, StructLike partitionData) throws
-      IOException {
-    OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(table, 0, 1)
-        .format(FileFormat.PARQUET).build();
-    DataFile dataFile = FileHelpers.writeDataFile(
-        table,
-        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
-        partitionData,
-        records);
+  protected static DataFile insertDataFile(
+      Table table, List<Record> records, StructLike partitionData) throws IOException {
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(table, 0, 1).format(FileFormat.PARQUET).build();
+    DataFile dataFile =
+        FileHelpers.writeDataFile(
+            table,
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            records);
 
     AppendFiles baseAppend = table.newAppend();
     baseAppend.appendFile(dataFile);
@@ -120,25 +137,27 @@ public abstract class AbstractOptimizingTest {
     updateProperties.commit();
   }
 
-  protected static void rowDelta(Table table, List<Record> insertRecords, List<Record> deleteRecords,
-                                 StructLike partitionData)
+  protected static void rowDelta(
+      Table table, List<Record> insertRecords, List<Record> deleteRecords, StructLike partitionData)
       throws IOException {
     // DataFile dataFile = writeNewDataFile(table, insertRecords, partitionData);
-    OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(table, 0, 1)
-        .format(FileFormat.PARQUET).build();
-    DataFile dataFile = FileHelpers.writeDataFile(
-        table,
-        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
-        partitionData,
-        insertRecords);
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(table, 0, 1).format(FileFormat.PARQUET).build();
+    DataFile dataFile =
+        FileHelpers.writeDataFile(
+            table,
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            insertRecords);
 
     Schema eqDeleteRowSchema = table.schema().select("id");
-    DeleteFile deleteFile = FileHelpers.writeDeleteFile(
-        table,
-        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
-        partitionData,
-        deleteRecords,
-        eqDeleteRowSchema);
+    DeleteFile deleteFile =
+        FileHelpers.writeDeleteFile(
+            table,
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            deleteRecords,
+            eqDeleteRowSchema);
 
     // DeleteFile deleteFile = writeEqDeleteFile(table, deleteRecords, partitionData);
     RowDelta rowDelta = table.newRowDelta();
@@ -148,17 +167,18 @@ public abstract class AbstractOptimizingTest {
     rowDelta.commit();
   }
 
-  protected static DeleteFile insertEqDeleteFiles(Table table, List<Record> records, StructLike partitionData)
-      throws IOException {
+  protected static DeleteFile insertEqDeleteFiles(
+      Table table, List<Record> records, StructLike partitionData) throws IOException {
     Schema eqDeleteRowSchema = table.schema().select("id");
-    OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(table, 0, 1)
-        .format(FileFormat.PARQUET).build();
-    DeleteFile deleteFile = FileHelpers.writeDeleteFile(
-        table,
-        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
-        partitionData,
-        records,
-        eqDeleteRowSchema);
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(table, 0, 1).format(FileFormat.PARQUET).build();
+    DeleteFile deleteFile =
+        FileHelpers.writeDeleteFile(
+            table,
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            records,
+            eqDeleteRowSchema);
     // DeleteFile result = writeEqDeleteFile(table, records, partitionData);
 
     RowDelta rowDelta = table.newRowDelta();
@@ -167,33 +187,38 @@ public abstract class AbstractOptimizingTest {
     return deleteFile;
   }
 
-  protected static void rowDeltaWithPos(Table table, List<Record> insertRecords, List<Record> deleteRecords,
-                                        StructLike partitionData) throws IOException {
-    OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(table, 0, 1)
-        .format(FileFormat.PARQUET).build();
+  protected static void rowDeltaWithPos(
+      Table table, List<Record> insertRecords, List<Record> deleteRecords, StructLike partitionData)
+      throws IOException {
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(table, 0, 1).format(FileFormat.PARQUET).build();
 
-    DataFile dataFile = FileHelpers.writeDataFile(
-        table,
-        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
-        partitionData,
-        insertRecords);
+    DataFile dataFile =
+        FileHelpers.writeDataFile(
+            table,
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            insertRecords);
 
     Schema eqDeleteRowSchema = table.schema().select("id");
-    DeleteFile deleteFile = FileHelpers.writeDeleteFile(
-        table,
-        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
-        partitionData,
-        deleteRecords,
-        eqDeleteRowSchema);
+    DeleteFile deleteFile =
+        FileHelpers.writeDeleteFile(
+            table,
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            deleteRecords,
+            eqDeleteRowSchema);
 
     List<Pair<CharSequence, Long>> file2Positions = Lists.newArrayList();
     file2Positions.add(Pair.of(dataFile.path().toString(), 0L));
 
-    DeleteFile posDeleteFile = FileHelpers.writeDeleteFile(
-        table,
-        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
-        partitionData,
-        file2Positions).first();
+    DeleteFile posDeleteFile =
+        FileHelpers.writeDeleteFile(
+                table,
+                outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+                partitionData,
+                file2Positions)
+            .first();
     RowDelta rowDelta = table.newRowDelta();
     rowDelta.addRows(dataFile);
     rowDelta.addDeletes(deleteFile);
@@ -202,7 +227,8 @@ public abstract class AbstractOptimizingTest {
     rowDelta.commit();
   }
 
-  protected static void writeChange(KeyedTable table, List<Record> insertRows, List<Record> deleteRows) {
+  protected static void writeChange(
+      KeyedTable table, List<Record> insertRows, List<Record> deleteRows) {
     List<DataFile> insertFiles = write(insertRows, table, ChangeAction.INSERT, null);
     List<DataFile> deleteFiles = write(deleteRows, table, ChangeAction.DELETE, null);
     AppendFiles appendFiles = table.changeTable().newAppend();
@@ -211,9 +237,9 @@ public abstract class AbstractOptimizingTest {
     appendFiles.commit();
   }
 
-  protected static void writeChangeWithTxId(KeyedTable table, List<Record> insertRows, List<Record> deleteRows,
-                                            long txId) {
-    DataTestHelpers.writeChangeStore(table, txId, ChangeAction.INSERT, insertRows, false);
+  protected static void writeChangeWithTxId(
+      KeyedTable table, List<Record> insertRows, List<Record> deleteRows, long txId) {
+    MixedDataTestHelpers.writeChangeStore(table, txId, ChangeAction.INSERT, insertRows, false);
     // DataTestHelpers.writeChangeStore(table, txId, ChangeAction.DELETE, deleteRows, false);
     List<DataFile> insertFiles = write(insertRows, table, ChangeAction.INSERT, txId);
     List<DataFile> deleteFiles = write(deleteRows, table, ChangeAction.DELETE, txId);
@@ -239,16 +265,18 @@ public abstract class AbstractOptimizingTest {
 
   protected static List<DataFile> write(UnkeyedTable table, List<Record> rows) {
     if (rows != null && !rows.isEmpty()) {
-      try (TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(table)
-          .withChangeAction(ChangeAction.INSERT)
-          .buildWriter(WriteOperationKind.APPEND)) {
-        rows.forEach(row -> {
-          try {
-            writer.write(row);
-          } catch (IOException e) {
-            throw new UncheckedIOException(e);
-          }
-        });
+      try (TaskWriter<Record> writer =
+          AdaptHiveGenericTaskWriterBuilder.builderFor(table)
+              .withChangeAction(ChangeAction.INSERT)
+              .buildWriter(WriteOperationKind.APPEND)) {
+        rows.forEach(
+            row -> {
+              try {
+                writer.write(row);
+              } catch (IOException e) {
+                throw new UncheckedIOException(e);
+              }
+            });
         return Arrays.asList(writer.complete().dataFiles());
       } catch (IOException e) {
         throw new RuntimeException(e);
@@ -257,19 +285,22 @@ public abstract class AbstractOptimizingTest {
     return Collections.emptyList();
   }
 
-  protected static List<DataFile> write(List<Record> rows, KeyedTable table, ChangeAction action, Long txId) {
+  protected static List<DataFile> write(
+      List<Record> rows, KeyedTable table, ChangeAction action, Long txId) {
     if (rows != null && !rows.isEmpty()) {
-      try (TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(table)
-          .withChangeAction(action)
-          .withTransactionId(txId)
-          .buildWriter(WriteOperationKind.APPEND)) {
-        rows.forEach(row -> {
-          try {
-            writer.write(row);
-          } catch (IOException e) {
-            throw new UncheckedIOException(e);
-          }
-        });
+      try (TaskWriter<Record> writer =
+          AdaptHiveGenericTaskWriterBuilder.builderFor(table)
+              .withChangeAction(action)
+              .withTransactionId(txId)
+              .buildWriter(WriteOperationKind.APPEND)) {
+        rows.forEach(
+            row -> {
+              try {
+                writer.write(row);
+              } catch (IOException e) {
+                throw new UncheckedIOException(e);
+              }
+            });
         return Arrays.asList(writer.complete().dataFiles());
       } catch (IOException e) {
         throw new RuntimeException(e);
@@ -291,7 +322,7 @@ public abstract class AbstractOptimizingTest {
   }
 
   protected static List<Record> readRecords(KeyedTable keyedTable) {
-    return DataTestHelpers.readKeyedTable(keyedTable, null);
+    return MixedDataTestHelpers.readKeyedTable(keyedTable, null);
   }
 
   protected static void assertIds(List<Record> actualRows, Object... expectIds) {
@@ -299,7 +330,7 @@ public abstract class AbstractOptimizingTest {
   }
 
   protected static void assertIdRange(List<Record> actualRows, int from, int to) {
-    assertRecordValues(actualRows, 0, range(from,to).toArray());
+    assertRecordValues(actualRows, 0, range(from, to).toArray());
   }
 
   protected static List<Integer> range(int from, int to) {
@@ -314,7 +345,8 @@ public abstract class AbstractOptimizingTest {
     assertRecordValues(actualRows, 1, expectNames);
   }
 
-  protected static void assertRecordValues(List<Record> actualRows, int index, Object... expectValues) {
+  protected static void assertRecordValues(
+      List<Record> actualRows, int index, Object... expectValues) {
     Set<Object> actualValueSet = Sets.newHashSet();
     int cnt = 0;
     for (Record r : actualRows) {

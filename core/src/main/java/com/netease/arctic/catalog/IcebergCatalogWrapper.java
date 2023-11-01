@@ -37,11 +37,14 @@ import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,47 +52,20 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * A wrapper class around {@link Catalog} and implement {@link ArcticCatalog}.
- */
+/** A wrapper class around {@link Catalog} and implement {@link ArcticCatalog}. */
 public class IcebergCatalogWrapper implements ArcticCatalog {
 
   private CatalogMeta meta;
   private Map<String, String> customProperties;
   private Pattern databaseFilterPattern;
+  private Pattern tableFilterPattern;
   private transient TableMetaStore tableMetaStore;
   private transient Catalog icebergCatalog;
 
-  @Override
-  public String name() {
-    return meta.getCatalogName();
-  }
+  public IcebergCatalogWrapper() {}
 
-  @Override
-  public void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties) {
-
-  }
-
-  private void initialize(CatalogMeta meta, Map<String, String> properties) {
-    this.meta = meta;
-    this.customProperties = properties;
-    CatalogUtil.mergeCatalogProperties(meta, properties);
-    meta.putToCatalogProperties(
-        org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE,
-        meta.getCatalogType());
-    this.tableMetaStore = CatalogUtil.buildMetaStore(meta);
-    if (meta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
-      meta.getCatalogProperties().remove("type");
-    }
-    icebergCatalog = tableMetaStore.doAs(() -> org.apache.iceberg.CatalogUtil.buildIcebergCatalog(name(),
-        meta.getCatalogProperties(), tableMetaStore.getConfiguration()));
-    if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION)) {
-      String databaseFilter =
-          meta.getCatalogProperties().get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
-      databaseFilterPattern = Pattern.compile(databaseFilter);
-    } else {
-      databaseFilterPattern = null;
-    }
+  public IcebergCatalogWrapper(CatalogMeta meta) {
+    initialize(meta, Maps.newHashMap());
   }
 
   public IcebergCatalogWrapper(CatalogMeta meta, Map<String, String> properties) {
@@ -97,60 +73,122 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
   }
 
   @Override
+  public String name() {
+    return meta.getCatalogName();
+  }
+
+  @Override
+  public void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties) {}
+
+  private void initialize(CatalogMeta meta, Map<String, String> properties) {
+    this.meta = meta;
+    this.customProperties = properties;
+    CatalogUtil.mergeCatalogProperties(meta, properties);
+    meta.putToCatalogProperties(
+        org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE, meta.getCatalogType());
+    this.tableMetaStore = CatalogUtil.buildMetaStore(meta);
+    if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(meta.getCatalogType())) {
+      meta.getCatalogProperties()
+          .put(CatalogProperties.CATALOG_IMPL, CatalogLoader.GLUE_CATALOG_IMPL);
+    }
+    if (meta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
+      meta.getCatalogProperties().remove(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE);
+    }
+
+    icebergCatalog =
+        tableMetaStore.doAs(
+            () ->
+                org.apache.iceberg.CatalogUtil.buildIcebergCatalog(
+                    name(), meta.getCatalogProperties(), tableMetaStore.getConfiguration()));
+    if (meta.getCatalogProperties()
+        .containsKey(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION)) {
+      String databaseFilter =
+          meta.getCatalogProperties()
+              .get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
+      databaseFilterPattern = Pattern.compile(databaseFilter);
+    } else {
+      databaseFilterPattern = null;
+    }
+
+    if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_TABLE_FILTER)) {
+      String tableFilter = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
+      tableFilterPattern = Pattern.compile(tableFilter);
+    } else {
+      tableFilterPattern = null;
+    }
+  }
+
+  @Override
   public List<String> listDatabases() {
     if (!(icebergCatalog instanceof SupportsNamespaces)) {
-      throw new UnsupportedOperationException(String.format(
-          "Iceberg catalog: %s doesn't implement SupportsNamespaces",
-          icebergCatalog.getClass().getName()));
+      throw new UnsupportedOperationException(
+          String.format(
+              "Iceberg catalog: %s doesn't implement SupportsNamespaces",
+              icebergCatalog.getClass().getName()));
     }
 
     List<String> databases =
-        tableMetaStore.doAs(() ->
-            ((SupportsNamespaces) icebergCatalog).listNamespaces(Namespace.empty())
-                .stream()
-                .map(namespace -> namespace.level(0))
-                .distinct()
-                .collect(Collectors.toList())
-        );
+        tableMetaStore.doAs(
+            () ->
+                ((SupportsNamespaces) icebergCatalog)
+                    .listNamespaces(Namespace.empty()).stream()
+                        .map(namespace -> namespace.level(0))
+                        .distinct()
+                        .collect(Collectors.toList()));
     return databases.stream()
-        .filter(database -> databaseFilterPattern == null || databaseFilterPattern.matcher(database).matches())
+        .filter(
+            database ->
+                databaseFilterPattern == null || databaseFilterPattern.matcher(database).matches())
         .collect(Collectors.toList());
   }
 
   @Override
   public void createDatabase(String databaseName) {
     if (icebergCatalog instanceof SupportsNamespaces) {
-      tableMetaStore.doAs(() -> {
-        ((SupportsNamespaces) icebergCatalog).createNamespace(Namespace.of(databaseName));
-        return null;
-      });
+      tableMetaStore.doAs(
+          () -> {
+            ((SupportsNamespaces) icebergCatalog).createNamespace(Namespace.of(databaseName));
+            return null;
+          });
     } else {
-      throw new UnsupportedOperationException(String.format(
-          "Iceberg catalog: %s doesn't implement SupportsNamespaces",
-          icebergCatalog.getClass().getName()));
+      throw new UnsupportedOperationException(
+          String.format(
+              "Iceberg catalog: %s doesn't implement SupportsNamespaces",
+              icebergCatalog.getClass().getName()));
     }
   }
 
   @Override
   public void dropDatabase(String databaseName) {
     if (icebergCatalog instanceof SupportsNamespaces) {
-      tableMetaStore.doAs(() -> {
-        ((SupportsNamespaces) icebergCatalog).dropNamespace(Namespace.of(databaseName));
-        return null;
-      });
+      tableMetaStore.doAs(
+          () -> {
+            ((SupportsNamespaces) icebergCatalog).dropNamespace(Namespace.of(databaseName));
+            return null;
+          });
     } else {
-      throw new UnsupportedOperationException(String.format(
-          "Iceberg catalog: %s doesn't implement SupportsNamespaces",
-          icebergCatalog.getClass().getName()));
+      throw new UnsupportedOperationException(
+          String.format(
+              "Iceberg catalog: %s doesn't implement SupportsNamespaces",
+              icebergCatalog.getClass().getName()));
     }
   }
 
   @Override
   public List<TableIdentifier> listTables(String database) {
-    return tableMetaStore.doAs(() -> icebergCatalog.listTables(Namespace.of(database)).stream()
-        .filter(tableIdentifier -> tableIdentifier.namespace().levels().length == 1)
-        .map(tableIdentifier -> TableIdentifier.of(name(), database, tableIdentifier.name()))
-        .collect(Collectors.toList()));
+    return tableMetaStore.doAs(
+        () ->
+            icebergCatalog.listTables(Namespace.of(database)).stream()
+                .filter(
+                    tableIdentifier ->
+                        tableIdentifier.namespace().levels().length == 1
+                            && (tableFilterPattern == null
+                                || tableFilterPattern
+                                    .matcher((database + "." + tableIdentifier.name()))
+                                    .matches()))
+                .map(
+                    tableIdentifier -> TableIdentifier.of(name(), database, tableIdentifier.name()))
+                .collect(Collectors.toList()));
   }
 
   public List<TableIdentifier> listTables() {
@@ -168,12 +206,16 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
 
   @Override
   public ArcticTable loadTable(TableIdentifier tableIdentifier) {
-    Table icebergTable = tableMetaStore.doAs(() -> icebergCatalog
-        .loadTable(toIcebergTableIdentifier(tableIdentifier)));
+    Table icebergTable =
+        tableMetaStore.doAs(
+            () -> icebergCatalog.loadTable(toIcebergTableIdentifier(tableIdentifier)));
     FileIO io = icebergTable.io();
     ArcticFileIO arcticFileIO = createArcticFileIO(io);
-    return new BasicIcebergTable(tableIdentifier, CatalogUtil.useArcticTableOperations(icebergTable,
-        icebergTable.location(), arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO,
+    return new BasicIcebergTable(
+        tableIdentifier,
+        CatalogUtil.useArcticTableOperations(
+            icebergTable, icebergTable.location(), arcticFileIO, tableMetaStore.getConfiguration()),
+        arcticFileIO,
         meta.getCatalogProperties());
   }
 
@@ -184,31 +226,29 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
 
   @Override
   public void renameTable(TableIdentifier from, String newTableName) {
-    tableMetaStore.doAs(() -> {
-      icebergCatalog.renameTable(
-          toIcebergTableIdentifier(from),
-          org.apache.iceberg.catalog.TableIdentifier.of(
-              Namespace.of(from.getDatabase()),
-              newTableName));
-      return null;
-    });
+    tableMetaStore.doAs(
+        () -> {
+          icebergCatalog.renameTable(
+              toIcebergTableIdentifier(from),
+              org.apache.iceberg.catalog.TableIdentifier.of(
+                  Namespace.of(from.getDatabase()), newTableName));
+          return null;
+        });
   }
 
   @Override
   public boolean dropTable(TableIdentifier tableIdentifier, boolean purge) {
-    return tableMetaStore.doAs(() -> icebergCatalog.dropTable(toIcebergTableIdentifier(tableIdentifier), purge));
+    return tableMetaStore.doAs(
+        () -> icebergCatalog.dropTable(toIcebergTableIdentifier(tableIdentifier), purge));
   }
 
   @Override
-  public TableBuilder newTableBuilder(
-      TableIdentifier identifier, Schema schema) {
+  public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema) {
     return new IcebergTableBuilder(schema, identifier);
   }
 
-
   @Override
-  public void refresh() {
-  }
+  public void refresh() {}
 
   @Override
   public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
@@ -224,10 +264,10 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
     initialize(meta, customProperties);
   }
 
-  private org.apache.iceberg.catalog.TableIdentifier toIcebergTableIdentifier(TableIdentifier tableIdentifier) {
+  private org.apache.iceberg.catalog.TableIdentifier toIcebergTableIdentifier(
+      TableIdentifier tableIdentifier) {
     return org.apache.iceberg.catalog.TableIdentifier.of(
-        Namespace.of(tableIdentifier.getDatabase()),
-        tableIdentifier.getTableName());
+        Namespace.of(tableIdentifier.getDatabase()), tableIdentifier.getTableName());
   }
 
   private ArcticFileIO createArcticFileIO(FileIO io) {
@@ -247,12 +287,13 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
     @Override
     public ArcticTable create() {
 
-      Table table = icebergCatalog.buildTable(
-              toIcebergTableIdentifier(identifier), schema
-          ).withPartitionSpec(spec)
-          .withProperties(properties)
-          .withSortOrder(sortOrder)
-          .create();
+      Table table =
+          icebergCatalog
+              .buildTable(toIcebergTableIdentifier(identifier), schema)
+              .withPartitionSpec(spec)
+              .withProperties(properties)
+              .withSortOrder(sortOrder)
+              .create();
 
       FileIO io = table.io();
       ArcticFileIO arcticFileIO = createArcticFileIO(io);
@@ -260,15 +301,23 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
     }
 
     @Override
+    public Transaction createTransaction() {
+      return icebergCatalog.newCreateTableTransaction(
+          toIcebergTableIdentifier(identifier), schema, spec, properties);
+    }
+
+    @Override
     public TableBuilder withPrimaryKeySpec(PrimaryKeySpec primaryKeySpec) {
-      throw new UnsupportedOperationException("can't create an iceberg table with primary key");
+      Preconditions.checkArgument(
+          primaryKeySpec == null || !primaryKeySpec.primaryKeyExisted(),
+          "can't create an iceberg table with primary key");
+      return this;
     }
 
     @Override
     protected IcebergTableBuilder self() {
       return this;
     }
-
   }
 
   public static class BasicIcebergTable extends BasicUnkeyedTable {
@@ -278,7 +327,7 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
         Table icebergTable,
         ArcticFileIO arcticFileIO,
         Map<String, String> catalogProperties) {
-      super(tableIdentifier, icebergTable, arcticFileIO, null, catalogProperties);
+      super(tableIdentifier, icebergTable, arcticFileIO, catalogProperties);
     }
 
     @Override

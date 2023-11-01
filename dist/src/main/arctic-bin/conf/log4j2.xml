@@ -20,14 +20,20 @@
 <Configuration monitorInterval="10">
     <properties>
         <property name="LOG_HOME">${sys:log.home}</property>
+        <property name="CONSOLE_LEVEL">${env:CONSOLE_LOG_LEVEL:-off}</property>
     </properties>
 
     <Appenders>
+        <Console name="consoleAppender" target="SYSTEM_OUT">
+            <!--Set log format and color-->
+            <PatternLayout
+                    pattern="%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n"/>
+        </Console>
         <!--*********************File Log***********************-->
         <!--Logs with a grade of debug-->
         <RollingFile name="debugFileAppender"
                      fileName="${LOG_HOME}/ams-debug.log"
-                     filePattern="${LOG_HOME}/history/ams-debug-%i.log">
+                     filePattern="${LOG_HOME}/history/ams-debug-%i.log.gz">
             <!--Set log format-->
             <PatternLayout>
                 <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
@@ -46,7 +52,7 @@
         <!--Logs with a grade of info-->
         <RollingFile name="infoFileAppender"
                      fileName="${LOG_HOME}/ams-info.log"
-                     filePattern="${LOG_HOME}/history/ams-info-%d{yyyy-MM-dd}-%i.log">
+                     filePattern="${LOG_HOME}/history/ams-info-%d{yyyy-MM-dd}-%i.log.gz">
             <!--Set log format-->
             <PatternLayout>
                 <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
@@ -54,13 +60,16 @@
             <Policies>
                 <!--Set the time for rolling updates of log files, depending on the file naming filePattern setting-->
                 <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <!--Set the log base file size to trigger rolling log file updates if the size is exceeded-->
+                <SizeBasedTriggeringPolicy size="2048MB"/>
             </Policies>
             <!--Set the maximum number of files in the log, the default is 7 if not set, it will be overwritten when
              it exceeds the size; depends on %i in filePattern-->
             <DefaultRolloverStrategy max="7">
                 <Delete basePath="${LOG_HOME}/history" maxDepth="1">
-                    <IfFileName glob="*.log"/>
+                    <IfFileName glob="*.log.gz"/>
                     <IfLastModified age="7d"/>
+                    <IfAccumulatedFileSize exceeds="20GB" />
                 </Delete>
             </DefaultRolloverStrategy>
         </RollingFile>
@@ -68,7 +77,7 @@
         <!--Logs with a grade of error-->
         <RollingFile name="errorFileAppender"
                      fileName="${LOG_HOME}/ams-error.log"
-                     filePattern="${LOG_HOME}/history/ams-error-%i.log">
+                     filePattern="${LOG_HOME}/history/ams-error-%i.log.gz">
             <!--Set log format-->
             <PatternLayout>
                 <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
@@ -83,15 +92,36 @@
              it exceeds the size; depends on %i in filePattern-->
             <DefaultRolloverStrategy max="7"/>
         </RollingFile>
+
+        <!--Logs for iceberg metrics report -->
+        <RollingFile name="amoroMetricReporter"
+                     fileName="${LOG_HOME}/amoro-metrics.log"
+                     filePattern="${LOG_HOME}/metrics/iceberg-metrics-%i.log.gz">
+            <PatternLayout>
+                <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
+            </PatternLayout>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="64MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="7"/>
+        </RollingFile>
     </Appenders>
 
     <Loggers>
+        <logger name="amoro.metric"  level="info">
+            <!-- iceberg rest metric reporter logs -->
+            <AppenderRef ref="amoroMetricReporter" />
+        </logger>
+
         <Root level="debug">
             <!--By default, debug logs are not printed-->
 <!--            <AppenderRef ref="debugFileAppender" level="debug"/>-->
             <AppenderRef ref="infoFileAppender" level="info"/>
             <AppenderRef ref="errorFileAppender" level="error"/>
+            <!-- SET CONSOLE_LOG_LEVEL=info to print console logger in docker -->
+            <AppenderRef ref="consoleAppender" level="${CONSOLE_LEVEL}" />
         </Root>
+
     </Loggers>
 
 </Configuration>

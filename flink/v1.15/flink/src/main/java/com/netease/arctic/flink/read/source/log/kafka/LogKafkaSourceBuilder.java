@@ -18,6 +18,21 @@
 
 package com.netease.arctic.flink.read.source.log.kafka;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_GROUP_OFFSETS;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_SPECIFIC_OFFSETS;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_SPECIFIC_OFFSETS;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.fetchLogstorePrefixProperties;
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
+import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
+
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
@@ -40,29 +55,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
-import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.fetchLogstorePrefixProperties;
-import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogTopic;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
-import static org.apache.flink.util.Preconditions.checkNotNull;
-import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
-
 /**
- * The @builder class for {@link LogKafkaSource} to make it easier for the users to construct a {@link
- * LogKafkaSource}.
+ * The @builder class for {@link LogKafkaSource} to make it easier for the users to construct a
+ * {@link LogKafkaSource}.
  *
  * <pre>{@code
  * LogKafkaSource source = LogKafkaSource.builder(arcticSchema, configuration)
@@ -75,8 +78,10 @@ import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CON
 public class LogKafkaSourceBuilder {
   private static final Logger LOG = LoggerFactory.getLogger(KafkaSourceBuilder.class);
   private static final String[] REQUIRED_CONFIGS = {
-      ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, ConsumerConfig.GROUP_ID_CONFIG
+    ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, ConsumerConfig.GROUP_ID_CONFIG
   };
+  private static final String PARTITION = "partition";
+  private static final String OFFSET = "offset";
   // The subscriber specifies the partitions to subscribe to.
   private KafkaSubscriber subscriber;
   // Users can specify the starting / stopping offset initializer.
@@ -88,11 +93,11 @@ public class LogKafkaSourceBuilder {
   // The configurations.
   protected Properties kafkaProperties;
 
-  private Schema schema;
-  private Map<String, String> tableProperties;
+  private final Schema schema;
+  private final Map<String, String> tableProperties;
 
   /**
-   * @param schema          read schema, only contains the selected fields
+   * @param schema read schema, only contains the selected fields
    * @param tableProperties arctic table properties, maybe include Flink SQL hints.
    */
   LogKafkaSourceBuilder(Schema schema, Map<String, String> tableProperties) {
@@ -129,8 +134,8 @@ public class LogKafkaSourceBuilder {
 
   /**
    * Set a list of topics the LogKafkaSource should consume from. All the topics in the list should
-   * have existed in the Kafka cluster. Otherwise an exception will be thrown. To allow some of
-   * the topics to be created lazily, please use {@link #setTopicPattern(Pattern)} instead.
+   * have existed in the Kafka cluster. Otherwise, an exception will be thrown. To allow some of the
+   * topics to be created lazily, please use {@link #setTopicPattern(Pattern)} instead.
    */
   public LogKafkaSourceBuilder setTopics(List<String> topics) {
     ensureSubscriberIsNull("topics");
@@ -140,8 +145,8 @@ public class LogKafkaSourceBuilder {
 
   /**
    * Set a list of topics the LogKafkaSource should consume from. All the topics in the list should
-   * have existed in the Kafka cluster. Otherwise an exception will be thrown. To allow some of
-   * the topics to be created lazily, please use {@link #setTopicPattern(Pattern)} instead.
+   * have existed in the Kafka cluster. Otherwise, an exception will be thrown. To allow some of the
+   * topics to be created lazily, please use {@link #setTopicPattern(Pattern)} instead.
    *
    * @param topics the list of topics to consume from.
    * @return this LogKafkaSourceBuilder.
@@ -182,8 +187,8 @@ public class LogKafkaSourceBuilder {
    * Users can also implement their own {@link OffsetsInitializer} for custom behaviors.
    *
    * <ul>
-   *   <li>{@link OffsetsInitializer#earliest()} - starting from the earliest offsets. This is
-   *       also the default {@link OffsetsInitializer} of the KafkaSource for starting offsets.
+   *   <li>{@link OffsetsInitializer#earliest()} - starting from the earliest offsets. This is also
+   *       the default {@link OffsetsInitializer} of the KafkaSource for starting offsets.
    *   <li>{@link OffsetsInitializer#latest()} - starting from the latest offsets.
    *   <li>{@link OffsetsInitializer#committedOffsets()} - starting from the committed offsets of
    *       the consumer group.
@@ -196,31 +201,30 @@ public class LogKafkaSourceBuilder {
    *       partition.
    *   <li>{@link OffsetsInitializer#timestamp(long)} - starting from the specified timestamp for
    *       each partition. Note that the guarantee here is that all the records in Kafka whose
-   *       {@link org.apache.kafka.clients.consumer.ConsumerRecord#timestamp()} is greater than
-   *       the given starting timestamp will be consumed. However, it is possible that some
-   *       consumer records whose timestamp is smaller than the given starting timestamp are also
-   *       consumed.
+   *       {@link org.apache.kafka.clients.consumer.ConsumerRecord#timestamp()} is greater than the
+   *       given starting timestamp will be consumed. However, it is possible that some consumer
+   *       records whose timestamp is smaller than the given starting timestamp are also consumed.
    * </ul>
    *
    * @param startingOffsetsInitializer the {@link OffsetsInitializer} setting the starting offsets
-   *                                   for the Source.
+   *     for the Source.
    * @return this LogKafkaSourceBuilder.
    */
-  public LogKafkaSourceBuilder setStartingOffsets(
-      OffsetsInitializer startingOffsetsInitializer) {
+  public LogKafkaSourceBuilder setStartingOffsets(OffsetsInitializer startingOffsetsInitializer) {
     this.startingOffsetsInitializer = startingOffsetsInitializer;
+    LOG.info("Setting LogKafkaSource starting offset: {}", startingOffsetsInitializer);
     return this;
   }
 
   /**
    * By default the LogKafkaSource is set to run in {@link Boundedness#CONTINUOUS_UNBOUNDED} manner
-   * and thus never stops until the Flink job fails or is canceled. To let the KafkaSource run as
-   * a streaming source but still stops at some point, one can set an {@link OffsetsInitializer}
-   * to specify the stopping offsets for each partition. When all the partitions have reached
-   * their stopping offsets, the KafkaSource will then exit.
+   * and thus never stops until the Flink job fails or is canceled. To let the KafkaSource run as a
+   * streaming source but still stops at some point, one can set an {@link OffsetsInitializer} to
+   * specify the stopping offsets for each partition. When all the partitions have reached their
+   * stopping offsets, the KafkaSource will then exit.
    *
-   * <p>This method is different from {@link #setBounded(OffsetsInitializer)} that after setting
-   * the stopping offsets with this method, {@link KafkaSource#getBoundedness()} will still return
+   * <p>This method is different from {@link #setBounded(OffsetsInitializer)} that after setting the
+   * stopping offsets with this method, {@link KafkaSource#getBoundedness()} will still return
    * {@link Boundedness#CONTINUOUS_UNBOUNDED} even though it will stop at the stopping offsets
    * specified by the stopping offsets {@link OffsetsInitializer}.
    *
@@ -235,15 +239,14 @@ public class LogKafkaSourceBuilder {
    *   <li>{@link OffsetsInitializer#offsets(Map)} - stops at the specified offsets for each
    *       partition.
    *   <li>{@link OffsetsInitializer#timestamp(long)} - stops at the specified timestamp for each
-   *       partition. The guarantee of setting the stopping timestamp is that no Kafka records
-   *       whose {@link org.apache.kafka.clients.consumer.ConsumerRecord#timestamp()} is greater
-   *       than the given stopping timestamp will be consumed. However, it is possible that some
-   *       records whose timestamp is smaller than the specified stopping timestamp are not
-   *       consumed.
+   *       partition. The guarantee of setting the stopping timestamp is that no Kafka records whose
+   *       {@link org.apache.kafka.clients.consumer.ConsumerRecord#timestamp()} is greater than the
+   *       given stopping timestamp will be consumed. However, it is possible that some records
+   *       whose timestamp is smaller than the specified stopping timestamp are not consumed.
    * </ul>
    *
    * @param stoppingOffsetsInitializer The {@link OffsetsInitializer} to specify the stopping
-   *                                   offset.
+   *     offset.
    * @return this LogKafkaSourceBuilder.
    * @see #setBounded(OffsetsInitializer)
    */
@@ -257,12 +260,12 @@ public class LogKafkaSourceBuilder {
    * By default the LogKafkaSource is set to run in {@link Boundedness#CONTINUOUS_UNBOUNDED} manner
    * and thus never stops until the Flink job fails or is canceled. To let the KafkaSource run in
    * {@link Boundedness#BOUNDED} manner and stops at some point, one can set an {@link
-   * OffsetsInitializer} to specify the stopping offsets for each partition. When all the
-   * partitions have reached their stopping offsets, the KafkaSource will then exit.
+   * OffsetsInitializer} to specify the stopping offsets for each partition. When all the partitions
+   * have reached their stopping offsets, the KafkaSource will then exit.
    *
    * <p>This method is different from {@link #setUnbounded(OffsetsInitializer)} that after setting
-   * the stopping offsets with this method, {@link KafkaSource#getBoundedness()} will return
-   * {@link Boundedness#BOUNDED} instead of {@link Boundedness#CONTINUOUS_UNBOUNDED}.
+   * the stopping offsets with this method, {@link KafkaSource#getBoundedness()} will return {@link
+   * Boundedness#BOUNDED} instead of {@link Boundedness#CONTINUOUS_UNBOUNDED}.
    *
    * <p>The following {@link OffsetsInitializer} are commonly used and provided out of the box.
    * Users can also implement their own {@link OffsetsInitializer} for custom behaviors.
@@ -275,15 +278,14 @@ public class LogKafkaSourceBuilder {
    *   <li>{@link OffsetsInitializer#offsets(Map)} - stops at the specified offsets for each
    *       partition.
    *   <li>{@link OffsetsInitializer#timestamp(long)} - stops at the specified timestamp for each
-   *       partition. The guarantee of setting the stopping timestamp is that no Kafka records
-   *       whose {@link org.apache.kafka.clients.consumer.ConsumerRecord#timestamp()} is greater
-   *       than the given stopping timestamp will be consumed. However, it is possible that some
-   *       records whose timestamp is smaller than the specified stopping timestamp are not
-   *       consumed.
+   *       partition. The guarantee of setting the stopping timestamp is that no Kafka records whose
+   *       {@link org.apache.kafka.clients.consumer.ConsumerRecord#timestamp()} is greater than the
+   *       given stopping timestamp will be consumed. However, it is possible that some records
+   *       whose timestamp is smaller than the specified stopping timestamp are not consumed.
    * </ul>
    *
    * @param stoppingOffsetsInitializer the {@link OffsetsInitializer} to specify the stopping
-   *                                   offsets.
+   *     offsets.
    * @return this LogKafkaSourceBuilder.
    * @see #setUnbounded(OffsetsInitializer)
    */
@@ -298,7 +300,7 @@ public class LogKafkaSourceBuilder {
    * org.apache.kafka.clients.consumer.ConsumerRecord ConsumerRecord} for LogKafkaSource.
    *
    * @param recordDeserializer the deserializer for Kafka {@link
-   *                           org.apache.kafka.clients.consumer.ConsumerRecord ConsumerRecord}.
+   *     org.apache.kafka.clients.consumer.ConsumerRecord ConsumerRecord}.
    * @return this LogKafkaSourceBuilder.
    */
   public LogKafkaSourceBuilder setDeserializer(
@@ -318,8 +320,8 @@ public class LogKafkaSourceBuilder {
   }
 
   /**
-   * Set an arbitrary property for the LogKafkaSource and LogKafkaConsumer. The valid keys can be found
-   * in {@link ConsumerConfig} and {@link KafkaSourceOptions}.
+   * Set an arbitrary property for the LogKafkaSource and LogKafkaConsumer. The valid keys can be
+   * found in {@link ConsumerConfig} and {@link KafkaSourceOptions}.
    *
    * <p>Note that the following keys will be overridden by the builder when the KafkaSource is
    * created.
@@ -334,7 +336,7 @@ public class LogKafkaSourceBuilder {
    *       #setBounded(OffsetsInitializer)} has been invoked.
    * </ul>
    *
-   * @param key   the key of the property.
+   * @param key the key of the property.
    * @param value the value of the property.
    * @return this LogKafkaSourceBuilder.
    */
@@ -344,8 +346,8 @@ public class LogKafkaSourceBuilder {
   }
 
   /**
-   * Set arbitrary properties for the LogKafkaSource and LogKafkaConsumer. The valid keys can be found
-   * in {@link ConsumerConfig} and {@link KafkaSourceOptions}.
+   * Set arbitrary properties for the LogKafkaSource and LogKafkaConsumer. The valid keys can be
+   * found in {@link ConsumerConfig} and {@link KafkaSourceOptions}.
    *
    * <p>Note that the following keys will be overridden by the builder when the KafkaSource is
    * created.
@@ -391,35 +393,32 @@ public class LogKafkaSourceBuilder {
 
   private void setupKafkaProperties() {
     if (tableProperties.containsKey(TableProperties.LOG_STORE_ADDRESS)) {
-      kafkaProperties.put(BOOTSTRAP_SERVERS_CONFIG, tableProperties.get(
-          TableProperties.LOG_STORE_ADDRESS));
+      kafkaProperties.put(
+          BOOTSTRAP_SERVERS_CONFIG, tableProperties.get(TableProperties.LOG_STORE_ADDRESS));
     }
     if (tableProperties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC)) {
       setTopics(getLogTopic(tableProperties));
     }
 
-    kafkaProperties.putIfAbsent("properties.key.serializer",
-        "org.apache.kafka.common.serialization.ByteArraySerializer");
-    kafkaProperties.putIfAbsent("properties.value.serializer",
-        "org.apache.kafka.common.serialization.ByteArraySerializer");
-    kafkaProperties.putIfAbsent("properties.key.deserializer",
+    kafkaProperties.putIfAbsent(
+        "properties.key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    kafkaProperties.putIfAbsent(
+        "properties.value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    kafkaProperties.putIfAbsent(
+        "properties.key.deserializer",
         "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-    kafkaProperties.putIfAbsent("properties.value.deserializer",
+    kafkaProperties.putIfAbsent(
+        "properties.value.deserializer",
         "org.apache.kafka.common.serialization.ByteArrayDeserializer");
 
     setupStartupMode();
   }
 
   private void setupStartupMode() {
-    String startupMode = CompatiblePropertyUtil.propertyAsString(tableProperties, SCAN_STARTUP_MODE.key(),
-        SCAN_STARTUP_MODE.defaultValue()).toLowerCase();
-    long startupTimestampMillis = 0L;
-    if (Objects.equals(startupMode.toLowerCase(), SCAN_STARTUP_MODE_TIMESTAMP)) {
-      startupTimestampMillis = Long.parseLong(Preconditions.checkNotNull(
-          tableProperties.get(SCAN_STARTUP_TIMESTAMP_MILLIS.key()),
-          String.format("'%s' should be set in '%s' mode",
-              SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP)));
-    }
+    String startupMode =
+        CompatiblePropertyUtil.propertyAsString(
+                tableProperties, SCAN_STARTUP_MODE.key(), SCAN_STARTUP_MODE.defaultValue())
+            .toLowerCase();
 
     switch (startupMode) {
       case SCAN_STARTUP_MODE_EARLIEST:
@@ -429,12 +428,47 @@ public class LogKafkaSourceBuilder {
         setStartingOffsets(OffsetsInitializer.latest());
         break;
       case SCAN_STARTUP_MODE_TIMESTAMP:
+        long startupTimestampMillis =
+            Long.parseLong(
+                Preconditions.checkNotNull(
+                    tableProperties.get(SCAN_STARTUP_TIMESTAMP_MILLIS.key()),
+                    String.format(
+                        "'%s' should be set in '%s' mode",
+                        SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP)));
         setStartingOffsets(OffsetsInitializer.timestamp(startupTimestampMillis));
         break;
+      case SCAN_STARTUP_MODE_GROUP_OFFSETS:
+        setStartingOffsets(OffsetsInitializer.committedOffsets());
+        break;
+      case SCAN_STARTUP_MODE_SPECIFIC_OFFSETS:
+        Map<TopicPartition, Long> specificOffsets = new HashMap<>();
+        String specificOffsetsStrOpt =
+            Preconditions.checkNotNull(
+                tableProperties.get(SCAN_STARTUP_SPECIFIC_OFFSETS.key()),
+                String.format(
+                    "'%s' should be set in '%s' mode",
+                    SCAN_STARTUP_SPECIFIC_OFFSETS.key(), SCAN_STARTUP_MODE_SPECIFIC_OFFSETS));
+        final Map<Integer, Long> offsetMap =
+            parseSpecificOffsets(specificOffsetsStrOpt, SCAN_STARTUP_SPECIFIC_OFFSETS.key());
+        offsetMap.forEach(
+            (partition, offset) -> {
+              final TopicPartition topicPartition =
+                  new TopicPartition(getLogTopic(tableProperties).get(0), partition);
+              specificOffsets.put(topicPartition, offset);
+            });
+        setStartingOffsets(OffsetsInitializer.offsets(specificOffsets));
+        break;
       default:
-        throw new ValidationException(String.format(
-            "%s only support '%s', '%s', '%s'. But input is '%s'", ArcticValidator.SCAN_STARTUP_MODE,
-            SCAN_STARTUP_MODE_LATEST, SCAN_STARTUP_MODE_EARLIEST, SCAN_STARTUP_MODE_TIMESTAMP, startupMode));
+        throw new ValidationException(
+            String.format(
+                "%s only support '%s', '%s', '%s', '%s', '%s'. But input is '%s'",
+                ArcticValidator.SCAN_STARTUP_MODE,
+                SCAN_STARTUP_MODE_LATEST,
+                SCAN_STARTUP_MODE_EARLIEST,
+                SCAN_STARTUP_MODE_TIMESTAMP,
+                SCAN_STARTUP_MODE_GROUP_OFFSETS,
+                SCAN_STARTUP_MODE_SPECIFIC_OFFSETS,
+                startupMode));
     }
   }
 
@@ -451,15 +485,12 @@ public class LogKafkaSourceBuilder {
 
   private void parseAndSetRequiredProperties() {
     maybeOverride(
-        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-        ByteArrayDeserializer.class.getName(),
-        true);
+        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName(), true);
     maybeOverride(
         ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
         ByteArrayDeserializer.class.getName(),
         true);
-    maybeOverride(
-        ConsumerConfig.GROUP_ID_CONFIG, "KafkaSource-" + new Random().nextLong(), false);
+    maybeOverride(ConsumerConfig.GROUP_ID_CONFIG, "KafkaSource-" + new Random().nextLong(), false);
     maybeOverride(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false", false);
     maybeOverride(
         ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
@@ -506,5 +537,42 @@ public class LogKafkaSourceBuilder {
     checkNotNull(
         subscriber,
         String.format("No topic is specified, '%s' should be set.", LOG_STORE_MESSAGE_TOPIC));
+  }
+
+  public static Map<Integer, Long> parseSpecificOffsets(
+      String specificOffsetsStr, String optionKey) {
+    final Map<Integer, Long> offsetMap = new HashMap<>();
+    final String[] pairs = specificOffsetsStr.split(";");
+    final String validationExceptionMessage =
+        String.format(
+            "Invalid properties '%s' should follow the format "
+                + "'partition:0,offset:42;partition:1,offset:300', but is '%s'.",
+            optionKey, specificOffsetsStr);
+
+    if (pairs.length == 0) {
+      throw new ValidationException(validationExceptionMessage);
+    }
+
+    for (String pair : pairs) {
+      if (null == pair || pair.length() == 0 || !pair.contains(",")) {
+        throw new ValidationException(validationExceptionMessage);
+      }
+
+      final String[] kv = pair.split(",");
+      if (kv.length != 2 || !kv[0].startsWith(PARTITION + ':') || !kv[1].startsWith(OFFSET + ':')) {
+        throw new ValidationException(validationExceptionMessage);
+      }
+
+      String partitionValue = kv[0].substring(kv[0].indexOf(":") + 1);
+      String offsetValue = kv[1].substring(kv[1].indexOf(":") + 1);
+      try {
+        final Integer partition = Integer.valueOf(partitionValue);
+        final Long offset = Long.valueOf(offsetValue);
+        offsetMap.put(partition, offset);
+      } catch (NumberFormatException e) {
+        throw new ValidationException(validationExceptionMessage, e);
+      }
+    }
+    return offsetMap;
   }
 }

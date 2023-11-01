@@ -19,7 +19,7 @@
 package com.netease.arctic.ams.api.resource;
 
 import com.netease.arctic.ams.api.Constants;
-import org.apache.curator.shaded.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,8 +29,7 @@ public class ResourceGroup {
   private String container;
   private Map<String, String> properties;
 
-  protected ResourceGroup() {
-  }
+  protected ResourceGroup() {}
 
   private ResourceGroup(String name, String container) {
     this.name = name;
@@ -53,7 +52,7 @@ public class ResourceGroup {
     return container;
   }
 
-  //generate inner builder class, use addProperties instead of set
+  // generate inner builder class, use addProperties instead of set
   public static class Builder {
     private final String name;
     private final String container;
@@ -68,9 +67,7 @@ public class ResourceGroup {
     }
 
     public Builder(String name) {
-      Preconditions.checkArgument(
-          name != null,
-          "Resource group name can not be null");
+      Preconditions.checkArgument(name != null, "Resource group name can not be null");
       this.name = name;
       this.container = Constants.EXTERNAL_RESOURCE_CONTAINER;
     }

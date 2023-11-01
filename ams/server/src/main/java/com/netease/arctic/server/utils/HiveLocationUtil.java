@@ -34,7 +34,8 @@ public class HiveLocationUtil {
   private static final Logger LOG = LoggerFactory.getLogger(HiveLocationUtil.class);
 
   /**
-   * getRuntime table hive table/partition location
+   * Get table hive table/partition location
+   *
    * @param table target table
    * @return hive table/partition location
    */
@@ -43,23 +44,32 @@ public class HiveLocationUtil {
     if (TableTypeUtil.isHive(table)) {
       if (table.spec().isUnpartitioned()) {
         try {
-          Table hiveTable = ((SupportHive) table).getHMSClient().run(client ->
-              client.getTable(table.id().getDatabase(), table.id().getTableName()));
+          Table hiveTable =
+              ((SupportHive) table)
+                  .getHMSClient()
+                  .run(
+                      client ->
+                          client.getTable(table.id().getDatabase(), table.id().getTableName()));
           hiveLocations.add(hiveTable.getSd().getLocation());
         } catch (Exception e) {
-          LOG.error("{} getRuntime hive table error", table.id(), e);
-          throw new IllegalStateException("getRuntime hive table error", e);
+          throw new IllegalStateException("Failed to get hive table location", e);
         }
       } else {
         try {
-          List<Partition> partitions = ((SupportHive) table).getHMSClient().run(client ->
-              client.listPartitions(table.id().getDatabase(), table.id().getTableName(), Short.MAX_VALUE));
+          List<Partition> partitions =
+              ((SupportHive) table)
+                  .getHMSClient()
+                  .run(
+                      client ->
+                          client.listPartitions(
+                              table.id().getDatabase(),
+                              table.id().getTableName(),
+                              Short.MAX_VALUE));
           for (Partition partition : partitions) {
             hiveLocations.add(partition.getSd().getLocation());
           }
         } catch (Exception e) {
-          LOG.error("{} getRuntime hive partitions error", table.id(), e);
-          throw new IllegalStateException("getRuntime hive partitions error", e);
+          throw new IllegalStateException("Failed to get hive partition locations", e);
         }
       }
     }

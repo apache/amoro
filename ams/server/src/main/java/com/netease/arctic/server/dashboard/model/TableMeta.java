@@ -61,9 +61,10 @@ public class TableMeta {
   public enum TableType {
     ARCTIC("arctic"),
     HIVE("hive"),
-    ICEBERG("iceberg");
+    ICEBERG("iceberg"),
+    PAIMON("paimon");
 
-    private String name;
+    private final String name;
 
     TableType(String name) {
       this.name = name;

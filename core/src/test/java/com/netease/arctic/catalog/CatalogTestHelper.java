@@ -21,11 +21,18 @@ package com.netease.arctic.catalog;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import org.apache.iceberg.catalog.Catalog;
 
 public interface CatalogTestHelper {
 
   String TEST_CATALOG_NAME = TableTestHelper.TEST_CATALOG_NAME;
+
+  String metastoreType();
+
+  default boolean isInternalCatalog() {
+    return CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(metastoreType());
+  }
 
   TableFormat tableFormat();
 

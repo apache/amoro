@@ -51,15 +51,15 @@ import org.apache.iceberg.io.LocationProvider;
 import java.util.List;
 import java.util.Map;
 
-//extends BasicUnkeyedTable is for adapt IcebergMeta
+// extends BasicUnkeyedTable is for adapt IcebergMeta
 public class TestArcticTable extends BasicUnkeyedTable {
 
-  private BaseTable table;
+  private final BaseTable table;
 
-  private TableIdentifier tableIdentifier;
+  private final TableIdentifier tableIdentifier;
 
   public TestArcticTable(BaseTable table, TableIdentifier tableIdentifier) {
-    super(null, null, null, null, null);
+    super(null, null, null, null);
     this.table = table;
     this.tableIdentifier = tableIdentifier;
   }

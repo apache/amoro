@@ -31,9 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * terminal controller .
- */
+/** The controller that handles terminal requests. */
 public class TerminalController {
 
   private final TerminalManager terminalManager;
@@ -42,13 +40,14 @@ public class TerminalController {
     this.terminalManager = terminalManager;
   }
 
-  /** getRuntime sql example list */
+  /** Get sql example list */
   public void getExamples(Context ctx) {
-    List<String> examples = Arrays.stream(SqlExample.values()).map(SqlExample::getName).collect(Collectors.toList());
+    List<String> examples =
+        Arrays.stream(SqlExample.values()).map(SqlExample::getName).collect(Collectors.toList());
     ctx.json(OkResponse.of(examples));
   }
 
-  /** getRuntime sql examples*/
+  /** Get sql examples */
   public void getSqlExamples(Context ctx) {
     String exampleName = ctx.pathParam("exampleName");
 
@@ -58,10 +57,10 @@ public class TerminalController {
         return;
       }
     }
-    throw new IllegalArgumentException("can not getRuntime example name : " + exampleName);
+    throw new IllegalArgumentException("can not get example name : " + exampleName);
   }
 
-  /** execute some sql*/
+  /** Execute some sql */
   public void executeScript(Context ctx) {
     String catalog = ctx.pathParam("catalog");
     Map<String, String> bodyParams = ctx.bodyAsClass(Map.class);
@@ -72,27 +71,27 @@ public class TerminalController {
     ctx.json(OkResponse.of(new SessionInfo(sessionId)));
   }
 
-  /** getRuntime execute logs of some session */
+  /** Get execute logs of some session */
   public void getLogs(Context ctx) {
     String sessionId = ctx.pathParamAsClass("sessionId", String.class).get();
     ctx.json(OkResponse.of(terminalManager.getExecutionLog(sessionId)));
   }
 
-  /** getRuntime execute result of some session*/
+  /** Get execute result of some session */
   public void getSqlResult(Context ctx) {
     String sessionId = ctx.pathParamAsClass("sessionId", String.class).get();
     List<SqlResult> results = terminalManager.getExecutionResults(sessionId);
     ctx.json(OkResponse.of(results));
   }
 
-  /** stop some sql*/
+  /** Stop some sql */
   public void stopSql(Context ctx) {
     String sessionId = ctx.pathParamAsClass("sessionId", String.class).get();
     terminalManager.cancelExecution(sessionId);
     ctx.json(OkResponse.ok());
   }
 
-  /** getRuntime latest sql info **/
+  /** Get latest sql information * */
   public void getLatestInfo(Context ctx) {
     String terminalId = ctx.cookie("JSESSIONID");
     LatestSessionInfo sessionInfo = terminalManager.getLastSessionInfo(terminalId);

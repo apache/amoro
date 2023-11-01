@@ -18,10 +18,5 @@
 
 package com.netease.arctic.table;
 
-
-/**
- * Base table store of an {@link KeyedTable}, storing base records in it.
- */
-public interface BaseTable extends UnkeyedTable {
-
-}
+/** Base table store of an {@link KeyedTable}, storing base records in it. */
+public interface BaseTable extends UnkeyedTable {}

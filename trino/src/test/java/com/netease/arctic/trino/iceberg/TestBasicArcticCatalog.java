@@ -23,7 +23,6 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableMetaStore;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.PartitionSpec;
@@ -41,15 +40,15 @@ import java.util.stream.Collectors;
 
 public class TestBasicArcticCatalog extends BasicArcticCatalog {
 
-  private String location;
+  private final String location;
 
-  private HadoopCatalog catalog;
+  private final HadoopCatalog catalog;
 
   public TestBasicArcticCatalog(String location) {
     this.location = location;
     Configuration conf = new Configuration();
     this.catalog = new HadoopCatalog(conf, location);
-    //创建catalog.db，便于测试
+    // 创建catalog.db，便于测试
     if (!catalog.namespaceExists(Namespace.of(catalog.name(), "tpch"))) {
       catalog.createNamespace(Namespace.of(catalog.name(), "tpch"));
     }
@@ -63,41 +62,41 @@ public class TestBasicArcticCatalog extends BasicArcticCatalog {
   @Override
   public List<String> listDatabases() {
     return catalog.listNamespaces(Namespace.of(catalog.name())).stream()
-        .map(s -> s.level(1)).collect(Collectors.toList());
+        .map(s -> s.level(1))
+        .collect(Collectors.toList());
   }
 
   @Override
   public List<TableIdentifier> listTables(String database) {
-    return catalog.listTables(Namespace.of(catalog.name(), database))
-        .stream()
-        .map(s -> TableIdentifier.of(s.namespace().level(0),
-            s.namespace().level(1), s.name()))
+    return catalog.listTables(Namespace.of(catalog.name(), database)).stream()
+        .map(s -> TableIdentifier.of(s.namespace().level(0), s.namespace().level(1), s.name()))
         .collect(Collectors.toList());
   }
 
   @Override
   public ArcticTable loadTable(TableIdentifier identifier) {
-    Table table = catalog.loadTable(
-        org.apache.iceberg.catalog.TableIdentifier.of(identifier.getCatalog(),
-            identifier.getDatabase(), identifier.getTableName()));
+    Table table =
+        catalog.loadTable(
+            org.apache.iceberg.catalog.TableIdentifier.of(
+                identifier.getCatalog(), identifier.getDatabase(), identifier.getTableName()));
     return new TestArcticTable((BaseTable) table, identifier);
   }
 
   @Override
   public boolean dropTable(TableIdentifier identifier, boolean purge) {
-    return catalog.dropTable(org.apache.iceberg.catalog.TableIdentifier.of(identifier.getCatalog(),
-        identifier.getDatabase(), identifier.getTableName()), purge);
-  }
-
-  @Override
-  public TableMetaStore getTableMetaStore() {
-    return TableMetaStore.EMPTY;
+    return catalog.dropTable(
+        org.apache.iceberg.catalog.TableIdentifier.of(
+            identifier.getCatalog(), identifier.getDatabase(), identifier.getTableName()),
+        purge);
   }
 
   @Override
   public boolean tableExists(TableIdentifier tableIdentifier) {
-    return catalog.tableExists(org.apache.iceberg.catalog.TableIdentifier.of(tableIdentifier.getCatalog(),
-        tableIdentifier.getDatabase(), tableIdentifier.getTableName()));
+    return catalog.tableExists(
+        org.apache.iceberg.catalog.TableIdentifier.of(
+            tableIdentifier.getCatalog(),
+            tableIdentifier.getDatabase(),
+            tableIdentifier.getTableName()));
   }
 
   @Override
@@ -154,9 +153,15 @@ public class TestBasicArcticCatalog extends BasicArcticCatalog {
       return null;
     }
 
-    public Transaction newCreateTableTransaction() {
-      return catalog.newCreateTableTransaction(org.apache.iceberg.catalog.TableIdentifier.of(identifier.getCatalog(),
-          identifier.getDatabase(), identifier.getTableName()), schema, partitionSpec, location, properties);
+    @Override
+    public Transaction createTransaction() {
+      return catalog.newCreateTableTransaction(
+          org.apache.iceberg.catalog.TableIdentifier.of(
+              identifier.getCatalog(), identifier.getDatabase(), identifier.getTableName()),
+          schema,
+          partitionSpec,
+          location,
+          properties);
     }
   }
 }

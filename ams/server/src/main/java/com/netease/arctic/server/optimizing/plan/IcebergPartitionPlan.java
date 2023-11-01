@@ -23,18 +23,16 @@ import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 
-import java.util.Collections;
-
 public class IcebergPartitionPlan extends AbstractPartitionPlan {
 
-  protected IcebergPartitionPlan(TableRuntime tableRuntime, ArcticTable table, String partition, long planTime) {
+  protected IcebergPartitionPlan(
+      TableRuntime tableRuntime, ArcticTable table, String partition, long planTime) {
     super(tableRuntime, table, partition, planTime);
   }
 
   @Override
   protected TaskSplitter buildTaskSplitter() {
-    // TODO not split tasks in a partition now
-    return targetTaskCount -> Collections.singletonList(new SplitTask(fragmentFiles, segmentFiles));
+    return new BinPackingTaskSplitter();
   }
 
   @Override

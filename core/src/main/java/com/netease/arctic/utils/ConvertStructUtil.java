@@ -19,6 +19,7 @@
 package com.netease.arctic.utils;
 
 import com.netease.arctic.ams.api.PartitionFieldData;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.data.DataFileType;
@@ -42,13 +43,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Util class convert types to metastore api structs.
- */
+/** Util class convert types to metastore api structs. */
 public class ConvertStructUtil {
 
   /**
-   * Convert {@link org.apache.iceberg.ContentFile iceberg file} to {@link com.netease.arctic.ams.api.DataFile}
+   * Convert {@link org.apache.iceberg.ContentFile iceberg file} to {@link
+   * com.netease.arctic.ams.api.DataFile}
    *
    * @param dataFile iceberg file
    * @param table arctic table file belong
@@ -68,7 +68,7 @@ public class ConvertStructUtil {
 
     /*
     Iceberg file has 3 types(FileContent) : DATA, POSITION_DELETES, EQUALITY_DELETES
-    Arctic file has 4 types(DataFileType): BASE_FILE, INSERT_FILE, EQ_DELETE_FILE, POS_DELETE_FILE 
+    Arctic file has 4 types(DataFileType): BASE_FILE, INSERT_FILE, EQ_DELETE_FILE, POS_DELETE_FILE
     i.  for iceberg DATA file, arctic keyed table has 3 file type: BASE_FILE, INSERT_FILE, EQ_DELETE_FILE;
         and arctic unkeyed table has 1 file type: BASE_FILE
     ii. for iceberg POSITION_DELETES file, arctic file type is POS_DELETE_FILE
@@ -97,11 +97,13 @@ public class ConvertStructUtil {
           amsDataFile.setIndex(DataTreeNode.ROOT.getIndex());
           amsDataFile.setMask(DataTreeNode.ROOT.getMask());
         } else {
-          throw new IllegalArgumentException("iceberg file content should not be POSITION_DELETES for " + filePath);
+          throw new IllegalArgumentException(
+              "iceberg file content should not be POSITION_DELETES for " + filePath);
         }
       }
     } else {
-      throw new UnsupportedOperationException("not support file content now: " + content + ", " + filePath);
+      throw new UnsupportedOperationException(
+          "not support file content now: " + content + ", " + filePath);
     }
     return amsDataFile;
   }
@@ -111,25 +113,34 @@ public class ConvertStructUtil {
       case BASE_FILE:
       case INSERT_FILE:
       case EQ_DELETE_FILE:
-        Preconditions.checkArgument(content == FileContent.DATA,
-            "%s, File content should be DATA, but is %s", path, content);
+        Preconditions.checkArgument(
+            content == FileContent.DATA,
+            "%s, File content should be DATA, but is %s",
+            path,
+            content);
         break;
       case POS_DELETE_FILE:
-        Preconditions.checkArgument(content == FileContent.POSITION_DELETES,
-            "%s, File content should be POSITION_DELETES, but is %s", path, content);
+        Preconditions.checkArgument(
+            content == FileContent.POSITION_DELETES,
+            "%s, File content should be POSITION_DELETES, but is %s",
+            path,
+            content);
         break;
       default:
         throw new IllegalArgumentException("Unknown file type: " + type);
     }
   }
 
-  public static List<PartitionFieldData> partitionFields(PartitionSpec partitionSpec, StructLike partitionData) {
-    List<PartitionFieldData> partitionFields = Lists.newArrayListWithCapacity(partitionSpec.fields().size());
+  public static List<PartitionFieldData> partitionFields(
+      PartitionSpec partitionSpec, StructLike partitionData) {
+    List<PartitionFieldData> partitionFields =
+        Lists.newArrayListWithCapacity(partitionSpec.fields().size());
     Class<?>[] javaClasses = partitionSpec.javaClasses();
     for (int i = 0; i < javaClasses.length; i += 1) {
       PartitionField field = partitionSpec.fields().get(i);
       Type type = partitionSpec.partitionType().fields().get(i).type();
-      String valueString = field.transform().toHumanString(type, get(partitionData, i, javaClasses[i]));
+      String valueString =
+          field.transform().toHumanString(type, get(partitionData, i, javaClasses[i]));
       partitionFields.add(new PartitionFieldData(field.name(), valueString));
     }
     return partitionFields;
@@ -141,7 +152,8 @@ public class ConvertStructUtil {
       if (i > 0) {
         sb.append("/");
       }
-      sb.append(partitionFieldDataList.get(i).getName()).append("=")
+      sb.append(partitionFieldDataList.get(i).getName())
+          .append("=")
           .append(partitionFieldDataList.get(i).getValue());
     }
     return sb.toString();
@@ -166,6 +178,8 @@ public class ConvertStructUtil {
     Map<String, String> properties = new HashMap<>();
     Map<String, String> locations = new HashMap<>();
 
+    TableFormat format;
+
     public TableMetaBuilder(TableIdentifier identifier, Schema schema) {
       meta.setTableIdentifier(identifier.buildTableIdentifier());
       this.schema = schema;
@@ -177,9 +191,10 @@ public class ConvertStructUtil {
       }
       com.netease.arctic.ams.api.PrimaryKeySpec primaryKeySpec =
           new com.netease.arctic.ams.api.PrimaryKeySpec();
-      List<String> fields = keySpec.primaryKeyStruct().fields()
-          .stream().map(Types.NestedField::name)
-          .collect(Collectors.toList());
+      List<String> fields =
+          keySpec.primaryKeyStruct().fields().stream()
+              .map(Types.NestedField::name)
+              .collect(Collectors.toList());
       primaryKeySpec.setFields(fields);
       meta.setKeySpec(primaryKeySpec);
       return this;
@@ -210,9 +225,16 @@ public class ConvertStructUtil {
       return this;
     }
 
+    public TableMetaBuilder withFormat(TableFormat format) {
+      this.format = format;
+      return this;
+    }
+
     public TableMeta build() {
+      Preconditions.checkNotNull(this.format, "table format must set.");
       meta.setLocations(locations);
       meta.setProperties(this.properties);
+      meta.setFormat(this.format.name());
       return meta;
     }
   }

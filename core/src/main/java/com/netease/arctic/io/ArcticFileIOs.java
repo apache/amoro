@@ -22,26 +22,36 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CatalogUtil;
+import org.apache.iceberg.hadoop.HadoopFileIO;
+import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Map;
 
 public class ArcticFileIOs {
-  
+
   public static final boolean CLOSE_TRASH = true;
 
   public static ArcticHadoopFileIO buildRecoverableHadoopFileIO(
-      TableIdentifier tableIdentifier, String tableLocation,
-      Map<String, String> tableProperties, TableMetaStore tableMetaStore,
+      TableIdentifier tableIdentifier,
+      String tableLocation,
+      Map<String, String> tableProperties,
+      TableMetaStore tableMetaStore,
       Map<String, String> catalogProperties) {
     tableProperties = CatalogUtil.mergeCatalogPropertiesToTable(tableProperties, catalogProperties);
-    if (!CLOSE_TRASH && PropertyUtil.propertyAsBoolean(tableProperties, TableProperties.ENABLE_TABLE_TRASH,
-        TableProperties.ENABLE_TABLE_TRASH_DEFAULT)) {
+    if (!CLOSE_TRASH
+        && PropertyUtil.propertyAsBoolean(
+            tableProperties,
+            TableProperties.ENABLE_TABLE_TRASH,
+            TableProperties.ENABLE_TABLE_TRASH_DEFAULT)) {
       ArcticHadoopFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
       TableTrashManager trashManager =
           TableTrashManagers.build(tableIdentifier, tableLocation, tableProperties, fileIO);
-      String trashFilePattern = PropertyUtil.propertyAsString(tableProperties, TableProperties.TABLE_TRASH_FILE_PATTERN,
-          TableProperties.TABLE_TRASH_FILE_PATTERN_DEFAULT);
+      String trashFilePattern =
+          PropertyUtil.propertyAsString(
+              tableProperties,
+              TableProperties.TABLE_TRASH_FILE_PATTERN,
+              TableProperties.TABLE_TRASH_FILE_PATTERN_DEFAULT);
 
       return new RecoverableHadoopFileIO(tableMetaStore, trashManager, trashFilePattern);
     } else {
@@ -51,5 +61,13 @@ public class ArcticFileIOs {
 
   public static ArcticHadoopFileIO buildHadoopFileIO(TableMetaStore tableMetaStore) {
     return new ArcticHadoopFileIO(tableMetaStore);
+  }
+
+  public static ArcticFileIO buildAdaptIcebergFileIO(TableMetaStore tableMetaStore, FileIO io) {
+    if (io instanceof HadoopFileIO) {
+      return buildHadoopFileIO(tableMetaStore);
+    } else {
+      return new ArcticFileIOAdapter(io);
+    }
   }
 }

@@ -18,12 +18,13 @@
 
 package com.netease.arctic.ams.api.properties;
 
-import org.apache.curator.shaded.com.google.common.base.Strings;
+import org.apache.iceberg.relocated.com.google.common.base.Strings;
 
 public class AmsHAProperties {
   private static final String ROOT_PATH = "/arctic/ams";
   private static final String LEADER_PATH = "/leader";
-  private static final String MASTER_PATH = "/master";
+  private static final String TABLE_SERVICE_MASTER_PATH = "/master";
+  private static final String OPTIMIZING_SERVICE_MASTER_PATH = "/optimizing-service-master";
   private static final String NAMESPACE_DEFAULT = "default";
 
   private static String getBasePath(String namespace) {
@@ -33,8 +34,12 @@ public class AmsHAProperties {
     return "/" + namespace + ROOT_PATH;
   }
 
-  public static String getMasterPath(String namespace) {
-    return getBasePath(namespace) + MASTER_PATH;
+  public static String getTableServiceMasterPath(String namespace) {
+    return getBasePath(namespace) + TABLE_SERVICE_MASTER_PATH;
+  }
+
+  public static String getOptimizingServiceMasterPath(String namespace) {
+    return getBasePath(namespace) + OPTIMIZING_SERVICE_MASTER_PATH;
   }
 
   public static String getLeaderPath(String namespace) {

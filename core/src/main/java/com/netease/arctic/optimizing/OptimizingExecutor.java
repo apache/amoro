@@ -20,6 +20,15 @@ package com.netease.arctic.optimizing;
 
 import java.io.Serializable;
 
-public interface OptimizingExecutor<O extends TableOptimizing.OptimizingOutput> extends Serializable {
+/**
+ * Self-optimizing executor for file merging, such as merging small files and converting
+ * equality-delete to position-delete.
+ */
+public interface OptimizingExecutor<O extends TableOptimizing.OptimizingOutput>
+    extends Serializable {
+
+  /**
+   * Execute compaction for {@link com.netease.arctic.optimizing.TableOptimizing.OptimizingInput}
+   */
   O execute();
 }

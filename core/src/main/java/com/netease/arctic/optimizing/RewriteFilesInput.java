@@ -19,11 +19,10 @@
 package com.netease.arctic.optimizing;
 
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.IcebergDataFile;
-import com.netease.arctic.data.IcebergDeleteFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.utils.ContentFiles;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 
@@ -33,17 +32,17 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class RewriteFilesInput extends BaseOptimizingInput {
-  private final IcebergDataFile[] rewrittenDataFiles;
-  private final IcebergDataFile[] rePosDeletedDataFiles;
-  private final IcebergContentFile<?>[] readOnlyDeleteFiles;
-  private final IcebergContentFile<?>[] rewrittenDeleteFiles;
-  private ArcticTable table;
+  private final DataFile[] rewrittenDataFiles;
+  private final DataFile[] rePosDeletedDataFiles;
+  private final ContentFile<?>[] readOnlyDeleteFiles;
+  private final ContentFile<?>[] rewrittenDeleteFiles;
+  private final ArcticTable table;
 
   public RewriteFilesInput(
-      IcebergDataFile[] rewrittenDataFiles,
-      IcebergDataFile[] rePosDeletedDataFiles,
-      IcebergContentFile<?>[] readOnlyDeleteFiles,
-      IcebergContentFile<?>[] rewrittenDeleteFiles,
+      DataFile[] rewrittenDataFiles,
+      DataFile[] rePosDeletedDataFiles,
+      ContentFile<?>[] readOnlyDeleteFiles,
+      ContentFile<?>[] rewrittenDeleteFiles,
       ArcticTable table) {
     this.rewrittenDataFiles = rewrittenDataFiles;
     this.rePosDeletedDataFiles = rePosDeletedDataFiles;
@@ -52,19 +51,19 @@ public class RewriteFilesInput extends BaseOptimizingInput {
     this.table = table;
   }
 
-  public IcebergDataFile[] rewrittenDataFiles() {
+  public DataFile[] rewrittenDataFiles() {
     return rewrittenDataFiles;
   }
 
-  public IcebergDataFile[] rePosDeletedDataFiles() {
+  public DataFile[] rePosDeletedDataFiles() {
     return rePosDeletedDataFiles;
   }
 
-  public IcebergContentFile<?>[] readOnlyDeleteFiles() {
+  public ContentFile<?>[] readOnlyDeleteFiles() {
     return readOnlyDeleteFiles;
   }
 
-  public IcebergContentFile<?>[] rewrittenDeleteFiles() {
+  public ContentFile<?>[] rewrittenDeleteFiles() {
     return rewrittenDeleteFiles;
   }
 
@@ -73,7 +72,7 @@ public class RewriteFilesInput extends BaseOptimizingInput {
       return null;
     }
     return Arrays.stream(rewrittenDataFiles)
-        .map(s -> (DefaultKeyedFile) s.internalDataFile())
+        .map(s -> (DefaultKeyedFile) s)
         .collect(Collectors.toList());
   }
 
@@ -82,58 +81,56 @@ public class RewriteFilesInput extends BaseOptimizingInput {
       return null;
     }
     return Arrays.stream(rePosDeletedDataFiles)
-        .map(s -> (DefaultKeyedFile) s.internalDataFile())
+        .map(s -> (DefaultKeyedFile) s)
         .collect(Collectors.toList());
   }
 
   public List<DeleteFile> positionDeleteForMixed() {
     return Arrays.stream(deleteFiles())
         .filter(s -> s instanceof DeleteFile)
-        .map(s -> (IcebergDeleteFile) s)
-        .map(IcebergDeleteFile::internalFile)
+        .map(ContentFiles::asDeleteFile)
         .collect(Collectors.toList());
   }
 
   public List<PrimaryKeyedFile> equalityDeleteForMixed() {
     return Arrays.stream(deleteFiles())
         .filter(s -> s instanceof DataFile)
-        .map(IcebergContentFile::internalFile)
         .map(s -> (PrimaryKeyedFile) s)
         .collect(Collectors.toList());
   }
 
-  public IcebergContentFile<?>[] readOnlyDeleteFilesForMixed() {
+  public ContentFile<?>[] readOnlyDeleteFilesForMixed() {
     return readOnlyDeleteFiles;
   }
 
-  public IcebergContentFile<?>[] rewrittenDeleteFilesForMixed() {
+  public ContentFile<?>[] rewrittenDeleteFilesForMixed() {
     return rewrittenDeleteFiles;
   }
 
-  public IcebergContentFile<?>[] deleteFiles() {
-    List<IcebergContentFile<?>> list = new ArrayList<>();
+  public ContentFile<?>[] deleteFiles() {
+    List<ContentFile<?>> list = new ArrayList<>();
     if (readOnlyDeleteFiles != null) {
       list.addAll(Arrays.asList(readOnlyDeleteFiles));
     }
     if (rewrittenDeleteFiles != null) {
       list.addAll(Arrays.asList(rewrittenDeleteFiles));
     }
-    return list.toArray(new IcebergContentFile<?>[0]);
+    return list.toArray(new ContentFile<?>[0]);
   }
 
-  public IcebergDataFile[] dataFiles() {
-    List<IcebergDataFile> list = new ArrayList<>();
+  public DataFile[] dataFiles() {
+    List<DataFile> list = new ArrayList<>();
     if (rewrittenDataFiles != null) {
       list.addAll(Arrays.asList(rewrittenDataFiles));
     }
     if (rePosDeletedDataFiles != null) {
       list.addAll(Arrays.asList(rePosDeletedDataFiles));
     }
-    return list.toArray(new IcebergDataFile[0]);
+    return list.toArray(new DataFile[0]);
   }
 
-  public IcebergContentFile<?>[] allFiles() {
-    List<IcebergContentFile<?>> list = new ArrayList<>();
+  public ContentFile<?>[] allFiles() {
+    List<ContentFile<?>> list = new ArrayList<>();
     if (rewrittenDataFiles != null) {
       list.addAll(Arrays.asList(rewrittenDataFiles));
     }
@@ -141,12 +138,12 @@ public class RewriteFilesInput extends BaseOptimizingInput {
       list.addAll(Arrays.asList(rePosDeletedDataFiles));
     }
     if (readOnlyDeleteFiles != null) {
-      Arrays.stream(readOnlyDeleteFiles).forEach(list::add);
+      list.addAll(Arrays.asList(readOnlyDeleteFiles));
     }
     if (rewrittenDeleteFiles != null) {
-      Arrays.stream(rewrittenDeleteFiles).forEach(list::add);
+      list.addAll(Arrays.asList(rewrittenDeleteFiles));
     }
-    return list.toArray(new IcebergContentFile<?>[0]);
+    return list.toArray(new ContentFile<?>[0]);
   }
 
   public ArcticTable getTable() {
@@ -155,11 +152,16 @@ public class RewriteFilesInput extends BaseOptimizingInput {
 
   @Override
   public String toString() {
-    return "RewriteFilesInput{" +
-        "rewrittenDataFilesSize=" + (rewrittenDataFiles == null ? 0 : rewrittenDataFiles.length) +
-        ", rePosDeletedDataFilesSize=" + (rePosDeletedDataFiles == null ? 0 : rePosDeletedDataFiles.length) +
-        ", readOnlyDeleteFilesSize=" + (readOnlyDeleteFiles == null ? 0 : readOnlyDeleteFiles.length) +
-        ", rewrittenDeleteFilesSize=" + (rewrittenDeleteFiles == null ? 0 : rewrittenDeleteFiles.length) +
-        "} " + super.toString();
+    return "RewriteFilesInput{"
+        + "rewrittenDataFilesSize="
+        + (rewrittenDataFiles == null ? 0 : rewrittenDataFiles.length)
+        + ", rePosDeletedDataFilesSize="
+        + (rePosDeletedDataFiles == null ? 0 : rePosDeletedDataFiles.length)
+        + ", readOnlyDeleteFilesSize="
+        + (readOnlyDeleteFiles == null ? 0 : readOnlyDeleteFiles.length)
+        + ", rewrittenDeleteFilesSize="
+        + (rewrittenDeleteFiles == null ? 0 : rewrittenDeleteFiles.length)
+        + "} "
+        + super.toString();
   }
 }

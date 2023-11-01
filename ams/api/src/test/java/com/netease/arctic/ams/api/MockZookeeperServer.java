@@ -27,9 +27,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Random;
 
-/**
- * Provides mock zookeeper server.
- */
+/** Provides mock zookeeper server. */
 public class MockZookeeperServer {
 
   private static TestingServer server;
@@ -61,8 +59,7 @@ public class MockZookeeperServer {
     server = new TestingServer(port, true);
     server.start();
 
-    client = CuratorFrameworkFactory.newClient("127.0.0.1",
-        new ExponentialBackoffRetry(1000, 3));
+    client = CuratorFrameworkFactory.newClient("127.0.0.1", new ExponentialBackoffRetry(1000, 3));
     client.start();
   }
 

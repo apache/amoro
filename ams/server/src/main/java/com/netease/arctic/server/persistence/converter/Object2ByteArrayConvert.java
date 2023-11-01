@@ -1,9 +1,13 @@
 package com.netease.arctic.server.persistence.converter;
 
+import com.netease.arctic.server.ArcticManagementConf;
+import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
+import com.netease.arctic.server.utils.CompressUtil;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
 
+import java.io.ByteArrayInputStream;
 import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,13 +17,21 @@ import java.sql.Types;
 public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
 
   @Override
-  public void setParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType) throws SQLException {
+  public void setParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType)
+      throws SQLException {
     if (parameter == null) {
-      ps.setNull(i, Types.BLOB);
+      if (SqlSessionFactoryProvider.getDbType().equals(ArcticManagementConf.DB_TYPE_POSTGRES)) {
+        ps.setNull(i, Types.BINARY);
+      } else {
+        ps.setNull(i, Types.BLOB);
+      }
       return;
     }
 
-    ps.setBytes(i, SerializationUtil.simpleSerialize(parameter).array());
+    ps.setBinaryStream(
+        i,
+        new ByteArrayInputStream(
+            CompressUtil.gzip(SerializationUtil.simpleSerialize(parameter).array())));
   }
 
   @Override
@@ -28,7 +40,7 @@ public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
     if (bytes == null) {
       return null;
     }
-    return SerializationUtil.simpleDeserialize(bytes);
+    return SerializationUtil.simpleDeserialize(CompressUtil.unGzip(bytes));
   }
 
   @Override
@@ -37,7 +49,7 @@ public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
     if (bytes == null) {
       return null;
     }
-    return SerializationUtil.simpleDeserialize(bytes);
+    return SerializationUtil.simpleDeserialize(CompressUtil.unGzip(bytes));
   }
 
   @Override
@@ -46,6 +58,6 @@ public class Object2ByteArrayConvert<T> implements TypeHandler<T> {
     if (bytes == null) {
       return null;
     }
-    return SerializationUtil.simpleDeserialize(bytes);
+    return SerializationUtil.simpleDeserialize(CompressUtil.unGzip(bytes));
   }
 }

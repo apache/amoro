@@ -43,12 +43,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Positional delete file writer for iceberg tables. Write to different delete file for every data file.
- * The output delete files are named with pattern: {data_file_name}-delete-{delete_file_suffix}.
- * 
+ * Positional delete file writer for iceberg tables. Write to different delete file for every data
+ * file. The output delete files are named with pattern:
+ * {data_file_name}-delete-{delete_file_suffix}.
+ *
  * @param <T> to indicate the record data type.
  */
-public class IcebergFanoutPosDeleteWriter<T> implements FileWriter<PositionDelete<T>, DeleteWriteResult> {
+public class IcebergFanoutPosDeleteWriter<T>
+    implements FileWriter<PositionDelete<T>, DeleteWriteResult> {
 
   private final List<DeleteFile> completedFiles = Lists.newArrayList();
   private final Map<CharSequenceWrapper, List<PosRow<T>>> posDeletes = Maps.newHashMap();
@@ -141,40 +143,45 @@ public class IcebergFanoutPosDeleteWriter<T> implements FileWriter<PositionDelet
       return;
     }
 
-    posDeletes.forEach((filePath, posDeletes) -> {
-      if (posDeletes.size() <= 0) {
-        return;
-      }
-      posDeletes.sort(Comparator.comparingLong(PosRow::pos));
-      String fileName = TableFileUtil.getFileName(filePath.get().toString());
-      FileFormat fileFormat = FileFormat.fromFileName(fileName);
-      if (fileFormat != null) {
-        fileName = fileName.substring(0, fileName.length() - fileFormat.name().length() - 1);
-      }
-      String fileDir = TableFileUtil.getFileDir(filePath.get().toString());
-      String deleteFilePath = format.addExtension(String.format("%s/%s-delete-%s", fileDir, fileName,
-          fileNameSuffix));
-      EncryptedOutputFile outputFile = encryptionManager.encrypt(fileIO.newOutputFile(deleteFilePath));
+    posDeletes.forEach(
+        (filePath, posDeletes) -> {
+          if (posDeletes.size() <= 0) {
+            return;
+          }
+          posDeletes.sort(Comparator.comparingLong(PosRow::pos));
+          String fileName = TableFileUtil.getFileName(filePath.get().toString());
+          FileFormat fileFormat = FileFormat.fromFileName(fileName);
+          if (fileFormat != null) {
+            fileName = fileName.substring(0, fileName.length() - fileFormat.name().length() - 1);
+          }
+          String fileDir = TableFileUtil.getFileDir(filePath.get().toString());
+          String deleteFilePath =
+              format.addExtension(
+                  String.format("%s/%s-delete-%s", fileDir, fileName, fileNameSuffix));
+          EncryptedOutputFile outputFile =
+              encryptionManager.encrypt(fileIO.newOutputFile(deleteFilePath));
 
-      PositionDeleteWriter<T> writer =
-          appenderFactory.newPosDeleteWriter(outputFile, format, partition);
-      PositionDelete<T> posDelete = PositionDelete.create();
-      try (PositionDeleteWriter<T> closeableWriter = writer) {
-        posDeletes.forEach(
-            posRow -> closeableWriter.write(posDelete.set(filePath.get(), posRow.pos(), posRow.row())));
-      } catch (IOException e) {
-        setFailure(e);
-        throw new UncheckedIOException(
-            "Failed to write the sorted path/pos pairs to pos-delete file: " +
-                outputFile.encryptingOutputFile().location(),
-            e);
-      }
-      // Add the referenced data files.
-      referencedDataFiles.addAll(writer.referencedDataFiles());
+          PositionDeleteWriter<T> writer =
+              appenderFactory.newPosDeleteWriter(outputFile, format, partition);
+          PositionDelete<T> posDelete = PositionDelete.create();
+          try (PositionDeleteWriter<T> closeableWriter = writer) {
+            posDeletes.forEach(
+                posRow ->
+                    closeableWriter.write(
+                        posDelete.set(filePath.get(), posRow.pos(), posRow.row())));
+          } catch (IOException e) {
+            setFailure(e);
+            throw new UncheckedIOException(
+                "Failed to write the sorted path/pos pairs to pos-delete file: "
+                    + outputFile.encryptingOutputFile().location(),
+                e);
+          }
+          // Add the referenced data files.
+          referencedDataFiles.addAll(writer.referencedDataFiles());
 
-      // Add the completed delete files.
-      completedFiles.add(writer.toDeleteFile());
-    });
+          // Add the completed delete files.
+          completedFiles.add(writer.toDeleteFile());
+        });
 
     // Clear the buffered pos-deletions.
     posDeletes.clear();

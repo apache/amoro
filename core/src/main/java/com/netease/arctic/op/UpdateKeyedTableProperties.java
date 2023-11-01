@@ -18,7 +18,6 @@
 
 package com.netease.arctic.op;
 
-import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.FileFormat;
@@ -35,11 +34,9 @@ public class UpdateKeyedTableProperties implements UpdateProperties {
   private final Map<String, String> propsSet = Maps.newHashMap();
   private final Set<String> propsDel = Sets.newHashSet();
   private final KeyedTable keyedTable;
-  private final TableMeta meta;
 
-  public UpdateKeyedTableProperties(KeyedTable keyedTable, TableMeta meta) {
+  public UpdateKeyedTableProperties(KeyedTable keyedTable) {
     this.keyedTable = keyedTable;
-    this.meta = meta;
   }
 
   @Override
@@ -79,7 +76,6 @@ public class UpdateKeyedTableProperties implements UpdateProperties {
     if (keyedTable.changeTable() != null) {
       commitIcebergTableProperties(keyedTable.changeTable());
     }
-    this.meta.setProperties(props);
   }
 
   protected void commitIcebergTableProperties(UnkeyedTable unkeyedTable) {
