@@ -24,6 +24,7 @@ import com.netease.arctic.server.table.TableRuntime;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -165,15 +166,12 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
       return true;
     }
     // When Upsert writing is enabled in the Flink engine, both INSERT and UPDATE_AFTER will
-    // generate deletes files
-    // (Most are eq-delete), and eq-delete file will be associated with the data file before the
-    // current snapshot.
+    // generate deletes files (Most are eq-delete), and eq-delete file will be associated
+    // with the data file before the current snapshot.
     // The eq-delete does not accurately reflect how much data has been deleted in the current
-    // segment file
-    // (That is, whether the segment file needs to be rewritten).
+    // segment file (That is, whether the segment file needs to be rewritten).
     // And the eq-delete file will be converted to pos-delete during minor optimizing, so only
-    // pos-delete record
-    // count is calculated here.
+    // pos-delete record count is calculated here.
     return getPosDeletesRecordCount(deletes)
         > dataFile.recordCount() * config.getMajorDuplicateRatio();
   }
@@ -235,7 +233,9 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   @Override
   public long getCost() {
     if (cost < 0) {
-      // We estimate that the cost of writing is 3 times that of reading
+      // We estimate that the cost of writing is 3 times that of reading.
+      // When rewriting the Position delete file, only the primary key field of the segment file
+      // will be read, so only one-tenth of the size is calculated based on the size.
       cost =
           (rewriteSegmentFileSize + fragmentFileSize) * 4
               + rewritePosSegmentFileSize / 10
@@ -380,46 +380,26 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
   @Override
   public String toString() {
-    return "CommonPartitionEvaluator{"
-        + "partition='"
-        + partition
-        + '\''
-        + ", config="
-        + config
-        + ", fragmentSize="
-        + fragmentSize
-        + ", planTime="
-        + planTime
-        + ", lastMinorOptimizeTime="
-        + tableRuntime.getLastMinorOptimizingTime()
-        + ", lastMajorOptimizeTime="
-        + tableRuntime.getLastMajorOptimizingTime()
-        + ", lastFullOptimizeTime="
-        + tableRuntime.getLastFullOptimizingTime()
-        + ", fragmentFileCount="
-        + fragmentFileCount
-        + ", fragmentFileSize="
-        + fragmentFileSize
-        + ", segmentFileCount="
-        + segmentFileCount
-        + ", segmentFileSize="
-        + segmentFileSize
-        + ", rewriteSegmentFileCount="
-        + rewriteSegmentFileCount
-        + ", rewriteSegmentFileSize="
-        + rewriteSegmentFileSize
-        + ", rewritePosSegmentFileCount="
-        + rewritePosSegmentFileCount
-        + ", rewritePosSegmentFileSize="
-        + rewritePosSegmentFileSize
-        + ", equalityDeleteFileCount="
-        + equalityDeleteFileCount
-        + ", equalityDeleteFileSize="
-        + equalityDeleteFileSize
-        + ", posDeleteFileCount="
-        + posDeleteFileCount
-        + ", posDeleteFileSize="
-        + posDeleteFileSize
-        + '}';
+    return MoreObjects.toStringHelper(this)
+        .add("partition", partition)
+        .add("config", config)
+        .add("fragmentSize", fragmentSize)
+        .add("planTime", planTime)
+        .add("lastMinorOptimizeTime", tableRuntime.getLastMinorOptimizingTime())
+        .add("lastFullOptimizeTime", tableRuntime.getLastFullOptimizingTime())
+        .add("lastFullOptimizeTime", tableRuntime.getLastFullOptimizingTime())
+        .add("fragmentFileCount", fragmentFileCount)
+        .add("fragmentFileSize", fragmentFileSize)
+        .add("segmentFileCount", segmentFileCount)
+        .add("segmentFileSize", segmentFileSize)
+        .add("rewriteSegmentFileCount", rewriteSegmentFileCount)
+        .add("rewriteSegmentFileSize", rewriteSegmentFileSize)
+        .add("rewritePosSegmentFileCount", rewritePosSegmentFileCount)
+        .add("rewritePosSegmentFileSize", rewritePosSegmentFileSize)
+        .add("equalityDeleteFileCount", equalityDeleteFileCount)
+        .add("equalityDeleteFileSize", equalityDeleteFileSize)
+        .add("posDeleteFileCount", posDeleteFileCount)
+        .add("posDeleteFileSize", posDeleteFileSize)
+        .toString();
   }
 }
