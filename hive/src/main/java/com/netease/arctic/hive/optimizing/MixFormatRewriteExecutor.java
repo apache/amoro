@@ -73,7 +73,7 @@ public class MixFormatRewriteExecutor extends AbstractRewriteFilesExecutor {
   }
 
   public long getTransactionId(List<PrimaryKeyedFile> dataFiles) {
-    return dataFiles.stream().mapToLong(PrimaryKeyedFile::transactionId).max().getAsLong();
+    return dataFiles.stream().mapToLong(PrimaryKeyedFile::transactionId).max().orElse(0L);
   }
 
   public String baseLocation() {

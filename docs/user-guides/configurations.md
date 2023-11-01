@@ -39,7 +39,7 @@ Self-optimizing configurations are applicable to both Iceberg Format and Mixed s
 | self-optimizing.fragment-ratio                      | 8                | The fragment file size threshold. We could divide self-optimizing.target-size by this ratio to get the actual fragment file size           |
 | self-optimizing.minor.trigger.file-count            | 12               | The minimum numbers of fragment files to trigger minor optimizing   |
 | self-optimizing.minor.trigger.interval              | 3600000(1 hour)  | The time interval in milliseconds to trigger minor optimizing                         |
-| self-optimizing.major.trigger.duplicate-ratio       | 0.5              | The ratio of duplicate data of segment files to trigger major optimizing  |
+| self-optimizing.major.trigger.duplicate-ratio       | 0.1              | The ratio of duplicate data of segment files to trigger major optimizing  |
 | self-optimizing.full.trigger.interval               | -1(closed)       | The time interval in milliseconds to trigger full optimizing
 | self-optimizing.full.rewrite-all-files              | true             | Whether full optimizing rewrites all files or skips files that do not need to be optimized |
 
@@ -116,4 +116,4 @@ If using Iceberg Format，please refer to [Iceberg configurations](https://icebe
 |-----------------------------------|------------------|--------------------------------------------------------------------------------------------------------|
 | base.hive.auto-sync-schema-change | true             | Whether synchronize schema changes of Hive Table from HMS                                              |
 | base.hive.auto-sync-data-write    | false            | Whether synchronize data changes of Hive Table from HMS, this should be true when writing to Hive      |
-| hive.consitent-write.enabled      | true             | The files written to the Hive directory will be hidden files and renamed to visible files upon commit. |
+| base.hive.consistent-write.enabled | true            | To avoid writing dirty data, the files written to the Hive directory will be hidden files and renamed to visible files upon commit. |
