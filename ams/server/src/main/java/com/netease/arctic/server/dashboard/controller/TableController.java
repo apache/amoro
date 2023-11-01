@@ -40,6 +40,7 @@ import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TableMeta;
 import com.netease.arctic.server.dashboard.model.TableOperation;
+import com.netease.arctic.server.dashboard.model.TagOrBranchInfo;
 import com.netease.arctic.server.dashboard.model.UpgradeHiveMeta;
 import com.netease.arctic.server.dashboard.model.UpgradeRunningInfo;
 import com.netease.arctic.server.dashboard.model.UpgradeStatus;
@@ -489,6 +490,34 @@ public class TableController {
 
     String signCal = CommonUtil.generateTablePageToken(catalog, db, table);
     ctx.json(OkResponse.of(signCal));
+  }
+
+  public void getTableTags(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String database = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
+    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    List<TagOrBranchInfo> partitionBaseInfos =
+        tableDescriptor.getTableTags(
+            TableIdentifier.of(catalog, database, table).buildTableIdentifier());
+    int offset = (page - 1) * pageSize;
+    PageResult<TagOrBranchInfo> amsPageResult = PageResult.of(partitionBaseInfos, offset, pageSize);
+    ctx.json(OkResponse.of(amsPageResult));
+  }
+
+  public void getTableBranchs(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String database = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
+    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    List<TagOrBranchInfo> partitionBaseInfos =
+        tableDescriptor.getTableBranchs(
+            TableIdentifier.of(catalog, database, table).buildTableIdentifier());
+    int offset = (page - 1) * pageSize;
+    PageResult<TagOrBranchInfo> amsPageResult = PageResult.of(partitionBaseInfos, offset, pageSize);
+    ctx.json(OkResponse.of(amsPageResult));
   }
 
   private List<AMSColumnInfo> transformHiveSchemaToAMSColumnInfo(List<FieldSchema> fields) {
