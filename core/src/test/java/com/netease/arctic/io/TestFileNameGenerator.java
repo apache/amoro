@@ -96,4 +96,23 @@ public class TestFileNameGenerator {
     Assert.assertEquals(fileMeta.type(), DataFileType.INSERT_FILE);
     Assert.assertEquals(fileMeta.transactionId(), 2L);
   }
+
+  @Test
+  public void testHiddenFileParse() {
+    String path = "hdfs://test/animal_partition_two/hive/.5-I-2-00000-941953957-0000000001.parquet";
+    DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseBase(path);
+    Assert.assertEquals(fileMeta.node(), DataTreeNode.of(3, 1));
+    Assert.assertEquals(fileMeta.type(), DataFileType.BASE_FILE);
+    Assert.assertEquals(fileMeta.transactionId(), 2L);
+
+    long txId = FileNameRules.parseTransactionId(path);
+    Assert.assertEquals(2L, txId);
+
+    String invalidPath =
+        "hdfs://test/animal_partition_two/hive/A5-I-2-00000-941953957-0000000001.parquet";
+    fileMeta = FileNameRules.parseBase(invalidPath);
+    Assert.assertEquals(fileMeta.node(), DataTreeNode.of(0, 0));
+    Assert.assertEquals(fileMeta.type(), DataFileType.BASE_FILE);
+    Assert.assertEquals(fileMeta.transactionId(), 0L);
+  }
 }
