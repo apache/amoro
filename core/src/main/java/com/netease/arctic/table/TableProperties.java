@@ -303,11 +303,6 @@ public class TableProperties {
 
   public static final String OWNER = "owner";
 
-  /** enable consistent write for hive store */
-  public static final String HIVE_CONSISTENT_WRITE_ENABLED = "hive.consistent-write.enabled";
-
-  public static final String HIVE_CONSISTENT_WRITE_ENABLED_DEFAULT = "true";
-
   /**
    * Protected properties which should not be read by user.
    */

@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink.write;
 
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.io.writer.AdaptHiveOperateToTableRelation;
 import com.netease.arctic.hive.io.writer.AdaptHiveOutputFileFactory;
 import com.netease.arctic.hive.table.HiveLocationKind;
@@ -37,7 +38,6 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WriteOperationKind;
 import com.netease.arctic.utils.SchemaUtil;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.FileFormat;
@@ -138,8 +138,10 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
 
     Schema selectSchema = TypeUtil.reassignIds(
         FlinkSchemaUtil.convert(FlinkSchemaUtil.toSchema(flinkSchema)), schema);
-    boolean hiveConsistentWriteEnabled =
-        TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
+    boolean hiveConsistentWriteEnabled = PropertyUtil.propertyAsBoolean(
+        table.properties(),
+        HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED,
+        HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED_DEFAULT);
 
     OutputFileFactory outputFileFactory = locationKind == HiveLocationKind.INSTANT ?
         new AdaptHiveOutputFileFactory(((SupportHive) table).hiveLocation(), table.spec(), fileFormat, table.io(),

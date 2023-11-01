@@ -18,6 +18,7 @@
 
 package com.netease.arctic.spark.io;
 
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.io.writer.AdaptHiveOutputFileFactory;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.writer.ChangeTaskWriter;
@@ -134,7 +135,10 @@ public class TaskWriters {
         .builderFor(icebergTable, schema, dsSchema)
         .writeHive(isHiveTable)
         .build();
-    boolean consistentWriteEnabled = TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
+    boolean consistentWriteEnabled = PropertyUtil.propertyAsBoolean(
+        table.properties(),
+        HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED,
+        HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED_DEFAULT);
 
     OutputFileFactory outputFileFactory;
     if (isHiveTable && isOverwrite) {

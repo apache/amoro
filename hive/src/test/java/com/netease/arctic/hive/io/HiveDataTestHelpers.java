@@ -19,6 +19,7 @@
 package com.netease.arctic.hive.io;
 
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.hive.table.SupportHive;
@@ -29,7 +30,6 @@ import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TableFileUtils;
-import com.netease.arctic.utils.TablePropertyUtil;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
@@ -38,6 +38,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.util.PropertyUtil;
 import org.junit.Assert;
 
 public class HiveDataTestHelpers {
@@ -140,8 +141,10 @@ public class HiveDataTestHelpers {
    * file.
    */
   public static void assertWriteConsistentFilesName(SupportHive table, List<DataFile> files) {
-    boolean consistentWriteEnabled =
-        TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
+    boolean consistentWriteEnabled = PropertyUtil.propertyAsBoolean(
+        table.properties(),
+        HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED,
+        HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED_DEFAULT);
     String hiveLocation = table.hiveLocation();
     for (DataFile f : files) {
       String filename = TableFileUtils.getFileName(f.path().toString());

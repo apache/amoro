@@ -19,6 +19,7 @@
 package com.netease.arctic.hive.io.writer;
 
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
@@ -38,7 +39,6 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WriteOperationKind;
 import com.netease.arctic.utils.SchemaUtil;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.MetricsModes;
@@ -73,7 +73,10 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
 
   private AdaptHiveGenericTaskWriterBuilder(ArcticTable table) {
     this.table = table;
-    this.hiveConsistentWrite = TablePropertyUtil.hiveConsistentWriteEnabled(table.properties());
+    this.hiveConsistentWrite = PropertyUtil.propertyAsBoolean(
+        table.properties(),
+        HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED,
+        HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED_DEFAULT);
   }
 
   public AdaptHiveGenericTaskWriterBuilder withTransactionId(Long transactionId) {

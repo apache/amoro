@@ -19,13 +19,13 @@
 package com.netease.arctic.spark.io;
 
 import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.spark.SparkTestBase;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -106,7 +106,7 @@ public class TestConsistentWrite extends SparkTestBase {
   public void testConsistentWrite() {
     ArcticTable table = catalog.newTableBuilder(
         TableIdentifier.of(catalogName, database, tableName), schema)
-        .withProperty(TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, consistentWriteEnabled + "")
+        .withProperty(HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED, consistentWriteEnabled + "")
         .withPrimaryKeySpec(this.keySpec)
         .withPartitionSpec(this.partitionSpec)
         .create();
