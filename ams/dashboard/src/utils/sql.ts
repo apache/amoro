@@ -19,7 +19,7 @@
 'use strict'
 export const conf = {
   comments: {
-    lineComment: ['--', '#'],
+    lineComment: '--',
     blockComment: ['/*', '*/']
   },
   brackets: [
@@ -1090,7 +1090,6 @@ export const language = {
     ],
     comments: [
       [/--+.*/, 'comment'],
-      [/#+.*/, 'comment'],
       [/\/\*/, { token: 'comment.quote', next: '@comment' }]
     ],
     comment: [
