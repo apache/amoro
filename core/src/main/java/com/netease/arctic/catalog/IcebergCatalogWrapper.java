@@ -333,6 +333,11 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
     }
 
     @Override
+    public String name() {
+      return icebergTable.name();
+    }
+
+    @Override
     public TableFormat format() {
       return TableFormat.ICEBERG;
     }
