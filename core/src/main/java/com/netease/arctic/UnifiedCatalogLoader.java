@@ -20,6 +20,7 @@ package com.netease.arctic;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -33,7 +34,7 @@ public class UnifiedCatalogLoader {
         () -> {
           try {
             CatalogMeta meta = client.getCatalog(catalogName);
-            meta.putToCatalogProperties("ams.uri", amsUri);
+            meta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, amsUri);
             return meta;
           } catch (NoSuchObjectException e) {
             throw new IllegalStateException(
