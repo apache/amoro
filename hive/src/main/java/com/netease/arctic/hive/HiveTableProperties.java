@@ -54,6 +54,7 @@ public class HiveTableProperties {
 
   /** enable consistent write for hive store */
   public static final String HIVE_CONSISTENT_WRITE_ENABLED = "base.hive.consistent-write.enabled";
+
   public static final boolean HIVE_CONSISTENT_WRITE_ENABLED_DEFAULT = true;
 
   public static final String ALLOW_HIVE_TABLE_EXISTED = "allow-hive-table-existed";
