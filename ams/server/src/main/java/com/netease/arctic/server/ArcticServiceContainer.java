@@ -478,25 +478,27 @@ public class ArcticServiceContainer {
       LOG.info("initializing container configuration...");
       JSONArray containers = yamlConfig.getJSONArray(ArcticManagementConf.CONTAINER_LIST);
       List<ContainerMetadata> containerList = new ArrayList<>();
-      for (int i = 0; i < containers.size(); i++) {
-        JSONObject containerConfig = containers.getJSONObject(i);
-        ContainerMetadata container =
-            new ContainerMetadata(
-                containerConfig.getString(ArcticManagementConf.CONTAINER_NAME),
-                containerConfig.getString(ArcticManagementConf.CONTAINER_IMPL));
-        Map<String, String> containerProperties = new HashMap<>();
-        if (containerConfig.containsKey(ArcticManagementConf.CONTAINER_PROPERTIES)) {
-          containerProperties.putAll(
-              containerConfig.getObject(ArcticManagementConf.CONTAINER_PROPERTIES, Map.class));
+      if (containers != null) {
+        for (int i = 0; i < containers.size(); i++) {
+          JSONObject containerConfig = containers.getJSONObject(i);
+          ContainerMetadata container =
+              new ContainerMetadata(
+                  containerConfig.getString(ArcticManagementConf.CONTAINER_NAME),
+                  containerConfig.getString(ArcticManagementConf.CONTAINER_IMPL));
+          Map<String, String> containerProperties = new HashMap<>();
+          if (containerConfig.containsKey(ArcticManagementConf.CONTAINER_PROPERTIES)) {
+            containerProperties.putAll(
+                containerConfig.getObject(ArcticManagementConf.CONTAINER_PROPERTIES, Map.class));
+          }
+          // put properties in config.yaml first.
+          containerProperties.put(PropertyNames.AMS_HOME, Environments.getHomePath());
+          containerProperties.putIfAbsent(
+              PropertyNames.AMS_OPTIMIZER_URI,
+              AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
+          // put addition system properties
+          container.setProperties(containerProperties);
+          containerList.add(container);
         }
-        // put properties in config.yaml first.
-        containerProperties.put(PropertyNames.AMS_HOME, Environments.getHomePath());
-        containerProperties.putIfAbsent(
-            PropertyNames.AMS_OPTIMIZER_URI,
-            AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
-        // put addition system properties
-        container.setProperties(containerProperties);
-        containerList.add(container);
       }
       ResourceContainers.init(containerList);
     }

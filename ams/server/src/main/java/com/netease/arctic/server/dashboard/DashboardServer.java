@@ -303,6 +303,9 @@ public class DashboardServer {
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
                 tableController::getPartitionFileListInfo);
             get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/operations",
+                tableController::getTableOperations);
+            get(
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/signature",
                 tableController::getTableDetailTabToken);
             get("/catalogs/{catalog}/databases/{db}/tables", tableController::getTableList);
