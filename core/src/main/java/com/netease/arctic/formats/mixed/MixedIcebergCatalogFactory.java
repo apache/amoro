@@ -18,17 +18,31 @@
 
 package com.netease.arctic.formats.mixed;
 
+import com.netease.arctic.FormatCatalog;
+import com.netease.arctic.FormatCatalogFactory;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.table.TableMetaStore;
 
-public class MixedHiveTable extends MixedIcebergTable {
+import java.util.Map;
 
-  public MixedHiveTable(ArcticTable arcticTable) {
-    super(arcticTable);
+public class MixedIcebergCatalogFactory implements FormatCatalogFactory {
+  @Override
+  public FormatCatalog create(
+      String catalogName,
+      String metastoreType,
+      Map<String, String> properties,
+      TableMetaStore metaStore) {
+    String catalogImpl = CatalogLoader.catalogImpl(metastoreType, properties);
+    ArcticCatalog catalog = CatalogLoader.buildCatalog(catalogImpl);
+
+    catalog.initialize(catalogName, properties, metaStore);
+    return new MixedCatalog(catalog, format());
   }
 
   @Override
   public TableFormat format() {
-    return TableFormat.MIXED_HIVE;
+    return TableFormat.MIXED_ICEBERG;
   }
 }

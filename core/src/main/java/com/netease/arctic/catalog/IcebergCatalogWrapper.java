@@ -44,7 +44,7 @@ import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.rest.RESTCatalog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,68 +54,66 @@ import java.util.stream.Collectors;
 
 /** A wrapper class around {@link Catalog} and implement {@link ArcticCatalog}. */
 public class IcebergCatalogWrapper implements ArcticCatalog {
-
-  private CatalogMeta meta;
-  private Map<String, String> customProperties;
   private Pattern databaseFilterPattern;
   private Pattern tableFilterPattern;
   private transient TableMetaStore tableMetaStore;
   private transient Catalog icebergCatalog;
 
+  private String name;
+  private Map<String, String> catalogProperties;
+
   public IcebergCatalogWrapper() {}
 
   public IcebergCatalogWrapper(CatalogMeta meta) {
-    initialize(meta, Maps.newHashMap());
-  }
+    meta.putToCatalogProperties(
+        org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE, meta.getCatalogType());
+    if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(meta.getCatalogType())) {
+      meta.getCatalogProperties()
+          .put(CatalogProperties.CATALOG_IMPL, CatalogLoader.GLUE_CATALOG_IMPL);
+    } else if (CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(meta.getCatalogType())) {
+      meta.putToCatalogProperties(CatalogProperties.WAREHOUSE_LOCATION, meta.getCatalogName());
+      meta.putToCatalogProperties(CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
+    }
 
-  public IcebergCatalogWrapper(CatalogMeta meta, Map<String, String> properties) {
-    initialize(meta, properties);
+    if (meta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
+      meta.getCatalogProperties().remove(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE);
+    }
+    TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(meta);
+    initialize(meta.getCatalogName(), meta.getCatalogProperties(), tableMetaStore);
   }
 
   @Override
   public String name() {
-    return meta.getCatalogName();
+    return this.name;
   }
 
   @Override
   public void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties) {}
 
-  private void initialize(CatalogMeta meta, Map<String, String> properties) {
-    this.meta = meta;
-    this.customProperties = properties;
-    CatalogUtil.mergeCatalogProperties(meta, properties);
-    meta.putToCatalogProperties(
-        org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE, meta.getCatalogType());
-    this.tableMetaStore = CatalogUtil.buildMetaStore(meta);
-    if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(meta.getCatalogType())) {
-      meta.getCatalogProperties()
-          .put(CatalogProperties.CATALOG_IMPL, CatalogLoader.GLUE_CATALOG_IMPL);
-    }
-    if (meta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
-      meta.getCatalogProperties().remove(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE);
-    }
-
+  @Override
+  public void initialize(String name, Map<String, String> properties, TableMetaStore metaStore) {
     icebergCatalog =
-        tableMetaStore.doAs(
+        metaStore.doAs(
             () ->
                 org.apache.iceberg.CatalogUtil.buildIcebergCatalog(
-                    name(), meta.getCatalogProperties(), tableMetaStore.getConfiguration()));
-    if (meta.getCatalogProperties()
-        .containsKey(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION)) {
+                    name, properties, metaStore.getConfiguration()));
+    if (properties.containsKey(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION)) {
       String databaseFilter =
-          meta.getCatalogProperties()
-              .get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
+          properties.get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
       databaseFilterPattern = Pattern.compile(databaseFilter);
     } else {
       databaseFilterPattern = null;
     }
 
-    if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_TABLE_FILTER)) {
-      String tableFilter = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
+    if (properties.containsKey(CatalogMetaProperties.KEY_TABLE_FILTER)) {
+      String tableFilter = properties.get(CatalogMetaProperties.KEY_TABLE_FILTER);
       tableFilterPattern = Pattern.compile(tableFilter);
     } else {
       tableFilterPattern = null;
     }
+    this.tableMetaStore = metaStore;
+    this.catalogProperties = properties;
+    this.name = name;
   }
 
   @Override
@@ -216,7 +214,7 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
         CatalogUtil.useArcticTableOperations(
             icebergTable, icebergTable.location(), arcticFileIO, tableMetaStore.getConfiguration()),
         arcticFileIO,
-        meta.getCatalogProperties());
+        catalogProperties);
   }
 
   @Override
@@ -257,11 +255,7 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
 
   @Override
   public Map<String, String> properties() {
-    return meta.getCatalogProperties();
-  }
-
-  public void refreshCatalogMeta(CatalogMeta meta) {
-    initialize(meta, customProperties);
+    return catalogProperties;
   }
 
   private org.apache.iceberg.catalog.TableIdentifier toIcebergTableIdentifier(
@@ -297,7 +291,7 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
 
       FileIO io = table.io();
       ArcticFileIO arcticFileIO = createArcticFileIO(io);
-      return new BasicIcebergTable(identifier, table, arcticFileIO, meta.getCatalogProperties());
+      return new BasicIcebergTable(identifier, table, arcticFileIO, catalogProperties);
     }
 
     @Override

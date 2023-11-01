@@ -26,6 +26,8 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.formats.iceberg.IcebergCatalogFactory;
+import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -85,8 +87,9 @@ public class IcebergHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Ca
   @Override
   public AmoroCatalog amoroCatalog() {
     IcebergCatalogFactory icebergCatalogFactory = new IcebergCatalogFactory();
+    TableMetaStore metaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
     return icebergCatalogFactory.create(
-        catalogName, getMetastoreType(), catalogProperties, new Configuration());
+        catalogName, getMetastoreType(), catalogProperties, metaStore);
   }
 
   @Override

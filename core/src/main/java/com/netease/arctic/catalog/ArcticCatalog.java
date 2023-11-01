@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
@@ -51,6 +52,8 @@ public interface ArcticCatalog {
    * @param properties client side catalog properties
    */
   void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties);
+
+  void initialize(String name, Map<String, String> properties, TableMetaStore metaStore);
 
   /**
    * Show database list of catalog.

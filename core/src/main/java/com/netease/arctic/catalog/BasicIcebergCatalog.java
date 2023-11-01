@@ -19,14 +19,18 @@
 package com.netease.arctic.catalog;
 
 import com.netease.arctic.AmsClient;
+import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.blocker.BasicTableBlockerManager;
+import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.TableBlockerManager;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.Catalog;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 
 import java.util.List;
@@ -37,6 +41,7 @@ public class BasicIcebergCatalog implements ArcticCatalog {
 
   private AmsClient client;
   private IcebergCatalogWrapper catalogWrapper;
+  private Map<String, String> clientSideProperties = Maps.newHashMap();
 
   @Override
   public String name() {
@@ -46,7 +51,18 @@ public class BasicIcebergCatalog implements ArcticCatalog {
   @Override
   public void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties) {
     this.client = client;
-    this.catalogWrapper = new IcebergCatalogWrapper(meta, properties);
+    this.clientSideProperties = properties;
+    CatalogUtil.mergeCatalogProperties(meta, properties);
+    this.catalogWrapper = new IcebergCatalogWrapper(meta);
+  }
+
+  @Override
+  public void initialize(String name, Map<String, String> properties, TableMetaStore metaStore) {
+    if (properties.containsKey(CatalogMetaProperties.AMS_URI)) {
+      this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
+    }
+    this.catalogWrapper = new IcebergCatalogWrapper();
+    this.catalogWrapper.initialize(name, properties, metaStore);
   }
 
   @Override
@@ -91,8 +107,13 @@ public class BasicIcebergCatalog implements ArcticCatalog {
 
   @Override
   public void refresh() {
+    if (client == null) {
+      throw new IllegalStateException("AMSClient is not initialized");
+    }
     try {
-      catalogWrapper.refreshCatalogMeta(client.getCatalog(catalogWrapper.name()));
+      CatalogMeta meta = client.getCatalog(catalogWrapper.name());
+      CatalogUtil.mergeCatalogProperties(meta, clientSideProperties);
+      catalogWrapper = new IcebergCatalogWrapper(meta);
     } catch (TException e) {
       throw new IllegalStateException(
           String.format("failed load catalog %s.", catalogWrapper.name()), e);
@@ -101,7 +122,8 @@ public class BasicIcebergCatalog implements ArcticCatalog {
 
   @Override
   public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
-    return BasicTableBlockerManager.build(tableIdentifier, client);
+    throw new UnsupportedOperationException(
+        "Catalog " + this.getClass().getName() + " doesn't support table blocker " + "manager");
   }
 
   @Override

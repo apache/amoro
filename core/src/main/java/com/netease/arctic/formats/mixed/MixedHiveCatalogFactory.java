@@ -16,31 +16,13 @@
  * limitations under the License.
  */
 
-package com.netease.arctic;
+package com.netease.arctic.formats.mixed;
 
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.table.TableMetaStore;
 
-import java.util.Map;
-
-/** A factory to create a {@link FormatCatalog}. */
-public interface FormatCatalogFactory {
-
-  /**
-   * Creates a {@link FormatCatalog} given a map of catalog properties.
-   *
-   * @param catalogName catalog name
-   * @param metastoreType metastore type
-   * @param properties catalog properties
-   * @param metaStore authentication context
-   * @return a new {@link FormatCatalog}
-   */
-  FormatCatalog create(
-      String catalogName,
-      String metastoreType,
-      Map<String, String> properties,
-      TableMetaStore metaStore);
-
-  /** format of this catalog factory */
-  TableFormat format();
+public class MixedHiveCatalogFactory extends MixedIcebergCatalogFactory {
+  @Override
+  public TableFormat format() {
+    return TableFormat.MIXED_HIVE;
+  }
 }

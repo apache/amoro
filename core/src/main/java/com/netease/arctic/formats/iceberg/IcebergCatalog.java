@@ -20,6 +20,11 @@ package com.netease.arctic.formats.iceberg;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.FormatCatalog;
+import com.netease.arctic.catalog.IcebergCatalogWrapper;
+import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.ArcticFileIOs;
+import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
@@ -28,14 +33,20 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class IcebergCatalog implements FormatCatalog {
 
   private final Catalog icebergCatalog;
+  private final TableMetaStore metaStore;
+  private final Map<String, String> properties;
 
-  public IcebergCatalog(Catalog icebergCatalog) {
+  public IcebergCatalog(
+      Catalog icebergCatalog, Map<String, String> properties, TableMetaStore metaStore) {
     this.icebergCatalog = icebergCatalog;
+    this.metaStore = metaStore;
+    this.properties = properties;
   }
 
   @Override
@@ -84,8 +95,16 @@ public class IcebergCatalog implements FormatCatalog {
   @Override
   public AmoroTable<?> loadTable(String database, String table) {
     Table icebergTable = icebergCatalog.loadTable(TableIdentifier.of(database, table));
+    ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(metaStore, icebergTable.io());
+    IcebergCatalogWrapper.BasicIcebergTable wrapped =
+        new IcebergCatalogWrapper.BasicIcebergTable(
+            com.netease.arctic.table.TableIdentifier.of(icebergCatalog.name(), database, table),
+            CatalogUtil.useArcticTableOperations(
+                icebergTable, icebergTable.location(), io, metaStore.getConfiguration()),
+            io,
+            properties);
     return new IcebergTable(
         com.netease.arctic.table.TableIdentifier.of(icebergCatalog.name(), database, table),
-        icebergTable);
+        wrapped);
   }
 }

@@ -27,6 +27,7 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.catalog.MixedTables;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.iceberg.CatalogProperties;
@@ -90,7 +91,8 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
       throw new UnsupportedOperationException(
           "Cannot build mixed-tables for table format:" + tableFormat);
     }
-    return new MixedHiveTables(catalogMeta);
+    return new MixedHiveTables(
+        catalogMeta.getCatalogProperties(), CatalogUtil.buildMetaStore(catalogMeta));
   }
 
   @Override

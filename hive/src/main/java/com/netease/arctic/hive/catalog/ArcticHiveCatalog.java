@@ -32,6 +32,7 @@ import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
@@ -67,8 +68,9 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
   }
 
   @Override
-  protected MixedTables newMixedTables(CatalogMeta catalogMeta) {
-    return new MixedHiveTables(catalogMeta);
+  protected MixedTables newMixedTables(
+      Map<String, String> catalogProperties, TableMetaStore metaStore) {
+    return new MixedHiveTables(catalogProperties, metaStore);
   }
 
   @Override

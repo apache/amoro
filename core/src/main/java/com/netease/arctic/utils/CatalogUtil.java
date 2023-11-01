@@ -63,9 +63,15 @@ public class CatalogUtil {
 
   /** Return table format set catalog supported. */
   public static Set<TableFormat> tableFormats(CatalogMeta meta) {
-    if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.TABLE_FORMATS)) {
-      String tableFormatsProperty =
-          meta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS);
+    return tableFormats(meta.getCatalogType(), meta.getCatalogProperties());
+  }
+
+  /** Return table format set catalog supported. */
+  public static Set<TableFormat> tableFormats(
+      String metastoreType, Map<String, String> catalogProperties) {
+    if (catalogProperties != null
+        && catalogProperties.containsKey(CatalogMetaProperties.TABLE_FORMATS)) {
+      String tableFormatsProperty = catalogProperties.get(CatalogMetaProperties.TABLE_FORMATS);
       return Arrays.stream(tableFormatsProperty.split(","))
           .map(
               tableFormatString ->
@@ -73,7 +79,7 @@ public class CatalogUtil {
           .collect(Collectors.toSet());
     } else {
       // Generate table format from catalog type for compatibility with older versions
-      switch (meta.getCatalogType()) {
+      switch (metastoreType) {
         case CATALOG_TYPE_AMS:
           return Sets.newHashSet(TableFormat.MIXED_ICEBERG);
         case CATALOG_TYPE_CUSTOM:
@@ -83,7 +89,7 @@ public class CatalogUtil {
         case CATALOG_TYPE_HIVE:
           return Sets.newHashSet(TableFormat.MIXED_HIVE);
         default:
-          throw new IllegalArgumentException("Unsupported catalog type:" + meta.getCatalogType());
+          throw new IllegalArgumentException("Unsupported catalog type:" + metastoreType);
       }
     }
   }
