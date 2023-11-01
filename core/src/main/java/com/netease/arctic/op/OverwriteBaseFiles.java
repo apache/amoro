@@ -33,6 +33,7 @@ import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.apache.iceberg.expressions.Expression;
@@ -175,6 +176,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     // step1: overwrite data files
     if (!this.addFiles.isEmpty() || !this.deleteFiles.isEmpty()) {
       OverwriteFiles overwriteFiles = transaction.newOverwrite();
+      overwriteFiles.set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
+      overwriteFiles.set(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST, "true");
 
       if (conflictDetectionFilter != null && baseTable.currentSnapshot() != null) {
         overwriteFiles.conflictDetectionFilter(conflictDetectionFilter).validateNoConflictingData();
@@ -206,6 +209,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         || CollectionUtils.isNotEmpty(deleteDeleteFiles)) {
       if (CollectionUtils.isEmpty(deleteDeleteFiles)) {
         RowDelta rowDelta = transaction.newRowDelta();
+        rowDelta.set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
+        rowDelta.set(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST, "true");
         if (baseTable.currentSnapshot() != null) {
           rowDelta.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
         }
@@ -224,6 +229,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         newSnapshots.add((CreateSnapshotEvent) rowDelta.updateEvent());
       } else {
         RewriteFiles rewriteFiles = transaction.newRewrite();
+        rewriteFiles.set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
+        rewriteFiles.set(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST, "true");
         if (baseTable.currentSnapshot() != null) {
           rewriteFiles.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
         }
@@ -283,11 +290,13 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
       if (statisticsFile != null) {
         result.add(StatisticsFileUtil.copyToSnapshot(statisticsFile, newSnapshot.snapshotId()));
       } else {
-        StatisticsFileUtil.PartitionDataSerializer dataSerializer =
-            StatisticsFileUtil.createPartitionDataSerializer(keyedTable.spec(), Long.class);
+        Table table = transaction.table();
+        StatisticsFileUtil.PartitionDataSerializer<Long> dataSerializer =
+            StatisticsFileUtil.createPartitionDataSerializer(table.spec(), Long.class);
         statisticsFile =
-            StatisticsFileUtil.writer(
-                    keyedTable.baseTable(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
+            StatisticsFileUtil.writerBuilder(table)
+                .withSnapshotId(newSnapshot.snapshotId())
+                .build()
                 .add(
                     ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence, dataSerializer)
                 .add(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, optimizedTime, dataSerializer)

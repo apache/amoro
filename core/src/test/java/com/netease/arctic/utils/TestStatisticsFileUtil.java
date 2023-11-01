@@ -64,7 +64,11 @@ public class TestStatisticsFileUtil extends TableTestBase {
         getArcticTable().isKeyedTable()
             ? getArcticTable().asKeyedTable().baseTable()
             : getArcticTable().asUnkeyedTable();
-    table.newAppend().commit();
+    table
+        .newAppend()
+        .set(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST, "true")
+        .set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true")
+        .commit();
 
     Snapshot snapshot = table.currentSnapshot();
     StructLikeMap<Long> optimizedTime = buildPartitionOptimizedTime();
@@ -73,13 +77,13 @@ public class TestStatisticsFileUtil extends TableTestBase {
     StatisticsFileUtil.PartitionDataSerializer<Long> dataSerializer =
         StatisticsFileUtil.createPartitionDataSerializer(table.spec(), Long.class);
     StatisticsFileUtil.Writer writer =
-        StatisticsFileUtil.writer(table, snapshot.snapshotId(), snapshot.sequenceNumber())
+        StatisticsFileUtil.writerBuilder(table)
+            .withSnapshotId(snapshot.snapshotId())
+            .build()
             .add(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, optimizedTime, dataSerializer)
             .add(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence, dataSerializer);
     StatisticsFile statisticsFile = writer.complete();
     table.updateStatistics().setStatistics(snapshot.snapshotId(), statisticsFile).commit();
-
-    StatisticsFileUtil.Reader reader = StatisticsFileUtil.reader(table);
 
     assertStructLikeEquals(
         optimizedTime, readPartitionData(table, ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME));
@@ -95,14 +99,14 @@ public class TestStatisticsFileUtil extends TableTestBase {
   }
 
   private StatisticsFile findValidStatisticFile(Table table, String type) {
-    List<StatisticsFile> latestValidStatisticsFiles =
-        StatisticsFileUtil.findLatestValidStatisticsFiles(
-            table,
-            table.currentSnapshot().snapshotId(),
-            StatisticsFileUtil.containsBlobOfType(type));
-    Preconditions.checkArgument(
-        latestValidStatisticsFiles.size() == 1, "Expect one valid statistics file");
-    return latestValidStatisticsFiles.get(0);
+    Snapshot latestValidSnapshot =
+        ArcticTableUtil.findLatestValidSnapshot(
+            table, table.currentSnapshot().snapshotId(), ArcticTableUtil.isTypeExist(type));
+    Preconditions.checkState(latestValidSnapshot != null, "Expect one valid snapshot");
+    List<StatisticsFile> statisticsFiles =
+        StatisticsFileUtil.getStatisticsFiles(table, latestValidSnapshot.snapshotId(), type);
+    Preconditions.checkArgument(statisticsFiles.size() == 1, "Expect one valid statistics file");
+    return statisticsFiles.get(0);
   }
 
   private StructLikeMap<Long> readPartitionData(Table table, String type) {

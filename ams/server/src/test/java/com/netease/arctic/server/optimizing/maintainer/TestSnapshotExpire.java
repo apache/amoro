@@ -66,8 +66,6 @@ import java.util.stream.Collectors;
 @RunWith(Parameterized.class)
 public class TestSnapshotExpire extends ExecutorTestBase {
 
-  private final List<DataFile> changeTableFiles = new ArrayList<>();
-
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
     return new Object[][] {
@@ -90,7 +88,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   }
 
   @Test
-  public void testExpireChangeTableFiles() throws Exception {
+  public void testExpireChangeTableFiles() {
     Assume.assumeTrue(isKeyedTable());
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
     testKeyedTable.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
@@ -137,7 +135,9 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     baseTable.newAppend().commit();
     Snapshot snapshot = baseTable.currentSnapshot();
     StatisticsFile statisticsFile =
-        StatisticsFileUtil.writer(baseTable, snapshot.snapshotId(), snapshot.sequenceNumber())
+        StatisticsFileUtil.writerBuilder(baseTable)
+            .withSnapshotId(snapshot.snapshotId())
+            .build()
             .add(
                 ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
                 optimizedSequence,
@@ -217,8 +217,9 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     HashSet<Snapshot> expectedSnapshots = new HashSet<>();
     expectedSnapshots.add(checkpointTime2Snapshot);
     expectedSnapshots.add(lastSnapshot);
-    Iterators.elementsEqual(
-        expectedSnapshots.iterator(), testKeyedTable.changeTable().snapshots().iterator());
+    Assert.assertTrue(
+        Iterators.elementsEqual(
+            expectedSnapshots.iterator(), testKeyedTable.changeTable().snapshots().iterator()));
   }
 
   @Test
@@ -232,7 +233,6 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     AppendFiles appendFiles = table.newAppend();
     appendFiles.set(FLINK_MAX_COMMITTED_CHECKPOINT_ID, "100");
     appendFiles.commit();
-    long checkpointTime = table.currentSnapshot().timestampMillis();
 
     AppendFiles appendFiles2 = table.newAppend();
     appendFiles2.set(FLINK_MAX_COMMITTED_CHECKPOINT_ID, "101");
@@ -260,7 +260,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     HashSet<Snapshot> expectedSnapshots = new HashSet<>();
     expectedSnapshots.add(checkpointTime2Snapshot);
     expectedSnapshots.add(lastSnapshot);
-    Iterators.elementsEqual(expectedSnapshots.iterator(), table.snapshots().iterator());
+    Assert.assertTrue(
+        Iterators.elementsEqual(expectedSnapshots.iterator(), table.snapshots().iterator()));
   }
 
   @Test
@@ -302,7 +303,8 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     new MixedTableMaintainer(table).expireSnapshots(tableRuntime);
     Assert.assertEquals(3, Iterables.size(table.snapshots()));
-    Iterators.elementsEqual(expectedSnapshots.iterator(), table.snapshots().iterator());
+    Assert.assertTrue(
+        Iterators.elementsEqual(expectedSnapshots.iterator(), table.snapshots().iterator()));
   }
 
   @Test
@@ -368,7 +370,6 @@ public class TestSnapshotExpire extends ExecutorTestBase {
         insertChangeDataFiles(testKeyedTable, 3).stream()
             .map(DataFile::path)
             .collect(Collectors.toSet());
-    long thirdCommitTime = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
     Assert.assertEquals(12, Iterables.size(testKeyedTable.changeTable().newScan().planFiles()));
     Assert.assertEquals(3, Iterables.size(testKeyedTable.changeTable().snapshots()));
 
@@ -403,7 +404,9 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     baseTable.newAppend().commit();
     Snapshot s1 = baseTable.currentSnapshot();
     StatisticsFile file1 =
-        StatisticsFileUtil.writer(baseTable, s1.snapshotId(), s1.sequenceNumber())
+        StatisticsFileUtil.writerBuilder(baseTable)
+            .withSnapshotId(s1.snapshotId())
+            .build()
             .add(
                 ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
                 StructLikeMap.create(baseTable.spec().partitionType()),
@@ -415,7 +418,9 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     baseTable.newAppend().commit();
     Snapshot s2 = baseTable.currentSnapshot();
     StatisticsFile file2 =
-        StatisticsFileUtil.writer(baseTable, s2.snapshotId(), s2.sequenceNumber())
+        StatisticsFileUtil.writerBuilder(baseTable)
+            .withSnapshotId(s2.snapshotId())
+            .build()
             .add(
                 ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
                 StructLikeMap.create(baseTable.spec().partitionType()),
@@ -454,10 +459,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   }
 
   private List<DataFile> insertChangeDataFiles(KeyedTable testKeyedTable, long transactionId) {
-    List<DataFile> changeInsertFiles =
-        writeAndCommitChangeStore(
-            testKeyedTable, transactionId, ChangeAction.INSERT, createRecords(1, 100));
-    changeTableFiles.addAll(changeInsertFiles);
-    return changeInsertFiles;
+    return writeAndCommitChangeStore(
+        testKeyedTable, transactionId, ChangeAction.INSERT, createRecords(1, 100));
   }
 }
