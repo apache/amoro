@@ -37,7 +37,6 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -66,12 +65,14 @@ public class BasicTableTestHelper implements TableTestHelper {
       PrimaryKeySpec primaryKeySpec,
       PartitionSpec partitionSpec,
       Map<String, String> tableProperties) {
-    tableProperties = tableProperties == null ? new HashMap<>() : tableProperties;
-    tableProperties.put(TableProperties.FORMAT_VERSION, "2");
     this.tableSchema = tableSchema;
     this.partitionSpec = partitionSpec;
     this.primaryKeySpec = primaryKeySpec;
-    this.tableProperties = tableProperties;
+    this.tableProperties = Maps.newHashMap();
+    if (tableProperties != null) {
+      this.tableProperties.putAll(tableProperties);
+    }
+    this.tableProperties.put(TableProperties.FORMAT_VERSION, "2");
   }
 
   public BasicTableTestHelper(

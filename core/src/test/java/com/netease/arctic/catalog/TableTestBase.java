@@ -43,9 +43,7 @@ public abstract class TableTestBase extends CatalogTestBase {
   public void setupTable() {
     this.tableMetaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
 
-    if (!getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
-      getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
-    }
+    getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     switch (getTestFormat()) {
       case MIXED_HIVE:
       case MIXED_ICEBERG:
@@ -84,6 +82,11 @@ public abstract class TableTestBase extends CatalogTestBase {
   @After
   public void dropTable() {
     getCatalog().dropTable(tableTestHelper.id(), true);
+    try {
+      getCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
   protected ArcticTable getArcticTable() {
