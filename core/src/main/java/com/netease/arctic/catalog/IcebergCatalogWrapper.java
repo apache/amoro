@@ -322,6 +322,8 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
 
   public static class BasicIcebergTable extends BasicUnkeyedTable {
 
+    private static final long serialVersionUID = -5240430071467122543L;
+
     public BasicIcebergTable(
         TableIdentifier tableIdentifier,
         Table icebergTable,
