@@ -31,6 +31,7 @@ import com.netease.arctic.spark.hive.TestUnKeyedTableMergeInto;
 import com.netease.arctic.spark.hive.TestUnkeyedHiveInsertOverwriteDynamic;
 import com.netease.arctic.spark.hive.TestUnkeyedHiveInsertOverwriteStatic;
 import com.netease.arctic.spark.hive.TestUnkeyedTableDml;
+import com.netease.arctic.spark.io.TestConsistentWrite;
 import com.netease.arctic.spark.source.TestKeyedTableDataFrameAPI;
 import com.netease.arctic.spark.source.TestUnKeyedTableDataFrameAPI;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -78,7 +79,8 @@ import java.util.Map;
     TestHiveTableTruncate.class,
     TestKeyedTableMergeInto.class,
     TestUnKeyedTableMergeInto.class,
-    TestUpsert.class
+    TestUpsert.class,
+    TestConsistentWrite.class
 })
 public class ArcticSparkCatalogTestGroup {
 

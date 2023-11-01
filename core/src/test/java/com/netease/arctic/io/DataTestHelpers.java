@@ -45,6 +45,7 @@ import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.InputFile;
+import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.Parquet;
@@ -119,6 +120,24 @@ public class DataTestHelpers {
       return Arrays.asList(result.dataFiles());
     } catch (IOException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  public static List<DataFile> writeRecords(TaskWriter<Record> taskWriter, List<Record> records) {
+    try {
+      records.forEach(
+          d -> {
+            try {
+              taskWriter.write(d);
+            } catch (IOException e) {
+              throw new UncheckedIOException(e);
+            }
+          });
+
+      WriteResult result = taskWriter.complete();
+      return Lists.newArrayList(Arrays.asList(result.dataFiles()));
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
     }
   }
 

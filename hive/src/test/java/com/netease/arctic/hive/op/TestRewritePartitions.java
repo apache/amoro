@@ -21,6 +21,8 @@ package com.netease.arctic.hive.op;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.MockDataFileBuilder;
 import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
+import com.netease.arctic.hive.io.HiveDataTestHelpers;
+import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
@@ -28,11 +30,15 @@ import com.netease.arctic.utils.TableFileUtils;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.ReplacePartitions;
+import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateProperties;
+import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -176,6 +182,29 @@ public class TestRewritePartitions extends HiveTableTestBase {
 
     Assert.assertThrows(CannotAlterHiveLocationException.class, replacePartitions::commit);
   }
+
+  @Test
+  public void testConsistentWriteCommit() {
+    UnkeyedHiveTable table = testHiveTable;
+    List<Record> records = records("p1", "p2");
+    List<DataFile> files = HiveDataTestHelpers.writerOf(table)
+        .transactionId(1L)
+        .writeHive(records);
+    HiveDataTestHelpers.assertWriteConsistentFilesName(table, files);
+
+    OverwriteFiles overwriteFiles = table.newOverwrite();
+    files.forEach(overwriteFiles::addFile);
+    overwriteFiles.commit();
+
+    List<DataFile> newDataFiles = HiveDataTestHelpers.writerOf(table)
+        .transactionId(2L)
+        .writeHive(records);
+    ReplacePartitions replacePartitions = table.newReplacePartitions();
+    newDataFiles.forEach(replacePartitions::addFile);
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(table);
+  }
+
+
   private void applyRewritePartitions(
       Map<String, String> partitionLocations,
       List<Map.Entry<String, String>> overwriteFiles) {

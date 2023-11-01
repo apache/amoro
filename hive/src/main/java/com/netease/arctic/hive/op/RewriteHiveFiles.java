@@ -8,6 +8,7 @@ import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotUpdate;
 import org.apache.iceberg.Transaction;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,12 @@ import static com.netease.arctic.op.OverwriteBaseFiles.PROPERTIES_TRANSACTION_ID
 public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements RewriteFiles {
 
   private final RewriteFiles delegate;
+
+  private final Set<DataFile> filesToDelete = Sets.newHashSet();
+  private final Set<DataFile> filesToAdd = Sets.newHashSet();
+  private final Set<DeleteFile> deleteFilesToReplace = Sets.newHashSet();
+  private final Set<DeleteFile> deleteFilesToAdd = Sets.newHashSet();
+  private long dataSequenceNumber = -1;
 
   public RewriteHiveFiles(Transaction transaction, boolean insideTransaction, UnkeyedHiveTable table,
                       HMSClientPool hmsClient, HMSClientPool transactionClient) {
@@ -33,24 +40,37 @@ public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements R
 
   @Override
   public RewriteFiles rewriteFiles(Set<DataFile> filesToDelete, Set<DataFile> filesToAdd) {
-    delegate.rewriteFiles(filesToDelete, filesToAdd);
+    this.filesToDelete.addAll(filesToDelete);
+    // only add datafile not in hive location
+    filesToAdd.stream().filter(dataFile -> !isHiveDataFile(dataFile)).forEach(this.filesToAdd::add);
     markHiveFiles(filesToDelete, filesToAdd);
     return this;
   }
 
   @Override
-  public RewriteFiles rewriteFiles(Set<DataFile> filesToDelete, Set<DataFile> filesToAdd, long sequenceNumber) {
-    delegate.rewriteFiles(filesToDelete, filesToAdd, sequenceNumber);
+  public RewriteFiles rewriteFiles(
+      Set<DataFile> filesToDelete, Set<DataFile> filesToAdd, long sequenceNumber) {
+    this.dataSequenceNumber = sequenceNumber;
+    this.filesToDelete.addAll(filesToDelete);
+    // only add datafile not in hive location
+    filesToAdd.stream().filter(dataFile -> !isHiveDataFile(dataFile)).forEach(this.filesToAdd::add);
     markHiveFiles(filesToDelete, filesToAdd);
     return this;
   }
 
   @Override
-  public RewriteFiles rewriteFiles(Set<DataFile> dataFilesToReplace,
-                                   Set<DeleteFile> deleteFilesToReplace,
-                                   Set<DataFile> dataFilesToAdd,
-                                   Set<DeleteFile> deleteFilesToAdd) {
-    delegate.rewriteFiles(dataFilesToReplace, deleteFilesToReplace, dataFilesToAdd, deleteFilesToAdd);
+  public RewriteFiles rewriteFiles(
+      Set<DataFile> dataFilesToReplace,
+      Set<DeleteFile> deleteFilesToReplace,
+      Set<DataFile> dataFilesToAdd,
+      Set<DeleteFile> deleteFilesToAdd) {
+    this.filesToDelete.addAll(dataFilesToReplace);
+    this.deleteFilesToReplace.addAll(deleteFilesToReplace);
+    this.deleteFilesToAdd.addAll(deleteFilesToAdd);
+    // only add datafile not in hive location
+    dataFilesToAdd.stream()
+        .filter(dataFile -> !isHiveDataFile(dataFile))
+        .forEach(this.filesToAdd::add);
     markHiveFiles(dataFilesToReplace, dataFilesToAdd);
 
     return this;
@@ -69,6 +89,19 @@ public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements R
   public RewriteFiles validateFromSnapshot(long snapshotId) {
     delegate.validateFromSnapshot(snapshotId);
     return this;
+  }
+
+  @Override
+  protected void postHiveDataCommitted(List<DataFile> committedDataFile) {
+    this.filesToAdd.addAll(committedDataFile);
+    if (this.dataSequenceNumber != -1) {
+      this.delegate.rewriteFiles(this.filesToDelete, this.filesToAdd, this.dataSequenceNumber);
+    } else {
+      this.delegate.rewriteFiles(
+          this.filesToDelete, this.deleteFilesToReplace,
+          this.filesToAdd, this.deleteFilesToAdd
+      );
+    }
   }
 
   @Override

@@ -4,6 +4,7 @@ import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
+import com.netease.arctic.hive.utils.HiveCommitUtil;
 import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
@@ -99,6 +100,8 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
 
   abstract SnapshotUpdate<?> getSnapshotUpdateDelegate();
 
+  protected abstract void postHiveDataCommitted(List<DataFile> committedDataFile);
+
   @Override
   public void commit() {
     commitTimestamp = (int) (System.currentTimeMillis() / 1000);
@@ -106,6 +109,12 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     if (syncDataToHive) {
       HiveMetaSynchronizer.syncArcticDataToHive(table);
     }
+    List<DataFile> committedDataFiles =
+        HiveCommitUtil.commitConsistentWriteFiles(this.addFiles, table.io(), table.spec());
+    this.addFiles.clear();
+    this.addFiles.addAll(committedDataFiles);
+    postHiveDataCommitted(this.addFiles);
+
     if (table.spec().isUnpartitioned()) {
       generateUnpartitionTableLocation();
     } else {
@@ -475,5 +484,11 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   private String partitionToString(Partition p) {
     return "Partition(values: [" + Joiner.on("/").join(p.getValues()) +
         "], location: " + p.getSd().getLocation() + ")";
+  }
+
+  protected boolean isHiveDataFile(DataFile dataFile) {
+    String hiveLocation = table.hiveLocation();
+    String dataFileLocation = dataFile.path().toString();
+    return dataFileLocation.toLowerCase().contains(hiveLocation.toLowerCase());
   }
 }
