@@ -38,6 +38,7 @@ import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TableBasicInfo;
 import com.netease.arctic.server.dashboard.model.TableStatistics;
+import com.netease.arctic.server.dashboard.model.TagOrBranchInfo;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.TableStatCollector;
 import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
@@ -46,7 +47,6 @@ import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
@@ -66,6 +66,7 @@ import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.PropertyUtil;
@@ -81,6 +82,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /** Descriptor for Mixed-Hive, Mixed-Iceberg, Iceberg format tables. */
@@ -124,24 +126,28 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     tableFileCnt += baseFilesStatistics.getFileCnt();
     serverTableMeta.setBaseMetrics(baseMetrics);
 
-    Map<String, Object> changeMetrics = Maps.newHashMap();
-    if (tableBasicInfo.getChangeStatistics() != null) {
-      FilesStatistics changeFilesStatistics =
-          tableBasicInfo.getChangeStatistics().getTotalFilesStat();
-      Map<String, String> changeSummary = tableBasicInfo.getChangeStatistics().getSummary();
-      changeMetrics.put("lastCommitTime", AmsUtil.longOrNull(changeSummary.get("visibleTime")));
-      changeMetrics.put("totalSize", byteToXB(changeFilesStatistics.getTotalSize()));
-      changeMetrics.put("fileCount", changeFilesStatistics.getFileCnt());
-      changeMetrics.put("averageFileSize", byteToXB(changeFilesStatistics.getAverageSize()));
-      changeMetrics.put("tableWatermark", AmsUtil.longOrNull(serverTableMeta.getTableWatermark()));
-      tableSize += changeFilesStatistics.getTotalSize();
-      tableFileCnt += changeFilesStatistics.getFileCnt();
-    } else {
-      changeMetrics.put("lastCommitTime", null);
-      changeMetrics.put("totalSize", null);
-      changeMetrics.put("fileCount", null);
-      changeMetrics.put("averageFileSize", null);
-      changeMetrics.put("tableWatermark", null);
+    if (table.isKeyedTable()) {
+      Map<String, Object> changeMetrics = Maps.newHashMap();
+      if (tableBasicInfo.getChangeStatistics() != null) {
+        FilesStatistics changeFilesStatistics =
+            tableBasicInfo.getChangeStatistics().getTotalFilesStat();
+        Map<String, String> changeSummary = tableBasicInfo.getChangeStatistics().getSummary();
+        changeMetrics.put("lastCommitTime", AmsUtil.longOrNull(changeSummary.get("visibleTime")));
+        changeMetrics.put("totalSize", byteToXB(changeFilesStatistics.getTotalSize()));
+        changeMetrics.put("fileCount", changeFilesStatistics.getFileCnt());
+        changeMetrics.put("averageFileSize", byteToXB(changeFilesStatistics.getAverageSize()));
+        changeMetrics.put(
+            "tableWatermark", AmsUtil.longOrNull(serverTableMeta.getTableWatermark()));
+        tableSize += changeFilesStatistics.getTotalSize();
+        tableFileCnt += changeFilesStatistics.getFileCnt();
+      } else {
+        changeMetrics.put("lastCommitTime", null);
+        changeMetrics.put("totalSize", null);
+        changeMetrics.put("fileCount", null);
+        changeMetrics.put("averageFileSize", null);
+        changeMetrics.put("tableWatermark", null);
+      }
+      serverTableMeta.setChangeMetrics(changeMetrics);
     }
     Map<String, Object> tableSummary = new HashMap<>();
     tableSummary.put("size", byteToXB(tableSize));
@@ -392,6 +398,16 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   @Override
+  public List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable) {
+    return getTableTagsOrBranchs(amoroTable, SnapshotRef::isTag);
+  }
+
+  @Override
+  public List<TagOrBranchInfo> getTableBranchs(AmoroTable<?> amoroTable) {
+    return getTableTagsOrBranchs(amoroTable, SnapshotRef::isBranch);
+  }
+
+  @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
       AmoroTable<?> amoroTable, int limit, int offset) {
     TableIdentifier tableIdentifier = amoroTable.id();
@@ -492,9 +508,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
         TableStatCollector.fillTableStatistics(baseInfo, unkeyedTable, table);
       } else if (table.isKeyedTable()) {
         KeyedTable keyedTable = table.asKeyedTable();
-        if (!PrimaryKeySpec.noPrimaryKey().equals(keyedTable.primaryKeySpec())) {
-          changeInfo = TableStatCollector.collectChangeTableInfo(keyedTable);
-        }
+        changeInfo = TableStatCollector.collectChangeTableInfo(keyedTable);
         baseInfo = TableStatCollector.collectBaseTableInfo(keyedTable);
       } else {
         throw new IllegalStateException("unknown type of table");
@@ -581,5 +595,29 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   private ArcticTable getTable(AmoroTable<?> amoroTable) {
     return (ArcticTable) amoroTable.originalTable();
+  }
+
+  private List<TagOrBranchInfo> getTableTagsOrBranchs(
+      AmoroTable<?> amoroTable, Predicate<SnapshotRef> predicate) {
+    ArcticTable arcticTable = getTable(amoroTable);
+    List<TagOrBranchInfo> result = new ArrayList<>();
+    Map<String, SnapshotRef> snapshotRefs;
+    if (arcticTable.isKeyedTable()) {
+      // todo temporarily responds to the problem of Mixed Format table.
+      if (predicate.test(SnapshotRef.branchBuilder(-1).build())) {
+        return ImmutableList.of(TagOrBranchInfo.MAIN_BRANCH);
+      } else {
+        return Collections.emptyList();
+      }
+    } else {
+      snapshotRefs = arcticTable.asUnkeyedTable().refs();
+      snapshotRefs.forEach(
+          (name, snapshotRef) -> {
+            if (predicate.test(snapshotRef)) {
+              result.add(new TagOrBranchInfo(name, snapshotRef));
+            }
+          });
+      return result;
+    }
   }
 }

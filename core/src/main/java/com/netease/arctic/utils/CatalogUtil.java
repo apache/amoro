@@ -278,18 +278,6 @@ public class CatalogUtil {
   }
 
   /**
-   * Copy property from source properties to target properties
-   *
-   * @param fromProperties - from these properties
-   * @param toProperties - to these properties
-   * @param key - key
-   */
-  public static <T> void copyProperty(
-      Map<String, String> fromProperties, Map<String, T> toProperties, String key) {
-    copyProperty(fromProperties, toProperties, key, key);
-  }
-
-  /**
    * Copy property from source properties to target properties, support changing the key name.
    *
    * @param fromProperties - from these properties

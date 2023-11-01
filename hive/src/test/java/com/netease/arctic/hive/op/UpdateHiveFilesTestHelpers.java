@@ -49,13 +49,13 @@ public class UpdateHiveFilesTestHelpers {
       HiveMetaStoreClient hiveClient, ArcticTable table, List<DataFile> exceptFiles)
       throws TException {
     if (table.spec().isPartitioned()) {
-      UpdateHiveFilesTestHelpers.assertHivePartitionValues(hiveClient, table, exceptFiles);
+      assertHivePartitionValues(hiveClient, table, exceptFiles);
     } else {
-      UpdateHiveFilesTestHelpers.assertHiveTableValue(hiveClient, table, exceptFiles);
+      assertHiveTableValue(hiveClient, table, exceptFiles);
     }
   }
 
-  public static void assertHivePartitionValues(
+  private static void assertHivePartitionValues(
       HiveMetaStoreClient hiveClient, ArcticTable table, List<DataFile> files) throws TException {
     StructLikeMap<List<DataFile>> filesByPartition = groupFilesByPartition(table.spec(), files);
     StructLikeMap<String> pathByPartition = pathByPartition(table.spec(), filesByPartition);
@@ -92,7 +92,7 @@ public class UpdateHiveFilesTestHelpers {
     }
   }
 
-  public static void assertHiveTableValue(
+  private static void assertHiveTableValue(
       HiveMetaStoreClient hiveClient, ArcticTable table, List<DataFile> files) throws TException {
     TableIdentifier identifier = table.id();
     final String database = identifier.getDatabase();
