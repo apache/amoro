@@ -22,8 +22,8 @@ import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
-import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
+import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
@@ -60,9 +60,8 @@ public interface FormatTableDescriptor {
   Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
       AmoroTable<?> amoroTable, int limit, int offset);
 
-  /** Get the paged optimizing process detail information of the {@link AmoroTable}. */
-  List<OptimizingTaskInfo> getOptimizingTaskInfos(
-      AmoroTable<?> amoroTable, long processId);
+  /** Get the paged optimizing process tasks information of the {@link AmoroTable}. */
+  List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, long processId);
 
   /** Get the tag information of the {@link AmoroTable}. */
   List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable);

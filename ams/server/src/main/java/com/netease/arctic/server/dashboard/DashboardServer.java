@@ -188,7 +188,7 @@ public class DashboardServer {
                 tableController::getOptimizingProcesses);
             get(
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/tasks",
-                tableController::getOptimizingProcessDetail);
+                tableController::getOptimizingProcessTasks);
             get(
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
                 tableController::getTableTransactions);
@@ -302,7 +302,7 @@ public class DashboardServer {
                 tableController::getOptimizingProcesses);
             get(
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/tasks",
-                tableController::getOptimizingProcessDetail);
+                tableController::getOptimizingProcessTasks);
             get(
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
                 tableController::getTableTransactions);

@@ -32,8 +32,8 @@ import com.netease.arctic.server.dashboard.model.AMSPartitionField;
 import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
-import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
+import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
@@ -434,8 +434,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   @Override
-  public List<OptimizingTaskInfo> getOptimizingTaskInfos(
-      AmoroTable<?> amoroTable, long processId) {
+  public List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, long processId) {
     List<OptimizingTaskMeta> optimizingTaskMetaList =
         getAs(
             OptimizingMapper.class,
