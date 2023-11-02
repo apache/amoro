@@ -84,6 +84,7 @@ public class TestKeyedTableScan extends TableDataTestBase {
 
   private void changeOptimizedSequence() {
     BaseTable baseTable = getArcticTable().asKeyedTable().baseTable();
+    baseTable.newAppend().set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true").commit();
     Snapshot baseSnapshot = baseTable.currentSnapshot();
     StructLikeMap<Long> fromSequence =
         StructLikeMap.create(getArcticTable().spec().partitionType());
@@ -91,8 +92,9 @@ public class TestKeyedTableScan extends TableDataTestBase {
         ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
     fromSequence.put(partitionData, 1L);
     StatisticsFile file =
-        StatisticsFileUtil.writer(
-                baseTable, baseSnapshot.snapshotId(), baseSnapshot.sequenceNumber())
+        StatisticsFileUtil.writerBuilder(baseTable)
+            .withSnapshotId(baseSnapshot.snapshotId())
+            .build()
             .add(
                 ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
                 fromSequence,
