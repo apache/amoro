@@ -69,7 +69,7 @@ actively review and provide feedback on each other's PRs.
 ## Design document
 
 Write down your implementation plan and discuss it with other developers in the community before you
-start coding officially. If it is just a small changes, describe the implementation steps clearly in
+start coding officially. If it is just a small change, describe the implementation steps clearly in
 the Issue. If it is a relatively large work, it is recommended to write a design document for this
 feature. Here is
 a [design document template](https://docs.google.com/document/d/1LeTyrlzQJfSs2DkRBsucK_vV5gtHRYLb1KSrpu0hp3g/edit?usp=sharing)
@@ -111,7 +111,7 @@ After installing the plugin, format your code automatically by applying the foll
 
 All files (including source code, configuration files) in the project are required to declare
 CopyRight information at the top, and the project uses Apache License 2. You can configure the
-copyright information in IntelliJ IDEA with follow steps:
+copyright information in IntelliJ IDEA with the following steps:
 
 1. Open Settings → Editor → Copyright → Copyright Profiles.
 2. Add a new copyright file named Apache.
