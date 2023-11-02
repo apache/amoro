@@ -308,12 +308,12 @@ public class TableController {
     Preconditions.checkState(serverCatalog.exist(db, table), "no such table");
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
-    List<OptimizingProcessDetailInfo> optimizingProcessInfo =
+    List<OptimizingProcessDetailInfo> optimizingProcessDetailInfo =
         tableDescriptor.getOptimizingProcessDetailInfo(
             tableIdentifier.buildTableIdentifier(), Long.parseLong(processId));
 
     PageResult<OptimizingProcessDetailInfo> pageResult =
-        PageResult.of(optimizingProcessInfo, offset, pageSize);
+        PageResult.of(optimizingProcessDetailInfo, offset, limit);
     ctx.json(OkResponse.of(pageResult));
   }
 
