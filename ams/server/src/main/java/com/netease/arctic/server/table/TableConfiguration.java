@@ -116,7 +116,9 @@ public class TableConfiguration {
         && cleanOrphanEnabled == that.cleanOrphanEnabled
         && orphanExistingMinutes == that.orphanExistingMinutes
         && autoCreateTagEnabled == that.autoCreateTagEnabled
-        && Objects.equal(optimizingConfig, that.optimizingConfig);
+        && deleteDanglingDeleteFilesEnabled == that.deleteDanglingDeleteFilesEnabled
+        && Objects.equal(optimizingConfig, that.optimizingConfig)
+        && Objects.equal(expiringDataConfig, that.expiringDataConfig);
   }
 
   @Override
@@ -128,7 +130,9 @@ public class TableConfiguration {
         cleanOrphanEnabled,
         orphanExistingMinutes,
         autoCreateTagEnabled,
-        optimizingConfig);
+        deleteDanglingDeleteFilesEnabled,
+        optimizingConfig,
+        expiringDataConfig);
   }
 
   public static TableConfiguration parseConfig(Map<String, String> properties) {
