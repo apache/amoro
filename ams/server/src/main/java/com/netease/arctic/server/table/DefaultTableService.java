@@ -140,12 +140,16 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   @Override
   public void dropCatalog(String catalogName) {
     checkStarted();
-    doAsExisted(
-        CatalogMetaMapper.class,
-        mapper -> mapper.deleteCatalog(catalogName),
+    doAsTransaction(
         () ->
-            new IllegalMetadataException(
-                "Catalog " + catalogName + " has more than one database or table"));
+            doAsExisted(
+                CatalogMetaMapper.class,
+                mapper -> mapper.deleteCatalog(catalogName),
+                () ->
+                    new IllegalMetadataException(
+                        "Catalog " + catalogName + " has more than one database or table")),
+        () ->
+            doAs(TableMetaMapper.class, mapper -> mapper.deleteTableIdByCatalogName(catalogName)));
     internalCatalogMap.remove(catalogName);
     externalCatalogMap.remove(catalogName);
   }
