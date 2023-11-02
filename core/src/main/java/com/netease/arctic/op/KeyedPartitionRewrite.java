@@ -26,6 +26,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.StatisticsFile;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -69,6 +70,7 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation
     Preconditions.checkArgument(this.optimizedSequence > 0, "optimized sequence must > 0.");
 
     ReplacePartitions replacePartitions = transaction.newReplacePartitions();
+    replacePartitions.set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
     addFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
     CreateSnapshotEvent newSnapshot = (CreateSnapshotEvent) replacePartitions.updateEvent();
@@ -80,13 +82,15 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation
     }
     addFiles.forEach(f -> optimizedSequence.put(f.partition(), this.optimizedSequence));
 
+    Table table = transaction.table();
     StatisticsFile statisticsFile =
-        StatisticsFileUtil.writer(
-                keyedTable.baseTable(), newSnapshot.snapshotId(), newSnapshot.sequenceNumber())
+        StatisticsFileUtil.writerBuilder(table)
+            .withSnapshotId(newSnapshot.snapshotId())
+            .build()
             .add(
                 ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
                 optimizedSequence,
-                StatisticsFileUtil.createPartitionDataSerializer(keyedTable.spec(), Long.class))
+                StatisticsFileUtil.createPartitionDataSerializer(table.spec(), Long.class))
             .complete();
     return Collections.singletonList(statisticsFile);
   }

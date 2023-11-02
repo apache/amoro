@@ -23,7 +23,8 @@ import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_F
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.hive.HiveTableProperties;
+import com.netease.arctic.hive.MixedHiveTableTestBase;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
@@ -35,6 +36,7 @@ import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.thrift.TException;
 import org.junit.ClassRule;
@@ -45,7 +47,7 @@ import org.junit.runners.Parameterized;
 import java.util.List;
 
 @RunWith(Parameterized.class)
-public class TestRewritePartitions extends TableTestBase {
+public class TestRewritePartitions extends MixedHiveTableTestBase {
 
   @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
@@ -65,7 +67,10 @@ public class TestRewritePartitions extends TableTestBase {
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(false, true)
+        new HiveTableTestHelper(
+            false,
+            true,
+            ImmutableMap.of(HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
       }
     };
   }
@@ -75,11 +80,13 @@ public class TestRewritePartitions extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     initDataFiles =
-        HiveDataTestHelpers.writeBaseStore(getArcticTable(), 1L, insertRecords, false, true);
+        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     initDataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
+
+    initDataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
   }
 
   @Test
@@ -90,11 +97,14 @@ public class TestRewritePartitions extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writeBaseStore(getArcticTable(), 2L, insertRecords, false, true);
+        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(2L).writeHive(insertRecords);
+    HiveDataTestHelpers.assertWriteConsistentFilesName(getArcticTable(), dataFiles);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     ReplacePartitions replacePartitions = baseStore.newReplacePartitions();
     dataFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(getArcticTable());
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
 
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
@@ -112,11 +122,12 @@ public class TestRewritePartitions extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writeBaseStore(getArcticTable(), 2L, insertRecords, false, true);
+        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(2L).writeHive(insertRecords);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     ReplacePartitions replacePartitions = baseStore.newReplacePartitions();
     dataFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
 
     List<DataFile> expectDataFiles = Lists.newArrayList(dataFiles);
     expectDataFiles.add(p1DataFile);
@@ -133,12 +144,13 @@ public class TestRewritePartitions extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writeBaseStore(getArcticTable(), 2L, insertRecords, false, true);
+        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(2L).writeHive(insertRecords);
     Transaction transaction = getBaseStore().newTransaction();
     ReplacePartitions replacePartitions = transaction.newReplacePartitions();
     dataFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
     transaction.commitTransaction();
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(getBaseStore());
 
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), dataFiles);
@@ -152,17 +164,22 @@ public class TestRewritePartitions extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
 
     String hiveLocation = "test_hive_location";
-    HiveDataTestHelpers.writeBaseStore(
-        getArcticTable(), 1L, insertRecords, false, true, hiveLocation);
+    HiveDataTestHelpers.writerOf(getArcticTable())
+        .transactionId(1L)
+        .customHiveLocation(hiveLocation)
+        .writeHive(insertRecords);
     // rewrite data files
     List<DataFile> rewriteDataFiles =
-        HiveDataTestHelpers.writeBaseStore(
-            getArcticTable(), 2L, insertRecords, false, true, hiveLocation);
+        HiveDataTestHelpers.writerOf(getArcticTable())
+            .transactionId(2L)
+            .customHiveLocation(hiveLocation)
+            .writeHive(insertRecords);
     ReplacePartitions replacePartitions = getBaseStore().newReplacePartitions();
     rewriteDataFiles.forEach(replacePartitions::addFile);
     replacePartitions.set(DELETE_UNTRACKED_HIVE_FILE, "true");
     replacePartitions.commit();
 
+    rewriteDataFiles = HiveDataTestHelpers.lastedAddedFiles(getBaseStore());
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getArcticTable(), rewriteDataFiles);
   }

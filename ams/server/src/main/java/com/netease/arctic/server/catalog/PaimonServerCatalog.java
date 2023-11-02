@@ -25,9 +25,13 @@ import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
+import org.apache.paimon.hive.HiveCatalogOptions;
 
+import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
@@ -40,6 +44,11 @@ public class PaimonServerCatalog extends ExternalCatalog {
   protected PaimonServerCatalog(CatalogMeta metadata) {
     super(metadata);
     this.tableMetaStore = CatalogUtil.buildMetaStore(metadata);
+    Optional<URL> hiveSiteLocation = tableMetaStore.getHiveSiteLocation();
+    hiveSiteLocation.ifPresent(
+        url ->
+            metadata.catalogProperties.put(
+                HiveCatalogOptions.HIVE_CONF_DIR.key(), new File(url.getPath()).getParent()));
     this.paimonCatalog =
         doAs(() -> new CommonUnifiedCatalog(null, metadata, metadata.catalogProperties));
   }

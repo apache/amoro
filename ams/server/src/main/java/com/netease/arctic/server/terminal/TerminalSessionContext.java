@@ -232,7 +232,7 @@ public class TerminalSessionContext {
           statementBuilder = new StringBuilder();
         }
         line = line.trim();
-        if (line.length() < 1 || line.startsWith("--")) {
+        if (line.length() < 1 || line.startsWith("--") || line.startsWith("#")) {
           // ignore blank lines and comments.
           continue;
         } else if (line.endsWith(";")) {

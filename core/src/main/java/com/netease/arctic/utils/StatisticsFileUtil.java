@@ -49,14 +49,38 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /** Util class for write and read Iceberg statistics file {@link StatisticsFile}. */
 public class StatisticsFileUtil {
 
-  public static Writer writer(Table table, long snapshotId, long sequenceNumber) {
-    return new Writer(table, snapshotId, sequenceNumber);
+  public static WriterBuilder writerBuilder(Table table) {
+    return new WriterBuilder(table);
+  }
+
+  public static class WriterBuilder {
+    private final Table table;
+    private Long snapshotId;
+
+    private WriterBuilder(Table table) {
+      this.table = table;
+    }
+
+    public WriterBuilder withSnapshotId(long snapshotId) {
+      this.snapshotId = snapshotId;
+      return this;
+    }
+
+    public Writer build() {
+      Snapshot snapshot;
+      if (snapshotId == null) {
+        snapshot = table.currentSnapshot();
+      } else {
+        snapshot = table.snapshot(snapshotId);
+      }
+      Preconditions.checkArgument(snapshot != null, "Cannot find snapshot with id %s", snapshotId);
+      return new Writer(table, snapshot.snapshotId(), snapshot.sequenceNumber());
+    }
   }
 
   public static Reader reader(Table table) {
@@ -77,7 +101,12 @@ public class StatisticsFileUtil {
           table
               .io()
               .newOutputFile(
-                  table.location() + "/data/" + snapshotId + "-" + UUID.randomUUID() + ".puffin");
+                  table.location()
+                      + "/data/puffin/"
+                      + snapshotId
+                      + "-"
+                      + UUID.randomUUID()
+                      + ".puffin");
       this.puffinWriter = Puffin.write(outputFile).build();
     }
 
@@ -177,44 +206,22 @@ public class StatisticsFileUtil {
   }
 
   /**
-   * Find the statistics file that satisfies the condition and belongs to the latest snapshot.
+   * Get the statistics files that belong to the given snapshot.
    *
    * @param table - Iceberg Table
-   * @param currentSnapshotId - find from this snapshot to its ancestors
-   * @param condition - the condition to filter the statistics file
-   * @return the statistics file, return null if not found
+   * @param snapshotId - the snapshot id
+   * @param type - the type of the blob type
+   * @return the list of statistics files
    */
-  public static List<StatisticsFile> findLatestValidStatisticsFiles(
-      Table table, long currentSnapshotId, Predicate<StatisticsFile> condition) {
+  public static List<StatisticsFile> getStatisticsFiles(Table table, long snapshotId, String type) {
     List<StatisticsFile> statisticsFiles = table.statisticsFiles();
     if (statisticsFiles.isEmpty()) {
       return Collections.emptyList();
     }
-    Map<Long, List<StatisticsFile>> statisticsFilesBySnapshotId =
-        statisticsFiles.stream().collect(Collectors.groupingBy(StatisticsFile::snapshotId));
-    long snapshotId = currentSnapshotId;
-    while (true) {
-      List<StatisticsFile> statisticsFileList = statisticsFilesBySnapshotId.get(snapshotId);
-      if (statisticsFileList != null) {
-        List<StatisticsFile> result =
-            statisticsFileList.stream().filter(condition).collect(Collectors.toList());
-        if (!result.isEmpty()) {
-          return result;
-        }
-      }
-      // seek parent snapshot
-      Snapshot snapshot = table.snapshot(snapshotId);
-      if (snapshot == null) {
-        return Collections.emptyList();
-      } else {
-        snapshotId = snapshot.parentId();
-      }
-    }
-  }
-
-  public static Predicate<StatisticsFile> containsBlobOfType(String type) {
-    return statisticsFile ->
-        statisticsFile.blobMetadata().stream().anyMatch(b -> type.equals(b.type()));
+    return statisticsFiles.stream()
+        .filter(s -> s.blobMetadata().stream().anyMatch(b -> type.equals(b.type())))
+        .collect(Collectors.groupingBy(StatisticsFile::snapshotId))
+        .get(snapshotId);
   }
 
   public static <T> PartitionDataSerializer<T> createPartitionDataSerializer(
