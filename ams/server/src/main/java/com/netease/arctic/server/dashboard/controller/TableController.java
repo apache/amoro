@@ -34,7 +34,7 @@ import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
 import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.HiveTableInfo;
-import com.netease.arctic.server.dashboard.model.OptimizingProcessDetailInfo;
+import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
@@ -308,12 +308,12 @@ public class TableController {
     Preconditions.checkState(serverCatalog.exist(db, table), "no such table");
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
-    List<OptimizingProcessDetailInfo> optimizingProcessDetailInfo =
+    List<OptimizingTaskInfo> optimizingTaskInfos =
         tableDescriptor.getOptimizingProcessDetailInfo(
             tableIdentifier.buildTableIdentifier(), Long.parseLong(processId));
 
-    PageResult<OptimizingProcessDetailInfo> pageResult =
-        PageResult.of(optimizingProcessDetailInfo, offset, limit);
+    PageResult<OptimizingTaskInfo> pageResult =
+        PageResult.of(optimizingTaskInfos, offset, limit);
     ctx.json(OkResponse.of(pageResult));
   }
 

@@ -23,7 +23,7 @@ import com.netease.arctic.server.optimizing.TaskRuntime;
 
 import java.util.Map;
 
-public class OptimizingProcessDetailInfo {
+public class OptimizingTaskInfo {
   private Long tableId;
   private Long processId;
   private int taskId;
@@ -38,7 +38,7 @@ public class OptimizingProcessDetailInfo {
   private MetricsSummary summary;
   private Map<String, String> properties;
 
-  public OptimizingProcessDetailInfo(
+  public OptimizingTaskInfo(
       Long tableId,
       Long processId,
       int taskId,
