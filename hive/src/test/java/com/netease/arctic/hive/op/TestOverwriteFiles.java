@@ -5,6 +5,7 @@ import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_F
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogTestHelper;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.MixedHiveTableTestBase;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
@@ -54,8 +55,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
         new HiveTableTestHelper(
             true,
             false,
-            ImmutableMap.of(
-                com.netease.arctic.table.TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
+            ImmutableMap.of(HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
@@ -66,8 +66,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
         new HiveTableTestHelper(
             false,
             false,
-            ImmutableMap.of(
-                com.netease.arctic.table.TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
+            ImmutableMap.of(HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED, "false"))
       }
     };
   }

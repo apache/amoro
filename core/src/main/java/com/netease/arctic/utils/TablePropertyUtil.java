@@ -133,11 +133,4 @@ public class TablePropertyUtil {
       return Long.parseLong(watermarkValue);
     }
   }
-
-  public static boolean hiveConsistentWriteEnabled(Map<String, String> properties) {
-    return Boolean.parseBoolean(
-        properties.getOrDefault(
-            TableProperties.HIVE_CONSISTENT_WRITE_ENABLED,
-            TableProperties.HIVE_CONSISTENT_WRITE_ENABLED_DEFAULT));
-  }
 }
