@@ -32,6 +32,7 @@ import com.netease.arctic.server.dashboard.model.AMSPartitionField;
 import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
+import com.netease.arctic.server.dashboard.model.OptimizingProcessDetailInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
@@ -430,6 +431,36 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             .map(p -> OptimizingProcessInfo.build(p, optimizingTasks.get(p.getProcessId())))
             .collect(Collectors.toList()),
         total);
+  }
+
+  @Override
+  public List<OptimizingProcessDetailInfo> getOptimizingProcessDetailInfo(
+      AmoroTable<?> amoroTable, long processId) {
+    List<OptimizingTaskMeta> optimizingTaskMetaList =
+        getAs(
+            OptimizingMapper.class,
+            mapper -> mapper.selectOptimizeTaskMetas(Collections.singletonList(processId)));
+    if (CollectionUtils.isEmpty(optimizingTaskMetaList)) {
+      return Collections.emptyList();
+    }
+    return optimizingTaskMetaList.stream()
+        .map(
+            taskMeta ->
+                new OptimizingProcessDetailInfo(
+                    taskMeta.getTableId(),
+                    taskMeta.getProcessId(),
+                    taskMeta.getTaskId(),
+                    taskMeta.getPartitionData(),
+                    taskMeta.getStatus(),
+                    taskMeta.getRetryNum(),
+                    taskMeta.getThreadId(),
+                    taskMeta.getStartTime(),
+                    taskMeta.getEndTime(),
+                    taskMeta.getCostTime(),
+                    taskMeta.getFailReason(),
+                    taskMeta.getMetricsSummary(),
+                    taskMeta.getProperties()))
+        .collect(Collectors.toList());
   }
 
   private List<PartitionFileBaseInfo> collectFileInfo(

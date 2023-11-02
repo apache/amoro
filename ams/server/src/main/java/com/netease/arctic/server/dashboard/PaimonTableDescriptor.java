@@ -30,6 +30,7 @@ import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
 import com.netease.arctic.server.dashboard.model.AMSPartitionField;
 import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
+import com.netease.arctic.server.dashboard.model.OptimizingProcessDetailInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
@@ -385,6 +386,12 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
       throw new RuntimeException(e);
     }
     return Pair.of(processInfoList, total);
+  }
+
+  @Override
+  public List<OptimizingProcessDetailInfo> getOptimizingProcessDetailInfo(
+      AmoroTable<?> amoroTable, long processId) {
+    throw new UnsupportedOperationException();
   }
 
   @NotNull

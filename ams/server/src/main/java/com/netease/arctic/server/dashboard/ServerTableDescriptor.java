@@ -25,6 +25,7 @@ import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
+import com.netease.arctic.server.dashboard.model.OptimizingProcessDetailInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
@@ -126,6 +127,13 @@ public class ServerTableDescriptor extends PersistentBase {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getOptimizingProcessesInfo(amoroTable, limit, offset);
+  }
+
+  public List<OptimizingProcessDetailInfo> getOptimizingProcessDetailInfo(
+      TableIdentifier tableIdentifier, long tableId) {
+    AmoroTable<?> amoroTable = loadTable(tableIdentifier);
+    FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
+    return formatTableDescriptor.getOptimizingProcessDetailInfo(amoroTable, tableId);
   }
 
   private AmoroTable<?> loadTable(TableIdentifier identifier) {
