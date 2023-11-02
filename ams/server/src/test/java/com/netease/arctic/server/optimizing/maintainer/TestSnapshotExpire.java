@@ -132,7 +132,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   private void writeOptimizedSequence(
       KeyedTable testKeyedTable, StructLikeMap<Long> optimizedSequence) {
     BaseTable baseTable = testKeyedTable.baseTable();
-    baseTable.newAppend().commit();
+    baseTable.newAppend().set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true").commit();
     Snapshot snapshot = baseTable.currentSnapshot();
     StatisticsFile statisticsFile =
         StatisticsFileUtil.writerBuilder(baseTable)
@@ -214,7 +214,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     tableMaintainer.expireSnapshots(tableRuntime);
 
     Assert.assertEquals(2, Iterables.size(testKeyedTable.changeTable().snapshots()));
-    HashSet<Snapshot> expectedSnapshots = new HashSet<>();
+    List<Snapshot> expectedSnapshots = new ArrayList<>();
     expectedSnapshots.add(checkpointTime2Snapshot);
     expectedSnapshots.add(lastSnapshot);
     Assert.assertTrue(
@@ -257,7 +257,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     tableMaintainer.expireSnapshots(tableRuntime);
 
     Assert.assertEquals(2, Iterables.size(table.snapshots()));
-    HashSet<Snapshot> expectedSnapshots = new HashSet<>();
+    List<Snapshot> expectedSnapshots = new ArrayList<>();
     expectedSnapshots.add(checkpointTime2Snapshot);
     expectedSnapshots.add(lastSnapshot);
     Assert.assertTrue(
@@ -293,7 +293,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Mockito.when(optimizingProcess.getTargetSnapshotId()).thenReturn(optimizeSnapshotId);
     Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.COMMITTING);
     Mockito.when(tableRuntime.getOptimizingProcess()).thenReturn(optimizingProcess);
-    HashSet<Snapshot> expectedSnapshots = new HashSet<>();
+    List<Snapshot> expectedSnapshots = new ArrayList<>();
     expectedSnapshots.add(table.currentSnapshot());
 
     table.newAppend().commit();
