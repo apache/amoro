@@ -41,7 +41,7 @@ Pull requests are the preferred mechanism for contributing to Amoro
 
 * Generally, create a PR only to the master branch.
 * PR should be linked to the corresponding issue.
-    * The PR title format should be: \[ARCTIC-{issue_number}\]\[{module}\]{pr_description}.
+    * The PR title format should be: \[AMORO-{issue_number}\]\[{module}\]{pr_description}.
     * Add fix/resolve #{issue_number} in the description to link the PR to the issue.
     * The linked issue should clearly explain the background, objectives, and implementation methods
       of the PR.
