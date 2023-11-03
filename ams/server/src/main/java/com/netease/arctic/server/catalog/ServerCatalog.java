@@ -6,7 +6,6 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.server.exception.IllegalMetadataException;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
-import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 
 import java.util.List;
 

@@ -617,10 +617,11 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   private void disposeTable(ServerTableIdentifier tableIdentifier) {
     doAs(
         TableMetaMapper.class,
-        mapper -> mapper.deleteTableIdByName(
-            tableIdentifier.getCatalog(),
-            tableIdentifier.getDatabase(),
-            tableIdentifier.getTableName()));
+        mapper ->
+            mapper.deleteTableIdByName(
+                tableIdentifier.getCatalog(),
+                tableIdentifier.getDatabase(),
+                tableIdentifier.getTableName()));
     Optional.ofNullable(tableRuntimeMap.remove(tableIdentifier))
         .ifPresent(
             tableRuntime -> {
