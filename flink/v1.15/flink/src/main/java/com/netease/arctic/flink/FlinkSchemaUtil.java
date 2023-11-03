@@ -120,10 +120,7 @@ public class FlinkSchemaUtil {
    * com.netease.arctic.flink.table.ArcticDynamicSource} distinguish the watermark field. For now,
    * it only be used in the case of Arctic as dim-table.
    */
-  public static TableSchema getPhysicalSchema(TableSchema tableSchema, boolean addWatermark) {
-    if (!addWatermark) {
-      return tableSchema;
-    }
+  public static TableSchema getPhysicalSchemaForDimTable(TableSchema tableSchema) {
     TableSchema.Builder builder = filter(tableSchema, TableColumn::isPhysical);
     tableSchema.getWatermarkSpecs().forEach(builder::watermark);
     return builder.build();

@@ -20,6 +20,7 @@ package com.netease.arctic.flink.table;
 
 import static com.netease.arctic.flink.FlinkSchemaUtil.addSchemaProperties;
 import static com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema;
+import static com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchemaForDimTable;
 import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.METASTORE_URL;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.createKeyFormatProjection;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.createValueFormatProjection;
@@ -170,7 +171,14 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
             arcticTable.properties(),
             ArcticValidator.DIM_TABLE_ENABLE.key(),
             ArcticValidator.DIM_TABLE_ENABLE.defaultValue());
-    TableSchema tableSchema = getPhysicalSchema(catalogTable.getSchema());
+
+    TableSchema tableSchema;
+    if (!dimTable) {
+      tableSchema = getPhysicalSchema(catalogTable.getSchema());
+    } else {
+      tableSchema = getPhysicalSchemaForDimTable(catalogTable.getSchema());
+    }
+
     switch (readMode) {
       case ArcticValidator.ARCTIC_READ_FILE:
         boolean batchMode = context.getConfiguration().get(RUNTIME_MODE).equals(BATCH);
