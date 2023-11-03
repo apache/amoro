@@ -241,9 +241,6 @@ public interface TableMetaMapper {
       @Param("databaseName") String databaseName,
       @Param("tableName") String tableName);
 
-  @Delete("DELETE FROM table_identifier WHERE catalog_name = #{catalogName}")
-  Integer deleteTableIdByCatalogName(@Param("catalogName") String catalogName);
-
   @Select(
       "SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier"
           + " WHERE catalog_name = #{catalogName} AND db_name = #{databaseName} AND table_name = #{tableName}")
