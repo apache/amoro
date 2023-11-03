@@ -187,6 +187,7 @@ public class ArcticMetaStore {
   }
 
   public static void startMetaStore(Configuration conf) throws Throwable {
+    ServiceContainer.reset();
     //prepare env
     if (conf.getString(ArcticMetaStoreConf.DB_TYPE).equals("derby")) {
       DerbyService derbyService = new DerbyService();
