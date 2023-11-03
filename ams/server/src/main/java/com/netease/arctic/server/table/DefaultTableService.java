@@ -516,8 +516,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
     // Clear TableRuntime objects that do not correspond to a catalog.
     // This scenario is mainly due to the fact that TableRuntime objects were not cleaned up in a
-    // timely manner
-    // during the process of dropping the catalog due to concurrency considerations.
+    // timely manner during the process of dropping the catalog due to concurrency considerations.
     // It is permissible to have some erroneous states in the middle, as long as the final data is
     // consistent.
     Set<String> catalogNames =
