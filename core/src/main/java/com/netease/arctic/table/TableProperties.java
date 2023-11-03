@@ -101,7 +101,7 @@ public class TableProperties {
 
   public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO =
       "self-optimizing.major.trigger.duplicate-ratio";
-  public static final double SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT = 0.5;
+  public static final double SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT = 0.1;
 
   public static final String SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL =
       "self-optimizing.full.trigger.interval";

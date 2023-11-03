@@ -43,32 +43,6 @@ public class TablePropertyUtil {
 
   public static final StructLike EMPTY_STRUCT = GenericRecord.create(new Schema());
 
-  /**
-   * Decode string to max transaction id map of each partition.
-   *
-   * @param spec table partition spec
-   * @param value string value
-   * @return max transaction id map of each partition
-   */
-  public static StructLikeMap<Long> decodePartitionMaxTxId(PartitionSpec spec, String value) {
-    try {
-      StructLikeMap<Long> results = StructLikeMap.create(spec.partitionType());
-      TypeReference<Map<String, Long>> typeReference = new TypeReference<Map<String, Long>>() {};
-      Map<String, Long> map = new ObjectMapper().readValue(value, typeReference);
-      for (String key : map.keySet()) {
-        if (spec.isUnpartitioned()) {
-          results.put(null, map.get(key));
-        } else {
-          StructLike partitionData = ArcticDataFiles.data(spec, key);
-          results.put(partitionData, map.get(key));
-        }
-      }
-      return results;
-    } catch (JsonProcessingException e) {
-      throw new UnsupportedOperationException("Failed to decode partition max txId ", e);
-    }
-  }
-
   public static StructLikeMap<Map<String, String>> decodePartitionProperties(
       PartitionSpec spec, String value) {
     try {
