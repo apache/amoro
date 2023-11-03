@@ -208,6 +208,14 @@ public class MixedDataTestHelpers {
     return writeFiles;
   }
 
+  public static List<Record> readTable(ArcticTable table, Expression expression) {
+    if (table.isKeyedTable()) {
+      return readKeyedTable(table.asKeyedTable(), expression);
+    } else {
+      return readBaseStore(table, expression);
+    }
+  }
+
   public static List<Record> readKeyedTable(KeyedTable keyedTable, Expression expression) {
     return readKeyedTable(keyedTable, expression, null, false, false);
   }
