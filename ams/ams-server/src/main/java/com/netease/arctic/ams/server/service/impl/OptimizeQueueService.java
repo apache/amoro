@@ -494,7 +494,7 @@ public class OptimizeQueueService extends IJDBCService implements Closeable {
                   String pattern = ".*(\\d{5}-)" + task.getOptimizeRuntime().getAttemptId() + "(-\\d{10}).*";
                   if (Pattern.matches(pattern, fileLocation)) {
                     arcticTable.io().deleteFile(fileLocation);
-                    LOG.debug("delete file {} by produced failed optimize task.", fileLocation);
+                    LOG.info("delete file {} by produced failed optimize task.", fileLocation);
                   }
                 }
               }
