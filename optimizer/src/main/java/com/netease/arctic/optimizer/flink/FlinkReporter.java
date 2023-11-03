@@ -43,7 +43,7 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
   private final long heartBeatInterval;
   private long createTime;
   private volatile boolean stopped = false;
-  private Thread thread;
+  private Thread touchThread;
 
   public FlinkReporter(BaseTaskReporter taskReporter, BaseToucher toucher, OptimizerConfig optimizerConfig) {
     this.taskReporter = taskReporter;
@@ -62,7 +62,7 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
   public void open() throws Exception {
     super.open();
     createTime = System.currentTimeMillis();
-    this.thread = new Thread(() -> {
+    this.touchThread = new Thread(() -> {
       while (!stopped) {
         try {
           Thread.sleep(heartBeatInterval);
@@ -83,15 +83,25 @@ public class FlinkReporter extends AbstractStreamOperator<Void>
         }
       }
     });
-    this.thread.start();
+    this.touchThread.start();
   }
 
   @Override
   public void close() throws Exception {
     super.close();
+    stopTouchThread();
+  }
+
+  @Override
+  public void dispose() throws Exception {
+    super.dispose();
+    stopTouchThread();
+  }
+
+  private void stopTouchThread() {
     stopped = true;
-    if (thread != null) {
-      thread.interrupt();
+    if (touchThread != null) {
+      touchThread.interrupt();
     }
   }
 
