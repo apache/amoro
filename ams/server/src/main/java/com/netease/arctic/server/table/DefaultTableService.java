@@ -145,11 +145,10 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
       throw new ObjectNotExistsException("Catalog " + catalogName);
     }
 
+    // TableRuntime cleanup is responsibility by exploreExternalCatalog method
     serverCatalog.dispose();
     internalCatalogMap.remove(catalogName);
     externalCatalogMap.remove(catalogName);
-
-    // TableRuntime cleanup is responsibility by exploreExternalCatalog method
   }
 
   @Override
@@ -493,8 +492,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
                         CompletableFuture.runAsync(
                             () -> {
                               try {
-                                disposeTable(
-                                    externalCatalog, serverTableIdentifiers.get(tableIdentity));
+                                disposeTable(serverTableIdentifiers.get(tableIdentity));
                               } catch (Exception e) {
                                 LOG.error(
                                     "TableExplorer dispose table {} error",
@@ -523,11 +521,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
         listCatalogMetas().stream().map(CatalogMeta::getCatalogName).collect(Collectors.toSet());
     for (TableRuntime tableRuntime : tableRuntimeMap.values()) {
       if (!catalogNames.contains(tableRuntime.getTableIdentifier().getCatalog())) {
-        if (headHandler != null) {
-          headHandler.fireTableRemoved(tableRuntime);
-        }
-        tableRuntime.dispose();
-        tableRuntimeMap.remove(tableRuntime.getTableIdentifier());
+        disposeTable(tableRuntime.getTableIdentifier());
       }
     }
 
@@ -620,9 +614,13 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     }
   }
 
-  private void disposeTable(
-      ExternalCatalog externalCatalog, ServerTableIdentifier tableIdentifier) {
-    externalCatalog.disposeTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
+  private void disposeTable(ServerTableIdentifier tableIdentifier) {
+    doAs(
+        TableMetaMapper.class,
+        mapper -> mapper.deleteTableIdByName(
+            tableIdentifier.getCatalog(),
+            tableIdentifier.getDatabase(),
+            tableIdentifier.getTableName()));
     Optional.ofNullable(tableRuntimeMap.remove(tableIdentifier))
         .ifPresent(
             tableRuntime -> {

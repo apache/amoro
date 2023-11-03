@@ -51,7 +51,6 @@ public abstract class ServerCatalog extends PersistentBase {
                 mapper -> mapper.deleteCatalog(name()),
                 () ->
                     new IllegalMetadataException(
-                        "Catalog " + name() + " has more than one database or table")),
-        () -> doAs(TableMetaMapper.class, mapper -> mapper.deleteTableIdByCatalogName(name())));
+                        "Catalog " + name() + " has more than one database or table")));
   }
 }
