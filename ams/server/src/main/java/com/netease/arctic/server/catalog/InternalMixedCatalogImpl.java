@@ -79,7 +79,8 @@ public class InternalMixedCatalogImpl extends InternalIcebergCatalogImpl {
   }
 
   protected BaseTable loadChangeStore(ArcticFileIO fileIO, TableMetadata tableMetadata) {
-    TableOperations ops = InternalTableUtil.newTableOperations(tableMetadata, fileIO, true);
+    TableOperations ops = InternalTableUtil.newTableOperations(
+        getMetadata(), tableMetadata, fileIO, true);
     return new BaseTable(
         ops,
         TableIdentifier.of(

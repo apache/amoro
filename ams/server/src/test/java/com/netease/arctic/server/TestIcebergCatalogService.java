@@ -139,6 +139,8 @@ public class TestIcebergCatalogService extends InternalCatalogServiceTestBase {
       nsCatalog.createTable(identifier, schema);
       Assertions.assertEquals(1, nsCatalog.listTables(ns).size());
       Assertions.assertEquals(identifier, nsCatalog.listTables(ns).get(0));
+      // assert table runtime exits
+      assertTableRuntime(tableIdentifier, TableFormat.ICEBERG);
 
       LOG.info("Assert load iceberg table");
       Table tbl = nsCatalog.loadTable(identifier);

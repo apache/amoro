@@ -174,7 +174,11 @@ public class CatalogUtil {
       Table table, String tableLocation, ArcticFileIO arcticFileIO, Configuration configuration) {
     if (table instanceof org.apache.iceberg.BaseTable) {
       org.apache.iceberg.BaseTable baseTable = (org.apache.iceberg.BaseTable) table;
-      if (baseTable.operations() instanceof HadoopTableOperations) {
+      if (baseTable.operations() instanceof ArcticHadoopTableOperations) {
+        return table;
+      } else if (baseTable.operations() instanceof ArcticTableOperations ) {
+        return table;
+      } else if (baseTable.operations() instanceof HadoopTableOperations) {
         return new org.apache.iceberg.BaseTable(
             new ArcticHadoopTableOperations(new Path(tableLocation), arcticFileIO, configuration),
             table.name());

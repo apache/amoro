@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.PartitionSpec;
@@ -31,6 +32,7 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
@@ -196,5 +198,40 @@ public class TablePropertyUtil {
         "can read change store identifier from base store properties");
     String change = properties.get(TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER);
     return TableIdentifier.parse(change);
+  }
+
+
+  public static Map<String, String> commonMixedProperties(PrimaryKeySpec keySpec, TableFormat format) {
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put(TableProperties.TABLE_FORMAT, format.name());
+    if (keySpec.primaryKeyExisted()) {
+      String fields = Joiner.on(",").join(keySpec.fieldNames());
+      properties.put(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS, fields);
+    }
+
+    properties.put(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
+    properties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
+    properties.put(org.apache.iceberg.TableProperties.METADATA_DELETE_AFTER_COMMIT_ENABLED, "true");
+    properties.put("flink.max-continuous-empty-commits", String.valueOf(Integer.MAX_VALUE));
+    return properties;
+  }
+
+
+  public static Map<String, String> baseStoreProperties(
+      PrimaryKeySpec keySpec, TableIdentifier changeIdentifier, TableFormat format) {
+    Map<String, String> properties = commonMixedProperties(keySpec, format);
+    properties.put(TableProperties.MIXED_FORMAT_TABLE_STORE,
+        TableProperties.MIXED_FORMAT_TABLE_STORE_BASE);
+    if (keySpec.primaryKeyExisted()) {
+      properties.put(TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER, changeIdentifier.toString());
+    }
+    return properties;
+  }
+
+  public static Map<String, String> changeStoreProperties(PrimaryKeySpec keySpec, TableFormat format) {
+    Map<String, String> properties = commonMixedProperties(keySpec, format);
+    properties.put(TableProperties.MIXED_FORMAT_TABLE_STORE,
+        TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE);
+    return properties;
   }
 }

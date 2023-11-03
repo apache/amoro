@@ -209,6 +209,7 @@ public class MixedDataTestHelpers {
   }
 
   public static List<Record> readTable(ArcticTable table, Expression expression) {
+    table.refresh();
     if (table.isKeyedTable()) {
       return readKeyedTable(table.asKeyedTable(), expression);
     } else {

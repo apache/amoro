@@ -21,11 +21,14 @@ package com.netease.arctic.server;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.MixedDataTestHelpers;
+import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
@@ -36,10 +39,12 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +54,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.App;
 
 import java.util.List;
 import java.util.Map;
@@ -59,29 +65,22 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
   private static final Logger LOG = LoggerFactory.getLogger(TestInternalMixedCatalogService.class);
 
   private ArcticCatalog catalog;
-  private final String icebergTable = "iceberg_table";
-
-  private final TableIdentifier tableIdentifier =
-      TableIdentifier.of(AmsEnvironment.INTERNAL_ICEBERG_CATALOG, database, table);
-
-  private org.apache.iceberg.catalog.TableIdentifier icebergTableIdentifier =
-      org.apache.iceberg.catalog.TableIdentifier.of(database, icebergTable);
 
   static final List<Record> baseRecords =
       Lists.newArrayList(
-          MixedDataTestHelpers.createRecord(1, "777", 0, "2022-01-01T12:00:00"),
-          MixedDataTestHelpers.createRecord(2, "888", 0, "2022-01-02T12:00:00"),
-          MixedDataTestHelpers.createRecord(3, "999", 0, "2022-01-03T12:00:00"));
+          MixedDataTestHelpers.createRecord(1, "111", 0, "2022-01-01T12:00:00"),
+          MixedDataTestHelpers.createRecord(2, "222", 0, "2022-01-02T12:00:00"),
+          MixedDataTestHelpers.createRecord(3, "333", 0, "2022-01-03T12:00:00"));
   static final List<Record> changeInsert =
       Lists.newArrayList(
-          MixedDataTestHelpers.createRecord(4, "777", 0, "2022-01-01T12:00:00"),
-          MixedDataTestHelpers.createRecord(5, "888", 0, "2022-01-02T12:00:00"),
-          MixedDataTestHelpers.createRecord(6, "999", 0, "2022-01-03T12:00:00"));
+          MixedDataTestHelpers.createRecord(4, "444", 0, "2022-01-01T12:00:00"),
+          MixedDataTestHelpers.createRecord(5, "555", 0, "2022-01-02T12:00:00"),
+          MixedDataTestHelpers.createRecord(6, "666", 0, "2022-01-03T12:00:00"));
 
   static final List<Record> changeDelete =
       Lists.newArrayList(
-          MixedDataTestHelpers.createRecord(3, "999", 0, "2022-01-03T12:00:00"),
-          MixedDataTestHelpers.createRecord(4, "777", 0, "2022-01-01T12:00:00"));
+          MixedDataTestHelpers.createRecord(3, "333", 0, "2022-01-03T12:00:00"),
+          MixedDataTestHelpers.createRecord(4, "444", 0, "2022-01-01T12:00:00"));
 
   @BeforeEach
   public void setMixedCatalog() {
@@ -128,7 +127,7 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
 
     @ParameterizedTest(name = "CatalogTableOperationTest[withPrimaryKey={0}]")
     @ValueSource(booleans = {true, false})
-    public void catalogTableOperationTests(boolean withPrimary) {
+    public void tableOperationTests(boolean withPrimary) {
       TableBuilder builder =
           catalog.newTableBuilder(tableIdentifier, schema).withPartitionSpec(spec);
       if (withPrimary) {
@@ -136,6 +135,8 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
       }
       // create mixed-iceberg
       builder.create();
+      // assert table runtime exits
+      assertTableRuntime(tableIdentifier, TableFormat.MIXED_ICEBERG);
 
       // assert 1 table in mixed-iceberg catalog
       Assertions.assertEquals(1, catalog.listTables(database).size());
@@ -164,7 +165,6 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
   @Nested
   public class TestTableCommit {
 
-
     @BeforeEach
     public void before() {
       catalog.createDatabase(database);
@@ -186,6 +186,8 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
       }
       // create mixed-iceberg
       builder.create();
+      // assert table runtime exits
+      assertTableRuntime(tableIdentifier, TableFormat.MIXED_ICEBERG);
 
       // load table
       ArcticTable table = catalog.loadTable(tableIdentifier);
@@ -196,15 +198,15 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
       table.refresh();
       // scan table records.
       List<Record> records =
-          MixedDataTestHelpers.readTable(table.asKeyedTable(), Expressions.alwaysTrue());
+          MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue());
       Assertions.assertEquals(expectedResult.size(), records.size());
     }
   }
 
   /**
    * The purpose of these tests is to test the compatibility of historical versions of connectors.
-   * Mixed-iceberg tables created by old connectors can be accessed with new connectors,
-   * but tables created by new connectors cannot be accessed with old versions.
+   * Mixed-iceberg tables created by old connectors can be accessed with new connectors, but tables
+   * created by new connectors cannot be accessed with old versions.
    */
   @Nested
   public class CompatibilityCatalogTests {
@@ -222,11 +224,27 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
       this.historicalCatalog = historicalCatalog;
     }
 
-    @ParameterizedTest(name = "TestNewCatalogLoadHistoricalTable[withPrimaryKey={0}]")
+    @AfterEach
+    public void cleanDatabase() {
+      catalog.dropDatabase(database);
+    }
+
+    final List<Record> newChangeAdded =
+        Lists.newArrayList(
+            MixedDataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
+            MixedDataTestHelpers.createRecord(8, "888", 0, "2022-01-02T12:00:00"),
+            MixedDataTestHelpers.createRecord(9, "999", 0, "2022-01-03T12:00:00"));
+
+    final List<Record> newChangeDelete =
+        Lists.newArrayList(
+            MixedDataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
+            MixedDataTestHelpers.createRecord(1, "111", 0, "2022-01-01T12:00:00"));
+
+    @ParameterizedTest(name = "Test-NewCatalog-Load-HistoricalTable[withPrimaryKey={0}]")
     @ValueSource(booleans = {false, true})
     public void testNewCatalogLoadHistorical(boolean primaryKey) {
-      TableBuilder builder = historicalCatalog.newTableBuilder(tableIdentifier, schema)
-          .withPartitionSpec(spec);
+      TableBuilder builder =
+          historicalCatalog.newTableBuilder(tableIdentifier, schema).withPartitionSpec(spec);
       if (primaryKey) {
         builder.withPrimaryKeySpec(keySpec);
       }
@@ -237,53 +255,134 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
 
       // load table base on rest catalog
       ArcticTable restTable = catalog.loadTable(tableIdentifier);
-      List<Record> loadedRecords = MixedDataTestHelpers.readTable(restTable, Expressions.alwaysTrue());
+      List<Record> loadedRecords =
+          MixedDataTestHelpers.readTable(restTable, Expressions.alwaysTrue());
 
       // assert rest-based table scan right records.
       Assertions.assertEquals(expectedResult.size(), loadedRecords.size());
 
+      // write through rest-based table
+      List<Record> results = writeTestData(restTable, null, newChangeAdded, newChangeDelete);
+
+      // read data through historical table
+      List<Record> hisScanResult = MixedDataTestHelpers.readTable(historicalTable, Expressions.alwaysTrue());
+      Assertions.assertEquals(hisScanResult.size(), results.size());
+
+      // read data through rest-based table
+      List<Record> restScanResult = MixedDataTestHelpers.readTable(restTable, Expressions.alwaysTrue());
+      Assertions.assertEquals(results.size(), restScanResult.size());
+
+
+      // read data through historical table.
+      List<Record> scanHistorical =
+          MixedDataTestHelpers.readTable(historicalTable, Expressions.alwaysTrue());
+      Assertions.assertEquals(results.size(), scanHistorical.size());
+
+      // TODO: there is bug in unkeyed-table.location.
+      String location = tableService.loadTableMetadata(tableIdentifier.buildTableIdentifier()).getTableLocation();
+      ArcticFileIO io = historicalTable.io();
+      //drop table through rest-catalog
+      catalog.dropTable(tableIdentifier, true);
+      Assertions.assertTrue(catalog.listTables(database).isEmpty());
+      Assertions.assertTrue(historicalCatalog.listTables(database).isEmpty());
+      // table dir has been purged
+      Assertions.assertFalse(io.exists(location));
+    }
+
+    @ParameterizedTest(name = "Assert-HistoricalCatalog-CannotLoad-NewTable[withPrimaryKey={0}]")
+    @ValueSource(booleans = {false, true})
+    public void assertHistoricalCatalogCannotLoadNewTable(boolean primaryKey) {
+      TableBuilder builder =
+          catalog.newTableBuilder(tableIdentifier, schema).withPartitionSpec(spec);
+      if (primaryKey) {
+        builder.withPrimaryKeySpec(keySpec);
+      }
+      builder.create();
+
+      // assert list table show the new tables.
+      Assertions.assertEquals(1, historicalCatalog.listTables(database).size());
+
+      // assert load table failed.
+      Assertions.assertThrows(Exception.class, () -> {
+        historicalCatalog.loadTable(tableIdentifier);
+      });
+
+      // assert drop table failed.
+      Assertions.assertThrows(Exception.class, () -> {
+        historicalCatalog.dropTable(tableIdentifier, true);
+      });
+      // clean up the table.
+      catalog.dropTable(tableIdentifier, true);
     }
   }
 
-  /**
-   * write test records to the target table and return the expected records
-   */
   private static List<Record> writeTestData(ArcticTable table) {
-    long txId = table.isKeyedTable() ? table.asKeyedTable().beginTransaction("") : 1L;
-    List<DataFile> files = MixedDataTestHelpers.writeBaseStore(table, txId, baseRecords, false);
-    UnkeyedTable baseStore = ArcticTableUtil.baseStore(table);
-    AppendFiles appendFiles = baseStore.newAppend();
-    files.forEach(appendFiles::appendFile);
-    appendFiles.commit();
-    if (table.isKeyedTable()) {
-      txId = table.asKeyedTable().beginTransaction("");
-      List<DataFile> changeInsertFiles =
-          MixedDataTestHelpers.writeChangeStore(
-              table.asKeyedTable(), txId, ChangeAction.INSERT, changeInsert, false);
-      UnkeyedTable changeStore = table.asKeyedTable().changeTable();
-      appendFiles = changeStore.newAppend();
-      changeInsertFiles.forEach(appendFiles::appendFile);
-      appendFiles.commit();
+    return writeTestData(table, baseRecords, changeInsert, changeDelete);
+  }
 
-      txId = table.asKeyedTable().beginTransaction("");
-      List<DataFile> changeDeleteFiles =
-          MixedDataTestHelpers.writeChangeStore(
-              table.asKeyedTable(), txId, ChangeAction.DELETE, changeDelete, false);
-      appendFiles = changeStore.newAppend();
-      changeDeleteFiles.forEach(appendFiles::appendFile);
+  /** write test records to the target table and return the expected records */
+  private static List<Record> writeTestData(
+      ArcticTable table,
+      List<Record> baseAdded,
+      List<Record> changeAdded,
+      List<Record> changeDelete) {
+    table.refresh();
+    List<Record> initRecords = Lists.newArrayList(
+        MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue())
+    );
+    List<Record> finalRecords = null;
+    long txId;
+    if (baseAdded != null && !baseAdded.isEmpty()) {
+      txId = table.isKeyedTable() ? table.asKeyedTable().beginTransaction("") : 1L;
+      List<DataFile> files = MixedDataTestHelpers.writeBaseStore(table, txId, baseAdded, false);
+      UnkeyedTable baseStore = ArcticTableUtil.baseStore(table);
+      AppendFiles appendFiles = baseStore.newAppend();
+      files.forEach(appendFiles::appendFile);
       appendFiles.commit();
-      Map<Integer, Record> results = Maps.newHashMap();
-      baseRecords.forEach(r -> results.put(r.get(0, Integer.class), r));
-      changeInsert.forEach(r -> results.put(r.get(0, Integer.class), r));
-      changeDelete.forEach(r -> results.remove(r.get(0, Integer.class)));
-      return Lists.newArrayList(results.values());
-    } else {
-      return baseRecords;
+      initRecords.addAll(baseAdded);
     }
+
+    if (table.isKeyedTable()) {
+      if (changeAdded != null && !changeAdded.isEmpty()) {
+        txId = table.asKeyedTable().beginTransaction("");
+        List<DataFile> changeInsertFiles =
+            MixedDataTestHelpers.writeChangeStore(
+                table.asKeyedTable(), txId, ChangeAction.INSERT, changeAdded, false);
+        UnkeyedTable changeStore = table.asKeyedTable().changeTable();
+        AppendFiles appendFiles = changeStore.newAppend();
+        changeInsertFiles.forEach(appendFiles::appendFile);
+        appendFiles.commit();
+        initRecords.addAll(changeAdded);
+        finalRecords = Lists.newArrayList(
+            MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue())
+        );
+        System.out.println(finalRecords.size());
+      }
+
+      if (changeDelete != null && !changeDelete.isEmpty()) {
+        txId = table.asKeyedTable().beginTransaction("");
+        List<DataFile> changeDeleteFiles =
+            MixedDataTestHelpers.writeChangeStore(
+                table.asKeyedTable(), txId, ChangeAction.DELETE, changeDelete, false);
+        UnkeyedTable changeStore = table.asKeyedTable().changeTable();
+        AppendFiles appendFiles = changeStore.newAppend();
+        changeDeleteFiles.forEach(appendFiles::appendFile);
+        appendFiles.commit();
+        Map<Integer, Record> results = Maps.newHashMap();
+        initRecords.forEach(r -> results.put(r.get(0, Integer.class), r));
+        changeDelete.forEach(r -> results.remove(r.get(0, Integer.class)));
+        initRecords = Lists.newArrayList(results.values());
+      }
+    }
+    finalRecords = Lists.newArrayList(
+        MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue())
+    );
+    System.out.println(finalRecords.size());
+    return initRecords;
   }
 
   private ArcticCatalog loadMixedIcebergCatalog() {
     return CatalogLoader.load(
-        ams.getTableServiceUrl() + "/" + AmsEnvironment.INTERNAL_MIXED_ICEBERG_CATALOG);
+        ams.getTableServiceUrl() + "/" + catalogName());
   }
 }

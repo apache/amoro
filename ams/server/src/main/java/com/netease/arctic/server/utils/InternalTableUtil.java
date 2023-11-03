@@ -7,6 +7,7 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
+import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.iceberg.InternalTableStoreOperations;
 import com.netease.arctic.server.table.ServerTableIdentifier;
@@ -16,6 +17,7 @@ import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
@@ -28,6 +30,7 @@ import org.apache.iceberg.exceptions.NotFoundException;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.LocationUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +42,6 @@ import java.util.UUID;
 /** Util class for internal table operations. */
 public class InternalTableUtil {
   private static final Logger LOG = LoggerFactory.getLogger(InternalTableUtil.class);
-  public static final String DEFAULT_FILE_IO_IMPL = "org.apache.iceberg.io.ResolvingFileIO";
   public static final String METADATA_FOLDER_NAME = "metadata";
   public static final String PROPERTIES_METADATA_LOCATION = "iceberg.metadata.location";
   public static final String PROPERTIES_PREV_METADATA_LOCATION = "iceberg.metadata.prev-location";
@@ -48,10 +50,75 @@ public class InternalTableUtil {
 
   public static final String MIXED_ICEBERG_BASED_REST = "mixed-iceberg.based-on-rest-catalog";
 
+  private static final String HADOOP_FILE_IO_IMPL = "org.apache.iceberg.hadoop.HadoopFileIO";
+  private static final String S3_FILE_IO_IMPL = "org.apache.iceberg.aws.s3.S3FileIO";
+
+
+  /**
+   * create an iceberg table operations for internal iceberg/mixed-iceberg table
+   * @param catalogMeta catalogMeta of table
+   * @param tableMeta  persistent tableMetadata
+   * @param io arctic file io
+   * @param changeStore is change store of mixed-iceberg
+   * @return iceberg table operation.
+   */
   public static TableOperations newTableOperations(
-      com.netease.arctic.server.table.TableMetadata tableMeta, FileIO io, boolean changeStore) {
+      CatalogMeta catalogMeta,
+      com.netease.arctic.server.table.TableMetadata tableMeta, ArcticFileIO io, boolean changeStore) {
+    if (isLegacyMixedIceberg(tableMeta)) {
+      String tableLocation = changeStore ? tableMeta.getChangeLocation() : tableMeta.getBaseLocation();
+      TableMetaStore metaStore = CatalogUtil.buildMetaStore(catalogMeta);
+      return new ArcticHadoopTableOperations(new Path(tableLocation), io, metaStore.getConfiguration());
+    }
     return new InternalTableStoreOperations(
         tableMeta.getTableIdentifier(), tableMeta, io, changeStore);
+  }
+
+  /**
+   * check if the given persistent tableMetadata if a legacy mixed-iceberg table.
+   * @param internalTableMetadata persistent table metadata.
+   * @param metadata iceberg table metadata
+   * @param changeStore is change store if mixed-berg.
+   * @return Mixed-iceberg metadata adapted for the REST Catalog.
+   */
+  public static TableMetadata legacyTableMetadata(
+      com.netease.arctic.server.table.TableMetadata internalTableMetadata,
+      TableMetadata metadata, boolean changeStore) {
+    if (!isLegacyMixedIceberg(internalTableMetadata)) {
+      return metadata;
+    }
+    PrimaryKeySpec keySpec = PrimaryKeySpec.noPrimaryKey();
+    TableMeta tableMeta = internalTableMetadata.buildTableMeta();
+    if (tableMeta.isSetKeySpec()) {
+      PrimaryKeySpec.Builder keyBuilder = PrimaryKeySpec.builderFor(metadata.schema());
+      tableMeta.getKeySpec().getFields().forEach(keyBuilder::addColumn);
+      keySpec = keyBuilder.build();
+    }
+    TableIdentifier changeIdentifier = TableIdentifier.of(
+        internalTableMetadata.getTableIdentifier().getDatabase(),
+        internalTableMetadata.getTableIdentifier().getTableName() + "@change");
+    Map<String, String> properties = Maps.newHashMap(metadata.properties());
+    if (!changeStore) {
+      properties.putAll(
+          TablePropertyUtil.baseStoreProperties(keySpec, changeIdentifier, TableFormat.MIXED_ICEBERG)
+      );
+    } else {
+      properties.putAll(
+          TablePropertyUtil.changeStoreProperties(keySpec, TableFormat.MIXED_ICEBERG)
+      );
+    }
+    if (Maps.difference(properties, metadata.properties()).areEqual()) {
+      return metadata;
+    }
+    return TableMetadata.buildFrom(metadata)
+        .setProperties(properties)
+        .discardChanges()
+        .build();
+  }
+
+  public static boolean isLegacyMixedIceberg(com.netease.arctic.server.table.TableMetadata internalTableMetadata) {
+    return TableFormat.MIXED_ICEBERG == internalTableMetadata.getFormat() &&
+        !Boolean.parseBoolean(internalTableMetadata.getProperties().get(MIXED_ICEBERG_BASED_REST));
   }
 
   /**
@@ -160,10 +227,18 @@ public class InternalTableUtil {
     Map<String, String> catalogProperties = meta.getCatalogProperties();
     TableMetaStore store = CatalogUtil.buildMetaStore(meta);
     Configuration conf = store.getConfiguration();
+    String warehouse = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
     String ioImpl =
-        catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, DEFAULT_FILE_IO_IMPL);
+        catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, defaultFileIoImpl(warehouse));
     FileIO fileIO = org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
     return ArcticFileIOs.buildAdaptIcebergFileIO(store, fileIO);
+  }
+
+  private static String defaultFileIoImpl(String warehouse) {
+    if (warehouse.toLowerCase().startsWith("s3://")) {
+      return S3_FILE_IO_IMPL;
+    }
+    return HADOOP_FILE_IO_IMPL;
   }
 
   /**

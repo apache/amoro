@@ -332,13 +332,15 @@ public class IcebergRestCatalogService extends PersistentBase {
         ctx,
         (catalog, tableMeta, changeStore) -> {
           TableMetadata tableMetadata = null;
-          try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
-            tableMetadata =
-                InternalTableUtil.loadIcebergTableStoreMetadata(io, tableMeta, changeStore);
+          try (ArcticFileIO io = newIcebergFileIo(catalog.getMetadata())) {
+            TableOperations ops = InternalTableUtil.newTableOperations(
+                catalog.getMetadata(), tableMeta, io, changeStore);
+            tableMetadata = ops.current();
           }
           if (tableMetadata == null) {
             throw new NoSuchTableException("failed to load table from metadata file.");
           }
+          tableMetadata = InternalTableUtil.legacyTableMetadata(tableMeta, tableMetadata, changeStore);
           return LoadTableResponse.builder().withTableMetadata(tableMetadata).build();
         });
   }
@@ -349,8 +351,9 @@ public class IcebergRestCatalogService extends PersistentBase {
         ctx,
         (catalog, tableMeta, changeStore) -> {
           UpdateTableRequest request = bodyAsClass(ctx, UpdateTableRequest.class);
-          try (FileIO io = newIcebergFileIo(catalog.getMetadata())) {
-            TableOperations ops = InternalTableUtil.newTableOperations(tableMeta, io, changeStore);
+          try (ArcticFileIO io = newIcebergFileIo(catalog.getMetadata())) {
+            TableOperations ops = InternalTableUtil.newTableOperations(
+                catalog.getMetadata(), tableMeta, io, changeStore);
             TableMetadata base = ops.current();
             if (base == null) {
               throw new CommitFailedException("table metadata lost.");
@@ -377,26 +380,31 @@ public class IcebergRestCatalogService extends PersistentBase {
               Boolean.parseBoolean(
                   Optional.ofNullable(ctx.req.getParameter("purgeRequested")).orElse("false"));
           TableMetadata current = null;
-          if (changeStore) {
-            // skip drop change store
-            return null;
-          }
+
           try (ArcticFileIO io = newIcebergFileIo(catalog.getMetadata())) {
+            TableOperations ops = InternalTableUtil.newTableOperations(
+                catalog.getMetadata(), tableMetadata, io, changeStore);
             try {
-              current = InternalTableUtil.loadIcebergTableStoreMetadata(io, tableMetadata);
+              current = ops.current();
             } catch (Exception e) {
               LOG.warn(
                   "failed to load iceberg table metadata, metadata file maybe lost: "
                       + e.getMessage());
             }
+            String purgeLocation;
+            if (!changeStore) {
+              tableService.dropTableMetadata(
+                  tableMetadata.getTableIdentifier().getIdentifier(), true);
+              purgeLocation = tableMetadata.getTableLocation();
+            } else {
+              purgeLocation = tableMetadata.getChangeLocation();
+            }
 
-            tableService.dropTableMetadata(
-                tableMetadata.getTableIdentifier().getIdentifier(), true);
             if (purge && current != null) {
               org.apache.iceberg.CatalogUtil.dropTableData(io, current);
-              if (io.supportPrefixOperations()) {
-                io.asPrefixFileIO().deletePrefix(current.location());
-              }
+            }
+            if (purge && io.supportPrefixOperations()) {
+              io.asPrefixFileIO().deletePrefix(purgeLocation);
             }
           }
 

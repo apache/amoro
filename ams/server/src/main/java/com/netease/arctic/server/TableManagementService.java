@@ -31,6 +31,7 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.table.TableService;
+import com.netease.arctic.server.utils.InternalTableUtil;
 import org.apache.thrift.TException;
 
 import java.util.List;
@@ -96,7 +97,12 @@ public class TableManagementService implements ArcticTableMetastore.Iface {
 
   @Override
   public TableMeta getTable(TableIdentifier tableIdentifier) {
-    return tableService.loadTableMetadata(tableIdentifier).buildTableMeta();
+    TableMetadata tableMetadata = tableService.loadTableMetadata(tableIdentifier);
+    if (!InternalTableUtil.isLegacyMixedIceberg(tableMetadata)) {
+      throw new IllegalArgumentException("The table " + tableIdentifier.toString() + " is based" +
+          " on rest-catalog, please upgrade your connector");
+    }
+    return tableMetadata.buildTableMeta();
   }
 
   @Override

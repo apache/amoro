@@ -111,7 +111,6 @@ public class MixedTables {
       PartitionSpec partitionSpec,
       PrimaryKeySpec keySpec,
       Map<String, String> properties) {
-    Map<String, String> tableStoreProperties = tableStoreProperties(keySpec, properties);
     TableIdentifier baseIdentifier =
         TableIdentifier.of(identifier.getDatabase(), identifier.getTableName());
     TableIdentifier changeIdentifier = generateChangeStoreIdentifier(baseIdentifier);
@@ -119,18 +118,14 @@ public class MixedTables {
       throw new AlreadyExistsException("change store already exists");
     }
 
+    Map<String, String> baseProperties = Maps.newHashMap(properties);
+    baseProperties.putAll(
+        TablePropertyUtil.baseStoreProperties(keySpec, changeIdentifier, TableFormat.MIXED_ICEBERG));
     Catalog.TableBuilder baseBuilder =
         icebergCatalog
             .buildTable(baseIdentifier, schema)
             .withPartitionSpec(partitionSpec)
-            .withProperty(
-                TableProperties.MIXED_FORMAT_TABLE_STORE,
-                TableProperties.MIXED_FORMAT_TABLE_STORE_BASE)
-            .withProperties(tableStoreProperties);
-    if (keySpec.primaryKeyExisted()) {
-      baseBuilder.withProperty(
-          TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER, changeIdentifier.toString());
-    }
+            .withProperties(baseProperties);
 
     if (!keySpec.primaryKeyExisted()) {
       Table base = tableMetaStore.doAs(baseBuilder::create);
@@ -142,14 +137,15 @@ public class MixedTables {
     Table base = tableMetaStore.doAs(baseBuilder::create);
     ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
 
+    Map<String, String> changeProperties = Maps.newHashMap(properties);
+    changeProperties.putAll(
+        TablePropertyUtil.changeStoreProperties(keySpec, TableFormat.MIXED_ICEBERG)
+    );
     Catalog.TableBuilder changeBuilder =
         icebergCatalog
             .buildTable(changeIdentifier, schema)
-            .withProperties(tableStoreProperties)
-            .withPartitionSpec(partitionSpec)
-            .withProperty(
-                TableProperties.MIXED_FORMAT_TABLE_STORE,
-                TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE);
+            .withProperties(changeProperties)
+            .withPartitionSpec(partitionSpec);
     Table change;
     try {
       change = tableMetaStore.doAs(changeBuilder::create);
@@ -168,22 +164,6 @@ public class MixedTables {
             io,
             catalogMeta.getCatalogProperties());
     return new BasicKeyedTable(keySpec, baseStore, changeStore);
-  }
-
-  private Map<String, String> tableStoreProperties(
-      PrimaryKeySpec keySpec, Map<String, String> tableProperties) {
-    Map<String, String> properties = Maps.newHashMap(tableProperties);
-    properties.put(TableProperties.TABLE_FORMAT, TableFormat.MIXED_ICEBERG.name());
-    if (keySpec.primaryKeyExisted()) {
-      String fields = Joiner.on(",").join(keySpec.fieldNames());
-      properties.put(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS, fields);
-    }
-
-    properties.put(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
-    properties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
-    properties.put(org.apache.iceberg.TableProperties.METADATA_DELETE_AFTER_COMMIT_ENABLED, "true");
-    properties.put("flink.max-continuous-empty-commits", String.valueOf(Integer.MAX_VALUE));
-    return properties;
   }
 
   private Table loadChangeStore(Table base) {
