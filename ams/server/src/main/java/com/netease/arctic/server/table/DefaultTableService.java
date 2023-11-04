@@ -140,12 +140,13 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   @Override
   public void dropCatalog(String catalogName) {
     checkStarted();
-    doAsExisted(
-        CatalogMetaMapper.class,
-        mapper -> mapper.deleteCatalog(catalogName),
-        () ->
-            new IllegalMetadataException(
-                "Catalog " + catalogName + " has more than one database or table"));
+    ServerCatalog serverCatalog = getServerCatalog(catalogName);
+    if (serverCatalog == null) {
+      throw new ObjectNotExistsException("Catalog " + catalogName);
+    }
+
+    // TableRuntime cleanup is responsibility by exploreExternalCatalog method
+    serverCatalog.dispose();
     internalCatalogMap.remove(catalogName);
     externalCatalogMap.remove(catalogName);
   }
@@ -491,8 +492,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
                         CompletableFuture.runAsync(
                             () -> {
                               try {
-                                disposeTable(
-                                    externalCatalog, serverTableIdentifiers.get(tableIdentity));
+                                disposeTable(serverTableIdentifiers.get(tableIdentity));
                               } catch (Exception e) {
                                 LOG.error(
                                     "TableExplorer dispose table {} error",
@@ -511,6 +511,20 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
         LOG.error("TableExplorer error", e);
       }
     }
+
+    // Clear TableRuntime objects that do not correspond to a catalog.
+    // This scenario is mainly due to the fact that TableRuntime objects were not cleaned up in a
+    // timely manner during the process of dropping the catalog due to concurrency considerations.
+    // It is permissible to have some erroneous states in the middle, as long as the final data is
+    // consistent.
+    Set<String> catalogNames =
+        listCatalogMetas().stream().map(CatalogMeta::getCatalogName).collect(Collectors.toSet());
+    for (TableRuntime tableRuntime : tableRuntimeMap.values()) {
+      if (!catalogNames.contains(tableRuntime.getTableIdentifier().getCatalog())) {
+        disposeTable(tableRuntime.getTableIdentifier());
+      }
+    }
+
     long end = System.currentTimeMillis();
     LOG.info("Syncing external catalogs took {} ms.", end - start);
   }
@@ -600,9 +614,14 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     }
   }
 
-  private void disposeTable(
-      ExternalCatalog externalCatalog, ServerTableIdentifier tableIdentifier) {
-    externalCatalog.disposeTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
+  private void disposeTable(ServerTableIdentifier tableIdentifier) {
+    doAs(
+        TableMetaMapper.class,
+        mapper ->
+            mapper.deleteTableIdByName(
+                tableIdentifier.getCatalog(),
+                tableIdentifier.getDatabase(),
+                tableIdentifier.getTableName()));
     Optional.ofNullable(tableRuntimeMap.remove(tableIdentifier))
         .ifPresent(
             tableRuntime -> {
