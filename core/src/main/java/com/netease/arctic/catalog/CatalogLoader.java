@@ -91,7 +91,7 @@ public class CatalogLoader {
    * @param catalogProperties - catalog properties
    * @return class name for catalog
    */
-  public static String catalogImpl(String metastoreType, Map<String, String> catalogProperties) {
+  private static String catalogImpl(String metastoreType, Map<String, String> catalogProperties) {
     Set<TableFormat> tableFormats = CatalogUtil.tableFormats(metastoreType, catalogProperties);
     Preconditions.checkArgument(
         tableFormats.size() == 1, "Catalog support only one table format now.");
