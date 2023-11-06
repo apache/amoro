@@ -74,7 +74,6 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
   protected AmsClient client;
   protected String name;
-  protected Map<String, String> customProperties;
   protected Map<String, String> catalogProperties;
   protected MixedTables tables;
   protected transient TableMetaStore tableMetaStore;
@@ -82,15 +81,6 @@ public class BasicArcticCatalog implements ArcticCatalog {
   @Override
   public String name() {
     return name;
-  }
-
-  @Override
-  public void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties) {
-    this.client = client;
-    this.customProperties = properties;
-    CatalogUtil.mergeCatalogProperties(meta, properties);
-    TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(meta);
-    this.initialize(meta.getCatalogName(), meta.getCatalogProperties(), tableMetaStore);
   }
 
   @Override
@@ -208,7 +198,6 @@ public class BasicArcticCatalog implements ArcticCatalog {
   public void refresh() {
     try {
       CatalogMeta meta = getClient().getCatalog(name());
-      CatalogUtil.mergeCatalogProperties(meta, customProperties);
       TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(meta);
       this.initialize(meta.getCatalogName(), meta.getCatalogProperties(), tableMetaStore);
     } catch (TException e) {

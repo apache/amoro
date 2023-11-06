@@ -57,7 +57,6 @@ import java.util.stream.Collectors;
 
 public class BasicMixedIcebergCatalog implements ArcticCatalog {
 
-  private Map<String, String> clientSideProperties = Maps.newHashMap();
   private Catalog icebergCatalog;
   private TableMetaStore tableMetaStore;
   private Map<String, String> catalogProperties;
@@ -76,17 +75,6 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   @Override
   public String name() {
     return this.name;
-  }
-
-  @Override
-  public void initialize(
-      AmsClient client, CatalogMeta catalogMeta, Map<String, String> properties) {
-    this.client = client;
-    this.clientSideProperties = properties == null ? Maps.newHashMap() : properties;
-    CatalogUtil.mergeCatalogProperties(catalogMeta, clientSideProperties);
-    TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
-    this.initialize(
-        catalogMeta.getCatalogName(), catalogMeta.getCatalogProperties(), tableMetaStore);
   }
 
   @Override
@@ -228,7 +216,6 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     }
     try {
       CatalogMeta catalogMeta = client.getCatalog(this.name());
-      CatalogUtil.mergeCatalogProperties(catalogMeta, clientSideProperties);
       this.initialize(
           catalogMeta.getCatalogName(),
           catalogMeta.getCatalogProperties(),

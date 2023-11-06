@@ -27,10 +27,8 @@ import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.TableBlockerManager;
-import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.Catalog;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 
 import java.util.List;
@@ -41,19 +39,10 @@ public class BasicIcebergCatalog implements ArcticCatalog {
 
   private AmsClient client;
   private IcebergCatalogWrapper catalogWrapper;
-  private Map<String, String> clientSideProperties = Maps.newHashMap();
 
   @Override
   public String name() {
     return catalogWrapper.name();
-  }
-
-  @Override
-  public void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties) {
-    this.client = client;
-    this.clientSideProperties = properties;
-    CatalogUtil.mergeCatalogProperties(meta, properties);
-    this.catalogWrapper = new IcebergCatalogWrapper(meta);
   }
 
   @Override
@@ -112,7 +101,6 @@ public class BasicIcebergCatalog implements ArcticCatalog {
     }
     try {
       CatalogMeta meta = client.getCatalog(catalogWrapper.name());
-      CatalogUtil.mergeCatalogProperties(meta, clientSideProperties);
       catalogWrapper = new IcebergCatalogWrapper(meta);
     } catch (TException e) {
       throw new IllegalStateException(
