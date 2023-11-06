@@ -200,8 +200,8 @@ public class TablePropertyUtil {
     return TableIdentifier.parse(change);
   }
 
-
-  public static Map<String, String> commonMixedProperties(PrimaryKeySpec keySpec, TableFormat format) {
+  public static Map<String, String> commonMixedProperties(
+      PrimaryKeySpec keySpec, TableFormat format) {
     Map<String, String> properties = Maps.newHashMap();
     properties.put(TableProperties.TABLE_FORMAT, format.name());
     if (keySpec.primaryKeyExisted()) {
@@ -216,22 +216,23 @@ public class TablePropertyUtil {
     return properties;
   }
 
-
   public static Map<String, String> baseStoreProperties(
       PrimaryKeySpec keySpec, TableIdentifier changeIdentifier, TableFormat format) {
     Map<String, String> properties = commonMixedProperties(keySpec, format);
-    properties.put(TableProperties.MIXED_FORMAT_TABLE_STORE,
-        TableProperties.MIXED_FORMAT_TABLE_STORE_BASE);
+    properties.put(
+        TableProperties.MIXED_FORMAT_TABLE_STORE, TableProperties.MIXED_FORMAT_TABLE_STORE_BASE);
     if (keySpec.primaryKeyExisted()) {
-      properties.put(TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER, changeIdentifier.toString());
+      properties.put(
+          TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER, changeIdentifier.toString());
     }
     return properties;
   }
 
-  public static Map<String, String> changeStoreProperties(PrimaryKeySpec keySpec, TableFormat format) {
+  public static Map<String, String> changeStoreProperties(
+      PrimaryKeySpec keySpec, TableFormat format) {
     Map<String, String> properties = commonMixedProperties(keySpec, format);
-    properties.put(TableProperties.MIXED_FORMAT_TABLE_STORE,
-        TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE);
+    properties.put(
+        TableProperties.MIXED_FORMAT_TABLE_STORE, TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE);
     return properties;
   }
 }

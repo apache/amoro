@@ -176,7 +176,7 @@ public class CatalogUtil {
       org.apache.iceberg.BaseTable baseTable = (org.apache.iceberg.BaseTable) table;
       if (baseTable.operations() instanceof ArcticHadoopTableOperations) {
         return table;
-      } else if (baseTable.operations() instanceof ArcticTableOperations ) {
+      } else if (baseTable.operations() instanceof ArcticTableOperations) {
         return table;
       } else if (baseTable.operations() instanceof HadoopTableOperations) {
         return new org.apache.iceberg.BaseTable(

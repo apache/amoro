@@ -90,7 +90,6 @@ public abstract class InternalCatalogServiceTestBase {
             store.getConfiguration());
   }
 
-
   protected ServerTableIdentifier getServerTableIdentifier(TableIdentifier identifier) {
     TableMetadata metadata = tableService.loadTableMetadata(identifier.buildTableIdentifier());
     return metadata.getTableIdentifier();
@@ -103,7 +102,7 @@ public abstract class InternalCatalogServiceTestBase {
 
   protected void assertTableRuntime(TableIdentifier identifier, TableFormat format) {
     TableRuntime runtime = getTableRuntime(identifier);
-    Assertions.assertNotNull(runtime,  "table runtime is not exists after created");
+    Assertions.assertNotNull(runtime, "table runtime is not exists after created");
     Assertions.assertEquals(format, runtime.getFormat());
   }
 }

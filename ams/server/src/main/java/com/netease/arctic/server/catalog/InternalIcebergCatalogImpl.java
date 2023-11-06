@@ -71,8 +71,8 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
   }
 
   protected BaseTable loadIcebergTable(ArcticFileIO fileIO, TableMetadata tableMetadata) {
-    TableOperations ops = InternalTableUtil.newTableOperations(
-        getMetadata(), tableMetadata, fileIO, false);
+    TableOperations ops =
+        InternalTableUtil.newTableOperations(getMetadata(), tableMetadata, fileIO, false);
     return new BaseTable(
         ops,
         TableIdentifier.of(

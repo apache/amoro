@@ -53,22 +53,26 @@ public class InternalTableUtil {
   private static final String HADOOP_FILE_IO_IMPL = "org.apache.iceberg.hadoop.HadoopFileIO";
   private static final String S3_FILE_IO_IMPL = "org.apache.iceberg.aws.s3.S3FileIO";
 
-
   /**
    * create an iceberg table operations for internal iceberg/mixed-iceberg table
+   *
    * @param catalogMeta catalogMeta of table
-   * @param tableMeta  persistent tableMetadata
+   * @param tableMeta persistent tableMetadata
    * @param io arctic file io
    * @param changeStore is change store of mixed-iceberg
    * @return iceberg table operation.
    */
   public static TableOperations newTableOperations(
       CatalogMeta catalogMeta,
-      com.netease.arctic.server.table.TableMetadata tableMeta, ArcticFileIO io, boolean changeStore) {
+      com.netease.arctic.server.table.TableMetadata tableMeta,
+      ArcticFileIO io,
+      boolean changeStore) {
     if (isLegacyMixedIceberg(tableMeta)) {
-      String tableLocation = changeStore ? tableMeta.getChangeLocation() : tableMeta.getBaseLocation();
+      String tableLocation =
+          changeStore ? tableMeta.getChangeLocation() : tableMeta.getBaseLocation();
       TableMetaStore metaStore = CatalogUtil.buildMetaStore(catalogMeta);
-      return new ArcticHadoopTableOperations(new Path(tableLocation), io, metaStore.getConfiguration());
+      return new ArcticHadoopTableOperations(
+          new Path(tableLocation), io, metaStore.getConfiguration());
     }
     return new InternalTableStoreOperations(
         tableMeta.getTableIdentifier(), tableMeta, io, changeStore);
@@ -76,6 +80,7 @@ public class InternalTableUtil {
 
   /**
    * check if the given persistent tableMetadata if a legacy mixed-iceberg table.
+   *
    * @param internalTableMetadata persistent table metadata.
    * @param metadata iceberg table metadata
    * @param changeStore is change store if mixed-berg.
@@ -83,7 +88,8 @@ public class InternalTableUtil {
    */
   public static TableMetadata legacyTableMetadata(
       com.netease.arctic.server.table.TableMetadata internalTableMetadata,
-      TableMetadata metadata, boolean changeStore) {
+      TableMetadata metadata,
+      boolean changeStore) {
     if (!isLegacyMixedIceberg(internalTableMetadata)) {
       return metadata;
     }
@@ -94,31 +100,30 @@ public class InternalTableUtil {
       tableMeta.getKeySpec().getFields().forEach(keyBuilder::addColumn);
       keySpec = keyBuilder.build();
     }
-    TableIdentifier changeIdentifier = TableIdentifier.of(
-        internalTableMetadata.getTableIdentifier().getDatabase(),
-        internalTableMetadata.getTableIdentifier().getTableName() + "@change");
+    TableIdentifier changeIdentifier =
+        TableIdentifier.of(
+            internalTableMetadata.getTableIdentifier().getDatabase(),
+            internalTableMetadata.getTableIdentifier().getTableName() + "@change");
     Map<String, String> properties = Maps.newHashMap(metadata.properties());
     if (!changeStore) {
       properties.putAll(
-          TablePropertyUtil.baseStoreProperties(keySpec, changeIdentifier, TableFormat.MIXED_ICEBERG)
-      );
+          TablePropertyUtil.baseStoreProperties(
+              keySpec, changeIdentifier, TableFormat.MIXED_ICEBERG));
     } else {
       properties.putAll(
-          TablePropertyUtil.changeStoreProperties(keySpec, TableFormat.MIXED_ICEBERG)
-      );
+          TablePropertyUtil.changeStoreProperties(keySpec, TableFormat.MIXED_ICEBERG));
     }
     if (Maps.difference(properties, metadata.properties()).areEqual()) {
       return metadata;
     }
-    return TableMetadata.buildFrom(metadata)
-        .setProperties(properties)
-        .discardChanges()
-        .build();
+    return TableMetadata.buildFrom(metadata).setProperties(properties).discardChanges().build();
   }
 
-  public static boolean isLegacyMixedIceberg(com.netease.arctic.server.table.TableMetadata internalTableMetadata) {
-    return TableFormat.MIXED_ICEBERG == internalTableMetadata.getFormat() &&
-        !Boolean.parseBoolean(internalTableMetadata.getProperties().get(MIXED_ICEBERG_BASED_REST));
+  public static boolean isLegacyMixedIceberg(
+      com.netease.arctic.server.table.TableMetadata internalTableMetadata) {
+    return TableFormat.MIXED_ICEBERG == internalTableMetadata.getFormat()
+        && !Boolean.parseBoolean(
+            internalTableMetadata.getProperties().get(MIXED_ICEBERG_BASED_REST));
   }
 
   /**
@@ -229,7 +234,8 @@ public class InternalTableUtil {
     Configuration conf = store.getConfiguration();
     String warehouse = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
     String ioImpl =
-        catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, defaultFileIoImpl(warehouse));
+        catalogProperties.getOrDefault(
+            CatalogProperties.FILE_IO_IMPL, defaultFileIoImpl(warehouse));
     FileIO fileIO = org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
     return ArcticFileIOs.buildAdaptIcebergFileIO(store, fileIO);
   }

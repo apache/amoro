@@ -28,10 +28,8 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.MixedDataTestHelpers;
-import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
-import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.iceberg.AppendFiles;
@@ -39,12 +37,10 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
-import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
-import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,7 +50,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.App;
 
 import java.util.List;
 import java.util.Map;
@@ -197,8 +192,7 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
 
       table.refresh();
       // scan table records.
-      List<Record> records =
-          MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue());
+      List<Record> records = MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue());
       Assertions.assertEquals(expectedResult.size(), records.size());
     }
   }
@@ -265,13 +259,14 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
       List<Record> results = writeTestData(restTable, null, newChangeAdded, newChangeDelete);
 
       // read data through historical table
-      List<Record> hisScanResult = MixedDataTestHelpers.readTable(historicalTable, Expressions.alwaysTrue());
+      List<Record> hisScanResult =
+          MixedDataTestHelpers.readTable(historicalTable, Expressions.alwaysTrue());
       Assertions.assertEquals(hisScanResult.size(), results.size());
 
       // read data through rest-based table
-      List<Record> restScanResult = MixedDataTestHelpers.readTable(restTable, Expressions.alwaysTrue());
+      List<Record> restScanResult =
+          MixedDataTestHelpers.readTable(restTable, Expressions.alwaysTrue());
       Assertions.assertEquals(results.size(), restScanResult.size());
-
 
       // read data through historical table.
       List<Record> scanHistorical =
@@ -279,9 +274,10 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
       Assertions.assertEquals(results.size(), scanHistorical.size());
 
       // TODO: there is bug in unkeyed-table.location.
-      String location = tableService.loadTableMetadata(tableIdentifier.buildTableIdentifier()).getTableLocation();
+      String location =
+          tableService.loadTableMetadata(tableIdentifier.buildTableIdentifier()).getTableLocation();
       ArcticFileIO io = historicalTable.io();
-      //drop table through rest-catalog
+      // drop table through rest-catalog
       catalog.dropTable(tableIdentifier, true);
       Assertions.assertTrue(catalog.listTables(database).isEmpty());
       Assertions.assertTrue(historicalCatalog.listTables(database).isEmpty());
@@ -303,14 +299,18 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
       Assertions.assertEquals(1, historicalCatalog.listTables(database).size());
 
       // assert load table failed.
-      Assertions.assertThrows(Exception.class, () -> {
-        historicalCatalog.loadTable(tableIdentifier);
-      });
+      Assertions.assertThrows(
+          Exception.class,
+          () -> {
+            historicalCatalog.loadTable(tableIdentifier);
+          });
 
       // assert drop table failed.
-      Assertions.assertThrows(Exception.class, () -> {
-        historicalCatalog.dropTable(tableIdentifier, true);
-      });
+      Assertions.assertThrows(
+          Exception.class,
+          () -> {
+            historicalCatalog.dropTable(tableIdentifier, true);
+          });
       // clean up the table.
       catalog.dropTable(tableIdentifier, true);
     }
@@ -327,9 +327,8 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
       List<Record> changeAdded,
       List<Record> changeDelete) {
     table.refresh();
-    List<Record> initRecords = Lists.newArrayList(
-        MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue())
-    );
+    List<Record> initRecords =
+        Lists.newArrayList(MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue()));
     List<Record> finalRecords = null;
     long txId;
     if (baseAdded != null && !baseAdded.isEmpty()) {
@@ -353,9 +352,8 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
         changeInsertFiles.forEach(appendFiles::appendFile);
         appendFiles.commit();
         initRecords.addAll(changeAdded);
-        finalRecords = Lists.newArrayList(
-            MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue())
-        );
+        finalRecords =
+            Lists.newArrayList(MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue()));
         System.out.println(finalRecords.size());
       }
 
@@ -374,15 +372,13 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
         initRecords = Lists.newArrayList(results.values());
       }
     }
-    finalRecords = Lists.newArrayList(
-        MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue())
-    );
+    finalRecords =
+        Lists.newArrayList(MixedDataTestHelpers.readTable(table, Expressions.alwaysTrue()));
     System.out.println(finalRecords.size());
     return initRecords;
   }
 
   private ArcticCatalog loadMixedIcebergCatalog() {
-    return CatalogLoader.load(
-        ams.getTableServiceUrl() + "/" + catalogName());
+    return CatalogLoader.load(ams.getTableServiceUrl() + "/" + catalogName());
   }
 }

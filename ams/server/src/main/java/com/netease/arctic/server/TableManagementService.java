@@ -99,8 +99,11 @@ public class TableManagementService implements ArcticTableMetastore.Iface {
   public TableMeta getTable(TableIdentifier tableIdentifier) {
     TableMetadata tableMetadata = tableService.loadTableMetadata(tableIdentifier);
     if (!InternalTableUtil.isLegacyMixedIceberg(tableMetadata)) {
-      throw new IllegalArgumentException("The table " + tableIdentifier.toString() + " is based" +
-          " on rest-catalog, please upgrade your connector");
+      throw new IllegalArgumentException(
+          "The table "
+              + tableIdentifier.toString()
+              + " is based"
+              + " on rest-catalog, please upgrade your connector");
     }
     return tableMetadata.buildTableMeta();
   }

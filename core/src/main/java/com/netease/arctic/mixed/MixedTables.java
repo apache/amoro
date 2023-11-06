@@ -30,7 +30,6 @@ import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
@@ -39,7 +38,6 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
-import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,7 +118,8 @@ public class MixedTables {
 
     Map<String, String> baseProperties = Maps.newHashMap(properties);
     baseProperties.putAll(
-        TablePropertyUtil.baseStoreProperties(keySpec, changeIdentifier, TableFormat.MIXED_ICEBERG));
+        TablePropertyUtil.baseStoreProperties(
+            keySpec, changeIdentifier, TableFormat.MIXED_ICEBERG));
     Catalog.TableBuilder baseBuilder =
         icebergCatalog
             .buildTable(baseIdentifier, schema)
@@ -139,8 +138,7 @@ public class MixedTables {
 
     Map<String, String> changeProperties = Maps.newHashMap(properties);
     changeProperties.putAll(
-        TablePropertyUtil.changeStoreProperties(keySpec, TableFormat.MIXED_ICEBERG)
-    );
+        TablePropertyUtil.changeStoreProperties(keySpec, TableFormat.MIXED_ICEBERG));
     Catalog.TableBuilder changeBuilder =
         icebergCatalog
             .buildTable(changeIdentifier, schema)
