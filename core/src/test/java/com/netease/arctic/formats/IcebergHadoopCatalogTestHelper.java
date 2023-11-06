@@ -80,8 +80,12 @@ public class IcebergHadoopCatalogTestHelper extends AbstractFormatCatalogTestHel
 
   @Override
   public Catalog originalCatalog() {
-    return IcebergCatalogFactory.icebergCatalog(
-        catalogName, getMetastoreType(), catalogProperties, new Configuration());
+    Map<String, String> props =
+        CatalogUtil.withIcebergCatalogInitializeProperties(
+            catalogName, getMetastoreType(), catalogProperties);
+    TableMetaStore metaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
+    return org.apache.iceberg.CatalogUtil.buildIcebergCatalog(
+        catalogName, props, metaStore.getConfiguration());
   }
 
   @Override

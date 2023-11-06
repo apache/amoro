@@ -18,7 +18,6 @@
 
 package com.netease.arctic.catalog;
 
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.io.ArcticFileIO;
@@ -58,13 +57,6 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
 
   private String name;
   private Map<String, String> catalogProperties;
-
-  public IcebergCatalogWrapper() {}
-
-  public IcebergCatalogWrapper(CatalogMeta meta) {
-    TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(meta);
-    initialize(meta.getCatalogName(), meta.getCatalogProperties(), tableMetaStore);
-  }
 
   @Override
   public String name() {

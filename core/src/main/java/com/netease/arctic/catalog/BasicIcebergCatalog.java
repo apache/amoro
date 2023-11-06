@@ -18,9 +18,6 @@
 
 package com.netease.arctic.catalog;
 
-import com.netease.arctic.AmsClient;
-import com.netease.arctic.PooledAmsClient;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
@@ -35,7 +32,6 @@ import java.util.Map;
 /** A wrapper class around {@link Catalog} and implement {@link ArcticCatalog}. */
 public class BasicIcebergCatalog implements ArcticCatalog {
 
-  private AmsClient client;
   private IcebergCatalogWrapper catalogWrapper;
 
   @Override
@@ -45,9 +41,6 @@ public class BasicIcebergCatalog implements ArcticCatalog {
 
   @Override
   public void initialize(String name, Map<String, String> properties, TableMetaStore metaStore) {
-    if (properties.containsKey(CatalogMetaProperties.AMS_URI)) {
-      this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
-    }
     this.catalogWrapper = new IcebergCatalogWrapper();
     this.catalogWrapper.initialize(name, properties, metaStore);
   }

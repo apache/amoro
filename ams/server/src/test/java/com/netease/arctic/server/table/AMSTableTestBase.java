@@ -23,12 +23,12 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.catalog.IcebergCatalogWrapper;
 import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.hive.TestHMS;
-import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
@@ -79,10 +79,14 @@ public class AMSTableTestBase extends TableServiceTestBase {
         tableMeta = buildTableMeta();
       }
     } else {
-      if (TableFormat.ICEBERG.equals(catalogTestHelper.tableFormat())) {
-        externalCatalog = new IcebergCatalogWrapper(catalogMeta);
-      } else if (TableFormat.MIXED_ICEBERG.equals(catalogTestHelper.tableFormat())) {
-        externalCatalog = new BasicMixedIcebergCatalog(catalogMeta);
+      if (TableFormat.ICEBERG.equals(catalogTestHelper.tableFormat())
+          || TableFormat.MIXED_ICEBERG.equals(catalogTestHelper.tableFormat())) {
+        externalCatalog =
+            CatalogLoader.createCatalog(
+                catalogMeta.getCatalogName(),
+                catalogMeta.getCatalogType(),
+                catalogMeta.getCatalogProperties(),
+                CatalogUtil.buildMetaStore(catalogMeta));
       } else if (TableFormat.MIXED_HIVE.equals(catalogTestHelper.tableFormat())) {
         mixedTables = catalogTestHelper.buildMixedTables(catalogMeta);
         tableMeta = buildTableMeta();

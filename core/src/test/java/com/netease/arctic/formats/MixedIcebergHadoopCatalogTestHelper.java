@@ -6,6 +6,7 @@ import com.netease.arctic.AmoroCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.formats.mixed.MixedIcebergCatalogFactory;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
@@ -53,7 +54,7 @@ public class MixedIcebergHadoopCatalogTestHelper
   public ArcticCatalog originalCatalog() {
     CatalogMeta meta = getCatalogMeta();
     TableMetaStore metaStore = CatalogUtil.buildMetaStore(meta);
-    return MixedIcebergCatalogFactory.createMixedCatalog(
+    return CatalogLoader.createCatalog(
         catalogName(), meta.getCatalogType(), meta.getCatalogProperties(), metaStore);
   }
 

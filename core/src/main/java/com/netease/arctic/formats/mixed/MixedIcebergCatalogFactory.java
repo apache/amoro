@@ -24,8 +24,6 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.utils.CatalogUtil;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 
 import java.util.Map;
 
@@ -36,21 +34,9 @@ public class MixedIcebergCatalogFactory implements FormatCatalogFactory {
       String metastoreType,
       Map<String, String> properties,
       TableMetaStore metaStore) {
-    ArcticCatalog catalog = createMixedCatalog(catalogName, metastoreType, properties, metaStore);
+    ArcticCatalog catalog =
+        CatalogLoader.createCatalog(catalogName, metastoreType, properties, metaStore);
     return new MixedCatalog(catalog, format());
-  }
-
-  @VisibleForTesting
-  public static ArcticCatalog createMixedCatalog(
-      String catalogName,
-      String metastoreType,
-      Map<String, String> properties,
-      TableMetaStore metaStore) {
-    String catalogImpl = CatalogLoader.catalogImpl(metastoreType, properties);
-    ArcticCatalog catalog = CatalogLoader.buildCatalog(catalogImpl);
-    properties = CatalogUtil.addIcebergCatalogProperties(metastoreType, properties);
-    catalog.initialize(catalogName, properties, metaStore);
-    return catalog;
   }
 
   @Override

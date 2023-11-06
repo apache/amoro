@@ -20,7 +20,6 @@ package com.netease.arctic.mixed;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.PooledAmsClient;
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
@@ -34,7 +33,6 @@ import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
-import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
@@ -63,13 +61,6 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   private Pattern databaseFilterPattern;
   private AmsClient client;
   private MixedTables tables;
-
-  public BasicMixedIcebergCatalog() {}
-
-  public BasicMixedIcebergCatalog(CatalogMeta meta) {
-    this.initialize(
-        meta.getCatalogName(), meta.getCatalogProperties(), CatalogUtil.buildMetaStore(meta));
-  }
 
   @Override
   public String name() {

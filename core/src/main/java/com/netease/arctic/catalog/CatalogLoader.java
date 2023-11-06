@@ -35,6 +35,7 @@ import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
+import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.common.DynConstructors;
@@ -209,18 +210,38 @@ public class CatalogLoader {
       String type = catalogMeta.getCatalogType();
       catalogMeta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, metaStoreUrl);
       CatalogUtil.mergeCatalogProperties(catalogMeta, properties);
-      properties =
-          CatalogUtil.addIcebergCatalogProperties(
-              catalogMeta.getCatalogType(), catalogMeta.getCatalogProperties());
-      String catalogImpl = catalogImpl(type, catalogMeta.getCatalogProperties());
-      ArcticCatalog catalog = buildCatalog(catalogImpl);
-      catalog.initialize(catalogName, properties, CatalogUtil.buildMetaStore(catalogMeta));
-      return catalog;
+      return createCatalog(
+          catalogName,
+          type,
+          catalogMeta.getCatalogProperties(),
+          CatalogUtil.buildMetaStore(catalogMeta));
     } catch (NoSuchObjectException e1) {
       throw new IllegalArgumentException("catalog not found, please check catalog name", e1);
     } catch (Exception e) {
       throw new IllegalStateException("failed when load catalog " + catalogName, e);
     }
+  }
+
+  /**
+   * build and initialize a mixed-format catalog.
+   *
+   * @param catalogName catalog-name
+   * @param metastoreType metastore type
+   * @param properties catalog properties
+   * @param metaStore auth context
+   * @return initialized catalog.
+   */
+  public static ArcticCatalog createCatalog(
+      String catalogName,
+      String metastoreType,
+      Map<String, String> properties,
+      TableMetaStore metaStore) {
+    properties =
+        CatalogUtil.withIcebergCatalogInitializeProperties(catalogName, metastoreType, properties);
+    String catalogImpl = catalogImpl(metastoreType, properties);
+    ArcticCatalog catalog = buildCatalog(catalogImpl);
+    catalog.initialize(catalogName, properties, metaStore);
+    return catalog;
   }
 
   public static ArcticCatalog buildCatalog(String impl) {
