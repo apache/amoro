@@ -19,7 +19,9 @@
 package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
+import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
@@ -54,6 +56,18 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
             tableRuntime.getTableIdentifier(),
             pendingInput);
         tableRuntime.setPendingInput(pendingInput);
+      }
+    }
+  }
+
+  @Override
+  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
+    // After disabling self-optimizing, close the currently running optimizing process.
+    if (originalConfig.getOptimizingConfig().isEnabled()
+        && !tableRuntime.getTableConfiguration().getOptimizingConfig().isEnabled()) {
+      OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
+      if (optimizingProcess.getStatus() == OptimizingProcess.Status.RUNNING) {
+        optimizingProcess.close();
       }
     }
   }
