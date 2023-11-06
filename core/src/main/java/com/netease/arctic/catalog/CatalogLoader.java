@@ -244,7 +244,7 @@ public class CatalogLoader {
     return catalog;
   }
 
-  public static ArcticCatalog buildCatalog(String impl) {
+  private static ArcticCatalog buildCatalog(String impl) {
     DynConstructors.Ctor<ArcticCatalog> ctor;
     try {
       ctor = DynConstructors.builder(ArcticCatalog.class).impl(impl).buildChecked();
