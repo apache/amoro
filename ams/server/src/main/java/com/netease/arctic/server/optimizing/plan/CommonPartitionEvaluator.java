@@ -292,7 +292,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     if (!reachFullInterval()) {
       return false;
     }
-    return anyDeleteExist() || fragmentFileCount >= 2;
+    return anyDeleteExist() || fragmentFileCount >= 2 || segmentFileCount >= 2;
   }
 
   protected String name() {

@@ -316,6 +316,11 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
                   rewritePosDataFiles.add(f.getFile());
                   deleteFiles.addAll(f.getDeleteFiles());
                 });
+        if (rewriteDataFiles.size() == 1
+            && rewritePosDataFiles.size() == 0
+            && deleteFiles.size() == 0) {
+          continue;
+        }
         results.add(new SplitTask(rewriteDataFiles, rewritePosDataFiles, deleteFiles));
       }
       return results;
