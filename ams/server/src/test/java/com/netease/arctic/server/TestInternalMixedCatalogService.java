@@ -94,7 +94,8 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
     @Test
     public void test() {
       ArcticCatalog catalog = loadMixedIcebergCatalog();
-      Assertions.assertEquals(MixedIcebergAmoroCatalog.class.getName(), catalog.getClass().getName());
+      Assertions.assertEquals(
+          MixedIcebergAmoroCatalog.class.getName(), catalog.getClass().getName());
       Assertions.assertTrue(catalog.listDatabases().isEmpty());
 
       catalog.createDatabase(database);

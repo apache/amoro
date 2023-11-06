@@ -67,8 +67,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-/** Basic {@link ArcticCatalog} implementation.
- * This class is deprecated, using {@link com.netease.arctic.mixed.MixedIcebergAmoroCatalog} instead.
+/**
+ * Basic {@link ArcticCatalog} implementation. This class is deprecated, using {@link
+ * com.netease.arctic.mixed.MixedIcebergAmoroCatalog} instead.
  */
 @Deprecated
 public class BasicArcticCatalog implements ArcticCatalog {
