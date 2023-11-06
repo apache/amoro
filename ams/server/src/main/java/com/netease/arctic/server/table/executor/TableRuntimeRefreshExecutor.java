@@ -19,6 +19,7 @@
 package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
@@ -61,10 +62,13 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   @Override
   public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
-    // After disabling self-optimizing, use dispose() to change the status of the table to IDLE
+    // After disabling self-optimizing, close the currently running optimizing process.
     if (originalConfig.getOptimizingConfig().isEnabled()
         && !tableRuntime.getTableConfiguration().getOptimizingConfig().isEnabled()) {
-      tableRuntime.dispose();
+      OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
+      if (optimizingProcess.getStatus() == OptimizingProcess.Status.RUNNING) {
+        optimizingProcess.close();
+      }
     }
   }
 
