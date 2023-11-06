@@ -23,7 +23,6 @@ import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.TableTrashManagers;
 import com.netease.arctic.op.CreateTableTransaction;
@@ -36,7 +35,6 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import com.netease.arctic.utils.CatalogUtil;
-import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
@@ -71,7 +69,8 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   public BasicMixedIcebergCatalog() {}
 
   public BasicMixedIcebergCatalog(CatalogMeta meta) {
-    this.initialize(meta);
+    this.initialize(
+        meta.getCatalogName(), meta.getCatalogProperties(), CatalogUtil.buildMetaStore(meta));
   }
 
   @Override
@@ -80,11 +79,14 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   }
 
   @Override
-  public void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties) {
+  public void initialize(
+      AmsClient client, CatalogMeta catalogMeta, Map<String, String> properties) {
     this.client = client;
     this.clientSideProperties = properties == null ? Maps.newHashMap() : properties;
-    this.name = meta.getCatalogName();
-    this.initialize(meta);
+    CatalogUtil.mergeCatalogProperties(catalogMeta, clientSideProperties);
+    TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
+    this.initialize(
+        catalogMeta.getCatalogName(), catalogMeta.getCatalogProperties(), tableMetaStore);
   }
 
   @Override
@@ -112,26 +114,6 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
         this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
       }
     }
-  }
-
-  private void initialize(CatalogMeta catalogMeta) {
-    CatalogUtil.mergeCatalogProperties(catalogMeta, clientSideProperties);
-
-    catalogMeta.putToCatalogProperties(
-        org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE, catalogMeta.getCatalogType());
-    if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(catalogMeta.getCatalogType())) {
-      catalogMeta
-          .getCatalogProperties()
-          .put(CatalogProperties.CATALOG_IMPL, CatalogLoader.GLUE_CATALOG_IMPL);
-    }
-    if (catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
-      catalogMeta
-          .getCatalogProperties()
-          .remove(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE);
-    }
-    TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
-    this.initialize(
-        catalogMeta.getCatalogName(), catalogMeta.getCatalogProperties(), tableMetaStore);
   }
 
   @Override
@@ -246,7 +228,11 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     }
     try {
       CatalogMeta catalogMeta = client.getCatalog(this.name());
-      this.initialize(catalogMeta);
+      CatalogUtil.mergeCatalogProperties(catalogMeta, clientSideProperties);
+      this.initialize(
+          catalogMeta.getCatalogName(),
+          catalogMeta.getCatalogProperties(),
+          CatalogUtil.buildMetaStore(catalogMeta));
     } catch (TException e) {
       throw new IllegalStateException(String.format("failed load catalog %s.", name()), e);
     }

@@ -34,7 +34,6 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import com.netease.arctic.utils.CatalogUtil;
-import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
@@ -44,7 +43,6 @@ import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.rest.RESTCatalog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,19 +63,6 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
   public IcebergCatalogWrapper() {}
 
   public IcebergCatalogWrapper(CatalogMeta meta) {
-    meta.putToCatalogProperties(
-        org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE, meta.getCatalogType());
-    if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(meta.getCatalogType())) {
-      meta.getCatalogProperties()
-          .put(CatalogProperties.CATALOG_IMPL, CatalogLoader.GLUE_CATALOG_IMPL);
-    } else if (CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(meta.getCatalogType())) {
-      meta.putToCatalogProperties(CatalogProperties.WAREHOUSE_LOCATION, meta.getCatalogName());
-      meta.putToCatalogProperties(CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
-    }
-
-    if (meta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
-      meta.getCatalogProperties().remove(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE);
-    }
     TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(meta);
     initialize(meta.getCatalogName(), meta.getCatalogProperties(), tableMetaStore);
   }

@@ -33,6 +33,7 @@ import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.CatalogProperties;
@@ -206,6 +207,7 @@ public class CatalogLoader {
     try {
       CatalogMeta catalogMeta = client.getCatalog(catalogName);
       String type = catalogMeta.getCatalogType();
+      catalogMeta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, metaStoreUrl);
       CatalogUtil.mergeCatalogProperties(catalogMeta, properties);
       String catalogImpl = catalogImpl(type, catalogMeta.getCatalogProperties());
       ArcticCatalog catalog = buildCatalog(catalogImpl);

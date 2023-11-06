@@ -33,6 +33,7 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BasicIcebergCatalog;
+import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.op.ArcticTableOperations;
@@ -43,6 +44,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.BaseTable;
+import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.hadoop.HadoopTableOperations;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -102,6 +104,20 @@ public class CatalogUtil {
     if (properties != null) {
       properties.forEach(meta::putToCatalogProperties);
     }
+  }
+
+  public static Map<String, String> addIcebergCatalogProperties(
+      String metastoreType, Map<String, String> properties) {
+    Map<String, String> icebergCatalogProperties = Maps.newHashMap(properties);
+    icebergCatalogProperties.put(
+        org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE, metastoreType);
+    if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(metastoreType)) {
+      icebergCatalogProperties.put(CatalogProperties.CATALOG_IMPL, CatalogLoader.GLUE_CATALOG_IMPL);
+    }
+    if (icebergCatalogProperties.containsKey(CatalogProperties.CATALOG_IMPL)) {
+      icebergCatalogProperties.remove(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE);
+    }
+    return icebergCatalogProperties;
   }
 
   /** Build {@link TableMetaStore} from catalog meta. */

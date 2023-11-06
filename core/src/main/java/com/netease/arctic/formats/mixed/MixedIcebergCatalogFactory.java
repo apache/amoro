@@ -21,13 +21,11 @@ package com.netease.arctic.formats.mixed;
 import com.netease.arctic.FormatCatalog;
 import com.netease.arctic.FormatCatalogFactory;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.TableMetaStore;
-import org.apache.iceberg.CatalogProperties;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 
@@ -50,17 +48,8 @@ public class MixedIcebergCatalogFactory implements FormatCatalogFactory {
       TableMetaStore metaStore) {
     String catalogImpl = CatalogLoader.catalogImpl(metastoreType, properties);
     ArcticCatalog catalog = CatalogLoader.buildCatalog(catalogImpl);
-
-    Map<String, String> initializeProperties = Maps.newHashMap(properties);
-    initializeProperties.put(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE, metastoreType);
-    if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(metastoreType)) {
-      initializeProperties.put(CatalogProperties.CATALOG_IMPL, CatalogLoader.GLUE_CATALOG_IMPL);
-    }
-    if (initializeProperties.containsKey(CatalogProperties.CATALOG_IMPL)) {
-      initializeProperties.remove(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE);
-    }
-
-    catalog.initialize(catalogName, initializeProperties, metaStore);
+    properties = CatalogUtil.addIcebergCatalogProperties(metastoreType, properties);
+    catalog.initialize(catalogName, properties, metaStore);
     return catalog;
   }
 
