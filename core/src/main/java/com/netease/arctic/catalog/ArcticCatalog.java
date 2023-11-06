@@ -18,8 +18,6 @@
 
 package com.netease.arctic.catalog;
 
-import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
@@ -42,19 +40,6 @@ public interface ArcticCatalog {
    * @return catalog's name
    */
   String name();
-
-  /**
-   * Initialize a catalog given a custom name and a map of catalog properties. all catalog implement
-   * must be no-args construct. Catalogs will call this method after implement object created.
-   *
-   * <p>This method is deprecated, using {@link #initialize(String, Map, TableMetaStore)} instead.
-   *
-   * @param client client of arctic metastore
-   * @param meta catalog init struct
-   * @param properties client side catalog properties
-   */
-  @Deprecated
-  void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties);
 
   /**
    * Initialize a catalog given a custom name and a map of catalog properties. all catalog implement

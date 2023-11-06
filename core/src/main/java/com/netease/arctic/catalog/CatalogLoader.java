@@ -209,9 +209,12 @@ public class CatalogLoader {
       String type = catalogMeta.getCatalogType();
       catalogMeta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, metaStoreUrl);
       CatalogUtil.mergeCatalogProperties(catalogMeta, properties);
+      properties =
+          CatalogUtil.addIcebergCatalogProperties(
+              catalogMeta.getCatalogType(), catalogMeta.getCatalogProperties());
       String catalogImpl = catalogImpl(type, catalogMeta.getCatalogProperties());
       ArcticCatalog catalog = buildCatalog(catalogImpl);
-      catalog.initialize(client, catalogMeta, properties);
+      catalog.initialize(catalogName, properties, CatalogUtil.buildMetaStore(catalogMeta));
       return catalog;
     } catch (NoSuchObjectException e1) {
       throw new IllegalArgumentException("catalog not found, please check catalog name", e1);

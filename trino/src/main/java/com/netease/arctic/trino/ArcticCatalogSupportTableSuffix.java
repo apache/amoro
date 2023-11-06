@@ -85,11 +85,6 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   }
 
   @Override
-  public void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties) {
-    arcticCatalog.initialize(client, meta, properties);
-  }
-
-  @Override
   public void initialize(String name, Map<String, String> properties, TableMetaStore metaStore) {
     arcticCatalog.initialize(name, properties, metaStore);
   }
