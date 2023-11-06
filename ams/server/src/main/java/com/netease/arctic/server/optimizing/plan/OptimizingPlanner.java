@@ -51,6 +51,8 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   private final PartitionPlannerFactory partitionPlannerFactory;
   private List<TaskDescriptor> tasks;
 
+  private List<AbstractPartitionPlan> actualPartitionPlans;
+
   public OptimizingPlanner(TableRuntime tableRuntime, ArcticTable table, double availableCore) {
     super(tableRuntime, table);
     this.partitionFilter = tableRuntime.getPendingInput() == null ?
@@ -67,13 +69,17 @@ public class OptimizingPlanner extends OptimizingEvaluator {
   }
 
   public Map<String, Long> getFromSequence() {
-    return partitionPlanMap.entrySet().stream()
-        .collect(Collectors.toMap(Map.Entry::getKey, e -> ((AbstractPartitionPlan) e.getValue()).getFromSequence()));
+    return actualPartitionPlans.stream()
+        .collect(
+            Collectors.toMap(
+                AbstractPartitionPlan::getPartition, AbstractPartitionPlan::getFromSequence));
   }
 
   public Map<String, Long> getToSequence() {
-    return partitionPlanMap.entrySet().stream()
-        .collect(Collectors.toMap(Map.Entry::getKey, e -> ((AbstractPartitionPlan) e.getValue()).getToSequence()));
+    return actualPartitionPlans.stream()
+        .collect(
+            Collectors.toMap(
+                AbstractPartitionPlan::getPartition, AbstractPartitionPlan::getToSequence));
   }
 
   @Override
@@ -120,10 +126,10 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     evaluators.sort(Comparator.comparing(PartitionEvaluator::getWeight, Comparator.reverseOrder()));
 
     double maxInputSize = MAX_INPUT_FILE_SIZE_PER_THREAD * availableCore;
-    List<PartitionEvaluator> inputPartitions = Lists.newArrayList();
+    actualPartitionPlans = Lists.newArrayList();
     long actualInputSize = 0;
     for (PartitionEvaluator evaluator : evaluators) {
-      inputPartitions.add(evaluator);
+      actualPartitionPlans.add((AbstractPartitionPlan) evaluator);
       actualInputSize += evaluator.getCost();
       if (actualInputSize > maxInputSize) {
         break;
@@ -132,21 +138,28 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
     double avgThreadCost = actualInputSize / availableCore;
     List<TaskDescriptor> tasks = Lists.newArrayList();
-    for (PartitionEvaluator evaluator : inputPartitions) {
-      tasks.addAll(((AbstractPartitionPlan) evaluator).splitTasks((int) (actualInputSize / avgThreadCost)));
+    for (AbstractPartitionPlan partitionPlan : actualPartitionPlans) {
+      tasks.addAll(partitionPlan.splitTasks((int) (actualInputSize / avgThreadCost)));
     }
     if (!tasks.isEmpty()) {
-      if (evaluators.stream().anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.FULL)) {
+      if (evaluators.stream()
+          .anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.FULL)) {
         optimizingType = OptimizingType.FULL;
-      } else if (evaluators.stream().anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.MAJOR)) {
+      } else if (evaluators.stream()
+          .anyMatch(evaluator -> evaluator.getOptimizingType() == OptimizingType.MAJOR)) {
         optimizingType = OptimizingType.MAJOR;
       } else {
         optimizingType = OptimizingType.MINOR;
       }
     }
     long endTime = System.nanoTime();
-    LOG.info("{} finish plan, type = {}, get {} tasks, cost {} ns, {} ms", tableRuntime.getTableIdentifier(),
-        getOptimizingType(), tasks.size(), endTime - startTime, (endTime - startTime) / 1_000_000);
+    LOG.info(
+        "{} finish plan, type = {}, get {} tasks, cost {} ns, {} ms",
+        tableRuntime.getTableIdentifier(),
+        getOptimizingType(),
+        tasks.size(),
+        endTime - startTime,
+        (endTime - startTime) / 1_000_000);
     return cacheAndReturnTasks(tasks);
   }
 
@@ -173,7 +186,8 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     private final String hiveLocation;
     private final long planTime;
 
-    public PartitionPlannerFactory(ArcticTable arcticTable, TableRuntime tableRuntime, long planTime) {
+    public PartitionPlannerFactory(
+        ArcticTable arcticTable, TableRuntime tableRuntime, long planTime) {
       this.arcticTable = arcticTable;
       this.tableRuntime = tableRuntime;
       this.planTime = planTime;
@@ -189,7 +203,8 @@ public class OptimizingPlanner extends OptimizingEvaluator {
         return new IcebergPartitionPlan(tableRuntime, arcticTable, partitionPath, planTime);
       } else {
         if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {
-          return new MixedHivePartitionPlan(tableRuntime, arcticTable, partitionPath, hiveLocation, planTime);
+          return new MixedHivePartitionPlan(
+              tableRuntime, arcticTable, partitionPath, hiveLocation, planTime);
         } else {
           return new MixedIcebergPartitionPlan(tableRuntime, arcticTable, partitionPath, planTime);
         }
