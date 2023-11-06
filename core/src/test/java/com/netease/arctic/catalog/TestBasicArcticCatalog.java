@@ -111,7 +111,7 @@ public class TestBasicArcticCatalog extends CatalogTestBase {
             testCatalogMeta,
             CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
             "false");
-    getCatalog().refresh();
+    refreshCatalog();
     ArcticTable loadTable = getCatalog().loadTable(createTable.id());
     Assert.assertFalse(
         PropertyUtil.propertyAsBoolean(

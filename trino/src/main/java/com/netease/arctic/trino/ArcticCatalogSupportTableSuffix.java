@@ -152,11 +152,6 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   }
 
   @Override
-  public void refresh() {
-    arcticCatalog.refresh();
-  }
-
-  @Override
   public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
     return arcticCatalog.getTableBlockerManager(tableIdentifier);
   }

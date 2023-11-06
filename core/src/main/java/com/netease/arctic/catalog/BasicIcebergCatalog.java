@@ -20,7 +20,6 @@ package com.netease.arctic.catalog;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.PooledAmsClient;
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
@@ -29,7 +28,6 @@ import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.Catalog;
-import org.apache.thrift.TException;
 
 import java.util.List;
 import java.util.Map;
@@ -92,20 +90,6 @@ public class BasicIcebergCatalog implements ArcticCatalog {
   @Override
   public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema) {
     return catalogWrapper.newTableBuilder(identifier, schema);
-  }
-
-  @Override
-  public void refresh() {
-    if (client == null) {
-      throw new IllegalStateException("AMSClient is not initialized");
-    }
-    try {
-      CatalogMeta meta = client.getCatalog(catalogWrapper.name());
-      catalogWrapper = new IcebergCatalogWrapper(meta);
-    } catch (TException e) {
-      throw new IllegalStateException(
-          String.format("failed load catalog %s.", catalogWrapper.name()), e);
-    }
   }
 
   @Override

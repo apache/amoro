@@ -136,7 +136,7 @@ public class TestMixedCatalog extends CatalogTestBase {
             testCatalogMeta,
             CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
             "false");
-    getCatalog().refresh();
+    refreshCatalog();
     createTable =
         getCatalog()
             .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
@@ -185,7 +185,7 @@ public class TestMixedCatalog extends CatalogTestBase {
             testCatalogMeta,
             CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
             "false");
-    getCatalog().refresh();
+    refreshCatalog();
     createTable =
         getCatalog()
             .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
@@ -218,7 +218,7 @@ public class TestMixedCatalog extends CatalogTestBase {
             testCatalogMeta,
             CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
             "true");
-    getCatalog().refresh();
+    refreshCatalog();
 
     ArcticTable table = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
     assertRecoverableFileIO(table);
@@ -254,7 +254,7 @@ public class TestMixedCatalog extends CatalogTestBase {
             testCatalogMeta,
             CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
             "true");
-    getCatalog().refresh();
+    refreshCatalog();
 
     ArcticTable table = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
     assertRecoverableFileIO(table);

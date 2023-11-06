@@ -26,7 +26,6 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.NoSuchDatabaseException;
 import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.ams.api.AlreadyExistsException;
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
@@ -192,17 +191,6 @@ public class BasicArcticCatalog implements ArcticCatalog {
   public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema) {
     validate(identifier);
     return new ArcticTableBuilder(identifier, schema);
-  }
-
-  @Override
-  public void refresh() {
-    try {
-      CatalogMeta meta = getClient().getCatalog(name());
-      TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(meta);
-      this.initialize(meta.getCatalogName(), meta.getCatalogProperties(), tableMetaStore);
-    } catch (TException e) {
-      throw new IllegalStateException(String.format("failed load catalog %s.", name()), e);
-    }
   }
 
   @Override

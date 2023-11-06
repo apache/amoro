@@ -227,9 +227,6 @@ public class IcebergCatalogWrapper implements ArcticCatalog {
   }
 
   @Override
-  public void refresh() {}
-
-  @Override
   public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
     return null;
   }

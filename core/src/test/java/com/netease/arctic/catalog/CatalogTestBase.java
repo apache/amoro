@@ -74,6 +74,10 @@ public abstract class CatalogTestBase {
     return catalog;
   }
 
+  protected void refreshCatalog() {
+    this.catalog = CatalogLoader.load(getCatalogUrl());
+  }
+
   protected String getCatalogUrl() {
     return TEST_AMS.getServerUrl() + "/" + catalogMeta.getCatalogName();
   }

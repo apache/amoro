@@ -47,7 +47,6 @@ import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
-import org.apache.thrift.TException;
 
 import java.util.List;
 import java.util.Map;
@@ -207,22 +206,6 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   @Override
   public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema) {
     return new MixedIcebergTableBuilder(identifier, schema);
-  }
-
-  @Override
-  public void refresh() {
-    if (client == null) {
-      throw new UnsupportedOperationException("AMSClient is not initialized");
-    }
-    try {
-      CatalogMeta catalogMeta = client.getCatalog(this.name());
-      this.initialize(
-          catalogMeta.getCatalogName(),
-          catalogMeta.getCatalogProperties(),
-          CatalogUtil.buildMetaStore(catalogMeta));
-    } catch (TException e) {
-      throw new IllegalStateException(String.format("failed load catalog %s.", name()), e);
-    }
   }
 
   @Override

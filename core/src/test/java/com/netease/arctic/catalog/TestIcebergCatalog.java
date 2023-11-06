@@ -78,7 +78,7 @@ public class TestIcebergCatalog extends CatalogTestBase {
             testCatalogMeta,
             CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
             "true");
-    getCatalog().refresh();
+    refreshCatalog();
 
     table = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
     Assert.assertFalse(table.io() instanceof RecoverableHadoopFileIO);
