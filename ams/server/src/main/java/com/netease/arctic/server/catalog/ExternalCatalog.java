@@ -24,8 +24,10 @@ public class ExternalCatalog extends ServerCatalog {
 
   protected ExternalCatalog(CatalogMeta metadata) {
     super(metadata);
-    this.unifiedCatalog = new CommonUnifiedCatalog(this::getMetadata, Maps.newHashMap());
     this.tableMetaStore = CatalogUtil.buildMetaStore(metadata);
+    this.unifiedCatalog =
+        this.tableMetaStore.doAs(
+            () -> new CommonUnifiedCatalog(this::getMetadata, Maps.newHashMap()));
   }
 
   public void syncTable(String database, String tableName, TableFormat format) {

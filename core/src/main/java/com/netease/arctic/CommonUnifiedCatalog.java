@@ -142,8 +142,13 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
 
   @Override
   public synchronized void refresh() {
-    this.meta = metaSupplier.get();
+    CatalogMeta newMeta = metaSupplier.get();
     CatalogUtil.mergeCatalogProperties(meta, properties);
+    if (newMeta.equals(this.meta)) {
+      return;
+    }
+    this.meta = newMeta;
+    this.initializeFormatCatalogs();
   }
 
   protected void initializeFormatCatalogs() {
