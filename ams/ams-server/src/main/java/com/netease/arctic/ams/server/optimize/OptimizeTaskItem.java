@@ -171,8 +171,10 @@ public class OptimizeTaskItem extends IJDBCService {
     long reportTime = System.currentTimeMillis();
     lock.lock();
     try {
-      Preconditions.checkArgument(optimizeRuntime.getStatus() != OptimizeStatus.Prepared,
-          "task prepared, can't on prepared");
+      // Some tasks may not need to be executed, these tasks can change to Prepared from Init directly
+      Preconditions.checkArgument(
+          optimizeRuntime.getStatus() == OptimizeStatus.Init || optimizeRuntime.getStatus() == OptimizeStatus.Executing,
+          optimizeRuntime.getStatus() + " task can't on prepared, only support Init or Executing");
       OptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
       if (newRuntime.getExecuteTime() == OptimizeTaskRuntime.INVALID_TIME) {
         newRuntime.setExecuteTime(preparedTime);
