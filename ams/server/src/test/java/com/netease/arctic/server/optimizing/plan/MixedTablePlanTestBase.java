@@ -177,7 +177,21 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     Assert.assertTrue(taskDescriptors.isEmpty());
 
     // 2.Step2
+    // plan without delete files
+    openFullOptimizing();
+    taskDescriptors = planWithCurrentFiles();
+
+    Assert.assertEquals(1, taskDescriptors.size());
+    assertTask(
+        taskDescriptors.get(0),
+        dataFiles,
+        Collections.emptyList(),
+        Collections.emptyList(),
+        Collections.emptyList());
+
+    // 3.Step3
     // plan with delete files
+    closeFullOptimizing();
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
@@ -191,7 +205,8 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
     Assert.assertTrue(taskDescriptors.isEmpty());
 
-    // 3.Step3
+    // 4.Step4
+    // plan with delete files
     openFullOptimizing();
     taskDescriptors = planWithCurrentFiles();
     Assert.assertEquals(1, taskDescriptors.size());
@@ -405,6 +420,13 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     getArcticTable()
         .updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "3600")
+        .commit();
+  }
+
+  protected void closeFullOptimizing() {
+    getArcticTable()
+        .updateProperties()
+        .remove(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL)
         .commit();
   }
 
