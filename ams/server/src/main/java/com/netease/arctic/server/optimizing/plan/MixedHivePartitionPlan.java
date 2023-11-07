@@ -167,7 +167,9 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
       if (!reachFullInterval() && !reachHiveRefreshInterval()) {
         return false;
       }
-      return fragmentFileCount > getBaseSplitCount() || hasNewHiveData();
+      return fragmentFileCount > getBaseSplitCount()
+          || segmentFileCount > getBaseSplitCount()
+          || hasNewHiveData();
     }
 
     @Override
