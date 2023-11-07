@@ -18,11 +18,10 @@
 
 package com.netease.arctic.catalog;
 
-import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
@@ -46,11 +45,11 @@ public interface ArcticCatalog {
    * Initialize a catalog given a custom name and a map of catalog properties. all catalog implement
    * must be no-args construct. Catalogs will call this method after implement object created.
    *
-   * @param client client of arctic metastore
-   * @param meta catalog init struct
+   * @param name name of catalog
    * @param properties client side catalog properties
+   * @param metaStore auth context.
    */
-  void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties);
+  void initialize(String name, Map<String, String> properties, TableMetaStore metaStore);
 
   /**
    * Show database list of catalog.
@@ -134,9 +133,6 @@ public interface ArcticCatalog {
    * @return the builder to build a table
    */
   TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema);
-
-  /** Refresh catalog meta */
-  void refresh();
 
   /**
    * Return a table blocker manager.

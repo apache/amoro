@@ -95,4 +95,14 @@ public class PaimonCatalog implements FormatCatalog {
       throw new NoSuchDatabaseException(e);
     }
   }
+
+  @Override
+  public boolean dropTable(String database, String table, boolean purge) {
+    try {
+      catalog.dropTable(Identifier.create(database, table), purge);
+      return true;
+    } catch (Catalog.TableNotExistException e) {
+      return false;
+    }
+  }
 }

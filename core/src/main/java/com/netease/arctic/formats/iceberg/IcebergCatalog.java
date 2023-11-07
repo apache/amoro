@@ -20,6 +20,7 @@ package com.netease.arctic.formats.iceberg;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.FormatCatalog;
+import com.netease.arctic.table.TableMetaStore;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
@@ -28,14 +29,20 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class IcebergCatalog implements FormatCatalog {
 
   private final Catalog icebergCatalog;
+  private final TableMetaStore metaStore;
+  private final Map<String, String> properties;
 
-  public IcebergCatalog(Catalog icebergCatalog) {
+  public IcebergCatalog(
+      Catalog icebergCatalog, Map<String, String> properties, TableMetaStore metaStore) {
     this.icebergCatalog = icebergCatalog;
+    this.metaStore = metaStore;
+    this.properties = properties;
   }
 
   @Override
@@ -84,8 +91,15 @@ public class IcebergCatalog implements FormatCatalog {
   @Override
   public AmoroTable<?> loadTable(String database, String table) {
     Table icebergTable = icebergCatalog.loadTable(TableIdentifier.of(database, table));
-    return new IcebergTable(
+    return IcebergTable.newIcebergTable(
         com.netease.arctic.table.TableIdentifier.of(icebergCatalog.name(), database, table),
-        icebergTable);
+        icebergTable,
+        metaStore,
+        properties);
+  }
+
+  @Override
+  public boolean dropTable(String database, String table, boolean purge) {
+    return icebergCatalog.dropTable(TableIdentifier.of(database, table), purge);
   }
 }

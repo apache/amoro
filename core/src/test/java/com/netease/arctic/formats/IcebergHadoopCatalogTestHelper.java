@@ -21,11 +21,10 @@ package com.netease.arctic.formats;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.netease.arctic.AmoroCatalog;
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.formats.iceberg.IcebergCatalogFactory;
+import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -38,7 +37,7 @@ import org.apache.iceberg.types.Types;
 import java.util.HashMap;
 import java.util.Map;
 
-public class IcebergHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Catalog> {
+public class IcebergHadoopCatalogTestHelper extends AbstractFormatCatalogTestHelper<Catalog> {
 
   public static final Schema schema =
       new Schema(
@@ -57,18 +56,13 @@ public class IcebergHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Ca
     properties.put(DEFAULT_TABLE_OPTION_KEY, DEFAULT_TABLE_OPTION_VALUE);
   }
 
-  protected final String catalogName;
-
-  protected final Map<String, String> catalogProperties;
-
   public IcebergHadoopCatalogTestHelper(String catalogName, Map<String, String> catalogProperties) {
-    this.catalogName = catalogName;
-    this.catalogProperties = catalogProperties == null ? new HashMap<>() : catalogProperties;
+    super(catalogName, catalogProperties);
   }
 
   @Override
-  public void initWarehouse(String warehouseLocation) {
-    catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE, warehouseLocation);
+  protected TableFormat format() {
+    return TableFormat.ICEBERG;
   }
 
   @Override
@@ -77,27 +71,21 @@ public class IcebergHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Ca
   }
 
   @Override
-  public CatalogMeta getCatalogMeta() {
-    return CatalogTestHelpers.buildCatalogMeta(
-        catalogName, getMetastoreType(), catalogProperties, TableFormat.ICEBERG);
-  }
-
-  @Override
   public AmoroCatalog amoroCatalog() {
     IcebergCatalogFactory icebergCatalogFactory = new IcebergCatalogFactory();
+    TableMetaStore metaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
     return icebergCatalogFactory.create(
-        catalogName, getMetastoreType(), catalogProperties, new Configuration());
+        catalogName, getMetastoreType(), catalogProperties, metaStore);
   }
 
   @Override
   public Catalog originalCatalog() {
-    return IcebergCatalogFactory.icebergCatalog(
-        catalogName, getMetastoreType(), catalogProperties, new Configuration());
-  }
-
-  @Override
-  public String catalogName() {
-    return catalogName;
+    Map<String, String> props =
+        CatalogUtil.withIcebergCatalogInitializeProperties(
+            catalogName, getMetastoreType(), catalogProperties);
+    TableMetaStore metaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
+    return org.apache.iceberg.CatalogUtil.buildIcebergCatalog(
+        catalogName, props, metaStore.getConfiguration());
   }
 
   @Override
@@ -137,10 +125,6 @@ public class IcebergHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Ca
   public void createTable(String db, String tableName) throws Exception {
     Catalog catalog = originalCatalog();
     catalog.createTable(TableIdentifier.of(db, tableName), schema, spec, properties);
-  }
-
-  protected String getMetastoreType() {
-    return CatalogMetaProperties.CATALOG_TYPE_HADOOP;
   }
 
   public static IcebergHadoopCatalogTestHelper defaultHelper() {

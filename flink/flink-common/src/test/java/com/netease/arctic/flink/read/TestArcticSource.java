@@ -127,7 +127,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
 
   @Before
   public void testSetup() throws IOException {
-    ArcticCatalog testCatalog = getCatalog();
+    ArcticCatalog testCatalog = getMixedFormatCatalog();
 
     String db = FAIL_TABLE_ID.getDatabase();
     if (!testCatalog.listDatabases().contains(db)) {
@@ -148,9 +148,9 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
   @After
   public void dropTable() {
     miniClusterResource.cancelAllJobs();
-    getCatalog().dropTable(FAIL_TABLE_ID, true);
-    getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
-    getCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
+    getMixedFormatCatalog().dropTable(FAIL_TABLE_ID, true);
+    getMixedFormatCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
+    getMixedFormatCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
   }
 
   @Test
@@ -296,7 +296,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     TableIdentifier tableId =
         TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_empty_change");
     KeyedTable table =
-        getCatalog()
+        getMixedFormatCatalog()
             .newTableBuilder(tableId, TABLE_SCHEMA)
             .withPartitionSpec(BasicTableTestHelper.SPEC)
             .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
@@ -365,7 +365,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     jobClient.cancel();
 
     Assert.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
-    getCatalog().dropTable(tableId, true);
+    getMixedFormatCatalog().dropTable(tableId, true);
   }
 
   @Test
@@ -373,7 +373,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     final String MAX_CONTINUOUS_EMPTY_COMMITS = "flink.max-continuous-empty-commits";
     TableIdentifier tableId = TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_keyed_tb");
     KeyedTable table =
-        getCatalog()
+        getMixedFormatCatalog()
             .newTableBuilder(tableId, TABLE_SCHEMA)
             .withProperty(MAX_CONTINUOUS_EMPTY_COMMITS, "1")
             .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
@@ -467,7 +467,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     jobClient.cancel();
 
     Assert.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
-    getCatalog().dropTable(tableId, true);
+    getMixedFormatCatalog().dropTable(tableId, true);
   }
 
   @Test
@@ -475,7 +475,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     final String MAX_CONTINUOUS_EMPTY_COMMITS = "flink.max-continuous-empty-commits";
     TableIdentifier tableId = TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_keyed_tb");
     KeyedTable table =
-        getCatalog()
+        getMixedFormatCatalog()
             .newTableBuilder(tableId, TABLE_SCHEMA)
             .withProperty(MAX_CONTINUOUS_EMPTY_COMMITS, "1")
             .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
@@ -569,7 +569,7 @@ public class TestArcticSource extends TestRowDataReaderFunction implements Seria
     jobClient.cancel();
 
     Assert.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
-    getCatalog().dropTable(tableId, true);
+    getMixedFormatCatalog().dropTable(tableId, true);
   }
 
   @Test

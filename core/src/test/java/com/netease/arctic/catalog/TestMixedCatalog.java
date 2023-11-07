@@ -59,8 +59,8 @@ public class TestMixedCatalog extends CatalogTestBase {
 
   @Before
   public void before() {
-    if (!getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
-      getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
+    if (!getMixedFormatCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
+      getMixedFormatCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     }
   }
 
@@ -87,21 +87,22 @@ public class TestMixedCatalog extends CatalogTestBase {
   @Test
   public void testCreateUnkeyedTable() throws TException {
     UnkeyedTable createTable =
-        getCatalog()
+        getMixedFormatCatalog()
             .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
             .withPartitionSpec(getCreateTableSpec())
             .create()
             .asUnkeyedTable();
     validateCreatedTable(createTable);
 
-    UnkeyedTable loadTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID).asUnkeyedTable();
+    UnkeyedTable loadTable =
+        getMixedFormatCatalog().loadTable(TableTestHelper.TEST_TABLE_ID).asUnkeyedTable();
     validateCreatedTable(loadTable);
   }
 
   @Test
   public void testCreateKeyedTable() throws TException {
     KeyedTable createTable =
-        getCatalog()
+        getMixedFormatCatalog()
             .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
             .withPartitionSpec(getCreateTableSpec())
             .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
@@ -109,14 +110,15 @@ public class TestMixedCatalog extends CatalogTestBase {
             .asKeyedTable();
     validateCreatedTable(createTable);
 
-    KeyedTable loadTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID).asKeyedTable();
+    KeyedTable loadTable =
+        getMixedFormatCatalog().loadTable(TableTestHelper.TEST_TABLE_ID).asKeyedTable();
     validateCreatedTable(loadTable);
   }
 
   @Test
   public void testCreateTableWithNewCatalogProperties() throws TException {
     UnkeyedTable createTable =
-        getCatalog()
+        getMixedFormatCatalog()
             .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
             .withPartitionSpec(getCreateTableSpec())
             .create()
@@ -126,7 +128,7 @@ public class TestMixedCatalog extends CatalogTestBase {
             createTable.properties(),
             TableProperties.ENABLE_SELF_OPTIMIZING,
             TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
-    getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
+    getMixedFormatCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
 
     CatalogMeta testCatalogMeta =
         TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
@@ -136,9 +138,9 @@ public class TestMixedCatalog extends CatalogTestBase {
             testCatalogMeta,
             CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
             "false");
-    getCatalog().refresh();
+    refreshMixedFormatCatalog();
     createTable =
-        getCatalog()
+        getMixedFormatCatalog()
             .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
             .withPartitionSpec(getCreateTableSpec())
             .create()
@@ -153,7 +155,7 @@ public class TestMixedCatalog extends CatalogTestBase {
   @Test
   public void testCreateTableWithNewCatalogLogProperties() throws TException {
     UnkeyedTable createTable =
-        getCatalog()
+        getMixedFormatCatalog()
             .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
             .withPartitionSpec(getCreateTableSpec())
             .create()
@@ -163,7 +165,7 @@ public class TestMixedCatalog extends CatalogTestBase {
             createTable.properties(),
             TableProperties.ENABLE_SELF_OPTIMIZING,
             TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
-    getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
+    getMixedFormatCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
 
     CatalogMeta testCatalogMeta =
         TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
@@ -185,9 +187,9 @@ public class TestMixedCatalog extends CatalogTestBase {
             testCatalogMeta,
             CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
             "false");
-    getCatalog().refresh();
+    refreshMixedFormatCatalog();
     createTable =
-        getCatalog()
+        getMixedFormatCatalog()
             .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
             .withPartitionSpec(getCreateTableSpec())
             .withProperty(TableProperties.ENABLE_LOG_STORE, "true")
@@ -203,7 +205,7 @@ public class TestMixedCatalog extends CatalogTestBase {
   @Test
   public void testUnkeyedRecoverableFileIO() throws TException {
     UnkeyedTable createTable =
-        getCatalog()
+        getMixedFormatCatalog()
             .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
             .withPartitionSpec(getCreateTableSpec())
             .create()
@@ -218,14 +220,14 @@ public class TestMixedCatalog extends CatalogTestBase {
             testCatalogMeta,
             CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
             "true");
-    getCatalog().refresh();
+    refreshMixedFormatCatalog();
 
-    ArcticTable table = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
+    ArcticTable table = getMixedFormatCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
     assertRecoverableFileIO(table);
 
-    getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
+    getMixedFormatCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
     createTable =
-        getCatalog()
+        getMixedFormatCatalog()
             .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
             .withPartitionSpec(getCreateTableSpec())
             .create()
@@ -236,7 +238,7 @@ public class TestMixedCatalog extends CatalogTestBase {
   @Test
   public void testKeyedRecoverableFileIO() throws TException {
     KeyedTable createTable =
-        getCatalog()
+        getMixedFormatCatalog()
             .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
             .withPartitionSpec(getCreateTableSpec())
             .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
@@ -254,16 +256,16 @@ public class TestMixedCatalog extends CatalogTestBase {
             testCatalogMeta,
             CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_TABLE_TRASH,
             "true");
-    getCatalog().refresh();
+    refreshMixedFormatCatalog();
 
-    ArcticTable table = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
+    ArcticTable table = getMixedFormatCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
     assertRecoverableFileIO(table);
     assertRecoverableFileIO(table.asKeyedTable().changeTable());
     assertRecoverableFileIO(table.asKeyedTable().baseTable());
 
-    getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
+    getMixedFormatCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
     createTable =
-        getCatalog()
+        getMixedFormatCatalog()
             .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
             .withPartitionSpec(getCreateTableSpec())
             .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
@@ -296,21 +298,22 @@ public class TestMixedCatalog extends CatalogTestBase {
   @Test
   public void testGetTableBlockerManager() {
     KeyedTable createTable =
-        getCatalog()
+        getMixedFormatCatalog()
             .newTableBuilder(TableTestHelper.TEST_TABLE_ID, getCreateTableSchema())
             .withPrimaryKeySpec(BasicTableTestHelper.PRIMARY_KEY_SPEC)
             .withPartitionSpec(getCreateTableSpec())
             .create()
             .asKeyedTable();
-    TableBlockerManager tableBlockerManager = getCatalog().getTableBlockerManager(createTable.id());
+    TableBlockerManager tableBlockerManager =
+        getMixedFormatCatalog().getTableBlockerManager(createTable.id());
     Assert.assertEquals(createTable.id(), tableBlockerManager.tableIdentifier());
     Assert.assertTrue(tableBlockerManager.getBlockers().isEmpty());
   }
 
   @After
   public void after() {
-    getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
-    getCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
+    getMixedFormatCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
+    getMixedFormatCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
   }
 
   protected Schema getCreateTableSchema() {

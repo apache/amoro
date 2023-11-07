@@ -31,8 +31,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.BasicIcebergCatalog;
+import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.op.ArcticTableOperations;
@@ -43,10 +42,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.BaseTable;
+import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.hadoop.HadoopTableOperations;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,9 +65,15 @@ public class CatalogUtil {
 
   /** Return table format set catalog supported. */
   public static Set<TableFormat> tableFormats(CatalogMeta meta) {
-    if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.TABLE_FORMATS)) {
-      String tableFormatsProperty =
-          meta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS);
+    return tableFormats(meta.getCatalogType(), meta.getCatalogProperties());
+  }
+
+  /** Return table format set catalog supported. */
+  public static Set<TableFormat> tableFormats(
+      String metastoreType, Map<String, String> catalogProperties) {
+    if (catalogProperties != null
+        && catalogProperties.containsKey(CatalogMetaProperties.TABLE_FORMATS)) {
+      String tableFormatsProperty = catalogProperties.get(CatalogMetaProperties.TABLE_FORMATS);
       return Arrays.stream(tableFormatsProperty.split(","))
           .map(
               tableFormatString ->
@@ -73,7 +81,7 @@ public class CatalogUtil {
           .collect(Collectors.toSet());
     } else {
       // Generate table format from catalog type for compatibility with older versions
-      switch (meta.getCatalogType()) {
+      switch (metastoreType) {
         case CATALOG_TYPE_AMS:
           return Sets.newHashSet(TableFormat.MIXED_ICEBERG);
         case CATALOG_TYPE_CUSTOM:
@@ -83,7 +91,7 @@ public class CatalogUtil {
         case CATALOG_TYPE_HIVE:
           return Sets.newHashSet(TableFormat.MIXED_HIVE);
         default:
-          throw new IllegalArgumentException("Unsupported catalog type:" + meta.getCatalogType());
+          throw new IllegalArgumentException("Unsupported catalog type:" + metastoreType);
       }
     }
   }
@@ -96,6 +104,42 @@ public class CatalogUtil {
     if (properties != null) {
       properties.forEach(meta::putToCatalogProperties);
     }
+  }
+
+  /**
+   * add initialize properties for iceberg catalog
+   *
+   * @param catalogName - catalog name
+   * @param metastoreType - metastore type
+   * @param properties - catalog properties
+   * @return catalog properties with initialize properties.
+   */
+  public static Map<String, String> withIcebergCatalogInitializeProperties(
+      String catalogName, String metastoreType, Map<String, String> properties) {
+    Map<String, String> icebergCatalogProperties = Maps.newHashMap(properties);
+    icebergCatalogProperties.put(
+        org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE, metastoreType);
+    if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(metastoreType)) {
+      icebergCatalogProperties.put(CatalogProperties.CATALOG_IMPL, CatalogLoader.GLUE_CATALOG_IMPL);
+    }
+    if (CATALOG_TYPE_AMS.equalsIgnoreCase(metastoreType)) {
+      icebergCatalogProperties.put(CatalogProperties.WAREHOUSE_LOCATION, catalogName);
+      if (!icebergCatalogProperties.containsKey(CatalogProperties.CATALOG_IMPL)) {
+        icebergCatalogProperties.put(CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
+      }
+    }
+
+    if (CATALOG_TYPE_CUSTOM.equalsIgnoreCase(metastoreType)) {
+      Preconditions.checkArgument(
+          icebergCatalogProperties.containsKey(CatalogProperties.CATALOG_IMPL),
+          "Custom catalog properties must contains " + CatalogProperties.CATALOG_IMPL);
+    }
+
+    if (icebergCatalogProperties.containsKey(CatalogProperties.CATALOG_IMPL)) {
+      icebergCatalogProperties.remove(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE);
+    }
+
+    return icebergCatalogProperties;
   }
 
   /** Build {@link TableMetaStore} from catalog meta. */
@@ -185,17 +229,6 @@ public class CatalogUtil {
       }
     }
     return table;
-  }
-
-  /**
-   * check arctic catalog is native iceberg catalog
-   *
-   * @param arcticCatalog target arctic catalog
-   * @return Whether native iceberg catalog. true is native iceberg catalog, false isn't native
-   *     iceberg catalog.
-   */
-  public static boolean isIcebergCatalog(ArcticCatalog arcticCatalog) {
-    return arcticCatalog instanceof BasicIcebergCatalog;
   }
 
   /**
