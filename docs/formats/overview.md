@@ -23,7 +23,7 @@ In addition, new table formats such as [Iceberg](https://Iceberg.apache.org/) al
 For users, the design goal of Amoro is to provide an out-of-the-box data lake system. Internally, Amoro's design philosophy is to use different table formats as storage engines for data lakes. 
 This design pattern is more common in open-source systems such as MySQL and ClickHouse.
 
-Currently, Amoro mainly provides the following three table formats:
+Currently, Amoro mainly provides the following four table formats:
 
 - **Iceberg format:** Users can directly entrust their Iceberg tables to Amoro for maintenance, so that users can not only use all the functions of Iceberg tables, but also enjoy the performance and stability improvements brought by Amoro.
 - **Mixed-Iceberg format:** Amoro provides a set of more optimized formats for streaming update scenarios on top of the Iceberg format. If users have high performance requirements for streaming updates or have demands for CDC incremental data reading functions, they can choose to use the Mixed-Iceberg format.
