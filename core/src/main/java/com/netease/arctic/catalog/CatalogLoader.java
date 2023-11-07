@@ -37,7 +37,7 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
-import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.aws.glue.GlueCatalog;
 import org.apache.iceberg.common.DynConstructors;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -52,10 +52,9 @@ import java.util.stream.Collectors;
 public class CatalogLoader {
 
   public static final String AMS_CATALOG_IMPL = BasicArcticCatalog.class.getName();
-  public static final String ICEBERG_CATALOG_IMPL = BasicIcebergCatalog.class.getName();
   public static final String HIVE_CATALOG_IMPL =
       "com.netease.arctic.hive.catalog.ArcticHiveCatalog";
-  public static final String GLUE_CATALOG_IMPL = "org.apache.iceberg.aws.glue.GlueCatalog";
+  public static final String GLUE_CATALOG_IMPL = GlueCatalog.class.getName();
   public static final String MIXED_ICEBERG_CATALOG_IMP = BasicMixedIcebergCatalog.class.getName();
 
   /**
@@ -96,62 +95,34 @@ public class CatalogLoader {
     Preconditions.checkArgument(
         tableFormats.size() == 1, "Catalog support only one table format now.");
     TableFormat tableFormat = tableFormats.iterator().next();
+    Preconditions.checkArgument(
+        TableFormat.MIXED_HIVE == tableFormat || TableFormat.MIXED_ICEBERG == tableFormat,
+        "MixedCatalogLoader only support mixed-format, format: %s",
+        tableFormat.name());
+
     String catalogImpl;
     switch (metastoreType) {
       case CATALOG_TYPE_HADOOP:
+      case CATALOG_TYPE_GLUE:
+      case CATALOG_TYPE_CUSTOM:
         Preconditions.checkArgument(
-            TableFormat.ICEBERG == tableFormat || TableFormat.MIXED_ICEBERG == tableFormat,
-            "Hadoop catalog support iceberg/mixed-iceberg table only.");
-        if (TableFormat.ICEBERG == tableFormat) {
-          catalogImpl = ICEBERG_CATALOG_IMPL;
-        } else {
-          catalogImpl = MIXED_ICEBERG_CATALOG_IMP;
-        }
+            TableFormat.MIXED_ICEBERG == tableFormat,
+            "%s catalog support mixed-iceberg table only.",
+            metastoreType);
+        catalogImpl = MIXED_ICEBERG_CATALOG_IMP;
         break;
       case CATALOG_TYPE_HIVE:
-        if (TableFormat.ICEBERG == tableFormat) {
-          catalogImpl = ICEBERG_CATALOG_IMPL;
-        } else if (TableFormat.MIXED_HIVE == tableFormat) {
+        if (TableFormat.MIXED_HIVE == tableFormat) {
           catalogImpl = HIVE_CATALOG_IMPL;
-        } else if (TableFormat.MIXED_ICEBERG == tableFormat) {
-          catalogImpl = MIXED_ICEBERG_CATALOG_IMP;
         } else {
-          throw new IllegalArgumentException(
-              "Hive Catalog support iceberg/mixed-iceberg/mixed-hive table only");
+          catalogImpl = MIXED_ICEBERG_CATALOG_IMP;
         }
         break;
       case CATALOG_TYPE_AMS:
         if (TableFormat.MIXED_ICEBERG == tableFormat) {
           catalogImpl = AMS_CATALOG_IMPL;
-        } else if (TableFormat.ICEBERG == tableFormat) {
-          catalogImpl = ICEBERG_CATALOG_IMPL;
         } else {
-          throw new IllegalArgumentException(
-              "Internal Catalog support iceberg or mixed-iceberg table only");
-        }
-
-        break;
-      case CATALOG_TYPE_GLUE:
-        if (TableFormat.ICEBERG == tableFormat) {
-          catalogImpl = GLUE_CATALOG_IMPL;
-        } else if (TableFormat.MIXED_ICEBERG == tableFormat) {
-          catalogImpl = MIXED_ICEBERG_CATALOG_IMP;
-        } else {
-          throw new IllegalArgumentException(
-              "Glue Catalog support iceberg/mixed-iceberg table only");
-        }
-        break;
-      case CATALOG_TYPE_CUSTOM:
-        Preconditions.checkArgument(
-            TableFormat.ICEBERG == tableFormat || TableFormat.MIXED_ICEBERG == tableFormat,
-            "Custom catalog support iceberg/mixed-iceberg table only.");
-        Preconditions.checkArgument(
-            catalogProperties.containsKey(CatalogProperties.CATALOG_IMPL),
-            "Custom catalog properties must contains " + CatalogProperties.CATALOG_IMPL);
-        if (TableFormat.ICEBERG == tableFormat) {
-          catalogImpl = ICEBERG_CATALOG_IMPL;
-        } else {
-          catalogImpl = MIXED_ICEBERG_CATALOG_IMP;
+          throw new IllegalArgumentException("Internal Catalog mixed-iceberg table only");
         }
         break;
       default:

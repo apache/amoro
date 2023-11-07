@@ -74,4 +74,9 @@ public class MixedCatalog implements FormatCatalog {
         .map(TableIdentifier::getTableName)
         .collect(Collectors.toList());
   }
+
+  @Override
+  public boolean dropTable(String database, String table, boolean purge) {
+    return catalog.dropTable(TableIdentifier.of(catalog.name(), database, table), purge);
+  }
 }

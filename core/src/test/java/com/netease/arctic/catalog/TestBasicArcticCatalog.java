@@ -44,31 +44,28 @@ public class TestBasicArcticCatalog extends CatalogTestBase {
 
   @Parameterized.Parameters(name = "tableFormat = {0}")
   public static Object[] parameters() {
-    return new Object[] {
-      new BasicCatalogTestHelper(TableFormat.ICEBERG),
-      new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG)
-    };
+    return new Object[] {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG)};
   }
 
   @Test
   public void testCreateAndDropDatabase() {
     String createDbName = TableTestHelper.TEST_DB_NAME;
-    Assert.assertFalse(getCatalog().listDatabases().contains(createDbName));
-    getCatalog().createDatabase(createDbName);
-    Assert.assertTrue(getCatalog().listDatabases().contains(createDbName));
-    getCatalog().dropDatabase(createDbName);
-    Assert.assertFalse(getCatalog().listDatabases().contains(createDbName));
+    Assert.assertFalse(getMixedFormatCatalog().listDatabases().contains(createDbName));
+    getMixedFormatCatalog().createDatabase(createDbName);
+    Assert.assertTrue(getMixedFormatCatalog().listDatabases().contains(createDbName));
+    getMixedFormatCatalog().dropDatabase(createDbName);
+    Assert.assertFalse(getMixedFormatCatalog().listDatabases().contains(createDbName));
   }
 
   @Test
   public void testCreateDuplicateDatabase() {
     String createDbName = TableTestHelper.TEST_DB_NAME;
-    Assert.assertFalse(getCatalog().listDatabases().contains(createDbName));
-    getCatalog().createDatabase(createDbName);
-    Assert.assertTrue(getCatalog().listDatabases().contains(createDbName));
+    Assert.assertFalse(getMixedFormatCatalog().listDatabases().contains(createDbName));
+    getMixedFormatCatalog().createDatabase(createDbName);
+    Assert.assertTrue(getMixedFormatCatalog().listDatabases().contains(createDbName));
     Assert.assertThrows(
-        AlreadyExistsException.class, () -> getCatalog().createDatabase(createDbName));
-    getCatalog().dropDatabase(createDbName);
+        AlreadyExistsException.class, () -> getMixedFormatCatalog().createDatabase(createDbName));
+    getMixedFormatCatalog().dropDatabase(createDbName);
   }
 
   @Test
@@ -81,9 +78,9 @@ public class TestBasicArcticCatalog extends CatalogTestBase {
             testCatalogMeta,
             CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
             "false");
-    getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
+    getMixedFormatCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     createTestTable();
-    ArcticTable createTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
+    ArcticTable createTable = getMixedFormatCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
     Assert.assertFalse(
         PropertyUtil.propertyAsBoolean(
             createTable.properties(),
@@ -93,9 +90,9 @@ public class TestBasicArcticCatalog extends CatalogTestBase {
 
   @Test
   public void testLoadTableWithNewCatalogProperties() throws TException {
-    getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
+    getMixedFormatCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     createTestTable();
-    ArcticTable createTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
+    ArcticTable createTable = getMixedFormatCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
 
     Assert.assertTrue(
         PropertyUtil.propertyAsBoolean(
@@ -111,8 +108,8 @@ public class TestBasicArcticCatalog extends CatalogTestBase {
             testCatalogMeta,
             CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
             "false");
-    refreshCatalog();
-    ArcticTable loadTable = getCatalog().loadTable(createTable.id());
+    refreshMixedFormatCatalog();
+    ArcticTable loadTable = getMixedFormatCatalog().loadTable(createTable.id());
     Assert.assertFalse(
         PropertyUtil.propertyAsBoolean(
             loadTable.properties(),
@@ -122,9 +119,9 @@ public class TestBasicArcticCatalog extends CatalogTestBase {
 
   @After
   public void after() {
-    getCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
-    if (getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
-      getCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
+    getMixedFormatCatalog().dropTable(TableTestHelper.TEST_TABLE_ID, true);
+    if (getMixedFormatCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
+      getMixedFormatCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
     }
   }
 
@@ -138,7 +135,7 @@ public class TestBasicArcticCatalog extends CatalogTestBase {
         break;
       case MIXED_ICEBERG:
       case MIXED_HIVE:
-        getCatalog()
+        getMixedFormatCatalog()
             .newTableBuilder(TableTestHelper.TEST_TABLE_ID, BasicTableTestHelper.TABLE_SCHEMA)
             .create();
         break;

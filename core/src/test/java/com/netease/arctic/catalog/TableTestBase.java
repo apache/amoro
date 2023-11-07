@@ -25,6 +25,7 @@ import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.CatalogUtil;
+import org.apache.iceberg.catalog.TableIdentifier;
 import org.junit.After;
 import org.junit.Before;
 
@@ -43,7 +44,7 @@ public abstract class TableTestBase extends CatalogTestBase {
   public void setupTable() {
     this.tableMetaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
 
-    getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
+    getUnifiedCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     switch (getTestFormat()) {
       case MIXED_HIVE:
       case MIXED_ICEBERG:
@@ -57,7 +58,8 @@ public abstract class TableTestBase extends CatalogTestBase {
 
   private void createMixedFormatTable() {
     TableBuilder tableBuilder =
-        getCatalog().newTableBuilder(TableTestHelper.TEST_TABLE_ID, tableTestHelper.tableSchema());
+        getMixedFormatCatalog()
+            .newTableBuilder(TableTestHelper.TEST_TABLE_ID, tableTestHelper.tableSchema());
     tableBuilder.withProperties(tableTestHelper.tableProperties());
     if (isKeyedTable()) {
       tableBuilder.withPrimaryKeySpec(tableTestHelper.primaryKeySpec());
@@ -76,14 +78,30 @@ public abstract class TableTestBase extends CatalogTestBase {
             tableTestHelper.tableSchema(),
             tableTestHelper.partitionSpec(),
             tableTestHelper.tableProperties());
-    arcticTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
+    arcticTable =
+        (ArcticTable)
+            getUnifiedCatalog()
+                .loadTable(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME)
+                .originalTable();
   }
 
   @After
   public void dropTable() {
-    getCatalog().dropTable(tableTestHelper.id(), true);
+    switch (getTestFormat()) {
+      case MIXED_HIVE:
+      case MIXED_ICEBERG:
+        getMixedFormatCatalog().dropTable(tableTestHelper.id(), true);
+        break;
+      case ICEBERG:
+        getIcebergCatalog()
+            .dropTable(
+                TableIdentifier.of(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME),
+                true);
+        break;
+    }
+
     try {
-      getCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
+      getUnifiedCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
     } catch (Exception e) {
       e.printStackTrace();
     }

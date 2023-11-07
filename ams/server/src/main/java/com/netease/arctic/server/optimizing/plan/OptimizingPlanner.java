@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.OptimizingType;
@@ -25,7 +26,6 @@ import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -201,7 +201,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     }
 
     public PartitionEvaluator buildPartitionPlanner(String partitionPath) {
-      if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
+      if (TableFormat.ICEBERG == arcticTable.format()) {
         return new IcebergPartitionPlan(tableRuntime, arcticTable, partitionPath, planTime);
       } else {
         if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {

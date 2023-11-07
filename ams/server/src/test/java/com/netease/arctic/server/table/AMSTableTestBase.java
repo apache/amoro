@@ -18,7 +18,9 @@
 
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.CommonUnifiedCatalog;
 import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
@@ -32,6 +34,9 @@ import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
+import org.apache.iceberg.catalog.Catalog;
+import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Assert;
@@ -50,7 +55,7 @@ public class AMSTableTestBase extends TableServiceTestBase {
   private final TableTestHelper tableTestHelper;
   private String catalogWarehouse;
   private MixedTables mixedTables;
-  private ArcticCatalog externalCatalog;
+  private UnifiedCatalog externalCatalog;
   private CatalogMeta catalogMeta;
 
   private TableMeta tableMeta;
@@ -73,24 +78,14 @@ public class AMSTableTestBase extends TableServiceTestBase {
   public void init() throws IOException, TException {
     catalogWarehouse = temp.newFolder().getPath();
     catalogMeta = catalogTestHelper.buildCatalogMeta(catalogWarehouse);
-    if (catalogTestHelper.isInternalCatalog()) {
-      if (TableFormat.MIXED_ICEBERG.equals(catalogTestHelper.tableFormat())) {
+    if (catalogTestHelper.isInternalCatalog() || TableFormat.MIXED_HIVE.equals(catalogTestHelper.tableFormat())) {
+      if (TableFormat.MIXED_ICEBERG.equals(catalogTestHelper.tableFormat()) ||
+          TableFormat.MIXED_HIVE.equals(catalogTestHelper.tableFormat())) {
         mixedTables = catalogTestHelper.buildMixedTables(catalogMeta);
         tableMeta = buildTableMeta();
       }
     } else {
-      if (TableFormat.ICEBERG.equals(catalogTestHelper.tableFormat())
-          || TableFormat.MIXED_ICEBERG.equals(catalogTestHelper.tableFormat())) {
-        externalCatalog =
-            CatalogLoader.createCatalog(
-                catalogMeta.getCatalogName(),
-                catalogMeta.getCatalogType(),
-                catalogMeta.getCatalogProperties(),
-                CatalogUtil.buildMetaStore(catalogMeta));
-      } else if (TableFormat.MIXED_HIVE.equals(catalogTestHelper.tableFormat())) {
-        mixedTables = catalogTestHelper.buildMixedTables(catalogMeta);
-        tableMeta = buildTableMeta();
-      }
+      externalCatalog = new CommonUnifiedCatalog(() -> catalogMeta, Maps.newHashMap());
     }
 
     tableService().createCatalog(catalogMeta);
@@ -168,16 +163,43 @@ public class AMSTableTestBase extends TableServiceTestBase {
       TableMetadata tableMetadata = tableMetadata();
       tableService().createTable(catalogMeta.getCatalogName(), tableMetadata);
     } else {
-      externalCatalog
-          .newTableBuilder(tableTestHelper.id(), tableTestHelper.tableSchema())
-          .withPartitionSpec(tableTestHelper.partitionSpec())
-          .withProperties(tableTestHelper.tableProperties())
-          .withPrimaryKeySpec(tableTestHelper.primaryKeySpec())
-          .create();
+      switch (catalogTestHelper.tableFormat()) {
+        case ICEBERG:
+          createIcebergTable();
+          break;
+        case MIXED_ICEBERG:
+          createMixedIcebergTable();
+          break;
+        default:
+          throw new IllegalStateException("un-support format");
+      }
       tableService().exploreExternalCatalog();
     }
 
     serverTableIdentifier = tableService().listManagedTables().get(0);
+  }
+
+  private void createMixedIcebergTable() {
+    ArcticCatalog catalog = CatalogLoader.createCatalog(
+        catalogMeta.getCatalogName(),
+        catalogMeta.getCatalogType(),
+        catalogMeta.getCatalogProperties(),
+        CatalogUtil.buildMetaStore(catalogMeta)
+    );
+    catalog.newTableBuilder(tableTestHelper.id(), tableTestHelper.tableSchema())
+        .withPartitionSpec(tableTestHelper.partitionSpec())
+        .withProperties(tableTestHelper.tableProperties())
+        .withPrimaryKeySpec(tableTestHelper.primaryKeySpec())
+        .create();
+  }
+
+  private void createIcebergTable() {
+    Catalog catalog = catalogTestHelper.buildIcebergCatalog(catalogMeta);
+    catalog.createTable(
+        TableIdentifier.of(tableTestHelper.id().getDatabase(), tableTestHelper.id().getTableName()),
+        tableTestHelper.tableSchema(),
+        tableTestHelper.partitionSpec(),
+        tableTestHelper.tableProperties());
   }
 
   protected void dropTable() {
@@ -185,7 +207,9 @@ public class AMSTableTestBase extends TableServiceTestBase {
       mixedTables.dropTableByMeta(tableMeta, true);
       tableService().dropTableMetadata(tableMeta.getTableIdentifier(), true);
     } else {
-      externalCatalog.dropTable(tableTestHelper.id(), true);
+      String database = tableTestHelper.id().getDatabase();
+      String table = tableTestHelper.id().getTableName();
+      externalCatalog.dropTable(database, table, true);
       tableService().exploreExternalCatalog();
     }
   }

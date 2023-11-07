@@ -141,6 +141,16 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   }
 
   @Override
+  public boolean dropTable(String database, String table, boolean purge) {
+    try {
+      AmoroTable<?> t = loadTable(database, table);
+      return findFirstFormatCatalog(t.format()).dropTable(database, table, purge);
+    } catch (NoSuchTableException e) {
+      return false;
+    }
+  }
+
+  @Override
   public synchronized void refresh() {
     CatalogMeta newMeta = metaSupplier.get();
     CatalogUtil.mergeCatalogProperties(meta, properties);

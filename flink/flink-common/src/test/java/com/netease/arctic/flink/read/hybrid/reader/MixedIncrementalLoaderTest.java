@@ -167,6 +167,6 @@ public class MixedIncrementalLoaderTest extends TableTestBase implements FlinkTa
 
   @Override
   public String getCatalogName() {
-    return getCatalog().name();
+    return getMixedFormatCatalog().name();
   }
 }

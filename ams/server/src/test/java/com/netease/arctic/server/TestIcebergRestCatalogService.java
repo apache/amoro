@@ -231,7 +231,7 @@ public class TestIcebergRestCatalogService {
     }
 
     @Test
-    public void testArcticCatalogLoader() throws IOException {
+    public void testServerCatalogLoadTable() throws IOException {
       Table tbl = nsCatalog.createTable(identifier, schema, spec);
       DataFile[] files = IcebergDataTestHelpers.insert(tbl, newRecords).dataFiles();
       AppendFiles appendFiles = tbl.newAppend();
@@ -239,10 +239,7 @@ public class TestIcebergRestCatalogService {
       appendFiles.commit();
 
       ArcticCatalog catalog = ams.catalog(AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
-      ArcticTable arcticTable =
-          catalog.loadTable(
-              com.netease.arctic.table.TableIdentifier.of(
-                  AmsEnvironment.INTERNAL_ICEBERG_CATALOG, database, table));
+      ArcticTable arcticTable = (ArcticTable) serverCatalog.loadTable(database, table).originalTable();
 
       Assertions.assertEquals(TableFormat.ICEBERG, arcticTable.format());
       GenericUnkeyedDataReader reader =

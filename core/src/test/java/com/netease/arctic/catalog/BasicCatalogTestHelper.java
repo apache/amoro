@@ -22,6 +22,8 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALO
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
 
+import com.netease.arctic.CommonUnifiedCatalog;
+import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
@@ -74,6 +76,11 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
   @Override
   public String metastoreType() {
     return metastoreType;
+  }
+
+  @Override
+  public UnifiedCatalog buildUnifiedCatalog(CatalogMeta catalogMeta) {
+    return new CommonUnifiedCatalog(() -> catalogMeta, Maps.newHashMap());
   }
 
   @Override

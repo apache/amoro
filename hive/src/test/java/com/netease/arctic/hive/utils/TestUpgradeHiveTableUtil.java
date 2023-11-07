@@ -97,12 +97,12 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
     if (isPartitioned) {
       createPartition();
     }
-    identifier = TableIdentifier.of(getCatalog().name(), db, table);
+    identifier = TableIdentifier.of(getMixedFormatCatalog().name(), db, table);
   }
 
   @After
   public void dropTable() throws TException {
-    getCatalog().dropTable(identifier, true);
+    getMixedFormatCatalog().dropTable(identifier, true);
     TEST_HMS.getHiveClient().dropDatabase(db);
   }
 
@@ -135,8 +135,11 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
   @Test
   public void upgradeHiveTable() throws Exception {
     UpgradeHiveTableUtil.upgradeHiveTable(
-        (ArcticHiveCatalog) getCatalog(), identifier, new ArrayList<>(), new HashMap<>());
-    ArcticTable table = getCatalog().loadTable(identifier);
+        (ArcticHiveCatalog) getMixedFormatCatalog(),
+        identifier,
+        new ArrayList<>(),
+        new HashMap<>());
+    ArcticTable table = getMixedFormatCatalog().loadTable(identifier);
     UnkeyedHiveTable baseTable =
         table.isKeyedTable()
             ? (UnkeyedHiveTable) table.asKeyedTable().baseTable()
@@ -144,7 +147,7 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
     if (table.spec().isPartitioned()) {
       List<Partition> partitions =
           HivePartitionUtil.getHiveAllPartitions(
-              ((ArcticHiveCatalog) getCatalog()).getHMSClient(), table.id());
+              ((ArcticHiveCatalog) getMixedFormatCatalog()).getHMSClient(), table.id());
       for (Partition partition : partitions) {
         StructLike partitionData =
             HivePartitionUtil.buildPartitionData(partition.getValues(), table.spec());

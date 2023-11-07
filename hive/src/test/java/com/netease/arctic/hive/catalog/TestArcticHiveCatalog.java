@@ -45,20 +45,19 @@ public class TestArcticHiveCatalog extends TestBasicArcticCatalog {
   @Parameterized.Parameters(name = "testFormat = {0}")
   public static Object[] parameters() {
     return new Object[] {
-      new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-      new HiveCatalogTestHelper(TableFormat.ICEBERG, TEST_HMS.getHiveConf())
+      new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf())
     };
   }
 
   @Test
   public void testDropTableButNotDropHiveTable() throws MetaException {
-    if (getCatalog() instanceof ArcticHiveCatalog) {
-      getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
+    if (getMixedFormatCatalog() instanceof ArcticHiveCatalog) {
+      getMixedFormatCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
       createTestTable();
-      getCatalog()
+      getMixedFormatCatalog()
           .dropTable(
               TableIdentifier.of(
-                  getCatalog().name(),
+                  getMixedFormatCatalog().name(),
                   TableTestHelper.TEST_DB_NAME,
                   TableTestHelper.TEST_TABLE_NAME),
               false);
@@ -72,7 +71,7 @@ public class TestArcticHiveCatalog extends TestBasicArcticCatalog {
 
   @After
   public void cleanUp() throws TException {
-    if (getCatalog() instanceof ArcticHiveCatalog) {
+    if (getMixedFormatCatalog() instanceof ArcticHiveCatalog) {
       TEST_HMS
           .getHiveClient()
           .dropTable(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME, true, true);
