@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
@@ -72,7 +73,11 @@ public class MixedIcebergAmoroCatalog extends BasicMixedIcebergCatalog {
 
     @Override
     protected TableIdentifier generateChangeStoreIdentifier(TableIdentifier baseIdentifier) {
-      return TableIdentifier.of(baseIdentifier.namespace(), baseIdentifier.name() + "@change");
+      return TableIdentifier.of(
+          baseIdentifier.namespace(),
+          baseIdentifier.name()
+              + MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR
+              + MetaTableProperties.MIXED_FORMAT_CHANGE_STORE_SUFFIX);
     }
   }
 }

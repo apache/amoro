@@ -53,6 +53,12 @@ public class InternalTableUtil {
   private static final String HADOOP_FILE_IO_IMPL = "org.apache.iceberg.hadoop.HadoopFileIO";
   private static final String S3_FILE_IO_IMPL = "org.apache.iceberg.aws.s3.S3FileIO";
 
+  private static final String CHANGE_STORE_TABLE_NAME_SUFFIX =
+      MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR
+          + MetaTableProperties.MIXED_FORMAT_CHANGE_STORE_SUFFIX;
+
+  private static final String S3_PROTOCOL_PREFIX = "s3://";
+
   /**
    * create an iceberg table operations for internal iceberg/mixed-iceberg table
    *
@@ -103,7 +109,8 @@ public class InternalTableUtil {
     TableIdentifier changeIdentifier =
         TableIdentifier.of(
             internalTableMetadata.getTableIdentifier().getDatabase(),
-            internalTableMetadata.getTableIdentifier().getTableName() + "@change");
+            internalTableMetadata.getTableIdentifier().getTableName()
+                + CHANGE_STORE_TABLE_NAME_SUFFIX);
     Map<String, String> properties = Maps.newHashMap(metadata.properties());
     if (!changeStore) {
       properties.putAll(
@@ -133,17 +140,16 @@ public class InternalTableUtil {
    * @return is this match the change store name pattern
    */
   public static boolean isMatchChangeStoreNamePattern(String tableName) {
-    if (!tableName.contains(MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR)) {
+    String separator = MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR;
+    if (!tableName.contains(separator)) {
       return false;
     }
-    String separator = MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR;
-    String changeStoreSuffix = separator + "change";
     Preconditions.checkArgument(
         tableName.indexOf(separator) == tableName.lastIndexOf(separator)
-            && tableName.endsWith(changeStoreSuffix),
+            && tableName.endsWith(CHANGE_STORE_TABLE_NAME_SUFFIX),
         "illegal table name: %s, %s is not allowed in table name.",
         tableName,
-        MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR);
+        separator);
 
     return true;
   }
@@ -214,10 +220,7 @@ public class InternalTableUtil {
    */
   public static String internalTableName(String tableName) {
     if (isMatchChangeStoreNamePattern(tableName)) {
-      String suffix =
-          MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR
-              + MetaTableProperties.MIXED_FORMAT_CHANGE_STORE_SUFFIX;
-      return tableName.substring(0, tableName.length() - suffix.length());
+      return tableName.substring(0, tableName.length() - CHANGE_STORE_TABLE_NAME_SUFFIX.length());
     }
     return tableName;
   }
@@ -241,7 +244,7 @@ public class InternalTableUtil {
   }
 
   private static String defaultFileIoImpl(String warehouse) {
-    if (warehouse.toLowerCase().startsWith("s3://")) {
+    if (warehouse.toLowerCase().startsWith(S3_PROTOCOL_PREFIX)) {
       return S3_FILE_IO_IMPL;
     }
     return HADOOP_FILE_IO_IMPL;
@@ -360,10 +363,7 @@ public class InternalTableUtil {
       PrimaryKeySpec keySpec = PrimaryKeySpec.parse(icebergTableMetadata.schema(), properties);
       if (keySpec.primaryKeyExisted()) {
         TableIdentifier changeIdentifier = TablePropertyUtil.parseChangeIdentifier(properties);
-        String expectChangeStoreName =
-            identifier.name()
-                + MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR
-                + MetaTableProperties.MIXED_FORMAT_CHANGE_STORE_SUFFIX;
+        String expectChangeStoreName = identifier.name() + CHANGE_STORE_TABLE_NAME_SUFFIX;
         TableIdentifier expectChangeIdentifier =
             TableIdentifier.of(identifier.namespace(), expectChangeStoreName);
         Preconditions.checkArgument(
