@@ -191,7 +191,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
     // 3.Step3
     // plan with delete files
-    closeFullOptimizing();
+    closeFullOptimizingInterval();
     List<DeleteFile> posDeleteFiles = Lists.newArrayList();
     for (DataFile dataFile : dataFiles) {
       posDeleteFiles.addAll(
@@ -420,13 +420,6 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     getArcticTable()
         .updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "3600")
-        .commit();
-  }
-
-  protected void closeFullOptimizing() {
-    getArcticTable()
-        .updateProperties()
-        .remove(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL)
         .commit();
   }
 
