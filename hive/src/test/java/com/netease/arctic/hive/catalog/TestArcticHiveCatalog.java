@@ -44,9 +44,7 @@ public class TestArcticHiveCatalog extends TestBasicArcticCatalog {
 
   @Parameterized.Parameters(name = "testFormat = {0}")
   public static Object[] parameters() {
-    return new Object[] {
-      new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf())
-    };
+    return new Object[] {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf())};
   }
 
   @Test

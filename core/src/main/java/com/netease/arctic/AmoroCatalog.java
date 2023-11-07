@@ -76,6 +76,7 @@ public interface AmoroCatalog {
 
   /**
    * drop table from catalog.
+   *
    * @param database database name
    * @param table table name
    * @param purge purge table data.

@@ -239,7 +239,8 @@ public class TestIcebergRestCatalogService {
       appendFiles.commit();
 
       ArcticCatalog catalog = ams.catalog(AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
-      ArcticTable arcticTable = (ArcticTable) serverCatalog.loadTable(database, table).originalTable();
+      ArcticTable arcticTable =
+          (ArcticTable) serverCatalog.loadTable(database, table).originalTable();
 
       Assertions.assertEquals(TableFormat.ICEBERG, arcticTable.format());
       GenericUnkeyedDataReader reader =

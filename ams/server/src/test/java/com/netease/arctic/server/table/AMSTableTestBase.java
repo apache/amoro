@@ -78,9 +78,10 @@ public class AMSTableTestBase extends TableServiceTestBase {
   public void init() throws IOException, TException {
     catalogWarehouse = temp.newFolder().getPath();
     catalogMeta = catalogTestHelper.buildCatalogMeta(catalogWarehouse);
-    if (catalogTestHelper.isInternalCatalog() || TableFormat.MIXED_HIVE.equals(catalogTestHelper.tableFormat())) {
-      if (TableFormat.MIXED_ICEBERG.equals(catalogTestHelper.tableFormat()) ||
-          TableFormat.MIXED_HIVE.equals(catalogTestHelper.tableFormat())) {
+    if (catalogTestHelper.isInternalCatalog()
+        || TableFormat.MIXED_HIVE.equals(catalogTestHelper.tableFormat())) {
+      if (TableFormat.MIXED_ICEBERG.equals(catalogTestHelper.tableFormat())
+          || TableFormat.MIXED_HIVE.equals(catalogTestHelper.tableFormat())) {
         mixedTables = catalogTestHelper.buildMixedTables(catalogMeta);
         tableMeta = buildTableMeta();
       }
@@ -180,13 +181,14 @@ public class AMSTableTestBase extends TableServiceTestBase {
   }
 
   private void createMixedIcebergTable() {
-    ArcticCatalog catalog = CatalogLoader.createCatalog(
-        catalogMeta.getCatalogName(),
-        catalogMeta.getCatalogType(),
-        catalogMeta.getCatalogProperties(),
-        CatalogUtil.buildMetaStore(catalogMeta)
-    );
-    catalog.newTableBuilder(tableTestHelper.id(), tableTestHelper.tableSchema())
+    ArcticCatalog catalog =
+        CatalogLoader.createCatalog(
+            catalogMeta.getCatalogName(),
+            catalogMeta.getCatalogType(),
+            catalogMeta.getCatalogProperties(),
+            CatalogUtil.buildMetaStore(catalogMeta));
+    catalog
+        .newTableBuilder(tableTestHelper.id(), tableTestHelper.tableSchema())
         .withPartitionSpec(tableTestHelper.partitionSpec())
         .withProperties(tableTestHelper.tableProperties())
         .withPrimaryKeySpec(tableTestHelper.primaryKeySpec())
