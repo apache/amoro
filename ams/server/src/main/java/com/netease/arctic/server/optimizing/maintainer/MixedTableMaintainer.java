@@ -46,7 +46,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -110,12 +109,7 @@ public class MixedTableMaintainer implements TableMaintainer {
 
   @Override
   public void autoCreateTags(TableRuntime tableRuntime) {
-    new AutoCreateIcebergTagAction(
-            arcticTable.isKeyedTable()
-                ? arcticTable.asKeyedTable().baseTable()
-                : arcticTable.asUnkeyedTable(),
-            LocalDateTime.now())
-        .execute();
+    throw new UnsupportedOperationException("Mixed table doesn't support auto create tags");
   }
 
   protected void expireSnapshots(long mustOlderThan) {
