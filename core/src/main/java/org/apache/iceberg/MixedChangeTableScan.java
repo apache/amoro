@@ -19,7 +19,6 @@
 package org.apache.iceberg;
 
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.scan.BasicArcticFileScanTask;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -33,7 +32,6 @@ import org.apache.iceberg.util.StructLikeMap;
  */
 public class MixedChangeTableScan extends DataTableScan implements ChangeTableIncrementalScan {
   private StructLikeMap<Long> fromPartitionSequence;
-  private StructLikeMap<Long> fromPartitionLegacyTransactionId;
   private Long toSequence;
   private Long fromSequence;
 
@@ -62,7 +60,6 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
       Table table, Schema schema, TableScanContext context) {
     MixedChangeTableScan scan = new MixedChangeTableScan(table, schema, context);
     scan.fromPartitionSequence = this.fromPartitionSequence;
-    scan.fromPartitionLegacyTransactionId = this.fromPartitionLegacyTransactionId;
     scan.toSequence = this.toSequence;
     return scan;
   }
@@ -89,14 +86,6 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
   }
 
   @Override
-  public ChangeTableIncrementalScan fromLegacyTransaction(
-      StructLikeMap<Long> partitionTransactionId) {
-    MixedChangeTableScan scan = newRefinedScan(table(), schema(), context());
-    scan.fromPartitionLegacyTransactionId = partitionTransactionId;
-    return scan;
-  }
-
-  @Override
   public CloseableIterable<FileScanTask> doPlanFiles() {
     CloseableIterable<FileScanTask> filteredTasks =
         CloseableIterable.filter(
@@ -104,14 +93,7 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
             fileScanTask -> {
               StructLike partition = fileScanTask.file().partition();
               long sequenceNumber = fileScanTask.file().dataSequenceNumber();
-              Boolean shouldKeep = shouldKeepFile(partition, sequenceNumber);
-              if (shouldKeep == null) {
-                String filePath = fileScanTask.file().path().toString();
-                return shouldKeepFileWithLegacyTxId(
-                    partition, FileNameRules.parseChange(filePath, sequenceNumber).transactionId());
-              } else {
-                return shouldKeep;
-              }
+              return shouldKeepFile(partition, sequenceNumber);
             });
     return CloseableIterable.transform(
         filteredTasks,
@@ -120,14 +102,14 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
                 DefaultKeyedFile.parseChange(fileScanTask.file()), null, table().spec(), null));
   }
 
-  private Boolean shouldKeepFile(StructLike partition, long sequence) {
+  private boolean shouldKeepFile(StructLike partition, long sequence) {
     if (biggerThanToSequence(sequence)) {
       return false;
     }
     if (fromSequence == null
         && (fromPartitionSequence == null || fromPartitionSequence.isEmpty())) {
-      // if fromPartitionSequence is not set or is empty, return null to check legacy transactionId
-      return null;
+      // if fromPartitionSequence is not set or is empty, return all change files
+      return true;
     }
     Long fromSequence;
     if (table().spec().isUnpartitioned()) {
@@ -138,7 +120,7 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
     if (fromSequence != null) {
       return sequence > fromSequence;
     } else {
-      return null;
+      return true;
     }
   }
 
@@ -155,26 +137,5 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
 
   private boolean biggerThanToSequence(long sequence) {
     return this.toSequence != null && sequence > this.toSequence;
-  }
-
-  private boolean shouldKeepFileWithLegacyTxId(StructLike partition, long legacyTxId) {
-    if (fromPartitionLegacyTransactionId == null || fromPartitionLegacyTransactionId.isEmpty()) {
-      // if fromPartitionLegacyTransactionId is not set or is empty, return all files
-      return true;
-    }
-    if (table().spec().isUnpartitioned()) {
-      Long fromTransactionId =
-          fromPartitionLegacyTransactionId.entrySet().iterator().next().getValue();
-      return legacyTxId > fromTransactionId;
-    } else {
-      if (!fromPartitionLegacyTransactionId.containsKey(partition)) {
-        // if fromPartitionLegacyTransactionId not contains this partition, return all files of this
-        // partition
-        return true;
-      } else {
-        Long partitionTransactionId = fromPartitionLegacyTransactionId.get(partition);
-        return legacyTxId > partitionTransactionId;
-      }
-    }
   }
 }

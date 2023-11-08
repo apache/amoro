@@ -29,6 +29,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -230,9 +231,8 @@ public class MixedTableMaintainer implements TableMaintainer {
         return;
       }
 
-      StructLikeMap<Long> partitionMaxTransactionId =
-          TablePropertyUtil.getPartitionOptimizedSequence(keyedTable);
-      if (MapUtils.isEmpty(partitionMaxTransactionId)) {
+      StructLikeMap<Long> optimizedSequences = ArcticTableUtil.readOptimizedSequence(keyedTable);
+      if (MapUtils.isEmpty(optimizedSequences)) {
         LOG.info("table {} not contains max transaction id", keyedTable.id());
         return;
       }
@@ -252,7 +252,7 @@ public class MixedTableMaintainer implements TableMaintainer {
                     .spec()
                     .partitionToPath(expiredDataFileEntries.get(0).getFile().partition()));
 
-        Long optimizedSequence = partitionMaxTransactionId.get(TablePropertyUtil.EMPTY_STRUCT);
+        Long optimizedSequence = optimizedSequences.get(TablePropertyUtil.EMPTY_STRUCT);
         if (optimizedSequence != null && CollectionUtils.isNotEmpty(partitionDataFiles)) {
           changeDeleteFiles.addAll(
               partitionDataFiles.stream()
@@ -265,7 +265,7 @@ public class MixedTableMaintainer implements TableMaintainer {
                   .collect(Collectors.toList()));
         }
       } else {
-        partitionMaxTransactionId.forEach(
+        optimizedSequences.forEach(
             (key, value) -> {
               List<IcebergFileEntry> partitionDataFiles =
                   partitionDataFileMap.get(keyedTable.spec().partitionToPath(key));
