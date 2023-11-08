@@ -20,7 +20,7 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.io.TableDataTestBase;
-import com.netease.arctic.utils.TablePropertyUtil;
+import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
@@ -58,7 +58,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
     // overwrite all partition and add new data file
 
     StructLikeMap<Long> partitionOptimizedSequence =
-        TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable().asKeyedTable());
+        ArcticTableUtil.readOptimizedSequence(getArcticTable().asKeyedTable());
     // expect result: all partition with new txId
     Assert.assertEquals(
         txId,
@@ -82,7 +82,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
             .longValue());
 
     StructLikeMap<Long> partitionOptimizedTime =
-        TablePropertyUtil.getPartitionBaseOptimizedTime(getArcticTable().asKeyedTable());
+        ArcticTableUtil.readBaseOptimizedTime(getArcticTable().asKeyedTable());
     // expect result: all partition with new optimized time
     assertRange(
         before,
@@ -145,7 +145,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
     long after = System.currentTimeMillis();
 
     StructLikeMap<Long> partitionOptimizedSequence =
-        TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable().asKeyedTable());
+        ArcticTableUtil.readOptimizedSequence(getArcticTable().asKeyedTable());
     // expect result: 1,2,4 partition with new txId, 3 partition is null
     Assert.assertEquals(
         txId,
@@ -167,7 +167,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
             .longValue());
 
     StructLikeMap<Long> partitionOptimizedTime =
-        TablePropertyUtil.getPartitionBaseOptimizedTime(getArcticTable().asKeyedTable());
+        ArcticTableUtil.readBaseOptimizedTime(getArcticTable().asKeyedTable());
     // expect result: 1,2,4 partition with new optimized time, 3 partition is null
     assertRange(
         before,

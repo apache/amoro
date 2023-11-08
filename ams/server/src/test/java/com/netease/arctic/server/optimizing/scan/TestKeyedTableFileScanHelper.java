@@ -30,13 +30,11 @@ import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -243,17 +241,8 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
   protected KeyedTableFileScanHelper buildFileScanHelper() {
     long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().baseTable(), true);
     long changeSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().changeTable(), true);
-    StructLikeMap<Long> partitionOptimizedSequence =
-        TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable());
-    StructLikeMap<Long> legacyPartitionMaxTransactionId =
-        TablePropertyUtil.getLegacyPartitionMaxTransactionId(getArcticTable());
     return new KeyedTableFileScanHelper(
-        getArcticTable(),
-        new KeyedTableSnapshot(
-            baseSnapshotId,
-            changeSnapshotId,
-            partitionOptimizedSequence,
-            legacyPartitionMaxTransactionId));
+        getArcticTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId));
   }
 
   private void appendChange(List<DataFile> dataFiles) {
