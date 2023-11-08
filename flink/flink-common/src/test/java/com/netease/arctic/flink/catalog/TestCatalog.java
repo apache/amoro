@@ -100,7 +100,7 @@ public class TestCatalog extends CatalogTestBase {
   public void after() {
     sql("DROP TABLE " + CATALOG + "." + DB + "." + TABLE);
     sql("DROP DATABASE " + CATALOG + "." + DB);
-    Assert.assertTrue(CollectionUtil.isNullOrEmpty(getCatalog().listDatabases()));
+    Assert.assertTrue(CollectionUtil.isNullOrEmpty(getMixedFormatCatalog().listDatabases()));
     sql("USE CATALOG default_catalog");
     sql("DROP CATALOG " + CATALOG);
   }
@@ -127,7 +127,9 @@ public class TestCatalog extends CatalogTestBase {
     sql("SHOW tables");
 
     Assert.assertTrue(
-        getCatalog().loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE)).isKeyedTable());
+        getMixedFormatCatalog()
+            .loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE))
+            .isKeyedTable());
   }
 
   @Test
@@ -157,7 +159,7 @@ public class TestCatalog extends CatalogTestBase {
             + ")");
 
     Map<String, String> properties =
-        getCatalog().loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE)).properties();
+        getMixedFormatCatalog().loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE)).properties();
 
     // index for compute columns
     int[] computedIndex = {3, 4, 5};
@@ -242,7 +244,7 @@ public class TestCatalog extends CatalogTestBase {
             + ")");
 
     ArcticTable amoroTable =
-        getCatalog().loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE));
+        getMixedFormatCatalog().loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE));
     String beforeExpr =
         amoroTable.properties().get(compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, 2, EXPR));
     // change property "flink.computed-column.2.expr" from "`id` +5" to "`newId` +5"
@@ -258,8 +260,7 @@ public class TestCatalog extends CatalogTestBase {
 
     // can't get table
     testGetTable(false);
-    getCatalog()
-        .loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE))
+    amoroTable
         .updateProperties()
         .set(compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, 2, EXPR), beforeExpr)
         .commit();
