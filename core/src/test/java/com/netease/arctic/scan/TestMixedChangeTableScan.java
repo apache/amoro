@@ -18,7 +18,6 @@
 
 package com.netease.arctic.scan;
 
-import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.io.TableDataTestBase;
 import com.netease.arctic.utils.ArcticDataFiles;
 import org.apache.iceberg.FileScanTask;
@@ -90,49 +89,6 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
             .toSequence(1);
     try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
       assertFilesSequence(tasks, 0, 0, 0);
-    }
-  }
-
-  @Test
-  public void testIgnoreLegacyTxId() throws IOException {
-    StructLikeMap<Long> fromSequence =
-        StructLikeMap.create(getArcticTable().spec().partitionType());
-    StructLike partitionData =
-        ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
-    fromSequence.put(partitionData, 1L);
-    StructLikeMap<Long> fromLegacyTxId =
-        StructLikeMap.create(getArcticTable().spec().partitionType());
-    StructLike partitionData1 =
-        ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
-    fromLegacyTxId.put(partitionData1, 100L);
-    ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable()
-            .asKeyedTable()
-            .changeTable()
-            .newScan()
-            .fromSequence(fromSequence)
-            .fromLegacyTransaction(fromLegacyTxId);
-    try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
-      assertFilesSequence(tasks, 1, 2, 2);
-    }
-  }
-
-  @Test
-  public void testUseLegacyId() throws IOException {
-    StructLikeMap<Long> fromLegacyTxId =
-        StructLikeMap.create(getArcticTable().spec().partitionType());
-    StructLike partitionData1 =
-        ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
-    fromLegacyTxId.put(partitionData1, 2L);
-    ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable()
-            .asKeyedTable()
-            .changeTable()
-            .newScan()
-            .fromLegacyTransaction(fromLegacyTxId);
-    try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
-      assertFiles(
-          tasks, 1, task -> FileNameRules.parseTransactionId(task.file().path().toString()) > 2L);
     }
   }
 
