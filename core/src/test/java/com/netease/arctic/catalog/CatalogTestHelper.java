@@ -19,6 +19,7 @@
 package com.netease.arctic.catalog;
 
 import com.netease.arctic.TableTestHelper;
+import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
@@ -37,6 +38,8 @@ public interface CatalogTestHelper {
   TableFormat tableFormat();
 
   CatalogMeta buildCatalogMeta(String baseDir);
+
+  UnifiedCatalog buildUnifiedCatalog(CatalogMeta catalogMeta);
 
   Catalog buildIcebergCatalog(CatalogMeta catalogMeta);
 

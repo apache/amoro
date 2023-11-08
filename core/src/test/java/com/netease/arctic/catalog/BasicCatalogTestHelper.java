@@ -22,9 +22,12 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALO
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
 
+import com.netease.arctic.CommonUnifiedCatalog;
+import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -76,6 +79,11 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
   }
 
   @Override
+  public UnifiedCatalog buildUnifiedCatalog(CatalogMeta catalogMeta) {
+    return new CommonUnifiedCatalog(() -> catalogMeta, Maps.newHashMap());
+  }
+
+  @Override
   public Catalog buildIcebergCatalog(CatalogMeta catalogMeta) {
     if (!TableFormat.ICEBERG.equals(tableFormat)) {
       throw new UnsupportedOperationException(
@@ -93,7 +101,8 @@ public class BasicCatalogTestHelper implements CatalogTestHelper {
       throw new UnsupportedOperationException(
           "Cannot build mixed-tables for table format:" + tableFormat);
     }
-    return new MixedTables(catalogMeta);
+    return new MixedTables(
+        catalogMeta.getCatalogProperties(), CatalogUtil.buildMetaStore(catalogMeta));
   }
 
   @Override

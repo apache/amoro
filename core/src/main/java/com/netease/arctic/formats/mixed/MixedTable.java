@@ -27,12 +27,14 @@ import org.apache.iceberg.Snapshot;
 
 import java.util.Map;
 
-public class MixedIcebergTable implements AmoroTable<ArcticTable> {
+public class MixedTable implements AmoroTable<ArcticTable> {
 
   private final ArcticTable arcticTable;
+  private final TableFormat format;
 
-  public MixedIcebergTable(ArcticTable arcticTable) {
+  public MixedTable(ArcticTable arcticTable, TableFormat format) {
     this.arcticTable = arcticTable;
+    this.format = format;
   }
 
   @Override
@@ -42,7 +44,7 @@ public class MixedIcebergTable implements AmoroTable<ArcticTable> {
 
   @Override
   public TableFormat format() {
-    return TableFormat.MIXED_ICEBERG;
+    return format;
   }
 
   @Override

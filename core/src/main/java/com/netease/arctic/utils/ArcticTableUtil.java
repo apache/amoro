@@ -1,6 +1,6 @@
 package com.netease.arctic.utils;
 
-import com.netease.arctic.catalog.IcebergCatalogWrapper;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -22,19 +22,8 @@ public class ArcticTableUtil {
   public static final String BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST = "optimized-sequence.exist";
   public static final String BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST = "base-optimized-time.exist";
 
-  /**
-   * check arctic table is iceberg table format
-   *
-   * @param arcticTable target arctic table
-   * @return Whether iceberg table format
-   */
-  public static boolean isIcebergTableFormat(ArcticTable arcticTable) {
-    return arcticTable instanceof IcebergCatalogWrapper.BasicIcebergTable;
-  }
-
   /** Return the base store of the arctic table. */
   public static UnkeyedTable baseStore(ArcticTable arcticTable) {
-
     if (arcticTable.isKeyedTable()) {
       return arcticTable.asKeyedTable().baseTable();
     } else {
@@ -45,7 +34,7 @@ public class ArcticTableUtil {
   /** Return the table root location of the arctic table. */
   public static String tableRootLocation(ArcticTable arcticTable) {
     String tableRootLocation;
-    if (!ArcticTableUtil.isIcebergTableFormat(arcticTable) && arcticTable.isUnkeyedTable()) {
+    if (TableFormat.ICEBERG != arcticTable.format() && arcticTable.isUnkeyedTable()) {
       tableRootLocation = TableFileUtil.getFileDir(arcticTable.location());
     } else {
       tableRootLocation = arcticTable.location();
