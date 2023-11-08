@@ -22,7 +22,6 @@ public class ArcticTableUtil {
   public static final String BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST = "optimized-sequence.exist";
   public static final String BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST = "base-optimized-time.exist";
 
-
   /** Return the base store of the arctic table. */
   public static UnkeyedTable baseStore(ArcticTable arcticTable) {
     if (arcticTable.isKeyedTable()) {
