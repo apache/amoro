@@ -2,7 +2,6 @@ package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.catalog.IcebergCatalogWrapper;
 import com.netease.arctic.formats.iceberg.IcebergTable;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.server.ArcticManagementConf;
@@ -10,6 +9,8 @@ import com.netease.arctic.server.IcebergRestCatalogService;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.utils.Configurations;
+import com.netease.arctic.server.utils.IcebergTableUtil;
+import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.server.utils.InternalTableUtil;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.CatalogProperties;
@@ -64,10 +65,12 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
     BaseTable table = loadIcebergTable(fileIO, tableMetadata);
     com.netease.arctic.table.TableIdentifier tableIdentifier =
         com.netease.arctic.table.TableIdentifier.of(name(), database, tableName);
-    return new IcebergTable(
+
+    return IcebergTable.newIcebergTable(
         tableIdentifier,
-        new IcebergCatalogWrapper.BasicIcebergTable(
-            tableIdentifier, table, fileIO, getMetadata().getCatalogProperties()));
+        table,
+        CatalogUtil.buildMetaStore(getMetadata()),
+        getMetadata().getCatalogProperties());
   }
 
   protected BaseTable loadIcebergTable(ArcticFileIO fileIO, TableMetadata tableMetadata) {

@@ -42,8 +42,10 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   private final Map<String, String> properties = Maps.newHashMap();
 
   public CommonUnifiedCatalog(
-      Supplier<CatalogMeta> catalogMetaSupplier, CatalogMeta meta, Map<String, String> properties) {
-    this.meta = meta;
+      Supplier<CatalogMeta> catalogMetaSupplier, Map<String, String> properties) {
+    CatalogMeta catalogMeta = catalogMetaSupplier.get();
+    CatalogUtil.mergeCatalogProperties(catalogMeta, properties);
+    this.meta = catalogMeta;
     this.properties.putAll(properties);
     this.metaSupplier = catalogMetaSupplier;
     initializeFormatCatalogs();
@@ -79,7 +81,7 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     if (!exist(database)) {
       throw new NoSuchDatabaseException("Database: " + database + " does not exist.");
     }
-    if (listTables(database).size() > 0) {
+    if (!listTables(database).isEmpty()) {
       throw new IllegalStateException("Database: " + database + " is not empty.");
     }
     findFirstFormatCatalog(TableFormat.values()).dropDatabase(database);
@@ -139,9 +141,24 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   }
 
   @Override
+  public boolean dropTable(String database, String table, boolean purge) {
+    try {
+      AmoroTable<?> t = loadTable(database, table);
+      return findFirstFormatCatalog(t.format()).dropTable(database, table, purge);
+    } catch (NoSuchTableException e) {
+      return false;
+    }
+  }
+
+  @Override
   public synchronized void refresh() {
-    this.meta = metaSupplier.get();
+    CatalogMeta newMeta = metaSupplier.get();
     CatalogUtil.mergeCatalogProperties(meta, properties);
+    if (newMeta.equals(this.meta)) {
+      return;
+    }
+    this.meta = newMeta;
+    this.initializeFormatCatalogs();
   }
 
   protected void initializeFormatCatalogs() {
@@ -152,11 +169,7 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     for (FormatCatalogFactory factory : loader) {
       if (formats.contains(factory.format())) {
         FormatCatalog catalog =
-            factory.create(
-                name(),
-                meta.getCatalogType(),
-                meta.getCatalogProperties(),
-                store.getConfiguration());
+            factory.create(name(), meta.getCatalogType(), meta.getCatalogProperties(), store);
         formatCatalogs.put(factory.format(), catalog);
       }
     }

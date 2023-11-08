@@ -21,12 +21,15 @@ package com.netease.arctic.hive.catalog;
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HIVE;
 
+import com.netease.arctic.CommonUnifiedCatalog;
+import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.catalog.MixedTables;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.iceberg.CatalogProperties;
@@ -77,6 +80,11 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
   }
 
   @Override
+  public UnifiedCatalog buildUnifiedCatalog(CatalogMeta catalogMeta) {
+    return new CommonUnifiedCatalog(() -> catalogMeta, Maps.newHashMap());
+  }
+
+  @Override
   public Catalog buildIcebergCatalog(CatalogMeta catalogMeta) {
     Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
     catalogProperties.put(ICEBERG_CATALOG_TYPE, ICEBERG_CATALOG_TYPE_HIVE);
@@ -90,7 +98,8 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
       throw new UnsupportedOperationException(
           "Cannot build mixed-tables for table format:" + tableFormat);
     }
-    return new MixedHiveTables(catalogMeta);
+    return new MixedHiveTables(
+        catalogMeta.getCatalogProperties(), CatalogUtil.buildMetaStore(catalogMeta));
   }
 
   @Override

@@ -35,6 +35,7 @@ import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.HiveTableInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
+import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
@@ -284,6 +285,35 @@ public class TableController {
     int total = optimizingProcessesInfo.second();
 
     ctx.json(OkResponse.of(PageResult.of(result, total)));
+  }
+
+  /**
+   * Get tasks of optimizing process.
+   *
+   * @param ctx - context for handling the request and response
+   */
+  public void getOptimizingProcessTasks(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    String processId = ctx.pathParam("processId");
+    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
+    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+
+    int offset = (page - 1) * pageSize;
+    int limit = pageSize;
+    ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
+    Preconditions.checkArgument(offset >= 0, "offset[%s] must >= 0", offset);
+    Preconditions.checkArgument(limit >= 0, "limit[%s] must >= 0", limit);
+    Preconditions.checkState(serverCatalog.exist(db, table), "no such table");
+
+    TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
+    List<OptimizingTaskInfo> optimizingTaskInfos =
+        tableDescriptor.getOptimizingProcessTaskInfos(
+            tableIdentifier.buildTableIdentifier(), Long.parseLong(processId));
+
+    PageResult<OptimizingTaskInfo> pageResult = PageResult.of(optimizingTaskInfos, offset, limit);
+    ctx.json(OkResponse.of(pageResult));
   }
 
   /**

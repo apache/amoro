@@ -24,8 +24,8 @@ import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.NoSuchDatabaseException;
+import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.ams.api.AlreadyExistsException;
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
@@ -76,34 +76,43 @@ public class BasicArcticCatalog implements ArcticCatalog {
   private static final Logger LOG = LoggerFactory.getLogger(BasicArcticCatalog.class);
 
   protected AmsClient client;
-  protected CatalogMeta catalogMeta;
-  protected Map<String, String> customProperties;
+  protected String name;
+  protected Map<String, String> catalogProperties;
   protected MixedTables tables;
   protected transient TableMetaStore tableMetaStore;
 
   @Override
   public String name() {
-    return catalogMeta.getCatalogName();
+    return name;
   }
 
   @Override
-  public void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties) {
-    this.client = client;
-    this.catalogMeta = meta;
-    this.customProperties = properties;
-    CatalogUtil.mergeCatalogProperties(catalogMeta, properties);
-    tables = newMixedTables(catalogMeta);
-    tableMetaStore = CatalogUtil.buildMetaStore(meta);
+  public void initialize(String name, Map<String, String> properties, TableMetaStore metaStore) {
+    if (properties.containsKey(CatalogMetaProperties.AMS_URI)) {
+      this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
+    }
+    this.name = name;
+    this.catalogProperties = properties;
+    this.tableMetaStore = metaStore;
+    this.tables = newMixedTables(properties, metaStore);
   }
 
-  protected MixedTables newMixedTables(CatalogMeta catalogMeta) {
-    return new MixedTables(catalogMeta);
+  protected MixedTables newMixedTables(
+      Map<String, String> catalogProperties, TableMetaStore metaStore) {
+    return new MixedTables(catalogProperties, metaStore);
+  }
+
+  protected AmsClient getClient() {
+    if (client == null) {
+      throw new IllegalStateException("AMSClient is not initialized");
+    }
+    return client;
   }
 
   @Override
   public List<String> listDatabases() {
     try {
-      return client.getDatabases(this.catalogMeta.getCatalogName());
+      return getClient().getDatabases(name());
     } catch (TException e) {
       throw new IllegalStateException("failed load database", e);
     }
@@ -112,7 +121,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
   @Override
   public void createDatabase(String databaseName) {
     try {
-      client.createDatabase(this.catalogMeta.getCatalogName(), databaseName);
+      getClient().createDatabase(name(), databaseName);
     } catch (AlreadyExistsException e) {
       throw new org.apache.iceberg.exceptions.AlreadyExistsException(
           "Database already exists, %s", databaseName);
@@ -124,7 +133,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
   @Override
   public void dropDatabase(String databaseName) {
     try {
-      client.dropDatabase(this.catalogMeta.getCatalogName(), databaseName);
+      getClient().dropDatabase(name(), databaseName);
     } catch (NoSuchObjectException e0) {
       throw new NoSuchDatabaseException(e0, databaseName);
     } catch (TException e) {
@@ -135,13 +144,8 @@ public class BasicArcticCatalog implements ArcticCatalog {
   @Override
   public List<TableIdentifier> listTables(String database) {
     try {
-      return client.listTables(this.catalogMeta.getCatalogName(), database).stream()
-          .map(
-              t ->
-                  TableIdentifier.of(
-                      this.catalogMeta.getCatalogName(),
-                      database,
-                      t.getTableIdentifier().getTableName()))
+      return getClient().listTables(name(), database).stream()
+          .map(t -> TableIdentifier.of(name(), database, t.getTableIdentifier().getTableName()))
           .collect(Collectors.toList());
     } catch (TException e) {
       throw new IllegalStateException("failed load tables", e);
@@ -179,7 +183,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
   protected void doDropTable(TableMeta meta, boolean purge) {
     try {
-      client.removeTable(meta.getTableIdentifier(), purge);
+      getClient().removeTable(meta.getTableIdentifier(), purge);
     } catch (TException e) {
       throw new IllegalStateException("error when delete table metadata from metastore");
     }
@@ -194,17 +198,6 @@ public class BasicArcticCatalog implements ArcticCatalog {
   }
 
   @Override
-  public void refresh() {
-    try {
-      this.catalogMeta = client.getCatalog(catalogMeta.getCatalogName());
-      tables.refreshCatalogMeta(catalogMeta);
-    } catch (TException e) {
-      throw new IllegalStateException(
-          String.format("failed load catalog %s.", catalogMeta.getCatalogName()), e);
-    }
-  }
-
-  @Override
   public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
     validate(tableIdentifier);
     return BasicTableBlockerManager.build(tableIdentifier, client);
@@ -212,13 +205,13 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
   @Override
   public Map<String, String> properties() {
-    return catalogMeta.getCatalogProperties();
+    return catalogProperties;
   }
 
   protected TableMeta getArcticTableMeta(TableIdentifier identifier) {
     TableMeta tableMeta;
     try {
-      tableMeta = client.getTable(CatalogUtil.amsTaleId(identifier));
+      tableMeta = getClient().getTable(CatalogUtil.amsTaleId(identifier));
       return tableMeta;
     } catch (NoSuchObjectException e) {
       throw new NoSuchTableException(e, "load table failed %s.", identifier);
@@ -246,10 +239,10 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
     public ArcticTableBuilder(TableIdentifier identifier, Schema schema) {
       Preconditions.checkArgument(
-          identifier.getCatalog().equals(catalogMeta.getCatalogName()),
+          identifier.getCatalog().equals(name()),
           "Illegal table id:%s for catalog:%s",
           identifier.toString(),
-          catalogMeta.getCatalogName());
+          name());
       this.identifier = identifier;
       this.schema = schema;
       this.partitionSpec = PartitionSpec.unpartitioned();
@@ -362,7 +355,7 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
     protected void checkProperties() {
       Map<String, String> mergedProperties =
-          CatalogUtil.mergeCatalogPropertiesToTable(properties, catalogMeta.getCatalogProperties());
+          CatalogUtil.mergeCatalogPropertiesToTable(properties, catalogProperties);
       boolean enableStream =
           CompatiblePropertyUtil.propertyAsBoolean(
               mergedProperties,
@@ -469,16 +462,12 @@ public class BasicArcticCatalog implements ArcticCatalog {
     }
 
     protected String getDatabaseLocation() {
-      if (catalogMeta.getCatalogProperties() != null) {
+      if (catalogProperties != null) {
         String catalogWarehouse =
-            catalogMeta
-                .getCatalogProperties()
-                .getOrDefault(CatalogMetaProperties.KEY_WAREHOUSE, null);
+            catalogProperties.getOrDefault(CatalogMetaProperties.KEY_WAREHOUSE, null);
         if (catalogWarehouse == null) {
           catalogWarehouse =
-              catalogMeta
-                  .getCatalogProperties()
-                  .getOrDefault(CatalogMetaProperties.KEY_WAREHOUSE_DIR, null);
+              catalogProperties.getOrDefault(CatalogMetaProperties.KEY_WAREHOUSE_DIR, null);
         }
         if (catalogWarehouse == null) {
           throw new NullPointerException("Catalog warehouse is null.");
