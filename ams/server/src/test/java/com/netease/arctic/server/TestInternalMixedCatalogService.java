@@ -22,6 +22,7 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BasicArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
@@ -33,6 +34,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.catalog.Namespace;
@@ -214,11 +216,13 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
     public void setupTest() {
       ArcticCatalog historicalCatalog = new BasicArcticCatalog();
       CatalogMeta meta = serverCatalog.getMetadata();
-      AmsClient client = new PooledAmsClient(ams.getTableServiceUrl());
-      historicalCatalog.initialize(client, meta, ImmutableMap.of());
+      meta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, ams.getTableServiceUrl());
 
       historicalCatalog.createDatabase(database);
-      this.historicalCatalog = historicalCatalog;
+      this.historicalCatalog = CatalogLoader.createCatalog(
+          meta.getCatalogName(), BasicArcticCatalog.class.getName(),
+          meta.getCatalogType(), meta.getCatalogProperties(), CatalogUtil.buildMetaStore(meta)
+      );
     }
 
     @AfterEach

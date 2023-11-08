@@ -40,6 +40,7 @@ import com.netease.arctic.mixed.MixedIcebergAmoroCatalog;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.aws.glue.GlueCatalog;
 import org.apache.iceberg.common.DynConstructors;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
@@ -211,9 +212,20 @@ public class CatalogLoader {
       String metastoreType,
       Map<String, String> properties,
       TableMetaStore metaStore) {
+    String catalogImpl = catalogImpl(metastoreType, properties);
+    return createCatalog(catalogName, catalogImpl, metastoreType, properties, metaStore);
+  }
+
+  @VisibleForTesting
+  public static ArcticCatalog createCatalog(
+      String catalogName,
+      String catalogImpl,
+      String metastoreType,
+      Map<String, String> properties,
+      TableMetaStore metaStore
+  ) {
     properties =
         CatalogUtil.withIcebergCatalogInitializeProperties(catalogName, metastoreType, properties);
-    String catalogImpl = catalogImpl(metastoreType, properties);
     ArcticCatalog catalog = buildCatalog(catalogImpl);
     catalog.initialize(catalogName, properties, metaStore);
     return catalog;

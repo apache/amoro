@@ -6,7 +6,6 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.formats.mixed.MixedTable;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.formats.mixed.MixedIcebergTable;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.TableMetadata;
@@ -14,8 +13,6 @@ import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
 
 import java.util.Map;
-
-public class InternalMixedCatalogImpl extends InternalCatalog {
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.InternalTableUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -78,7 +75,7 @@ public class InternalMixedCatalogImpl extends InternalIcebergCatalogImpl {
           new BasicUnkeyedTable(
               tableIdentifier, baseTable, fileIO, getMetadata().getCatalogProperties());
     }
-    return new MixedIcebergTable(mixedIcebergTable);
+    return new MixedTable(mixedIcebergTable, TableFormat.MIXED_ICEBERG);
   }
 
   @Override

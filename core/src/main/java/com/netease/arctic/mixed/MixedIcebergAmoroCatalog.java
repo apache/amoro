@@ -60,15 +60,15 @@ public class MixedIcebergAmoroCatalog extends BasicMixedIcebergCatalog {
 
   @Override
   protected MixedTables newMixedTables(
-      TableMetaStore metaStore, CatalogMeta meta, Catalog icebergCatalog) {
-    return new InternalMixedTables(metaStore, meta, icebergCatalog);
+      TableMetaStore metaStore, Map<String, String> catalogProperties, Catalog icebergCatalog) {
+    return new InternalMixedTables(metaStore, catalogProperties, icebergCatalog);
   }
 
   static class InternalMixedTables extends MixedTables {
 
     public InternalMixedTables(
-        TableMetaStore tableMetaStore, CatalogMeta catalogMeta, Catalog catalog) {
-      super(tableMetaStore, catalogMeta, catalog);
+        TableMetaStore tableMetaStore, Map<String, String> catalogProperties, Catalog catalog) {
+      super(tableMetaStore, catalogProperties, catalog);
     }
 
     @Override
