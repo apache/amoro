@@ -159,7 +159,9 @@ public class TestCatalog extends CatalogTestBase {
             + ")");
 
     Map<String, String> properties =
-        getMixedFormatCatalog().loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE)).properties();
+        getMixedFormatCatalog()
+            .loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE))
+            .properties();
 
     // index for compute columns
     int[] computedIndex = {3, 4, 5};
