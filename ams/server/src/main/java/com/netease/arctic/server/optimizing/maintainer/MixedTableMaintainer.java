@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -105,6 +106,16 @@ public class MixedTableMaintainer implements TableMaintainer {
       changeMaintainer.expireSnapshots(tableRuntime);
     }
     baseMaintainer.expireSnapshots(tableRuntime);
+  }
+
+  @Override
+  public void autoCreateTags(TableRuntime tableRuntime) {
+    new AutoCreateIcebergTagAction(
+            arcticTable.isKeyedTable()
+                ? arcticTable.asKeyedTable().baseTable()
+                : arcticTable.asUnkeyedTable(),
+            LocalDateTime.now())
+        .execute();
   }
 
   protected void expireSnapshots(long mustOlderThan) {

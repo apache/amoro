@@ -64,8 +64,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   public static final String METADATA_FOLDER_NAME = "metadata";
   public static final String DATA_FOLDER_NAME = "data";
+  // same as org.apache.iceberg.flink.sink.IcebergFilesCommitter#FLINK_JOB_ID
   public static final String FLINK_JOB_ID = "flink.job-id";
-
+  // same as org.apache.iceberg.flink.sink.IcebergFilesCommitter#MAX_COMMITTED_CHECKPOINT_ID
   public static final String FLINK_MAX_COMMITTED_CHECKPOINT_ID =
       "flink.max-committed-checkpoint-id";
 
@@ -104,6 +105,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     cleanDanglingDeleteFiles();
   }
 
+  @Override
   public void expireSnapshots(TableRuntime tableRuntime) {
     TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
     if (!tableConfiguration.isExpireSnapshotEnabled()) {
@@ -113,7 +115,12 @@ public class IcebergTableMaintainer implements TableMaintainer {
         olderThanSnapshotNeedToExpire(tableRuntime), expireSnapshotNeedToExcludeFiles());
   }
 
-  public void expireSnapshots(long mustOlderThan) {
+  @Override
+  public void autoCreateTags(TableRuntime tableRuntime) {
+    new AutoCreateIcebergTagAction(table, LocalDateTime.now()).execute();
+  }
+
+  void expireSnapshots(long mustOlderThan) {
     expireSnapshots(
         olderThanSnapshotNeedToExpire(mustOlderThan), expireSnapshotNeedToExcludeFiles());
   }
