@@ -64,7 +64,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
     new AutoCreateIcebergTagAction(table, now).execute();
     checkTagCount(table, 1);
     checkTag(table, "tag-day-" + formatDate(now.minusDays(1)), snapshot);
-    
+
     // should not recreate tag
     new AutoCreateIcebergTagAction(table, now).execute();
     checkTagCount(table, 1);
@@ -127,7 +127,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
     new AutoCreateIcebergTagAction(table, now).execute();
     checkTagCount(table, 1);
   }
-  
+
   private long getOffsetMinutesOfToday(long millis) {
     LocalDateTime now = fromEpochMillis(millis);
     LocalDateTime today = LocalDateTime.of(now.toLocalDate(), LocalTime.ofSecondOfDay(0));
@@ -138,7 +138,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
   private LocalDateTime fromEpochMillis(long millis) {
     return LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault());
   }
-  
+
   private String formatDate(LocalDateTime localDateTime) {
     return localDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
   }
@@ -146,7 +146,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
   private void checkNoTag(Table table) {
     Assert.assertFalse(table.refs().values().stream().anyMatch(SnapshotRef::isTag));
   }
-  
+
   private void checkTagCount(Table table, int count) {
     Assert.assertEquals(count, table.refs().values().stream().filter(SnapshotRef::isTag).count());
   }
