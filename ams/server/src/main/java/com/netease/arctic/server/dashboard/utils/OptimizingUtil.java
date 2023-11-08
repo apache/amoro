@@ -1,6 +1,5 @@
 package com.netease.arctic.server.dashboard.utils;
 
-import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
 import com.netease.arctic.server.dashboard.model.TableOptimizingInfo;
 import com.netease.arctic.server.optimizing.MetricsSummary;
@@ -8,8 +7,7 @@ import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
 import com.netease.arctic.server.table.TableRuntime;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.ContentFile;
 
 public class OptimizingUtil {
 
@@ -63,34 +61,36 @@ public class OptimizingUtil {
     }
     return FilesStatistics.builder()
         .addFiles(metricsSummary.getEqualityDeleteSize(), metricsSummary.getEqDeleteFileCnt())
-        .addFiles(metricsSummary.getPositionalDeleteSize(), metricsSummary.getPosDeleteFileCnt())
+        .addFiles(metricsSummary.getPositionDeleteSize(), metricsSummary.getPosDeleteFileCnt())
         .addFiles(metricsSummary.getRewriteDataSize(), metricsSummary.getRewriteDataFileCnt())
         .build();
   }
 
-  public static long getFileSize(RewriteFilesOutput output) {
+  public static long getFileSize(ContentFile<?>[] contentFiles) {
     long size = 0;
-    if (output.getDataFiles() != null) {
-      for (DataFile dataFile : output.getDataFiles()) {
-        size += dataFile.fileSizeInBytes();
-      }
-    }
-    if (output.getDeleteFiles() != null) {
-      for (DeleteFile dataFile : output.getDeleteFiles()) {
-        size += dataFile.fileSizeInBytes();
+    if (contentFiles != null) {
+      for (ContentFile<?> contentFile : contentFiles) {
+        size += contentFile.fileSizeInBytes();
       }
     }
     return size;
   }
 
-  public static int getFileCount(RewriteFilesOutput output) {
+  public static int getFileCount(ContentFile<?>[] contentFiles) {
     int length = 0;
-    if (output.getDataFiles() != null) {
-      length += output.getDataFiles().length;
-    }
-    if (output.getDeleteFiles() != null) {
-      length += output.getDeleteFiles().length;
+    if (contentFiles != null) {
+      length += contentFiles.length;
     }
     return length;
+  }
+
+  public static long getRecordCnt(ContentFile<?>[] contentFiles) {
+    int recordCnt = 0;
+    if (contentFiles != null) {
+      for (ContentFile<?> contentFile : contentFiles) {
+        recordCnt += contentFile.recordCount();
+      }
+    }
+    return recordCnt;
   }
 }
