@@ -26,6 +26,7 @@ import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
@@ -90,12 +91,16 @@ public class IcebergCatalog implements FormatCatalog {
 
   @Override
   public AmoroTable<?> loadTable(String database, String table) {
-    Table icebergTable = icebergCatalog.loadTable(TableIdentifier.of(database, table));
-    return IcebergTable.newIcebergTable(
-        com.netease.arctic.table.TableIdentifier.of(icebergCatalog.name(), database, table),
-        icebergTable,
-        metaStore,
-        properties);
+    try {
+      Table icebergTable = icebergCatalog.loadTable(TableIdentifier.of(database, table));
+      return IcebergTable.newIcebergTable(
+          com.netease.arctic.table.TableIdentifier.of(icebergCatalog.name(), database, table),
+          icebergTable,
+          metaStore,
+          properties);
+    } catch (NoSuchTableException e) {
+      throw new com.netease.arctic.NoSuchTableException(e);
+    }
   }
 
   @Override

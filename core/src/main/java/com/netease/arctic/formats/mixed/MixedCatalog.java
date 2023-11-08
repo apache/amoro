@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.exceptions.NoSuchTableException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -64,8 +65,13 @@ public class MixedCatalog implements FormatCatalog {
 
   @Override
   public AmoroTable<?> loadTable(String database, String table) {
-    ArcticTable mixedTable = catalog.loadTable(TableIdentifier.of(catalog.name(), database, table));
-    return new MixedTable(mixedTable, format);
+    try {
+      ArcticTable mixedTable =
+          catalog.loadTable(TableIdentifier.of(catalog.name(), database, table));
+      return new MixedTable(mixedTable, format);
+    } catch (NoSuchTableException e) {
+      throw new com.netease.arctic.NoSuchTableException(e);
+    }
   }
 
   @Override
