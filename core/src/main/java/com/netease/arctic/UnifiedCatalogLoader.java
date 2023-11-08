@@ -20,7 +20,7 @@ package com.netease.arctic;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.NoSuchObjectException;
-import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -28,17 +28,14 @@ import java.util.function.Supplier;
 public class UnifiedCatalogLoader {
 
   public static UnifiedCatalog loadUnifiedCatalog(
-      String amsUri, String catalogName, Map<String, String> clientSideProperties) {
+      String amsUri, String catalogName, Map<String, String> props) {
     AmsClient client = new PooledAmsClient(amsUri);
-    return loadUnifiedCatalog(client, catalogName, clientSideProperties);
-  }
-
-  private static UnifiedCatalog loadUnifiedCatalog(
-      AmsClient client, String catalogName, Map<String, String> props) {
     Supplier<CatalogMeta> metaSupplier =
         () -> {
           try {
-            return client.getCatalog(catalogName);
+            CatalogMeta meta = client.getCatalog(catalogName);
+            meta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, amsUri);
+            return meta;
           } catch (NoSuchObjectException e) {
             throw new IllegalStateException(
                 "catalog not found, please check catalog name:" + catalogName, e);
@@ -47,8 +44,6 @@ public class UnifiedCatalogLoader {
           }
         };
 
-    CatalogMeta catalogMeta = metaSupplier.get();
-    CatalogUtil.mergeCatalogProperties(catalogMeta, props);
-    return new CommonUnifiedCatalog(metaSupplier, catalogMeta, props);
+    return new CommonUnifiedCatalog(metaSupplier, props);
   }
 }
