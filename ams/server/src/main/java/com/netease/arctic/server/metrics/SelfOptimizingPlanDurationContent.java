@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.metrics.MetricType;
 import com.netease.arctic.ams.api.metrics.MetricsContent;
 import com.netease.arctic.ams.api.metrics.TaggedMetrics;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 public class SelfOptimizingPlanDurationContent
     implements MetricsContent<SelfOptimizingPlanDurationContent> {
@@ -65,5 +66,13 @@ public class SelfOptimizingPlanDurationContent
   @Override
   public SelfOptimizingPlanDurationContent data() {
     return this;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add(TABLE_NAME, tableName)
+        .add(TABLE_OPTIMIZING_PLAN_DURATION, tableOptimizingPlanDuration)
+        .toString();
   }
 }

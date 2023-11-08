@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.metrics.MetricType;
 import com.netease.arctic.ams.api.metrics.MetricsContent;
 import com.netease.arctic.ams.api.metrics.TaggedMetrics;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 public class SelfOptimizingTotalCostMsContent
     implements MetricsContent<SelfOptimizingTotalCostMsContent> {
@@ -82,5 +83,15 @@ public class SelfOptimizingTotalCostMsContent
   @Override
   public SelfOptimizingTotalCostMsContent data() {
     return this;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add(TABLE_NAME, tableName)
+        .add(OPTIMIZING_PROCESS_ID, optimizingProcessId)
+        .add(OPTIMIZING_TYPE, optimizingType)
+        .add(TABLE_OPTIMIZING_TOTAL_COST_MS, tableOptimizingTotalCostMs)
+        .toString();
   }
 }

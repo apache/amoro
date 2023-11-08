@@ -127,6 +127,8 @@ public class ArcticServiceContainer {
   }
 
   public void startService() throws Exception {
+    metricsManager = new MetricsManager();
+    metricsManager.initialize();
     tableService = new DefaultTableService(serviceConfig, metricsManager);
     optimizingService = new DefaultOptimizingService(serviceConfig, tableService);
 
@@ -141,6 +143,7 @@ public class ArcticServiceContainer {
     addHandlerChain(AsyncTableExecutors.getInstance().getBlockerExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getHiveCommitSyncExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getTableRefreshingExecutor());
+
     tableService.initialize();
     LOG.info("AMS table service have been initialized");
     terminalManager = new TerminalManager(serviceConfig, tableService);

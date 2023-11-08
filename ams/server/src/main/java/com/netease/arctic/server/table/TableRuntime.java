@@ -265,23 +265,30 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   private void updateOptimizingStatus(OptimizingStatus status) {
-    SelfOptimizingStatusDurationMsContent selfOptimizingStatusDurationMsContent =
-        new SelfOptimizingStatusDurationMsContent(
-            tableIdentifier.toString(), optimizingStatus.displayValue());
-    selfOptimizingStatusDurationMsContent
-        .tableOptimizingStatusDurationMs()
-        .inc(System.currentTimeMillis() - currentStatusStartTime);
-    if (optimizingStatus == OptimizingStatus.COMMITTING) {
-      selfOptimizingStatusDurationMsContent.setOptimizingType(
-          optimizingProcess.getOptimizingType().name());
-      selfOptimizingStatusDurationMsContent.setOptimizingProcessId(
-          optimizingProcess.getProcessId());
-      selfOptimizingStatusDurationMsContent.setTargetSnapshotId(
-          optimizingProcess.getTargetSnapshotId());
+    long currentTime = System.currentTimeMillis();
+    SelfOptimizingStatusDurationMsContent selfOptimizingStatusDurationMsContent;
+
+    if (!optimizingStatus.isProcessing() || optimizingStatus == OptimizingStatus.COMMITTING) {
+      selfOptimizingStatusDurationMsContent =
+          new SelfOptimizingStatusDurationMsContent(
+              tableIdentifier.toString(), optimizingStatus.displayValue());
+      if (!optimizingStatus.isProcessing()) {
+        selfOptimizingStatusDurationMsContent
+            .tableOptimizingStatusDurationMs()
+            .inc(currentTime - currentStatusStartTime);
+      }
+      if (optimizingStatus == OptimizingStatus.COMMITTING) {
+        selfOptimizingStatusDurationMsContent.setOptimizingType(
+            optimizingProcess.getOptimizingType().name());
+        selfOptimizingStatusDurationMsContent.setOptimizingProcessId(
+            optimizingProcess.getProcessId());
+        selfOptimizingStatusDurationMsContent.setTargetSnapshotId(
+            optimizingProcess.getTargetSnapshotId());
+      }
+      metricsManager.emit(selfOptimizingStatusDurationMsContent);
     }
-    metricsManager.emit(selfOptimizingStatusDurationMsContent);
     this.optimizingStatus = status;
-    this.currentStatusStartTime = System.currentTimeMillis();
+    this.currentStatusStartTime = currentTime;
   }
 
   private boolean refreshSnapshots(AmoroTable<?> amoroTable) {

@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.metrics.MetricType;
 import com.netease.arctic.ams.api.metrics.MetricsContent;
 import com.netease.arctic.ams.api.metrics.TaggedMetrics;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 public class SelfOptimizingStatusDurationMsContent
     implements MetricsContent<SelfOptimizingStatusDurationMsContent> {
@@ -107,5 +108,17 @@ public class SelfOptimizingStatusDurationMsContent
   @Override
   public SelfOptimizingStatusDurationMsContent data() {
     return this;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add(TABLE_NAME, tableName)
+        .add(OPTIMIZING_STATUS, optimizingStatus)
+        .add(OPTIMIZING_PROCESS_ID, optimizingProcessId)
+        .add(OPTIMIZING_TYPE, optimizingType)
+        .add(TARGET_SNAPSHOT_ID, targetSnapshotId)
+        .add(TABLE_OPTIMIZING_STATUS_DURATION_MS, tableOptimizingStatusDurationMs)
+        .toString();
   }
 }
