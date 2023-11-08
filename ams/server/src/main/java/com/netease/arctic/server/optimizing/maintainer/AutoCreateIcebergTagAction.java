@@ -67,8 +67,7 @@ public class AutoCreateIcebergTagAction {
   }
 
   private String findTagOfToday() {
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(tagConfig.getTagFormat());
-    String name = now.minusDays(1).format(formatter);
+    String name = generateTagName()
     return table.refs().entrySet().stream()
         .filter(entry -> entry.getValue().isTag())
         .map(Map.Entry::getKey)
