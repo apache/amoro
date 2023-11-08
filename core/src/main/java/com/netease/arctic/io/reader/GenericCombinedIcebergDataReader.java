@@ -23,11 +23,7 @@ import com.netease.arctic.optimizing.OptimizingDataReader;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
 import com.netease.arctic.utils.map.StructLikeCollections;
-import org.apache.iceberg.ContentFile;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.MetadataColumns;
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.Schema;
+import org.apache.iceberg.*;
 import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.avro.DataReader;
@@ -64,7 +60,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected final BiFunction<Type, Object, Object> convertConstant;
   protected final boolean reuseContainer;
 
-  protected final ContentFile[] deleteFiles;
+  protected final ContentFile<?>[] deleteFiles;
   protected CombinedDeleteFilter<Record> deleteFilter;
 
   protected PartitionSpec spec;
@@ -94,10 +90,25 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
         Arrays.stream(rewriteFilesInput.dataFiles())
             .map(s -> s.path().toString())
             .collect(Collectors.toSet());
+    long dataRecordCnt =
+        Arrays.stream(rewriteFilesInput.dataFiles()).mapToLong(ContentFile::recordCount).sum();
+    long eqDeleteRecordCnt =
+        Arrays.stream(rewriteFilesInput.deleteFiles())
+            .filter(file -> file.content() == FileContent.EQUALITY_DELETES)
+            .mapToLong(ContentFile::recordCount)
+            .sum();
     this.deleteFilter =
-        new GenericDeleteFilter(deleteFiles, positionPathSet, tableSchema, structLikeCollections);
+        new GenericDeleteFilter(
+            this,
+            deleteFiles,
+            positionPathSet,
+            tableSchema,
+            structLikeCollections,
+            // TODO trigger policy
+            eqDeleteRecordCnt > dataRecordCnt * 2);
   }
 
+  @Override
   public CloseableIterable<Record> readData() {
     if (input.rewrittenDataFiles() == null) {
       return CloseableIterable.empty();
@@ -116,7 +127,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     StructForDelete<Record> structForDelete =
         new StructForDelete<>(requireSchema, deleteFilter.deleteIds());
     CloseableIterable<StructForDelete<Record>> structForDeleteCloseableIterable =
-        CloseableIterable.transform(concat, record -> structForDelete.wrap(record));
+        CloseableIterable.transform(concat, structForDelete::wrap);
 
     CloseableIterable<Record> iterable =
         CloseableIterable.transform(
@@ -124,6 +135,21 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     return iterable;
   }
 
+  @Override
+  public CloseableIterable<Record> readIdentifierData(Set<Integer> identifierFieldIds) {
+    if (identifierFieldIds == null || identifierFieldIds.size() == 0) {
+      identifierFieldIds = tableSchema.identifierFieldIds();
+    }
+    Schema identifierSchema = TypeUtil.select(tableSchema, identifierFieldIds);
+
+    return CloseableIterable.concat(
+        CloseableIterable.transform(
+            CloseableIterable.withNoopClose(
+                Arrays.stream(input.rewrittenDataFiles()).collect(Collectors.toList())),
+            s -> openFile(s, spec, identifierSchema)));
+  }
+
+  @Override
   public CloseableIterable<Record> readDeletedData() {
     if (input.rePosDeletedDataFiles() == null) {
       return CloseableIterable.empty();
@@ -147,7 +173,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     StructForDelete<Record> structForDelete =
         new StructForDelete<>(requireSchema, deleteFilter.deleteIds());
     CloseableIterable<StructForDelete<Record>> structForDeleteCloseableIterable =
-        CloseableIterable.transform(concat, record -> structForDelete.wrap(record));
+        CloseableIterable.transform(concat, structForDelete::wrap);
 
     CloseableIterable<Record> iterable =
         CloseableIterable.transform(
@@ -289,11 +315,19 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected class GenericDeleteFilter extends CombinedDeleteFilter<Record> {
 
     public GenericDeleteFilter(
-        ContentFile[] deleteFiles,
+        GenericCombinedIcebergDataReader combinedDataReader,
+        ContentFile<?>[] deleteFiles,
         Set<String> positionPathSets,
         Schema tableSchema,
-        StructLikeCollections structLikeCollections) {
-      super(deleteFiles, positionPathSets, tableSchema, structLikeCollections);
+        StructLikeCollections structLikeCollections,
+        boolean filterEqDelete) {
+      super(
+          combinedDataReader,
+          deleteFiles,
+          positionPathSets,
+          tableSchema,
+          structLikeCollections,
+          filterEqDelete);
     }
 
     @Override

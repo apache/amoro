@@ -50,10 +50,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.IntStream;
 
 @RunWith(Parameterized.class)
 public class TestIcebergCombinedReader extends TableTestBase {
@@ -63,6 +61,8 @@ public class TestIcebergCombinedReader extends TableTestBase {
   private RewriteFilesInput scanTask;
 
   private RewriteFilesInput dataScanTask;
+
+  private RewriteFilesInput filterEqDeleteScanTask;
 
   public TestIcebergCombinedReader(boolean partitionedTable, FileFormat fileFormat) {
     super(
@@ -133,6 +133,23 @@ public class TestIcebergCombinedReader extends TableTestBase {
                 deletes)
             .first();
 
+    List<Record> records = new ArrayList<>();
+    IntStream.range(2, 100).forEach(id -> records.add(idRecord.copy("id", id)));
+    DeleteFile eqDeleteFile1 =
+        FileHelpers.writeDeleteFile(
+            getArcticTable().asUnkeyedTable(),
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            records,
+            idSchema);
+    DeleteFile eqDeleteFile2 =
+        FileHelpers.writeDeleteFile(
+            getArcticTable().asUnkeyedTable(),
+            outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(),
+            partitionData,
+            records,
+            idSchema);
+
     scanTask =
         new RewriteFilesInput(
             new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
@@ -149,6 +166,16 @@ public class TestIcebergCombinedReader extends TableTestBase {
             new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
             new DeleteFile[] {},
             new DeleteFile[] {},
+            getArcticTable());
+    filterEqDeleteScanTask =
+        new RewriteFilesInput(
+            new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
+            new DataFile[] {},
+            new DeleteFile[] {},
+            new DeleteFile[] {
+              MixedDataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile1, 2L),
+              MixedDataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile2, 3L)
+            },
             getArcticTable());
   }
 
@@ -230,6 +257,25 @@ public class TestIcebergCombinedReader extends TableTestBase {
             dataScanTask);
     try (CloseableIterable<Record> records = dataReader.readDeletedData()) {
       Assert.assertEquals(0, Iterables.size(records));
+    }
+    dataReader.close();
+  }
+
+  @Test
+  public void readDataWithEqDelete() throws IOException {
+    GenericCombinedIcebergDataReader dataReader =
+        new GenericCombinedIcebergDataReader(
+            getArcticTable().io(),
+            getArcticTable().schema(),
+            getArcticTable().spec(),
+            null,
+            false,
+            IdentityPartitionConverters::convertConstant,
+            false,
+            null,
+            filterEqDeleteScanTask);
+    try (CloseableIterable<Record> records = dataReader.readData()) {
+      Assert.assertEquals(1, Iterables.size(records));
     }
     dataReader.close();
   }

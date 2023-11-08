@@ -22,6 +22,7 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 
 import java.io.Closeable;
+import java.util.Set;
 
 /** An interface to read the data and delete data. */
 public interface OptimizingDataReader extends Closeable {
@@ -32,6 +33,8 @@ public interface OptimizingDataReader extends Closeable {
    */
   CloseableIterable<Record> readData();
 
+  /** */
+  CloseableIterable<Record> readIdentifierData(Set<Integer> identifierFieldIds);
   /**
    * Reading data that needs to be deleted during MOR. If there is no delete file, then the result
    * is empty.

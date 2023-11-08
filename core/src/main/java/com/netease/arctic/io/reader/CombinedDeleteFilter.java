@@ -23,12 +23,7 @@ import com.netease.arctic.io.CloseablePredicate;
 import com.netease.arctic.utils.ContentFiles;
 import com.netease.arctic.utils.map.StructLikeBaseMap;
 import com.netease.arctic.utils.map.StructLikeCollections;
-import org.apache.iceberg.Accessor;
-import org.apache.iceberg.ContentFile;
-import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.MetadataColumns;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.StructLike;
+import org.apache.iceberg.*;
 import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
@@ -53,12 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 
 /**
@@ -90,12 +80,18 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
   private final Schema deleteSchema;
 
   private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
+  private final GenericCombinedIcebergDataReader combinedDataReader;
+
+  private final boolean filterEqDelete;
 
   protected CombinedDeleteFilter(
+      GenericCombinedIcebergDataReader combinedDataReader,
       ContentFile<?>[] deleteFiles,
       Set<String> positionPathSets,
       Schema tableSchema,
-      StructLikeCollections structLikeCollections) {
+      StructLikeCollections structLikeCollections,
+      boolean filterEqDelete) {
+    this.combinedDataReader = combinedDataReader;
     ImmutableList.Builder<DeleteFile> posDeleteBuilder = ImmutableList.builder();
     ImmutableList.Builder<DeleteFile> eqDeleteBuilder = ImmutableList.builder();
     if (deleteFiles != null) {
@@ -121,7 +117,6 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
         }
       }
     }
-
     this.positionPathSets = positionPathSets;
     this.posDeletes = posDeleteBuilder.build();
     this.eqDeletes = eqDeleteBuilder.build();
@@ -130,6 +125,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     if (structLikeCollections != null) {
       this.structLikeCollections = structLikeCollections;
     }
+    this.filterEqDelete = filterEqDelete;
   }
 
   protected abstract InputFile getInputFile(String location);
@@ -186,6 +182,18 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
       return record -> false;
     }
 
+    InternalRecordWrapper internalRecordWrapper =
+        new InternalRecordWrapper(deleteSchema.asStruct());
+
+    StructLikeBaseMap<Long> identifierStructLikeMap = null;
+    if (filterEqDelete) {
+      identifierStructLikeMap = structLikeCollections.createStructLikeMap(deleteSchema.asStruct());
+      for (Record record : combinedDataReader.readIdentifierData(deleteIds)) {
+        StructLike identifier = internalRecordWrapper.copyFor(record);
+        identifierStructLikeMap.put(identifier, 1L);
+      }
+    }
+
     CloseableIterable<RecordWithLsn> deleteRecords =
         CloseableIterable.transform(
             CloseableIterable.concat(
@@ -196,9 +204,6 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
                             openDeletes(ContentFiles.asDeleteFile(s), deleteSchema),
                             r -> new RecordWithLsn(s.dataSequenceNumber(), r)))),
             RecordWithLsn::recordCopy);
-
-    InternalRecordWrapper internalRecordWrapper =
-        new InternalRecordWrapper(deleteSchema.asStruct());
 
     StructLikeBaseMap<Long> structLikeMap =
         structLikeCollections.createStructLikeMap(deleteSchema.asStruct());
@@ -211,8 +216,14 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
               : getArcticFileIo().doAs(deletes::iterator);
       while (it.hasNext()) {
         RecordWithLsn recordWithLsn = it.next();
-        Long lsn = recordWithLsn.getLsn();
         StructLike deletePK = internalRecordWrapper.copyFor(recordWithLsn.getRecord());
+        if (filterEqDelete) {
+          Long ident = identifierStructLikeMap.get(deletePK);
+          if (ident == null) {
+            continue;
+          }
+        }
+        Long lsn = recordWithLsn.getLsn();
         Long old = structLikeMap.get(deletePK);
         if (old == null || old.compareTo(lsn) <= 0) {
           structLikeMap.put(deletePK, lsn);

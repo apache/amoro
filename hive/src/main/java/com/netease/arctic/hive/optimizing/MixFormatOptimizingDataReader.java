@@ -19,10 +19,12 @@ import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
+import org.apache.iceberg.types.TypeUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -50,6 +52,20 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
     AdaptHiveGenericKeyedDataReader reader = arcticDataReader(table.schema());
 
     // Change returned value by readData  from Iterator to Iterable in future
+    CloseableIterator<Record> closeableIterator =
+        reader.readData(nodeFileScanTask(input.rewrittenDataFilesForMixed()));
+    return wrapIterator2Iterable(closeableIterator);
+  }
+
+  @Override
+  public CloseableIterable<Record> readIdentifierData(Set<Integer> identifierFieldIds) {
+    if (identifierFieldIds == null || identifierFieldIds.size() == 0) {
+      identifierFieldIds = table.schema().identifierFieldIds();
+    }
+    Schema schema = TypeUtil.select(table.schema(), identifierFieldIds);
+    AdaptHiveGenericKeyedDataReader reader = arcticDataReader(schema);
+
+    // Change returned value by readIdentifierData from Iterator to Iterable in future
     CloseableIterator<Record> closeableIterator =
         reader.readData(nodeFileScanTask(input.rewrittenDataFilesForMixed()));
     return wrapIterator2Iterable(closeableIterator);
