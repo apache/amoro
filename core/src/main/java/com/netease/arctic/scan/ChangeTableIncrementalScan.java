@@ -53,7 +53,4 @@ public interface ChangeTableIncrementalScan extends TableScan {
 
   @Override
   ChangeTableIncrementalScan filter(Expression filter);
-
-  @Override
-  ChangeTableIncrementalScan useRef(String ref);
 }

@@ -60,29 +60,6 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
   }
 
   @Test
-  public void testIncrementalScanUseRef() {
-    Snapshot snapshot = getArcticTable().asKeyedTable().changeTable().currentSnapshot();
-    String branchName = "test_branch";
-    getArcticTable()
-        .asKeyedTable()
-        .changeTable()
-        .manageSnapshots()
-        .createBranch(branchName, snapshot.snapshotId())
-        .commit();
-    writeChangeStore(4L, ChangeAction.INSERT, changeInsertRecords(allRecords));
-    Assert.assertNotEquals(
-        snapshot.snapshotId(),
-        getArcticTable().asKeyedTable().changeTable().currentSnapshot().snapshotId());
-
-    ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable().asKeyedTable().changeTable().newScan();
-    changeTableIncrementalScan = changeTableIncrementalScan.useRef(branchName);
-    CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles();
-
-    assertFilesSequence(tasks, 3, 1, 2);
-  }
-
-  @Test
   public void testIncrementalScanFromPartitionSequence() throws IOException {
     StructLikeMap<Long> fromSequence =
         StructLikeMap.create(getArcticTable().spec().partitionType());

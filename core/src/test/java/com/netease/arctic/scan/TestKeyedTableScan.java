@@ -18,13 +18,11 @@
 
 package com.netease.arctic.scan;
 
-import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.io.TableDataTestBase;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.table.BaseTable;
-import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.utils.ArcticDataFiles;
 import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.StatisticsFileUtil;
@@ -60,26 +58,6 @@ public class TestKeyedTableScan extends TableDataTestBase {
   public void testScanWithOptimizedSequence() throws IOException {
     changeOptimizedSequence();
     assertFileCount(getArcticTable().asKeyedTable().newScan().planTasks(), 4, 0, 1);
-  }
-
-  @Test
-  public void testScanWithRef() throws IOException {
-    BaseTable baseTable = getArcticTable().asKeyedTable().baseTable();
-    changeOptimizedSequence();
-    String branchName = "test_branch";
-    baseTable
-        .manageSnapshots()
-        .createBranch(branchName, baseTable.currentSnapshot().snapshotId())
-        .commit();
-    ChangeTable changeTable = getArcticTable().asKeyedTable().changeTable();
-    changeTable
-        .manageSnapshots()
-        .createBranch(branchName, changeTable.currentSnapshot().snapshotId())
-        .commit();
-    writeChangeStore(4L, ChangeAction.INSERT, changeInsertRecords(allRecords));
-    assertFileCount(getArcticTable().asKeyedTable().newScan().planTasks(), 4, 2, 1);
-    assertFileCount(
-        getArcticTable().asKeyedTable().newScan().useRef(branchName).planTasks(), 4, 0, 1);
   }
 
   private void changeOptimizedSequence() {
