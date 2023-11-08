@@ -18,23 +18,9 @@
 
 package com.netease.arctic.optimizing;
 
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-
-import java.util.Map;
-
-public class IcebergRewriteExecutorFactory implements OptimizingExecutorFactory<RewriteFilesInput> {
-
-  private Map<String, String> properties;
-
+public class TablePlanExecutor implements OptimizingExecutor<TablePlanOutput> {
   @Override
-  public void initialize(Map<String, String> properties) {
-    this.properties = Maps.newHashMap(properties);
-  }
-
-  @Override
-  public OptimizingExecutor<RewriteFilesOutput> createExecutor(RewriteFilesInput input) {
-    OptimizingInputProperties optimizingConfig = OptimizingInputProperties.parse(properties);
-    return new IcebergRewriteExecutor(
-        input, input.getTable(), optimizingConfig.getStructLikeCollections());
+  public TablePlanOutput execute() {
+    return null;
   }
 }

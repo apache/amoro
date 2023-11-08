@@ -22,6 +22,7 @@ import com.netease.arctic.optimizing.OptimizingExecutor;
 import com.netease.arctic.optimizing.OptimizingExecutorFactory;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesInput;
+import com.netease.arctic.optimizing.RewriteFilesOutput;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
@@ -38,7 +39,7 @@ public class MixFormatRewriteExecutorFactory
   }
 
   @Override
-  public OptimizingExecutor createExecutor(RewriteFilesInput input) {
+  public OptimizingExecutor<RewriteFilesOutput> createExecutor(RewriteFilesInput input) {
     OptimizingInputProperties optimizingConfig = OptimizingInputProperties.parse(properties);
     return new MixFormatRewriteExecutor(
         input,
