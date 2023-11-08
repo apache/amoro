@@ -20,8 +20,9 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticTableUtil;
+import com.netease.arctic.utils.StatisticsFileUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.iceberg.DataFile;
@@ -30,21 +31,22 @@ import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.RowDelta;
+import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
+import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 /** Overwrite {@link com.netease.arctic.table.BaseTable} and change max transaction id map */
 public class OverwriteBaseFiles extends PartitionTransactionOperation {
@@ -156,7 +158,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   }
 
   @Override
-  protected StructLikeMap<Map<String, String>> apply(Transaction transaction) {
+  protected List<StatisticsFile> apply(Transaction transaction) {
     Preconditions.checkState(
         this.dynamic != null,
         "updateOptimizedSequence() or updateOptimizedSequenceDynamically() must be invoked");
@@ -169,10 +171,13 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     }
 
     UnkeyedTable baseTable = keyedTable.baseTable();
+    List<CreateSnapshotEvent> newSnapshots = Lists.newArrayList();
 
     // step1: overwrite data files
     if (!this.addFiles.isEmpty() || !this.deleteFiles.isEmpty()) {
       OverwriteFiles overwriteFiles = transaction.newOverwrite();
+      overwriteFiles.set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
+      overwriteFiles.set(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST, "true");
 
       if (conflictDetectionFilter != null && baseTable.currentSnapshot() != null) {
         overwriteFiles.conflictDetectionFilter(conflictDetectionFilter).validateNoConflictingData();
@@ -196,6 +201,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         properties.forEach(overwriteFiles::set);
       }
       overwriteFiles.commit();
+      newSnapshots.add((CreateSnapshotEvent) overwriteFiles.updateEvent());
     }
 
     // step2: RowDelta/Rewrite pos-delete files
@@ -203,6 +209,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         || CollectionUtils.isNotEmpty(deleteDeleteFiles)) {
       if (CollectionUtils.isEmpty(deleteDeleteFiles)) {
         RowDelta rowDelta = transaction.newRowDelta();
+        rowDelta.set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
+        rowDelta.set(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST, "true");
         if (baseTable.currentSnapshot() != null) {
           rowDelta.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
         }
@@ -218,8 +226,11 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
           properties.forEach(rowDelta::set);
         }
         rowDelta.commit();
+        newSnapshots.add((CreateSnapshotEvent) rowDelta.updateEvent());
       } else {
         RewriteFiles rewriteFiles = transaction.newRewrite();
+        rewriteFiles.set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
+        rewriteFiles.set(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME_EXIST, "true");
         if (baseTable.currentSnapshot() != null) {
           rewriteFiles.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
         }
@@ -241,14 +252,26 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
           properties.forEach(rewriteFiles::set);
         }
         rewriteFiles.commit();
+        newSnapshots.add((CreateSnapshotEvent) rewriteFiles.updateEvent());
       }
+    }
+    if (newSnapshots.isEmpty()) {
+      return Collections.emptyList();
     }
 
     // step3: set optimized sequence id, optimized time
-    String commitTime = String.valueOf(System.currentTimeMillis());
+    long commitTime = System.currentTimeMillis();
     PartitionSpec spec = transaction.table().spec();
-    StructLikeMap<Map<String, String>> partitionProperties =
-        StructLikeMap.create(spec.partitionType());
+    StructLikeMap<Long> oldOptimizedSequence = ArcticTableUtil.readOptimizedSequence(keyedTable);
+    StructLikeMap<Long> oldOptimizedTime = ArcticTableUtil.readBaseOptimizedTime(keyedTable);
+    StructLikeMap<Long> optimizedSequence = StructLikeMap.create(spec.partitionType());
+    StructLikeMap<Long> optimizedTime = StructLikeMap.create(spec.partitionType());
+    if (oldOptimizedSequence != null) {
+      optimizedSequence.putAll(oldOptimizedSequence);
+    }
+    if (oldOptimizedTime != null) {
+      optimizedTime.putAll(oldOptimizedTime);
+    }
     StructLikeMap<Long> toChangePartitionSequence;
     if (this.dynamic) {
       toChangePartitionSequence = sequenceForChangedPartitions;
@@ -257,13 +280,31 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     }
     toChangePartitionSequence.forEach(
         (partition, sequence) -> {
-          Map<String, String> properties =
-              partitionProperties.computeIfAbsent(partition, k -> Maps.newHashMap());
-          properties.put(TableProperties.PARTITION_OPTIMIZED_SEQUENCE, String.valueOf(sequence));
-          properties.put(TableProperties.PARTITION_BASE_OPTIMIZED_TIME, commitTime);
+          optimizedSequence.put(partition, sequence);
+          optimizedTime.put(partition, commitTime);
         });
 
-    return partitionProperties;
+    StatisticsFile statisticsFile = null;
+    List<StatisticsFile> result = Lists.newArrayList();
+    for (CreateSnapshotEvent newSnapshot : newSnapshots) {
+      if (statisticsFile != null) {
+        result.add(StatisticsFileUtil.copyToSnapshot(statisticsFile, newSnapshot.snapshotId()));
+      } else {
+        Table table = transaction.table();
+        StatisticsFileUtil.PartitionDataSerializer<Long> dataSerializer =
+            StatisticsFileUtil.createPartitionDataSerializer(table.spec(), Long.class);
+        statisticsFile =
+            StatisticsFileUtil.writerBuilder(table)
+                .withSnapshotId(newSnapshot.snapshotId())
+                .build()
+                .add(
+                    ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE, optimizedSequence, dataSerializer)
+                .add(ArcticTableUtil.BLOB_TYPE_BASE_OPTIMIZED_TIME, optimizedTime, dataSerializer)
+                .complete();
+        result.add(statisticsFile);
+      }
+    }
+    return result;
   }
 
   private void applyDeleteExpression() {

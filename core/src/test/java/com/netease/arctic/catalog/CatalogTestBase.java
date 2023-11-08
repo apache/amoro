@@ -23,6 +23,7 @@ import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.iceberg.catalog.Catalog;
 import org.junit.After;
@@ -58,6 +59,7 @@ public abstract class CatalogTestBase {
       baseDir = "file:/" + temp.newFolder().getPath().replace("\\", "/");
     }
     catalogMeta = testHelper.buildCatalogMeta(baseDir);
+    catalogMeta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, TEST_AMS.getServerUrl());
     getAmsHandler().createCatalog(catalogMeta);
   }
 

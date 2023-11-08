@@ -93,7 +93,11 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
       throw new NoSuchDatabaseException("Database: " + database + " does not exist.");
     }
 
-    return formatCatalogAsOrder(TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG, TableFormat.PAIMON)
+    return formatCatalogAsOrder(
+            TableFormat.MIXED_HIVE,
+            TableFormat.MIXED_ICEBERG,
+            TableFormat.ICEBERG,
+            TableFormat.PAIMON)
         .map(
             formatCatalog -> {
               try {
@@ -118,7 +122,9 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
       throw new NoSuchDatabaseException("Database: " + database + " does not exist.");
     }
     TableFormat[] formats =
-        new TableFormat[] {TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG, TableFormat.PAIMON};
+        new TableFormat[] {
+          TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG, TableFormat.PAIMON
+        };
 
     Map<String, TableFormat> tableNameToFormat = Maps.newHashMap();
     for (TableFormat format : formats) {

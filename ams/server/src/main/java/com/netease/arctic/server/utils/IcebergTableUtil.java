@@ -27,6 +27,9 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableSnapshot;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableFileUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.iceberg.CatalogProperties;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
@@ -37,6 +40,9 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
+import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.io.OutputFile;
+import org.apache.iceberg.util.LocationUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,15 +69,8 @@ public class IcebergTableUtil {
     if (arcticTable.isUnkeyedTable()) {
       return new BasicTableSnapshot(tableRuntime.getCurrentSnapshotId());
     } else {
-      StructLikeMap<Long> partitionOptimizedSequence =
-          TablePropertyUtil.getPartitionOptimizedSequence(arcticTable.asKeyedTable());
-      StructLikeMap<Long> legacyPartitionMaxTransactionId =
-          TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
       return new KeyedTableSnapshot(
-          tableRuntime.getCurrentSnapshotId(),
-          tableRuntime.getCurrentChangeSnapshotId(),
-          partitionOptimizedSequence,
-          legacyPartitionMaxTransactionId);
+          tableRuntime.getCurrentSnapshotId(), tableRuntime.getCurrentChangeSnapshotId());
     }
   }
 
