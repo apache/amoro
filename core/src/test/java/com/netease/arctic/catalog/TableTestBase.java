@@ -86,7 +86,8 @@ public abstract class TableTestBase extends CatalogTestBase {
 
   @After
   public void dropTable() {
-    getUnifiedCatalog().dropTable(tableTestHelper.id().getDatabase(), tableTestHelper.id().getTableName(), true);
+    getUnifiedCatalog()
+        .dropTable(tableTestHelper.id().getDatabase(), tableTestHelper.id().getTableName(), true);
     try {
       getUnifiedCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
     } catch (Exception e) {
