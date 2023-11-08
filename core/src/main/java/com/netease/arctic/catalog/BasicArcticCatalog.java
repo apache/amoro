@@ -88,9 +88,11 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
   @Override
   public void initialize(String name, Map<String, String> properties, TableMetaStore metaStore) {
-    if (properties.containsKey(CatalogMetaProperties.AMS_URI)) {
-      this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
-    }
+    Preconditions.checkArgument(
+        properties.containsKey(CatalogMetaProperties.AMS_URI),
+        "property: %s must be set",
+        CatalogMetaProperties.AMS_URI);
+    this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
     this.name = name;
     this.catalogProperties = properties;
     this.tableMetaStore = metaStore;

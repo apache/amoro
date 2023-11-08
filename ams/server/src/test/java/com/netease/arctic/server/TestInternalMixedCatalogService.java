@@ -18,8 +18,6 @@
 
 package com.netease.arctic.server;
 
-import com.netease.arctic.AmsClient;
-import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
@@ -40,7 +38,6 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
@@ -88,6 +85,11 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
   @Override
   protected String catalogName() {
     return AmsEnvironment.INTERNAL_MIXED_ICEBERG_CATALOG;
+  }
+
+  @Test
+  public void testCatalogLoader() {
+    Assertions.assertEquals(MixedIcebergAmoroCatalog.class.getName(), catalog.getClass().getName());
   }
 
   @Nested
@@ -214,15 +216,14 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
 
     @BeforeEach
     public void setupTest() {
-      ArcticCatalog historicalCatalog = new BasicArcticCatalog();
       CatalogMeta meta = serverCatalog.getMetadata();
       meta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, ams.getTableServiceUrl());
 
-      historicalCatalog.createDatabase(database);
-      this.historicalCatalog = CatalogLoader.createCatalog(
-          meta.getCatalogName(), BasicArcticCatalog.class.getName(),
-          meta.getCatalogType(), meta.getCatalogProperties(), CatalogUtil.buildMetaStore(meta)
-      );
+      ArcticCatalog catalog = new BasicArcticCatalog();
+      catalog.initialize(
+          meta.getCatalogName(), meta.getCatalogProperties(), CatalogUtil.buildMetaStore(meta));
+      this.historicalCatalog = catalog;
+      this.historicalCatalog.createDatabase(database);
     }
 
     @AfterEach

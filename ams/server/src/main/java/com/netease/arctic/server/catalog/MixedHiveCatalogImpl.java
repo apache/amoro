@@ -40,16 +40,18 @@ public class MixedHiveCatalogImpl extends InternalCatalog {
 
   protected MixedHiveCatalogImpl(CatalogMeta catalogMeta) {
     super(catalogMeta);
-    this.tables = new MixedHiveTables(catalogMeta.getCatalogProperties(), CatalogUtil.buildMetaStore(catalogMeta));
+    this.tables =
+        new MixedHiveTables(
+            catalogMeta.getCatalogProperties(), CatalogUtil.buildMetaStore(catalogMeta));
     hiveClientPool = ((MixedHiveTables) tables()).getHiveClientPool();
   }
-
 
   @Override
   public void updateMetadata(CatalogMeta metadata) {
     super.updateMetadata(metadata);
     hiveClientPool = ((MixedHiveTables) tables()).getHiveClientPool();
-    this.tables = new MixedHiveTables(metadata.getCatalogProperties(), CatalogUtil.buildMetaStore(metadata));
+    this.tables =
+        new MixedHiveTables(metadata.getCatalogProperties(), CatalogUtil.buildMetaStore(metadata));
   }
 
   @Override

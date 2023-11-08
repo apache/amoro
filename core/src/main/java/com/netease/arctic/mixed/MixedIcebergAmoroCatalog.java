@@ -1,7 +1,6 @@
 package com.netease.arctic.mixed;
 
 import com.google.common.collect.Maps;
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;

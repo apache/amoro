@@ -3,16 +3,10 @@ package com.netease.arctic.server.catalog;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.catalog.MixedTables;
 import com.netease.arctic.formats.mixed.MixedTable;
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.TableMetadata;
-import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.utils.CatalogUtil;
-
-import java.util.Map;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.InternalTableUtil;
 import com.netease.arctic.table.ArcticTable;

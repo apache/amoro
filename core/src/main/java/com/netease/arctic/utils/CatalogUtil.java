@@ -31,7 +31,6 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.op.ArcticTableOperations;
@@ -44,6 +43,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.aws.glue.GlueCatalog;
 import org.apache.iceberg.hadoop.HadoopTableOperations;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -120,7 +120,7 @@ public class CatalogUtil {
     icebergCatalogProperties.put(
         org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE, metastoreType);
     if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(metastoreType)) {
-      icebergCatalogProperties.put(CatalogProperties.CATALOG_IMPL, CatalogLoader.GLUE_CATALOG_IMPL);
+      icebergCatalogProperties.put(CatalogProperties.CATALOG_IMPL, GlueCatalog.class.getName());
     }
     if (CATALOG_TYPE_AMS.equalsIgnoreCase(metastoreType)) {
       icebergCatalogProperties.put(CatalogProperties.WAREHOUSE_LOCATION, catalogName);
