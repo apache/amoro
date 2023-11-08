@@ -82,6 +82,7 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
           properties.get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
       databaseFilterPattern = Pattern.compile(databaseFilter);
     }
+    MixedTables tables = new MixedTables(metaStore, properties, icebergCatalog);
     synchronized (this) {
       this.name = name;
       this.tableMetaStore = metaStore;

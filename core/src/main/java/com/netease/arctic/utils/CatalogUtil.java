@@ -31,6 +31,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.op.ArcticTableOperations;

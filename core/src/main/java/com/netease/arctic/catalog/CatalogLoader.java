@@ -38,6 +38,7 @@ import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
 import com.netease.arctic.mixed.MixedIcebergAmoroCatalog;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
+import org.apache.iceberg.aws.glue.GlueCatalog;
 import org.apache.iceberg.common.DynConstructors;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
