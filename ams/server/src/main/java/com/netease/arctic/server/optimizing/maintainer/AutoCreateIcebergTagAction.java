@@ -70,7 +70,7 @@ public class AutoCreateIcebergTagAction {
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(tagConfig.getTagFormat());
     String name = now.minusDays(1).format(formatter);
     return table.refs().entrySet().stream()
-        .filter(entry -> !entry.getValue().isBranch())
+        .filter(entry -> entry.getValue().isTag())
         .map(Map.Entry::getKey)
         .filter(name::equals)
         .findFirst()
