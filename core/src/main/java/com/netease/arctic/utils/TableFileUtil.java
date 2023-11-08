@@ -53,13 +53,6 @@ public class TableFileUtil {
     return filePath.substring(0, lastSlash);
   }
 
-  public static String getPartitionPathFromFilePath(
-      String fileLocation, String tableLocation, String fileName) {
-    int tableIndex = fileLocation.indexOf(tableLocation);
-    int fileIndex = fileLocation.lastIndexOf(fileName);
-    return fileLocation.substring(tableIndex + tableLocation.length(), fileIndex - 1);
-  }
-
   /**
    * Try to recursiveDelete the empty directory
    *
