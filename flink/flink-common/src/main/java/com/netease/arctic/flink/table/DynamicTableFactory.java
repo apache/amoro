@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink.table;
 
-import static com.netease.arctic.flink.FlinkSchemaUtil.addSchemaProperties;
+import static com.netease.arctic.flink.FlinkSchemaUtil.generateExtraOptionsFrom;
 import static com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema;
 import static com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchemaForDimTable;
 import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.METASTORE_URL;
@@ -149,8 +149,8 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
 
     // update computed columns and watermark to properties
     Map<String, String> properties = options.toMap();
-    Map<String, String> updatedProperties = addSchemaProperties(catalogTable.getSchema());
-    properties.putAll(updatedProperties);
+    Map<String, String> extraOptions = generateExtraOptionsFrom(catalogTable.getSchema());
+    properties.putAll(extraOptions);
 
     ArcticTableLoader tableLoader =
         createTableLoader(objectPath, actualCatalogName, actualBuilder, properties);

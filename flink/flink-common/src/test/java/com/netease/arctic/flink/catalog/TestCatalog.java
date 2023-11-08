@@ -35,6 +35,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestBase;
 import com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
@@ -132,6 +133,8 @@ public class TestCatalog extends CatalogTestBase {
   @Test
   public void testDDLWithVirtualColumn() throws IOException {
     // create arctic table with compute columns and watermark under arctic catalog
+    // org.apache.iceberg.flink.TypeToFlinkType will convert Timestamp to Timestamp(6), so we cast
+    // datatype manually
     sql(
         "CREATE TABLE "
             + CATALOG
@@ -142,7 +145,7 @@ public class TestCatalog extends CatalogTestBase {
             + " ("
             + " id INT,"
             + " name STRING,"
-            + " t TIMESTAMP(6),"
+            + " t TIMESTAMP,"
             + " t3 as cast(t as TIMESTAMP(3)),"
             + " compute_id as id+5 ,"
             + " proc as PROCTIME() ,"
@@ -215,6 +218,65 @@ public class TestCatalog extends CatalogTestBase {
                 + "'streaming'='false'"
                 + ") */");
     checkRows(rows);
+  }
+
+  @Test
+  public void testReadNotMatchColumn() throws IOException {
+    // create arctic table with compute columns under arctic catalog
+    sql(
+        "CREATE TABLE "
+            + CATALOG
+            + "."
+            + DB
+            + "."
+            + TABLE
+            + " ("
+            + " id INT,"
+            + " t TIMESTAMP(6),"
+            + " proc as PROCTIME(), "
+            + " compute_id as id+5 ,"
+            + " PRIMARY KEY (id) NOT ENFORCED "
+            + ") PARTITIONED BY(t) "
+            + " WITH ("
+            + " 'connector' = 'arctic'"
+            + ")");
+
+    ArcticTable amoroTable =
+        getCatalog().loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE));
+    String beforeExpr =
+        amoroTable.properties().get(compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, 2, EXPR));
+    // change property "flink.computed-column.2.expr" from "`id` +5" to "`newId` +5"
+    String afterExpr = "`newId` +5";
+    amoroTable
+        .updateProperties()
+        .set(compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, 2, EXPR), afterExpr)
+        .commit();
+
+    Assert.assertNotEquals(
+        beforeExpr,
+        amoroTable.properties().get(compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, 2, EXPR)));
+
+    // can't get table
+    testGetTable(false);
+    getCatalog()
+        .loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE))
+        .updateProperties()
+        .set(compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, 2, EXPR), beforeExpr)
+        .commit();
+
+    // can get table normally
+    testGetTable(true);
+  }
+
+  private void testGetTable(boolean expected) {
+    boolean isGetTable = true;
+    try {
+      sql("DESC " + CATALOG + "." + DB + "." + TABLE + "");
+    } catch (RuntimeException e) {
+      e.printStackTrace();
+      isGetTable = false;
+    }
+    Assert.assertEquals(expected, isGetTable);
   }
 
   @Test

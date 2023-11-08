@@ -18,7 +18,8 @@
 
 package com.netease.arctic.flink.catalog;
 
-import static com.netease.arctic.flink.FlinkSchemaUtil.addSchemaProperties;
+import static com.netease.arctic.flink.FlinkSchemaUtil.generateExtraOptionsFrom;
+import static com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema;
 import static com.netease.arctic.flink.FlinkSchemaUtil.toSchema;
 import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
 import static org.apache.flink.util.Preconditions.checkNotNull;
@@ -74,7 +75,6 @@ import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.flink.FlinkFilters;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
-import org.apache.iceberg.flink.util.FlinkCompatibilityUtil;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -287,32 +287,16 @@ public class ArcticCatalog extends AbstractCatalog {
   public void createTable(ObjectPath tablePath, CatalogBaseTable table, boolean ignoreIfExists)
       throws CatalogException, TableAlreadyExistException {
     validateFlinkTable(table);
-    createArcticTable(tablePath, table, ignoreIfExists);
+    createAmoroTable(tablePath, table, ignoreIfExists);
   }
 
-  private void createArcticTable(
+  private void createAmoroTable(
       ObjectPath tablePath, CatalogBaseTable table, boolean ignoreIfExists)
       throws CatalogException, TableAlreadyExistException {
     TableSchema tableSchema = table.getSchema();
-    TableSchema.Builder flinkSchemaBuilder = TableSchema.builder();
-    // add PhysicalColumn to arcticTableSchema
-    tableSchema
-        .getTableColumns()
-        .forEach(
-            c -> {
-              if (FlinkCompatibilityUtil.isPhysicalColumn(c)) {
-                flinkSchemaBuilder.field(c.getName(), c.getType());
-              }
-            });
-
-    if (tableSchema.getPrimaryKey().isPresent()) {
-      flinkSchemaBuilder.primaryKey(
-          tableSchema.getPrimaryKey().get().getColumns().toArray(new String[0]));
-    }
-    TableSchema tableSchemaWithoutCompute = flinkSchemaBuilder.build();
-
-    Schema icebergSchema = FlinkSchemaUtil.convert(tableSchemaWithoutCompute);
-
+    // get PhysicalColumn for TableSchema
+    TableSchema physicalSchema = getPhysicalSchema(tableSchema);
+    Schema icebergSchema = FlinkSchemaUtil.convert(physicalSchema);
     TableBuilder tableBuilder =
         internalCatalog.newTableBuilder(getTableIdentifier(tablePath), icebergSchema);
 
@@ -330,9 +314,8 @@ public class ArcticCatalog extends AbstractCatalog {
 
     Map<String, String> properties = table.getOptions();
     // update computed columns and watermark to properties
-
-    Map<String, String> updatedProperties = addSchemaProperties(tableSchema);
-    properties.putAll(updatedProperties);
+    Map<String, String> extraOptions = generateExtraOptionsFrom(tableSchema);
+    properties.putAll(extraOptions);
 
     tableBuilder.withProperties(properties);
 

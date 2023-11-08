@@ -22,20 +22,20 @@ public class TestFlinkSchemaUtil {
             .field("proc", DataTypes.TIMESTAMP_LTZ(), "PROCTIME()")
             // org.apache.iceberg.flink.TypeToFlinkType will convert Timestamp to Timestamp(6), so
             // we cast datatype manually
-            .field("ts3", DataTypes.TIMESTAMP(3), "cast(ts as timestamp(3))")
+            .field("ts3", DataTypes.TIMESTAMP(3), "cast(`ts` as timestamp(3))")
             .watermark("ts3", "`ts3` - INTERVAL '5' SECOND", DataTypes.TIMESTAMP(3))
             .build();
 
-    // get physicalSchema from tableSchema
+    // get physicalSchema from tableSchema and convert into iceberg Schema
     Schema icebergSchema =
         org.apache.iceberg.flink.FlinkSchemaUtil.convert(
             FlinkSchemaUtil.getPhysicalSchema(flinkSchema));
 
-    Map<String, String> arcticProperties = FlinkSchemaUtil.addSchemaProperties(flinkSchema);
+    Map<String, String> extraOptions = FlinkSchemaUtil.generateExtraOptionsFrom(flinkSchema);
 
-    // Convert iceberg Schema to flink TableSchema
+    // Convert iceberg Schema with extraOptions into flink TableSchema
     TableSchema fromIcebergSchema =
-        FlinkSchemaUtil.toSchema(icebergSchema, new ArrayList<>(), arcticProperties);
+        FlinkSchemaUtil.toSchema(icebergSchema, new ArrayList<>(), extraOptions);
 
     Assert.assertEquals(flinkSchema, fromIcebergSchema);
   }
