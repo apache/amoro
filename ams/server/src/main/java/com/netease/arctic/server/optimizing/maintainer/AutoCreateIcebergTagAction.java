@@ -67,7 +67,7 @@ public class AutoCreateIcebergTagAction {
   }
 
   private String findTagOfToday() {
-    String name = generateTagName()
+    String name = generateTagName();
     return table.refs().entrySet().stream()
         .filter(entry -> entry.getValue().isTag())
         .map(Map.Entry::getKey)
