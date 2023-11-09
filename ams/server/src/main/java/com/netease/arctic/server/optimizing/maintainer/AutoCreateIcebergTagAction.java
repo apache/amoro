@@ -27,11 +27,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
+/** Action to auto create tag for Iceberg Table. */
 public class AutoCreateIcebergTagAction {
   private static final Logger LOG = LoggerFactory.getLogger(AutoCreateIcebergTagAction.class);
 
@@ -49,6 +48,7 @@ public class AutoCreateIcebergTagAction {
     if (!tagConfig.isAutoCreateTag()) {
       return;
     }
+    LOG.info("start check creating tag for {}", table.name());
     if (tagExist()) {
       LOG.debug("{} find expect tag, skip", table.name());
       return;
@@ -58,7 +58,7 @@ public class AutoCreateIcebergTagAction {
   }
 
   private boolean tagExist() {
-    if (TagTriggerPeriod.DAILY.propertyName().equals(tagConfig.getTriggerPeriod())) {
+    if (tagConfig.getTriggerPeriod() == TagTriggerPeriod.DAILY) {
       return findTagOfToday() != null;
     } else {
       throw new IllegalArgumentException(
@@ -94,7 +94,7 @@ public class AutoCreateIcebergTagAction {
   }
 
   private String generateTagName() {
-    if (TagTriggerPeriod.DAILY.propertyName().equals(tagConfig.getTriggerPeriod())) {
+    if (tagConfig.getTriggerPeriod() == TagTriggerPeriod.DAILY) {
       String tagFormat = tagConfig.getTagFormat();
       return now.minusDays(1).format(DateTimeFormatter.ofPattern(tagFormat));
     } else {
@@ -104,15 +104,7 @@ public class AutoCreateIcebergTagAction {
   }
 
   private long getTagTriggerTime() {
-    if (TagTriggerPeriod.DAILY.propertyName().equals(tagConfig.getTriggerPeriod())) {
-      int triggerOffsetMinutes = tagConfig.getTriggerOffsetMinutes();
-      LocalTime localTime = LocalTime.ofSecondOfDay(triggerOffsetMinutes * 60L);
-      LocalDateTime localDateTime = LocalDateTime.of(now.toLocalDate(), localTime);
-      return localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-    } else {
-      throw new IllegalArgumentException(
-          "unsupported trigger period " + tagConfig.getTriggerPeriod());
-    }
+    return tagConfig.getTriggerPeriod().getTagTriggerTime(now, tagConfig.getTriggerOffsetMinutes());
   }
 
   private static Snapshot findSnapshot(Table table, long tagTriggerTime) {
@@ -134,7 +126,7 @@ public class AutoCreateIcebergTagAction {
   static class TagConfig {
     private boolean autoCreateTag;
     private String tagFormat;
-    private String triggerPeriod;
+    private TagTriggerPeriod triggerPeriod;
     private int triggerOffsetMinutes;
 
     public boolean isAutoCreateTag() {
@@ -153,11 +145,11 @@ public class AutoCreateIcebergTagAction {
       this.tagFormat = tagFormat;
     }
 
-    public String getTriggerPeriod() {
+    public TagTriggerPeriod getTriggerPeriod() {
       return triggerPeriod;
     }
 
-    public void setTriggerPeriod(String triggerPeriod) {
+    public void setTriggerPeriod(TagTriggerPeriod triggerPeriod) {
       this.triggerPeriod = triggerPeriod;
     }
 
@@ -182,10 +174,11 @@ public class AutoCreateIcebergTagAction {
               TableProperties.AUTO_CREATE_TAG_FORMAT,
               TableProperties.AUTO_CREATE_TAG_FORMAT_DEFAULT));
       tagConfig.setTriggerPeriod(
-          CompatiblePropertyUtil.propertyAsString(
-              tableProperties,
-              TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD,
-              TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD_DEFAULT));
+          TagTriggerPeriod.valueOf(
+              CompatiblePropertyUtil.propertyAsString(
+                  tableProperties,
+                  TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD,
+                  TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD_DEFAULT)));
       tagConfig.setTriggerOffsetMinutes(
           CompatiblePropertyUtil.propertyAsInt(
               tableProperties,

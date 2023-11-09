@@ -18,6 +18,10 @@
 
 package com.netease.arctic.table;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+
 public enum TagTriggerPeriod {
   DAILY("daily");
 
@@ -29,5 +33,20 @@ public enum TagTriggerPeriod {
 
   public String propertyName() {
     return propertyName;
+  }
+
+  public long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
+    switch (this) {
+      case DAILY:
+        return getDailyTagTriggerTime(checkTime, triggerOffsetMinutes);
+      default:
+        throw new UnsupportedOperationException("Unsupported tag trigger period: " + this);
+    }
+  }
+
+  private long getDailyTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
+    LocalTime offsetTime = LocalTime.ofSecondOfDay(triggerOffsetMinutes * 60L);
+    LocalDateTime triggerTime = LocalDateTime.of(checkTime.toLocalDate(), offsetTime);
+    return triggerTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
   }
 }

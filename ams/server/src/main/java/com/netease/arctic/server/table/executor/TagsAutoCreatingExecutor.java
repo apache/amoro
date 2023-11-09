@@ -21,18 +21,19 @@ package com.netease.arctic.server.table.executor;
 import static com.netease.arctic.server.optimizing.maintainer.TableMaintainer.ofTable;
 
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.optimizing.maintainer.TableMaintainer;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TagsCheckingExecutor extends BaseTableExecutor {
-  private static final Logger LOG = LoggerFactory.getLogger(TagsCheckingExecutor.class);
+public class TagsAutoCreatingExecutor extends BaseTableExecutor {
+  private static final Logger LOG = LoggerFactory.getLogger(TagsAutoCreatingExecutor.class);
 
   private static final long INTERVAL = 60 * 1000L; // 1min
 
-  protected TagsCheckingExecutor(TableManager tableManager, int poolSize) {
+  protected TagsAutoCreatingExecutor(TableManager tableManager, int poolSize) {
     super(tableManager, poolSize);
   }
 
@@ -43,14 +44,13 @@ public class TagsCheckingExecutor extends BaseTableExecutor {
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
-    return tableRuntime.getTableConfiguration().isAutoCreateTagEnabled() 
-        && tableRuntime.format() == TableFormat.ICEBERG;
+    return tableRuntime.getTableConfiguration().isAutoCreateTagEnabled()
+        && tableRuntime.getFormat() == TableFormat.ICEBERG;
   }
 
   @Override
   protected void execute(TableRuntime tableRuntime) {
     try {
-      LOG.info("{} start creating tags", tableRuntime.getTableIdentifier());
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
       TableMaintainer tableMaintainer = ofTable(amoroTable);
       tableMaintainer.autoCreateTags(tableRuntime);

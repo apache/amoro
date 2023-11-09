@@ -143,7 +143,7 @@ public class ArcticServiceContainer {
     addHandlerChain(AsyncTableExecutors.getInstance().getBlockerExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getHiveCommitSyncExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getTableRefreshingExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getTagsCheckingExecutor());
+    addHandlerChain(AsyncTableExecutors.getInstance().getTagsAutoCreatingExecutor());
     tableService.initialize();
     LOG.info("AMS table service have been initialized");
     terminalManager = new TerminalManager(serviceConfig, tableService);
