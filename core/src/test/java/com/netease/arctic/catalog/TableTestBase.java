@@ -25,7 +25,6 @@ import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.CatalogUtil;
-import org.apache.iceberg.catalog.TableIdentifier;
 import org.junit.After;
 import org.junit.Before;
 
@@ -87,19 +86,8 @@ public abstract class TableTestBase extends CatalogTestBase {
 
   @After
   public void dropTable() {
-    switch (getTestFormat()) {
-      case MIXED_HIVE:
-      case MIXED_ICEBERG:
-        getMixedFormatCatalog().dropTable(tableTestHelper.id(), true);
-        break;
-      case ICEBERG:
-        getIcebergCatalog()
-            .dropTable(
-                TableIdentifier.of(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME),
-                true);
-        break;
-    }
-
+    getUnifiedCatalog()
+        .dropTable(tableTestHelper.id().getDatabase(), tableTestHelper.id().getTableName(), true);
     try {
       getUnifiedCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
     } catch (Exception e) {

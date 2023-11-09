@@ -203,9 +203,6 @@ public class AmsEnvironment {
             TableFormat.ICEBERG);
 
     tableService.createCatalog(catalogMeta);
-    // catalogs.put(
-    //     INTERNAL_ICEBERG_CATALOG,
-    //     CatalogLoader.load(getTableServiceUrl() + "/" + INTERNAL_ICEBERG_CATALOG));
   }
 
   private void createIcebergCatalog() {
@@ -220,8 +217,6 @@ public class AmsEnvironment {
             properties,
             TableFormat.ICEBERG);
     tableService.createCatalog(catalogMeta);
-    // catalogs.put(ICEBERG_CATALOG, CatalogLoader.load(getTableServiceUrl() + "/" +
-    // ICEBERG_CATALOG));
   }
 
   private void createMixIcebergCatalog() {

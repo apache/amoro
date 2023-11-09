@@ -72,6 +72,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
   public Map<String, Long> getFromSequence() {
     return actualPartitionPlans.stream()
+        .filter(p -> p.getFromSequence() != null)
         .collect(
             Collectors.toMap(
                 AbstractPartitionPlan::getPartition, AbstractPartitionPlan::getFromSequence));
@@ -79,6 +80,7 @@ public class OptimizingPlanner extends OptimizingEvaluator {
 
   public Map<String, Long> getToSequence() {
     return actualPartitionPlans.stream()
+        .filter(p -> p.getToSequence() != null)
         .collect(
             Collectors.toMap(
                 AbstractPartitionPlan::getPartition, AbstractPartitionPlan::getToSequence));
