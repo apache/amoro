@@ -33,7 +33,10 @@ public interface OptimizingDataReader extends Closeable {
    */
   CloseableIterable<Record> readData();
 
-  /** */
+  /**
+   * Read the identifier(primary key) of the optimization task data, Used to filter invalid
+   * eq-delete data. If a task contains a delete operation, then the read result is MOR.
+   */
   CloseableIterable<Record> readIdentifierData(Set<Integer> identifierFieldIds);
   /**
    * Reading data that needs to be deleted during MOR. If there is no delete file, then the result

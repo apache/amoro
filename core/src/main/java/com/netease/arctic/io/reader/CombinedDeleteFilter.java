@@ -52,8 +52,13 @@ import java.util.*;
 import java.util.function.Predicate;
 
 /**
- * Special point: 1. Apply all delete file to all data file 2. EQUALITY_DELETES only be written by
- * flink in current, so the schemas of all EQUALITY_DELETES is primary key
+ * Special point:
+ *
+ * <ul>
+ *   <li>Apply all delete file to all data file
+ *   <li>EQUALITY_DELETES only be written by flink in current, so the schemas of all
+ *       EQUALITY_DELETES is primary key
+ * </ul>
  */
 public abstract class CombinedDeleteFilter<T extends StructLike> {
 

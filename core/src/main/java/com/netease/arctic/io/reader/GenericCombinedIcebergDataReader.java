@@ -97,6 +97,10 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
             .filter(file -> file.content() == FileContent.EQUALITY_DELETES)
             .mapToLong(ContentFile::recordCount)
             .sum();
+
+    // Data file primary key memory usage, cost is the same as eq delete, +1 cost
+    // Data file read cost is 0.5 times the memory cost, +0.5 cost
+    boolean filterEqDelete = eqDeleteRecordCnt > dataRecordCnt * 2.5;
     this.deleteFilter =
         new GenericDeleteFilter(
             this,
@@ -104,8 +108,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
             positionPathSet,
             tableSchema,
             structLikeCollections,
-            // TODO trigger policy
-            eqDeleteRecordCnt > dataRecordCnt * 2);
+            filterEqDelete);
   }
 
   @Override
