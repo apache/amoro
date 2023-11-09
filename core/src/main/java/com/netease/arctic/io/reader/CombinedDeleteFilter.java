@@ -43,6 +43,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.Filter;
+import org.apache.paimon.shade.guava30.com.google.common.hash.BloomFilter;
 import org.roaringbitmap.longlong.Roaring64Bitmap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -187,15 +188,15 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
       return record -> false;
     }
 
-    InternalRecordWrapper internalRecordWrapper =
-        new InternalRecordWrapper(deleteSchema.asStruct());
-
-    StructLikeBaseMap<Long> identifierStructLikeMap = null;
+    BloomFilter<StructLike> bloomFilter = null;
     if (filterEqDelete) {
-      identifierStructLikeMap = structLikeCollections.createStructLikeMap(deleteSchema.asStruct());
+      bloomFilter =
+          BloomFilter.create(
+              StructLikeFunnel.structLikeFunnel(),
+              combinedDataReader.rewrittenDataRecordCnt(),
+              0.001);
       for (Record record : combinedDataReader.readIdentifierData(deleteIds)) {
-        StructLike identifier = internalRecordWrapper.copyFor(record);
-        identifierStructLikeMap.put(identifier, 1L);
+        bloomFilter.put(record);
       }
     }
 
@@ -213,6 +214,9 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     StructLikeBaseMap<Long> structLikeMap =
         structLikeCollections.createStructLikeMap(deleteSchema.asStruct());
 
+    InternalRecordWrapper internalRecordWrapper =
+        new InternalRecordWrapper(deleteSchema.asStruct());
+
     // init map
     try (CloseableIterable<RecordWithLsn> deletes = deleteRecords) {
       Iterator<RecordWithLsn> it =
@@ -222,11 +226,8 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
       while (it.hasNext()) {
         RecordWithLsn recordWithLsn = it.next();
         StructLike deletePK = internalRecordWrapper.copyFor(recordWithLsn.getRecord());
-        if (filterEqDelete) {
-          Long ident = identifierStructLikeMap.get(deletePK);
-          if (ident == null) {
-            continue;
-          }
+        if (filterEqDelete && !bloomFilter.mightContain(deletePK)) {
+          continue;
         }
         Long lsn = recordWithLsn.getLsn();
         Long old = structLikeMap.get(deletePK);

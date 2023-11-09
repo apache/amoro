@@ -11,10 +11,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.map.StructLikeCollections;
-import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.MetadataColumns;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.TableProperties;
+import org.apache.iceberg.*;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
@@ -69,6 +66,11 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
     CloseableIterator<Record> closeableIterator =
         reader.readData(nodeFileScanTask(input.rewrittenDataFilesForMixed()));
     return wrapIterator2Iterable(closeableIterator);
+  }
+
+  @Override
+  public long rewrittenDataRecordCnt() {
+    return input.rewrittenDataFilesForMixed().stream().mapToLong(ContentFile::recordCount).sum();
   }
 
   @Override

@@ -148,6 +148,11 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   }
 
   @Override
+  public long rewrittenDataRecordCnt() {
+    return Arrays.stream(input.rewrittenDataFiles()).mapToLong(ContentFile::recordCount).sum();
+  }
+
+  @Override
   public CloseableIterable<Record> readDeletedData() {
     if (input.rePosDeletedDataFiles() == null) {
       return CloseableIterable.empty();
