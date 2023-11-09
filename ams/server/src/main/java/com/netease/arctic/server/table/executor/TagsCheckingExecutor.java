@@ -43,7 +43,8 @@ public class TagsCheckingExecutor extends BaseTableExecutor {
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
-    return tableRuntime.getTableConfiguration().isAutoCreateTagEnabled();
+    return tableRuntime.getTableConfiguration().isAutoCreateTagEnabled() 
+        && tableRuntime.format() == TableFormat.ICEBERG;
   }
 
   @Override
