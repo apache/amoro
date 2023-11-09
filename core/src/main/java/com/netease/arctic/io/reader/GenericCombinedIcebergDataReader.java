@@ -103,12 +103,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     boolean filterEqDelete = eqDeleteRecordCnt > dataRecordCnt * 2.5;
     this.deleteFilter =
         new GenericDeleteFilter(
-            this,
-            deleteFiles,
-            positionPathSet,
-            tableSchema,
-            structLikeCollections,
-            filterEqDelete);
+            this, deleteFiles, positionPathSet, tableSchema, structLikeCollections, filterEqDelete);
   }
 
   @Override
