@@ -1,5 +1,9 @@
 package com.netease.arctic.utils;
 
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.iceberg.rest.RESTCatalog;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -246,5 +250,47 @@ public class TestCatalogUtil {
     Map<String, String> result =
         CatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
     Assert.assertEquals(expected, result);
+  }
+
+  @Test
+  public void testWithIcebergCatalogInitializeProperties() {
+    Map<String, String> props;
+    final String name = "test";
+    final String typeHadoop = "hadoop";
+    final String typeCustom = "custom";
+    final String typeAms = CatalogMetaProperties.CATALOG_TYPE_AMS;
+    final String type = "type";
+    final String keyWarehouse = CatalogProperties.WAREHOUSE_LOCATION;
+    final String path = "hdfs://test-cluster/warehouse";
+    final String restImpl = RESTCatalog.class.getName();
+
+    // hive catalog
+    props =
+        CatalogUtil.withIcebergCatalogInitializeProperties(
+            name, typeHadoop, ImmutableMap.of(keyWarehouse, path));
+    Assert.assertEquals(typeHadoop, props.get(type));
+
+    // custom
+    props =
+        CatalogUtil.withIcebergCatalogInitializeProperties(
+            name,
+            typeCustom,
+            ImmutableMap.of(keyWarehouse, path, CatalogProperties.CATALOG_IMPL, restImpl));
+    Assert.assertFalse(props.containsKey(type));
+    // custom args check
+    Assert.assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          CatalogUtil.withIcebergCatalogInitializeProperties(
+              name, typeCustom, ImmutableMap.of(keyWarehouse, path));
+        });
+
+    // ams
+    props =
+        CatalogUtil.withIcebergCatalogInitializeProperties(
+            name, typeAms, ImmutableMap.of(keyWarehouse, path));
+    Assert.assertEquals(name, props.get(keyWarehouse));
+    Assert.assertFalse(props.containsKey(type));
+    Assert.assertEquals(restImpl, props.get(CatalogProperties.CATALOG_IMPL));
   }
 }

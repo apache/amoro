@@ -31,7 +31,7 @@ public class TestBasicTableBlockerManager extends TableTestBase {
   @Test
   public void testBlockAndRelease() throws OperationConflictException {
     TableBlockerManager tableBlockerManager =
-        getCatalog().getTableBlockerManager(TableTestHelper.TEST_TABLE_ID);
+        getMixedFormatCatalog().getTableBlockerManager(TableTestHelper.TEST_TABLE_ID);
     Assert.assertTrue(tableBlockerManager instanceof BasicTableBlockerManager);
     BasicTableBlockerManager blockerManager = (BasicTableBlockerManager) tableBlockerManager;
 

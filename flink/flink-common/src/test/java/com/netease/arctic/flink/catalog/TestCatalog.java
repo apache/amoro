@@ -102,12 +102,14 @@ public class TestCatalog extends CatalogTestBase {
     sql("SHOW tables");
 
     Assert.assertTrue(
-        getCatalog().loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE)).isKeyedTable());
+        getMixedFormatCatalog()
+            .loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE))
+            .isKeyedTable());
     sql("DROP TABLE " + DB + "." + TABLE);
 
     sql("DROP DATABASE " + DB);
 
-    Assert.assertTrue(CollectionUtil.isNullOrEmpty(getCatalog().listDatabases()));
+    Assert.assertTrue(CollectionUtil.isNullOrEmpty(getMixedFormatCatalog().listDatabases()));
     sql("USE CATALOG default_catalog");
     sql("DROP CATALOG arcticCatalog");
   }

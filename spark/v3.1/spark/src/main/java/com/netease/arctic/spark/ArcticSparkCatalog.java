@@ -81,6 +81,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   private String catalogName = null;
 
   private ArcticCatalog catalog;
+  private CaseInsensitiveStringMap options;
 
   /**
    * Build an Arctic {@link TableIdentifier} for the given Spark identifier.
@@ -114,7 +115,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
 
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
-    checkAndRefreshCatalogMeta(catalog);
+    checkAndRefreshCatalogMeta();
     TableIdentifier identifier;
     ArcticTable table;
     try {
@@ -152,7 +153,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   public Table createTable(
       Identifier ident, StructType schema, Transform[] transforms, Map<String, String> properties)
       throws TableAlreadyExistsException {
-    checkAndRefreshCatalogMeta(catalog);
+    checkAndRefreshCatalogMeta();
     properties = Maps.newHashMap(properties);
     Schema finalSchema = checkAndConvertSchema(schema, properties);
     TableIdentifier identifier = buildIdentifier(ident);
@@ -183,13 +184,13 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     }
   }
 
-  private void checkAndRefreshCatalogMeta(ArcticCatalog catalog) {
+  private void checkAndRefreshCatalogMeta() {
     SparkSession sparkSession = SparkSession.active();
     if (Boolean.parseBoolean(
         sparkSession
             .conf()
             .get(REFRESH_CATALOG_BEFORE_USAGE, REFRESH_CATALOG_BEFORE_USAGE_DEFAULT))) {
-      catalog.refresh();
+      initialize(catalogName, options);
     }
   }
 
@@ -413,6 +414,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     Preconditions.checkArgument(
         StringUtils.isNotBlank(catalogUrl), "lack required properties: url");
     catalog = CatalogLoader.load(catalogUrl, options);
+    this.options = options;
   }
 
   @Override
