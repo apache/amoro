@@ -5,6 +5,8 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
+import com.netease.arctic.scan.IcebergTableFileScanHelper;
+import com.netease.arctic.scan.TableFileScanHelper;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import org.apache.iceberg.DataFile;
 import org.junit.runner.RunWith;

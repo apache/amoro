@@ -16,27 +16,27 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.table;
+package com.netease.arctic.table;
 
 public class KeyedTableSnapshot implements TableSnapshot {
-  private final long baseSnapshotId;
-  private final long changeSnapshotId;
+  private final Long baseSnapshotId;
+  private final Long changeSnapshotId;
 
-  public KeyedTableSnapshot(long baseSnapshotId, long changeSnapshotId) {
+  public KeyedTableSnapshot(Long baseSnapshotId, Long changeSnapshotId) {
     this.baseSnapshotId = baseSnapshotId;
     this.changeSnapshotId = changeSnapshotId;
   }
 
-  public long baseSnapshotId() {
+  public Long baseSnapshotId() {
     return baseSnapshotId;
   }
 
-  public long changeSnapshotId() {
+  public Long changeSnapshotId() {
     return changeSnapshotId;
   }
 
   @Override
-  public long snapshotId() {
+  public Long snapshotId() {
     return baseSnapshotId;
   }
 }

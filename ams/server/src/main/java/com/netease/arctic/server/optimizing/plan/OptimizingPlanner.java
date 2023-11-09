@@ -20,12 +20,12 @@ package com.netease.arctic.server.optimizing.plan;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.scan.TableFileScanHelper;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.OptimizingType;
-import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
-import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.KeyedTableSnapshot;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

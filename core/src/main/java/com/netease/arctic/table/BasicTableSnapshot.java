@@ -16,17 +16,17 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.table;
+package com.netease.arctic.table;
 
 public class BasicTableSnapshot implements TableSnapshot {
-  private final long snapshotId;
+  private final Long snapshotId;
 
-  public BasicTableSnapshot(long snapshotId) {
+  public BasicTableSnapshot(Long snapshotId) {
     this.snapshotId = snapshotId;
   }
 
   @Override
-  public long snapshotId() {
+  public Long snapshotId() {
     return snapshotId;
   }
 }

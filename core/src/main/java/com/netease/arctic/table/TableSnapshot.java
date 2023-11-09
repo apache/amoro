@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.table;
+package com.netease.arctic.table;
 
 public interface TableSnapshot {
 
-  long snapshotId();
+  Long snapshotId();
 }

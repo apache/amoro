@@ -18,13 +18,15 @@
 
 package com.netease.arctic.server.optimizing;
 
+import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+
 import com.netease.arctic.TableTestHelper;
-import com.netease.arctic.server.table.BasicTableSnapshot;
-import com.netease.arctic.server.table.KeyedTableSnapshot;
-import com.netease.arctic.server.table.TableSnapshot;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.BasicTableSnapshot;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.KeyedTableSnapshot;
+import com.netease.arctic.table.TableSnapshot;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -40,7 +42,7 @@ public class OptimizingTestHelpers {
       return getCurrentKeyedTableSnapshot(table.asKeyedTable());
     } else {
       long baseSnapshotId = IcebergTableUtil.getSnapshotId(table.asUnkeyedTable(), true);
-      return new BasicTableSnapshot(baseSnapshotId);
+      return new BasicTableSnapshot(baseSnapshotId == INVALID_SNAPSHOT_ID ? null : baseSnapshotId);
     }
   }
 
@@ -48,7 +50,9 @@ public class OptimizingTestHelpers {
     long baseSnapshotId = IcebergTableUtil.getSnapshotId(keyedTable.baseTable(), true);
     long changeSnapshotId = IcebergTableUtil.getSnapshotId(keyedTable.changeTable(), true);
 
-    return new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId);
+    return new KeyedTableSnapshot(
+        baseSnapshotId == INVALID_SNAPSHOT_ID ? null : baseSnapshotId,
+        changeSnapshotId == INVALID_SNAPSHOT_ID ? null : changeSnapshotId);
   }
 
   public static List<Record> generateRecord(

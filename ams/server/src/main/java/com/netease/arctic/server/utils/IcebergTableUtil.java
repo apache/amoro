@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.utils;
 
+import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
@@ -25,14 +27,13 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.io.ArcticFileIOs;
 import com.netease.arctic.scan.TableEntriesScan;
-import com.netease.arctic.server.ArcticServiceConstants;
-import com.netease.arctic.server.table.BasicTableSnapshot;
-import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.table.TableSnapshot;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.BasicTableSnapshot;
+import com.netease.arctic.table.KeyedTableSnapshot;
 import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.table.TableSnapshot;
 import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -77,7 +78,7 @@ public class IcebergTableUtil {
   public static long getSnapshotId(Table table, boolean refresh) {
     Snapshot currentSnapshot = getSnapshot(table, refresh);
     if (currentSnapshot == null) {
-      return ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+      return INVALID_SNAPSHOT_ID;
     } else {
       return currentSnapshot.snapshotId();
     }
@@ -85,10 +86,18 @@ public class IcebergTableUtil {
 
   public static TableSnapshot getSnapshot(ArcticTable arcticTable, TableRuntime tableRuntime) {
     if (arcticTable.isUnkeyedTable()) {
-      return new BasicTableSnapshot(tableRuntime.getCurrentSnapshotId());
+      return new BasicTableSnapshot(
+          tableRuntime.getCurrentSnapshotId() == INVALID_SNAPSHOT_ID
+              ? null
+              : tableRuntime.getCurrentSnapshotId());
     } else {
       return new KeyedTableSnapshot(
-          tableRuntime.getCurrentSnapshotId(), tableRuntime.getCurrentChangeSnapshotId());
+          tableRuntime.getCurrentSnapshotId() == INVALID_SNAPSHOT_ID
+              ? null
+              : tableRuntime.getCurrentSnapshotId(),
+          tableRuntime.getCurrentChangeSnapshotId() == INVALID_SNAPSHOT_ID
+              ? null
+              : tableRuntime.getCurrentChangeSnapshotId());
     }
   }
 

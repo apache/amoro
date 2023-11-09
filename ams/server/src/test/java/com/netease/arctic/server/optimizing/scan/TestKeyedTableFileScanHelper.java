@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.optimizing.scan;
 
+import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -25,10 +27,12 @@ import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.MixedDataTestHelpers;
+import com.netease.arctic.scan.KeyedTableFileScanHelper;
+import com.netease.arctic.scan.TableFileScanHelper;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
-import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.KeyedTableSnapshot;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -242,7 +246,10 @@ public class TestKeyedTableFileScanHelper extends TableFileScanHelperTestBase {
     long baseSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().baseTable(), true);
     long changeSnapshotId = IcebergTableUtil.getSnapshotId(getArcticTable().changeTable(), true);
     return new KeyedTableFileScanHelper(
-        getArcticTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId));
+        getArcticTable(),
+        new KeyedTableSnapshot(
+            baseSnapshotId == INVALID_SNAPSHOT_ID ? null : baseSnapshotId,
+            changeSnapshotId == INVALID_SNAPSHOT_ID ? null : changeSnapshotId));
   }
 
   private void appendChange(List<DataFile> dataFiles) {

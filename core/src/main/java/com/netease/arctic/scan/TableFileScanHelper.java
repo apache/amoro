@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.optimizing.scan;
+package com.netease.arctic.scan;
 
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;

@@ -20,6 +20,7 @@ package com.netease.arctic.server.table.executor;
 
 import static com.netease.arctic.BasicTableTestHelper.PRIMARY_KEY_SPEC;
 import static com.netease.arctic.BasicTableTestHelper.SPEC;
+import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
 
 import com.google.common.collect.Lists;
 import com.netease.arctic.BasicTableTestHelper;
@@ -31,15 +32,15 @@ import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.io.MixedDataTestHelpers;
+import com.netease.arctic.scan.KeyedTableFileScanHelper;
+import com.netease.arctic.scan.TableFileScanHelper;
+import com.netease.arctic.scan.UnkeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
-import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
-import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
-import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import com.netease.arctic.server.table.DataExpirationConfig;
-import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.KeyedTableSnapshot;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
@@ -476,8 +477,12 @@ public class TestDataExpire extends ExecutorTestBase {
         IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable(), true);
     long changeSnapshotId =
         IcebergTableUtil.getSnapshotId(getArcticTable().asKeyedTable().changeTable(), true);
+
     return new KeyedTableFileScanHelper(
-        getArcticTable().asKeyedTable(), new KeyedTableSnapshot(baseSnapshotId, changeSnapshotId));
+        getArcticTable().asKeyedTable(),
+        new KeyedTableSnapshot(
+            baseSnapshotId == INVALID_SNAPSHOT_ID ? null : baseSnapshotId,
+            changeSnapshotId == INVALID_SNAPSHOT_ID ? null : changeSnapshotId));
   }
 
   protected TableFileScanHelper getTableFileScanHelper() {

@@ -16,9 +16,8 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.optimizing.scan;
+package com.netease.arctic.scan;
 
-import com.netease.arctic.server.ArcticServiceConstants;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -29,16 +28,16 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 public class IcebergTableFileScanHelper implements TableFileScanHelper {
   private final Table table;
   private PartitionFilter partitionFilter;
-  private final long snapshotId;
+  private final Long snapshotId;
 
-  public IcebergTableFileScanHelper(Table table, long snapshotId) {
+  public IcebergTableFileScanHelper(Table table, Long snapshotId) {
     this.table = table;
     this.snapshotId = snapshotId;
   }
 
   @Override
   public CloseableIterable<FileScanResult> scan() {
-    if (snapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (snapshotId == null) {
       return CloseableIterable.empty();
     }
     PartitionSpec partitionSpec = table.spec();

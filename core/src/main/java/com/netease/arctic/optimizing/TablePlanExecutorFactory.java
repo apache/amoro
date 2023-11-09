@@ -24,9 +24,7 @@ public class TablePlanExecutorFactory implements OptimizingExecutorFactory<Table
 
   // TODO
   @Override
-  public void initialize(Map<String, String> properties) {
-    
-  }
+  public void initialize(Map<String, String> properties) {}
 
   @Override
   public OptimizingExecutor<TablePlanOutput> createExecutor(TablePlanInput input) {

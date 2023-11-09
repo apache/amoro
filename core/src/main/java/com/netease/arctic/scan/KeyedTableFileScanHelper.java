@@ -16,17 +16,15 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.optimizing.scan;
+package com.netease.arctic.scan;
 
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.scan.ChangeTableIncrementalScan;
-import com.netease.arctic.server.ArcticServiceConstants;
-import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.KeyedTableSnapshot;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
@@ -63,8 +61,8 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
   private static final Logger LOG = LoggerFactory.getLogger(KeyedTableFileScanHelper.class);
 
   private final KeyedTable arcticTable;
-  private final long changeSnapshotId;
-  private final long baseSnapshotId;
+  private final Long changeSnapshotId;
+  private final Long baseSnapshotId;
   private PartitionFilter partitionFilter;
 
   public KeyedTableFileScanHelper(KeyedTable arcticTable, KeyedTableSnapshot snapshot) {
@@ -84,7 +82,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
    * @return the max sequence of selected file, return Long.MAX_VALUE if all files should be
    *     selected, Long.MIN_VALUE means no files should be selected
    */
-  static long getMaxSequenceKeepingTxIdInOrder(
+  public static long getMaxSequenceKeepingTxIdInOrder(
       List<SnapshotFileGroup> snapshotFileGroups, long maxFileCntLimit) {
     if (maxFileCntLimit <= 0 || snapshotFileGroups == null || snapshotFileGroups.isEmpty()) {
       return Long.MIN_VALUE;
@@ -161,9 +159,9 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     ChangeFiles changeFiles = new ChangeFiles(arcticTable);
     UnkeyedTable baseTable = arcticTable.baseTable();
     ChangeTable changeTable = arcticTable.changeTable();
-    if (changeSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (changeSnapshotId != null) {
       StructLikeMap<Long> optimizedSequence =
-          baseSnapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID
+          baseSnapshotId == null
               ? StructLikeMap.create(arcticTable.spec().partitionType())
               : ArcticTableUtil.readOptimizedSequence(arcticTable, baseSnapshotId);
       long maxSequence = getMaxSequenceLimit(arcticTable, changeSnapshotId, optimizedSequence);
@@ -199,7 +197,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     }
 
     CloseableIterable<FileScanResult> baseScanResult = CloseableIterable.empty();
-    if (baseSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
+    if (baseSnapshotId != null) {
       PartitionSpec partitionSpec = baseTable.spec();
       baseScanResult =
           CloseableIterable.transform(
@@ -378,7 +376,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
   }
 
   /** Files grouped by snapshot, but only with the file cnt. */
-  static class SnapshotFileGroup implements Comparable<SnapshotFileGroup> {
+  public static class SnapshotFileGroup implements Comparable<SnapshotFileGroup> {
     private final long sequence;
     private final long transactionId;
     private int fileCnt = 0;
