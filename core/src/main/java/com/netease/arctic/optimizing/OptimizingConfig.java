@@ -1,8 +1,25 @@
-package com.netease.arctic.server.optimizing;
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.netease.arctic.optimizing;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Objects;
-import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
@@ -63,9 +80,6 @@ public class OptimizingConfig {
 
   // base.refresh-interval
   private long baseRefreshInterval;
-
-  // base.hive.refresh-interval
-  private long hiveRefreshInterval;
 
   public OptimizingConfig() {}
 
@@ -221,15 +235,6 @@ public class OptimizingConfig {
     return this;
   }
 
-  public long getHiveRefreshInterval() {
-    return hiveRefreshInterval;
-  }
-
-  public OptimizingConfig setHiveRefreshInterval(long hiveRefreshInterval) {
-    this.hiveRefreshInterval = hiveRefreshInterval;
-    return this;
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -251,7 +256,6 @@ public class OptimizingConfig {
         && fullRewriteAllFiles == that.fullRewriteAllFiles
         && baseHashBucket == that.baseHashBucket
         && baseRefreshInterval == that.baseRefreshInterval
-        && hiveRefreshInterval == that.hiveRefreshInterval
         && Objects.equal(optimizerGroup, that.optimizerGroup);
   }
 
@@ -274,8 +278,7 @@ public class OptimizingConfig {
         fullTriggerInterval,
         fullRewriteAllFiles,
         baseHashBucket,
-        baseRefreshInterval,
-        hiveRefreshInterval);
+        baseRefreshInterval);
   }
 
   @Override
@@ -298,13 +301,11 @@ public class OptimizingConfig {
         .add("fullRewriteAllFiles", fullRewriteAllFiles)
         .add("baseHashBucket", baseHashBucket)
         .add("baseRefreshInterval", baseRefreshInterval)
-        .add("hiveRefreshInterval", hiveRefreshInterval)
         .toString();
   }
 
-  public static OptimizingConfig parseOptimizingConfig(Map<String, String> properties) {
-    return new OptimizingConfig()
-        .setEnabled(
+  public OptimizingConfig init(Map<String, String> properties) {
+    setEnabled(
             CompatiblePropertyUtil.propertyAsBoolean(
                 properties,
                 TableProperties.ENABLE_SELF_OPTIMIZING,
@@ -383,11 +384,11 @@ public class OptimizingConfig {
             PropertyUtil.propertyAsLong(
                 properties,
                 TableProperties.BASE_REFRESH_INTERVAL,
-                TableProperties.BASE_REFRESH_INTERVAL_DEFAULT))
-        .setHiveRefreshInterval(
-            PropertyUtil.propertyAsLong(
-                properties,
-                HiveTableProperties.REFRESH_HIVE_INTERVAL,
-                HiveTableProperties.REFRESH_HIVE_INTERVAL_DEFAULT));
+                TableProperties.BASE_REFRESH_INTERVAL_DEFAULT));
+    return this;
+  }
+
+  public static OptimizingConfig parseOptimizingConfig(Map<String, String> properties) {
+    return new OptimizingConfig().init(properties);
   }
 }

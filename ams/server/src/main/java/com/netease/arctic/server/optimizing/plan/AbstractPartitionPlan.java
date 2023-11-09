@@ -18,10 +18,10 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
+import com.netease.arctic.optimizing.OptimizingConfig;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.plan.TaskDescriptor;
-import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;

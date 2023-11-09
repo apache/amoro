@@ -25,6 +25,7 @@ import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.table.ArcticTable;
 
 import javax.annotation.Nullable;
+
 import java.util.List;
 
 public abstract class AbstractSceneCountChecker implements CompleteOptimizingFlow.Checker {

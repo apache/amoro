@@ -29,6 +29,7 @@ import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.data.Record;
 
 import javax.annotation.Nullable;
+
 import java.util.List;
 
 public class DataConcurrencyChecker implements CompleteOptimizingFlow.Checker {

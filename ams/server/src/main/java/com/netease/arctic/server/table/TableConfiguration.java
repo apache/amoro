@@ -2,7 +2,7 @@ package com.netease.arctic.server.table;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Objects;
-import com.netease.arctic.server.optimizing.OptimizingConfig;
+import com.netease.arctic.optimizing.OptimizingConfig;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 

@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
-import com.netease.arctic.server.optimizing.OptimizingConfig;
+import com.netease.arctic.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
 import org.apache.iceberg.ContentFile;

@@ -26,13 +26,13 @@ import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SI
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutor;
 import com.netease.arctic.optimizing.IcebergRewriteExecutor;
+import com.netease.arctic.optimizing.OptimizingConfig;
 import com.netease.arctic.optimizing.OptimizingExecutor;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.KeyedTableCommit;
-import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.optimizing.UnKeyedTableCommit;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
@@ -52,6 +52,7 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.mockito.Mockito;
 
 import javax.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

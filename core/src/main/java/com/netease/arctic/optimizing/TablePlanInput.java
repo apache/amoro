@@ -22,6 +22,7 @@ import com.netease.arctic.scan.TableFileScanHelper;
 
 public class TablePlanInput extends BaseOptimizingInput {
   private TableFileScanHelper tableFileScanHelper;
+  private OptimizingConfig optimizingConfig;
 
   public TableFileScanHelper getTableFileScanHelper() {
     return tableFileScanHelper;
@@ -29,5 +30,13 @@ public class TablePlanInput extends BaseOptimizingInput {
 
   public void setTableFileScanHelper(TableFileScanHelper tableFileScanHelper) {
     this.tableFileScanHelper = tableFileScanHelper;
+  }
+
+  public OptimizingConfig getOptimizingConfig() {
+    return optimizingConfig;
+  }
+
+  public void setOptimizingConfig(OptimizingConfig optimizingConfig) {
+    this.optimizingConfig = optimizingConfig;
   }
 }

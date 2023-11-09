@@ -16,28 +16,25 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizing;
+package com.netease.arctic.hive.optimizing;
 
-import com.netease.arctic.scan.TableFileScanHelper;
+import com.netease.arctic.optimizing.OptimizingExecutor;
+import com.netease.arctic.optimizing.OptimizingExecutorFactory;
+import com.netease.arctic.optimizing.TablePlanInput;
+import com.netease.arctic.optimizing.TablePlanOutput;
 
 import java.util.Map;
 
-public class TablePlanExecutor implements OptimizingExecutor<TablePlanOutput> {
-  private TableFileScanHelper tableFileScanHelper;
-  private OptimizingConfig optimizingConfig;
-  private Map<String, String> options;
-
-  public TablePlanExecutor(
-      TableFileScanHelper tableFileScanHelper,
-      OptimizingConfig optimizingConfig,
-      Map<String, String> options) {
-    this.tableFileScanHelper = tableFileScanHelper;
-    this.optimizingConfig = optimizingConfig;
-    this.options = options;
-  }
+public class MixedHivePlanExecutorFactory implements OptimizingExecutorFactory<TablePlanInput> {
 
   @Override
-  public TablePlanOutput execute() {
-    return null;
+  public void initialize(Map<String, String> properties) {}
+
+  @Override
+  public OptimizingExecutor<TablePlanOutput> createExecutor(TablePlanInput input) {
+    return new MixedHivePlanExecutor(
+        input.getTableFileScanHelper(),
+        (MixedHiveOptimizingConfig) input.getOptimizingConfig(),
+        input.getOptions());
   }
 }

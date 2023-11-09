@@ -18,22 +18,16 @@
 
 package com.netease.arctic.optimizing;
 
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-
 import java.util.Map;
 
 public class TablePlanExecutorFactory implements OptimizingExecutorFactory<TablePlanInput> {
 
-  private Map<String, String> properties;
-
-  // TODO
   @Override
-  public void initialize(Map<String, String> properties) {
-    this.properties = Maps.newHashMap(properties);
-  }
+  public void initialize(Map<String, String> properties) {}
 
   @Override
   public OptimizingExecutor<TablePlanOutput> createExecutor(TablePlanInput input) {
-    return null;
+    return new TablePlanExecutor(
+        input.getTableFileScanHelper(), input.getOptimizingConfig(), input.getOptions());
   }
 }
