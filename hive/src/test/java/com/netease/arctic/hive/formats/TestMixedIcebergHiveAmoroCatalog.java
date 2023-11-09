@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,27 +16,34 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.hive.catalog;
+package com.netease.arctic.hive.formats;
 
-import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.catalog.TestIcebergCatalog;
+import com.netease.arctic.formats.AmoroCatalogTestHelper;
+import com.netease.arctic.formats.TestMixedIcebergFormatCatalog;
 import com.netease.arctic.hive.TestHMS;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.IOException;
+
 @RunWith(Parameterized.class)
-public class TestIcebergHiveCatalog extends TestIcebergCatalog {
+public class TestMixedIcebergHiveAmoroCatalog extends TestMixedIcebergFormatCatalog {
 
   @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
-  public TestIcebergHiveCatalog(CatalogTestHelper catalogTestHelper) {
-    super(catalogTestHelper);
+  public TestMixedIcebergHiveAmoroCatalog(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
+    super(amoroCatalogTestHelper);
   }
 
-  @Parameterized.Parameters(name = "testFormat = {0}")
+  @Parameterized.Parameters(name = "{0}")
   public static Object[] parameters() {
-    return new Object[] {new HiveCatalogTestHelper(TableFormat.ICEBERG, TEST_HMS.getHiveConf())};
+    return new Object[] {MixedIcebergHiveCatalogTestHelper.defaultHelper()};
+  }
+
+  @Override
+  public void setupCatalog() throws IOException {
+    catalogTestHelper.initHiveConf(TEST_HMS.getHiveConf());
+    super.setupCatalog();
   }
 }

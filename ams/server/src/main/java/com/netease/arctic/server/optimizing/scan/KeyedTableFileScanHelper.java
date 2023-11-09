@@ -29,6 +29,7 @@ import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -64,16 +65,12 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
   private final KeyedTable arcticTable;
   private final long changeSnapshotId;
   private final long baseSnapshotId;
-  private final StructLikeMap<Long> partitionOptimizedSequence;
-  private final StructLikeMap<Long> legacyPartitionMaxTransactionId;
   private PartitionFilter partitionFilter;
 
   public KeyedTableFileScanHelper(KeyedTable arcticTable, KeyedTableSnapshot snapshot) {
     this.arcticTable = arcticTable;
     this.baseSnapshotId = snapshot.baseSnapshotId();
     this.changeSnapshotId = snapshot.changeSnapshotId();
-    this.partitionOptimizedSequence = snapshot.partitionOptimizedSequence();
-    this.legacyPartitionMaxTransactionId = snapshot.legacyPartitionMaxTransactionId();
   }
 
   /**
@@ -165,18 +162,16 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     UnkeyedTable baseTable = arcticTable.baseTable();
     ChangeTable changeTable = arcticTable.changeTable();
     if (changeSnapshotId != ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
-      long maxSequence =
-          getMaxSequenceLimit(
-              arcticTable,
-              changeSnapshotId,
-              partitionOptimizedSequence,
-              legacyPartitionMaxTransactionId);
+      StructLikeMap<Long> optimizedSequence =
+          baseSnapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID
+              ? StructLikeMap.create(arcticTable.spec().partitionType())
+              : ArcticTableUtil.readOptimizedSequence(arcticTable, baseSnapshotId);
+      long maxSequence = getMaxSequenceLimit(arcticTable, changeSnapshotId, optimizedSequence);
       if (maxSequence != Long.MIN_VALUE) {
         ChangeTableIncrementalScan changeTableIncrementalScan =
             changeTable
                 .newScan()
-                .fromSequence(partitionOptimizedSequence)
-                .fromLegacyTransaction(legacyPartitionMaxTransactionId)
+                .fromSequence(optimizedSequence)
                 .toSequence(maxSequence)
                 .useSnapshot(changeSnapshotId);
         try (CloseableIterable<FileScanTask> fileScanTasks =
@@ -251,8 +246,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
   private long getMaxSequenceLimit(
       KeyedTable arcticTable,
       long changeSnapshotId,
-      StructLikeMap<Long> partitionOptimizedSequence,
-      StructLikeMap<Long> legacyPartitionMaxTransactionId) {
+      StructLikeMap<Long> partitionOptimizedSequence) {
     ChangeTable changeTable = arcticTable.changeTable();
     Snapshot changeSnapshot = changeTable.snapshot(changeSnapshotId);
     int totalFilesInSummary =
@@ -272,7 +266,6 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
         changeTable
             .newScan()
             .fromSequence(partitionOptimizedSequence)
-            .fromLegacyTransaction(legacyPartitionMaxTransactionId)
             .useSnapshot(changeSnapshot.snapshotId());
     Map<Long, SnapshotFileGroup> changeFilesGroupBySequence = new HashMap<>();
     try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {

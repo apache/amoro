@@ -88,7 +88,7 @@ public class TestJoin extends FlinkTestBase {
 
   @After
   public void after() {
-    getCatalog().dropTable(TABLE_ID, true);
+    getMixedFormatCatalog().dropTable(TABLE_ID, true);
   }
 
   @Test

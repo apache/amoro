@@ -146,6 +146,11 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   }
 
   @Override
+  public UpdateStatistics updateStatistics() {
+    return icebergTable.updateStatistics();
+  }
+
+  @Override
   public Map<String, String> properties() {
     if (catalogProperties == null) {
       return icebergTable.properties();
@@ -307,10 +312,5 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public UpdatePartitionProperties updatePartitionProperties(Transaction transaction) {
     return new PartitionPropertiesUpdate(this, transaction);
-  }
-
-  @Override
-  public UpdateStatistics updateStatistics() {
-    return icebergTable.updateStatistics();
   }
 }

@@ -259,7 +259,7 @@ public class TestBasicTableTrashManager extends TableTestBase {
     Assert.assertTrue(tableTrashManager.fileExistInTrash(file1));
     String trashParentLocation =
         TableTrashManagers.getTrashParentLocation(getArcticTable().id(), customTrashLocation);
-    getCatalog().dropTable(getArcticTable().id(), true);
+    getMixedFormatCatalog().dropTable(getArcticTable().id(), true);
     Assert.assertFalse(getArcticTable().io().exists(trashParentLocation));
     Assert.assertFalse(tableTrashManager.fileExistInTrash(file1));
   }

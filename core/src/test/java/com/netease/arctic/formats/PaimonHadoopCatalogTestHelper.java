@@ -19,12 +19,10 @@
 package com.netease.arctic.formats;
 
 import com.netease.arctic.AmoroCatalog;
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.formats.paimon.PaimonCatalogFactory;
-import org.apache.hadoop.conf.Configuration;
+import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.options.CatalogOptions;
@@ -35,7 +33,7 @@ import org.apache.paimon.types.DataTypes;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PaimonHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Catalog> {
+public class PaimonHadoopCatalogTestHelper extends AbstractFormatCatalogTestHelper<Catalog> {
 
   public static final Schema schema =
       Schema.newBuilder()
@@ -47,13 +45,8 @@ public class PaimonHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Cat
           .option("amoro.test.key", "amoro.test.value")
           .build();
 
-  protected final String catalogName;
-
-  protected final Map<String, String> catalogProperties;
-
   public PaimonHadoopCatalogTestHelper(String catalogName, Map<String, String> catalogProperties) {
-    this.catalogName = catalogName;
-    this.catalogProperties = catalogProperties == null ? new HashMap<>() : catalogProperties;
+    super(catalogName, catalogProperties);
   }
 
   public void initWarehouse(String warehouseLocation) {
@@ -61,31 +54,21 @@ public class PaimonHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Cat
   }
 
   @Override
-  public void initHiveConf(Configuration hiveConf) {
-    // Do nothing
-  }
-
-  @Override
-  public CatalogMeta getCatalogMeta() {
-    return CatalogTestHelpers.buildCatalogMeta(
-        catalogName, getMetastoreType(), catalogProperties, TableFormat.PAIMON);
+  protected TableFormat format() {
+    return TableFormat.PAIMON;
   }
 
   @Override
   public AmoroCatalog amoroCatalog() {
     PaimonCatalogFactory paimonCatalogFactory = new PaimonCatalogFactory();
+    TableMetaStore metaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
     return paimonCatalogFactory.create(
-        catalogName, getMetastoreType(), catalogProperties, new Configuration());
+        catalogName, getMetastoreType(), catalogProperties, metaStore);
   }
 
   @Override
   public Catalog originalCatalog() {
     return PaimonCatalogFactory.paimonCatalog(getMetastoreType(), catalogProperties, null);
-  }
-
-  @Override
-  public String catalogName() {
-    return catalogName;
   }
 
   @Override
@@ -136,10 +119,6 @@ public class PaimonHadoopCatalogTestHelper implements AmoroCatalogTestHelper<Cat
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
-  }
-
-  protected String getMetastoreType() {
-    return CatalogMetaProperties.CATALOG_TYPE_HADOOP;
   }
 
   public static PaimonHadoopCatalogTestHelper defaultHelper() {
