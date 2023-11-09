@@ -167,6 +167,11 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     this.initializeFormatCatalogs();
   }
 
+  @Override
+  public Map<String, String> properties() {
+    return this.meta.getCatalogProperties();
+  }
+
   protected void initializeFormatCatalogs() {
     ServiceLoader<FormatCatalogFactory> loader = ServiceLoader.load(FormatCatalogFactory.class);
     Set<TableFormat> formats = CatalogUtil.tableFormats(this.meta);

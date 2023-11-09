@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *  *
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,31 +16,19 @@
  * limitations under the License.
  */
 
-package com.netease.arctic;
+package com.netease.arctic.spark.unified;
 
-import java.util.List;
-import java.util.Map;
-
-/** UnifiedCatalog is a catalog that can visit tables with all types of formats. */
-public interface UnifiedCatalog extends AmoroCatalog {
-
-  /** name of this catalog */
-  String name();
+public class SparkCatalogProperties {
 
   /**
-   * list tables with format
-   *
-   * @param database given database
-   * @return identifier and format list
+   * AMS URI, to load unified catalog information.
    */
-  List<TableIDWithFormat> listTables(String database);
-
-  /** Refresh catalog meta */
-  void refresh();
+  public static final String URI = "uri";
 
   /**
-   * Get catalog properties
-   * @return catalog properties
+   * AMS CATALOG name.
    */
-  Map<String, String> properties();
+  public static final String CATALOG = "catalog";
+
+
 }
