@@ -123,12 +123,19 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       taskSplitter = buildTaskSplitter();
     }
     beforeSplit();
-    return taskSplitter.splitTasks(targetTaskCount).stream()
+    List<SplitTask> splitTasks = taskSplitter.splitTasks(targetTaskCount);
+    splitTasks = afterSplit(splitTasks);
+
+    return splitTasks.stream()
         .map(task -> task.buildTask(buildTaskProperties()))
         .collect(Collectors.toList());
   }
 
   protected void beforeSplit() {}
+
+  protected List<SplitTask> afterSplit(List<SplitTask> splitTasks) {
+    return splitTasks;
+  }
 
   protected abstract TaskSplitter buildTaskSplitter();
 
@@ -316,11 +323,6 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
                   rewritePosDataFiles.add(f.getFile());
                   deleteFiles.addAll(f.getDeleteFiles());
                 });
-        if (rewriteDataFiles.size() == 1
-            && rewritePosDataFiles.size() == 0
-            && deleteFiles.size() == 0) {
-          continue;
-        }
         results.add(new SplitTask(rewriteDataFiles, rewritePosDataFiles, deleteFiles));
       }
       return results;
