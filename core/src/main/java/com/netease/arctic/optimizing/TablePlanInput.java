@@ -18,6 +18,16 @@
 
 package com.netease.arctic.optimizing;
 
+import com.netease.arctic.scan.TableFileScanHelper;
+
 public class TablePlanInput extends BaseOptimizingInput {
-  // TODO
+  private TableFileScanHelper tableFileScanHelper;
+
+  public TableFileScanHelper getTableFileScanHelper() {
+    return tableFileScanHelper;
+  }
+
+  public void setTableFileScanHelper(TableFileScanHelper tableFileScanHelper) {
+    this.tableFileScanHelper = tableFileScanHelper;
+  }
 }

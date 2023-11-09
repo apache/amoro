@@ -27,6 +27,7 @@ import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.optimizing.MixFormatRewriteExecutorFactory;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
+import com.netease.arctic.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.scan.TableFileScanHelper;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;

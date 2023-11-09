@@ -223,6 +223,11 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
     return this;
   }
 
+  @Override
+  public String tableName() {
+    return arcticTable.name();
+  }
+
   private DataFile wrapChangeFile(DataFile dataFile) {
     return DefaultKeyedFile.parseChange(dataFile);
   }

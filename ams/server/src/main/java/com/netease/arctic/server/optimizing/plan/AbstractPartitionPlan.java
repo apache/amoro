@@ -20,6 +20,7 @@ package com.netease.arctic.server.optimizing.plan;
 
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesInput;
+import com.netease.arctic.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
@@ -242,8 +243,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
               readOnlyDeleteFiles.toArray(new ContentFile[0]),
               rewriteDeleteFiles.toArray(new ContentFile[0]),
               tableObject);
-      return new TaskDescriptor(
-          tableRuntime.getTableIdentifier().getId(), partition, input, properties.getProperties());
+      return new TaskDescriptor(partition, input, properties.getProperties());
     }
   }
 

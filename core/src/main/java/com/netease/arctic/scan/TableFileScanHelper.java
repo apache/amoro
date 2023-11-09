@@ -56,4 +56,6 @@ public interface TableFileScanHelper {
   CloseableIterable<FileScanResult> scan();
 
   TableFileScanHelper withPartitionFilter(PartitionFilter partitionFilter);
+
+  String tableName();
 }

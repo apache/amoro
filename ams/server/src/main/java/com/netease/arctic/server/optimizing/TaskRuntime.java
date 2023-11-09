@@ -24,12 +24,12 @@ import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
+import com.netease.arctic.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.dashboard.utils.OptimizingUtil;
 import com.netease.arctic.server.exception.DuplicateRuntimeException;
 import com.netease.arctic.server.exception.IllegalTaskStateException;
 import com.netease.arctic.server.exception.OptimizingClosedException;
-import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.persistence.StatedPersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
@@ -61,12 +61,15 @@ public class TaskRuntime extends StatedPersistentBase {
   private TaskRuntime() {}
 
   public TaskRuntime(
-      OptimizingTaskId taskId, TaskDescriptor taskDescriptor, Map<String, String> properties) {
+      OptimizingTaskId taskId,
+      TaskDescriptor taskDescriptor,
+      long tableId,
+      Map<String, String> properties) {
     this.taskId = taskId;
     this.partition = taskDescriptor.getPartition();
     this.input = taskDescriptor.getInput();
     this.summary = new MetricsSummary(input);
-    this.tableId = taskDescriptor.getTableId();
+    this.tableId = tableId;
     this.properties = properties;
   }
 

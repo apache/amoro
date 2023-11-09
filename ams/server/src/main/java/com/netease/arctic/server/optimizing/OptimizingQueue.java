@@ -28,12 +28,12 @@ import com.netease.arctic.ams.api.OptimizingTaskResult;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.optimizing.RewriteFilesInput;
+import com.netease.arctic.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.OptimizingClosedException;
 import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.exception.TaskNotFoundException;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
-import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.TaskFilesPersistence;
 import com.netease.arctic.server.persistence.mapper.OptimizerMapper;
@@ -723,6 +723,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
             new TaskRuntime(
                 new OptimizingTaskId(processId, taskId++),
                 taskDescriptor,
+                tableRuntime.getTableIdentifier().getId(),
                 taskDescriptor.properties());
         LOG.info(
             "{} plan new task {}, summary {}",

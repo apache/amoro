@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.scan.KeyedTableFileScanHelper;
 import com.netease.arctic.scan.TableFileScanHelper;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;

@@ -18,12 +18,58 @@
 
 package com.netease.arctic.optimizing;
 
+import com.netease.arctic.optimizing.plan.TaskDescriptor;
+import org.apache.iceberg.util.StructLikeMap;
+
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class TablePlanOutput implements TableOptimizing.OptimizingOutput {
-  // TODO
+
+  private List<TaskDescriptor> tasks;
+
+  private StructLikeMap<PartitionPlanMetrics> partitionPlanMetrics;
+
+  public List<TaskDescriptor> getTasks() {
+    return tasks;
+  }
+
+  public void setTasks(List<TaskDescriptor> tasks) {
+    this.tasks = tasks;
+  }
+
+  public StructLikeMap<PartitionPlanMetrics> getPartitionPlanMetrics() {
+    return partitionPlanMetrics;
+  }
+
+  public void setPartitionPlanMetrics(StructLikeMap<PartitionPlanMetrics> partitionPlanMetrics) {
+    this.partitionPlanMetrics = partitionPlanMetrics;
+  }
+
   @Override
   public Map<String, String> summary() {
-    return null;
+    return Collections.emptyMap();
+  }
+
+  public static class PartitionPlanMetrics {
+    private long fromSequence;
+    private long toSequence;
+
+    public long getFromSequence() {
+      return fromSequence;
+    }
+
+    public void setFromSequence(long fromSequence) {
+      this.fromSequence = fromSequence;
+    }
+
+    public long getToSequence() {
+      return toSequence;
+    }
+
+    public void setToSequence(long toSequence) {
+      this.toSequence = toSequence;
+    }
   }
 }

@@ -29,13 +29,13 @@ import com.netease.arctic.optimizing.IcebergRewriteExecutor;
 import com.netease.arctic.optimizing.OptimizingExecutor;
 import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
+import com.netease.arctic.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.KeyedTableCommit;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 import com.netease.arctic.server.optimizing.UnKeyedTableCommit;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
-import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
@@ -52,7 +52,6 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.mockito.Mockito;
 
 import javax.annotation.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

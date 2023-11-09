@@ -20,6 +20,7 @@ package com.netease.arctic.server.optimizing.plan;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.scan.TableFileScanHelper;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.OptimizingType;

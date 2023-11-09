@@ -64,4 +64,9 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
     this.partitionFilter = partitionFilter;
     return this;
   }
+
+  @Override
+  public String tableName() {
+    return table.name();
+  }
 }

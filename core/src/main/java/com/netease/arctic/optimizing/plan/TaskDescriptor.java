@@ -16,24 +16,32 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizing;
+package com.netease.arctic.optimizing.plan;
 
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import com.netease.arctic.optimizing.RewriteFilesInput;
 
 import java.util.Map;
 
-public class TablePlanExecutorFactory implements OptimizingExecutorFactory<TablePlanInput> {
+public class TaskDescriptor {
+  private final String partition;
+  private final RewriteFilesInput input;
+  private final Map<String, String> properties;
 
-  private Map<String, String> properties;
-
-  // TODO
-  @Override
-  public void initialize(Map<String, String> properties) {
-    this.properties = Maps.newHashMap(properties);
+  public TaskDescriptor(String partition, RewriteFilesInput input, Map<String, String> properties) {
+    this.partition = partition;
+    this.input = input;
+    this.properties = properties;
   }
 
-  @Override
-  public OptimizingExecutor<TablePlanOutput> createExecutor(TablePlanInput input) {
-    return null;
+  public String getPartition() {
+    return partition;
+  }
+
+  public RewriteFilesInput getInput() {
+    return input;
+  }
+
+  public Map<String, String> properties() {
+    return properties;
   }
 }
