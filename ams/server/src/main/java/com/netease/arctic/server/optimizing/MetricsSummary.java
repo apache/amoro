@@ -11,7 +11,6 @@ import java.util.Collection;
 
 public class MetricsSummary {
   @JsonIgnoreProperties private long newDataSize = 0;
-
   @JsonIgnoreProperties private int newDataFileCnt = 0;
   @JsonIgnoreProperties private long newDataRecordCnt = 0;
   /** Only position delete files will be generated */
