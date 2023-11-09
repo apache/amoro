@@ -77,11 +77,7 @@ public class OptimizingUtil {
   }
 
   public static int getFileCount(ContentFile<?>[] contentFiles) {
-    int length = 0;
-    if (contentFiles != null) {
-      length += contentFiles.length;
-    }
-    return length;
+    return contentFiles == null ? 0 : contentFiles.length;
   }
 
   public static long getRecordCnt(ContentFile<?>[] contentFiles) {
