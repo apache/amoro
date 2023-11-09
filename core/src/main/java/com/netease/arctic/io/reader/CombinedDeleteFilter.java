@@ -188,6 +188,9 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
       return record -> false;
     }
 
+    InternalRecordWrapper internalRecordWrapper =
+        new InternalRecordWrapper(deleteSchema.asStruct());
+
     BloomFilter<StructLike> bloomFilter = null;
     if (filterEqDelete) {
       bloomFilter =
@@ -196,7 +199,8 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
               combinedDataReader.rewrittenDataRecordCnt(),
               0.001);
       for (Record record : combinedDataReader.readIdentifierData(deleteIds)) {
-        bloomFilter.put(record);
+        StructLike identifier = internalRecordWrapper.copyFor(record);
+        bloomFilter.put(identifier);
       }
     }
 
@@ -213,9 +217,6 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
 
     StructLikeBaseMap<Long> structLikeMap =
         structLikeCollections.createStructLikeMap(deleteSchema.asStruct());
-
-    InternalRecordWrapper internalRecordWrapper =
-        new InternalRecordWrapper(deleteSchema.asStruct());
 
     // init map
     try (CloseableIterable<RecordWithLsn> deletes = deleteRecords) {
