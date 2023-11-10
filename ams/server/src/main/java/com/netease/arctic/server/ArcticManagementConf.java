@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server;
 
-
 import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.ConfigOptions;
 
@@ -244,9 +243,13 @@ public class ArcticManagementConf {
           .defaultValue(1)
           .withDescription("Max planning parallelism in one optimizer group.");
 
-  /**
-   * config key prefix of terminal
-   */
+  public static final ConfigOption<Long> OPTIMIZER_POLLING_TIMEOUT =
+      ConfigOptions.key("optimizer.polling-timeout")
+          .longType()
+          .defaultValue(1000L)
+          .withDescription("Optimizer polling task timeout.");
+
+  /** config key prefix of terminal */
   public static final String TERMINAL_PREFIX = "terminal.";
 
   public static final ConfigOption<String> TERMINAL_BACKEND =

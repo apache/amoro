@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.server.optimizing;
 
 import com.google.common.collect.Maps;
@@ -46,6 +64,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class OptimizingQueue extends PersistentBase {
@@ -85,16 +104,17 @@ public class OptimizingQueue extends PersistentBase {
 
   private void initTableRuntime(TableRuntimeMeta tableRuntimeMeta) {
     TableRuntime tableRuntime = tableRuntimeMeta.getTableRuntime();
-    if (tableRuntime.getOptimizingStatus().isProcessing() &&
-        tableRuntimeMeta.getOptimizingProcessId() != 0) {
+    if (tableRuntime.getOptimizingStatus().isProcessing()
+        && tableRuntimeMeta.getOptimizingProcessId() != 0) {
       tableRuntime.recover(new TableOptimizingProcess(tableRuntimeMeta));
     }
 
     if (tableRuntime.isOptimizingEnabled()) {
-      //TODO: load task quotas
-      tableRuntime.resetTaskQuotas(System.currentTimeMillis() - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME);
-      if (tableRuntime.getOptimizingStatus() == OptimizingStatus.IDLE ||
-          tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING) {
+      // TODO: load task quotas
+      tableRuntime.resetTaskQuotas(
+          System.currentTimeMillis() - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME);
+      if (tableRuntime.getOptimizingStatus() == OptimizingStatus.IDLE
+          || tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING) {
         schedulingPolicy.addTable(tableRuntime);
       } else if (tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
         tableQueue.offer(new TableOptimizingProcess(tableRuntimeMeta));
@@ -113,15 +133,22 @@ public class OptimizingQueue extends PersistentBase {
 
   public void refreshTable(TableRuntime tableRuntime) {
     if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
-      LOG.info("Bind queue {} success with table {}", optimizerGroup.getName(), tableRuntime.getTableIdentifier());
-      tableRuntime.resetTaskQuotas(System.currentTimeMillis() - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME);
+      LOG.info(
+          "Bind queue {} success with table {}",
+          optimizerGroup.getName(),
+          tableRuntime.getTableIdentifier());
+      tableRuntime.resetTaskQuotas(
+          System.currentTimeMillis() - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME);
       schedulingPolicy.addTable(tableRuntime);
     }
   }
 
   public void releaseTable(TableRuntime tableRuntime) {
     schedulingPolicy.removeTable(tableRuntime);
-    LOG.info("Release queue {} with table {}", optimizerGroup.getName(), tableRuntime.getTableIdentifier());
+    LOG.info(
+        "Release queue {} with table {}",
+        optimizerGroup.getName(),
+        tableRuntime.getTableIdentifier());
   }
 
   public boolean containsTable(ServerTableIdentifier identifier) {
@@ -130,7 +157,8 @@ public class OptimizingQueue extends PersistentBase {
 
   private void clearProcess(TableOptimizingProcess optimizingProcess) {
     tableQueue.removeIf(process -> process.getProcessId() == optimizingProcess.getProcessId());
-    retryTaskQueue.removeIf(taskRuntime -> taskRuntime.getProcessId() == optimizingProcess.getProcessId());
+    retryTaskQueue.removeIf(
+        taskRuntime -> taskRuntime.getProcessId() == optimizingProcess.getProcessId());
   }
 
   public TaskRuntime pollTask(long maxWaitTime) {
@@ -148,10 +176,9 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   private TaskRuntime fetchTask() {
-      return Optional.ofNullable(retryTaskQueue.poll())
-        .orElse(Optional.ofNullable(tableQueue.peek())
-            .map(TableOptimizingProcess::poll)
-            .orElse(null));
+    return Optional.ofNullable(retryTaskQueue.poll())
+        .orElse(
+            Optional.ofNullable(tableQueue.peek()).map(TableOptimizingProcess::poll).orElse(null));
   }
 
   public TaskRuntime getTask(OptimizingTaskId taskId) {
@@ -168,11 +195,10 @@ public class OptimizingQueue extends PersistentBase {
         .collect(Collectors.toList());
   }
 
-  public List<TaskRuntime> collectRunningTasks() {
+  public List<TaskRuntime> collectTasks(Predicate<TaskRuntime> predicate) {
     return tableQueue.stream()
         .flatMap(p -> p.getTaskMap().values().stream())
-        .filter(task -> task.getStatus() == TaskRuntime.Status.ACKED ||
-            task.getStatus() == TaskRuntime.Status.SCHEDULED)
+        .filter(predicate)
         .collect(Collectors.toList());
   }
 
@@ -194,8 +220,8 @@ public class OptimizingQueue extends PersistentBase {
     try {
       long currentTime = System.currentTimeMillis();
       scheduleTableIfNecessary(currentTime);
-      return waitDeadline > currentTime &&
-          planningCompleted.await(waitDeadline - currentTime, TimeUnit.MILLISECONDS);
+      return waitDeadline > currentTime
+          && planningCompleted.await(waitDeadline - currentTime, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       LOG.error("Schedule table interrupted", e);
       return false;
@@ -217,54 +243,62 @@ public class OptimizingQueue extends PersistentBase {
     }
   }
 
-  private void triggerAsyncPlanning(TableRuntime tableRuntime, Set<TableRuntime> skipTables, long startTime) {
+  private void triggerAsyncPlanning(
+      TableRuntime tableRuntime, Set<TableRuntime> skipTables, long startTime) {
     LOG.info("Trigger planning table {}", tableRuntime.getTableIdentifier());
     planningTables.add(tableRuntime);
-    doPlanning(tableRuntime).whenComplete((process, throwable) -> {
-      long currentTime = System.currentTimeMillis();
-      scheduleLock.lock();
-      try {
-        plannedKeepingTables.put(tableRuntime, System.currentTimeMillis());
-        planningTables.remove(tableRuntime);
-        if (process != null) {
-          tableQueue.offer(process);
-          LOG.info("{} completes planning {} tasks with a total cost of {} ms, skipping tables, {}",
-              optimizerGroup.getName(),
-              process.getTaskMap().size(),
-              currentTime - startTime,
-              skipTables);
-        } else {
-          if (throwable != null) {
-            LOG.error("Planning table {} failed", tableRuntime.getTableIdentifier(), throwable);
-          }
-          LOG.info("{} skip planning table {} with a total cost of {} ms.",
-              optimizerGroup.getName(),
-              tableRuntime.getTableIdentifier(),
-              currentTime - startTime);
-        }
-        planningCompleted.signalAll();
-      } finally {
-        scheduleLock.unlock();
-      }
-    });
+    doPlanning(tableRuntime)
+        .whenComplete(
+            (process, throwable) -> {
+              long currentTime = System.currentTimeMillis();
+              scheduleLock.lock();
+              try {
+                plannedKeepingTables.put(tableRuntime, System.currentTimeMillis());
+                planningTables.remove(tableRuntime);
+                if (process != null) {
+                  tableQueue.offer(process);
+                  LOG.info(
+                      "{} completes planning {} tasks with a total cost of {} ms, skipping tables, {}",
+                      optimizerGroup.getName(),
+                      process.getTaskMap().size(),
+                      currentTime - startTime,
+                      skipTables);
+                } else {
+                  if (throwable != null) {
+                    LOG.error(
+                        "Planning table {} failed", tableRuntime.getTableIdentifier(), throwable);
+                  }
+                  LOG.info(
+                      "{} skip planning table {} with a total cost of {} ms.",
+                      optimizerGroup.getName(),
+                      tableRuntime.getTableIdentifier(),
+                      currentTime - startTime);
+                }
+                planningCompleted.signalAll();
+              } finally {
+                scheduleLock.unlock();
+              }
+            });
   }
 
   private CompletableFuture<TableOptimizingProcess> doPlanning(TableRuntime tableRuntime) {
     CompletableFuture<TableOptimizingProcess> future = new CompletableFuture<>();
-    planExecutor.execute(() -> {
-      AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
-      OptimizingPlanner planner = new OptimizingPlanner(
-          tableRuntime.refresh(table),
-          (ArcticTable) table.originalTable(),
-          getAvailableCore());
-      if (planner.isNecessary()) {
-        TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
-        future.complete(optimizingProcess);
-      } else {
-        tableRuntime.cleanPendingInput();
-        future.complete(null);
-      }
-    });
+    planExecutor.execute(
+        () -> {
+          AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
+          OptimizingPlanner planner =
+              new OptimizingPlanner(
+                  tableRuntime.refresh(table),
+                  (ArcticTable) table.originalTable(),
+                  getAvailableCore());
+          if (planner.isNecessary()) {
+            TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
+            future.complete(optimizingProcess);
+          } else {
+            tableRuntime.cleanPendingInput();
+            future.complete(null);
+          }
+        });
     return future;
   }
 
@@ -377,18 +411,23 @@ public class OptimizingQueue extends PersistentBase {
       try {
         try {
           tableRuntime.addTaskQuota(taskRuntime.getCurrentQuota());
-        } catch (Throwable t) {
-          LOG.warn("{} failed to add task quota {}, ignore it", tableRuntime.getTableIdentifier(),
-              taskRuntime.getTaskId(), t);
+        } catch (Throwable throwable) {
+          LOG.warn(
+              "{} failed to add task quota {}, ignore it",
+              tableRuntime.getTableIdentifier(),
+              taskRuntime.getTaskId(),
+              throwable);
         }
         if (isClosed()) {
           throw new OptimizingClosedException(processId);
         }
         if (taskRuntime.getStatus() == TaskRuntime.Status.SUCCESS) {
           // the lock of TableOptimizingProcess makes it thread-safe
-          if (allTasksPrepared() && tableRuntime.getOptimizingStatus().isProcessing() &&
-              tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
+          if (allTasksPrepared()
+              && tableRuntime.getOptimizingStatus().isProcessing()
+              && tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
             tableRuntime.beginCommitting();
+            clearProcess(this);
           }
         } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
           if (taskRuntime.getRetry() <= tableRuntime.getMaxExecuteRetryCount()) {
@@ -420,9 +459,10 @@ public class OptimizingQueue extends PersistentBase {
 
     @Override
     public long getDuration() {
-      long dur = endTime == ArcticServiceConstants.INVALID_TIME ?
-          System.currentTimeMillis() - planTime :
-          endTime - planTime;
+      long dur =
+          endTime == ArcticServiceConstants.INVALID_TIME
+              ? System.currentTimeMillis() - planTime
+              : endTime - planTime;
       return Math.max(0, dur);
     }
 
@@ -463,8 +503,7 @@ public class OptimizingQueue extends PersistentBase {
      */
     @Override
     public long getRunningQuotaTime(long calculatingStartTime, long calculatingEndTime) {
-      return taskMap.values()
-          .stream()
+      return taskMap.values().stream()
           .filter(t -> !t.finished())
           .mapToLong(task -> task.getQuotaTime(calculatingStartTime, calculatingEndTime))
           .sum();
@@ -472,8 +511,11 @@ public class OptimizingQueue extends PersistentBase {
 
     @Override
     public void commit() {
-      LOG.debug("{} get {} tasks of {} partitions to commit", tableRuntime.getTableIdentifier(),
-          taskMap.size(), taskMap.values());
+      LOG.debug(
+          "{} get {} tasks of {} partitions to commit",
+          tableRuntime.getTableIdentifier(),
+          taskMap.size(),
+          taskMap.values());
 
       lock.lock();
       try {
@@ -504,80 +546,122 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     private UnKeyedTableCommit buildCommit() {
-      ArcticTable table = (ArcticTable) tableManager.loadTable(tableRuntime.getTableIdentifier()).originalTable();
+      ArcticTable table =
+          (ArcticTable) tableManager.loadTable(tableRuntime.getTableIdentifier()).originalTable();
       if (table.isUnkeyedTable()) {
         return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values());
       } else {
-        return new KeyedTableCommit(table, taskMap.values(), targetSnapshotId,
-            convertPartitionSequence(table, fromSequence), convertPartitionSequence(table, toSequence));
+        return new KeyedTableCommit(
+            table,
+            taskMap.values(),
+            targetSnapshotId,
+            convertPartitionSequence(table, fromSequence),
+            convertPartitionSequence(table, toSequence));
       }
     }
 
-    private StructLikeMap<Long> convertPartitionSequence(ArcticTable table, Map<String, Long> partitionSequence) {
+    private StructLikeMap<Long> convertPartitionSequence(
+        ArcticTable table, Map<String, Long> partitionSequence) {
       PartitionSpec spec = table.spec();
       StructLikeMap<Long> results = StructLikeMap.create(spec.partitionType());
-      partitionSequence.forEach((partition, sequence) -> {
-        if (spec.isUnpartitioned()) {
-          results.put(TablePropertyUtil.EMPTY_STRUCT, sequence);
-        } else {
-          StructLike partitionData = ArcticDataFiles.data(spec, partition);
-          results.put(partitionData, sequence);
-        }
-      });
+      partitionSequence.forEach(
+          (partition, sequence) -> {
+            if (spec.isUnpartitioned()) {
+              results.put(TablePropertyUtil.EMPTY_STRUCT, sequence);
+            } else {
+              StructLike partitionData = ArcticDataFiles.data(spec, partition);
+              results.put(partitionData, sequence);
+            }
+          });
       return results;
     }
 
     private void beginAndPersistProcess() {
       doAsTransaction(
-          () -> doAs(OptimizingMapper.class, mapper ->
-              mapper.insertOptimizingProcess(tableRuntime.getTableIdentifier(),
-                  processId, targetSnapshotId, targetChangeSnapshotId, status, optimizingType, planTime, getSummary(),
-                  fromSequence, toSequence)),
-          () -> doAs(OptimizingMapper.class, mapper ->
-              mapper.insertTaskRuntimes(Lists.newArrayList(taskMap.values()))),
+          () ->
+              doAs(
+                  OptimizingMapper.class,
+                  mapper ->
+                      mapper.insertOptimizingProcess(
+                          tableRuntime.getTableIdentifier(),
+                          processId,
+                          targetSnapshotId,
+                          targetChangeSnapshotId,
+                          status,
+                          optimizingType,
+                          planTime,
+                          getSummary(),
+                          fromSequence,
+                          toSequence)),
+          () ->
+              doAs(
+                  OptimizingMapper.class,
+                  mapper -> mapper.insertTaskRuntimes(Lists.newArrayList(taskMap.values()))),
           () -> TaskFilesPersistence.persistTaskInputs(processId, taskMap.values()),
-          () -> tableRuntime.beginProcess(this)
-      );
+          () -> tableRuntime.beginProcess(this));
     }
 
     private void persistProcessCompleted(boolean success) {
       if (!success) {
         doAsTransaction(
             () -> taskMap.values().forEach(TaskRuntime::tryCanceling),
-            () -> doAs(OptimizingMapper.class, mapper ->
-                mapper.updateOptimizingProcess(tableRuntime.getTableIdentifier().getId(), processId, status, endTime,
-                    getSummary(), getFailedReason())),
-            () -> tableRuntime.completeProcess(false)
-        );
+            () ->
+                doAs(
+                    OptimizingMapper.class,
+                    mapper ->
+                        mapper.updateOptimizingProcess(
+                            tableRuntime.getTableIdentifier().getId(),
+                            processId,
+                            status,
+                            endTime,
+                            getSummary(),
+                            getFailedReason())),
+            () -> tableRuntime.completeProcess(false));
       } else {
         doAsTransaction(
-            () -> doAs(OptimizingMapper.class, mapper ->
-                mapper.updateOptimizingProcess(tableRuntime.getTableIdentifier().getId(), processId, status, endTime,
-                    getSummary(), getFailedReason())),
-            () -> tableRuntime.completeProcess(true)
-        );
+            () ->
+                doAs(
+                    OptimizingMapper.class,
+                    mapper ->
+                        mapper.updateOptimizingProcess(
+                            tableRuntime.getTableIdentifier().getId(),
+                            processId,
+                            status,
+                            endTime,
+                            getSummary(),
+                            getFailedReason())),
+            () -> tableRuntime.completeProcess(true));
       }
     }
 
     private void loadTaskRuntimes() {
-      List<TaskRuntime> taskRuntimes = getAs(
-          OptimizingMapper.class,
-          mapper -> mapper.selectTaskRuntimes(tableRuntime.getTableIdentifier().getId(), processId));
+      List<TaskRuntime> taskRuntimes =
+          getAs(
+              OptimizingMapper.class,
+              mapper ->
+                  mapper.selectTaskRuntimes(tableRuntime.getTableIdentifier().getId(), processId));
       Map<Integer, RewriteFilesInput> inputs = TaskFilesPersistence.loadTaskInputs(processId);
-      taskRuntimes.forEach(taskRuntime -> {
-        taskRuntime.claimOwnership(this);
-        taskRuntime.setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
-        taskMap.put(taskRuntime.getTaskId(), taskRuntime);
-        taskQueue.offer(taskRuntime);
-      });
+      taskRuntimes.forEach(
+          taskRuntime -> {
+            taskRuntime.claimOwnership(this);
+            taskRuntime.setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
+            taskMap.put(taskRuntime.getTaskId(), taskRuntime);
+            taskQueue.offer(taskRuntime);
+          });
     }
 
     private void loadTaskRuntimes(List<TaskDescriptor> taskDescriptors) {
       int taskId = 1;
       for (TaskDescriptor taskDescriptor : taskDescriptors) {
-        TaskRuntime taskRuntime = new TaskRuntime(new OptimizingTaskId(processId, taskId++),
-            taskDescriptor, taskDescriptor.properties());
-        LOG.info("{} plan new task {}, summary {}", tableRuntime.getTableIdentifier(), taskRuntime.getTaskId(),
+        TaskRuntime taskRuntime =
+            new TaskRuntime(
+                new OptimizingTaskId(processId, taskId++),
+                taskDescriptor,
+                taskDescriptor.properties());
+        LOG.info(
+            "{} plan new task {}, summary {}",
+            tableRuntime.getTableIdentifier(),
+            taskRuntime.getTaskId(),
             taskRuntime.getSummary());
         taskMap.put(taskRuntime.getTaskId(), taskRuntime.claimOwnership(this));
         taskQueue.offer(taskRuntime);

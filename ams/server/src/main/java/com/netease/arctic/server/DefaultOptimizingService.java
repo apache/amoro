@@ -59,58 +59,65 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * DefaultOptimizingService is implementing the OptimizerManager Thrift service, which manages the optimization tasks
- * for ArcticTable. It includes methods for authenticating optimizers, polling tasks from the optimizing queue,
- * acknowledging tasks,and completing tasks. The code uses several data structures, including maps for optimizing queues
- * ,task runtimes, and authenticated optimizers.
- * <p>
- * The code also includes a TimerTask for detecting and removing expired optimizers and suspending tasks.
+ * DefaultOptimizingService is implementing the OptimizerManager Thrift service, which manages the
+ * optimization tasks for ArcticTable. It includes methods for authenticating optimizers, polling
+ * tasks from the optimizing queue, acknowledging tasks,and completing tasks. The code uses several
+ * data structures, including maps for optimizing queues ,task runtimes, and authenticated
+ * optimizers.
+ *
+ * <p>The code also includes a TimerTask for detecting and removing expired optimizers and
+ * suspending tasks.
  */
-public class DefaultOptimizingService extends StatedPersistentBase implements OptimizingService.Iface,
-    OptimizerManager, QuotaProvider {
+public class DefaultOptimizingService extends StatedPersistentBase
+    implements OptimizingService.Iface, OptimizerManager, QuotaProvider {
 
   private static final Logger LOG = LoggerFactory.getLogger(DefaultOptimizingService.class);
-  private static final long POLLING_TIMEOUT_MS = 10000;
 
   private final long optimizerTouchTimeout;
   private final long taskAckTimeout;
   private final int maxPlanningParallelism;
+  private final long pollingTimeout;
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
   private final Map<String, OptimizerInstance> authOptimizers = new ConcurrentHashMap<>();
+  private final SuspendingDetector suspendingDetector = new SuspendingDetector();
   private final TableService tableService;
   private final RuntimeHandlerChain tableHandlerChain;
   private final Executor planExecutor;
-  private Timer optimizerMonitorTimer;
 
   public DefaultOptimizingService(Configurations serviceConfig, DefaultTableService tableService) {
     this.optimizerTouchTimeout = serviceConfig.getLong(ArcticManagementConf.OPTIMIZER_HB_TIMEOUT);
     this.taskAckTimeout = serviceConfig.getLong(ArcticManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT);
-    this.maxPlanningParallelism = serviceConfig.getInteger(ArcticManagementConf.OPTIMIZER_MAX_PLANNING_PARALLELISM);
+    this.maxPlanningParallelism =
+        serviceConfig.getInteger(ArcticManagementConf.OPTIMIZER_MAX_PLANNING_PARALLELISM);
+    this.pollingTimeout = serviceConfig.getLong(ArcticManagementConf.OPTIMIZER_POLLING_TIMEOUT);
     this.tableService = tableService;
     this.tableHandlerChain = new TableRuntimeHandlerImpl();
-    this.planExecutor = Executors.newCachedThreadPool(new ThreadFactory() {
-      private final AtomicInteger threadId = new AtomicInteger(0);
-      @Override
-      public Thread newThread(@NotNull Runnable r) {
-        Thread thread = new Thread(r, "plan-executor-thread-" + threadId.incrementAndGet());
-        thread.setDaemon(true);
-        return thread;
-      }
-    });
+    this.planExecutor =
+        Executors.newCachedThreadPool(
+            new ThreadFactory() {
+              private final AtomicInteger threadId = new AtomicInteger(0);
+
+              @Override
+              public Thread newThread(@NotNull Runnable r) {
+                Thread thread = new Thread(r, "plan-executor-thread-" + threadId.incrementAndGet());
+                thread.setDaemon(true);
+                return thread;
+              }
+            });
   }
 
   public RuntimeHandlerChain getTableRuntimeHandler() {
@@ -118,40 +125,50 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
   }
 
   private void loadOptimizingQueues(List<TableRuntimeMeta> tableRuntimeMetaList) {
-    List<ResourceGroup> optimizerGroups = getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups);
+    List<ResourceGroup> optimizerGroups =
+        getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups);
     List<OptimizerInstance> optimizers = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
-    Map<String, List<TableRuntimeMeta>> groupToTableRuntimes = tableRuntimeMetaList.stream()
-        .collect(Collectors.groupingBy(TableRuntimeMeta::getOptimizerGroup));
-    optimizerGroups.forEach(group -> {
-      String groupName = group.getName();
-      List<TableRuntimeMeta> tableRuntimeMetas = groupToTableRuntimes.remove(groupName);
-      OptimizingQueue optimizingQueue = new OptimizingQueue(
-          tableService,
-          group,
-          this,
-          planExecutor,
-          Optional.ofNullable(tableRuntimeMetas).orElseGet(ArrayList::new),
-          maxPlanningParallelism);
-      optimizingQueueByGroup.put(groupName, optimizingQueue);
-    });
-    optimizers.forEach(this::registerOptimizer);
-    groupToTableRuntimes.keySet().forEach(groupName -> LOG.warn("Unloaded task runtime in group " + groupName));
+    Map<String, List<TableRuntimeMeta>> groupToTableRuntimes =
+        tableRuntimeMetaList.stream()
+            .collect(Collectors.groupingBy(TableRuntimeMeta::getOptimizerGroup));
+    optimizerGroups.forEach(
+        group -> {
+          String groupName = group.getName();
+          List<TableRuntimeMeta> tableRuntimeMetas = groupToTableRuntimes.remove(groupName);
+          OptimizingQueue optimizingQueue =
+              new OptimizingQueue(
+                  tableService,
+                  group,
+                  this,
+                  planExecutor,
+                  Optional.ofNullable(tableRuntimeMetas).orElseGet(ArrayList::new),
+                  maxPlanningParallelism);
+          optimizingQueueByGroup.put(groupName, optimizingQueue);
+        });
+    optimizers.forEach(optimizer -> registerOptimizer(optimizer, false));
+    groupToTableRuntimes
+        .keySet()
+        .forEach(groupName -> LOG.warn("Unloaded task runtime in group " + groupName));
   }
 
-  private void registerOptimizer(OptimizerInstance optimizer) {
-    String token = optimizer.getToken();
-    authOptimizers.put(token, optimizer);
-    optimizingQueueByToken.put(token, optimizingQueueByGroup.get(optimizer.getGroupName()));
+  private void registerOptimizer(OptimizerInstance optimizer, boolean needPersistency) {
+    if (needPersistency) {
+      doAs(OptimizerMapper.class, mapper -> mapper.insertOptimizer(optimizer));
+    }
+    authOptimizers.put(optimizer.getToken(), optimizer);
+    optimizingQueueByToken.put(
+        optimizer.getToken(), optimizingQueueByGroup.get(optimizer.getGroupName()));
+    suspendingDetector.detectTimeout(optimizer);
   }
 
   private void unregisterOptimizer(String token) {
+    doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(token));
     optimizingQueueByToken.remove(token);
     authOptimizers.remove(token);
   }
 
   @Override
-  public void ping() {
-  }
+  public void ping() {}
 
   public List<TaskRuntime> listTasks(String optimizerGroup) {
     return getQueueByGroup(optimizerGroup).collectTasks();
@@ -167,8 +184,8 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
   }
 
   private OptimizerInstance getAuthenticatedOptimizer(String authToken) {
-    org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument(authToken != null,
-        "authToken can not be null");
+    org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument(
+        authToken != null, "authToken can not be null");
     return Optional.ofNullable(authOptimizers.get(authToken))
         .orElseThrow(() -> new PluginRetryAuthException("Optimizer has not been authenticated"));
   }
@@ -179,15 +196,16 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
       LOG.debug("Optimizer {} (threadId {}) try polling task", authToken, threadId);
     }
     OptimizingQueue queue = getQueueByToken(authToken);
-    return Optional.ofNullable(queue.pollTask(POLLING_TIMEOUT_MS))
-        .map(task -> extractOptimizingTask(task,
-            getAuthenticatedOptimizer(authToken).getThread(threadId), queue))
+    return Optional.ofNullable(queue.pollTask(pollingTimeout))
+        .map(
+            task ->
+                extractOptimizingTask(
+                    task, getAuthenticatedOptimizer(authToken).getThread(threadId), queue))
         .orElse(null);
   }
 
-  private OptimizingTask extractOptimizingTask(TaskRuntime task,
-                                               OptimizerThread optimizerThread,
-                                               OptimizingQueue queue) {
+  private OptimizingTask extractOptimizingTask(
+      TaskRuntime task, OptimizerThread optimizerThread, OptimizingQueue queue) {
     try {
       task.schedule(optimizerThread);
       LOG.info("OptimizerThread {} polled task {}", optimizerThread, task.getTaskId());
@@ -212,7 +230,8 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
   public void completeTask(String authToken, OptimizingTaskResult taskResult) {
     LOG.info("Optimizer {} complete task {}", authToken, taskResult.getTaskId());
     OptimizingQueue queue = getQueueByToken(authToken);
-    OptimizerThread thread = getAuthenticatedOptimizer(authToken).getThread(taskResult.getThreadId());
+    OptimizerThread thread =
+        getAuthenticatedOptimizer(authToken).getThread(taskResult.getThreadId());
     Optional.ofNullable(queue.getTask(taskResult.getTaskId()))
         .orElseThrow(() -> new TaskNotFoundException(taskResult.getTaskId()))
         .complete(thread, taskResult);
@@ -223,8 +242,7 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
     LOG.info("Register optimizer {}.", registerInfo);
     OptimizingQueue queue = getQueueByGroup(registerInfo.getGroupName());
     OptimizerInstance optimizer = new OptimizerInstance(registerInfo, queue.getContainerName());
-    doAs(OptimizerMapper.class, mapper -> mapper.insertOptimizer(optimizer));
-    registerOptimizer(optimizer);
+    registerOptimizer(optimizer, true);
     return optimizer.getToken();
   }
 
@@ -239,16 +257,12 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
   }
 
   private Optional<OptimizingQueue> getOptionalQueueByGroup(String optimizerGroup) {
-    Preconditions.checkArgument(
-        optimizerGroup != null,
-        "optimizerGroup can not be null");
+    Preconditions.checkArgument(optimizerGroup != null, "optimizerGroup can not be null");
     return Optional.ofNullable(optimizingQueueByGroup.get(optimizerGroup));
   }
 
   private OptimizingQueue getQueueByToken(String token) {
-    Preconditions.checkArgument(
-        token != null,
-        "optimizer token can not be null");
+    Preconditions.checkArgument(token != null, "optimizer token can not be null");
     return Optional.ofNullable(optimizingQueueByToken.get(token))
         .orElseThrow(() -> new PluginRetryAuthException("Optimizer has not been authenticated"));
   }
@@ -269,26 +283,28 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
   public void deleteOptimizer(String group, String resourceId) {
     List<OptimizerInstance> deleteOptimizers =
         getAs(OptimizerMapper.class, mapper -> mapper.selectByResourceId(resourceId));
-    deleteOptimizers.forEach(optimizer -> {
-      String token = optimizer.getToken();
-      doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(token));
-      unregisterOptimizer(token);
-    });
+    deleteOptimizers.forEach(
+        optimizer -> {
+          String token = optimizer.getToken();
+          unregisterOptimizer(token);
+        });
   }
 
   @Override
   public void createResourceGroup(ResourceGroup resourceGroup) {
-    doAsTransaction(() -> {
-      doAs(ResourceMapper.class, mapper -> mapper.insertResourceGroup(resourceGroup));
-      OptimizingQueue optimizingQueue = new OptimizingQueue(
-          tableService,
-          resourceGroup,
-          this,
-          planExecutor,
-          new ArrayList<>(),
-          maxPlanningParallelism);
-      optimizingQueueByGroup.put(resourceGroup.getName(), optimizingQueue);
-    });
+    doAsTransaction(
+        () -> {
+          doAs(ResourceMapper.class, mapper -> mapper.insertResourceGroup(resourceGroup));
+          OptimizingQueue optimizingQueue =
+              new OptimizingQueue(
+                  tableService,
+                  resourceGroup,
+                  this,
+                  planExecutor,
+                  new ArrayList<>(),
+                  maxPlanningParallelism);
+          optimizingQueueByGroup.put(resourceGroup.getName(), optimizingQueue);
+        });
   }
 
   @Override
@@ -297,8 +313,10 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
       doAs(ResourceMapper.class, mapper -> mapper.deleteResourceGroup(groupName));
       optimizingQueueByGroup.remove(groupName);
     } else {
-      throw new RuntimeException(String.format("The resource group %s cannot be deleted because it is currently in " +
-          "use.", groupName));
+      throw new RuntimeException(
+          String.format(
+              "The resource group %s cannot be deleted because it is currently in " + "use.",
+              groupName));
     }
   }
 
@@ -357,10 +375,12 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
 
   public boolean canDeleteResourceGroup(String name) {
     for (CatalogMeta catalogMeta : tableService.listCatalogMetas()) {
-      if (catalogMeta.getCatalogProperties() != null &&
-          catalogMeta.getCatalogProperties()
+      if (catalogMeta.getCatalogProperties() != null
+          && catalogMeta
+              .getCatalogProperties()
               .getOrDefault(
-                  CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.SELF_OPTIMIZING_GROUP,
+                  CatalogMetaProperties.TABLE_PROPERTIES_PREFIX
+                      + TableProperties.SELF_OPTIMIZING_GROUP,
                   TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT)
               .equals(name)) {
         return false;
@@ -372,7 +392,8 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
       }
     }
     for (ServerTableIdentifier identifier : tableService.listManagedTables()) {
-      if (optimizingQueueByGroup.containsKey(name) && optimizingQueueByGroup.get(name).containsTable(identifier)) {
+      if (optimizingQueueByGroup.containsKey(name)
+          && optimizingQueueByGroup.get(name).containsTable(identifier)) {
         return false;
       }
     }
@@ -392,7 +413,8 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
     @Override
     public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
       if (!tableRuntime.getOptimizingStatus().isProcessing()) {
-        getOptionalQueueByGroup(tableRuntime.getOptimizerGroup()).ifPresent(q -> q.refreshTable(tableRuntime));
+        getOptionalQueueByGroup(tableRuntime.getOptimizerGroup())
+            .ifPresent(q -> q.refreshTable(tableRuntime));
       }
     }
 
@@ -402,83 +424,170 @@ public class DefaultOptimizingService extends StatedPersistentBase implements Op
       if (!tableRuntime.getOptimizerGroup().equals(originalGroup)) {
         getOptionalQueueByGroup(originalGroup).ifPresent(q -> q.releaseTable(tableRuntime));
       }
-      getOptionalQueueByGroup(tableRuntime.getOptimizerGroup()).ifPresent(q -> q.refreshTable(tableRuntime));
+      getOptionalQueueByGroup(tableRuntime.getOptimizerGroup())
+          .ifPresent(q -> q.refreshTable(tableRuntime));
     }
 
     @Override
     public void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
-      getOptionalQueueByGroup(tableRuntime.getOptimizerGroup()).ifPresent(q -> q.refreshTable(tableRuntime));
+      getOptionalQueueByGroup(tableRuntime.getOptimizerGroup())
+          .ifPresent(q -> q.refreshTable(tableRuntime));
     }
 
     @Override
     public void handleTableRemoved(TableRuntime tableRuntime) {
-      getOptionalQueueByGroup(tableRuntime.getOptimizerGroup()).ifPresent(queue -> queue.releaseTable(tableRuntime));
+      getOptionalQueueByGroup(tableRuntime.getOptimizerGroup())
+          .ifPresent(queue -> queue.releaseTable(tableRuntime));
     }
 
     @Override
     protected void initHandler(List<TableRuntimeMeta> tableRuntimeMetaList) {
       LOG.info("OptimizerManagementService begin initializing");
       loadOptimizingQueues(tableRuntimeMetaList);
-      optimizerMonitorTimer = new Timer("OptimizerMonitor", true);
-      optimizerMonitorTimer.schedule(
-          new SuspendingDetector(),
-          optimizerTouchTimeout,
-          ArcticServiceConstants.OPTIMIZER_CHECK_INTERVAL);
-      LOG.info("init SuspendingDetector for Optimizer with delay {} ms, interval {} ms", optimizerTouchTimeout,
-          ArcticServiceConstants.OPTIMIZER_CHECK_INTERVAL);
+      suspendingDetector.start();
+      LOG.info("SuspendingDetector for Optimizer has been started.");
       LOG.info("OptimizerManagementService initializing has completed");
     }
 
     @Override
     protected void doDispose() {
-      if (Objects.nonNull(optimizerMonitorTimer)) {
-        optimizerMonitorTimer.cancel();
-      }
+      suspendingDetector.dispose();
     }
   }
 
-  private class SuspendingDetector extends TimerTask {
+  private class SuspendingDetectTask implements Delayed {
+
+    private final String token;
+    private final long checkDelayedTime;
+
+    public SuspendingDetectTask(OptimizerInstance optimizer) {
+      this.token = optimizer.getToken();
+      this.checkDelayedTime = optimizer.getTouchTime() + optimizerTouchTimeout;
+    }
+
+    @Override
+    public long getDelay(@NotNull TimeUnit unit) {
+      return unit.convert(checkDelayedTime - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public int compareTo(@NotNull Delayed o) {
+      SuspendingDetectTask another = (SuspendingDetectTask) o;
+      return Long.compare(checkDelayedTime, another.checkDelayedTime);
+    }
+
+    public String getToken() {
+      return token;
+    }
+  }
+
+  private class SuspendingDetector implements Runnable {
+
+    private volatile boolean stopped = false;
+    private final Thread thread = new Thread(this, "SuspendingDetector");
+    private final DelayQueue<SuspendingDetectTask> suspendingQueue = new DelayQueue<>();
+
+    public SuspendingDetector() {
+      thread.setDaemon(true);
+    }
+
+    public void detectTimeout(OptimizerInstance optimizerInstance) {
+      Preconditions.checkNotNull(optimizerInstance, "token can not be null");
+      suspendingQueue.add(new SuspendingDetectTask(optimizerInstance));
+    }
+
+    public void start() {
+      thread.start();
+    }
+
+    public void dispose() {
+      stopped = true;
+      thread.interrupt();
+    }
 
     @Override
     public void run() {
-      try {
-        long currentTime = System.currentTimeMillis();
-        Set<String> expiredTokens = authOptimizers.values().stream()
-            .filter(optimizer -> currentTime - optimizer.getTouchTime() > optimizerTouchTimeout)
-            .map(OptimizerInstance::getToken)
-            .collect(Collectors.toSet());
-
-        expiredTokens.forEach(authOptimizers.keySet()::remove);
-        if (!expiredTokens.isEmpty()) {
-          LOG.info("Expired optimizers: {}", expiredTokens);
+      while (!stopped) {
+        try {
+          SuspendingDetectTask detectTask = suspendingQueue.take();
+          String token = detectTask.getToken();
+          boolean isOptimzerExpired =
+              Optional.ofNullable(authOptimizers.get(token))
+                  .map(
+                      optimizer ->
+                          optimizer.getTouchTime() + optimizerTouchTimeout
+                              < System.currentTimeMillis())
+                  .orElse(true);
+          OptimizingQueue queue = getQueueByToken(token);
+          queue
+              .collectTasks(buildSuspendingPredication(token, isOptimzerExpired))
+              .forEach(
+                  task -> {
+                    LOG.info(
+                        "Task {} is suspending, since it's optimizer is expired, put it to retry queue, optimizer {}",
+                        task.getTaskId(),
+                        task.getResourceDesc());
+                    // optimizing task of suspending optimizer would not be counted for retrying
+                    queue.retryTask(task, false);
+                  });
+          if (isOptimzerExpired) {
+            LOG.info("Optimizer {} has been expired, unregister it", token);
+            unregisterOptimizer(token);
+          } else {
+            OptimizerInstance optimizer = authOptimizers.get(token);
+            detectTimeout(optimizer);
+          }
+        } catch (InterruptedException ignored) {
+        } catch (Throwable t) {
+          LOG.error("SuspendingDetector has encountered a problem.", t);
         }
-
-        for (OptimizingQueue queue : optimizingQueueByGroup.values()) {
-          queue.collectRunningTasks().stream()
-            .filter(task -> isTaskExpired(task, currentTime, expiredTokens, authOptimizers.keySet()))
-            .forEach(task -> {
-              LOG.info("Task {} is suspending, since it's optimizer is expired, put it to retry queue, optimizer {}",
-                  task.getTaskId(), task.getResourceDesc());
-              //optimizing task of suspending optimizer would not be counted for retrying
-              queue.retryTask(task, false);
-            });
-        }
-
-        expiredTokens.forEach(token -> {
-          doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(token));
-          unregisterOptimizer(token);
-        });
-      } catch (RuntimeException e) {
-        LOG.error("Update optimizer status abnormal failed. try next round", e);
       }
     }
 
-    private boolean isTaskExpired(TaskRuntime task, long currentTime,
-                                  Set<String> expiredTokens, Set<String> authTokens) {
-      return task.getStatus() == TaskRuntime.Status.SCHEDULED
-          && currentTime - task.getStartTime() > taskAckTimeout ||
-          expiredTokens.contains(task.getToken()) ||
-          !authTokens.contains(task.getToken());
+    private boolean isOptimizerTimeout(String token) {
+      return Optional.ofNullable(authOptimizers.get(token))
+          .map(
+              optimizer ->
+                  optimizer.getTouchTime() + optimizerTouchTimeout < System.currentTimeMillis())
+          .orElse(true);
+    }
+
+    private void dealSuspendingTasks(String token, boolean isOptimzerExpired) {
+      OptimizingQueue queue = getQueueByToken(token);
+      queue
+          .collectTasks(buildSuspendingPredication(token, isOptimzerExpired))
+          .forEach(
+              task -> {
+                LOG.info(
+                    "Task {} is suspending, since it's optimizer is expired, put it to retry queue, optimizer {}",
+                    task.getTaskId(),
+                    task.getResourceDesc());
+                // optimizing task of suspending optimizer would not be counted for retrying
+                queue.retryTask(task, false);
+              });
+    }
+
+    private void dealOptimizer(String token, boolean isOptimzerExpired) {
+      if (isOptimzerExpired) {
+        LOG.info("Optimizer {} has been suspended, unregister it", token);
+        unregisterOptimizer(token);
+      } else {
+        OptimizerInstance optimizer = authOptimizers.get(token);
+        detectTimeout(optimizer);
+      }
+    }
+
+    private Predicate<TaskRuntime> buildSuspendingPredication(
+        String token, boolean isOptimzerExpired) {
+      return task -> {
+        if (isOptimzerExpired) {
+          return token.equals(task.getToken());
+        } else {
+          return token.equals(task.getToken())
+              && task.getStatus() == TaskRuntime.Status.SCHEDULED
+              && task.getStartTime() + taskAckTimeout < System.currentTimeMillis();
+        }
+      };
     }
   }
 }

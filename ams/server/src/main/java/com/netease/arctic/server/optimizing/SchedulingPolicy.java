@@ -4,18 +4,15 @@ import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.table.TableRuntimeMeta;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 public class SchedulingPolicy {
 
@@ -52,10 +49,12 @@ public class SchedulingPolicy {
   public TableRuntime scheduleTable(Set<TableRuntime> skipSet) {
     tableLock.lock();
     try {
-      return tableRuntimeMap.values().stream()
-          .filter(tableRuntime -> !shouldSkip(skipSet, tableRuntime))
-          .min(tableSorter)
-          .orElse(null);
+      TableRuntime t =
+          tableRuntimeMap.values().stream()
+              .filter(tableRuntime -> !shouldSkip(skipSet, tableRuntime))
+              .min(tableSorter)
+              .orElse(null);
+      return t;
     } finally {
       tableLock.unlock();
     }
@@ -66,9 +65,10 @@ public class SchedulingPolicy {
   }
 
   private boolean isTablePending(TableRuntime tableRuntime) {
-    return tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING &&
-        (tableRuntime.getLastOptimizedSnapshotId() != tableRuntime.getCurrentSnapshotId() ||
-            tableRuntime.getLastOptimizedChangeSnapshotId() != tableRuntime.getCurrentChangeSnapshotId());
+    return tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING
+        && (tableRuntime.getLastOptimizedSnapshotId() != tableRuntime.getCurrentSnapshotId()
+            || tableRuntime.getLastOptimizedChangeSnapshotId()
+                != tableRuntime.getCurrentChangeSnapshotId());
   }
 
   public void addTable(TableRuntime tableRuntime) {

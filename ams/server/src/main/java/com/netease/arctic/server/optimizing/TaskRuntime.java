@@ -45,38 +45,25 @@ public class TaskRuntime extends StatedPersistentBase {
   private long tableId;
   private String partition;
   private OptimizingTaskId taskId;
-  @StateField
-  private Status status = Status.PLANNED;
+  @StateField private Status status = Status.PLANNED;
   private final TaskStatusMachine statusMachine = new TaskStatusMachine();
-  @StateField
-  private int retry = 0;
-  @StateField
-  private long startTime = ArcticServiceConstants.INVALID_TIME;
-  @StateField
-  private long endTime = ArcticServiceConstants.INVALID_TIME;
-  @StateField
-  private long costTime = 0;
-  @StateField
-  private String token;
-  @StateField
-  private int threadId = -1;
-  @StateField
-  private String failReason;
+  @StateField private int retry = 0;
+  @StateField private long startTime = ArcticServiceConstants.INVALID_TIME;
+  @StateField private long endTime = ArcticServiceConstants.INVALID_TIME;
+  @StateField private long costTime = 0;
+  @StateField private String token;
+  @StateField private int threadId = -1;
+  @StateField private String failReason;
   private TaskOwner owner;
   private RewriteFilesInput input;
-  @StateField
-  private RewriteFilesOutput output;
-  @StateField
-  private MetricsSummary summary;
+  @StateField private RewriteFilesOutput output;
+  @StateField private MetricsSummary summary;
   private Map<String, String> properties;
 
-  private TaskRuntime() {
-  }
+  private TaskRuntime() {}
 
   public TaskRuntime(
-      OptimizingTaskId taskId,
-      TaskDescriptor taskDescriptor,
-      Map<String, String> properties) {
+      OptimizingTaskId taskId, TaskDescriptor taskDescriptor, Map<String, String> properties) {
     this.taskId = taskId;
     this.partition = taskDescriptor.getPartition();
     this.input = taskDescriptor.getInput();
@@ -86,17 +73,18 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   public void complete(OptimizerThread thread, OptimizingTaskResult result) {
-    invokeConsisitency(() -> {
-      validThread(thread);
-      if (result.getErrorMessage() != null) {
-        fail(result.getErrorMessage());
-      } else {
-        finish(TaskFilesPersistence.loadTaskOutput(result.getTaskOutput()));
-      }
-      owner.acceptResult(this);
-      token = null;
-      threadId = -1;
-    });
+    invokeConsisitency(
+        () -> {
+          validThread(thread);
+          if (result.getErrorMessage() != null) {
+            fail(result.getErrorMessage());
+          } else {
+            finish(TaskFilesPersistence.loadTaskOutput(result.getTaskOutput()));
+          }
+          owner.acceptResult(this);
+          token = null;
+          threadId = -1;
+        });
   }
 
   private void finish(RewriteFilesOutput filesOutput) {
@@ -138,23 +126,25 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   public void schedule(OptimizerThread thread) {
-    invokeConsisitency(() -> {
-      statusMachine.accept(Status.SCHEDULED);
-      token = thread.getToken();
-      threadId = thread.getThreadId();
-      startTime = System.currentTimeMillis();
-      persistTaskRuntime(this);
-    });
+    invokeConsisitency(
+        () -> {
+          statusMachine.accept(Status.SCHEDULED);
+          token = thread.getToken();
+          threadId = thread.getThreadId();
+          startTime = System.currentTimeMillis();
+          persistTaskRuntime(this);
+        });
   }
 
   public void ack(OptimizerThread thread) {
-    invokeConsisitency(() -> {
-      validThread(thread);
-      statusMachine.accept(Status.ACKED);
-      startTime = System.currentTimeMillis();
-      endTime = ArcticServiceConstants.INVALID_TIME;
-      persistTaskRuntime(this);
-    });
+    invokeConsisitency(
+        () -> {
+          validThread(thread);
+          statusMachine.accept(Status.ACKED);
+          startTime = System.currentTimeMillis();
+          endTime = ArcticServiceConstants.INVALID_TIME;
+          persistTaskRuntime(this);
+        });
   }
 
   void tryCanceling() {
@@ -310,6 +300,9 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   private void validThread(OptimizerThread thread) {
+    if (token == null) {
+      throw new IllegalStateException("Task not scheduled yet, taskId:" + taskId);
+    }
     if (!thread.getToken().equals(getToken()) || thread.getThreadId() != threadId) {
       throw new DuplicateRuntimeException("Task already acked by optimizer thread + " + thread);
     }
@@ -331,38 +324,18 @@ public class TaskRuntime extends StatedPersistentBase {
 
   static {
     nextStatusMap.put(
-        Status.PLANNED,
-        Sets.newHashSet(
-            Status.PLANNED,
-            Status.SCHEDULED,
-            Status.CANCELED));
+        Status.PLANNED, Sets.newHashSet(Status.PLANNED, Status.SCHEDULED, Status.CANCELED));
     nextStatusMap.put(
         Status.SCHEDULED,
-        Sets.newHashSet(
-            Status.PLANNED,
-            Status.SCHEDULED,
-            Status.ACKED,
-            Status.CANCELED));
+        Sets.newHashSet(Status.PLANNED, Status.SCHEDULED, Status.ACKED, Status.CANCELED));
     nextStatusMap.put(
         Status.ACKED,
         Sets.newHashSet(
-            Status.PLANNED,
-            Status.ACKED,
-            Status.SUCCESS,
-            Status.FAILED,
-            Status.CANCELED));
+            Status.PLANNED, Status.ACKED, Status.SUCCESS, Status.FAILED, Status.CANCELED));
     nextStatusMap.put(
-        Status.FAILED,
-        Sets.newHashSet(
-            Status.PLANNED,
-            Status.FAILED,
-            Status.CANCELED));
-    nextStatusMap.put(
-        Status.SUCCESS,
-        Sets.newHashSet(Status.SUCCESS));
-    nextStatusMap.put(
-        Status.CANCELED,
-        Sets.newHashSet(Status.CANCELED));
+        Status.FAILED, Sets.newHashSet(Status.PLANNED, Status.FAILED, Status.CANCELED));
+    nextStatusMap.put(Status.SUCCESS, Sets.newHashSet(Status.SUCCESS));
+    nextStatusMap.put(Status.CANCELED, Sets.newHashSet(Status.CANCELED));
   }
 
   private class TaskStatusMachine {

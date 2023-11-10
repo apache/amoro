@@ -117,7 +117,7 @@ public interface OptimizingMapper {
         + "#{taskRuntime.startTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
         + " #{taskRuntime.endTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}, "
         + "#{taskRuntime.status}, #{taskRuntime.failReason, jdbcType=VARCHAR},"
-        + " #{taskRuntime.optimizingThread.token, jdbcType=VARCHAR}, #{taskRuntime.optimizingThread.threadId, "
+        + " #{taskRuntime.token, jdbcType=VARCHAR}, #{taskRuntime.threadId, "
         + "jdbcType=INTEGER}, #{taskRuntime.output, jdbcType=BLOB, "
         + " typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert},"
         + " #{taskRuntime.summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter},"
@@ -141,8 +141,8 @@ public interface OptimizingMapper {
     @Result(property = "endTime", column = "end_time", typeHandler = Long2TsConverter.class),
     @Result(property = "status", column = "status"),
     @Result(property = "failReason", column = "fail_reason"),
-    @Result(property = "optimizingThread.token", column = "optimizer_token"),
-    @Result(property = "optimizingThread.threadId", column = "thread_id"),
+    @Result(property = "token", column = "optimizer_token"),
+    @Result(property = "threadId", column = "thread_id"),
     @Result(
         property = "output",
         column = "rewrite_output",
@@ -195,8 +195,8 @@ public interface OptimizingMapper {
           + " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
           + " cost_time = #{taskRuntime.costTime}, status = #{taskRuntime.status},"
           + " fail_reason = #{taskRuntime.failReason, jdbcType=VARCHAR},"
-          + " optimizer_token = #{taskRuntime.optimizingThread.token, jdbcType=VARCHAR},"
-          + " thread_id = #{taskRuntime.optimizingThread.threadId, jdbcType=INTEGER},"
+          + " optimizer_token = #{taskRuntime.token, jdbcType=VARCHAR},"
+          + " thread_id = #{taskRuntime.threadId, jdbcType=INTEGER},"
           + " rewrite_output = #{taskRuntime.output, jdbcType=BLOB,"
           + " typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert},"
           + " metrics_summary = #{taskRuntime.summary,"
