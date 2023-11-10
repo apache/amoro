@@ -35,7 +35,13 @@ public enum TagTriggerPeriod {
     return propertyName;
   }
 
-  public long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
+    DAILY("daily"){
+      @Override
+      long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
+          //todo 
+      }
+  };
+  public abstract long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes);
     switch (this) {
       case DAILY:
         return getDailyTagTriggerTime(checkTime, triggerOffsetMinutes);
