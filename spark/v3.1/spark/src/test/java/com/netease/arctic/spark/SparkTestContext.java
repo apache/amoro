@@ -59,13 +59,17 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.util.StructLikeMap;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.internal.SQLConf;
+import org.apache.spark.sql.types.StructType;
 import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
@@ -625,6 +629,13 @@ public class SparkTestContext extends ExternalResource {
     }
     return RowFactory.create(values);
   }
+
+  public static InternalRow recordToInternalRow(Schema schema, Record record) {
+    StructType structType = SparkSchemaUtil.convert(schema);
+    Row row = recordToRow(record);
+    return RowEncoder.apply(structType).createSerializer().apply(row);
+  }
+
 
   public Map<String, String> properties(String... kv) {
     Map<String, String> props = Maps.newHashMap();

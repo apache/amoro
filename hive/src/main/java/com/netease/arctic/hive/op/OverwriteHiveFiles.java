@@ -29,6 +29,7 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 import static com.netease.arctic.op.OverwriteBaseFiles.PROPERTIES_TRANSACTION_ID;
@@ -59,11 +60,10 @@ public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implemen
 
   @Override
   public OverwriteFiles addFile(DataFile file) {
-    delegate.addFile(file);
-    String hiveLocationRoot = table.hiveLocation();
-    String dataFileLocation = file.path().toString();
-    if (dataFileLocation.toLowerCase().contains(hiveLocationRoot.toLowerCase())) {
-      // only handle file in hive location
+    if (!isHiveDataFile(file)) {
+      delegate.addFile(file);
+    } else {
+      // handle file in hive location when commit
       this.addFiles.add(file);
     }
     return this;
@@ -72,9 +72,7 @@ public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implemen
   @Override
   public OverwriteFiles deleteFile(DataFile file) {
     delegate.deleteFile(file);
-    String hiveLocation = table.hiveLocation();
-    String dataFileLocation = file.path().toString();
-    if (dataFileLocation.toLowerCase().contains(hiveLocation.toLowerCase())) {
+    if (isHiveDataFile(file)) {
       // only handle file in hive location
       this.deleteFiles.add(file);
     }
@@ -124,6 +122,11 @@ public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implemen
   }
 
   @Override
+  protected void postHiveDataCommitted(List<DataFile> committedDataFile) {
+    committedDataFile.forEach(delegate::addFile);
+  }
+
+  @Override
   public OverwriteFiles set(String property, String value) {
     if (PROPERTIES_TRANSACTION_ID.equals(property)) {
       this.txId = Long.parseLong(value);
@@ -135,6 +138,10 @@ public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implemen
 
     if (DELETE_UNTRACKED_HIVE_FILE.equals(property)) {
       this.checkOrphanFiles = Boolean.parseBoolean(value);
+    }
+
+    if (SYNC_DATA_TO_HIVE.equals(property)) {
+      this.syncDataToHive = Boolean.parseBoolean(value);
     }
 
     delegate.set(property, value);

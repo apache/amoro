@@ -18,6 +18,7 @@
 
 package com.netease.arctic.spark.io;
 
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.io.writer.AdaptHiveOutputFileFactory;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.writer.ChangeTaskWriter;
@@ -94,7 +95,7 @@ public class TaskWriters {
     this.dsSchema = dsSchema;
     return this;
   }
-  
+
   public TaskWriters withHiveSubdirectory(String hiveSubdirectory) {
     this.hiveSubdirectory = hiveSubdirectory;
     return this;
@@ -133,18 +134,21 @@ public class TaskWriters {
         .builderFor(icebergTable, schema, dsSchema)
         .writeHive(isHiveTable)
         .build();
+    boolean consistentWriteEnabled = PropertyUtil.propertyAsBoolean(
+        table.properties(),
+        HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED,
+        HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED_DEFAULT);
 
     OutputFileFactory outputFileFactory;
     if (isHiveTable && isOverwrite) {
       outputFileFactory = new AdaptHiveOutputFileFactory(
           ((SupportHive) table).hiveLocation(), table.spec(), fileFormat, table.io(),
-          encryptionManager, partitionId, taskId, transactionId, hiveSubdirectory);
+          encryptionManager, partitionId, taskId, transactionId, hiveSubdirectory, consistentWriteEnabled);
     } else {
       outputFileFactory = new CommonOutputFileFactory(
           baseLocation, table.spec(), fileFormat, table.io(),
           encryptionManager, partitionId, taskId, transactionId);
     }
-
     return new ArcticSparkBaseTaskWriter(
         fileFormat, appenderFactory,
         outputFileFactory, table.io(), fileSize, mask, schema,

@@ -109,7 +109,7 @@ public class TestIcebergFullOptimizePlan extends TestIcebergBase {
     long targetSize = dataFiles.get(0).fileSizeInBytes() * packFileCnt + 100;
     table.updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0")
-        .set(TableProperties.SELF_OPTIMIZING_TARGET_SIZE, targetSize + "")
+        .set(TableProperties.SELF_OPTIMIZING_MAX_TASK_SIZE, targetSize + "")
         .commit();
     insertEqDeleteFiles(table, 1);
     insertPosDeleteFiles(table, dataFiles);

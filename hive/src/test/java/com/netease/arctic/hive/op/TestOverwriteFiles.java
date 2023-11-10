@@ -4,7 +4,10 @@ import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.MockDataFileBuilder;
 import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
+import com.netease.arctic.hive.io.HiveDataTestHelpers;
+import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
+import com.netease.arctic.io.DataTestHelpers;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -17,6 +20,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateProperties;
+import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -418,6 +422,22 @@ public class TestOverwriteFiles extends HiveTableTestBase {
 
     hiveTable.setTableName(testHiveTable.id().getTableName());
     hms.getClient().alter_table(testHiveTable.id().getDatabase(), "new_table", hiveTable);
+  }
+
+  @Test
+  public void testConsistentWriteCommit() {
+    UnkeyedHiveTable table = testHiveTable;
+    List<Record> records = records("p1", "p2");
+    List<DataFile> files = HiveDataTestHelpers.writerOf(table)
+        .transactionId(1L)
+        .writeHive(records);
+    HiveDataTestHelpers.assertWriteConsistentFilesName(table, files);
+
+    OverwriteFiles overwriteFiles = table.newOverwrite();
+    files.forEach(overwriteFiles::addFile);
+    overwriteFiles.commit();
+
+    HiveDataTestHelpers.assertWriteConsistentFilesCommit(table);
   }
 
   private void applyOverwrite(

@@ -4,6 +4,8 @@ import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
+import com.netease.arctic.hive.utils.HiveCommitUtil;
+import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
@@ -50,6 +52,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
 
   public static final String PROPERTIES_VALIDATE_LOCATION = "validate-location";
   public static final String DELETE_UNTRACKED_HIVE_FILE = "delete-untracked-hive-file";
+  public static final String SYNC_DATA_TO_HIVE = "sync-data-to-hive";
 
   protected final Transaction transaction;
   protected final boolean insideTransaction;
@@ -72,6 +75,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   protected Long txId = null;
   protected boolean validateLocation = true;
   protected boolean checkOrphanFiles = false;
+  protected boolean syncDataToHive = false;
   protected int commitTimestamp; // in seconds
 
   public UpdateHiveFiles(Transaction transaction, boolean insideTransaction, UnkeyedHiveTable table,
@@ -96,9 +100,21 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
 
   abstract SnapshotUpdate<?> getSnapshotUpdateDelegate();
 
+  protected abstract void postHiveDataCommitted(List<DataFile> committedDataFile);
+
   @Override
   public void commit() {
     commitTimestamp = (int) (System.currentTimeMillis() / 1000);
+    applyDeleteExpr();
+    if (syncDataToHive) {
+      HiveMetaSynchronizer.syncArcticDataToHive(table);
+    }
+    List<DataFile> committedDataFiles =
+        HiveCommitUtil.commitConsistentWriteFiles(this.addFiles, table.io(), table.spec());
+    this.addFiles.clear();
+    this.addFiles.addAll(committedDataFiles);
+    postHiveDataCommitted(this.addFiles);
+
     if (table.spec().isUnpartitioned()) {
       generateUnpartitionTableLocation();
     } else {
@@ -203,11 +219,6 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   }
 
   protected StructLikeMap<Partition> getDeletePartition() {
-    if (expr != null) {
-      List<DataFile> deleteFilesByExpr = applyDeleteExpr();
-      this.deleteFiles.addAll(deleteFilesByExpr);
-    }
-
     StructLikeMap<Partition> deletePartitions = StructLikeMap.create(table.spec().partitionType());
     if (deleteFiles.isEmpty()) {
       return deletePartitions;
@@ -453,9 +464,12 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     return newLocation;
   }
 
-  protected List<DataFile> applyDeleteExpr() {
+  protected void applyDeleteExpr() {
+    if (expr == null) {
+      return;
+    }
     try (CloseableIterable<FileScanTask> tasks = table.newScan().filter(expr).planFiles()) {
-      return Lists.newArrayList(tasks).stream().map(FileScanTask::file).collect(Collectors.toList());
+      tasks.forEach(task -> deleteFiles.add(task.file()));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -470,5 +484,11 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   private String partitionToString(Partition p) {
     return "Partition(values: [" + Joiner.on("/").join(p.getValues()) +
         "], location: " + p.getSd().getLocation() + ")";
+  }
+
+  protected boolean isHiveDataFile(DataFile dataFile) {
+    String hiveLocation = table.hiveLocation();
+    String dataFileLocation = dataFile.path().toString();
+    return dataFileLocation.toLowerCase().contains(hiveLocation.toLowerCase());
   }
 }

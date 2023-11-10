@@ -25,18 +25,22 @@ import com.netease.arctic.ams.server.model.BasicOptimizeTask;
 import com.netease.arctic.ams.server.model.OptimizeTaskRuntime;
 import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.hive.HMSClientPool;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.SerializationUtils;
 import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,35 +92,10 @@ public class SupportHiveCommit extends BasicOptimizeCommit {
 
           List<ByteBuffer> newTargetFiles = new ArrayList<>(targetFiles.size());
           for (DataFile targetFile : targetFiles) {
-            if (partitionPathMap.get(partition) == null) {
-              List<String> partitionValues =
-                  HivePartitionUtil.partitionValuesAsList(targetFile.partition(), partitionSchema);
-              String partitionPath;
-              if (arcticTable.spec().isUnpartitioned()) {
-                try {
-                  Table hiveTable = ((SupportHive) arcticTable).getHMSClient().run(client ->
-                      client.getTable(arcticTable.id().getDatabase(), arcticTable.id().getTableName()));
-                  partitionPath = hiveTable.getSd().getLocation();
-                } catch (Exception e) {
-                  LOG.error("Get hive table failed", e);
-                  break;
-                }
-              } else {
-                String hiveSubdirectory = arcticTable.isKeyedTable() ?
-                    HiveTableUtil.newHiveSubdirectory(maxTransactionId) : HiveTableUtil.newHiveSubdirectory();
+            String partitionPath = partitionPathMap.computeIfAbsent(partition,
+                key -> getPartitionPath(hiveClient, maxTransactionId, targetFile, partitionSchema));
 
-                Partition p = HivePartitionUtil.getPartition(hiveClient, arcticTable, partitionValues);
-                if (p == null) {
-                  partitionPath = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
-                      arcticTable.spec(), targetFile.partition(), hiveSubdirectory);
-                } else {
-                  partitionPath = p.getSd().getLocation();
-                }
-              }
-              partitionPathMap.put(partition, partitionPath);
-            }
-
-            DataFile finalDataFile = moveTargetFiles(targetFile, partitionPathMap.get(partition));
+            DataFile finalDataFile = moveTargetFiles(targetFile, partitionPath);
             newTargetFiles.add(SerializationUtils.toByteBuffer(finalDataFile));
           }
 
@@ -127,6 +106,49 @@ public class SupportHiveCommit extends BasicOptimizeCommit {
     });
 
     return super.commit(baseSnapshotId);
+  }
+
+  private String getPartitionPath(HMSClientPool hiveClient, long maxTransactionId, DataFile targetFile,
+                                  Types.StructType partitionSchema) {
+    // get iceberg partition path
+    String icebergPartitionLocation = getIcebergPartitionLocation(targetFile.partition());
+    if (icebergPartitionLocation != null) {
+      return icebergPartitionLocation;
+    }
+    // get hive partition path
+    if (arcticTable.spec().isUnpartitioned()) {
+      try {
+        Table hiveTable = ((SupportHive) arcticTable).getHMSClient().run(client ->
+            client.getTable(arcticTable.id().getDatabase(), arcticTable.id().getTableName()));
+        return hiveTable.getSd().getLocation();
+      } catch (Exception e) {
+        throw new RuntimeException("Get hive table failed", e);
+      }
+    } else {
+      List<String> partitionValues = HivePartitionUtil.partitionValuesAsList(targetFile.partition(), partitionSchema);
+      String hiveSubdirectory = arcticTable.isKeyedTable() ?
+          HiveTableUtil.newHiveSubdirectory(maxTransactionId) : HiveTableUtil.newHiveSubdirectory();
+
+      Partition p = HivePartitionUtil.getPartition(hiveClient, arcticTable, partitionValues);
+      if (p == null) {
+        return HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
+            arcticTable.spec(), targetFile.partition(), hiveSubdirectory);
+      } else {
+        return p.getSd().getLocation();
+      }
+    }
+  }
+
+  private String getIcebergPartitionLocation(StructLike partitionData) {
+    UnkeyedTable baseTable = arcticTable.isKeyedTable() ?
+        arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
+    StructLikeMap<Map<String, String>> partitionProperty = baseTable.partitionProperty();
+    Map<String, String> property =
+        partitionProperty.get(arcticTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : partitionData);
+    if (property == null) {
+      return null;
+    }
+    return property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
   }
 
   protected boolean isPartitionMajorOptimizeSupportHive(String partition, List<OptimizeTaskItem> optimizeTaskItems) {

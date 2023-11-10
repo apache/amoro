@@ -26,6 +26,7 @@ import com.netease.arctic.hive.HMSClientImpl;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.HiveTableTestBase;
+import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.op.RewriteHiveFiles;
 import com.netease.arctic.hive.table.HiveLocationKind;
@@ -96,9 +97,18 @@ public class HiveMetaSynchronizerTest extends HiveTableTestBase {
     Assert.assertEquals(0, Iterables.size(testHiveTable.snapshots()));
     List<DataFile> dataFiles = writeDataFiles(testHiveTable, HiveLocationKind.INSTANT,
         writeRecords("p1", "p2"));
+    OverwriteFiles overwriteFiles = testHiveTable.newOverwrite();
+    dataFiles.forEach(overwriteFiles::addFile);
+    overwriteFiles.commit();
+    Assert.assertEquals(1, Iterables.size(testHiveTable.snapshots()));
+    List<Partition> partitions = hms.getClient()
+        .listPartitions(HIVE_TABLE_ID.getDatabase(), HIVE_TABLE_ID.getTableName(), Short.MAX_VALUE);
+    Assert.assertEquals(2, partitions.size());
+
     String partition1FilePath = null;
     String partition2FilePath = null;
     String partition3FilePath = null;
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(testHiveTable);
     for (DataFile dataFile : dataFiles) {
       if (dataFile.partition().get(0, String.class).equals("p1")) {
         partition1FilePath = dataFile.path().toString();
@@ -109,17 +119,11 @@ public class HiveMetaSynchronizerTest extends HiveTableTestBase {
     Assert.assertNotNull(partition1FilePath);
     Assert.assertNotNull(partition2FilePath);
 
-    OverwriteFiles overwriteFiles = testHiveTable.newOverwrite();
-    dataFiles.forEach(overwriteFiles::addFile);
-    overwriteFiles.commit();
-    Assert.assertEquals(1, Iterables.size(testHiveTable.snapshots()));
-    List<Partition> partitions = hms.getClient()
-        .listPartitions(HIVE_TABLE_ID.getDatabase(), HIVE_TABLE_ID.getTableName(), Short.MAX_VALUE);
-    Assert.assertEquals(2, partitions.size());
 
     //test add new hive partition
-    List<DataFile> newFiles = writeDataFiles(testHiveTable, HiveLocationKind.INSTANT,
-        writeRecords("p3"));
+    List<DataFile> newFiles = HiveDataTestHelpers.writerOf(testHiveTable)
+        .consistentWriteEnabled(false)
+        .writeHive(records("p3"));
     Assert.assertEquals(1, newFiles.size());
     partition3FilePath = newFiles.get(0).path().toString();
     Partition newPartition = HivePartitionUtil.newPartition(hiveTable, Lists.newArrayList("p3"),
@@ -132,9 +136,9 @@ public class HiveMetaSynchronizerTest extends HiveTableTestBase {
     partitions = hms.getClient()
         .listPartitions(HIVE_TABLE_ID.getDatabase(), HIVE_TABLE_ID.getTableName(), Short.MAX_VALUE);
     Assert.assertEquals(3, partitions.size());
-    Assert.assertEquals(
-        Sets.newHashSet(partition1FilePath, partition2FilePath, partition3FilePath),
-        listTableFiles(testHiveTable).stream().map(DataFile::path).collect(Collectors.toSet()));
+    Assert.assertTrue(
+        listTableFiles(testHiveTable).stream().map(DataFile::path)
+            .collect(Collectors.toSet()).contains(partition3FilePath));
 
     //test drop hive partition
     hms.getClient().dropPartition(HIVE_TABLE_ID.getDatabase(), HIVE_TABLE_ID.getTableName(),
@@ -168,8 +172,10 @@ public class HiveMetaSynchronizerTest extends HiveTableTestBase {
 
     //should not sync hive data to arctic when both hive location and hive transient_lastDdlTime not changed
     OverwriteFiles p4OverwriteFiles = testHiveTable.newOverwrite();
-    List<DataFile> p4DataFiles = writeDataFiles(testHiveTable, HiveLocationKind.INSTANT,
-        writeRecords("p4"));
+    List<DataFile> p4DataFiles = HiveDataTestHelpers.writerOf(testHiveTable)
+        .consistentWriteEnabled(false)
+        .writeHive(records("p4"));
+
     p4DataFiles.forEach(p4OverwriteFiles::addFile);
     p4OverwriteFiles.commit();
     Partition hiveOldPartition = hms.getClient().getPartition(HIVE_TABLE_ID.getDatabase(), HIVE_TABLE_ID.getTableName(),
@@ -196,8 +202,10 @@ public class HiveMetaSynchronizerTest extends HiveTableTestBase {
   public void testKeyedTableSyncDataToHive() throws IOException, TException {
     Table hiveTable = hms.getClient()
         .getTable(UN_PARTITION_HIVE_PK_TABLE_ID.getDatabase(), UN_PARTITION_HIVE_PK_TABLE_ID.getTableName());
-    List<DataFile> p1DataFiles = writeDataFiles(testUnPartitionKeyedHiveTable, HiveLocationKind.INSTANT,
-        writeRecords("p1"));
+    List<DataFile> p1DataFiles = HiveDataTestHelpers.writerOf(testUnPartitionKeyedHiveTable)
+            .consistentWriteEnabled(false)
+            .transactionId(1L)
+            .writeHive(records("p1"));
     hiveTable.getSd().setLocation(p1DataFiles.get(0).path().toString().substring(
         0,
         p1DataFiles.get(0).path().toString().lastIndexOf("/")));
@@ -217,8 +225,10 @@ public class HiveMetaSynchronizerTest extends HiveTableTestBase {
     //should not sync hive data to arctic when both hive location and hive transient_lastDdlTime not changed
     hiveTable = hms.getClient()
         .getTable(UN_PARTITION_HIVE_PK_TABLE_ID.getDatabase(), UN_PARTITION_HIVE_PK_TABLE_ID.getTableName());
-    List<DataFile> p1NewFiles = writeDataFiles(testUnPartitionKeyedHiveTable, HiveLocationKind.INSTANT,
-        writeRecords("p1"));
+    List<DataFile> p1NewFiles = HiveDataTestHelpers.writerOf(testUnPartitionKeyedHiveTable)
+        .transactionId(2L)
+        .consistentWriteEnabled(false)
+        .writeHive(records("p1"));
     RewriteFiles p1NewRewrite = testUnPartitionKeyedHiveTable.baseTable().newRewrite();
     p1NewRewrite.rewriteFiles(new HashSet<>(p1DataFiles), new HashSet<>(p1NewFiles));
     p1NewRewrite.commit();
