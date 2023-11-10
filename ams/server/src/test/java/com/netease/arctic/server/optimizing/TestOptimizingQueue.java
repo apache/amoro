@@ -69,6 +69,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         quotaProvider,
         planExecutor,
         Collections.singletonList(tableRuntimeMeta),
+        1,
         1);
   }
 
@@ -79,6 +80,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         quotaProvider,
         planExecutor,
         Collections.emptyList(),
+        1,
         1);
   }
 

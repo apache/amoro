@@ -122,6 +122,12 @@ public class ArcticManagementConf {
           .defaultValue(60000L)
           .withDescription("Interval for refreshing table metadata.");
 
+  public static final ConfigOption<Long> GLOBAL_MIN_PLANNING_INTERVAL =
+      ConfigOptions.key("refresh-tables.interval")
+          .longType()
+          .defaultValue(60000L)
+          .withDescription("Minimum interval for planning on a single table.");
+
   public static final ConfigOption<Long> BLOCKER_TIMEOUT =
       ConfigOptions.key("blocker.timeout")
           .longType()
@@ -246,7 +252,7 @@ public class ArcticManagementConf {
   public static final ConfigOption<Long> OPTIMIZER_POLLING_TIMEOUT =
       ConfigOptions.key("optimizer.polling-timeout")
           .longType()
-          .defaultValue(1000L)
+          .defaultValue(3000L)
           .withDescription("Optimizer polling task timeout.");
 
   /** config key prefix of terminal */

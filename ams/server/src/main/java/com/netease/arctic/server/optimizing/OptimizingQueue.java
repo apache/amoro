@@ -70,7 +70,6 @@ import java.util.stream.Collectors;
 public class OptimizingQueue extends PersistentBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(OptimizingQueue.class);
-  private static final long TABLE_PLANNING_MIN_INTERVAL = 60 * 1000L;
 
   private final QuotaProvider quotaProvider;
   private final Queue<TableOptimizingProcess> tableQueue = new LinkedTransferQueue<>();
@@ -83,6 +82,7 @@ public class OptimizingQueue extends PersistentBase {
   private final Lock scheduleLock = new ReentrantLock();
   private final Condition planningCompleted = scheduleLock.newCondition();
   private final int maxPlanningParallelism;
+  private final long minPlanningInterval;
   private ResourceGroup optimizerGroup;
 
   public OptimizingQueue(
@@ -91,7 +91,8 @@ public class OptimizingQueue extends PersistentBase {
       QuotaProvider quotaProvider,
       Executor planExecutor,
       List<TableRuntimeMeta> tableRuntimeMetaList,
-      int maxPlanningParallelism) {
+      int maxPlanningParallelism,
+      long minPlanningInterval) {
     Preconditions.checkNotNull(optimizerGroup, "Optimizer group can not be null");
     this.planExecutor = planExecutor;
     this.optimizerGroup = optimizerGroup;
@@ -99,6 +100,7 @@ public class OptimizingQueue extends PersistentBase {
     this.schedulingPolicy = new SchedulingPolicy(optimizerGroup);
     this.tableManager = tableManager;
     this.maxPlanningParallelism = maxPlanningParallelism;
+    this.minPlanningInterval = minPlanningInterval;
     tableRuntimeMetaList.forEach(this::initTableRuntime);
   }
 
@@ -234,7 +236,7 @@ public class OptimizingQueue extends PersistentBase {
     if (planningTables.size() < maxPlanningParallelism) {
       Set<TableRuntime> skipTables = new HashSet<>(planningTables);
       plannedKeepingTables.entrySet().stream()
-          .filter(entry -> startTime - entry.getValue() < TABLE_PLANNING_MIN_INTERVAL)
+          .filter(entry -> startTime - entry.getValue() < minPlanningInterval)
           .filter(entry -> isOptimizingBlocked(entry.getKey()))
           .map(Map.Entry::getKey)
           .forEach(skipTables::add);
