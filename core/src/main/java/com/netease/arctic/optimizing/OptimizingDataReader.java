@@ -39,9 +39,6 @@ public interface OptimizingDataReader extends Closeable {
    */
   CloseableIterable<Record> readIdentifierData(Set<Integer> identifierFieldIds);
 
-  /** Rewritten data record count */
-  long rewrittenDataRecordCnt();
-
   /**
    * Reading data that needs to be deleted during MOR. If there is no delete file, then the result
    * is empty.

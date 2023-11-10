@@ -69,11 +69,6 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
   }
 
   @Override
-  public long rewrittenDataRecordCnt() {
-    return input.rewrittenDataFilesForMixed().stream().mapToLong(ContentFile::recordCount).sum();
-  }
-
-  @Override
   public CloseableIterable<Record> readDeletedData() {
     Schema schema =
         new Schema(

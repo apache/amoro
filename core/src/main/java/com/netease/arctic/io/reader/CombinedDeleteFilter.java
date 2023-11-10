@@ -88,16 +88,19 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
   private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
   private final GenericCombinedIcebergDataReader combinedDataReader;
 
+  private final long rewrittenDataRecordCnt;
   private final boolean filterEqDelete;
 
   protected CombinedDeleteFilter(
       GenericCombinedIcebergDataReader combinedDataReader,
+      long rewrittenDataRecordCnt,
       ContentFile<?>[] deleteFiles,
       Set<String> positionPathSets,
       Schema tableSchema,
       StructLikeCollections structLikeCollections,
       boolean filterEqDelete) {
     this.combinedDataReader = combinedDataReader;
+    this.rewrittenDataRecordCnt = rewrittenDataRecordCnt;
     ImmutableList.Builder<DeleteFile> posDeleteBuilder = ImmutableList.builder();
     ImmutableList.Builder<DeleteFile> eqDeleteBuilder = ImmutableList.builder();
     if (deleteFiles != null) {
@@ -196,7 +199,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
       bloomFilter =
           BloomFilter.create(
               StructLikeFunnel.structLikeFunnel(deleteSchema.asStruct()),
-              combinedDataReader.rewrittenDataRecordCnt(),
+              rewrittenDataRecordCnt,
               0.001);
       for (Record record : combinedDataReader.readIdentifierData(deleteIds)) {
         StructLike identifier = internalRecordWrapper.copyFor(record);

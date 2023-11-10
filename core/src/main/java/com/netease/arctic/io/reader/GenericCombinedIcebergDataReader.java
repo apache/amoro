@@ -98,12 +98,21 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
             .mapToLong(ContentFile::recordCount)
             .sum();
 
+    long rewrittenDataRecordCnt =
+        Arrays.stream(input.rewrittenDataFiles()).mapToLong(ContentFile::recordCount).sum();
+
     // Data file primary key memory usage, cost is the same as eq delete, +1 cost
     // Data file read cost is 0.5 times the memory cost, +0.5 cost
     boolean filterEqDelete = eqDeleteRecordCnt > dataRecordCnt * 2.5;
     this.deleteFilter =
         new GenericDeleteFilter(
-            this, deleteFiles, positionPathSet, tableSchema, structLikeCollections, filterEqDelete);
+            this,
+            rewrittenDataRecordCnt,
+            deleteFiles,
+            positionPathSet,
+            tableSchema,
+            structLikeCollections,
+            filterEqDelete);
   }
 
   @Override
@@ -145,11 +154,6 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
             CloseableIterable.withNoopClose(
                 Arrays.stream(input.rewrittenDataFiles()).collect(Collectors.toList())),
             s -> openFile(s, spec, identifierSchema)));
-  }
-
-  @Override
-  public long rewrittenDataRecordCnt() {
-    return Arrays.stream(input.rewrittenDataFiles()).mapToLong(ContentFile::recordCount).sum();
   }
 
   @Override
@@ -319,6 +323,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
 
     public GenericDeleteFilter(
         GenericCombinedIcebergDataReader combinedDataReader,
+        long rewrittenDataRecordCnt,
         ContentFile<?>[] deleteFiles,
         Set<String> positionPathSets,
         Schema tableSchema,
@@ -326,6 +331,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
         boolean filterEqDelete) {
       super(
           combinedDataReader,
+          rewrittenDataRecordCnt,
           deleteFiles,
           positionPathSets,
           tableSchema,
