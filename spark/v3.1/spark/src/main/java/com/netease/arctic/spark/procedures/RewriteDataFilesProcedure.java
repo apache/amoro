@@ -19,16 +19,12 @@
 package com.netease.arctic.spark.procedures;
 
 import com.netease.arctic.ams.api.BlockableOperation;
-import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.spark.actions.BaseRewriteAction;
 import com.netease.arctic.spark.table.ArcticSparkTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.blocker.Blocker;
 import com.netease.arctic.table.blocker.TableBlockerManager;
-import org.apache.iceberg.actions.RewriteDataFiles;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.spark.Spark3Util;
 import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.expressions.Expression;
@@ -43,9 +39,7 @@ import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.unsafe.types.UTF8String;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class RewriteDataFilesProcedure extends BaseProcedure {
 
@@ -74,7 +68,7 @@ public class RewriteDataFilesProcedure extends BaseProcedure {
                   "rewritten_partitions", DataTypes.StringType, false, Metadata.empty()),
               new StructField(
                   "added_data_files_count", DataTypes.IntegerType, false, Metadata.empty()),
-          });
+              });
 
   protected TableBlockerManager tableBlockerManager;
   protected Blocker block;
@@ -115,20 +109,20 @@ public class RewriteDataFilesProcedure extends BaseProcedure {
     ArcticSparkTable sparkTable = loadSparkTable(toIdentifier(args.getString(0), PARAMETERS[0].name()));
     ArcticTable arcticTable = sparkTable.table();
     ArcticCatalog arcticCatalog = sparkTable.arcticCatalog();
-    String where = args.isNullAt(1) ? null : args.getString(1);
-    getBlocker(arcticCatalog, arcticTable);
-    try {
-      checkBlocker(tableBlockerManager);
-      BaseRewriteAction action = actions().rewriteDataFiles(arcticTable);
-      action = checkAndApplyFilter(action, where, arcticTable.id().toString());
-      return toOutputRows(action.execute());
-    } finally {
-      tableBlockerManager.release(block);
+    tableBlockerManager = arcticCatalog.getTableBlockerManager(arcticTable.id());
+    if (conflict(tableBlockerManager.getBlockers())) {
+      throw new IllegalStateException("table is blocked by optimize");
     }
+
+    String where = args.isNullAt(1) ? null : args.getString(1);
+    BaseRewriteAction action = actions().rewriteDataFiles(arcticTable);
+    action = checkAndApplyFilter(action, where, arcticTable.id().toString());
+    return toOutputRows(action.execute());
   }
 
   private InternalRow[] toOutputRows(BaseRewriteAction.RewriteResult result) {
-    InternalRow row = newInternalRow(result.rewriteFileCount(),
+    InternalRow row = newInternalRow(
+        result.rewriteFileCount(),
         result.rewriteDeleteFileCount(),
         result.rewritePartitionCount(),
         result.rewriteBaseStorePartitionCount(),
@@ -141,24 +135,9 @@ public class RewriteDataFilesProcedure extends BaseProcedure {
     return new GenericInternalRow(values);
   }
 
-  public void checkBlocker(TableBlockerManager tableBlockerManager) {
-    List<String> blockerIds = tableBlockerManager.getBlockers()
-        .stream().map(Blocker::blockerId).collect(Collectors.toList());
-    if (!blockerIds.contains(block.blockerId())) {
-      throw new IllegalStateException("block is not in blockerManager");
-    }
-  }
-
-  public void getBlocker(ArcticCatalog catalog, ArcticTable table) {
-    this.tableBlockerManager = catalog.getTableBlockerManager(table.id());
-    ArrayList<BlockableOperation> operations = Lists.newArrayList();
-    operations.add(BlockableOperation.BATCH_WRITE);
-    operations.add(BlockableOperation.OPTIMIZE);
-    try {
-      this.block = tableBlockerManager.block(operations);
-    } catch (OperationConflictException e) {
-      throw new IllegalStateException("failed to block table " + table.id() + " with " + operations, e);
-    }
+  private boolean conflict(List<Blocker> blockers) {
+    return blockers.stream()
+        .anyMatch(blocker -> blocker.operations().contains(BlockableOperation.OPTIMIZE));
   }
 
   private BaseRewriteAction checkAndApplyFilter(
