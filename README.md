@@ -1,4 +1,5 @@
 <!--
+r
  - Licensed to the Apache Software Foundation (ASF) under one
  - or more contributor license agreements.  See the NOTICE file
  - distributed with this work for additional information
@@ -59,12 +60,10 @@ Here is the architecture diagram of Amoro:
 Amoro can manage tables of different table formats, similar to how MySQL/ClickHouse can choose different storage engines.
 Amoro meets diverse user needs by using different table formats. Currently, Amoro supports four table formats:
 
-* Iceberg format: means using the native table format of the Apache Iceberg, which has all the features and characteristics of Iceberg.
-* Mixed Iceberg format: built on top of Iceberg format, which can accelerate data processing using LogStore 
-  and provides more efficient query performance and streaming read capability in CDC scenarios.
-* Mixed Hive format: has the same features as the Mixed Iceberg tables but is compatible with a Hive table.
-  Support upgrading Hive tables to Mixed Hive tables, and allow Hive's native read and write methods after upgrading.
-* Paimon format: supports displaying metadata information in the Paimon format, including Schema, Options, Files, Snapshots, DDLs, and Compaction information.
+* Iceberg format: Users can directly entrust their Iceberg tables to Amoro for maintenance, so that users can not only use all the functions of Iceberg tables, but also enjoy the performance and stability improvements brought by Amoro.
+* Mixed-Iceberg format: Amoro provides a set of more optimized formats for streaming update scenarios on top of the Iceberg format. If users have high performance requirements for streaming updates or have demands for CDC incremental data reading functions, they can choose to use the Mixed-Iceberg format.
+* Mixed-Hive format: Many users do not want to affect the business originally built on Hive while using data lakes. Therefore, Amoro provides the Mixed-Hive format, which can upgrade Hive tables to Mixed-Hive format only through metadata migration, and the original Hive tables can still be used normally. This ensures business stability and benefits from the advantages of data lake computing.
+* Paimon format: Amoro supports displaying metadata information in the Paimon format, including Schema, Options, Files, Snapshots, DDLs, and Compaction information.
 
 ## Supported engines
 
