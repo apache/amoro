@@ -18,6 +18,11 @@
 
 package com.netease.arctic.spark.util;
 
+import com.netease.arctic.spark.actions.optimizing.BasicTableSnapshot;
+import com.netease.arctic.spark.actions.optimizing.KeyedTableSnapshot;
+import com.netease.arctic.spark.actions.optimizing.TableSnapshot;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.util.Utf8;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
@@ -25,6 +30,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.spark.Spark3Util;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.util.ByteBuffers;
+import org.apache.iceberg.util.StructLikeMap;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.connector.catalog.CatalogPlugin;
 import org.apache.spark.sql.connector.catalog.Identifier;
@@ -49,6 +55,21 @@ public class ArcticSparkUtils {
         "Cannot resolver name-parts %s to catalog and identifier, %s is not a table catalog",
         Joiner.on(',').join(nameParts), catalog.name());
     return new TableCatalogAndIdentifier((TableCatalog) catalog, catalogAndIdentifier.identifier());
+  }
+
+  public static TableSnapshot getSnapshot(ArcticTable arcticTable) {
+    if (arcticTable.isUnkeyedTable()) {
+      return new BasicTableSnapshot(arcticTable.asUnkeyedTable().currentSnapshot().snapshotId());
+    } else {
+      StructLikeMap<Long> partitionOptimizedSequence =
+          TablePropertyUtil.getPartitionOptimizedSequence(arcticTable.asKeyedTable());
+      StructLikeMap<Long> legacyPartitionMaxTransactionId =
+          TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
+      return new KeyedTableSnapshot(arcticTable.asKeyedTable().baseTable().currentSnapshot().snapshotId(),
+          arcticTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
+          partitionOptimizedSequence,
+          legacyPartitionMaxTransactionId);
+    }
   }
 
   public static class TableCatalogAndIdentifier {

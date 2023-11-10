@@ -23,11 +23,11 @@ import com.netease.arctic.spark.sql.catalyst.analysis
 import com.netease.arctic.spark.sql.catalyst.analysis.{QueryWithConstraintCheck, ResolveArcticCommand, RewriteArcticCommand, RewriteMergeIntoTable}
 import com.netease.arctic.spark.sql.catalyst.optimize.{OptimizeWriteRule, RewriteAppendArcticTable, RewriteDeleteFromArcticTable, RewriteUpdateArcticTable}
 import com.netease.arctic.spark.sql.catalyst.parser.ArcticSqlExtensionsParser
-import com.netease.arctic.spark.sql.catalyst.plans.QueryWithConstraintCheckPlan
 import com.netease.arctic.spark.sql.execution
 import org.apache.spark.sql.SparkSessionExtensions
-import org.apache.spark.sql.catalyst.analysis.{AlignRowLevelOperations, RowLevelOperationsPredicateCheck}
+import org.apache.spark.sql.catalyst.analysis.{AlignRowLevelOperations, ProcedureArgumentCoercion, ResolveProcedures, RowLevelOperationsPredicateCheck}
 import org.apache.spark.sql.catalyst.optimizer._
+import org.apache.spark.sql.catalyst.parser.extensions.IcebergSparkSqlExtensionsParser
 
 class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
 
@@ -35,6 +35,10 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
     extensions.injectParser {
       case (_, parser) => new ArcticSqlExtensionsParser(parser)
     }
+    extensions.injectParser {
+      case (_, parser) => new IcebergSparkSqlExtensionsParser(parser)
+    }
+
     // resolve arctic command
     extensions.injectResolutionRule { spark => ResolveArcticCommand(spark) }
     extensions.injectResolutionRule { spark => analysis.ResolveMergeIntoTableReferences(spark) }
@@ -42,6 +46,8 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
 
     extensions.injectPostHocResolutionRule(spark => RewriteArcticCommand(spark))
     // iceberg analyzer rules
+    extensions.injectResolutionRule { spark => ResolveProcedures(spark) }
+    extensions.injectResolutionRule { _ => ProcedureArgumentCoercion }
     extensions.injectPostHocResolutionRule { _ => AlignRowLevelOperations }
 
     // arctic optimizer rules

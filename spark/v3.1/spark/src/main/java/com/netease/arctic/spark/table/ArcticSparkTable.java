@@ -208,4 +208,8 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, Sup
         Boolean.parseBoolean(arcticTable.properties().getOrDefault(
                 TableProperties.UPSERT_ENABLED, "false"));
   }
+
+  public ArcticCatalog arcticCatalog() {
+    return catalog;
+  }
 }

@@ -20,6 +20,7 @@ package com.netease.arctic.scan;
 
 import com.netease.arctic.data.file.ContentFileWithSequence;
 import org.apache.iceberg.TableScan;
+import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
 
@@ -63,4 +64,7 @@ public interface ChangeTableIncrementalScan extends TableScan {
 
   @Override
   ChangeTableIncrementalScan useSnapshot(long snapshotId);
+
+  @Override
+  ChangeTableIncrementalScan filter(Expression expr);
 }

@@ -48,7 +48,6 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException;
 import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.NamespaceChange;
-import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.connector.catalog.TableChange;
@@ -75,7 +74,7 @@ import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_
 import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT;
 import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
 
-public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
+public class ArcticSparkCatalog extends BaseCatalog {
   // private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkCatalog.class);
   private String catalogName = null;
 
@@ -151,7 +150,8 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     if (type != null) {
       switch (type) {
         case CHANGE:
-          return new ArcticSparkChangeTable((BasicUnkeyedTable)table.asKeyedTable().changeTable(),
+          return new ArcticSparkChangeTable(
+              (BasicUnkeyedTable) table.asKeyedTable().changeTable(),
               false);
         default:
           throw new IllegalArgumentException("Unknown inner table type: " + type);
@@ -204,7 +204,8 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
 
   private void checkAndRefreshCatalogMeta(ArcticCatalog catalog) {
     SparkSession sparkSession = SparkSession.active();
-    if (Boolean.parseBoolean(sparkSession.conf().get(REFRESH_CATALOG_BEFORE_USAGE,
+    if (Boolean.parseBoolean(sparkSession.conf().get(
+        REFRESH_CATALOG_BEFORE_USAGE,
         REFRESH_CATALOG_BEFORE_USAGE_DEFAULT))) {
       catalog.refresh();
     }
@@ -218,7 +219,8 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       useTimestampWithoutZoneInNewTables = true;
     } else {
       useTimestampWithoutZoneInNewTables = Boolean.parseBoolean(
-          sparkSession.conf().get(USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
+          sparkSession.conf().get(
+              USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
               USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT));
     }
     if (useTimestampWithoutZoneInNewTables) {

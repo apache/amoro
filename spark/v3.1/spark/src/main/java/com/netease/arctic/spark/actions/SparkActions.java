@@ -16,28 +16,27 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.writer;
+package com.netease.arctic.spark.actions;
 
-public enum WriteMode {
-  OVERWRITE_BY_FILTER("overwrite-by-filter"),
-  OVERWRITE_DYNAMIC("overwrite-dynamic"),
-  APPEND("append"),
-  DELTAWRITE("deltaWrite"),
-  REWRITE_FILES("rewrite-files");
+import com.netease.arctic.table.ArcticTable;
+import org.apache.spark.sql.SparkSession;
 
-  public static final String WRITE_MODE_KEY = "write-mode";
+public class SparkActions {
+  private final SparkSession spark;
 
-  public final String mode;
-  WriteMode(String mode) {
-    this.mode = mode;
+  private SparkActions(SparkSession spark) {
+    this.spark = spark;
   }
 
-  public static WriteMode getWriteMode(String mode) {
-    for (WriteMode m : values()) {
-      if (m.mode.equalsIgnoreCase(mode)) {
-        return m;
-      }
+  public static SparkActions get(SparkSession spark) {
+    return new SparkActions(spark);
+  }
+
+  public BaseRewriteAction rewriteDataFiles(ArcticTable table) {
+    if (table.isKeyedTable()) {
+      return new KeyedTableRewriteAction(spark, table);
+    } else {
+      return new UnKeyedTableRewriteAction(spark, table);
     }
-    throw new IllegalArgumentException("Invalid write mode: " + mode);
   }
 }

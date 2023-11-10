@@ -22,6 +22,7 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.scan.KeyedTableScanTask;
+import com.netease.arctic.spark.actions.ScanTaskSetManager;
 import com.netease.arctic.spark.util.Stats;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -33,6 +34,7 @@ import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.Spark3Util;
 import org.apache.iceberg.spark.SparkSchemaUtil;
+import org.apache.iceberg.spark.SparkWriteOptions;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.connector.read.Batch;
 import org.apache.spark.sql.connector.read.InputPartition;
@@ -67,6 +69,7 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
   private final Long asOfTimestamp;
   private StructType readSchema = null;
   private List<CombinedScanTask> tasks = null;
+  private final String scanTaskId;
 
   KeyedSparkBatchScan(
       KeyedTable table, boolean caseSensitive,
@@ -94,6 +97,7 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
     } else if (startSnapshotId == null && endSnapshotId != null) {
       throw new IllegalArgumentException("Cannot only specify option end-snapshot-id to do incremental scan");
     }
+    this.scanTaskId = options.get(SparkWriteOptions.REWRITTEN_FILE_SCAN_TASK_SET_ID);
   }
 
   @Override
@@ -169,6 +173,12 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
   }
 
   private List<CombinedScanTask> tasks() {
+    if (scanTaskId != null) {
+      LOG.info("get task from cache start");
+      this.tasks = ScanTaskSetManager.get().fetchTasks(table, scanTaskId);
+      LOG.info("get {} task from cache end", tasks.size());
+    }
+
     if (tasks == null) {
       KeyedTableScan scan = table
           .newScan();

@@ -48,7 +48,7 @@ import java.util.Map;
  * @param <T> CatalogPlugin class to avoid casting to TableCatalog and SupportsNamespaces.
  */
 public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespaces>
-    implements SupportsNamespaces, CatalogExtension {
+    extends BaseCatalog implements CatalogExtension {
   private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkSessionCatalog.class);
   private static final String[] DEFAULT_NAMESPACE = new String[]{"default"};
 

@@ -33,7 +33,9 @@ import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.spark.FileRewriteCoordinator;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.Tasks;
 import org.apache.spark.sql.catalyst.InternalRow;
@@ -105,6 +107,11 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     return new DeltaWrite();
   }
 
+  @Override
+  public BatchWrite asRewriteFiles(String fileSetID) {
+    return new RewriteFilesWriter(fileSetID);
+  }
+
   private abstract class BaseBatchWrite implements BatchWrite {
 
     protected TableBlockerManager tableBlockerManager;
@@ -153,7 +160,6 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
   private class AppendWrite extends BaseBatchWrite {
 
-
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
       getBlocker();
@@ -173,7 +179,6 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   }
 
   private class DynamicOverwrite extends BaseBatchWrite {
-
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
@@ -241,6 +246,26 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
       }
       append.commit();
       tableBlockerManager.release(block);
+    }
+  }
+
+  private class RewriteFilesWriter extends BaseBatchWrite {
+
+    private final String fileSetID;
+
+    private RewriteFilesWriter(String fileSetID) {
+      this.fileSetID = fileSetID;
+    }
+
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo physicalWriteInfo) {
+      return new BaseWriterFactory(table, dsSchema, txId, hiveSubdirectory, orderedWriter);
+    }
+
+    @Override
+    public void commit(WriterCommitMessage[] messages) {
+      FileRewriteCoordinator coordinator = FileRewriteCoordinator.get();
+      coordinator.stageRewrite(table.baseTable(), fileSetID, ImmutableSet.copyOf(files(messages)));
     }
   }
 

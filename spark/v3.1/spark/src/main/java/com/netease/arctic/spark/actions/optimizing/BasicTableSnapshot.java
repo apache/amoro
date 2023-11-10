@@ -16,28 +16,17 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.writer;
+package com.netease.arctic.spark.actions.optimizing;
 
-public enum WriteMode {
-  OVERWRITE_BY_FILTER("overwrite-by-filter"),
-  OVERWRITE_DYNAMIC("overwrite-dynamic"),
-  APPEND("append"),
-  DELTAWRITE("deltaWrite"),
-  REWRITE_FILES("rewrite-files");
+public class BasicTableSnapshot implements TableSnapshot {
+  private final long snapshotId;
 
-  public static final String WRITE_MODE_KEY = "write-mode";
-
-  public final String mode;
-  WriteMode(String mode) {
-    this.mode = mode;
+  public BasicTableSnapshot(long snapshotId) {
+    this.snapshotId = snapshotId;
   }
 
-  public static WriteMode getWriteMode(String mode) {
-    for (WriteMode m : values()) {
-      if (m.mode.equalsIgnoreCase(mode)) {
-        return m;
-      }
-    }
-    throw new IllegalArgumentException("Invalid write mode: " + mode);
+  @Override
+  public long snapshotId() {
+    return snapshotId;
   }
 }

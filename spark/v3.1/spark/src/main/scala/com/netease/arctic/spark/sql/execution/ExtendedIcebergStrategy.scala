@@ -20,8 +20,9 @@ package com.netease.arctic.spark.sql.execution
 
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
 import org.apache.iceberg.spark.{Spark3Util, SparkCatalog, SparkSessionCatalog}
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.NamedRelation
-import org.apache.spark.sql.catalyst.expressions.{And, Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{And, Expression, GenericInternalRow, NamedExpression}
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
@@ -34,6 +35,10 @@ import scala.collection.JavaConverters.seqAsJavaList
 
 case class ExtendedIcebergStrategy(spark: SparkSession) extends Strategy {
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
+    case c@Call(procedure, args) =>
+      val input = buildInternalRow(args)
+      CallExec(c.output, procedure, input) :: Nil
+
     case DynamicFileFilter(scanPlan, fileFilterPlan, filterable) =>
       DynamicFileFilterExec(planLater(scanPlan), planLater(fileFilterPlan), filterable) :: Nil
 
@@ -78,6 +83,14 @@ case class ExtendedIcebergStrategy(spark: SparkSession) extends Strategy {
 
   private def refreshCache(r: NamedRelation)(): Unit = {
     spark.sharedState.cacheManager.recacheByPlan(spark, r)
+  }
+
+  private def buildInternalRow(exprs: Seq[Expression]): InternalRow = {
+    val values = new Array[Any](exprs.size)
+    for (index <- exprs.indices) {
+      values(index) = exprs(index).eval()
+    }
+    new GenericInternalRow(values)
   }
 
   private object ArcticCatalogAndIdentifier {

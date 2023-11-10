@@ -34,7 +34,9 @@ import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.spark.FileRewriteCoordinator;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.Tasks;
 import org.apache.spark.sql.catalyst.InternalRow;
@@ -102,6 +104,11 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
   @Override
   public BatchWrite asDeltaWrite() {
     return new DeltaWrite();
+  }
+
+  @Override
+  public BatchWrite asRewriteFiles(String rewrittenFileSetId) {
+    return new RewriteFilesWriter(rewrittenFileSetId);
   }
 
   private abstract class BaseBatchWrite implements BatchWrite {
@@ -240,6 +247,26 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
       }
       rowDelta.commit();
       tableBlockerManager.release(block);
+    }
+  }
+
+  private class RewriteFilesWriter extends BaseBatchWrite {
+
+    private final String fileSetID;
+
+    private RewriteFilesWriter(String fileSetID) {
+      this.fileSetID = fileSetID;
+    }
+
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo physicalWriteInfo) {
+      return new WriterFactory(table, dsSchema, true, hiveSubdirectory, orderedWriter);
+    }
+
+    @Override
+    public void commit(WriterCommitMessage[] messages) {
+      FileRewriteCoordinator coordinator = FileRewriteCoordinator.get();
+      coordinator.stageRewrite(table, fileSetID, ImmutableSet.copyOf(files(messages)));
     }
   }
 
