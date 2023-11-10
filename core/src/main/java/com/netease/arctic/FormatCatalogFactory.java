@@ -19,7 +19,7 @@
 package com.netease.arctic;
 
 import com.netease.arctic.ams.api.TableFormat;
-import org.apache.hadoop.conf.Configuration;
+import com.netease.arctic.table.TableMetaStore;
 
 import java.util.Map;
 
@@ -32,14 +32,14 @@ public interface FormatCatalogFactory {
    * @param catalogName catalog name
    * @param metastoreType metastore type
    * @param properties catalog properties
-   * @param configuration hadoop configuration
+   * @param metaStore authentication context
    * @return a new {@link FormatCatalog}
    */
   FormatCatalog create(
       String catalogName,
       String metastoreType,
       Map<String, String> properties,
-      Configuration configuration);
+      TableMetaStore metaStore);
 
   /** format of this catalog factory */
   TableFormat format();

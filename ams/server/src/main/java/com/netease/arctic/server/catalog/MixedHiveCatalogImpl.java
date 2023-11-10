@@ -20,24 +20,33 @@ package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.formats.mixed.MixedHiveTable;
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.catalog.MixedTables;
+import com.netease.arctic.formats.mixed.MixedTable;
 import com.netease.arctic.hive.CachedHiveClientPool;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.catalog.MixedHiveTables;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.TableMetadata;
+import com.netease.arctic.table.TableMetaStore;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.thrift.TException;
 
 import java.util.List;
+import java.util.Map;
 
 public class MixedHiveCatalogImpl extends InternalMixedCatalogImpl {
 
   private volatile CachedHiveClientPool hiveClientPool;
 
   protected MixedHiveCatalogImpl(CatalogMeta catalogMeta) {
-    super(catalogMeta, new MixedHiveTables(catalogMeta));
+    super(catalogMeta);
     hiveClientPool = ((MixedHiveTables) tables()).getHiveClientPool();
+  }
+
+  @Override
+  protected MixedTables newTables(Map<String, String> catalogProperties, TableMetaStore metaStore) {
+    return new MixedHiveTables(catalogProperties, metaStore);
   }
 
   @Override
@@ -56,7 +65,8 @@ public class MixedHiveCatalogImpl extends InternalMixedCatalogImpl {
     if (tableMetadata == null) {
       return null;
     }
-    return new MixedHiveTable(tables.loadTableByMeta(tableMetadata.buildTableMeta()));
+    return new MixedTable(
+        tables.loadTableByMeta(tableMetadata.buildTableMeta()), TableFormat.MIXED_HIVE);
   }
 
   @Override

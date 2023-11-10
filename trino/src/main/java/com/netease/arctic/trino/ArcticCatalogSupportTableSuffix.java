@@ -18,8 +18,6 @@
 
 package com.netease.arctic.trino;
 
-import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
@@ -32,6 +30,7 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
@@ -84,8 +83,8 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   }
 
   @Override
-  public void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties) {
-    arcticCatalog.initialize(client, meta, properties);
+  public void initialize(String name, Map<String, String> properties, TableMetaStore metaStore) {
+    arcticCatalog.initialize(name, properties, metaStore);
   }
 
   @Override
@@ -148,11 +147,6 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   @Override
   public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema) {
     return arcticCatalog.newTableBuilder(identifier, schema);
-  }
-
-  @Override
-  public void refresh() {
-    arcticCatalog.refresh();
   }
 
   @Override

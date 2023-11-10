@@ -26,9 +26,11 @@ import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
+import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
+import com.netease.arctic.server.dashboard.model.TagOrBranchInfo;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
@@ -108,11 +110,30 @@ public class ServerTableDescriptor extends PersistentBase {
     return formatTableDescriptor.getTableFiles(amoroTable, partition);
   }
 
+  public List<TagOrBranchInfo> getTableTags(TableIdentifier tableIdentifier) {
+    AmoroTable<?> amoroTable = loadTable(tableIdentifier);
+    FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
+    return formatTableDescriptor.getTableTags(amoroTable);
+  }
+
+  public List<TagOrBranchInfo> getTableBranchs(TableIdentifier tableIdentifier) {
+    AmoroTable<?> amoroTable = loadTable(tableIdentifier);
+    FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
+    return formatTableDescriptor.getTableBranchs(amoroTable);
+  }
+
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
       TableIdentifier tableIdentifier, int limit, int offset) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getOptimizingProcessesInfo(amoroTable, limit, offset);
+  }
+
+  public List<OptimizingTaskInfo> getOptimizingProcessTaskInfos(
+      TableIdentifier tableIdentifier, long tableId) {
+    AmoroTable<?> amoroTable = loadTable(tableIdentifier);
+    FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
+    return formatTableDescriptor.getOptimizingTaskInfos(amoroTable, tableId);
   }
 
   private AmoroTable<?> loadTable(TableIdentifier identifier) {

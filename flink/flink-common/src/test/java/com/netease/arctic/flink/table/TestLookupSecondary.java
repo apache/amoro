@@ -59,10 +59,10 @@ public class TestLookupSecondary extends CatalogITCaseBase implements FlinkTaskW
 
   @Before
   public void setup() throws IOException {
-    List<String> dbs = getCatalog().listDatabases();
+    List<String> dbs = getMixedFormatCatalog().listDatabases();
     if (dbs.isEmpty()) {
       db = "test_db";
-      getCatalog().createDatabase(db);
+      getMixedFormatCatalog().createDatabase(db);
     } else {
       db = dbs.get(0);
     }
@@ -147,7 +147,7 @@ public class TestLookupSecondary extends CatalogITCaseBase implements FlinkTaskW
 
   @Override
   public String getCatalogName() {
-    return getCatalog().name();
+    return getMixedFormatCatalog().name();
   }
 
   @Override
@@ -170,7 +170,7 @@ public class TestLookupSecondary extends CatalogITCaseBase implements FlinkTaskW
       boolean writeToBaseStore,
       boolean upsertEnabled)
       throws IOException {
-    ArcticTable arcticTable = getCatalog().loadTable(table);
+    ArcticTable arcticTable = getMixedFormatCatalog().loadTable(table);
     Assert.assertNotNull(arcticTable);
     RowType rowType = FlinkSchemaUtil.convert(arcticTable.schema());
     for (RowData rowData : expected) {

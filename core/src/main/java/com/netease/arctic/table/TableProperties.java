@@ -101,7 +101,7 @@ public class TableProperties {
 
   public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO =
       "self-optimizing.major.trigger.duplicate-ratio";
-  public static final double SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT = 0.5;
+  public static final double SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT = 0.1;
 
   public static final String SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL =
       "self-optimizing.full.trigger.interval";
@@ -271,11 +271,6 @@ public class TableProperties {
   public static final String LOG_STORE_PROPERTIES_PREFIX = "properties.";
 
   public static final String OWNER = "owner";
-
-  /** enable consistent write for hive store */
-  public static final String HIVE_CONSISTENT_WRITE_ENABLED = "hive.consistent-write.enabled";
-
-  public static final String HIVE_CONSISTENT_WRITE_ENABLED_DEFAULT = "true";
 
   /** table format related properties */
   public static final String TABLE_FORMAT = "table-format";

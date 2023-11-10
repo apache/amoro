@@ -18,8 +18,6 @@
 
 package com.netease.arctic.hive.catalog;
 
-import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.catalog.BasicArcticCatalog;
@@ -32,6 +30,7 @@ import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
@@ -61,14 +60,15 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
   private CachedHiveClientPool hiveClientPool;
 
   @Override
-  public void initialize(AmsClient client, CatalogMeta meta, Map<String, String> properties) {
-    super.initialize(client, meta, properties);
+  public void initialize(String name, Map<String, String> properties, TableMetaStore metaStore) {
+    super.initialize(name, properties, metaStore);
     this.hiveClientPool = ((MixedHiveTables) tables).getHiveClientPool();
   }
 
   @Override
-  protected MixedTables newMixedTables(CatalogMeta catalogMeta) {
-    return new MixedHiveTables(catalogMeta);
+  protected MixedTables newMixedTables(
+      Map<String, String> catalogProperties, TableMetaStore metaStore) {
+    return new MixedHiveTables(catalogProperties, metaStore);
   }
 
   @Override

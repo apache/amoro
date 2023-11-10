@@ -18,3 +18,5 @@
 
 com.netease.arctic.formats.iceberg.IcebergCatalogFactory
 com.netease.arctic.formats.paimon.PaimonCatalogFactory
+com.netease.arctic.formats.mixed.MixedIcebergCatalogFactory
+com.netease.arctic.formats.mixed.MixedHiveCatalogFactory

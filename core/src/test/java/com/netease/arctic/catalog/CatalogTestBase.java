@@ -19,9 +19,11 @@
 package com.netease.arctic.catalog;
 
 import com.netease.arctic.TestAms;
+import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.iceberg.catalog.Catalog;
 import org.junit.After;
@@ -37,7 +39,8 @@ public abstract class CatalogTestBase {
   @ClassRule public static TestAms TEST_AMS = new TestAms();
   private final CatalogTestHelper testHelper;
   @Rule public TemporaryFolder temp = new TemporaryFolder();
-  private ArcticCatalog catalog;
+  private UnifiedCatalog unifiedCatalog;
+  private ArcticCatalog mixedFormatCatalog;
   private CatalogMeta catalogMeta;
   private Catalog icebergCatalog;
 
@@ -56,6 +59,7 @@ public abstract class CatalogTestBase {
       baseDir = "file:/" + temp.newFolder().getPath().replace("\\", "/");
     }
     catalogMeta = testHelper.buildCatalogMeta(baseDir);
+    catalogMeta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, TEST_AMS.getServerUrl());
     getAmsHandler().createCatalog(catalogMeta);
   }
 
@@ -63,15 +67,19 @@ public abstract class CatalogTestBase {
   public void dropCatalog() {
     if (catalogMeta != null) {
       getAmsHandler().dropCatalog(catalogMeta.getCatalogName());
-      catalog = null;
+      mixedFormatCatalog = null;
     }
   }
 
-  protected ArcticCatalog getCatalog() {
-    if (catalog == null) {
-      catalog = CatalogLoader.load(getCatalogUrl());
+  protected ArcticCatalog getMixedFormatCatalog() {
+    if (mixedFormatCatalog == null) {
+      mixedFormatCatalog = CatalogLoader.load(getCatalogUrl());
     }
-    return catalog;
+    return mixedFormatCatalog;
+  }
+
+  protected void refreshMixedFormatCatalog() {
+    this.mixedFormatCatalog = CatalogLoader.load(getCatalogUrl());
   }
 
   protected String getCatalogUrl() {
@@ -91,5 +99,12 @@ public abstract class CatalogTestBase {
       icebergCatalog = testHelper.buildIcebergCatalog(catalogMeta);
     }
     return icebergCatalog;
+  }
+
+  protected UnifiedCatalog getUnifiedCatalog() {
+    if (unifiedCatalog == null) {
+      unifiedCatalog = testHelper.buildUnifiedCatalog(catalogMeta);
+    }
+    return unifiedCatalog;
   }
 }
