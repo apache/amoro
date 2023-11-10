@@ -149,6 +149,56 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
     Assert.assertEquals(Iterables.size(readData), 1);
   }
 
+  @Test
+  public void readDataEnableFilterEqDelete() throws IOException {
+    UnkeyedTable table = getArcticTable().asUnkeyedTable();
+    List<Record> records = RandomGenericData.generate(table.schema(), 50, 1);
+    List<Record> deleteRecords = RandomGenericData.generate(table.schema(), 200, 1);
+
+    List<RecordWithAction> list = new ArrayList<>();
+    records.forEach(r -> list.add(new RecordWithAction(r, ChangeAction.INSERT)));
+    write(table, list);
+
+    List<RecordWithAction> deletes = new ArrayList<>();
+    deleteRecords.forEach(r -> deletes.add(new RecordWithAction(r, ChangeAction.DELETE)));
+    write(table, deletes);
+
+    List<DataFile> dataFileList = new ArrayList<>();
+    List<DeleteFile> deleteFileList = new ArrayList<>();
+    try (CloseableIterable<FileScanTask> tasks = table.newScan().planFiles()) {
+      for (FileScanTask task : tasks) {
+        dataFileList.add(task.file());
+        deleteFileList.addAll(task.deletes());
+      }
+    }
+
+    DataFile[] dataFiles = dataFileList.toArray(new DataFile[0]);
+    DeleteFile[] deleteFiles = deleteFileList.toArray(new DeleteFile[0]);
+
+    Assert.assertNotEquals(dataFiles.length, 0);
+    Assert.assertNotEquals(deleteFiles.length, 0);
+
+    RewriteFilesInput input =
+        new RewriteFilesInput(
+            dataFiles, new DataFile[] {}, new DeleteFile[] {}, deleteFiles, table);
+
+    GenericCombinedIcebergDataReader reader =
+        new GenericCombinedIcebergDataReader(
+            table.io(),
+            table.schema(),
+            table.spec(),
+            null,
+            false,
+            IdentityPartitionConverters::convertConstant,
+            false,
+            null,
+            input);
+    Assert.assertTrue(reader.filterEqDelete());
+
+    CloseableIterable<Record> readData = reader.readData();
+    Assert.assertEquals(Iterables.size(readData), 0);
+  }
+
   private static void write(UnkeyedTable table, List<RecordWithAction> list) throws IOException {
     WriteResult result = IcebergDataTestHelpers.delta(table, list);
 

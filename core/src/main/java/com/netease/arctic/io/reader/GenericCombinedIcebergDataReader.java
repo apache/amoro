@@ -22,6 +22,7 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.optimizing.OptimizingDataReader;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
+import com.netease.arctic.utils.map.StructLikeBaseMap;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.*;
 import org.apache.iceberg.avro.Avro;
@@ -32,12 +33,14 @@ import org.apache.iceberg.data.parquet.GenericParquetReaders;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.parquet.Parquet;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
+import org.apache.paimon.shade.guava30.com.google.common.hash.BloomFilter;
 
 import java.util.Arrays;
 import java.util.List;
@@ -90,20 +93,9 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
         Arrays.stream(rewriteFilesInput.dataFiles())
             .map(s -> s.path().toString())
             .collect(Collectors.toSet());
-    long dataRecordCnt =
-        Arrays.stream(rewriteFilesInput.dataFiles()).mapToLong(ContentFile::recordCount).sum();
-    long eqDeleteRecordCnt =
-        Arrays.stream(rewriteFilesInput.deleteFiles())
-            .filter(file -> file.content() == FileContent.EQUALITY_DELETES)
-            .mapToLong(ContentFile::recordCount)
-            .sum();
-
     long rewrittenDataRecordCnt =
         Arrays.stream(input.rewrittenDataFiles()).mapToLong(ContentFile::recordCount).sum();
 
-    // Data file primary key memory usage, cost is the same as eq delete, +1 cost
-    // Data file read cost is 0.5 times the memory cost, +0.5 cost
-    boolean filterEqDelete = eqDeleteRecordCnt > dataRecordCnt * 2.5;
     this.deleteFilter =
         new GenericDeleteFilter(
             this,
@@ -112,7 +104,25 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
             positionPathSet,
             tableSchema,
             structLikeCollections,
-            filterEqDelete);
+            filterEqDelete());
+  }
+
+  /**
+   * Whether to use {@link BloomFilter} to filter eq delete and reduce the amount of data written to
+   * {@link StructLikeBaseMap} by eq delete
+   */
+  @VisibleForTesting
+  public boolean filterEqDelete() {
+    long dataRecordCnt = Arrays.stream(input.dataFiles()).mapToLong(ContentFile::recordCount).sum();
+    long eqDeleteRecordCnt =
+        Arrays.stream(input.deleteFiles())
+            .filter(file -> file.content() == FileContent.EQUALITY_DELETES)
+            .mapToLong(ContentFile::recordCount)
+            .sum();
+
+    // Data file primary key memory usage, cost is the same as eq delete, +1 cost
+    // Data file read cost is 0.5 times the memory cost, +0.5 cost
+    return eqDeleteRecordCnt > dataRecordCnt * 2.5;
   }
 
   @Override
