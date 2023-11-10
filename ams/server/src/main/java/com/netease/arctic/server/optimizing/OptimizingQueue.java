@@ -122,15 +122,23 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         schedulingPolicy.addTable(tableRuntime);
       } else if (tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
         TableOptimizingProcess process = new TableOptimizingProcess(tableRuntimeMeta);
-        process.getTaskMap().entrySet().stream()
-            .filter(
-                entry ->
-                    entry.getValue().getStatus() == TaskRuntime.Status.SCHEDULED
-                        || entry.getValue().getStatus() == TaskRuntime.Status.ACKED)
-            .forEach(entry -> executingTaskMap.put(entry.getKey(), entry.getValue()));
-        process.getTaskMap().values().stream()
-            .filter(task -> task.getStatus() == TaskRuntime.Status.PLANNED)
-            .forEach(taskQueue::offer);
+        process
+            .getTaskMap()
+            .forEach(
+                (taskId, taskRuntime) -> {
+                  switch (taskRuntime.getStatus()) {
+                    case SCHEDULED:
+                    case ACKED:
+                      executingTaskMap.put(taskId, taskRuntime);
+                      break;
+                    case PLANNED:
+                      taskQueue.offer(taskRuntime);
+                      break;
+                    case FAILED:
+                      retryQueue.offer(taskRuntime);
+                      break;
+                  }
+                });
       }
     } else {
       OptimizingProcess process = tableRuntime.getOptimizingProcess();
