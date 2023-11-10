@@ -203,14 +203,14 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
 
     BloomFilter<StructLike> bloomFilter = null;
     if (filterEqDelete) {
-      bloomFilter =
-          BloomFilter.create(
-              StructLikeFunnel.structLikeFunnel(deleteSchema.asStruct()),
-              rewrittenDataRecordCnt,
-              0.001);
-      for (Record record : readIdentifierData(deleteSchema)) {
-        StructLike identifier = internalRecordWrapper.copyFor(record);
-        bloomFilter.put(identifier);
+      bloomFilter = BloomFilter.create(StructLikeFunnel.INSTANCE, rewrittenDataRecordCnt, 0.001);
+      try (CloseableIterable<Record> deletes = readIdentifierData(deleteSchema)) {
+        for (Record record : deletes) {
+          StructLike identifier = internalRecordWrapper.copyFor(record);
+          bloomFilter.put(identifier);
+        }
+      } catch (IOException e) {
+        throw new RuntimeException(e);
       }
     }
 
