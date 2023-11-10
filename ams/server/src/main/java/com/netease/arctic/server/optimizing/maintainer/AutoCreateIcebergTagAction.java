@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Map;
 
 /** Action to auto create tag for Iceberg Table. */
@@ -176,9 +177,10 @@ public class AutoCreateIcebergTagAction {
       tagConfig.setTriggerPeriod(
           TagTriggerPeriod.valueOf(
               CompatiblePropertyUtil.propertyAsString(
-                  tableProperties,
-                  TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD,
-                  TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD_DEFAULT)));
+                      tableProperties,
+                      TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD,
+                      TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD_DEFAULT)
+                  .toUpperCase(Locale.ROOT)));
       tagConfig.setTriggerOffsetMinutes(
           CompatiblePropertyUtil.propertyAsInt(
               tableProperties,
