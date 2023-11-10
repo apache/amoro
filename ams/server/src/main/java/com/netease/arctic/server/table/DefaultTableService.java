@@ -17,7 +17,6 @@ import com.netease.arctic.server.catalog.CatalogBuilder;
 import com.netease.arctic.server.catalog.ExternalCatalog;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
-import com.netease.arctic.server.catalog.TableEventListener;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.IllegalMetadataException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
@@ -49,7 +48,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class DefaultTableService extends StatedPersistentBase
-    implements TableService, TableEventListener {
+    implements TableService {
 
   public static final Logger LOG = LoggerFactory.getLogger(DefaultTableService.class);
   private final long externalCatalogRefreshingInterval;
@@ -133,7 +132,6 @@ public class DefaultTableService extends StatedPersistentBase
   private void initServerCatalog(CatalogMeta catalogMeta) {
     ServerCatalog catalog = CatalogBuilder.buildServerCatalog(catalogMeta, serverConfiguration);
     if (catalog instanceof InternalCatalog) {
-      ((InternalCatalog) catalog).addEventListener(this);
       internalCatalogMap.put(catalogMeta.getCatalogName(), (InternalCatalog) catalog);
     } else {
       externalCatalogMap.put(catalogMeta.getCatalogName(), (ExternalCatalog) catalog);
@@ -194,7 +192,9 @@ public class DefaultTableService extends StatedPersistentBase
     validateTableNotExists(tableMetadata.getTableIdentifier().getIdentifier());
 
     InternalCatalog catalog = getInternalCatalog(catalogName);
-    catalog.createTable(tableMetadata);
+    TableMetadata metadata = catalog.createTable(tableMetadata);
+
+    triggerTableAdded(catalog, metadata.getTableIdentifier());
   }
 
   @Override
@@ -623,12 +623,6 @@ public class DefaultTableService extends StatedPersistentBase
               }
               tableRuntime.dispose();
             });
-  }
-
-  @Override
-  public void onTableCreated(ServerTableIdentifier identifier) {
-    InternalCatalog catalog = getInternalCatalog(identifier.getCatalog());
-    triggerTableAdded(catalog, identifier);
   }
 
   private static class TableIdentity {

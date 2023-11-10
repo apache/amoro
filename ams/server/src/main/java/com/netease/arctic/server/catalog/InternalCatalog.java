@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.catalog;
 
-import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
@@ -44,16 +43,10 @@ public abstract class InternalCatalog extends ServerCatalog {
     super(metadata);
   }
 
-  protected final List<TableEventListener> tableEventListeners = Lists.newArrayList();
-
   @Override
   public List<String> listDatabases() {
     return getAs(
         TableMetaMapper.class, mapper -> mapper.selectDatabases(getMetadata().getCatalogName()));
-  }
-
-  public void addEventListener(TableEventListener listener) {
-    tableEventListeners.add(listener);
   }
 
   public void createDatabase(String databaseName) {
@@ -124,7 +117,7 @@ public abstract class InternalCatalog extends ServerCatalog {
         .collect(Collectors.toList());
   }
 
-  public void createTable(TableMetadata tableMetadata) {
+  public TableMetadata createTable(TableMetadata tableMetadata) {
     validateTableIdentifier(tableMetadata.getTableIdentifier().getIdentifier());
     ServerTableIdentifier tableIdentifier = tableMetadata.getTableIdentifier();
     doAsTransaction(
@@ -137,29 +130,13 @@ public abstract class InternalCatalog extends ServerCatalog {
                 () -> new ObjectNotExistsException(name())),
         () -> increaseDatabaseTableCount(tableIdentifier.getDatabase()));
 
-    TableMetadata createdMetadata =
-        getAs(
+    return getAs(
             TableMetaMapper.class,
             mapper ->
                 mapper.selectTableMetaByName(
                     tableIdentifier.getCatalog(),
                     tableIdentifier.getDatabase(),
                     tableIdentifier.getTableName()));
-    if (!isStageCreate(createdMetadata)) {
-      tableEventListeners.forEach(
-          listener -> listener.onTableCreated(createdMetadata.getTableIdentifier()));
-    }
-  }
-
-  protected boolean isStageCreate(TableMetadata metadata) {
-    return false;
-  }
-
-  public TableMetadata commitStageCreateTable(TableMetadata metadata) {
-    TableMetadata committed = commitTable(metadata);
-    tableEventListeners.forEach(
-        listener -> listener.onTableCreated(committed.getTableIdentifier()));
-    return committed;
   }
 
   public TableMetadata commitTable(TableMetadata metadata) {

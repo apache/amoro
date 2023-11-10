@@ -29,6 +29,7 @@ import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
@@ -58,14 +59,32 @@ public class MixedTables {
     this.catalogProperties = catalogProperties;
   }
 
+  /**
+   * check the given iceberg table is a base store for mixed-iceberg.
+   *
+   * @param table iceberg table
+   * @return base store of mixed-iceberg
+   */
   public boolean isBaseStore(Table table) {
     return TablePropertyUtil.isBaseStore(table.properties(), TableFormat.MIXED_ICEBERG);
   }
 
+  /**
+   * parse change store identifier from base store
+   *
+   * @param base base store
+   * @return change store table identifier.
+   */
   public TableIdentifier parseChangeIdentifier(Table base) {
     return TablePropertyUtil.parseChangeIdentifier(base.properties());
   }
 
+  /**
+   * create change store table identifier
+   *
+   * @param baseIdentifier base store table identifier.
+   * @return change store table identifier.
+   */
   protected TableIdentifier generateChangeStoreIdentifier(TableIdentifier baseIdentifier) {
     String separator =
         catalogProperties.getOrDefault(
@@ -75,6 +94,13 @@ public class MixedTables {
         baseIdentifier.namespace(), baseIdentifier.name() + separator + "change" + separator);
   }
 
+  /**
+   * load a mixed-format table.
+   *
+   * @param base            - base store
+   * @param tableIdentifier mixed-format table identifier.
+   * @return mixed format table instance.
+   */
   public ArcticTable loadTable(
       Table base, com.netease.arctic.table.TableIdentifier tableIdentifier) {
     ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
@@ -96,6 +122,16 @@ public class MixedTables {
     return new BasicKeyedTable(keySpec, baseStore, changeStore);
   }
 
+  /**
+   * create a mixed iceberg table
+   *
+   * @param identifier    mixed catalog table identifier.
+   * @param schema        table schema
+   * @param partitionSpec partition spec
+   * @param keySpec       key spec
+   * @param properties    table properties
+   * @return mixed format table.
+   */
   public ArcticTable createTable(
       com.netease.arctic.table.TableIdentifier identifier,
       Schema schema,
@@ -104,6 +140,40 @@ public class MixedTables {
       Map<String, String> properties) {
     TableIdentifier baseIdentifier =
         TableIdentifier.of(identifier.getDatabase(), identifier.getTableName());
+    TableIdentifier changeIdentifier = generateChangeStoreIdentifier(baseIdentifier);
+
+    Table base = createBaseStore(baseIdentifier, schema, partitionSpec, keySpec, properties);
+    ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
+    if (!keySpec.primaryKeyExisted()) {
+      return new BasicUnkeyedTable(
+          identifier, useArcticTableOperation(base, io), io, catalogProperties);
+    }
+
+    Table change = createChangeStore(baseIdentifier, changeIdentifier, schema, partitionSpec, keySpec, properties);
+    BaseTable baseStore =
+        new BasicKeyedTable.BaseInternalTable(
+            identifier, useArcticTableOperation(base, io), io, catalogProperties);
+    ChangeTable changeStore =
+        new BasicKeyedTable.ChangeInternalTable(
+            identifier, useArcticTableOperation(change, io), io, catalogProperties);
+    return new BasicKeyedTable(keySpec, baseStore, changeStore);
+  }
+
+  /**
+   * create base store for mixed-format
+   *
+   * @param baseIdentifier base store identifier
+   * @param schema         table schema
+   * @param partitionSpec  partition schema
+   * @param keySpec        key spec
+   * @param properties     table properties
+   * @return base store iceberg table.
+   */
+  protected Table createBaseStore(
+      TableIdentifier baseIdentifier, Schema schema,
+      PartitionSpec partitionSpec,
+      PrimaryKeySpec keySpec,
+      Map<String, String> properties) {
     TableIdentifier changeIdentifier = generateChangeStoreIdentifier(baseIdentifier);
     if (keySpec.primaryKeyExisted() && tableStoreExists(changeIdentifier)) {
       throw new AlreadyExistsException("change store already exists");
@@ -118,17 +188,27 @@ public class MixedTables {
             .buildTable(baseIdentifier, schema)
             .withPartitionSpec(partitionSpec)
             .withProperties(baseProperties);
+    return baseBuilder.create();
+  }
 
-    if (!keySpec.primaryKeyExisted()) {
-      Table base = tableMetaStore.doAs(baseBuilder::create);
-      ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
-      return new BasicUnkeyedTable(
-          identifier, useArcticTableOperation(base, io), io, catalogProperties);
-    }
-
-    Table base = tableMetaStore.doAs(baseBuilder::create);
-    ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
-
+  /**
+   * create change store for mixed-format
+   *
+   * @param baseIdentifier   base store identifier
+   * @param changeIdentifier change store identifier
+   * @param schema           table schema
+   * @param partitionSpec    partition spec
+   * @param keySpec          key spec
+   * @param properties       table properties
+   * @return change table store.
+   */
+  protected Table createChangeStore(
+      TableIdentifier baseIdentifier,
+      TableIdentifier changeIdentifier,
+      Schema schema,
+      PartitionSpec partitionSpec,
+      PrimaryKeySpec keySpec,
+      Map<String, String> properties) {
     Map<String, String> changeProperties = Maps.newHashMap(properties);
     changeProperties.putAll(
         TablePropertyUtil.changeStoreProperties(keySpec, TableFormat.MIXED_ICEBERG));
@@ -140,18 +220,42 @@ public class MixedTables {
     Table change;
     try {
       change = tableMetaStore.doAs(changeBuilder::create);
+      return change;
     } catch (RuntimeException e) {
       LOG.warn("Create base store failed for reason: " + e.getMessage());
       tableMetaStore.doAs(() -> icebergCatalog.dropTable(baseIdentifier, true));
       throw e;
     }
-    BaseTable baseStore =
-        new BasicKeyedTable.BaseInternalTable(
-            identifier, useArcticTableOperation(base, io), io, catalogProperties);
-    ChangeTable changeStore =
-        new BasicKeyedTable.ChangeInternalTable(
-            identifier, useArcticTableOperation(change, io), io, catalogProperties);
-    return new BasicKeyedTable(keySpec, baseStore, changeStore);
+  }
+
+  /**
+   * drop a mixed-format table
+   * @param table - mixed table
+   * @param purge - purge data when drop table
+   * @return - true if table was deleted successfully.
+   */
+  public boolean dropTable(ArcticTable table, boolean purge) {
+    UnkeyedTable base = table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
+    boolean deleted = dropBaseStore(TableIdentifier.of(base.id().getDatabase(), base.id().getTableName()), purge);
+    boolean changeDeleted = false;
+    if (table.isKeyedTable()) {
+      try {
+        changeDeleted =
+            dropChangeStore(parseChangeIdentifier(base.asUnkeyedTable()), purge);
+        return deleted && changeDeleted;
+      } catch (Exception e) {
+        // pass
+      }
+    }
+    return deleted;
+  }
+
+  protected boolean dropBaseStore(TableIdentifier tableStoreIdentifier, boolean purge) {
+    return tableMetaStore.doAs(() -> icebergCatalog.dropTable(tableStoreIdentifier, purge));
+  }
+
+  protected boolean dropChangeStore(TableIdentifier changStoreIdentifier, boolean purge) {
+    return tableMetaStore.doAs(() -> icebergCatalog.dropTable(changStoreIdentifier, purge));
   }
 
   private Table loadChangeStore(Table base) {

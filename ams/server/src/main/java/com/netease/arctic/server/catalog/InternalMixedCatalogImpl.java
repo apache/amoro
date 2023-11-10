@@ -72,12 +72,6 @@ public class InternalMixedCatalogImpl extends InternalIcebergCatalogImpl {
     return new MixedTable(mixedIcebergTable, TableFormat.MIXED_ICEBERG);
   }
 
-  @Override
-  protected boolean isStageCreate(TableMetadata metadata) {
-    return StringUtils.isNotEmpty(metadata.getPrimaryKey())
-        && StringUtils.isEmpty(metadata.getChangeLocation());
-  }
-
   protected BaseTable loadChangeStore(ArcticFileIO fileIO, TableMetadata tableMetadata) {
     TableOperations ops =
         InternalTableUtil.newTableOperations(getMetadata(), tableMetadata, fileIO, true);

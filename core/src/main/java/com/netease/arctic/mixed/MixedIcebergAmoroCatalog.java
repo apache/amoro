@@ -20,12 +20,15 @@ package com.netease.arctic.mixed;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
+import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.CatalogUtil;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -43,10 +46,7 @@ public class MixedIcebergAmoroCatalog extends BasicMixedIcebergCatalog {
 
   @Override
   protected Catalog buildIcebergCatalog(
-      String name, String metastoreType, Map<String, String> properties, Configuration hadoopConf) {
-    Preconditions.checkArgument(
-        CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(metastoreType),
-        this.getClass().getName() + " support internal catalog only.");
+      String name, Map<String, String> properties, Configuration hadoopConf) {
     Preconditions.checkNotNull(
         properties.containsKey(CatalogProperties.URI),
         "lack required properties: %s",
@@ -95,6 +95,23 @@ public class MixedIcebergAmoroCatalog extends BasicMixedIcebergCatalog {
           baseIdentifier.name()
               + MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR
               + MetaTableProperties.MIXED_FORMAT_CHANGE_STORE_SUFFIX);
+    }
+
+    @Override
+    protected Table createChangeStore(
+        TableIdentifier baseIdentifier,
+        TableIdentifier changeIdentifier,
+        Schema schema,
+        PartitionSpec partitionSpec,
+        PrimaryKeySpec keySpec,
+        Map<String, String> properties) {
+      return tableMetaStore.doAs(() -> icebergCatalog.loadTable(changeIdentifier));
+    }
+
+    @Override
+    protected boolean dropChangeStore(TableIdentifier changStoreIdentifier, boolean purge) {
+      // drop change store in AMS
+      return true;
     }
   }
 }
