@@ -195,7 +195,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     if (filterEqDelete) {
       bloomFilter =
           BloomFilter.create(
-              StructLikeFunnel.structLikeFunnel(),
+              StructLikeFunnel.structLikeFunnel(deleteSchema.asStruct()),
               combinedDataReader.rewrittenDataRecordCnt(),
               0.001);
       for (Record record : combinedDataReader.readIdentifierData(deleteIds)) {
