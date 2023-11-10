@@ -133,6 +133,46 @@ public class TestCatalog extends CatalogTestBase {
   }
 
   @Test
+  public void testComputeIndex() {
+    // if compute column before any physical column, will throw exception.
+    Assert.assertThrows(
+        org.apache.flink.table.api.TableException.class,
+        () ->
+            sql(
+                "CREATE TABLE "
+                    + CATALOG
+                    + "."
+                    + DB
+                    + "."
+                    + TABLE
+                    + " ("
+                    + " id INT,"
+                    + " compute_id as id+5 ,"
+                    + " proc as PROCTIME() ,"
+                    + " name STRING"
+                    + ") "
+                    + " WITH ("
+                    + " 'connector' = 'arctic'"
+                    + ")"));
+
+    // compute column must come after all the physical columns
+    sql(
+        "CREATE TABLE "
+            + CATALOG
+            + "."
+            + DB
+            + "."
+            + TABLE
+            + " ("
+            + " id INT,"
+            + " proc as PROCTIME() "
+            + ") "
+            + " WITH ("
+            + " 'connector' = 'arctic'"
+            + ")");
+  }
+
+  @Test
   public void testDDLWithVirtualColumn() throws IOException {
     // create arctic table with compute columns and watermark under arctic catalog
     // org.apache.iceberg.flink.TypeToFlinkType will convert Timestamp to Timestamp(6), so we cast
@@ -164,7 +204,7 @@ public class TestCatalog extends CatalogTestBase {
             .properties();
 
     // index for compute columns
-    int[] computedIndex = {3, 4, 5};
+    int[] computedIndex = {1, 2, 3};
     Arrays.stream(computedIndex)
         .forEach(
             x -> {
@@ -183,6 +223,9 @@ public class TestCatalog extends CatalogTestBase {
         properties.containsKey(compoundKey(FLINK_PREFIX, WATERMARK, WATERMARK_STRATEGY_EXPR)));
     Assert.assertTrue(
         properties.containsKey(compoundKey(FLINK_PREFIX, WATERMARK, WATERMARK_STRATEGY_DATA_TYPE)));
+
+    List<Row> result = sql("DESC " + CATALOG + "." + DB + "." + TABLE + "");
+    Assert.assertEquals(6, result.size());
   }
 
   @Test
@@ -260,26 +303,17 @@ public class TestCatalog extends CatalogTestBase {
         beforeExpr,
         amoroTable.properties().get(compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, 2, EXPR)));
 
-    // can't get table
-    testGetTable(false);
+    // property for expr do not match any columns in amoro, will throw exception.
+    Assert.assertThrows(
+        java.lang.IllegalStateException.class,
+        () -> sql("DESC " + CATALOG + "." + DB + "." + TABLE + ""));
     amoroTable
         .updateProperties()
         .set(compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, 2, EXPR), beforeExpr)
         .commit();
 
     // can get table normally
-    testGetTable(true);
-  }
-
-  private void testGetTable(boolean expected) {
-    boolean isGetTable = true;
-    try {
-      sql("DESC " + CATALOG + "." + DB + "." + TABLE + "");
-    } catch (RuntimeException e) {
-      e.printStackTrace();
-      isGetTable = false;
-    }
-    Assert.assertEquals(expected, isGetTable);
+    sql("DESC " + CATALOG + "." + DB + "." + TABLE + "");
   }
 
   @Test

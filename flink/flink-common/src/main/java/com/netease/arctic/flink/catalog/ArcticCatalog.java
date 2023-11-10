@@ -42,6 +42,9 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
+import org.apache.flink.table.api.TableColumn;
+import org.apache.flink.table.api.TableColumn.ComputedColumn;
+import org.apache.flink.table.api.TableColumn.PhysicalColumn;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.catalog.AbstractCatalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;
@@ -287,6 +290,7 @@ public class ArcticCatalog extends AbstractCatalog {
   public void createTable(ObjectPath tablePath, CatalogBaseTable table, boolean ignoreIfExists)
       throws CatalogException, TableAlreadyExistException {
     validateFlinkTable(table);
+    checkColumnOrder(table);
     createAmoroTable(tablePath, table, ignoreIfExists);
   }
 
@@ -604,6 +608,25 @@ public class ArcticCatalog extends AbstractCatalog {
     for (String key : partitionSpec.getPartitionSpec().keySet()) {
       if (!partitionKeys.contains(key)) {
         throw new PartitionSpecInvalidException(getName(), partitionKeys, tablePath, partitionSpec);
+      }
+    }
+  }
+
+  private void checkColumnOrder(CatalogBaseTable table) {
+    TableSchema schema = table.getSchema();
+    List<TableColumn> tableColumns = schema.getTableColumns();
+    int computeIndex = -1;
+    // find the index for compute column
+    for (int i = 0; i < tableColumns.size(); i++) {
+      if (tableColumns.get(i) instanceof ComputedColumn) {
+        computeIndex = i;
+        break;
+      }
+    }
+
+    for (int i = computeIndex + 1; computeIndex > -1 && i < tableColumns.size(); i++) {
+      if (tableColumns.get(i) instanceof PhysicalColumn) {
+        throw new IllegalStateException("compute column must come after all the physical columns");
       }
     }
   }

@@ -100,16 +100,10 @@ public class FlinkSchemaUtil {
     List<String> fieldNames = rowType.getFieldNames();
 
     // add computed columns
-    computeIndex.stream()
-        .map(index -> deserializeComputeColumn(tableProperties, index, fieldNames))
-        .forEach(builder::add);
-
-    // get computeColumn fieldName
-    computeIndex.stream()
-        .forEach(
-            index ->
-                fieldNames.add(
-                    tableProperties.get(compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, index, NAME))));
+    for (int index : computeIndex) {
+      builder.add(deserializeComputeColumn(tableProperties, index, fieldNames));
+      fieldNames.add(tableProperties.get(compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, index, NAME)));
+    }
 
     // add watermark
     if (isWatermarkValid(tableProperties)) {
@@ -277,17 +271,19 @@ public class FlinkSchemaUtil {
   private static Map<String, String> serializeComputeColumn(TableSchema schema) {
     Map<String, String> serialized = new HashMap<>();
     List<TableColumn> tableColumns = schema.getTableColumns();
-    // index in Flink TableSchema
-    for (int index = 0; index < tableColumns.size(); index++) {
-      TableColumn column = tableColumns.get(index);
+    // index in compute Column, starting from 1
+    int computeIndex = 1;
+    for (TableColumn column : tableColumns) {
       if (column instanceof ComputedColumn) {
-        serialized.put(compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, index, NAME), column.getName());
         serialized.put(
-            compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, index, DATA_TYPE),
+            compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, computeIndex, NAME), column.getName());
+        serialized.put(
+            compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, computeIndex, DATA_TYPE),
             column.getType().getLogicalType().asSerializableString());
         serialized.put(
-            compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, index, EXPR),
+            compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, computeIndex, EXPR),
             ((TableColumn.ComputedColumn) column).getExpression());
+        computeIndex++;
       }
     }
     return serialized;
@@ -354,7 +350,7 @@ public class FlinkSchemaUtil {
               Matcher matcher = COMPUTE_PATTERN.matcher(k);
               if (matcher.find()) {
                 int indexId = NumberUtils.toInt(matcher.group(1));
-                if (isComputeValid(tableProperties, indexId)) {
+                if (indexId > 0 && isComputeValid(tableProperties, indexId)) {
                   computedIndex.add(indexId);
                 }
               }
