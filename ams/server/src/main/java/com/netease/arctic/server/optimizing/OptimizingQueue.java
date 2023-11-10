@@ -135,7 +135,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
                       taskQueue.offer(taskRuntime);
                       break;
                     case FAILED:
-                      retryQueue.offer(taskRuntime);
+                      retryTask(taskRuntime, false);
                       break;
                   }
                 });
