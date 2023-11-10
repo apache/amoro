@@ -24,7 +24,12 @@ import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
 import com.netease.arctic.utils.map.StructLikeBaseMap;
 import com.netease.arctic.utils.map.StructLikeCollections;
-import org.apache.iceberg.*;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.FileContent;
+import org.apache.iceberg.MetadataColumns;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.avro.DataReader;
@@ -153,17 +158,12 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   }
 
   @Override
-  public CloseableIterable<Record> readIdentifierData(Set<Integer> identifierFieldIds) {
-    if (identifierFieldIds == null || identifierFieldIds.size() == 0) {
-      identifierFieldIds = tableSchema.identifierFieldIds();
-    }
-    Schema identifierSchema = TypeUtil.select(tableSchema, identifierFieldIds);
-
+  public CloseableIterable<Record> readIdentifierData(Schema deleteSchema) {
     return CloseableIterable.concat(
         CloseableIterable.transform(
             CloseableIterable.withNoopClose(
                 Arrays.stream(input.rewrittenDataFiles()).collect(Collectors.toList())),
-            s -> openFile(s, spec, identifierSchema)));
+            s -> openFile(s, spec, deleteSchema)));
   }
 
   @Override
@@ -332,7 +332,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected class GenericDeleteFilter extends CombinedDeleteFilter<Record> {
 
     public GenericDeleteFilter(
-        GenericCombinedIcebergDataReader combinedDataReader,
+        OptimizingDataReader optimizingDataReader,
         long rewrittenDataRecordCnt,
         ContentFile<?>[] deleteFiles,
         Set<String> positionPathSets,
@@ -340,7 +340,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
         StructLikeCollections structLikeCollections,
         boolean filterEqDelete) {
       super(
-          combinedDataReader,
+          optimizingDataReader,
           rewrittenDataRecordCnt,
           deleteFiles,
           positionPathSets,

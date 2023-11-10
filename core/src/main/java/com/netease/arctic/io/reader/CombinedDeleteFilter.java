@@ -20,10 +20,16 @@ package com.netease.arctic.io.reader;
 
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.CloseablePredicate;
+import com.netease.arctic.optimizing.OptimizingDataReader;
 import com.netease.arctic.utils.ContentFiles;
 import com.netease.arctic.utils.map.StructLikeBaseMap;
 import com.netease.arctic.utils.map.StructLikeCollections;
-import org.apache.iceberg.*;
+import org.apache.iceberg.Accessor;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.MetadataColumns;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
@@ -49,7 +55,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -86,20 +97,20 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
   private final Schema deleteSchema;
 
   private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
-  private final GenericCombinedIcebergDataReader combinedDataReader;
+  private final OptimizingDataReader optimizingDataReader;
 
   private final long rewrittenDataRecordCnt;
   private final boolean filterEqDelete;
 
   protected CombinedDeleteFilter(
-      GenericCombinedIcebergDataReader combinedDataReader,
+      OptimizingDataReader optimizingDataReader,
       long rewrittenDataRecordCnt,
       ContentFile<?>[] deleteFiles,
       Set<String> positionPathSets,
       Schema tableSchema,
       StructLikeCollections structLikeCollections,
       boolean filterEqDelete) {
-    this.combinedDataReader = combinedDataReader;
+    this.optimizingDataReader = optimizingDataReader;
     this.rewrittenDataRecordCnt = rewrittenDataRecordCnt;
     ImmutableList.Builder<DeleteFile> posDeleteBuilder = ImmutableList.builder();
     ImmutableList.Builder<DeleteFile> eqDeleteBuilder = ImmutableList.builder();
@@ -201,7 +212,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
               StructLikeFunnel.structLikeFunnel(deleteSchema.asStruct()),
               rewrittenDataRecordCnt,
               0.001);
-      for (Record record : combinedDataReader.readIdentifierData(deleteIds)) {
+      for (Record record : optimizingDataReader.readIdentifierData(deleteSchema)) {
         StructLike identifier = internalRecordWrapper.copyFor(record);
         bloomFilter.put(identifier);
       }

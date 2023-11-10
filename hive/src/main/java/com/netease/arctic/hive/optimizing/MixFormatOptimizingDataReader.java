@@ -11,17 +11,18 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.map.StructLikeCollections;
-import org.apache.iceberg.*;
+import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.MetadataColumns;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
-import org.apache.iceberg.types.TypeUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -55,12 +56,8 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
   }
 
   @Override
-  public CloseableIterable<Record> readIdentifierData(Set<Integer> identifierFieldIds) {
-    if (identifierFieldIds == null || identifierFieldIds.size() == 0) {
-      identifierFieldIds = table.schema().identifierFieldIds();
-    }
-    Schema schema = TypeUtil.select(table.schema(), identifierFieldIds);
-    AdaptHiveGenericKeyedDataReader reader = arcticDataReader(schema);
+  public CloseableIterable<Record> readIdentifierData(Schema deleteSchema) {
+    AdaptHiveGenericKeyedDataReader reader = arcticDataReader(deleteSchema);
 
     // Change returned value by readIdentifierData from Iterator to Iterable in future
     CloseableIterator<Record> closeableIterator =
