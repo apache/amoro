@@ -18,7 +18,6 @@
 
 package com.netease.arctic.optimizing;
 
-import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 
@@ -32,12 +31,6 @@ public interface OptimizingDataReader extends Closeable {
    * MOR.
    */
   CloseableIterable<Record> readData();
-
-  /**
-   * Read the identifier(primary key) of the optimization task data, Used to filter invalid
-   * eq-delete data. If a task contains a delete operation, then the read result is MOR.
-   */
-  CloseableIterable<Record> readIdentifierData(Schema deleteSchema);
 
   /**
    * Reading data that needs to be deleted during MOR. If there is no delete file, then the result

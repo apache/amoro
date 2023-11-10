@@ -20,7 +20,6 @@ package com.netease.arctic.io.reader;
 
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.CloseablePredicate;
-import com.netease.arctic.optimizing.OptimizingDataReader;
 import com.netease.arctic.utils.ContentFiles;
 import com.netease.arctic.utils.map.StructLikeBaseMap;
 import com.netease.arctic.utils.map.StructLikeCollections;
@@ -97,20 +96,17 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
   private final Schema deleteSchema;
 
   private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
-  private final OptimizingDataReader optimizingDataReader;
 
   private final long rewrittenDataRecordCnt;
   private final boolean filterEqDelete;
 
   protected CombinedDeleteFilter(
-      OptimizingDataReader optimizingDataReader,
       long rewrittenDataRecordCnt,
       ContentFile<?>[] deleteFiles,
       Set<String> positionPathSets,
       Schema tableSchema,
       StructLikeCollections structLikeCollections,
       boolean filterEqDelete) {
-    this.optimizingDataReader = optimizingDataReader;
     this.rewrittenDataRecordCnt = rewrittenDataRecordCnt;
     ImmutableList.Builder<DeleteFile> posDeleteBuilder = ImmutableList.builder();
     ImmutableList.Builder<DeleteFile> eqDeleteBuilder = ImmutableList.builder();
@@ -212,7 +208,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
               StructLikeFunnel.structLikeFunnel(deleteSchema.asStruct()),
               rewrittenDataRecordCnt,
               0.001);
-      for (Record record : optimizingDataReader.readIdentifierData(deleteSchema)) {
+      for (Record record : readIdentifierData(deleteSchema)) {
         StructLike identifier = internalRecordWrapper.copyFor(record);
         bloomFilter.put(identifier);
       }
@@ -271,6 +267,8 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     this.eqPredicate = closeablePredicate;
     return isInDeleteSet;
   }
+
+  abstract CloseableIterable<Record> readIdentifierData(Schema deleteSchema);
 
   private CloseableIterable<StructForDelete<T>> applyEqDeletes(
       CloseableIterable<StructForDelete<T>> records) {

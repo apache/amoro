@@ -103,7 +103,6 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
 
     this.deleteFilter =
         new GenericDeleteFilter(
-            this,
             rewrittenDataRecordCnt,
             deleteFiles,
             positionPathSet,
@@ -155,15 +154,6 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
         CloseableIterable.transform(
             deleteFilter.filter(structForDeleteCloseableIterable), StructForDelete::recover);
     return iterable;
-  }
-
-  @Override
-  public CloseableIterable<Record> readIdentifierData(Schema deleteSchema) {
-    return CloseableIterable.concat(
-        CloseableIterable.transform(
-            CloseableIterable.withNoopClose(
-                Arrays.stream(input.rewrittenDataFiles()).collect(Collectors.toList())),
-            s -> openFile(s, spec, deleteSchema)));
   }
 
   @Override
@@ -332,7 +322,6 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected class GenericDeleteFilter extends CombinedDeleteFilter<Record> {
 
     public GenericDeleteFilter(
-        OptimizingDataReader optimizingDataReader,
         long rewrittenDataRecordCnt,
         ContentFile<?>[] deleteFiles,
         Set<String> positionPathSets,
@@ -340,7 +329,6 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
         StructLikeCollections structLikeCollections,
         boolean filterEqDelete) {
       super(
-          optimizingDataReader,
           rewrittenDataRecordCnt,
           deleteFiles,
           positionPathSets,
@@ -357,6 +345,15 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     @Override
     protected ArcticFileIO getArcticFileIo() {
       return fileIO;
+    }
+
+    @Override
+    protected CloseableIterable<Record> readIdentifierData(Schema deleteSchema) {
+      return CloseableIterable.concat(
+          CloseableIterable.transform(
+              CloseableIterable.withNoopClose(
+                  Arrays.stream(input.rewrittenDataFiles()).collect(Collectors.toList())),
+              s -> openFile(s, spec, deleteSchema)));
     }
   }
 }

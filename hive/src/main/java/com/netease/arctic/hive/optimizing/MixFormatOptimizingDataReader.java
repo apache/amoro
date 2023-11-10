@@ -56,16 +56,6 @@ public class MixFormatOptimizingDataReader implements OptimizingDataReader {
   }
 
   @Override
-  public CloseableIterable<Record> readIdentifierData(Schema deleteSchema) {
-    AdaptHiveGenericKeyedDataReader reader = arcticDataReader(deleteSchema);
-
-    // Change returned value by readIdentifierData from Iterator to Iterable in future
-    CloseableIterator<Record> closeableIterator =
-        reader.readData(nodeFileScanTask(input.rewrittenDataFilesForMixed()));
-    return wrapIterator2Iterable(closeableIterator);
-  }
-
-  @Override
   public CloseableIterable<Record> readDeletedData() {
     Schema schema =
         new Schema(
