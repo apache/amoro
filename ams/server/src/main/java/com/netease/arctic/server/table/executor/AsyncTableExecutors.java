@@ -47,9 +47,13 @@ public class AsyncTableExecutors {
             tableManager,
             conf.getInteger(ArcticManagementConf.REFRESH_TABLES_THREAD_COUNT),
             conf.getLong(ArcticManagementConf.REFRESH_TABLES_INTERVAL));
-    this.tagsAutoCreatingExecutor =
-        new TagsAutoCreatingExecutor(
-            tableManager, conf.getInteger(ArcticManagementConf.CHECK_TAGS_THREAD_COUNT));
+    if (conf.getBoolean(ArcticManagementConf.AUTO_CREATE_TAGS_ENABLED)) {
+      this.tagsAutoCreatingExecutor =
+          new TagsAutoCreatingExecutor(
+              tableManager,
+              conf.getInteger(ArcticManagementConf.AUTO_CREATE_TAGS_THREAD_COUNT),
+              conf.getLong(ArcticManagementConf.AUTO_CREATE_TAGS_INTERVAL));
+    }
     if (conf.getBoolean(ArcticManagementConf.DATA_EXPIRATION_ENABLED)) {
       this.dataExpiringExecutor =
           new DataExpiringExecutor(

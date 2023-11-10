@@ -31,15 +31,16 @@ import org.slf4j.LoggerFactory;
 public class TagsAutoCreatingExecutor extends BaseTableExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(TagsAutoCreatingExecutor.class);
 
-  private static final long INTERVAL = 60 * 1000L; // 1min
+  private final long interval;
 
-  protected TagsAutoCreatingExecutor(TableManager tableManager, int poolSize) {
+  protected TagsAutoCreatingExecutor(TableManager tableManager, int poolSize, long interval) {
     super(tableManager, poolSize);
+    this.interval = interval;
   }
 
   @Override
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return INTERVAL;
+    return interval;
   }
 
   @Override
