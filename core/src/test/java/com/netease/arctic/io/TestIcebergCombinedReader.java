@@ -262,7 +262,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
   }
 
   @Test
-  public void readDataWithEqDelete() throws IOException {
+  public void readDataEnableFilterEqDelete() throws IOException {
     GenericCombinedIcebergDataReader dataReader =
         new GenericCombinedIcebergDataReader(
             getArcticTable().io(),
@@ -274,6 +274,9 @@ public class TestIcebergCombinedReader extends TableTestBase {
             false,
             null,
             filterEqDeleteScanTask);
+
+    Assert.assertTrue(dataReader.filterEqDelete());
+
     try (CloseableIterable<Record> records = dataReader.readData()) {
       Assert.assertEquals(1, Iterables.size(records));
     }
