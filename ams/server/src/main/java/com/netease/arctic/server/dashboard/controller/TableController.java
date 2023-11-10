@@ -35,11 +35,13 @@ import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.HiveTableInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
+import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TableMeta;
 import com.netease.arctic.server.dashboard.model.TableOperation;
+import com.netease.arctic.server.dashboard.model.TagOrBranchInfo;
 import com.netease.arctic.server.dashboard.model.UpgradeHiveMeta;
 import com.netease.arctic.server.dashboard.model.UpgradeRunningInfo;
 import com.netease.arctic.server.dashboard.model.UpgradeStatus;
@@ -286,6 +288,35 @@ public class TableController {
   }
 
   /**
+   * Get tasks of optimizing process.
+   *
+   * @param ctx - context for handling the request and response
+   */
+  public void getOptimizingProcessTasks(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    String processId = ctx.pathParam("processId");
+    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
+    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+
+    int offset = (page - 1) * pageSize;
+    int limit = pageSize;
+    ServerCatalog serverCatalog = tableService.getServerCatalog(catalog);
+    Preconditions.checkArgument(offset >= 0, "offset[%s] must >= 0", offset);
+    Preconditions.checkArgument(limit >= 0, "limit[%s] must >= 0", limit);
+    Preconditions.checkState(serverCatalog.exist(db, table), "no such table");
+
+    TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
+    List<OptimizingTaskInfo> optimizingTaskInfos =
+        tableDescriptor.getOptimizingProcessTaskInfos(
+            tableIdentifier.buildTableIdentifier(), Long.parseLong(processId));
+
+    PageResult<OptimizingTaskInfo> pageResult = PageResult.of(optimizingTaskInfos, offset, limit);
+    ctx.json(OkResponse.of(pageResult));
+  }
+
+  /**
    * get list of transactions.
    *
    * @param ctx - context for handling the request and response
@@ -489,6 +520,34 @@ public class TableController {
 
     String signCal = CommonUtil.generateTablePageToken(catalog, db, table);
     ctx.json(OkResponse.of(signCal));
+  }
+
+  public void getTableTags(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String database = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
+    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    List<TagOrBranchInfo> partitionBaseInfos =
+        tableDescriptor.getTableTags(
+            TableIdentifier.of(catalog, database, table).buildTableIdentifier());
+    int offset = (page - 1) * pageSize;
+    PageResult<TagOrBranchInfo> amsPageResult = PageResult.of(partitionBaseInfos, offset, pageSize);
+    ctx.json(OkResponse.of(amsPageResult));
+  }
+
+  public void getTableBranchs(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String database = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
+    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    List<TagOrBranchInfo> partitionBaseInfos =
+        tableDescriptor.getTableBranchs(
+            TableIdentifier.of(catalog, database, table).buildTableIdentifier());
+    int offset = (page - 1) * pageSize;
+    PageResult<TagOrBranchInfo> amsPageResult = PageResult.of(partitionBaseInfos, offset, pageSize);
+    ctx.json(OkResponse.of(amsPageResult));
   }
 
   private List<AMSColumnInfo> transformHiveSchemaToAMSColumnInfo(List<FieldSchema> fields) {

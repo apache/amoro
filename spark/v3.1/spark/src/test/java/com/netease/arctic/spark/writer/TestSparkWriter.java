@@ -5,6 +5,7 @@ import static com.netease.arctic.table.TableProperties.CHANGE_FILE_FORMAT;
 import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
 
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.spark.io.TaskWriters;
@@ -14,7 +15,6 @@ import com.netease.arctic.spark.test.utils.RecordGenerator;
 import com.netease.arctic.spark.test.utils.TestTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Files;
@@ -201,7 +201,7 @@ public class TestSparkWriter extends SparkTableTestBase {
                 .collect(Collectors.toList()));
     Set<InternalRow> result = new HashSet<>();
     Iterators.addAll(result, concat.iterator());
-    Assertions.assertEquals(result, records.stream().collect(Collectors.toSet()));
+    Assertions.assertEquals(result, new HashSet<>(records));
   }
 
   private CloseableIterable<InternalRow> readParquet(Schema schema, String path) {
@@ -212,8 +212,7 @@ public class TestSparkWriter extends SparkTableTestBase {
                 fileSchema -> SparkParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
             .caseSensitive(false);
 
-    CloseableIterable<InternalRow> iterable = builder.build();
-    return iterable;
+    return builder.build();
   }
 
   private CloseableIterable<InternalRow> readOrc(Schema schema, String path) {
@@ -223,8 +222,7 @@ public class TestSparkWriter extends SparkTableTestBase {
             .createReaderFunc(fileSchema -> new SparkOrcReader(schema, fileSchema, new HashMap<>()))
             .caseSensitive(false);
 
-    CloseableIterable<InternalRow> iterable = builder.build();
-    return iterable;
+    return builder.build();
   }
 
   private InternalRow geneRowData() {
@@ -245,7 +243,7 @@ public class TestSparkWriter extends SparkTableTestBase {
             schema,
             builder ->
                 builder.withProperty(
-                    TableProperties.HIVE_CONSISTENT_WRITE_ENABLED, enableConsistentWrite + ""));
+                    HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED, enableConsistentWrite + ""));
     StructType dsSchema = SparkSchemaUtil.convert(schema);
     List<Record> records = RecordGenerator.buildFor(schema).build().records(10);
     try (TaskWriter<InternalRow> writer =

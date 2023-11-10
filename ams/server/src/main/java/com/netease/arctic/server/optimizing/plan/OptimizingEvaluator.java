@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.optimizing.scan.IcebergTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
@@ -29,7 +30,6 @@ import com.netease.arctic.server.table.TableSnapshot;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TablePropertyUtil;
-import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.CloseableIterable;
@@ -73,7 +73,7 @@ public class OptimizingEvaluator {
   protected void initEvaluator() {
     long startTime = System.currentTimeMillis();
     TableFileScanHelper tableFileScanHelper;
-    if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
+    if (TableFormat.ICEBERG == arcticTable.format()) {
       tableFileScanHelper =
           new IcebergTableFileScanHelper(
               arcticTable.asUnkeyedTable(), currentSnapshot.snapshotId());
@@ -133,7 +133,7 @@ public class OptimizingEvaluator {
 
   protected PartitionEvaluator buildEvaluator(String partitionPath) {
     Map<String, String> partitionProperties = partitionProperties(partitionPath);
-    if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
+    if (TableFormat.ICEBERG == arcticTable.format()) {
       return new CommonPartitionEvaluator(
           tableRuntime, partitionPath, partitionProperties, System.currentTimeMillis());
     } else {

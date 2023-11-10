@@ -187,6 +187,9 @@ public class DashboardServer {
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
                 tableController::getOptimizingProcesses);
             get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/tasks",
+                tableController::getOptimizingProcessTasks);
+            get(
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
                 tableController::getTableTransactions);
             get(
@@ -204,6 +207,13 @@ public class DashboardServer {
             get("/catalogs/{catalog}/databases/{db}/tables", tableController::getTableList);
             get("/catalogs/{catalog}/databases", tableController::getDatabaseList);
             get("/catalogs", tableController::getCatalogs);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/tags",
+                tableController::getTableTags);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
+                tableController::getTableBranchs);
+
             // catalog controller
             post("/catalogs", catalogController::createCatalog);
             // make sure types is before
@@ -291,6 +301,9 @@ public class DashboardServer {
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
                 tableController::getOptimizingProcesses);
             get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/tasks",
+                tableController::getOptimizingProcessTasks);
+            get(
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
                 tableController::getTableTransactions);
             get(
@@ -311,6 +324,12 @@ public class DashboardServer {
             get("/catalogs/{catalog}/databases/{db}/tables", tableController::getTableList);
             get("/catalogs/{catalog}/databases", tableController::getDatabaseList);
             get("/catalogs", tableController::getCatalogs);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/tags",
+                tableController::getTableTags);
+            get(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
+                tableController::getTableBranchs);
 
             // optimize controller
             get(

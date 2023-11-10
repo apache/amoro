@@ -2,29 +2,33 @@ package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.MixedTables;
-import com.netease.arctic.formats.mixed.MixedIcebergTable;
+import com.netease.arctic.formats.mixed.MixedTable;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.TableMetadata;
+import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.utils.CatalogUtil;
+
+import java.util.Map;
 
 public class InternalMixedCatalogImpl extends InternalCatalog {
 
-  protected final MixedTables tables;
+  protected MixedTables tables;
 
   protected InternalMixedCatalogImpl(CatalogMeta metadata) {
     super(metadata);
-    this.tables = new MixedTables(metadata);
+    this.tables = newTables(metadata.getCatalogProperties(), CatalogUtil.buildMetaStore(metadata));
   }
 
-  protected InternalMixedCatalogImpl(CatalogMeta metadata, MixedTables tables) {
-    super(metadata);
-    this.tables = tables;
+  protected MixedTables newTables(Map<String, String> catalogProperties, TableMetaStore metaStore) {
+    return new MixedTables(catalogProperties, metaStore);
   }
 
   @Override
   public void updateMetadata(CatalogMeta metadata) {
     super.updateMetadata(metadata);
-    this.tables.refreshCatalogMeta(getMetadata());
+    this.tables = newTables(metadata.getCatalogProperties(), CatalogUtil.buildMetaStore(metadata));
   }
 
   @Override
@@ -37,7 +41,8 @@ public class InternalMixedCatalogImpl extends InternalCatalog {
     if (tableMetadata == null) {
       return null;
     }
-    return new MixedIcebergTable(tables.loadTableByMeta(tableMetadata.buildTableMeta()));
+    return new MixedTable(
+        tables.loadTableByMeta(tableMetadata.buildTableMeta()), TableFormat.MIXED_ICEBERG);
   }
 
   protected MixedTables tables() {

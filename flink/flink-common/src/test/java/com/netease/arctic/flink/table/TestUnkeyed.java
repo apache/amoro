@@ -137,7 +137,7 @@ public class TestUnkeyed extends FlinkTestBase {
       db = DB;
     }
     super.before();
-    arcticCatalog = getCatalog();
+    arcticCatalog = getMixedFormatCatalog();
     topic = String.join(".", catalog, db, TABLE);
     super.config();
   }
