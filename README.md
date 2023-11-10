@@ -57,13 +57,14 @@ Here is the architecture diagram of Amoro:
 ## Supported table formats 
 
 Amoro can manage tables of different table formats, similar to how MySQL/ClickHouse can choose different storage engines.
-Amoro meets diverse user needs by using different table formats. Currently, Amoro supports three table formats:
+Amoro meets diverse user needs by using different table formats. Currently, Amoro supports four table formats:
 
 * Iceberg format: means using the native table format of the Apache Iceberg, which has all the features and characteristics of Iceberg.
 * Mixed Iceberg format: built on top of Iceberg format, which can accelerate data processing using LogStore 
   and provides more efficient query performance and streaming read capability in CDC scenarios.
 * Mixed Hive format: has the same features as the Mixed Iceberg tables but is compatible with a Hive table.
   Support upgrading Hive tables to Mixed Hive tables, and allow Hive's native read and write methods after upgrading.
+* Paimon format: supports displaying metadata information in the Paimon format, including Schema, Options, Files, Snapshots, DDLs, and Compaction information.
 
 ## Supported engines
 
