@@ -289,7 +289,7 @@ public class ArcticCatalog extends AbstractCatalog {
   public void createTable(ObjectPath tablePath, CatalogBaseTable table, boolean ignoreIfExists)
       throws CatalogException, TableAlreadyExistException {
     validateFlinkTable(table);
-    checkColumnOrder(table);
+    validateColumnOrder(table);
     createAmoroTable(tablePath, table, ignoreIfExists);
   }
 
@@ -611,7 +611,7 @@ public class ArcticCatalog extends AbstractCatalog {
     }
   }
 
-  private void checkColumnOrder(CatalogBaseTable table) {
+  private void validateColumnOrder(CatalogBaseTable table) {
     TableSchema schema = table.getSchema();
     List<TableColumn> tableColumns = schema.getTableColumns();
     int computeIndex = -1;
