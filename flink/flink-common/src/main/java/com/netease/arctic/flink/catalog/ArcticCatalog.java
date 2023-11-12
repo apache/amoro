@@ -53,7 +53,6 @@ import org.apache.flink.table.catalog.CatalogFunction;
 import org.apache.flink.table.catalog.CatalogPartition;
 import org.apache.flink.table.catalog.CatalogPartitionSpec;
 import org.apache.flink.table.catalog.CatalogTable;
-import org.apache.flink.table.catalog.CatalogTableImpl;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.table.catalog.exceptions.DatabaseAlreadyExistException;
@@ -197,11 +196,11 @@ public class ArcticCatalog extends AbstractCatalog {
     fillTableMetaPropertiesIfLookupLike(arcticProperties, tableIdentifier);
 
     List<String> partitionKeys = toPartitionKeys(table.spec(), table.schema());
-    return new CatalogTableImpl(
-        toSchema(arcticSchema, ArcticUtils.getPrimaryKeys(table), arcticProperties),
+    return CatalogTable.of(
+        toSchema(arcticSchema, ArcticUtils.getPrimaryKeys(table), arcticProperties).toSchema(),
+        null,
         partitionKeys,
-        arcticProperties,
-        null);
+        arcticProperties);
   }
 
   /**
