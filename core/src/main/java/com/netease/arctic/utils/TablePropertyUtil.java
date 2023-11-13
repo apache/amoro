@@ -31,7 +31,6 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.GenericRecord;
-import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
@@ -167,13 +166,28 @@ public class TablePropertyUtil {
     return TableIdentifier.parse(change);
   }
 
+  public static PrimaryKeySpec parsePrimaryKeySpec(
+      Schema schema, Map<String, String> tableProperties) {
+    if (tableProperties.containsKey(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS)) {
+      return PrimaryKeySpec.fromDescription(
+          schema, tableProperties.get(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS));
+    }
+    return PrimaryKeySpec.noPrimaryKey();
+  }
+
+  /**
+   * common properties for mixed format.
+   *
+   * @param keySpec primary key spec
+   * @param format table format
+   * @return mixed-format table properties.
+   */
   public static Map<String, String> commonMixedProperties(
       PrimaryKeySpec keySpec, TableFormat format) {
     Map<String, String> properties = Maps.newHashMap();
     properties.put(TableProperties.TABLE_FORMAT, format.name());
     if (keySpec.primaryKeyExisted()) {
-      String fields = Joiner.on(",").join(keySpec.fieldNames());
-      properties.put(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS, fields);
+      properties.put(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS, keySpec.description());
     }
 
     properties.put(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
@@ -183,6 +197,14 @@ public class TablePropertyUtil {
     return properties;
   }
 
+  /**
+   * generate properties for base store
+   *
+   * @param keySpec key spec,
+   * @param changeIdentifier change store identifier.
+   * @param format table format
+   * @return base store table properties.
+   */
   public static Map<String, String> baseStoreProperties(
       PrimaryKeySpec keySpec, TableIdentifier changeIdentifier, TableFormat format) {
     Map<String, String> properties = commonMixedProperties(keySpec, format);
@@ -195,6 +217,13 @@ public class TablePropertyUtil {
     return properties;
   }
 
+  /**
+   * generate properties for change store
+   *
+   * @param keySpec key spec,
+   * @param format table format
+   * @return change store table properties.
+   */
   public static Map<String, String> changeStoreProperties(
       PrimaryKeySpec keySpec, TableFormat format) {
     Map<String, String> properties = commonMixedProperties(keySpec, format);

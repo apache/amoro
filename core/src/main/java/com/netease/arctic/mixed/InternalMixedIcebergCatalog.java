@@ -39,9 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Mixed-iceberg format catalog base on internal catalog.
- */
+/** Mixed-iceberg format catalog base on internal catalog. */
 public class InternalMixedIcebergCatalog extends BasicMixedIcebergCatalog {
 
   public static final String CHANGE_STORE_SEPARATOR = "@";
@@ -97,9 +95,7 @@ public class InternalMixedIcebergCatalog extends BasicMixedIcebergCatalog {
     protected TableIdentifier generateChangeStoreIdentifier(TableIdentifier baseIdentifier) {
       return TableIdentifier.of(
           baseIdentifier.namespace(),
-          baseIdentifier.name()
-              + CHANGE_STORE_SEPARATOR
-              + CHANGE_STORE_NAME);
+          baseIdentifier.name() + CHANGE_STORE_SEPARATOR + CHANGE_STORE_NAME);
     }
 
     @Override

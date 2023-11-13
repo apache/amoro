@@ -97,14 +97,15 @@ public class MixedTables {
   /**
    * load a mixed-format table.
    *
-   * @param base            - base store
+   * @param base - base store
    * @param tableIdentifier mixed-format table identifier.
    * @return mixed format table instance.
    */
   public ArcticTable loadTable(
       Table base, com.netease.arctic.table.TableIdentifier tableIdentifier) {
     ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
-    PrimaryKeySpec keySpec = PrimaryKeySpec.parse(base.schema(), base.properties());
+    PrimaryKeySpec keySpec =
+        TablePropertyUtil.parsePrimaryKeySpec(base.schema(), base.properties());
     if (!keySpec.primaryKeyExisted()) {
       return new BasicUnkeyedTable(
           tableIdentifier, useArcticTableOperation(base, io), io, catalogProperties);
@@ -125,11 +126,11 @@ public class MixedTables {
   /**
    * create a mixed iceberg table
    *
-   * @param identifier    mixed catalog table identifier.
-   * @param schema        table schema
+   * @param identifier mixed catalog table identifier.
+   * @param schema table schema
    * @param partitionSpec partition spec
-   * @param keySpec       key spec
-   * @param properties    table properties
+   * @param keySpec key spec
+   * @param properties table properties
    * @return mixed format table.
    */
   public ArcticTable createTable(
@@ -149,7 +150,9 @@ public class MixedTables {
           identifier, useArcticTableOperation(base, io), io, catalogProperties);
     }
 
-    Table change = createChangeStore(baseIdentifier, changeIdentifier, schema, partitionSpec, keySpec, properties);
+    Table change =
+        createChangeStore(
+            baseIdentifier, changeIdentifier, schema, partitionSpec, keySpec, properties);
     BaseTable baseStore =
         new BasicKeyedTable.BaseInternalTable(
             identifier, useArcticTableOperation(base, io), io, catalogProperties);
@@ -163,14 +166,15 @@ public class MixedTables {
    * create base store for mixed-format
    *
    * @param baseIdentifier base store identifier
-   * @param schema         table schema
-   * @param partitionSpec  partition schema
-   * @param keySpec        key spec
-   * @param properties     table properties
+   * @param schema table schema
+   * @param partitionSpec partition schema
+   * @param keySpec key spec
+   * @param properties table properties
    * @return base store iceberg table.
    */
   protected Table createBaseStore(
-      TableIdentifier baseIdentifier, Schema schema,
+      TableIdentifier baseIdentifier,
+      Schema schema,
       PartitionSpec partitionSpec,
       PrimaryKeySpec keySpec,
       Map<String, String> properties) {
@@ -194,12 +198,12 @@ public class MixedTables {
   /**
    * create change store for mixed-format
    *
-   * @param baseIdentifier   base store identifier
+   * @param baseIdentifier base store identifier
    * @param changeIdentifier change store identifier
-   * @param schema           table schema
-   * @param partitionSpec    partition spec
-   * @param keySpec          key spec
-   * @param properties       table properties
+   * @param schema table schema
+   * @param partitionSpec partition spec
+   * @param keySpec key spec
+   * @param properties table properties
    * @return change table store.
    */
   protected Table createChangeStore(
@@ -230,18 +234,20 @@ public class MixedTables {
 
   /**
    * drop a mixed-format table
+   *
    * @param table - mixed table
    * @param purge - purge data when drop table
    * @return - true if table was deleted successfully.
    */
   public boolean dropTable(ArcticTable table, boolean purge) {
-    UnkeyedTable base = table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
-    boolean deleted = dropBaseStore(TableIdentifier.of(base.id().getDatabase(), base.id().getTableName()), purge);
+    UnkeyedTable base =
+        table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
+    boolean deleted =
+        dropBaseStore(TableIdentifier.of(base.id().getDatabase(), base.id().getTableName()), purge);
     boolean changeDeleted = false;
     if (table.isKeyedTable()) {
       try {
-        changeDeleted =
-            dropChangeStore(parseChangeIdentifier(base.asUnkeyedTable()), purge);
+        changeDeleted = dropChangeStore(parseChangeIdentifier(base.asUnkeyedTable()), purge);
         return deleted && changeDeleted;
       } catch (Exception e) {
         // pass

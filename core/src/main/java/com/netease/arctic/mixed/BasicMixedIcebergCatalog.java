@@ -33,6 +33,7 @@ import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -128,7 +129,8 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
       if (tables.isBaseStore(table)) {
         mixedTables.add(TableIdentifier.of(name(), database, identifier.name()));
         visited.add(identifier);
-        PrimaryKeySpec keySpec = PrimaryKeySpec.parse(table.schema(), table.properties());
+        PrimaryKeySpec keySpec =
+            TablePropertyUtil.parsePrimaryKeySpec(table.schema(), table.properties());
         if (keySpec.primaryKeyExisted()) {
           visited.add(tables.parseChangeIdentifier(table));
         }
