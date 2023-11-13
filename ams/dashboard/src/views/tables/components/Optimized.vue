@@ -1,5 +1,6 @@
 <template>
   <div class="table-optinize">
+    <a-button type="primary" v-model:disabled="buttonDisabled" class="g-mb-16" @click="cancel">{{ t("cancel") }}</a-button>
     <a-table
       rowKey="processId"
       :columns="columns"
@@ -7,7 +8,6 @@
       :pagination="pagination"
       @change="change"
       :loading="loading"
-
     >
       <template #headerCell="{ column }">
         <template v-if="column.dataIndex === 'tasks'">
@@ -44,7 +44,7 @@ import { onMounted, reactive, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'
 import { IColumns } from '@/types/common.type'
-import { getOptimizes } from '@/services/table.service'
+import { getOptimizes, cancelOptimizingProcess } from '@/services/table.service'
 import { useRoute } from 'vue-router'
 import { QuestionCircleOutlined } from '@ant-design/icons-vue'
 import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
@@ -74,6 +74,7 @@ const columns: IColumns[] = shallowReactive([
 const dataSource = reactive<any[]>([])
 
 const loading = ref<boolean>(false)
+const buttonDisabled = ref(true)
 const pagination = reactive(usePagination())
 const route = useRoute()
 const query = route.query
@@ -97,6 +98,9 @@ async function getTableInfo() {
     pagination.total = total
     dataSource.push(...[...list || []].map(item => {
       const { inputFiles = {}, outputFiles = {} } = item
+      if (item.status === 'RUNNING') {
+        buttonDisabled.value = false
+      }
       return {
         ...item,
         // recordId,
@@ -115,6 +119,19 @@ async function getTableInfo() {
   } catch (error) {
   } finally {
     loading.value = false
+  }
+}
+
+async function cancel() {
+  try {
+    loading.value = true
+    const result = await cancelOptimizingProcess({
+      ...sourceData
+    })
+    console.log(result)
+    buttonDisabled.value = true
+    getTableInfo()
+  } catch (error) {
   }
 }
 

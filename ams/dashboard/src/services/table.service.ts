@@ -173,3 +173,9 @@ export function upgradeHiveTable(
 export function getUpgradeProperties() {
   return request.get('ams/v1/upgrade/properties')
 }
+
+export function cancelOptimizingProcess(
+  { catalog = '' as string, db = '' as string, table = '' as string }
+) {
+  return request.post(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/cancel-process`)
+}

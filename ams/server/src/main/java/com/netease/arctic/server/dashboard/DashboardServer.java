@@ -213,6 +213,9 @@ public class DashboardServer {
             get(
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
                 tableController::getTableBranchs);
+            post(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/cancel-process",
+                tableController::cancelOptimizingProcess);
 
             // catalog controller
             post("/catalogs", catalogController::createCatalog);

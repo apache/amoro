@@ -398,6 +398,11 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
+  public TableRuntime getRuntime(TableIdentifier tableIdentifier) {
+    return getRuntime(getServerTableIdentifier(tableIdentifier));
+  }
+
+  @Override
   public boolean contains(ServerTableIdentifier tableIdentifier) {
     checkStarted();
     return tableRuntimeMap.containsKey(tableIdentifier);

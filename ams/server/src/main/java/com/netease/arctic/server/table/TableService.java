@@ -84,6 +84,8 @@ public interface TableService extends CatalogService, TableManager {
    */
   List<TableIDWithFormat> listTables(String catalogName, String dbName);
 
+  TableRuntime getRuntime(TableIdentifier tableIdentifier);
+
   /** create arctic database */
   void createDatabase(String catalogName, String dbName);
 
