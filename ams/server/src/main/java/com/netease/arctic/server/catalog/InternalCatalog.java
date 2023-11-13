@@ -131,12 +131,12 @@ public abstract class InternalCatalog extends ServerCatalog {
         () -> increaseDatabaseTableCount(tableIdentifier.getDatabase()));
 
     return getAs(
-            TableMetaMapper.class,
-            mapper ->
-                mapper.selectTableMetaByName(
-                    tableIdentifier.getCatalog(),
-                    tableIdentifier.getDatabase(),
-                    tableIdentifier.getTableName()));
+        TableMetaMapper.class,
+        mapper ->
+            mapper.selectTableMetaByName(
+                tableIdentifier.getCatalog(),
+                tableIdentifier.getDatabase(),
+                tableIdentifier.getTableName()));
   }
 
   public TableMetadata commitTable(TableMetadata metadata) {

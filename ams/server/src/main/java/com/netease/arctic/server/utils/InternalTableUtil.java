@@ -102,8 +102,8 @@ public class InternalTableUtil {
   }
 
   /**
-   * check if the given persistent tableMetadata if a legacy mixed-iceberg table.
-   * add addition table properties for REST CATALOG
+   * check if the given persistent tableMetadata if a legacy mixed-iceberg table. add addition table
+   * properties for REST CATALOG
    *
    * @param internalTableMetadata persistent table metadata.
    * @param metadata iceberg table metadata
@@ -146,6 +146,7 @@ public class InternalTableUtil {
 
   /**
    * Check if this table is created before version 0.7.0
+   *
    * @param internalTableMetadata table metadata.
    * @return true if this table is created before version 0.7.0
    */
@@ -187,10 +188,7 @@ public class InternalTableUtil {
    * @return - the real table location.
    */
   public static String tableLocation(
-      InternalCatalog catalog,
-      String database,
-      String tableName,
-      String location) {
+      InternalCatalog catalog, String database, String tableName, String location) {
     if (StringUtils.isBlank(location)) {
       String warehouse =
           catalog.getMetadata().getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
@@ -241,7 +239,6 @@ public class InternalTableUtil {
     }
     return HADOOP_FILE_IO_IMPL;
   }
-
 
   /**
    * load iceberg table metadata by given ams table metadata
@@ -320,7 +317,6 @@ public class InternalTableUtil {
     }
   }
 
-
   /**
    * create iceberg table and return an AMS table metadata object to commit.
    *
@@ -354,7 +350,8 @@ public class InternalTableUtil {
         apiKeySpec.setFields(keySpec.fieldNames());
         meta.setKeySpec(apiKeySpec);
         meta.putToLocations(MetaTableProperties.LOCATION_KEY_CHANGE, changeMetadata.location());
-        meta.putToProperties(CHANGE_STORE_PREFIX + PROPERTIES_METADATA_LOCATION, changeMetadataFileLocation);
+        meta.putToProperties(
+            CHANGE_STORE_PREFIX + PROPERTIES_METADATA_LOCATION, changeMetadataFileLocation);
       }
       meta.putToProperties(MIXED_ICEBERG_BASED_REST, Boolean.toString(true));
     }
@@ -376,9 +373,6 @@ public class InternalTableUtil {
     return new com.netease.arctic.server.table.TableMetadata(
         serverTableIdentifier, meta, catalogMeta);
   }
-
-
-
 
   private static long parseMetadataFileVersion(String metadataLocation) {
     int fileNameStart = metadataLocation.lastIndexOf('/') + 1; // if '/' isn't found, this will be 0

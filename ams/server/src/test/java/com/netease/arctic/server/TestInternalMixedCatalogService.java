@@ -89,7 +89,8 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
 
   @Test
   public void testCatalogLoader() {
-    Assertions.assertEquals(InternalMixedIcebergCatalog.class.getName(), catalog.getClass().getName());
+    Assertions.assertEquals(
+        InternalMixedIcebergCatalog.class.getName(), catalog.getClass().getName());
   }
 
   @Nested

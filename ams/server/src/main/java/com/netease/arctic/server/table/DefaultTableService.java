@@ -47,8 +47,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class DefaultTableService extends StatedPersistentBase
-    implements TableService {
+public class DefaultTableService extends StatedPersistentBase implements TableService {
 
   public static final Logger LOG = LoggerFactory.getLogger(DefaultTableService.class);
   private final long externalCatalogRefreshingInterval;
