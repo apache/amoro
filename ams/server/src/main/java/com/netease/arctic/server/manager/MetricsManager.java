@@ -36,7 +36,7 @@ public class MetricsManager extends ActivePluginManager<MetricsEmitter> {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetricsManager.class);
   private static final String METRICS_CONFIG_DIRECTORY = "metrics";
-  private volatile static MetricsManager INSTANCE;
+  private static volatile MetricsManager INSTANCE;
 
   private final String configPath;
 
