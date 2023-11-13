@@ -18,90 +18,6 @@
 
 package com.netease.arctic.trino.unkeyed;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Verify.verify;
-import static com.google.common.base.Verify.verifyNotNull;
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.Maps.transformValues;
-import static io.trino.plugin.base.util.Procedures.checkProcedureArgument;
-import static io.trino.plugin.hive.HiveApplyProjectionUtil.extractSupportedProjectedColumns;
-import static io.trino.plugin.hive.HiveApplyProjectionUtil.replaceWithNewVariables;
-import static io.trino.plugin.hive.util.HiveUtil.isStructuralType;
-import static io.trino.plugin.iceberg.ExpressionConverter.toIcebergExpression;
-import static io.trino.plugin.iceberg.IcebergAnalyzeProperties.getColumnNames;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_FILE_RECORD_COUNT;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_DATA;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_SPEC_ID;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_ROW_ID;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_ROW_ID_NAME;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.fileModifiedTimeColumnHandle;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.fileModifiedTimeColumnMetadata;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.pathColumnHandle;
-import static io.trino.plugin.iceberg.IcebergColumnHandle.pathColumnMetadata;
-import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_COMMIT_ERROR;
-import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_FILESYSTEM_ERROR;
-import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_INVALID_METADATA;
-import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_MODIFIED_TIME;
-import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_PATH;
-import static io.trino.plugin.iceberg.IcebergMetadataColumn.isMetadataColumnId;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.getExpireSnapshotMinRetention;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.getRemoveOrphanFilesMinRetention;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.isExtendedStatisticsEnabled;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.isProjectionPushdownEnabled;
-import static io.trino.plugin.iceberg.IcebergSessionProperties.isStatisticsEnabled;
-import static io.trino.plugin.iceberg.IcebergTableProperties.FILE_FORMAT_PROPERTY;
-import static io.trino.plugin.iceberg.IcebergTableProperties.FORMAT_VERSION_PROPERTY;
-import static io.trino.plugin.iceberg.IcebergTableProperties.PARTITIONING_PROPERTY;
-import static io.trino.plugin.iceberg.IcebergTableProperties.getPartitioning;
-import static io.trino.plugin.iceberg.IcebergUtil.commit;
-import static io.trino.plugin.iceberg.IcebergUtil.deserializePartitionValue;
-import static io.trino.plugin.iceberg.IcebergUtil.fileName;
-import static io.trino.plugin.iceberg.IcebergUtil.getColumnHandle;
-import static io.trino.plugin.iceberg.IcebergUtil.getColumns;
-import static io.trino.plugin.iceberg.IcebergUtil.getFileFormat;
-import static io.trino.plugin.iceberg.IcebergUtil.getPartitionKeys;
-import static io.trino.plugin.iceberg.IcebergUtil.getTableComment;
-import static io.trino.plugin.iceberg.IcebergUtil.newCreateTableTransaction;
-import static io.trino.plugin.iceberg.IcebergUtil.schemaFromMetadata;
-import static io.trino.plugin.iceberg.PartitionFields.parsePartitionFields;
-import static io.trino.plugin.iceberg.PartitionFields.toPartitionFields;
-import static io.trino.plugin.iceberg.TableStatisticsReader.TRINO_STATS_COLUMN_ID_PATTERN;
-import static io.trino.plugin.iceberg.TableStatisticsReader.TRINO_STATS_PREFIX;
-import static io.trino.plugin.iceberg.TableType.DATA;
-import static io.trino.plugin.iceberg.TypeConverter.toIcebergType;
-import static io.trino.plugin.iceberg.TypeConverter.toTrinoType;
-import static io.trino.plugin.iceberg.catalog.hms.TrinoHiveCatalog.DEPENDS_ON_TABLES;
-import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.DROP_EXTENDED_STATS;
-import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.EXPIRE_SNAPSHOTS;
-import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.OPTIMIZE;
-import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.REMOVE_ORPHAN_FILES;
-import static io.trino.spi.StandardErrorCode.INVALID_ANALYZE_PROPERTY;
-import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
-import static io.trino.spi.connector.MaterializedViewFreshness.Freshness.FRESH;
-import static io.trino.spi.connector.MaterializedViewFreshness.Freshness.STALE;
-import static io.trino.spi.connector.MaterializedViewFreshness.Freshness.UNKNOWN;
-import static io.trino.spi.connector.RetryMode.NO_RETRIES;
-import static java.lang.String.format;
-import static java.util.Locale.ENGLISH;
-import static java.util.Objects.requireNonNull;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.joining;
-import static org.apache.iceberg.FileContent.POSITION_DELETES;
-import static org.apache.iceberg.ReachableFileUtil.metadataFileLocations;
-import static org.apache.iceberg.ReachableFileUtil.versionHintLocation;
-import static org.apache.iceberg.SnapshotSummary.DELETED_RECORDS_PROP;
-import static org.apache.iceberg.SnapshotSummary.REMOVED_EQ_DELETES_PROP;
-import static org.apache.iceberg.SnapshotSummary.REMOVED_POS_DELETES_PROP;
-import static org.apache.iceberg.TableProperties.DELETE_ISOLATION_LEVEL;
-import static org.apache.iceberg.TableProperties.DELETE_ISOLATION_LEVEL_DEFAULT;
-import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
-import static org.apache.iceberg.TableProperties.WRITE_LOCATION_PROVIDER_IMPL;
-import static org.apache.iceberg.types.TypeUtil.indexParents;
-
 import com.google.common.base.Splitter;
 import com.google.common.base.Suppliers;
 import com.google.common.base.VerifyException;
@@ -273,6 +189,90 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Verify.verify;
+import static com.google.common.base.Verify.verifyNotNull;
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.google.common.collect.Maps.transformValues;
+import static io.trino.plugin.base.util.Procedures.checkProcedureArgument;
+import static io.trino.plugin.hive.HiveApplyProjectionUtil.extractSupportedProjectedColumns;
+import static io.trino.plugin.hive.HiveApplyProjectionUtil.replaceWithNewVariables;
+import static io.trino.plugin.hive.util.HiveUtil.isStructuralType;
+import static io.trino.plugin.iceberg.ExpressionConverter.toIcebergExpression;
+import static io.trino.plugin.iceberg.IcebergAnalyzeProperties.getColumnNames;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_FILE_RECORD_COUNT;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_DATA;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_PARTITION_SPEC_ID;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_MERGE_ROW_ID;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.TRINO_ROW_ID_NAME;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.fileModifiedTimeColumnHandle;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.fileModifiedTimeColumnMetadata;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.pathColumnHandle;
+import static io.trino.plugin.iceberg.IcebergColumnHandle.pathColumnMetadata;
+import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_COMMIT_ERROR;
+import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_FILESYSTEM_ERROR;
+import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_INVALID_METADATA;
+import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_MODIFIED_TIME;
+import static io.trino.plugin.iceberg.IcebergMetadataColumn.FILE_PATH;
+import static io.trino.plugin.iceberg.IcebergMetadataColumn.isMetadataColumnId;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getExpireSnapshotMinRetention;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.getRemoveOrphanFilesMinRetention;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.isExtendedStatisticsEnabled;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.isProjectionPushdownEnabled;
+import static io.trino.plugin.iceberg.IcebergSessionProperties.isStatisticsEnabled;
+import static io.trino.plugin.iceberg.IcebergTableProperties.FILE_FORMAT_PROPERTY;
+import static io.trino.plugin.iceberg.IcebergTableProperties.FORMAT_VERSION_PROPERTY;
+import static io.trino.plugin.iceberg.IcebergTableProperties.PARTITIONING_PROPERTY;
+import static io.trino.plugin.iceberg.IcebergTableProperties.getPartitioning;
+import static io.trino.plugin.iceberg.IcebergUtil.commit;
+import static io.trino.plugin.iceberg.IcebergUtil.deserializePartitionValue;
+import static io.trino.plugin.iceberg.IcebergUtil.fileName;
+import static io.trino.plugin.iceberg.IcebergUtil.getColumnHandle;
+import static io.trino.plugin.iceberg.IcebergUtil.getColumns;
+import static io.trino.plugin.iceberg.IcebergUtil.getFileFormat;
+import static io.trino.plugin.iceberg.IcebergUtil.getPartitionKeys;
+import static io.trino.plugin.iceberg.IcebergUtil.getTableComment;
+import static io.trino.plugin.iceberg.IcebergUtil.newCreateTableTransaction;
+import static io.trino.plugin.iceberg.IcebergUtil.schemaFromMetadata;
+import static io.trino.plugin.iceberg.PartitionFields.parsePartitionFields;
+import static io.trino.plugin.iceberg.PartitionFields.toPartitionFields;
+import static io.trino.plugin.iceberg.TableStatisticsReader.TRINO_STATS_COLUMN_ID_PATTERN;
+import static io.trino.plugin.iceberg.TableStatisticsReader.TRINO_STATS_PREFIX;
+import static io.trino.plugin.iceberg.TableType.DATA;
+import static io.trino.plugin.iceberg.TypeConverter.toIcebergType;
+import static io.trino.plugin.iceberg.TypeConverter.toTrinoType;
+import static io.trino.plugin.iceberg.catalog.hms.TrinoHiveCatalog.DEPENDS_ON_TABLES;
+import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.DROP_EXTENDED_STATS;
+import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.EXPIRE_SNAPSHOTS;
+import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.OPTIMIZE;
+import static io.trino.plugin.iceberg.procedure.IcebergTableProcedureId.REMOVE_ORPHAN_FILES;
+import static io.trino.spi.StandardErrorCode.INVALID_ANALYZE_PROPERTY;
+import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
+import static io.trino.spi.connector.MaterializedViewFreshness.Freshness.FRESH;
+import static io.trino.spi.connector.MaterializedViewFreshness.Freshness.STALE;
+import static io.trino.spi.connector.MaterializedViewFreshness.Freshness.UNKNOWN;
+import static io.trino.spi.connector.RetryMode.NO_RETRIES;
+import static java.lang.String.format;
+import static java.util.Locale.ENGLISH;
+import static java.util.Objects.requireNonNull;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
+import static org.apache.iceberg.FileContent.POSITION_DELETES;
+import static org.apache.iceberg.ReachableFileUtil.metadataFileLocations;
+import static org.apache.iceberg.ReachableFileUtil.versionHintLocation;
+import static org.apache.iceberg.SnapshotSummary.DELETED_RECORDS_PROP;
+import static org.apache.iceberg.SnapshotSummary.REMOVED_EQ_DELETES_PROP;
+import static org.apache.iceberg.SnapshotSummary.REMOVED_POS_DELETES_PROP;
+import static org.apache.iceberg.TableProperties.DELETE_ISOLATION_LEVEL;
+import static org.apache.iceberg.TableProperties.DELETE_ISOLATION_LEVEL_DEFAULT;
+import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
+import static org.apache.iceberg.TableProperties.WRITE_LOCATION_PROVIDER_IMPL;
+import static org.apache.iceberg.types.TypeUtil.indexParents;
+
 /**
  * Iceberg original metadata has some problems for arctic, such as iceberg version, table type. So
  * copy from IcebergMetadata and made some change
@@ -304,6 +304,8 @@ public class IcebergMetadata implements ConnectorMetadata {
 
   private final Map<IcebergTableHandle, TableStatistics> tableStatisticsCache =
       new ConcurrentHashMap<>();
+
+  private final Map<SchemaTableName, Table> tableCache = new ConcurrentHashMap<>();
 
   private Transaction transaction;
 
@@ -355,8 +357,7 @@ public class IcebergMetadata implements ConnectorMetadata {
     Table table;
     try {
       table =
-          catalog.loadTable(
-              session, new SchemaTableName(tableName.getSchemaName(), name.getTableName()));
+          loadTable(session, new SchemaTableName(tableName.getSchemaName(), name.getTableName()));
     } catch (TableNotFoundException e) {
       return null;
     }
@@ -423,8 +424,7 @@ public class IcebergMetadata implements ConnectorMetadata {
     Table table;
     try {
       table =
-          catalog.loadTable(
-              session, new SchemaTableName(tableName.getSchemaName(), name.getTableName()));
+          loadTable(session, new SchemaTableName(tableName.getSchemaName(), name.getTableName()));
     } catch (TableNotFoundException e) {
       return Optional.empty();
     } catch (UnknownTableTypeException e) {
@@ -472,7 +472,7 @@ public class IcebergMetadata implements ConnectorMetadata {
           ImmutableList.of());
     }
 
-    Table icebergTable = catalog.loadTable(session, table.getSchemaTableName());
+    Table icebergTable = loadTable(session, table.getSchemaTableName());
 
     // Extract identity partition fields that are present in all partition specs, for creating the
     // discrete predicates.
@@ -558,7 +558,7 @@ public class IcebergMetadata implements ConnectorMetadata {
   public ConnectorTableMetadata getTableMetadata(
       ConnectorSession session, ConnectorTableHandle table) {
     IcebergTableHandle tableHandle = (IcebergTableHandle) table;
-    Table icebergTable = catalog.loadTable(session, tableHandle.getSchemaTableName());
+    Table icebergTable = loadTable(session, tableHandle.getSchemaTableName());
     List<ColumnMetadata> columns =
         getColumnMetadatas(SchemaParser.fromJson(tableHandle.getTableSchemaJson()));
     ImmutableMap.Builder<String, Object> properties = ImmutableMap.builder();
@@ -636,7 +636,7 @@ public class IcebergMetadata implements ConnectorMetadata {
                   return Stream.of(TableColumnsMetadata.forRedirectedTable(tableName));
                 }
 
-                Table icebergTable = catalog.loadTable(session, tableName);
+                Table icebergTable = loadTable(session, tableName);
                 List<ColumnMetadata> columns = getColumnMetadatas(icebergTable.schema());
                 return Stream.of(TableColumnsMetadata.forTable(tableName, columns));
               } catch (TableNotFoundException e) {
@@ -767,7 +767,7 @@ public class IcebergMetadata implements ConnectorMetadata {
     IcebergTableHandle table = (IcebergTableHandle) tableHandle;
     verifyTableVersionForUpdate(table);
 
-    Table icebergTable = catalog.loadTable(session, table.getSchemaTableName());
+    Table icebergTable = loadTable(session, table.getSchemaTableName());
     validateNotModifyingOldSnapshot(table, icebergTable);
     validateNotPartitionedByNestedField(icebergTable.schema(), icebergTable.spec());
 
@@ -1039,7 +1039,7 @@ public class IcebergMetadata implements ConnectorMetadata {
       List<ColumnHandle> columns,
       RetryMode retryMode) {
     IcebergTableHandle table = (IcebergTableHandle) tableHandle;
-    Table icebergTable = catalog.loadTable(session, table.getSchemaTableName());
+    Table icebergTable = loadTable(session, table.getSchemaTableName());
 
     validateNotModifyingOldSnapshot(table, icebergTable);
     validateNotPartitionedByNestedField(icebergTable.schema(), icebergTable.spec());
@@ -1220,7 +1220,7 @@ public class IcebergMetadata implements ConnectorMetadata {
         "Cannot execute table procedure %s on non-DATA table: %s",
         procedureName,
         tableHandle.getTableType());
-    Table icebergTable = catalog.loadTable(session, tableHandle.getSchemaTableName());
+    Table icebergTable = loadTable(session, tableHandle.getSchemaTableName());
     if (tableHandle.getSnapshotId().isPresent()
         && (tableHandle.getSnapshotId().get() != icebergTable.currentSnapshot().snapshotId())) {
       throw new TrinoException(
@@ -1271,7 +1271,7 @@ public class IcebergMetadata implements ConnectorMetadata {
 
   private Optional<ConnectorTableExecuteHandle> getTableHandleForDropExtendedStats(
       ConnectorSession session, IcebergTableHandle tableHandle) {
-    Table icebergTable = catalog.loadTable(session, tableHandle.getSchemaTableName());
+    Table icebergTable = loadTable(session, tableHandle.getSchemaTableName());
 
     return Optional.of(
         new IcebergTableExecuteHandle(
@@ -1286,7 +1286,7 @@ public class IcebergMetadata implements ConnectorMetadata {
       IcebergTableHandle tableHandle,
       Map<String, Object> executeProperties) {
     Duration retentionThreshold = (Duration) executeProperties.get(RETENTION_THRESHOLD);
-    Table icebergTable = catalog.loadTable(session, tableHandle.getSchemaTableName());
+    Table icebergTable = loadTable(session, tableHandle.getSchemaTableName());
 
     return Optional.of(
         new IcebergTableExecuteHandle(
@@ -1301,7 +1301,7 @@ public class IcebergMetadata implements ConnectorMetadata {
       IcebergTableHandle tableHandle,
       Map<String, Object> executeProperties) {
     Duration retentionThreshold = (Duration) executeProperties.get(RETENTION_THRESHOLD);
-    Table icebergTable = catalog.loadTable(session, tableHandle.getSchemaTableName());
+    Table icebergTable = loadTable(session, tableHandle.getSchemaTableName());
 
     return Optional.of(
         new IcebergTableExecuteHandle(
@@ -1329,7 +1329,7 @@ public class IcebergMetadata implements ConnectorMetadata {
 
   private Optional<ConnectorTableLayout> getLayoutForOptimize(
       ConnectorSession session, IcebergTableExecuteHandle executeHandle) {
-    Table icebergTable = catalog.loadTable(session, executeHandle.getSchemaTableName());
+    Table icebergTable = loadTable(session, executeHandle.getSchemaTableName());
     // from performance perspective it is better to have lower number of bigger files than other way
     // around
     // thus we force repartitioning for optimize to achieve this
@@ -1360,7 +1360,7 @@ public class IcebergMetadata implements ConnectorMetadata {
       ConnectorSession session, IcebergTableExecuteHandle executeHandle, IcebergTableHandle table) {
     IcebergOptimizeHandle optimizeHandle =
         (IcebergOptimizeHandle) executeHandle.getProcedureHandle();
-    Table icebergTable = catalog.loadTable(session, table.getSchemaTableName());
+    Table icebergTable = loadTable(session, table.getSchemaTableName());
 
     validateNotModifyingOldSnapshot(table, icebergTable);
     validateNotPartitionedByNestedField(icebergTable.schema(), icebergTable.spec());
@@ -1514,7 +1514,7 @@ public class IcebergMetadata implements ConnectorMetadata {
         "Unexpected procedure handle %s",
         executeHandle.getProcedureHandle());
 
-    Table icebergTable = catalog.loadTable(session, executeHandle.getSchemaTableName());
+    Table icebergTable = loadTable(session, executeHandle.getSchemaTableName());
     beginTransaction(icebergTable);
     UpdateStatistics updateStatistics = transaction.updateStatistics();
     for (StatisticsFile statisticsFile : icebergTable.statisticsFiles()) {
@@ -1537,7 +1537,7 @@ public class IcebergMetadata implements ConnectorMetadata {
     IcebergExpireSnapshotsHandle expireSnapshotsHandle =
         (IcebergExpireSnapshotsHandle) executeHandle.getProcedureHandle();
 
-    Table table = catalog.loadTable(session, executeHandle.getSchemaTableName());
+    Table table = loadTable(session, executeHandle.getSchemaTableName());
     Duration retention =
         requireNonNull(expireSnapshotsHandle.getRetentionThreshold(), "retention is null");
     validateTableExecuteParameters(
@@ -1631,7 +1631,7 @@ public class IcebergMetadata implements ConnectorMetadata {
     IcebergRemoveOrphanFilesHandle removeOrphanFilesHandle =
         (IcebergRemoveOrphanFilesHandle) executeHandle.getProcedureHandle();
 
-    Table table = catalog.loadTable(session, executeHandle.getSchemaTableName());
+    Table table = loadTable(session, executeHandle.getSchemaTableName());
     Duration retention =
         requireNonNull(removeOrphanFilesHandle.getRetentionThreshold(), "retention is null");
     validateTableExecuteParameters(
@@ -1794,7 +1794,7 @@ public class IcebergMetadata implements ConnectorMetadata {
       ConnectorTableHandle tableHandle,
       Map<String, Optional<Object>> properties) {
     IcebergTableHandle table = (IcebergTableHandle) tableHandle;
-    Table icebergTable = catalog.loadTable(session, table.getSchemaTableName());
+    Table icebergTable = loadTable(session, table.getSchemaTableName());
 
     transaction = icebergTable.newTransaction();
     UpdateProperties updateProperties = transaction.updateProperties();
@@ -1848,7 +1848,7 @@ public class IcebergMetadata implements ConnectorMetadata {
   public void addColumn(
       ConnectorSession session, ConnectorTableHandle tableHandle, ColumnMetadata column) {
     Table icebergTable =
-        catalog.loadTable(session, ((IcebergTableHandle) tableHandle).getSchemaTableName());
+        loadTable(session, ((IcebergTableHandle) tableHandle).getSchemaTableName());
     icebergTable
         .updateSchema()
         .addColumn(column.getName(), toIcebergType(column.getType()), column.getComment())
@@ -1860,7 +1860,7 @@ public class IcebergMetadata implements ConnectorMetadata {
       ConnectorSession session, ConnectorTableHandle tableHandle, ColumnHandle column) {
     IcebergColumnHandle handle = (IcebergColumnHandle) column;
     Table icebergTable =
-        catalog.loadTable(session, ((IcebergTableHandle) tableHandle).getSchemaTableName());
+        loadTable(session, ((IcebergTableHandle) tableHandle).getSchemaTableName());
     icebergTable.updateSchema().deleteColumn(handle.getName()).commit();
   }
 
@@ -1872,7 +1872,7 @@ public class IcebergMetadata implements ConnectorMetadata {
       String target) {
     IcebergColumnHandle columnHandle = (IcebergColumnHandle) source;
     Table icebergTable =
-        catalog.loadTable(session, ((IcebergTableHandle) tableHandle).getSchemaTableName());
+        loadTable(session, ((IcebergTableHandle) tableHandle).getSchemaTableName());
     icebergTable.updateSchema().renameColumn(columnHandle.getName(), target).commit();
   }
 
@@ -1968,7 +1968,7 @@ public class IcebergMetadata implements ConnectorMetadata {
   public ConnectorTableHandle beginStatisticsCollection(
       ConnectorSession session, ConnectorTableHandle tableHandle) {
     IcebergTableHandle handle = (IcebergTableHandle) tableHandle;
-    Table icebergTable = catalog.loadTable(session, handle.getSchemaTableName());
+    Table icebergTable = loadTable(session, handle.getSchemaTableName());
     beginTransaction(icebergTable);
     return handle;
   }
@@ -2168,7 +2168,7 @@ public class IcebergMetadata implements ConnectorMetadata {
   public OptionalLong executeDelete(ConnectorSession session, ConnectorTableHandle tableHandle) {
     IcebergTableHandle handle = (IcebergTableHandle) tableHandle;
 
-    Table icebergTable = catalog.loadTable(session, handle.getSchemaTableName());
+    Table icebergTable = loadTable(session, handle.getSchemaTableName());
 
     DeleteFiles deleteFiles =
         icebergTable
@@ -2199,7 +2199,7 @@ public class IcebergMetadata implements ConnectorMetadata {
   public Optional<ConstraintApplicationResult<ConnectorTableHandle>> applyFilter(
       ConnectorSession session, ConnectorTableHandle handle, Constraint constraint) {
     IcebergTableHandle table = (IcebergTableHandle) handle;
-    Table icebergTable = catalog.loadTable(session, table.getSchemaTableName());
+    Table icebergTable = loadTable(session, table.getSchemaTableName());
 
     Set<Integer> partitionSourceIds = identityPartitionColumnsInAllSpecs(icebergTable);
     BiPredicate<IcebergColumnHandle, Domain> isIdentityPartition =
@@ -2449,7 +2449,7 @@ public class IcebergMetadata implements ConnectorMetadata {
             originalHandle.isRecordScannedFiles(),
             originalHandle.getMaxScannedFileSize()),
         handle -> {
-          Table icebergTable = catalog.loadTable(session, handle.getSchemaTableName());
+          Table icebergTable = loadTable(session, handle.getSchemaTableName());
           return TableStatisticsReader.getTableStatistics(
               typeManager, session, handle, icebergTable);
         });
@@ -2466,7 +2466,7 @@ public class IcebergMetadata implements ConnectorMetadata {
   }
 
   Table getIcebergTable(ConnectorSession session, SchemaTableName schemaTableName) {
-    return catalog.loadTable(session, schemaTableName);
+    return loadTable(session, schemaTableName);
   }
 
   @Override
@@ -2497,7 +2497,7 @@ public class IcebergMetadata implements ConnectorMetadata {
       List<ConnectorTableHandle> sourceTableHandles,
       RetryMode retryMode) {
     IcebergTableHandle table = (IcebergTableHandle) tableHandle;
-    Table icebergTable = catalog.loadTable(session, table.getSchemaTableName());
+    Table icebergTable = loadTable(session, table.getSchemaTableName());
     beginTransaction(icebergTable);
 
     return newWritableTableHandle(table.getSchemaTableName(), icebergTable, retryMode);
@@ -2626,7 +2626,7 @@ public class IcebergMetadata implements ConnectorMetadata {
   public Optional<TableToken> getTableToken(
       ConnectorSession session, ConnectorTableHandle tableHandle) {
     IcebergTableHandle table = (IcebergTableHandle) tableHandle;
-    Table icebergTable = catalog.loadTable(session, table.getSchemaTableName());
+    Table icebergTable = loadTable(session, table.getSchemaTableName());
     return Optional.ofNullable(icebergTable.currentSnapshot())
         .map(snapshot -> new TableToken(snapshot.snapshotId()));
   }
@@ -2663,7 +2663,7 @@ public class IcebergMetadata implements ConnectorMetadata {
                         "Storage table missing in definition of materialized view "
                             + materializedViewName));
 
-    Table icebergTable = catalog.loadTable(session, storageTableName);
+    Table icebergTable = loadTable(session, storageTableName);
     String dependsOnTables =
         icebergTable.currentSnapshot().summary().getOrDefault(DEPENDS_ON_TABLES, "");
     if (dependsOnTables.isEmpty()) {
@@ -2753,6 +2753,13 @@ public class IcebergMetadata implements ConnectorMetadata {
   private void beginTransaction(Table icebergTable) {
     verify(transaction == null, "transaction already set");
     transaction = icebergTable.newTransaction();
+  }
+
+  private Table loadTable(ConnectorSession session, SchemaTableName tableName) {
+    return tableCache.computeIfAbsent(
+        tableName,
+        ignore -> catalog.loadTable(session, tableName)
+    );
   }
 
   private static class TableToken {
