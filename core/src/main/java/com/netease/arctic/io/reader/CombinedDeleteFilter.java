@@ -112,9 +112,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
       StructLikeCollections structLikeCollections) {
     this.input = rewriteFilesInput;
     this.dataRecordCnt =
-        Arrays.stream(rewriteFilesInput.dataFiles())
-            .mapToLong(ContentFile::recordCount)
-            .sum();
+        Arrays.stream(rewriteFilesInput.dataFiles()).mapToLong(ContentFile::recordCount).sum();
     ImmutableList.Builder<DeleteFile> posDeleteBuilder = ImmutableList.builder();
     ImmutableList.Builder<DeleteFile> eqDeleteBuilder = ImmutableList.builder();
     if (rewriteFilesInput.deleteFiles() != null) {

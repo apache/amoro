@@ -170,7 +170,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
     filterEqDeleteScanTask =
         new RewriteFilesInput(
             new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
-            new DataFile[] {},
+            new DataFile[] {MixedDataTestHelpers.wrapIcebergDataFile(dataFile, 1L)},
             new DeleteFile[] {},
             new DeleteFile[] {
               MixedDataTestHelpers.wrapIcebergDeleteFile(eqDeleteFile1, 2L),
@@ -279,6 +279,10 @@ public class TestIcebergCombinedReader extends TableTestBase {
 
     try (CloseableIterable<Record> records = dataReader.readData()) {
       Assert.assertEquals(1, Iterables.size(records));
+    }
+
+    try (CloseableIterable<Record> records = dataReader.readDeletedData()) {
+      Assert.assertEquals(2, Iterables.size(records));
     }
     dataReader.close();
   }
