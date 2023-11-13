@@ -26,6 +26,8 @@ import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.table.KeyedTableSnapshot;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,7 +130,12 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     // prioritize partitions with high cost to avoid starvation
     evaluators.sort(Comparator.comparing(PartitionEvaluator::getWeight, Comparator.reverseOrder()));
 
-    double maxInputSize = MAX_INPUT_FILE_SIZE_PER_THREAD * availableCore;
+    double maxInputSize =
+        CompatiblePropertyUtil.propertyAsLong(
+                getArcticTable().properties(),
+                TableProperties.SELF_OPTIMIZING_MAX_INPUT_FILE_SIZE_PER_THREAD,
+                TableProperties.SELF_OPTIMIZING_MAX_INPUT_FILE_SIZE_PER_THREAD_DEFAULT)
+            * availableCore;
     actualPartitionPlans = Lists.newArrayList();
     long actualInputSize = 0;
     for (PartitionEvaluator evaluator : evaluators) {
@@ -157,12 +164,14 @@ public class OptimizingPlanner extends OptimizingEvaluator {
     }
     long endTime = System.nanoTime();
     LOG.info(
-        "{} finish plan, type = {}, get {} tasks, cost {} ns, {} ms",
+        "{} finish plan, type = {}, get {} tasks, cost {} ns, {} ms maxInputSize {} actualInputSize {}",
         tableRuntime.getTableIdentifier(),
         getOptimizingType(),
         tasks.size(),
         endTime - startTime,
-        (endTime - startTime) / 1_000_000);
+        (endTime - startTime) / 1_000_000,
+        maxInputSize,
+        actualInputSize);
     return cacheAndReturnTasks(tasks);
   }
 
