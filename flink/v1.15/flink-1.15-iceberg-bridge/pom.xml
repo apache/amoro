@@ -6,7 +6,7 @@
     <parent>
         <artifactId>amoro-flink</artifactId>
         <groupId>com.netease.amoro</groupId>
-        <version>0.6.0</version>
+        <version>0.6.1-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
