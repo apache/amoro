@@ -99,7 +99,7 @@ export interface IDetailsInfo {
 export interface ICompMap {
   Details: string
   Partitions: string
-  Transactions: string
+  Snapshots: string
   Operations: string
   Optimizes: string
 }
@@ -126,7 +126,7 @@ export interface BreadcrumbPartitionItem {
   path: string
 }
 
-export interface BreadcrumbTransactionItem {
+export interface BreadcrumbSnapshotItem {
   file: string
   fsn: number
   partition: string
@@ -135,7 +135,7 @@ export interface BreadcrumbTransactionItem {
   commitTime: number | string
 }
 
-export interface TransactionItemSummary {
+export interface SnapshotItemSummary {
   'total-data-files': number
   'total-delete-files': number
   'total-records': number
@@ -143,13 +143,14 @@ export interface TransactionItemSummary {
   'total-equality-deletes': number
 }
 
-export interface TransactionItem {
-  transactionId: string
-  fileCount: number
-  fileSize: string
-  commitTime: string
+export interface SnapshotItem {
   snapshotId: string
-  summary: TransactionItemSummary
+  operation: string
+  producer: string
+  fileCount: number
+  records: number
+  commitTime: string
+  summary: SnapshotItemSummary
   filesSummaryForChart: Record<string, number>
   recordsSummaryForChart: Record<string, number>
 }

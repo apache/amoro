@@ -20,7 +20,7 @@ package com.netease.arctic.server.dashboard;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
+import com.netease.arctic.server.dashboard.model.AmoroSnapshotsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
@@ -41,11 +41,11 @@ public interface FormatTableDescriptor {
   /** Get the table metadata information of the {@link AmoroTable}. */
   ServerTableMeta getTableDetail(AmoroTable<?> amoroTable);
 
-  /** Get the transaction information of the {@link AmoroTable}. */
-  List<AMSTransactionsOfTable> getTransactions(AmoroTable<?> amoroTable);
+  /** Get the snapshot information of the {@link AmoroTable}. */
+  List<AmoroSnapshotsOfTable> getSnapshots(AmoroTable<?> amoroTable, String ref);
 
-  /** Get the transaction detail information of the {@link AmoroTable}. */
-  List<PartitionFileBaseInfo> getTransactionDetail(AmoroTable<?> amoroTable, long transactionId);
+  /** Get the snapshot detail information of the {@link AmoroTable}. */
+  List<PartitionFileBaseInfo> getSnapshotDetail(AmoroTable<?> amoroTable, long snapshotId);
 
   /** Get the DDL information of the {@link AmoroTable}. */
   List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable);
@@ -67,5 +67,5 @@ public interface FormatTableDescriptor {
   List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable);
 
   /** Get the branch information of the {@link AmoroTable}. */
-  List<TagOrBranchInfo> getTableBranchs(AmoroTable<?> amoroTable);
+  List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable);
 }
