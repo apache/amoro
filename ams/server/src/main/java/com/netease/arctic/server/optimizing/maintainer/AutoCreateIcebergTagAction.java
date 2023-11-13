@@ -83,6 +83,16 @@ public class AutoCreateIcebergTagAction {
       LOG.info("{} no snapshot found at {}", this.table.name(), getTagTriggerTime());
       return false;
     }
+    if (exceedMaxDelay(snapshot)) {
+      LOG.info(
+          "{} snapshot {} {} exceed max delay {}, trigger time {}",
+          this.table.name(),
+          snapshot.snapshotId(),
+          snapshot.timestampMillis(),
+          tagConfig.getMaxDelayMinutes(),
+          getTagTriggerTime());
+      return false;
+    }
     String newTagName = generateTagName();
     table.manageSnapshots().createTag(newTagName, snapshot.snapshotId()).commit();
     LOG.info(
@@ -92,6 +102,14 @@ public class AutoCreateIcebergTagAction {
         snapshot.snapshotId(),
         snapshot.timestampMillis());
     return true;
+  }
+
+  private boolean exceedMaxDelay(Snapshot snapshot) {
+    if (tagConfig.getMaxDelayMinutes() <= 0) {
+      return false;
+    }
+    long delay = snapshot.timestampMillis() - getTagTriggerTime();
+    return delay > tagConfig.getMaxDelayMinutes() * 60_000L;
   }
 
   private String generateTagName() {
@@ -129,6 +147,7 @@ public class AutoCreateIcebergTagAction {
     private String tagFormat;
     private TagTriggerPeriod triggerPeriod;
     private int triggerOffsetMinutes;
+    private int maxDelayMinutes;
 
     public boolean isAutoCreateTag() {
       return autoCreateTag;
@@ -162,6 +181,14 @@ public class AutoCreateIcebergTagAction {
       this.triggerOffsetMinutes = triggerOffsetMinutes;
     }
 
+    public int getMaxDelayMinutes() {
+      return maxDelayMinutes;
+    }
+
+    public void setMaxDelayMinutes(int maxDelayMinutes) {
+      this.maxDelayMinutes = maxDelayMinutes;
+    }
+
     public static TagConfig fromTableProperties(Map<String, String> tableProperties) {
       TagConfig tagConfig = new TagConfig();
       tagConfig.setAutoCreateTag(
@@ -186,6 +213,11 @@ public class AutoCreateIcebergTagAction {
               tableProperties,
               TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES,
               TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES_DEFAULT));
+      tagConfig.setMaxDelayMinutes(
+          CompatiblePropertyUtil.propertyAsInt(
+              tableProperties,
+              TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES,
+              TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES_DEFAULT));
       return tagConfig;
     }
   }

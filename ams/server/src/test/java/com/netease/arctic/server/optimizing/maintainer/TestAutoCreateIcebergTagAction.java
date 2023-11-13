@@ -54,7 +54,11 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
   @Test
   public void testCreateDailyTag() {
     Table table = getArcticTable().asUnkeyedTable();
-    table.updateProperties().set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true").commit();
+    table
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .set(TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES, "0")
+        .commit();
     table.newAppend().commit();
     checkSnapshots(table, 1);
     checkNoTag(table);
@@ -73,7 +77,11 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
   @Test
   public void testCreateDailyOffsetTag() {
     Table table = getArcticTable().asUnkeyedTable();
-    table.updateProperties().set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true").commit();
+    table
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .set(TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES, "0")
+        .commit();
     table.newAppend().commit();
     checkSnapshots(table, 1);
     checkNoTag(table);
@@ -106,9 +114,39 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
   }
 
   @Test
+  public void testNotCreateDelayDailyTag() {
+    Table table = getArcticTable().asUnkeyedTable();
+    table
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .set(TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES, "1440")
+        .commit();
+    table.newAppend().commit();
+    checkSnapshots(table, 1);
+    checkNoTag(table);
+
+    Snapshot snapshot = table.currentSnapshot();
+    LocalDateTime now = fromEpochMillis(snapshot.timestampMillis());
+    LocalDateTime yesterday = now.minusDays(1);
+
+    // should not create yesterday tag
+    new AutoCreateIcebergTagAction(table, yesterday).execute();
+    checkNoTag(table);
+
+    // should create today tag
+    new AutoCreateIcebergTagAction(table, now).execute();
+    checkTagCount(table, 1);
+    checkTag(table, "tag-day-" + formatDate(now.minusDays(1)), snapshot);
+  }
+
+  @Test
   public void testTagFormat() {
     Table table = getArcticTable().asUnkeyedTable();
-    table.updateProperties().set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true").commit();
+    table
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .set(TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES, "0")
+        .commit();
     table
         .updateProperties()
         .set(TableProperties.AUTO_CREATE_TAG_FORMAT, "'custom-tag-'yyyyMMdd'-auto'")
