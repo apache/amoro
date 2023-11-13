@@ -203,6 +203,10 @@ public class TableProperties {
       "tag.auto-create.trigger.offset.minutes";
   public static final int AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES_DEFAULT = 0;
 
+  public static final String AUTO_CREATE_TAG_MAX_DELAY_MINUTES =
+      "tag.auto-create.trigger.max-delay.minutes";
+  public static final int AUTO_CREATE_TAG_MAX_DELAY_MINUTES_DEFAULT = 60;
+
   public static final String AUTO_CREATE_TAG_FORMAT = "tag.auto-create.daily.tag-format";
   public static final String AUTO_CREATE_TAG_FORMAT_DEFAULT = "'tag-day-'yyyyMMdd";
 
