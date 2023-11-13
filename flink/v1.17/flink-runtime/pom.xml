@@ -16,7 +16,8 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -233,112 +234,154 @@
                             <relocations>
                                 <relocation>
                                     <pattern>org.apache.iceberg.</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.iceberg.</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.iceberg.
+                                    </shadedPattern>
                                 </relocation>
                                 <!--            parquet                    -->
                                 <relocation>
                                     <pattern>org.apache.parquet.</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.parquet.</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.parquet.
+                                    </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>shaded.parquet.</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.shaded.parquet.</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.shaded.parquet.
+                                    </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>parquet.</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.parquet.</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.parquet.
+                                    </shadedPattern>
                                 </relocation>
                                 <!--           org.apache.commons, commons-lang                    -->
                                 <relocation>
                                     <pattern>org.apache.commons</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.commons</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.commons
+                                    </shadedPattern>
                                 </relocation>
                                 <!--             com.fasterxml.jackson.core                   -->
                                 <relocation>
                                     <pattern>com.fasterxml</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.com.fasterxml</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.com.fasterxml
+                                    </shadedPattern>
                                 </relocation>
                                 <!--              thrift                  -->
                                 <relocation>
                                     <pattern>org.apache.thrift</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.thrift</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.thrift
+                                    </shadedPattern>
+                                    <excludes>
+                                        <exclude>org.apache.thrift.TException</exclude>
+                                    </excludes>
                                 </relocation>
                                 <!--                caffeine                -->
                                 <relocation>
                                     <pattern>com.github.benmanes.caffeine</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.com.github.benmanes.caffeine</shadedPattern>
+                                    <shadedPattern>
+                                        com.netease.arctic.shaded.com.github.benmanes.caffeine
+                                    </shadedPattern>
                                 </relocation>
                                 <!--               avro                 -->
                                 <relocation>
                                     <pattern>org.apache.avro</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.avro</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.avro
+                                    </shadedPattern>
                                 </relocation>
                                 <!--               zookeeper                 -->
                                 <relocation>
                                     <pattern>org.apache.zookeeper</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.zookeeper</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.zookeeper
+                                    </shadedPattern>
                                 </relocation>
                                 <!--               curator                 -->
                                 <relocation>
                                     <pattern>org.apache.curator</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.curator</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.curator
+                                    </shadedPattern>
                                 </relocation>
                                 <!--               orc                 -->
                                 <relocation>
                                     <pattern>org.apache.orc</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.orc</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.orc
+                                    </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.threeten.extra</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.threeten.extra</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.threeten.extra
+                                    </shadedPattern>
                                 </relocation>
                                 <!--               cglib                 -->
                                 <relocation>
                                     <pattern>net.sf.cglib</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.net.sf.cglib</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.net.sf.cglib
+                                    </shadedPattern>
                                 </relocation>
                                 <!--               guava                 -->
                                 <relocation>
                                     <pattern>com.google</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.com.google</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.com.google
+                                    </shadedPattern>
                                 </relocation>
                                 <!--             asm                   -->
                                 <relocation>
                                     <pattern>org.objectweb.asm</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.objectweb.asm</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.objectweb.asm
+                                    </shadedPattern>
                                 </relocation>
                                 <!--              flink-sql-connector-kafka                  -->
                                 <relocation>
                                     <pattern>org.apache.flink.connector.kafka</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.flink.connector.kafka</shadedPattern>
+                                    <shadedPattern>
+                                        com.netease.arctic.shaded.org.apache.flink.connector.kafka
+                                    </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.flink.streaming.connectors.kafka</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.flink.streaming.connectors.kafka</shadedPattern>
+                                    <shadedPattern>
+                                        com.netease.arctic.shaded.org.apache.flink.streaming.connectors.kafka
+                                    </shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema</shadedPattern>
+                                    <pattern>
+                                        org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema
+                                    </pattern>
+                                    <shadedPattern>
+                                        com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema
+                                    </shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema</shadedPattern>
+                                    <pattern>
+                                        org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema
+                                    </pattern>
+                                    <shadedPattern>
+                                        com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema
+                                    </shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.apache.flink.streaming.util.serialization.KeyedSerializationSchema</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.KeyedSerializationSchema</shadedPattern>
+                                    <pattern>
+                                        org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
+                                    </pattern>
+                                    <shadedPattern>
+                                        com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
+                                    </shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.apache.flink.streaming.util.serialization.TypeInformationKeyValueSerializationSchema</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.TypeInformationKeyValueSerializationSchema</shadedPattern>
+                                    <pattern>
+                                        org.apache.flink.streaming.util.serialization.TypeInformationKeyValueSerializationSchema
+                                    </pattern>
+                                    <shadedPattern>
+                                        com.netease.arctic.shaded.org.apache.flink.streaming.util.serialization.TypeInformationKeyValueSerializationSchema
+                                    </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.kafka</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.org.apache.kafka</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.kafka
+                                    </shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>com.facebook.fb303</pattern>
-                                    <shadedPattern>com.netease.arctic.shaded.com.facebook.fb303</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shaded.com.facebook.fb303
+                                    </shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
