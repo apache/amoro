@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.NoSuchTableException;
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
@@ -277,7 +278,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
       List<BlockableOperation> operations,
       Map<String, String> properties) {
     checkStarted();
-    return getAndCheckExist(getServerTableIdentifier(tableIdentifier))
+    return getAndCheckExist(getOrSyncServerTableIdentifier(tableIdentifier))
         .block(operations, properties, blockerTimeout)
         .buildBlocker();
   }
@@ -301,7 +302,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   @Override
   public List<Blocker> getBlockers(TableIdentifier tableIdentifier) {
     checkStarted();
-    return getAndCheckExist(getServerTableIdentifier(tableIdentifier)).getBlockers().stream()
+    return getAndCheckExist(getOrSyncServerTableIdentifier(tableIdentifier)).getBlockers().stream()
         .map(TableBlocker::buildBlocker)
         .collect(Collectors.toList());
   }
@@ -389,6 +390,26 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
         TableMetaMapper.class,
         mapper ->
             mapper.selectTableIdentifier(id.getCatalog(), id.getDatabase(), id.getTableName()));
+  }
+
+  private ServerTableIdentifier getOrSyncServerTableIdentifier(TableIdentifier id) {
+    ServerTableIdentifier serverTableIdentifier = getServerTableIdentifier(id);
+    if (serverTableIdentifier != null) {
+      return serverTableIdentifier;
+    }
+    ServerCatalog serverCatalog = getServerCatalog(id.getCatalog());
+    if (serverCatalog instanceof InternalCatalog) {
+      return null;
+    }
+    try {
+      AmoroTable<?> table = serverCatalog.loadTable(id.database, id.getTableName());
+      TableIdentity identity =
+          new TableIdentity(id.getDatabase(), id.getTableName(), table.format());
+      syncTable((ExternalCatalog) serverCatalog, identity);
+      return getServerTableIdentifier(id);
+    } catch (NoSuchTableException e) {
+      return null;
+    }
   }
 
   @Override
@@ -649,6 +670,12 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
       this.database = serverTableIdentifier.getDatabase();
       this.tableName = serverTableIdentifier.getTableName();
       this.format = serverTableIdentifier.getFormat();
+    }
+
+    protected TableIdentity(String database, String tableName, TableFormat format) {
+      this.database = database;
+      this.tableName = tableName;
+      this.format = format;
     }
 
     public String getDatabase() {
