@@ -625,7 +625,7 @@ public class ArcticCatalog extends AbstractCatalog {
 
     for (int i = computeIndex + 1; computeIndex > -1 && i < tableColumns.size(); i++) {
       if (tableColumns.get(i) instanceof PhysicalColumn) {
-        throw new IllegalStateException("compute column must come after all the physical columns");
+        throw new IllegalStateException("compute column must be listed after all physical columns ");
       }
     }
   }

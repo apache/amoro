@@ -86,7 +86,7 @@ Currently, most of the syntax supported by [Flink SQL create table](https://nigh
 - PARTITION BY (column1, column2, …): configure Flink partition fields, but Flink does not yet support hidden partitions.
 - PRIMARY KEY (column1, column2, …): configure primary keys.
 - WITH ('key'='value', …): configure Amoro Table properties.
-- computed_column_definition: column_name AS computed_column_expression 
+- computed_column_definition: column_name AS computed_column_expression. Currently, compute column must be listed after all physical columns. 
 - watermark_definition: WATERMARK FOR rowtime_column_name AS watermark_strategy_expression, rowtime_column_name must be of type TIMESTAMP(3).  
 
 #### PARTITIONED BY
