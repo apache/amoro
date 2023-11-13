@@ -233,7 +233,10 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
 
     BloomFilter<StructLike> bloomFilter = null;
     if (filterEqDelete) {
-      LOG.info("Enable filter eq-delete, rewrite data record count is {}", dataRecordCnt);
+      LOG.debug(
+          "Enable bloom-filter to filter eq-delete, (rewrite + rewrite pos) data count is {}",
+          dataRecordCnt);
+      // one million data is about 1.71M memory usage
       bloomFilter = BloomFilter.create(StructLikeFunnel.INSTANCE, dataRecordCnt, 0.001);
       try (CloseableIterable<Record> deletes =
           CloseableIterable.concat(
