@@ -190,11 +190,11 @@ public class DashboardServer {
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/tasks",
                 tableController::getOptimizingProcessTasks);
             get(
-                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
-                tableController::getTableTransactions);
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/snapshots",
+                tableController::getTableSnapshots);
             get(
-                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions/{transactionId}/detail",
-                tableController::getTransactionDetail);
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/snapshots/{snapshotId}/detail",
+                tableController::getSnapshotDetail);
             get(
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions",
                 tableController::getTablePartitions);
@@ -212,7 +212,7 @@ public class DashboardServer {
                 tableController::getTableTags);
             get(
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
-                tableController::getTableBranchs);
+                tableController::getTableBranches);
 
             // catalog controller
             post("/catalogs", catalogController::createCatalog);
@@ -304,11 +304,11 @@ public class DashboardServer {
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/tasks",
                 tableController::getOptimizingProcessTasks);
             get(
-                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
-                tableController::getTableTransactions);
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/snapshots",
+                tableController::getTableSnapshots);
             get(
-                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions/{transactionId}/detail",
-                tableController::getTransactionDetail);
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/snapshots/{snapshotId}/detail",
+                tableController::getSnapshotDetail);
             get(
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions",
                 tableController::getTablePartitions);
@@ -329,7 +329,7 @@ public class DashboardServer {
                 tableController::getTableTags);
             get(
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
-                tableController::getTableBranchs);
+                tableController::getTableBranches);
 
             // optimize controller
             get(

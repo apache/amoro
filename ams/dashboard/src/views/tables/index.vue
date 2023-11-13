@@ -47,7 +47,7 @@ import { defineComponent, reactive, toRefs, watch, shallowReactive, computed, on
 import UDetails from './components/Details.vue'
 import UFiles from './components/Files.vue'
 import UOperations from './components/Operations.vue'
-import UTransactions from './components/Transactions.vue'
+import USnapshots from './components/Snapshots.vue'
 import UOptimized from './components/Optimized.vue'
 import { useRoute, useRouter } from 'vue-router'
 import useStore from '@/store/index'
@@ -61,7 +61,7 @@ export default defineComponent({
     UDetails,
     UFiles,
     UOperations,
-    UTransactions,
+    USnapshots,
     UOptimized
   },
   setup() {
@@ -74,7 +74,7 @@ export default defineComponent({
     const tabConfigs = shallowReactive([
       // { key: 'Details' },
       // { key: 'Files' },
-      { key: 'Transactions', label: 'Transactions' },
+      { key: 'Snapshots', label: 'Snapshots' },
       { key: 'Optimized', label: 'Optimizing' },
       { key: 'Operations', label: 'Operations' }
     ])
