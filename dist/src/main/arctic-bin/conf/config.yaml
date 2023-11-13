@@ -58,6 +58,9 @@ ams:
     type: derby
     jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
     url: jdbc:derby:/tmp/amoro/derby;create=true
+    connect-max-total: 20
+    connect-max-idle: 16
+    connect-max-wait-millis: 1000
 
 #    MySQL database configuration.
 #    database:

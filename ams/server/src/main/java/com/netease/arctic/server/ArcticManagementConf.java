@@ -224,6 +224,24 @@ public class ArcticManagementConf {
           .defaultValue("")
           .withDescription("The password for connecting to the database.");
 
+  public static final ConfigOption<Integer> DB_CONNECT_MAX_TOTAL =
+      ConfigOptions.key("database.connect-max-total")
+          .intType()
+          .defaultValue(20)
+          .withDescription("Max connect count of database.");
+
+  public static final ConfigOption<Integer> DB_CONNECT_MAX_IDLE =
+      ConfigOptions.key("database.connect-max-idle")
+          .intType()
+          .defaultValue(16)
+          .withDescription("Max idle connect count of database.");
+
+  public static final ConfigOption<Long> DB_CONNECT_MAX_WAIT_MILLIS =
+      ConfigOptions.key("database.connect-max-wait-millis")
+          .longType()
+          .defaultValue(1000L)
+          .withDescription("Connect database max wait time.");
+
   public static final ConfigOption<Long> OPTIMIZER_HB_TIMEOUT =
       ConfigOptions.key("optimizer.heart-beat-timeout")
           .longType()
