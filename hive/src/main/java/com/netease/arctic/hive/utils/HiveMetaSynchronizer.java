@@ -81,6 +81,10 @@ public class HiveMetaSynchronizer {
    */
   public static void syncHiveSchemaToArctic(ArcticTable table, HMSClientPool hiveClient) {
     try {
+      if (!HiveTableUtil.checkExist(hiveClient, table.id())) {
+        LOG.warn("hive table {} not exist, try to skip sync schema to amoro", table.id());
+        return;
+      }
       Table hiveTable = hiveClient.run(client -> client.getTable(table.id().getDatabase(), table.id().getTableName()));
       Schema hiveSchema = HiveSchemaUtil.convertHiveSchemaToIcebergSchema(hiveTable, table.isKeyedTable() ?
           table.asKeyedTable().primaryKeySpec().fieldNames() : new ArrayList<>());
