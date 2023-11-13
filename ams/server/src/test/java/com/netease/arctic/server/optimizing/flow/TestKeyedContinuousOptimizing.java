@@ -61,7 +61,7 @@ public class TestKeyedContinuousOptimizing extends TableTestBase {
       {
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, false)
       },
-      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(true, false)},
+      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(true, true)},
       {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(true, false)},
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
@@ -142,7 +142,7 @@ public class TestKeyedContinuousOptimizing extends TableTestBase {
     mustFullCycle(table, optimizingFlow::optimize);
 
     while (cycle-- > 0) {
-      view.onlyDelete(recordCountOnceWrite);
+      view.onlyDelete(recordCountOnceWrite * 6);
       optimizingFlow.optimize();
 
       view.cdc(recordCountOnceWrite);

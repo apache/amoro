@@ -103,7 +103,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
 
   private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
 
-  private final long rewrittenDataRecordCnt;
+  private final long dataRecordCnt;
   private final boolean filterEqDelete;
 
   protected CombinedDeleteFilter(
@@ -111,8 +111,8 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
       Schema tableSchema,
       StructLikeCollections structLikeCollections) {
     this.input = rewriteFilesInput;
-    this.rewrittenDataRecordCnt =
-        Arrays.stream(rewriteFilesInput.rewrittenDataFiles())
+    this.dataRecordCnt =
+        Arrays.stream(rewriteFilesInput.dataFiles())
             .mapToLong(ContentFile::recordCount)
             .sum();
     ImmutableList.Builder<DeleteFile> posDeleteBuilder = ImmutableList.builder();
@@ -235,12 +235,13 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
 
     BloomFilter<StructLike> bloomFilter = null;
     if (filterEqDelete) {
-      bloomFilter = BloomFilter.create(StructLikeFunnel.INSTANCE, rewrittenDataRecordCnt, 0.001);
+      LOG.info("Enable filter eq-delete, rewrite data record count is {}", dataRecordCnt);
+      bloomFilter = BloomFilter.create(StructLikeFunnel.INSTANCE, dataRecordCnt, 0.001);
       try (CloseableIterable<Record> deletes =
           CloseableIterable.concat(
               CloseableIterable.transform(
                   CloseableIterable.withNoopClose(
-                      Arrays.stream(input.rewrittenDataFiles()).collect(Collectors.toList())),
+                      Arrays.stream(input.dataFiles()).collect(Collectors.toList())),
                   s -> openFile(s, deleteSchema)))) {
         for (Record record : deletes) {
           StructLike identifier = internalRecordWrapper.copyFor(record);
