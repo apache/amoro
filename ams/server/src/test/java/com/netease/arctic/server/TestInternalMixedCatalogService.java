@@ -27,7 +27,7 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.MixedDataTestHelpers;
-import com.netease.arctic.mixed.MixedIcebergAmoroCatalog;
+import com.netease.arctic.mixed.InternalMixedIcebergCatalog;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.UnkeyedTable;
@@ -89,7 +89,7 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
 
   @Test
   public void testCatalogLoader() {
-    Assertions.assertEquals(MixedIcebergAmoroCatalog.class.getName(), catalog.getClass().getName());
+    Assertions.assertEquals(InternalMixedIcebergCatalog.class.getName(), catalog.getClass().getName());
   }
 
   @Nested
@@ -99,7 +99,7 @@ public class TestInternalMixedCatalogService extends InternalCatalogServiceTestB
     public void test() {
       ArcticCatalog catalog = loadMixedIcebergCatalog();
       Assertions.assertEquals(
-          MixedIcebergAmoroCatalog.class.getName(), catalog.getClass().getName());
+          InternalMixedIcebergCatalog.class.getName(), catalog.getClass().getName());
       Assertions.assertTrue(catalog.listDatabases().isEmpty());
 
       catalog.createDatabase(database);

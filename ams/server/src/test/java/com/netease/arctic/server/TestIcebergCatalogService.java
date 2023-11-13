@@ -21,7 +21,6 @@ package com.netease.arctic.server;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.io.IcebergDataTestHelpers;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.io.reader.GenericUnkeyedDataReader;
@@ -207,7 +206,6 @@ public class TestIcebergCatalogService extends InternalCatalogServiceTestBase {
       Arrays.stream(files).forEach(appendFiles::appendFile);
       appendFiles.commit();
 
-      ArcticCatalog catalog = ams.catalog(AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
       ArcticTable arcticTable =
           (ArcticTable) serverCatalog.loadTable(database, table).originalTable();
 

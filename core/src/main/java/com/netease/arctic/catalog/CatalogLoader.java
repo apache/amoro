@@ -35,7 +35,7 @@ import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
-import com.netease.arctic.mixed.MixedIcebergAmoroCatalog;
+import com.netease.arctic.mixed.InternalMixedIcebergCatalog;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.common.DynConstructors;
@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 /** Catalogs, create catalog from arctic metastore thrift url. */
 public class CatalogLoader {
 
-  public static final String INTERNAL_CATALOG_IMPL = MixedIcebergAmoroCatalog.class.getName();
+  public static final String INTERNAL_CATALOG_IMPL = InternalMixedIcebergCatalog.class.getName();
   public static final String HIVE_CATALOG_IMPL =
       "com.netease.arctic.hive.catalog.ArcticHiveCatalog";
   public static final String MIXED_ICEBERG_CATALOG_IMP = BasicMixedIcebergCatalog.class.getName();

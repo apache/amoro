@@ -20,7 +20,6 @@ package com.netease.arctic.mixed;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.hadoop.conf.Configuration;
@@ -40,7 +39,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class MixedIcebergAmoroCatalog extends BasicMixedIcebergCatalog {
+/**
+ * Mixed-iceberg format catalog base on internal catalog.
+ */
+public class InternalMixedIcebergCatalog extends BasicMixedIcebergCatalog {
+
+  public static final String CHANGE_STORE_SEPARATOR = "@";
+  public static final String CHANGE_STORE_NAME = "change";
 
   public static final String HTTP_HEADER_LIST_TABLE_FILTER = "LIST-TABLE-FILTER";
 
@@ -93,8 +98,8 @@ public class MixedIcebergAmoroCatalog extends BasicMixedIcebergCatalog {
       return TableIdentifier.of(
           baseIdentifier.namespace(),
           baseIdentifier.name()
-              + MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR
-              + MetaTableProperties.MIXED_FORMAT_CHANGE_STORE_SUFFIX);
+              + CHANGE_STORE_SEPARATOR
+              + CHANGE_STORE_NAME);
     }
 
     @Override

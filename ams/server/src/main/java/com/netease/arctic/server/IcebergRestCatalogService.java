@@ -44,6 +44,7 @@ import io.javalin.http.ContentType;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.plugin.json.JavalinJackson;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.TableMetadata;
@@ -163,7 +164,9 @@ public class IcebergRestCatalogService extends PersistentBase {
       LOG.warn("InternalServer Error", e);
     } else {
       // those errors happened when the client-side passed arguments with problems.
-      LOG.debug("Iceberg Rest Catalog Service exception: ", e);
+      LOG.info("Exception when handle request: {} {}, code: {} message: {}",
+          ctx.req.getMethod(), ctx.req.getRequestURI().substring(ICEBERG_REST_API_PREFIX.length()),
+          code.code, e.getMessage());
     }
   }
 
@@ -287,7 +290,7 @@ public class IcebergRestCatalogService extends PersistentBase {
         (catalog, database) -> {
           CreateTableRequest request = bodyAsClass(ctx, CreateTableRequest.class);
           String tableName = request.name();
-          checkAlreadyExists(catalog.exist(database, tableName), "Table",
+          checkAlreadyExists(!catalog.exist(database, tableName), "Table",
               database + "." + tableName);
           String tableLocation = InternalTableUtil.tableLocation(
               catalog, database, request.name(), request.location());
@@ -471,7 +474,11 @@ public class IcebergRestCatalogService extends PersistentBase {
             };
 
             TableMetadata base = tableStoreMetadataLoader.apply(false);
-            TableMetadata change = tableStoreMetadataLoader.apply(true);
+            TableMetadata change = null;
+            if (StringUtils.isNotEmpty(tableMetadata.getPrimaryKey()) &&
+                StringUtils.isNotEmpty(tableMetadata.getChangeLocation())) {
+              change = tableStoreMetadataLoader.apply(true);
+            }
 
             String purgeLocation = tableMetadata.getTableLocation();
             tableService.dropTableMetadata(

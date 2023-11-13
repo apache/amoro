@@ -25,6 +25,7 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
+import com.netease.arctic.mixed.InternalMixedIcebergCatalog;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.iceberg.InternalTableStoreOperations;
@@ -70,8 +71,8 @@ public class InternalTableUtil {
   private static final String S3_FILE_IO_IMPL = "org.apache.iceberg.aws.s3.S3FileIO";
 
   public static final String CHANGE_STORE_TABLE_NAME_SUFFIX =
-      MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR
-          + MetaTableProperties.MIXED_FORMAT_CHANGE_STORE_SUFFIX;
+      InternalMixedIcebergCatalog.CHANGE_STORE_SEPARATOR
+          + InternalMixedIcebergCatalog.CHANGE_STORE_NAME;
 
   private static final String S3_PROTOCOL_PREFIX = "s3://";
 
@@ -143,6 +144,11 @@ public class InternalTableUtil {
     return TableMetadata.buildFrom(metadata).setProperties(properties).discardChanges().build();
   }
 
+  /**
+   * Check if this table is created before version 0.7.0
+   * @param internalTableMetadata table metadata.
+   * @return true if this table is created before version 0.7.0
+   */
   public static boolean isLegacyMixedIceberg(
       com.netease.arctic.server.table.TableMetadata internalTableMetadata) {
     return TableFormat.MIXED_ICEBERG == internalTableMetadata.getFormat()
@@ -157,7 +163,7 @@ public class InternalTableUtil {
    * @return is this match the change store name pattern
    */
   public static boolean isMatchChangeStoreNamePattern(String tableName) {
-    String separator = MetaTableProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR;
+    String separator = InternalMixedIcebergCatalog.CHANGE_STORE_SEPARATOR;
     if (!tableName.contains(separator)) {
       return false;
     }
@@ -348,6 +354,7 @@ public class InternalTableUtil {
         apiKeySpec.setFields(keySpec.fieldNames());
         meta.setKeySpec(apiKeySpec);
         meta.putToLocations(MetaTableProperties.LOCATION_KEY_CHANGE, changeMetadata.location());
+        meta.putToProperties(CHANGE_STORE_PREFIX + PROPERTIES_METADATA_LOCATION, changeMetadataFileLocation);
       }
       meta.putToProperties(MIXED_ICEBERG_BASED_REST, Boolean.toString(true));
     }

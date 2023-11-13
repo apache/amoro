@@ -76,16 +76,14 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
           properties.get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
       databaseFilterPattern = Pattern.compile(databaseFilter);
     }
-    synchronized (this) {
-      this.name = name;
-      this.tableMetaStore = metaStore;
-      this.icebergCatalog = buildIcebergCatalog(name, properties, metaStore.getConfiguration());
-      this.databaseFilterPattern = databaseFilterPattern;
-      this.catalogProperties = properties;
-      this.tables = newMixedTables(metaStore, properties, icebergCatalog);
-      if (properties.containsKey(CatalogMetaProperties.AMS_URI)) {
-        this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
-      }
+    this.name = name;
+    this.tableMetaStore = metaStore;
+    this.icebergCatalog = buildIcebergCatalog(name, properties, metaStore.getConfiguration());
+    this.databaseFilterPattern = databaseFilterPattern;
+    this.catalogProperties = properties;
+    this.tables = newMixedTables(metaStore, properties, icebergCatalog);
+    if (properties.containsKey(CatalogMetaProperties.AMS_URI)) {
+      this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
     }
   }
 
