@@ -275,7 +275,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
             null,
             filterEqDeleteScanTask);
 
-    Assert.assertTrue(dataReader.filterEqDelete());
+    Assert.assertTrue(dataReader.getDeleteFilter().isFilterEqDelete());
 
     try (CloseableIterable<Record> records = dataReader.readData()) {
       Assert.assertEquals(1, Iterables.size(records));

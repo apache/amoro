@@ -193,7 +193,7 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
             false,
             null,
             input);
-    Assert.assertTrue(reader.filterEqDelete());
+    Assert.assertTrue(reader.getDeleteFilter().isFilterEqDelete());
 
     CloseableIterable<Record> readData = reader.readData();
     Assert.assertEquals(Iterables.size(readData), 0);

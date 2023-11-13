@@ -20,12 +20,14 @@ package com.netease.arctic.io.reader;
 
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.CloseablePredicate;
+import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.utils.ContentFiles;
 import com.netease.arctic.utils.map.StructLikeBaseMap;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileContent;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
@@ -41,6 +43,7 @@ import org.apache.iceberg.io.DeleteSchemaUtil;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.Parquet;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
@@ -54,6 +57,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -61,6 +65,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Special point:
@@ -82,6 +87,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
   private static final Accessor<StructLike> POSITION_ACCESSOR =
       POS_DELETE_SCHEMA.accessorForField(MetadataColumns.DELETE_FILE_POS.fieldId());
 
+  private final RewriteFilesInput input;
   private final List<DeleteFile> posDeletes;
   private final List<DeleteFile> eqDeletes;
 
@@ -101,17 +107,18 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
   private final boolean filterEqDelete;
 
   protected CombinedDeleteFilter(
-      long rewrittenDataRecordCnt,
-      ContentFile<?>[] deleteFiles,
-      Set<String> positionPathSets,
+      RewriteFilesInput rewriteFilesInput,
       Schema tableSchema,
-      StructLikeCollections structLikeCollections,
-      boolean filterEqDelete) {
-    this.rewrittenDataRecordCnt = rewrittenDataRecordCnt;
+      StructLikeCollections structLikeCollections) {
+    this.input = rewriteFilesInput;
+    this.rewrittenDataRecordCnt =
+        Arrays.stream(rewriteFilesInput.rewrittenDataFiles())
+            .mapToLong(ContentFile::recordCount)
+            .sum();
     ImmutableList.Builder<DeleteFile> posDeleteBuilder = ImmutableList.builder();
     ImmutableList.Builder<DeleteFile> eqDeleteBuilder = ImmutableList.builder();
-    if (deleteFiles != null) {
-      for (ContentFile<?> delete : deleteFiles) {
+    if (rewriteFilesInput.deleteFiles() != null) {
+      for (ContentFile<?> delete : rewriteFilesInput.deleteFiles()) {
         switch (delete.content()) {
           case POSITION_DELETES:
             posDeleteBuilder.add(ContentFiles.asDeleteFile(delete));
@@ -133,7 +140,10 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
         }
       }
     }
-    this.positionPathSets = positionPathSets;
+    this.positionPathSets =
+        Arrays.stream(rewriteFilesInput.dataFiles())
+            .map(s -> s.path().toString())
+            .collect(Collectors.toSet());
     this.posDeletes = posDeleteBuilder.build();
     this.eqDeletes = eqDeleteBuilder.build();
     this.deleteSchema = TypeUtil.select(tableSchema, deleteIds);
@@ -141,7 +151,29 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     if (structLikeCollections != null) {
       this.structLikeCollections = structLikeCollections;
     }
-    this.filterEqDelete = filterEqDelete;
+    this.filterEqDelete = filterEqDelete();
+  }
+
+  /**
+   * Whether to use {@link BloomFilter} to filter eq delete and reduce the amount of data written to
+   * {@link StructLikeBaseMap} by eq delete
+   */
+  private boolean filterEqDelete() {
+    long dataRecordCnt = Arrays.stream(input.dataFiles()).mapToLong(ContentFile::recordCount).sum();
+    long eqDeleteRecordCnt =
+        Arrays.stream(input.deleteFiles())
+            .filter(file -> file.content() == FileContent.EQUALITY_DELETES)
+            .mapToLong(ContentFile::recordCount)
+            .sum();
+
+    // Data file primary key memory usage, cost is the same as eq delete, +1 cost
+    // Data file read cost is 0.5 times the memory cost, +0.5 cost
+    return eqDeleteRecordCnt > dataRecordCnt * 2.5;
+  }
+
+  @VisibleForTesting
+  public boolean isFilterEqDelete() {
+    return filterEqDelete;
   }
 
   protected abstract InputFile getInputFile(String location);
@@ -204,7 +236,12 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     BloomFilter<StructLike> bloomFilter = null;
     if (filterEqDelete) {
       bloomFilter = BloomFilter.create(StructLikeFunnel.INSTANCE, rewrittenDataRecordCnt, 0.001);
-      try (CloseableIterable<Record> deletes = readIdentifierData(deleteSchema)) {
+      try (CloseableIterable<Record> deletes =
+          CloseableIterable.concat(
+              CloseableIterable.transform(
+                  CloseableIterable.withNoopClose(
+                      Arrays.stream(input.rewrittenDataFiles()).collect(Collectors.toList())),
+                  s -> openFile(s, deleteSchema)))) {
         for (Record record : deletes) {
           StructLike identifier = internalRecordWrapper.copyFor(record);
           bloomFilter.put(identifier);
@@ -221,7 +258,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
                     eqDeletes,
                     s ->
                         CloseableIterable.transform(
-                            openDeletes(ContentFiles.asDeleteFile(s), deleteSchema),
+                            openFile(s, deleteSchema),
                             r -> new RecordWithLsn(s.dataSequenceNumber(), r)))),
             RecordWithLsn::recordCopy);
 
@@ -267,8 +304,6 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     this.eqPredicate = closeablePredicate;
     return isInDeleteSet;
   }
-
-  abstract CloseableIterable<Record> readIdentifierData(Schema deleteSchema);
 
   private CloseableIterable<StructForDelete<T>> applyEqDeletes(
       CloseableIterable<StructForDelete<T>> records) {
@@ -348,12 +383,12 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
   }
 
   private CloseableIterable<Record> openPosDeletes(DeleteFile file) {
-    return openDeletes(file, POS_DELETE_SCHEMA);
+    return openFile(file, POS_DELETE_SCHEMA);
   }
 
-  private CloseableIterable<Record> openDeletes(DeleteFile deleteFile, Schema deleteSchema) {
-    InputFile input = getInputFile(deleteFile.path().toString());
-    switch (deleteFile.format()) {
+  private CloseableIterable<Record> openFile(ContentFile<?> contentFile, Schema deleteSchema) {
+    InputFile input = getInputFile(contentFile.path().toString());
+    switch (contentFile.format()) {
       case AVRO:
         return Avro.read(input)
             .project(deleteSchema)
@@ -380,7 +415,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
         throw new UnsupportedOperationException(
             String.format(
                 "Cannot read deletes, %s is not a supported format: %s",
-                deleteFile.format().name(), deleteFile.path()));
+                contentFile.format().name(), contentFile.path()));
     }
   }
 

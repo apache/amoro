@@ -22,11 +22,8 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.optimizing.OptimizingDataReader;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
-import com.netease.arctic.utils.map.StructLikeBaseMap;
 import com.netease.arctic.utils.map.StructLikeCollections;
-import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.FileContent;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -45,7 +42,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
-import org.apache.paimon.shade.guava30.com.google.common.hash.BloomFilter;
 
 import java.util.Arrays;
 import java.util.List;
@@ -67,8 +63,6 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected final ArcticFileIO fileIO;
   protected final BiFunction<Type, Object, Object> convertConstant;
   protected final boolean reuseContainer;
-
-  protected final ContentFile<?>[] deleteFiles;
   protected CombinedDeleteFilter<Record> deleteFilter;
 
   protected PartitionSpec spec;
@@ -93,40 +87,8 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     this.convertConstant = convertConstant;
     this.reuseContainer = reuseContainer;
     this.input = rewriteFilesInput;
-    this.deleteFiles = rewriteFilesInput.deleteFiles();
-    Set<String> positionPathSet =
-        Arrays.stream(rewriteFilesInput.dataFiles())
-            .map(s -> s.path().toString())
-            .collect(Collectors.toSet());
-    long rewrittenDataRecordCnt =
-        Arrays.stream(input.rewrittenDataFiles()).mapToLong(ContentFile::recordCount).sum();
-
     this.deleteFilter =
-        new GenericDeleteFilter(
-            rewrittenDataRecordCnt,
-            deleteFiles,
-            positionPathSet,
-            tableSchema,
-            structLikeCollections,
-            filterEqDelete());
-  }
-
-  /**
-   * Whether to use {@link BloomFilter} to filter eq delete and reduce the amount of data written to
-   * {@link StructLikeBaseMap} by eq delete
-   */
-  @VisibleForTesting
-  public boolean filterEqDelete() {
-    long dataRecordCnt = Arrays.stream(input.dataFiles()).mapToLong(ContentFile::recordCount).sum();
-    long eqDeleteRecordCnt =
-        Arrays.stream(input.deleteFiles())
-            .filter(file -> file.content() == FileContent.EQUALITY_DELETES)
-            .mapToLong(ContentFile::recordCount)
-            .sum();
-
-    // Data file primary key memory usage, cost is the same as eq delete, +1 cost
-    // Data file read cost is 0.5 times the memory cost, +0.5 cost
-    return eqDeleteRecordCnt > dataRecordCnt * 2.5;
+        new GenericDeleteFilter(rewriteFilesInput, tableSchema, structLikeCollections);
   }
 
   @Override
@@ -319,22 +281,18 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     return new Schema(columns);
   }
 
+  @VisibleForTesting
+  public CombinedDeleteFilter<Record> getDeleteFilter() {
+    return deleteFilter;
+  }
+
   protected class GenericDeleteFilter extends CombinedDeleteFilter<Record> {
 
     public GenericDeleteFilter(
-        long rewrittenDataRecordCnt,
-        ContentFile<?>[] deleteFiles,
-        Set<String> positionPathSets,
+        RewriteFilesInput rewriteFilesInput,
         Schema tableSchema,
-        StructLikeCollections structLikeCollections,
-        boolean filterEqDelete) {
-      super(
-          rewrittenDataRecordCnt,
-          deleteFiles,
-          positionPathSets,
-          tableSchema,
-          structLikeCollections,
-          filterEqDelete);
+        StructLikeCollections structLikeCollections) {
+      super(rewriteFilesInput, tableSchema, structLikeCollections);
     }
 
     @Override
@@ -345,15 +303,6 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     @Override
     protected ArcticFileIO getArcticFileIo() {
       return fileIO;
-    }
-
-    @Override
-    protected CloseableIterable<Record> readIdentifierData(Schema deleteSchema) {
-      return CloseableIterable.concat(
-          CloseableIterable.transform(
-              CloseableIterable.withNoopClose(
-                  Arrays.stream(input.rewrittenDataFiles()).collect(Collectors.toList())),
-              s -> openFile(s, spec, deleteSchema)));
     }
   }
 }
