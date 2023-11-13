@@ -46,6 +46,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public class DefaultTableService extends StatedPersistentBase implements TableService {
@@ -597,6 +598,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   private void syncTable(ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
+    AtomicBoolean tableRuntimeAdded = new AtomicBoolean(false);
     try {
       doAsTransaction(
           () ->
@@ -604,14 +606,16 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
                   tableIdentity.getDatabase(),
                   tableIdentity.getTableName(),
                   tableIdentity.getFormat()),
-          () -> handleTableRuntimeAdded(externalCatalog, tableIdentity));
+          () -> tableRuntimeAdded.set(handleTableRuntimeAdded(externalCatalog, tableIdentity)));
     } catch (Throwable t) {
-      revertTableRuntimeAdded(externalCatalog, tableIdentity);
+      if (tableRuntimeAdded.get()) {
+        revertTableRuntimeAdded(externalCatalog, tableIdentity);
+      }
       throw t;
     }
   }
 
-  private void handleTableRuntimeAdded(
+  private boolean handleTableRuntimeAdded(
       ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
     ServerTableIdentifier tableIdentifier =
         externalCatalog.getServerTableIdentifier(
@@ -623,6 +627,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     if (headHandler != null) {
       headHandler.fireTableAdded(table, tableRuntime);
     }
+    return true;
   }
 
   private void revertTableRuntimeAdded(
