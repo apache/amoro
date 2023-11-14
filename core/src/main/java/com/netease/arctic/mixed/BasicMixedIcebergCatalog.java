@@ -131,7 +131,7 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     List<String> databases =
         tableMetaStore.doAs(
             () ->
-                asNamespaceCatalog.listNamespaces(Namespace.empty()).stream()
+                asNamespaceCatalog().listNamespaces(Namespace.empty()).stream()
                     .map(namespace -> namespace.level(0))
                     .distinct()
                     .collect(Collectors.toList()));
@@ -145,12 +145,12 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
 
   @Override
   public void createDatabase(String database) {
-    asNamespaceCatalog.createNamespace(Namespace.of(database));
+    asNamespaceCatalog().createNamespace(Namespace.of(database));
   }
 
   @Override
   public void dropDatabase(String databaseName) {
-    asNamespaceCatalog.dropNamespace(Namespace.of(databaseName));
+    asNamespaceCatalog().dropNamespace(Namespace.of(databaseName));
   }
 
   @Override
@@ -253,6 +253,16 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   private boolean dropTableInternal(
       org.apache.iceberg.catalog.TableIdentifier tableIdentifier, boolean purge) {
     return tableMetaStore.doAs(() -> icebergCatalog.dropTable(tableIdentifier, purge));
+  }
+
+  private SupportsNamespaces asNamespaceCatalog() {
+    if (asNamespaceCatalog == null) {
+      throw new UnsupportedOperationException(
+          String.format(
+              "Iceberg catalog: %s doesn't implement SupportsNamespaces",
+              icebergCatalog.getClass().getName()));
+    }
+    return asNamespaceCatalog;
   }
 
   private class MixedIcebergTableBuilder implements TableBuilder {
