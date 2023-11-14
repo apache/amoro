@@ -24,7 +24,6 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
-import com.netease.arctic.server.iceberg.InternalTableStoreOperations;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.utils.InternalTableUtil;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -82,7 +81,7 @@ public class InternalMixedIcebergHandler extends InternalIcebergHandler {
       }
       return ops;
     }
-    return new InternalTableStoreOperations(
+    return new MixedIcebergInternalTableStoreOperations(
         tableMetadata().getTableIdentifier(), tableMetadata(), io, changeStore);
   }
 

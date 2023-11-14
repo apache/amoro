@@ -1,10 +1,23 @@
-package com.netease.arctic.server.iceberg;
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import static com.netease.arctic.server.table.internal.InternalTableConstants.CHANGE_STORE_PREFIX;
-import static com.netease.arctic.server.table.internal.InternalTableConstants.PROPERTIES_METADATA_LOCATION;
-import static com.netease.arctic.server.table.internal.InternalTableConstants.PROPERTIES_PREV_METADATA_LOCATION;
+package com.netease.arctic.server.table.internal;
 
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
@@ -25,24 +38,24 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class InternalTableStoreOperations extends PersistentBase implements TableOperations {
+import static com.netease.arctic.server.table.internal.InternalTableConstants.PROPERTIES_METADATA_LOCATION;
+import static com.netease.arctic.server.table.internal.InternalTableConstants.PROPERTIES_PREV_METADATA_LOCATION;
+
+public class IcebergInternalTableOperations extends PersistentBase implements TableOperations {
 
   private final ServerTableIdentifier identifier;
 
   private TableMetadata current;
   private final FileIO io;
   private com.netease.arctic.server.table.TableMetadata tableMetadata;
-  private final boolean changeStore;
 
-  public InternalTableStoreOperations(
+  public IcebergInternalTableOperations(
       ServerTableIdentifier identifier,
       com.netease.arctic.server.table.TableMetadata tableMetadata,
-      FileIO io,
-      boolean changeStore) {
+      FileIO io) {
     this.io = io;
     this.tableMetadata = tableMetadata;
     this.identifier = identifier;
-    this.changeStore = changeStore;
   }
 
   @Override
@@ -63,34 +76,19 @@ public class InternalTableStoreOperations extends PersistentBase implements Tabl
     if (this.tableMetadata == null) {
       return null;
     }
-    this.current = loadTableMetadata(io, this.tableMetadata, this.changeStore);
-    return this.current;
-  }
-
-  /**
-   * load iceberg table metadata by given ams table metadata
-   *
-   * @param io - iceberg file io
-   * @param tableMeta - table metadata
-   * @param changeStore - set true to load a change store metadata for mixed-format.
-   * @return iceberg table metadata object
-   */
-  private TableMetadata loadTableMetadata(
-      FileIO io, com.netease.arctic.server.table.TableMetadata tableMeta, boolean changeStore) {
-    String locationProperty = PROPERTIES_METADATA_LOCATION;
-    if (changeStore) {
-      Preconditions.checkState(
-          TableFormat.MIXED_ICEBERG == tableMeta.getFormat(),
-          "Table %s is not a mixed-iceberg table. can't load change-store",
-          tableMeta.getTableIdentifier().toString());
-      locationProperty = CHANGE_STORE_PREFIX + PROPERTIES_METADATA_LOCATION;
-    }
-    String metadataFileLocation = tableMeta.getProperties().get(locationProperty);
+    String metadataFileLocation = tableMetadataLocation(this.tableMetadata);
     if (StringUtils.isBlank(metadataFileLocation)) {
       return null;
     }
-    return TableMetadataParser.read(io, metadataFileLocation);
+    this.current = TableMetadataParser.read(io, metadataFileLocation);
+    return this.current;
   }
+
+
+  protected String tableMetadataLocation(com.netease.arctic.server.table.TableMetadata tableMeta) {
+    return tableMeta.getProperties().get(PROPERTIES_METADATA_LOCATION);
+  }
+
 
   @Override
   public void commit(TableMetadata base, TableMetadata metadata) {
@@ -106,9 +104,9 @@ public class InternalTableStoreOperations extends PersistentBase implements Tabl
     String newMetadataFileLocation = InternalTableUtil.genNewMetadataFileLocation(base, metadata);
 
     try {
-      commitTableInternal(tableMetadata, base, metadata, newMetadataFileLocation, io, changeStore);
+      commitTableInternal(tableMetadata, base, metadata, newMetadataFileLocation);
       com.netease.arctic.server.table.TableMetadata updatedMetadata = doCommit();
-      checkCommitSuccess(updatedMetadata, newMetadataFileLocation, changeStore);
+      checkCommitSuccess(updatedMetadata, newMetadataFileLocation);
     } catch (Exception e) {
       io.deleteFile(newMetadataFileLocation);
     } finally {
@@ -166,48 +164,37 @@ public class InternalTableStoreOperations extends PersistentBase implements Tabl
 
   /**
    * write iceberg table metadata and apply changes to AMS tableMetadata to commit.
-   *
-   * @param amsTableMetadata ams table metadata
-   * @param baseIcebergTableMetadata base iceberg table metadata
-   * @param icebergTableMetadata iceberg table metadata to commit
-   * @param newMetadataFileLocation new metadata file location
-   * @param io iceberg file io
    */
   private void commitTableInternal(
       com.netease.arctic.server.table.TableMetadata amsTableMetadata,
-      TableMetadata baseIcebergTableMetadata,
-      TableMetadata icebergTableMetadata,
-      String newMetadataFileLocation,
-      FileIO io,
-      boolean changeStore) {
-    if (!Objects.equals(icebergTableMetadata.location(), baseIcebergTableMetadata.location())) {
+      TableMetadata base,
+      TableMetadata newMetadata,
+      String newMetadataFileLocation) {
+    if (!Objects.equals(newMetadata.location(), base.location())) {
       throw new UnsupportedOperationException("SetLocation is not supported.");
     }
     OutputFile outputFile = io.newOutputFile(newMetadataFileLocation);
-    TableMetadataParser.overwrite(icebergTableMetadata, outputFile);
+    TableMetadataParser.overwrite(newMetadata, outputFile);
 
+    updateMetadataLocationProperties(amsTableMetadata, base.metadataFileLocation(), newMetadataFileLocation);
+  }
+
+  protected void updateMetadataLocationProperties(
+      com.netease.arctic.server.table.TableMetadata amsTableMetadata,
+      String oldMetadataFileLocation,
+      String newMetadataFileLocation
+  ) {
     Map<String, String> properties = amsTableMetadata.getProperties();
-    String prevLocationKey = PROPERTIES_PREV_METADATA_LOCATION;
-    String metadataLocationKey = PROPERTIES_METADATA_LOCATION;
-    if (changeStore) {
-      prevLocationKey = CHANGE_STORE_PREFIX + PROPERTIES_PREV_METADATA_LOCATION;
-      metadataLocationKey = CHANGE_STORE_PREFIX + PROPERTIES_METADATA_LOCATION;
-    }
-
-    properties.put(prevLocationKey, baseIcebergTableMetadata.metadataFileLocation());
-    properties.put(metadataLocationKey, newMetadataFileLocation);
+    properties.put(PROPERTIES_PREV_METADATA_LOCATION, oldMetadataFileLocation);
+    properties.put(PROPERTIES_METADATA_LOCATION, newMetadataFileLocation);
     amsTableMetadata.setProperties(properties);
   }
 
-  public void checkCommitSuccess(
+
+  private void checkCommitSuccess(
       com.netease.arctic.server.table.TableMetadata updatedTableMetadata,
-      String metadataFileLocation,
-      boolean changeStore) {
-    String metadataLocationKey = PROPERTIES_METADATA_LOCATION;
-    if (changeStore) {
-      metadataLocationKey = CHANGE_STORE_PREFIX + PROPERTIES_METADATA_LOCATION;
-    }
-    String metaLocationInDatabase = updatedTableMetadata.getProperties().get(metadataLocationKey);
+      String metadataFileLocation) {
+    String metaLocationInDatabase = tableMetadataLocation(updatedTableMetadata);
     if (!Objects.equals(metaLocationInDatabase, metadataFileLocation)) {
       throw new CommitFailedException(
           "commit conflict, some other commit happened during this commit. ");

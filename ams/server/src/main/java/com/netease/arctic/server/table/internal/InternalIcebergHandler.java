@@ -20,7 +20,6 @@ package com.netease.arctic.server.table.internal;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.server.iceberg.InternalTableStoreOperations;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.utils.InternalTableUtil;
 import org.apache.iceberg.TableOperations;
@@ -49,8 +48,8 @@ public class InternalIcebergHandler implements InternalTableHandler<TableOperati
   @Override
   public TableOperations newTableOperator() {
     checkClosed();
-    return new InternalTableStoreOperations(
-        tableMetadata.getTableIdentifier(), tableMetadata, io, false);
+    return new IcebergInternalTableOperations(
+        tableMetadata.getTableIdentifier(), tableMetadata, io);
   }
 
   @Override
