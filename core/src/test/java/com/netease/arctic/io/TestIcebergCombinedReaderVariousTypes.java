@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.io.reader.CombinedDeleteFilter;
 import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
 import com.netease.arctic.io.writer.RecordWithAction;
 import com.netease.arctic.optimizing.RewriteFilesInput;
@@ -182,6 +183,7 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
         new RewriteFilesInput(
             dataFiles, new DataFile[] {}, new DeleteFile[] {}, deleteFiles, table);
 
+    CombinedDeleteFilter.FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = 100L;
     GenericCombinedIcebergDataReader reader =
         new GenericCombinedIcebergDataReader(
             table.io(),
