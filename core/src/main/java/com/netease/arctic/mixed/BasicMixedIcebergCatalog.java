@@ -58,6 +58,7 @@ import java.util.stream.Collectors;
 public class BasicMixedIcebergCatalog implements ArcticCatalog {
 
   private Catalog icebergCatalog;
+  private SupportsNamespaces asNamespaceCatalog;
   private TableMetaStore tableMetaStore;
   private Map<String, String> catalogProperties;
   private String name;
@@ -113,6 +114,9 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
           cacheEnabled
               ? CachingCatalog.wrap(icebergCatalog, cacheCaseSensitive, cacheExpirationIntervalMs)
               : icebergCatalog;
+      if (icebergCatalog instanceof SupportsNamespaces) {
+        this.asNamespaceCatalog = (SupportsNamespaces) icebergCatalog;
+      }
       this.databaseFilterPattern = databaseFilterPattern;
       this.catalogProperties = properties;
       this.tables = tables;
@@ -127,7 +131,7 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
     List<String> databases =
         tableMetaStore.doAs(
             () ->
-                asNamespaceCatalog().listNamespaces(Namespace.empty()).stream()
+                asNamespaceCatalog.listNamespaces(Namespace.empty()).stream()
                     .map(namespace -> namespace.level(0))
                     .distinct()
                     .collect(Collectors.toList()));
@@ -141,12 +145,12 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
 
   @Override
   public void createDatabase(String database) {
-    asNamespaceCatalog().createNamespace(Namespace.of(database));
+    asNamespaceCatalog.createNamespace(Namespace.of(database));
   }
 
   @Override
   public void dropDatabase(String databaseName) {
-    asNamespaceCatalog().dropNamespace(Namespace.of(databaseName));
+    asNamespaceCatalog.dropNamespace(Namespace.of(databaseName));
   }
 
   @Override
@@ -249,16 +253,6 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   private boolean dropTableInternal(
       org.apache.iceberg.catalog.TableIdentifier tableIdentifier, boolean purge) {
     return tableMetaStore.doAs(() -> icebergCatalog.dropTable(tableIdentifier, purge));
-  }
-
-  private SupportsNamespaces asNamespaceCatalog() {
-    if (!(icebergCatalog instanceof SupportsNamespaces)) {
-      throw new UnsupportedOperationException(
-          String.format(
-              "Iceberg catalog: %s doesn't implement SupportsNamespaces",
-              icebergCatalog.getClass().getName()));
-    }
-    return (SupportsNamespaces) icebergCatalog;
   }
 
   private class MixedIcebergTableBuilder implements TableBuilder {
