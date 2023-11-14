@@ -53,11 +53,6 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DataOperations;
-import org.apache.iceberg.HasTableOperations;
-import org.apache.iceberg.MetadataTableType;
-import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotRef;
@@ -486,7 +481,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
       if (partition != null && partitionSpec.isPartitioned() && !partition.equals(partitionPath)) {
         continue;
       }
-      Long fileSize = contentFile.fileSizeInBytes();
+      long fileSize = contentFile.fileSizeInBytes();
       DataFileType dataFileType =
           isChangeTable
               ? FileNameRules.parseFileTypeForChange(contentFile.path().toString())
