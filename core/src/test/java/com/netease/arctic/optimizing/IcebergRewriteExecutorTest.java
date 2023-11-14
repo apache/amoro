@@ -39,6 +39,7 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.avro.DataReader;
 import org.apache.iceberg.data.orc.GenericOrcReader;
 import org.apache.iceberg.data.parquet.GenericParquetReaders;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFileFactory;
@@ -74,7 +75,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
   private final Schema posSchema =
       new Schema(MetadataColumns.FILE_PATH, MetadataColumns.ROW_POSITION);
 
-  public IcebergRewriteExecutorTest(boolean partitionedTable, FileFormat fileFormat) {
+  public IcebergRewriteExecutorTest(boolean hasPartition, FileFormat fileFormat) {
     super(
         new BasicCatalogTestHelper(TableFormat.ICEBERG),
         new BasicTableTestHelper(false, true, buildTableProperties(fileFormat)));
@@ -193,6 +194,20 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
       Record last = Iterables.getLast(records);
       Assert.assertEquals(last.get(1), 1L);
     }
+  }
+
+  @Test
+  public void readAllDataWithPartitionEvolution() throws IOException {
+    if (!getArcticTable().spec().isUnpartitioned()) {
+      getArcticTable()
+          .asUnkeyedTable()
+          .updateSpec()
+          .removeField("op_time_day")
+          .addField(Expressions.month("op_time"))
+          .commit();
+    }
+
+    readAllData();
   }
 
   @Test

@@ -24,7 +24,6 @@ import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.io.reader.ParallelIcebergGenerics;
 import com.netease.arctic.server.dashboard.component.reverser.DDLReverser;
 import com.netease.arctic.server.dashboard.component.reverser.IcebergTableMetaExtract;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
@@ -46,28 +45,20 @@ import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
 import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.ManifestEntryFields;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.iceberg.DataFile;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataOperations;
-import org.apache.iceberg.HasTableOperations;
-import org.apache.iceberg.MetadataTableType;
-import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.data.GenericRecord;
-import org.apache.iceberg.data.InternalRecordWrapper;
-import org.apache.iceberg.data.Record;
-import org.apache.iceberg.expressions.Expressions;
-import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.Pair;
@@ -75,9 +66,9 @@ import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -464,55 +455,41 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   private List<PartitionFileBaseInfo> collectFileInfo(
       Table table, boolean isChangeTable, String partition) {
-    PartitionSpec spec = table.spec();
     List<PartitionFileBaseInfo> result = new ArrayList<>();
-    Table entriesTable =
-        MetadataTableUtils.createMetadataTableInstance(
-            ((HasTableOperations) table).operations(),
-            table.name(),
-            table.name() + "#ENTRIES",
-            MetadataTableType.ENTRIES);
-    try (CloseableIterable<Record> manifests =
-        ParallelIcebergGenerics.read(entriesTable, executorService)
-            .where(
-                Expressions.notEqual(
-                    ManifestEntryFields.STATUS.name(), ManifestEntryFields.Status.DELETED.id()))
-            .build()) {
-      for (Record record : manifests) {
-        long snapshotId = (long) record.getField(ManifestEntryFields.SNAPSHOT_ID.name());
-        GenericRecord dataFile =
-            (GenericRecord) record.getField(ManifestEntryFields.DATA_FILE_FIELD_NAME);
-        Integer contentId = (Integer) dataFile.getField(DataFile.CONTENT.name());
-        String filePath = (String) dataFile.getField(DataFile.FILE_PATH.name());
-        String partitionPath = null;
-        GenericRecord parRecord = (GenericRecord) dataFile.getField(DataFile.PARTITION_NAME);
-        if (parRecord != null) {
-          InternalRecordWrapper wrapper = new InternalRecordWrapper(parRecord.struct());
-          partitionPath = spec.partitionToPath(wrapper.wrap(parRecord));
-        }
-        if (partition != null && spec.isPartitioned() && !partition.equals(partitionPath)) {
-          continue;
-        }
-        Long fileSize = (Long) dataFile.getField(DataFile.FILE_SIZE.name());
-        DataFileType dataFileType =
-            isChangeTable
-                ? FileNameRules.parseFileTypeForChange(filePath)
-                : DataFileType.ofContentId(contentId);
-        long commitTime = -1;
-        if (table.snapshot(snapshotId) != null) {
-          commitTime = table.snapshot(snapshotId).timestampMillis();
-        }
-        result.add(
-            new PartitionFileBaseInfo(
-                String.valueOf(snapshotId),
-                dataFileType,
-                commitTime,
-                partitionPath,
-                filePath,
-                fileSize));
+    Map<Integer, PartitionSpec> specs = table.specs();
+
+    Map<Long, Long> seqToSnapshotId = new HashMap<>();
+    Iterable<Snapshot> snapshots = table.snapshots();
+    for (Snapshot snapshot : snapshots) {
+      seqToSnapshotId.put(snapshot.sequenceNumber(), snapshot.snapshotId());
+    }
+    Collection<ContentFile<?>> allContent = IcebergTableUtil.getAllContent(table, executorService);
+
+    for (ContentFile<?> contentFile : allContent) {
+      Long snapshotId = seqToSnapshotId.get(contentFile.fileSequenceNumber());
+
+      PartitionSpec partitionSpec = specs.get(contentFile.specId());
+      String partitionPath = partitionSpec.partitionToPath(contentFile.partition());
+      if (partition != null && partitionSpec.isPartitioned() && !partition.equals(partitionPath)) {
+        continue;
       }
-    } catch (IOException exception) {
-      LOG.error("close manifest file error", exception);
+      Long fileSize = contentFile.fileSizeInBytes();
+      DataFileType dataFileType =
+          isChangeTable
+              ? FileNameRules.parseFileTypeForChange(contentFile.path().toString())
+              : DataFileType.ofContentId(contentFile.content().id());
+      long commitTime = -1;
+      if (table.snapshot(snapshotId) != null) {
+        commitTime = table.snapshot(snapshotId).timestampMillis();
+      }
+      result.add(
+          new PartitionFileBaseInfo(
+              String.valueOf(snapshotId),
+              dataFileType,
+              commitTime,
+              partitionPath,
+              contentFile.path().toString(),
+              fileSize));
     }
     return result;
   }

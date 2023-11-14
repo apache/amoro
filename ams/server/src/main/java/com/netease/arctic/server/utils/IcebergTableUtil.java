@@ -58,12 +58,15 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
 
 public class IcebergTableUtil {
 
@@ -117,6 +120,29 @@ public class IcebergTableUtil {
     }
 
     return validFilesPath;
+  }
+
+  public static Collection<ContentFile<?>> getAllContent(
+      Table table, ExecutorService executorService) {
+    CloseableIterable<FileScanTask> taskIterables =
+        table.newScan().planWith(executorService).planFiles();
+    Map<String, ContentFile<?>> allFiles = new HashMap<>();
+    try {
+      for (FileScanTask task : taskIterables) {
+        allFiles.put(task.file().path().toString(), task.file());
+        for (DeleteFile deleteFile : task.deletes()) {
+          allFiles.put(deleteFile.path().toString(), deleteFile);
+        }
+      }
+    } finally {
+      try {
+        taskIterables.close();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    return allFiles.values();
   }
 
   public static Set<DeleteFile> getDanglingDeleteFiles(Table internalTable) {
