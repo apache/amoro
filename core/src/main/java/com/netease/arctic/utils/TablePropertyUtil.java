@@ -21,6 +21,7 @@ package com.netease.arctic.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
@@ -132,5 +133,20 @@ public class TablePropertyUtil {
     } else {
       return Long.parseLong(watermarkValue);
     }
+  }
+
+  /**
+   * Check if an iceberg table is a table store of a mixed-iceberg table.
+   *
+   * @param properties table properties of iceberg
+   * @return true if this it a table store.
+   */
+  public static boolean isMixedTableStore(Map<String, String> properties) {
+    String format = properties.get(TableProperties.TABLE_FORMAT);
+    String tableStore = properties.get(TableProperties.MIXED_FORMAT_TABLE_STORE);
+    boolean baseStore = TableProperties.MIXED_FORMAT_TABLE_STORE_BASE.equalsIgnoreCase(tableStore);
+    boolean changeStore =
+        TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE.equalsIgnoreCase(tableStore);
+    return TableFormat.MIXED_ICEBERG.name().equalsIgnoreCase(format) && (baseStore || changeStore);
   }
 }
