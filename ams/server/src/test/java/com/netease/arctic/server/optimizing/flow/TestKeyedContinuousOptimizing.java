@@ -30,6 +30,7 @@ import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.hive.catalog.HiveTableTestHelper;
+import com.netease.arctic.io.reader.CombinedDeleteFilter;
 import com.netease.arctic.server.optimizing.flow.checker.DataConcurrencyChecker;
 import com.netease.arctic.server.optimizing.flow.checker.FullOptimizingMove2HiveChecker;
 import com.netease.arctic.server.optimizing.flow.checker.FullOptimizingWrite2HiveChecker;
@@ -88,6 +89,7 @@ public class TestKeyedContinuousOptimizing extends TableTestBase {
 
     int cycle = 5;
     int recordCountOnceWrite = 2500;
+    CombinedDeleteFilter.FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = 2499L;
 
     // close full optimize
     table.updateProperties().set(SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1").commit();
@@ -142,7 +144,7 @@ public class TestKeyedContinuousOptimizing extends TableTestBase {
     mustFullCycle(table, optimizingFlow::optimize);
 
     while (cycle-- > 0) {
-      view.onlyDelete(recordCountOnceWrite * 6);
+      view.onlyDelete(recordCountOnceWrite);
       optimizingFlow.optimize();
 
       view.cdc(recordCountOnceWrite);

@@ -22,6 +22,7 @@ import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.io.reader.CombinedDeleteFilter;
 import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import org.apache.iceberg.DataFile;
@@ -50,7 +51,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 @RunWith(Parameterized.class)
@@ -263,6 +268,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
 
   @Test
   public void readDataEnableFilterEqDelete() throws IOException {
+    CombinedDeleteFilter.FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = 100L;
     GenericCombinedIcebergDataReader dataReader =
         new GenericCombinedIcebergDataReader(
             getArcticTable().io(),

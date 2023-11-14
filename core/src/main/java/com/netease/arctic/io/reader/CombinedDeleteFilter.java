@@ -87,6 +87,8 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
   private static final Accessor<StructLike> POSITION_ACCESSOR =
       POS_DELETE_SCHEMA.accessorForField(MetadataColumns.DELETE_FILE_POS.fieldId());
 
+  @VisibleForTesting public static long FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = 1000000L;
+
   private final RewriteFilesInput input;
   private final List<DeleteFile> posDeletes;
   private final List<DeleteFile> eqDeletes;
@@ -162,7 +164,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
             .filter(file -> file.content() == FileContent.EQUALITY_DELETES)
             .mapToLong(ContentFile::recordCount)
             .sum();
-    return eqDeleteRecordCnt > 1000000;
+    return eqDeleteRecordCnt > FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT;
   }
 
   @VisibleForTesting
