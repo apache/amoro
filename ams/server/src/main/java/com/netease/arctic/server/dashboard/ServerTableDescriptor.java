@@ -23,7 +23,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.catalog.ServerCatalog;
-import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
+import com.netease.arctic.server.dashboard.model.AmoroSnapshotsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
 import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
@@ -78,17 +78,17 @@ public class ServerTableDescriptor extends PersistentBase {
     return formatTableDescriptor.getTableDetail(amoroTable);
   }
 
-  public List<AMSTransactionsOfTable> getTransactions(TableIdentifier tableIdentifier) {
+  public List<AmoroSnapshotsOfTable> getSnapshots(TableIdentifier tableIdentifier, String ref) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
-    return formatTableDescriptor.getTransactions(amoroTable);
+    return formatTableDescriptor.getSnapshots(amoroTable, ref);
   }
 
-  public List<PartitionFileBaseInfo> getTransactionDetail(
-      TableIdentifier tableIdentifier, long transactionId) {
+  public List<PartitionFileBaseInfo> getSnapshotDetail(
+      TableIdentifier tableIdentifier, long snapshotId) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
-    return formatTableDescriptor.getTransactionDetail(amoroTable, transactionId);
+    return formatTableDescriptor.getSnapshotDetail(amoroTable, snapshotId);
   }
 
   public List<DDLInfo> getTableOperations(TableIdentifier tableIdentifier) {
@@ -116,10 +116,10 @@ public class ServerTableDescriptor extends PersistentBase {
     return formatTableDescriptor.getTableTags(amoroTable);
   }
 
-  public List<TagOrBranchInfo> getTableBranchs(TableIdentifier tableIdentifier) {
+  public List<TagOrBranchInfo> getTableBranches(TableIdentifier tableIdentifier) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
-    return formatTableDescriptor.getTableBranchs(amoroTable);
+    return formatTableDescriptor.getTableBranches(amoroTable);
   }
 
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
