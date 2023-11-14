@@ -53,7 +53,7 @@ In the `ams/dashboard` directory, run `yarn serve` or `npm run serve` to start a
 
 In the `ams/dashboard` directory, run `yarn build` or `npm run build` to prepare the dashboard for deployment.
 
-Since we don't currently have a front-end CI configured, we must execute the `yarn build` or `npm run build` command before committing the front-end code each time, and commit the static file changes in the `ams/dashboard/src/mian/resource/static` directory along with it.
+Since we don't currently have a front-end CI configured, we must execute the `yarn build` or `npm run build` command before committing the front-end code each time, and commit the static file changes in the `ams/dashboard/src/main/resources/static` directory along with it.
 
 In addition, you can run `yarn build:vue-dev` or `npm run build:vue-dev` to create dev build for the dashboard.
 
