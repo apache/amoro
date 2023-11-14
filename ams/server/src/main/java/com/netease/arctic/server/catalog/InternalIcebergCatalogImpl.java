@@ -2,12 +2,17 @@ package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.formats.iceberg.IcebergTable;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.IcebergRestCatalogService;
-import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
+import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.table.TableMetadata;
+import com.netease.arctic.server.table.internal.InternalIcebergCreator;
+import com.netease.arctic.server.table.internal.InternalIcebergHandler;
+import com.netease.arctic.server.table.internal.InternalTableCreator;
+import com.netease.arctic.server.table.internal.InternalTableHandler;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.InternalTableUtil;
 import com.netease.arctic.utils.CatalogUtil;
@@ -15,7 +20,10 @@ import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.exceptions.AlreadyExistsException;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.rest.RESTCatalog;
+import org.apache.iceberg.rest.requests.CreateTableRequest;
 
 public class InternalIcebergCatalogImpl extends InternalCatalog {
 
@@ -52,16 +60,22 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
 
   @Override
   public AmoroTable<?> loadTable(String database, String tableName) {
-    TableMetadata tableMetadata =
-        getAs(
-            TableMetaMapper.class,
-            mapper ->
-                mapper.selectTableMetaByName(getMetadata().getCatalogName(), database, tableName));
-    if (tableMetadata == null) {
+    InternalTableHandler<TableOperations> handler;
+    try {
+      handler = newTableHandler(database, tableName);
+    } catch (ObjectNotExistsException e) {
       return null;
     }
-    ArcticFileIO fileIO = fileIO(getMetadata());
-    BaseTable table = loadIcebergTable(fileIO, tableMetadata);
+    TableMetadata tableMetadata = handler.tableMetadata();
+    TableOperations ops = handler.newTableOperator();
+
+    BaseTable table =
+        new BaseTable(
+            ops,
+            TableIdentifier.of(
+                    tableMetadata.getTableIdentifier().getDatabase(),
+                    tableMetadata.getTableIdentifier().getTableName())
+                .toString());
     com.netease.arctic.table.TableIdentifier tableIdentifier =
         com.netease.arctic.table.TableIdentifier.of(name(), database, tableName);
 
@@ -70,17 +84,6 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
         table,
         CatalogUtil.buildMetaStore(getMetadata()),
         getMetadata().getCatalogProperties());
-  }
-
-  protected BaseTable loadIcebergTable(ArcticFileIO fileIO, TableMetadata tableMetadata) {
-    TableOperations ops =
-        InternalTableUtil.newTableOperations(getMetadata(), tableMetadata, fileIO, false);
-    return new BaseTable(
-        ops,
-        TableIdentifier.of(
-                tableMetadata.getTableIdentifier().getDatabase(),
-                tableMetadata.getTableIdentifier().getTableName())
-            .toString());
   }
 
   protected ArcticFileIO fileIO(CatalogMeta catalogMeta) {
@@ -93,5 +96,42 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
         + ":"
         + httpPort
         + IcebergRestCatalogService.ICEBERG_REST_API_PREFIX;
+  }
+
+  @Override
+  public <A> InternalTableCreator newTableCreator(
+      String database, String tableName, TableFormat format, A creatorArguments) {
+
+    Preconditions.checkArgument(
+        format == format(), "the catalog only support to create %s table", format().name());
+    Preconditions.checkArgument(
+        creatorArguments instanceof CreateTableRequest,
+        "only support accept creation arguments type: %s",
+        CreateTableRequest.class.getName());
+    if (exist(database, tableName)) {
+      throw new AlreadyExistsException(
+          "Table " + name() + "." + database + "." + tableName + " already " + "exists.");
+    }
+    return newTableCreator(database, tableName, (CreateTableRequest) creatorArguments);
+  }
+
+  protected TableFormat format() {
+    return TableFormat.ICEBERG;
+  }
+
+  protected InternalTableCreator newTableCreator(
+      String database, String tableName, CreateTableRequest request) {
+    return new InternalIcebergCreator(getMetadata(), database, tableName, request);
+  }
+
+  @Override
+  public <O> InternalTableHandler<O> newTableHandler(String database, String tableName) {
+    TableMetadata metadata = loadTableMetadata(database, tableName);
+    Preconditions.checkState(
+        metadata.getFormat() == format(),
+        "the catalog only support to handle %s table",
+        format().name());
+    //noinspection unchecked
+    return (InternalTableHandler<O>) new InternalIcebergHandler(getMetadata(), metadata);
   }
 }

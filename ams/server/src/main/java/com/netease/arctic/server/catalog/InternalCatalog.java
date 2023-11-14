@@ -20,6 +20,7 @@ package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.IllegalMetadataException;
@@ -29,12 +30,11 @@ import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
-import org.apache.iceberg.exceptions.CommitFailedException;
+import com.netease.arctic.server.table.internal.InternalTableCreator;
+import com.netease.arctic.server.table.internal.InternalTableHandler;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public abstract class InternalCatalog extends ServerCatalog {
@@ -117,6 +117,11 @@ public abstract class InternalCatalog extends ServerCatalog {
         .collect(Collectors.toList());
   }
 
+  public abstract <A> InternalTableCreator newTableCreator(
+      String database, String tableName, TableFormat format, A creatorArguments);
+
+  public abstract <O> InternalTableHandler<O> newTableHandler(String database, String tableName);
+
   public TableMetadata createTable(TableMetadata tableMetadata) {
     validateTableIdentifier(tableMetadata.getTableIdentifier().getIdentifier());
     ServerTableIdentifier tableIdentifier = tableMetadata.getTableIdentifier();
@@ -137,32 +142,6 @@ public abstract class InternalCatalog extends ServerCatalog {
                 tableIdentifier.getCatalog(),
                 tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName()));
-  }
-
-  public TableMetadata commitTable(TableMetadata metadata) {
-    ServerTableIdentifier tableIdentifier = metadata.getTableIdentifier();
-    AtomicInteger effectRows = new AtomicInteger();
-    AtomicReference<TableMetadata> metadataRef = new AtomicReference<>();
-    doAsTransaction(
-        () -> {
-          int effects =
-              getAs(
-                  TableMetaMapper.class,
-                  mapper -> mapper.commitTableChange(tableIdentifier.getId(), metadata));
-          effectRows.set(effects);
-        },
-        () -> {
-          com.netease.arctic.server.table.TableMetadata m =
-              getAs(
-                  TableMetaMapper.class,
-                  mapper -> mapper.selectTableMetaById(tableIdentifier.getId()));
-          metadataRef.set(m);
-        });
-    if (effectRows.get() == 0) {
-      throw new CommitFailedException(
-          "commit failed for version: " + metadata.getMetaVersion() + " has been committed");
-    }
-    return metadataRef.get();
   }
 
   public ServerTableIdentifier dropTable(String databaseName, String tableName) {

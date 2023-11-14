@@ -28,6 +28,8 @@ import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.catalog.MixedHiveTables;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.TableMetadata;
+import com.netease.arctic.server.table.internal.InternalTableCreator;
+import com.netease.arctic.server.table.internal.InternalTableHandler;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.thrift.TException;
@@ -76,6 +78,20 @@ public class MixedHiveCatalogImpl extends InternalCatalog {
   @Override
   public void dropDatabase(String databaseName) {
     // do not handle database operations
+  }
+
+  @Override
+  public <A> InternalTableCreator newTableCreator(
+      String database,
+      String tableName,
+      TableFormat format,
+      A creatorArguments) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public <O> InternalTableHandler<O> newTableHandler(String database, String tableName) {
+    throw new UnsupportedOperationException();
   }
 
   @Override
