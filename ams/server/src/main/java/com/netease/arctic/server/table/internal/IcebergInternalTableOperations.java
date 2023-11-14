@@ -18,6 +18,9 @@
 
 package com.netease.arctic.server.table.internal;
 
+import static com.netease.arctic.server.table.internal.InternalTableConstants.PROPERTIES_METADATA_LOCATION;
+import static com.netease.arctic.server.table.internal.InternalTableConstants.PROPERTIES_PREV_METADATA_LOCATION;
+
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
@@ -37,9 +40,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static com.netease.arctic.server.table.internal.InternalTableConstants.PROPERTIES_METADATA_LOCATION;
-import static com.netease.arctic.server.table.internal.InternalTableConstants.PROPERTIES_PREV_METADATA_LOCATION;
 
 public class IcebergInternalTableOperations extends PersistentBase implements TableOperations {
 
@@ -84,11 +84,9 @@ public class IcebergInternalTableOperations extends PersistentBase implements Ta
     return this.current;
   }
 
-
   protected String tableMetadataLocation(com.netease.arctic.server.table.TableMetadata tableMeta) {
     return tableMeta.getProperties().get(PROPERTIES_METADATA_LOCATION);
   }
-
 
   @Override
   public void commit(TableMetadata base, TableMetadata metadata) {
@@ -162,9 +160,7 @@ public class IcebergInternalTableOperations extends PersistentBase implements Ta
     return metadataRef.get();
   }
 
-  /**
-   * write iceberg table metadata and apply changes to AMS tableMetadata to commit.
-   */
+  /** write iceberg table metadata and apply changes to AMS tableMetadata to commit. */
   private void commitTableInternal(
       com.netease.arctic.server.table.TableMetadata amsTableMetadata,
       TableMetadata base,
@@ -176,20 +172,19 @@ public class IcebergInternalTableOperations extends PersistentBase implements Ta
     OutputFile outputFile = io.newOutputFile(newMetadataFileLocation);
     TableMetadataParser.overwrite(newMetadata, outputFile);
 
-    updateMetadataLocationProperties(amsTableMetadata, base.metadataFileLocation(), newMetadataFileLocation);
+    updateMetadataLocationProperties(
+        amsTableMetadata, base.metadataFileLocation(), newMetadataFileLocation);
   }
 
   protected void updateMetadataLocationProperties(
       com.netease.arctic.server.table.TableMetadata amsTableMetadata,
       String oldMetadataFileLocation,
-      String newMetadataFileLocation
-  ) {
+      String newMetadataFileLocation) {
     Map<String, String> properties = amsTableMetadata.getProperties();
     properties.put(PROPERTIES_PREV_METADATA_LOCATION, oldMetadataFileLocation);
     properties.put(PROPERTIES_METADATA_LOCATION, newMetadataFileLocation);
     amsTableMetadata.setProperties(properties);
   }
-
 
   private void checkCommitSuccess(
       com.netease.arctic.server.table.TableMetadata updatedTableMetadata,

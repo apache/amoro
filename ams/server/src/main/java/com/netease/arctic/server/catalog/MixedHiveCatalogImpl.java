@@ -82,10 +82,7 @@ public class MixedHiveCatalogImpl extends InternalCatalog {
 
   @Override
   public <A> InternalTableCreator newTableCreator(
-      String database,
-      String tableName,
-      TableFormat format,
-      A creatorArguments) {
+      String database, String tableName, TableFormat format, A creatorArguments) {
     throw new UnsupportedOperationException();
   }
 

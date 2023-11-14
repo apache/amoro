@@ -68,8 +68,9 @@ public class InternalMixedIcebergHandler extends InternalIcebergHandler {
           changeStore ? tableMetadata().getChangeLocation() : tableMetadata().getBaseLocation();
       TableMetaStore metaStore = CatalogUtil.buildMetaStore(catalogMeta);
 
-      ArcticHadoopTableOperations ops =  new ArcticHadoopTableOperations(
-          new Path(tableLocation), io, metaStore.getConfiguration());
+      ArcticHadoopTableOperations ops =
+          new ArcticHadoopTableOperations(
+              new Path(tableLocation), io, metaStore.getConfiguration());
       org.apache.iceberg.TableMetadata current = ops.current();
       if (current == null) {
         return ops;
@@ -84,7 +85,6 @@ public class InternalMixedIcebergHandler extends InternalIcebergHandler {
     return new MixedIcebergInternalTableStoreOperations(
         tableMetadata().getTableIdentifier(), tableMetadata(), io, changeStore);
   }
-
 
   private org.apache.iceberg.TableMetadata legacyTableMetadata(
       org.apache.iceberg.TableMetadata metadata, boolean changeStore) {

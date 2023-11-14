@@ -18,15 +18,15 @@
 
 package com.netease.arctic.server.table.internal;
 
+import static com.netease.arctic.server.table.internal.InternalTableConstants.CHANGE_STORE_PREFIX;
+import static com.netease.arctic.server.table.internal.InternalTableConstants.PROPERTIES_METADATA_LOCATION;
+import static com.netease.arctic.server.table.internal.InternalTableConstants.PROPERTIES_PREV_METADATA_LOCATION;
+
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
 import org.apache.iceberg.io.FileIO;
 
 import java.util.Map;
-
-import static com.netease.arctic.server.table.internal.InternalTableConstants.CHANGE_STORE_PREFIX;
-import static com.netease.arctic.server.table.internal.InternalTableConstants.PROPERTIES_METADATA_LOCATION;
-import static com.netease.arctic.server.table.internal.InternalTableConstants.PROPERTIES_PREV_METADATA_LOCATION;
 
 public class MixedIcebergInternalTableStoreOperations extends IcebergInternalTableOperations {
   boolean forChangeStore;
@@ -55,12 +55,11 @@ public class MixedIcebergInternalTableStoreOperations extends IcebergInternalTab
       String newMetadataFileLocation) {
     if (!forChangeStore) {
       super.updateMetadataLocationProperties(
-          serverTableMetadata,
-          oldMetadataFileLocation,
-          newMetadataFileLocation);
+          serverTableMetadata, oldMetadataFileLocation, newMetadataFileLocation);
     } else {
       Map<String, String> properties = serverTableMetadata.getProperties();
-      properties.put(CHANGE_STORE_PREFIX + PROPERTIES_PREV_METADATA_LOCATION, oldMetadataFileLocation);
+      properties.put(
+          CHANGE_STORE_PREFIX + PROPERTIES_PREV_METADATA_LOCATION, oldMetadataFileLocation);
       properties.put(CHANGE_STORE_PREFIX + PROPERTIES_METADATA_LOCATION, newMetadataFileLocation);
       serverTableMetadata.setProperties(properties);
     }
