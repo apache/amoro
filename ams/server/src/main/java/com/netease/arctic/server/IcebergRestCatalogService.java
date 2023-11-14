@@ -103,11 +103,11 @@ public class IcebergRestCatalogService extends PersistentBase {
   private final TableService tableService;
   private final MetricsManager metricsManager;
 
-  public IcebergRestCatalogService(TableService tableService, MetricsManager metricsManager) {
+  public IcebergRestCatalogService(TableService tableService) {
     this.tableService = tableService;
     ObjectMapper objectMapper = jsonMapper();
     this.jsonMapper = new JavalinJackson(objectMapper);
-    this.metricsManager = metricsManager;
+    this.metricsManager = MetricsManager.instance();
   }
 
   public EndpointGroup endpoints() {
