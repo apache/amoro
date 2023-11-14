@@ -157,16 +157,12 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
    * {@link StructLikeBaseMap} by eq delete
    */
   private boolean filterEqDelete() {
-    long dataRecordCnt = Arrays.stream(input.dataFiles()).mapToLong(ContentFile::recordCount).sum();
     long eqDeleteRecordCnt =
         Arrays.stream(input.deleteFiles())
             .filter(file -> file.content() == FileContent.EQUALITY_DELETES)
             .mapToLong(ContentFile::recordCount)
             .sum();
-
-    // Data file primary key memory usage, cost is the same as eq delete, +1 cost
-    // Data file read cost is 0.5 times the memory cost, +0.5 cost
-    return eqDeleteRecordCnt > dataRecordCnt * 2.5;
+    return eqDeleteRecordCnt > 1000000;
   }
 
   @VisibleForTesting
