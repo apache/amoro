@@ -36,6 +36,7 @@ public class MetricsManager extends ActivePluginManager<MetricsEmitter> {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetricsManager.class);
   private static final String METRICS_CONFIG_DIRECTORY = "metrics";
+  private static volatile MetricsManager INSTANCE;
 
   private final String configPath;
 
@@ -45,6 +46,18 @@ public class MetricsManager extends ActivePluginManager<MetricsEmitter> {
 
   public MetricsManager(String configPath) {
     this.configPath = configPath;
+  }
+
+  public static MetricsManager instance() {
+    if (INSTANCE == null) {
+      synchronized (MetricsManager.class) {
+        if (INSTANCE == null) {
+          INSTANCE = new MetricsManager();
+          INSTANCE.initialize();
+        }
+      }
+    }
+    return INSTANCE;
   }
 
   public void initialize() {

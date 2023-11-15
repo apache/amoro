@@ -23,43 +23,39 @@ import com.netease.arctic.server.dashboard.utils.AmsUtil;
 
 import java.util.Map;
 
-public class AMSTransactionsOfTable {
-  private String transactionId;
+public class AmoroSnapshotsOfTable {
+  private String snapshotId;
   private int fileCount;
   private long fileSize;
+  private long records;
   private long commitTime;
-  private String snapshotId;
   private String operation;
+  private String producer;
   private Map<String, String> summary;
 
   private Map<String, String> recordsSummaryForChart;
 
   private Map<String, String> filesSummaryForChart;
 
-  public AMSTransactionsOfTable() {}
+  public AmoroSnapshotsOfTable() {}
 
-  public AMSTransactionsOfTable(
-      String transactionId,
+  public AmoroSnapshotsOfTable(
+      String snapshotId,
       int fileCount,
       long fileSize,
+      long records,
       long commitTime,
       String operation,
+      String producer,
       Map<String, String> summary) {
-    this.transactionId = transactionId;
     this.fileCount = fileCount;
     this.fileSize = fileSize;
     this.commitTime = commitTime;
-    this.snapshotId = this.transactionId;
+    this.records = records;
+    this.snapshotId = snapshotId;
     this.operation = operation;
+    this.producer = producer;
     this.summary = summary;
-  }
-
-  public String getTransactionId() {
-    return transactionId;
-  }
-
-  public void setTransactionId(String transactionId) {
-    this.transactionId = transactionId;
   }
 
   public int getFileCount() {
@@ -130,27 +126,51 @@ public class AMSTransactionsOfTable {
     this.filesSummaryForChart = filesSummaryForChart;
   }
 
+  public long getRecords() {
+    return records;
+  }
+
+  public void setRecords(long records) {
+    this.records = records;
+  }
+
+  public String getProducer() {
+    return producer;
+  }
+
+  public void setProducer(String producer) {
+    this.producer = producer;
+  }
+
   @Override
   public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof AMSTransactionsOfTable)) {
-      return false;
-    }
-    AMSTransactionsOfTable that = (AMSTransactionsOfTable) o;
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    AmoroSnapshotsOfTable that = (AmoroSnapshotsOfTable) o;
     return fileCount == that.fileCount
+        && fileSize == that.fileSize
+        && records == that.records
         && commitTime == that.commitTime
-        && Objects.equal(transactionId, that.transactionId)
-        && Objects.equal(fileSize, that.fileSize)
         && Objects.equal(snapshotId, that.snapshotId)
         && Objects.equal(operation, that.operation)
-        && Objects.equal(summary, that.summary);
+        && Objects.equal(producer, that.producer)
+        && Objects.equal(summary, that.summary)
+        && Objects.equal(recordsSummaryForChart, that.recordsSummaryForChart)
+        && Objects.equal(filesSummaryForChart, that.filesSummaryForChart);
   }
 
   @Override
   public int hashCode() {
     return Objects.hashCode(
-        transactionId, fileCount, fileSize, commitTime, snapshotId, operation, summary);
+        snapshotId,
+        fileCount,
+        fileSize,
+        records,
+        commitTime,
+        operation,
+        producer,
+        summary,
+        recordsSummaryForChart,
+        filesSummaryForChart);
   }
 }

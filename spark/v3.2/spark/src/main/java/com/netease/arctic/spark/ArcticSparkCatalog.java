@@ -180,9 +180,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     try {
       if (properties.containsKey("primary.keys")) {
         PrimaryKeySpec primaryKeySpec =
-            PrimaryKeySpec.builderFor(finalSchema)
-                .addDescription(properties.get("primary.keys"))
-                .build();
+            PrimaryKeySpec.fromDescription(finalSchema, properties.get("primary.keys"));
         properties.remove("primary.keys");
         builder
             .withPartitionSpec(spec)
@@ -233,9 +231,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     // schema add primary keys
     if (properties.containsKey("primary.keys")) {
       PrimaryKeySpec primaryKeySpec =
-          PrimaryKeySpec.builderFor(convertSchema)
-              .addDescription(properties.get("primary.keys"))
-              .build();
+          PrimaryKeySpec.fromDescription(convertSchema, properties.get("primary.keys"));
       List<String> primaryKeys = primaryKeySpec.fieldNames();
       Set<String> pkSet = new HashSet<>(primaryKeys);
       Set<Integer> identifierFieldIds = new HashSet<>();
