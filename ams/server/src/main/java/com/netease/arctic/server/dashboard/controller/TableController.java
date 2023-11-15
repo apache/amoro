@@ -58,6 +58,7 @@ import io.javalin.http.Context;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.relocated.com.google.common.base.Function;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -599,9 +600,21 @@ public class TableController {
     List<TagOrBranchInfo> partitionBaseInfos =
         tableDescriptor.getTableBranches(
             TableIdentifier.of(catalog, database, table).buildTableIdentifier());
+    putMainBranchFirst(partitionBaseInfos);
     int offset = (page - 1) * pageSize;
     PageResult<TagOrBranchInfo> amsPageResult = PageResult.of(partitionBaseInfos, offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
+  }
+
+  private void putMainBranchFirst(List<TagOrBranchInfo> branchInfos) {
+    branchInfos.stream()
+        .filter(branch -> SnapshotRef.MAIN_BRANCH.equals(branch.getName()))
+        .findFirst()
+        .ifPresent(
+            mainBranch -> {
+              branchInfos.remove(mainBranch);
+              branchInfos.add(0, mainBranch);
+            });
   }
 
   private List<AMSColumnInfo> transformHiveSchemaToAMSColumnInfo(List<FieldSchema> fields) {
