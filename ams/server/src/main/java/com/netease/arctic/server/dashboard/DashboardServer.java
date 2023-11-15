@@ -26,7 +26,7 @@ import static io.javalin.apibuilder.ApiBuilder.put;
 
 import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.server.DefaultOptimizingService;
-import com.netease.arctic.server.IcebergRestCatalogService;
+import com.netease.arctic.server.RestCatalogService;
 import com.netease.arctic.server.dashboard.controller.CatalogController;
 import com.netease.arctic.server.dashboard.controller.HealthCheckController;
 import com.netease.arctic.server.dashboard.controller.LoginController;
@@ -433,7 +433,7 @@ public class DashboardServer {
     "/js/*",
     "/img/*",
     "/css/*",
-    IcebergRestCatalogService.ICEBERG_REST_API_PREFIX + "/*"
+    RestCatalogService.ICEBERG_REST_API_PREFIX + "/*"
   };
 
   private static boolean needLoginCheck(String uri) {
