@@ -18,8 +18,7 @@
 
 package com.netease.arctic.spark.test;
 
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.ams.api.TableFormat;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -36,9 +35,7 @@ import java.util.Map;
 public class SparkTestBase {
   protected static final Logger LOG = LoggerFactory.getLogger(SparkTestBase.class);
   public static final SparkTestContext context = new SparkTestContext();
-  public static final String SESSION_CATALOG = "spark_catalog";
-  public static final String HADOOP_CATALOG = SparkTestContext.EXTERNAL_HADOOP_CATALOG_NAME;
-  public static final String HIVE_CATALOG = SparkTestContext.EXTERNAL_HIVE_CATALOG_NAME;
+  public static final String SPARK_SESSION_CATALOG = "spark_catalog";
 
   @BeforeAll
   public static void setupContext() throws Exception {
@@ -51,8 +48,7 @@ public class SparkTestBase {
   }
 
   private SparkSession spark;
-  private ArcticCatalog catalog;
-  protected String currentCatalog = SESSION_CATALOG;
+  protected String currentCatalog = SPARK_SESSION_CATALOG;
   protected QueryExecution qe;
 
   protected Map<String, String> sparkSessionConfig() {
@@ -60,31 +56,17 @@ public class SparkTestBase {
         "spark.sql.catalog.spark_catalog",
         SparkTestContext.SESSION_CATALOG_IMPL,
         "spark.sql.catalog.spark_catalog.url",
-        context.catalogUrl(SparkTestContext.EXTERNAL_HIVE_CATALOG_NAME));
+        context.catalogUrl(TableFormat.MIXED_HIVE.name()));
   }
 
   @AfterEach
   public void tearDownTestSession() {
     spark = null;
-    catalog = null;
   }
 
   public void setCurrentCatalog(String catalog) {
     this.currentCatalog = catalog;
     sql("USE " + this.currentCatalog);
-    this.catalog = null;
-  }
-
-  protected ArcticCatalog catalog() {
-    if (catalog == null) {
-      String catalogUrl =
-          spark()
-              .sessionState()
-              .conf()
-              .getConfString("spark.sql.catalog." + currentCatalog + ".url");
-      catalog = CatalogLoader.load(catalogUrl);
-    }
-    return catalog;
   }
 
   protected SparkSession spark() {

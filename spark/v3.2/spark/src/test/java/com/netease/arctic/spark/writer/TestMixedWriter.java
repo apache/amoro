@@ -10,7 +10,7 @@ import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.spark.reader.SparkParquetReaders;
-import com.netease.arctic.spark.test.SparkTableTestBase;
+import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.utils.RecordGenerator;
 import com.netease.arctic.spark.test.utils.TestTableUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -33,9 +33,9 @@ import org.apache.iceberg.spark.data.SparkOrcReader;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
-import org.apache.spark.sql.connector.write.BatchWrite;
 import org.apache.spark.sql.connector.write.DataWriter;
 import org.apache.spark.sql.connector.write.LogicalWriteInfoImpl;
+import org.apache.spark.sql.connector.write.Write;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import org.apache.spark.unsafe.types.UTF8String;
@@ -56,7 +56,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class TestSparkWriter extends SparkTableTestBase {
+public class TestMixedWriter extends MixedTableTestBase {
 
   static final Schema schema =
       new Schema(
@@ -175,8 +175,9 @@ public class TestSparkWriter extends SparkTableTestBase {
     LogicalWriteInfoImpl info =
         new LogicalWriteInfoImpl("queryId", structType, new CaseInsensitiveStringMap(map));
     ArcticSparkWriteBuilder builder = new ArcticSparkWriteBuilder(table, info, catalog());
-    BatchWrite batchWrite = builder.buildForBatch();
-    DataWriter<InternalRow> writer = batchWrite.createBatchWriterFactory(null).createWriter(0, 0);
+    Write write = builder.build();
+    DataWriter<InternalRow> writer =
+        write.toBatch().createBatchWriterFactory(null).createWriter(0, 0);
     // create record
     InternalRow record = geneRowData();
     List<InternalRow> records = Collections.singletonList(record);

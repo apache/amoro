@@ -20,7 +20,6 @@ package com.netease.arctic.spark.test;
 
 import com.netease.arctic.SingletonResourceUtil;
 import com.netease.arctic.TestAms;
-import com.netease.arctic.TestedCatalogs;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.TestHMS;
@@ -43,14 +42,25 @@ public class SparkTestContext {
 
   public static final String SESSION_CATALOG_IMPL =
       "com.netease.arctic.spark.ArcticSparkSessionCatalog";
-  public static final String CATALOG_IMPL = "com.netease.arctic.spark.ArcticSparkCatalog";
+  public static final String MIXED_CATALOG_IMPL = "com.netease.arctic.spark.ArcticSparkCatalog";
   public static final String SQL_EXTENSIONS_IMPL = "com.netease.arctic.spark.ArcticSparkExtensions";
 
-  final TemporaryFolder warehouse = new TemporaryFolder();
-  public static final String EXTERNAL_HIVE_CATALOG_NAME = "hive_catalog";
-  public static final String EXTERNAL_HADOOP_CATALOG_NAME = "hadoop_catalog";
+  public static final String UNIFIED_CATALOG_IMP = "com.netease.arctic.spark.unified.SparkCatalog";
 
-  public static final String EXTERNAL_MIXED_ICEBERG_HIVE = "mixed_iceberg_hive_catalog";
+  final TemporaryFolder warehouse = new TemporaryFolder();
+
+  /**
+   * Define spark catalog names.
+   */
+  public static class SparkCatalogNames {
+    public static final String MIXED_HIVE = "mixed_hive_catalog";
+    public static final String MIXED_ICEBERG = "mixed_iceberg_catalog";
+
+    public static final String UNIFIED_ICEBERG = "unified_iceberg";
+    public static final String UNIFIED_MIXED_ICEBERG = "unified_mixed_iceberg";
+    public static final String UNIFIED_MIXED_HIVE = "unified_mixed_hive";
+    public static final String UNIFIED_PAIMON = "unified_paimon";
+  }
 
   final TestAms ams = new TestAms();
 
@@ -104,24 +114,15 @@ public class SparkTestContext {
         return;
       }
     }
-    CatalogMeta arcticCatalogMeta =
-        TestedCatalogs.hadoopCatalog(TableFormat.MIXED_ICEBERG)
-            .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
-    arcticCatalogMeta.setCatalogName(EXTERNAL_HADOOP_CATALOG_NAME);
-    ams.getAmsHandler().createCatalog(arcticCatalogMeta);
-
     HiveConf hiveConf = hms.getHiveConf();
-    CatalogMeta hiveCatalogMeta =
-        HiveCatalogTestHelper.build(hiveConf, TableFormat.MIXED_HIVE)
-            .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
-    hiveCatalogMeta.setCatalogName(EXTERNAL_HIVE_CATALOG_NAME);
-    ams.getAmsHandler().createCatalog(hiveCatalogMeta);
-
-    CatalogMeta mixedIcebergHiveCatalogMeta =
-        HiveCatalogTestHelper.build(hiveConf, TableFormat.MIXED_ICEBERG)
-            .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
-    mixedIcebergHiveCatalogMeta.setCatalogName(EXTERNAL_MIXED_ICEBERG_HIVE);
-    ams.getAmsHandler().createCatalog(mixedIcebergHiveCatalogMeta);
+    for (TableFormat format: TableFormat.values()) {
+      // create catalog for all formats in AMS with hive metastore.
+      CatalogMeta hiveCatalogMeta =
+          HiveCatalogTestHelper.build(hiveConf, format)
+              .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
+      hiveCatalogMeta.setCatalogName(format.name());
+      ams.getAmsHandler().createCatalog(hiveCatalogMeta);
+    }
     catalogSet = true;
   }
 
@@ -151,14 +152,14 @@ public class SparkTestContext {
 
   public SparkSession getSparkSession(Map<String, String> externalConfigs) {
     Map<String, String> configs = Maps.newHashMap();
-    configs.put("spark.sql.catalog." + EXTERNAL_HADOOP_CATALOG_NAME, CATALOG_IMPL);
-    configs.put(
-        "spark.sql.catalog." + EXTERNAL_HADOOP_CATALOG_NAME + ".url",
-        this.ams.getServerUrl() + "/" + EXTERNAL_HADOOP_CATALOG_NAME);
-    configs.put("spark.sql.catalog." + EXTERNAL_HIVE_CATALOG_NAME, CATALOG_IMPL);
-    configs.put(
-        "spark.sql.catalog." + EXTERNAL_HIVE_CATALOG_NAME + ".url",
-        this.ams.getServerUrl() + "/" + EXTERNAL_HIVE_CATALOG_NAME);
+
+    addMixedSparkCatalog(configs, SparkCatalogNames.MIXED_HIVE, TableFormat.MIXED_HIVE);
+    addMixedSparkCatalog(configs, SparkCatalogNames.MIXED_ICEBERG, TableFormat.MIXED_ICEBERG);
+
+    addUnifiedSparkCatalog(configs, SparkCatalogNames.UNIFIED_ICEBERG, TableFormat.ICEBERG);
+    addUnifiedSparkCatalog(configs, SparkCatalogNames.UNIFIED_PAIMON, TableFormat.PAIMON);
+    addUnifiedSparkCatalog(configs, SparkCatalogNames.UNIFIED_MIXED_HIVE, TableFormat.MIXED_HIVE);
+    addUnifiedSparkCatalog(configs, SparkCatalogNames.UNIFIED_MIXED_ICEBERG, TableFormat.MIXED_ICEBERG);
 
     configs.put("hive.metastore.uris", this.hiveMetastoreUri());
     configs.put("spark.sql.catalogImplementation", "hive");
@@ -181,6 +182,20 @@ public class SparkTestContext {
 
     initializeSparkSession(configs);
     return this.spark.cloneSession();
+  }
+
+  private void addMixedSparkCatalog(Map<String, String> configs, String catalogName, TableFormat format) {
+    configs.put("spark.sql.catalog." + catalogName, MIXED_CATALOG_IMPL);
+    configs.put(
+        "spark.sql.catalog." + catalogName + ".url",
+        this.ams.getServerUrl() + "/" + format.name());
+  }
+
+  private void addUnifiedSparkCatalog(Map<String, String> configs, String catalogName, TableFormat format) {
+    configs.put("spark.sql.catalog." + catalogName, UNIFIED_CATALOG_IMP);
+    configs.put(
+        "spark.sql.catalog." + catalogName + ".uri",
+        this.ams.getServerUrl() + "/" + format.name());
   }
 
   private boolean isSameSparkConf(Map<String, String> sparkConf) {

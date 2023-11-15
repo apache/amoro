@@ -20,7 +20,7 @@ package com.netease.arctic.spark.test.suites.sql;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.SparkSQLProperties;
-import com.netease.arctic.spark.test.SparkTableTestBase;
+import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import com.netease.arctic.spark.test.utils.Asserts;
 import com.netease.arctic.table.ArcticTable;
@@ -43,7 +43,7 @@ import java.util.stream.Stream;
 
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
-public class TestCreateTableSQL extends SparkTableTestBase {
+public class TestCreateTableSQL extends MixedTableTestBase {
 
   public static Stream<Arguments> testTimestampHandleInCreateTable() {
     return Stream.of(

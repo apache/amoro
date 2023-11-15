@@ -20,6 +20,7 @@ package com.netease.arctic.spark.test.suites.sql;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
@@ -72,7 +73,7 @@ public class TestMultiDelegateSessionCatalog extends SparkTestBase {
         "spark.sql.catalog.spark_catalog.arctic", ArcticSparkSessionCatalog.class.getName());
     configs.put(
         "spark.sql.catalog.spark_catalog.arctic.url",
-        context.catalogUrl(SparkTestContext.EXTERNAL_HIVE_CATALOG_NAME));
+        context.catalogUrl(TableFormat.MIXED_HIVE.name()));
 
     configs.put("spark.sql.catalog.spark_catalog.iceberg", SparkSessionCatalog.class.getName());
     configs.put("spark.sql.catalog.spark_catalog.iceberg.type", "hive");
@@ -87,10 +88,9 @@ public class TestMultiDelegateSessionCatalog extends SparkTestBase {
 
   ArcticCatalog arcticCatalog;
 
-  @Override
   protected ArcticCatalog catalog() {
     if (arcticCatalog == null) {
-      String catalogUrl = context.catalogUrl(SparkTestContext.EXTERNAL_HIVE_CATALOG_NAME);
+      String catalogUrl = context.catalogUrl(TableFormat.MIXED_HIVE.name());
       arcticCatalog = CatalogLoader.load(catalogUrl);
     }
     return arcticCatalog;
@@ -102,7 +102,7 @@ public class TestMultiDelegateSessionCatalog extends SparkTestBase {
   private final String hiveTable = "hive_table";
   private final String tempView = "tmp";
   private final TableIdentifier arcticTableIdentifier =
-      TableIdentifier.of(SparkTestContext.EXTERNAL_HIVE_CATALOG_NAME, database, arcticTable);
+      TableIdentifier.of(TableFormat.MIXED_HIVE.name(), database, arcticTable);
 
   List<Row> tempRows =
       Lists.newArrayList(

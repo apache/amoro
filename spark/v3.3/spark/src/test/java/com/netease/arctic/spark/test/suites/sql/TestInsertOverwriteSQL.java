@@ -22,7 +22,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.spark.SparkSQLProperties;
-import com.netease.arctic.spark.test.SparkTableTestBase;
+import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import com.netease.arctic.spark.test.utils.Asserts;
 import com.netease.arctic.spark.test.utils.DataComparator;
@@ -62,7 +62,7 @@ import java.util.stream.Stream;
  */
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
-public class TestInsertOverwriteSQL extends SparkTableTestBase {
+public class TestInsertOverwriteSQL extends MixedTableTestBase {
 
   static final String OVERWRITE_MODE_KEY = "spark.sql.sources.partitionOverwriteMode";
   static final String DYNAMIC = "DYNAMIC";

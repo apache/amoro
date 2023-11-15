@@ -87,7 +87,9 @@ public class EnableCatalogSelectExtension implements BeforeEachMethodAdapter {
 
   private String selectCatalogByFormat(ExtensionContext context, ExtensionRegistry registry) {
     TableFormat format = formatFromMethodArgs(context, registry);
-    return chooseCatalogForFormatTest(format);
+    Preconditions.condition(format == TableFormat.MIXED_ICEBERG || format == TableFormat.MIXED_HIVE,
+        "must be a mixed-format");
+    return format.name();
   }
 
   private TableFormat formatFromMethodArgs(ExtensionContext context, ExtensionRegistry registry) {
@@ -111,17 +113,5 @@ public class EnableCatalogSelectExtension implements BeforeEachMethodAdapter {
       throw new IllegalArgumentException("The test has not parameter is TableFormat type");
     }
     return (TableFormat) resolver.resolveParameter(parameterContext, context);
-  }
-
-  private static String chooseCatalogForFormatTest(TableFormat format) {
-    switch (format) {
-      case MIXED_HIVE:
-        return SparkTestBase.HIVE_CATALOG;
-      case ICEBERG:
-      case MIXED_ICEBERG:
-        return SparkTestBase.HADOOP_CATALOG;
-      default:
-        throw new IllegalArgumentException("Un-supported table format type for test:" + format);
-    }
   }
 }

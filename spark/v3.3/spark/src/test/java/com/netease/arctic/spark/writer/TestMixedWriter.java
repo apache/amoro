@@ -10,7 +10,7 @@ import com.netease.arctic.hive.io.HiveDataTestHelpers;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.spark.reader.SparkParquetReaders;
-import com.netease.arctic.spark.test.SparkTableTestBase;
+import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.utils.RecordGenerator;
 import com.netease.arctic.spark.test.utils.TestTableUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -56,7 +56,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class TestSparkWriter extends SparkTableTestBase {
+public class TestMixedWriter extends MixedTableTestBase {
 
   static final Schema schema =
       new Schema(

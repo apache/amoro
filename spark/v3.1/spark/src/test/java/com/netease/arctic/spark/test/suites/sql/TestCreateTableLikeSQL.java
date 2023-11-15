@@ -20,7 +20,7 @@ package com.netease.arctic.spark.test.suites.sql;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.SparkSQLProperties;
-import com.netease.arctic.spark.test.SparkTableTestBase;
+import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import com.netease.arctic.spark.test.utils.Asserts;
 import com.netease.arctic.spark.test.utils.TestTable;
@@ -42,7 +42,7 @@ import java.util.stream.Stream;
 
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
-public class TestCreateTableLikeSQL extends SparkTableTestBase {
+public class TestCreateTableLikeSQL extends MixedTableTestBase {
 
   public static Stream<Arguments> testTimestampZoneHandle() {
     return Stream.of(
@@ -84,7 +84,7 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
   @DisplayName("Test SQL: CREATE TABLE LIKE hive table")
   @ParameterizedTest
   @MethodSource
-  @EnableCatalogSelect.SelectCatalog(use = SESSION_CATALOG)
+  @EnableCatalogSelect.SelectCatalog(use = SPARK_SESSION_CATALOG)
   public void testCreateTableLikeHiveTable(TestTable source) {
     createHiveSource(source.hiveSchema, source.hivePartitions, ImmutableMap.of("k1", "v1"));
 
@@ -149,7 +149,7 @@ public class TestCreateTableLikeSQL extends SparkTableTestBase {
   @DisplayName("TestSQL: CREATE TABLE LIKE without USING ARCTIC")
   @ParameterizedTest(name = "{index} provider = {0} ")
   @MethodSource
-  @EnableCatalogSelect.SelectCatalog(use = SESSION_CATALOG)
+  @EnableCatalogSelect.SelectCatalog(use = SPARK_SESSION_CATALOG)
   public void testCreateTableWithoutProviderInSessionCatalog(
       String provider, boolean expectCreate) {
     TestTable source = TestTables.MixedHive.PK_PT;

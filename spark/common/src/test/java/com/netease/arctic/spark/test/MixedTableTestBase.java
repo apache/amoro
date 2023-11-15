@@ -19,6 +19,8 @@
 package com.netease.arctic.spark.test;
 
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.spark.test.utils.TestTableUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -41,7 +43,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.connector.catalog.Identifier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,18 +54,42 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class SparkTableTestBase extends SparkTestBase {
+/**
+ * Test base for all mixed-format tests.
+ */
+public class MixedTableTestBase extends SparkTestBase {
+  public static final String MIXED_ICEBERG_CATALOG = SparkTestContext.SparkCatalogNames.MIXED_ICEBERG;
+
   protected static final TableFormat MIXED_HIVE = TableFormat.MIXED_HIVE;
   protected static final TableFormat MIXED_ICEBERG = TableFormat.MIXED_ICEBERG;
   protected static final TableFormat ICEBERG = TableFormat.ICEBERG;
   protected static final PartitionSpec unpartitioned = PartitionSpec.unpartitioned();
   protected static final PrimaryKeySpec noPrimaryKey = PrimaryKeySpec.noPrimaryKey();
 
-  private final String database = "spark_test_database";
-  private final String table = "test_table";
+  private ArcticCatalog mixedCatalog = null;
+  private String currentSparkCatalog = null;
+
+  private final String database = "mixed_database";
+  private final String table = "mixed_table";
   private final String sourceTable = "test_source_table";
 
   private Identifier source;
+
+
+
+  protected ArcticCatalog catalog() {
+    boolean reInitMixedCatalog = mixedCatalog == null || (!currentCatalog.equals(currentSparkCatalog));
+    if (reInitMixedCatalog) {
+      String catalogUrl =
+          spark()
+              .sessionState()
+              .conf()
+              .getConfString("spark.sql.catalog." + currentCatalog + ".url");
+      mixedCatalog = CatalogLoader.load(catalogUrl);
+      this.currentSparkCatalog = currentCatalog;
+    }
+    return mixedCatalog;
+  }
 
   public String database() {
     return this.database;

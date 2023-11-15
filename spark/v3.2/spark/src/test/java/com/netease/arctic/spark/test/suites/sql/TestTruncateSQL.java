@@ -20,7 +20,7 @@ package com.netease.arctic.spark.test.suites.sql;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.spark.test.SparkTableTestBase;
+import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.io.FileInfo;
@@ -37,7 +37,7 @@ import java.util.stream.Stream;
 
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
-public class TestTruncateSQL extends SparkTableTestBase {
+public class TestTruncateSQL extends MixedTableTestBase {
 
   public static Stream<Arguments> testTruncateTable() {
     return Stream.of(
