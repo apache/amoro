@@ -6,7 +6,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.formats.iceberg.IcebergTable;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.server.ArcticManagementConf;
-import com.netease.arctic.server.IcebergRestCatalogService;
+import com.netease.arctic.server.RestCatalogService;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.table.internal.InternalIcebergCreator;
@@ -91,28 +91,20 @@ public class InternalIcebergCatalogImpl extends InternalCatalog {
   }
 
   private String defaultRestURI() {
-    return "http://"
-        + exposedHost
-        + ":"
-        + httpPort
-        + IcebergRestCatalogService.ICEBERG_REST_API_PREFIX;
+    return "http://" + exposedHost + ":" + httpPort + RestCatalogService.ICEBERG_REST_API_PREFIX;
   }
 
   @Override
-  public <A> InternalTableCreator newTableCreator(
-      String database, String tableName, TableFormat format, A creatorArguments) {
+  public InternalTableCreator newTableCreator(
+      String database, String tableName, TableFormat format, CreateTableRequest creatorArguments) {
 
     Preconditions.checkArgument(
         format == format(), "the catalog only support to create %s table", format().name());
-    Preconditions.checkArgument(
-        creatorArguments instanceof CreateTableRequest,
-        "only support accept creation arguments type: %s",
-        CreateTableRequest.class.getName());
     if (exist(database, tableName)) {
       throw new AlreadyExistsException(
           "Table " + name() + "." + database + "." + tableName + " already " + "exists.");
     }
-    return newTableCreator(database, tableName, (CreateTableRequest) creatorArguments);
+    return newTableCreator(database, tableName, creatorArguments);
   }
 
   protected TableFormat format() {

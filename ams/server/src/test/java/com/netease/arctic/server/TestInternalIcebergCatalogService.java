@@ -55,8 +55,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class TestIcebergCatalogService extends InternalCatalogServiceTestBase {
-  private static final Logger LOG = LoggerFactory.getLogger(TestIcebergCatalogService.class);
+public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBase {
+  private static final Logger LOG =
+      LoggerFactory.getLogger(TestInternalIcebergCatalogService.class);
 
   private final Namespace ns = Namespace.of(database);
   private final TableIdentifier identifier = TableIdentifier.of(ns, table);

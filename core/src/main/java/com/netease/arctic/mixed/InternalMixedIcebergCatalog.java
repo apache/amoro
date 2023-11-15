@@ -91,6 +91,14 @@ public class InternalMixedIcebergCatalog extends BasicMixedIcebergCatalog {
       super(tableMetaStore, catalogProperties, catalog);
     }
 
+    /**
+     * For internal table, using {table-name}@change as change store identifier, this identifier
+     * cloud be recognized by AMS. Due to '@' is an invalid character of table name, the change
+     * store identifier will never be conflict with other table name.
+     *
+     * @param baseIdentifier base store table identifier.
+     * @return change store iceberg table identifier.
+     */
     @Override
     protected TableIdentifier generateChangeStoreIdentifier(TableIdentifier baseIdentifier) {
       return TableIdentifier.of(
@@ -98,6 +106,10 @@ public class InternalMixedIcebergCatalog extends BasicMixedIcebergCatalog {
           baseIdentifier.name() + CHANGE_STORE_SEPARATOR + CHANGE_STORE_NAME);
     }
 
+    /**
+     * the change store will be created automatically by AMS when creating the base store, so we
+     * just load change store from AMS
+     */
     @Override
     protected Table createChangeStore(
         TableIdentifier baseIdentifier,
@@ -109,6 +121,10 @@ public class InternalMixedIcebergCatalog extends BasicMixedIcebergCatalog {
       return tableMetaStore.doAs(() -> icebergCatalog.loadTable(changeIdentifier));
     }
 
+    /**
+     * The change store will be dropped automatically by AMS when dropping the base store, so we do
+     * nothing here
+     */
     @Override
     protected boolean dropChangeStore(TableIdentifier changStoreIdentifier, boolean purge) {
       // drop change store in AMS

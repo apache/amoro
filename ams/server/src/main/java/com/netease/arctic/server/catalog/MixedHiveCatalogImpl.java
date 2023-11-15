@@ -32,6 +32,7 @@ import com.netease.arctic.server.table.internal.InternalTableCreator;
 import com.netease.arctic.server.table.internal.InternalTableHandler;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
+import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.thrift.TException;
 
 import java.util.List;
@@ -81,8 +82,8 @@ public class MixedHiveCatalogImpl extends InternalCatalog {
   }
 
   @Override
-  public <A> InternalTableCreator newTableCreator(
-      String database, String tableName, TableFormat format, A creatorArguments) {
+  public InternalTableCreator newTableCreator(
+      String database, String tableName, TableFormat format, CreateTableRequest creatorArguments) {
     throw new UnsupportedOperationException();
   }
 

@@ -37,6 +37,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 
+/** Table handler for mixed-iceberg format */
 public class InternalMixedIcebergHandler extends InternalIcebergHandler {
   private final boolean changeStore;
   private final CatalogMeta catalogMeta;

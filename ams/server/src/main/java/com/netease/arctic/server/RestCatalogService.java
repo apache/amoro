@@ -85,9 +85,14 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class IcebergRestCatalogService extends PersistentBase {
+/**
+ * This class provides an implementation of <a
+ * href="https://github.com/apache/iceberg/blob/main/open-api/rest-catalog-open-api.yaml">iceberg
+ * rest-catalog-open-api </a>
+ */
+public class RestCatalogService extends PersistentBase {
 
-  private static final Logger LOG = LoggerFactory.getLogger(IcebergRestCatalogService.class);
+  private static final Logger LOG = LoggerFactory.getLogger(RestCatalogService.class);
 
   public static final String ICEBERG_REST_API_PREFIX = "/api/iceberg/rest";
 
@@ -103,7 +108,7 @@ public class IcebergRestCatalogService extends PersistentBase {
   private final TableService tableService;
   private final MetricsManager metricsManager;
 
-  public IcebergRestCatalogService(TableService tableService) {
+  public RestCatalogService(TableService tableService) {
     this.tableService = tableService;
     ObjectMapper objectMapper = jsonMapper();
     this.jsonMapper = new JavalinJackson(objectMapper);

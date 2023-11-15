@@ -20,6 +20,7 @@ package com.netease.arctic.server.table.internal;
 
 import com.netease.arctic.mixed.InternalMixedIcebergCatalog;
 
+/** Constants defines for internal table */
 public class InternalTableConstants {
   public static final String METADATA_FOLDER_NAME = "metadata";
   public static final String PROPERTIES_METADATA_LOCATION = "iceberg.metadata.location";

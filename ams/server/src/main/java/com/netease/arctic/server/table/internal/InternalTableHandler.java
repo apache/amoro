@@ -22,14 +22,31 @@ import com.netease.arctic.server.table.TableMetadata;
 
 import java.io.Closeable;
 
+/**
+ * Interface of internal tables' handler.
+ *
+ * @param <OP> Table operation class
+ */
 public interface InternalTableHandler<OP> extends Closeable {
 
+  /** @return Persistent {@link TableMetadata} object */
   TableMetadata tableMetadata();
 
+  /**
+   * Table operations object. like {@link org.apache.iceberg.TableOperations}
+   *
+   * @return table operations
+   */
   OP newTableOperator();
 
+  /**
+   * clean table resources created by AMS
+   *
+   * @param purge if purge data
+   */
   void dropTable(boolean purge);
 
+  /** Release resource like {@link org.apache.iceberg.io.FileIO} */
   @Override
   default void close() {}
 }

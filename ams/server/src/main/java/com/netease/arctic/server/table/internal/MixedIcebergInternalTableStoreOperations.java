@@ -24,10 +24,12 @@ import static com.netease.arctic.server.table.internal.InternalTableConstants.PR
 
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
+import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.io.FileIO;
 
 import java.util.Map;
 
+/** Iceberg table operations {@link TableOperations} for Mixed-Iceberg table store. */
 public class MixedIcebergInternalTableStoreOperations extends IcebergInternalTableOperations {
   boolean forChangeStore;
 

@@ -45,11 +45,11 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Map;
 
-public abstract class InternalCatalogServiceTestBase {
-  private static final Logger LOG = LoggerFactory.getLogger(InternalCatalogServiceTestBase.class);
+public abstract class RestCatalogServiceTestBase {
+  private static final Logger LOG = LoggerFactory.getLogger(RestCatalogServiceTestBase.class);
 
   static AmsEnvironment ams = AmsEnvironment.getIntegrationInstances();
-  static String restCatalogUri = IcebergRestCatalogService.ICEBERG_REST_API_PREFIX;
+  static String restCatalogUri = RestCatalogService.ICEBERG_REST_API_PREFIX;
 
   protected final String database = "test_ns";
   protected final String table = "test_iceberg_tbl";

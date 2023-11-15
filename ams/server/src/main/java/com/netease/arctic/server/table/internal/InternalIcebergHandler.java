@@ -27,6 +27,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** Table handler for iceberg format */
 public class InternalIcebergHandler implements InternalTableHandler<TableOperations> {
 
   private static final Logger LOG = LoggerFactory.getLogger(InternalIcebergHandler.class);

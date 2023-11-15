@@ -39,6 +39,7 @@ import org.apache.iceberg.rest.requests.CreateTableRequest;
 
 import java.util.Map;
 
+/** Table creator for mixed-iceberg format */
 public class InternalMixedIcebergCreator extends InternalIcebergCreator {
 
   private String changMetadataFileLocation;

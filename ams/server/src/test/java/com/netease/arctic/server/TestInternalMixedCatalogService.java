@@ -56,7 +56,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class TestInternalMixedCatalogService extends InternalCatalogServiceTestBase {
+public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(TestInternalMixedCatalogService.class);
 
   private ArcticCatalog catalog;

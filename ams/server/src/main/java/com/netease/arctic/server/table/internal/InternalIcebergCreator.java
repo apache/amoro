@@ -39,6 +39,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.iceberg.util.LocationUtil;
 
+/** Table creator for iceberg format */
 public class InternalIcebergCreator implements InternalTableCreator {
 
   protected final ArcticFileIO io;

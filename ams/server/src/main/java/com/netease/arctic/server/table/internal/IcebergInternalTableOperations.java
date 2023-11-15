@@ -41,6 +41,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+/** Iceberg table operations {@link TableOperations} */
 public class IcebergInternalTableOperations extends PersistentBase implements TableOperations {
 
   private final ServerTableIdentifier identifier;

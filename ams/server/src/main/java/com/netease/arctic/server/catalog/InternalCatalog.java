@@ -32,6 +32,7 @@ import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
 import com.netease.arctic.server.table.internal.InternalTableCreator;
 import com.netease.arctic.server.table.internal.InternalTableHandler;
+import org.apache.iceberg.rest.requests.CreateTableRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -117,8 +118,8 @@ public abstract class InternalCatalog extends ServerCatalog {
         .collect(Collectors.toList());
   }
 
-  public abstract <A> InternalTableCreator newTableCreator(
-      String database, String tableName, TableFormat format, A creatorArguments);
+  public abstract InternalTableCreator newTableCreator(
+      String database, String tableName, TableFormat format, CreateTableRequest creatorArguments);
 
   public abstract <O> InternalTableHandler<O> newTableHandler(String database, String tableName);
 
