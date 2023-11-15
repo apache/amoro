@@ -20,6 +20,7 @@ package com.netease.arctic.spark.test.extensions;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.test.SparkTestBase;
+import com.netease.arctic.spark.test.SparkTestContext;
 import org.apache.commons.lang.StringUtils;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterResolver;
@@ -89,7 +90,14 @@ public class EnableCatalogSelectExtension implements BeforeEachMethodAdapter {
     TableFormat format = formatFromMethodArgs(context, registry);
     Preconditions.condition(format == TableFormat.MIXED_ICEBERG || format == TableFormat.MIXED_HIVE,
         "must be a mixed-format");
-    return format.name();
+    switch (format) {
+      case MIXED_ICEBERG:
+        return SparkTestContext.SparkCatalogNames.MIXED_ICEBERG;
+      case MIXED_HIVE:
+        return SparkTestContext.SparkCatalogNames.MIXED_HIVE;
+      default:
+        throw new IllegalArgumentException("must be a mixed-format");
+    }
   }
 
   private TableFormat formatFromMethodArgs(ExtensionContext context, ExtensionRegistry registry) {

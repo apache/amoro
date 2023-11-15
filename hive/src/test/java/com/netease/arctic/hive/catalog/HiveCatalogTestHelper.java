@@ -50,11 +50,6 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
   }
 
   public HiveCatalogTestHelper(TableFormat tableFormat, Configuration hiveConf) {
-    Preconditions.checkArgument(
-        tableFormat.equals(TableFormat.ICEBERG)
-            || tableFormat.equals(TableFormat.MIXED_HIVE)
-            || tableFormat.equals(TableFormat.MIXED_ICEBERG),
-        "Cannot support table format:" + tableFormat);
     this.tableFormat = tableFormat;
     this.hiveConf = hiveConf;
   }

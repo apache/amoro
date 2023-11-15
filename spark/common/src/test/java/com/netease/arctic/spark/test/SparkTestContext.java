@@ -120,7 +120,7 @@ public class SparkTestContext {
       CatalogMeta hiveCatalogMeta =
           HiveCatalogTestHelper.build(hiveConf, format)
               .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
-      hiveCatalogMeta.setCatalogName(format.name());
+      hiveCatalogMeta.setCatalogName(format.name().toLowerCase());
       ams.getAmsHandler().createCatalog(hiveCatalogMeta);
     }
     catalogSet = true;
