@@ -199,7 +199,7 @@ public class ArcticServiceContainer {
   private void initHttpService() {
     DashboardServer dashboardServer =
         new DashboardServer(serviceConfig, tableService, optimizingService, terminalManager);
-    IcebergRestCatalogService restCatalogService = new IcebergRestCatalogService(tableService);
+    RestCatalogService restCatalogService = new RestCatalogService(tableService);
 
     httpServer =
         Javalin.create(

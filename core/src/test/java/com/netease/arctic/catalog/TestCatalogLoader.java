@@ -22,6 +22,7 @@ import com.netease.arctic.TestAms;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -41,13 +42,13 @@ public class TestCatalogLoader {
     CatalogMeta catalogMeta =
         CatalogTestHelpers.buildCatalogMeta(
             TEST_CATALOG_NAME,
-            CatalogMetaProperties.CATALOG_TYPE_AMS,
+            CatalogMetaProperties.CATALOG_TYPE_HADOOP,
             properties,
             TableFormat.MIXED_ICEBERG);
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
     ArcticCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
     Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
-    Assert.assertTrue(loadCatalog instanceof BasicArcticCatalog);
+    Assert.assertEquals(BasicMixedIcebergCatalog.class.getName(), loadCatalog.getClass().getName());
     TEST_AMS.getAmsHandler().dropCatalog(TEST_CATALOG_NAME);
   }
 
