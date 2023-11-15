@@ -43,7 +43,7 @@ public class MixedIcebergInternalTableStoreOperations extends IcebergInternalTab
   @Override
   protected String tableMetadataLocation(TableMetadata tableMeta) {
     if (forChangeStore) {
-      tableMeta.getProperties().get(CHANGE_STORE_PREFIX + PROPERTIES_METADATA_LOCATION);
+      return tableMeta.getProperties().get(CHANGE_STORE_PREFIX + PROPERTIES_METADATA_LOCATION);
     }
     return super.tableMetadataLocation(tableMeta);
   }
