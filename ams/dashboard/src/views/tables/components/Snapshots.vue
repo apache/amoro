@@ -138,7 +138,7 @@ async function getTableInfo() {
       rcData[commitTime] = recordsSummaryForChart || {}
       fcData[commitTime] = filesSummaryForChart || {}
       if (p.producer === 'OPTIMIZE') {
-        p.operation = p.operation + '(optimize)'
+        p.operation = p.operation + '(optimizing)'
       }
       p.commitTime = p.commitTime ? dateFormat(p.commitTime) : ''
       dataSource.push(p)
