@@ -115,7 +115,7 @@ const getBranchList = async () => {
 
 const getTagList = async () => {
   const result = await getTags(props)
-  tagList.value = (result.list || []).map((l: IServiceBranchItem) => ({ value: l.name, label: l.name, type: branchTypeMap.BRANCH }))
+  tagList.value = (result.list || []).map((l: IServiceBranchItem) => ({ value: l.name, label: l.name, type: branchTypeMap.TAG }))
 }
 
 const init = async () => {
