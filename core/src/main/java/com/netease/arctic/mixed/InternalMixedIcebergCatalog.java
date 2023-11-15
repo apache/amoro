@@ -107,7 +107,7 @@ public class InternalMixedIcebergCatalog extends BasicMixedIcebergCatalog {
     }
 
     /**
-     * the change store will be created automatically by AMS when creating the base store, so we
+     * The change store will be created automatically by AMS when creating the base store, so we
      * just load change store from AMS
      */
     @Override
