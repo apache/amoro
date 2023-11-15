@@ -26,13 +26,13 @@ import java.io.Closeable;
 public interface InternalTableCreator extends Closeable {
 
   /**
-   * do all things about create an internal table, and prepare the {@link TableMetadata} for {@link
+   * Do all things about create an internal table, and prepare the {@link TableMetadata} for {@link
    * com.netease.arctic.server.table.TableService#createTable(java.lang.String,
    * com.netease.arctic.server.table.TableMetadata)}
    */
   TableMetadata create();
 
-  /** rollback all resource created during {@link #create()} */
+  /** Rollback all resource created during {@link #create()} */
   void rollback();
 
   /** Release resource like {@link org.apache.iceberg.io.FileIO} */

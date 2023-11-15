@@ -40,7 +40,7 @@ public interface InternalTableHandler<OP> extends Closeable {
   OP newTableOperator();
 
   /**
-   * clean table resources created by AMS
+   * Clean table resources created by AMS
    *
    * @param purge if purge data
    */
