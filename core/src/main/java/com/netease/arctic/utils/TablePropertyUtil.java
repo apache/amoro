@@ -139,6 +139,21 @@ public class TablePropertyUtil {
   }
 
   /**
+   * Check if an iceberg table is a table store of a mixed-iceberg table.
+   *
+   * @param properties table properties of iceberg
+   * @return true if this it a table store.
+   */
+  public static boolean isMixedTableStore(Map<String, String> properties) {
+    String format = properties.get(TableProperties.TABLE_FORMAT);
+    String tableStore = properties.get(TableProperties.MIXED_FORMAT_TABLE_STORE);
+    boolean baseStore = TableProperties.MIXED_FORMAT_TABLE_STORE_BASE.equalsIgnoreCase(tableStore);
+    boolean changeStore =
+        TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE.equalsIgnoreCase(tableStore);
+    return TableFormat.MIXED_ICEBERG.name().equalsIgnoreCase(format) && (baseStore || changeStore);
+  }
+
+  /**
    * Check if the given table properties is the base store of mixed-format,
    *
    * @param properties properties of the table.
