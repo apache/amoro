@@ -20,6 +20,7 @@ package com.netease.arctic;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
@@ -31,6 +32,7 @@ import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,6 +42,7 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   private CatalogMeta meta;
   private Map<TableFormat, FormatCatalog> formatCatalogs = Maps.newHashMap();
   private final Map<String, String> properties = Maps.newHashMap();
+  private Pattern tableFilterPattern;
 
   public CommonUnifiedCatalog(
       Supplier<CatalogMeta> catalogMetaSupplier, Map<String, String> properties) {
@@ -48,6 +51,12 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     this.meta = catalogMeta;
     this.properties.putAll(properties);
     this.metaSupplier = catalogMetaSupplier;
+    if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_TABLE_FILTER)) {
+      String tableFilter = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
+      tableFilterPattern = Pattern.compile(tableFilter);
+    } else {
+      tableFilterPattern = null;
+    }
     initializeFormatCatalogs();
   }
 
@@ -129,9 +138,11 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     Map<String, TableFormat> tableNameToFormat = Maps.newHashMap();
     for (TableFormat format : formats) {
       if (formatCatalogs.containsKey(format)) {
-        formatCatalogs
-            .get(format)
-            .listTables(database)
+        formatCatalogs.get(format).listTables(database).stream()
+            .filter(
+                tableName ->
+                    tableFilterPattern == null
+                        || tableFilterPattern.matcher((database + "." + tableName)).matches())
             .forEach(table -> tableNameToFormat.putIfAbsent(table, format));
       }
     }
