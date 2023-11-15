@@ -27,6 +27,7 @@ import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.blocker.TableBlocker;
 import com.netease.arctic.server.utils.Configurations;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
@@ -622,6 +623,11 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
             tableIdentity.getDatabase(), tableIdentity.getTableName());
     AmoroTable<?> table =
         externalCatalog.loadTable(tableIdentity.getDatabase(), tableIdentity.getTableName());
+    if (TableFormat.ICEBERG == table.format()) {
+      if (TablePropertyUtil.isMixedTableStore(table.properties())) {
+        return false;
+      }
+    }
     TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
     tableRuntimeMap.put(tableIdentifier, tableRuntime);
     if (headHandler != null) {
