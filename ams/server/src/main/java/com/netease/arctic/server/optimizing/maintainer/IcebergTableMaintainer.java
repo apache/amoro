@@ -20,7 +20,9 @@ package com.netease.arctic.server.optimizing.maintainer;
 
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.netease.arctic.IcebergFileEntry;
@@ -74,8 +76,6 @@ import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.io.SupportsPrefixOperations;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
@@ -158,9 +158,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     try {
       DataExpirationConfig expirationConfig =
           tableRuntime.getTableConfiguration().getExpiringDataConfig();
-      if (!expirationConfig.isEnabled()
-          || expirationConfig.getRetentionTime() <= 0
-          || !validateExpirationField(expirationConfig.getExpirationField())) {
+      if (!validateExpirationConfig(expirationConfig)) {
         return;
       }
 
@@ -168,12 +166,23 @@ public class IcebergTableMaintainer implements TableMaintainer {
           expirationConfig,
           Instant.now()
               .atZone(
-                  getDefaultZoneId(
+                  IcebergTableUtil.getDefaultZoneId(
                       table.schema().findField(expirationConfig.getExpirationField())))
               .toInstant());
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
     }
+  }
+
+  protected boolean validateExpirationConfig(DataExpirationConfig expirationConfig) {
+    return expirationConfig.isEnabled()
+        && expirationConfig.getRetentionTime() > 0
+        && validateExpirationField(expirationConfig.getExpirationField());
+  }
+
+  @VisibleForTesting
+  public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
+    purgeTableFrom(expirationConfig, instant);
   }
 
   public void expireSnapshots(long mustOlderThan) {
@@ -540,23 +549,15 @@ public class IcebergTableMaintainer implements TableMaintainer {
         "Expiring data older than {} in table {} ",
         Instant.ofEpochMilli(expireTimestamp)
             .atZone(
-                getDefaultZoneId(table.schema().findField(expirationConfig.getExpirationField())))
+                IcebergTableUtil.getDefaultZoneId(table.schema().findField(expirationConfig.getExpirationField())))
             .toLocalDateTime(),
         table.name());
 
     purgeTableData(expirationConfig, expireTimestamp);
   }
 
-  protected static ZoneId getDefaultZoneId(Types.NestedField expireField) {
-    Type type = expireField.type();
-    if (type.typeId() == Type.TypeID.STRING) {
-      return ZoneId.systemDefault();
-    }
-    return ZoneOffset.UTC;
-  }
-
-  CloseableIterable<IcebergFileEntry> fileScan(Table table, Expression partitionFilter, Snapshot snapshot) {
-    TableScan tableScan = table.newScan().filter(partitionFilter).includeColumnStats();
+  CloseableIterable<IcebergFileEntry> fileScan(Table table, Expression dataFilter) {
+    TableScan tableScan = table.newScan().filter(dataFilter).includeColumnStats();
 
     CloseableIterable<FileScanTask> tasks;
     long snapshotId = IcebergTableUtil.getSnapshotId(table, false);
@@ -568,7 +569,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     CloseableIterable<DataFile> dataFiles =
         CloseableIterable.transform(tasks, ContentScanTask::file);
     Set<DeleteFile> deleteFiles =
-        StreamSupport.stream(tasks.spliterator(), false)
+        StreamSupport.stream(tasks.spliterator(), true)
             .flatMap(e -> e.deletes().stream())
             .collect(Collectors.toSet());
 
@@ -588,7 +589,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   protected void purgeTableData(DataExpirationConfig expirationConfig, long expireTimestamp) {
     Expression dataFilter = getDataExpression(expirationConfig, expireTimestamp);
-    Map<StructLike, DataFileFreshness> partitionFreshness = Maps.newHashMap();
+    Map<StructLike, DataFileFreshness> partitionFreshness = Maps.newConcurrentMap();
 
     MaintainStrategy maintainStrategy = createMaintainStrategy();
     List<ExpireFiles> expiredFiles =
@@ -625,7 +626,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
         }
       case STRING:
         String expireDateTime =
-            LocalDateTime.ofInstant(Instant.ofEpochMilli(expireTimestamp), getDefaultZoneId(field))
+            LocalDateTime.ofInstant(Instant.ofEpochMilli(expireTimestamp), IcebergTableUtil.getDefaultZoneId(field))
                 .format(
                     DateTimeFormatter.ofPattern(
                         expirationConfig.getDateTimePattern(), Locale.getDefault()));
@@ -828,7 +829,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
           Literal.of(
               LocalDate.parse(upperBound.toString(), formatter)
                   .atStartOfDay()
-                  .atZone(getDefaultZoneId(field))
+                  .atZone(IcebergTableUtil.getDefaultZoneId(field))
                   .toInstant()
                   .toEpochMilli());
     }

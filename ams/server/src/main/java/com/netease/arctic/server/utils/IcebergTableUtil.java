@@ -27,6 +27,8 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableSnapshot;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableFileUtil;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
@@ -35,6 +37,8 @@ import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.types.Type;
+import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,5 +130,13 @@ public class IcebergTableUtil {
     }
 
     return danglingDeleteFiles;
+  }
+
+  public static ZoneId getDefaultZoneId(Types.NestedField expireField) {
+    Type type = expireField.type();
+    if (type.typeId() == Type.TypeID.STRING) {
+      return ZoneId.systemDefault();
+    }
+    return ZoneOffset.UTC;
   }
 }

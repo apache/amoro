@@ -32,6 +32,9 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
+import com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer;
+import com.netease.arctic.server.optimizing.maintainer.MixedTableMaintainer;
+import com.netease.arctic.server.optimizing.maintainer.TableMaintainer;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
@@ -183,14 +186,8 @@ public class TestDataExpire extends ExecutorTestBase {
         getArcticTable(), tableTestHelper().writeBaseStore(getArcticTable(), 0, records, false));
 
     DataExpirationConfig config = new DataExpirationConfig(getArcticTable());
-    DataExpiringExecutor.purgeTableFrom(
-        getArcticTable(),
-        config,
-        LocalDateTime.parse("2022-01-03T18:00:00.000")
-            .atZone(
-                DataExpiringExecutor.getDefaultZoneId(
-                    getArcticTable().schema().findField(config.getExpirationField())))
-            .toInstant());
+
+    getMaintainerAndExpire(config, "2022-01-03T18:00:00.000");
 
     List<Record> result = readSortedBaseRecords(getArcticTable());
 
@@ -241,12 +238,12 @@ public class TestDataExpire extends ExecutorTestBase {
 
     // expire partitions that order than 2022-01-02 18:00:00.000
     DataExpirationConfig config = new DataExpirationConfig(keyedTable);
-    DataExpiringExecutor.purgeTableFrom(
-        keyedTable,
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(keyedTable);
+    tableMaintainer.expireDataFrom(
         config,
         LocalDateTime.parse("2022-01-03T18:00:00.000")
             .atZone(
-                DataExpiringExecutor.getDefaultZoneId(
+                IcebergTableUtil.getDefaultZoneId(
                     keyedTable.schema().findField(config.getExpirationField())))
             .toInstant());
 
@@ -324,12 +321,12 @@ public class TestDataExpire extends ExecutorTestBase {
 
     // expire partitions that order than 2022-01-02 18:00:00.000
     DataExpirationConfig config = new DataExpirationConfig(keyedTable);
-    DataExpiringExecutor.purgeTableFrom(
-        keyedTable,
+    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getArcticTable());
+    mixedTableMaintainer.expireDataFrom(
         config,
         LocalDateTime.parse("2022-01-03T18:00:00.000")
             .atZone(
-                DataExpiringExecutor.getDefaultZoneId(
+                IcebergTableUtil.getDefaultZoneId(
                     keyedTable.schema().findField(config.getExpirationField())))
             .toInstant());
 
@@ -362,14 +359,8 @@ public class TestDataExpire extends ExecutorTestBase {
 
     // expire partitions that order than 2022-01-02 18:00:00.000
     DataExpirationConfig config = new DataExpirationConfig(getArcticTable());
-    DataExpiringExecutor.purgeTableFrom(
-        getArcticTable(),
-        config,
-        LocalDateTime.parse("2022-01-03T18:00:00.000")
-            .atZone(
-                DataExpiringExecutor.getDefaultZoneId(
-                    getArcticTable().schema().findField(config.getExpirationField())))
-            .toInstant());
+
+    getMaintainerAndExpire(config, "2022-01-03T18:00:00.000");
 
     List<Record> result = readSortedBaseRecords(getArcticTable());
 
@@ -385,6 +376,26 @@ public class TestDataExpire extends ExecutorTestBase {
               createRecord(4, "444", parseMillis("2022-01-02T19:00:00"), "2022-01-02T19:00:00"));
     }
     Assert.assertEquals(expected, result);
+  }
+
+  protected void getMaintainerAndExpire(DataExpirationConfig config, String datetime) {
+    if (getTestFormat().equals(TableFormat.ICEBERG)) {
+      IcebergTableMaintainer icebergTableMaintainer = new IcebergTableMaintainer(getArcticTable().asUnkeyedTable());
+      icebergTableMaintainer.expireDataFrom(config,
+          LocalDateTime.parse(datetime)
+              .atZone(
+                  IcebergTableUtil.getDefaultZoneId(
+                      getArcticTable().schema().findField(config.getExpirationField())))
+              .toInstant());
+    } else {
+      MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getArcticTable());
+      mixedTableMaintainer.expireDataFrom(config,
+          LocalDateTime.parse(datetime)
+              .atZone(
+                  IcebergTableUtil.getDefaultZoneId(
+                      getArcticTable().schema().findField(config.getExpirationField())))
+              .toInstant());
+    }
   }
 
   @Test

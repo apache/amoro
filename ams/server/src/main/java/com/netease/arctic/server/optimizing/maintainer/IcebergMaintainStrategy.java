@@ -7,18 +7,15 @@ import com.netease.arctic.server.utils.IcebergTableUtil;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 
 public class IcebergMaintainStrategy implements MaintainStrategy {
-  private final Snapshot currentSnapshot;
   private final IcebergTableMaintainer icebergMaintainer;
 
   public IcebergMaintainStrategy(IcebergTableMaintainer maintainer) {
     this.icebergMaintainer = maintainer;
-    this.currentSnapshot = icebergMaintainer.getTable().currentSnapshot();
   }
 
   @Override
@@ -29,7 +26,7 @@ public class IcebergMaintainStrategy implements MaintainStrategy {
       Map<StructLike, IcebergTableMaintainer.DataFileFreshness> partitionFreshness) {
     IcebergTableMaintainer.ExpireFiles expiredFiles = new IcebergTableMaintainer.ExpireFiles();
     try (CloseableIterable<IcebergFileEntry> entries =
-        icebergMaintainer.fileScan(icebergMaintainer.getTable(), dataFilter, currentSnapshot)) {
+        icebergMaintainer.fileScan(icebergMaintainer.getTable(), dataFilter)) {
       CloseableIterable<IcebergFileEntry> mayExpiredFiles =
           CloseableIterable.withNoopClose(
               Lists.newArrayList(

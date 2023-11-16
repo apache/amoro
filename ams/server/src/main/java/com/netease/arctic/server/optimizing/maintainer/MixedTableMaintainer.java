@@ -18,10 +18,12 @@
 
 package com.netease.arctic.server.optimizing.maintainer;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.scan.TableEntriesScan;
+import com.netease.arctic.server.table.DataExpirationConfig;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.HiveLocationUtil;
 import com.netease.arctic.server.utils.IcebergTableUtil;
@@ -32,6 +34,8 @@ import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
+import java.time.Instant;
+import jdk.jfr.internal.tool.Main;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.iceberg.DataFile;
@@ -109,7 +113,28 @@ public class MixedTableMaintainer implements TableMaintainer {
 
   @Override
   public void expireData(TableRuntime tableRuntime) {
-    baseMaintainer.expireData(tableRuntime);
+    if (changeMaintainer != null) {
+      if (baseMaintainer != null) {
+        changeMaintainer.setMaintainStrategy(createMaintainStrategy());
+      }
+      changeMaintainer.expireData(tableRuntime);
+    } else {
+      baseMaintainer.setMaintainStrategy(createMaintainStrategy());
+      baseMaintainer.expireData(tableRuntime);
+    }
+  }
+
+  @VisibleForTesting
+  public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
+    if (changeMaintainer != null) {
+      if (baseMaintainer != null) {
+        changeMaintainer.setMaintainStrategy(createMaintainStrategy());
+      }
+      changeMaintainer.expireDataFrom(expirationConfig, instant);
+    } else {
+      baseMaintainer.setMaintainStrategy(createMaintainStrategy());
+      baseMaintainer.expireDataFrom(expirationConfig, instant);
+    }
   }
 
   @Override
@@ -171,6 +196,8 @@ public class MixedTableMaintainer implements TableMaintainer {
     private static final int DATA_FILE_LIST_SPLIT = 3000;
 
     private final UnkeyedTable unkeyedTable;
+
+    private MaintainStrategy maintainStrategy;
 
     public ChangeTableMaintainer(UnkeyedTable unkeyedTable) {
       super(unkeyedTable);
@@ -328,9 +355,24 @@ public class MixedTableMaintainer implements TableMaintainer {
         LOG.error(unkeyedTable.name() + " failed to delete change files, ignore", t);
       }
     }
+
+    public void setMaintainStrategy(MaintainStrategy maintainStrategy) {
+      this.maintainStrategy = maintainStrategy;
+    }
+
+    @Override
+    public MaintainStrategy createMaintainStrategy() {
+      if (maintainStrategy != null) {
+        return maintainStrategy;
+      } else {
+        return super.createMaintainStrategy();
+      }
+    }
   }
 
   public class BaseTableMaintainer extends IcebergTableMaintainer {
+
+    private MaintainStrategy maintainStrategy;
 
     public BaseTableMaintainer(UnkeyedTable unkeyedTable) {
       super(unkeyedTable);
@@ -344,6 +386,19 @@ public class MixedTableMaintainer implements TableMaintainer {
     @Override
     protected Set<String> expireSnapshotNeedToExcludeFiles() {
       return mergeSets(changeFiles, hiveFiles);
+    }
+
+    public void setMaintainStrategy(MaintainStrategy maintainStrategy) {
+      this.maintainStrategy = maintainStrategy;
+    }
+
+    @Override
+    public MaintainStrategy createMaintainStrategy() {
+      if (maintainStrategy != null) {
+        return maintainStrategy;
+      } else {
+        return super.createMaintainStrategy();
+      }
     }
   }
 }
