@@ -102,19 +102,19 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
           properties.get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
       databaseFilterPattern = Pattern.compile(databaseFilter);
     }
-    Catalog icebergCatalog = buildIcebergCatalog(name, properties, metaStore.getConfiguration());
+    Catalog catalog = buildIcebergCatalog(name, properties, metaStore.getConfiguration());
     this.name = name;
     this.tableMetaStore = metaStore;
     this.icebergCatalog =
         cacheEnabled
-            ? CachingCatalog.wrap(icebergCatalog, cacheCaseSensitive, cacheExpirationIntervalMs)
-            : icebergCatalog;
-    if (icebergCatalog instanceof SupportsNamespaces) {
-      this.asNamespaceCatalog = (SupportsNamespaces) icebergCatalog;
+            ? CachingCatalog.wrap(catalog, cacheCaseSensitive, cacheExpirationIntervalMs)
+            : catalog;
+    if (catalog instanceof SupportsNamespaces) {
+      this.asNamespaceCatalog = (SupportsNamespaces) catalog;
     }
     this.databaseFilterPattern = databaseFilterPattern;
     this.catalogProperties = properties;
-    this.tables = newMixedTables(metaStore, properties, icebergCatalog);
+    this.tables = newMixedTables(metaStore, properties, icebergCatalog());
     if (properties.containsKey(CatalogMetaProperties.AMS_URI)) {
       this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
     }
