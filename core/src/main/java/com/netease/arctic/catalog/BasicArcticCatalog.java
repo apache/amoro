@@ -32,6 +32,7 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticFileIOs;
+import com.netease.arctic.mixed.InternalMixedIcebergCatalog;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.op.CreateTableTransaction;
 import com.netease.arctic.table.ArcticTable;
@@ -58,8 +59,6 @@ import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.thrift.TException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -67,9 +66,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-/** Basic {@link ArcticCatalog} implementation. */
+/**
+ * Basic {@link ArcticCatalog} implementation. This class is deprecated, using {@link
+ * InternalMixedIcebergCatalog} instead.
+ *
+ * @deprecated since 0.7.0, will be removed in 0.9.0;
+ */
+@Deprecated
 public class BasicArcticCatalog implements ArcticCatalog {
-  private static final Logger LOG = LoggerFactory.getLogger(BasicArcticCatalog.class);
 
   protected AmsClient client;
   protected String name;
@@ -84,9 +88,11 @@ public class BasicArcticCatalog implements ArcticCatalog {
 
   @Override
   public void initialize(String name, Map<String, String> properties, TableMetaStore metaStore) {
-    if (properties.containsKey(CatalogMetaProperties.AMS_URI)) {
-      this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
-    }
+    Preconditions.checkArgument(
+        properties.containsKey(CatalogMetaProperties.AMS_URI),
+        "property: %s must be set",
+        CatalogMetaProperties.AMS_URI);
+    this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
     this.name = name;
     this.catalogProperties = properties;
     this.tableMetaStore = metaStore;

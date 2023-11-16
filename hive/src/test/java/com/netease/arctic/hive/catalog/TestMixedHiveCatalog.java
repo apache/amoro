@@ -50,6 +50,11 @@ public class TestMixedHiveCatalog extends TestMixedCatalog {
   }
 
   @Override
+  protected String expectCatalogImpl() {
+    return ArcticHiveCatalog.class.getName();
+  }
+
+  @Override
   protected PartitionSpec getCreateTableSpec() {
     return IDENTIFY_SPEC;
   }
@@ -66,8 +71,8 @@ public class TestMixedHiveCatalog extends TestMixedCatalog {
   }
 
   @Override
-  protected void validateCreatedTable(ArcticTable table) throws TException {
-    super.validateCreatedTable(table);
+  protected void validateCreatedTable(ArcticTable table, boolean withKey) throws TException {
+    super.validateCreatedTable(table, withKey);
     validateTableArcticProperties(table.id());
   }
 
