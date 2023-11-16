@@ -23,7 +23,6 @@ import com.netease.arctic.optimizing.OptimizingDataReader;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
 import com.netease.arctic.utils.map.StructLikeCollections;
-import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.PartitionSpec;
@@ -36,6 +35,7 @@ import org.apache.iceberg.data.parquet.GenericParquetReaders;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.parquet.Parquet;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
@@ -63,8 +63,6 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected final ArcticFileIO fileIO;
   protected final BiFunction<Type, Object, Object> convertConstant;
   protected final boolean reuseContainer;
-
-  protected final ContentFile[] deleteFiles;
   protected CombinedDeleteFilter<Record> deleteFilter;
 
   protected PartitionSpec spec;
@@ -89,15 +87,11 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     this.convertConstant = convertConstant;
     this.reuseContainer = reuseContainer;
     this.input = rewriteFilesInput;
-    this.deleteFiles = rewriteFilesInput.deleteFiles();
-    Set<String> positionPathSet =
-        Arrays.stream(rewriteFilesInput.dataFiles())
-            .map(s -> s.path().toString())
-            .collect(Collectors.toSet());
     this.deleteFilter =
-        new GenericDeleteFilter(deleteFiles, positionPathSet, tableSchema, structLikeCollections);
+        new GenericDeleteFilter(rewriteFilesInput, tableSchema, structLikeCollections);
   }
 
+  @Override
   public CloseableIterable<Record> readData() {
     if (input.rewrittenDataFiles() == null) {
       return CloseableIterable.empty();
@@ -116,7 +110,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     StructForDelete<Record> structForDelete =
         new StructForDelete<>(requireSchema, deleteFilter.deleteIds());
     CloseableIterable<StructForDelete<Record>> structForDeleteCloseableIterable =
-        CloseableIterable.transform(concat, record -> structForDelete.wrap(record));
+        CloseableIterable.transform(concat, structForDelete::wrap);
 
     CloseableIterable<Record> iterable =
         CloseableIterable.transform(
@@ -124,6 +118,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     return iterable;
   }
 
+  @Override
   public CloseableIterable<Record> readDeletedData() {
     if (input.rePosDeletedDataFiles() == null) {
       return CloseableIterable.empty();
@@ -147,7 +142,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     StructForDelete<Record> structForDelete =
         new StructForDelete<>(requireSchema, deleteFilter.deleteIds());
     CloseableIterable<StructForDelete<Record>> structForDeleteCloseableIterable =
-        CloseableIterable.transform(concat, record -> structForDelete.wrap(record));
+        CloseableIterable.transform(concat, structForDelete::wrap);
 
     CloseableIterable<Record> iterable =
         CloseableIterable.transform(
@@ -286,14 +281,18 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     return new Schema(columns);
   }
 
+  @VisibleForTesting
+  public CombinedDeleteFilter<Record> getDeleteFilter() {
+    return deleteFilter;
+  }
+
   protected class GenericDeleteFilter extends CombinedDeleteFilter<Record> {
 
     public GenericDeleteFilter(
-        ContentFile[] deleteFiles,
-        Set<String> positionPathSets,
+        RewriteFilesInput rewriteFilesInput,
         Schema tableSchema,
         StructLikeCollections structLikeCollections) {
-      super(deleteFiles, positionPathSets, tableSchema, structLikeCollections);
+      super(rewriteFilesInput, tableSchema, structLikeCollections);
     }
 
     @Override
