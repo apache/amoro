@@ -6,6 +6,7 @@ import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
@@ -15,12 +16,14 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class ExternalCatalog extends ServerCatalog {
 
   UnifiedCatalog unifiedCatalog;
   TableMetaStore tableMetaStore;
+  private Pattern tableFilterPattern;
 
   protected ExternalCatalog(CatalogMeta metadata) {
     super(metadata);
@@ -28,6 +31,13 @@ public class ExternalCatalog extends ServerCatalog {
     this.unifiedCatalog =
         this.tableMetaStore.doAs(
             () -> new CommonUnifiedCatalog(this::getMetadata, Maps.newHashMap()));
+    if (metadata.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_TABLE_FILTER)) {
+      String tableFilter =
+          metadata.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
+      tableFilterPattern = Pattern.compile(tableFilter);
+    } else {
+      tableFilterPattern = null;
+    }
   }
 
   public void syncTable(String database, String tableName, TableFormat format) {
@@ -83,7 +93,20 @@ public class ExternalCatalog extends ServerCatalog {
 
   @Override
   public List<TableIDWithFormat> listTables(String database) {
-    return doAs(() -> new ArrayList<>(unifiedCatalog.listTables(database)));
+    return doAs(
+        () ->
+            new ArrayList<>(
+                unifiedCatalog.listTables(database).stream()
+                    .filter(
+                        tableIDWithFormat ->
+                            tableFilterPattern == null
+                                || tableFilterPattern
+                                    .matcher(
+                                        (database
+                                            + "."
+                                            + tableIDWithFormat.getIdentifier().getTableName()))
+                                    .matches())
+                    .collect(Collectors.toList())));
   }
 
   @Override
