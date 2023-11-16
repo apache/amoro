@@ -28,31 +28,33 @@ import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.catalog.MixedHiveTables;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.TableMetadata;
-import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.server.table.internal.InternalTableCreator;
+import com.netease.arctic.server.table.internal.InternalTableHandler;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
+import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.thrift.TException;
 
 import java.util.List;
-import java.util.Map;
 
-public class MixedHiveCatalogImpl extends InternalMixedCatalogImpl {
-
+public class MixedHiveCatalogImpl extends InternalCatalog {
+  protected MixedTables tables;
   private volatile CachedHiveClientPool hiveClientPool;
 
   protected MixedHiveCatalogImpl(CatalogMeta catalogMeta) {
     super(catalogMeta);
+    this.tables =
+        new MixedHiveTables(
+            catalogMeta.getCatalogProperties(), CatalogUtil.buildMetaStore(catalogMeta));
     hiveClientPool = ((MixedHiveTables) tables()).getHiveClientPool();
-  }
-
-  @Override
-  protected MixedTables newTables(Map<String, String> catalogProperties, TableMetaStore metaStore) {
-    return new MixedHiveTables(catalogProperties, metaStore);
   }
 
   @Override
   public void updateMetadata(CatalogMeta metadata) {
     super.updateMetadata(metadata);
     hiveClientPool = ((MixedHiveTables) tables()).getHiveClientPool();
+    this.tables =
+        new MixedHiveTables(metadata.getCatalogProperties(), CatalogUtil.buildMetaStore(metadata));
   }
 
   @Override
@@ -77,6 +79,17 @@ public class MixedHiveCatalogImpl extends InternalMixedCatalogImpl {
   @Override
   public void dropDatabase(String databaseName) {
     // do not handle database operations
+  }
+
+  @Override
+  public InternalTableCreator newTableCreator(
+      String database, String tableName, TableFormat format, CreateTableRequest creatorArguments) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public <O> InternalTableHandler<O> newTableHandler(String database, String tableName) {
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -117,5 +130,9 @@ public class MixedHiveCatalogImpl extends InternalMixedCatalogImpl {
 
   public CachedHiveClientPool getHiveClient() {
     return hiveClientPool;
+  }
+
+  private MixedTables tables() {
+    return tables;
   }
 }

@@ -1,7 +1,26 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.server.catalog;
 
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.exception.AlreadyExistsException;
 import com.netease.arctic.server.exception.IllegalMetadataException;
@@ -11,8 +30,12 @@ import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableMetadata;
+import com.netease.arctic.server.table.internal.InternalTableCreator;
+import com.netease.arctic.server.table.internal.InternalTableHandler;
+import org.apache.iceberg.rest.requests.CreateTableRequest;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public abstract class InternalCatalog extends ServerCatalog {
@@ -95,7 +118,12 @@ public abstract class InternalCatalog extends ServerCatalog {
         .collect(Collectors.toList());
   }
 
-  public ServerTableIdentifier createTable(TableMetadata tableMetadata) {
+  public abstract InternalTableCreator newTableCreator(
+      String database, String tableName, TableFormat format, CreateTableRequest creatorArguments);
+
+  public abstract <O> InternalTableHandler<O> newTableHandler(String database, String tableName);
+
+  public TableMetadata createTable(TableMetadata tableMetadata) {
     validateTableIdentifier(tableMetadata.getTableIdentifier().getIdentifier());
     ServerTableIdentifier tableIdentifier = tableMetadata.getTableIdentifier();
     doAsTransaction(
@@ -107,10 +135,11 @@ public abstract class InternalCatalog extends ServerCatalog {
                 mapper -> mapper.incTableCount(1, name()),
                 () -> new ObjectNotExistsException(name())),
         () -> increaseDatabaseTableCount(tableIdentifier.getDatabase()));
+
     return getAs(
         TableMetaMapper.class,
         mapper ->
-            mapper.selectTableIdentifier(
+            mapper.selectTableMetaByName(
                 tableIdentifier.getCatalog(),
                 tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName()));
@@ -167,6 +196,18 @@ public abstract class InternalCatalog extends ServerCatalog {
                 TableMetaMapper.class,
                 mapper -> mapper.selectTableMetaById(tableIdentifier.getId()))
             != null;
+  }
+
+  public TableMetadata loadTableMetadata(String database, String table) {
+    return Optional.ofNullable(
+            getAs(
+                TableMetaMapper.class,
+                mapper -> mapper.selectTableMetaByName(name(), database, table)))
+        .orElseThrow(
+            () ->
+                new ObjectNotExistsException(
+                    com.netease.arctic.table.TableIdentifier.of(name(), database, table)
+                        .toString()));
   }
 
   private String getDatabaseDesc(String database) {

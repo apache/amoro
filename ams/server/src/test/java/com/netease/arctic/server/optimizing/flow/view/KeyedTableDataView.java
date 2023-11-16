@@ -254,6 +254,9 @@ public class KeyedTableDataView extends AbstractTableDataView {
   }
 
   private boolean equRecord(Record r1, Record r2) {
+    if ((r1 == null && r2 != null) || (r1 != null && r2 == null)) {
+      return false;
+    }
     if (r2.size() < schemaSize) {
       return false;
     }
