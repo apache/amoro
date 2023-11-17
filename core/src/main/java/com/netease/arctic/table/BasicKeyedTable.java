@@ -18,7 +18,6 @@
 
 package com.netease.arctic.table;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.KeyedPartitionRewrite;
@@ -41,6 +40,7 @@ import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 
