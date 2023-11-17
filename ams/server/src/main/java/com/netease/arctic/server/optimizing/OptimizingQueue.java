@@ -117,8 +117,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       // TODO: load task quotas
       tableRuntime.resetTaskQuotas(
           System.currentTimeMillis() - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME);
-      if (tableRuntime.getOptimizingStatus() == OptimizingStatus.IDLE
-          || tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING) {
+      if (!tableRuntime.getOptimizingStatus().isProcessing()) {
         schedulingPolicy.addTable(tableRuntime);
       } else if (tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
         TableOptimizingProcess process = new TableOptimizingProcess(tableRuntimeMeta);
@@ -370,6 +369,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           continue;
         }
         plannedTables.add(table.id());
+        tableRuntime.beginPlanning();
         if (planner.isNecessary()) {
           TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
           LOG.info(
@@ -382,6 +382,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           tableRuntime.cleanPendingInput();
         }
       } catch (Throwable e) {
+        tableRuntime.planFailed();
         LOG.error(tableRuntime.getTableIdentifier() + " plan failed, continue", e);
       }
     }

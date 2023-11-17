@@ -149,6 +149,26 @@ public class TableRuntime extends StatedPersistentBase {
         });
   }
 
+  public void beginPlanning() {
+    invokeConsisitency(
+        () -> {
+          OptimizingStatus originalStatus = optimizingStatus;
+          updateOptimizingStatus(OptimizingStatus.PLANNING);
+          persistUpdatingRuntime();
+          tableHandler.handleTableChanged(this, originalStatus);
+        });
+  }
+
+  public void planFailed() {
+    invokeConsisitency(
+        () -> {
+          OptimizingStatus originalStatus = optimizingStatus;
+          updateOptimizingStatus(OptimizingStatus.PENDING);
+          persistUpdatingRuntime();
+          tableHandler.handleTableChanged(this, originalStatus);
+        });
+  }
+
   public void beginProcess(OptimizingProcess optimizingProcess) {
     invokeConsisitency(
         () -> {
@@ -208,10 +228,10 @@ public class TableRuntime extends StatedPersistentBase {
     invokeConsisitency(
         () -> {
           pendingInput = null;
-          if (optimizingStatus == OptimizingStatus.PENDING) {
+          if (optimizingStatus == OptimizingStatus.PLANNING) {
             updateOptimizingStatus(OptimizingStatus.IDLE);
             persistUpdatingRuntime();
-            tableHandler.handleTableChanged(this, OptimizingStatus.PENDING);
+            tableHandler.handleTableChanged(this, OptimizingStatus.PLANNING);
           }
         });
   }
