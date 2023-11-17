@@ -1,41 +1,88 @@
 <template>
   <div class="table-optimizing">
-    <a-table
-      rowKey="processId"
-      :columns="columns"
-      :data-source="dataSource"
-      :pagination="pagination"
-      @change="change"
-      :loading="loading"
+    <template v-if="!hasBreadcrumb">
+      <a-table
+        rowKey="processId"
+        :columns="columns"
+        :data-source="dataSource"
+        :pagination="pagination"
+        @change="change"
+        :loading="loading"
 
-    >
-      <template #headerCell="{ column }">
-        <template v-if="column.dataIndex === 'tasks'">
-          <div class="">{{column.title}}</div>
-          <div class="">success / total</div>
+      >
+        <template #headerCell="{ column }">
+          <template v-if="column.dataIndex === 'tasks'">
+            <div class="">{{ column.title }}</div>
+            <div class="">success / total</div>
+          </template>
+          <template v-if="column.dataIndex === 'inputFiles'">
+            <div class="">{{ column.title }}</div>
+            <div class="">size / count</div>
+          </template>
+          <template v-if="column.dataIndex === 'outputFiles'">
+            <div class="">{{ column.title }}</div>
+            <div class="">size / count</div>
+          </template>
         </template>
-        <template v-if="column.dataIndex === 'inputFiles'">
-          <div class="">{{column.title}}</div>
-          <div class="">size / count</div>
+        <template #bodyCell="{ record, column }">
+          <template v-if="column.dataIndex === 'processId'">
+            <a-button type="link" @click="toggleBreadcrumb(record.processId)">
+              {{record.processId}}
+            </a-button>
+          </template>
+          <template v-if="column.dataIndex === 'status'">
+            <div class="g-flex-ac">
+              <span :style="{ 'background-color': (STATUS_CONFIG[record.status] || {}).color }" class="status-icon"></span>
+              <span>{{ record.status }}</span>
+              <a-tooltip v-if="record.status === 'FAILED'" placement="topRight" class="g-ml-4" overlayClassName="table-failed-tip">
+                <template #title><div class="tip-title">{{ record.failReason }}</div></template>
+                <question-circle-outlined />
+              </a-tooltip>
+            </div>
+          </template>
         </template>
-        <template v-if="column.dataIndex === 'outputFiles'">
-          <div class="">{{column.title}}</div>
-          <div class="">size / count</div>
-        </template>
-      </template>
-      <template #bodyCell="{record, column }">
-        <template v-if="column.dataIndex === 'status'">
-          <div class="g-flex-ac">
-            <span :style="{'background-color': (STATUS_CONFIG[record.status] || {}).color}" class="status-icon"></span>
-            <span>{{ record.status }}</span>
-            <a-tooltip v-if="record.status === 'FAILED'" placement="topRight" class="g-ml-4" overlayClassName="table-failed-tip">
-              <template #title><div class="tip-title">{{record.failReason}}</div></template>
-              <question-circle-outlined />
+      </a-table>
+    </template>
+    <template v-else>
+      <a-breadcrumb separator=">">
+        <a-breadcrumb-item @click="toggleBreadcrumb" class="text-active">All</a-breadcrumb-item>
+        <a-breadcrumb-item>{{ `${$t('processId')} ${processId}`}}</a-breadcrumb-item>
+      </a-breadcrumb>
+      <a-table
+        rowKey="taskId"
+        :columns="breadcrumbColumns"
+        :data-source="breadcrumbDataSource"
+        :pagination="breadcrumbPagination"
+        :loading="loading"
+        @change="change"
+        class="g-mt-8"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'thread'">
+            <a-tooltip>
+              <template #title>{{record.thread}}</template>
+              <span>{{record.thread}}</span>
             </a-tooltip>
-          </div>
+          </template>
+          <template v-if="column.dataIndex === 'status'">
+            <div class="g-flex-ac">
+              <span :style="{ 'background-color': (TASK_STATUS_CONFIG[record.status] || {}).color }" class="status-icon"></span>
+              <span>{{ record.status }}</span>
+              <a-tooltip v-if="record.status === 'FAILED'" placement="topRight" class="g-ml-4" overlayClassName="table-failed-tip">
+                <template #title><div class="tip-title">{{ record.failReason }}</div></template>
+                <question-circle-outlined />
+              </a-tooltip>
+            </div>
+          </template>
         </template>
-      </template>
-    </a-table>
+        <template #expandedRowRender="{ record }">
+            <a-row type="flex" :gutter="16" v-for="(value, key) in record.summary" :key="key">
+              <a-col flex="220px" style="text-align: right;">{{ key }} :</a-col>
+              <a-col flex="auto">{{ value }}</a-col>
+            </a-row>
+          </template>
+      </a-table>
+    </template>
   </div>
 </template>
 
@@ -43,11 +90,13 @@
 import { onMounted, reactive, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'
-import { IColumns } from '@/types/common.type'
-import { getOptimizes } from '@/services/table.service'
+import { IColumns, BreadcrumbOptimizingItem } from '@/types/common.type'
+import { getOptimizes, getTasksByOptimizingProcessId } from '@/services/table.service'
 import { useRoute } from 'vue-router'
 import { QuestionCircleOutlined } from '@ant-design/icons-vue'
 import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
+
+const hasBreadcrumb = ref<boolean>(false)
 
 // const statusMap = { RUNNING: 'RUNNING', CLOSED: 'CLOSED', SUCCESS: 'SUCCESS', FAILED: 'FAILED' }
 const STATUS_CONFIG = shallowReactive({
@@ -55,6 +104,15 @@ const STATUS_CONFIG = shallowReactive({
   CLOSED: { title: 'CLOSED', color: '#c9cdd4' },
   SUCCESS: { title: 'SUCCESS', color: '#0ad787' },
   FAILED: { title: 'FAILED', color: '#f5222d' }
+})
+
+const TASK_STATUS_CONFIG = shallowReactive({
+  PLANNED: { title: 'PLANNED', color: '#ffcc00' },
+  SCHEDULED: { title: 'SCHEDULED', color: '#4169E1' },
+  ACKED: { title: 'ACKED', color: '#1890ff' },
+  FAILED: { title: 'FAILED', color: '#f5222d' },
+  SUCCESS: { title: 'SUCCESS', color: '#0ad787' },
+  CANCELED: { title: 'CANCELED', color: '#c9cdd4' }
 })
 
 const { t } = useI18n()
@@ -68,13 +126,25 @@ const columns: IColumns[] = shallowReactive([
   { title: t('finishTime'), dataIndex: 'finishTime' },
   { title: t('input'), dataIndex: 'inputFiles' },
   { title: t('output'), dataIndex: 'outputFiles' }
-
+])
+const breadcrumbColumns = shallowReactive([
+  { title: t('taskId'), dataIndex: 'taskId', width: 82, ellipsis: true },
+  { title: t('partition'), dataIndex: 'partitionData' },
+  { title: t('startTime'), dataIndex: 'startTime', width: 172 },
+  { title: t('status'), dataIndex: 'status', width: 124 },
+  { title: t('costTime'), dataIndex: 'formatCostTime', width: 154 },
+  { title: t('finishTime'), dataIndex: 'endTime', width: 172 },
+  { title: t('retry'), dataIndex: 'retryNum', width: 68 },
+  { title: t('thread'), dataIndex: 'thread', ellipsis: true }
 ])
 
 const dataSource = reactive<any[]>([])
+const processId = ref<number>(0)
+const breadcrumbDataSource = reactive<BreadcrumbOptimizingItem[]>([])
 
 const loading = ref<boolean>(false)
 const pagination = reactive(usePagination())
+const breadcrumbPagination = reactive(usePagination())
 const route = useRoute()
 const query = route.query
 const sourceData = reactive({
@@ -111,7 +181,6 @@ async function getTableInfo() {
         tasks: `${item.successTasks || '-'} / ${item.totalTasks || '-'}${item.runningTasks ? ` (${item.runningTasks} running)` : ''}`
       }
     }))
-    console.log(dataSource)
   } catch (error) {
   } finally {
     loading.value = false
@@ -119,15 +188,67 @@ async function getTableInfo() {
 }
 
 function change({ current = 1, pageSize = 25 } = pagination) {
-  pagination.current = current
-  if (pageSize !== pagination.pageSize) {
-    pagination.current = 1
+  if (hasBreadcrumb.value) {
+    breadcrumbPagination.current = current
+    if (pageSize !== breadcrumbPagination.pageSize) {
+      breadcrumbPagination.current = 1
+    }
+    breadcrumbPagination.pageSize = pageSize
+  } else {
+    pagination.current = current
+    if (pageSize !== pagination.pageSize) {
+      pagination.current = 1
+    }
+    pagination.pageSize = pageSize
   }
-  pagination.pageSize = pageSize
-  getTableInfo()
+  refresh()
+}
+
+function refresh() {
+  if (hasBreadcrumb.value) {
+    getBreadcrumbTable()
+  } else {
+    getTableInfo()
+  }
+}
+
+async function getBreadcrumbTable() {
+  try {
+    breadcrumbDataSource.length = 0
+    loading.value = true
+    const params = {
+      ...sourceData,
+      processId: processId.value,
+      page: breadcrumbPagination.current,
+      pageSize: breadcrumbPagination.pageSize
+    }
+    const result = await getTasksByOptimizingProcessId(params)
+    const { list, total } = result
+    breadcrumbPagination.total = total
+    list.forEach((p: BreadcrumbOptimizingItem) => {
+      p.startTime = p.startTime ? dateFormat(p.startTime) : '-'
+      p.endTime = p.endTime ? dateFormat(p.endTime) : '-'
+      p.formatCostTime = formatMS2Time(p.costTime)
+      p.thread = p.optimizerToken ? '(' + p.threadId + ')' + p.optimizerToken : '-'
+      breadcrumbDataSource.push(p)
+    })
+  } catch (error) {
+  } finally {
+    loading.value = false
+  }
+}
+
+function toggleBreadcrumb(rowProcessId: number) {
+  processId.value = rowProcessId
+  hasBreadcrumb.value = !hasBreadcrumb.value
+  if (hasBreadcrumb.value) {
+    breadcrumbPagination.current = 1
+    getBreadcrumbTable()
+  }
 }
 
 onMounted(() => {
+  hasBreadcrumb.value = false
   getTableInfo()
 })
 
@@ -159,7 +280,16 @@ onMounted(() => {
 }
 </style>
 <style lang="less">
-.table-failed-tip{
+.table-optimizing {
+  .text-active {
+    color: #1890ff;
+    cursor: pointer;
+  }
+  .ant-btn-link {
+    padding: 0;
+  }
+}
+.table-failed-tip {
   .ant-tooltip-content{
     width: 800px;
   }

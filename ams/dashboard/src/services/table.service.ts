@@ -161,6 +161,22 @@ export function getOptimizes(
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes`, { params: { page, pageSize, token } })
 }
 
+// get optimizing taskes
+export function getTasksByOptimizingProcessId(
+  params: {
+    catalog: string
+    db: string,
+    table: string,
+    processId: number,
+    page: number
+    pageSize: number
+    token?: string
+  }
+) {
+  const { catalog, db, table, processId, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes/${processId}/tasks`, { params: { page, pageSize, token } })
+}
+
 export function upgradeHiveTable(
   { catalog = '' as string, db = '' as string, table = '' as string, properties = {} as IMap<string>, pkList = [] as IMap<string>[] }
 ) {

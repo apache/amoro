@@ -53,6 +53,12 @@
               <span>{{record.path}}</span>
             </a-tooltip>
           </template>
+          <template v-if="column.dataIndex === 'file'">
+            <a-tooltip>
+              <template #title>{{record.file}}</template>
+              <span>{{record.file}}</span>
+            </a-tooltip>
+          </template>
         </template>
       </a-table>
     </template>
@@ -128,7 +134,7 @@ async function getTableInfo() {
       if (p.producer === 'OPTIMIZE') {
         p.operation = p.operation + '(optimize)'
       }
-      p.commitTime = p.commitTime ? dateFormat(p.commitTime) : ''
+      p.commitTime = p.commitTime ? dateFormat(p.commitTime) : '-'
       dataSource.push(p)
     })
     recordChartOption.value = generateLineChartOption(t('recordChartTitle'), rcData)
