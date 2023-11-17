@@ -164,6 +164,11 @@ onMounted(() => {
     .ant-tabs {
       margin: 0 12px;
 
+      .ant-tabs-tabpane {
+        max-height: 350px;
+        overflow-y: auto;
+      }
+
       .branch-selector-item {
         display: flex;
         align-items: center;
