@@ -1,5 +1,5 @@
 <template>
-  <div class="table-optinize">
+  <div class="table-optimizing">
     <a-table
       rowKey="processId"
       :columns="columns"
@@ -134,7 +134,7 @@ onMounted(() => {
 </script>
 
 <style lang="less" scoped>
-.table-optinize {
+.table-optimizing {
   padding: 18px 24px;
   :deep(.ant-table-thead > tr > th:not(:last-child):not(.ant-table-selection-column):not(.ant-table-row-expand-icon-cell):not([colspan])::before) {
     height: 100% !important;
