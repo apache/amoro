@@ -63,7 +63,7 @@ export function scaleoutResource(
 export function releaseResource(
   params: {
     optimizerGroup: string
-    jobId: number
+    jobId: string
   }
 ) {
   const { optimizerGroup, jobId } = params
