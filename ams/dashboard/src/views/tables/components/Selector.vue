@@ -10,7 +10,7 @@
         <div>
           <div class="branch-selector-search">
             <a-input v-show="tabActiveKey === branchTypeMap.BRANCH" v-model:value="branchSearchKey" :placeholder="$t('Filter branches/tags')" @click="onClickInput" />
-            <a-input v-show="tabActiveKey === branchTypeMap.TAG" v-model:value="tagSearchKey" :placeholder="$t('findATag')" @click="onClickInput" />
+            <a-input v-show="tabActiveKey === branchTypeMap.TAG" v-model:value="tagSearchKey" :placeholder="$t('Filter branches/tags')" @click="onClickInput" />
           </div>
           <a-tabs v-model:activeKey="tabActiveKey" type="card">
             <a-tab-pane :key="branchTypeMap.BRANCH" tab="Branches">
@@ -165,7 +165,7 @@ onMounted(() => {
       margin: 0 12px;
 
       .ant-tabs-tabpane {
-        max-height: 350px;
+        height: 240px;
         overflow-y: auto;
       }
 
