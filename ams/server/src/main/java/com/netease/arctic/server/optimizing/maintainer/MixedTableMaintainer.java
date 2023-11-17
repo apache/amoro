@@ -42,6 +42,7 @@ import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.relocated.com.google.common.primitives.Longs;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
@@ -81,23 +82,20 @@ public class MixedTableMaintainer implements TableMaintainer {
       changeMaintainer = new ChangeTableMaintainer(changeTable);
       baseMaintainer = new BaseTableMaintainer(baseTable);
       changeFiles =
-          ImmutableSet.<String>builder()
-              .addAll(IcebergTableUtil.getAllContentFilePath(changeTable))
-              .addAll(IcebergTableUtil.getAllStatisticsFilePath(changeTable))
-              .build();
+          Sets.union(
+              IcebergTableUtil.getAllContentFilePath(changeTable),
+              IcebergTableUtil.getAllStatisticsFilePath(changeTable));
       baseFiles =
-          ImmutableSet.<String>builder()
-              .addAll(IcebergTableUtil.getAllContentFilePath(baseTable))
-              .addAll(IcebergTableUtil.getAllStatisticsFilePath(baseTable))
-              .build();
+          Sets.union(
+              IcebergTableUtil.getAllContentFilePath(baseTable),
+              IcebergTableUtil.getAllStatisticsFilePath(baseTable));
     } else {
       baseMaintainer = new BaseTableMaintainer(arcticTable.asUnkeyedTable());
       changeFiles = new HashSet<>();
       baseFiles =
-          ImmutableSet.<String>builder()
-              .addAll(IcebergTableUtil.getAllContentFilePath(arcticTable.asUnkeyedTable()))
-              .addAll(IcebergTableUtil.getAllStatisticsFilePath(arcticTable.asUnkeyedTable()))
-              .build();
+          Sets.union(
+              IcebergTableUtil.getAllContentFilePath(arcticTable.asUnkeyedTable()),
+              IcebergTableUtil.getAllStatisticsFilePath(arcticTable.asUnkeyedTable()));
     }
 
     if (TableTypeUtil.isHive(arcticTable)) {
@@ -335,16 +333,12 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     @Override
     public Set<String> orphanFileCleanNeedToExcludeFiles() {
-      return ImmutableSet.<String>builder()
-          .addAll(changeFiles)
-          .addAll(baseFiles)
-          .addAll(hiveFiles)
-          .build();
+      return Sets.union(changeFiles, Sets.union(baseFiles, hiveFiles));
     }
 
     @Override
     protected Set<String> expireSnapshotNeedToExcludeFiles() {
-      return ImmutableSet.<String>builder().addAll(changeFiles).addAll(hiveFiles).build();
+      return Sets.union(changeFiles, hiveFiles);
     }
   }
 }

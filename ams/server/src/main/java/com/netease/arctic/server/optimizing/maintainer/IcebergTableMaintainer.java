@@ -41,8 +41,8 @@ import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -201,10 +201,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   protected Set<String> orphanFileCleanNeedToExcludeFiles() {
-    return ImmutableSet.<String>builder()
-        .addAll(IcebergTableUtil.getAllContentFilePath(table))
-        .addAll(IcebergTableUtil.getAllStatisticsFilePath(table))
-        .build();
+    return Sets.union(
+        IcebergTableUtil.getAllContentFilePath(table),
+        IcebergTableUtil.getAllStatisticsFilePath(table));
   }
 
   protected ArcticFileIO arcticFileIO() {
