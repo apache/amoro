@@ -75,5 +75,8 @@ public class TestDescSQL extends SparkTableTestBase {
     List<Row> rows2 =
         sql("desc extended " + target().database + "." + target().table).collectAsList();
     assertTableDesc(rows2, primaryKeys, partitions);
+
+    rows = sql("show create table " + target()).collectAsList();
+    assertShowCreateTable(rows, target(), loadTable());
   }
 }
