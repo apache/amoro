@@ -41,7 +41,6 @@ import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.relocated.com.google.common.primitives.Longs;
 import org.apache.iceberg.util.StructLikeMap;
@@ -170,11 +169,7 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     @Override
     public Set<String> orphanFileCleanNeedToExcludeFiles() {
-      return ImmutableSet.<String>builder()
-          .addAll(changeFiles)
-          .addAll(baseFiles)
-          .addAll(hiveFiles)
-          .build();
+      return Sets.union(changeFiles, Sets.union(baseFiles, hiveFiles));
     }
 
     @Override
@@ -197,7 +192,7 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     @Override
     protected Set<String> expireSnapshotNeedToExcludeFiles() {
-      return ImmutableSet.<String>builder().addAll(baseFiles).addAll(hiveFiles).build();
+      return Sets.union(baseFiles, hiveFiles);
     }
 
     public void expireFiles(long ttlPoint) {
