@@ -7,6 +7,7 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 
 import java.util.Map;
+import java.util.Optional;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TableConfiguration {
@@ -86,7 +87,7 @@ public class TableConfiguration {
   }
 
   public DataExpirationConfig getExpiringDataConfig() {
-    return expiringDataConfig;
+    return Optional.ofNullable(expiringDataConfig).orElse(new DataExpirationConfig());
   }
 
   public TableConfiguration setExpiringDataConfig(DataExpirationConfig expiringDataConfig) {

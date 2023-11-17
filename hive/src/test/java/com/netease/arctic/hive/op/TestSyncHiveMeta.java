@@ -121,12 +121,13 @@ public class TestSyncHiveMeta extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
 
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writeBaseStore(getArcticTable(), 1L, insertRecords, false, true);
+        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
 
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(getBaseStore());
     Assert.assertEquals(1, dataFiles.size());
     String dataFilePath = dataFiles.get(0).path().toString();
     FileSystem fs = Util.getFs(new Path(dataFilePath), new Configuration());
@@ -177,11 +178,12 @@ public class TestSyncHiveMeta extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     List<DataFile> dataFiles =
-        HiveDataTestHelpers.writeBaseStore(getArcticTable(), 1L, insertRecords, false, true);
+        HiveDataTestHelpers.writerOf(getArcticTable()).transactionId(1L).writeHive(insertRecords);
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(getArcticTable());
     OverwriteFiles overwriteFiles = baseStore.newOverwrite();
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(getBaseStore());
 
     Table hiveTable =
         TEST_HMS
@@ -192,7 +194,10 @@ public class TestSyncHiveMeta extends TableTestBase {
     insertRecords.clear();
     insertRecords.add(tableTestHelper().generateTestRecord(3, "lily", 0, "2022-01-03T12:00:00"));
     List<DataFile> newFiles =
-        HiveDataTestHelpers.writeBaseStore(getArcticTable(), 1L, insertRecords, false, true);
+        HiveDataTestHelpers.writerOf(getArcticTable())
+            .transactionId(1L)
+            .consistentWriteEnabled(false)
+            .writeHive(insertRecords);
     Assert.assertEquals(1, newFiles.size());
     Partition newPartition =
         HivePartitionUtil.newPartition(
@@ -205,11 +210,12 @@ public class TestSyncHiveMeta extends TableTestBase {
     TEST_HMS.getHiveClient().add_partition(newPartition);
     getArcticTable().refresh();
 
+    List<DataFile> listTableFiles = listTableFiles(baseStore);
     Assert.assertEquals(
         Stream.concat(dataFiles.stream(), newFiles.stream())
             .map(DataFile::path)
             .collect(Collectors.toSet()),
-        listTableFiles(baseStore).stream().map(DataFile::path).collect(Collectors.toSet()));
+        listTableFiles.stream().map(DataFile::path).collect(Collectors.toSet()));
   }
 
   private List<DataFile> listTableFiles(UnkeyedTable table) {

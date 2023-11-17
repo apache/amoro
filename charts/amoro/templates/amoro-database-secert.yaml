@@ -25,6 +25,8 @@ metadata:
         {{- include "amoro.labels" . | nindent 4 }}
 type: Opaque
 data:
+  # use helm set username
+  username: {{ .Values.amoroConf.database.username | b64enc | quote }}
   # use helm set password
   password: {{ .Values.amoroConf.database.password | b64enc | quote }}
 {{- end }}

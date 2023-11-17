@@ -16,13 +16,14 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.netease.amoro</groupId>
     <artifactId>amoro-parent</artifactId>
-    <version>0.6.0-SNAPSHOT</version>
+    <version>0.7.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Amoro Project Parent</name>
@@ -69,7 +70,6 @@
         <jacoco.flink.skip>false</jacoco.flink.skip>
 
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
-        <maven-checkstyle-plugin.version>3.2.1</maven-checkstyle-plugin.version>
         <maven-jar-plugin-version>3.0.2</maven-jar-plugin-version>
         <maven-source-plugin-version>2.2.1</maven-source-plugin-version>
         <maven-javadoc-plugin.version>3.3.0</maven-javadoc-plugin.version>
@@ -107,7 +107,7 @@
         <parquet-hadoop.version>1.12.0</parquet-hadoop.version>
         <curator.version>5.2.1</curator.version>
         <zookeeper.version>3.7.1</zookeeper.version>
-        <fastjson.version>1.2.75</fastjson.version>
+        <fastjson.version>1.2.83</fastjson.version>
         <parquet-avro.version>1.12.2</parquet-avro.version>
         <orc-core.version>1.7.2</orc-core.version>
         <awssdk.version>2.20.5</awssdk.version>
@@ -867,31 +867,6 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>${maven-checkstyle-plugin.version}</version>
-                    <configuration>
-                        <configLocation>style/arctic-checkstyle.xml</configLocation>
-                        <suppressionsLocation>style/suppressions.xml</suppressionsLocation>
-                        <consoleOutput>true</consoleOutput>
-                        <failsOnError>true</failsOnError>
-                        <violationSeverity>warning</violationSeverity>
-                        <sourceDirectories>
-                            <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
-                        </sourceDirectories>
-                        <excludes>**\/gen-antlr\/</excludes>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>validate</id>
-                            <goals>
-                                <goal>check</goal>
-                            </goals>
-                            <phase>validate</phase>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>${maven-dependency-plugin.version}</version>
                 </plugin>
@@ -917,7 +892,8 @@
                             </goals>
                             <phase>test</phase>
                             <configuration>
-                                <outputDirectory>${project.build.directory}/codecov</outputDirectory>
+                                <outputDirectory>${project.build.directory}/codecov
+                                </outputDirectory>
                             </configuration>
                         </execution>
                     </executions>
@@ -952,7 +928,7 @@
                             <googleJavaFormat>
                                 <version>1.7</version>
                             </googleJavaFormat>
-                            <removeUnusedImports />
+                            <removeUnusedImports/>
                             <importOrder>
                                 <order>,javax,java,\\#</order>
                             </importOrder>

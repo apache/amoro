@@ -32,7 +32,6 @@ import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.CommonUtil;
 import com.netease.arctic.server.exception.ArcticRuntimeException;
-import com.netease.arctic.server.manager.MetricsManager;
 import com.netease.arctic.server.persistence.SqlSessionFactoryProvider;
 import com.netease.arctic.server.resource.ContainerMetadata;
 import com.netease.arctic.server.resource.OptimizerManager;
@@ -93,7 +92,6 @@ public class ArcticServiceContainer {
   private TServer tableManagementServer;
   private TServer optimizingServiceServer;
   private Javalin httpServer;
-  private MetricsManager metricsManager;
 
   public ArcticServiceContainer() throws Exception {
     initConfig();
@@ -146,9 +144,6 @@ public class ArcticServiceContainer {
     tableService.initialize();
     LOG.info("AMS table service have been initialized");
     terminalManager = new TerminalManager(serviceConfig, tableService);
-
-    metricsManager = new MetricsManager();
-    metricsManager.initialize();
 
     initThriftService();
     startThriftService();
@@ -204,8 +199,7 @@ public class ArcticServiceContainer {
   private void initHttpService() {
     DashboardServer dashboardServer =
         new DashboardServer(serviceConfig, tableService, optimizingService, terminalManager);
-    IcebergRestCatalogService restCatalogService =
-        new IcebergRestCatalogService(tableService, metricsManager);
+    RestCatalogService restCatalogService = new RestCatalogService(tableService);
 
     httpServer =
         Javalin.create(
@@ -478,25 +472,27 @@ public class ArcticServiceContainer {
       LOG.info("initializing container configuration...");
       JSONArray containers = yamlConfig.getJSONArray(ArcticManagementConf.CONTAINER_LIST);
       List<ContainerMetadata> containerList = new ArrayList<>();
-      for (int i = 0; i < containers.size(); i++) {
-        JSONObject containerConfig = containers.getJSONObject(i);
-        ContainerMetadata container =
-            new ContainerMetadata(
-                containerConfig.getString(ArcticManagementConf.CONTAINER_NAME),
-                containerConfig.getString(ArcticManagementConf.CONTAINER_IMPL));
-        Map<String, String> containerProperties = new HashMap<>();
-        if (containerConfig.containsKey(ArcticManagementConf.CONTAINER_PROPERTIES)) {
-          containerProperties.putAll(
-              containerConfig.getObject(ArcticManagementConf.CONTAINER_PROPERTIES, Map.class));
+      if (containers != null) {
+        for (int i = 0; i < containers.size(); i++) {
+          JSONObject containerConfig = containers.getJSONObject(i);
+          ContainerMetadata container =
+              new ContainerMetadata(
+                  containerConfig.getString(ArcticManagementConf.CONTAINER_NAME),
+                  containerConfig.getString(ArcticManagementConf.CONTAINER_IMPL));
+          Map<String, String> containerProperties = new HashMap<>();
+          if (containerConfig.containsKey(ArcticManagementConf.CONTAINER_PROPERTIES)) {
+            containerProperties.putAll(
+                containerConfig.getObject(ArcticManagementConf.CONTAINER_PROPERTIES, Map.class));
+          }
+          // put properties in config.yaml first.
+          containerProperties.put(PropertyNames.AMS_HOME, Environments.getHomePath());
+          containerProperties.putIfAbsent(
+              PropertyNames.AMS_OPTIMIZER_URI,
+              AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
+          // put addition system properties
+          container.setProperties(containerProperties);
+          containerList.add(container);
         }
-        // put properties in config.yaml first.
-        containerProperties.put(PropertyNames.AMS_HOME, Environments.getHomePath());
-        containerProperties.putIfAbsent(
-            PropertyNames.AMS_OPTIMIZER_URI,
-            AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
-        // put addition system properties
-        container.setProperties(containerProperties);
-        containerList.add(container);
       }
       ResourceContainers.init(containerList);
     }

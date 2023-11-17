@@ -18,6 +18,7 @@
 
 package com.netease.arctic.spark.io;
 
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.io.writer.AdaptHiveOutputFileFactory;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.writer.ChangeTaskWriter;
@@ -143,7 +144,11 @@ public class TaskWriters {
         InternalRowFileAppenderFactory.builderFor(icebergTable, schema, dsSchema)
             .writeHive(isHiveTable)
             .build();
-
+    boolean hiveConsistentWrite =
+        PropertyUtil.propertyAsBoolean(
+            table.properties(),
+            HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED,
+            HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED_DEFAULT);
     OutputFileFactory outputFileFactory;
     if (isHiveTable && isOverwrite) {
       outputFileFactory =
@@ -156,7 +161,8 @@ public class TaskWriters {
               partitionId,
               taskId,
               transactionId,
-              hiveSubdirectory);
+              hiveSubdirectory,
+              hiveConsistentWrite);
     } else {
       outputFileFactory =
           new CommonOutputFileFactory(

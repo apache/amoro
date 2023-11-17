@@ -43,9 +43,7 @@ public abstract class TableTestBase extends CatalogTestBase {
   public void setupTable() {
     this.tableMetaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
 
-    if (!getCatalog().listDatabases().contains(TableTestHelper.TEST_DB_NAME)) {
-      getCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
-    }
+    getUnifiedCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
     switch (getTestFormat()) {
       case MIXED_HIVE:
       case MIXED_ICEBERG:
@@ -59,7 +57,8 @@ public abstract class TableTestBase extends CatalogTestBase {
 
   private void createMixedFormatTable() {
     TableBuilder tableBuilder =
-        getCatalog().newTableBuilder(TableTestHelper.TEST_TABLE_ID, tableTestHelper.tableSchema());
+        getMixedFormatCatalog()
+            .newTableBuilder(TableTestHelper.TEST_TABLE_ID, tableTestHelper.tableSchema());
     tableBuilder.withProperties(tableTestHelper.tableProperties());
     if (isKeyedTable()) {
       tableBuilder.withPrimaryKeySpec(tableTestHelper.primaryKeySpec());
@@ -78,12 +77,22 @@ public abstract class TableTestBase extends CatalogTestBase {
             tableTestHelper.tableSchema(),
             tableTestHelper.partitionSpec(),
             tableTestHelper.tableProperties());
-    arcticTable = getCatalog().loadTable(TableTestHelper.TEST_TABLE_ID);
+    arcticTable =
+        (ArcticTable)
+            getUnifiedCatalog()
+                .loadTable(TableTestHelper.TEST_DB_NAME, TableTestHelper.TEST_TABLE_NAME)
+                .originalTable();
   }
 
   @After
   public void dropTable() {
-    getCatalog().dropTable(tableTestHelper.id(), true);
+    getUnifiedCatalog()
+        .dropTable(tableTestHelper.id().getDatabase(), tableTestHelper.id().getTableName(), true);
+    try {
+      getUnifiedCatalog().dropDatabase(TableTestHelper.TEST_DB_NAME);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
   protected ArcticTable getArcticTable() {

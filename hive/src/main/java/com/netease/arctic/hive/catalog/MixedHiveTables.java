@@ -1,6 +1,5 @@
 package com.netease.arctic.hive.catalog;
 
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.catalog.MixedTables;
@@ -17,6 +16,7 @@ import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.hadoop.hive.metastore.TableType;
@@ -27,6 +27,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.mapping.MappingUtil;
 import org.apache.iceberg.mapping.NameMappingParser;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 
@@ -38,10 +39,9 @@ public class MixedHiveTables extends MixedTables {
 
   private volatile CachedHiveClientPool hiveClientPool;
 
-  public MixedHiveTables(CatalogMeta catalogMeta) {
-    super(catalogMeta);
-    this.hiveClientPool =
-        new CachedHiveClientPool(getTableMetaStore(), catalogMeta.getCatalogProperties());
+  public MixedHiveTables(Map<String, String> catalogProperties, TableMetaStore metaStore) {
+    super(catalogProperties, metaStore);
+    this.hiveClientPool = new CachedHiveClientPool(getTableMetaStore(), catalogProperties);
   }
 
   public CachedHiveClientPool getHiveClientPool() {
@@ -61,7 +61,7 @@ public class MixedHiveTables extends MixedTables {
             tableLocation,
             tableMeta.getProperties(),
             tableMetaStore,
-            catalogMeta.getCatalogProperties());
+            catalogProperties);
     checkPrivilege(fileIO, baseLocation);
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
     UnkeyedHiveTable baseTable =
@@ -72,7 +72,7 @@ public class MixedHiveTables extends MixedTables {
             fileIO,
             tableLocation,
             hiveClientPool,
-            catalogMeta.getCatalogProperties(),
+            catalogProperties,
             false);
 
     Table changeIcebergTable = tableMetaStore.doAs(() -> tables.load(changeLocation));
@@ -82,7 +82,7 @@ public class MixedHiveTables extends MixedTables {
             CatalogUtil.useArcticTableOperations(
                 changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
-            catalogMeta.getCatalogProperties());
+            catalogProperties);
     return new KeyedHiveTable(
         tableMeta,
         tableLocation,
@@ -113,7 +113,7 @@ public class MixedHiveTables extends MixedTables {
             tableLocation,
             tableMeta.getProperties(),
             tableMetaStore,
-            catalogMeta.getCatalogProperties());
+            catalogProperties);
     checkPrivilege(fileIO, baseLocation);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
     return new UnkeyedHiveTable(
@@ -123,7 +123,7 @@ public class MixedHiveTables extends MixedTables {
         fileIO,
         tableLocation,
         hiveClientPool,
-        catalogMeta.getCatalogProperties());
+        catalogProperties);
   }
 
   @Override
@@ -151,7 +151,7 @@ public class MixedHiveTables extends MixedTables {
             tableLocation,
             tableMeta.getProperties(),
             tableMetaStore,
-            catalogMeta.getCatalogProperties());
+            catalogProperties);
     Table baseIcebergTable =
         tableMetaStore.doAs(
             () -> {
@@ -177,7 +177,7 @@ public class MixedHiveTables extends MixedTables {
             fileIO,
             tableLocation,
             hiveClientPool,
-            catalogMeta.getCatalogProperties(),
+            catalogProperties,
             false);
 
     Table changeIcebergTable =
@@ -203,7 +203,7 @@ public class MixedHiveTables extends MixedTables {
             CatalogUtil.useArcticTableOperations(
                 changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
             fileIO,
-            catalogMeta.getCatalogProperties());
+            catalogProperties);
 
     Map<String, String> metaProperties = tableMeta.getProperties();
     try {
@@ -317,7 +317,7 @@ public class MixedHiveTables extends MixedTables {
             tableLocation,
             tableMeta.getProperties(),
             tableMetaStore,
-            catalogMeta.getCatalogProperties());
+            catalogProperties);
     return new UnkeyedHiveTable(
         tableIdentifier,
         CatalogUtil.useArcticTableOperations(
@@ -325,7 +325,7 @@ public class MixedHiveTables extends MixedTables {
         fileIO,
         tableLocation,
         hiveClientPool,
-        catalogMeta.getCatalogProperties());
+        catalogProperties);
   }
 
   @Override
@@ -420,7 +420,10 @@ public class MixedHiveTables extends MixedTables {
       org.apache.hadoop.hive.metastore.api.Table hiveTable,
       PrimaryKeySpec primaryKeySpec,
       TableMeta meta) {
-    Map<String, String> parameters = constructProperties(primaryKeySpec, meta);
+    Map<String, String> hiveTableProperties = constructProperties(primaryKeySpec, meta);
+    Map<String, String> parameters = Maps.newHashMap();
+    parameters.putAll(hiveTable.getParameters());
+    parameters.putAll(hiveTableProperties);
     hiveTable.setParameters(parameters);
   }
 
@@ -428,12 +431,5 @@ public class MixedHiveTables extends MixedTables {
     String allowStringValue =
         tableMeta.getProperties().remove(HiveTableProperties.ALLOW_HIVE_TABLE_EXISTED);
     return Boolean.parseBoolean(allowStringValue);
-  }
-
-  @Override
-  public void refreshCatalogMeta(CatalogMeta meta) {
-    super.refreshCatalogMeta(meta);
-    this.hiveClientPool =
-        new CachedHiveClientPool(getTableMetaStore(), catalogMeta.getCatalogProperties());
   }
 }

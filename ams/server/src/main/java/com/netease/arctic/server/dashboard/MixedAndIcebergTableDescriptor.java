@@ -29,15 +29,17 @@ import com.netease.arctic.server.dashboard.component.reverser.DDLReverser;
 import com.netease.arctic.server.dashboard.component.reverser.IcebergTableMetaExtract;
 import com.netease.arctic.server.dashboard.model.AMSColumnInfo;
 import com.netease.arctic.server.dashboard.model.AMSPartitionField;
-import com.netease.arctic.server.dashboard.model.AMSTransactionsOfTable;
+import com.netease.arctic.server.dashboard.model.AmoroSnapshotsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
 import com.netease.arctic.server.dashboard.model.FilesStatistics;
 import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
+import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
 import com.netease.arctic.server.dashboard.model.TableBasicInfo;
 import com.netease.arctic.server.dashboard.model.TableStatistics;
+import com.netease.arctic.server.dashboard.model.TagOrBranchInfo;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.TableStatCollector;
 import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
@@ -46,19 +48,18 @@ import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ManifestEntryFields;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.GenericRecord;
@@ -66,9 +67,11 @@ import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.PropertyUtil;
+import org.apache.iceberg.util.SnapshotUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,6 +83,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /** Descriptor for Mixed-Hive, Mixed-Iceberg, Iceberg format tables. */
@@ -123,24 +127,28 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     tableFileCnt += baseFilesStatistics.getFileCnt();
     serverTableMeta.setBaseMetrics(baseMetrics);
 
-    Map<String, Object> changeMetrics = Maps.newHashMap();
-    if (tableBasicInfo.getChangeStatistics() != null) {
-      FilesStatistics changeFilesStatistics =
-          tableBasicInfo.getChangeStatistics().getTotalFilesStat();
-      Map<String, String> changeSummary = tableBasicInfo.getChangeStatistics().getSummary();
-      changeMetrics.put("lastCommitTime", AmsUtil.longOrNull(changeSummary.get("visibleTime")));
-      changeMetrics.put("totalSize", byteToXB(changeFilesStatistics.getTotalSize()));
-      changeMetrics.put("fileCount", changeFilesStatistics.getFileCnt());
-      changeMetrics.put("averageFileSize", byteToXB(changeFilesStatistics.getAverageSize()));
-      changeMetrics.put("tableWatermark", AmsUtil.longOrNull(serverTableMeta.getTableWatermark()));
-      tableSize += changeFilesStatistics.getTotalSize();
-      tableFileCnt += changeFilesStatistics.getFileCnt();
-    } else {
-      changeMetrics.put("lastCommitTime", null);
-      changeMetrics.put("totalSize", null);
-      changeMetrics.put("fileCount", null);
-      changeMetrics.put("averageFileSize", null);
-      changeMetrics.put("tableWatermark", null);
+    if (table.isKeyedTable()) {
+      Map<String, Object> changeMetrics = Maps.newHashMap();
+      if (tableBasicInfo.getChangeStatistics() != null) {
+        FilesStatistics changeFilesStatistics =
+            tableBasicInfo.getChangeStatistics().getTotalFilesStat();
+        Map<String, String> changeSummary = tableBasicInfo.getChangeStatistics().getSummary();
+        changeMetrics.put("lastCommitTime", AmsUtil.longOrNull(changeSummary.get("visibleTime")));
+        changeMetrics.put("totalSize", byteToXB(changeFilesStatistics.getTotalSize()));
+        changeMetrics.put("fileCount", changeFilesStatistics.getFileCnt());
+        changeMetrics.put("averageFileSize", byteToXB(changeFilesStatistics.getAverageSize()));
+        changeMetrics.put(
+            "tableWatermark", AmsUtil.longOrNull(serverTableMeta.getTableWatermark()));
+        tableSize += changeFilesStatistics.getTotalSize();
+        tableFileCnt += changeFilesStatistics.getFileCnt();
+      } else {
+        changeMetrics.put("lastCommitTime", null);
+        changeMetrics.put("totalSize", null);
+        changeMetrics.put("fileCount", null);
+        changeMetrics.put("averageFileSize", null);
+        changeMetrics.put("tableWatermark", null);
+      }
+      serverTableMeta.setChangeMetrics(changeMetrics);
     }
     Map<String, Object> tableSummary = new HashMap<>();
     tableSummary.put("size", byteToXB(tableSize));
@@ -151,126 +159,133 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     return serverTableMeta;
   }
 
-  public List<AMSTransactionsOfTable> getTransactions(AmoroTable<?> amoroTable) {
-    ArcticTable arcticTable = getTable(amoroTable);
-    List<AMSTransactionsOfTable> transactionsOfTables = new ArrayList<>();
-    List<Table> tables = new ArrayList<>();
-    if (arcticTable.isKeyedTable()) {
-      tables.add(arcticTable.asKeyedTable().changeTable());
-      tables.add(arcticTable.asKeyedTable().baseTable());
-    } else {
-      tables.add(arcticTable.asUnkeyedTable());
+  private Long snapshotIdOfTableRef(Table table, String ref) {
+    if (ref == null) {
+      ref = SnapshotRef.MAIN_BRANCH;
     }
-    tables.forEach(
-        table ->
-            table
-                .snapshots()
-                .forEach(
-                    snapshot -> {
-                      if (snapshot.operation().equals(DataOperations.REPLACE)) {
-                        return;
-                      }
-                      Map<String, String> summary = snapshot.summary();
-                      if (summary.containsKey(
-                          com.netease.arctic.op.SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE)) {
-                        return;
-                      }
-                      AMSTransactionsOfTable amsTransactionsOfTable = new AMSTransactionsOfTable();
-                      amsTransactionsOfTable.setTransactionId(
-                          String.valueOf(snapshot.snapshotId()));
-                      int fileCount =
-                          PropertyUtil.propertyAsInt(
-                              summary, org.apache.iceberg.SnapshotSummary.ADDED_FILES_PROP, 0);
-                      fileCount +=
-                          PropertyUtil.propertyAsInt(
-                              summary,
-                              org.apache.iceberg.SnapshotSummary.ADDED_DELETE_FILES_PROP,
-                              0);
-                      fileCount +=
-                          PropertyUtil.propertyAsInt(
-                              summary, org.apache.iceberg.SnapshotSummary.DELETED_FILES_PROP, 0);
-                      fileCount +=
-                          PropertyUtil.propertyAsInt(
-                              summary,
-                              org.apache.iceberg.SnapshotSummary.REMOVED_DELETE_FILES_PROP,
-                              0);
-                      amsTransactionsOfTable.setFileCount(fileCount);
-                      amsTransactionsOfTable.setFileSize(
-                          PropertyUtil.propertyAsLong(
-                                  summary,
-                                  org.apache.iceberg.SnapshotSummary.ADDED_FILE_SIZE_PROP,
-                                  0)
-                              + PropertyUtil.propertyAsLong(
-                                  summary,
-                                  org.apache.iceberg.SnapshotSummary.REMOVED_FILE_SIZE_PROP,
-                                  0));
-                      amsTransactionsOfTable.setCommitTime(snapshot.timestampMillis());
-                      amsTransactionsOfTable.setOperation(snapshot.operation());
-
-                      // normalize summary
-                      Map<String, String> normalizeSummary =
-                          com.google.common.collect.Maps.newHashMap(summary);
-                      normalizeSummary.computeIfPresent(
-                          SnapshotSummary.TOTAL_FILE_SIZE_PROP,
-                          (k, v) -> byteToXB(Long.parseLong(summary.get(k))));
-                      normalizeSummary.computeIfPresent(
-                          SnapshotSummary.ADDED_FILE_SIZE_PROP,
-                          (k, v) -> byteToXB(Long.parseLong(summary.get(k))));
-                      normalizeSummary.computeIfPresent(
-                          SnapshotSummary.REMOVED_FILE_SIZE_PROP,
-                          (k, v) -> byteToXB(Long.parseLong(summary.get(k))));
-                      amsTransactionsOfTable.setSummary(normalizeSummary);
-
-                      // Metric in chart
-                      Map<String, String> recordsSummaryForChat = new HashMap<>();
-                      recordsSummaryForChat.put(
-                          "total-records", summary.get(SnapshotSummary.TOTAL_RECORDS_PROP));
-                      recordsSummaryForChat.put(
-                          "eq-delete-records", summary.get(SnapshotSummary.TOTAL_EQ_DELETES_PROP));
-                      recordsSummaryForChat.put(
-                          "pos-delete-records",
-                          summary.get(SnapshotSummary.TOTAL_POS_DELETES_PROP));
-                      amsTransactionsOfTable.setRecordsSummaryForChart(recordsSummaryForChat);
-
-                      Map<String, String> filesSummaryForChat = new HashMap<>();
-                      filesSummaryForChat.put(
-                          "data-files", summary.get(SnapshotSummary.TOTAL_DATA_FILES_PROP));
-                      filesSummaryForChat.put(
-                          "delete-files", summary.get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
-                      filesSummaryForChat.put(
-                          "total-files",
-                          PropertyUtil.propertyAsInt(
-                                  summary, SnapshotSummary.TOTAL_DELETE_FILES_PROP, 0)
-                              + PropertyUtil.propertyAsInt(
-                                  summary, SnapshotSummary.TOTAL_DATA_FILES_PROP, 0)
-                              + "");
-                      amsTransactionsOfTable.setFilesSummaryForChart(filesSummaryForChat);
-
-                      transactionsOfTables.add(amsTransactionsOfTable);
-                    }));
-    transactionsOfTables.sort((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()));
-    return transactionsOfTables;
+    Snapshot snapshot = table.snapshot(ref);
+    if (snapshot == null) {
+      return null;
+    }
+    return snapshot.snapshotId();
   }
 
-  public List<PartitionFileBaseInfo> getTransactionDetail(
-      AmoroTable<?> amoroTable, long transactionId) {
+  @Override
+  public List<AmoroSnapshotsOfTable> getSnapshots(AmoroTable<?> amoroTable, String ref) {
+    ArcticTable arcticTable = getTable(amoroTable);
+    List<AmoroSnapshotsOfTable> snapshotsOfTables = new ArrayList<>();
+    List<Pair<Table, Long>> tableAndSnapshotIdList = new ArrayList<>();
+    if (arcticTable.isKeyedTable()) {
+      tableAndSnapshotIdList.add(
+          Pair.of(
+              arcticTable.asKeyedTable().changeTable(),
+              snapshotIdOfTableRef(arcticTable.asKeyedTable().changeTable(), ref)));
+      tableAndSnapshotIdList.add(
+          Pair.of(
+              arcticTable.asKeyedTable().baseTable(),
+              snapshotIdOfTableRef(arcticTable.asKeyedTable().baseTable(), ref)));
+    } else {
+      tableAndSnapshotIdList.add(
+          Pair.of(
+              arcticTable.asUnkeyedTable(),
+              snapshotIdOfTableRef(arcticTable.asUnkeyedTable(), ref)));
+    }
+    tableAndSnapshotIdList.forEach(
+        tableAndSnapshotId -> collectSnapshots(snapshotsOfTables, tableAndSnapshotId));
+    snapshotsOfTables.sort((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()));
+    return snapshotsOfTables;
+  }
+
+  private void collectSnapshots(
+      List<AmoroSnapshotsOfTable> snapshotsOfTables, Pair<Table, Long> tableAndSnapshotId) {
+    Table table = tableAndSnapshotId.first();
+    Long snapshotId = tableAndSnapshotId.second();
+    if (snapshotId != null) {
+      SnapshotUtil.ancestorsOf(snapshotId, table::snapshot)
+          .forEach(
+              snapshot -> {
+                Map<String, String> summary = snapshot.summary();
+                if (summary.containsKey(
+                    com.netease.arctic.op.SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE)) {
+                  return;
+                }
+                AmoroSnapshotsOfTable amoroSnapshotsOfTable = new AmoroSnapshotsOfTable();
+                amoroSnapshotsOfTable.setSnapshotId(String.valueOf(snapshot.snapshotId()));
+                int fileCount =
+                    PropertyUtil.propertyAsInt(summary, SnapshotSummary.TOTAL_DELETE_FILES_PROP, 0)
+                        + PropertyUtil.propertyAsInt(
+                            summary, SnapshotSummary.TOTAL_DATA_FILES_PROP, 0);
+                amoroSnapshotsOfTable.setFileCount(fileCount);
+                amoroSnapshotsOfTable.setFileSize(
+                    PropertyUtil.propertyAsLong(summary, SnapshotSummary.ADDED_FILE_SIZE_PROP, 0L)
+                        + PropertyUtil.propertyAsLong(
+                            summary, SnapshotSummary.REMOVED_FILE_SIZE_PROP, 0L));
+                long totalRecords =
+                    PropertyUtil.propertyAsLong(summary, SnapshotSummary.TOTAL_RECORDS_PROP, 0L);
+                amoroSnapshotsOfTable.setRecords(totalRecords);
+                amoroSnapshotsOfTable.setCommitTime(snapshot.timestampMillis());
+                amoroSnapshotsOfTable.setOperation(snapshot.operation());
+                amoroSnapshotsOfTable.setProducer(
+                    PropertyUtil.propertyAsString(
+                        summary,
+                        com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER,
+                        com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT));
+
+                // normalize summary
+                Map<String, String> normalizeSummary =
+                    com.google.common.collect.Maps.newHashMap(summary);
+                normalizeSummary.computeIfPresent(
+                    SnapshotSummary.TOTAL_FILE_SIZE_PROP,
+                    (k, v) -> byteToXB(Long.parseLong(summary.get(k))));
+                normalizeSummary.computeIfPresent(
+                    SnapshotSummary.ADDED_FILE_SIZE_PROP,
+                    (k, v) -> byteToXB(Long.parseLong(summary.get(k))));
+                normalizeSummary.computeIfPresent(
+                    SnapshotSummary.REMOVED_FILE_SIZE_PROP,
+                    (k, v) -> byteToXB(Long.parseLong(summary.get(k))));
+                amoroSnapshotsOfTable.setSummary(normalizeSummary);
+
+                // Metric in chart
+                Map<String, String> recordsSummaryForChat = new HashMap<>();
+                recordsSummaryForChat.put("total-records", totalRecords + "");
+                recordsSummaryForChat.put(
+                    "eq-delete-records", summary.get(SnapshotSummary.TOTAL_EQ_DELETES_PROP));
+                recordsSummaryForChat.put(
+                    "pos-delete-records", summary.get(SnapshotSummary.TOTAL_POS_DELETES_PROP));
+                amoroSnapshotsOfTable.setRecordsSummaryForChart(recordsSummaryForChat);
+
+                Map<String, String> filesSummaryForChat = new HashMap<>();
+                filesSummaryForChat.put(
+                    "data-files", summary.get(SnapshotSummary.TOTAL_DATA_FILES_PROP));
+                filesSummaryForChat.put(
+                    "delete-files", summary.get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
+                filesSummaryForChat.put("total-files", fileCount + "");
+                amoroSnapshotsOfTable.setFilesSummaryForChart(filesSummaryForChat);
+
+                snapshotsOfTables.add(amoroSnapshotsOfTable);
+              });
+    }
+  }
+
+  @Override
+  public List<PartitionFileBaseInfo> getSnapshotDetail(AmoroTable<?> amoroTable, long snapshotId) {
     ArcticTable arcticTable = getTable(amoroTable);
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     Snapshot snapshot;
     if (arcticTable.isKeyedTable()) {
-      snapshot = arcticTable.asKeyedTable().changeTable().snapshot(transactionId);
+      snapshot = arcticTable.asKeyedTable().changeTable().snapshot(snapshotId);
       if (snapshot == null) {
-        snapshot = arcticTable.asKeyedTable().baseTable().snapshot(transactionId);
+        snapshot = arcticTable.asKeyedTable().baseTable().snapshot(snapshotId);
       }
     } else {
-      snapshot = arcticTable.asUnkeyedTable().snapshot(transactionId);
+      snapshot = arcticTable.asUnkeyedTable().snapshot(snapshotId);
     }
     if (snapshot == null) {
       throw new IllegalArgumentException(
-          "unknown snapshot " + transactionId + " of " + amoroTable.id());
+          "unknown snapshot " + snapshotId + " of " + amoroTable.id());
     }
     final long snapshotTime = snapshot.timestampMillis();
-    String commitId = String.valueOf(transactionId);
+    String commitId = String.valueOf(snapshotId);
     snapshot
         .addedDataFiles(arcticTable.io())
         .forEach(
@@ -326,6 +341,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     return result;
   }
 
+  @Override
   public List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) {
     ArcticTable arcticTable = getTable(amoroTable);
     Table table;
@@ -383,6 +399,16 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   @Override
+  public List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable) {
+    return getTableTagsOrBranches(amoroTable, SnapshotRef::isTag);
+  }
+
+  @Override
+  public List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable) {
+    return getTableTagsOrBranches(amoroTable, SnapshotRef::isBranch);
+  }
+
+  @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
       AmoroTable<?> amoroTable, int limit, int offset) {
     TableIdentifier tableIdentifier = amoroTable.id();
@@ -413,6 +439,35 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             .map(p -> OptimizingProcessInfo.build(p, optimizingTasks.get(p.getProcessId())))
             .collect(Collectors.toList()),
         total);
+  }
+
+  @Override
+  public List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, long processId) {
+    List<OptimizingTaskMeta> optimizingTaskMetaList =
+        getAs(
+            OptimizingMapper.class,
+            mapper -> mapper.selectOptimizeTaskMetas(Collections.singletonList(processId)));
+    if (CollectionUtils.isEmpty(optimizingTaskMetaList)) {
+      return Collections.emptyList();
+    }
+    return optimizingTaskMetaList.stream()
+        .map(
+            taskMeta ->
+                new OptimizingTaskInfo(
+                    taskMeta.getTableId(),
+                    taskMeta.getProcessId(),
+                    taskMeta.getTaskId(),
+                    taskMeta.getPartitionData(),
+                    taskMeta.getStatus(),
+                    taskMeta.getRetryNum(),
+                    taskMeta.getThreadId(),
+                    taskMeta.getStartTime(),
+                    taskMeta.getEndTime(),
+                    taskMeta.getCostTime(),
+                    taskMeta.getFailReason(),
+                    taskMeta.getMetricsSummary(),
+                    taskMeta.getProperties()))
+        .collect(Collectors.toList());
   }
 
   private List<PartitionFileBaseInfo> collectFileInfo(
@@ -483,9 +538,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
         TableStatCollector.fillTableStatistics(baseInfo, unkeyedTable, table);
       } else if (table.isKeyedTable()) {
         KeyedTable keyedTable = table.asKeyedTable();
-        if (!PrimaryKeySpec.noPrimaryKey().equals(keyedTable.primaryKeySpec())) {
-          changeInfo = TableStatCollector.collectChangeTableInfo(keyedTable);
-        }
+        changeInfo = TableStatCollector.collectChangeTableInfo(keyedTable);
         baseInfo = TableStatCollector.collectBaseTableInfo(keyedTable);
       } else {
         throw new IllegalStateException("unknown type of table");
@@ -572,5 +625,29 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   private ArcticTable getTable(AmoroTable<?> amoroTable) {
     return (ArcticTable) amoroTable.originalTable();
+  }
+
+  private List<TagOrBranchInfo> getTableTagsOrBranches(
+      AmoroTable<?> amoroTable, Predicate<SnapshotRef> predicate) {
+    ArcticTable arcticTable = getTable(amoroTable);
+    List<TagOrBranchInfo> result = new ArrayList<>();
+    Map<String, SnapshotRef> snapshotRefs;
+    if (arcticTable.isKeyedTable()) {
+      // todo temporarily responds to the problem of Mixed Format table.
+      if (predicate.test(SnapshotRef.branchBuilder(-1).build())) {
+        return ImmutableList.of(TagOrBranchInfo.MAIN_BRANCH);
+      } else {
+        return Collections.emptyList();
+      }
+    } else {
+      snapshotRefs = arcticTable.asUnkeyedTable().refs();
+      snapshotRefs.forEach(
+          (name, snapshotRef) -> {
+            if (predicate.test(snapshotRef)) {
+              result.add(new TagOrBranchInfo(name, snapshotRef));
+            }
+          });
+      return result;
+    }
   }
 }

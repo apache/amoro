@@ -19,6 +19,7 @@
 package com.netease.arctic.hive.io.writer;
 
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
@@ -54,7 +55,7 @@ import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Locale;
 
-/** Builder to create writers for {@link KeyedTable} writting {@link Record}. */
+/** Builder to create writers for {@link KeyedTable} writing {@link Record}. */
 public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Record> {
 
   private final ArcticTable table;
@@ -66,9 +67,15 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   private String customHiveSubdirectory;
   private Long targetFileSize;
   private boolean orderedWriter = false;
+  private Boolean hiveConsistentWrite;
 
   private AdaptHiveGenericTaskWriterBuilder(ArcticTable table) {
     this.table = table;
+    this.hiveConsistentWrite =
+        PropertyUtil.propertyAsBoolean(
+            table.properties(),
+            HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED,
+            HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED_DEFAULT);
   }
 
   public AdaptHiveGenericTaskWriterBuilder withTransactionId(Long transactionId) {
@@ -104,6 +111,11 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
 
   public AdaptHiveGenericTaskWriterBuilder withOrdered() {
     this.orderedWriter = true;
+    return this;
+  }
+
+  public AdaptHiveGenericTaskWriterBuilder hiveConsistentWrite(boolean enabled) {
+    this.hiveConsistentWrite = enabled;
     return this;
   }
 
@@ -221,7 +233,8 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
                 partitionId,
                 taskId,
                 transactionId,
-                customHiveSubdirectory)
+                customHiveSubdirectory,
+                hiveConsistentWrite)
             : new CommonOutputFileFactory(
                 baseLocation,
                 table.spec(),

@@ -21,14 +21,17 @@ package com.netease.arctic.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
 
@@ -39,32 +42,6 @@ import java.util.Map;
 public class TablePropertyUtil {
 
   public static final StructLike EMPTY_STRUCT = GenericRecord.create(new Schema());
-
-  /**
-   * Decode string to max transaction id map of each partition.
-   *
-   * @param spec table partition spec
-   * @param value string value
-   * @return max transaction id map of each partition
-   */
-  public static StructLikeMap<Long> decodePartitionMaxTxId(PartitionSpec spec, String value) {
-    try {
-      StructLikeMap<Long> results = StructLikeMap.create(spec.partitionType());
-      TypeReference<Map<String, Long>> typeReference = new TypeReference<Map<String, Long>>() {};
-      Map<String, Long> map = new ObjectMapper().readValue(value, typeReference);
-      for (String key : map.keySet()) {
-        if (spec.isUnpartitioned()) {
-          results.put(null, map.get(key));
-        } else {
-          StructLike partitionData = ArcticDataFiles.data(spec, key);
-          results.put(partitionData, map.get(key));
-        }
-      }
-      return results;
-    } catch (JsonProcessingException e) {
-      throw new UnsupportedOperationException("Failed to decode partition max txId ", e);
-    }
-  }
 
   public static StructLikeMap<Map<String, String>> decodePartitionProperties(
       PartitionSpec spec, String value) {
@@ -101,16 +78,6 @@ public class TablePropertyUtil {
       throw new UncheckedIOException(e);
     }
     return value;
-  }
-
-  public static StructLikeMap<Long> getPartitionBaseOptimizedTime(KeyedTable keyedTable) {
-    return getPartitionLongProperties(
-        keyedTable.baseTable(), TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
-  }
-
-  public static StructLikeMap<Long> getPartitionOptimizedSequence(KeyedTable keyedTable) {
-    return getPartitionLongProperties(
-        keyedTable.baseTable(), TableProperties.PARTITION_OPTIMIZED_SEQUENCE);
   }
 
   public static StructLikeMap<Long> getPartitionLongProperties(
@@ -162,28 +129,6 @@ public class TablePropertyUtil {
     return result;
   }
 
-  public static StructLikeMap<Long> getLegacyPartitionMaxTransactionId(KeyedTable keyedTable) {
-    StructLikeMap<Long> baseTableMaxTransactionId =
-        StructLikeMap.create(keyedTable.spec().partitionType());
-
-    StructLikeMap<Map<String, String>> partitionProperty =
-        keyedTable.asKeyedTable().baseTable().partitionProperty();
-    partitionProperty.forEach(
-        (partitionKey, propertyValue) -> {
-          Long maxTxId =
-              (propertyValue == null
-                      || propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID) == null)
-                  ? null
-                  : Long.parseLong(
-                      propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID));
-          if (maxTxId != null) {
-            baseTableMaxTransactionId.put(partitionKey, maxTxId);
-          }
-        });
-
-    return baseTableMaxTransactionId;
-  }
-
   public static long getTableWatermark(Map<String, String> properties) {
     String watermarkValue = properties.get(TableProperties.WATERMARK_TABLE);
     if (watermarkValue == null) {
@@ -191,5 +136,114 @@ public class TablePropertyUtil {
     } else {
       return Long.parseLong(watermarkValue);
     }
+  }
+
+  /**
+   * Check if an iceberg table is a table store of a mixed-iceberg table.
+   *
+   * @param properties table properties of iceberg
+   * @return true if this it a table store.
+   */
+  public static boolean isMixedTableStore(Map<String, String> properties) {
+    String format = properties.get(TableProperties.TABLE_FORMAT);
+    String tableStore = properties.get(TableProperties.MIXED_FORMAT_TABLE_STORE);
+    boolean baseStore = TableProperties.MIXED_FORMAT_TABLE_STORE_BASE.equalsIgnoreCase(tableStore);
+    boolean changeStore =
+        TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE.equalsIgnoreCase(tableStore);
+    return TableFormat.MIXED_ICEBERG.name().equalsIgnoreCase(format) && (baseStore || changeStore);
+  }
+
+  /**
+   * Check if the given table properties is the base store of mixed-format,
+   *
+   * @param properties properties of the table.
+   * @param format - {@link TableFormat#MIXED_ICEBERG} or {@link TableFormat#MIXED_HIVE}
+   * @return true if this is a base store of mixed-format.
+   */
+  public static boolean isBaseStore(Map<String, String> properties, TableFormat format) {
+    String tableFormat = properties.get(TableProperties.TABLE_FORMAT);
+    String tableStore = properties.get(TableProperties.MIXED_FORMAT_TABLE_STORE);
+    return format.name().equalsIgnoreCase(tableFormat)
+        && TableProperties.MIXED_FORMAT_TABLE_STORE_BASE.equalsIgnoreCase(tableStore);
+  }
+
+  /**
+   * parse change store table identifier for base store table properties
+   *
+   * @param properties - table properties of base store
+   * @return - table identifier of change store.
+   */
+  public static TableIdentifier parseChangeIdentifier(Map<String, String> properties) {
+    Preconditions.checkArgument(
+        properties.containsKey(TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER),
+        "can read change store identifier from base store properties");
+    String change = properties.get(TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER);
+    return TableIdentifier.parse(change);
+  }
+
+  public static PrimaryKeySpec parsePrimaryKeySpec(
+      Schema schema, Map<String, String> tableProperties) {
+    if (tableProperties.containsKey(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS)) {
+      return PrimaryKeySpec.fromDescription(
+          schema, tableProperties.get(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS));
+    }
+    return PrimaryKeySpec.noPrimaryKey();
+  }
+
+  /**
+   * common properties for mixed format.
+   *
+   * @param keySpec primary key spec
+   * @param format table format
+   * @return mixed-format table properties.
+   */
+  public static Map<String, String> commonMixedProperties(
+      PrimaryKeySpec keySpec, TableFormat format) {
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put(TableProperties.TABLE_FORMAT, format.name());
+    if (keySpec.primaryKeyExisted()) {
+      properties.put(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS, keySpec.description());
+    }
+
+    properties.put(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
+    properties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
+    properties.put(org.apache.iceberg.TableProperties.METADATA_DELETE_AFTER_COMMIT_ENABLED, "true");
+    properties.put("flink.max-continuous-empty-commits", String.valueOf(Integer.MAX_VALUE));
+    return properties;
+  }
+
+  /**
+   * generate properties for base store
+   *
+   * @param keySpec key spec,
+   * @param changeIdentifier change store identifier.
+   * @param format table format
+   * @return base store table properties.
+   */
+  public static Map<String, String> baseStoreProperties(
+      PrimaryKeySpec keySpec, TableIdentifier changeIdentifier, TableFormat format) {
+    Map<String, String> properties = commonMixedProperties(keySpec, format);
+    properties.put(
+        TableProperties.MIXED_FORMAT_TABLE_STORE, TableProperties.MIXED_FORMAT_TABLE_STORE_BASE);
+    if (keySpec.primaryKeyExisted()) {
+      properties.put(
+          TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER, changeIdentifier.toString());
+    }
+    return properties;
+  }
+
+  /**
+   * generate properties for change store
+   *
+   * @param keySpec key spec,
+   * @param format table format
+   * @return change store table properties.
+   */
+  public static Map<String, String> changeStoreProperties(
+      PrimaryKeySpec keySpec, TableFormat format) {
+    Map<String, String> properties = commonMixedProperties(keySpec, format);
+    properties.put(
+        TableProperties.MIXED_FORMAT_TABLE_STORE, TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE);
+    return properties;
   }
 }
