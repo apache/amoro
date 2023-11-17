@@ -460,6 +460,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                     taskMeta.getPartitionData(),
                     taskMeta.getStatus(),
                     taskMeta.getRetryNum(),
+                    taskMeta.getOptimizerToken(),
                     taskMeta.getThreadId(),
                     taskMeta.getStartTime(),
                     taskMeta.getEndTime(),

@@ -30,6 +30,7 @@ public class OptimizingTaskInfo {
   private String partitionData;
   private TaskRuntime.Status status;
   private int retryNum;
+  private String optimizerToken;
   private int threadId;
   private long startTime;
   private long endTime;
@@ -45,6 +46,7 @@ public class OptimizingTaskInfo {
       String partitionData,
       TaskRuntime.Status status,
       int retryNum,
+      String optimizerToken,
       int threadId,
       long startTime,
       long endTime,
@@ -58,6 +60,7 @@ public class OptimizingTaskInfo {
     this.partitionData = partitionData;
     this.status = status;
     this.retryNum = retryNum;
+    this.optimizerToken = optimizerToken;
     this.threadId = threadId;
     this.startTime = startTime;
     this.endTime = endTime;
@@ -113,6 +116,14 @@ public class OptimizingTaskInfo {
 
   public void setRetryNum(int retryNum) {
     this.retryNum = retryNum;
+  }
+
+  public String getOptimizerToken() {
+    return optimizerToken;
+  }
+
+  public void setOptimizerToken(String optimizerToken) {
+    this.optimizerToken = optimizerToken;
   }
 
   public int getThreadId() {
