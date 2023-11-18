@@ -58,10 +58,10 @@
         class="g-mt-8"
       >
         <template #bodyCell="{ column, record }">
-          <template v-if="column.dataIndex === 'thread'">
+          <template v-if="column.dataIndex === 'partitionData'">
             <a-tooltip>
-              <template #title>{{record.thread}}</template>
-              <span>{{record.thread}}</span>
+              <template #title>{{record.partitionData}}</template>
+              <span>{{record.partitionData}}</span>
             </a-tooltip>
           </template>
           <template v-if="column.dataIndex === 'status'">
@@ -73,6 +73,12 @@
                 <question-circle-outlined />
               </a-tooltip>
             </div>
+          </template>
+          <template v-if="column.dataIndex === 'thread'">
+            <a-tooltip>
+              <template #title>{{record.thread}}</template>
+              <span>{{record.thread}}</span>
+            </a-tooltip>
           </template>
         </template>
         <template #expandedRowRender="{ record }">
@@ -127,13 +133,14 @@ const columns: IColumns[] = shallowReactive([
   { title: t('input'), dataIndex: 'inputFiles' },
   { title: t('output'), dataIndex: 'outputFiles' }
 ])
+
 const breadcrumbColumns = shallowReactive([
-  { title: t('taskId'), dataIndex: 'taskId', width: 82, ellipsis: true },
-  { title: t('partition'), dataIndex: 'partitionData' },
-  { title: t('startTime'), dataIndex: 'startTime', width: 172 },
+  { title: t('taskId'), dataIndex: 'taskId', width: 82 },
+  { title: t('partition'), dataIndex: 'partitionData', ellipsis: true },
+  { title: t('startTime'), dataIndex: 'startTime' },
   { title: t('status'), dataIndex: 'status', width: 124 },
   { title: t('costTime'), dataIndex: 'formatCostTime', width: 154 },
-  { title: t('finishTime'), dataIndex: 'endTime', width: 172 },
+  { title: t('finishTime'), dataIndex: 'endTime' },
   { title: t('retry'), dataIndex: 'retryNum', width: 68 },
   { title: t('thread'), dataIndex: 'thread', ellipsis: true }
 ])
@@ -230,6 +237,7 @@ async function getBreadcrumbTable() {
       p.endTime = p.endTime ? dateFormat(p.endTime) : '-'
       p.formatCostTime = formatMS2Time(p.costTime)
       p.thread = p.optimizerToken ? '(' + p.threadId + ')' + p.optimizerToken : '-'
+      p.partitionData = p.partitionData ? p.partitionData : '-'
       breadcrumbDataSource.push(p)
     })
   } catch (error) {
