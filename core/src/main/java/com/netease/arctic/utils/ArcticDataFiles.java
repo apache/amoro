@@ -38,7 +38,7 @@ public class ArcticDataFiles {
   }
 
   /** return the number of hours away from the epoch, reverse {@link TransformUtil#humanHour} */
-  private static long readHoursData(String asString) {
+  private static Integer readHoursData(String asString) {
     LocalDateTime dateTime = LocalDateTime.parse(asString, FORMAT_HOUR);
     return Math.toIntExact(ChronoUnit.HOURS.between(EPOCH, dateTime));
   }
