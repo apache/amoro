@@ -12,22 +12,18 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class ArcticDataFiles {
-  public static final OffsetDateTime EPOCH = Instant.ofEpochSecond(0).atOffset(ZoneOffset.UTC);
-  public static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd-hh");
+  public static final LocalDateTime EPOCH = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC);
+  private static final DateTimeFormatter FORMAT_HOUR = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH");
   private static final int EPOCH_YEAR = EPOCH.getYear();
   private static final String HIVE_NULL = "__HIVE_DEFAULT_PARTITION__";
   private static final String MONTH_TYPE = "month";
@@ -42,15 +38,9 @@ public class ArcticDataFiles {
   }
 
   /** return the number of hours away from the epoch, reverse {@link TransformUtil#humanHour} */
-  private static Integer readHoursData(String asString) {
-    try {
-      SDF.setTimeZone(TimeZone.getTimeZone("UTC"));
-      Date date = SDF.parse(asString);
-      OffsetDateTime parse = OffsetDateTime.parse(date.toInstant().toString());
-      return Math.toIntExact(ChronoUnit.HOURS.between(EPOCH, parse));
-    } catch (ParseException e) {
-      throw new UnsupportedOperationException("Failed to parse date string:" + asString);
-    }
+  private static long readHoursData(String asString) {
+    LocalDateTime dateTime = LocalDateTime.parse(asString, FORMAT_HOUR);
+    return Math.toIntExact(ChronoUnit.HOURS.between(EPOCH, dateTime));
   }
 
   public static Object fromPartitionString(PartitionField field, Type type, String asString) {
