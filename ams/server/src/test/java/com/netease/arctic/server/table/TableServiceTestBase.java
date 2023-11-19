@@ -18,8 +18,6 @@
 
 package com.netease.arctic.server.table;
 
-import com.netease.arctic.ams.api.metrics.MetricsContent;
-import com.netease.arctic.server.manager.MetricsManager;
 import com.netease.arctic.server.utils.Configurations;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -33,7 +31,7 @@ public abstract class TableServiceTestBase {
 
   @BeforeClass
   public static void initTableService() {
-    TABLE_SERVICE = new DefaultTableService(new Configurations(), buildMetricsManager());
+    TABLE_SERVICE = new DefaultTableService(new Configurations());
     TABLE_SERVICE.initialize();
   }
 
@@ -44,14 +42,5 @@ public abstract class TableServiceTestBase {
 
   protected DefaultTableService tableService() {
     return TABLE_SERVICE;
-  }
-
-  protected static MetricsManager buildMetricsManager() {
-    return new MetricsManager() {
-      @Override
-      public void emit(MetricsContent<?> metrics) {
-        // do nothing for test
-      }
-    };
   }
 }

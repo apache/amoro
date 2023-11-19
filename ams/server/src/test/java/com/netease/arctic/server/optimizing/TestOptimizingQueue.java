@@ -13,7 +13,6 @@ import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.optimizing.TableOptimizing;
-import com.netease.arctic.server.manager.MetricsManager;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.resource.OptimizerInstance;
@@ -221,7 +220,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // 2.reload from sysdb
     List<TableRuntimeMeta> tableRuntimeMetas = persistency.selectTableRuntimeMetas();
     Assert.assertEquals(1, tableRuntimeMetas.size());
-    tableRuntimeMetas.get(0).constructTableRuntime(tableService(), new MetricsManager());
+    tableRuntimeMetas.get(0).constructTableRuntime(tableService());
     queue =
         new OptimizingQueue(
             tableService(),
@@ -267,7 +266,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // 3.reload from sysdb
     List<TableRuntimeMeta> tableRuntimeMetas = persistency.selectTableRuntimeMetas();
     Assert.assertEquals(1, tableRuntimeMetas.size());
-    tableRuntimeMetas.get(0).constructTableRuntime(tableService(), metricsManager());
+    tableRuntimeMetas.get(0).constructTableRuntime(tableService());
     queue =
         new OptimizingQueue(
             tableService(),
@@ -313,7 +312,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // 4.reload from sysdb
     List<TableRuntimeMeta> tableRuntimeMetas = persistency.selectTableRuntimeMetas();
     Assert.assertEquals(1, tableRuntimeMetas.size());
-    tableRuntimeMetas.get(0).constructTableRuntime(tableService(), metricsManager());
+    tableRuntimeMetas.get(0).constructTableRuntime(tableService());
     queue =
         new OptimizingQueue(
             tableService(),
@@ -354,7 +353,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // 4.reload from sysdb
     List<TableRuntimeMeta> tableRuntimeMetas = persistency.selectTableRuntimeMetas();
     Assert.assertEquals(1, tableRuntimeMetas.size());
-    tableRuntimeMetas.get(0).constructTableRuntime(tableService(), metricsManager());
+    tableRuntimeMetas.get(0).constructTableRuntime(tableService());
     queue =
         new OptimizingQueue(
             tableService(),
@@ -501,7 +500,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     tableRuntimeMeta.setTableStatus(status);
     tableRuntimeMeta.setTableConfig(TableConfiguration.parseConfig(arcticTable.properties()));
     tableRuntimeMeta.setOptimizerGroup(resourceGroup.getName());
-    tableRuntimeMeta.constructTableRuntime(tableService(), metricsManager());
+    tableRuntimeMeta.constructTableRuntime(tableService());
     return tableRuntimeMeta;
   }
 

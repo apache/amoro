@@ -28,7 +28,7 @@ import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 public class SelfOptimizingTotalCostMsContent
     implements MetricsContent<SelfOptimizingTotalCostMsContent> {
   public static final String SELF_OPTIMIZING_TOTAL_COST_MS_CONTENT =
-      "self_optimizing_total_cost_ms_content";
+      "self_optimizing_total_cost_ms";
 
   public static final String TABLE_NAME = "table-name";
   public static final String OPTIMIZING_PROCESS_ID = "optimizing-process-id";
@@ -91,7 +91,7 @@ public class SelfOptimizingTotalCostMsContent
         .add(TABLE_NAME, tableName)
         .add(OPTIMIZING_PROCESS_ID, optimizingProcessId)
         .add(OPTIMIZING_TYPE, optimizingType)
-        .add(TABLE_OPTIMIZING_TOTAL_COST_MS, tableOptimizingTotalCostMs)
+        .add(TABLE_OPTIMIZING_TOTAL_COST_MS, tableOptimizingTotalCostMs.getCount())
         .toString();
   }
 }

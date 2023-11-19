@@ -19,35 +19,11 @@
 package com.netease.arctic.server.metrics;
 
 import com.codahale.metrics.Counter;
-import com.codahale.metrics.Timer;
 import com.netease.arctic.ams.api.metrics.TaggedMetrics;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.concurrent.TimeUnit;
-
 public class MetricContentTest {
-  @Test
-  public void selfOptimizingPlanDurationContentTest() {
-    SelfOptimizingPlanDurationContent selfOptimizingPlanDurationContent =
-        new SelfOptimizingPlanDurationContent("tableName");
-    Timer timer = selfOptimizingPlanDurationContent.tableOptimizingPlanDuration();
-    timer.time(
-        () -> {
-          try {
-            TimeUnit.MILLISECONDS.sleep(10);
-          } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-          }
-        });
-    TaggedMetrics taggedMetrics = TaggedMetrics.from(selfOptimizingPlanDurationContent);
-    Assert.assertNotNull(
-        taggedMetrics
-            .metrics()
-            .get(SelfOptimizingPlanDurationContent.TABLE_OPTIMIZING_PLAN_DURATION));
-    Assert.assertEquals(
-        taggedMetrics.tags().get(SelfOptimizingPlanDurationContent.TABLE_NAME), "tableName");
-  }
 
   @Test
   public void selfOptimizingStatusDurationContentTest() {

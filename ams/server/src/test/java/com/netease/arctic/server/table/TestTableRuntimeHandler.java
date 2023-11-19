@@ -63,7 +63,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
 
   @Test
   public void testInitialize() {
-    tableService = new DefaultTableService(new Configurations(), metricsManager());
+    tableService = new DefaultTableService(new Configurations());
     TestHandler handler = new TestHandler();
     tableService.addHandlerChain(handler);
     tableService.initialize();
@@ -77,7 +77,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     Assert.assertTrue(handler.isDisposed());
 
     // initialize with a history table
-    tableService = new DefaultTableService(new Configurations(), metricsManager());
+    tableService = new DefaultTableService(new Configurations());
     handler = new TestHandler();
     tableService.addHandlerChain(handler);
     tableService.initialize();

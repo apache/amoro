@@ -28,7 +28,7 @@ import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 public class SelfOptimizingStatusDurationMsContent
     implements MetricsContent<SelfOptimizingStatusDurationMsContent> {
   public static final String SELF_OPTIMIZING_STATUS_DURATION_MS_REPORT_NAME =
-      "self_optimizing_status_duration_ms_content";
+      "self_optimizing_status_duration_ms";
 
   public static final String TABLE_NAME = "table-name";
   public static final String OPTIMIZING_STATUS = "optimizing-status";
@@ -118,7 +118,7 @@ public class SelfOptimizingStatusDurationMsContent
         .add(OPTIMIZING_PROCESS_ID, optimizingProcessId)
         .add(OPTIMIZING_TYPE, optimizingType)
         .add(TARGET_SNAPSHOT_ID, targetSnapshotId)
-        .add(TABLE_OPTIMIZING_STATUS_DURATION_MS, tableOptimizingStatusDurationMs)
+        .add(TABLE_OPTIMIZING_STATUS_DURATION_MS, tableOptimizingStatusDurationMs.getCount())
         .toString();
   }
 }
