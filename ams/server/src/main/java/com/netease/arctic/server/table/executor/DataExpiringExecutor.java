@@ -18,61 +18,15 @@
 
 package com.netease.arctic.server.table.executor;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.netease.arctic.AmoroTable;
-import com.netease.arctic.IcebergFileEntry;
-import com.netease.arctic.op.SnapshotSummary;
-import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.optimizing.maintainer.TableMaintainer;
-import com.netease.arctic.server.table.DataExpirationConfig;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BaseTable;
-import com.netease.arctic.table.ChangeTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.ManifestEntryFields;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.iceberg.ContentFile;
-import org.apache.iceberg.ContentScanTask;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.DeleteFiles;
-import org.apache.iceberg.FileContent;
-import org.apache.iceberg.FileScanTask;
-import org.apache.iceberg.RewriteFiles;
-import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.StructLike;
-import org.apache.iceberg.TableScan;
-import org.apache.iceberg.expressions.Expression;
-import org.apache.iceberg.expressions.Expressions;
-import org.apache.iceberg.expressions.Literal;
-import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.types.Conversions;
-import org.apache.iceberg.types.Type;
-import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 public class DataExpiringExecutor extends BaseTableExecutor {
 

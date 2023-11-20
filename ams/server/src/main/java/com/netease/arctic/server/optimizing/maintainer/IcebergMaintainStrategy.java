@@ -4,12 +4,15 @@ import com.google.common.collect.Lists;
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.server.table.DataExpirationConfig;
 import com.netease.arctic.server.utils.IcebergTableUtil;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.LinkedTransferQueue;
 
 public class IcebergMaintainStrategy implements MaintainStrategy {
   private final IcebergTableMaintainer icebergMaintainer;
@@ -19,7 +22,7 @@ public class IcebergMaintainStrategy implements MaintainStrategy {
   }
 
   @Override
-  public List<IcebergTableMaintainer.ExpireFiles> entryFileScan(
+  public List<IcebergTableMaintainer.ExpireFiles> expiredFileScan(
       DataExpirationConfig expirationConfig,
       Expression dataFilter,
       long expireTimestamp,
@@ -27,15 +30,17 @@ public class IcebergMaintainStrategy implements MaintainStrategy {
     IcebergTableMaintainer.ExpireFiles expiredFiles = new IcebergTableMaintainer.ExpireFiles();
     try (CloseableIterable<IcebergFileEntry> entries =
         icebergMaintainer.fileScan(icebergMaintainer.getTable(), dataFilter)) {
-      CloseableIterable<IcebergFileEntry> mayExpiredFiles =
-          CloseableIterable.withNoopClose(
-              Lists.newArrayList(
-                  CloseableIterable.filter(
-                      entries,
-                      e ->
-                          icebergMaintainer.mayExpired(e, expirationConfig, partitionFreshness, expireTimestamp))));
-      CloseableIterable.filter(
-              mayExpiredFiles, e -> icebergMaintainer.willNotRetain(e, expirationConfig, partitionFreshness))
+      Queue<IcebergFileEntry> fileEntries = new LinkedTransferQueue<>();
+      entries.forEach(
+          e -> {
+            if (icebergMaintainer.mayExpired(
+                e, expirationConfig, partitionFreshness, expireTimestamp)) {
+              fileEntries.add(e);
+            }
+          });
+      fileEntries
+          .parallelStream()
+          .filter(e -> icebergMaintainer.willNotRetain(e, expirationConfig, partitionFreshness))
           .forEach(expiredFiles::addFile);
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -44,7 +49,8 @@ public class IcebergMaintainStrategy implements MaintainStrategy {
   }
 
   @Override
-  public void doExpireFiles(List<IcebergTableMaintainer.ExpireFiles> expiredFiles, long expireTimestamp) {
+  public void doExpireFiles(
+      List<IcebergTableMaintainer.ExpireFiles> expiredFiles, long expireTimestamp) {
     icebergMaintainer.expireFiles(
         IcebergTableUtil.getSnapshotId(icebergMaintainer.getTable(), false),
         expiredFiles.get(0),
