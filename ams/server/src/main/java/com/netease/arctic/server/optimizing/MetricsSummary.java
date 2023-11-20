@@ -73,8 +73,6 @@ public class MetricsSummary {
         .map(TaskRuntime::getMetricsSummary)
         .forEach(
             metrics -> {
-              newFileSize += metrics.getNewFileSize();
-              newFileCnt += metrics.getNewFileCnt();
               newDataFileCnt += metrics.getNewDataFileCnt();
               newDataSize += metrics.getNewDataSize();
               newDataRecordCnt += metrics.getNewDataRecordCnt();
@@ -82,6 +80,7 @@ public class MetricsSummary {
               newDeleteFileCnt += metrics.getNewDeleteFileCnt();
               newDeleteRecordCnt += metrics.getNewDeleteRecordCnt();
               rewriteDataFileCnt += metrics.getRewriteDataFileCnt();
+              reRowDeletedDataFileCnt += metrics.getReRowDeletedDataFileCnt();
               rewritePosDataFileCnt += metrics.getRewritePosDataFileCnt();
               rewriteDataSize += metrics.getRewriteDataSize();
               rewritePosDataSize += metrics.getRewritePosDataSize();
@@ -91,10 +90,11 @@ public class MetricsSummary {
               eqDeleteFileCnt += metrics.getEqDeleteFileCnt();
               equalityDeleteSize += metrics.getEqualityDeleteSize();
               rewriteDataRecordCnt += metrics.getRewriteDataRecordCnt();
-              reRowDeletedDataFileCnt += metrics.getReRowDeletedDataFileCnt();
               rewritePosDataRecordCnt += metrics.getRewritePosDataRecordCnt();
               eqDeleteRecordCnt += metrics.getEqDeleteRecordCnt();
               posDeleteRecordCnt += metrics.getPosDeleteRecordCnt();
+              newFileSize += metrics.getNewFileSize();
+              newFileCnt += metrics.getNewFileCnt();
             });
   }
 
