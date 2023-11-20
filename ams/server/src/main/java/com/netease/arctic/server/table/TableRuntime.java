@@ -125,7 +125,10 @@ public class TableRuntime extends StatedPersistentBase {
     this.optimizerGroup = tableRuntimeMeta.getOptimizerGroup();
     this.tableConfiguration = tableRuntimeMeta.getTableConfig();
     this.processId = tableRuntimeMeta.getOptimizingProcessId();
-    this.optimizingStatus = tableRuntimeMeta.getTableStatus();
+    this.optimizingStatus =
+        tableRuntimeMeta.getTableStatus() == OptimizingStatus.PLANNING
+            ? OptimizingStatus.PENDING
+            : tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
   }
 
