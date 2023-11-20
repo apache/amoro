@@ -67,7 +67,7 @@ import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.PropertyUtil;
@@ -636,7 +636,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     if (arcticTable.isKeyedTable()) {
       // todo temporarily responds to the problem of Mixed Format table.
       if (predicate.test(SnapshotRef.branchBuilder(-1).build())) {
-        return ImmutableList.of(TagOrBranchInfo.MAIN_BRANCH);
+        return Lists.newArrayList(TagOrBranchInfo.MAIN_BRANCH);
       } else {
         return Collections.emptyList();
       }
