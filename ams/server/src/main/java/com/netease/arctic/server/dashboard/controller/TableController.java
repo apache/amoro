@@ -243,6 +243,7 @@ public class TableController {
         AmsUtil.getNotDeprecatedAndNotInternalStaticFields(TableProperties.class);
     tableProperties.keySet().stream()
         .filter(key -> !key.endsWith("_DEFAULT"))
+        .filter(key -> tableProperties.containsKey(key + "_DEFAULT"))
         .forEach(
             key -> keyValues.put(tableProperties.get(key), tableProperties.get(key + "_DEFAULT")));
     ServerTableProperties.HIDDEN_EXPOSED.forEach(keyValues::remove);
