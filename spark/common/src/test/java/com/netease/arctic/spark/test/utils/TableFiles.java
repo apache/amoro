@@ -54,6 +54,10 @@ public class TableFiles {
     this.changeEqDeleteFiles = Collections.emptySet();
   }
 
+  public int totalFileCount() {
+    return baseDataFiles.size() + baseDeleteFiles.size() + changeInsertFiles.size() + changeEqDeleteFiles.size();
+  }
+
   public TableFiles filterByPartitions(StructLikeSet partitions) {
     return filter(f -> partitions.contains(f.partition()));
   }
