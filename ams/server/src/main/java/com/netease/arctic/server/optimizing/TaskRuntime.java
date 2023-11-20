@@ -88,8 +88,12 @@ public class TaskRuntime extends StatedPersistentBase {
     invokeConsisitency(
         () -> {
           statusMachine.accept(Status.SUCCESS);
-          summary.setNewFileCnt(OptimizingUtil.getFileCount(filesOutput));
-          summary.setNewFileSize(OptimizingUtil.getFileSize(filesOutput));
+          summary.setNewDataFileCnt(OptimizingUtil.getFileCount(filesOutput.getDataFiles()));
+          summary.setNewDataSize(OptimizingUtil.getFileSize(filesOutput.getDataFiles()));
+          summary.setNewDataRecordCnt(OptimizingUtil.getRecordCnt(filesOutput.getDataFiles()));
+          summary.setNewDeleteFileCnt(OptimizingUtil.getFileCount(filesOutput.getDeleteFiles()));
+          summary.setNewDeleteSize(OptimizingUtil.getFileSize(filesOutput.getDeleteFiles()));
+          summary.setNewDeleteRecordCnt(OptimizingUtil.getRecordCnt(filesOutput.getDeleteFiles()));
           endTime = System.currentTimeMillis();
           costTime += endTime - startTime;
           output = filesOutput;
