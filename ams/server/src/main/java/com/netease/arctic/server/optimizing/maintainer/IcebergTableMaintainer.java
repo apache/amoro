@@ -156,7 +156,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
         return;
       }
 
-      purgeTableFrom(
+      expireDataFrom(
           expirationConfig,
           Instant.now()
               .atZone(
@@ -173,9 +173,25 @@ public class IcebergTableMaintainer implements TableMaintainer {
         && validateExpirationField(expirationConfig.getExpirationField());
   }
 
+  /**
+   * Purge data older than the specified UTC timestamp
+   *
+   * @param expirationConfig expiration configs
+   * @param instant timestamp/timestampz/long field type uses UTC, others will use the local time
+   *     zone
+   */
   @VisibleForTesting
   public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
-    purgeTableFrom(expirationConfig, instant);
+    long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
+    LOG.info(
+        "Expiring data older than {} in table {} ",
+        Instant.ofEpochMilli(expireTimestamp)
+            .atZone(
+                getDefaultZoneId(table.schema().findField(expirationConfig.getExpirationField())))
+            .toLocalDateTime(),
+        table.name());
+
+    purgeTableData(expirationConfig, expireTimestamp);
   }
 
   public void expireSnapshots(long mustOlderThan) {
@@ -529,26 +545,6 @@ public class IcebergTableMaintainer implements TableMaintainer {
     return true;
   }
 
-  /**
-   * Purge data older than the specified UTC timestamp
-   *
-   * @param expirationConfig expiration configs
-   * @param instant timestamp/timestampz/long field type uses UTC, others will use the local time
-   *     zone
-   */
-  protected void purgeTableFrom(DataExpirationConfig expirationConfig, Instant instant) {
-    long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
-    LOG.info(
-        "Expiring data older than {} in table {} ",
-        Instant.ofEpochMilli(expireTimestamp)
-            .atZone(
-                getDefaultZoneId(table.schema().findField(expirationConfig.getExpirationField())))
-            .toLocalDateTime(),
-        table.name());
-
-    purgeTableData(expirationConfig, expireTimestamp);
-  }
-
   CloseableIterable<IcebergFileEntry> fileScan(Table table, Expression dataFilter) {
     TableScan tableScan = table.newScan().filter(dataFilter).includeColumnStats();
 
@@ -612,7 +608,6 @@ public class IcebergTableMaintainer implements TableMaintainer {
    *
    * @param expirationConfig expiration configuration
    * @param expireTimestamp expired timestamp
-   * @return filter expression
    */
   protected Expression getDataExpression(
       DataExpirationConfig expirationConfig, long expireTimestamp) {
