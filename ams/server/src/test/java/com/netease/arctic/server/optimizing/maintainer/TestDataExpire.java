@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.table.executor;
+package com.netease.arctic.server.optimizing.maintainer;
 
 import static com.netease.arctic.BasicTableTestHelper.PRIMARY_KEY_SPEC;
 import static com.netease.arctic.BasicTableTestHelper.SPEC;
@@ -32,13 +32,12 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.server.optimizing.OptimizingTestHelpers;
-import com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer;
-import com.netease.arctic.server.optimizing.maintainer.MixedTableMaintainer;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.TableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.UnkeyedTableFileScanHelper;
 import com.netease.arctic.server.table.DataExpirationConfig;
 import com.netease.arctic.server.table.KeyedTableSnapshot;
+import com.netease.arctic.server.table.executor.ExecutorTestBase;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
