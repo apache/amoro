@@ -67,7 +67,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
     LocalDateTime now = fromEpochMillis(snapshot.timestampMillis());
     new AutoCreateIcebergTagAction(table, now).execute();
     checkTagCount(table, 1);
-    checkTag(table, "tag-day-" + formatDate(now.minusDays(1)), snapshot);
+    checkTag(table, "tag-" + formatDate(now.minusDays(1)), snapshot);
 
     // should not recreate tag
     new AutoCreateIcebergTagAction(table, now).execute();
@@ -106,7 +106,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
         .commit();
     new AutoCreateIcebergTagAction(table, now).execute();
     checkTagCount(table, 1);
-    checkTag(table, "tag-day-" + formatDate(now.minusDays(1)), snapshot);
+    checkTag(table, "tag-" + formatDate(now.minusDays(1)), snapshot);
 
     // should not recreate tag
     new AutoCreateIcebergTagAction(table, now).execute();
@@ -136,7 +136,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
     // should create today tag
     new AutoCreateIcebergTagAction(table, now).execute();
     checkTagCount(table, 1);
-    checkTag(table, "tag-day-" + formatDate(now.minusDays(1)), snapshot);
+    checkTag(table, "tag-" + formatDate(now.minusDays(1)), snapshot);
   }
 
   @Test
@@ -149,7 +149,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
         .commit();
     table
         .updateProperties()
-        .set(TableProperties.AUTO_CREATE_TAG_FORMAT, "'custom-tag-'yyyyMMdd'-auto'")
+        .set(TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT, "'custom-tag-'yyyyMMdd'-auto'")
         .commit();
     table.newAppend().commit();
     checkSnapshots(table, 1);

@@ -199,8 +199,8 @@ public class AutoCreateIcebergTagAction {
       tagConfig.setTagFormat(
           CompatiblePropertyUtil.propertyAsString(
               tableProperties,
-              TableProperties.AUTO_CREATE_TAG_FORMAT,
-              TableProperties.AUTO_CREATE_TAG_FORMAT_DEFAULT));
+              TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT,
+              TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT_DEFAULT));
       tagConfig.setTriggerPeriod(
           TagTriggerPeriod.valueOf(
               CompatiblePropertyUtil.propertyAsString(
