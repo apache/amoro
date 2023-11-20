@@ -41,6 +41,7 @@ import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.FilesStatisticsBuilder;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.util.Pair;
@@ -457,7 +458,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable) {
-    return Lists.newArrayList(TagOrBranchInfo.MAIN_BRANCH);
+    return ImmutableList.of(TagOrBranchInfo.MAIN_BRANCH);
   }
 
   private AmoroSnapshotsOfTable manifestListInfo(
