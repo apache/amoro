@@ -11,6 +11,25 @@ import java.util.Collection;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MetricsSummary {
+  private long rewriteDataSize = 0;
+  private int rewriteDataFileCnt = 0;
+  private long rewriteDataRecordCnt = 0;
+  private long rewritePosDataSize = 0;
+  private int rewritePosDataFileCnt = 0;
+  /** @deprecated since 0.7.0, will be removed in 0.8.0 */
+  @Deprecated private int reRowDeletedDataFileCnt = 0;
+
+  private long rewritePosDataRecordCnt = 0;
+  private long equalityDeleteSize = 0;
+  private int eqDeleteFileCnt = 0;
+  private long eqDeleteRecordCnt = 0;
+  private long positionDeleteSize = 0;
+  /** @deprecated since 0.7.0, will be removed in 0.8.0 */
+  @Deprecated private long positionalDeleteSize = 0;
+
+  private int posDeleteFileCnt = 0;
+  private long posDeleteRecordCnt = 0;
+
   /** @deprecated since 0.7.0, will be removed in 0.8.0 */
   @Deprecated long newFileSize = 0;
 
@@ -23,24 +42,6 @@ public class MetricsSummary {
 
   private int newDeleteFileCnt = 0;
   private long newDeleteRecordCnt = 0;
-  private long rewriteDataSize = 0;
-  private long rewritePosDataSize = 0;
-  private long equalityDeleteSize = 0;
-  /** @deprecated since 0.7.0, will be removed in 0.8.0 */
-  @Deprecated private long positionalDeleteSize = 0;
-
-  private long positionDeleteSize = 0;
-  private int rewriteDataFileCnt = 0;
-  /** @deprecated since 0.7.0, will be removed in 0.8.0 */
-  @Deprecated private int reRowDeletedDataFileCnt = 0;
-
-  private int rewritePosDataFileCnt = 0;
-  private int eqDeleteFileCnt = 0;
-  private int posDeleteFileCnt = 0;
-  private int rewriteDataRecordCnt = 0;
-  private int rewritePosDataRecordCnt = 0;
-  private int eqDeleteRecordCnt = 0;
-  private int posDeleteRecordCnt = 0;
 
   public MetricsSummary() {}
 
@@ -194,25 +195,39 @@ public class MetricsSummary {
     return posDeleteFileCnt;
   }
 
-  public int getRewriteDataRecordCnt() {
+  public long getRewriteDataRecordCnt() {
     return rewriteDataRecordCnt;
   }
 
-  public int getRewritePosDataRecordCnt() {
+  public long getRewritePosDataRecordCnt() {
     return rewritePosDataRecordCnt;
   }
 
-  public int getEqDeleteRecordCnt() {
+  public long getEqDeleteRecordCnt() {
     return eqDeleteRecordCnt;
   }
 
-  public int getPosDeleteRecordCnt() {
+  public long getPosDeleteRecordCnt() {
     return posDeleteRecordCnt;
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
+        .add("rewriteDataSize", rewriteDataSize)
+        .add("rewriteDataFileCnt", rewriteDataFileCnt)
+        .add("rewriteDataRecordCnt", rewriteDataRecordCnt)
+        .add("rewritePosDataSize", rewritePosDataSize)
+        .add("rewritePosDataFileCnt", rewritePosDataFileCnt)
+        .add("reRowDeletedDataFileCnt", reRowDeletedDataFileCnt)
+        .add("rewritePosDataRecordCnt", rewritePosDataRecordCnt)
+        .add("equalityDeleteSize", equalityDeleteSize)
+        .add("eqDeleteFileCnt", eqDeleteFileCnt)
+        .add("eqDeleteRecordCnt", eqDeleteRecordCnt)
+        .add("positionDeleteSize", positionDeleteSize)
+        .add("positionalDeleteSize", positionalDeleteSize)
+        .add("posDeleteFileCnt", posDeleteFileCnt)
+        .add("posDeleteRecordCnt", posDeleteRecordCnt)
         .add("newFileSize", newFileSize)
         .add("newFileCnt", newFileCnt)
         .add("newDataSize", newDataSize)
@@ -221,20 +236,6 @@ public class MetricsSummary {
         .add("newDeleteSize", newDeleteSize)
         .add("newDeleteFileCnt", newDeleteFileCnt)
         .add("newDeleteRecordCnt", newDeleteRecordCnt)
-        .add("rewriteDataSize", rewriteDataSize)
-        .add("rewritePosDataSize", rewritePosDataSize)
-        .add("equalityDeleteSize", equalityDeleteSize)
-        .add("positionalDeleteSize", positionalDeleteSize)
-        .add("positionDeleteSize", positionDeleteSize)
-        .add("rewriteDataFileCnt", rewriteDataFileCnt)
-        .add("reRowDeletedDataFileCnt", reRowDeletedDataFileCnt)
-        .add("rewritePosDataFileCnt", rewritePosDataFileCnt)
-        .add("eqDeleteFileCnt", eqDeleteFileCnt)
-        .add("posDeleteFileCnt", posDeleteFileCnt)
-        .add("rewriteDataRecordCnt", rewriteDataRecordCnt)
-        .add("rewritePosDataRecordCnt", rewritePosDataRecordCnt)
-        .add("eqDeleteRecordCnt", eqDeleteRecordCnt)
-        .add("posDeleteRecordCnt", posDeleteRecordCnt)
         .toString();
   }
 }
