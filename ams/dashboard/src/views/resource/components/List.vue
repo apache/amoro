@@ -19,7 +19,7 @@
           <span>{{ record.optimizeStatus }}</span>
         </template>
         <template v-if="column.dataIndex === 'operation'">
-          <span class="primary-link" :class="{'disabled': record.containerType === 'external'}" @click="releaseModal(record)">
+          <span class="primary-link" :class="{'disabled': record.container === 'external'}" @click="releaseModal(record)">
             {{ t('release') }}
           </span>
         </template>
@@ -107,7 +107,7 @@ function refresh(resetPage?: boolean) {
 }
 
 function releaseModal (record: IOptimizeResourceTableItem) {
-  if (record.containerType === 'external') {
+  if (record.container === 'external') {
     return
   }
   Modal.confirm({

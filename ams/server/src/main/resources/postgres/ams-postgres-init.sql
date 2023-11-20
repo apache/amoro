@@ -107,6 +107,7 @@ COMMENT ON COLUMN table_identifier.table_id IS 'Auto-increment ID';
 COMMENT ON COLUMN table_identifier.catalog_name IS 'Catalog name';
 COMMENT ON COLUMN table_identifier.db_name IS 'Database name';
 COMMENT ON COLUMN table_identifier.table_name IS 'Table name';
+COMMENT ON COLUMN table_identifier.format IS 'Table format';
 
 CREATE TABLE table_metadata
 (
