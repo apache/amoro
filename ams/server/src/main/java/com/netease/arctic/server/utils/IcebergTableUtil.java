@@ -42,6 +42,7 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableMetadata;
@@ -64,6 +65,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class IcebergTableUtil {
 
@@ -117,6 +119,12 @@ public class IcebergTableUtil {
     }
 
     return validFilesPath;
+  }
+
+  public static Set<String> getAllStatisticsFilePath(Table table) {
+    return ReachableFileUtil.statisticsFilesLocations(table).stream()
+        .map(TableFileUtil::getUriPath)
+        .collect(Collectors.toSet());
   }
 
   public static Set<DeleteFile> getDanglingDeleteFiles(Table internalTable) {
