@@ -93,8 +93,8 @@ public class MetricsSummary {
               rewritePosDataRecordCnt += metrics.getRewritePosDataRecordCnt();
               eqDeleteRecordCnt += metrics.getEqDeleteRecordCnt();
               posDeleteRecordCnt += metrics.getPosDeleteRecordCnt();
-              newFileSize += metrics.getNewFileSize();
               newFileCnt += metrics.getNewFileCnt();
+              newFileSize += metrics.getNewFileSize();
             });
   }
 
