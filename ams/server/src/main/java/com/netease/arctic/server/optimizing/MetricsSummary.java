@@ -11,6 +11,10 @@ import java.util.Collection;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MetricsSummary {
+  /** @deprecated since 0.7.0, will be removed in 0.8.0 */
+  @Deprecated long newFileSize = 0;
+
+  @Deprecated int newFileCnt = 0;
   private long newDataSize = 0;
   private int newDataFileCnt = 0;
   private long newDataRecordCnt = 0;
@@ -22,8 +26,14 @@ public class MetricsSummary {
   private long rewriteDataSize = 0;
   private long rewritePosDataSize = 0;
   private long equalityDeleteSize = 0;
+  /** @deprecated since 0.7.0, will be removed in 0.8.0 */
+  @Deprecated private long positionalDeleteSize = 0;
+
   private long positionDeleteSize = 0;
   private int rewriteDataFileCnt = 0;
+  /** @deprecated since 0.7.0, will be removed in 0.8.0 */
+  @Deprecated private int reRowDeletedDataFileCnt = 0;
+
   private int rewritePosDataFileCnt = 0;
   private int eqDeleteFileCnt = 0;
   private int posDeleteFileCnt = 0;
@@ -63,6 +73,8 @@ public class MetricsSummary {
         .map(TaskRuntime::getMetricsSummary)
         .forEach(
             metrics -> {
+              newFileSize += metrics.getNewFileSize();
+              newFileCnt += metrics.getNewFileCnt();
               newDataFileCnt += metrics.getNewDataFileCnt();
               newDataSize += metrics.getNewDataSize();
               newDataRecordCnt += metrics.getNewDataRecordCnt();
@@ -74,14 +86,24 @@ public class MetricsSummary {
               rewriteDataSize += metrics.getRewriteDataSize();
               rewritePosDataSize += metrics.getRewritePosDataSize();
               posDeleteFileCnt += metrics.getPosDeleteFileCnt();
+              positionalDeleteSize += metrics.getPositionalDeleteSize();
               positionDeleteSize += metrics.getPositionDeleteSize();
               eqDeleteFileCnt += metrics.getEqDeleteFileCnt();
               equalityDeleteSize += metrics.getEqualityDeleteSize();
               rewriteDataRecordCnt += metrics.getRewriteDataRecordCnt();
+              reRowDeletedDataFileCnt += metrics.getReRowDeletedDataFileCnt();
               rewritePosDataRecordCnt += metrics.getRewritePosDataRecordCnt();
               eqDeleteRecordCnt += metrics.getEqDeleteRecordCnt();
               posDeleteRecordCnt += metrics.getPosDeleteRecordCnt();
             });
+  }
+
+  public long getNewFileSize() {
+    return newFileSize;
+  }
+
+  public int getNewFileCnt() {
+    return newFileCnt;
   }
 
   public long getNewDataSize() {
@@ -144,12 +166,20 @@ public class MetricsSummary {
     return equalityDeleteSize;
   }
 
+  public long getPositionalDeleteSize() {
+    return positionalDeleteSize;
+  }
+
   public long getPositionDeleteSize() {
     return positionDeleteSize;
   }
 
   public int getRewriteDataFileCnt() {
     return rewriteDataFileCnt;
+  }
+
+  public int getReRowDeletedDataFileCnt() {
+    return reRowDeletedDataFileCnt;
   }
 
   public int getRewritePosDataFileCnt() {
@@ -183,6 +213,8 @@ public class MetricsSummary {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
+        .add("newFileSize", newFileSize)
+        .add("newFileCnt", newFileCnt)
         .add("newDataSize", newDataSize)
         .add("newDataFileCnt", newDataFileCnt)
         .add("newDataRecordCnt", newDataRecordCnt)
@@ -192,8 +224,10 @@ public class MetricsSummary {
         .add("rewriteDataSize", rewriteDataSize)
         .add("rewritePosDataSize", rewritePosDataSize)
         .add("equalityDeleteSize", equalityDeleteSize)
+        .add("positionalDeleteSize", positionalDeleteSize)
         .add("positionDeleteSize", positionDeleteSize)
         .add("rewriteDataFileCnt", rewriteDataFileCnt)
+        .add("reRowDeletedDataFileCnt", reRowDeletedDataFileCnt)
         .add("rewritePosDataFileCnt", rewritePosDataFileCnt)
         .add("eqDeleteFileCnt", eqDeleteFileCnt)
         .add("posDeleteFileCnt", posDeleteFileCnt)

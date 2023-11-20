@@ -61,7 +61,9 @@ public class OptimizingUtil {
     }
     return FilesStatistics.builder()
         .addFiles(metricsSummary.getEqualityDeleteSize(), metricsSummary.getEqDeleteFileCnt())
-        .addFiles(metricsSummary.getPositionDeleteSize(), metricsSummary.getPosDeleteFileCnt())
+        .addFiles(
+            metricsSummary.getPositionalDeleteSize() + metricsSummary.getPositionDeleteSize(),
+            metricsSummary.getPosDeleteFileCnt())
         .addFiles(metricsSummary.getRewriteDataSize(), metricsSummary.getRewriteDataFileCnt())
         .build();
   }

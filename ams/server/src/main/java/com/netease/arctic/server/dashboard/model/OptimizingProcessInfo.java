@@ -214,9 +214,14 @@ public class OptimizingProcessInfo {
     MetricsSummary summary = meta.getSummary();
     if (summary != null) {
       inputBuilder.addFiles(summary.getEqualityDeleteSize(), summary.getEqDeleteFileCnt());
-      inputBuilder.addFiles(summary.getPositionDeleteSize(), summary.getPosDeleteFileCnt());
+      inputBuilder.addFiles(
+          summary.getPositionDeleteSize() + summary.getPositionalDeleteSize(),
+          summary.getPosDeleteFileCnt());
       inputBuilder.addFiles(summary.getRewriteDataSize(), summary.getRewriteDataFileCnt());
-      inputBuilder.addFiles(summary.getRewritePosDataSize(), summary.getRewritePosDataFileCnt());
+      inputBuilder.addFiles(
+          summary.getRewritePosDataSize(),
+          summary.getReRowDeletedDataFileCnt() + summary.getRewritePosDataFileCnt());
+      outputBuilder.addFiles(summary.getNewFileSize(), summary.getNewFileCnt());
       outputBuilder.addFiles(summary.getNewDataSize(), summary.getNewDataFileCnt());
       outputBuilder.addFiles(summary.getNewDeleteSize(), summary.getNewDeleteFileCnt());
     }
