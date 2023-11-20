@@ -78,10 +78,10 @@ public class ArcticSparkTable
         return new ArcticIcebergSparkTable(table.asUnkeyedTable(), false, sparkCatalogName);
       }
     }
-    return new ArcticSparkTable(table, sparkCatalogName, catalog);
+    return new ArcticSparkTable(table, catalog, sparkCatalogName);
   }
 
-  public ArcticSparkTable(ArcticTable arcticTable, String sparkCatalogName, ArcticCatalog catalog) {
+  public ArcticSparkTable(ArcticTable arcticTable, ArcticCatalog catalog, String sparkCatalogName) {
     this.arcticTable = arcticTable;
     this.sparkCatalogName = sparkCatalogName;
     this.catalog = catalog;
