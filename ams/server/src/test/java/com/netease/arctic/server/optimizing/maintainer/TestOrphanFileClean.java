@@ -334,21 +334,27 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     } else {
       unkeyedTable = getArcticTable().asUnkeyedTable();
     }
-    unkeyedTable.newAppend().commit();
-    Snapshot snapshot = unkeyedTable.currentSnapshot();
-    StatisticsFile file = writeStatisticsFile(unkeyedTable, snapshot);
-    unkeyedTable.updateStatistics().setStatistics(snapshot.snapshotId(), file).commit();
+    StatisticsFile file1 =
+        commitStatisticsFile(unkeyedTable, unkeyedTable.location() + "/metadata/test1.puffin");
+    StatisticsFile file2 =
+        commitStatisticsFile(unkeyedTable, unkeyedTable.location() + "/data/test2.puffin");
+    StatisticsFile file3 =
+        commitStatisticsFile(unkeyedTable, unkeyedTable.location() + "/data/puffin/test3.puffin");
 
-    Assert.assertTrue(unkeyedTable.io().exists(file.path()));
+    Assert.assertTrue(unkeyedTable.io().exists(file1.path()));
+    Assert.assertTrue(unkeyedTable.io().exists(file2.path()));
+    Assert.assertTrue(unkeyedTable.io().exists(file3.path()));
+    new MixedTableMaintainer(getArcticTable()).cleanContentFiles(System.currentTimeMillis() + 1);
     new MixedTableMaintainer(getArcticTable()).cleanMetadata(System.currentTimeMillis() + 1);
-    Assert.assertTrue(unkeyedTable.io().exists(file.path()));
+    Assert.assertTrue(unkeyedTable.io().exists(file1.path()));
+    Assert.assertTrue(unkeyedTable.io().exists(file2.path()));
+    Assert.assertTrue(unkeyedTable.io().exists(file3.path()));
   }
 
-  private StatisticsFile writeStatisticsFile(UnkeyedTable table, Snapshot snapshot) {
-    OutputFile outputFile =
-        table
-            .io()
-            .newOutputFile(table.location() + "/metadata/" + snapshot.snapshotId() + ".puffin");
+  private StatisticsFile commitStatisticsFile(UnkeyedTable table, String fileLocation) {
+    table.newAppend().commit();
+    Snapshot snapshot = table.currentSnapshot();
+    OutputFile outputFile = table.io().newOutputFile(fileLocation);
     List<BlobMetadata> blobMetadata;
     long fileSize;
     long footerSize;
@@ -362,7 +368,11 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     }
     List<org.apache.iceberg.BlobMetadata> collect =
         blobMetadata.stream().map(GenericBlobMetadata::from).collect(Collectors.toList());
-    return new GenericStatisticsFile(
-        snapshot.snapshotId(), outputFile.location(), fileSize, footerSize, collect);
+    GenericStatisticsFile statisticsFile =
+        new GenericStatisticsFile(
+            snapshot.snapshotId(), outputFile.location(), fileSize, footerSize, collect);
+    table.updateStatistics().setStatistics(snapshot.snapshotId(), statisticsFile).commit();
+
+    return statisticsFile;
   }
 }
