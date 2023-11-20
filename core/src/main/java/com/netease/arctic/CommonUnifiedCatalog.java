@@ -20,6 +20,7 @@ package com.netease.arctic;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
@@ -31,6 +32,7 @@ import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,6 +42,8 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   private CatalogMeta meta;
   private Map<TableFormat, FormatCatalog> formatCatalogs = Maps.newHashMap();
   private final Map<String, String> properties = Maps.newHashMap();
+  private Pattern databaseFilterPattern;
+  private Pattern tableFilterPattern;
 
   public CommonUnifiedCatalog(
       Supplier<CatalogMeta> catalogMetaSupplier, Map<String, String> properties) {
@@ -53,7 +57,12 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
 
   @Override
   public List<String> listDatabases() {
-    return findFirstFormatCatalog(TableFormat.values()).listDatabases();
+    return findFirstFormatCatalog(TableFormat.values()).listDatabases().stream()
+        .filter(
+            database ->
+                (databaseFilterPattern == null)
+                    || databaseFilterPattern.matcher(database).matches())
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -143,6 +152,12 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
               return TableIDWithFormat.of(
                   TableIdentifier.of(this.meta.getCatalogName(), database, tableName), format);
             })
+        .filter(
+            table ->
+                (tableFilterPattern == null
+                    || tableFilterPattern
+                        .matcher((database + "." + table.getIdentifier().getTableName()))
+                        .matches()))
         .collect(Collectors.toList());
   }
 
@@ -180,6 +195,21 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
       }
     }
     this.formatCatalogs = formatCatalogs;
+    if (meta.getCatalogProperties()
+        .containsKey(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION)) {
+      String databaseFilter =
+          meta.getCatalogProperties()
+              .get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
+      databaseFilterPattern = Pattern.compile(databaseFilter);
+    } else {
+      databaseFilterPattern = null;
+    }
+    if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_TABLE_FILTER)) {
+      String tableFilter = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
+      tableFilterPattern = Pattern.compile(tableFilter);
+    } else {
+      tableFilterPattern = null;
+    }
   }
 
   /** get format catalogs as given format order */
