@@ -61,6 +61,7 @@ import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.io.SupportsPrefixOperations;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
@@ -281,7 +282,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   protected Set<String> orphanFileCleanNeedToExcludeFiles() {
-    return IcebergTableUtil.getAllContentFilePath(table);
+    return Sets.union(
+        IcebergTableUtil.getAllContentFilePath(table),
+        IcebergTableUtil.getAllStatisticsFilePath(table));
   }
 
   protected ArcticFileIO arcticFileIO() {
