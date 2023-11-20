@@ -18,16 +18,21 @@
 
 package com.netease.arctic.server.catalog;
 
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.formats.AmoroCatalogTestHelper;
 import com.netease.arctic.formats.IcebergHadoopCatalogTestHelper;
+import com.netease.arctic.formats.MixedIcebergHadoopCatalogTestHelper;
 import com.netease.arctic.formats.PaimonHadoopCatalogTestHelper;
 import com.netease.arctic.hive.formats.IcebergHiveCatalogTestHelper;
+import com.netease.arctic.hive.formats.MixedIcebergHiveCatalogTestHelper;
 import com.netease.arctic.hive.formats.PaimonHiveCatalogTestHelper;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.util.HashMap;
 
 @RunWith(Parameterized.class)
 public class TestServerCatalog extends TableCatalogTestBase {
@@ -36,6 +41,8 @@ public class TestServerCatalog extends TableCatalogTestBase {
 
   private final String testTableName = "test_table";
 
+  private final String testTableNameFilter = "test_table_filter";
+
   public TestServerCatalog(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
     super(amoroCatalogTestHelper);
   }
@@ -43,10 +50,48 @@ public class TestServerCatalog extends TableCatalogTestBase {
   @Parameterized.Parameters(name = "{0}")
   public static Object[] parameters() {
     return new Object[] {
-      PaimonHadoopCatalogTestHelper.defaultHelper(),
-      PaimonHiveCatalogTestHelper.defaultHelper(),
-      IcebergHadoopCatalogTestHelper.defaultHelper(),
-      IcebergHiveCatalogTestHelper.defaultHelper()
+      new PaimonHadoopCatalogTestHelper(
+          "test_paimon_catalog",
+          new HashMap<String, String>() {
+            {
+              put(CatalogMetaProperties.KEY_TABLE_FILTER, "test_database.test_table");
+            }
+          }),
+      new PaimonHiveCatalogTestHelper(
+          "test_paimon_catalog",
+          new HashMap<String, String>() {
+            {
+              put(CatalogMetaProperties.KEY_TABLE_FILTER, "test_database.test_table");
+            }
+          }),
+      new IcebergHadoopCatalogTestHelper(
+          "test_iceberg_catalog",
+          new HashMap<String, String>() {
+            {
+              put(CatalogMetaProperties.KEY_TABLE_FILTER, "test_database.test_table");
+            }
+          }),
+      new IcebergHiveCatalogTestHelper(
+          "test_iceberg_catalog",
+          new HashMap<String, String>() {
+            {
+              put(CatalogMetaProperties.KEY_TABLE_FILTER, "test_database.test_table");
+            }
+          }),
+      new MixedIcebergHadoopCatalogTestHelper(
+          "test_mixed_catalog",
+          new HashMap<String, String>() {
+            {
+              put(CatalogMetaProperties.KEY_TABLE_FILTER, "test_database.test_table");
+            }
+          }),
+      new MixedIcebergHiveCatalogTestHelper(
+          "test_mixed_catalog",
+          new HashMap<String, String>() {
+            {
+              put(CatalogMetaProperties.KEY_TABLE_FILTER, "test_database.test_table");
+            }
+          })
     };
   }
 
@@ -54,37 +99,43 @@ public class TestServerCatalog extends TableCatalogTestBase {
   public void setUp() throws Exception {
     getAmoroCatalog().createDatabase(testDatabaseName);
     getAmoroCatalogTestHelper().createTable(testDatabaseName, testTableName);
+    getAmoroCatalogTestHelper().createTable(testDatabaseName, testTableNameFilter);
   }
 
   @Test
   public void listDatabases() {
-    Assert.assertTrue(getExternalCatalog().listDatabases().contains(testDatabaseName));
+    Assert.assertTrue(getServerCatalog().listDatabases().contains(testDatabaseName));
   }
 
   @Test
   public void dataBaseExists() {
-    Assert.assertTrue(getExternalCatalog().exist(testDatabaseName));
+    Assert.assertTrue(getServerCatalog().exist(testDatabaseName));
   }
 
   @Test
   public void tableExists() {
-    Assert.assertTrue(getExternalCatalog().exist(testDatabaseName, testTableName));
+    Assert.assertTrue(getServerCatalog().exist(testDatabaseName, testTableName));
   }
 
   @Test
   public void listTables() {
-    Assert.assertEquals(1, getExternalCatalog().listTables(testDatabaseName).size());
-    Assert.assertEquals(
-        testTableName,
-        getExternalCatalog().listTables(testDatabaseName).get(0).getIdentifier().getTableName());
+    ServerCatalog serverCatalog = getServerCatalog();
+    if (serverCatalog instanceof ExternalCatalog) {
+      Assert.assertEquals(1, serverCatalog.listTables(testDatabaseName).size());
+      Assert.assertEquals(
+          testTableName,
+          serverCatalog.listTables(testDatabaseName).get(0).getIdentifier().getTableName());
+    } else {
+      Assert.assertEquals(2, serverCatalog.listTables(testDatabaseName).size());
+    }
   }
 
   @Test
   public void loadTable() {
-    Assert.assertNotNull(getExternalCatalog().loadTable(testDatabaseName, testTableName));
+    Assert.assertNotNull(getServerCatalog().loadTable(testDatabaseName, testTableName));
   }
 
-  private ServerCatalog getExternalCatalog() {
+  private ServerCatalog getServerCatalog() {
     return tableService().getServerCatalog(getAmoroCatalogTestHelper().catalogName());
   }
 }
