@@ -232,13 +232,13 @@ public class ArcticManagementConf {
           .withDescription("The password for connecting to the database.");
 
   public static final ConfigOption<Integer> DB_CONNECT_MAX_TOTAL =
-      ConfigOptions.key("database.connect-max-total")
+      ConfigOptions.key("database.connection-pool-max-total")
           .intType()
           .defaultValue(20)
           .withDescription("Max connect count of database.");
 
   public static final ConfigOption<Integer> DB_CONNECT_MAX_IDLE =
-      ConfigOptions.key("database.connect-max-idle")
+      ConfigOptions.key("database.connection-pool-max-idle")
           .intType()
           .defaultValue(16)
           .withDescription("Max idle connect count of database.");

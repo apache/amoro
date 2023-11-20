@@ -59,8 +59,8 @@ ams:
     type: derby
     jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
     url: jdbc:derby:/tmp/amoro/derby;create=true
-    connect-max-total: 20
-    connect-max-idle: 16
+    connection-pool-max-total: 20
+    connection-pool-max-idle: 16
     connect-max-wait-millis: 1000
 
 #    MySQL database configuration.
@@ -70,6 +70,9 @@ ams:
 #      url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
 #      username: root
 #      password: root
+#      connection-pool-max-total: 20
+#      connection-pool-max-idle: 16
+#      connect-max-wait-millis: 1000
 
   #  Postgres database configuration.
   #  database:
@@ -78,6 +81,9 @@ ams:
   #    url: jdbc:postgresql://127.0.0.1:5432/db
   #    username: user
   #    password: passwd
+  #      connection-pool-max-total: 20
+  #      connection-pool-max-idle: 16
+  #      connect-max-wait-millis: 1000
 
   terminal:
     backend: local
