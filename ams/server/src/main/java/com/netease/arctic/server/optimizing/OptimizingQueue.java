@@ -357,7 +357,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     List<TableIdentifier> plannedTables = Lists.newArrayList();
     for (TableRuntime tableRuntime : scheduledTables) {
       LOG.debug("Planning table {}", tableRuntime.getTableIdentifier());
-      try {
         AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
         OptimizingPlanner planner =
             new OptimizingPlanner(
@@ -368,8 +367,9 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           LOG.info("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
           continue;
         }
+      tableRuntime.beginPlanning();
+      try {
         plannedTables.add(table.id());
-        tableRuntime.beginPlanning();
         if (planner.isNecessary()) {
           TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
           LOG.info(
