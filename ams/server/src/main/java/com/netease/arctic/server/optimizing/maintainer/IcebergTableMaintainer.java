@@ -41,6 +41,7 @@ import com.netease.arctic.utils.TableFileUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.ContentScanTask;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
@@ -81,7 +82,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.LinkedTransferQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -549,24 +549,22 @@ public class IcebergTableMaintainer implements TableMaintainer {
     TableScan tableScan = table.newScan().filter(dataFilter).includeColumnStats();
 
     CloseableIterable<FileScanTask> tasks;
-    long snapshotId = IcebergTableUtil.getSnapshotId(table, false);
+    Snapshot snapshot = IcebergTableUtil.getSnapshot(table, false);
+    long snapshotId = snapshot.snapshotId();
     if (snapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
       tasks = tableScan.planFiles();
     } else {
       tasks = tableScan.useSnapshot(snapshotId).planFiles();
     }
-    AtomicBoolean hasDelete = new AtomicBoolean(false);
+    long deleteFileCnt =
+        Long.parseLong(
+            snapshot
+                .summary()
+                .getOrDefault(org.apache.iceberg.SnapshotSummary.TOTAL_DELETE_FILES_PROP, "0"));
     CloseableIterable<DataFile> dataFiles =
-        CloseableIterable.transform(
-            tasks,
-            t -> {
-              if (!hasDelete.get() && !t.deletes().isEmpty()) {
-                hasDelete.set(true);
-              }
-              return t.file();
-            });
+        CloseableIterable.transform(tasks, ContentScanTask::file);
     CloseableIterable<FileScanTask> hasDeleteTask =
-        hasDelete.get()
+        deleteFileCnt > 0
             ? CloseableIterable.filter(tasks, t -> !t.deletes().isEmpty())
             : CloseableIterable.empty();
 
