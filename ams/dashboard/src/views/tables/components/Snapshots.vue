@@ -9,6 +9,7 @@
           <Chart :loading="loading" :options="fileChartOption" />
         </a-col>
       </a-row>
+      <selector :db="sourceData.db" :table="sourceData.table" :disabled="loading" @ref-change="onRefChange" />
       <a-table
         rowKey="snapshotId"
         :columns="columns"
@@ -77,6 +78,7 @@ import { dateFormat } from '@/utils'
 import Chart from '@/components/echarts/Chart.vue'
 import { ECOption } from '@/components/echarts'
 import { generateLineChartOption } from '@/utils/chart'
+import Selector from './Selector.vue'
 
 const hasBreadcrumb = ref<boolean>(false)
 const { t } = useI18n()
@@ -113,6 +115,14 @@ const sourceData = reactive({
 })
 const recordChartOption = ref<ECOption>({})
 const fileChartOption = ref<ECOption>({})
+const tblRef = ref<string>('')
+const operation = ref<string>('')
+
+const onRefChange = (params: { ref: string, operation: string }) => {
+  tblRef.value = params.ref
+  operation.value = params.operation
+  getTableInfo()
+}
 
 async function getTableInfo() {
   try {
@@ -120,6 +130,8 @@ async function getTableInfo() {
     dataSource.length = 0
     const result = await getSnapshots({
       ...sourceData,
+      ref: tblRef.value,
+      operation: operation.value,
       page: pagination.current,
       pageSize: pagination.pageSize
     })
@@ -132,7 +144,7 @@ async function getTableInfo() {
       rcData[commitTime] = recordsSummaryForChart || {}
       fcData[commitTime] = filesSummaryForChart || {}
       if (p.producer === 'OPTIMIZE') {
-        p.operation = p.operation + '(optimize)'
+        p.operation = p.operation + '(optimizing)'
       }
       p.commitTime = p.commitTime ? dateFormat(p.commitTime) : '-'
       dataSource.push(p)
@@ -205,7 +217,7 @@ function toggleBreadcrumb(record: SnapshotItem) {
 
 onMounted(() => {
   hasBreadcrumb.value = false
-  getTableInfo()
+  // getTableInfo()
 })
 
 </script>
