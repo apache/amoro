@@ -28,6 +28,7 @@ ams:
     
   self-optimizing:
     commit-thread-count: 10
+    runtime-data-keep-time: 2592000000 # 30d
 
   optimizer:
     heart-beat-timeout: 60000 # 1min

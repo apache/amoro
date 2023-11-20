@@ -194,6 +194,12 @@ public class ArcticManagementConf {
           .defaultValue(10)
           .withDescription("The number of threads that self-optimizing uses to submit results.");
 
+  public static final ConfigOption<Long> OPTIMIZING_RUNTIME_DATA_KEEP_TIME =
+      ConfigOptions.key("self-optimizing.runtime-data-keep-time")
+          .longType()
+          .defaultValue(30 * 24 * 60 * 60 * 1000L)
+          .withDescription("The number of milliseconds that self-optimizing runtime data keeps the runtime.");
+
   public static final ConfigOption<String> DB_TYPE =
       ConfigOptions.key("database.type")
           .stringType()

@@ -30,13 +30,13 @@ public class OptimizingExpiringExecutor extends BaseTableExecutor {
 
   // 1 days
   private static final long INTERVAL = 24 * 60 * 60 * 1000L;
-  // 30 days
-  private static final long KEEP_TIME = 30 * 24 * 60 * 60 * 1000L;
 
   private final Persistency persistency = new Persistency();
+  private final long keepTime;
 
-  public OptimizingExpiringExecutor(TableManager tableRuntimes) {
+  public OptimizingExpiringExecutor(TableManager tableRuntimes, long keepTime) {
     super(tableRuntimes, 1);
+    this.keepTime = keepTime;
   }
 
   @Override
@@ -61,7 +61,7 @@ public class OptimizingExpiringExecutor extends BaseTableExecutor {
 
   private class Persistency extends PersistentBase {
     public void doExpiring(TableRuntime tableRuntime) {
-      long expireTime = System.currentTimeMillis() - KEEP_TIME;
+      long expireTime = System.currentTimeMillis() - keepTime;
       doAsTransaction(
           () ->
               doAs(

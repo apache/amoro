@@ -78,10 +78,10 @@ public class SqlSessionFactoryProvider {
       dataSource.setPassword(config.getString(ArcticManagementConf.DB_PASSWORD));
     }
     dataSource.setDefaultAutoCommit(false);
-    dataSource.setMaxTotal(20);
-    dataSource.setMaxIdle(16);
+    dataSource.setMaxTotal(config.getInteger(ArcticManagementConf.DB_CONNECT_MAX_TOTAL));
+    dataSource.setMaxIdle(config.getInteger(ArcticManagementConf.DB_CONNECT_MAX_IDLE));
     dataSource.setMinIdle(0);
-    dataSource.setMaxWaitMillis(1000L);
+    dataSource.setMaxWaitMillis(config.getLong(ArcticManagementConf.DB_CONNECT_MAX_WAIT_MILLIS));
     dataSource.setLogAbandoned(true);
     dataSource.setRemoveAbandonedOnBorrow(true);
     dataSource.setRemoveAbandonedTimeout(60);
