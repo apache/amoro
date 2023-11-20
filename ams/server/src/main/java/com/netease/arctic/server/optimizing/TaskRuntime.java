@@ -94,6 +94,8 @@ public class TaskRuntime extends StatedPersistentBase {
           summary.setNewDeleteFileCnt(OptimizingUtil.getFileCount(filesOutput.getDeleteFiles()));
           summary.setNewDeleteSize(OptimizingUtil.getFileSize(filesOutput.getDeleteFiles()));
           summary.setNewDeleteRecordCnt(OptimizingUtil.getRecordCnt(filesOutput.getDeleteFiles()));
+          summary.setNewFileSize(summary.getNewDataSize() + summary.getNewDeleteSize());
+          summary.setNewFileCnt(summary.getNewFileCnt() + summary.getNewFileCnt());
           endTime = System.currentTimeMillis();
           costTime += endTime - startTime;
           output = filesOutput;
