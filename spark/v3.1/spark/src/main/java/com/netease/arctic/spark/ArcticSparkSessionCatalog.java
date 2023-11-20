@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark;
 
-import com.netease.arctic.spark.utils.MixedFormatSparkUtil;
+import com.netease.arctic.spark.mixed.MixedFormatSparkUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;

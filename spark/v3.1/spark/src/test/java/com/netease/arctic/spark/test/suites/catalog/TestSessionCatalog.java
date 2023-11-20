@@ -34,8 +34,8 @@ public class TestSessionCatalog extends MixedTableTestBase {
     return ImmutableMap.of(
         "spark.sql.catalog.spark_catalog",
         SparkTestContext.SESSION_CATALOG_IMPL,
-        "spark.sql.catalog.spark_catalog.url",
-        context.catalogUrl(TableFormat.MIXED_ICEBERG.name()));
+        "spark.sql.catalog.spark_catalog.uri",
+        context.amsCatalogUrl(TableFormat.MIXED_ICEBERG));
   }
 
   @Test

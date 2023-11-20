@@ -25,10 +25,4 @@ public class SparkCatalogProperties {
    */
   public static final String URI = "uri";
 
-  /**
-   * AMS CATALOG name.
-   */
-  public static final String CATALOG = "catalog";
-
-
 }

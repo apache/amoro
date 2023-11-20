@@ -16,14 +16,14 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark;
+package com.netease.arctic.spark.mixed;
 
 import java.util.Locale;
 
-public enum ArcticTableStoreType {
+public enum MixedTableStoreType {
   CHANGE;
 
-  public static ArcticTableStoreType from(String name) {
-    return ArcticTableStoreType.valueOf(name.toUpperCase(Locale.ROOT));
+  public static MixedTableStoreType from(String name) {
+    return MixedTableStoreType.valueOf(name.toUpperCase(Locale.ROOT));
   }
 }

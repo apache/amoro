@@ -21,7 +21,9 @@ package com.netease.arctic.spark.test;
 import com.netease.arctic.SingletonResourceUtil;
 import com.netease.arctic.TestAms;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import org.apache.commons.lang.StringUtils;
@@ -37,6 +39,7 @@ import org.apache.thrift.TException;
 import org.junit.rules.TemporaryFolder;
 
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 public class SparkTestContext {
 
@@ -126,9 +129,10 @@ public class SparkTestContext {
     catalogSet = true;
   }
 
-  public String catalogUrl(String arcticCatalogName) {
-    return this.ams.getServerUrl() + "/" + arcticCatalogName;
+  public String amsCatalogUrl(TableFormat format) {
+    return this.ams.getServerUrl() + "/" + format.name().toLowerCase();
   }
+
 
   private String hiveVersion() {
     try {
@@ -187,15 +191,13 @@ public class SparkTestContext {
   private void addMixedSparkCatalog(Map<String, String> configs, String catalogName, TableFormat format) {
     configs.put("spark.sql.catalog." + catalogName, MIXED_CATALOG_IMPL);
     configs.put(
-        "spark.sql.catalog." + catalogName + ".url",
-        this.ams.getServerUrl() + "/" + format.name());
+        "spark.sql.catalog." + catalogName + ".uri", amsCatalogUrl(format));
   }
 
   private void addUnifiedSparkCatalog(Map<String, String> configs, String catalogName, TableFormat format) {
     configs.put("spark.sql.catalog." + catalogName, UNIFIED_CATALOG_IMP);
     configs.put(
-        "spark.sql.catalog." + catalogName + ".uri",
-        this.ams.getServerUrl() + "/" + format.name());
+        "spark.sql.catalog." + catalogName + ".uri", amsCatalogUrl(format));
   }
 
   private boolean isSameSparkConf(Map<String, String> sparkConf) {

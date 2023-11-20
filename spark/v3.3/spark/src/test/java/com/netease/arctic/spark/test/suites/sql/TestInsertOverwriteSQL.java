@@ -21,7 +21,7 @@ package com.netease.arctic.spark.test.suites.sql;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.spark.SparkSQLProperties;
+import com.netease.arctic.spark.mixed.SparkSQLProperties;
 import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import com.netease.arctic.spark.test.utils.Asserts;

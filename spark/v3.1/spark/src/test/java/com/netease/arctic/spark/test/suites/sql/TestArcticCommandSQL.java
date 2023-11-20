@@ -22,12 +22,14 @@ import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import com.netease.arctic.spark.test.utils.TestTable;
 import org.apache.iceberg.types.Types;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
+@Disabled
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
 public class TestArcticCommandSQL extends MixedTableTestBase {

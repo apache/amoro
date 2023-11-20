@@ -22,11 +22,14 @@ import com.netease.arctic.AmoroTable;
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.UnifiedCatalogLoader;
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException;
@@ -71,17 +74,20 @@ public class SparkCatalog implements TableCatalog, SupportsNamespaces, Procedure
     String uri = options.get(SparkCatalogProperties.URI);
     properties.remove(SparkCatalogProperties.URI);
     Preconditions.checkNotNull(uri, "lack required option: %s", SparkCatalogProperties.URI);
-    String registerCatalogName = options.get(SparkCatalogProperties.CATALOG);
-    properties.remove(SparkCatalogProperties.CATALOG);
+
+    ArcticThriftUrl catalogUri = ArcticThriftUrl.parse(uri, Constants.THRIFT_TABLE_SERVICE_NAME);
+    String registerCatalogName = catalogUri.catalogName();
+
     if (StringUtils.isBlank(registerCatalogName)) {
       registerCatalogName = name;
       if (CatalogManager.SESSION_CATALOG_NAME().equalsIgnoreCase(registerCatalogName)) {
-        LOG.warn("option: {} is not set, using spark catalog name: {}, which is same as spark session catalog name",
-            SparkCatalogProperties.CATALOG, name);
+        LOG.warn("catalog name is not exists in catalog uri, using spark catalog as register catalog name, but " +
+            "current name is spark session catalog name.");
       }
     }
     this.name = name;
-    this.unifiedCatalog = UnifiedCatalogLoader.loadUnifiedCatalog(uri, registerCatalogName, properties);
+    this.unifiedCatalog = UnifiedCatalogLoader.loadUnifiedCatalog(
+        catalogUri.serverUrl(), registerCatalogName, properties);
   }
 
   @Override
@@ -181,7 +187,13 @@ public class SparkCatalog implements TableCatalog, SupportsNamespaces, Procedure
   @Override
   public Table createTable(Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
       throws TableAlreadyExistsException, NoSuchNamespaceException {
-    return null;
+    String provider = properties.get(PROP_PROVIDER);
+    if (StringUtils.isBlank(provider)) {
+      throw new IllegalArgumentException("table provider is required.");
+    }
+    TableFormat format = TableFormat.valueOf(provider.toUpperCase());
+    TableCatalog catalog = tableCatalog(format);
+    return catalog.createTable(ident, schema, partitions, properties);
   }
 
   @Override
@@ -209,7 +221,12 @@ public class SparkCatalog implements TableCatalog, SupportsNamespaces, Procedure
   @Override
   public void renameTable(Identifier oldIdent, Identifier newIdent)
       throws NoSuchTableException, TableAlreadyExistsException {
-    throw new UnsupportedOperationException("rename table is not supported");
+    String database = namespaceToDatabase(oldIdent.namespace());
+    String tableName = oldIdent.name();
+    AmoroTable<?> table = unifiedCatalog.loadTable(database, tableName);
+    TableFormat format = table.format();
+    TableCatalog catalog = tableCatalog(format);
+    catalog.renameTable(oldIdent, newIdent);
   }
 
   @Override
@@ -251,6 +268,4 @@ public class SparkCatalog implements TableCatalog, SupportsNamespaces, Procedure
           "Failed to find public no-arg constructor for format: " + format.name() + " : " + impl, e);
     }
   }
-
-
 }

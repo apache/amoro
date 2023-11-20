@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark;
+package com.netease.arctic.spark.mixed;
 
 public class SparkSQLProperties {
 

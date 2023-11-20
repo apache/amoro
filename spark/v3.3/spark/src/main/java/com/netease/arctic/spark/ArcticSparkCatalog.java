@@ -18,15 +18,16 @@
 
 package com.netease.arctic.spark;
 
-import static com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE;
-import static com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE_DEFAULT;
-import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES;
-import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT;
+import static com.netease.arctic.spark.mixed.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE;
+import static com.netease.arctic.spark.mixed.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE_DEFAULT;
+import static com.netease.arctic.spark.mixed.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES;
+import static com.netease.arctic.spark.mixed.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT;
 import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
 
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.utils.CatalogUtil;
+import com.netease.arctic.spark.mixed.MixedTableStoreType;
 import com.netease.arctic.spark.table.ArcticSparkChangeTable;
 import com.netease.arctic.spark.table.ArcticSparkTable;
 import com.netease.arctic.table.ArcticTable;
@@ -128,7 +129,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     ArcticTable table;
     try {
       if (isInnerTableIdentifier(ident)) {
-        ArcticTableStoreType type = ArcticTableStoreType.from(ident.name());
+        MixedTableStoreType type = MixedTableStoreType.from(ident.name());
         identifier = buildInnerTableIdentifier(ident);
         table = catalog.loadTable(identifier);
         return loadInnerTable(table, type);
@@ -142,7 +143,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     return ArcticSparkTable.ofArcticTable(table, catalog);
   }
 
-  private Table loadInnerTable(ArcticTable table, ArcticTableStoreType type) {
+  private Table loadInnerTable(ArcticTable table, MixedTableStoreType type) {
     if (type != null) {
       switch (type) {
         case CHANGE:
@@ -160,7 +161,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     if (identifier.namespace().length != 2) {
       return false;
     }
-    return ArcticTableStoreType.from(identifier.name()) != null;
+    return MixedTableStoreType.from(identifier.name()) != null;
   }
 
   @Override
@@ -422,6 +423,9 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   public final void initialize(String name, CaseInsensitiveStringMap options) {
     this.catalogName = name;
     String catalogUrl = options.get("url");
+    if (StringUtils.isBlank(catalogUrl)) {
+      catalogUrl = options.get("uri");
+    }
     if (StringUtils.isBlank(catalogUrl)) {
       throw new IllegalArgumentException("lack required properties: url");
     }

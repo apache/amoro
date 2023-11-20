@@ -35,7 +35,7 @@ public class TestSessionCatalog extends MixedTableTestBase {
         "spark.sql.catalog.spark_catalog",
         SparkTestContext.SESSION_CATALOG_IMPL,
         "spark.sql.catalog.spark_catalog.url",
-        context.catalogUrl(TableFormat.MIXED_ICEBERG.name()));
+        context.amsCatalogUrl(TableFormat.MIXED_ICEBERG));
   }
 
   @Test

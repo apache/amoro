@@ -19,8 +19,9 @@
 package com.netease.arctic.spark.test.suites.sql;
 
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.spark.SparkSQLProperties;
+import com.netease.arctic.spark.mixed.SparkSQLProperties;
 import com.netease.arctic.spark.test.MixedTableTestBase;
+import com.netease.arctic.spark.test.TestIdentifier;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import com.netease.arctic.spark.test.utils.Asserts;
 import com.netease.arctic.spark.test.utils.TestTable;
@@ -157,7 +158,7 @@ public class TestCreateTableLikeSQL extends MixedTableTestBase {
     Assertions.assertEquals(expectCreate, tableExists());
     if (!expectCreate) {
       // not an arctic table.
-      Identifier target = target();
+      TestIdentifier target = target();
       context.dropHiveTable(target.database, target.table);
     }
   }

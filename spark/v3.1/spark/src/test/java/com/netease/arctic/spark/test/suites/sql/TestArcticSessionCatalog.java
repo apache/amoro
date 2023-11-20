@@ -20,7 +20,7 @@ package com.netease.arctic.spark.test.suites.sql;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.hive.HiveTableProperties;
-import com.netease.arctic.spark.SparkSQLProperties;
+import com.netease.arctic.spark.mixed.SparkSQLProperties;
 import com.netease.arctic.spark.sql.catalyst.plans.QueryWithConstraintCheckPlan;
 import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.utils.RecordGenerator;
