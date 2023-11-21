@@ -41,14 +41,27 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   private Map<TableFormat, FormatCatalog> formatCatalogs = Maps.newHashMap();
   private final Map<String, String> properties = Maps.newHashMap();
 
+  private TableMetaStore tableMetaStore;
+
   public CommonUnifiedCatalog(
       Supplier<CatalogMeta> catalogMetaSupplier, Map<String, String> properties) {
     CatalogMeta catalogMeta = catalogMetaSupplier.get();
     CatalogUtil.mergeCatalogProperties(catalogMeta, properties);
     this.meta = catalogMeta;
+    this.tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
     this.properties.putAll(properties);
     this.metaSupplier = catalogMetaSupplier;
     initializeFormatCatalogs();
+  }
+
+  @Override
+  public String metastoreType() {
+    return meta.getCatalogType();
+  }
+
+  @Override
+  public TableMetaStore authenticationContext() {
+    return this.tableMetaStore;
   }
 
   @Override
@@ -163,6 +176,7 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     if (newMeta.equals(this.meta)) {
       return;
     }
+    this.tableMetaStore = CatalogUtil.buildMetaStore(newMeta);
     this.meta = newMeta;
     this.initializeFormatCatalogs();
   }

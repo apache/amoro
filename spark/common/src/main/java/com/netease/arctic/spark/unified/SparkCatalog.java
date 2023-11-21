@@ -256,7 +256,14 @@ public class SparkCatalog implements TableCatalog, SupportsNamespaces, Procedure
             format.name() + " does not  implement TableCatalog");
       }
       TableCatalog tableCatalog = (TableCatalog) catalogClass.getDeclaredConstructor().newInstance();
-      tableCatalog.initialize(name, new CaseInsensitiveStringMap(unifiedCatalog.properties()));
+      Map<String, String> tableCatalogInitializeProperties = Maps.newHashMap();
+      tableCatalogInitializeProperties.putAll(unifiedCatalog.properties());
+      tableCatalogInitializeProperties.put("type", unifiedCatalog.metastoreType());
+      if (tableCatalog instanceof SupportAuthentication) {
+        ((SupportAuthentication) tableCatalog).setAuthenticationContext(unifiedCatalog.authenticationContext());
+      }
+      tableCatalog.initialize(
+          unifiedCatalog.name(), new CaseInsensitiveStringMap(tableCatalogInitializeProperties));
       return tableCatalog;
     } catch (ClassNotFoundException e) {
       throw new IllegalStateException("Cannot find catalog plugin class for format: " + format, e);

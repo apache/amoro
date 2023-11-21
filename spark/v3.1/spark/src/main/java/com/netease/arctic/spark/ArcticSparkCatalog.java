@@ -30,12 +30,14 @@ import com.netease.arctic.hive.utils.CatalogUtil;
 import com.netease.arctic.spark.mixed.MixedTableStoreType;
 import com.netease.arctic.spark.table.ArcticSparkChangeTable;
 import com.netease.arctic.spark.table.ArcticSparkTable;
+import com.netease.arctic.spark.unified.SupportAuthentication;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.PartitionSpec;
@@ -78,8 +80,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
+public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces, SupportAuthentication {
   private String catalogName = null;
+  private TableMetaStore tableMetaStore;
 
   private ArcticCatalog catalog;
   private CaseInsensitiveStringMap options;
@@ -406,14 +409,26 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   @Override
   public final void initialize(String name, CaseInsensitiveStringMap options) {
     this.catalogName = name;
-    String catalogUrl = options.get("url");
-    if (StringUtils.isBlank(catalogUrl)) {
-      catalogUrl = options.get("uri");
-    }
+    String catalogUrl = options.get("ams.uri");
+    if (StringUtils.isNotBlank(catalogUrl)) {
+      // initialize for unified catalog.
+      String metastoreType = options.get("type");
+      Preconditions.checkArgument(StringUtils.isNotEmpty(metastoreType),
+          "Lack required property: type when initialized by unified catalog.");
+      Preconditions.checkNotNull(tableMetaStore,
+          "Authentication context must be set when initialized by unified catalog.");
+      catalog = CatalogLoader.createCatalog(name,
+          metastoreType, options, tableMetaStore);
+    } else {
+      catalogUrl = options.get("url");
+      if (StringUtils.isBlank(catalogUrl)) {
+        catalogUrl = options.get("uri");
+      }
+      Preconditions.checkArgument(
+          StringUtils.isNotBlank(catalogUrl), "lack required properties: url");
 
-    Preconditions.checkArgument(
-        StringUtils.isNotBlank(catalogUrl), "lack required properties: url");
-    catalog = CatalogLoader.load(catalogUrl, options);
+      catalog = CatalogLoader.load(catalogUrl, options);
+    }
     this.options = options;
   }
 
@@ -464,5 +479,10 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     String database = namespace[0];
     catalog.dropDatabase(database);
     return true;
+  }
+
+  @Override
+  public void setAuthenticationContext(TableMetaStore tableMetaStore) {
+    this.tableMetaStore = tableMetaStore;
   }
 }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *  *
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,42 +16,19 @@
  * limitations under the License.
  */
 
-package com.netease.arctic;
+package com.netease.arctic.spark.unified;
 
 import com.netease.arctic.table.TableMetaStore;
+import org.apache.spark.sql.connector.catalog.TableCatalog;
 
-import java.util.List;
-import java.util.Map;
-
-/** UnifiedCatalog is a catalog that can visit tables with all types of formats. */
-public interface UnifiedCatalog extends AmoroCatalog {
-
-  /** Name of this catalog */
-  String name();
-
-  /** Metastore type */
-  String metastoreType();
+/**
+ * Mixed-in interface to indicate that a spark catalog support Amoro authentication context.
+ */
+public interface SupportAuthentication extends TableCatalog {
 
   /**
-   * Get authentication context of this catalog.
-   * @return table metastore.
+   * Set authentication context
+   * @param tableMetaStore authentication context object.
    */
-  TableMetaStore authenticationContext();
-
-  /**
-   * List tables with format
-   *
-   * @param database given database
-   * @return identifier and format list
-   */
-  List<TableIDWithFormat> listTables(String database);
-
-  /** Refresh catalog meta */
-  void refresh();
-
-  /**
-   * Get catalog properties
-   * @return catalog properties
-   */
-  Map<String, String> properties();
+  void setAuthenticationContext(TableMetaStore tableMetaStore);
 }
