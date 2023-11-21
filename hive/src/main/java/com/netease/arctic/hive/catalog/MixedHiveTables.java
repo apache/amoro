@@ -331,7 +331,8 @@ public class MixedHiveTables extends MixedTables {
   @Override
   public void dropTableByMeta(TableMeta tableMeta, boolean purge) {
     super.dropTableByMeta(tableMeta, purge);
-    if (!HiveTableUtil.checkExist(hiveClientPool, TableIdentifier.of(tableMeta.getTableIdentifier()))) {
+    if (!HiveTableUtil.checkExist(
+        hiveClientPool, TableIdentifier.of(tableMeta.getTableIdentifier()))) {
       // if hive table does not exist, we will not try to drop hive table
       return;
     }
