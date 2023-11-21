@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server;
 
-import com.google.common.base.Preconditions;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
@@ -26,12 +25,16 @@ import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.ams.api.metrics.MetricType;
+import com.netease.arctic.ams.api.metrics.MetricsContent;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.ams.api.resource.ResourceManager;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
 import com.netease.arctic.server.exception.PluginRetryAuthException;
+import com.netease.arctic.server.manager.MetricsManager;
+import com.netease.arctic.server.metrics.OptimizerMetrics;
 import com.netease.arctic.server.optimizing.OptimizingQueue;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.persistence.StatedPersistentBase;
@@ -48,6 +51,9 @@ import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableProperties;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,6 +65,9 @@ import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -86,6 +95,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final DefaultTableService tableManager;
   private final RuntimeHandlerChain tableHandlerChain;
   private Timer optimizerMonitorTimer;
+  private ScheduledExecutorService metricsCalcExecutor;
 
   public DefaultOptimizingService(Configurations serviceConfig, DefaultTableService tableService) {
     this.optimizerTouchTimeout = serviceConfig.getLong(ArcticManagementConf.OPTIMIZER_HB_TIMEOUT);
@@ -375,6 +385,19 @@ public class DefaultOptimizingService extends StatedPersistentBase
           "init SuspendingDetector for Optimizer with delay {} ms, interval {} ms",
           optimizerTouchTimeout,
           ArcticServiceConstants.OPTIMIZER_CHECK_INTERVAL);
+
+      metricsCalcExecutor =
+          Executors.newSingleThreadScheduledExecutor(
+              new ThreadFactoryBuilder()
+                  .setDaemon(true)
+                  .setNameFormat("ASYNC-optimizer-metrics-%d")
+                  .build());
+      metricsCalcExecutor.scheduleAtFixedRate(
+          new OptimizerMetricsCalculator(),
+          ArcticServiceConstants.OPTIMIZER_METRICS_CALCULATE_INTERVAL,
+          ArcticServiceConstants.OPTIMIZER_METRICS_CALCULATE_INTERVAL,
+          TimeUnit.MILLISECONDS);
+
       LOG.info("OptimizerManagementService initializing has completed");
     }
 
@@ -382,6 +405,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
     protected void doDispose() {
       if (Objects.nonNull(optimizerMonitorTimer)) {
         optimizerMonitorTimer.cancel();
+      }
+      if (Objects.nonNull(metricsCalcExecutor)) {
+        metricsCalcExecutor.shutdownNow();
       }
     }
   }
@@ -407,6 +433,54 @@ public class DefaultOptimizingService extends StatedPersistentBase
       } catch (RuntimeException e) {
         LOG.error("Update optimizer status abnormal failed. try next round", e);
       }
+    }
+  }
+
+  private class OptimizerMetricsCalculator implements Runnable {
+
+    @Override
+    public void run() {
+      Map<String, OptimizerMetrics> groupCounters = Maps.newHashMap();
+      // Calculate the total time sum of quotas for all tables under each group.
+      tableManager
+          .listManagedTables()
+          .forEach(
+              tableIdentifier -> {
+                TableRuntime tableRuntime = tableManager.getRuntime(tableIdentifier);
+                OptimizerMetrics optimizerMetrics =
+                    groupCounters.computeIfAbsent(
+                        tableRuntime.getOptimizerGroup(), OptimizerMetrics::new);
+                optimizerMetrics.optimizerOccupyTime().inc(tableRuntime.getQuotaTime());
+              });
+
+      // Calculate the percentage of time taken by executing tasks for each group
+      // in relation to the total time taken by the optimizer to run.
+      groupCounters.forEach(
+          (group, metrics) -> {
+            int totalThreadCount =
+                listOptimizers(group).stream().mapToInt(Resource::getThreadCount).sum();
+            metrics.optimizerThreadCount().inc(totalThreadCount);
+            metrics.optimizerOccupyInterval().inc(ArcticServiceConstants.QUOTA_LOOK_BACK_TIME);
+            MetricsManager.instance()
+                .emit(
+                    new MetricsContent<OptimizerMetrics>() {
+
+                      @Override
+                      public String name() {
+                        return OptimizerMetrics.OPTIMIZER_REPORT_NAME;
+                      }
+
+                      @Override
+                      public MetricType type() {
+                        return MetricType.SERVICE;
+                      }
+
+                      @Override
+                      public OptimizerMetrics data() {
+                        return metrics;
+                      }
+                    });
+          });
     }
   }
 }
