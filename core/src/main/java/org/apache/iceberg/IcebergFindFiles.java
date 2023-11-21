@@ -43,6 +43,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.DateTimeUtil;
 import org.apache.iceberg.util.ParallelIterable;
+import org.apache.iceberg.util.PartitionSet;
 
 public class IcebergFindFiles {
   private static final Types.StructType EMPTY_STRUCT = Types.StructType.of();
@@ -56,7 +57,8 @@ public class IcebergFindFiles {
   private final Map<Integer, PartitionSpec> specsById;
   private Expression dataFilter;
   private Expression fileFilter;
-  private final Map<Integer, Expression> partitionFilters;
+  private Map<Integer, Expression> partitionFilters;
+  private PartitionSet partitionSet;
   private boolean ignoreDeleted;
   private boolean ignoreExisting;
   private List<String> columns;
@@ -76,7 +78,6 @@ public class IcebergFindFiles {
     this.ops = ((HasTableOperations) table).operations();
     this.dataFilter = Expressions.alwaysTrue();
     this.fileFilter = Expressions.alwaysTrue();
-    this.partitionFilters = new HashMap<>();
     this.specsById = table.specs();
     this.ignoreDeleted = false;
     this.ignoreExisting = false;
@@ -160,6 +161,14 @@ public class IcebergFindFiles {
   }
 
   public IcebergFindFiles inPartitions(PartitionSpec spec, List<StructLike> partitions) {
+    if (partitionSet == null) {
+      this.partitionSet = PartitionSet.create(specsById);
+      this.partitionFilters = new HashMap<>();
+    }
+    for (StructLike partition : partitions) {
+      partitionSet.add(spec.specId(), partition);
+    }
+
     Expression partitionSetFilter = Expressions.alwaysFalse();
     for (StructLike partitionData : partitions) {
       Expression partFilter = Expressions.alwaysTrue();
@@ -330,7 +339,7 @@ public class IcebergFindFiles {
                 ManifestReader<?> reader =
                     ManifestFiles.open(manifest, io, specsById)
                         .filterRows(dataFilter)
-                        .filterPartitions(partitionFilter(manifest.partitionSpecId()))
+                        .filterPartitions(partitionSet)
                         .caseSensitive(caseSensitive)
                         .select(columns)
                         .scanMetrics(scanMetrics);
@@ -376,7 +385,7 @@ public class IcebergFindFiles {
   }
 
   private Expression partitionFilter(Integer specId) {
-    if (partitionFilters.isEmpty()) {
+    if (partitionFilters == null || partitionFilters.isEmpty()) {
       return Expressions.alwaysTrue();
     }
 
