@@ -262,7 +262,7 @@ export default defineComponent({
     left: 200px;
     right: 0;
     bottom: 0;
-    z-index: 100;
+    z-index: 1100;
     &.collapsed-sub-menu {
       left: 64px;
     }

@@ -283,15 +283,15 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
         .skippingTypesCheck()
         .matches(
             "VALUES "
-                + "('id', NULL, NULL, 0e0, NULL, '1', '6'), "
+                + "('id', NULL, NULL, 0e0, NULL, '1', '4'), "
                 + "('op_time', NULL, NULL, 0e0, NULL, '2022-01-01 12:00:00.000000', '2022-01-04 12:00:00.000000'), "
                 + "('op_time_with_zone', NULL, NULL, 0e0, NULL,'2022-01-01 12:00:00.000 UTC', '2022-01-04 12:00:00.000 UTC'), "
-                + "('d$d', NULL, NULL, 0e0, NULL, '100.0', '105.0'), "
+                + "('d$d', NULL, NULL, 0e0, NULL, '100.0', '103.0'), "
                 + "('map_name', NULL, NULL, NULL, NULL, NULL, NULL), "
                 + "('array_name', NULL, NULL, NULL, NULL, NULL, NULL), "
                 + "('struct_name', NULL, NULL, NULL, NULL, NULL, NULL), "
-                + "('name', 618e0, NULL, 0e0, NULL, NULL, NULL), "
-                + "(NULL, NULL, NULL, NULL, 9e0, NULL, NULL)");
+                + "('name', 548e0, NULL, 0e0, NULL, NULL, NULL), "
+                + "(NULL, NULL, NULL, NULL, 4e0, NULL, NULL)");
   }
 
   @Test
@@ -300,17 +300,17 @@ public class TestHiveTable extends TestHiveTableBaseForTrino {
         .skippingTypesCheck()
         .matches(
             "VALUES "
-                + "('id', NULL, NULL, 0e0, NULL, '1', '6'), "
+                + "('id', NULL, NULL, 0e0, NULL, '1', '4'), "
                 + "('op_time', NULL, NULL, 0e0, NULL, '2022-01-01 12:00:00.000000',"
                 + " '2022-01-04 12:00:00.000000'), "
                 + "('op_time_with_zone', NULL, NULL, 0e0, NULL, "
                 + "'2022-01-01 12:00:00.000 UTC', '2022-01-04 12:00:00.000 UTC'), "
-                + "('d$d', NULL, NULL, 0e0, NULL, '100.0', '105.0'), "
-                + "('map_name', 27e0, NULL, 0e0, NULL, NULL, NULL), "
-                + "('array_name', 27e0, NULL, 0e0, NULL, NULL, NULL), "
+                + "('d$d', NULL, NULL, 0e0, NULL, '100.0', '103.0'), "
+                + "('map_name', 24e0, NULL, 0e0, NULL, NULL, NULL), "
+                + "('array_name', 24e0, NULL, 0e0, NULL, NULL, NULL), "
                 + "('struct_name', 0e0, NULL, 0e0, NULL, NULL, NULL), "
-                + "('name', 156e0, NULL, 0e0, NULL, NULL, NULL), "
-                + "(NULL, NULL, NULL, NULL, 9e0, NULL, NULL)");
+                + "('name', 137e0, NULL, 0e0, NULL, NULL, NULL), "
+                + "(NULL, NULL, NULL, NULL, 4e0, NULL, NULL)");
   }
 
   private void assertCommon(String query, List<List<String>> values) {

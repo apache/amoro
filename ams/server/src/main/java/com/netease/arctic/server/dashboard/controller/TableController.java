@@ -19,6 +19,7 @@
 package com.netease.arctic.server.dashboard.controller;
 
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.CatalogLoader;
@@ -57,6 +58,7 @@ import io.javalin.http.Context;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.relocated.com.google.common.base.Function;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -64,6 +66,7 @@ import org.apache.iceberg.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -329,14 +332,64 @@ public class TableController {
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
     // ref means tag/branch
     String ref = ctx.queryParamAsClass("ref", String.class).getOrDefault(null);
+    String operation =
+        ctx.queryParamAsClass("operation", String.class)
+            .getOrDefault(OperationType.ALL.displayName());
+    OperationType operationType = OperationType.of(operation);
 
     List<AmoroSnapshotsOfTable> snapshotsOfTables =
-        tableDescriptor.getSnapshots(
-            TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(), ref);
+        tableDescriptor
+            .getSnapshots(
+                TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(), ref)
+            .stream()
+            .filter(s -> validOperationType(s, operationType))
+            .collect(Collectors.toList());
     int offset = (page - 1) * pageSize;
     PageResult<AmoroSnapshotsOfTable> pageResult =
         PageResult.of(snapshotsOfTables, offset, pageSize);
     ctx.json(OkResponse.of(pageResult));
+  }
+
+  private enum OperationType {
+    ALL("all"),
+    OPTIMIZING("optimizing"),
+    NON_OPTIMIZING("non-optimizing");
+
+    private final String displayName;
+
+    OperationType(String displayName) {
+      this.displayName = displayName;
+    }
+
+    public String displayName() {
+      return displayName;
+    }
+
+    public static OperationType of(String displayName) {
+      return Arrays.stream(OperationType.values())
+          .filter(o -> o.displayName().equals(displayName))
+          .findFirst()
+          .orElseThrow(
+              () ->
+                  new IllegalArgumentException(
+                      "invalid operation: "
+                          + displayName
+                          + ", only support all/optimizing/non-optimizing"));
+    }
+  }
+
+  private boolean validOperationType(AmoroSnapshotsOfTable snapshot, OperationType operationType) {
+    switch (operationType) {
+      case ALL:
+        return true;
+      case OPTIMIZING:
+        return CommitMetaProducer.OPTIMIZE.name().equals(snapshot.getProducer());
+      case NON_OPTIMIZING:
+        return !CommitMetaProducer.OPTIMIZE.name().equals(snapshot.getProducer());
+      default:
+        throw new IllegalArgumentException(
+            "invalid operation: " + operationType + ", only support all/optimizing/non-optimizing");
+    }
   }
 
   /**
@@ -547,9 +600,21 @@ public class TableController {
     List<TagOrBranchInfo> partitionBaseInfos =
         tableDescriptor.getTableBranches(
             TableIdentifier.of(catalog, database, table).buildTableIdentifier());
+    putMainBranchFirst(partitionBaseInfos);
     int offset = (page - 1) * pageSize;
     PageResult<TagOrBranchInfo> amsPageResult = PageResult.of(partitionBaseInfos, offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
+  }
+
+  private void putMainBranchFirst(List<TagOrBranchInfo> branchInfos) {
+    branchInfos.stream()
+        .filter(branch -> SnapshotRef.MAIN_BRANCH.equals(branch.getName()))
+        .findFirst()
+        .ifPresent(
+            mainBranch -> {
+              branchInfos.remove(mainBranch);
+              branchInfos.add(0, mainBranch);
+            });
   }
 
   private List<AMSColumnInfo> transformHiveSchemaToAMSColumnInfo(List<FieldSchema> fields) {
