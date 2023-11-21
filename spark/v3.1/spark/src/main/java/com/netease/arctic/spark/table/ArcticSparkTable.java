@@ -58,21 +58,24 @@ public class ArcticSparkTable
           TableCapability.OVERWRITE_DYNAMIC);
 
   private final ArcticTable arcticTable;
+  private final String sparkCatalogName;
   private SparkSession lazySpark = null;
   private final ArcticCatalog catalog;
 
-  public static Table ofArcticTable(ArcticTable table, ArcticCatalog catalog) {
+  public static Table ofArcticTable(
+      ArcticTable table, ArcticCatalog catalog, String sparkCatalogName) {
     if (table.isUnkeyedTable()) {
       if (!(table instanceof SupportHive)) {
-        return new ArcticIcebergSparkTable(table.asUnkeyedTable(), false);
+        return new ArcticIcebergSparkTable(table.asUnkeyedTable(), false, sparkCatalogName);
       }
     }
-    return new ArcticSparkTable(table, catalog);
+    return new ArcticSparkTable(table, catalog, sparkCatalogName);
   }
 
-  public ArcticSparkTable(ArcticTable arcticTable, ArcticCatalog catalog) {
+  public ArcticSparkTable(ArcticTable arcticTable, ArcticCatalog catalog, String sparkCatalogName) {
     this.arcticTable = arcticTable;
     this.catalog = catalog;
+    this.sparkCatalogName = sparkCatalogName;
   }
 
   private SparkSession sparkSession() {
@@ -89,7 +92,11 @@ public class ArcticSparkTable
 
   @Override
   public String name() {
-    return arcticTable.id().toString();
+    return sparkCatalogName
+        + "."
+        + arcticTable.id().getDatabase()
+        + "."
+        + arcticTable.id().getTableName();
   }
 
   @Override
