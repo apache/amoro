@@ -44,7 +44,6 @@ import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.flink.table.api.TableColumn;
 import org.apache.flink.table.api.TableColumn.ComputedColumn;
-import org.apache.flink.table.api.TableColumn.PhysicalColumn;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.catalog.AbstractCatalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;
@@ -614,17 +613,12 @@ public class ArcticCatalog extends AbstractCatalog {
   private void validateColumnOrder(CatalogBaseTable table) {
     TableSchema schema = table.getSchema();
     List<TableColumn> tableColumns = schema.getTableColumns();
-    int computeIndex = -1;
-    // find the index for compute column
-    for (int i = 0; i < tableColumns.size(); i++) {
-      if (tableColumns.get(i) instanceof ComputedColumn) {
-        computeIndex = i;
-        break;
-      }
-    }
 
-    for (int i = computeIndex + 1; computeIndex > -1 && i < tableColumns.size(); i++) {
-      if (tableColumns.get(i) instanceof PhysicalColumn) {
+    boolean foundComputeColumn = false;
+    for (TableColumn tableColumn : tableColumns) {
+      if (tableColumn instanceof ComputedColumn) {
+        foundComputeColumn = true;
+      } else if (foundComputeColumn) {
         throw new IllegalStateException(
             "compute column must be listed after all physical columns. ");
       }

@@ -55,6 +55,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -96,7 +97,7 @@ public class FlinkSchemaUtil {
       builder.primaryKey(primaryKeys.toArray(new String[0]));
     }
 
-    HashSet<Integer> computeIndex = getComputeIndex(tableProperties);
+    Set<Integer> computeIndex = getComputeIndex(tableProperties);
     List<String> fieldNames = rowType.getFieldNames();
 
     // add computed columns
@@ -267,7 +268,7 @@ public class FlinkSchemaUtil {
     return properties;
   }
 
-  /** serialize computeColumns into properties */
+  /** Serialize compute columns into properties. */
   private static Map<String, String> serializeComputeColumn(TableSchema schema) {
     Map<String, String> serialized = new HashMap<>();
     List<TableColumn> tableColumns = schema.getTableColumns();
@@ -289,13 +290,13 @@ public class FlinkSchemaUtil {
     return serialized;
   }
 
-  /** deserialize computeColumns from properties */
+  /** Deserialize compute columns from properties. */
   private static TableColumn deserializeComputeColumn(
       Map<String, String> tableProperties, int index, List<String> fieldNames) {
     String expr = tableProperties.get(compoundKey(FLINK_PREFIX, COMPUTED_COLUMNS, index, EXPR));
     if (!isExprContainField(expr, fieldNames)) {
       throw new IllegalStateException(
-          "expression " + expr + " do not match any columns in amoro. ");
+          "expression " + expr + " does not match any columns in the table. ");
     }
     DataType dataType =
         TypeConversions.fromLogicalToDataType(
@@ -341,8 +342,8 @@ public class FlinkSchemaUtil {
     return false;
   }
 
-  private static HashSet<Integer> getComputeIndex(Map<String, String> tableProperties) {
-    HashSet<Integer> computedIndex = new HashSet<>();
+  private static Set<Integer> getComputeIndex(Map<String, String> tableProperties) {
+    Set<Integer> computedIndex = new TreeSet<>();
     tableProperties
         .keySet()
         .forEach(
@@ -358,7 +359,7 @@ public class FlinkSchemaUtil {
     return computedIndex;
   }
 
-  /** serialize watermarkSpec into properties */
+  /** Serialize watermarkSpec into properties. */
   private static Map<String, String> serializeWatermarkSpec(WatermarkSpec watermarkSpec) {
     Map<String, String> serializedWatermarkSpec = new HashMap<>();
     serializedWatermarkSpec.put(
@@ -374,7 +375,7 @@ public class FlinkSchemaUtil {
     return serializedWatermarkSpec;
   }
 
-  /** deserialize watermarkSpec from properties */
+  /** Deserialize watermarkSpec from properties. */
   private static WatermarkSpec deserializeWatermarkSpec(
       Map<String, String> tableProperties, List<String> fieldNames) {
     String rowtimeAttribute =
@@ -383,7 +384,7 @@ public class FlinkSchemaUtil {
       throw new IllegalStateException(
           "Watermark rowtime attribute '"
               + rowtimeAttribute
-              + " does not match any columns in amoro.");
+              + " does not match any columns in the table. ");
     }
     DataType watermarkExprOutputType =
         TypeConversions.fromLogicalToDataType(
