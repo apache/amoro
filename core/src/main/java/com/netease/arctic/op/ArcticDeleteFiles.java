@@ -24,6 +24,7 @@ import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
+
 import java.util.function.Supplier;
 
 public class ArcticDeleteFiles extends ArcticUpdate<DeleteFiles> implements DeleteFiles {
@@ -76,8 +77,7 @@ public class ArcticDeleteFiles extends ArcticUpdate<DeleteFiles> implements Dele
 
     @Override
     protected ArcticDeleteFiles updateWithWatermark(
-        Transaction transaction,
-        boolean autoCommitTransaction) {
+        Transaction transaction, boolean autoCommitTransaction) {
       return new ArcticDeleteFiles(table, transaction.newDelete());
     }
 

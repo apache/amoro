@@ -1,5 +1,6 @@
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.OptimizingType;
@@ -12,6 +13,7 @@ public class TableRuntimeMeta {
   private String catalogName;
   private String dbName;
   private String tableName;
+  private TableFormat format;
   private long currentSnapshotId;
   private long lastOptimizedSnapshotId;
   private long lastOptimizedChangeSnapshotId;
@@ -38,8 +40,7 @@ public class TableRuntimeMeta {
 
   private TableRuntime tableRuntime;
 
-  public TableRuntimeMeta() {
-  }
+  public TableRuntimeMeta() {}
 
   public TableRuntime constructTableRuntime(TableManager initializer) {
     if (tableRuntime == null) {
@@ -89,6 +90,10 @@ public class TableRuntimeMeta {
 
   public String getTableName() {
     return tableName;
+  }
+
+  public TableFormat getFormat() {
+    return format;
   }
 
   public long getCurrentSnapshotId() {
@@ -165,6 +170,10 @@ public class TableRuntimeMeta {
 
   public void setTableName(String tableName) {
     this.tableName = tableName;
+  }
+
+  public void setFormat(TableFormat format) {
+    this.format = format;
   }
 
   public void setCurrentSnapshotId(long currentSnapshotId) {

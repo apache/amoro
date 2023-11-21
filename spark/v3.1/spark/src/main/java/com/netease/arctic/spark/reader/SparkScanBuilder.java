@@ -44,9 +44,11 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
-public class SparkScanBuilder implements ScanBuilder, SupportsExtendIdentColumns, SupportsPushDownFilters,
-    SupportsPushDownRequiredColumns {
+public class SparkScanBuilder
+    implements ScanBuilder,
+        SupportsExtendIdentColumns,
+        SupportsPushDownFilters,
+        SupportsPushDownRequiredColumns {
   private static final Filter[] NO_FILTERS = new Filter[0];
 
   private final ArcticTable table;
@@ -57,7 +59,7 @@ public class SparkScanBuilder implements ScanBuilder, SupportsExtendIdentColumns
   private Schema schema = null;
   private StructType requestedProjection;
   private final boolean caseSensitive;
-  private List<Expression> filterExpressions = null;
+  private List<Expression> filterExpressions = Lists.newArrayList();
   private Filter[] pushedFilters = NO_FILTERS;
 
   public SparkScanBuilder(SparkSession spark, ArcticTable table, CaseInsensitiveStringMap options) {
@@ -66,7 +68,8 @@ public class SparkScanBuilder implements ScanBuilder, SupportsExtendIdentColumns
     this.caseSensitive = Boolean.parseBoolean(spark.conf().get("spark.sql.caseSensitive"));
   }
 
-  public SparkScanBuilder(SparkSession spark, ArcticTable table, CaseInsensitiveStringMap options, Schema schema) {
+  public SparkScanBuilder(
+      SparkSession spark, ArcticTable table, CaseInsensitiveStringMap options, Schema schema) {
     this.table = table;
     this.options = options;
     this.schema = schema;
@@ -78,8 +81,9 @@ public class SparkScanBuilder implements ScanBuilder, SupportsExtendIdentColumns
       if (requestedProjection != null) {
         // the projection should include all columns that will be returned,
         // including those only used in filters
-        this.schema = SparkSchemaUtil.prune(table.schema(),
-            requestedProjection, filterExpression(), caseSensitive);
+        this.schema =
+            SparkSchemaUtil.prune(
+                table.schema(), requestedProjection, filterExpression(), caseSensitive);
       } else {
         this.schema = table.schema();
       }
@@ -92,10 +96,11 @@ public class SparkScanBuilder implements ScanBuilder, SupportsExtendIdentColumns
       icebergTable = table.asKeyedTable().baseTable();
     }
     // metadata columns
-    List<Types.NestedField> fields = metaColumns.stream()
-        .distinct()
-        .map(column -> MetadataColumns.metadataColumn(icebergTable, column))
-        .collect(Collectors.toList());
+    List<Types.NestedField> fields =
+        metaColumns.stream()
+            .distinct()
+            .map(column -> MetadataColumns.metadataColumn(icebergTable, column))
+            .collect(Collectors.toList());
     if (fields.size() == 1) {
       return schema;
     }
@@ -105,7 +110,7 @@ public class SparkScanBuilder implements ScanBuilder, SupportsExtendIdentColumns
   }
 
   private Expression filterExpression() {
-    if (filterExpressions != null) {
+    if (!filterExpressions.isEmpty()) {
       return filterExpressions.stream().reduce(Expressions.alwaysTrue(), Expressions::and);
     }
     return Expressions.alwaysTrue();
@@ -164,8 +169,8 @@ public class SparkScanBuilder implements ScanBuilder, SupportsExtendIdentColumns
           filterExpressions,
           options);
     } else {
-      throw new IllegalStateException("Unable to build scan for table: " + table.id().toString() + ", unknown table " +
-          "type");
+      throw new IllegalStateException(
+          "Unable to build scan for table: " + table.id().toString() + ", unknown table " + "type");
     }
   }
 

@@ -16,6 +16,12 @@ The Iceberg Format can be accessed using the Connector provided by Iceberg.
 Refer to the documentation at [Iceberg Flink user manual](https://iceberg.apache.org/docs/latest/flink-connector/)
 for more information.
 
+## Paimon format
+
+The Paimon Format can be accessed using the Connector provided by Paimon.
+Refer to the documentation at [Paimon Flink user manual](https://paimon.apache.org/docs/master/engines/flink/)
+for more information.
+
 ## Mixed format
 The Apache Flink engine can process Amoro table data in batch and streaming mode. The Flink on Amoro connector provides the ability to read and write to the Amoro data lake while ensuring data consistency. To meet the high real-time data requirements of businesses, the Amoro data lake's underlying storage structure is designed with LogStore, which stores the latest changelog or append-only real-time data.
 
@@ -34,22 +40,21 @@ Version Description:
 
 | Connector Version | Flink Version | Dependent Iceberg Version                                                                                                                |
 | ----------------- |---------------|  ----------------- |
-| 0.5.0             | 1.12.x        | 1.1.0            |
-| 0.5.0             | 1.14.x        | 1.1.0            |
-| 0.5.0             | 1.15.x        | 1.1.0            |
+| 0.6.0             | 1.15.x        | 1.3.0            |
+| 0.6.0             | 1.16.x        | 1.3.0            |
+| 0.6.0             | 1.17.x        | 1.3.0            |
 
 The Amoro project can be self-compiled to obtain the runtime jar.
 
-`mvn clean package -pl ':amoro-flink-runtime-1.14' -am -DskipTests`
+`mvn clean package -pl ':amoro-flink-runtime-1.15' -am -DskipTests`
 
-The Flink Runtime Jar is located in the `flink/v1.14/flink-runtime/target` directory.
+The Flink Runtime Jar is located in the `flink/v1.15/flink-runtime/target` directory.
 
 ## Environment preparation
-Download Flink and related dependencies, and download Flink 1.12/1.14/1.15 as needed. Taking Flink 1.12 as an example:
-
+Download Flink and related dependencies, and download Flink 1.15/1.16/1.17 as needed. Taking Flink 1.15 as an example:
 ```shell
 # Replace version value with the latest Amoro version if needed
-AMORO_VERSION=0.5.0
+AMORO_VERSION=0.6.0
 FLINK_VERSION=1.15.3
 FLINK_MAJOR_VERSION=1.15
 FLINK_HADOOP_SHADE_VERSION=2.7.5
@@ -65,12 +70,12 @@ tar -zxvf flink-${FLINK_VERSION}-bin-scala_2.12.tgz
 
 cd flink-${FLINK_VERSION}
 # Download Flink Hadoop dependency
-wget ${FLINK_CONNECTOR_URL}/flink-shaded-hadoop-2-uber/${HADOOP_VERSION}-10.0/flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar
-# Download Flink Aoro Connector
+wget ${FLINK_CONNECTOR_URL}/flink-shaded-hadoop-2-uber/${FLINK_HADOOP_SHADE_VERSION}-10.0/flink-shaded-hadoop-2-uber-${FLINK_HADOOP_SHADE_VERSION}-10.0.jar
+# Download Flink Amoro Connector
 wget ${AMORO_CONNECTOR_URL}/amoro-flink-runtime-${FLINK_MAJOR_VERSION}/${AMORO_VERSION}/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
 
 # Copy the necessary JAR files to the lib directory
-mv flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar lib
+mv flink-shaded-hadoop-2-uber-${FLINK_HADOOP_SHADE_VERSION}-10.0.jar lib
 mv amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar lib
 ```
 
@@ -96,7 +101,7 @@ Move the dependencies to the lib directory of Flink:
 cp examples/table/ChangelogSocketExample.jar lib
 
 cp ../amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar lib
-cp ../flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar lib
+cp ../flink-shaded-hadoop-2-uber-${FLINK_HADOOP_SHADE_VERSION}-10.0.jar lib
 ```
 
 ### Mixed-Hive format

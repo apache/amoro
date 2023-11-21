@@ -18,8 +18,7 @@
 
 package com.netease.arctic.spark;
 
-import com.netease.arctic.hive.HiveTableProperties;
-import com.netease.arctic.hive.utils.CompatibleHivePropertyUtil;
+import com.netease.arctic.spark.utils.MixedFormatSparkUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
@@ -41,7 +40,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-
 /**
  * A Spark catalog that can also load non-Iceberg tables.
  *
@@ -50,7 +48,7 @@ import java.util.Map;
 public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespaces>
     implements SupportsNamespaces, CatalogExtension {
   private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkSessionCatalog.class);
-  private static final String[] DEFAULT_NAMESPACE = new String[]{"default"};
+  private static final String[] DEFAULT_NAMESPACE = new String[] {"default"};
 
   private String catalogName = null;
   private ArcticSparkCatalog arcticCatalog = null;
@@ -60,10 +58,11 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
 
   /**
    * Build a {@link ArcticSparkCatalog} to be used for Iceberg operations.
-   * <p>
-   * The default implementation creates a new ArcticSparkCatalog with the session catalog's name and options.
    *
-   * @param name    catalog name
+   * <p>The default implementation creates a new ArcticSparkCatalog with the session catalog's name
+   * and options.
+   *
+   * @param name catalog name
    * @param options catalog options
    * @return a ArcticSparkCatalog to be used for Iceberg tables
    */
@@ -89,17 +88,20 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   }
 
   @Override
-  public Map<String, String> loadNamespaceMetadata(String[] namespace) throws NoSuchNamespaceException {
+  public Map<String, String> loadNamespaceMetadata(String[] namespace)
+      throws NoSuchNamespaceException {
     return getSessionCatalog().loadNamespaceMetadata(namespace);
   }
 
   @Override
-  public void createNamespace(String[] namespace, Map<String, String> metadata) throws NamespaceAlreadyExistsException {
+  public void createNamespace(String[] namespace, Map<String, String> metadata)
+      throws NamespaceAlreadyExistsException {
     getSessionCatalog().createNamespace(namespace, metadata);
   }
 
   @Override
-  public void alterNamespace(String[] namespace, NamespaceChange... changes) throws NoSuchNamespaceException {
+  public void alterNamespace(String[] namespace, NamespaceChange... changes)
+      throws NoSuchNamespaceException {
     getSessionCatalog().alterNamespace(namespace, changes);
   }
 
@@ -117,7 +119,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
     Table table = getSessionCatalog().loadTable(ident);
-    if (isArcticTable(table)) {
+    if (MixedFormatSparkUtil.isMixedFormatTable(table)) {
       return getArcticCatalog().loadTable(ident);
     }
     return table;
@@ -125,8 +127,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
 
   @Override
   public Table createTable(
-      Identifier ident, StructType schema, Transform[] partitions,
-      Map<String, String> properties)
+      Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
       throws TableAlreadyExistsException, NoSuchNamespaceException {
     String provider = properties.get("provider");
     if (useArctic(provider)) {
@@ -140,7 +141,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   @Override
   public Table alterTable(Identifier ident, TableChange... changes) throws NoSuchTableException {
     Table table = getSessionCatalog().loadTable(ident);
-    if (isArcticTable(table)) {
+    if (MixedFormatSparkUtil.isMixedFormatTable(table)) {
       return getArcticCatalog().alterTable(ident, changes);
     } else {
       return getSessionCatalog().alterTable(ident, changes);
@@ -149,11 +150,12 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
 
   @Override
   public boolean dropTable(Identifier ident) {
-    // no need to check table existence to determine which catalog to use. if a table doesn't exist then both are
+    // no need to check table existence to determine which catalog to use. if a table doesn't exist
+    // then both are
     // required to return false.
     try {
       Table table = getSessionCatalog().loadTable(ident);
-      if (isArcticTable(table)) {
+      if (MixedFormatSparkUtil.isMixedFormatTable(table)) {
         return getArcticCatalog().dropTable(ident) || getSessionCatalog().dropTable(ident);
       } else {
         return getSessionCatalog().dropTable(ident);
@@ -164,11 +166,13 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   }
 
   @Override
-  public void renameTable(Identifier from, Identifier to) throws NoSuchTableException, TableAlreadyExistsException {
-    // rename is not supported by HadoopCatalog. to avoid UnsupportedOperationException for session catalog tables,
+  public void renameTable(Identifier from, Identifier to)
+      throws NoSuchTableException, TableAlreadyExistsException {
+    // rename is not supported by HadoopCatalog. to avoid UnsupportedOperationException for session
+    // catalog tables,
     // check table existence first to ensure that the table belongs to the Iceberg catalog.
     Table table = getSessionCatalog().loadTable(from);
-    if (isArcticTable(table)) {
+    if (MixedFormatSparkUtil.isMixedFormatTable(table)) {
       getArcticCatalog().renameTable(from, to);
     } else {
       getSessionCatalog().renameTable(from, to);
@@ -202,15 +206,14 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   }
 
   private boolean useArctic(String provider) {
-    if ("arctic".equalsIgnoreCase(provider)) {
-      return true;
-    }
-    return false;
+    return "arctic".equalsIgnoreCase(provider);
   }
 
   private T getSessionCatalog() {
-    Preconditions.checkNotNull(sessionCatalog, "Delegated SessionCatalog is missing. " +
-        "Please make sure your are replacing Spark's default catalog, named 'spark_catalog'.");
+    Preconditions.checkNotNull(
+        sessionCatalog,
+        "Delegated SessionCatalog is missing. "
+            + "Please make sure your are replacing Spark's default catalog, named 'spark_catalog'.");
     return sessionCatalog;
   }
 
@@ -219,12 +222,5 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
       this.arcticCatalog = buildSparkCatalog(this.catalogName, this.options);
     }
     return this.arcticCatalog;
-
-  }
-
-  private boolean isArcticTable(Table table) {
-    return table.properties() != null &&
-        CompatibleHivePropertyUtil.propertyAsBoolean(
-            table.properties(), HiveTableProperties.ARCTIC_TABLE_FLAG, false);
   }
 }

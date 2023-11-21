@@ -18,6 +18,9 @@
 
 package com.netease.arctic.log;
 
+import static com.netease.arctic.utils.FlipUtil.convertToBoolean;
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,12 +37,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.Serializable;
 
-import static com.netease.arctic.utils.FlipUtil.convertToBoolean;
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument;
-
 /**
- * Deserialization that deserializes a JSON bytes array into an instance of {@link LogData}
- * through {@link LogData.Factory#create(Object, Object...)}
+ * Deserialization that deserializes a JSON bytes array into an instance of {@link LogData} through
+ * {@link LogData.Factory#create(Object, Object...)}
  */
 public class LogDataJsonDeserialization<T> implements Serializable {
   private static final long serialVersionUID = -5741370033707067127L;
@@ -49,9 +49,7 @@ public class LogDataJsonDeserialization<T> implements Serializable {
   private final JsonToLogDataConverters.JsonToLogDataConverter<T> jsonToLogDataConverter;
   private final LogData.Factory<T> factory;
 
-  /**
-   * Object mapper for parsing the JSON.
-   */
+  /** Object mapper for parsing the JSON. */
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   public LogDataJsonDeserialization(
@@ -70,19 +68,19 @@ public class LogDataJsonDeserialization<T> implements Serializable {
   }
 
   private boolean hasDecimalType(Types.StructType structType) {
-    return structType
-        .fields()
-        .stream()
+    return structType.fields().stream()
         .map(Types.NestedField::type)
-        .anyMatch((Predicate<Type>) type -> {
-          if (type.typeId() == Type.TypeID.STRUCT) {
-            boolean hasDecimalType = hasDecimalType((Types.StructType) type);
-            if (hasDecimalType) {
-              return true;
-            }
-          }
-          return type.typeId() == Type.TypeID.DECIMAL;
-        });
+        .anyMatch(
+            (Predicate<Type>)
+                type -> {
+                  if (type.typeId() == Type.TypeID.STRUCT) {
+                    boolean hasDecimalType = hasDecimalType((Types.StructType) type);
+                    if (hasDecimalType) {
+                      return true;
+                    }
+                  }
+                  return type.typeId() == Type.TypeID.DECIMAL;
+                });
   }
 
   public LogData<T> deserialize(byte[] message) throws IOException {
@@ -106,7 +104,8 @@ public class LogDataJsonDeserialization<T> implements Serializable {
       byte[] actualValueBytes = Bytes.subByte(message, 18, message.length - 18);
       final JsonNode root = objectMapper.readTree(actualValueBytes);
       actualValue = (T) jsonToLogDataConverter.convert(root, null);
-      return factory.create(actualValue, versionBytes, upstreamIdBytes, epicNo, false, changeActionByte);
+      return factory.create(
+          actualValue, versionBytes, upstreamIdBytes, epicNo, false, changeActionByte);
     } catch (Throwable t) {
       LOG.error("", t);
       throw t;

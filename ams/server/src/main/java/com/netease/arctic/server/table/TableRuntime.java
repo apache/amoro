@@ -18,7 +18,9 @@
 
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.BlockerConflictException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
@@ -43,6 +45,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -61,43 +64,37 @@ public class TableRuntime extends StatedPersistentBase {
 
   private final TableRuntimeHandler tableHandler;
   private final ServerTableIdentifier tableIdentifier;
-  private final List<TaskRuntime.TaskQuota> taskQuotas = Collections.synchronizedList(new ArrayList<>());
+  private final List<TaskRuntime.TaskQuota> taskQuotas =
+      Collections.synchronizedList(new ArrayList<>());
 
   // for unKeyedTable or base table
-  @StateField
-  private volatile long currentSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+  @StateField private volatile long currentSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+
   @StateField
   private volatile long lastOptimizedSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+
   @StateField
   private volatile long lastOptimizedChangeSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
   // for change table
   @StateField
   private volatile long currentChangeSnapshotId = ArcticServiceConstants.INVALID_SNAPSHOT_ID;
-  @StateField
-  private volatile OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
-  @StateField
-  private volatile long currentStatusStartTime = System.currentTimeMillis();
-  @StateField
-  private volatile long lastMajorOptimizingTime;
-  @StateField
-  private volatile long lastFullOptimizingTime;
-  @StateField
-  private volatile long lastMinorOptimizingTime;
-  @StateField
-  private volatile String optimizerGroup;
-  @StateField
-  private volatile OptimizingProcess optimizingProcess;
-  @StateField
-  private volatile TableConfiguration tableConfiguration;
-  @StateField
-  private volatile long processId;
-  @StateField
-  private volatile OptimizingEvaluator.PendingInput pendingInput;
+
+  @StateField private volatile OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
+  @StateField private volatile long currentStatusStartTime = System.currentTimeMillis();
+  @StateField private volatile long lastMajorOptimizingTime;
+  @StateField private volatile long lastFullOptimizingTime;
+  @StateField private volatile long lastMinorOptimizingTime;
+  @StateField private volatile String optimizerGroup;
+  @StateField private volatile OptimizingProcess optimizingProcess;
+  @StateField private volatile TableConfiguration tableConfiguration;
+  @StateField private volatile long processId;
+  @StateField private volatile OptimizingEvaluator.PendingInput pendingInput;
 
   private final ReentrantLock blockerLock = new ReentrantLock();
 
   protected TableRuntime(
-      ServerTableIdentifier tableIdentifier, TableRuntimeHandler tableHandler,
+      ServerTableIdentifier tableIdentifier,
+      TableRuntimeHandler tableHandler,
       Map<String, String> properties) {
     Preconditions.checkNotNull(tableIdentifier, tableHandler);
     this.tableHandler = tableHandler;
@@ -110,8 +107,13 @@ public class TableRuntime extends StatedPersistentBase {
   protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
     Preconditions.checkNotNull(tableRuntimeMeta, tableHandler);
     this.tableHandler = tableHandler;
-    this.tableIdentifier = ServerTableIdentifier.of(tableRuntimeMeta.getTableId(), tableRuntimeMeta.getCatalogName(),
-        tableRuntimeMeta.getDbName(), tableRuntimeMeta.getTableName());
+    this.tableIdentifier =
+        ServerTableIdentifier.of(
+            tableRuntimeMeta.getTableId(),
+            tableRuntimeMeta.getCatalogName(),
+            tableRuntimeMeta.getDbName(),
+            tableRuntimeMeta.getTableName(),
+            tableRuntimeMeta.getFormat());
     this.currentSnapshotId = tableRuntimeMeta.getCurrentSnapshotId();
     this.lastOptimizedSnapshotId = tableRuntimeMeta.getLastOptimizedSnapshotId();
     this.lastOptimizedChangeSnapshotId = tableRuntimeMeta.getLastOptimizedChangeSnapshotId();
@@ -128,79 +130,90 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
-    if (!optimizingStatus.isProcessing() || !Objects.equals(optimizingProcess.getProcessId(), processId)) {
+    if (!optimizingStatus.isProcessing()
+        || !Objects.equals(optimizingProcess.getProcessId(), processId)) {
       throw new IllegalStateException("Table runtime and processing are not matched!");
     }
     this.optimizingProcess = optimizingProcess;
   }
 
   public void dispose() {
-    invokeInStateLock(() -> {
-      doAsTransaction(
-          () -> Optional.ofNullable(optimizingProcess).ifPresent(OptimizingProcess::close),
-          () -> doAs(TableMetaMapper.class, mapper ->
-              mapper.deleteOptimizingRuntime(tableIdentifier.getId()))
-      );
-    });
+    invokeInStateLock(
+        () -> {
+          doAsTransaction(
+              () -> Optional.ofNullable(optimizingProcess).ifPresent(OptimizingProcess::close),
+              () ->
+                  doAs(
+                      TableMetaMapper.class,
+                      mapper -> mapper.deleteOptimizingRuntime(tableIdentifier.getId())));
+        });
   }
 
   public void beginProcess(OptimizingProcess optimizingProcess) {
-    invokeConsisitency(() -> {
-      OptimizingStatus originalStatus = optimizingStatus;
-      this.optimizingProcess = optimizingProcess;
-      this.processId = optimizingProcess.getProcessId();
-      updateOptimizingStatus(optimizingProcess.getOptimizingType().getStatus());
-      this.pendingInput = null;
-      persistUpdatingRuntime();
-      tableHandler.handleTableChanged(this, originalStatus);
-    });
+    invokeConsisitency(
+        () -> {
+          OptimizingStatus originalStatus = optimizingStatus;
+          this.optimizingProcess = optimizingProcess;
+          this.processId = optimizingProcess.getProcessId();
+          updateOptimizingStatus(optimizingProcess.getOptimizingType().getStatus());
+          this.pendingInput = null;
+          persistUpdatingRuntime();
+          tableHandler.handleTableChanged(this, originalStatus);
+        });
   }
 
   public void beginCommitting() {
-    invokeConsisitency(() -> {
-      OptimizingStatus originalStatus = optimizingStatus;
-      updateOptimizingStatus(OptimizingStatus.COMMITTING);
-      persistUpdatingRuntime();
-      tableHandler.handleTableChanged(this, originalStatus);
-    });
+    invokeConsisitency(
+        () -> {
+          OptimizingStatus originalStatus = optimizingStatus;
+          updateOptimizingStatus(OptimizingStatus.COMMITTING);
+          persistUpdatingRuntime();
+          tableHandler.handleTableChanged(this, originalStatus);
+        });
   }
 
   public void setPendingInput(OptimizingEvaluator.PendingInput pendingInput) {
-    invokeConsisitency(() -> {
-      this.pendingInput = pendingInput;
-      if (optimizingStatus == OptimizingStatus.IDLE) {
-        this.currentChangeSnapshotId = System.currentTimeMillis();
-        updateOptimizingStatus(OptimizingStatus.PENDING);
-        persistUpdatingRuntime();
-        LOG.info("{} status changed from idle to pending with pendingInput {}", tableIdentifier, pendingInput);
-        tableHandler.handleTableChanged(this, OptimizingStatus.IDLE);
-      }
-    });
+    invokeConsisitency(
+        () -> {
+          this.pendingInput = pendingInput;
+          if (optimizingStatus == OptimizingStatus.IDLE) {
+            this.currentChangeSnapshotId = System.currentTimeMillis();
+            updateOptimizingStatus(OptimizingStatus.PENDING);
+            persistUpdatingRuntime();
+            LOG.info(
+                "{} status changed from idle to pending with pendingInput {}",
+                tableIdentifier,
+                pendingInput);
+            tableHandler.handleTableChanged(this, OptimizingStatus.IDLE);
+          }
+        });
   }
 
-  public TableRuntime refresh(ArcticTable table) {
-    return invokeConsisitency(() -> {
-      TableConfiguration configuration = tableConfiguration;
-      boolean configChanged = updateConfigInternal(table.properties());
-      if (refreshSnapshots(table) || configChanged) {
-        persistUpdatingRuntime();
-      }
-      if (configChanged) {
-        tableHandler.handleTableChanged(this, configuration);
-      }
-      return this;
-    });
+  public TableRuntime refresh(AmoroTable<?> table) {
+    return invokeConsisitency(
+        () -> {
+          TableConfiguration configuration = tableConfiguration;
+          boolean configChanged = updateConfigInternal(table.properties());
+          if (refreshSnapshots(table) || configChanged) {
+            persistUpdatingRuntime();
+          }
+          if (configChanged) {
+            tableHandler.handleTableChanged(this, configuration);
+          }
+          return this;
+        });
   }
 
   public void cleanPendingInput() {
-    invokeConsisitency(() -> {
-      pendingInput = null;
-      if (optimizingStatus == OptimizingStatus.PENDING) {
-        updateOptimizingStatus(OptimizingStatus.IDLE);
-        persistUpdatingRuntime();
-        tableHandler.handleTableChanged(this, OptimizingStatus.PENDING);
-      }
-    });
+    invokeConsisitency(
+        () -> {
+          pendingInput = null;
+          if (optimizingStatus == OptimizingStatus.PENDING) {
+            updateOptimizingStatus(OptimizingStatus.IDLE);
+            persistUpdatingRuntime();
+            tableHandler.handleTableChanged(this, OptimizingStatus.PENDING);
+          }
+        });
   }
 
   /**
@@ -209,32 +222,37 @@ public class TableRuntime extends StatedPersistentBase {
    * @param startTimeMills
    */
   public void resetTaskQuotas(long startTimeMills) {
-    invokeInStateLock(() -> {
-      taskQuotas.clear();
-      taskQuotas.addAll(getAs(OptimizingMapper.class, mapper ->
-          mapper.selectTaskQuotasByTime(tableIdentifier.getId(), startTimeMills)));
-    });
+    invokeInStateLock(
+        () -> {
+          taskQuotas.clear();
+          taskQuotas.addAll(
+              getAs(
+                  OptimizingMapper.class,
+                  mapper ->
+                      mapper.selectTaskQuotasByTime(tableIdentifier.getId(), startTimeMills)));
+        });
   }
 
   public void completeProcess(boolean success) {
-    invokeConsisitency(() -> {
-      OptimizingStatus originalStatus = optimizingStatus;
-      if (success) {
-        lastOptimizedSnapshotId = optimizingProcess.getTargetSnapshotId();
-        lastOptimizedChangeSnapshotId = optimizingProcess.getTargetChangeSnapshotId();
-        if (optimizingProcess.getOptimizingType() == OptimizingType.MINOR) {
-          lastMinorOptimizingTime = optimizingProcess.getPlanTime();
-        } else if (optimizingProcess.getOptimizingType() == OptimizingType.MAJOR) {
-          lastMajorOptimizingTime = optimizingProcess.getPlanTime();
-        } else if (optimizingProcess.getOptimizingType() == OptimizingType.FULL) {
-          lastFullOptimizingTime = optimizingProcess.getPlanTime();
-        }
-      }
-      updateOptimizingStatus(OptimizingStatus.IDLE);
-      optimizingProcess = null;
-      persistUpdatingRuntime();
-      tableHandler.handleTableChanged(this, originalStatus);
-    });
+    invokeConsisitency(
+        () -> {
+          OptimizingStatus originalStatus = optimizingStatus;
+          if (success) {
+            lastOptimizedSnapshotId = optimizingProcess.getTargetSnapshotId();
+            lastOptimizedChangeSnapshotId = optimizingProcess.getTargetChangeSnapshotId();
+            if (optimizingProcess.getOptimizingType() == OptimizingType.MINOR) {
+              lastMinorOptimizingTime = optimizingProcess.getPlanTime();
+            } else if (optimizingProcess.getOptimizingType() == OptimizingType.MAJOR) {
+              lastMajorOptimizingTime = optimizingProcess.getPlanTime();
+            } else if (optimizingProcess.getOptimizingType() == OptimizingType.FULL) {
+              lastFullOptimizingTime = optimizingProcess.getPlanTime();
+            }
+          }
+          updateOptimizingStatus(OptimizingStatus.IDLE);
+          optimizingProcess = null;
+          persistUpdatingRuntime();
+          tableHandler.handleTableChanged(this, originalStatus);
+        });
   }
 
   private void updateOptimizingStatus(OptimizingStatus status) {
@@ -242,15 +260,20 @@ public class TableRuntime extends StatedPersistentBase {
     this.currentStatusStartTime = System.currentTimeMillis();
   }
 
-  private boolean refreshSnapshots(ArcticTable table) {
+  private boolean refreshSnapshots(AmoroTable<?> amoroTable) {
+    ArcticTable table = (ArcticTable) amoroTable.originalTable();
     if (table.isKeyedTable()) {
       long lastSnapshotId = currentSnapshotId;
       long changeSnapshotId = currentChangeSnapshotId;
       currentSnapshotId = IcebergTableUtil.getSnapshotId(table.asKeyedTable().baseTable(), false);
-      currentChangeSnapshotId = IcebergTableUtil.getSnapshotId(table.asKeyedTable().changeTable(), false);
+      currentChangeSnapshotId =
+          IcebergTableUtil.getSnapshotId(table.asKeyedTable().changeTable(), false);
       if (currentSnapshotId != lastSnapshotId || currentChangeSnapshotId != changeSnapshotId) {
-        LOG.info("Refreshing table {} with base snapshot id {} and change snapshot id {}", tableIdentifier,
-            currentSnapshotId, currentChangeSnapshotId);
+        LOG.info(
+            "Refreshing table {} with base snapshot id {} and change snapshot id {}",
+            tableIdentifier,
+            currentSnapshotId,
+            currentChangeSnapshotId);
         return true;
       }
     } else {
@@ -258,7 +281,8 @@ public class TableRuntime extends StatedPersistentBase {
       Snapshot currentSnapshot = table.asUnkeyedTable().currentSnapshot();
       currentSnapshotId = currentSnapshot == null ? -1 : currentSnapshot.snapshotId();
       if (currentSnapshotId != lastSnapshotId) {
-        LOG.info("Refreshing table {} with base snapshot id {}", tableIdentifier, currentSnapshotId);
+        LOG.info(
+            "Refreshing table {} with base snapshot id {}", tableIdentifier, currentSnapshotId);
         return true;
       }
     }
@@ -274,7 +298,8 @@ public class TableRuntime extends StatedPersistentBase {
     if (tableConfiguration.equals(newTableConfig)) {
       return false;
     }
-    if (!Objects.equals(this.optimizerGroup, newTableConfig.getOptimizingConfig().getOptimizerGroup())) {
+    if (!Objects.equals(
+        this.optimizerGroup, newTableConfig.getOptimizingConfig().getOptimizerGroup())) {
       if (optimizingProcess != null) {
         optimizingProcess.close();
       }
@@ -313,6 +338,10 @@ public class TableRuntime extends StatedPersistentBase {
 
   public ServerTableIdentifier getTableIdentifier() {
     return tableIdentifier;
+  }
+
+  public TableFormat getFormat() {
+    return tableIdentifier.getFormat();
   }
 
   public OptimizingStatus getOptimizingStatus() {
@@ -367,10 +396,6 @@ public class TableRuntime extends StatedPersistentBase {
     return optimizerGroup;
   }
 
-  public long getTargetSize() {
-    return tableConfiguration.getOptimizingConfig().getTargetSize();
-  }
-
   public void setCurrentChangeSnapshotId(long currentChangeSnapshotId) {
     this.currentChangeSnapshotId = currentChangeSnapshotId;
   }
@@ -404,17 +429,22 @@ public class TableRuntime extends StatedPersistentBase {
     long calculatingStartTime = calculatingEndTime - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME;
     taskQuotas.removeIf(task -> task.checkExpired(calculatingStartTime));
     long finishedTaskQuotaTime =
-        taskQuotas.stream().mapToLong(taskQuota -> taskQuota.getQuotaTime(calculatingStartTime)).sum();
-    return optimizingProcess == null ?
-        finishedTaskQuotaTime :
-        finishedTaskQuotaTime + optimizingProcess.getRunningQuotaTime(calculatingStartTime, calculatingEndTime);
+        taskQuotas.stream()
+            .mapToLong(taskQuota -> taskQuota.getQuotaTime(calculatingStartTime))
+            .sum();
+    return optimizingProcess == null
+        ? finishedTaskQuotaTime
+        : finishedTaskQuotaTime
+            + optimizingProcess.getRunningQuotaTime(calculatingStartTime, calculatingEndTime);
   }
 
   public double calculateQuotaOccupy() {
-    return new BigDecimal((double) getQuotaTime() /
-        ArcticServiceConstants.QUOTA_LOOK_BACK_TIME /
-        tableConfiguration.getOptimizingConfig().getTargetQuota())
-        .setScale(4, RoundingMode.HALF_UP).doubleValue();
+    return new BigDecimal(
+            (double) getQuotaTime()
+                / ArcticServiceConstants.QUOTA_LOOK_BACK_TIME
+                / tableConfiguration.getOptimizingConfig().getTargetQuota())
+        .setScale(4, RoundingMode.HALF_UP)
+        .doubleValue();
   }
 
   /**
@@ -436,13 +466,14 @@ public class TableRuntime extends StatedPersistentBase {
   /**
    * Block some operations for table.
    *
-   * @param operations     - operations to be blocked
-   * @param properties     -
+   * @param operations - operations to be blocked
+   * @param properties -
    * @param blockerTimeout -
    * @return TableBlocker if success
    */
   public TableBlocker block(
-      List<BlockableOperation> operations, @Nonnull Map<String, String> properties,
+      List<BlockableOperation> operations,
+      @Nonnull Map<String, String> properties,
       long blockerTimeout) {
     Preconditions.checkNotNull(operations, "operations should not be null");
     Preconditions.checkArgument(!operations.isEmpty(), "operations should not be empty");
@@ -455,7 +486,8 @@ public class TableRuntime extends StatedPersistentBase {
       if (conflict(operations, tableBlockers)) {
         throw new BlockerConflictException(operations + " is conflict with " + tableBlockers);
       }
-      TableBlocker tableBlocker = buildTableBlocker(tableIdentifier, operations, properties, now, blockerTimeout);
+      TableBlocker tableBlocker =
+          buildTableBlocker(tableIdentifier, operations, properties, now, blockerTimeout);
       doAs(TableBlockerMapper.class, mapper -> mapper.insertBlocker(tableBlocker));
       return tableBlocker;
     } finally {
@@ -466,7 +498,7 @@ public class TableRuntime extends StatedPersistentBase {
   /**
    * Renew blocker.
    *
-   * @param blockerId      - blockerId
+   * @param blockerId - blockerId
    * @param blockerTimeout - timeout
    * @throws IllegalStateException if blocker not exist
    */
@@ -475,7 +507,9 @@ public class TableRuntime extends StatedPersistentBase {
     try {
       long now = System.currentTimeMillis();
       TableBlocker tableBlocker =
-          getAs(TableBlockerMapper.class, mapper -> mapper.selectBlocker(Long.parseLong(blockerId), now));
+          getAs(
+              TableBlockerMapper.class,
+              mapper -> mapper.selectBlocker(Long.parseLong(blockerId), now));
       if (tableBlocker == null) {
         throw new ObjectNotExistsException("Blocker " + blockerId + " of " + tableIdentifier);
       }
@@ -513,16 +547,18 @@ public class TableRuntime extends StatedPersistentBase {
     blockerLock.lock();
     try {
       List<TableBlocker> tableBlockers =
-          getAs(TableBlockerMapper.class, mapper -> mapper.selectBlockers(tableIdentifier, System.currentTimeMillis()));
+          getAs(
+              TableBlockerMapper.class,
+              mapper -> mapper.selectBlockers(tableIdentifier, System.currentTimeMillis()));
       return conflict(operation, tableBlockers);
     } finally {
       blockerLock.unlock();
     }
   }
 
-  private boolean conflict(List<BlockableOperation> blockableOperations, List<TableBlocker> blockers) {
-    return blockableOperations.stream()
-        .anyMatch(operation -> conflict(operation, blockers));
+  private boolean conflict(
+      List<BlockableOperation> blockableOperations, List<TableBlocker> blockers) {
+    return blockableOperations.stream().anyMatch(operation -> conflict(operation, blockers));
   }
 
   private boolean conflict(BlockableOperation blockableOperation, List<TableBlocker> blockers) {
@@ -531,13 +567,17 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   private TableBlocker buildTableBlocker(
-      ServerTableIdentifier tableIdentifier, List<BlockableOperation> operations,
-      Map<String, String> properties, long now, long blockerTimeout) {
+      ServerTableIdentifier tableIdentifier,
+      List<BlockableOperation> operations,
+      Map<String, String> properties,
+      long now,
+      long blockerTimeout) {
     TableBlocker tableBlocker = new TableBlocker();
     tableBlocker.setTableIdentifier(tableIdentifier);
     tableBlocker.setCreateTime(now);
     tableBlocker.setExpirationTime(now + blockerTimeout);
-    tableBlocker.setOperations(operations.stream().map(BlockableOperation::name).collect(Collectors.toList()));
+    tableBlocker.setOperations(
+        operations.stream().map(BlockableOperation::name).collect(Collectors.toList()));
     HashMap<String, String> propertiesOfTableBlocker = new HashMap<>(properties);
     propertiesOfTableBlocker.put(RenewableBlocker.BLOCKER_TIMEOUT, blockerTimeout + "");
     tableBlocker.setProperties(propertiesOfTableBlocker);

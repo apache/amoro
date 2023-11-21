@@ -25,6 +25,7 @@ import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.collections.CollectionUtils;
 
 import javax.annotation.Nullable;
+
 import java.util.List;
 
 public class OptimizingCountChecker extends AbstractSceneCountChecker {

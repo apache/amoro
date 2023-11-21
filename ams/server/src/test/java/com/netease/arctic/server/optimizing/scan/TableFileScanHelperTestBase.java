@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.optimizing.scan;
 
+import com.google.common.collect.Lists;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
@@ -27,21 +28,26 @@ import com.netease.arctic.utils.ContentFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.io.CloseableIterable;
 import org.junit.Assert;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 
 public abstract class TableFileScanHelperTestBase extends TableTestBase {
-  public TableFileScanHelperTestBase(CatalogTestHelper catalogTestHelper,
-                                     TableTestHelper tableTestHelper) {
+  public TableFileScanHelperTestBase(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
-  protected void assertScanResult(List<TableFileScanHelper.FileScanResult> result, int size, Integer deleteCnt) {
+  protected void assertScanResult(
+      List<TableFileScanHelper.FileScanResult> result, int size, Integer deleteCnt) {
     assertScanResult(result, size, null, deleteCnt);
   }
 
-  protected void assertScanResult(List<TableFileScanHelper.FileScanResult> result, int size, Long sequence) {
+  protected void assertScanResult(
+      List<TableFileScanHelper.FileScanResult> result, int size, Long sequence) {
     assertScanResult(result, size, sequence, null);
   }
 
@@ -49,8 +55,8 @@ public abstract class TableFileScanHelperTestBase extends TableTestBase {
     assertScanResult(result, size, null, null);
   }
 
-  protected void assertScanResult(List<TableFileScanHelper.FileScanResult> result, int size, Long sequence,
-                                  Integer deleteCnt) {
+  protected void assertScanResult(
+      List<TableFileScanHelper.FileScanResult> result, int size, Long sequence, Integer deleteCnt) {
     Assert.assertEquals(size, result.size());
     for (TableFileScanHelper.FileScanResult fileScanResult : result) {
       DataFile file = fileScanResult.file();
@@ -82,4 +88,16 @@ public abstract class TableFileScanHelperTestBase extends TableTestBase {
   }
 
   protected abstract TableFileScanHelper buildFileScanHelper();
+
+  protected List<TableFileScanHelper.FileScanResult> scanFiles() {
+    return scanFiles(buildFileScanHelper());
+  }
+
+  protected List<TableFileScanHelper.FileScanResult> scanFiles(TableFileScanHelper scanHelper) {
+    try (CloseableIterable<TableFileScanHelper.FileScanResult> results = scanHelper.scan()) {
+      return Lists.newArrayList(results.iterator());
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
 }

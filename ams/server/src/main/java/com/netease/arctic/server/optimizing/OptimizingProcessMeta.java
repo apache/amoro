@@ -20,9 +20,7 @@ package com.netease.arctic.server.optimizing;
 
 import java.util.Map;
 
-/**
- * Meta of optimizing process.
- */
+/** Meta of optimizing process. */
 public class OptimizingProcessMeta {
 
   private Long processId;
@@ -41,8 +39,7 @@ public class OptimizingProcessMeta {
   private Map<String, Long> fromSequence;
   private Map<String, Long> toSequence;
 
-  public OptimizingProcessMeta() {
-  }
+  public OptimizingProcessMeta() {}
 
   public Long getProcessId() {
     return processId;

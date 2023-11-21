@@ -49,49 +49,42 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import java.util.Map;
 import java.util.Set;
 
-public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
-    SupportsRowLevelOperator, SupportsPartitionManagement {
-  private static final Set<String> RESERVED_PROPERTIES = Sets.newHashSet("provider", "format", "current-snapshot-id");
-  private static final Set<TableCapability> CAPABILITIES = ImmutableSet.of(
-      TableCapability.BATCH_READ,
-      TableCapability.BATCH_WRITE,
-      TableCapability.STREAMING_WRITE,
-      TableCapability.OVERWRITE_BY_FILTER,
-      TableCapability.OVERWRITE_DYNAMIC);
+public class ArcticSparkTable
+    implements Table,
+        SupportsRead,
+        SupportsWrite,
+        SupportsRowLevelOperator,
+        SupportsPartitionManagement {
+  private static final Set<String> RESERVED_PROPERTIES =
+      Sets.newHashSet("provider", "format", "current-snapshot-id");
+  private static final Set<TableCapability> CAPABILITIES =
+      ImmutableSet.of(
+          TableCapability.BATCH_READ,
+          TableCapability.BATCH_WRITE,
+          TableCapability.STREAMING_WRITE,
+          TableCapability.OVERWRITE_BY_FILTER,
+          TableCapability.OVERWRITE_DYNAMIC);
 
   private final ArcticTable arcticTable;
-  private final StructType requestedSchema;
-  private final boolean refreshEagerly;
+  private final String sparkCatalogName;
   private StructType lazyTableSchema = null;
   private SparkSession lazySpark = null;
   private final ArcticCatalog catalog;
 
-  public static Table ofArcticTable(ArcticTable table, ArcticCatalog catalog) {
+  public static Table ofArcticTable(
+      ArcticTable table, ArcticCatalog catalog, String sparkCatalogName) {
     if (table.isUnkeyedTable()) {
       if (!(table instanceof SupportHive)) {
-        return new ArcticIcebergSparkTable(table.asUnkeyedTable(), false);
+        return new ArcticIcebergSparkTable(table.asUnkeyedTable(), false, sparkCatalogName);
       }
     }
-    return new ArcticSparkTable(table, false, catalog);
+    return new ArcticSparkTable(table, catalog, sparkCatalogName);
   }
 
-  public ArcticSparkTable(ArcticTable arcticTable, boolean refreshEagerly, ArcticCatalog catalog) {
-    this(arcticTable, null, refreshEagerly, catalog);
-  }
-
-  public ArcticSparkTable(ArcticTable arcticTable,
-                          StructType requestedSchema,
-                          boolean refreshEagerly,
-                          ArcticCatalog catalog) {
+  public ArcticSparkTable(ArcticTable arcticTable, ArcticCatalog catalog, String sparkCatalogName) {
     this.arcticTable = arcticTable;
-    this.requestedSchema = requestedSchema;
-    this.refreshEagerly = refreshEagerly;
+    this.sparkCatalogName = sparkCatalogName;
     this.catalog = catalog;
-
-    if (requestedSchema != null) {
-      // convert the requested schema to throw an exception if any requested fields are unknown
-      SparkSchemaUtil.convert(arcticTable.schema(), requestedSchema);
-    }
   }
 
   private SparkSession sparkSession() {
@@ -108,19 +101,18 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
 
   @Override
   public String name() {
-    return arcticTable.id().toString();
+    return sparkCatalogName
+        + "."
+        + arcticTable.id().getDatabase()
+        + "."
+        + arcticTable.id().getTableName();
   }
 
   @Override
   public StructType schema() {
     if (lazyTableSchema == null) {
       Schema tableSchema = arcticTable.schema();
-      if (requestedSchema != null) {
-        Schema prunedSchema = SparkSchemaUtil.prune(tableSchema, requestedSchema);
-        this.lazyTableSchema = SparkSchemaUtil.convert(prunedSchema);
-      } else {
-        this.lazyTableSchema = SparkSchemaUtil.convert(tableSchema);
-      }
+      this.lazyTableSchema = SparkSchemaUtil.convert(tableSchema);
     }
 
     return lazyTableSchema;
@@ -136,10 +128,16 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
   public Map<String, String> properties() {
     ImmutableMap.Builder<String, String> propsBuilder = ImmutableMap.builder();
 
-    String baseFileFormat = arcticTable.properties()
-        .getOrDefault(TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT);
-    String deltaFileFormat = arcticTable.properties()
-        .getOrDefault(TableProperties.CHANGE_FILE_FORMAT, TableProperties.CHANGE_FILE_FORMAT_DEFAULT);
+    String baseFileFormat =
+        arcticTable
+            .properties()
+            .getOrDefault(
+                TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT);
+    String deltaFileFormat =
+        arcticTable
+            .properties()
+            .getOrDefault(
+                TableProperties.CHANGE_FILE_FORMAT, TableProperties.CHANGE_FILE_FORMAT_DEFAULT);
     propsBuilder.put("base.write.format", baseFileFormat);
     propsBuilder.put("delta.write.format", deltaFileFormat);
     propsBuilder.put("provider", "arctic");
@@ -182,20 +180,13 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
 
   @Override
   public ScanBuilder newScanBuilder(CaseInsensitiveStringMap options) {
-    SparkScanBuilder scanBuilder = new SparkScanBuilder(sparkSession(), arcticTable, options);
-
-    if (requestedSchema != null) {
-      scanBuilder.pruneColumns(requestedSchema);
-    }
-
-    return scanBuilder;
+    return new SparkScanBuilder(sparkSession(), arcticTable, options);
   }
 
   @Override
   public WriteBuilder newWriteBuilder(LogicalWriteInfo info) {
     return new ArcticSparkWriteBuilder(arcticTable, info, catalog);
   }
-
 
   @Override
   public SupportsExtendIdentColumns newUpsertScanBuilder(CaseInsensitiveStringMap options) {
@@ -209,9 +200,9 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
 
   @Override
   public boolean appendAsUpsert() {
-    return arcticTable.isKeyedTable() &&
-        Boolean.parseBoolean(arcticTable.properties().getOrDefault(
-                TableProperties.UPSERT_ENABLED, "false"));
+    return arcticTable.isKeyedTable()
+        && Boolean.parseBoolean(
+            arcticTable.properties().getOrDefault(TableProperties.UPSERT_ENABLED, "false"));
   }
 
   @Override
@@ -237,7 +228,8 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite,
   }
 
   @Override
-  public Map<String, String> loadPartitionMetadata(InternalRow ident) throws UnsupportedOperationException {
+  public Map<String, String> loadPartitionMetadata(InternalRow ident)
+      throws UnsupportedOperationException {
     return null;
   }
 

@@ -20,14 +20,10 @@ package com.netease.arctic;
 
 import java.util.List;
 
-/**
- * UnifiedCatalog is a catalog that can visit tables with all types of formats.
- */
+/** UnifiedCatalog is a catalog that can visit tables with all types of formats. */
 public interface UnifiedCatalog extends AmoroCatalog {
 
-  /**
-   * name of this catalog
-   */
+  /** name of this catalog */
   String name();
 
   /**
@@ -36,10 +32,8 @@ public interface UnifiedCatalog extends AmoroCatalog {
    * @param database given database
    * @return identifier and format list
    */
-  List<TableMeta> listTableMetas(String database);
+  List<TableIDWithFormat> listTables(String database);
 
-  /**
-   * Refresh catalog meta
-   */
+  /** Refresh catalog meta */
   void refresh();
 }

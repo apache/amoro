@@ -24,10 +24,12 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
+
 import java.util.function.Supplier;
 
 /**
- * Implementation of {@link AppendFiles} for arctic table, adding tracing and watermark generating logics.
+ * Implementation of {@link AppendFiles} for arctic table, adding tracing and watermark generating
+ * logics.
  */
 public class ArcticAppendFiles extends ArcticUpdate<AppendFiles> implements AppendFiles {
 
@@ -43,8 +45,10 @@ public class ArcticAppendFiles extends ArcticUpdate<AppendFiles> implements Appe
   }
 
   private ArcticAppendFiles(
-      ArcticTable arcticTable, AppendFiles appendFiles,
-      Transaction transaction, boolean autoCommitTransaction) {
+      ArcticTable arcticTable,
+      AppendFiles appendFiles,
+      Transaction transaction,
+      boolean autoCommitTransaction) {
     super(arcticTable, appendFiles, transaction, autoCommitTransaction);
     this.appendFiles = appendFiles;
   }
@@ -58,7 +62,7 @@ public class ArcticAppendFiles extends ArcticUpdate<AppendFiles> implements Appe
 
   @Override
   public AppendFiles appendManifest(ManifestFile file) {
-    //TODO read added files from manifest file
+    // TODO read added files from manifest file
     appendFiles.appendManifest(file);
     return this;
   }
@@ -79,8 +83,10 @@ public class ArcticAppendFiles extends ArcticUpdate<AppendFiles> implements Appe
     }
 
     @Override
-    protected ArcticAppendFiles updateWithWatermark(Transaction transaction, boolean autoCommitTransaction) {
-      return new ArcticAppendFiles(table, newAppendFiles(transaction), transaction, autoCommitTransaction);
+    protected ArcticAppendFiles updateWithWatermark(
+        Transaction transaction, boolean autoCommitTransaction) {
+      return new ArcticAppendFiles(
+          table, newAppendFiles(transaction), transaction, autoCommitTransaction);
     }
 
     @Override

@@ -18,9 +18,7 @@
 
 package com.netease.arctic;
 
-/**
- * Exception raised when attempting to load a database that does not exists.
- */
+/** Exception raised when attempting to load a database that does not exists. */
 public class NoSuchDatabaseException extends RuntimeException {
 
   public NoSuchDatabaseException(String message, Object... args) {
@@ -29,5 +27,17 @@ public class NoSuchDatabaseException extends RuntimeException {
 
   public NoSuchDatabaseException(Throwable e, String message, Object... args) {
     super(String.format(message, args), e);
+  }
+
+  public NoSuchDatabaseException(String message) {
+    super(message);
+  }
+
+  public NoSuchDatabaseException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public NoSuchDatabaseException(Throwable cause) {
+    super(cause);
   }
 }

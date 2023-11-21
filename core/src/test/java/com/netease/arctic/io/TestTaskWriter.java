@@ -18,6 +18,8 @@
 
 package com.netease.arctic.io;
 
+import static com.netease.arctic.table.TableProperties.FILE_FORMAT_ORC;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.DataFileTestHelpers;
 import com.netease.arctic.TableTestHelper;
@@ -29,6 +31,7 @@ import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.scan.TableEntriesScan;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.iceberg.AppendFiles;
@@ -36,6 +39,7 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.data.Record;
@@ -51,6 +55,7 @@ import org.junit.runners.Parameterized;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -59,14 +64,35 @@ public class TestTaskWriter extends TableTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][] {{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(true, true)},
-                           {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(true, false)},
-                           {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(false, true)},
-                           {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(false, false)}};
+    return new Object[][] {
+      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, true)},
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, false)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(false, true)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(false, false)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, true, FILE_FORMAT_ORC)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(true, false, FILE_FORMAT_ORC)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(false, true, FILE_FORMAT_ORC)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(false, false, FILE_FORMAT_ORC)
+      }
+    };
   }
 
   public TestTaskWriter(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -83,8 +109,8 @@ public class TestTaskWriter extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(5, "mary", 0, "2022-01-01T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(6, "mack", 0, "2022-01-01T12:00:00"));
 
-    List<DataFile> files = tableTestHelper().writeBaseStore(getArcticTable(),
-        1L, insertRecords, false);
+    List<DataFile> files =
+        tableTestHelper().writeBaseStore(getArcticTable(), 1L, insertRecords, false);
     if (isKeyedTable()) {
       if (isPartitionedTable()) {
         Assert.assertEquals(5, files.size());
@@ -104,20 +130,33 @@ public class TestTaskWriter extends TableTestBase {
     files.forEach(appendFiles::appendFile);
     appendFiles.commit();
 
-    List<Record> readRecords = tableTestHelper().readBaseStore(getArcticTable(),
-        Expressions.alwaysTrue(), null, false);
+    List<Record> readRecords =
+        tableTestHelper().readBaseStore(getArcticTable(), Expressions.alwaysTrue(), null, false);
     Assert.assertEquals(Sets.newHashSet(insertRecords), Sets.newHashSet(readRecords));
   }
 
   @Test
   public void testBasePosDeleteWriter() throws IOException {
-    DataFile dataFile = DataFileTestHelpers.getFile("/data", 1, getArcticTable().spec(),
-        isPartitionedTable() ? "op_time_day=2020-01-01" : null, null, false);
+    String fileFormat =
+        tableTestHelper()
+            .tableProperties()
+            .getOrDefault(
+                TableProperties.DEFAULT_FILE_FORMAT, TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
+    DataFile dataFile =
+        DataFileTestHelpers.getFile(
+            "/data",
+            1,
+            getArcticTable().spec(),
+            isPartitionedTable() ? "op_time_day=2020-01-01" : null,
+            null,
+            false,
+            FileFormat.valueOf(fileFormat.toUpperCase(Locale.ENGLISH)));
     GenericTaskWriters.Builder builder = GenericTaskWriters.builderFor(getArcticTable());
     if (isKeyedTable()) {
       builder.withTransactionId(1L);
     }
-    SortedPosDeleteWriter<Record> writer = builder.buildBasePosDeleteWriter(0, 0, dataFile.partition());
+    SortedPosDeleteWriter<Record> writer =
+        builder.buildBasePosDeleteWriter(0, 0, dataFile.partition());
 
     writer.delete(dataFile.path(), 1);
     writer.delete(dataFile.path(), 3);
@@ -130,23 +169,35 @@ public class TestTaskWriter extends TableTestBase {
     rowDelta.commit();
 
     // check lower bounds and upper bounds of file_path
-    TableEntriesScan entriesScan = TableEntriesScan.builder(baseStore)
-        .includeColumnStats()
-        .includeFileContent(FileContent.POSITION_DELETES)
-        .build();
+    TableEntriesScan entriesScan =
+        TableEntriesScan.builder(baseStore)
+            .includeColumnStats()
+            .includeFileContent(FileContent.POSITION_DELETES)
+            .build();
     AtomicInteger cnt = new AtomicInteger();
-    entriesScan.entries().forEach(entry -> {
-      cnt.getAndIncrement();
-      ContentFile<?> file = entry.getFile();
-      Map<Integer, ByteBuffer> lowerBounds = file.lowerBounds();
-      Map<Integer, ByteBuffer> upperBounds = file.upperBounds();
+    entriesScan
+        .entries()
+        .forEach(
+            entry -> {
+              cnt.getAndIncrement();
+              ContentFile<?> file = entry.getFile();
+              Map<Integer, ByteBuffer> lowerBounds = file.lowerBounds();
+              Map<Integer, ByteBuffer> upperBounds = file.upperBounds();
 
-      String pathLowerBounds = new String(lowerBounds.get(MetadataColumns.DELETE_FILE_PATH.fieldId()).array());
-      String pathUpperBounds = new String(upperBounds.get(MetadataColumns.DELETE_FILE_PATH.fieldId()).array());
+              String pathLowerBounds =
+                  new String(lowerBounds.get(MetadataColumns.DELETE_FILE_PATH.fieldId()).array());
+              String pathUpperBounds =
+                  new String(upperBounds.get(MetadataColumns.DELETE_FILE_PATH.fieldId()).array());
 
-      Assert.assertEquals(dataFile.path().toString(), pathLowerBounds);
-      Assert.assertEquals(dataFile.path().toString(), pathUpperBounds);
-    });
+              // As ORC PositionDeleteWriter didn't add metricsConfig,
+              // here can't get lower bounds and upper bounds of file_path accurately for orc file
+              // format,
+              // do not check lower bounds and upper bounds for orc
+              if (!fileFormat.equals(FILE_FORMAT_ORC)) {
+                Assert.assertEquals(dataFile.path().toString(), pathLowerBounds);
+                Assert.assertEquals(dataFile.path().toString(), pathUpperBounds);
+              }
+            });
     Assert.assertEquals(1, cnt.get());
   }
 
@@ -160,16 +211,20 @@ public class TestTaskWriter extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(4, "sam", 0, "2022-01-04T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(5, "mary", 0, "2022-01-01T12:00:00"));
 
-    List<DataFile> insertFiles = tableTestHelper().writeChangeStore(getArcticTable().asKeyedTable(),
-        1L, ChangeAction.INSERT, insertRecords, false);
+    List<DataFile> insertFiles =
+        tableTestHelper()
+            .writeChangeStore(
+                getArcticTable().asKeyedTable(), 1L, ChangeAction.INSERT, insertRecords, false);
     Assert.assertEquals(4, insertFiles.size());
 
     List<Record> deleteRecords = Lists.newArrayList();
     deleteRecords.add(insertRecords.get(0));
     deleteRecords.add(insertRecords.get(1));
 
-    List<DataFile> deleteFiles = tableTestHelper().writeChangeStore(getArcticTable().asKeyedTable(),
-        2L, ChangeAction.DELETE, deleteRecords, false);
+    List<DataFile> deleteFiles =
+        tableTestHelper()
+            .writeChangeStore(
+                getArcticTable().asKeyedTable(), 2L, ChangeAction.DELETE, deleteRecords, false);
     Assert.assertEquals(2, deleteFiles.size());
 
     AppendFiles appendFiles = getArcticTable().asKeyedTable().changeTable().newAppend();
@@ -177,14 +232,20 @@ public class TestTaskWriter extends TableTestBase {
     deleteFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
 
-    List<Record> readChangeRecords = tableTestHelper().readChangeStore(getArcticTable().asKeyedTable(),
-        Expressions.alwaysTrue(), null, false);
+    List<Record> readChangeRecords =
+        tableTestHelper()
+            .readChangeStore(
+                getArcticTable().asKeyedTable(), Expressions.alwaysTrue(), null, false);
     List<Record> expectRecord = Lists.newArrayList();
     for (int i = 0; i < insertRecords.size(); i++) {
-      expectRecord.add(DataTestHelpers.appendMetaColumnValues(insertRecords.get(i), 1L, i + 1, ChangeAction.INSERT));
+      expectRecord.add(
+          MixedDataTestHelpers.appendMetaColumnValues(
+              insertRecords.get(i), 1L, i + 1, ChangeAction.INSERT));
     }
     for (int i = 0; i < deleteRecords.size(); i++) {
-      expectRecord.add(DataTestHelpers.appendMetaColumnValues(deleteRecords.get(i), 2L, i + 1, ChangeAction.DELETE));
+      expectRecord.add(
+          MixedDataTestHelpers.appendMetaColumnValues(
+              deleteRecords.get(i), 2L, i + 1, ChangeAction.DELETE));
     }
     Assert.assertEquals(Sets.newHashSet(expectRecord), Sets.newHashSet(readChangeRecords));
   }
@@ -205,12 +266,18 @@ public class TestTaskWriter extends TableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(12, "sam", 0, "2022-02-01T06:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(13, "john", 0, "2022-01-01T12:00:00"));
 
-    Assert.assertThrows(IllegalStateException.class, () ->
-        tableTestHelper().writeBaseStore(getArcticTable().asKeyedTable(), 1L, insertRecords, true));
+    Assert.assertThrows(
+        IllegalStateException.class,
+        () ->
+            tableTestHelper()
+                .writeBaseStore(getArcticTable().asKeyedTable(), 1L, insertRecords, true));
 
     Assume.assumeTrue(isKeyedTable());
-    Assert.assertThrows(IllegalStateException.class, () ->
-        tableTestHelper().writeChangeStore(getArcticTable().asKeyedTable(), 1L, ChangeAction.INSERT,
-            insertRecords, true));
+    Assert.assertThrows(
+        IllegalStateException.class,
+        () ->
+            tableTestHelper()
+                .writeChangeStore(
+                    getArcticTable().asKeyedTable(), 1L, ChangeAction.INSERT, insertRecords, true));
   }
 }

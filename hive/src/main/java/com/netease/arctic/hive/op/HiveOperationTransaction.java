@@ -45,6 +45,7 @@ import org.apache.iceberg.UpdateLocation;
 import org.apache.iceberg.UpdatePartitionSpec;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
+import org.apache.iceberg.UpdateStatistics;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.LocationProvider;
@@ -64,9 +65,7 @@ public class HiveOperationTransaction implements Transaction {
   private final TransactionalTable transactionalTable;
 
   public HiveOperationTransaction(
-      UnkeyedHiveTable unkeyedHiveTable,
-      Transaction wrapped,
-      HMSClientPool client) {
+      UnkeyedHiveTable unkeyedHiveTable, Transaction wrapped, HMSClientPool client) {
     this.unkeyedHiveTable = unkeyedHiveTable;
     this.wrapped = wrapped;
     this.client = client;
@@ -81,7 +80,8 @@ public class HiveOperationTransaction implements Transaction {
 
   @Override
   public UpdateSchema updateSchema() {
-    return new HiveSchemaUpdate(unkeyedHiveTable, client, transactionalClient, wrapped.updateSchema());
+    return new HiveSchemaUpdate(
+        unkeyedHiveTable, client, transactionalClient, wrapped.updateSchema());
   }
 
   @Override
@@ -155,6 +155,16 @@ public class HiveOperationTransaction implements Transaction {
     transactionalClient.commit();
   }
 
+  @Override
+  public UpdateStatistics updateStatistics() {
+    return wrapped.updateStatistics();
+  }
+
+  @Override
+  public ManageSnapshots manageSnapshots() {
+    return wrapped.manageSnapshots();
+  }
+
   private class TransactionalHMSClient implements HMSClientPool {
     List<Action<?, HMSClient, TException>> pendingActions = Lists.newArrayList();
 
@@ -165,7 +175,8 @@ public class HiveOperationTransaction implements Transaction {
     }
 
     @Override
-    public <R> R run(Action<R, HMSClient, TException> action, boolean retry) throws TException, InterruptedException {
+    public <R> R run(Action<R, HMSClient, TException> action, boolean retry)
+        throws TException, InterruptedException {
       pendingActions.add(action);
       return null;
     }

@@ -74,9 +74,10 @@ public abstract class AbstractTableDataView implements TableDataView {
   }
 
   private WriteResult writeKeyedTable(List<RecordWithAction> records) throws IOException {
-    GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(arcticTable.asKeyedTable())
-        .withTransactionId(0L)
-        .buildChangeWriter();
+    GenericChangeTaskWriter writer =
+        GenericTaskWriters.builderFor(arcticTable.asKeyedTable())
+            .withTransactionId(0L)
+            .buildChangeWriter();
     try {
       for (Record record : records) {
         writer.write(record);
@@ -88,8 +89,7 @@ public abstract class AbstractTableDataView implements TableDataView {
   }
 
   private WriteResult writeUnKeyedTable(List<RecordWithAction> records) throws IOException {
-    GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(arcticTable)
-        .buildBaseWriter();
+    GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(arcticTable).buildBaseWriter();
     try {
       for (Record record : records) {
         writer.write(record);
@@ -102,21 +102,20 @@ public abstract class AbstractTableDataView implements TableDataView {
 
   private WriteResult writeIceberg(List<RecordWithAction> records) throws IOException {
     Schema eqDeleteSchema = primary == null ? schema : primary;
-    GenericTaskDeltaWriter deltaWriter = createTaskWriter(
-        eqDeleteSchema
-                .columns()
-                .stream()
-                .map(Types.NestedField::fieldId).collect(Collectors.toList()),
-        schema,
-        arcticTable.asUnkeyedTable(),
-        FileFormat.PARQUET,
-        OutputFileFactory.builderFor(
+    GenericTaskDeltaWriter deltaWriter =
+        createTaskWriter(
+            eqDeleteSchema.columns().stream()
+                .map(Types.NestedField::fieldId)
+                .collect(Collectors.toList()),
+            schema,
             arcticTable.asUnkeyedTable(),
-            1,
-            1).format(FileFormat.PARQUET).build()
-    );
+            FileFormat.PARQUET,
+            OutputFileFactory.builderFor(arcticTable.asUnkeyedTable(), 1, 1)
+                .format(FileFormat.PARQUET)
+                .build());
     for (RecordWithAction record : records) {
-      if (record.getAction() == ChangeAction.DELETE || record.getAction() == ChangeAction.UPDATE_BEFORE) {
+      if (record.getAction() == ChangeAction.DELETE
+          || record.getAction() == ChangeAction.UPDATE_BEFORE) {
         deltaWriter.delete(record);
       } else {
         deltaWriter.write(record);

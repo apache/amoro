@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -45,17 +46,18 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][] {{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(true, true)},
-                           {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-                            new BasicTableTestHelper(false, true)},
-                           {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-                            new HiveTableTestHelper(true, true)}};
+    return new Object[][] {
+      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, true)},
+      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, true)},
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, true)
+      }
+    };
   }
 
   public TestTableRuntimeHandler(
-      CatalogTestHelper catalogTestHelper,
-      TableTestHelper tableTestHelper) {
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper, false);
   }
 
@@ -80,15 +82,25 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     tableService.addHandlerChain(handler);
     tableService.initialize();
     Assert.assertEquals(1, handler.getInitTables().size());
-    Assert.assertEquals(createTableId.getId().longValue(), handler.getInitTables().get(0).getTableId());
+    Assert.assertEquals(
+        createTableId.getId().longValue(), handler.getInitTables().get(0).getTableId());
 
     // test change properties
-    tableService().loadTable(createTableId).updateProperties()
-        .set(TableProperties.ENABLE_ORPHAN_CLEAN, "true").commit();
-    tableService().getRuntime(createTableId).refresh(tableService.loadTable(serverTableIdentifier()));
+    ArcticTable arcticTable = (ArcticTable) tableService().loadTable(createTableId).originalTable();
+
+    arcticTable.updateProperties().set(TableProperties.ENABLE_ORPHAN_CLEAN, "true").commit();
+    tableService()
+        .getRuntime(createTableId)
+        .refresh(tableService.loadTable(serverTableIdentifier()));
     Assert.assertEquals(1, handler.getConfigChangedTables().size());
     validateTableRuntime(handler.getConfigChangedTables().get(0).first());
-    Assert.assertTrue(handler.getConfigChangedTables().get(0).first().getTableConfiguration().isCleanOrphanEnabled());
+    Assert.assertTrue(
+        handler
+            .getConfigChangedTables()
+            .get(0)
+            .first()
+            .getTableConfiguration()
+            .isCleanOrphanEnabled());
     Assert.assertFalse(handler.getConfigChangedTables().get(0).second().isCleanOrphanEnabled());
 
     // drop table
@@ -111,15 +123,16 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
   static class TestHandler extends RuntimeHandlerChain {
 
     private final List<TableRuntimeMeta> initTables = Lists.newArrayList();
-    private final List<Pair<TableRuntime, OptimizingStatus>> statusChangedTables = Lists.newArrayList();
-    private final List<Pair<TableRuntime, TableConfiguration>> configChangedTables = Lists.newArrayList();
+    private final List<Pair<TableRuntime, OptimizingStatus>> statusChangedTables =
+        Lists.newArrayList();
+    private final List<Pair<TableRuntime, TableConfiguration>> configChangedTables =
+        Lists.newArrayList();
     private final List<Pair<ArcticTable, TableRuntime>> addedTables = Lists.newArrayList();
     private final List<TableRuntime> removedTables = Lists.newArrayList();
     private boolean disposed = false;
 
     @Override
-    protected void handleStatusChanged(
-        TableRuntime tableRuntime, OptimizingStatus originalStatus) {
+    protected void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
       statusChangedTables.add(Pair.of(tableRuntime, originalStatus));
     }
 
@@ -130,9 +143,8 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     }
 
     @Override
-    protected void handleTableAdded(
-        ArcticTable table, TableRuntime tableRuntime) {
-      addedTables.add(Pair.of(table, tableRuntime));
+    protected void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
+      addedTables.add(Pair.of((ArcticTable) table.originalTable(), tableRuntime));
     }
 
     @Override

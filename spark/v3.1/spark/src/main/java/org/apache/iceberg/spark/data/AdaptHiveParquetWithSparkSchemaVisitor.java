@@ -38,18 +38,21 @@ import java.util.Deque;
 import java.util.List;
 
 /**
- * Copy from iceberg {@link org.apache.iceberg.spark.data.ParquetWithSparkSchemaVisitor} to change some code, see
- * annotation "Change For Arctic"
+ * Copy from iceberg {@link org.apache.iceberg.spark.data.ParquetWithSparkSchemaVisitor} to change
+ * some code, see annotation "Change For Arctic"
  */
 public class AdaptHiveParquetWithSparkSchemaVisitor<T> {
   private final Deque<String> fieldNames = Lists.newLinkedList();
 
-  public static <T> T visit(DataType sType, Type type, AdaptHiveParquetWithSparkSchemaVisitor<T> visitor) {
+  public static <T> T visit(
+      DataType sType, Type type, AdaptHiveParquetWithSparkSchemaVisitor<T> visitor) {
     Preconditions.checkArgument(sType != null, "Invalid DataType: null");
     if (type instanceof MessageType) {
-      Preconditions.checkArgument(sType instanceof StructType, "Invalid struct: %s is not a struct", sType);
+      Preconditions.checkArgument(
+          sType instanceof StructType, "Invalid struct: %s is not a struct", sType);
       StructType struct = (StructType) sType;
-      return visitor.message(struct, (MessageType) type, visitFields(struct, type.asGroupType(), visitor));
+      return visitor.message(
+          struct, (MessageType) type, visitFields(struct, type.asGroupType(), visitor));
 
     } else if (type.isPrimitive()) {
       return visitor.primitive(sType, type.asPrimitiveType());
@@ -61,21 +64,30 @@ public class AdaptHiveParquetWithSparkSchemaVisitor<T> {
       if (annotation != null) {
         switch (annotation) {
           case LIST:
-            Preconditions.checkArgument(!group.isRepetition(Repetition.REPEATED),
-                "Invalid list: top-level group is repeated: %s", group);
-            Preconditions.checkArgument(group.getFieldCount() == 1,
-                "Invalid list: does not contain single repeated field: %s", group);
+            Preconditions.checkArgument(
+                !group.isRepetition(Repetition.REPEATED),
+                "Invalid list: top-level group is repeated: %s",
+                group);
+            Preconditions.checkArgument(
+                group.getFieldCount() == 1,
+                "Invalid list: does not contain single repeated field: %s",
+                group);
 
             GroupType repeatedElement = group.getFields().get(0).asGroupType();
-            Preconditions.checkArgument(repeatedElement.isRepetition(Repetition.REPEATED),
+            Preconditions.checkArgument(
+                repeatedElement.isRepetition(Repetition.REPEATED),
                 "Invalid list: inner group is not repeated");
-            Preconditions.checkArgument(repeatedElement.getFieldCount() <= 1,
-                "Invalid list: repeated group is not a single field: %s", group);
+            Preconditions.checkArgument(
+                repeatedElement.getFieldCount() <= 1,
+                "Invalid list: repeated group is not a single field: %s",
+                group);
 
-            Preconditions.checkArgument(sType instanceof ArrayType, "Invalid list: %s is not an array", sType);
+            Preconditions.checkArgument(
+                sType instanceof ArrayType, "Invalid list: %s is not an array", sType);
             ArrayType array = (ArrayType) sType;
-            StructField element = new StructField(
-                "element", array.elementType(), array.containsNull(), Metadata.empty());
+            StructField element =
+                new StructField(
+                    "element", array.elementType(), array.containsNull(), Metadata.empty());
 
             visitor.fieldNames.push(repeatedElement.getName());
             try {
@@ -91,22 +103,30 @@ public class AdaptHiveParquetWithSparkSchemaVisitor<T> {
             }
 
           case MAP:
-            Preconditions.checkArgument(!group.isRepetition(Repetition.REPEATED),
-                "Invalid map: top-level group is repeated: %s", group);
-            Preconditions.checkArgument(group.getFieldCount() == 1,
-                "Invalid map: does not contain single repeated field: %s", group);
+            Preconditions.checkArgument(
+                !group.isRepetition(Repetition.REPEATED),
+                "Invalid map: top-level group is repeated: %s",
+                group);
+            Preconditions.checkArgument(
+                group.getFieldCount() == 1,
+                "Invalid map: does not contain single repeated field: %s",
+                group);
 
             GroupType repeatedKeyValue = group.getType(0).asGroupType();
-            Preconditions.checkArgument(repeatedKeyValue.isRepetition(Repetition.REPEATED),
+            Preconditions.checkArgument(
+                repeatedKeyValue.isRepetition(Repetition.REPEATED),
                 "Invalid map: inner group is not repeated");
-            Preconditions.checkArgument(repeatedKeyValue.getFieldCount() <= 2,
+            Preconditions.checkArgument(
+                repeatedKeyValue.getFieldCount() <= 2,
                 "Invalid map: repeated group does not have 2 fields");
 
-            Preconditions.checkArgument(sType instanceof MapType, "Invalid map: %s is not a map", sType);
+            Preconditions.checkArgument(
+                sType instanceof MapType, "Invalid map: %s is not a map", sType);
             MapType map = (MapType) sType;
             StructField keyField = new StructField("key", map.keyType(), false, Metadata.empty());
-            StructField valueField = new StructField(
-                "value", map.valueType(), map.valueContainsNull(), Metadata.empty());
+            StructField valueField =
+                new StructField(
+                    "value", map.valueType(), map.valueContainsNull(), Metadata.empty());
 
             visitor.fieldNames.push(repeatedKeyValue.getName());
             try {
@@ -143,13 +163,15 @@ public class AdaptHiveParquetWithSparkSchemaVisitor<T> {
         }
       }
 
-      Preconditions.checkArgument(sType instanceof StructType, "Invalid struct: %s is not a struct", sType);
+      Preconditions.checkArgument(
+          sType instanceof StructType, "Invalid struct: %s is not a struct", sType);
       StructType struct = (StructType) sType;
       return visitor.struct(struct, group, visitFields(struct, group, visitor));
     }
   }
 
-  private static <T> T visitField(StructField sField, Type field, AdaptHiveParquetWithSparkSchemaVisitor<T> visitor) {
+  private static <T> T visitField(
+      StructField sField, Type field, AdaptHiveParquetWithSparkSchemaVisitor<T> visitor) {
     visitor.fieldNames.push(field.getName());
     try {
       return visit(sField.dataType(), field, visitor);
@@ -158,22 +180,25 @@ public class AdaptHiveParquetWithSparkSchemaVisitor<T> {
     }
   }
 
-  private static <T> List<T> visitFields(StructType struct, GroupType group,
-      AdaptHiveParquetWithSparkSchemaVisitor<T> visitor) {
+  private static <T> List<T> visitFields(
+      StructType struct, GroupType group, AdaptHiveParquetWithSparkSchemaVisitor<T> visitor) {
     StructField[] sFields = struct.fields();
-    Preconditions.checkArgument(sFields.length == group.getFieldCount(),
-        "Structs do not match: %s and %s", struct, group);
+    Preconditions.checkArgument(
+        sFields.length == group.getFieldCount(), "Structs do not match: %s and %s", struct, group);
     List<T> results = Lists.newArrayListWithExpectedSize(group.getFieldCount());
     for (int i = 0; i < sFields.length; i += 1) {
       Type field = group.getFields().get(i);
       StructField sField = sFields[i];
 
-      //Change For Arctic ⬇
+      // Change For Arctic ⬇
       // Preconditions.checkArgument(field.getName().equals(AvroSchemaUtil.makeCompatibleName(sField.name())),
       //     "Structs do not match: field %s != %s", field.getName(), sField.name());
-      Preconditions.checkArgument(field.getName().equals(sField.name()),
-          "Structs do not match: field %s != %s", field.getName(), sField.name());
-      //Change For Arctic ⬆
+      Preconditions.checkArgument(
+          field.getName().equals(sField.name()),
+          "Structs do not match: field %s != %s",
+          field.getName(),
+          sField.name());
+      // Change For Arctic ⬆
       results.add(visitField(sField, field, visitor));
     }
 

@@ -19,7 +19,7 @@
 
 We provide a bash script to help you build docker image easier.
 
-You can build all image via script in current dir.
+You can build all images via the script in current dir.
 
 ```shell
 ./build.sh all 
@@ -28,11 +28,11 @@ You can build all image via script in current dir.
 or just build only one image.
 
 ```shell
-./build.sh ams
+./build.sh amoro
 ```
 
-- NOTICE: The ams image and flink image required the project had been packaged. 
-so run `mvn package -pl '!trino'` before build ams or flink image.
+- NOTICE: The amoro image, quickdemo image and optimizer-flink image required the project had been packaged. 
+so run `mvn package -pl '!trino'` before build amoro, quickdemo or optimizer-flink image.
 
 You can speed up image building via 
 
@@ -40,7 +40,7 @@ You can speed up image building via
 ./build.sh \
   --apache-archive https://mirrors.aliyun.com/apache \
   --debian-mirror https://mirrors.aliyun.com  \
-  flink
+  optimizer-flink
 ```
 
 more options see `./build.sh --help`

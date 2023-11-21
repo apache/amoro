@@ -24,6 +24,7 @@ import com.netease.arctic.server.table.TableRuntime;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,15 +69,20 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   private OptimizingType optimizingType = null;
   private String name;
 
-  public CommonPartitionEvaluator(TableRuntime tableRuntime, String partition, Map<String, String> partitionProperties,
-                                  long planTime) {
+  public CommonPartitionEvaluator(
+      TableRuntime tableRuntime,
+      String partition,
+      Map<String, String> partitionProperties,
+      long planTime) {
     this.partition = partition;
     this.tableRuntime = tableRuntime;
     this.config = tableRuntime.getOptimizingConfig();
     this.fragmentSize = config.getTargetSize() / config.getFragmentRatio();
     this.planTime = planTime;
-    this.reachFullInterval = config.getFullTriggerInterval() >= 0 &&
-        planTime - tableRuntime.getLastFullOptimizingTime() > config.getFullTriggerInterval();
+    this.reachFullInterval =
+        config.getFullTriggerInterval() >= 0
+            && planTime - tableRuntime.getLastFullOptimizingTime()
+                > config.getFullTriggerInterval();
     this.partitionProperties = partitionProperties;
   }
 
@@ -159,13 +165,15 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     if (isFragmentFile(dataFile)) {
       return true;
     }
-    // When Upsert writing is enabled in the Flink engine, both INSERT and UPDATE_AFTER will generate deletes files
-    // (Most are eq-delete), and eq-delete file will be associated with the data file before the current snapshot.
-    // The eq-delete does not accurately reflect how much data has been deleted in the current segment file
-    // (That is, whether the segment file needs to be rewritten).
-    // And the eq-delete file will be converted to pos-delete during minor optimizing, so only pos-delete record
-    // count is calculated here.
-    return getPosDeletesRecordCount(deletes) > dataFile.recordCount() * config.getMajorDuplicateRatio();
+    // When Upsert writing is enabled in the Flink engine, both INSERT and UPDATE_AFTER will
+    // generate deletes files (Most are eq-delete), and eq-delete file will be associated
+    // with the data file before the current snapshot.
+    // The eq-delete does not accurately reflect how much data has been deleted in the current
+    // segment file (That is, whether the segment file needs to be rewritten).
+    // And the eq-delete file will be converted to pos-delete during minor optimizing, so only
+    // pos-delete record count is calculated here.
+    return getPosDeletesRecordCount(deletes)
+        > dataFile.recordCount() * config.getMajorDuplicateRatio();
   }
 
   public boolean segmentFileShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
@@ -177,10 +185,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     }
     if (deletes.stream().anyMatch(delete -> delete.content() == FileContent.EQUALITY_DELETES)) {
       return true;
-    } else if (deletes.stream().filter(delete -> delete.content() == FileContent.POSITION_DELETES).count() >= 2) {
-      return true;
     } else {
-      return false;
+      return deletes.stream()
+              .filter(delete -> delete.content() == FileContent.POSITION_DELETES)
+              .count()
+          >= 2;
     }
   }
 
@@ -189,8 +198,10 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   private long getPosDeletesRecordCount(List<ContentFile<?>> files) {
-    return files.stream().filter(file -> file.content() == FileContent.POSITION_DELETES)
-        .mapToLong(ContentFile::recordCount).sum();
+    return files.stream()
+        .filter(file -> file.content() == FileContent.POSITION_DELETES)
+        .mapToLong(ContentFile::recordCount)
+        .sum();
   }
 
   private void addDelete(ContentFile<?> delete) {
@@ -222,11 +233,20 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   @Override
   public long getCost() {
     if (cost < 0) {
-      // We estimate that the cost of writing is 3 times that of reading
-      cost = (rewriteSegmentFileSize + fragmentFileSize) * 4 +
-          rewritePosSegmentFileSize / 10 + posDeleteFileSize + equalityDeleteFileSize;
-      int fileCnt = rewriteSegmentFileCount + rewritePosSegmentFileCount + fragmentFileCount + posDeleteFileCount +
-          equalityDeleteFileCount;
+      // We estimate that the cost of writing is 3 times that of reading.
+      // When rewriting the Position delete file, only the primary key field of the segment file
+      // will be read, so only one-tenth of the size is calculated based on the size.
+      cost =
+          (rewriteSegmentFileSize + fragmentFileSize) * 4
+              + rewritePosSegmentFileSize / 10
+              + posDeleteFileSize
+              + equalityDeleteFileSize;
+      int fileCnt =
+          rewriteSegmentFileCount
+              + rewritePosSegmentFileCount
+              + fragmentFileCount
+              + posDeleteFileCount
+              + equalityDeleteFileCount;
       cost += fileCnt * config.getOpenFileCost();
     }
     return cost;
@@ -240,8 +260,10 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   @Override
   public OptimizingType getOptimizingType() {
     if (optimizingType == null) {
-      optimizingType = isFullNecessary() ? OptimizingType.FULL :
-          isMajorNecessary() ? OptimizingType.MAJOR : OptimizingType.MINOR;
+      optimizingType =
+          isFullNecessary()
+              ? OptimizingType.FULL
+              : isMajorNecessary() ? OptimizingType.MAJOR : OptimizingType.MINOR;
       LOG.debug("{} optimizingType = {} ", name(), optimizingType);
     }
     return optimizingType;
@@ -253,12 +275,13 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
   public boolean isMinorNecessary() {
     int smallFileCount = fragmentFileCount + equalityDeleteFileCount;
-    return smallFileCount >= config.getMinorLeastFileCount() || (smallFileCount > 1 && reachMinorInterval());
+    return smallFileCount >= config.getMinorLeastFileCount()
+        || (smallFileCount > 1 && reachMinorInterval());
   }
 
   protected boolean reachMinorInterval() {
-    return config.getMinorLeastInterval() >= 0 &&
-        planTime - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval();
+    return config.getMinorLeastInterval() >= 0
+        && planTime - tableRuntime.getLastMinorOptimizingTime() > config.getMinorLeastInterval();
   }
 
   protected boolean reachFullInterval() {
@@ -274,7 +297,9 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
   protected String name() {
     if (name == null) {
-      name = String.format("partition %s of %s", partition, tableRuntime.getTableIdentifier().toString());
+      name =
+          String.format(
+              "partition %s of %s", partition, tableRuntime.getTableIdentifier().toString());
     }
     return name;
   }
@@ -355,26 +380,26 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
   @Override
   public String toString() {
-    return "CommonPartitionEvaluator{" +
-        "partition='" + partition + '\'' +
-        ", config=" + config +
-        ", fragmentSize=" + fragmentSize +
-        ", planTime=" + planTime +
-        ", lastMinorOptimizeTime=" + tableRuntime.getLastMinorOptimizingTime() +
-        ", lastMajorOptimizeTime=" + tableRuntime.getLastMajorOptimizingTime() +
-        ", lastFullOptimizeTime=" + tableRuntime.getLastFullOptimizingTime() +
-        ", fragmentFileCount=" + fragmentFileCount +
-        ", fragmentFileSize=" + fragmentFileSize +
-        ", segmentFileCount=" + segmentFileCount +
-        ", segmentFileSize=" + segmentFileSize +
-        ", rewriteSegmentFileCount=" + rewriteSegmentFileCount +
-        ", rewriteSegmentFileSize=" + rewriteSegmentFileSize +
-        ", rewritePosSegmentFileCount=" + rewritePosSegmentFileCount +
-        ", rewritePosSegmentFileSize=" + rewritePosSegmentFileSize +
-        ", equalityDeleteFileCount=" + equalityDeleteFileCount +
-        ", equalityDeleteFileSize=" + equalityDeleteFileSize +
-        ", posDeleteFileCount=" + posDeleteFileCount +
-        ", posDeleteFileSize=" + posDeleteFileSize +
-        '}';
+    return MoreObjects.toStringHelper(this)
+        .add("partition", partition)
+        .add("config", config)
+        .add("fragmentSize", fragmentSize)
+        .add("planTime", planTime)
+        .add("lastMinorOptimizeTime", tableRuntime.getLastMinorOptimizingTime())
+        .add("lastFullOptimizeTime", tableRuntime.getLastFullOptimizingTime())
+        .add("lastFullOptimizeTime", tableRuntime.getLastFullOptimizingTime())
+        .add("fragmentFileCount", fragmentFileCount)
+        .add("fragmentFileSize", fragmentFileSize)
+        .add("segmentFileCount", segmentFileCount)
+        .add("segmentFileSize", segmentFileSize)
+        .add("rewriteSegmentFileCount", rewriteSegmentFileCount)
+        .add("rewriteSegmentFileSize", rewriteSegmentFileSize)
+        .add("rewritePosSegmentFileCount", rewritePosSegmentFileCount)
+        .add("rewritePosSegmentFileSize", rewritePosSegmentFileSize)
+        .add("equalityDeleteFileCount", equalityDeleteFileCount)
+        .add("equalityDeleteFileSize", equalityDeleteFileSize)
+        .add("posDeleteFileCount", posDeleteFileCount)
+        .add("posDeleteFileSize", posDeleteFileSize)
+        .toString();
   }
 }

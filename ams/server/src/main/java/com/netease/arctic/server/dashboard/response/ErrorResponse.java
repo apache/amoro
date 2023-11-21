@@ -53,8 +53,6 @@ public class ErrorResponse extends Response {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("requestId", requestId)
-        .toString();
+    return MoreObjects.toStringHelper(this).add("requestId", requestId).toString();
   }
 }

@@ -33,7 +33,7 @@ public class OptimizingExpiringExecutor extends BaseTableExecutor {
   // 30 days
   private static final long KEEP_TIME = 30 * 24 * 60 * 60 * 1000L;
 
-  private Persistency persistency = new Persistency();
+  private final Persistency persistency = new Persistency();
 
   public OptimizingExpiringExecutor(TableManager tableRuntimes) {
     super(tableRuntimes, 1);
@@ -54,7 +54,8 @@ public class OptimizingExpiringExecutor extends BaseTableExecutor {
     try {
       persistency.doExpiring(tableRuntime);
     } catch (Throwable throwable) {
-      LOG.error("Expiring table runtimes of {} failed.", tableRuntime.getTableIdentifier(), throwable);
+      LOG.error(
+          "Expiring table runtimes of {} failed.", tableRuntime.getTableIdentifier(), throwable);
     }
   }
 
@@ -62,13 +63,24 @@ public class OptimizingExpiringExecutor extends BaseTableExecutor {
     public void doExpiring(TableRuntime tableRuntime) {
       long expireTime = System.currentTimeMillis() - KEEP_TIME;
       doAsTransaction(
-          () -> doAs(OptimizingMapper.class, mapper ->
-              mapper.deleteOptimizingProcessBefore(tableRuntime.getTableIdentifier().getId(), expireTime)),
-          () -> doAs(OptimizingMapper.class, mapper ->
-              mapper.deleteTaskRuntimesBefore(tableRuntime.getTableIdentifier().getId(), expireTime)),
-          () -> doAs(OptimizingMapper.class, mapper ->
-              mapper.deleteOptimizingQuotaBefore(tableRuntime.getTableIdentifier().getId(), expireTime))
-      );
+          () ->
+              doAs(
+                  OptimizingMapper.class,
+                  mapper ->
+                      mapper.deleteOptimizingProcessBefore(
+                          tableRuntime.getTableIdentifier().getId(), expireTime)),
+          () ->
+              doAs(
+                  OptimizingMapper.class,
+                  mapper ->
+                      mapper.deleteTaskRuntimesBefore(
+                          tableRuntime.getTableIdentifier().getId(), expireTime)),
+          () ->
+              doAs(
+                  OptimizingMapper.class,
+                  mapper ->
+                      mapper.deleteOptimizingQuotaBefore(
+                          tableRuntime.getTableIdentifier().getId(), expireTime)));
     }
   }
 }

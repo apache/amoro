@@ -18,6 +18,17 @@
 
 package com.netease.arctic.spark.writer;
 
+import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
+import static com.netease.arctic.spark.writer.WriteTaskCommit.files;
+import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS;
+import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS_DEFAULT;
+import static org.apache.iceberg.TableProperties.COMMIT_MIN_RETRY_WAIT_MS;
+import static org.apache.iceberg.TableProperties.COMMIT_MIN_RETRY_WAIT_MS_DEFAULT;
+import static org.apache.iceberg.TableProperties.COMMIT_NUM_RETRIES;
+import static org.apache.iceberg.TableProperties.COMMIT_NUM_RETRIES_DEFAULT;
+import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS;
+import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT;
+
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.catalog.ArcticCatalog;
@@ -53,17 +64,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
-import static com.netease.arctic.spark.writer.WriteTaskCommit.files;
-import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS;
-import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS_DEFAULT;
-import static org.apache.iceberg.TableProperties.COMMIT_MIN_RETRY_WAIT_MS;
-import static org.apache.iceberg.TableProperties.COMMIT_MIN_RETRY_WAIT_MS_DEFAULT;
-import static org.apache.iceberg.TableProperties.COMMIT_NUM_RETRIES;
-import static org.apache.iceberg.TableProperties.COMMIT_NUM_RETRIES_DEFAULT;
-import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS;
-import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT;
-
 public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite {
   private final KeyedTable table;
   private final StructType dsSchema;
@@ -79,9 +79,9 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     this.dsSchema = info.schema();
     this.txId = table.beginTransaction(null);
     this.hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(this.txId);
-    this.orderedWriter = Boolean.parseBoolean(info.options().getOrDefault(
-        "writer.distributed-and-ordered", "false"
-    ));
+    this.orderedWriter =
+        Boolean.parseBoolean(
+            info.options().getOrDefault("writer.distributed-and-ordered", "false"));
     this.catalog = catalog;
   }
 
@@ -115,24 +115,31 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
       try {
         Map<String, String> props = table.properties();
         Tasks.foreach(files(messages))
-            .retry(PropertyUtil.propertyAsInt(props, COMMIT_NUM_RETRIES, COMMIT_NUM_RETRIES_DEFAULT))
+            .retry(
+                PropertyUtil.propertyAsInt(props, COMMIT_NUM_RETRIES, COMMIT_NUM_RETRIES_DEFAULT))
             .exponentialBackoff(
-                PropertyUtil.propertyAsInt(props, COMMIT_MIN_RETRY_WAIT_MS, COMMIT_MIN_RETRY_WAIT_MS_DEFAULT),
-                PropertyUtil.propertyAsInt(props, COMMIT_MAX_RETRY_WAIT_MS, COMMIT_MAX_RETRY_WAIT_MS_DEFAULT),
-                PropertyUtil.propertyAsInt(props, COMMIT_TOTAL_RETRY_TIME_MS, COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT),
+                PropertyUtil.propertyAsInt(
+                    props, COMMIT_MIN_RETRY_WAIT_MS, COMMIT_MIN_RETRY_WAIT_MS_DEFAULT),
+                PropertyUtil.propertyAsInt(
+                    props, COMMIT_MAX_RETRY_WAIT_MS, COMMIT_MAX_RETRY_WAIT_MS_DEFAULT),
+                PropertyUtil.propertyAsInt(
+                    props, COMMIT_TOTAL_RETRY_TIME_MS, COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT),
                 2.0 /* exponential */)
             .throwFailureWhenFinished()
-            .run(file -> {
-              table.io().deleteFile(file.path().toString());
-            });
+            .run(
+                file -> {
+                  table.io().deleteFile(file.path().toString());
+                });
       } finally {
         tableBlockerManager.release(block);
       }
     }
 
     public void checkBlocker(TableBlockerManager tableBlockerManager) {
-      List<String> blockerIds = tableBlockerManager.getBlockers()
-          .stream().map(Blocker::blockerId).collect(Collectors.toList());
+      List<String> blockerIds =
+          tableBlockerManager.getBlockers().stream()
+              .map(Blocker::blockerId)
+              .collect(Collectors.toList());
       if (!blockerIds.contains(block.blockerId())) {
         throw new IllegalStateException("block is not in blockerManager");
       }
@@ -146,13 +153,13 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
       try {
         this.block = tableBlockerManager.block(operations);
       } catch (OperationConflictException e) {
-        throw new IllegalStateException("failed to block table " + table.id() + " with " + operations, e);
+        throw new IllegalStateException(
+            "failed to block table " + table.id() + " with " + operations, e);
       }
     }
   }
 
   private class AppendWrite extends BaseBatchWrite {
-
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
@@ -173,7 +180,6 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   }
 
   private class DynamicOverwrite extends BaseBatchWrite {
-
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
@@ -250,7 +256,8 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     protected final Long transactionId;
     protected final boolean orderedWrite;
 
-    AbstractWriterFactory(KeyedTable table, StructType dsSchema, Long transactionId, boolean orderedWrite) {
+    AbstractWriterFactory(
+        KeyedTable table, StructType dsSchema, Long transactionId, boolean orderedWrite) {
       this.table = table;
       this.dsSchema = dsSchema;
       this.transactionId = transactionId;
@@ -272,7 +279,6 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     protected final String hiveSubdirectory;
 
-
     BaseWriterFactory(
         KeyedTable table,
         StructType dsSchema,
@@ -285,13 +291,14 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
-      TaskWriters writerBuilder = TaskWriters.of(table)
-          .withTransactionId(transactionId)
-          .withPartitionId(partitionId)
-          .withTaskId(taskId)
-          .withDataSourceSchema(dsSchema)
-          .withOrderedWriter(orderedWrite)
-          .withHiveSubdirectory(hiveSubdirectory);
+      TaskWriters writerBuilder =
+          TaskWriters.of(table)
+              .withTransactionId(transactionId)
+              .withPartitionId(partitionId)
+              .withTaskId(taskId)
+              .withDataSourceSchema(dsSchema)
+              .withOrderedWriter(orderedWrite)
+              .withHiveSubdirectory(hiveSubdirectory);
 
       TaskWriter<InternalRow> writer = writerBuilder.newBaseWriter(true);
       return new SimpleInternalRowDataWriter(writer);
@@ -300,29 +307,40 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
   private static class ChangeWriteFactory extends AbstractWriterFactory {
 
-    ChangeWriteFactory(KeyedTable table, StructType dsSchema, long transactionId, boolean orderedWrite) {
+    ChangeWriteFactory(
+        KeyedTable table, StructType dsSchema, long transactionId, boolean orderedWrite) {
       super(table, dsSchema, transactionId, orderedWrite);
     }
 
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
-      return new SimpleRowLevelDataWriter(newWriter(partitionId, taskId, dsSchema),
-          newWriter(partitionId, taskId, dsSchema), dsSchema, true);
+      return new SimpleRowLevelDataWriter(
+          newWriter(partitionId, taskId, dsSchema),
+          newWriter(partitionId, taskId, dsSchema),
+          dsSchema,
+          true);
     }
   }
 
   private static class DeltaChangeFactory extends AbstractWriterFactory {
 
-    DeltaChangeFactory(KeyedTable table, StructType dsSchema, long transactionId, boolean orderedWrite) {
+    DeltaChangeFactory(
+        KeyedTable table, StructType dsSchema, long transactionId, boolean orderedWrite) {
       super(table, dsSchema, transactionId, orderedWrite);
     }
 
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
-      StructType schema = new StructType(Arrays.stream(dsSchema.fields())
-          .filter(field -> !field.name().equals(RowDeltaUtils.OPERATION_COLUMN())).toArray(StructField[]::new));
-      return new SimpleRowLevelDataWriter(newWriter(partitionId, taskId, schema),
-          newWriter(partitionId, taskId, schema), dsSchema, true);
+      StructType schema =
+          new StructType(
+              Arrays.stream(dsSchema.fields())
+                  .filter(field -> !field.name().equals(RowDeltaUtils.OPERATION_COLUMN()))
+                  .toArray(StructField[]::new));
+      return new SimpleRowLevelDataWriter(
+          newWriter(partitionId, taskId, schema),
+          newWriter(partitionId, taskId, schema),
+          dsSchema,
+          true);
     }
   }
 }

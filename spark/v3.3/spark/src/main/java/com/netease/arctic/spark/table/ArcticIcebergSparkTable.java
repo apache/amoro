@@ -33,10 +33,13 @@ import java.util.Map;
 
 public class ArcticIcebergSparkTable extends SparkTable implements SupportsPartitionManagement {
   private final UnkeyedTable unkeyedTable;
+  private final String sparkCatalogName;
 
-  public ArcticIcebergSparkTable(UnkeyedTable unkeyedTable, boolean refreshEagerly) {
+  public ArcticIcebergSparkTable(
+      UnkeyedTable unkeyedTable, boolean refreshEagerly, String sparkCatalogName) {
     super(unkeyedTable, refreshEagerly);
     this.unkeyedTable = unkeyedTable;
+    this.sparkCatalogName = sparkCatalogName;
   }
 
   @Override
@@ -53,13 +56,22 @@ public class ArcticIcebergSparkTable extends SparkTable implements SupportsParti
   }
 
   @Override
+  public String name() {
+    return sparkCatalogName
+        + "."
+        + unkeyedTable.id().getDatabase()
+        + "."
+        + unkeyedTable.id().getTableName();
+  }
+
+  @Override
   public StructType partitionSchema() {
     return SparkSchemaUtil.convert(new Schema(table().spec().partitionType().fields()));
   }
 
   @Override
-  public void createPartition(InternalRow ident, Map<String, String> properties) throws PartitionAlreadyExistsException,
-      UnsupportedOperationException {
+  public void createPartition(InternalRow ident, Map<String, String> properties)
+      throws PartitionAlreadyExistsException, UnsupportedOperationException {
     throw new UnsupportedOperationException("not supported create partition");
   }
 
@@ -75,7 +87,8 @@ public class ArcticIcebergSparkTable extends SparkTable implements SupportsParti
   }
 
   @Override
-  public Map<String, String> loadPartitionMetadata(InternalRow ident) throws UnsupportedOperationException {
+  public Map<String, String> loadPartitionMetadata(InternalRow ident)
+      throws UnsupportedOperationException {
     return null;
   }
 

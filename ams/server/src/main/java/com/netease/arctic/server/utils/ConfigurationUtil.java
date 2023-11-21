@@ -18,7 +18,11 @@
 
 package com.netease.arctic.server.utils;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import javax.annotation.Nonnull;
+
 import java.io.File;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -33,27 +37,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
-
-/**
- * Utility class for {@link Configurations} related helper functions.
- */
+/** Utility class for {@link Configurations} related helper functions. */
 public class ConfigurationUtil {
 
   private static final String[] EMPTY = new String[0];
 
   // Make sure that we cannot instantiate this class
-  private ConfigurationUtil() {
-  }
+  private ConfigurationUtil() {}
 
   /**
    * Creates a new {@link Configurations} from the given {@link Properties}.
    *
    * @param properties to convert into a {@link Configurations}
    * @return {@link Configurations} which has been populated by the values of the given {@link
-   * Properties}
+   *     Properties}
    */
   @Nonnull
   public static Configurations createConfiguration(Properties properties) {
@@ -70,8 +67,7 @@ public class ConfigurationUtil {
 
   @Nonnull
   public static String[] splitPaths(@Nonnull String separatedPaths) {
-    return separatedPaths.length() > 0 ?
-        separatedPaths.split(",|" + File.pathSeparator) : EMPTY;
+    return separatedPaths.length() > 0 ? separatedPaths.split(",|" + File.pathSeparator) : EMPTY;
   }
 
   // --------------------------------------------------------------------------------------------
@@ -79,19 +75,18 @@ public class ConfigurationUtil {
   // --------------------------------------------------------------------------------------------
 
   private static void checkConfigContains(Map<String, String> configs, String key) {
-    checkArgument(
-        configs.containsKey(key), "Key %s is missing present from dynamic configs.", key);
+    checkArgument(configs.containsKey(key), "Key %s is missing present from dynamic configs.", key);
   }
 
   /**
    * Tries to convert the raw value into the provided type.
    *
    * @param rawValue rawValue to convert into the provided type clazz
-   * @param clazz    clazz specifying the target type
-   * @param <T>      type of the result
+   * @param clazz clazz specifying the target type
+   * @param <T> type of the result
    * @return the converted value if rawValue is of type clazz
    * @throws IllegalArgumentException if the rawValue cannot be converted in the specified target
-   *                                  type clazz
+   *     type clazz
    */
   @SuppressWarnings("unchecked")
   public static <T> T convertValue(Object rawValue, Class<?> clazz) {
@@ -135,19 +130,37 @@ public class ConfigurationUtil {
     if (o instanceof Map) {
       return (Map<String, String>) o;
     } else {
-      List<String> listOfRawProperties =
-          StructuredOptionsSplitter.splitEscaped(o.toString(), ',');
+      List<String> listOfRawProperties = StructuredOptionsSplitter.splitEscaped(o.toString(), ',');
       return listOfRawProperties.stream()
           .map(s -> StructuredOptionsSplitter.splitEscaped(s, ':'))
           .peek(
               pair -> {
                 if (pair.size() != 2) {
-                  throw new IllegalArgumentException(
-                      "Could not parse pair in the map " + pair);
+                  throw new IllegalArgumentException("Could not parse pair in the map " + pair);
                 }
               })
           .collect(Collectors.toMap(a -> a.get(0), a -> a.get(1)));
     }
+  }
+
+  /**
+   * Convert System Env key to Configuration key For Example : AMS_DATABASE_PASSWORD --->
+   * ams.database.password AMS_SERVER__EXPOSE__HOST ---> ams.server-expose-host
+   */
+  public static Map<String, Object> convertConfigurationKeys(
+      String prefix, Map<String, String> values) {
+    return values.entrySet().stream()
+        .filter(entry -> entry.getKey().startsWith(prefix))
+        .collect(
+            Collectors.toMap(
+                entry ->
+                    entry
+                        .getKey()
+                        .replaceFirst(prefix + "_", "")
+                        .toLowerCase()
+                        .replaceAll("(_{2,})", "-")
+                        .replace("_", "."),
+                Map.Entry::getValue));
   }
 
   @SuppressWarnings("unchecked")
@@ -159,9 +172,7 @@ public class ConfigurationUtil {
     return Arrays.stream(clazz.getEnumConstants())
         .filter(
             e ->
-                e.toString()
-                    .toUpperCase(Locale.ROOT)
-                    .equals(o.toString().toUpperCase(Locale.ROOT)))
+                e.toString().toUpperCase(Locale.ROOT).equals(o.toString().toUpperCase(Locale.ROOT)))
         .findAny()
         .orElseThrow(
             () ->
@@ -188,22 +199,23 @@ public class ConfigurationUtil {
     } else if (o instanceof List) {
       return ((List<?>) o)
           .stream()
-          .map(e -> StructuredOptionsSplitter.escapeWithSingleQuote(convertToString(e), ";"))
-          .collect(Collectors.joining(";"));
+              .map(e -> StructuredOptionsSplitter.escapeWithSingleQuote(convertToString(e), ";"))
+              .collect(Collectors.joining(";"));
     } else if (o instanceof Map) {
       return ((Map<?, ?>) o)
           .entrySet().stream()
-          .map(
-              e -> {
-                String escapedKey =
-                    StructuredOptionsSplitter.escapeWithSingleQuote(e.getKey().toString(), ":");
-                String escapedValue =
-                    StructuredOptionsSplitter.escapeWithSingleQuote(e.getValue().toString(), ":");
+              .map(
+                  e -> {
+                    String escapedKey =
+                        StructuredOptionsSplitter.escapeWithSingleQuote(e.getKey().toString(), ":");
+                    String escapedValue =
+                        StructuredOptionsSplitter.escapeWithSingleQuote(
+                            e.getValue().toString(), ":");
 
-                return StructuredOptionsSplitter.escapeWithSingleQuote(
-                    escapedKey + ":" + escapedValue, ",");
-              })
-          .collect(Collectors.joining(","));
+                    return StructuredOptionsSplitter.escapeWithSingleQuote(
+                        escapedKey + ":" + escapedValue, ",");
+                  })
+              .collect(Collectors.joining(","));
     }
 
     return o.toString();
@@ -218,9 +230,7 @@ public class ConfigurationUtil {
         return (int) value;
       } else {
         throw new IllegalArgumentException(
-            String.format(
-                "Configuration value %s overflows/underflows the integer type.",
-                value));
+            String.format("Configuration value %s overflows/underflows the integer type.", value));
       }
     }
 
@@ -260,15 +270,13 @@ public class ConfigurationUtil {
       return (Float) o;
     } else if (o.getClass() == Double.class) {
       double value = ((Double) o);
-      if (value == 0.0 ||
-          (value >= Float.MIN_VALUE && value <= Float.MAX_VALUE) ||
-          (value >= -Float.MAX_VALUE && value <= -Float.MIN_VALUE)) {
+      if (value == 0.0
+          || (value >= Float.MIN_VALUE && value <= Float.MAX_VALUE)
+          || (value >= -Float.MAX_VALUE && value <= -Float.MIN_VALUE)) {
         return (float) value;
       } else {
         throw new IllegalArgumentException(
-            String.format(
-                "Configuration value %s overflows/underflows the float type.",
-                value));
+            String.format("Configuration value %s overflows/underflows the float type.", value));
       }
     }
 
@@ -285,9 +293,7 @@ public class ConfigurationUtil {
     return Double.parseDouble(o.toString());
   }
 
-  /**
-   * Collection of utilities about time intervals.
-   */
+  /** Collection of utilities about time intervals. */
   public static class TimeUtils {
 
     private static final Map<String, ChronoUnit> LABEL_TO_UNIT_MAP =
@@ -338,8 +344,9 @@ public class ConfigurationUtil {
         value = Long.parseLong(number); // this throws a NumberFormatException on overflow
       } catch (NumberFormatException e) {
         throw new IllegalArgumentException(
-            "The value '" + number +
-                "' cannot be re represented as 64bit number (numeric overflow).");
+            "The value '"
+                + number
+                + "' cannot be re represented as 64bit number (numeric overflow).");
       }
 
       if (unitLabel.isEmpty()) {
@@ -351,9 +358,10 @@ public class ConfigurationUtil {
         return Duration.of(value, unit);
       } else {
         throw new IllegalArgumentException(
-            "Time interval unit label '" + unitLabel +
-                "' does not match any of the recognized units: " +
-                TimeUnit.getAllUnits());
+            "Time interval unit label '"
+                + unitLabel
+                + "' does not match any of the recognized units: "
+                + TimeUnit.getAllUnits());
       }
     }
 
@@ -403,9 +411,7 @@ public class ConfigurationUtil {
       TimeUnit highestIntegerUnit =
           IntStream.range(0, orderedUnits.size())
               .sequential()
-              .filter(
-                  idx ->
-                      nanos % orderedUnits.get(idx).unit.getDuration().toNanos() != 0)
+              .filter(idx -> nanos % orderedUnits.get(idx).unit.getDuration().toNanos() != 0)
               .boxed()
               .findFirst()
               .map(
@@ -441,14 +447,11 @@ public class ConfigurationUtil {
         case DAYS:
           return ChronoUnit.DAYS;
         default:
-          throw new IllegalArgumentException(
-              String.format("Unsupported time unit %s.", timeUnit));
+          throw new IllegalArgumentException(String.format("Unsupported time unit %s.", timeUnit));
       }
     }
 
-    /**
-     * Enum which defines time unit, mostly used to parse value from configuration file.
-     */
+    /** Enum which defines time unit, mostly used to parse value from configuration file. */
     private enum TimeUnit {
       DAYS(ChronoUnit.DAYS, singular("d"), plural("day")),
       HOURS(ChronoUnit.HOURS, singular("h"), plural("hour")),
@@ -466,10 +469,7 @@ public class ConfigurationUtil {
 
       TimeUnit(ChronoUnit unit, String[]... labels) {
         this.unit = unit;
-        this.labels =
-            Arrays.stream(labels)
-                .flatMap(Arrays::stream)
-                .collect(Collectors.toList());
+        this.labels = Arrays.stream(labels).flatMap(Arrays::stream).collect(Collectors.toList());
       }
 
       /**
@@ -477,7 +477,7 @@ public class ConfigurationUtil {
        * @return the singular format of the original label
        */
       private static String[] singular(String label) {
-        return new String[]{label};
+        return new String[] {label};
       }
 
       /**
@@ -485,7 +485,7 @@ public class ConfigurationUtil {
        * @return both the singular format and plural format of the original label
        */
       private static String[] plural(String label) {
-        return new String[]{label, label + PLURAL_SUFFIX};
+        return new String[] {label, label + PLURAL_SUFFIX};
       }
 
       public static String getAllUnits() {

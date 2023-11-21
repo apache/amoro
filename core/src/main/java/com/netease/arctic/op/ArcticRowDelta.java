@@ -25,8 +25,8 @@ import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
-import java.util.function.Supplier;
 
+import java.util.function.Supplier;
 
 public class ArcticRowDelta extends ArcticUpdate<RowDelta> implements RowDelta {
 
@@ -41,8 +41,11 @@ public class ArcticRowDelta extends ArcticUpdate<RowDelta> implements RowDelta {
     this.rowDelta = rowDelta;
   }
 
-  private ArcticRowDelta(ArcticTable arcticTable, RowDelta rowDelta,
-      Transaction transaction, boolean autoCommitTransaction) {
+  private ArcticRowDelta(
+      ArcticTable arcticTable,
+      RowDelta rowDelta,
+      Transaction transaction,
+      boolean autoCommitTransaction) {
     super(arcticTable, rowDelta, transaction, autoCommitTransaction);
     this.rowDelta = rowDelta;
   }
@@ -115,10 +118,11 @@ public class ArcticRowDelta extends ArcticUpdate<RowDelta> implements RowDelta {
       generateWatermark();
     }
 
-
     @Override
-    protected ArcticRowDelta updateWithWatermark(Transaction transaction, boolean autoCommitTransaction) {
-      return new ArcticRowDelta(table, transaction.newRowDelta(), transaction, autoCommitTransaction);
+    protected ArcticRowDelta updateWithWatermark(
+        Transaction transaction, boolean autoCommitTransaction) {
+      return new ArcticRowDelta(
+          table, transaction.newRowDelta(), transaction, autoCommitTransaction);
     }
 
     @Override

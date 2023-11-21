@@ -22,4 +22,12 @@ public class NoSuchTableException extends RuntimeException {
   public NoSuchTableException(String message) {
     super(message);
   }
+
+  public NoSuchTableException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public NoSuchTableException(Throwable cause) {
+    super(cause);
+  }
 }

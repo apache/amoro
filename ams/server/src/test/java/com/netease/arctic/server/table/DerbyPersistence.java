@@ -50,13 +50,17 @@ public class DerbyPersistence extends ExternalResource {
       Configurations configurations = new Configurations();
       configurations.set(ArcticManagementConf.DB_CONNECTION_URL, derbyUrl);
       configurations.set(ArcticManagementConf.DB_TYPE, ArcticManagementConf.DB_TYPE_DERBY);
-      configurations.set(ArcticManagementConf.DB_DRIVER_CLASS_NAME, "org.apache.derby.jdbc.EmbeddedDriver");
+      configurations.set(
+          ArcticManagementConf.DB_DRIVER_CLASS_NAME, "org.apache.derby.jdbc.EmbeddedDriver");
       SqlSessionFactoryProvider.getInstance().init(configurations);
       LOG.info("Initialized derby persistent with url: {}", derbyUrl);
-      Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-        SINGLETON_FOLDER.delete();
-        LOG.info("Deleted resources in derby persistent.");
-      }));
+      Runtime.getRuntime()
+          .addShutdownHook(
+              new Thread(
+                  () -> {
+                    SINGLETON_FOLDER.delete();
+                    LOG.info("Deleted resources in derby persistent.");
+                  }));
       truncateAllTables();
     } catch (IOException e) {
       throw new UncheckedIOException(e);

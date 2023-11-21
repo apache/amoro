@@ -1,5 +1,9 @@
 package com.netease.arctic.server.optimizing;
 
+import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
+import static com.netease.arctic.hive.op.UpdateHiveFiles.SYNC_DATA_TO_HIVE;
+import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
+
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.PrimaryKeyedFile;
@@ -10,8 +14,8 @@ import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.server.exception.OptimizingCommitException;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.ContentFiles;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -23,14 +27,12 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.glassfish.jersey.internal.guava.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
-import static com.netease.arctic.hive.op.UpdateHiveFiles.SYNC_DATA_TO_HIVE;
-import static com.netease.arctic.server.ArcticServiceConstants.INVALID_SNAPSHOT_ID;
 
 public class KeyedTableCommit extends UnKeyedTableCommit {
 
@@ -47,8 +49,11 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
   protected StructLikeMap<Long> toSequenceOfPartitions;
 
   public KeyedTableCommit(
-      ArcticTable table, Collection<TaskRuntime> tasks, Long fromSnapshotId,
-      StructLikeMap<Long> fromSequenceOfPartitions, StructLikeMap<Long> toSequenceOfPartitions) {
+      ArcticTable table,
+      Collection<TaskRuntime> tasks,
+      Long fromSnapshotId,
+      StructLikeMap<Long> fromSequenceOfPartitions,
+      StructLikeMap<Long> toSequenceOfPartitions) {
     super(fromSnapshotId, table, tasks);
     this.table = table;
     this.tasks = tasks;
@@ -60,12 +65,11 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
   @Override
   public void commit() throws OptimizingCommitException {
     if (tasks.isEmpty()) {
-      LOG.info("{} getRuntime no tasks to commit", table.id());
+      LOG.info("{} found no tasks to commit", table.id());
     }
-    LOG.info("{} getRuntime tasks to commit with from snapshot id = {}", table.id(),
-        fromSnapshotId);
+    LOG.info("{} found tasks to commit from snapshot {}", table.id(), fromSnapshotId);
 
-    //In the scene of moving files to hive, the files will be renamed
+    // In the scene of moving files to hive, the files will be renamed
     List<DataFile> hiveNewDataFiles = moveFile2HiveIfNeed();
 
     Set<DataFile> addedDataFiles = Sets.newHashSet();
@@ -74,18 +78,19 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
     Set<DeleteFile> removedDeleteFiles = Sets.newHashSet();
 
     StructLikeMap<Long> partitionOptimizedSequence =
-        TablePropertyUtil.getPartitionOptimizedSequence(table.asKeyedTable());
+        ArcticTableUtil.readOptimizedSequence(table.asKeyedTable());
 
     for (TaskRuntime taskRuntime : tasks) {
       RewriteFilesInput input = taskRuntime.getInput();
       StructLike partition = partition(input);
 
-      //Check if the partition version has expired
-      if (fileInPartitionNeedSkip(partition, partitionOptimizedSequence, fromSequenceOfPartitions)) {
+      // Check if the partition version has expired
+      if (fileInPartitionNeedSkip(
+          partition, partitionOptimizedSequence, fromSequenceOfPartitions)) {
         toSequenceOfPartitions.remove(partition);
         continue;
       }
-      //Only base data file need to remove
+      // Only base data file need to remove
       if (input.rewrittenDataFiles() != null) {
         Arrays.stream(input.rewrittenDataFiles())
             .map(s -> (PrimaryKeyedFile) s)
@@ -93,7 +98,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
             .forEach(removedDataFiles::add);
       }
 
-      //Only position delete need to remove
+      // Only position delete need to remove
       if (input.rewrittenDeleteFiles() != null) {
         Arrays.stream(input.rewrittenDeleteFiles())
             .filter(ContentFiles::isDeleteFile)
@@ -116,7 +121,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
     try {
       executeCommit(addedDataFiles, removedDataFiles, addedDeleteFiles, removedDeleteFiles);
     } catch (Exception e) {
-      //Only failures to clean files will trigger a retry
+      // Only failures to clean files will trigger a retry
       LOG.warn("Optimize commit table {} failed, give up commit.", table.id(), e);
 
       if (needMoveFile2Hive()) {
@@ -131,7 +136,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
       Set<DataFile> removedDataFiles,
       Set<DeleteFile> addedDeleteFiles,
       Set<DeleteFile> removedDeleteFiles) {
-    //overwrite files
+    // overwrite files
     OverwriteBaseFiles overwriteBaseFiles = new OverwriteBaseFiles(table.asKeyedTable());
     overwriteBaseFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
     overwriteBaseFiles.validateNoConflictingAppends(Expressions.alwaysFalse());
@@ -146,12 +151,15 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
     }
     overwriteBaseFiles.skipEmptyCommit().commit();
 
-    //remove delete files
+    // remove delete files
     if (CollectionUtils.isNotEmpty(removedDeleteFiles)) {
       RewriteFiles rewriteFiles = table.asKeyedTable().baseTable().newRewrite();
       rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
-      rewriteFiles.rewriteFiles(Collections.emptySet(), removedDeleteFiles,
-          Collections.emptySet(), Collections.emptySet());
+      rewriteFiles.rewriteFiles(
+          Collections.emptySet(),
+          removedDeleteFiles,
+          Collections.emptySet(),
+          Collections.emptySet());
       try {
         rewriteFiles.commit();
       } catch (ValidationException e) {
@@ -159,9 +167,13 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
       }
     }
 
-    LOG.info("{} optimize committed, delete {} files [{} posDelete files], " +
-            "add {} new files [{} posDelete files]",
-        table.id(), removedDataFiles.size(), removedDeleteFiles.size(), addedDataFiles.size(),
+    LOG.info(
+        "{} optimize committed, delete {} files [{} posDelete files], "
+            + "add {} new files [{} posDelete files]",
+        table.id(),
+        removedDataFiles.size(),
+        removedDeleteFiles.size(),
+        addedDataFiles.size(),
         addedDataFiles.size());
   }
 

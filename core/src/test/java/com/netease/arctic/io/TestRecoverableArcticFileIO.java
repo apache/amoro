@@ -29,6 +29,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
 import java.io.IOException;
 
 public class TestRecoverableArcticFileIO extends TableTestBase {
@@ -48,8 +49,12 @@ public class TestRecoverableArcticFileIO extends TableTestBase {
   @Before
   public void before() {
     ArcticTable arcticTable = getArcticTable();
-    trashManager = TableTrashManagers.build(arcticTable.id(), arcticTable.location(),
-        arcticTable.properties(), (ArcticHadoopFileIO) arcticTable.io());
+    trashManager =
+        TableTrashManagers.build(
+            arcticTable.id(),
+            arcticTable.location(),
+            arcticTable.properties(),
+            (ArcticHadoopFileIO) arcticTable.io());
     recoverableArcticFileIO =
         new RecoverableHadoopFileIO(
             getTableMetaStore(), trashManager, TableProperties.TABLE_TRASH_FILE_PATTERN_DEFAULT);
@@ -91,7 +96,8 @@ public class TestRecoverableArcticFileIO extends TableTestBase {
     createFile(file1);
     createFile(file2);
     createFile(file3);
-    Iterable<PathInfo> items = recoverableArcticFileIO.listDirectory(getArcticTable().location() + "/base/test");
+    Iterable<PathInfo> items =
+        recoverableArcticFileIO.listDirectory(getArcticTable().location() + "/base/test");
     Assert.assertEquals(3L, Streams.stream(items).count());
   }
 
@@ -104,7 +110,7 @@ public class TestRecoverableArcticFileIO extends TableTestBase {
 
   @Test
   public void isEmptyDirectory() {
-    String dir = getArcticTable().location() + "location";
+    String dir = getArcticTable().location() + "/location";
     arcticFileIO.asFileSystemIO().makeDirectories(dir);
     Assert.assertTrue(recoverableArcticFileIO.isEmptyDirectory(dir));
     Assert.assertFalse(recoverableArcticFileIO.isEmptyDirectory(getArcticTable().location()));
@@ -139,17 +145,24 @@ public class TestRecoverableArcticFileIO extends TableTestBase {
     Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(file1));
     Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(file2));
     Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(file3));
-    Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(getArcticTable().location() +
-        "/metadata/version-hint.text"));
-    Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(getArcticTable().location() +
-        "/metadata/v2.metadata.json"));
-    Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(getArcticTable().location() +
-        "/metadata/snap-1515213806302741636-1-85fc817e-941d-4e9a-ab41-2dbf7687bfcd.avro"));
-    Assert.assertTrue(recoverableArcticFileIO.matchTrashFilePattern(getArcticTable().location() +
-        "/metadata/3ce7600d-4853-45d0-8533-84c12a611916-m0.avro"));
+    Assert.assertTrue(
+        recoverableArcticFileIO.matchTrashFilePattern(
+            getArcticTable().location() + "/metadata/version-hint.text"));
+    Assert.assertTrue(
+        recoverableArcticFileIO.matchTrashFilePattern(
+            getArcticTable().location() + "/metadata/v2.metadata.json"));
+    Assert.assertTrue(
+        recoverableArcticFileIO.matchTrashFilePattern(
+            getArcticTable().location()
+                + "/metadata/snap-1515213806302741636-1-85fc817e-941d-4e9a-ab41-2dbf7687bfcd.avro"));
+    Assert.assertTrue(
+        recoverableArcticFileIO.matchTrashFilePattern(
+            getArcticTable().location()
+                + "/metadata/3ce7600d-4853-45d0-8533-84c12a611916-m0.avro"));
 
-    Assert.assertFalse(recoverableArcticFileIO.matchTrashFilePattern(getArcticTable().location() +
-        "/metadata/3ce7600d-4853-45d0-8533-84c12a611916.avro"));
+    Assert.assertFalse(
+        recoverableArcticFileIO.matchTrashFilePattern(
+            getArcticTable().location() + "/metadata/3ce7600d-4853-45d0-8533-84c12a611916.avro"));
   }
 
   private void createFile(String path) throws IOException {

@@ -31,13 +31,14 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Abstract implementation of {@link PendingUpdate}, adding arctic logics like tracing and watermark generating for
- * iceberg operations.
+ * Abstract implementation of {@link PendingUpdate}, adding arctic logics like tracing and watermark
+ * generating for iceberg operations.
  *
  * @param <T> Java class of changes from this update; returned by {@link #apply} for validation.
  */
@@ -60,7 +61,9 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
   }
 
   public ArcticUpdate(
-      ArcticTable arcticTable, SnapshotUpdate<T> delegate, Transaction transaction,
+      ArcticTable arcticTable,
+      SnapshotUpdate<T> delegate,
+      Transaction transaction,
       boolean autoCommitTransaction) {
     this.arcticTable = arcticTable;
     this.transaction = transaction;
@@ -142,7 +145,10 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
       long currentWatermark = TablePropertyUtil.getTableWatermark(arcticTable.properties());
       long newWatermark = watermarkGenerator.watermark();
       if (newWatermark > currentWatermark) {
-        transaction.updateProperties().set(TableProperties.WATERMARK_TABLE, String.valueOf(newWatermark)).commit();
+        transaction
+            .updateProperties()
+            .set(TableProperties.WATERMARK_TABLE, String.valueOf(newWatermark))
+            .commit();
       }
     }
     if (transaction != null && autoCommitTransaction) {
@@ -221,8 +227,8 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
       }
     }
 
-    protected abstract T updateWithWatermark(Transaction transaction,
-        boolean autoCommitTransaction);
+    protected abstract T updateWithWatermark(
+        Transaction transaction, boolean autoCommitTransaction);
 
     protected abstract T updateWithoutWatermark(Supplier<I> delegateSupplier);
 

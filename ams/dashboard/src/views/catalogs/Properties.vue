@@ -115,6 +115,13 @@ function addRule() {
 // }
 
 defineExpose({
+  getPropertiesWithoputValidation() {
+    const propObj: IMap<string> = {}
+    propertiesForm.data.forEach(e => {
+      propObj[e.key] = e.value
+    })
+    return Promise.resolve(propObj)
+  },
   getProperties() {
     return propertiesFormRef.value
       .validateFields()

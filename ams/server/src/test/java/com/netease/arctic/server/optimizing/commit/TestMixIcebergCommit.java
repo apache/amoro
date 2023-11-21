@@ -49,6 +49,7 @@ import org.junit.runners.Parameterized;
 import org.mockito.Mockito;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -56,19 +57,17 @@ import java.util.Optional;
 @RunWith(Parameterized.class)
 public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
 
-  public TestMixIcebergCommit(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+  public TestMixIcebergCommit(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Parameterized.Parameters(name = "commit_test")
   public static Object[] parameters() {
-    return new Object[][] {{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(true, true)
-                           },
-                           {
-                               new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                               new BasicTableTestHelper(true, false)
-                           }};
+    return new Object[][] {
+      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, true)},
+      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, false)}
+    };
   }
 
   @Before
@@ -81,14 +80,13 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
   }
 
   protected void addFile(DataFile dataFile) {
-    arcticTable.asKeyedTable().changeTable().newAppend()
-        .appendFile(dataFile)
-        .commit();
+    arcticTable.asKeyedTable().changeTable().newAppend().appendFile(dataFile).commit();
   }
 
   protected Map<String, ContentFile<?>> getAllFiles() {
     Map<String, ContentFile<?>> maps = new HashMap<>();
-    CloseableIterable<CombinedScanTask> combinedScanTasks = arcticTable.asKeyedTable().newScan().planTasks();
+    CloseableIterable<CombinedScanTask> combinedScanTasks =
+        arcticTable.asKeyedTable().newScan().planTasks();
     for (CombinedScanTask combinedScanTask : combinedScanTasks) {
       for (KeyedTableScanTask keyedTableScanTask : combinedScanTask.tasks()) {
         for (ArcticFileScanTask task : keyedTableScanTask.dataTasks()) {
@@ -124,30 +122,25 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
       DataFile[] rewritePos,
       ContentFile<?>[] deletes,
       DataFile[] dataOutput,
-      DeleteFile[] deleteOutput
-  ) throws OptimizingCommitException {
-    RewriteFilesInput input = getRewriteInput(
-        rewriteData,
-        rewritePos,
-        deletes
-    );
-    RewriteFilesOutput output = new RewriteFilesOutput(
-        dataOutput,
-        deleteOutput,
-        null);
+      DeleteFile[] deleteOutput)
+      throws OptimizingCommitException {
+    RewriteFilesInput input = getRewriteInput(rewriteData, rewritePos, deletes);
+    RewriteFilesOutput output = new RewriteFilesOutput(dataOutput, deleteOutput, null);
     StructLikeMap<Long> fromSequence = getFromSequenceOfPartitions(input);
     StructLikeMap<Long> toSequence = getToSequenceOfPartitions(input);
     TaskRuntime taskRuntime = Mockito.mock(TaskRuntime.class);
     Mockito.when(taskRuntime.getPartition()).thenReturn(partitionPath);
     Mockito.when(taskRuntime.getInput()).thenReturn(input);
     Mockito.when(taskRuntime.getOutput()).thenReturn(output);
-    KeyedTableCommit commit = new KeyedTableCommit(
-        getArcticTable(),
-        Arrays.asList(taskRuntime),
-        Optional.ofNullable(arcticTable.asKeyedTable().baseTable().currentSnapshot()).map(Snapshot::snapshotId)
-            .orElse(null),
-        fromSequence,
-        toSequence);
+    KeyedTableCommit commit =
+        new KeyedTableCommit(
+            getArcticTable(),
+            Collections.singletonList(taskRuntime),
+            Optional.ofNullable(arcticTable.asKeyedTable().baseTable().currentSnapshot())
+                .map(Snapshot::snapshotId)
+                .orElse(null),
+            fromSequence,
+            toSequence);
     commit.commit();
   }
 
@@ -188,37 +181,39 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
   }
 
   private RewriteFilesInput getRewriteInput(
-      DataFile[] rewriteDataFiles, DataFile[] rePositionDataFiles,
-      ContentFile<?>[] deleteFiles) {
+      DataFile[] rewriteDataFiles, DataFile[] rePositionDataFiles, ContentFile<?>[] deleteFiles) {
     Map<String, ContentFile<?>> allFiles = getAllFiles();
 
     DataFile[] rewriteData = null;
     if (rewriteDataFiles != null) {
-      rewriteData = Arrays.stream(rewriteDataFiles)
-          .map(s -> (DefaultKeyedFile) allFiles.get(s.path().toString()))
-          .toArray(DataFile[]::new);
+      rewriteData =
+          Arrays.stream(rewriteDataFiles)
+              .map(s -> (DefaultKeyedFile) allFiles.get(s.path().toString()))
+              .toArray(DataFile[]::new);
     }
 
     DataFile[] rewritePos = null;
     if (rePositionDataFiles != null) {
-      rewritePos = Arrays.stream(rePositionDataFiles)
-          .map(s -> (DefaultKeyedFile) allFiles.get(s.path().toString()))
-          .toArray(DataFile[]::new);
+      rewritePos =
+          Arrays.stream(rePositionDataFiles)
+              .map(s -> (DefaultKeyedFile) allFiles.get(s.path().toString()))
+              .toArray(DataFile[]::new);
     }
 
     ContentFile<?>[] delete = null;
     if (deleteFiles != null) {
-      delete = Arrays.stream(deleteFiles)
-          .map(s -> allFiles.get(s.path().toString()))
-          .map(s -> {
-                if (s instanceof DefaultKeyedFile) {
-                  return s;
-                } else {
-                  return s;
-                }
-          }
-          )
-          .toArray(ContentFile[]::new);
+      delete =
+          Arrays.stream(deleteFiles)
+              .map(s -> allFiles.get(s.path().toString()))
+              .map(
+                  s -> {
+                    if (s instanceof DefaultKeyedFile) {
+                      return s;
+                    } else {
+                      return s;
+                    }
+                  })
+              .toArray(ContentFile[]::new);
     }
     return new RewriteFilesInput(rewriteData, rewritePos, null, delete, arcticTable);
   }

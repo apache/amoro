@@ -41,6 +41,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.connector.catalog.Identifier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,14 +53,12 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-
 public class SparkTableTestBase extends SparkTestBase {
   protected static final TableFormat MIXED_HIVE = TableFormat.MIXED_HIVE;
   protected static final TableFormat MIXED_ICEBERG = TableFormat.MIXED_ICEBERG;
   protected static final TableFormat ICEBERG = TableFormat.ICEBERG;
   protected static final PartitionSpec unpartitioned = PartitionSpec.unpartitioned();
   protected static final PrimaryKeySpec noPrimaryKey = PrimaryKeySpec.noPrimaryKey();
-
 
   private final String database = "spark_test_database";
   private final String table = "test_table";
@@ -83,7 +82,6 @@ public class SparkTableTestBase extends SparkTestBase {
     Preconditions.checkNotNull(source);
     return source;
   }
-
 
   public ArcticTable loadTable() {
     return catalog().loadTable(target().toArcticIdentifier());
@@ -125,7 +123,7 @@ public class SparkTableTestBase extends SparkTestBase {
     catalog().dropTable(TableIdentifier.of(catalog().name(), database, table), true);
     try {
       context.dropHiveTable(database, table);
-    }catch (Exception e){
+    } catch (Exception e) {
       // pass
     }
   }
@@ -137,19 +135,20 @@ public class SparkTableTestBase extends SparkTestBase {
   protected void createHiveSource(
       List<FieldSchema> cols, List<FieldSchema> partitions, Map<String, String> properties) {
     long currentTimeMillis = System.currentTimeMillis();
-    Table source = new Table(
-        sourceTable,
-        database,
-        null,
-        (int) currentTimeMillis / 1000,
-        (int) currentTimeMillis / 1000,
-        Integer.MAX_VALUE,
-        null,
-        partitions,
-        new HashMap<>(),
-        null,
-        null,
-        TableType.EXTERNAL_TABLE.toString());
+    Table source =
+        new Table(
+            sourceTable,
+            database,
+            null,
+            (int) currentTimeMillis / 1000,
+            (int) currentTimeMillis / 1000,
+            Integer.MAX_VALUE,
+            null,
+            partitions,
+            new HashMap<>(),
+            null,
+            null,
+            TableType.EXTERNAL_TABLE.toString());
     StorageDescriptor storageDescriptor = new StorageDescriptor();
     storageDescriptor.setInputFormat(HiveTableProperties.PARQUET_INPUT_FORMAT);
     storageDescriptor.setOutputFormat(HiveTableProperties.PARQUET_OUTPUT_FORMAT);
@@ -168,7 +167,8 @@ public class SparkTableTestBase extends SparkTestBase {
   }
 
   public ArcticTable createArcticSource(Schema schema, Consumer<TableBuilder> consumer) {
-    Identifier identifier = new Identifier(catalog().name(), database, sourceTable, Identifier.SOURCE_TYPE_ARCTIC);
+    Identifier identifier =
+        new Identifier(catalog().name(), database, sourceTable, Identifier.SOURCE_TYPE_ARCTIC);
     TableBuilder builder = catalog().newTableBuilder(identifier.toArcticIdentifier(), schema);
     consumer.accept(builder);
     ArcticTable source = builder.create();
@@ -177,9 +177,11 @@ public class SparkTableTestBase extends SparkTestBase {
   }
 
   public void createViewSource(Schema schema, List<Record> data) {
-    Dataset<Row> ds = spark().createDataFrame(
-        data.stream().map(TestTableUtil::recordToRow).collect(Collectors.toList()),
-        SparkSchemaUtil.convert(schema));
+    Dataset<Row> ds =
+        spark()
+            .createDataFrame(
+                data.stream().map(TestTableUtil::recordToRow).collect(Collectors.toList()),
+                SparkSchemaUtil.convert(schema));
 
     ds.createOrReplaceTempView(sourceTable);
     this.source = new Identifier(null, null, sourceTable, Identifier.SOURCE_TYPE_VIEW);
@@ -191,7 +193,6 @@ public class SparkTableTestBase extends SparkTestBase {
     consumer.accept(builder);
     return builder.create();
   }
-
 
   protected boolean tableExists() {
     return catalog().tableExists(target().toArcticIdentifier());
@@ -209,7 +210,6 @@ public class SparkTableTestBase extends SparkTestBase {
     } else if (Identifier.SOURCE_TYPE_VIEW.equalsIgnoreCase(source.sourceType)) {
       spark().sessionState().catalog().dropTempView(source.table);
     }
-
   }
 
   public static class Identifier {
@@ -233,6 +233,11 @@ public class SparkTableTestBase extends SparkTestBase {
       return TableIdentifier.of(catalog, database, table);
     }
 
+    public org.apache.spark.sql.connector.catalog.Identifier toSparkIdentifier() {
+      return org.apache.spark.sql.connector.catalog.Identifier.of(new String[] {database}, table);
+    }
+
+    /** @return spark identifier as string. */
     @Override
     public String toString() {
       if (SOURCE_TYPE_VIEW.equalsIgnoreCase(sourceType)) {
@@ -247,11 +252,14 @@ public class SparkTableTestBase extends SparkTestBase {
     boolean primaryKeysBlock = false;
     List<String> descPartitionKey = Lists.newArrayList();
     List<String> descPrimaryKeys = Lists.newArrayList();
-    List<Object[]> rs = rows.stream()
-        .map(row -> IntStream.range(0, row.size())
-            .mapToObj(pos -> row.isNullAt(pos) ? null : row.get(pos))
-            .toArray(Object[]::new)
-        ).collect(Collectors.toList());
+    List<Object[]> rs =
+        rows.stream()
+            .map(
+                row ->
+                    IntStream.range(0, row.size())
+                        .mapToObj(pos -> row.isNullAt(pos) ? null : row.get(pos))
+                        .toArray(Object[]::new))
+            .collect(Collectors.toList());
     for (Object[] row : rs) {
       if (StringUtils.equalsIgnoreCase("# Partitioning", row[0].toString())) {
         partitionBlock = true;
@@ -266,13 +274,30 @@ public class SparkTableTestBase extends SparkTestBase {
         descPrimaryKeys.add(row[0].toString());
       }
     }
-    Assertions.assertArrayEquals(partitionKey.stream().sorted().distinct().toArray(),
+    Assertions.assertArrayEquals(
+        partitionKey.stream().sorted().distinct().toArray(),
         descPartitionKey.stream().sorted().distinct().toArray());
 
     Assertions.assertEquals(primaryKeys.size(), descPrimaryKeys.size());
-    Assertions.assertArrayEquals(primaryKeys.stream().sorted().distinct().toArray(),
+    Assertions.assertArrayEquals(
+        primaryKeys.stream().sorted().distinct().toArray(),
         descPrimaryKeys.stream().sorted().distinct().toArray());
   }
 
-
+  public void assertShowCreateTable(List<Row> rows, Identifier id, ArcticTable table) {
+    StringBuilder showCreateSqlBuilder = new StringBuilder();
+    for (Row r : rows) {
+      showCreateSqlBuilder.append(r.getString(0));
+    }
+    String showCreateSql = showCreateSqlBuilder.toString();
+    String expectCreateHeader = "create table " + id.catalog + "." + id + " (";
+    String ignoreCaseShowCreate = showCreateSql.replace("CREATE", "create");
+    ignoreCaseShowCreate = ignoreCaseShowCreate.replace("TABLE", "table");
+    Assertions.assertTrue(
+        ignoreCaseShowCreate.startsWith(expectCreateHeader),
+        "expect ["
+            + expectCreateHeader
+            + "] in ShowCreateTable Result, but not found in :"
+            + showCreateSql);
+  }
 }

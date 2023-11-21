@@ -10,10 +10,9 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.optimizing.RewriteFilesOutput;
 import com.netease.arctic.optimizing.TableOptimizing;
-import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.resource.OptimizerInstance;
@@ -42,36 +41,51 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   private final Persistency persistency = new Persistency();
 
-  public TestOptimizingQueue(CatalogTestHelper catalogTestHelper,
-                             TableTestHelper tableTestHelper) {
+  public TestOptimizingQueue(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper, true);
   }
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][]{
-        {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-            new BasicTableTestHelper(false, true)}};
+    return new Object[][] {
+      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, true)}
+    };
   }
 
   @Test
   public void testPollNoTask() {
-    TableRuntimeMeta tableRuntimeMeta = buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
-    OptimizingQueue queue = new OptimizingQueue(tableService(), defaultResourceGroup(),
-        Collections.singletonList(tableRuntimeMeta), Collections.emptyList(), 60000, 3000);
-    OptimizingTask optimizingTask = queue.pollTask("", 1);
+    TableRuntimeMeta tableRuntimeMeta =
+        buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            tableService(),
+            defaultResourceGroup(),
+            Collections.singletonList(tableRuntimeMeta),
+            Collections.emptyList(),
+            60000,
+            3000);
+    String authToken = queue.authenticate(buildRegisterInfo());
+    OptimizingTask optimizingTask = queue.pollTask(authToken, 1);
     Assert.assertNull(optimizingTask);
   }
 
   @Test
   public void testRefreshTable() {
-    OptimizingQueue queue = new OptimizingQueue(tableService(), defaultResourceGroup(),
-        Collections.emptyList(), Collections.emptyList(), 60000, 3000);
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            tableService(),
+            defaultResourceGroup(),
+            Collections.emptyList(),
+            Collections.emptyList(),
+            60000,
+            3000);
     Assert.assertEquals(0, queue.getSchedulingPolicy().getTableRuntimeMap().size());
-    TableRuntimeMeta tableRuntimeMeta = buildTableRuntimeMeta(OptimizingStatus.IDLE, defaultResourceGroup());
+    TableRuntimeMeta tableRuntimeMeta =
+        buildTableRuntimeMeta(OptimizingStatus.IDLE, defaultResourceGroup());
     queue.refreshTable(tableRuntimeMeta.getTableRuntime());
     Assert.assertEquals(1, queue.getSchedulingPolicy().getTableRuntimeMap().size());
-    Assert.assertTrue(queue.getSchedulingPolicy().getTableRuntimeMap().containsKey(serverTableIdentifier()));
+    Assert.assertTrue(
+        queue.getSchedulingPolicy().getTableRuntimeMap().containsKey(serverTableIdentifier()));
 
     queue.releaseTable(tableRuntimeMeta.getTableRuntime());
     Assert.assertEquals(0, queue.getSchedulingPolicy().getTableRuntimeMap().size());
@@ -81,8 +95,14 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   public void testHandleTask() {
     TableRuntimeMeta tableRuntimeMeta = initTableWithFiles();
 
-    OptimizingQueue queue = new OptimizingQueue(tableService(), defaultResourceGroup(),
-        Collections.singletonList(tableRuntimeMeta), Collections.emptyList(), 60000, 3000);
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            tableService(),
+            defaultResourceGroup(),
+            Collections.singletonList(tableRuntimeMeta),
+            Collections.emptyList(),
+            60000,
+            3000);
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -119,15 +139,20 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // 9.close
     optimizingProcess.close();
     Assert.assertEquals(OptimizingProcess.Status.CLOSED, optimizingProcess.getStatus());
-
   }
 
   @Test
   public void testPollTwice() {
     TableRuntimeMeta tableRuntimeMeta = initTableWithFiles();
 
-    OptimizingQueue queue = new OptimizingQueue(tableService(), defaultResourceGroup(),
-        Collections.singletonList(tableRuntimeMeta), Collections.emptyList(), 60000, 3000);
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            tableService(),
+            defaultResourceGroup(),
+            Collections.singletonList(tableRuntimeMeta),
+            Collections.emptyList(),
+            60000,
+            3000);
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -142,32 +167,49 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   public void testCheckSuspendTask() {
     TableRuntimeMeta tableRuntimeMeta = initTableWithFiles();
 
-    OptimizingQueue queue = new OptimizingQueue(tableService(), defaultResourceGroup(),
-        Collections.singletonList(tableRuntimeMeta), Collections.emptyList(), 60000, 3000);
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            tableService(),
+            defaultResourceGroup(),
+            Collections.singletonList(tableRuntimeMeta),
+            Collections.emptyList(),
+            60000,
+            3000);
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
     // 1.poll task
     OptimizingTask task1 = pollTaskAndCheck(authToken, thread, queue);
-    queue.getOptimizers().forEach(optimizerInstance -> optimizerInstance.setTouchTime(
-        System.currentTimeMillis() - 60000 - 1));
+    queue
+        .getOptimizers()
+        .forEach(
+            optimizerInstance ->
+                optimizerInstance.setTouchTime(System.currentTimeMillis() - 60000 - 1));
 
     // 2.check suspending and retry task
     queue.checkSuspending();
 
     // 3.poll again
     Assert.assertEquals(0, queue.getExecutingTaskMap().size());
-    OptimizingTask task2 = pollTaskAndCheck(authToken, thread, queue);
+    String newAuthToken = queue.authenticate(buildRegisterInfo());
+    OptimizingQueue.OptimizingThread newThread =
+        new OptimizingQueue.OptimizingThread(newAuthToken, 1);
+    OptimizingTask task2 = pollTaskAndCheck(newAuthToken, newThread, queue);
     Assert.assertEquals(task1, task2);
-
   }
 
   @Test
   public void testReloadScheduledTask() {
     TableRuntimeMeta tableRuntimeMeta = initTableWithFiles();
 
-    OptimizingQueue queue = new OptimizingQueue(tableService(), defaultResourceGroup(),
-        Collections.singletonList(tableRuntimeMeta), Collections.emptyList(), 60000, 3000);
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            tableService(),
+            defaultResourceGroup(),
+            Collections.singletonList(tableRuntimeMeta),
+            Collections.emptyList(),
+            60000,
+            3000);
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -179,8 +221,14 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     List<TableRuntimeMeta> tableRuntimeMetas = persistency.selectTableRuntimeMetas();
     Assert.assertEquals(1, tableRuntimeMetas.size());
     tableRuntimeMetas.get(0).constructTableRuntime(tableService());
-    queue = new OptimizingQueue(tableService(), defaultResourceGroup(), tableRuntimeMetas, Collections.emptyList(),
-        60000, 3000);
+    queue =
+        new OptimizingQueue(
+            tableService(),
+            defaultResourceGroup(),
+            tableRuntimeMetas,
+            queue.getOptimizers(),
+            60000,
+            3000);
 
     Assert.assertEquals(1, queue.getExecutingTaskMap().size());
     TaskRuntime taskRuntime = queue.getExecutingTaskMap().get(task.getTaskId());
@@ -197,8 +245,14 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   public void testReloadAckTask() {
     TableRuntimeMeta tableRuntimeMeta = initTableWithFiles();
 
-    OptimizingQueue queue = new OptimizingQueue(tableService(), defaultResourceGroup(),
-        Collections.singletonList(tableRuntimeMeta), Collections.emptyList(), 60000, 3000);
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            tableService(),
+            defaultResourceGroup(),
+            Collections.singletonList(tableRuntimeMeta),
+            Collections.emptyList(),
+            60000,
+            3000);
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -213,8 +267,14 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     List<TableRuntimeMeta> tableRuntimeMetas = persistency.selectTableRuntimeMetas();
     Assert.assertEquals(1, tableRuntimeMetas.size());
     tableRuntimeMetas.get(0).constructTableRuntime(tableService());
-    queue = new OptimizingQueue(tableService(), defaultResourceGroup(), tableRuntimeMetas, Collections.emptyList(),
-        60000, 3000);
+    queue =
+        new OptimizingQueue(
+            tableService(),
+            defaultResourceGroup(),
+            tableRuntimeMetas,
+            queue.getOptimizers(),
+            60000,
+            3000);
 
     Assert.assertEquals(1, queue.getExecutingTaskMap().size());
     TaskRuntime taskRuntime = queue.getExecutingTaskMap().get(task.getTaskId());
@@ -228,8 +288,14 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   public void testReloadCompleteTask() {
     TableRuntimeMeta tableRuntimeMeta = initTableWithFiles();
 
-    OptimizingQueue queue = new OptimizingQueue(tableService(), defaultResourceGroup(),
-        Collections.singletonList(tableRuntimeMeta), Collections.emptyList(), 60000, 3000);
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            tableService(),
+            defaultResourceGroup(),
+            Collections.singletonList(tableRuntimeMeta),
+            Collections.emptyList(),
+            60000,
+            3000);
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -247,8 +313,14 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     List<TableRuntimeMeta> tableRuntimeMetas = persistency.selectTableRuntimeMetas();
     Assert.assertEquals(1, tableRuntimeMetas.size());
     tableRuntimeMetas.get(0).constructTableRuntime(tableService());
-    queue = new OptimizingQueue(tableService(), defaultResourceGroup(), tableRuntimeMetas, Collections.emptyList(),
-        60000, 3000);
+    queue =
+        new OptimizingQueue(
+            tableService(),
+            defaultResourceGroup(),
+            tableRuntimeMetas,
+            Collections.emptyList(),
+            60000,
+            3000);
 
     Assert.assertEquals(0, queue.getExecutingTaskMap().size());
   }
@@ -257,8 +329,14 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   public void testReloadFailTask() {
     TableRuntimeMeta tableRuntimeMeta = initTableWithFiles();
 
-    OptimizingQueue queue = new OptimizingQueue(tableService(), defaultResourceGroup(),
-        Collections.singletonList(tableRuntimeMeta), Collections.emptyList(), 60000, 3000);
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            tableService(),
+            defaultResourceGroup(),
+            Collections.singletonList(tableRuntimeMeta),
+            Collections.emptyList(),
+            60000,
+            3000);
 
     String authToken = queue.authenticate(buildRegisterInfo());
     OptimizingQueue.OptimizingThread thread = new OptimizingQueue.OptimizingThread(authToken, 1);
@@ -276,8 +354,14 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     List<TableRuntimeMeta> tableRuntimeMetas = persistency.selectTableRuntimeMetas();
     Assert.assertEquals(1, tableRuntimeMetas.size());
     tableRuntimeMetas.get(0).constructTableRuntime(tableService());
-    queue = new OptimizingQueue(tableService(), defaultResourceGroup(), tableRuntimeMetas, Collections.emptyList(),
-        60000, 3000);
+    queue =
+        new OptimizingQueue(
+            tableService(),
+            defaultResourceGroup(),
+            tableRuntimeMetas,
+            queue.getOptimizers(),
+            60000,
+            3000);
 
     Assert.assertEquals(0, queue.getExecutingTaskMap().size());
 
@@ -293,47 +377,59 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   }
 
   private TableRuntimeMeta initTableWithFiles() {
-    ArcticTable arcticTable = tableService().loadTable(serverTableIdentifier());
+    ArcticTable arcticTable =
+        (ArcticTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     appendData(arcticTable.asUnkeyedTable(), 1);
     appendData(arcticTable.asUnkeyedTable(), 2);
-    TableRuntimeMeta tableRuntimeMeta = buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
+    TableRuntimeMeta tableRuntimeMeta =
+        buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
     TableRuntime runtime = tableRuntimeMeta.getTableRuntime();
 
     runtime.refresh(tableService().loadTable(serverTableIdentifier()));
     return tableRuntimeMeta;
   }
 
-  private void succeedTaskAndCheck(String authToken, OptimizingQueue.OptimizingThread thread, OptimizingQueue queue,
-                                   OptimizingTask task) {
+  private void succeedTaskAndCheck(
+      String authToken,
+      OptimizingQueue.OptimizingThread thread,
+      OptimizingQueue queue,
+      OptimizingTask task) {
     TaskRuntime taskRuntime = queue.getExecutingTaskMap().get(task.getTaskId());
-    queue.completeTask(authToken, buildOptimizingTaskResult(task.getTaskId(), thread.getThreadId()));
+    queue.completeTask(
+        authToken, buildOptimizingTaskResult(task.getTaskId(), thread.getThreadId()));
     Assert.assertEquals(0, queue.getExecutingTaskMap().size());
     assertTaskRuntime(taskRuntime, TaskRuntime.Status.SUCCESS, null);
   }
 
-  private void failTaskAndCheck(String authToken, OptimizingQueue.OptimizingThread thread, OptimizingQueue queue,
-                                OptimizingTask task) {
+  private void failTaskAndCheck(
+      String authToken,
+      OptimizingQueue.OptimizingThread thread,
+      OptimizingQueue queue,
+      OptimizingTask task) {
     TaskRuntime taskRuntime = queue.getExecutingTaskMap().get(task.getTaskId());
     String errorMessage = "unknown error";
-    queue.completeTask(authToken, buildOptimizingTaskFailResult(task.getTaskId(), thread.getThreadId(), errorMessage));
+    queue.completeTask(
+        authToken,
+        buildOptimizingTaskFailResult(task.getTaskId(), thread.getThreadId(), errorMessage));
     Assert.assertEquals(0, queue.getExecutingTaskMap().size());
     assertTaskRuntime(taskRuntime, TaskRuntime.Status.PLANNED, null); // retry and change to PLANNED
     Assert.assertEquals(1, taskRuntime.getRetry());
     Assert.assertEquals(errorMessage, taskRuntime.getFailReason());
   }
 
-  private void ackTaskAndCheck(String authToken,
-                               OptimizingQueue.OptimizingThread thread,
-                               OptimizingQueue queue,
-                               OptimizingTask task) {
+  private void ackTaskAndCheck(
+      String authToken,
+      OptimizingQueue.OptimizingThread thread,
+      OptimizingQueue queue,
+      OptimizingTask task) {
     queue.ackTask(authToken, thread.getThreadId(), task.getTaskId());
     Assert.assertEquals(1, queue.getExecutingTaskMap().size());
     TaskRuntime taskRuntime = queue.getExecutingTaskMap().get(task.getTaskId());
     assertTaskRuntime(taskRuntime, TaskRuntime.Status.ACKED, thread);
   }
 
-  private OptimizingTask pollTaskAndCheck(String authToken, OptimizingQueue.OptimizingThread thread,
-                                          OptimizingQueue queue) {
+  private OptimizingTask pollTaskAndCheck(
+      String authToken, OptimizingQueue.OptimizingThread thread, OptimizingQueue queue) {
     OptimizingTask task = queue.pollTask(authToken, thread.getThreadId());
     Assert.assertNotNull(task);
     Assert.assertEquals(1, queue.getExecutingTaskMap().size());
@@ -344,8 +440,14 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Test
   public void testOptimizer() throws InterruptedException {
-    OptimizingQueue queue = new OptimizingQueue(tableService(), defaultResourceGroup(),
-        Collections.emptyList(), Collections.emptyList(), 60000, 3000);
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            tableService(),
+            defaultResourceGroup(),
+            Collections.emptyList(),
+            Collections.emptyList(),
+            60000,
+            3000);
     OptimizerRegisterInfo registerInfo = buildRegisterInfo();
 
     // authenticate
@@ -376,8 +478,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     return registerInfo;
   }
 
-  private void assertTaskRuntime(TaskRuntime taskRuntime, TaskRuntime.Status status,
-                                 OptimizingQueue.OptimizingThread thread) {
+  private void assertTaskRuntime(
+      TaskRuntime taskRuntime, TaskRuntime.Status status, OptimizingQueue.OptimizingThread thread) {
     Assert.assertEquals(status, taskRuntime.getStatus());
     Assert.assertEquals(thread, taskRuntime.getOptimizingThread());
   }
@@ -386,8 +488,10 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     return new ResourceGroup.Builder("test", "local").build();
   }
 
-  private TableRuntimeMeta buildTableRuntimeMeta(OptimizingStatus status, ResourceGroup resourceGroup) {
-    ArcticTable arcticTable = tableService().loadTable(serverTableIdentifier());
+  private TableRuntimeMeta buildTableRuntimeMeta(
+      OptimizingStatus status, ResourceGroup resourceGroup) {
+    ArcticTable arcticTable =
+        (ArcticTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     TableRuntimeMeta tableRuntimeMeta = new TableRuntimeMeta();
     tableRuntimeMeta.setCatalogName(serverTableIdentifier().getCatalog());
     tableRuntimeMeta.setDbName(serverTableIdentifier().getDatabase());
@@ -395,19 +499,17 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     tableRuntimeMeta.setTableId(serverTableIdentifier().getId());
     tableRuntimeMeta.setTableStatus(status);
     tableRuntimeMeta.setTableConfig(TableConfiguration.parseConfig(arcticTable.properties()));
-    tableRuntimeMeta.setCurrentChangeSnapshotId(ArcticServiceConstants.INVALID_SNAPSHOT_ID);
-    tableRuntimeMeta.setCurrentSnapshotId(ArcticServiceConstants.INVALID_SNAPSHOT_ID);
-    tableRuntimeMeta.setLastOptimizedChangeSnapshotId(ArcticServiceConstants.INVALID_SNAPSHOT_ID);
-    tableRuntimeMeta.setLastOptimizedSnapshotId(ArcticServiceConstants.INVALID_SNAPSHOT_ID);
     tableRuntimeMeta.setOptimizerGroup(resourceGroup.getName());
     tableRuntimeMeta.constructTableRuntime(tableService());
     return tableRuntimeMeta;
   }
 
   private List<DataFile> appendData(UnkeyedTable table, int id) {
-    ArrayList<Record> newRecords = Lists.newArrayList(
-        DataTestHelpers.createRecord(table.schema(), id, "111", 0L, "2022-01-01T12:00:00"));
-    List<DataFile> dataFiles = DataTestHelpers.writeBaseStore(table, 0L, newRecords, false);
+    ArrayList<Record> newRecords =
+        Lists.newArrayList(
+            MixedDataTestHelpers.createRecord(
+                table.schema(), id, "111", 0L, "2022-01-01T12:00:00"));
+    List<DataFile> dataFiles = MixedDataTestHelpers.writeBaseStore(table, 0L, newRecords, false);
     AppendFiles appendFiles = table.newAppend();
     dataFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
@@ -421,8 +523,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     return optimizingTaskResult;
   }
 
-  private OptimizingTaskResult buildOptimizingTaskFailResult(OptimizingTaskId taskId, int threadId,
-                                                             String errorMessage) {
+  private OptimizingTaskResult buildOptimizingTaskFailResult(
+      OptimizingTaskId taskId, int threadId, String errorMessage) {
     TableOptimizing.OptimizingOutput output = new RewriteFilesOutput(null, null, null);
     OptimizingTaskResult optimizingTaskResult = new OptimizingTaskResult(taskId, threadId);
     optimizingTaskResult.setTaskOutput(SerializationUtil.simpleSerialize(output));

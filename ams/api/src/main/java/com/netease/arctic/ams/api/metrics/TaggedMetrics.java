@@ -32,8 +32,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- *  This is a simple data structure that separates tags and metrics, making it easier for reporters to write to popular
- *  monitoring systems when processing {@link MetricReport}
+ * This is a simple data structure that separates tags and metrics, making it easier for reporters
+ * to write to popular monitoring systems when processing {@link MetricsContent}
  */
 public class TaggedMetrics {
   private final Map<String, Object> tags;
@@ -48,7 +48,7 @@ public class TaggedMetrics {
     return new TaggedMetrics(tags, metrics);
   }
 
-  public static TaggedMetrics from(MetricReport metricReport) {
+  public static TaggedMetrics from(MetricsContent<?> metricReport) {
     return of(parseTags(metricReport), parseMetrics(metricReport));
   }
 
@@ -63,34 +63,37 @@ public class TaggedMetrics {
   private static Map<String, Object> parseTags(Object object) {
     List<Method> tagMethods = getAnnotationMethods(object, TaggedMetrics.Tag.class);
     Map<String, Object> tags = Maps.newHashMap();
-    tagMethods.forEach(method -> {
-      TaggedMetrics.Tag tag = method.getAnnotation(TaggedMetrics.Tag.class);
-      try {
-        tags.put(tag.name(), method.invoke(object));
-      } catch (IllegalAccessException | InvocationTargetException e) {
-        throw new RuntimeException(e);
-      }
-    });
+    tagMethods.forEach(
+        method -> {
+          TaggedMetrics.Tag tag = method.getAnnotation(TaggedMetrics.Tag.class);
+          try {
+            tags.put(tag.name(), method.invoke(object));
+          } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+          }
+        });
     return tags;
   }
 
   private static Map<String, Object> parseMetrics(Object object) {
     List<Method> tagMethods = getAnnotationMethods(object, TaggedMetrics.Metric.class);
     Map<String, Object> metrics = Maps.newHashMap();
-    tagMethods.forEach(method -> {
-      TaggedMetrics.Metric metric = method.getAnnotation(TaggedMetrics.Metric.class);
-      try {
-        if (method.invoke(object) != null) {
-          metrics.put(metric.name(), method.invoke(object));
-        }
-      } catch (IllegalAccessException | InvocationTargetException e) {
-        throw new RuntimeException(e);
-      }
-    });
+    tagMethods.forEach(
+        method -> {
+          TaggedMetrics.Metric metric = method.getAnnotation(TaggedMetrics.Metric.class);
+          try {
+            if (method.invoke(object) != null) {
+              metrics.put(metric.name(), method.invoke(object));
+            }
+          } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+          }
+        });
     return metrics;
   }
 
-  private static List<Method> getAnnotationMethods(Object object, Class<? extends Annotation> annotationClass) {
+  private static List<Method> getAnnotationMethods(
+      Object object, Class<? extends Annotation> annotationClass) {
     List<Method> methods = Lists.newArrayList();
     for (Method method : object.getClass().getDeclaredMethods()) {
       if (method.isAnnotationPresent(annotationClass)) {

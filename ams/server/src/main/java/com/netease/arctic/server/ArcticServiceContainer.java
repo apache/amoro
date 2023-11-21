@@ -20,6 +20,7 @@ package com.netease.arctic.server;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.Constants;
@@ -41,13 +42,13 @@ import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.table.executor.AsyncTableExecutors;
 import com.netease.arctic.server.terminal.TerminalManager;
 import com.netease.arctic.server.utils.ConfigOption;
+import com.netease.arctic.server.utils.ConfigurationUtil;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.server.utils.ThriftServiceProxy;
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -132,6 +133,7 @@ public class ArcticServiceContainer {
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
     addHandlerChain(optimizingService.getTableRuntimeHandler());
+    addHandlerChain(AsyncTableExecutors.getInstance().getDataExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getSnapshotsExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingCommitExecutor());
@@ -170,6 +172,10 @@ public class ArcticServiceContainer {
       tableService.dispose();
       tableService = null;
     }
+    if (terminalManager != null) {
+      terminalManager.dispose();
+      terminalManager = null;
+    }
     optimizingService = null;
   }
 
@@ -191,53 +197,75 @@ public class ArcticServiceContainer {
   }
 
   private void initHttpService() {
-    DashboardServer dashboardServer = new DashboardServer(
-        serviceConfig, tableService, optimizingService, terminalManager);
-    IcebergRestCatalogService restCatalogService = new IcebergRestCatalogService(tableService);
+    DashboardServer dashboardServer =
+        new DashboardServer(serviceConfig, tableService, optimizingService, terminalManager);
+    RestCatalogService restCatalogService = new RestCatalogService(tableService);
 
-    httpServer = Javalin.create(config -> {
-      config.addStaticFiles(dashboardServer.configStaticFiles());
-      config.sessionHandler(SessionHandler::new);
-      config.enableCorsForAllOrigins();
-    });
-    httpServer.routes(() -> {
-      dashboardServer.endpoints().addEndpoints();
-      restCatalogService.endpoints().addEndpoints();
-    });
+    httpServer =
+        Javalin.create(
+            config -> {
+              config.addStaticFiles(dashboardServer.configStaticFiles());
+              config.sessionHandler(SessionHandler::new);
+              config.enableCorsForAllOrigins();
+              config.showJavalinBanner = false;
+            });
+    httpServer.routes(
+        () -> {
+          dashboardServer.endpoints().addEndpoints();
+          restCatalogService.endpoints().addEndpoints();
+        });
 
-    httpServer.before(ctx -> {
-      String token = ctx.queryParam("token");
-      if (StringUtils.isNotEmpty(token)) {
-        CommonUtil.checkSinglePageToken(ctx);
-      } else {
-        dashboardServer.preHandleRequest(ctx);
-      }
-    });
-    httpServer.exception(Exception.class, (e, ctx) -> {
-      if (restCatalogService.needHandleException(ctx)) {
-        restCatalogService.handleException(e, ctx);
-      } else {
-        dashboardServer.handleException(e, ctx);
-      }
-    });
+    httpServer.before(
+        ctx -> {
+          String token = ctx.queryParam("token");
+          if (StringUtils.isNotEmpty(token)) {
+            CommonUtil.checkSinglePageToken(ctx);
+          } else {
+            dashboardServer.preHandleRequest(ctx);
+          }
+        });
+    httpServer.exception(
+        Exception.class,
+        (e, ctx) -> {
+          if (restCatalogService.needHandleException(ctx)) {
+            restCatalogService.handleException(e, ctx);
+          } else {
+            dashboardServer.handleException(e, ctx);
+          }
+        });
     // default response handle
-    httpServer.error(HttpCode.NOT_FOUND.getStatus(), ctx -> {
-      if (!restCatalogService.needHandleException(ctx)) {
-        ctx.json(new ErrorResponse(HttpCode.NOT_FOUND, "page not found!", ""));
-      }
-    });
+    httpServer.error(
+        HttpCode.NOT_FOUND.getStatus(),
+        ctx -> {
+          if (!restCatalogService.needHandleException(ctx)) {
+            ctx.json(new ErrorResponse(HttpCode.NOT_FOUND, "page not found!", ""));
+          }
+        });
 
-    httpServer.error(HttpCode.INTERNAL_SERVER_ERROR.getStatus(), ctx -> {
-      if (!restCatalogService.needHandleException(ctx)) {
-        ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, "internal error!", ""));
-      }
-    });
+    httpServer.error(
+        HttpCode.INTERNAL_SERVER_ERROR.getStatus(),
+        ctx -> {
+          if (!restCatalogService.needHandleException(ctx)) {
+            ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, "internal error!", ""));
+          }
+        });
   }
 
   private void startHttpService() {
     int port = serviceConfig.getInteger(ArcticManagementConf.HTTP_SERVER_PORT);
     httpServer.start(port);
-    LOG.info("Http server start at {}!!!", port);
+
+    LOG.info(
+        "\n"
+            + "    ___     __  ___ ____   ____   ____ \n"
+            + "   /   |   /  |/  // __ \\ / __ \\ / __ \\\n"
+            + "  / /| |  / /|_/ // / / // /_/ // / / /\n"
+            + " / ___ | / /  / // /_/ // _, _// /_/ / \n"
+            + "/_/  |_|/_/  /_/ \\____//_/ |_| \\____/  \n"
+            + "                                       \n"
+            + "      https://amoro.netease.com/       \n");
+
+    LOG.info("Http server start at {}.", port);
   }
 
   private void initThriftService() throws TTransportException {
@@ -245,55 +273,91 @@ public class ArcticServiceContainer {
     long maxMessageSize = serviceConfig.getLong(ArcticManagementConf.THRIFT_MAX_MESSAGE_SIZE);
     int selectorThreads = serviceConfig.getInteger(ArcticManagementConf.THRIFT_SELECTOR_THREADS);
     int workerThreads = serviceConfig.getInteger(ArcticManagementConf.THRIFT_WORKER_THREADS);
-    int queueSizePerSelector = serviceConfig.getInteger(ArcticManagementConf.THRIFT_QUEUE_SIZE_PER_THREAD);
+    int queueSizePerSelector =
+        serviceConfig.getInteger(ArcticManagementConf.THRIFT_QUEUE_SIZE_PER_THREAD);
     String bindHost = serviceConfig.getString(ArcticManagementConf.SERVER_BIND_HOST);
 
     ArcticTableMetastore.Processor<ArcticTableMetastore.Iface> tableManagementProcessor =
-        new ArcticTableMetastore.Processor<>(ThriftServiceProxy.createProxy(ArcticTableMetastore.Iface.class,
-            new TableManagementService(tableService), ArcticRuntimeException::normalizeCompatibly));
+        new ArcticTableMetastore.Processor<>(
+            ThriftServiceProxy.createProxy(
+                ArcticTableMetastore.Iface.class,
+                new TableManagementService(tableService),
+                ArcticRuntimeException::normalizeCompatibly));
     tableManagementServer =
-        createThriftServer(tableManagementProcessor, Constants.THRIFT_TABLE_SERVICE_NAME, bindHost,
+        createThriftServer(
+            tableManagementProcessor,
+            Constants.THRIFT_TABLE_SERVICE_NAME,
+            bindHost,
             serviceConfig.getInteger(ArcticManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT),
-            Executors.newFixedThreadPool(workerThreads, getThriftThreadFactory(Constants.THRIFT_TABLE_SERVICE_NAME)),
-            selectorThreads, queueSizePerSelector, maxMessageSize);
+            Executors.newFixedThreadPool(
+                workerThreads, getThriftThreadFactory(Constants.THRIFT_TABLE_SERVICE_NAME)),
+            selectorThreads,
+            queueSizePerSelector,
+            maxMessageSize);
 
     OptimizingService.Processor<OptimizingService.Iface> optimizingProcessor =
-        new OptimizingService.Processor<>(ThriftServiceProxy.createProxy(OptimizingService.Iface.class,
-            optimizingService, ArcticRuntimeException::normalize));
+        new OptimizingService.Processor<>(
+            ThriftServiceProxy.createProxy(
+                OptimizingService.Iface.class,
+                optimizingService,
+                ArcticRuntimeException::normalize));
     optimizingServiceServer =
-        createThriftServer(optimizingProcessor, Constants.THRIFT_OPTIMIZING_SERVICE_NAME, bindHost,
+        createThriftServer(
+            optimizingProcessor,
+            Constants.THRIFT_OPTIMIZING_SERVICE_NAME,
+            bindHost,
             serviceConfig.getInteger(ArcticManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT),
-            Executors.newCachedThreadPool(getThriftThreadFactory(Constants.THRIFT_OPTIMIZING_SERVICE_NAME)),
-            selectorThreads, queueSizePerSelector, maxMessageSize);
+            Executors.newCachedThreadPool(
+                getThriftThreadFactory(Constants.THRIFT_OPTIMIZING_SERVICE_NAME)),
+            selectorThreads,
+            queueSizePerSelector,
+            maxMessageSize);
   }
 
   private TServer createThriftServer(
-      TProcessor processor, String processorName, String bindHost, int port,
-      ExecutorService executorService, int selectorThreads, int queueSizePerSelector, long maxMessageSize)
+      TProcessor processor,
+      String processorName,
+      String bindHost,
+      int port,
+      ExecutorService executorService,
+      int selectorThreads,
+      int queueSizePerSelector,
+      long maxMessageSize)
       throws TTransportException {
     LOG.info("Initializing thrift server: {}", processorName);
     LOG.info("Starting {} thrift server on port: {}", processorName, port);
     TNonblockingServerSocket serverTransport = getServerSocket(bindHost, port);
     final TProtocolFactory protocolFactory = new TBinaryProtocol.Factory();
-    final TProtocolFactory inputProtoFactory = new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize);
+    final TProtocolFactory inputProtoFactory =
+        new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize);
     TTransportFactory transportFactory = new TFramedTransport.Factory();
     TMultiplexedProcessor multiplexedProcessor = new TMultiplexedProcessor();
     multiplexedProcessor.registerProcessor(processorName, processor);
-    TThreadedSelectorServer.Args args = new TThreadedSelectorServer.Args(serverTransport)
-        .processor(multiplexedProcessor)
-        .transportFactory(transportFactory)
-        .protocolFactory(protocolFactory)
-        .inputProtocolFactory(inputProtoFactory)
-        .executorService(executorService)
-        .selectorThreads(selectorThreads)
-        .acceptQueueSizePerThread(queueSizePerSelector);
-    LOG.info("The number of selector threads for the {} thrift server is: {}", processorName, selectorThreads);
-    LOG.info("The size of per-selector queue for the {} thrift server is: {}", processorName, queueSizePerSelector);
+    TThreadedSelectorServer.Args args =
+        new TThreadedSelectorServer.Args(serverTransport)
+            .processor(multiplexedProcessor)
+            .transportFactory(transportFactory)
+            .protocolFactory(protocolFactory)
+            .inputProtocolFactory(inputProtoFactory)
+            .executorService(executorService)
+            .selectorThreads(selectorThreads)
+            .acceptQueueSizePerThread(queueSizePerSelector);
+    LOG.info(
+        "The number of selector threads for the {} thrift server is: {}",
+        processorName,
+        selectorThreads);
+    LOG.info(
+        "The size of per-selector queue for the {} thrift server is: {}",
+        processorName,
+        queueSizePerSelector);
     return new TThreadedSelectorServer(args);
   }
 
   private ThreadFactory getThriftThreadFactory(String processorName) {
-    return new ThreadFactoryBuilder().setDaemon(false).setNameFormat("thrift-server-" + processorName + "-%d").build();
+    return new ThreadFactoryBuilder()
+        .setDaemon(false)
+        .setNameFormat("thrift-server-" + processorName + "-%d")
+        .build();
   }
 
   private class ConfigurationHelper {
@@ -301,22 +365,33 @@ public class ArcticServiceContainer {
     private JSONObject yamlConfig;
 
     public void init() throws IOException {
-      initServiceConfig();
+      Map<String, Object> envConfig = initEnvConfig();
+      initServiceConfig(envConfig);
       initContainerConfig();
     }
 
     @SuppressWarnings("unchecked")
-    private void initServiceConfig() throws IOException {
+    private void initServiceConfig(Map<String, Object> envConfig) throws IOException {
       LOG.info("initializing service configuration...");
       String configPath = Environments.getConfigPath() + "/" + SERVER_CONFIG_FILENAME;
       LOG.info("load config from path: {}", configPath);
-      yamlConfig = new JSONObject(new Yaml().loadAs(Files.newInputStream(Paths.get(configPath)), Map.class));
+      yamlConfig =
+          new JSONObject(new Yaml().loadAs(Files.newInputStream(Paths.get(configPath)), Map.class));
       JSONObject systemConfig = yamlConfig.getJSONObject(ArcticManagementConf.SYSTEM_CONFIG);
       Map<String, Object> expandedConfigurationMap = Maps.newHashMap();
       expandConfigMap(systemConfig, "", expandedConfigurationMap);
+      // If same configurations in files and environment variables, environment variables have
+      // higher priority.
+      expandedConfigurationMap.putAll(envConfig);
       validateConfig(expandedConfigurationMap);
       serviceConfig = Configurations.fromObjectMap(expandedConfigurationMap);
       SqlSessionFactoryProvider.getInstance().init(serviceConfig);
+    }
+
+    private Map<String, Object> initEnvConfig() {
+      LOG.info("initializing system env configuration...");
+      String prefix = ArcticManagementConf.SYSTEM_CONFIG.toUpperCase();
+      return ConfigurationUtil.convertConfigurationKeys(prefix, System.getenv());
     }
 
     private void validateConfig(Map<String, Object> systemConfig) {
@@ -324,34 +399,42 @@ public class ArcticServiceContainer {
         throw new IllegalArgumentException(
             "configuration " + ArcticManagementConf.SERVER_EXPOSE_HOST.key() + " must be set");
       }
-      InetAddress inetAddress = AmsUtil.lookForBindHost(
-          (String) systemConfig.get(ArcticManagementConf.SERVER_EXPOSE_HOST.key()));
+      InetAddress inetAddress =
+          AmsUtil.lookForBindHost(
+              (String) systemConfig.get(ArcticManagementConf.SERVER_EXPOSE_HOST.key()));
       systemConfig.put(ArcticManagementConf.SERVER_EXPOSE_HOST.key(), inetAddress.getHostAddress());
 
       // mysql config
       if (((String) systemConfig.get(ArcticManagementConf.DB_TYPE.key()))
           .equalsIgnoreCase(ArcticManagementConf.DB_TYPE_MYSQL)) {
-        if (!systemConfig.containsKey(ArcticManagementConf.DB_PASSWORD.key()) ||
-            !systemConfig.containsKey(ArcticManagementConf.DB_USER_NAME.key())) {
-          throw new IllegalArgumentException("username and password must be configured if the database type is mysql");
+        if (!systemConfig.containsKey(ArcticManagementConf.DB_PASSWORD.key())
+            || !systemConfig.containsKey(ArcticManagementConf.DB_USER_NAME.key())) {
+          throw new IllegalArgumentException(
+              "username and password must be configured if the database type is mysql");
         }
       }
 
       // HA config
-      if (systemConfig.containsKey(ArcticManagementConf.HA_ENABLE.key()) &&
-          ((Boolean) systemConfig.get(ArcticManagementConf.HA_ENABLE.key()))) {
+      if (systemConfig.containsKey(ArcticManagementConf.HA_ENABLE.key())
+          && ((Boolean) systemConfig.get(ArcticManagementConf.HA_ENABLE.key()))) {
         if (!systemConfig.containsKey(ArcticManagementConf.HA_ZOOKEEPER_ADDRESS.key())) {
           throw new IllegalArgumentException(
-              ArcticManagementConf.HA_ZOOKEEPER_ADDRESS.key() + " must be configured when you enable " +
-                  "the ams high availability");
+              ArcticManagementConf.HA_ZOOKEEPER_ADDRESS.key()
+                  + " must be configured when you enable "
+                  + "the ams high availability");
         }
       }
       // terminal config
-      String terminalBackend = systemConfig.getOrDefault(ArcticManagementConf.TERMINAL_BACKEND.key(), "")
-          .toString().toLowerCase();
+      String terminalBackend =
+          systemConfig
+              .getOrDefault(ArcticManagementConf.TERMINAL_BACKEND.key(), "")
+              .toString()
+              .toLowerCase();
       if (!Arrays.asList("local", "kyuubi", "custom").contains(terminalBackend)) {
         throw new IllegalArgumentException(
-            String.format("Illegal terminal implement: %s, local, kyuubi, custom is available", terminalBackend));
+            String.format(
+                "Illegal terminal implement: %s, local, kyuubi, custom is available",
+                terminalBackend));
       }
 
       validateThreadCount(systemConfig, ArcticManagementConf.REFRESH_TABLES_THREAD_COUNT);
@@ -373,11 +456,14 @@ public class ArcticServiceContainer {
       return (boolean) systemConfig.getOrDefault(config.key(), config.defaultValue());
     }
 
-    private void validateThreadCount(Map<String, Object> systemConfig, ConfigOption<Integer> config) {
+    private void validateThreadCount(
+        Map<String, Object> systemConfig, ConfigOption<Integer> config) {
       int threadCount = (int) systemConfig.getOrDefault(config.key(), config.defaultValue());
       if (threadCount <= 0) {
         throw new IllegalArgumentException(
-            String.format("%s(%s) must > 0, actual value = %d", config.key(), config.description(), threadCount));
+            String.format(
+                "%s(%s) must > 0, actual value = %d",
+                config.key(), config.description(), threadCount));
       }
     }
 
@@ -386,34 +472,42 @@ public class ArcticServiceContainer {
       LOG.info("initializing container configuration...");
       JSONArray containers = yamlConfig.getJSONArray(ArcticManagementConf.CONTAINER_LIST);
       List<ContainerMetadata> containerList = new ArrayList<>();
-      for (int i = 0; i < containers.size(); i++) {
-        JSONObject containerConfig = containers.getJSONObject(i);
-        ContainerMetadata container = new ContainerMetadata(
-            containerConfig.getString(ArcticManagementConf.CONTAINER_NAME),
-            containerConfig.getString(ArcticManagementConf.CONTAINER_IMPL));
-        Map<String, String> containerProperties = new HashMap<>();
-        containerProperties.put(PropertyNames.AMS_HOME, Environments.getHomePath());
-        containerProperties.put(
-            PropertyNames.OPTIMIZER_AMS_URL,
-            AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
-        if (containerConfig.containsKey(ArcticManagementConf.CONTAINER_PROPERTIES)) {
-          containerProperties.putAll(containerConfig.getObject(ArcticManagementConf.CONTAINER_PROPERTIES, Map.class));
+      if (containers != null) {
+        for (int i = 0; i < containers.size(); i++) {
+          JSONObject containerConfig = containers.getJSONObject(i);
+          ContainerMetadata container =
+              new ContainerMetadata(
+                  containerConfig.getString(ArcticManagementConf.CONTAINER_NAME),
+                  containerConfig.getString(ArcticManagementConf.CONTAINER_IMPL));
+          Map<String, String> containerProperties = new HashMap<>();
+          if (containerConfig.containsKey(ArcticManagementConf.CONTAINER_PROPERTIES)) {
+            containerProperties.putAll(
+                containerConfig.getObject(ArcticManagementConf.CONTAINER_PROPERTIES, Map.class));
+          }
+          // put properties in config.yaml first.
+          containerProperties.put(PropertyNames.AMS_HOME, Environments.getHomePath());
+          containerProperties.putIfAbsent(
+              PropertyNames.AMS_OPTIMIZER_URI,
+              AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
+          // put addition system properties
+          container.setProperties(containerProperties);
+          containerList.add(container);
         }
-        container.setProperties(containerProperties);
-        containerList.add(container);
       }
       ResourceContainers.init(containerList);
     }
   }
 
-  private TNonblockingServerSocket getServerSocket(String bindHost, int portNum) throws TTransportException {
+  private TNonblockingServerSocket getServerSocket(String bindHost, int portNum)
+      throws TTransportException {
     InetSocketAddress serverAddress;
     serverAddress = new InetSocketAddress(bindHost, portNum);
     return new TNonblockingServerSocket(serverAddress);
   }
 
   @SuppressWarnings("unchecked")
-  private void expandConfigMap(Map<String, Object> config, String prefix, Map<String, Object> result) {
+  private void expandConfigMap(
+      Map<String, Object> config, String prefix, Map<String, Object> result) {
     for (Map.Entry<String, Object> entry : config.entrySet()) {
       String key = entry.getKey();
       Object value = entry.getValue();

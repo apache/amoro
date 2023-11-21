@@ -18,6 +18,12 @@
 
 package com.netease.arctic.trino.keyed;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Throwables.throwIfInstanceOf;
+import static com.netease.arctic.ArcticErrorCode.ARCTIC_BAD_DATA;
+import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
+import static java.util.Objects.requireNonNull;
+
 import com.google.common.collect.ImmutableList;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.PrimaryKeyedFile;
@@ -52,32 +58,24 @@ import java.util.OptionalLong;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Throwables.throwIfInstanceOf;
-import static com.netease.arctic.ArcticErrorCode.ARCTIC_BAD_DATA;
-import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
-import static java.util.Objects.requireNonNull;
-
-/**
- * ConnectorPageSource for Keyed Table
- */
+/** ConnectorPageSource for Keyed Table */
 public class KeyedConnectorPageSource implements ConnectorPageSource {
 
-  private IcebergPageSourceProvider icebergPageSourceProvider;
-  private ConnectorTransactionHandle transaction;
-  private ConnectorSession session;
-  private KeyedConnectorSplit split;
-  private KeyedTableHandle table;
-  private List<IcebergColumnHandle> expectedColumns;
-  private List<IcebergColumnHandle> requiredColumns;
-  private DynamicFilter dynamicFilter;
-  private TypeManager typeManager;
-  private AdaptHiveArcticDeleteFilter<TrinoRow> arcticDeleteFilter;
+  private final IcebergPageSourceProvider icebergPageSourceProvider;
+  private final ConnectorTransactionHandle transaction;
+  private final ConnectorSession session;
+  private final KeyedConnectorSplit split;
+  private final KeyedTableHandle table;
+  private final List<IcebergColumnHandle> expectedColumns;
+  private final List<IcebergColumnHandle> requiredColumns;
+  private final DynamicFilter dynamicFilter;
+  private final TypeManager typeManager;
+  private final AdaptHiveArcticDeleteFilter<TrinoRow> arcticDeleteFilter;
 
-  private List<ColumnHandle> requireColumnsDummy;
-  private Type[] requireColumnTypes;
-  private int[] expectedColumnIndexes;
-  private Iterator<ArcticFileScanTask> dataTasksIt;
+  private final List<ColumnHandle> requireColumnsDummy;
+  private final Type[] requireColumnTypes;
+  private final int[] expectedColumnIndexes;
+  private final Iterator<ArcticFileScanTask> dataTasksIt;
 
   private boolean close;
   long completedPositions;
@@ -106,7 +104,8 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
     this.typeManager = typeManager;
     this.arcticDeleteFilter = arcticDeleteFilter;
 
-    this.requireColumnsDummy = requiredColumns.stream().map(ColumnHandle.class::cast).collect(Collectors.toList());
+    this.requireColumnsDummy =
+        requiredColumns.stream().map(ColumnHandle.class::cast).collect(Collectors.toList());
     this.expectedColumnIndexes = new int[expectedColumns.size()];
     for (int i = 0; i < expectedColumns.size(); i++) {
       checkArgument(
@@ -115,9 +114,8 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
       expectedColumnIndexes[i] = i;
     }
 
-    this.requireColumnTypes = requiredColumns.stream()
-        .map(IcebergColumnHandle::getType)
-        .toArray(Type[]::new);
+    this.requireColumnTypes =
+        requiredColumns.stream().map(IcebergColumnHandle::getType).toArray(Type[]::new);
 
     this.dataTasksIt = split.getKeyedTableScanTask().dataTasks().iterator();
   }
@@ -170,18 +168,20 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
         int positionCount = page.getPositionCount();
         int[] positionsToKeep = new int[positionCount];
         try (CloseableIterable<TrinoRow> filteredRows =
-            arcticDeleteFilter.filter(CloseableIterable.withNoopClose(TrinoRow.fromPage(
-                requireColumnTypes,
-                page,
-                positionCount)))) {
+            arcticDeleteFilter.filter(
+                CloseableIterable.withNoopClose(
+                    TrinoRow.fromPage(requireColumnTypes, page, positionCount)))) {
           int positionsToKeepCount = 0;
           for (TrinoRow rowToKeep : filteredRows) {
             positionsToKeep[positionsToKeepCount] = rowToKeep.getPosition();
             positionsToKeepCount++;
           }
-          page = page.getPositions(positionsToKeep, 0, positionsToKeepCount).getColumns(expectedColumnIndexes);
+          page =
+              page.getPositions(positionsToKeep, 0, positionsToKeepCount)
+                  .getColumns(expectedColumnIndexes);
         } catch (IOException e) {
-          throw new TrinoException(ICEBERG_BAD_DATA, "Failed to filter rows during merge-on-read operation", e);
+          throw new TrinoException(
+              ICEBERG_BAD_DATA, "Failed to filter rows during merge-on-read operation", e);
         }
       }
 
@@ -233,8 +233,10 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
       if (page == null) {
         current.close();
         if (dataTasksIt.hasNext()) {
-          completedPositions += current.getCompletedPositions().isPresent() ?
-              current.getCompletedPositions().getAsLong() : 0L;
+          completedPositions +=
+              current.getCompletedPositions().isPresent()
+                  ? current.getCompletedPositions().getAsLong()
+                  : 0L;
           completedBytes += current.getCompletedBytes();
           readTimeNanos += current.getReadTimeNanos();
           current = open(dataTasksIt.next());
@@ -267,20 +269,20 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
             primaryKeyedFile.fileSizeInBytes(),
             primaryKeyedFile.fileSizeInBytes(),
             primaryKeyedFile.recordCount(),
-            IcebergFileFormat.PARQUET,
+            IcebergFileFormat.fromIceberg(primaryKeyedFile.format()),
             ImmutableList.of(),
             split.getPartitionSpecJson(),
             split.getPartitionDataJson(),
-            arcticFileScanTask.deletes().stream().map(TrinoDeleteFile::copyOf).collect(Collectors.toList()),
+            arcticFileScanTask.deletes().stream()
+                .map(TrinoDeleteFile::copyOf)
+                .collect(Collectors.toList()),
             null,
-            null
-        ),
+            null),
         table.getIcebergTableHandle(),
         requireColumnsDummy,
         dynamicFilter,
         idToConstant,
         false,
-        DateTimeZone.forID(TimeZone.getDefault().getID())
-    );
+        DateTimeZone.forID(TimeZone.getDefault().getID()));
   }
 }

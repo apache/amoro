@@ -64,6 +64,7 @@ CREATE TABLE `table_identifier`
     `catalog_name`    varchar(64) NOT NULL COMMENT 'Catalog name',
     `db_name`         varchar(128) NOT NULL COMMENT 'Database name',
     `table_name`      varchar(128) NOT NULL COMMENT 'Table name',
+    `format`          VARCHAR(32)  NOT NULL COMMENT 'Table Format',
     PRIMARY KEY (`table_id`),
     UNIQUE KEY `table_name_index` (`catalog_name`,`db_name`,`table_name`)
 );
@@ -74,7 +75,6 @@ CREATE TABLE `table_metadata`
     `catalog_name`    varchar(64) NOT NULL COMMENT 'Catalog name',
     `db_name`         varchar(128) NOT NULL COMMENT 'Database name',
     `table_name`      varchar(128) NOT NULL COMMENT 'Table name',
-    `format`          varchar(32)  NOT NULL COMMENT "format",
     `primary_key`     varchar(256) DEFAULT NULL COMMENT 'Primary key',
     `sort_key`        varchar(256) DEFAULT NULL COMMENT 'Sort key',
     `table_location`  varchar(256) DEFAULT NULL COMMENT 'Table location',

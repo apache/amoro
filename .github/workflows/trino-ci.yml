@@ -3,6 +3,10 @@
 
 name: Trino CI with Maven
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
@@ -16,9 +20,7 @@ on:
     paths:
       - "ams/**"
       - "core/**"
-      - "flink/**"
       - "hive/**"
-      - "spark/**"
       - "trino/**"
       - "pom.xml"
 
@@ -34,11 +36,14 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Validate checkstyle first
+        run: mvn validate -P trino-spotless
+
       - name: Install dependency with Maven
-        run: mvn clean install -DskipTests -pl 'ams/api,core,hive' -Dhadoop=v2 -am -B
+        run: mvn clean install -DskipTests -pl 'ams/api,core,hive' -Dhadoop=v2 -am -B -P trino-spotless
 
       - name: Build with Maven
-        run: mvn clean test -pl 'trino' -B -ntp -Dhadoop=v2
+        run: mvn clean test -pl 'trino' -B -ntp -Dhadoop=v2 -P trino-spotless
 
       - name: Code coverage
         uses: codecov/codecov-action@v3

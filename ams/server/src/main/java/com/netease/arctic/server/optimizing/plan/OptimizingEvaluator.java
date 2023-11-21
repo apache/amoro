@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.optimizing.plan;
 
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.server.optimizing.scan.IcebergTableFileScanHelper;
 import com.netease.arctic.server.optimizing.scan.KeyedTableFileScanHelper;
@@ -29,21 +30,23 @@ import com.netease.arctic.server.table.TableSnapshot;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TablePropertyUtil;
-import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
 public class OptimizingEvaluator {
-  
+
   private static final Logger LOG = LoggerFactory.getLogger(OptimizingEvaluator.class);
 
   protected final ArcticTable arcticTable;
@@ -70,22 +73,29 @@ public class OptimizingEvaluator {
   protected void initEvaluator() {
     long startTime = System.currentTimeMillis();
     TableFileScanHelper tableFileScanHelper;
-    if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
-      tableFileScanHelper = new IcebergTableFileScanHelper(arcticTable.asUnkeyedTable(), currentSnapshot.snapshotId());
+    if (TableFormat.ICEBERG == arcticTable.format()) {
+      tableFileScanHelper =
+          new IcebergTableFileScanHelper(
+              arcticTable.asUnkeyedTable(), currentSnapshot.snapshotId());
     } else {
       if (arcticTable.isUnkeyedTable()) {
         tableFileScanHelper =
-            new UnkeyedTableFileScanHelper(arcticTable.asUnkeyedTable(), currentSnapshot.snapshotId());
+            new UnkeyedTableFileScanHelper(
+                arcticTable.asUnkeyedTable(), currentSnapshot.snapshotId());
       } else {
         tableFileScanHelper =
-            new KeyedTableFileScanHelper(arcticTable.asKeyedTable(), ((KeyedTableSnapshot) currentSnapshot));
+            new KeyedTableFileScanHelper(
+                arcticTable.asKeyedTable(), ((KeyedTableSnapshot) currentSnapshot));
       }
     }
     tableFileScanHelper.withPartitionFilter(getPartitionFilter());
     initPartitionPlans(tableFileScanHelper);
     isInitialized = true;
-    LOG.info("{} finish initEvaluator and get {} partitions necessary to optimize, cost {} ms",
-        arcticTable.id(), partitionPlanMap.size(), System.currentTimeMillis() - startTime);
+    LOG.info(
+        "{} finished evaluating, found {} partitions that need optimizing in {} ms",
+        arcticTable.id(),
+        partitionPlanMap.size(),
+        System.currentTimeMillis() - startTime);
   }
 
   protected TableFileScanHelper.PartitionFilter getPartitionFilter() {
@@ -94,13 +104,26 @@ public class OptimizingEvaluator {
 
   private void initPartitionPlans(TableFileScanHelper tableFileScanHelper) {
     PartitionSpec partitionSpec = arcticTable.spec();
-    // add partition properties before adding files
-    for (TableFileScanHelper.FileScanResult fileScanResult : tableFileScanHelper.scan()) {
-      StructLike partition = fileScanResult.file().partition();
-      String partitionPath = partitionSpec.partitionToPath(partition);
-      PartitionEvaluator evaluator = partitionPlanMap.computeIfAbsent(partitionPath, this::buildEvaluator);
-      evaluator.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
+    long startTime = System.currentTimeMillis();
+    long count = 0;
+    try (CloseableIterable<TableFileScanHelper.FileScanResult> results =
+        tableFileScanHelper.scan()) {
+      for (TableFileScanHelper.FileScanResult fileScanResult : results) {
+        StructLike partition = fileScanResult.file().partition();
+        String partitionPath = partitionSpec.partitionToPath(partition);
+        PartitionEvaluator evaluator =
+            partitionPlanMap.computeIfAbsent(partitionPath, this::buildEvaluator);
+        evaluator.addFile(fileScanResult.file(), fileScanResult.deleteFiles());
+        count++;
+      }
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
     }
+    LOG.info(
+        "{} finished file scanning, scanning {} files in {} ms",
+        arcticTable.id(),
+        count,
+        System.currentTimeMillis() - startTime);
     partitionPlanMap.values().removeIf(plan -> !plan.isNecessary());
   }
 
@@ -110,16 +133,26 @@ public class OptimizingEvaluator {
 
   protected PartitionEvaluator buildEvaluator(String partitionPath) {
     Map<String, String> partitionProperties = partitionProperties(partitionPath);
-    if (TableTypeUtil.isIcebergTableFormat(arcticTable)) {
-      return new CommonPartitionEvaluator(tableRuntime, partitionPath, partitionProperties, System.currentTimeMillis());
+    if (TableFormat.ICEBERG == arcticTable.format()) {
+      return new CommonPartitionEvaluator(
+          tableRuntime, partitionPath, partitionProperties, System.currentTimeMillis());
     } else {
       if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {
         String hiveLocation = (((SupportHive) arcticTable).hiveLocation());
-        return new MixedHivePartitionPlan.MixedHivePartitionEvaluator(tableRuntime, partitionPath, partitionProperties,
-            hiveLocation, System.currentTimeMillis(), arcticTable.isKeyedTable());
+        return new MixedHivePartitionPlan.MixedHivePartitionEvaluator(
+            tableRuntime,
+            partitionPath,
+            partitionProperties,
+            hiveLocation,
+            System.currentTimeMillis(),
+            arcticTable.isKeyedTable());
       } else {
-        return new MixedIcebergPartitionPlan.MixedIcebergPartitionEvaluator(tableRuntime, partitionPath,
-            partitionProperties, System.currentTimeMillis(), arcticTable.isKeyedTable());
+        return new MixedIcebergPartitionPlan.MixedIcebergPartitionEvaluator(
+            tableRuntime,
+            partitionPath,
+            partitionProperties,
+            System.currentTimeMillis(),
+            arcticTable.isKeyedTable());
       }
     }
   }
@@ -149,8 +182,7 @@ public class OptimizingEvaluator {
     private long positionalDeleteBytes = 0L;
     private long equalityDeleteBytes = 0L;
 
-    public PendingInput() {
-    }
+    public PendingInput() {}
 
     public PendingInput(Collection<PartitionEvaluator> evaluators) {
       for (PartitionEvaluator evaluator : evaluators) {

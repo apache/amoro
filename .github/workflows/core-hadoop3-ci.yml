@@ -3,6 +3,10 @@
 
 name: Core/hadoop3 CI with Maven
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
@@ -19,7 +23,6 @@ on:
       - "flink/**"
       - "hive/**"
       - "spark/**"
-      - "trino/**"
       - "pom.xml"
 
 jobs:
@@ -35,8 +38,8 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Print maven depend tree
-        run: mvn dependency:tree -B -ntp
+      - name: Validate checkstyle first
+        run: mvn validate
 
       - name: Build all module with Maven
         run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp

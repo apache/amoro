@@ -18,6 +18,9 @@
 
 package com.netease.arctic.server.optimizing.flow;
 
+import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES;
+import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
@@ -42,46 +45,36 @@ import org.junit.runners.Parameterized;
 import java.io.IOException;
 import java.util.List;
 
-import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES;
-import static com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL;
-
 @RunWith(Parameterized.class)
 public class TestUnKeyedContinuousOptimizing extends TableTestBase {
 
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
-  public TestUnKeyedContinuousOptimizing(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
+  public TestUnKeyedContinuousOptimizing(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
     return new Object[][] {
-        {
-            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, true)
-        },
-        {
-            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, false)
-        },
-        {
-            new BasicCatalogTestHelper(TableFormat.ICEBERG),
-            new BasicTableTestHelper(false, false)
-        },
-        {
-            new BasicCatalogTestHelper(TableFormat.ICEBERG),
-            new BasicTableTestHelper(false, false)
-        },
-        {
-            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new HiveTableTestHelper(false, true)
-        },
-        {
-            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new BasicTableTestHelper(false, false)
-        }
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(false, true)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(false, false)
+      },
+      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, true)},
+      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, false)},
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(false, true)
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new BasicTableTestHelper(false, false)
+      }
     };
   }
 
@@ -99,29 +92,31 @@ public class TestUnKeyedContinuousOptimizing extends TableTestBase {
     int cycle = 5;
     int recordCountOnceWrite = 1000;
 
-    //close full optimize
+    // close full optimize
     table.updateProperties().set(SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1").commit();
-    //Need move file to hive scene
+    // Need move file to hive scene
 
-    UnKeyedTableDataView view = new UnKeyedTableDataView(table,
-        partitionCount, writeTargetFileSize, null);
+    UnKeyedTableDataView view =
+        new UnKeyedTableDataView(table, partitionCount, writeTargetFileSize, null);
 
-    //init checker
+    // init checker
     DataConcurrencyChecker dataConcurrencyChecker = new DataConcurrencyChecker(view);
     OptimizingCountChecker optimizingCountChecker = new OptimizingCountChecker(0);
-    FullOptimizingWrite2HiveChecker fullOptimizingWrite2HiveChecker = new FullOptimizingWrite2HiveChecker(view);
-    FullOptimizingMove2HiveChecker fullOptimizingMove2HiveChecker = new FullOptimizingMove2HiveChecker(view);
+    FullOptimizingWrite2HiveChecker fullOptimizingWrite2HiveChecker =
+        new FullOptimizingWrite2HiveChecker(view);
+    FullOptimizingMove2HiveChecker fullOptimizingMove2HiveChecker =
+        new FullOptimizingMove2HiveChecker(view);
     MinorOptimizingCheck minorOptimizingCheck = new MinorOptimizingCheck();
 
-    CompleteOptimizingFlow.Builder builder = CompleteOptimizingFlow
-        .builder(table, availableCore)
-        .setTargetSize(selfTargetFileSize)
-        .setFragmentRatio(null)
-        .setDuplicateRatio(null)
-        .setMinorTriggerFileCount(minorTriggerCount)
-        .addChecker(dataConcurrencyChecker)
-        .addChecker(optimizingCountChecker)
-        .addChecker(minorOptimizingCheck);
+    CompleteOptimizingFlow.Builder builder =
+        CompleteOptimizingFlow.builder(table, availableCore)
+            .setTargetSize(selfTargetFileSize)
+            .setFragmentRatio(null)
+            .setDuplicateRatio(null)
+            .setMinorTriggerFileCount(minorTriggerCount)
+            .addChecker(dataConcurrencyChecker)
+            .addChecker(optimizingCountChecker)
+            .addChecker(minorOptimizingCheck);
 
     if (table.format() == TableFormat.MIXED_HIVE) {
       builder
@@ -132,7 +127,7 @@ public class TestUnKeyedContinuousOptimizing extends TableTestBase {
     CompleteOptimizingFlow optimizingFlow = builder.build();
 
     table.updateProperties().set(SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES, "false").commit();
-    //full optimizing need move file to hive from change
+    // full optimizing need move file to hive from change
     append(recordCountOnceWrite, view);
     mustFullCycle(table, optimizingFlow::optimize);
 
@@ -164,7 +159,8 @@ public class TestUnKeyedContinuousOptimizing extends TableTestBase {
     }
   }
 
-  private static void mustFullCycle(ArcticTable table, RunnableWithException runnable) throws Exception {
+  private static void mustFullCycle(ArcticTable table, RunnableWithException runnable)
+      throws Exception {
     table.updateProperties().set(SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "1").commit();
     runnable.run();
     table.updateProperties().set(SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1").commit();

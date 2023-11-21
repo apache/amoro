@@ -84,11 +84,14 @@ public class TestHMS extends ExternalResource {
     if (SingletonResourceUtil.isUseSingletonResource()) {
       if (!mockHms.isStarted()) {
         mockHms.start();
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-          SINGLETON.stop();
-          SINGLETON_FOLDER.delete();
-          LOG.info("Stop singleton mock HMS after testing.");
-        }));
+        Runtime.getRuntime()
+            .addShutdownHook(
+                new Thread(
+                    () -> {
+                      SINGLETON.stop();
+                      SINGLETON_FOLDER.delete();
+                      LOG.info("Stop singleton mock HMS after testing.");
+                    }));
         LOG.info("Start singleton mock HMS before testing.");
       }
     } else {

@@ -19,13 +19,22 @@ The Amoro Helm chart has been installed!
 
 If you want to go ams web ui,you can use this cmd forward to local:
 
- $ kubectl --namespace {{ .Release.Namespace }} port-forward services/{{ .Release.Name }}-rest {{ .Values.server.rest.port}}:{{ .Values.server.rest.port}}
+{{ if .Values.ingress.enabled }}
+  http://{{ .Values.ingress.hostname }}{{ .Values.ingress.path }}
+{{ else }}
+  $ kubectl --namespace {{ .Release.Namespace }} port-forward services/{{ include "common.names.fullname" $ }}-rest {{ .Values.server.rest.port}}:{{ .Values.server.rest.port}}
+{{ end }}
 
 Additional Resources Docs
 
 ================================================================================================================
 
+{{ if eq .Chart.AppVersion "master-snapshot" }}
         * Documentation: https://amoro.netease.com/docs/latest/
+        * Version build Info : https://github.com/NetEase/amoro
+{{ else }}
+        * Documentation: https://amoro.netease.com/docs/{{ .Chart.AppVersion }}/
         * Version build Info : https://github.com/NetEase/amoro/releases/tag/v{{ .Chart.AppVersion }}
+{{ end }}
 
 ================================================================================================================

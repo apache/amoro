@@ -18,6 +18,9 @@
 
 package com.netease.arctic.hive.catalog;
 
+import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_FLAG;
+import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
+
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.TestMixedCatalog;
@@ -34,20 +37,21 @@ import org.junit.runners.JUnit4;
 
 import java.util.Map;
 
-import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_FLAG;
-import static com.netease.arctic.hive.HiveTableProperties.ARCTIC_TABLE_ROOT_LOCATION;
-
 @RunWith(JUnit4.class)
 public class TestMixedHiveCatalog extends TestMixedCatalog {
 
-  private static final PartitionSpec IDENTIFY_SPEC = PartitionSpec.builderFor(BasicTableTestHelper.TABLE_SCHEMA)
-      .identity("op_time").build();
+  private static final PartitionSpec IDENTIFY_SPEC =
+      PartitionSpec.builderFor(BasicTableTestHelper.TABLE_SCHEMA).identity("op_time").build();
 
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
   public TestMixedHiveCatalog() {
     super(new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()));
+  }
+
+  @Override
+  protected String expectCatalogImpl() {
+    return ArcticHiveCatalog.class.getName();
   }
 
   @Override
@@ -58,8 +62,8 @@ public class TestMixedHiveCatalog extends TestMixedCatalog {
   private void validateTableArcticProperties(TableIdentifier tableIdentifier) throws TException {
     String dbName = tableIdentifier.getDatabase();
     String tbl = tableIdentifier.getTableName();
-    Map<String, String> tableParameter = TEST_HMS.getHiveClient()
-        .getTable(dbName, tbl).getParameters();
+    Map<String, String> tableParameter =
+        TEST_HMS.getHiveClient().getTable(dbName, tbl).getParameters();
 
     Assert.assertTrue(tableParameter.containsKey(ARCTIC_TABLE_ROOT_LOCATION));
     Assert.assertTrue(tableParameter.get(ARCTIC_TABLE_ROOT_LOCATION).endsWith(tbl));
@@ -67,13 +71,14 @@ public class TestMixedHiveCatalog extends TestMixedCatalog {
   }
 
   @Override
-  protected void validateCreatedTable(ArcticTable table) throws TException {
-    super.validateCreatedTable(table);
+  protected void validateCreatedTable(ArcticTable table, boolean withKey) throws TException {
+    super.validateCreatedTable(table, withKey);
     validateTableArcticProperties(table.id());
   }
 
   @Override
-  protected void assertIcebergTableStore(Table tableStore, boolean isBaseStore, boolean isKeyedTable) {
+  protected void assertIcebergTableStore(
+      Table tableStore, boolean isBaseStore, boolean isKeyedTable) {
     // mixed-hive does not check the table store
   }
 }

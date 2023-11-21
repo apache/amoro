@@ -18,7 +18,7 @@
 
 package com.netease.arctic.scan;
 
-import com.netease.arctic.io.reader.GenericIcebergDataReader;
+import com.netease.arctic.io.reader.GenericUnkeyedDataReader;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.PartitionSpec;
@@ -27,9 +27,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
 import java.util.List;
 
-/**
- * Be used in {@link GenericIcebergDataReader} to read iceberg for optimizing
- */
+/** Be used in {@link GenericUnkeyedDataReader} to read iceberg for optimizing */
 public class CombinedIcebergScanTask {
 
   private final DataFile[] dataFiles;
@@ -43,7 +41,8 @@ public class CombinedIcebergScanTask {
   public CombinedIcebergScanTask(
       DataFile[] dataFiles,
       DeleteFile[] deleteFiles,
-      PartitionSpec partitionSpec, StructLike partitionData) {
+      PartitionSpec partitionSpec,
+      StructLike partitionData) {
     this.dataFiles = dataFiles == null ? new DataFile[0] : dataFiles;
     this.deleteFiles = deleteFiles == null ? new DeleteFile[0] : deleteFiles;
     this.partitionSpec = partitionSpec;

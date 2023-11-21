@@ -20,9 +20,15 @@
 <Configuration monitorInterval="10">
     <properties>
         <property name="LOG_HOME">${sys:log.home}</property>
+        <property name="CONSOLE_LEVEL">${env:CONSOLE_LOG_LEVEL:-off}</property>
     </properties>
 
     <Appenders>
+        <Console name="consoleAppender" target="SYSTEM_OUT">
+            <!--Set log format and color-->
+            <PatternLayout
+                    pattern="%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n"/>
+        </Console>
         <!--*********************File Log***********************-->
         <!--Logs with a grade of debug-->
         <RollingFile name="debugFileAppender"
@@ -88,11 +94,11 @@
         </RollingFile>
 
         <!--Logs for iceberg metrics report -->
-        <RollingFile name="icebergRestMetricReporter"
-                     fileName="${LOG_HOME}/iceberg-metrics.log"
+        <RollingFile name="amoroMetricReporter"
+                     fileName="${LOG_HOME}/amoro-metrics.log"
                      filePattern="${LOG_HOME}/metrics/iceberg-metrics-%i.log.gz">
             <PatternLayout>
-                <pattern>%m%n</pattern>
+                <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
             </PatternLayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="64MB"/>
@@ -102,9 +108,9 @@
     </Appenders>
 
     <Loggers>
-        <logger name="iceberg.metric"  level="info">
+        <logger name="amoro.metric"  level="info">
             <!-- iceberg rest metric reporter logs -->
-            <AppenderRef ref="icebergRestMetricReporter" />
+            <AppenderRef ref="amoroMetricReporter" />
         </logger>
 
         <Root level="debug">
@@ -112,6 +118,8 @@
 <!--            <AppenderRef ref="debugFileAppender" level="debug"/>-->
             <AppenderRef ref="infoFileAppender" level="info"/>
             <AppenderRef ref="errorFileAppender" level="error"/>
+            <!-- SET CONSOLE_LOG_LEVEL=info to print console logger in docker -->
+            <AppenderRef ref="consoleAppender" level="${CONSOLE_LEVEL}" />
         </Root>
 
     </Loggers>

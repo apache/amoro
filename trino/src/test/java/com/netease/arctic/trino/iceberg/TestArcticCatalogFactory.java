@@ -38,12 +38,12 @@ public class TestArcticCatalogFactory implements ArcticCatalogFactory {
     this.arcticConfig = arcticConfig;
   }
 
-  //先默认只刷新一次，以后需要制定配置刷新策略ArcticCatalog
   public ArcticCatalog getArcticCatalog() {
     if (arcticCatalog == null) {
       synchronized (this) {
         if (arcticCatalog == null) {
-          try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(this.getClass().getClassLoader())) {
+          try (ThreadContextClassLoader ignored =
+              new ThreadContextClassLoader(this.getClass().getClassLoader())) {
             this.arcticCatalog =
                 new ArcticCatalogSupportTableSuffix(
                     new TestBasicArcticCatalog(arcticConfig.getCatalogUrl()));
@@ -56,6 +56,6 @@ public class TestArcticCatalogFactory implements ArcticCatalogFactory {
 
   @Override
   public TableMetaStore getTableMetastore() {
-    return  TableMetaStore.EMPTY;
+    return TableMetaStore.EMPTY;
   }
 }

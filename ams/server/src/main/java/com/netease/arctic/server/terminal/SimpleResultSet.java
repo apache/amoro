@@ -53,7 +53,5 @@ public class SimpleResultSet implements TerminalSession.ResultSet {
   }
 
   @Override
-  public void close() {
-
-  }
+  public void close() {}
 }

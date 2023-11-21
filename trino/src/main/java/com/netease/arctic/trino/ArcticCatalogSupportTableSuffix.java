@@ -18,8 +18,6 @@
 
 package com.netease.arctic.trino;
 
-import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
@@ -32,6 +30,7 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
@@ -61,12 +60,14 @@ import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * A wrapper of {@link ArcticCatalog} to resolve sub table, such as "tableName#change","tableName#base"
+ * A wrapper of {@link ArcticCatalog} to resolve sub table, such as
+ * "tableName#change","tableName#base"
  */
 public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
 
@@ -82,9 +83,8 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   }
 
   @Override
-  public void initialize(
-      AmsClient client, CatalogMeta meta, Map<String, String> properties) {
-    arcticCatalog.initialize(client, meta, properties);
+  public void initialize(String name, Map<String, String> properties, TableMetaStore metaStore) {
+    arcticCatalog.initialize(name, properties, metaStore);
   }
 
   @Override
@@ -111,12 +111,18 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   public ArcticTable loadTable(TableIdentifier tableIdentifier) {
     TableNameResolve tableNameResolve = new TableNameResolve(tableIdentifier.getTableName());
     if (tableNameResolve.withSuffix()) {
-      TableIdentifier newTableIdentifier = TableIdentifier.of(tableIdentifier.getCatalog(),
-          tableIdentifier.getDatabase(), tableNameResolve.getTableName());
+      TableIdentifier newTableIdentifier =
+          TableIdentifier.of(
+              tableIdentifier.getCatalog(),
+              tableIdentifier.getDatabase(),
+              tableNameResolve.getTableName());
       ArcticTable arcticTable = arcticCatalog.loadTable(newTableIdentifier);
       if (arcticTable.isUnkeyedTable()) {
-        throw new IllegalArgumentException("table " + newTableIdentifier + " is not keyed table can not use " +
-            "change or base suffix");
+        throw new IllegalArgumentException(
+            "table "
+                + newTableIdentifier
+                + " is not keyed table can not use "
+                + "change or base suffix");
       }
       KeyedTable keyedTable = arcticTable.asKeyedTable();
       if (tableNameResolve.isBase()) {
@@ -139,14 +145,8 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
   }
 
   @Override
-  public TableBuilder newTableBuilder(
-      TableIdentifier identifier, Schema schema) {
+  public TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema) {
     return arcticCatalog.newTableBuilder(identifier, schema);
-  }
-
-  @Override
-  public void refresh() {
-    arcticCatalog.refresh();
   }
 
   @Override

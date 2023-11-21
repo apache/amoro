@@ -18,21 +18,26 @@
 
 package com.netease.arctic.hive.catalog;
 
+import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
+import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HIVE;
+
+import com.netease.arctic.CommonUnifiedCatalog;
+import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.catalog.MixedTables;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
-
-import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
-import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HIVE;
 
 public class HiveCatalogTestHelper implements CatalogTestHelper {
 
@@ -45,8 +50,11 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
   }
 
   public HiveCatalogTestHelper(TableFormat tableFormat, Configuration hiveConf) {
-    Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG) ||
-        tableFormat.equals(TableFormat.MIXED_HIVE), "Cannot support table format:" + tableFormat);
+    Preconditions.checkArgument(
+        tableFormat.equals(TableFormat.ICEBERG)
+            || tableFormat.equals(TableFormat.MIXED_HIVE)
+            || tableFormat.equals(TableFormat.MIXED_ICEBERG),
+        "Cannot support table format:" + tableFormat);
     this.tableFormat = tableFormat;
     this.hiveConf = hiveConf;
   }
@@ -64,24 +72,34 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
   @Override
   public CatalogMeta buildCatalogMeta(String baseDir) {
     Map<String, String> properties = Maps.newHashMap();
-    return CatalogTestHelpers.buildHiveCatalogMeta(TEST_CATALOG_NAME,
-        properties, hiveConf, tableFormat);
+    if (TableFormat.MIXED_ICEBERG == tableFormat) {
+      properties.put(CatalogProperties.URI, hiveConf.get(HiveConf.ConfVars.METASTOREURIS.varname));
+    }
+    return CatalogTestHelpers.buildHiveCatalogMeta(
+        TEST_CATALOG_NAME, properties, hiveConf, tableFormat);
+  }
+
+  @Override
+  public UnifiedCatalog buildUnifiedCatalog(CatalogMeta catalogMeta) {
+    return new CommonUnifiedCatalog(() -> catalogMeta, Maps.newHashMap());
   }
 
   @Override
   public Catalog buildIcebergCatalog(CatalogMeta catalogMeta) {
     Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
     catalogProperties.put(ICEBERG_CATALOG_TYPE, ICEBERG_CATALOG_TYPE_HIVE);
-    return org.apache.iceberg.CatalogUtil.buildIcebergCatalog(TEST_CATALOG_NAME,
-        catalogProperties, hiveConf);
+    return org.apache.iceberg.CatalogUtil.buildIcebergCatalog(
+        TEST_CATALOG_NAME, catalogProperties, hiveConf);
   }
 
   @Override
   public MixedTables buildMixedTables(CatalogMeta catalogMeta) {
     if (!TableFormat.MIXED_HIVE.equals(tableFormat)) {
-      throw new UnsupportedOperationException("Cannot build mixed-tables for table format:" + tableFormat);
+      throw new UnsupportedOperationException(
+          "Cannot build mixed-tables for table format:" + tableFormat);
     }
-    return new MixedHiveTables(catalogMeta);
+    return new MixedHiveTables(
+        catalogMeta.getCatalogProperties(), CatalogUtil.buildMetaStore(catalogMeta));
   }
 
   @Override

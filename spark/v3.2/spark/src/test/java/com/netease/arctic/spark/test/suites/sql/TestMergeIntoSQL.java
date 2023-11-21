@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark.test.suites.sql;
 
-
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.spark.test.SparkTableTestBase;
@@ -47,32 +46,31 @@ import java.util.stream.Stream;
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
 public class TestMergeIntoSQL extends SparkTableTestBase {
 
-  private static final Schema schema = new Schema(
-      Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "data", Types.StringType.get()),
-      Types.NestedField.required(3, "pt", Types.StringType.get())
-  );
-  private static final PrimaryKeySpec pk = PrimaryKeySpec.builderFor(schema).addColumn("id").build();
+  private static final Schema schema =
+      new Schema(
+          Types.NestedField.required(1, "id", Types.IntegerType.get()),
+          Types.NestedField.required(2, "data", Types.StringType.get()),
+          Types.NestedField.required(3, "pt", Types.StringType.get()));
+  private static final PrimaryKeySpec pk =
+      PrimaryKeySpec.builderFor(schema).addColumn("id").build();
 
-  private static final List<Record> base = Lists.newArrayList(
-      RecordGenerator.newRecord(schema, 1, "a", "001"),
-      RecordGenerator.newRecord(schema, 2, "b", "002")
-  );
-  private static final List<Record> change = Lists.newArrayList(
-      RecordGenerator.newRecord(schema, 3, "c", "001"),
-      RecordGenerator.newRecord(schema, 4, "d", "002")
-  );
+  private static final List<Record> base =
+      Lists.newArrayList(
+          RecordGenerator.newRecord(schema, 1, "a", "001"),
+          RecordGenerator.newRecord(schema, 2, "b", "002"));
+  private static final List<Record> change =
+      Lists.newArrayList(
+          RecordGenerator.newRecord(schema, 3, "c", "001"),
+          RecordGenerator.newRecord(schema, 4, "d", "002"));
 
-  private static final List<Record> source = Lists.newArrayList(
-      RecordGenerator.newRecord(schema, 1, "s1", "001"),
-      RecordGenerator.newRecord(schema, 2, "s2", "002"),
-      RecordGenerator.newRecord(schema, 5, "s5", "001"),
-      RecordGenerator.newRecord(schema, 6, "s6", "003")
-  );
+  private static final List<Record> source =
+      Lists.newArrayList(
+          RecordGenerator.newRecord(schema, 1, "s1", "001"),
+          RecordGenerator.newRecord(schema, 2, "s2", "002"),
+          RecordGenerator.newRecord(schema, 5, "s5", "001"),
+          RecordGenerator.newRecord(schema, 6, "s6", "003"));
 
-
-  private List<Record> target = Lists.newArrayList();
-
+  private final List<Record> target = Lists.newArrayList();
 
   public void setupTest(PrimaryKeySpec keySpec) {
     ArcticTable table = createTarget(schema, builder -> builder.withPrimaryKeySpec(keySpec));
@@ -87,15 +85,12 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
     }
   }
 
-
   public static Stream<Arguments> args() {
     return Stream.of(
         Arguments.arguments(MIXED_ICEBERG, pk),
         Arguments.arguments(MIXED_ICEBERG, noPrimaryKey),
-
         Arguments.arguments(MIXED_HIVE, pk),
-        Arguments.arguments(MIXED_HIVE, noPrimaryKey)
-    );
+        Arguments.arguments(MIXED_HIVE, noPrimaryKey));
   }
 
   @DisplayName("SQL: MERGE INTO for all actions with condition")
@@ -105,25 +100,27 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
     setupTest(keySpec);
     createViewSource(schema, source);
 
-    sql("MERGE INTO " + target() + " AS t USING " + source() + " AS s ON t.id == s.id " +
-        "WHEN MATCHED AND t.id = 1 THEN DELETE " +
-        "WHEN MATCHED AND t.id = 2 THEN UPDATE SET * " +
-        "WHEN NOT MATCHED AND s.id != 5 THEN INSERT *");
+    sql(
+        "MERGE INTO "
+            + target()
+            + " AS t USING "
+            + source()
+            + " AS s ON t.id == s.id "
+            + "WHEN MATCHED AND t.id = 1 THEN DELETE "
+            + "WHEN MATCHED AND t.id = 2 THEN UPDATE SET * "
+            + "WHEN NOT MATCHED AND s.id != 5 THEN INSERT *");
 
-    List<Record> expects = ExpectResultUtil.expectMergeResult(
-            target, source, r -> r.getField("id")
-        ).whenMatched((t, s) -> t.getField("id").equals(1), (t, s) -> null)
-        .whenMatched((t, s) -> t.getField("id").equals(2), (t, s) -> s)
-        .whenNotMatched(s -> !s.getField("id").equals(5), Function.identity())
-        .results();
+    List<Record> expects =
+        ExpectResultUtil.expectMergeResult(target, source, r -> r.getField("id"))
+            .whenMatched((t, s) -> t.getField("id").equals(1), (t, s) -> null)
+            .whenMatched((t, s) -> t.getField("id").equals(2), (t, s) -> s)
+            .whenNotMatched(s -> !s.getField("id").equals(5), Function.identity())
+            .results();
 
     ArcticTable table = loadTable();
     List<Record> actual = TestTableUtil.tableRecords(table);
-    DataComparator.build(expects, actual)
-        .ignoreOrder("id")
-        .assertRecordsEqual();
+    DataComparator.build(expects, actual).ignoreOrder("id").assertRecordsEqual();
   }
-
 
   @DisplayName("SQL: MERGE INTO for all actions with condition")
   @ParameterizedTest
@@ -132,24 +129,28 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
     setupTest(keySpec);
     createViewSource(schema, source);
 
-    sql("MERGE INTO " + target() + " AS t USING " + source() + " AS s ON t.id == s.id " +
-        "WHEN MATCHED AND t.id = 2 THEN UPDATE SET t.data = 'ccc' ");
+    sql(
+        "MERGE INTO "
+            + target()
+            + " AS t USING "
+            + source()
+            + " AS s ON t.id == s.id "
+            + "WHEN MATCHED AND t.id = 2 THEN UPDATE SET t.data = 'ccc' ");
 
-    List<Record> expects = ExpectResultUtil.expectMergeResult(
-            target, source, r -> r.getField("id")
-        ).whenMatched((t, s) -> t.getField("id").equals(2), (t, s) -> {
-          t.setField("data", "ccc");
-          return t;
-        })
-        .results();
+    List<Record> expects =
+        ExpectResultUtil.expectMergeResult(target, source, r -> r.getField("id"))
+            .whenMatched(
+                (t, s) -> t.getField("id").equals(2),
+                (t, s) -> {
+                  t.setField("data", "ccc");
+                  return t;
+                })
+            .results();
 
     ArcticTable table = loadTable();
     List<Record> actual = TestTableUtil.tableRecords(table);
-    DataComparator.build(expects, actual)
-        .ignoreOrder("id")
-        .assertRecordsEqual();
+    DataComparator.build(expects, actual).ignoreOrder("id").assertRecordsEqual();
   }
-
 
   @DisplayName("SQL: MERGE INTO for all actions with target no data")
   @ParameterizedTest
@@ -158,19 +159,21 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
     ArcticTable table = createTarget(schema, builder -> builder.withPrimaryKeySpec(keySpec));
     createViewSource(schema, source);
 
-    sql("MERGE INTO " + target() + " AS t USING " + source() + " AS s ON t.id == s.id " +
-        "WHEN MATCHED AND t.id = 1 THEN DELETE " +
-        "WHEN MATCHED AND t.id = 2 THEN UPDATE SET * " +
-        "WHEN NOT MATCHED THEN INSERT *");
+    sql(
+        "MERGE INTO "
+            + target()
+            + " AS t USING "
+            + source()
+            + " AS s ON t.id == s.id "
+            + "WHEN MATCHED AND t.id = 1 THEN DELETE "
+            + "WHEN MATCHED AND t.id = 2 THEN UPDATE SET * "
+            + "WHEN NOT MATCHED THEN INSERT *");
 
     table.refresh();
     List<Record> expects = Lists.newArrayList(source);
     List<Record> actual = TestTableUtil.tableRecords(table);
-    DataComparator.build(expects, actual)
-        .ignoreOrder("id")
-        .assertRecordsEqual();
+    DataComparator.build(expects, actual).ignoreOrder("id").assertRecordsEqual();
   }
-
 
   @DisplayName("SQL: MERGE INTO for all actions without condition")
   @ParameterizedTest
@@ -179,23 +182,25 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
     setupTest(keySpec);
     createViewSource(schema, source);
 
-    sql("MERGE INTO " + target() + " AS t USING " + source() + " AS s ON t.id == s.id " +
-        "WHEN MATCHED THEN UPDATE SET * " +
-        "WHEN NOT MATCHED THEN INSERT *");
+    sql(
+        "MERGE INTO "
+            + target()
+            + " AS t USING "
+            + source()
+            + " AS s ON t.id == s.id "
+            + "WHEN MATCHED THEN UPDATE SET * "
+            + "WHEN NOT MATCHED THEN INSERT *");
 
-    List<Record> expects = ExpectResultUtil.expectMergeResult(
-            target, source, r -> r.getField("id")
-        ).whenMatched((t, s) -> true, (t, s) -> s)
-        .whenNotMatched(s -> true, Function.identity())
-        .results();
+    List<Record> expects =
+        ExpectResultUtil.expectMergeResult(target, source, r -> r.getField("id"))
+            .whenMatched((t, s) -> true, (t, s) -> s)
+            .whenNotMatched(s -> true, Function.identity())
+            .results();
 
     ArcticTable table = loadTable();
     List<Record> actual = TestTableUtil.tableRecords(table);
-    DataComparator.build(expects, actual)
-        .ignoreOrder("id")
-        .assertRecordsEqual();
+    DataComparator.build(expects, actual).ignoreOrder("id").assertRecordsEqual();
   }
-
 
   @DisplayName("SQL: MERGE INTO for only delete actions")
   @ParameterizedTest
@@ -203,19 +208,22 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
   public void testOnlyDeletes(TableFormat format, PrimaryKeySpec keySpec) {
     setupTest(keySpec);
     createViewSource(schema, source);
-    sql("MERGE INTO " + target() + " AS t USING " + source() + " AS s ON t.id == s.id " +
-        "WHEN MATCHED THEN DELETE ");
+    sql(
+        "MERGE INTO "
+            + target()
+            + " AS t USING "
+            + source()
+            + " AS s ON t.id == s.id "
+            + "WHEN MATCHED THEN DELETE ");
 
-    List<Record> expects = ExpectResultUtil.expectMergeResult(
-            target, source, r -> r.getField("id")
-        ).whenMatched((t, s) -> true, (t, s) -> null)
-        .results();
+    List<Record> expects =
+        ExpectResultUtil.expectMergeResult(target, source, r -> r.getField("id"))
+            .whenMatched((t, s) -> true, (t, s) -> null)
+            .results();
 
     ArcticTable table = loadTable();
     List<Record> actual = TestTableUtil.tableRecords(table);
-    DataComparator.build(expects, actual)
-        .ignoreOrder("id")
-        .assertRecordsEqual();
+    DataComparator.build(expects, actual).ignoreOrder("id").assertRecordsEqual();
   }
 
   @DisplayName("SQL: MERGE INTO for explicit column ")
@@ -225,28 +233,31 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
     setupTest(keySpec);
     createViewSource(schema, source);
 
-    sql("MERGE INTO " + target() + " AS t USING " + source() + " AS s ON t.id == s.id " +
-        "WHEN MATCHED THEN UPDATE SET t.id = s.id, t.data = s.pt, t.pt = s.pt " +
-        "WHEN NOT MATCHED THEN INSERT (t.data, t.pt, t.id) values ( s.pt, s.pt, s.id) ");
+    sql(
+        "MERGE INTO "
+            + target()
+            + " AS t USING "
+            + source()
+            + " AS s ON t.id == s.id "
+            + "WHEN MATCHED THEN UPDATE SET t.id = s.id, t.data = s.pt, t.pt = s.pt "
+            + "WHEN NOT MATCHED THEN INSERT (t.data, t.pt, t.id) values ( s.pt, s.pt, s.id) ");
 
-    Function<Record, Record> dataAsPt = s -> {
-      Record r = s.copy();
-      r.setField("data", s.getField("pt"));
-      return r;
-    };
-    List<Record> expects = ExpectResultUtil.expectMergeResult(
-            target, source, r -> r.getField("id")
-        ).whenMatched((t, s) -> true, (t, s) -> dataAsPt.apply(s))
-        .whenNotMatched(s -> true, dataAsPt)
-        .results();
+    Function<Record, Record> dataAsPt =
+        s -> {
+          Record r = s.copy();
+          r.setField("data", s.getField("pt"));
+          return r;
+        };
+    List<Record> expects =
+        ExpectResultUtil.expectMergeResult(target, source, r -> r.getField("id"))
+            .whenMatched((t, s) -> true, (t, s) -> dataAsPt.apply(s))
+            .whenNotMatched(s -> true, dataAsPt)
+            .results();
 
     ArcticTable table = loadTable();
     List<Record> actual = TestTableUtil.tableRecords(table);
-    DataComparator.build(expects, actual)
-        .ignoreOrder("id")
-        .assertRecordsEqual();
+    DataComparator.build(expects, actual).ignoreOrder("id").assertRecordsEqual();
   }
-
 
   public static Stream<TableFormat> formatArgs() {
     return Stream.of(MIXED_HIVE, MIXED_ICEBERG);
@@ -261,36 +272,44 @@ public class TestMergeIntoSQL extends SparkTableTestBase {
 
     boolean catched = false;
     try {
-      sql("MERGE INTO " + target() + " AS t USING " + source() + " AS s ON t.pt == s.id " +
-          "WHEN MATCHED THEN UPDATE SET t.id = s.id, t.data = s.pt, t.pt = s.pt " +
-          "WHEN NOT MATCHED THEN INSERT (t.data, t.pt, t.id) values ( s.pt, s.pt, s.id) ");
+      sql(
+          "MERGE INTO "
+              + target()
+              + " AS t USING "
+              + source()
+              + " AS s ON t.pt == s.id "
+              + "WHEN MATCHED THEN UPDATE SET t.id = s.id, t.data = s.pt, t.pt = s.pt "
+              + "WHEN NOT MATCHED THEN INSERT (t.data, t.pt, t.id) values ( s.pt, s.pt, s.id) ");
     } catch (Exception e) {
       catched = true;
     }
     Assertions.assertTrue(catched);
   }
-
 
   @DisplayName("SQL: MERGE INTO failed if source has duplicate join key")
   @ParameterizedTest
   @MethodSource("formatArgs")
   public void testFailedWhenDuplicateJoinKey(TableFormat format) {
     setupTest(pk);
-    List<Record> source = Lists.newArrayList(
-        RecordGenerator.newRecord(schema, 1, "s1", "001"),
-        RecordGenerator.newRecord(schema, 1, "s2", "001")
-    );
+    List<Record> source =
+        Lists.newArrayList(
+            RecordGenerator.newRecord(schema, 1, "s1", "001"),
+            RecordGenerator.newRecord(schema, 1, "s2", "001"));
     createViewSource(schema, source);
 
     boolean catched = false;
     try {
-      sql("MERGE INTO " + target() + " AS t USING " + source() + " AS s ON t.id == s.id " +
-          "WHEN MATCHED THEN UPDATE SET t.id = s.id, t.data = s.pt, t.pt = s.pt " +
-          "WHEN NOT MATCHED THEN INSERT (t.data, t.pt, t.id) values ( s.pt, s.pt, s.id) ");
+      sql(
+          "MERGE INTO "
+              + target()
+              + " AS t USING "
+              + source()
+              + " AS s ON t.id == s.id "
+              + "WHEN MATCHED THEN UPDATE SET t.id = s.id, t.data = s.pt, t.pt = s.pt "
+              + "WHEN NOT MATCHED THEN INSERT (t.data, t.pt, t.id) values ( s.pt, s.pt, s.id) ");
     } catch (Exception e) {
       catched = true;
     }
     Assertions.assertTrue(catched);
   }
-
 }

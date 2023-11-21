@@ -58,15 +58,15 @@ import org.apache.iceberg.UpdateLocation;
 import org.apache.iceberg.UpdatePartitionSpec;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
+import org.apache.iceberg.UpdateStatistics;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.util.StructLikeMap;
+
 import java.util.List;
 import java.util.Map;
 
-/**
- * Basic implementation of {@link UnkeyedTable}, wrapping a {@link Table}.
- */
+/** Basic implementation of {@link UnkeyedTable}, wrapping a {@link Table}. */
 public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   private final Map<String, String> catalogProperties;
@@ -75,7 +75,9 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   protected final ArcticFileIO arcticFileIO;
 
   public BasicUnkeyedTable(
-      TableIdentifier tableIdentifier, Table icebergTable, ArcticFileIO arcticFileIO,
+      TableIdentifier tableIdentifier,
+      Table icebergTable,
+      ArcticFileIO arcticFileIO,
       Map<String, String> catalogProperties) {
     this.tableIdentifier = tableIdentifier;
     this.icebergTable = icebergTable;
@@ -144,11 +146,17 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
   }
 
   @Override
+  public UpdateStatistics updateStatistics() {
+    return icebergTable.updateStatistics();
+  }
+
+  @Override
   public Map<String, String> properties() {
     if (catalogProperties == null) {
       return icebergTable.properties();
     } else {
-      return CatalogUtil.mergeCatalogPropertiesToTable(icebergTable.properties(), catalogProperties);
+      return CatalogUtil.mergeCatalogPropertiesToTable(
+          icebergTable.properties(), catalogProperties);
     }
   }
 
@@ -204,23 +212,17 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public AppendFiles newAppend() {
-    return ArcticAppendFiles.buildFor(this, false)
-        .onTableStore(icebergTable)
-        .build();
+    return ArcticAppendFiles.buildFor(this, false).onTableStore(icebergTable).build();
   }
 
   @Override
   public AppendFiles newFastAppend() {
-    return ArcticAppendFiles.buildFor(this, true)
-        .onTableStore(icebergTable)
-        .build();
+    return ArcticAppendFiles.buildFor(this, true).onTableStore(icebergTable).build();
   }
 
   @Override
   public RewriteFiles newRewrite() {
-    return ArcticRewriteFiles.buildFor(this)
-        .onTableStore(icebergTable)
-        .build();
+    return ArcticRewriteFiles.buildFor(this).onTableStore(icebergTable).build();
   }
 
   @Override
@@ -230,27 +232,22 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public OverwriteFiles newOverwrite() {
-    return ArcticOverwriteFiles.buildFor(this)
-        .onTableStore(icebergTable).build();
+    return ArcticOverwriteFiles.buildFor(this).onTableStore(icebergTable).build();
   }
 
   @Override
   public RowDelta newRowDelta() {
-    return ArcticRowDelta.buildFor(this)
-        .onTableStore(icebergTable).build();
+    return ArcticRowDelta.buildFor(this).onTableStore(icebergTable).build();
   }
 
   @Override
   public ReplacePartitions newReplacePartitions() {
-    return ArcticReplacePartitions.buildFor(this)
-        .onTableStore(icebergTable).build();
+    return ArcticReplacePartitions.buildFor(this).onTableStore(icebergTable).build();
   }
 
   @Override
   public DeleteFiles newDelete() {
-    return ArcticDeleteFiles.buildFor(this)
-        .onTableStore(icebergTable)
-        .build();
+    return ArcticDeleteFiles.buildFor(this).onTableStore(icebergTable).build();
   }
 
   @Override

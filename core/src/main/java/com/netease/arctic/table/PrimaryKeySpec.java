@@ -32,7 +32,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Represents the primary key specification of an {@link KeyedTable}, consist of some fields from table's {@link Schema}
+ * Represents the primary key specification of an {@link KeyedTable}, consist of some fields from
+ * table's {@link Schema}
  */
 public class PrimaryKeySpec implements Serializable {
   public static final String PRIMARY_KEY_COLUMN_JOIN_DELIMITER = ",";
@@ -50,11 +51,27 @@ public class PrimaryKeySpec implements Serializable {
   }
 
   public Schema getPkSchema() {
-    return schema.select(pkFields.stream().map(PrimaryKeyField::fieldName).collect(Collectors.toList()));
+    return schema.select(
+        pkFields.stream().map(PrimaryKeyField::fieldName).collect(Collectors.toList()));
   }
 
   public static Builder builderFor(Schema schema) {
     return new Builder(schema);
+  }
+
+  /**
+   * parse primary key spec from table properties
+   *
+   * @param schema - base store table schema
+   * @param keyDescription - key description of {#{@link #description}}
+   * @return primary key spec.
+   */
+  public static PrimaryKeySpec fromDescription(Schema schema, String keyDescription) {
+    PrimaryKeySpec.Builder keyBuilder = PrimaryKeySpec.builderFor(schema);
+    Arrays.stream(keyDescription.split(PRIMARY_KEY_COLUMN_JOIN_DELIMITER))
+        .filter(StringUtils::isNotBlank)
+        .forEach(keyBuilder::addColumn);
+    return keyBuilder.build();
   }
 
   public List<PrimaryKeyField> fields() {
@@ -66,8 +83,10 @@ public class PrimaryKeySpec implements Serializable {
   }
 
   public Types.StructType primaryKeyStruct() {
-    return Types.StructType.of(pkFields.stream().map(field -> schema.findField(field.fieldName()))
-        .collect(Collectors.toList()));
+    return Types.StructType.of(
+        pkFields.stream()
+            .map(field -> schema.findField(field.fieldName()))
+            .collect(Collectors.toList()));
   }
 
   @Override
@@ -94,7 +113,7 @@ public class PrimaryKeySpec implements Serializable {
     for (PrimaryKeyField field : pkFields) {
       sb.append(field).append(",");
     }
-    if (pkFields.size() > 0) {
+    if (!pkFields.isEmpty()) {
       sb.deleteCharAt(sb.length() - 1);
     }
     sb.append(")");
@@ -102,10 +121,10 @@ public class PrimaryKeySpec implements Serializable {
   }
 
   public String description() {
-    return pkFields.stream().map(PrimaryKeyField::fieldName)
+    return pkFields.stream()
+        .map(PrimaryKeyField::fieldName)
         .collect(Collectors.joining(PRIMARY_KEY_COLUMN_JOIN_DELIMITER));
   }
-
 
   public List<String> fieldNames() {
     return pkFields.stream().map(PrimaryKeyField::fieldName).collect(Collectors.toList());
@@ -113,30 +132,24 @@ public class PrimaryKeySpec implements Serializable {
 
   public static class Builder {
     private final Schema schema;
-    private List<PrimaryKeyField> pkFields = new ArrayList<>();
+    private final List<PrimaryKeyField> pkFields = new ArrayList<>();
 
     private Builder(Schema schema) {
       this.schema = schema;
     }
 
-    public Builder addDescription(String columnDescription) {
-      Arrays.stream(columnDescription.split(PRIMARY_KEY_COLUMN_JOIN_DELIMITER))
-          .filter(StringUtils::isNotBlank).forEach(this::addColumn);
-      return this;
-    }
-
     public Builder addColumn(String columnName) {
       Types.NestedField sourceColumn = schema.findField(columnName);
-      Preconditions.checkArgument(sourceColumn != null,
-          "Cannot find source column: %s", columnName);
+      Preconditions.checkArgument(
+          sourceColumn != null, "Cannot find source column: %s", columnName);
       addColumn(sourceColumn);
       return this;
     }
 
     public Builder addColumn(Integer columnIndex) {
       Types.NestedField sourceColumn = schema.findField(columnIndex);
-      Preconditions.checkArgument(sourceColumn != null,
-          "Cannot find source column by id: %s", columnIndex);
+      Preconditions.checkArgument(
+          sourceColumn != null, "Cannot find source column by id: %s", columnIndex);
       addColumn(sourceColumn);
       return this;
     }
@@ -147,7 +160,7 @@ public class PrimaryKeySpec implements Serializable {
     }
 
     public PrimaryKeySpec build() {
-      if (pkFields.size() > 0) {
+      if (!pkFields.isEmpty()) {
         return new PrimaryKeySpec(schema, pkFields);
       } else {
         return PrimaryKeySpec.noPrimaryKey();

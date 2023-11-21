@@ -29,7 +29,6 @@ import com.netease.arctic.hive.catalog.HiveTableTestHelper;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.Database;
@@ -55,31 +54,31 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 @RunWith(Parameterized.class)
 public class TestUpgradeHiveTableUtil extends CatalogTestBase {
 
-  @ClassRule
-  public static TestHMS TEST_HMS = new TestHMS();
+  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
-  @Rule
-  public TemporaryFolder folder = new TemporaryFolder();
+  @Rule public TemporaryFolder folder = new TemporaryFolder();
 
   private Table hiveTable;
   private TableIdentifier identifier;
-  private String db = "testUpgradeHiveDb";
-  private String table = "testUpgradeHiveTable";
-  private boolean isPartitioned;
-  private String[] partitionNames = {"name", HiveTableTestHelper.COLUMN_NAME_OP_DAY};
-  private String[] partitionValues = {"Bob", "2020-01-01"};
+  private final String db = "testUpgradeHiveDb";
+  private final String table = "testUpgradeHiveTable";
+  private final boolean isPartitioned;
+  private final FileFormat fileFormat;
+  private final String[] partitionNames = {"name", HiveTableTestHelper.COLUMN_NAME_OP_DAY};
+  private final String[] partitionValues = {"Bob", "2020-01-01"};
 
   public TestUpgradeHiveTableUtil(
-      CatalogTestHelper catalogTestHelper, boolean isPartitioned) throws IOException {
+      CatalogTestHelper catalogTestHelper, boolean isPartitioned, FileFormat fileFormat)
+      throws IOException {
     super(catalogTestHelper);
     folder.create();
     this.isPartitioned = isPartitioned;
+    this.fileFormat = fileFormat;
   }
 
   @Before
@@ -87,64 +86,100 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
     Database database = new Database();
     database.setName(db);
     TEST_HMS.getHiveClient().createDatabase(database);
-    PartitionSpec spec = isPartitioned ? PartitionSpec.builderFor(HiveTableTestHelper.HIVE_TABLE_SCHEMA)
-        .identity("name").identity(HiveTableTestHelper.COLUMN_NAME_OP_DAY).build() : PartitionSpec.unpartitioned();
+    PartitionSpec spec =
+        isPartitioned
+            ? PartitionSpec.builderFor(HiveTableTestHelper.HIVE_TABLE_SCHEMA)
+                .identity("name")
+                .identity(HiveTableTestHelper.COLUMN_NAME_OP_DAY)
+                .build()
+            : PartitionSpec.unpartitioned();
     hiveTable = createHiveTable(db, table, HiveTableTestHelper.HIVE_TABLE_SCHEMA, spec);
     if (isPartitioned) {
       createPartition();
     }
-    identifier = TableIdentifier.of(getCatalog().name(), db, table);
+    identifier = TableIdentifier.of(getMixedFormatCatalog().name(), db, table);
   }
 
   @After
   public void dropTable() throws TException {
-    getCatalog().dropTable(identifier, true);
+    getMixedFormatCatalog().dropTable(identifier, true);
     TEST_HMS.getHiveClient().dropDatabase(db);
   }
 
-  @Parameterized.Parameters(name = "{0}, {1}")
+  @Parameterized.Parameters(name = "{0}, {1}, {2}")
   public static Object[] parameters() {
-    return new Object[][] {{new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()), true},
-                           {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()), false}};
+    return new Object[][] {
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        true,
+        FileFormat.PARQUET
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        false,
+        FileFormat.PARQUET
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        true,
+        FileFormat.ORC
+      },
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        false,
+        FileFormat.ORC
+      }
+    };
   }
 
   @Test
   public void upgradeHiveTable() throws Exception {
     UpgradeHiveTableUtil.upgradeHiveTable(
-        (ArcticHiveCatalog) getCatalog(),
+        (ArcticHiveCatalog) getMixedFormatCatalog(),
         identifier,
         new ArrayList<>(),
         new HashMap<>());
-    ArcticTable table = getCatalog().loadTable(identifier);
-    UnkeyedHiveTable baseTable = table.isKeyedTable() ?
-        (UnkeyedHiveTable) table.asKeyedTable().baseTable() :
-        (UnkeyedHiveTable) table.asUnkeyedTable();
+    ArcticTable table = getMixedFormatCatalog().loadTable(identifier);
+    UnkeyedHiveTable baseTable =
+        table.isKeyedTable()
+            ? (UnkeyedHiveTable) table.asKeyedTable().baseTable()
+            : (UnkeyedHiveTable) table.asUnkeyedTable();
     if (table.spec().isPartitioned()) {
       List<Partition> partitions =
-          HivePartitionUtil.getHiveAllPartitions(((ArcticHiveCatalog) getCatalog()).getHMSClient(), table.id());
+          HivePartitionUtil.getHiveAllPartitions(
+              ((ArcticHiveCatalog) getMixedFormatCatalog()).getHMSClient(), table.id());
       for (Partition partition : partitions) {
-        StructLike partitionData = HivePartitionUtil.buildPartitionData(partition.getValues(), table.spec());
+        StructLike partitionData =
+            HivePartitionUtil.buildPartitionData(partition.getValues(), table.spec());
         Map<String, String> partitionProperties = baseTable.partitionProperty().get(partitionData);
-        Assert.assertTrue(partitionProperties.containsKey(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
-        Assert.assertTrue(partitionProperties.containsKey(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
-        Assert.assertFalse(HiveMetaSynchronizer.partitionHasModified(baseTable, partition, partitionData));
+        Assert.assertTrue(
+            partitionProperties.containsKey(
+                HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
+        Assert.assertTrue(
+            partitionProperties.containsKey(
+                HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
+        Assert.assertFalse(
+            HiveMetaSynchronizer.partitionHasModified(baseTable, partition, partitionData));
       }
     } else {
-      Map<String, String> partitionProperties = baseTable.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT);
-      Assert.assertTrue(partitionProperties.containsKey(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
-      Assert.assertTrue(partitionProperties.containsKey(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
+      Map<String, String> partitionProperties =
+          baseTable.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT);
+      Assert.assertTrue(
+          partitionProperties.containsKey(
+              HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
+      Assert.assertTrue(
+          partitionProperties.containsKey(
+              HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
       Assert.assertFalse(HiveMetaSynchronizer.tableHasModified(baseTable, hiveTable));
     }
   }
 
-  private Table createHiveTable(String db, String table, Schema schema, PartitionSpec spec) throws TException,
-      IOException {
+  private Table createHiveTable(String db, String table, Schema schema, PartitionSpec spec)
+      throws TException, IOException {
     Table hiveTable = newHiveTable(db, table, schema, spec);
-    hiveTable.setSd(HiveTableUtil.storageDescriptor(
-        schema,
-        spec,
-        folder.newFolder(db).getAbsolutePath(),
-        FileFormat.valueOf(TableProperties.DEFAULT_FILE_FORMAT_DEFAULT.toUpperCase(Locale.ENGLISH))));
+    hiveTable.setSd(
+        HiveTableUtil.storageDescriptor(
+            schema, spec, folder.newFolder(db).getAbsolutePath(), fileFormat));
     TEST_HMS.getHiveClient().createTable(hiveTable);
     return TEST_HMS.getHiveClient().getTable(db, table);
   }
@@ -155,8 +190,11 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
       partitions.add(String.join("=", partitionNames[i], partitionValues[i]));
     }
     Partition newPartition =
-        HivePartitionUtil.newPartition(hiveTable, partitions,
-            hiveTable.getSd().getLocation() + "/" + String.join("/", partitions), new ArrayList<>(),
+        HivePartitionUtil.newPartition(
+            hiveTable,
+            partitions,
+            hiveTable.getSd().getLocation() + "/" + String.join("/", partitions),
+            new ArrayList<>(),
             (int) (System.currentTimeMillis() / 1000));
     TEST_HMS.getHiveClient().add_partition(newPartition);
   }
@@ -164,19 +202,20 @@ public class TestUpgradeHiveTableUtil extends CatalogTestBase {
   private org.apache.hadoop.hive.metastore.api.Table newHiveTable(
       String db, String table, Schema schema, PartitionSpec partitionSpec) {
     final long currentTimeMillis = System.currentTimeMillis();
-    org.apache.hadoop.hive.metastore.api.Table newTable = new org.apache.hadoop.hive.metastore.api.Table(
-        table,
-        db,
-        System.getProperty("user.name"),
-        (int) currentTimeMillis / 1000,
-        (int) currentTimeMillis / 1000,
-        Integer.MAX_VALUE,
-        null,
-        HiveSchemaUtil.hivePartitionFields(schema, partitionSpec),
-        new HashMap<>(),
-        null,
-        null,
-        TableType.EXTERNAL_TABLE.toString());
+    org.apache.hadoop.hive.metastore.api.Table newTable =
+        new org.apache.hadoop.hive.metastore.api.Table(
+            table,
+            db,
+            System.getProperty("user.name"),
+            (int) currentTimeMillis / 1000,
+            (int) currentTimeMillis / 1000,
+            Integer.MAX_VALUE,
+            null,
+            HiveSchemaUtil.hivePartitionFields(schema, partitionSpec),
+            new HashMap<>(),
+            null,
+            null,
+            TableType.EXTERNAL_TABLE.toString());
 
     newTable.getParameters().put("EXTERNAL", "TRUE");
     return newTable;

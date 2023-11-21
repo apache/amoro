@@ -18,21 +18,34 @@
 
 package com.netease.arctic.server.catalog;
 
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.catalog.MixedTables;
+import com.netease.arctic.formats.mixed.MixedTable;
 import com.netease.arctic.hive.CachedHiveClientPool;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.catalog.MixedHiveTables;
+import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
+import com.netease.arctic.server.table.TableMetadata;
+import com.netease.arctic.server.table.internal.InternalTableCreator;
+import com.netease.arctic.server.table.internal.InternalTableHandler;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
+import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.thrift.TException;
 
 import java.util.List;
 
-public class MixedHiveCatalogImpl extends InternalMixedCatalogImpl {
-
+public class MixedHiveCatalogImpl extends InternalCatalog {
+  protected MixedTables tables;
   private volatile CachedHiveClientPool hiveClientPool;
 
   protected MixedHiveCatalogImpl(CatalogMeta catalogMeta) {
-    super(catalogMeta, new MixedHiveTables(catalogMeta));
+    super(catalogMeta);
+    this.tables =
+        new MixedHiveTables(
+            catalogMeta.getCatalogProperties(), CatalogUtil.buildMetaStore(catalogMeta));
     hiveClientPool = ((MixedHiveTables) tables()).getHiveClientPool();
   }
 
@@ -40,6 +53,22 @@ public class MixedHiveCatalogImpl extends InternalMixedCatalogImpl {
   public void updateMetadata(CatalogMeta metadata) {
     super.updateMetadata(metadata);
     hiveClientPool = ((MixedHiveTables) tables()).getHiveClientPool();
+    this.tables =
+        new MixedHiveTables(metadata.getCatalogProperties(), CatalogUtil.buildMetaStore(metadata));
+  }
+
+  @Override
+  public AmoroTable<?> loadTable(String database, String tableName) {
+    TableMetadata tableMetadata =
+        getAs(
+            TableMetaMapper.class,
+            mapper ->
+                mapper.selectTableMetaByName(getMetadata().getCatalogName(), database, tableName));
+    if (tableMetadata == null) {
+      return null;
+    }
+    return new MixedTable(
+        tables.loadTableByMeta(tableMetadata.buildTableMeta()), TableFormat.MIXED_HIVE);
   }
 
   @Override
@@ -50,6 +79,17 @@ public class MixedHiveCatalogImpl extends InternalMixedCatalogImpl {
   @Override
   public void dropDatabase(String databaseName) {
     // do not handle database operations
+  }
+
+  @Override
+  public InternalTableCreator newTableCreator(
+      String database, String tableName, TableFormat format, CreateTableRequest creatorArguments) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public <O> InternalTableHandler<O> newTableHandler(String database, String tableName) {
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -65,14 +105,15 @@ public class MixedHiveCatalogImpl extends InternalMixedCatalogImpl {
   @Override
   public boolean exist(String database) {
     try {
-      return hiveClientPool.run(client -> {
-        try {
-          client.getDatabase(database);
-          return true;
-        } catch (NoSuchObjectException exception) {
-          return false;
-        }
-      });
+      return hiveClientPool.run(
+          client -> {
+            try {
+              client.getDatabase(database);
+              return true;
+            } catch (NoSuchObjectException exception) {
+              return false;
+            }
+          });
     } catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to get databases", e);
     }
@@ -89,5 +130,9 @@ public class MixedHiveCatalogImpl extends InternalMixedCatalogImpl {
 
   public CachedHiveClientPool getHiveClient() {
     return hiveClientPool;
+  }
+
+  private MixedTables tables() {
+    return tables;
   }
 }

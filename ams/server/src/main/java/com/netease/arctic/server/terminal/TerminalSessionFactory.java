@@ -27,9 +27,7 @@ import com.netease.arctic.table.TableMetaStore;
 import java.util.List;
 import java.util.Map;
 
-/**
- * factory to create a TerminalSession
- */
+/** factory to create a TerminalSession */
 public interface TerminalSessionFactory {
 
   /**
@@ -42,28 +40,22 @@ public interface TerminalSessionFactory {
   /**
    * create a new session
    *
-   * @param metaStore     - auth info
-   * @param configuration - configuration of session, all properties are defined in {@link SessionConfigOptions}
+   * @param metaStore - auth info
+   * @param configuration - configuration of session, all properties are defined in {@link
+   *     SessionConfigOptions}
    * @return - new terminal context
    */
   TerminalSession create(TableMetaStore metaStore, Configurations configuration);
 
   class SessionConfigOptions {
-    public static ConfigOption<Integer> FETCH_SIZE = ConfigOptions
-        .key("session.fetch-size")
-        .intType()
-        .defaultValue(1000);
+    public static ConfigOption<Integer> FETCH_SIZE =
+        ConfigOptions.key("session.fetch-size").intType().defaultValue(1000);
 
-    public static ConfigOption<List<String>> CATALOGS = ConfigOptions
-        .key("session.catalogs")
-        .stringType()
-        .asList()
-        .noDefaultValue();
+    public static ConfigOption<List<String>> CATALOGS =
+        ConfigOptions.key("session.catalogs").stringType().asList().noDefaultValue();
 
-    public static ConfigOption<String> CATALOG_URL_BASE = ConfigOptions
-        .key("catalog-url-base")
-        .stringType()
-        .noDefaultValue();
+    public static ConfigOption<String> CATALOG_URL_BASE =
+        ConfigOptions.key("catalog-url-base").stringType().noDefaultValue();
 
     public static ConfigOption<String> catalogConnector(String catalog) {
       return ConfigOptions.key("session.catalog." + catalog + ".connector")
@@ -77,10 +69,8 @@ public interface TerminalSessionFactory {
           .noDefaultValue();
     }
 
-    public static ConfigOption<Boolean> USING_SESSION_CATALOG_FOR_HIVE = ConfigOptions
-        .key("using-session-catalog-for-hive")
-        .booleanType()
-        .defaultValue(false);
+    public static ConfigOption<Boolean> USING_SESSION_CATALOG_FOR_HIVE =
+        ConfigOptions.key("using-session-catalog-for-hive").booleanType().defaultValue(false);
 
     public static ConfigOption<String> catalogProperty(String catalog, String propertyKey) {
       return ConfigOptions.key("catalog." + catalog + "." + propertyKey)
@@ -88,14 +78,13 @@ public interface TerminalSessionFactory {
           .noDefaultValue();
     }
 
-    public static Map<String, String> getCatalogProperties(Configurations configuration, String catalog) {
+    public static Map<String, String> getCatalogProperties(
+        Configurations configuration, String catalog) {
       final String prefix = "catalog." + catalog + ".";
       Map<String, String> properties = Maps.newHashMap();
       for (String key : configuration.keySet()) {
         if (key.startsWith(prefix)) {
-          ConfigOption<String> confOption = ConfigOptions.key(key)
-              .stringType()
-              .noDefaultValue();
+          ConfigOption<String> confOption = ConfigOptions.key(key).stringType().noDefaultValue();
           properties.put(key.substring(prefix.length()), configuration.getString(confOption));
         }
       }
@@ -103,7 +92,5 @@ public interface TerminalSessionFactory {
     }
   }
 
-  ConfigOption<Integer> FETCH_SIZE = ConfigOptions.key("fetch-size")
-      .intType()
-      .defaultValue(1000);
+  ConfigOption<Integer> FETCH_SIZE = ConfigOptions.key("fetch-size").intType().defaultValue(1000);
 }

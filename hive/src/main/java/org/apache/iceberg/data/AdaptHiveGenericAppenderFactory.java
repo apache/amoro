@@ -42,9 +42,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Map;
 
-/**
- * Factory to create a new {@link FileAppender} to write {@link Record}s.
- */
+/** Factory to create a new {@link FileAppender} to write {@link Record}s. */
 public class AdaptHiveGenericAppenderFactory implements FileAppenderFactory<Record> {
 
   private final Schema schema;
@@ -63,7 +61,8 @@ public class AdaptHiveGenericAppenderFactory implements FileAppenderFactory<Reco
   }
 
   public AdaptHiveGenericAppenderFactory(
-      Schema schema, PartitionSpec spec,
+      Schema schema,
+      PartitionSpec spec,
       int[] equalityFieldIds,
       Schema eqDeleteRowSchema,
       Schema posDeleteRowSchema) {
@@ -97,7 +96,7 @@ public class AdaptHiveGenericAppenderFactory implements FileAppenderFactory<Reco
               .setAll(config)
               .overwrite()
               .build();
-        //Change For Arctic ⬇
+          // Change For Arctic ⬇
         case PARQUET:
           return AdaptHiveParquet.write(outputFile)
               .schema(schema)
@@ -106,7 +105,7 @@ public class AdaptHiveGenericAppenderFactory implements FileAppenderFactory<Reco
               .metricsConfig(metricsConfig)
               .overwrite()
               .build();
-        //Change For Arctic ⬆
+          // Change For Arctic ⬆
         case ORC:
           return ORC.write(outputFile)
               .schema(schema)
@@ -117,7 +116,8 @@ public class AdaptHiveGenericAppenderFactory implements FileAppenderFactory<Reco
               .build();
 
         default:
-          throw new UnsupportedOperationException("Cannot write unknown file format: " + fileFormat);
+          throw new UnsupportedOperationException(
+              "Cannot write unknown file format: " + fileFormat);
       }
     } catch (IOException e) {
       throw new UncheckedIOException(e);
@@ -126,17 +126,19 @@ public class AdaptHiveGenericAppenderFactory implements FileAppenderFactory<Reco
 
   @Override
   public org.apache.iceberg.io.DataWriter<Record> newDataWriter(
-      EncryptedOutputFile file, FileFormat format,
-      StructLike partition) {
+      EncryptedOutputFile file, FileFormat format, StructLike partition) {
     return new org.apache.iceberg.io.DataWriter<>(
-        newAppender(file.encryptingOutputFile(), format), format,
-        file.encryptingOutputFile().location(), spec, partition, file.keyMetadata());
+        newAppender(file.encryptingOutputFile(), format),
+        format,
+        file.encryptingOutputFile().location(),
+        spec,
+        partition,
+        file.keyMetadata());
   }
 
   @Override
   public EqualityDeleteWriter<Record> newEqDeleteWriter(
-      EncryptedOutputFile file, FileFormat format,
-      StructLike partition) {
+      EncryptedOutputFile file, FileFormat format, StructLike partition) {
     Preconditions.checkState(
         equalityFieldIds != null && equalityFieldIds.length > 0,
         "Equality field ids shouldn't be null or empty when creating equality-delete writer");
@@ -172,6 +174,19 @@ public class AdaptHiveGenericAppenderFactory implements FileAppenderFactory<Reco
               .equalityFieldIds(equalityFieldIds)
               .buildEqualityWriter();
 
+        case ORC:
+          return ORC.writeDeletes(file.encryptingOutputFile())
+              .createWriterFunc(GenericOrcWriter::buildWriter)
+              .withPartition(partition)
+              .overwrite()
+              .setAll(config)
+              .metricsConfig(metricsConfig)
+              .rowSchema(eqDeleteRowSchema)
+              .withSpec(spec)
+              .withKeyMetadata(file.keyMetadata())
+              .equalityFieldIds(equalityFieldIds)
+              .buildEqualityWriter();
+
         default:
           throw new UnsupportedOperationException(
               "Cannot write equality-deletes for unsupported file format: " + format);
@@ -183,8 +198,7 @@ public class AdaptHiveGenericAppenderFactory implements FileAppenderFactory<Reco
 
   @Override
   public PositionDeleteWriter<Record> newPosDeleteWriter(
-      EncryptedOutputFile file, FileFormat format,
-      StructLike partition) {
+      EncryptedOutputFile file, FileFormat format, StructLike partition) {
     MetricsConfig metricsConfig = MetricsConfig.fromProperties(config);
     try {
       switch (format) {
@@ -211,8 +225,21 @@ public class AdaptHiveGenericAppenderFactory implements FileAppenderFactory<Reco
               .withKeyMetadata(file.keyMetadata())
               .buildPositionWriter();
 
+        case ORC:
+          return ORC.writeDeletes(file.encryptingOutputFile())
+              .createWriterFunc(GenericOrcWriter::buildWriter)
+              .withPartition(partition)
+              .overwrite()
+              .setAll(config)
+              .metricsConfig(metricsConfig)
+              .rowSchema(posDeleteRowSchema)
+              .withSpec(spec)
+              .withKeyMetadata(file.keyMetadata())
+              .buildPositionWriter();
+
         default:
-          throw new UnsupportedOperationException("Cannot write pos-deletes for unsupported file format: " + format);
+          throw new UnsupportedOperationException(
+              "Cannot write pos-deletes for unsupported file format: " + format);
       }
     } catch (IOException e) {
       throw new UncheckedIOException(e);

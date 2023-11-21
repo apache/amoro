@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.table;
 
+import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.TableIdentifier;
@@ -33,6 +34,7 @@ public interface TableService extends CatalogService, TableManager {
   /**
    * create table metadata
    *
+   * @param catalogName internal catalog to create the table
    * @param tableMeta table metadata info
    */
   void createTable(String catalogName, TableMetadata tableMeta);
@@ -49,7 +51,7 @@ public interface TableService extends CatalogService, TableManager {
    * delete the table metadata
    *
    * @param tableIdentifier table id
-   * @param deleteData      if delete the external table
+   * @param deleteData if delete the external table
    */
   void dropTableMetadata(TableIdentifier tableIdentifier, boolean deleteData);
 
@@ -61,16 +63,16 @@ public interface TableService extends CatalogService, TableManager {
   List<String> listDatabases(String catalogName);
 
   /**
-   * Load all managed tables.
-   * Managed tables means the tables which are managed by AMS, AMS will watch their change and make them health.
+   * Load all managed tables. Managed tables means the tables which are managed by AMS, AMS will
+   * watch their change and make them health.
    *
    * @return {@link ServerTableIdentifier} list
    */
   List<ServerTableIdentifier> listManagedTables();
 
   /**
-   * Load all managed tables.
-   * Managed tables means the tables which are managed by AMS, AMS will watch their change and make them health.
+   * Load all managed tables. Managed tables means the tables which are managed by AMS, AMS will
+   * watch their change and make them health.
    *
    * @return {@link ServerTableIdentifier} list
    */
@@ -81,16 +83,12 @@ public interface TableService extends CatalogService, TableManager {
    *
    * @return {@link TableIdentifier} list
    */
-  List<TableIdentifier> listTables(String catalogName, String dbName);
+  List<TableIDWithFormat> listTables(String catalogName, String dbName);
 
-  /**
-   * create arctic database
-   */
+  /** create arctic database */
   void createDatabase(String catalogName, String dbName);
 
-  /**
-   * drop arctic database
-   */
+  /** drop arctic database */
   void dropDatabase(String catalogName, String dbName);
 
   /**
@@ -119,11 +117,12 @@ public interface TableService extends CatalogService, TableManager {
    *
    * @return the created blocker
    */
-  Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations, Map<String, String> properties);
+  Blocker block(
+      TableIdentifier tableIdentifier,
+      List<BlockableOperation> operations,
+      Map<String, String> properties);
 
-  /**
-   * release the blocker
-   */
+  /** release the blocker */
   void releaseBlocker(TableIdentifier tableIdentifier, String blockerId);
 
   /**
@@ -134,7 +133,7 @@ public interface TableService extends CatalogService, TableManager {
   long renewBlocker(TableIdentifier tableIdentifier, String blockerId);
 
   /**
-   * getRuntime blockers of table
+   * get blockers of table
    *
    * @return block list
    */

@@ -18,21 +18,18 @@
 
 package com.netease.arctic.table;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import static com.netease.arctic.table.WatermarkGenerator.EVENT_TIME_TIMESTAMP_MS;
 import static com.netease.arctic.table.WatermarkGenerator.INGEST_TIME;
 import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
 
-/**
- * Reserved Arctic table properties list.
- */
+import java.util.HashSet;
+import java.util.Set;
+
+/** Reserved Arctic table properties list. */
 public class TableProperties {
 
-  private TableProperties() {
-  }
+  private TableProperties() {}
 
   public static final String TABLE_PARTITION_PROPERTIES = "table.partition-properties";
 
@@ -46,30 +43,30 @@ public class TableProperties {
   public static final String TABLE_CREATE_TIME = "table.create-timestamp";
   public static final long TABLE_CREATE_TIME_DEFAULT = 0L;
 
-  /**
-   * table watermark related properties
-   */
-
+  /** table watermark related properties */
   public static final String TABLE_EVENT_TIME_FIELD = "table.event-time-field";
+
   public static final String TABLE_EVENT_TIME_FIELD_DEFAULT = INGEST_TIME;
 
-  public static final String TABLE_WATERMARK_ALLOWED_LATENESS = "table.watermark-allowed-lateness-second";
+  public static final String TABLE_WATERMARK_ALLOWED_LATENESS =
+      "table.watermark-allowed-lateness-second";
   public static final long TABLE_WATERMARK_ALLOWED_LATENESS_DEFAULT = 0L;
 
-  public static final String TABLE_EVENT_TIME_STRING_FORMAT = "table.event-time-field.datetime-string-format";
+  public static final String TABLE_EVENT_TIME_STRING_FORMAT =
+      "table.event-time-field.datetime-string-format";
   public static final String TABLE_EVENT_TIME_STRING_FORMAT_DEFAULT = "yyyy-MM-dd HH:mm:ss";
 
-  public static final String TABLE_EVENT_TIME_NUMBER_FORMAT = "table.event-time-field.datetime-number-format";
+  public static final String TABLE_EVENT_TIME_NUMBER_FORMAT =
+      "table.event-time-field.datetime-number-format";
   public static final String TABLE_EVENT_TIME_NUMBER_FORMAT_DEFAULT = EVENT_TIME_TIMESTAMP_MS;
 
   public static final String WATERMARK_TABLE = "watermark.table";
 
   public static final String WATERMARK_BASE_STORE = "watermark.base";
 
-  /**
-   * table optimize related properties
-   */
+  /** table optimize related properties */
   public static final String ENABLE_SELF_OPTIMIZING = "self-optimizing.enabled";
+
   public static final boolean ENABLE_SELF_OPTIMIZING_DEFAULT = true;
 
   public static final String SELF_OPTIMIZING_GROUP = "self-optimizing.group";
@@ -78,7 +75,8 @@ public class TableProperties {
   public static final String SELF_OPTIMIZING_QUOTA = "self-optimizing.quota";
   public static final double SELF_OPTIMIZING_QUOTA_DEFAULT = 0.1;
 
-  public static final String SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER = "self-optimizing.execute.num-retries";
+  public static final String SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER =
+      "self-optimizing.execute.num-retries";
   public static final int SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER_DEFAULT = 5;
 
   public static final String SELF_OPTIMIZING_TARGET_SIZE = "self-optimizing.target-size";
@@ -87,62 +85,60 @@ public class TableProperties {
   public static final String SELF_OPTIMIZING_MAX_FILE_CNT = "self-optimizing.max-file-count";
   public static final int SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT = 10000;
 
-  public static final String SELF_OPTIMIZING_MAX_FILE_SIZE_BYTES = "self-optimizing.max-file-size-bytes";
-  public static final long SELF_OPTIMIZING_MAX_FILE_SIZE_BYTES_DEFAULT = 8589934592L; // 8 GB
+  public static final String SELF_OPTIMIZING_MAX_TASK_SIZE = "self-optimizing.max-task-size-bytes";
+  public static final long SELF_OPTIMIZING_MAX_TASK_SIZE_DEFAULT = 134217728; // 128 MB
 
   public static final String SELF_OPTIMIZING_FRAGMENT_RATIO = "self-optimizing.fragment-ratio";
   public static final int SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT = 8;
 
-  public static final String SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT = "self-optimizing.minor.trigger.file-count";
+  public static final String SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT =
+      "self-optimizing.minor.trigger.file-count";
   public static final int SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT = 12;
 
-  public static final String SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL = "self-optimizing.minor.trigger.interval";
+  public static final String SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL =
+      "self-optimizing.minor.trigger.interval";
   public static final int SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT = 3600000; // 1 h
 
   public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO =
       "self-optimizing.major.trigger.duplicate-ratio";
-  public static final double SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT = 0.5;
+  public static final double SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT = 0.1;
 
-  public static final String SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL = "self-optimizing.full.trigger.interval";
+  public static final String SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL =
+      "self-optimizing.full.trigger.interval";
   public static final int SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT = -1; // not trigger
 
-  public static final String SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES = "self-optimizing.full.rewrite-all-files";
+  public static final String SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES =
+      "self-optimizing.full.rewrite-all-files";
   public static final boolean SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT = true;
 
-  /**
-   * deprecated table optimize related properties
-   */
-  @Deprecated
-  public static final String ENABLE_OPTIMIZE = "optimize.enable";
+  /** deprecated table optimize related properties */
+  @Deprecated public static final String ENABLE_OPTIMIZE = "optimize.enable";
+
+  @Deprecated public static final String OPTIMIZE_GROUP = "optimize.group";
+
+  @Deprecated public static final String OPTIMIZE_RETRY_NUMBER = "optimize.num-retries";
+
+  @Deprecated public static final String OPTIMIZE_MAX_FILE_COUNT = "optimize.max-file-count";
 
   @Deprecated
-  public static final String OPTIMIZE_GROUP = "optimize.group";
+  public static final String FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL =
+      "optimize.full.trigger.max-interval";
 
   @Deprecated
-  public static final String OPTIMIZE_RETRY_NUMBER = "optimize.num-retries";
+  public static final String MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL =
+      "optimize.minor.trigger.max-interval";
 
   @Deprecated
-  public static final String OPTIMIZE_MAX_FILE_COUNT = "optimize.max-file-count";
+  public static final String MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT =
+      "optimize.minor.trigger.delete-file-count";
 
-  @Deprecated
-  public static final String FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.full.trigger.max-interval";
+  @Deprecated public static final String OPTIMIZE_QUOTA = "optimize.quota";
 
-  @Deprecated
-  public static final String MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.minor.trigger.max-interval";
-
-  @Deprecated
-  public static final String MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT = "optimize.minor.trigger.delete-file-count";
-
-  @Deprecated
-  public static final String OPTIMIZE_QUOTA = "optimize.quota";
-
-  /**
-   * table clean related properties
-   */
+  /** table clean related properties */
   public static final String ENABLE_TABLE_EXPIRE = "table-expire.enabled";
+
   public static final boolean ENABLE_TABLE_EXPIRE_DEFAULT = true;
-  @Deprecated
-  public static final String ENABLE_TABLE_EXPIRE_LEGACY = "table-expire.enable";
+  @Deprecated public static final String ENABLE_TABLE_EXPIRE_LEGACY = "table-expire.enable";
 
   public static final String CHANGE_DATA_TTL = "change.data.ttl.minutes";
   public static final long CHANGE_DATA_TTL_DEFAULT = 10080; // 7 Days
@@ -150,15 +146,29 @@ public class TableProperties {
   public static final String BASE_SNAPSHOT_KEEP_MINUTES = "snapshot.base.keep.minutes";
   public static final long BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT = 720; // 12 Hours
 
-  public static final String ENABLE_DANGLING_DELETE_FILES_CLEAN = "clean-dangling-delete-files.enabled";
+  public static final String ENABLE_DATA_EXPIRATION = "data-expire.enabled";
+  public static final boolean ENABLE_DATA_EXPIRATION_DEFAULT = false;
+  public static final String DATA_EXPIRATION_LEVEL = "data-expire.level";
+  public static final String DATA_EXPIRATION_LEVEL_DEFAULT = "partition";
+  public static final String DATA_EXPIRATION_FIELD = "data-expire.field";
+  public static final String DATA_EXPIRATION_DATE_STRING_PATTERN =
+      "data-expire.datetime-string-pattern";
+  public static final String DATA_EXPIRATION_DATE_STRING_PATTERN_DEFAULT = "yyyy-MM-dd";
+  public static final String DATA_EXPIRATION_DATE_NUMBER_FORMAT =
+      "data-expire.datetime-number-format";
+  public static final String DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT = "TIMESTAMP_MS";
+  public static final String DATA_EXPIRATION_RETENTION_TIME = "data-expire.retention-time";
+
+  public static final String ENABLE_DANGLING_DELETE_FILES_CLEAN =
+      "clean-dangling-delete-files.enabled";
   public static final boolean ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT = true;
 
   public static final String ENABLE_ORPHAN_CLEAN = "clean-orphan-file.enabled";
   public static final boolean ENABLE_ORPHAN_CLEAN_DEFAULT = false;
-  @Deprecated
-  public static final String ENABLE_ORPHAN_CLEAN_LEGACY = "clean-orphan-file.enable";
+  @Deprecated public static final String ENABLE_ORPHAN_CLEAN_LEGACY = "clean-orphan-file.enable";
 
-  public static final String MIN_ORPHAN_FILE_EXISTING_TIME = "clean-orphan-file.min-existing-time-minutes";
+  public static final String MIN_ORPHAN_FILE_EXISTING_TIME =
+      "clean-orphan-file.min-existing-time-minutes";
   public static final long MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT = 2880; // 2 Days
 
   public static final String ENABLE_TABLE_TRASH = "table-trash.enabled";
@@ -170,22 +180,28 @@ public class TableProperties {
   public static final int TABLE_TRASH_KEEP_DAYS_DEFAULT = 7; // 7 Days
 
   public static final String TABLE_TRASH_FILE_PATTERN = "table-trash.file-pattern";
-  public static final String TABLE_TRASH_FILE_PATTERN_DEFAULT = ".+\\.parquet" +
-      "|.*snap-[0-9]+-[0-9]+-.+\\.avro" + // snap-1515213806302741636-1-UUID.avro
-      "|.*version-hint.text" + // version-hint.text
-      "|.*v[0-9]+\\.metadata\\.json" + // v123.metadata.json
-      "|.*[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}-m[0-9]+\\.avro"; // UUID-m0.avro
+  public static final String TABLE_TRASH_FILE_PATTERN_DEFAULT =
+      ".+\\.parquet"
+          + "|.*snap-[0-9]+-[0-9]+-.+\\.avro"
+          + // snap-1515213806302741636-1-UUID.avro
+          "|.*version-hint.text"
+          + // version-hint.text
+          "|.*v[0-9]+\\.metadata\\.json"
+          + // v123.metadata.json
+          "|.*[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}-m[0-9]+\\.avro"; // UUID-m0.avro
 
-  /**
-   * table write related properties
-   */
+  /** table write related properties */
+  public static final String FILE_FORMAT_PARQUET = "parquet";
+
+  public static final String FILE_FORMAT_ORC = "orc";
   public static final String BASE_FILE_FORMAT = "base.write.format";
-  public static final String BASE_FILE_FORMAT_DEFAULT = "parquet";
+  public static final String BASE_FILE_FORMAT_DEFAULT = FILE_FORMAT_PARQUET;
 
   public static final String CHANGE_FILE_FORMAT = "change.write.format";
-  public static final String CHANGE_FILE_FORMAT_DEFAULT = "parquet";
+  public static final String CHANGE_FILE_FORMAT_DEFAULT = FILE_FORMAT_PARQUET;
 
-  public static final String DEFAULT_FILE_FORMAT = org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
+  public static final String DEFAULT_FILE_FORMAT =
+      org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
   public static final String DEFAULT_FILE_FORMAT_DEFAULT =
       org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 
@@ -202,7 +218,8 @@ public class TableProperties {
   public static final String UPSERT_ENABLED = "write.upsert.enabled";
   public static final boolean UPSERT_ENABLED_DEFAULT = false;
 
-  public static final String WRITE_DISTRIBUTION_MODE = org.apache.iceberg.TableProperties.WRITE_DISTRIBUTION_MODE;
+  public static final String WRITE_DISTRIBUTION_MODE =
+      org.apache.iceberg.TableProperties.WRITE_DISTRIBUTION_MODE;
   public static final String WRITE_DISTRIBUTION_MODE_NONE =
       org.apache.iceberg.TableProperties.WRITE_DISTRIBUTION_MODE_NONE;
   public static final String WRITE_DISTRIBUTION_MODE_HASH =
@@ -227,15 +244,14 @@ public class TableProperties {
   public static final String SPLIT_LOOKBACK = org.apache.iceberg.TableProperties.SPLIT_LOOKBACK;
   public static final int SPLIT_LOOKBACK_DEFAULT = 10;
 
-  public static final String SPLIT_OPEN_FILE_COST = org.apache.iceberg.TableProperties.SPLIT_OPEN_FILE_COST;
+  public static final String SPLIT_OPEN_FILE_COST =
+      org.apache.iceberg.TableProperties.SPLIT_OPEN_FILE_COST;
   public static final long SPLIT_OPEN_FILE_COST_DEFAULT = 4 * 1024 * 1024; // 4MB
-  /**
-   * log store related properties
-   */
+  /** log store related properties */
   public static final String ENABLE_LOG_STORE = "log-store.enabled";
+
   public static final boolean ENABLE_LOG_STORE_DEFAULT = false;
-  @Deprecated
-  public static final String ENABLE_LOG_STORE_LEGACY = "log-store.enable";
+  @Deprecated public static final String ENABLE_LOG_STORE_LEGACY = "log-store.enable";
 
   public static final String LOG_STORE_TYPE = "log-store.type";
   public static final String LOG_STORE_STORAGE_TYPE_KAFKA = "kafka";
@@ -256,24 +272,20 @@ public class TableProperties {
 
   public static final String OWNER = "owner";
 
-  /**
-   * table format related properties
-   */
+  /** table format related properties */
   public static final String TABLE_FORMAT = "table-format";
+
   public static final String MIXED_FORMAT_PRIMARY_KEY_FIELDS = "mixed-format.primary-key-fields";
   public static final String MIXED_FORMAT_TABLE_STORE = "mixed-format.table-store";
   public static final String MIXED_FORMAT_TABLE_STORE_BASE = "base";
   public static final String MIXED_FORMAT_TABLE_STORE_CHANGE = "change";
-  public static final String MIXED_FORMAT_CHANGE_STORE_IDENTIFIER = "mixed-format.change.identifier";
+  public static final String MIXED_FORMAT_CHANGE_STORE_IDENTIFIER =
+      "mixed-format.change.identifier";
 
-  /**
-   * Protected properties which should not be read by user.
-   */
+  /** Protected properties which should not be read by user. */
   public static final Set<String> READ_PROTECTED_PROPERTIES = new HashSet<>();
 
-  /**
-   * Protected properties which should not be written by user.
-   */
+  /** Protected properties which should not be written by user. */
   public static final Set<String> WRITE_PROTECTED_PROPERTIES = new HashSet<>();
 
   static {

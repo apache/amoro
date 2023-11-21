@@ -72,8 +72,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * migrate a v1 table to arctic table.
- * will reuse file in v1 table , but delete metadata in session catalog
+ * migrate a v1 table to arctic table. will reuse file in v1 table , but delete metadata in session
+ * catalog
  */
 public class MigrateToArcticCommand implements ArcticSparkCommand {
   private static final Logger LOG = LoggerFactory.getLogger(MigrateToArcticCommand.class);
@@ -82,12 +82,12 @@ public class MigrateToArcticCommand implements ArcticSparkCommand {
   protected static final List<String> EXCLUDED_PROPERTIES =
       ImmutableList.of("path", "transient_lastDdlTime", "serialization.format");
 
-  private static final StructType OUTPUT_TYPE = new StructType(
-      new StructField[] {
-          new StructField("partition", DataTypes.StringType, false, Metadata.empty()),
-          new StructField("file_counts", DataTypes.IntegerType, false, Metadata.empty())
-      }
-  );
+  private static final StructType OUTPUT_TYPE =
+      new StructType(
+          new StructField[] {
+            new StructField("partition", DataTypes.StringType, false, Metadata.empty()),
+            new StructField("file_counts", DataTypes.IntegerType, false, Metadata.empty())
+          });
 
   private final SparkSession spark;
   private final TableCatalog sourceCatalog;
@@ -97,10 +97,11 @@ public class MigrateToArcticCommand implements ArcticSparkCommand {
   private final Identifier targetIdentifier;
 
   protected MigrateToArcticCommand(
-      TableCatalog sourceCatalog, Identifier sourceIdentifier,
-      TableCatalog catalog, Identifier identifier,
-      SparkSession spark
-  ) {
+      TableCatalog sourceCatalog,
+      Identifier sourceIdentifier,
+      TableCatalog catalog,
+      Identifier identifier,
+      SparkSession spark) {
     this.spark = spark;
     this.sourceCatalog = sourceCatalog;
     this.targetCatalog = catalog;
@@ -126,12 +127,15 @@ public class MigrateToArcticCommand implements ArcticSparkCommand {
     TableIdentifier ident;
     PartitionSpec spec;
     Schema schema;
-    LOG.info("start to migrate {} to {}, using temp backup table {}",
-        sourceIdentifier, targetIdentifier, backupV1TableIdentifier);
+    LOG.info(
+        "start to migrate {} to {}, using temp backup table {}",
+        sourceIdentifier,
+        targetIdentifier,
+        backupV1TableIdentifier);
     V1Table sourceTable = loadV1Table(sourceCatalog, backupV1TableIdentifier);
-    ident = new TableIdentifier(
-        backupV1TableIdentifier.name(),
-        Some.apply(backupV1TableIdentifier.namespace()[0]));
+    ident =
+        new TableIdentifier(
+            backupV1TableIdentifier.name(), Some.apply(backupV1TableIdentifier.namespace()[0]));
     dataFiles = loadDataFiles(ident);
     UnkeyedTable table = createUnkeyedTable(sourceTable);
 
@@ -141,19 +145,22 @@ public class MigrateToArcticCommand implements ArcticSparkCommand {
     dataFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
 
-    LOG.info("migrate table {} finished, remove metadata of backup {} table",
-        targetIdentifier, backupV1TableIdentifier);
+    LOG.info(
+        "migrate table {} finished, remove metadata of backup {} table",
+        targetIdentifier,
+        backupV1TableIdentifier);
 
     if (PartitionSpec.unpartitioned().equals(spec)) {
       return new Row[] {RowFactory.create("ALL", dataFiles.size())};
     }
 
     Map<String, List<DataFile>> partitions = Maps.newHashMap();
-    dataFiles.forEach(d -> {
-      String partition = spec.partitionToPath(d.partition());
-      List<DataFile> df = partitions.computeIfAbsent(partition, p -> Lists.newArrayList());
-      df.add(d);
-    });
+    dataFiles.forEach(
+        d -> {
+          String partition = spec.partitionToPath(d.partition());
+          List<DataFile> df = partitions.computeIfAbsent(partition, p -> Lists.newArrayList());
+          df.add(d);
+        });
     return partitions.keySet().stream()
         .sorted()
         .map(p -> RowFactory.create(p, partitions.get(p).size()))
@@ -161,15 +168,16 @@ public class MigrateToArcticCommand implements ArcticSparkCommand {
   }
 
   private List<DataFile> loadDataFiles(TableIdentifier ident) throws AnalysisException {
-    PartitionSpec spec  = SparkSchemaUtil.specForTable(spark, ident.database().get() + "." + ident.table());
+    PartitionSpec spec =
+        SparkSchemaUtil.specForTable(spark, ident.database().get() + "." + ident.table());
 
     if (spec.equals(PartitionSpec.unpartitioned())) {
       return listUnPartitionedSparkTable(spark, ident);
     } else {
-      List<SparkTableUtil.SparkPartition> sparkPartitions = SparkTableUtil.getPartitions(spark, ident,
-          Maps.newHashMap());
-      Preconditions.checkArgument(!sparkPartitions.isEmpty(),
-          "Cannot find any partitions in table %s", ident);
+      List<SparkTableUtil.SparkPartition> sparkPartitions =
+          SparkTableUtil.getPartitions(spark, ident, Maps.newHashMap());
+      Preconditions.checkArgument(
+          !sparkPartitions.isEmpty(), "Cannot find any partitions in table %s", ident);
       return listPartitionDataFiles(spark, sparkPartitions, spec);
     }
   }
@@ -187,15 +195,13 @@ public class MigrateToArcticCommand implements ArcticSparkCommand {
     boolean threw = true;
     Table table = null;
     try {
-      table = targetCatalog.createTable(
-          targetIdentifier, schema, partitions, properties
-      );
+      table = targetCatalog.createTable(targetIdentifier, schema, partitions, properties);
       if (table instanceof ArcticIcebergSparkTable) {
         threw = false;
         return ((ArcticIcebergSparkTable) table).table();
       } else if (table instanceof ArcticSparkTable) {
         threw = false;
-        return ((ArcticSparkTable)table).table().asUnkeyedTable();
+        return ((ArcticSparkTable) table).table().asUnkeyedTable();
       }
       throw new IllegalStateException("target table must be un-keyed table");
     } finally {
@@ -209,19 +215,21 @@ public class MigrateToArcticCommand implements ArcticSparkCommand {
     }
   }
 
-
-  private static V1Table loadV1Table(TableCatalog catalog, Identifier identifier) throws NoSuchTableException {
+  private static V1Table loadV1Table(TableCatalog catalog, Identifier identifier)
+      throws NoSuchTableException {
     Table table = catalog.loadTable(identifier);
     Preconditions.checkArgument(table instanceof V1Table, "source table must be V1Table");
     return (V1Table) table;
   }
 
   private static List<DataFile> listUnPartitionedSparkTable(
-      SparkSession spark, TableIdentifier sourceTableIdent
-  ) throws NoSuchDatabaseException, NoSuchTableException {
+      SparkSession spark, TableIdentifier sourceTableIdent)
+      throws NoSuchDatabaseException, NoSuchTableException {
     CatalogTable sourceTable = spark.sessionState().catalog().getTableMetadata(sourceTableIdent);
     Option<String> format =
-        sourceTable.storage().serde().nonEmpty() ? sourceTable.storage().serde() : sourceTable.provider();
+        sourceTable.storage().serde().nonEmpty()
+            ? sourceTable.storage().serde()
+            : sourceTable.provider();
     Preconditions.checkArgument(format.nonEmpty(), "Could not determine table format");
 
     Map<String, String> partition = Collections.emptyMap();
@@ -229,8 +237,13 @@ public class MigrateToArcticCommand implements ArcticSparkCommand {
     Configuration conf = spark.sessionState().newHadoopConf();
     MetricsConfig metricsConfig = MetricsConfig.getDefault();
     return TableMigrationUtil.listPartition(
-        partition, Util.uriToString(sourceTable.location()),
-        format.get(), spec, conf, metricsConfig, null);
+        partition,
+        Util.uriToString(sourceTable.location()),
+        format.get(),
+        spec,
+        conf,
+        metricsConfig,
+        null);
   }
 
   private static List<DataFile> listPartitionDataFiles(
@@ -239,10 +252,13 @@ public class MigrateToArcticCommand implements ArcticSparkCommand {
     Configuration conf = spark.sessionState().newHadoopConf();
     MetricsConfig metricsConfig = MetricsConfig.getDefault();
 
-    return partitions.stream().map(
-        p -> TableMigrationUtil.listPartition(p.getValues(), p.getUri(), p.getFormat(), spec, conf,
-            metricsConfig, null)
-    ).flatMap(Collection::stream).collect(Collectors.toList());
+    return partitions.stream()
+        .map(
+            p ->
+                TableMigrationUtil.listPartition(
+                    p.getValues(), p.getUri(), p.getFormat(), spec, conf, metricsConfig, null))
+        .flatMap(Collection::stream)
+        .collect(Collectors.toList());
   }
 
   public static Builder newBuilder(SparkSession spark) {
@@ -271,8 +287,8 @@ public class MigrateToArcticCommand implements ArcticSparkCommand {
     }
 
     public MigrateToArcticCommand build() throws NoSuchTableException {
-      ArcticSparkUtils.TableCatalogAndIdentifier tableCatalogAndIdentifier
-          = ArcticSparkUtils.tableCatalogAndIdentifier(spark, source);
+      ArcticSparkUtils.TableCatalogAndIdentifier tableCatalogAndIdentifier =
+          ArcticSparkUtils.tableCatalogAndIdentifier(spark, source);
       TableCatalog sourceCatalog = tableCatalogAndIdentifier.catalog();
       Identifier sourceTableIdentifier = tableCatalogAndIdentifier.identifier();
 
@@ -286,19 +302,15 @@ public class MigrateToArcticCommand implements ArcticSparkCommand {
       checkTargetTable(targetCatalog, targetTableIdentifier);
 
       return new MigrateToArcticCommand(
-          sourceCatalog, sourceTableIdentifier,
-          targetCatalog, targetTableIdentifier,
-          spark
-      );
+          sourceCatalog, sourceTableIdentifier, targetCatalog, targetTableIdentifier, spark);
     }
 
-    private void checkSourceCatalogAndTable(TableCatalog catalog, Identifier identifier) throws NoSuchTableException {
+    private void checkSourceCatalogAndTable(TableCatalog catalog, Identifier identifier)
+        throws NoSuchTableException {
       Preconditions.checkArgument(
           catalog.name().equalsIgnoreCase(CatalogManager.SESSION_CATALOG_NAME()),
           "source table must in session catalog, current table is %s",
-          catalog.name()
-      );
-
+          catalog.name());
 
       Preconditions.checkArgument(
           catalog.tableExists(identifier),
@@ -316,19 +328,21 @@ public class MigrateToArcticCommand implements ArcticSparkCommand {
     }
 
     private void checkTargetTable(TableCatalog catalog, Identifier identifier) {
-      Preconditions.checkArgument(catalog instanceof SupportsNamespaces,
-          "The target catalog must support namespace");
       Preconditions.checkArgument(
-          ((SupportsNamespaces)catalog).namespaceExists(identifier.namespace()),
+          catalog instanceof SupportsNamespaces, "The target catalog must support namespace");
+      Preconditions.checkArgument(
+          ((SupportsNamespaces) catalog).namespaceExists(identifier.namespace()),
           "database %s does not exist in catalog %s",
-          Joiner.on(".").join(identifier.namespace()), catalog.name());
+          Joiner.on(".").join(identifier.namespace()),
+          catalog.name());
 
       List<String> nameParts = Lists.newArrayList(identifier.namespace());
       nameParts.add(identifier.name());
       Preconditions.checkArgument(
           !catalog.tableExists(identifier),
           "target table %s already exist in catalog %s",
-          Joiner.on(".").join(nameParts), catalog.name());
+          Joiner.on(".").join(nameParts),
+          catalog.name());
     }
   }
 }

@@ -1,4 +1,5 @@
 <!--
+r
  - Licensed to the Apache Software Foundation (ASF) under one
  - or more contributor license agreements.  See the NOTICE file
  - distributed with this work for additional information
@@ -57,13 +58,12 @@ Here is the architecture diagram of Amoro:
 ## Supported table formats 
 
 Amoro can manage tables of different table formats, similar to how MySQL/ClickHouse can choose different storage engines.
-Amoro meets diverse user needs by using different table formats. Currently, Amoro supports three table formats:
+Amoro meets diverse user needs by using different table formats. Currently, Amoro supports four table formats:
 
-* Iceberg format: means using the native table format of the Apache Iceberg, which has all the features and characteristics of Iceberg.
-* Mixed Iceberg format: built on top of Iceberg format, which can accelerate data processing using LogStore 
-  and provides more efficient query performance and streaming read capability in CDC scenarios.
-* Mixed Hive format: has the same features as the Mixed Iceberg tables but is compatible with a Hive table.
-  Support upgrading Hive tables to Mixed Hive tables, and allow Hive's native read and write methods after upgrading.
+* Iceberg format: Users can directly entrust their Iceberg tables to Amoro for maintenance, so that users can not only use all the functions of Iceberg tables, but also enjoy the performance and stability improvements brought by Amoro.
+* Mixed-Iceberg format: Amoro provides a set of more optimized formats for streaming update scenarios on top of the Iceberg format. If users have high performance requirements for streaming updates or have demands for CDC incremental data reading functions, they can choose to use the Mixed-Iceberg format.
+* Mixed-Hive format: Many users do not want to affect the business originally built on Hive while using data lakes. Therefore, Amoro provides the Mixed-Hive format, which can upgrade Hive tables to Mixed-Hive format only through metadata migration, and the original Hive tables can still be used normally. This ensures business stability and benefits from the advantages of data lake computing.
+* Paimon format: Amoro supports displaying metadata information in the Paimon format, including Schema, Options, Files, Snapshots, DDLs, and Compaction information.
 
 ## Supported engines
 
@@ -76,12 +76,12 @@ For details, please refer to: [Iceberg Docs](https://iceberg.apache.org/docs/lat
 
 Amoro support multiple processing engines for Mixed format as below:
 
-| Processing Engine | Version                   | Batch Read  | Batch Write | Batch Overwrite | Streaming Read | Streaming Write | Create Table | Alter Table |
-|-------------------|---------------------------|-------------|-------------|-----------------|----------------|-----------------|--------------|-------------|
-| Flink             | 1.12.x, 1.14.x and 1.15.x |  &#x2714;   |   &#x2714;   |       &#x2716;   |      &#x2714;   |       &#x2714;   |    &#x2714;   |   &#x2716;   |
-| Spark             | 3.1, 3.2, 3.3             |  &#x2714;   |   &#x2714;   |       &#x2714;   |      &#x2716;   |       &#x2716;   |    &#x2714;   |   &#x2714;   |
-| Hive              | 2.x, 3.x                  |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
-| Trino             | 406                       |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
+| Processing Engine | Version                | Batch Read  | Batch Write | Batch Overwrite | Streaming Read | Streaming Write | Create Table | Alter Table |
+|-------------------|------------------------|-------------|-------------|-----------------|----------------|-----------------|--------------|-------------|
+| Flink             | 1.15.x, 1.16.x, 1.17.x |  &#x2714;   |   &#x2714;   |       &#x2716;   |      &#x2714;   |       &#x2714;   |    &#x2714;   |   &#x2716;   |
+| Spark             | 3.1, 3.2, 3.3          |  &#x2714;   |   &#x2714;   |       &#x2714;   |      &#x2716;   |       &#x2716;   |    &#x2714;   |   &#x2714;   |
+| Hive              | 2.x, 3.x               |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
+| Trino             | 406                    |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
 
 ## Features
 
@@ -135,8 +135,12 @@ Amoro is built using Maven with Java 1.8 and Java 17(only for `trino` module).
 * To package without trino module and JAVA 17 dependency: `mvn clean package -DskipTests -pl '!trino'`
 * To build with hadoop 2.x(the default is 3.x) `mvn clean package -DskipTests -Dhadoop=v2`
 * To indicate flink version for optimizer(the default is 1.14, 1.15 and 1.16 are available)
-`mvn clean package -DskipTests -Doptimizer.flink=1.15`
+  `mvn clean package -DskipTests -Doptimizer.flink=1.15`
 
+>Spotless is skipped by default in `trino` module. So if you want to perform checkstyle when building `trino` module, you must be in a Java 17 environment.
+
+* To invoke a build include `trino` module in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless`
+* To only build `trino` and its dependent modules in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless -pl 'trino' -am`
 ## Quickstart
 
 Visit [https://amoro.netease.com/quick-demo/](https://amoro.netease.com/quick-demo/) to quickly

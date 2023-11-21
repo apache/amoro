@@ -18,8 +18,8 @@
 
 package com.netease.arctic.server.optimizing.flow;
 
-import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
-import com.netease.arctic.hive.io.reader.GenericAdaptHiveIcebergDataReader;
+import com.netease.arctic.hive.io.reader.AdaptHiveGenericKeyedDataReader;
+import com.netease.arctic.hive.io.reader.AdaptHiveGenericUnkeyedDataReader;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.ArcticTable;
@@ -40,7 +40,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class DataReader {
-  private ArcticTable table;
+  private final ArcticTable table;
 
   public DataReader(ArcticTable table) {
     this.table = table;
@@ -54,35 +54,42 @@ public class DataReader {
     }
   }
 
-  private List<Record> readKeyed(KeyedTable table) throws IOException, ExecutionException, InterruptedException {
+  private List<Record> readKeyed(KeyedTable table)
+      throws IOException, ExecutionException, InterruptedException {
     CloseableIterable<CombinedScanTask> combinedScanTasks = table.newScan().planTasks();
-    AdaptHiveGenericArcticDataReader dataReader = new AdaptHiveGenericArcticDataReader(
-        table.io(),
-        table.schema(),
-        table.schema(),
-        table.primaryKeySpec(),
-        null,
-        false,
-        IdentityPartitionConverters::convertConstant,
-        null,
-        false
-    );
+    AdaptHiveGenericKeyedDataReader dataReader =
+        new AdaptHiveGenericKeyedDataReader(
+            table.io(),
+            table.schema(),
+            table.schema(),
+            table.primaryKeySpec(),
+            null,
+            false,
+            IdentityPartitionConverters::convertConstant,
+            null,
+            false);
     List<CompletableFuture<List<Record>>> completableFutures = new ArrayList<>();
     for (CombinedScanTask combinedScanTask : combinedScanTasks) {
       for (KeyedTableScanTask scanTask : combinedScanTask.tasks()) {
-        completableFutures.add(CompletableFuture.supplyAsync(() -> {
-          return table.io().doAs(() -> {
-            CloseableIterator<Record> closeableIterator = dataReader.readData(scanTask);
-            List<Record> list = new ArrayList<>();
-            Iterators.addAll(list, closeableIterator);
-            try {
-              closeableIterator.close();
-            } catch (IOException e) {
-              throw new RuntimeException(e);
-            }
-            return list;
-          });
-        }));
+        completableFutures.add(
+            CompletableFuture.supplyAsync(
+                () -> {
+                  return table
+                      .io()
+                      .doAs(
+                          () -> {
+                            CloseableIterator<Record> closeableIterator =
+                                dataReader.readData(scanTask);
+                            List<Record> list = new ArrayList<>();
+                            Iterators.addAll(list, closeableIterator);
+                            try {
+                              closeableIterator.close();
+                            } catch (IOException e) {
+                              throw new RuntimeException(e);
+                            }
+                            return list;
+                          });
+                }));
       }
     }
 
@@ -93,31 +100,34 @@ public class DataReader {
     return list;
   }
 
-  private List<Record> readIceberg(UnkeyedTable table) throws ExecutionException, InterruptedException {
-    GenericAdaptHiveIcebergDataReader dataReader = new GenericAdaptHiveIcebergDataReader(
-        table.io(),
-        table.schema(),
-        table.schema(),
-        null,
-        false,
-        IdentityPartitionConverters::convertConstant,
-        false
-    );
+  private List<Record> readIceberg(UnkeyedTable table)
+      throws ExecutionException, InterruptedException {
+    AdaptHiveGenericUnkeyedDataReader dataReader =
+        new AdaptHiveGenericUnkeyedDataReader(
+            table.io(),
+            table.schema(),
+            table.schema(),
+            null,
+            false,
+            IdentityPartitionConverters::convertConstant,
+            false);
     CloseableIterable<FileScanTask> fileScanTasks = table.newScan().planFiles();
 
     List<CompletableFuture<List<Record>>> completableFutures = new ArrayList<>();
     for (FileScanTask fileScanTask : fileScanTasks) {
-      completableFutures.add(CompletableFuture.supplyAsync(() -> {
-        CloseableIterable<Record> closeableIterable = dataReader.readData(fileScanTask);
-        List<Record> list = new ArrayList<>();
-        Iterables.addAll(list, closeableIterable);
-        try {
-          closeableIterable.close();
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-        return list;
-      }));
+      completableFutures.add(
+          CompletableFuture.supplyAsync(
+              () -> {
+                CloseableIterable<Record> closeableIterable = dataReader.readData(fileScanTask);
+                List<Record> list = new ArrayList<>();
+                Iterables.addAll(list, closeableIterable);
+                try {
+                  closeableIterable.close();
+                } catch (IOException e) {
+                  throw new RuntimeException(e);
+                }
+                return list;
+              }));
     }
 
     List<Record> list = new ArrayList<>();

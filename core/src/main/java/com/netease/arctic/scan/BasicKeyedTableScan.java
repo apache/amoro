@@ -23,7 +23,7 @@ import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.scan.expressions.BasicPartitionEvaluator;
 import com.netease.arctic.table.BasicKeyedTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.TablePropertyUtil;
+import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -50,9 +50,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- * Basic implementation of {@link KeyedTableScan}, including the merge-on-read plan logical
- */
+/** Basic implementation of {@link KeyedTableScan}, including the merge-on-read plan logical */
 public class BasicKeyedTableScan implements KeyedTableScan {
   private static final Logger LOG = LoggerFactory.getLogger(BasicKeyedTableScan.class);
 
@@ -67,18 +65,25 @@ public class BasicKeyedTableScan implements KeyedTableScan {
 
   public BasicKeyedTableScan(BasicKeyedTable table) {
     this.table = table;
-    this.openFileCost = PropertyUtil.propertyAsLong(table.properties(),
-        TableProperties.SPLIT_OPEN_FILE_COST, TableProperties.SPLIT_OPEN_FILE_COST_DEFAULT);
-    this.splitSize = PropertyUtil.propertyAsLong(table.properties(),
-        TableProperties.SPLIT_SIZE, TableProperties.SPLIT_SIZE_DEFAULT);
-    this.lookBack = PropertyUtil.propertyAsInt(table.properties(),
-        TableProperties.SPLIT_LOOKBACK, TableProperties.SPLIT_LOOKBACK_DEFAULT);
+    this.openFileCost =
+        PropertyUtil.propertyAsLong(
+            table.properties(),
+            TableProperties.SPLIT_OPEN_FILE_COST,
+            TableProperties.SPLIT_OPEN_FILE_COST_DEFAULT);
+    this.splitSize =
+        PropertyUtil.propertyAsLong(
+            table.properties(), TableProperties.SPLIT_SIZE, TableProperties.SPLIT_SIZE_DEFAULT);
+    this.lookBack =
+        PropertyUtil.propertyAsInt(
+            table.properties(),
+            TableProperties.SPLIT_LOOKBACK,
+            TableProperties.SPLIT_LOOKBACK_DEFAULT);
     this.fileScanTasks = StructLikeMap.create(table.spec().partitionType());
   }
 
   /**
-   * Config this scan with filter by the {@link Expression}.
-   * For Change Table, only filters related to partition will take effect.
+   * Config this scan with filter by the {@link Expression}. For Change Table, only filters related
+   * to partition will take effect.
    *
    * @param expr a filter expression
    * @return scan based on this with results filtered by the expression
@@ -117,8 +122,8 @@ public class BasicKeyedTableScan implements KeyedTableScan {
     split();
     LOG.info("planning table {} split end", table.id());
     // 3.combine node task (FileScanTask List -> CombinedScanTask)
-    return combineNode(CloseableIterable.withNoopClose(splitTasks),
-        splitSize, lookBack, openFileCost);
+    return combineNode(
+        CloseableIterable.withNoopClose(splitTasks), splitSize, lookBack, openFileCost);
   }
 
   @Override
@@ -135,74 +140,90 @@ public class BasicKeyedTableScan implements KeyedTableScan {
     CloseableIterable<FileScanTask> fileScanTasks = scan.planFiles();
     return CloseableIterable.transform(
         fileScanTasks,
-        fileScanTask -> new BasicArcticFileScanTask(DefaultKeyedFile.parseBase(fileScanTask.file()),
-            fileScanTask.deletes(), fileScanTask.spec(), expression));
+        fileScanTask ->
+            new BasicArcticFileScanTask(
+                DefaultKeyedFile.parseBase(fileScanTask.file()),
+                fileScanTask.deletes(),
+                fileScanTask.spec(),
+                expression));
   }
 
   private CloseableIterable<ArcticFileScanTask> planChangeFiles() {
-    StructLikeMap<Long> partitionOptimizedSequence = TablePropertyUtil.getPartitionOptimizedSequence(table);
-    StructLikeMap<Long> legacyPartitionMaxTransactionId = TablePropertyUtil.getLegacyPartitionMaxTransactionId(table);
+    StructLikeMap<Long> partitionOptimizedSequence = ArcticTableUtil.readOptimizedSequence(table);
     Expression partitionExpressions = Expressions.alwaysTrue();
     if (expression != null) {
-      //Only push down filters related to partition
+      // Only push down filters related to partition
       partitionExpressions = new BasicPartitionEvaluator(table.spec()).project(expression);
     }
 
-    ChangeTableIncrementalScan changeTableScan = table.changeTable().newScan()
-        .fromSequence(partitionOptimizedSequence)
-        .fromLegacyTransaction(legacyPartitionMaxTransactionId);
+    ChangeTableIncrementalScan changeTableScan =
+        table.changeTable().newScan().fromSequence(partitionOptimizedSequence);
 
-    changeTableScan = (ChangeTableIncrementalScan) changeTableScan.filter(partitionExpressions);
+    changeTableScan = changeTableScan.filter(partitionExpressions);
 
     return CloseableIterable.transform(changeTableScan.planFiles(), s -> (ArcticFileScanTask) s);
   }
 
   private void split() {
-    fileScanTasks.forEach((structLike, fileScanTasks1) -> {
-      for (NodeFileScanTask task : fileScanTasks1) {
-        if (task.dataTasks().size() < 2) {
-          splitTasks.add(task);
-          continue;
-        }
+    fileScanTasks.forEach(
+        (structLike, fileScanTasks1) -> {
+          for (NodeFileScanTask task : fileScanTasks1) {
+            if (task.dataTasks().size() < 2) {
+              splitTasks.add(task);
+              continue;
+            }
 
-        if (splitTaskByDeleteRatio != null) {
-          long deleteWeight = task.arcticEquityDeletes().stream().mapToLong(s -> s.file().fileSizeInBytes())
-              .map(s -> s + openFileCost)
-              .sum();
+            if (splitTaskByDeleteRatio != null) {
+              long deleteWeight =
+                  task.arcticEquityDeletes().stream()
+                      .mapToLong(s -> s.file().fileSizeInBytes())
+                      .map(s -> s + openFileCost)
+                      .sum();
 
-          long dataWeight = task.dataTasks().stream().mapToLong(s -> s.file().fileSizeInBytes())
-              .map(s -> s + openFileCost)
-              .sum();
-          double deleteRatio = deleteWeight * 1.0 / dataWeight;
+              long dataWeight =
+                  task.dataTasks().stream()
+                      .mapToLong(s -> s.file().fileSizeInBytes())
+                      .map(s -> s + openFileCost)
+                      .sum();
+              double deleteRatio = deleteWeight * 1.0 / dataWeight;
 
-          if (deleteRatio < splitTaskByDeleteRatio) {
-            long targetSize = Math.min(new Double(deleteWeight / splitTaskByDeleteRatio).longValue(), splitSize);
-            split(task, targetSize);
-            continue;
+              if (deleteRatio < splitTaskByDeleteRatio) {
+                long targetSize =
+                    Math.min(
+                        new Double(deleteWeight / splitTaskByDeleteRatio).longValue(), splitSize);
+                split(task, targetSize);
+                continue;
+              }
+            }
+
+            if (task.cost() <= splitSize) {
+              splitTasks.add(task);
+              continue;
+            }
+            split(task, splitSize);
           }
-        }
-
-        if (task.cost() <= splitSize) {
-          splitTasks.add(task);
-          continue;
-        }
-        split(task, splitSize);
-      }
-    });
+        });
   }
 
   private void split(NodeFileScanTask task, long targetSize) {
     CloseableIterable<NodeFileScanTask> tasksIterable =
-        splitNode(CloseableIterable.withNoopClose(task.dataTasks()),
-            task.arcticEquityDeletes(), targetSize, lookBack, openFileCost);
+        splitNode(
+            CloseableIterable.withNoopClose(task.dataTasks()),
+            task.arcticEquityDeletes(),
+            targetSize,
+            lookBack,
+            openFileCost);
     splitTasks.addAll(Lists.newArrayList(tasksIterable));
   }
 
   public CloseableIterable<NodeFileScanTask> splitNode(
       CloseableIterable<ArcticFileScanTask> splitFiles,
       List<ArcticFileScanTask> deleteFiles,
-      long splitSize, int lookback, long openFileCost) {
-    Function<ArcticFileScanTask, Long> weightFunc = task -> Math.max(task.file().fileSizeInBytes(), openFileCost);
+      long splitSize,
+      int lookback,
+      long openFileCost) {
+    Function<ArcticFileScanTask, Long> weightFunc =
+        task -> Math.max(task.file().fileSizeInBytes(), openFileCost);
     return CloseableIterable.transform(
         CloseableIterable.combine(
             new BinPacking.PackingIterable<>(splitFiles, splitSize, lookback, weightFunc, true),
@@ -210,14 +231,18 @@ public class BasicKeyedTableScan implements KeyedTableScan {
         datafiles -> packingTask(datafiles, deleteFiles));
   }
 
-  private NodeFileScanTask packingTask(List<ArcticFileScanTask> datafiles, List<ArcticFileScanTask> deleteFiles) {
+  private NodeFileScanTask packingTask(
+      List<ArcticFileScanTask> datafiles, List<ArcticFileScanTask> deleteFiles) {
     // TODO Optimization: Add files in batch
-    return new NodeFileScanTask(Stream.concat(datafiles.stream(), deleteFiles.stream()).collect(Collectors.toList()));
+    return new NodeFileScanTask(
+        Stream.concat(datafiles.stream(), deleteFiles.stream()).collect(Collectors.toList()));
   }
 
   public CloseableIterable<CombinedScanTask> combineNode(
       CloseableIterable<NodeFileScanTask> splitFiles,
-      long splitSize, int lookback, long openFileCost) {
+      long splitSize,
+      int lookback,
+      long openFileCost) {
     Function<NodeFileScanTask, Long> weightFunc = file -> Math.max(file.cost(), openFileCost);
     return CloseableIterable.transform(
         CloseableIterable.combine(
@@ -227,63 +252,75 @@ public class BasicKeyedTableScan implements KeyedTableScan {
   }
 
   /**
-   * Construct tree node task according to partition
-   * 1. Put all files into the node they originally belonged to
-   * 2. Find all data nodes, traverse, and find the delete that intersects them
+   * Construct tree node task according to partition 1. Put all files into the node they originally
+   * belonged to 2. Find all data nodes, traverse, and find the delete that intersects them
    */
   private void partitionPlan(StructLike partition, Collection<ArcticFileScanTask> keyedTableTasks) {
     Map<DataTreeNode, NodeFileScanTask> nodeFileScanTaskMap = new HashMap<>();
     // planfiles() cannot guarantee the uniqueness of the file,
     // so Set<path> here is used to remove duplicate files
     Set<String> pathSets = new HashSet<>();
-    keyedTableTasks.forEach(task -> {
-      if (!pathSets.contains(task.file().path().toString())) {
-        pathSets.add(task.file().path().toString());
-        DataTreeNode treeNode = task.file().node();
-        NodeFileScanTask nodeFileScanTask = nodeFileScanTaskMap.getOrDefault(treeNode, new NodeFileScanTask(treeNode));
-        nodeFileScanTask.addFile(task);
-        nodeFileScanTaskMap.put(treeNode, nodeFileScanTask);
-      }
-    });
+    keyedTableTasks.forEach(
+        task -> {
+          if (!pathSets.contains(task.file().path().toString())) {
+            pathSets.add(task.file().path().toString());
+            DataTreeNode treeNode = task.file().node();
+            NodeFileScanTask nodeFileScanTask =
+                nodeFileScanTaskMap.getOrDefault(treeNode, new NodeFileScanTask(treeNode));
+            nodeFileScanTask.addFile(task);
+            nodeFileScanTaskMap.put(treeNode, nodeFileScanTask);
+          }
+        });
 
-    nodeFileScanTaskMap.forEach((treeNode, nodeFileScanTask) -> {
-      if (!nodeFileScanTask.isDataNode()) {
-        return;
-      }
+    nodeFileScanTaskMap.forEach(
+        (treeNode, nodeFileScanTask) -> {
+          if (!nodeFileScanTask.isDataNode()) {
+            return;
+          }
 
-      nodeFileScanTaskMap.forEach((treeNode1, nodeFileScanTask1) -> {
-        if (!treeNode1.equals(treeNode) && (treeNode1.isSonOf(treeNode) || treeNode.isSonOf(treeNode1))) {
-          List<ArcticFileScanTask> deletes = nodeFileScanTask1.arcticEquityDeletes().stream()
-              .filter(file -> file.file().node().equals(treeNode1))
-              .collect(Collectors.toList());
+          nodeFileScanTaskMap.forEach(
+              (treeNode1, nodeFileScanTask1) -> {
+                if (!treeNode1.equals(treeNode)
+                    && (treeNode1.isSonOf(treeNode) || treeNode.isSonOf(treeNode1))) {
+                  List<ArcticFileScanTask> deletes =
+                      nodeFileScanTask1.arcticEquityDeletes().stream()
+                          .filter(file -> file.file().node().equals(treeNode1))
+                          .collect(Collectors.toList());
 
-          nodeFileScanTask.addTasks(deletes);
-        }
-      });
-    });
+                  nodeFileScanTask.addTasks(deletes);
+                }
+              });
+        });
 
     List<NodeFileScanTask> fileScanTaskList = new ArrayList<>();
-    nodeFileScanTaskMap.forEach((treeNode, nodeFileScanTask) -> {
-      if (!nodeFileScanTask.isDataNode()) {
-        return;
-      }
-      fileScanTaskList.add(nodeFileScanTask);
-    });
+    nodeFileScanTaskMap.forEach(
+        (treeNode, nodeFileScanTask) -> {
+          if (!nodeFileScanTask.isDataNode()) {
+            return;
+          }
+          fileScanTaskList.add(nodeFileScanTask);
+        });
 
     fileScanTasks.put(partition, fileScanTaskList);
   }
 
   public StructLikeMap<Collection<ArcticFileScanTask>> groupFilesByPartition(
-          PartitionSpec partitionSpec,
+      PartitionSpec partitionSpec,
       CloseableIterable<ArcticFileScanTask> changeTasks,
       CloseableIterable<ArcticFileScanTask> baseTasks) {
-    StructLikeMap<Collection<ArcticFileScanTask>> filesGroupedByPartition
-            = StructLikeMap.create(partitionSpec.partitionType());
+    StructLikeMap<Collection<ArcticFileScanTask>> filesGroupedByPartition =
+        StructLikeMap.create(partitionSpec.partitionType());
     try {
-      changeTasks.forEach(task -> filesGroupedByPartition
-              .computeIfAbsent(task.file().partition(), k -> Lists.newArrayList()).add(task));
-      baseTasks.forEach(task -> filesGroupedByPartition
-              .computeIfAbsent(task.file().partition(), k -> Lists.newArrayList()).add(task));
+      changeTasks.forEach(
+          task ->
+              filesGroupedByPartition
+                  .computeIfAbsent(task.file().partition(), k -> Lists.newArrayList())
+                  .add(task));
+      baseTasks.forEach(
+          task ->
+              filesGroupedByPartition
+                  .computeIfAbsent(task.file().partition(), k -> Lists.newArrayList())
+                  .add(task));
       return filesGroupedByPartition;
     } finally {
       try {

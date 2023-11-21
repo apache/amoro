@@ -55,6 +55,7 @@ CREATE TABLE table_identifier (
     catalog_name    VARCHAR(64) NOT NULL,
     db_name         VARCHAR(128) NOT NULL,
     table_name      VARCHAR(128) NOT NULL,
+    format          VARCHAR(32)  NOT NULL,
     CONSTRAINT table_identifier_pk PRIMARY KEY (table_id),
     CONSTRAINT table_name_idx UNIQUE (catalog_name, db_name, table_name)
 );
@@ -64,7 +65,6 @@ CREATE TABLE table_metadata (
     catalog_name     VARCHAR(256) NOT NULL,
     db_name          VARCHAR(256) NOT NULL,
     table_name       VARCHAR(256) NOT NULL,
-    format           VARCHAR(32) NOT NULL,
     primary_key      VARCHAR(256),
     sort_key         VARCHAR(256),
     table_location   VARCHAR(256),

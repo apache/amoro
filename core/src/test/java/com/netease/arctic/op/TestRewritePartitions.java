@@ -18,9 +18,9 @@
 
 package com.netease.arctic.op;
 
-import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.io.TableDataTestBase;
-import com.netease.arctic.utils.TablePropertyUtil;
+import com.netease.arctic.utils.ArcticTableUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
@@ -35,18 +35,18 @@ import java.util.Set;
 
 public class TestRewritePartitions extends TableDataTestBase {
 
-  /**
-   * overwrite partition by data file.
-   */
+  /** overwrite partition by data file. */
   @Test
   public void testDynamicOverwritePartition() {
     long txId = getArcticTable().asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
-    List<Record> newRecords = Lists.newArrayList(
-        DataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
-        DataTestHelpers.createRecord(8, "888", 0, "2022-01-01T12:00:00"),
-        DataTestHelpers.createRecord(9, "999", 0, "2022-01-01T12:00:00")
-    );
-    List<DataFile> newFiles = DataTestHelpers.writeBaseStore(getArcticTable().asKeyedTable(), txId, newRecords, false);
+    List<Record> newRecords =
+        Lists.newArrayList(
+            MixedDataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
+            MixedDataTestHelpers.createRecord(8, "888", 0, "2022-01-01T12:00:00"),
+            MixedDataTestHelpers.createRecord(9, "999", 0, "2022-01-01T12:00:00"));
+    List<DataFile> newFiles =
+        MixedDataTestHelpers.writeBaseStore(
+            getArcticTable().asKeyedTable(), txId, newRecords, false);
     RewritePartitions rewritePartitions = getArcticTable().asKeyedTable().newRewritePartitions();
     newFiles.forEach(rewritePartitions::addDataFile);
     rewritePartitions.updateOptimizedSequenceDynamically(txId);
@@ -54,16 +54,26 @@ public class TestRewritePartitions extends TableDataTestBase {
     // rewrite 1 partition by data file
 
     StructLikeMap<Long> partitionOptimizedSequence =
-        TablePropertyUtil.getPartitionOptimizedSequence(getArcticTable().asKeyedTable());
+        ArcticTableUtil.readOptimizedSequence(getArcticTable().asKeyedTable());
     // expect result: 1 partition with new txId, 2,3 partition use old txId
     Assert.assertEquals(
         txId,
-        partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-01T12:00:00")).longValue());
-    Assert.assertNull(partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")));
-    Assert.assertNull(partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-03T12:00:00")));
-    Assert.assertNull(partitionOptimizedSequence.get(DataTestHelpers.recordPartition("2022-01-04T12:00:00")));
+        partitionOptimizedSequence
+            .get(MixedDataTestHelpers.recordPartition("2022-01-01T12:00:00"))
+            .longValue());
+    Assert.assertNull(
+        partitionOptimizedSequence.get(
+            MixedDataTestHelpers.recordPartition("2022-01-02T12:00:00")));
+    Assert.assertNull(
+        partitionOptimizedSequence.get(
+            MixedDataTestHelpers.recordPartition("2022-01-03T12:00:00")));
+    Assert.assertNull(
+        partitionOptimizedSequence.get(
+            MixedDataTestHelpers.recordPartition("2022-01-04T12:00:00")));
 
-    List<Record> rows = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), Expressions.alwaysTrue());
+    List<Record> rows =
+        MixedDataTestHelpers.readKeyedTable(
+            getArcticTable().asKeyedTable(), Expressions.alwaysTrue());
     // partition1 -> base[7,8,9]
     // partition2 -> base[2]
     // partition3 -> base[3]

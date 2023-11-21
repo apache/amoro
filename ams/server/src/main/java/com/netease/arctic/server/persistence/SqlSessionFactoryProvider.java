@@ -72,7 +72,8 @@ public class SqlSessionFactoryProvider {
     dataSource.setUrl(config.getString(ArcticManagementConf.DB_CONNECTION_URL));
     dataSource.setDriverClassName(config.getString(ArcticManagementConf.DB_DRIVER_CLASS_NAME));
     dbType = config.getString(ArcticManagementConf.DB_TYPE);
-    if (ArcticManagementConf.DB_TYPE_MYSQL.equals(dbType) || ArcticManagementConf.DB_TYPE_POSTGRES.equals(dbType)) {
+    if (ArcticManagementConf.DB_TYPE_MYSQL.equals(dbType)
+        || ArcticManagementConf.DB_TYPE_POSTGRES.equals(dbType)) {
       dataSource.setUsername(config.getString(ArcticManagementConf.DB_USER_NAME));
       dataSource.setPassword(config.getString(ArcticManagementConf.DB_PASSWORD));
     }
@@ -124,25 +125,28 @@ public class SqlSessionFactoryProvider {
     String query = "";
 
     try (SqlSession sqlSession = get().openSession(true);
-         Connection connection = sqlSession.getConnection();
-         Statement statement = connection.createStatement();) {
+        Connection connection = sqlSession.getConnection();
+        Statement statement = connection.createStatement()) {
       if (ArcticManagementConf.DB_TYPE_DERBY.equals(dbTypeConfig)) {
         query = "SELECT 1 FROM SYS.SYSTABLES WHERE TABLENAME = 'CATALOG_METADATA'";
       } else if (ArcticManagementConf.DB_TYPE_MYSQL.equals(dbTypeConfig)) {
-        query = String.format(
-            "SELECT 1 FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'",
-            connection.getCatalog(), "CATALOG_METADATA");
+        query =
+            String.format(
+                "SELECT 1 FROM information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'",
+                connection.getCatalog(), "catalog_metadata");
       } else if (ArcticManagementConf.DB_TYPE_POSTGRES.equals(dbTypeConfig)) {
-        query = String.format(
-            "SELECT 1 FROM information_schema.tables WHERE table_schema = %s AND table_name = '%s'",
-            "current_schema()", "catalog_metadata");
+        query =
+            String.format(
+                "SELECT 1 FROM information_schema.tables WHERE table_schema = %s AND table_name = '%s'",
+                "current_schema()", "catalog_metadata");
       }
       try (ResultSet rs = statement.executeQuery(query)) {
         if (!rs.next()) {
           ScriptRunner runner = new ScriptRunner(connection);
-          runner.runScript(new InputStreamReader(Files.newInputStream(
-              Paths.get(getInitSqlScriptPath(dbTypeConfig))),
-              StandardCharsets.UTF_8));
+          runner.runScript(
+              new InputStreamReader(
+                  Files.newInputStream(Paths.get(getInitSqlScriptPath(dbTypeConfig))),
+                  StandardCharsets.UTF_8));
         }
       }
     } catch (Exception e) {
@@ -168,15 +172,13 @@ public class SqlSessionFactoryProvider {
 
   public SqlSessionFactory get() {
     Preconditions.checkState(
-        sqlSessionFactory != null,
-        "Persistent configuration is not initialized yet.");
+        sqlSessionFactory != null, "Persistent configuration is not initialized yet.");
     return sqlSessionFactory;
   }
 
   public static String getDbType() {
     Preconditions.checkState(
-        StringUtils.isNotBlank(dbType),
-        "Persistent configuration is not initialized yet.");
+        StringUtils.isNotBlank(dbType), "Persistent configuration is not initialized yet.");
     return dbType;
   }
 }

@@ -80,15 +80,12 @@ public class RecordGenerator {
   }
 
   public List<Record> records(int size) {
-    return IntStream.range(0, size).boxed()
-        .map(x -> this.newRecord())
-        .collect(Collectors.toList());
+    return IntStream.range(0, size).boxed().map(x -> this.newRecord()).collect(Collectors.toList());
   }
 
   public static Builder buildFor(Schema schema) {
     return new Builder(schema);
   }
-
 
   public static class Builder {
     final Schema schema;
@@ -111,7 +108,6 @@ public class RecordGenerator {
       }
       return this;
     }
-
 
     public Builder withRoundRobinValues(String column, Object... values) {
       this.valueGeneratorMap.put(column, new RoundRobinEnumValueGenerator(values));
@@ -164,7 +160,7 @@ public class RecordGenerator {
             return EPOCH.plus((long) value, ChronoUnit.MICROS).toLocalDateTime();
           }
         case DATE:
-          return EPOCH.plus((int) value, ChronoUnit.SECONDS).toLocalDate();
+          return EPOCH.plusSeconds((int) value).toLocalDate();
       }
       return value;
     }
@@ -201,7 +197,6 @@ public class RecordGenerator {
       return super.get(Types.DateType.get()).toString();
     }
   }
-
 
   abstract static class EnumValueGenerator implements ValueGenerator {
     Object[] enums;

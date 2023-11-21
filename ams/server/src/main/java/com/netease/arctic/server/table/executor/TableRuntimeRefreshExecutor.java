@@ -18,15 +18,15 @@
 
 package com.netease.arctic.server.table.executor;
 
-import com.netease.arctic.server.optimizing.OptimizingStatus;
+import com.netease.arctic.AmoroTable;
+import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.plan.OptimizingEvaluator;
+import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 
-/**
- * Service for expiring tables periodically.
- */
+/** Service for expiring tables periodically. */
 public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
 
   // 1 minutes
@@ -46,22 +46,28 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     return Math.min(tableRuntime.getOptimizingConfig().getMinorLeastInterval() * 4L / 5, interval);
   }
 
-  @Override
-  public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
-    if (originalStatus != null && originalStatus.equals(OptimizingStatus.COMMITTING) &&
-        tableRuntime.getOptimizingStatus().equals(OptimizingStatus.IDLE)) {
-      tryEvaluatingPendingInput(tableRuntime, loadTable(tableRuntime));
-    }
-  }
-
   private void tryEvaluatingPendingInput(TableRuntime tableRuntime, ArcticTable table) {
     if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
       OptimizingEvaluator evaluator = new OptimizingEvaluator(tableRuntime, table);
       if (evaluator.isNecessary()) {
         OptimizingEvaluator.PendingInput pendingInput = evaluator.getPendingInput();
-        logger.debug("{} optimizing is necessary and get pending input {}", tableRuntime.getTableIdentifier(),
+        logger.debug(
+            "{} optimizing is necessary and get pending input {}",
+            tableRuntime.getTableIdentifier(),
             pendingInput);
         tableRuntime.setPendingInput(pendingInput);
+      }
+    }
+  }
+
+  @Override
+  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
+    // After disabling self-optimizing, close the currently running optimizing process.
+    if (originalConfig.getOptimizingConfig().isEnabled()
+        && !tableRuntime.getTableConfiguration().getOptimizingConfig().isEnabled()) {
+      OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
+      if (optimizingProcess.getStatus() == OptimizingProcess.Status.RUNNING) {
+        optimizingProcess.close();
       }
     }
   }
@@ -71,11 +77,11 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     try {
       long lastOptimizedSnapshotId = tableRuntime.getLastOptimizedSnapshotId();
       long lastOptimizedChangeSnapshotId = tableRuntime.getLastOptimizedChangeSnapshotId();
-      ArcticTable table = loadTable(tableRuntime);
+      AmoroTable<?> table = loadTable(tableRuntime);
       tableRuntime.refresh(table);
-      if (lastOptimizedSnapshotId != tableRuntime.getCurrentSnapshotId() ||
-          lastOptimizedChangeSnapshotId != tableRuntime.getCurrentChangeSnapshotId()) {
-        tryEvaluatingPendingInput(tableRuntime, table);
+      if (lastOptimizedSnapshotId != tableRuntime.getCurrentSnapshotId()
+          || lastOptimizedChangeSnapshotId != tableRuntime.getCurrentChangeSnapshotId()) {
+        tryEvaluatingPendingInput(tableRuntime, (ArcticTable) table.originalTable());
       }
     } catch (Throwable throwable) {
       logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);
