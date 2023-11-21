@@ -34,13 +34,13 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
-public class TestIcebergManifestReader extends TableTestBase {
+public class TestIcebergFindFiles extends TableTestBase {
   @Parameterized.Parameters(name = "formatVersion = {0}")
   public static Object[] parameters() {
     return new Object[] {1, 2};
   }
 
-  public TestIcebergManifestReader(int formatVersion) {
+  public TestIcebergFindFiles(int formatVersion) {
     super(formatVersion);
   }
 
@@ -49,7 +49,7 @@ public class TestIcebergManifestReader extends TableTestBase {
     table.newAppend().appendFile(FILE_A).appendFile(FILE_B).commit();
 
     Iterable<ContentFile<?>> files =
-        transform(new IcebergManifestReader(table).entries());
+        transform(new IcebergFindFiles(table).entries());
 
     Assert.assertEquals(pathSet(FILE_A, FILE_B), pathSet(files));
   }
@@ -65,7 +65,7 @@ public class TestIcebergManifestReader extends TableTestBase {
         .commit();
 
     Iterable<ContentFile<?>> files =
-        transform(new IcebergManifestReader(table)
+        transform(new IcebergFindFiles(table)
             .filterFiles(Expressions.startsWith("file_path", "/path/to/data-a"))
             .entries());
     Assert.assertEquals(pathSet(FILE_A), pathSet(files));
@@ -96,7 +96,7 @@ public class TestIcebergManifestReader extends TableTestBase {
         .commit();
 
     final Iterable<ContentFile<?>> files =
-        transform(new IcebergManifestReader(table).filterData(
+        transform(new IcebergFindFiles(table).filterData(
             Expressions.equal("id", 1)
         ).entries());
 
@@ -114,7 +114,7 @@ public class TestIcebergManifestReader extends TableTestBase {
         .commit();
 
     Iterable<ContentFile<?>> files =
-        transform(new IcebergManifestReader(table)
+        transform(new IcebergFindFiles(table)
             .inPartitions(
                 table.spec(),
                 Lists.newArrayList(
@@ -136,7 +136,7 @@ public class TestIcebergManifestReader extends TableTestBase {
     table.updateSpec().removeField(Expressions.bucket("data", 16)).commit();
 
     Iterable<ContentFile<?>> files =
-        transform(new IcebergManifestReader(table)
+        transform(new IcebergFindFiles(table)
             .inPartitions(
                 table.specs().get(0),
                 Lists.newArrayList(
@@ -170,7 +170,7 @@ public class TestIcebergManifestReader extends TableTestBase {
     table.newAppend().appendFile(FILE_ADD_PARTITION_FIELD).commit();
 
     Iterable<ContentFile<?>> files =
-        transform(new IcebergManifestReader(table)
+        transform(new IcebergFindFiles(table)
             .inPartitions(
                 table.specs().get(0),
                 StaticDataTask.Row.of(1), StaticDataTask.Row.of(2))
@@ -179,7 +179,7 @@ public class TestIcebergManifestReader extends TableTestBase {
     Assert.assertEquals(pathSet(FILE_B, FILE_C), pathSet(files));
 
     Iterable<ContentFile<?>> files2 =
-        transform(new IcebergManifestReader(table)
+        transform(new IcebergFindFiles(table)
             .inPartitions(
                 table.specs().get(1),
                 StaticDataTask.Row.of(0, 1))
@@ -217,7 +217,7 @@ public class TestIcebergManifestReader extends TableTestBase {
     table.newAppend().appendFile(FILE_REPLACE_PARTITION_FIELD).commit();
 
     Iterable<ContentFile<?>> files =
-        transform(new IcebergManifestReader(table)
+        transform(new IcebergFindFiles(table)
             .inPartitions(
                 table.specs().get(0),
                 StaticDataTask.Row.of(1),
@@ -227,7 +227,7 @@ public class TestIcebergManifestReader extends TableTestBase {
     Assert.assertEquals(pathSet(FILE_B, FILE_C), pathSet(files));
 
     Iterable<ContentFile<?>> files2 =
-        transform(new IcebergManifestReader(table)
+        transform(new IcebergFindFiles(table)
             .inPartitions(
                 table.specs().get(1),
                 StaticDataTask.Row.of(1))
@@ -249,7 +249,7 @@ public class TestIcebergManifestReader extends TableTestBase {
     table.newAppend().appendFile(FILE_D).commit();
 
     Iterable<ContentFile<?>> files =
-        transform(new IcebergManifestReader(table).asOfTime(timestamp).entries());
+        transform(new IcebergFindFiles(table).asOfTime(timestamp).entries());
 
     Assert.assertEquals(pathSet(FILE_A, FILE_B), pathSet(files));
   }
@@ -265,7 +265,7 @@ public class TestIcebergManifestReader extends TableTestBase {
     table.newAppend().appendFile(FILE_D).commit();
 
     Iterable<ContentFile<?>> files =
-        transform(new IcebergManifestReader(table).inSnapshot(snapshotId).entries());
+        transform(new IcebergFindFiles(table).inSnapshot(snapshotId).entries());
 
     Assert.assertEquals(pathSet(FILE_A, FILE_B, FILE_C), pathSet(files));
   }
@@ -281,7 +281,7 @@ public class TestIcebergManifestReader extends TableTestBase {
         .commit();
 
     Iterable<ContentFile<?>> files =
-        transform(new IcebergManifestReader(table)
+        transform(new IcebergFindFiles(table)
             .caseSensitive(false)
             .filterFiles(Expressions.startsWith("FILE_PATH", "/path/to/data-a"))
             .entries());
@@ -294,7 +294,7 @@ public class TestIcebergManifestReader extends TableTestBase {
     table.newAppend().appendFile(FILE_WITH_STATS).commit();
 
     Iterable<ContentFile<?>> files =
-        transform(new IcebergManifestReader(table).includeColumnStats().entries());
+        transform(new IcebergFindFiles(table).includeColumnStats().entries());
     final ContentFile<?> file = files.iterator().next();
 
     Assert.assertEquals(FILE_WITH_STATS.columnSizes(), file.columnSizes());
@@ -314,15 +314,15 @@ public class TestIcebergManifestReader extends TableTestBase {
         .commit();
 
     Iterable<ContentFile<?>> allFiles =
-        transform(new IcebergManifestReader(table).entries());
+        transform(new IcebergFindFiles(table).entries());
     Assert.assertEquals(pathSet(FILE_A, FILE_A_DELETES), pathSet(allFiles));
 
     Iterable<ContentFile<?>> dataFiles =
-        transform(new IcebergManifestReader(table).fileContent(ManifestContent.DATA).entries());
+        transform(new IcebergFindFiles(table).fileContent(ManifestContent.DATA).entries());
     Assert.assertEquals(pathSet(FILE_A), pathSet(dataFiles));
 
     Iterable<ContentFile<?>> deleteFiles =
-        transform(new IcebergManifestReader(table).fileContent(ManifestContent.DELETES).entries());
+        transform(new IcebergFindFiles(table).fileContent(ManifestContent.DELETES).entries());
     Assert.assertEquals(pathSet(FILE_A_DELETES), pathSet(deleteFiles));
   }
 
@@ -331,8 +331,8 @@ public class TestIcebergManifestReader extends TableTestBase {
     // a table has no snapshot when it just gets created and no data is loaded yet
 
     // if not handled properly, NPE will be thrown in collect()
-    Iterable<IcebergManifestReader.IcebergManifestEntry> files =
-        new IcebergManifestReader(table).entries();
+    Iterable<IcebergFindFiles.IcebergManifestEntry> files =
+        new IcebergFindFiles(table).entries();
 
     // verify an empty collection of data file is returned
     Assert.assertEquals(0, Sets.newHashSet(files).size());
@@ -347,7 +347,7 @@ public class TestIcebergManifestReader extends TableTestBase {
     return Sets.newHashSet(Iterables.transform(files, file -> file.path().toString()));
   }
 
-  private Iterable<ContentFile<?>> transform(Iterable<IcebergManifestReader.IcebergManifestEntry> entries) {
-    return Iterables.transform(entries, IcebergManifestReader.IcebergManifestEntry::getFile);
+  private Iterable<ContentFile<?>> transform(Iterable<IcebergFindFiles.IcebergManifestEntry> entries) {
+    return Iterables.transform(entries, IcebergFindFiles.IcebergManifestEntry::getFile);
   }
 }

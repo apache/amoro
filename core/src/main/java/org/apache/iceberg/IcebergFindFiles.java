@@ -44,7 +44,7 @@ import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.DateTimeUtil;
 import org.apache.iceberg.util.ParallelIterable;
 
-public class IcebergManifestReader {
+public class IcebergFindFiles {
   private static final Types.StructType EMPTY_STRUCT = Types.StructType.of();
 
   private final Table table;
@@ -70,7 +70,7 @@ public class IcebergManifestReader {
 
   private ManifestContent manifestContent;
 
-  public IcebergManifestReader(Table table) {
+  public IcebergFindFiles(Table table) {
     this.table = table;
     this.io = table.io();
     this.ops = ((HasTableOperations) table).operations();
@@ -93,7 +93,7 @@ public class IcebergManifestReader {
    * @param findSnapshotId a snapshot ID
    * @return this for method chaining
    */
-  public IcebergManifestReader inSnapshot(long findSnapshotId) {
+  public IcebergFindFiles inSnapshot(long findSnapshotId) {
     Preconditions.checkArgument(
         this.snapshotId == null,
         "Cannot set snapshot multiple times, already set to id=%s",
@@ -110,7 +110,7 @@ public class IcebergManifestReader {
    * @param timestampMillis a timestamp in milliseconds
    * @return this for method chaining
    */
-  public IcebergManifestReader asOfTime(long timestampMillis) {
+  public IcebergFindFiles asOfTime(long timestampMillis) {
     Preconditions.checkArgument(
         this.snapshotId == null,
         "Cannot set snapshot multiple times, already set to id=%s",
@@ -135,31 +135,31 @@ public class IcebergManifestReader {
     return inSnapshot(lastSnapshotId);
   }
 
-  public IcebergManifestReader filterData(Expression newDataFilter) {
+  public IcebergFindFiles filterData(Expression newDataFilter) {
     this.dataFilter = Expressions.and(dataFilter, newDataFilter);
     return this;
   }
 
-  public IcebergManifestReader filterFiles(Expression newFileFilter) {
+  public IcebergFindFiles filterFiles(Expression newFileFilter) {
     this.fileFilter = Expressions.and(fileFilter, newFileFilter);
     return this;
   }
 
-  public IcebergManifestReader includeColumnStats() {
+  public IcebergFindFiles includeColumnStats() {
     this.includeColumnStats = true;
     return this;
   }
 
-  public IcebergManifestReader fileContent(ManifestContent manifestContent) {
+  public IcebergFindFiles fileContent(ManifestContent manifestContent) {
     this.manifestContent = manifestContent;
     return this;
   }
 
-  public IcebergManifestReader inPartitions(PartitionSpec spec, StructLike... partitions) {
+  public IcebergFindFiles inPartitions(PartitionSpec spec, StructLike... partitions) {
     return inPartitions(spec, Arrays.asList(partitions));
   }
 
-  public IcebergManifestReader inPartitions(PartitionSpec spec, List<StructLike> partitions) {
+  public IcebergFindFiles inPartitions(PartitionSpec spec, List<StructLike> partitions) {
     Expression partitionSetFilter = Expressions.alwaysFalse();
     for (StructLike partitionData : partitions) {
       Expression partFilter = Expressions.alwaysTrue();
@@ -176,43 +176,43 @@ public class IcebergManifestReader {
     return this;
   }
 
-  public IcebergManifestReader filterManifests(Predicate<ManifestFile> newManifestPredicate) {
+  public IcebergFindFiles filterManifests(Predicate<ManifestFile> newManifestPredicate) {
     this.manifestPredicate = manifestPredicate.and(newManifestPredicate);
     return this;
   }
 
-  public IcebergManifestReader filterManifestEntries(
+  public IcebergFindFiles filterManifestEntries(
       Predicate<ManifestEntry<?>> newManifestEntryPredicate) {
     this.manifestEntryPredicate = manifestEntryPredicate.and(newManifestEntryPredicate);
     return this;
   }
 
-  public IcebergManifestReader scanMetrics(ScanMetrics metrics) {
+  public IcebergFindFiles scanMetrics(ScanMetrics metrics) {
     this.scanMetrics = metrics;
     return this;
   }
 
-  public IcebergManifestReader ignoreDeleted() {
+  public IcebergFindFiles ignoreDeleted() {
     this.ignoreDeleted = true;
     return this;
   }
 
-  public IcebergManifestReader ignoreExisting() {
+  public IcebergFindFiles ignoreExisting() {
     this.ignoreExisting = true;
     return this;
   }
 
-  public IcebergManifestReader select(List<String> newColumns) {
+  public IcebergFindFiles select(List<String> newColumns) {
     this.columns = Lists.newArrayList(newColumns);
     return this;
   }
 
-  public IcebergManifestReader caseSensitive(boolean newCaseSensitive) {
+  public IcebergFindFiles caseSensitive(boolean newCaseSensitive) {
     this.caseSensitive = newCaseSensitive;
     return this;
   }
 
-  public IcebergManifestReader planWith(ExecutorService newExecutorService) {
+  public IcebergFindFiles planWith(ExecutorService newExecutorService) {
     this.executorService = newExecutorService;
     return this;
   }

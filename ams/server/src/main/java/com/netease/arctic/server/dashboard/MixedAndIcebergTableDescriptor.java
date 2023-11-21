@@ -51,9 +51,10 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticDataFiles;
+import java.io.IOException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
-import org.apache.iceberg.IcebergManifestReader;
+import org.apache.iceberg.IcebergFindFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotRef;
@@ -481,9 +482,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     Map<Integer, PartitionSpec> specs = table.specs();
 
-    IcebergManifestReader manifestReader =
-        new IcebergManifestReader(table.io(), table.currentSnapshot().allManifests(table.io()))
-            .specsById(table.specs())
+    IcebergFindFiles manifestReader =
+        new IcebergFindFiles(table)
             .ignoreDeleted()
             .planWith(executorService);
 
@@ -492,38 +492,48 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
       manifestReader.inPartitions(specs.get(specId), partitionData);
     }
 
-    CloseableIterable<IcebergManifestReader.IcebergManifestEntry> entries =
+    CloseableIterable<IcebergFindFiles.IcebergManifestEntry> entries =
         manifestReader.entries();
 
-    for (IcebergManifestReader.IcebergManifestEntry entry : entries) {
-      ContentFile<?> contentFile = entry.getFile();
-      Long snapshotId = entry.getSnapshotId();
+    try {
+      for (IcebergFindFiles.IcebergManifestEntry entry : entries) {
+        ContentFile<?> contentFile = entry.getFile();
+        Long snapshotId = entry.getSnapshotId();
 
-      PartitionSpec partitionSpec = specs.get(contentFile.specId());
-      String partitionPath = partitionSpec.partitionToPath(contentFile.partition());
-      // if (partition != null && partitionSpec.isPartitioned() && !partition.equals(partitionPath)) {
-      //   continue;
-      // }
-      long fileSize = contentFile.fileSizeInBytes();
-      DataFileType dataFileType =
-          isChangeTable
-              ? FileNameRules.parseFileTypeForChange(contentFile.path().toString())
-              : DataFileType.ofContentId(contentFile.content().id());
-      long commitTime = -1;
-      if (table.snapshot(snapshotId) != null) {
-        commitTime = table.snapshot(snapshotId).timestampMillis();
+        PartitionSpec partitionSpec = specs.get(contentFile.specId());
+        String partitionPath = partitionSpec.partitionToPath(contentFile.partition());
+        // if (partition != null && partitionSpec.isPartitioned() && !partition.equals(partitionPath)) {
+        //   continue;
+        // }
+        long fileSize = contentFile.fileSizeInBytes();
+        DataFileType dataFileType =
+            isChangeTable
+                ? FileNameRules.parseFileTypeForChange(contentFile.path().toString())
+                : DataFileType.ofContentId(contentFile.content().id());
+        long commitTime = -1;
+        if (table.snapshot(snapshotId) != null) {
+          commitTime = table.snapshot(snapshotId).timestampMillis();
+        }
+        result.add(
+            new PartitionFileBaseInfo(
+                String.valueOf(snapshotId),
+                dataFileType,
+                commitTime,
+                partitionPath,
+                contentFile.specId(),
+                contentFile.path().toString(),
+                fileSize));
       }
-      result.add(
-          new PartitionFileBaseInfo(
-              String.valueOf(snapshotId),
-              dataFileType,
-              commitTime,
-              partitionPath,
-              contentFile.specId(),
-              contentFile.path().toString(),
-              fileSize));
+      return result;
+    }finally {
+      try {
+        entries.close();
+      } catch (IOException e) {
+        LOG.warn(e.getMessage(), e);
+      }
     }
-    return result;
+
+
   }
 
   private TableBasicInfo getTableBasicInfo(ArcticTable table) {
