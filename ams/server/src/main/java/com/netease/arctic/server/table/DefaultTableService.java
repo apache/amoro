@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.NoSuchTableException;
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.Blocker;
@@ -26,6 +27,7 @@ import com.netease.arctic.server.persistence.mapper.CatalogMetaMapper;
 import com.netease.arctic.server.persistence.mapper.TableMetaMapper;
 import com.netease.arctic.server.table.blocker.TableBlocker;
 import com.netease.arctic.server.utils.Configurations;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
@@ -45,6 +47,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public class DefaultTableService extends StatedPersistentBase implements TableService {
@@ -163,15 +166,9 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   @Override
   public TableMetadata loadTableMetadata(TableIdentifier tableIdentifier) {
     validateTableExists(tableIdentifier);
-    return Optional.ofNullable(
-            getAs(
-                TableMetaMapper.class,
-                mapper ->
-                    mapper.selectTableMetaByName(
-                        tableIdentifier.getCatalog(),
-                        tableIdentifier.getDatabase(),
-                        tableIdentifier.getTableName())))
-        .orElseThrow(() -> new ObjectNotExistsException(tableIdentifier));
+    InternalCatalog internalCatalog = getInternalCatalog(tableIdentifier.getCatalog());
+    return internalCatalog.loadTableMetadata(
+        tableIdentifier.getDatabase(), tableIdentifier.getTableName());
   }
 
   @Override
@@ -197,14 +194,9 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     validateTableNotExists(tableMetadata.getTableIdentifier().getIdentifier());
 
     InternalCatalog catalog = getInternalCatalog(catalogName);
-    ServerTableIdentifier tableIdentifier = catalog.createTable(tableMetadata);
-    AmoroTable<?> table =
-        catalog.loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
-    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
-    tableRuntimeMap.put(tableIdentifier, tableRuntime);
-    if (headHandler != null) {
-      headHandler.fireTableAdded(table, tableRuntime);
-    }
+    TableMetadata metadata = catalog.createTable(tableMetadata);
+
+    triggerTableAdded(catalog, metadata.getTableIdentifier());
   }
 
   @Override
@@ -277,7 +269,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
       List<BlockableOperation> operations,
       Map<String, String> properties) {
     checkStarted();
-    return getAndCheckExist(getServerTableIdentifier(tableIdentifier))
+    return getAndCheckExist(getOrSyncServerTableIdentifier(tableIdentifier))
         .block(operations, properties, blockerTimeout)
         .buildBlocker();
   }
@@ -301,7 +293,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   @Override
   public List<Blocker> getBlockers(TableIdentifier tableIdentifier) {
     checkStarted();
-    return getAndCheckExist(getServerTableIdentifier(tableIdentifier)).getBlockers().stream()
+    return getAndCheckExist(getOrSyncServerTableIdentifier(tableIdentifier)).getBlockers().stream()
         .map(TableBlocker::buildBlocker)
         .collect(Collectors.toList());
   }
@@ -375,7 +367,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     initialized.complete(true);
   }
 
-  public TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
+  private TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
     Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier cannot be null");
     TableRuntime tableRuntime = getRuntime(tableIdentifier);
     if (tableRuntime == null) {
@@ -389,6 +381,26 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
         TableMetaMapper.class,
         mapper ->
             mapper.selectTableIdentifier(id.getCatalog(), id.getDatabase(), id.getTableName()));
+  }
+
+  private ServerTableIdentifier getOrSyncServerTableIdentifier(TableIdentifier id) {
+    ServerTableIdentifier serverTableIdentifier = getServerTableIdentifier(id);
+    if (serverTableIdentifier != null) {
+      return serverTableIdentifier;
+    }
+    ServerCatalog serverCatalog = getServerCatalog(id.getCatalog());
+    if (serverCatalog instanceof InternalCatalog) {
+      return null;
+    }
+    try {
+      AmoroTable<?> table = serverCatalog.loadTable(id.database, id.getTableName());
+      TableIdentity identity =
+          new TableIdentity(id.getDatabase(), id.getTableName(), table.format());
+      syncTable((ExternalCatalog) serverCatalog, identity);
+      return getServerTableIdentifier(id);
+    } catch (NoSuchTableException e) {
+      return null;
+    }
   }
 
   @Override
@@ -576,6 +588,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   private void syncTable(ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
+    AtomicBoolean tableRuntimeAdded = new AtomicBoolean(false);
     try {
       doAsTransaction(
           () ->
@@ -583,25 +596,36 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
                   tableIdentity.getDatabase(),
                   tableIdentity.getTableName(),
                   tableIdentity.getFormat()),
-          () -> handleTableRuntimeAdded(externalCatalog, tableIdentity));
+          () -> {
+            ServerTableIdentifier tableIdentifier =
+                externalCatalog.getServerTableIdentifier(
+                    tableIdentity.getDatabase(), tableIdentity.getTableName());
+            tableRuntimeAdded.set(triggerTableAdded(externalCatalog, tableIdentifier));
+          });
     } catch (Throwable t) {
-      revertTableRuntimeAdded(externalCatalog, tableIdentity);
+      if (tableRuntimeAdded.get()) {
+        revertTableRuntimeAdded(externalCatalog, tableIdentity);
+      }
       throw t;
     }
   }
 
-  private void handleTableRuntimeAdded(
-      ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
-    ServerTableIdentifier tableIdentifier =
-        externalCatalog.getServerTableIdentifier(
-            tableIdentity.getDatabase(), tableIdentity.getTableName());
+  private boolean triggerTableAdded(
+      ServerCatalog catalog, ServerTableIdentifier serverTableIdentifier) {
     AmoroTable<?> table =
-        externalCatalog.loadTable(tableIdentity.getDatabase(), tableIdentity.getTableName());
-    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
-    tableRuntimeMap.put(tableIdentifier, tableRuntime);
+        catalog.loadTable(
+            serverTableIdentifier.getDatabase(), serverTableIdentifier.getTableName());
+    if (TableFormat.ICEBERG == table.format()) {
+      if (TablePropertyUtil.isMixedTableStore(table.properties())) {
+        return false;
+      }
+    }
+    TableRuntime tableRuntime = new TableRuntime(serverTableIdentifier, this, table.properties());
+    tableRuntimeMap.put(serverTableIdentifier, tableRuntime);
     if (headHandler != null) {
       headHandler.fireTableAdded(table, tableRuntime);
     }
+    return true;
   }
 
   private void revertTableRuntimeAdded(
@@ -649,6 +673,12 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
       this.database = serverTableIdentifier.getDatabase();
       this.tableName = serverTableIdentifier.getTableName();
       this.format = serverTableIdentifier.getFormat();
+    }
+
+    protected TableIdentity(String database, String tableName, TableFormat format) {
+      this.database = database;
+      this.tableName = tableName;
+      this.format = format;
     }
 
     public String getDatabase() {

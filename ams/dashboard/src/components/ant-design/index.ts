@@ -41,7 +41,8 @@ import {
   Radio,
   Collapse,
   Row,
-  Col
+  Col,
+  Dropdown
 } from 'ant-design-vue'
 
 const compontens = [
@@ -68,7 +69,8 @@ const compontens = [
   Radio,
   Collapse,
   Row,
-  Col
+  Col,
+  Dropdown
 ]
 export default function (app: App): void {
   compontens.forEach(app.use)

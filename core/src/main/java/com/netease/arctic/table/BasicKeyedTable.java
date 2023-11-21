@@ -40,6 +40,7 @@ import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 
@@ -119,22 +120,22 @@ public class BasicKeyedTable implements KeyedTable {
     long changeWatermark = TablePropertyUtil.getTableWatermark(changeTable.properties());
     long baseWatermark = TablePropertyUtil.getTableWatermark(baseTable.properties());
 
-    ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+    Map<String, String> properties = Maps.newHashMap();
     if (changeWatermark > baseWatermark) {
       baseTable
           .properties()
           .forEach(
               (k, v) -> {
                 if (!TableProperties.WATERMARK_TABLE.equals(k)) {
-                  builder.put(k, v);
+                  properties.put(k, v);
                 }
               });
-      builder.put(TableProperties.WATERMARK_TABLE, String.valueOf(changeWatermark));
+      properties.put(TableProperties.WATERMARK_TABLE, String.valueOf(changeWatermark));
     } else {
-      builder.putAll(baseTable.properties());
+      properties.putAll(baseTable.properties());
     }
-    builder.put(TableProperties.WATERMARK_BASE_STORE, String.valueOf(baseWatermark));
-    return builder.build();
+    properties.put(TableProperties.WATERMARK_BASE_STORE, String.valueOf(baseWatermark));
+    return ImmutableMap.copyOf(properties);
   }
 
   @Override
