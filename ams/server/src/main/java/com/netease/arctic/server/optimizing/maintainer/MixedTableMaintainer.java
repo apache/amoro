@@ -20,11 +20,8 @@ package com.netease.arctic.server.optimizing.maintainer;
 
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.table.TableRuntime;
-import com.netease.arctic.server.utils.HiveLocationUtil;
-import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -32,6 +29,12 @@ import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.iceberg.DataFile;
@@ -44,15 +47,6 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 /** Table maintainer for mixed-iceberg and mixed-hive tables. */
 public class MixedTableMaintainer implements TableMaintainer {
 
@@ -62,32 +56,15 @@ public class MixedTableMaintainer implements TableMaintainer {
 
   private ChangeTableMaintainer changeMaintainer;
 
-  private final BaseTableMaintainer baseMaintainer;
-
-  private final Set<String> changeFiles;
-
-  private final Set<String> baseFiles;
-
-  private final Set<String> hiveFiles;
+  private final IcebergTableMaintainer baseMaintainer;
 
   public MixedTableMaintainer(ArcticTable arcticTable) {
     this.arcticTable = arcticTable;
     if (arcticTable.isKeyedTable()) {
       changeMaintainer = new ChangeTableMaintainer(arcticTable.asKeyedTable().changeTable());
-      baseMaintainer = new BaseTableMaintainer(arcticTable.asKeyedTable().baseTable());
-      changeFiles =
-          IcebergTableUtil.getAllContentFilePath(arcticTable.asKeyedTable().changeTable());
-      baseFiles = IcebergTableUtil.getAllContentFilePath(arcticTable.asKeyedTable().baseTable());
+      baseMaintainer = new IcebergTableMaintainer(arcticTable.asKeyedTable().baseTable());
     } else {
-      baseMaintainer = new BaseTableMaintainer(arcticTable.asUnkeyedTable());
-      changeFiles = new HashSet<>();
-      baseFiles = IcebergTableUtil.getAllContentFilePath(arcticTable.asUnkeyedTable());
-    }
-
-    if (TableTypeUtil.isHive(arcticTable)) {
-      hiveFiles = HiveLocationUtil.getHiveLocation(arcticTable);
-    } else {
-      hiveFiles = new HashSet<>();
+      baseMaintainer = new IcebergTableMaintainer(arcticTable.asUnkeyedTable());
     }
   }
 
@@ -139,18 +116,10 @@ public class MixedTableMaintainer implements TableMaintainer {
     return changeMaintainer;
   }
 
-  public BaseTableMaintainer getBaseMaintainer() {
+  public IcebergTableMaintainer getBaseMaintainer() {
     return baseMaintainer;
   }
 
-  @SafeVarargs
-  private final Set<String> mergeSets(Set<String>... sets) {
-    Set<String> result = new HashSet<>();
-    for (Set<String> set : sets) {
-      result.addAll(set);
-    }
-    return result;
-  }
 
   public class ChangeTableMaintainer extends IcebergTableMaintainer {
 
@@ -161,11 +130,6 @@ public class MixedTableMaintainer implements TableMaintainer {
     public ChangeTableMaintainer(UnkeyedTable unkeyedTable) {
       super(unkeyedTable);
       this.unkeyedTable = unkeyedTable;
-    }
-
-    @Override
-    public Set<String> orphanFileCleanNeedToExcludeFiles() {
-      return mergeSets(changeFiles, baseFiles, hiveFiles);
     }
 
     @Override
@@ -184,11 +148,6 @@ public class MixedTableMaintainer implements TableMaintainer {
     protected long olderThanSnapshotNeedToExpire(long mustOlderThan) {
       long latestChangeFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(unkeyedTable);
       return Longs.min(latestChangeFlinkCommitTime, mustOlderThan);
-    }
-
-    @Override
-    protected Set<String> expireSnapshotNeedToExcludeFiles() {
-      return mergeSets(baseFiles, hiveFiles);
     }
 
     public void expireFiles(long ttlPoint) {
@@ -313,23 +272,6 @@ public class MixedTableMaintainer implements TableMaintainer {
       } catch (Throwable t) {
         LOG.error(unkeyedTable.name() + " failed to delete change files, ignore", t);
       }
-    }
-  }
-
-  public class BaseTableMaintainer extends IcebergTableMaintainer {
-
-    public BaseTableMaintainer(UnkeyedTable unkeyedTable) {
-      super(unkeyedTable);
-    }
-
-    @Override
-    public Set<String> orphanFileCleanNeedToExcludeFiles() {
-      return mergeSets(changeFiles, baseFiles, hiveFiles);
-    }
-
-    @Override
-    protected Set<String> expireSnapshotNeedToExcludeFiles() {
-      return mergeSets(changeFiles, hiveFiles);
     }
   }
 }

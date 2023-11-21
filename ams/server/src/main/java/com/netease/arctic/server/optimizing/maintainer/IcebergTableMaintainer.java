@@ -32,13 +32,18 @@ import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.GenericManifestFile;
+import org.apache.iceberg.GenericPartitionFieldSummary;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.exceptions.ValidationException;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileInfo;
+import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
@@ -46,14 +51,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -372,10 +378,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
       validFiles.add(TableFileUtil.getUriPath(manifestListLocation));
 
       // valid data files
-      List<ManifestFile> manifestFiles = snapshot.allManifests(internalTable.io());
-      for (ManifestFile manifestFile : manifestFiles) {
-        validFiles.add(TableFileUtil.getUriPath(manifestFile.path()));
-      }
+      scanManifestFiles(
+          internalTable.io().newInputFile(manifestListLocation),
+          f -> validFiles.add(TableFileUtil.getUriPath(f.path())));
 
       LOG.info(
           "{} scan snapshot {}: {} and getRuntime {} files, complete {}/{}",
@@ -436,5 +441,22 @@ public class IcebergTableMaintainer implements TableMaintainer {
   private static String formatTime(long timestamp) {
     return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault())
         .toString();
+  }
+
+  private static void scanManifestFiles(
+      InputFile manifestList, Consumer<ManifestFile> fileConsumer) {
+    try (CloseableIterable<ManifestFile> files =
+        Avro.read(manifestList)
+            .rename("manifest_file", GenericManifestFile.class.getName())
+            .rename("partitions", GenericPartitionFieldSummary.class.getName())
+            .rename("r508", GenericPartitionFieldSummary.class.getName())
+            .classLoader(GenericManifestFile.class.getClassLoader())
+            .project(ManifestFile.schema())
+            .reuseContainers(false)
+            .build()) {
+      files.forEach(fileConsumer);
+    } catch (IOException e) {
+      throw new RuntimeException("Cannot read manifest list file: " + manifestList.location(), e);
+    }
   }
 }
