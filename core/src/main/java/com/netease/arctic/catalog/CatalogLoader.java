@@ -35,10 +35,11 @@ import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.mixed.BasicMixedIcebergCatalog;
+import com.netease.arctic.mixed.InternalMixedIcebergCatalog;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
-import org.apache.iceberg.aws.glue.GlueCatalog;
 import org.apache.iceberg.common.DynConstructors;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
@@ -51,10 +52,9 @@ import java.util.stream.Collectors;
 /** Catalogs, create catalog from arctic metastore thrift url. */
 public class CatalogLoader {
 
-  public static final String AMS_CATALOG_IMPL = BasicArcticCatalog.class.getName();
+  public static final String INTERNAL_CATALOG_IMPL = InternalMixedIcebergCatalog.class.getName();
   public static final String HIVE_CATALOG_IMPL =
       "com.netease.arctic.hive.catalog.ArcticHiveCatalog";
-  public static final String GLUE_CATALOG_IMPL = GlueCatalog.class.getName();
   public static final String MIXED_ICEBERG_CATALOG_IMP = BasicMixedIcebergCatalog.class.getName();
 
   /**
@@ -120,7 +120,7 @@ public class CatalogLoader {
         break;
       case CATALOG_TYPE_AMS:
         if (TableFormat.MIXED_ICEBERG == tableFormat) {
-          catalogImpl = AMS_CATALOG_IMPL;
+          catalogImpl = INTERNAL_CATALOG_IMPL;
         } else {
           throw new IllegalArgumentException("Internal Catalog mixed-iceberg table only");
         }
@@ -207,9 +207,23 @@ public class CatalogLoader {
       String metastoreType,
       Map<String, String> properties,
       TableMetaStore metaStore) {
+    String catalogImpl = catalogImpl(metastoreType, properties);
     properties =
         CatalogUtil.withIcebergCatalogInitializeProperties(catalogName, metastoreType, properties);
-    String catalogImpl = catalogImpl(metastoreType, properties);
+    ArcticCatalog catalog = buildCatalog(catalogImpl);
+    catalog.initialize(catalogName, properties, metaStore);
+    return catalog;
+  }
+
+  @VisibleForTesting
+  public static ArcticCatalog createCatalog(
+      String catalogName,
+      String catalogImpl,
+      String metastoreType,
+      Map<String, String> properties,
+      TableMetaStore metaStore) {
+    properties =
+        CatalogUtil.withIcebergCatalogInitializeProperties(catalogName, metastoreType, properties);
     ArcticCatalog catalog = buildCatalog(catalogImpl);
     catalog.initialize(catalogName, properties, metaStore);
     return catalog;

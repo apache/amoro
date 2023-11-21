@@ -1,6 +1,7 @@
 package com.netease.arctic.server.persistence.converter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
@@ -22,6 +23,7 @@ public class JsonObjectConverter<T> extends BaseTypeHandler<T> {
       throw new IllegalArgumentException("Type argument cannot be null");
     }
     this.clazz = clazz;
+    mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
   }
 
   @Override

@@ -60,7 +60,7 @@ public class SparkScanBuilder
   private Schema schema = null;
   private StructType requestedProjection;
   private final boolean caseSensitive;
-  private List<Expression> filterExpressions = null;
+  private List<Expression> filterExpressions = Lists.newArrayList();
   private Filter[] pushedFilters = NO_FILTERS;
 
   public SparkScanBuilder(SparkSession spark, ArcticTable table, CaseInsensitiveStringMap options) {
@@ -111,7 +111,7 @@ public class SparkScanBuilder
   }
 
   private Expression filterExpression() {
-    if (filterExpressions != null) {
+    if (!filterExpressions.isEmpty()) {
       return filterExpressions.stream().reduce(Expressions.alwaysTrue(), Expressions::and);
     }
     return Expressions.alwaysTrue();

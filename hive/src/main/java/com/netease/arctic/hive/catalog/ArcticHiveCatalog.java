@@ -35,6 +35,7 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
+import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.iceberg.IcebergSchemaUtil;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
@@ -117,6 +118,8 @@ public class ArcticHiveCatalog extends BasicArcticCatalog {
                 false /* cascade */);
             return null;
           });
+    } catch (NoSuchObjectException e) {
+      // pass
     } catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to drop database:" + databaseName, e);
     }

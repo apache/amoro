@@ -18,7 +18,6 @@
 
 package com.netease.arctic.flink.table;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
@@ -53,7 +52,6 @@ import org.apache.flink.util.CloseableIterator;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -95,44 +93,35 @@ public class TestKeyed extends FlinkTestBase {
   private String topic;
   private final Map<String, String> tableProperties = new HashMap<>();
   public boolean isHive;
-  public boolean kafkaLegacyEnable;
 
   public TestKeyed(
-      CatalogTestHelper catalogTestHelper,
-      TableTestHelper tableTestHelper,
-      boolean isHive,
-      boolean kafkaLegacyEnable) {
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive) {
     super(catalogTestHelper, tableTestHelper);
     this.isHive = isHive;
-    this.kafkaLegacyEnable = kafkaLegacyEnable;
   }
 
-  @Parameterized.Parameters(name = "{0}, {1}, {2}, {3}")
+  @Parameterized.Parameters(name = "{0}, {1}, {2}")
   public static Collection parameters() {
     return Arrays.asList(
         new Object[][] {
           {
             new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
             new HiveTableTestHelper(true, true),
-            true,
             true
           },
           {
             new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
             new HiveTableTestHelper(true, true),
-            true,
-            false
-          },
-          {
-            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, true),
-            false,
             true
           },
           {
             new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
             new BasicTableTestHelper(true, true),
-            false,
+            false
+          },
+          {
+            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(true, true),
             false
           }
         });
@@ -166,7 +155,7 @@ public class TestKeyed extends FlinkTestBase {
   }
 
   private void prepareLog() {
-    topic = TestUtil.getUtMethodName(testName) + isHive + kafkaLegacyEnable;
+    topic = TestUtil.getUtMethodName(testName) + isHive;
     tableProperties.clear();
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
@@ -174,15 +163,11 @@ public class TestKeyed extends FlinkTestBase {
     tableProperties.put(LOG_STORE_TYPE, LOG_STORE_STORAGE_TYPE_KAFKA);
     tableProperties.put(
         LOG_STORE_ADDRESS, KafkaContainerTest.KAFKA_CONTAINER.getBootstrapServers());
-
-    if (kafkaLegacyEnable) {
-      tableProperties.put(ARCTIC_LOG_KAFKA_COMPATIBLE_ENABLE.key(), "true");
-    }
   }
 
   @Test
   public void testSinkSourceFile() throws IOException {
-    Assume.assumeFalse(kafkaLegacyEnable);
+
     List<Object[]> data = new LinkedList<>();
     data.add(
         new Object[] {
@@ -522,7 +507,7 @@ public class TestKeyed extends FlinkTestBase {
 
   @Test
   public void testPartitionSinkFile() throws IOException {
-    Assume.assumeFalse(kafkaLegacyEnable);
+
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     data.add(new Object[] {1000015, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -579,7 +564,7 @@ public class TestKeyed extends FlinkTestBase {
 
   @Test
   public void testSinkSourceFileWithoutSelectPK() throws Exception {
-    Assume.assumeFalse(kafkaLegacyEnable);
+
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     data.add(new Object[] {1000015, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -651,7 +636,7 @@ public class TestKeyed extends FlinkTestBase {
 
   @Test
   public void testFileUpsert() {
-    Assume.assumeFalse(kafkaLegacyEnable);
+
     List<Object[]> data = new LinkedList<>();
     data.add(
         new Object[] {RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -750,7 +735,7 @@ public class TestKeyed extends FlinkTestBase {
 
   @Test
   public void testFileCDC() {
-    Assume.assumeFalse(kafkaLegacyEnable);
+
     List<Object[]> data = new LinkedList<>();
     data.add(
         new Object[] {RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -874,7 +859,7 @@ public class TestKeyed extends FlinkTestBase {
 
   @Test
   public void testFileUpsertWithSamePrimaryKey() throws Exception {
-    Assume.assumeFalse(kafkaLegacyEnable);
+
     List<Object[]> data = new LinkedList<>();
     data.add(
         new Object[] {RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
