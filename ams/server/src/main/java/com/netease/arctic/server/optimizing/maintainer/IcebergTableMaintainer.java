@@ -47,6 +47,7 @@ import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -206,7 +207,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   protected Set<String> orphanFileCleanNeedToExcludeFiles() {
-    return IcebergTableUtil.getAllContentFilePath(table);
+    return Sets.union(
+        IcebergTableUtil.getAllContentFilePath(table),
+        IcebergTableUtil.getAllStatisticsFilePath(table));
   }
 
   protected ArcticFileIO arcticFileIO() {

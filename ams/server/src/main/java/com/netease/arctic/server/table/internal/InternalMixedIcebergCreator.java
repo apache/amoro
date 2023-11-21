@@ -98,6 +98,8 @@ public class InternalMixedIcebergCreator extends InternalIcebergCreator {
     metadata
         .getProperties()
         .put(CHANGE_STORE_PREFIX + PROPERTIES_METADATA_LOCATION, changeMetadataFileLocation);
+    metadata.setChangeLocation(changeTableLocation);
+    metadata.setPrimaryKey(keySpec.description());
 
     OutputFile changeStoreFile = io.newOutputFile(changeMetadataFileLocation);
     this.changMetadataFileLocation = changeMetadataFileLocation;
