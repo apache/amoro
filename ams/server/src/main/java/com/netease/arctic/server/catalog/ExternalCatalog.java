@@ -31,9 +31,9 @@ public class ExternalCatalog extends ServerCatalog {
     this.unifiedCatalog =
         this.tableMetaStore.doAs(
             () -> new CommonUnifiedCatalog(this::getMetadata, Maps.newHashMap()));
-    if (metadata.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_TABLE_FILTER)) {
-      String tableFilter =
-          metadata.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
+    String tableFilter =
+        metadata.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
+    if (tableFilter != null) {
       tableFilterPattern = Pattern.compile(tableFilter);
     } else {
       tableFilterPattern = null;
