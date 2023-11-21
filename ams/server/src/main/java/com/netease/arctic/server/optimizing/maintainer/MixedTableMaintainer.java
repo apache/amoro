@@ -29,12 +29,6 @@ import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.iceberg.DataFile;
@@ -46,6 +40,13 @@ import org.apache.iceberg.relocated.com.google.common.primitives.Longs;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /** Table maintainer for mixed-iceberg and mixed-hive tables. */
 public class MixedTableMaintainer implements TableMaintainer {
@@ -119,7 +120,6 @@ public class MixedTableMaintainer implements TableMaintainer {
   public IcebergTableMaintainer getBaseMaintainer() {
     return baseMaintainer;
   }
-
 
   public class ChangeTableMaintainer extends IcebergTableMaintainer {
 
