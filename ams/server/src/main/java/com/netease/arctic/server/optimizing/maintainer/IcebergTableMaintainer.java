@@ -372,27 +372,13 @@ public class IcebergTableMaintainer implements TableMaintainer {
     Iterable<Snapshot> snapshots = internalTable.snapshots();
     int size = Iterables.size(snapshots);
     LOG.info("{} getRuntime {} snapshots to scan", tableName, size);
-    int cnt = 0;
     for (Snapshot snapshot : snapshots) {
-      cnt++;
-      int before = validFiles.size();
       String manifestListLocation = snapshot.manifestListLocation();
-
       validFiles.add(TableFileUtil.getUriPath(manifestListLocation));
-
       // valid data files
       scanManifestFiles(
           internalTable.io().newInputFile(manifestListLocation),
           f -> validFiles.add(TableFileUtil.getUriPath(f.path())));
-
-      LOG.info(
-          "{} scan snapshot {}: {} and getRuntime {} files, complete {}/{}",
-          tableName,
-          snapshot.snapshotId(),
-          formatTime(snapshot.timestampMillis()),
-          validFiles.size() - before,
-          cnt,
-          size);
     }
     Stream.of(
             ReachableFileUtil.metadataFileLocations(internalTable, false).stream(),
@@ -441,10 +427,6 @@ public class IcebergTableMaintainer implements TableMaintainer {
     return count;
   }
 
-  private static String formatTime(long timestamp) {
-    return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault())
-        .toString();
-  }
 
   private static void scanManifestFiles(
       InputFile manifestList, Consumer<ManifestFile> fileConsumer) {
