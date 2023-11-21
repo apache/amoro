@@ -63,9 +63,7 @@ public class TaskRuntime extends StatedPersistentBase {
   private TaskRuntime() {}
 
   public TaskRuntime(
-      OptimizingTaskId taskId,
-      TaskDescriptor taskDescriptor,
-      Map<String, String> properties) {
+      OptimizingTaskId taskId, TaskDescriptor taskDescriptor, Map<String, String> properties) {
     this.taskId = taskId;
     this.partition = taskDescriptor.getPartition();
     this.input = taskDescriptor.getInput();
@@ -87,8 +85,13 @@ public class TaskRuntime extends StatedPersistentBase {
             statusMachine.accept(Status.SUCCESS);
             RewriteFilesOutput filesOutput =
                 TaskFilesPersistence.loadTaskOutput(result.getTaskOutput());
-            summary.setNewFileCnt(OptimizingUtil.getFileCount(filesOutput));
-            summary.setNewFileSize(OptimizingUtil.getFileSize(filesOutput));
+            summary.setNewDataFileCnt(OptimizingUtil.getFileCount(filesOutput.getDataFiles()));
+            summary.setNewDataSize(OptimizingUtil.getFileSize(filesOutput.getDataFiles()));
+            summary.setNewDataRecordCnt(OptimizingUtil.getRecordCnt(filesOutput.getDataFiles()));
+            summary.setNewDeleteFileCnt(OptimizingUtil.getFileCount(filesOutput.getDeleteFiles()));
+            summary.setNewDeleteSize(OptimizingUtil.getFileSize(filesOutput.getDeleteFiles()));
+            summary.setNewDeleteRecordCnt(
+                OptimizingUtil.getRecordCnt(filesOutput.getDeleteFiles()));
             endTime = System.currentTimeMillis();
             costTime += endTime - startTime;
             output = filesOutput;
@@ -320,8 +323,7 @@ public class TaskRuntime extends StatedPersistentBase {
         Status.ACKED,
         Sets.newHashSet(
             Status.PLANNED, Status.ACKED, Status.SUCCESS, Status.FAILED, Status.CANCELED));
-    nextStatusMap.put(
-        Status.FAILED, Sets.newHashSet(Status.PLANNED, Status.FAILED));
+    nextStatusMap.put(Status.FAILED, Sets.newHashSet(Status.PLANNED, Status.FAILED));
     nextStatusMap.put(Status.SUCCESS, Sets.newHashSet(Status.SUCCESS));
     nextStatusMap.put(Status.CANCELED, Sets.newHashSet(Status.CANCELED));
   }

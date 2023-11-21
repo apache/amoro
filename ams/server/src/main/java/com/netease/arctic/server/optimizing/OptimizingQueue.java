@@ -112,7 +112,6 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     if (tableRuntime.isOptimizingEnabled()) {
-      // TODO: load task quotas
       tableRuntime.resetTaskQuotas(
           System.currentTimeMillis() - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME);
       if (tableRuntime.getOptimizingStatus() == OptimizingStatus.IDLE
@@ -433,7 +432,8 @@ public class OptimizingQueue extends PersistentBase {
           }
         } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
           if (taskRuntime.getRetry() < tableRuntime.getMaxExecuteRetryCount()) {
-            System.out.println("/n/n #### getMaxExecuteRetryCount {}" + tableRuntime.getMaxExecuteRetryCount());
+            System.out.println(
+                "/n/n #### getMaxExecuteRetryCount {}" + tableRuntime.getMaxExecuteRetryCount());
             System.out.println("/n/n #### retry task times {}" + (taskRuntime.getRunTimes() - 1));
             retryTask(taskRuntime);
             System.out.println("/n/n #### task status {}" + taskRuntime.getStatus());

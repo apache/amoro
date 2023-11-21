@@ -1,6 +1,5 @@
 package com.netease.arctic.server.persistence;
 
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.lang.annotation.Retention;
@@ -63,17 +62,6 @@ public abstract class StatedPersistentBase extends PersistentBase {
     }
   }
 
-  protected final <T> T invokeInStateLock(Supplier<T> supplier) {
-    stateLock.lock();
-    try {
-      return supplier.get();
-    } catch (Throwable throwable) {
-      throw throwable;
-    } finally {
-      stateLock.unlock();
-    }
-  }
-
   Map<Field, Object> retainStates() {
     return Arrays.stream(consistentFields)
         .collect(Collectors.toMap(field -> field, this::getValue));
@@ -84,26 +72,24 @@ public abstract class StatedPersistentBase extends PersistentBase {
   }
 
   private Field[] getOrCreateConsistentFields() {
-    return metaCache
-            .computeIfAbsent(
-                getClass(),
-                clz -> {
-                  List<Field> fields = new ArrayList<>();
-                  while (clz != PersistentBase.class) {
-                    Arrays.stream(clz.getDeclaredFields())
-                        .filter(field -> field.isAnnotationPresent(StateField.class))
-                        .forEach(fields::add);
-                    clz = clz.getSuperclass().asSubclass(PersistentBase.class);
-                  }
-                  return fields.toArray(new Field[0]);
-                });
+    return metaCache.computeIfAbsent(
+        getClass(),
+        clz -> {
+          List<Field> fields = new ArrayList<>();
+          while (clz != PersistentBase.class) {
+            Arrays.stream(clz.getDeclaredFields())
+                .filter(field -> field.isAnnotationPresent(StateField.class))
+                .forEach(fields::add);
+            clz = clz.getSuperclass().asSubclass(PersistentBase.class);
+          }
+          return fields.toArray(new Field[0]);
+        });
   }
 
   private Object getValue(Field field) {
     try {
       field.setAccessible(true);
-      return Optional.ofNullable(field.get(StatedPersistentBase.this))
-          .orElse(NULL_VALUE);
+      return Optional.ofNullable(field.get(StatedPersistentBase.this)).orElse(NULL_VALUE);
     } catch (IllegalAccessException e) {
       throw new IllegalStateException(e);
     }

@@ -465,13 +465,14 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
 
     public boolean tryKeeping() {
-      return Objects.equals(optimizerInstance, authOptimizers.get(optimizerInstance.getToken())) &&
-          lastTouchTime != optimizerInstance.getTouchTime();
+      return Objects.equals(optimizerInstance, authOptimizers.get(optimizerInstance.getToken()))
+          && lastTouchTime != optimizerInstance.getTouchTime();
     }
 
     @Override
     public long getDelay(@NotNull TimeUnit unit) {
-      return unit.convert(lastTouchTime + optimizerTouchTimeout - System.currentTimeMillis(),
+      return unit.convert(
+          lastTouchTime + optimizerTouchTimeout - System.currentTimeMillis(),
           TimeUnit.MILLISECONDS);
     }
 

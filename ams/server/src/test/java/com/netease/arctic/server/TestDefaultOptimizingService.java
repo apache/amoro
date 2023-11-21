@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.server;
 
 import com.netease.arctic.BasicTableTestHelper;
@@ -37,7 +55,6 @@ import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.locks.LockSupport;
 
 @RunWith(Parameterized.class)
 public class TestDefaultOptimizingService extends AMSTableTestBase {
@@ -234,7 +251,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   @Test
-  public void testReloadScheduledTask() throws InterruptedException {
+  public void testReloadScheduledTask() {
     // 1.poll task
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task);
@@ -250,7 +267,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   @Test
-  public void testReloadAckTask() throws InterruptedException {
+  public void testReloadAckTask() {
     // 1.poll task
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task);
@@ -266,7 +283,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   @Test
-  public void testReloadCompletedTask() throws InterruptedException {
+  public void testReloadCompletedTask() {
     // THREAD_ID.poll task
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task);
@@ -279,7 +296,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   @Test
-  public void testReloadFailedTask() throws InterruptedException {
+  public void testReloadFailedTask() {
     // 1.poll task
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task);
