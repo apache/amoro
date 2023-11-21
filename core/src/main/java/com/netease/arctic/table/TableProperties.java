@@ -31,16 +31,18 @@ public class TableProperties {
 
   private TableProperties() {}
 
+  @HiddenProperties
   public static final String TABLE_PARTITION_PROPERTIES = "table.partition-properties";
 
+  @HiddenProperties
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
 
-  public static final String PARTITION_OPTIMIZED_SEQUENCE = "max-txId";
-  public static final String PARTITION_BASE_OPTIMIZED_TIME = "base-op-time";
+  @HiddenProperties public static final String PARTITION_OPTIMIZED_SEQUENCE = "max-txId";
+  @HiddenProperties public static final String PARTITION_BASE_OPTIMIZED_TIME = "base-op-time";
 
-  public static final String LOCATION = "location";
+  @HiddenProperties public static final String LOCATION = "location";
 
-  public static final String TABLE_CREATE_TIME = "table.create-timestamp";
+  @HiddenProperties public static final String TABLE_CREATE_TIME = "table.create-timestamp";
   public static final long TABLE_CREATE_TIME_DEFAULT = 0L;
 
   /** table watermark related properties */
@@ -60,9 +62,9 @@ public class TableProperties {
       "table.event-time-field.datetime-number-format";
   public static final String TABLE_EVENT_TIME_NUMBER_FORMAT_DEFAULT = EVENT_TIME_TIMESTAMP_MS;
 
-  public static final String WATERMARK_TABLE = "watermark.table";
+  @HiddenProperties public static final String WATERMARK_TABLE = "watermark.table";
 
-  public static final String WATERMARK_BASE_STORE = "watermark.base";
+  @HiddenProperties public static final String WATERMARK_BASE_STORE = "watermark.base";
 
   /** table optimize related properties */
   public static final String ENABLE_SELF_OPTIMIZING = "self-optimizing.enabled";
@@ -191,9 +193,9 @@ public class TableProperties {
           "|.*[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}-m[0-9]+\\.avro"; // UUID-m0.avro
 
   /** table write related properties */
-  public static final String FILE_FORMAT_PARQUET = "parquet";
+  @HiddenProperties public static final String FILE_FORMAT_PARQUET = "parquet";
 
-  public static final String FILE_FORMAT_ORC = "orc";
+  @HiddenProperties public static final String FILE_FORMAT_ORC = "orc";
   public static final String BASE_FILE_FORMAT = "base.write.format";
   public static final String BASE_FILE_FORMAT_DEFAULT = FILE_FORMAT_PARQUET;
 
@@ -220,19 +222,29 @@ public class TableProperties {
 
   public static final String WRITE_DISTRIBUTION_MODE =
       org.apache.iceberg.TableProperties.WRITE_DISTRIBUTION_MODE;
+
+  @HiddenProperties
   public static final String WRITE_DISTRIBUTION_MODE_NONE =
       org.apache.iceberg.TableProperties.WRITE_DISTRIBUTION_MODE_NONE;
+
+  @HiddenProperties
   public static final String WRITE_DISTRIBUTION_MODE_HASH =
       org.apache.iceberg.TableProperties.WRITE_DISTRIBUTION_MODE_HASH;
+
+  @HiddenProperties
   public static final String WRITE_DISTRIBUTION_MODE_RANGE =
       org.apache.iceberg.TableProperties.WRITE_DISTRIBUTION_MODE_RANGE;
+
   public static final String WRITE_DISTRIBUTION_MODE_DEFAULT = WRITE_DISTRIBUTION_MODE_HASH;
 
   public static final String WRITE_DISTRIBUTION_HASH_MODE = "write.distribution.hash-mode";
-  public static final String WRITE_DISTRIBUTION_HASH_PARTITION = "partition-key";
-  public static final String WRITE_DISTRIBUTION_HASH_PRIMARY = "primary-key";
+  @HiddenProperties public static final String WRITE_DISTRIBUTION_HASH_PARTITION = "partition-key";
+  @HiddenProperties public static final String WRITE_DISTRIBUTION_HASH_PRIMARY = "primary-key";
+
+  @HiddenProperties
   public static final String WRITE_DISTRIBUTION_HASH_PRIMARY_PARTITION = "primary-partition-key";
-  public static final String WRITE_DISTRIBUTION_HASH_AUTO = "auto";
+
+  @HiddenProperties public static final String WRITE_DISTRIBUTION_HASH_AUTO = "auto";
   public static final String WRITE_DISTRIBUTION_HASH_MODE_DEFAULT = WRITE_DISTRIBUTION_HASH_AUTO;
 
   public static final String BASE_REFRESH_INTERVAL = "base.refresh-interval";
@@ -254,8 +266,8 @@ public class TableProperties {
   @Deprecated public static final String ENABLE_LOG_STORE_LEGACY = "log-store.enable";
 
   public static final String LOG_STORE_TYPE = "log-store.type";
-  public static final String LOG_STORE_STORAGE_TYPE_KAFKA = "kafka";
-  public static final String LOG_STORE_STORAGE_TYPE_PULSAR = "pulsar";
+  @HiddenProperties public static final String LOG_STORE_STORAGE_TYPE_KAFKA = "kafka";
+  @HiddenProperties public static final String LOG_STORE_STORAGE_TYPE_PULSAR = "pulsar";
   public static final String LOG_STORE_STORAGE_TYPE_DEFAULT = LOG_STORE_STORAGE_TYPE_KAFKA;
 
   public static final String LOG_STORE_ADDRESS = "log-store.address";
@@ -268,25 +280,31 @@ public class TableProperties {
   public static final String LOG_STORE_DATA_VERSION = "log-store.data-version";
   public static final String LOG_STORE_DATA_VERSION_DEFAULT = "v1";
 
-  public static final String LOG_STORE_PROPERTIES_PREFIX = "properties.";
+  @HiddenProperties public static final String LOG_STORE_PROPERTIES_PREFIX = "properties.";
 
   public static final String OWNER = "owner";
 
   /** table format related properties */
-  public static final String TABLE_FORMAT = "table-format";
+  @HiddenProperties public static final String TABLE_FORMAT = "table-format";
 
+  @HiddenProperties
   public static final String MIXED_FORMAT_PRIMARY_KEY_FIELDS = "mixed-format.primary-key-fields";
+
+  @HiddenProperties
   public static final String MIXED_FORMAT_TABLE_STORE = "mixed-format.table-store";
-  public static final String MIXED_FORMAT_TABLE_STORE_BASE = "base";
-  public static final String MIXED_FORMAT_TABLE_STORE_CHANGE = "change";
+
+  @HiddenProperties public static final String MIXED_FORMAT_TABLE_STORE_BASE = "base";
+  @HiddenProperties public static final String MIXED_FORMAT_TABLE_STORE_CHANGE = "change";
+
+  @HiddenProperties
   public static final String MIXED_FORMAT_CHANGE_STORE_IDENTIFIER =
       "mixed-format.change.identifier";
 
   /** Protected properties which should not be read by user. */
-  public static final Set<String> READ_PROTECTED_PROPERTIES = new HashSet<>();
+  @HiddenProperties public static final Set<String> READ_PROTECTED_PROPERTIES = new HashSet<>();
 
   /** Protected properties which should not be written by user. */
-  public static final Set<String> WRITE_PROTECTED_PROPERTIES = new HashSet<>();
+  @HiddenProperties public static final Set<String> WRITE_PROTECTED_PROPERTIES = new HashSet<>();
 
   static {
     READ_PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);

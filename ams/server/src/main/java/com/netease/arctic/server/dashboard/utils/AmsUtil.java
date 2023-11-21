@@ -28,6 +28,7 @@ import static com.netease.arctic.server.ArcticManagementConf.TABLE_SERVICE_THRIF
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.server.utils.Configurations;
+import com.netease.arctic.table.HiddenProperties;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -99,6 +100,7 @@ public class AmsUtil {
             // filter out the non-static fields
             .filter(f -> Modifier.isStatic(f.getModifiers()))
             .filter(f -> f.getAnnotation(Deprecated.class) == null)
+            .filter(f -> f.getAnnotation(HiddenProperties.class) == null)
             // collect to list
             .collect(Collectors.toList());
 
