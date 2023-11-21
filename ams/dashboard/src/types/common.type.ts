@@ -114,6 +114,7 @@ export interface PartitionItem {
   fileCount: number
   size: string
   lastCommitTime: number | string
+  specId: number
 }
 
 export interface BreadcrumbPartitionItem {

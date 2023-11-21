@@ -45,19 +45,22 @@ import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
 import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.OptimizingMapper;
-import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticDataFiles;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.IcebergManifestReader;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.Pair;
@@ -68,7 +71,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -354,14 +356,14 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
       return new ArrayList<>();
     }
     Map<String, PartitionBaseInfo> partitionBaseInfoHashMap = new HashMap<>();
-    getTableFiles(amoroTable, null)
+    getTableFiles(amoroTable, null, null)
         .forEach(
             fileInfo -> {
               if (!partitionBaseInfoHashMap.containsKey(fileInfo.getPartition())) {
-                partitionBaseInfoHashMap.put(fileInfo.getPartition(), new PartitionBaseInfo());
-                partitionBaseInfoHashMap
-                    .get(fileInfo.getPartition())
-                    .setPartition(fileInfo.getPartition());
+                PartitionBaseInfo partitionBaseInfo = new PartitionBaseInfo();
+                partitionBaseInfo.setPartition(fileInfo.getPartition());
+                partitionBaseInfo.setSpecId(fileInfo.getSpecId());
+                partitionBaseInfoHashMap.put(fileInfo.getPartition(), partitionBaseInfo);
               }
               PartitionBaseInfo partitionInfo =
                   partitionBaseInfoHashMap.get(fileInfo.getPartition());
@@ -377,14 +379,27 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   @Override
-  public List<PartitionFileBaseInfo> getTableFiles(AmoroTable<?> amoroTable, String partition) {
+  public List<PartitionFileBaseInfo> getTableFiles(AmoroTable<?> amoroTable, String partition,
+      Integer specId) {
     ArcticTable arcticTable = getTable(amoroTable);
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     if (arcticTable.isKeyedTable()) {
-      result.addAll(collectFileInfo(arcticTable.asKeyedTable().changeTable(), true, partition));
-      result.addAll(collectFileInfo(arcticTable.asKeyedTable().baseTable(), false, partition));
+      result.addAll(collectFileInfo(
+          arcticTable.asKeyedTable().changeTable(),
+          true,
+          partition,
+          specId));
+      result.addAll(collectFileInfo(
+          arcticTable.asKeyedTable().baseTable(),
+          false,
+          partition,
+          specId));
     } else {
-      result.addAll(collectFileInfo(arcticTable.asUnkeyedTable(), false, partition));
+      result.addAll(collectFileInfo(
+          arcticTable.asUnkeyedTable(),
+          false,
+          partition,
+          specId));
     }
     return result;
   }
@@ -462,25 +477,33 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   private List<PartitionFileBaseInfo> collectFileInfo(
-      Table table, boolean isChangeTable, String partition) {
+      Table table, boolean isChangeTable, String partition, Integer specId) {
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     Map<Integer, PartitionSpec> specs = table.specs();
 
-    Map<Long, Long> seqToSnapshotId = new HashMap<>();
-    Iterable<Snapshot> snapshots = table.snapshots();
-    for (Snapshot snapshot : snapshots) {
-      seqToSnapshotId.put(snapshot.sequenceNumber(), snapshot.snapshotId());
-    }
-    Collection<ContentFile<?>> allContent = IcebergTableUtil.getAllContent(table, executorService);
+    IcebergManifestReader manifestReader =
+        new IcebergManifestReader(table.io(), table.currentSnapshot().allManifests(table.io()))
+            .specsById(table.specs())
+            .ignoreDeleted()
+            .planWith(executorService);
 
-    for (ContentFile<?> contentFile : allContent) {
-      Long snapshotId = seqToSnapshotId.get(contentFile.fileSequenceNumber());
+    if (partition != null && specId != null) {
+      GenericRecord partitionData = ArcticDataFiles.data(specs.get(specId), partition);
+      manifestReader.inPartitions(specs.get(specId), partitionData);
+    }
+
+    CloseableIterable<IcebergManifestReader.IcebergManifestEntry> entries =
+        manifestReader.entries();
+
+    for (IcebergManifestReader.IcebergManifestEntry entry : entries) {
+      ContentFile<?> contentFile = entry.getFile();
+      Long snapshotId = entry.getSnapshotId();
 
       PartitionSpec partitionSpec = specs.get(contentFile.specId());
       String partitionPath = partitionSpec.partitionToPath(contentFile.partition());
-      if (partition != null && partitionSpec.isPartitioned() && !partition.equals(partitionPath)) {
-        continue;
-      }
+      // if (partition != null && partitionSpec.isPartitioned() && !partition.equals(partitionPath)) {
+      //   continue;
+      // }
       long fileSize = contentFile.fileSizeInBytes();
       DataFileType dataFileType =
           isChangeTable
@@ -496,6 +519,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
               dataFileType,
               commitTime,
               partitionPath,
+              contentFile.specId(),
               contentFile.path().toString(),
               fileSize));
     }

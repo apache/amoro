@@ -393,12 +393,14 @@ public class TableController {
     String table = ctx.pathParam("table");
     String partition = ctx.pathParam("partition");
 
+    Integer specId = ctx.queryParamAsClass("specId", Integer.class).getOrDefault(0);
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
+
     List<PartitionFileBaseInfo> partitionFileBaseInfos =
         tableDescriptor.getTableFile(
-            TableIdentifier.of(catalog, db, table).buildTableIdentifier(), partition);
+            TableIdentifier.of(catalog, db, table).buildTableIdentifier(), partition, specId);
     int offset = (page - 1) * pageSize;
     PageResult<PartitionFileBaseInfo> amsPageResult =
         PageResult.of(partitionFileBaseInfos, offset, pageSize);

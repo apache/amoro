@@ -266,14 +266,15 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
           lastCommitTime = Math.max(lastCommitTime, dataFileMeta.creationTime().getMillisecond());
         }
         partitionBaseInfoList.add(
-            new PartitionBaseInfo(partitionSt, fileCount, fileSize, lastCommitTime));
+            new PartitionBaseInfo(partitionSt, 0, fileCount, fileSize, lastCommitTime));
       }
     }
     return partitionBaseInfoList;
   }
 
   @Override
-  public List<PartitionFileBaseInfo> getTableFiles(AmoroTable<?> amoroTable, String partition) {
+  public List<PartitionFileBaseInfo> getTableFiles(AmoroTable<?> amoroTable, String partition,
+      Integer specId) {
     FileStoreTable table = getTable(amoroTable);
     AbstractFileStore<?> store = (AbstractFileStore<?>) table.store();
 
@@ -330,6 +331,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
               INSERT_FILE,
               manifestEntry.file().creationTime().getMillisecond(),
               partitionSt,
+              0,
               fullFilePath(store, manifestEntry),
               manifestEntry.file().fileSize()));
     }

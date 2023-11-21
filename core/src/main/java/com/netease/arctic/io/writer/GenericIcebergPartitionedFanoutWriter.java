@@ -52,6 +52,6 @@ public class GenericIcebergPartitionedFanoutWriter extends PartitionedFanoutWrit
   protected PartitionKey partition(Record row) {
     StructLike structLike = wrapper.wrap(row);
     partitionKey.partition(structLike);
-    return partitionKey.copy();
+    return partitionKey;
   }
 }

@@ -448,7 +448,7 @@ public class DashboardServer {
         }
       }
     }
-    return true;
+    return false;
   }
 
   private boolean needApiKeyCheck(String uri) {
