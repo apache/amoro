@@ -75,14 +75,40 @@ public class TestArcticDataFiles {
     PartitionSpec spec = PartitionSpec.builderFor(SCHEMA).hour("dt").build();
     PartitionKey partitionKey = new PartitionKey(spec, SCHEMA);
     GenericRecord record = GenericRecord.create(SCHEMA);
+
     InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(SCHEMA.asStruct());
+
     partitionKey.partition(
-        internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-11T11:00:00"))));
+        internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-11T09:30:00"))));
     String partitionPath = spec.partitionToPath(partitionKey);
     StructLike partitionData = ArcticDataFiles.data(spec, partitionPath);
     StructLikeWrapper p1 = StructLikeWrapper.forType(spec.partitionType());
     p1.set(partitionKey);
     StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
+    p2.set(partitionData);
+    Assert.assertEquals(p1, p2);
+
+    partitionKey.partition(
+        internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-11T12:00:00"))));
+    partitionPath = spec.partitionToPath(partitionKey);
+    partitionData = ArcticDataFiles.data(spec, partitionPath);
+    p1.set(partitionKey);
+    p2.set(partitionData);
+    Assert.assertEquals(p1, p2);
+
+    partitionKey.partition(
+        internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-11T15:30:00"))));
+    partitionPath = spec.partitionToPath(partitionKey);
+    partitionData = ArcticDataFiles.data(spec, partitionPath);
+    p1.set(partitionKey);
+    p2.set(partitionData);
+    Assert.assertEquals(p1, p2);
+
+    partitionKey.partition(
+        internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-12T00:00:00"))));
+    partitionPath = spec.partitionToPath(partitionKey);
+    partitionData = ArcticDataFiles.data(spec, partitionPath);
+    p1.set(partitionKey);
     p2.set(partitionData);
     Assert.assertEquals(p1, p2);
   }

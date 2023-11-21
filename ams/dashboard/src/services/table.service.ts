@@ -102,8 +102,8 @@ export function getPartitionFiles(
   const { catalog, db, table, partition, page, pageSize, token } = params
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions/${partition}/files`, { params: { page, pageSize, token } })
 }
-// get Transactions
-export function getTransactions(
+// get snapshots
+export function getSnapshots(
   params: {
     catalog: string
     db: string,
@@ -111,26 +111,28 @@ export function getTransactions(
     page: number
     pageSize: number
     token?: string
+    ref: string
+    operation: string
   }
 ) {
-  const { catalog, db, table, page, pageSize, token } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/transactions`, { params: { page, pageSize, token } })
+  const { catalog, db, table, page, pageSize, token, ref, operation } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/snapshots`, { params: { page, pageSize, token, ref, operation } })
 }
 
-// get TransactionId detail
-export function getDetailByTransactionId(
+// get Snapshot detail
+export function getDetailBySnapshotId(
   params: {
     catalog: string
     db: string,
     table: string,
-    transactionId: string,
+    snapshotId: string,
     page: number
     pageSize: number
     token?: string
   }
 ) {
-  const { catalog, db, table, transactionId, page, pageSize, token } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/transactions/${transactionId}/detail`, { params: { page, pageSize, token } })
+  const { catalog, db, table, snapshotId, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/snapshots/${snapshotId}/detail`, { params: { page, pageSize, token } })
 }
 // get operations
 export function getOperations(
@@ -172,4 +174,14 @@ export function upgradeHiveTable(
 
 export function getUpgradeProperties() {
   return request.get('ams/v1/upgrade/properties')
+}
+
+export function getBranches(params: { db: string, table: string }) {
+  const { db, table } = params
+  return request.get(`/ams/v1/tables/catalogs/iceberg/dbs/${db}/tables/${table}/branches`)
+}
+
+export function getTags(params: { db: string, table: string }) {
+  const { db, table } = params
+  return request.get(`/ams/v1/tables/catalogs/iceberg/dbs/${db}/tables/${table}/tags`)
 }

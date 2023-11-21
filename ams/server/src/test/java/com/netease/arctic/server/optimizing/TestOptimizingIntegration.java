@@ -27,19 +27,26 @@ public class TestOptimizingIntegration {
   private static final String DATABASE = "optimizing_integration_test_db";
 
   private static final TableIdentifier MIXED_ICEBERG_TB_1 =
-      TableIdentifier.of(AmsEnvironment.MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table1");
+      TableIdentifier.of(
+          AmsEnvironment.INTERNAL_MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table1");
   private static final TableIdentifier MIXED_ICEBERG_TB_2 =
-      TableIdentifier.of(AmsEnvironment.MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table2");
+      TableIdentifier.of(
+          AmsEnvironment.INTERNAL_MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table2");
   private static final TableIdentifier MIXED_ICEBERG_TB_3 =
-      TableIdentifier.of(AmsEnvironment.MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table3");
+      TableIdentifier.of(
+          AmsEnvironment.INTERNAL_MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table3");
   private static final TableIdentifier MIXED_ICEBERG_TB_4 =
-      TableIdentifier.of(AmsEnvironment.MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table4");
+      TableIdentifier.of(
+          AmsEnvironment.INTERNAL_MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table4");
   private static final TableIdentifier MIXED_ICEBERG_TB_5 =
-      TableIdentifier.of(AmsEnvironment.MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table5");
+      TableIdentifier.of(
+          AmsEnvironment.INTERNAL_MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table5");
   private static final TableIdentifier MIXED_ICEBERG_TB_6 =
-      TableIdentifier.of(AmsEnvironment.MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table6");
+      TableIdentifier.of(
+          AmsEnvironment.INTERNAL_MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table6");
   private static final TableIdentifier MIXED_ICEBERG_TB_7 =
-      TableIdentifier.of(AmsEnvironment.MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table7");
+      TableIdentifier.of(
+          AmsEnvironment.INTERNAL_MIXED_ICEBERG_CATALOG, DATABASE, "mix_iceberg_table7");
   private static final TableIdentifier MIXED_HIVE_TB_1 =
       TableIdentifier.of(AmsEnvironment.MIXED_HIVE_CATALOG, DATABASE, "mix_hive_table1");
   private static final TableIdentifier MIXED_HIVE_TB_2 =
@@ -58,7 +65,7 @@ public class TestOptimizingIntegration {
     amsEnv.start();
     amsEnv.startOptimizer();
     amsEnv.createDatabaseIfNotExists(AmsEnvironment.ICEBERG_CATALOG, DATABASE);
-    amsEnv.createDatabaseIfNotExists(AmsEnvironment.MIXED_ICEBERG_CATALOG, DATABASE);
+    amsEnv.createDatabaseIfNotExists(AmsEnvironment.INTERNAL_MIXED_ICEBERG_CATALOG, DATABASE);
     amsEnv.createDatabaseIfNotExists(AmsEnvironment.MIXED_HIVE_CATALOG, DATABASE);
   }
 
@@ -148,7 +155,7 @@ public class TestOptimizingIntegration {
 
     TableBuilder tableBuilder =
         amsEnv
-            .catalog(AmsEnvironment.MIXED_ICEBERG_CATALOG)
+            .catalog(AmsEnvironment.INTERNAL_MIXED_ICEBERG_CATALOG)
             .newTableBuilder(tableIdentifier, SCHEMA)
             .withPrimaryKeySpec(primaryKeySpec)
             .withPartitionSpec(partitionSpec)
