@@ -47,7 +47,7 @@ public class TaskRuntime extends StatedPersistentBase {
   private OptimizingTaskId taskId;
   @StateField private Status status = Status.PLANNED;
   private final TaskStatusMachine statusMachine = new TaskStatusMachine();
-  @StateField private int retry = 0;
+  @StateField private int runTimes = 0;
   @StateField private long startTime = ArcticServiceConstants.INVALID_TIME;
   @StateField private long endTime = ArcticServiceConstants.INVALID_TIME;
   @StateField private long costTime = 0;
@@ -63,7 +63,9 @@ public class TaskRuntime extends StatedPersistentBase {
   private TaskRuntime() {}
 
   public TaskRuntime(
-      OptimizingTaskId taskId, TaskDescriptor taskDescriptor, Map<String, String> properties) {
+      OptimizingTaskId taskId,
+      TaskDescriptor taskDescriptor,
+      Map<String, String> properties) {
     this.taskId = taskId;
     this.partition = taskDescriptor.getPartition();
     this.input = taskDescriptor.getInput();
@@ -77,49 +79,31 @@ public class TaskRuntime extends StatedPersistentBase {
         () -> {
           validThread(thread);
           if (result.getErrorMessage() != null) {
-            fail(result.getErrorMessage());
+            statusMachine.accept(Status.FAILED);
+            failReason = result.getErrorMessage();
+            endTime = System.currentTimeMillis();
+            costTime += endTime - startTime;
           } else {
-            finish(TaskFilesPersistence.loadTaskOutput(result.getTaskOutput()));
+            statusMachine.accept(Status.SUCCESS);
+            RewriteFilesOutput filesOutput =
+                TaskFilesPersistence.loadTaskOutput(result.getTaskOutput());
+            summary.setNewFileCnt(OptimizingUtil.getFileCount(filesOutput));
+            summary.setNewFileSize(OptimizingUtil.getFileSize(filesOutput));
+            endTime = System.currentTimeMillis();
+            costTime += endTime - startTime;
+            output = filesOutput;
           }
+          runTimes += 1;
+          persistTaskRuntime(this);
           owner.acceptResult(this);
           token = null;
           threadId = -1;
         });
   }
 
-  private void finish(RewriteFilesOutput filesOutput) {
+  void reset() {
     invokeConsisitency(
         () -> {
-          statusMachine.accept(Status.SUCCESS);
-          summary.setNewFileCnt(OptimizingUtil.getFileCount(filesOutput));
-          summary.setNewFileSize(OptimizingUtil.getFileSize(filesOutput));
-          endTime = System.currentTimeMillis();
-          costTime += endTime - startTime;
-          output = filesOutput;
-          persistTaskRuntime(this);
-        });
-  }
-
-  void fail(String errorMessage) {
-    invokeConsisitency(
-        () -> {
-          statusMachine.accept(Status.FAILED);
-          failReason = errorMessage;
-          endTime = System.currentTimeMillis();
-          costTime += endTime - startTime;
-          persistTaskRuntime(this);
-        });
-  }
-
-  void reset(boolean incRetryCount) {
-    invokeConsisitency(
-        () -> {
-          if (!incRetryCount && status == Status.PLANNED) {
-            return;
-          }
-          if (incRetryCount) {
-            retry++;
-          }
           statusMachine.accept(Status.PLANNED);
           doAs(OptimizingMapper.class, mapper -> mapper.updateTaskStatus(this, Status.PLANNED));
         });
@@ -226,8 +210,12 @@ public class TaskRuntime extends StatedPersistentBase {
     return status;
   }
 
+  public int getRunTimes() {
+    return runTimes;
+  }
+
   public int getRetry() {
-    return retry;
+    return runTimes - 1;
   }
 
   public MetricsSummary getMetricsSummary() {
@@ -288,7 +276,7 @@ public class TaskRuntime extends StatedPersistentBase {
         .add("partition", partition)
         .add("taskId", taskId.getTaskId())
         .add("status", status)
-        .add("retry", retry)
+        .add("runTimes", runTimes)
         .add("startTime", startTime)
         .add("endTime", endTime)
         .add("costTime", costTime)
@@ -333,7 +321,7 @@ public class TaskRuntime extends StatedPersistentBase {
         Sets.newHashSet(
             Status.PLANNED, Status.ACKED, Status.SUCCESS, Status.FAILED, Status.CANCELED));
     nextStatusMap.put(
-        Status.FAILED, Sets.newHashSet(Status.PLANNED, Status.FAILED, Status.CANCELED));
+        Status.FAILED, Sets.newHashSet(Status.PLANNED, Status.FAILED));
     nextStatusMap.put(Status.SUCCESS, Sets.newHashSet(Status.SUCCESS));
     nextStatusMap.put(Status.CANCELED, Sets.newHashSet(Status.CANCELED));
   }

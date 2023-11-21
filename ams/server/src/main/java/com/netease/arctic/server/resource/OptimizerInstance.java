@@ -64,4 +64,13 @@ public class OptimizerInstance extends Resource {
   public OptimizerThread getThread(int threadId) {
     return new OptimizerThread(threadId, this);
   }
+
+  @Override
+  public String toString() {
+    return "OptimizerInstance{" +
+        "token='" + token + '\'' +
+        ", startTime=" + startTime +
+        ", touchTime=" + touchTime +
+        '}';
+  }
 }

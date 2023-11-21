@@ -112,7 +112,7 @@ public interface OptimizingMapper {
         + "end_time, status, fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary, properties) "
         + "VALUES ",
     "<foreach collection='taskRuntimes' item='taskRuntime' index='index' separator=','>",
-    "(#{taskRuntime.taskId.processId}, #{taskRuntime.taskId.taskId}, #{taskRuntime.retry},"
+    "(#{taskRuntime.taskId.processId}, #{taskRuntime.taskId.taskId}, #{taskRuntime.runTimes},"
         + " #{taskRuntime.tableId}, #{taskRuntime.partition}, "
         + "#{taskRuntime.startTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
         + " #{taskRuntime.endTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}, "
@@ -134,7 +134,7 @@ public interface OptimizingMapper {
   @Results({
     @Result(property = "taskId.processId", column = "process_id"),
     @Result(property = "taskId.taskId", column = "task_id"),
-    @Result(property = "retry", column = "retry_num"),
+    @Result(property = "runTimes", column = "retry_num"),
     @Result(property = "tableId", column = "table_id"),
     @Result(property = "partition", column = "partition_data"),
     @Result(property = "startTime", column = "start_time", typeHandler = Long2TsConverter.class),
@@ -188,7 +188,7 @@ public interface OptimizingMapper {
   List<OptimizingTaskMeta> selectOptimizeTaskMetas(@Param("processIds") List<Long> processIds);
 
   @Update(
-      "UPDATE task_runtime SET retry_num = #{taskRuntime.retry}, "
+      "UPDATE task_runtime SET retry_num = #{taskRuntime.runTimes}, "
           + "start_time = #{taskRuntime.startTime,"
           + " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
           + " end_time = #{taskRuntime.endTime,"

@@ -7,8 +7,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
@@ -16,22 +18,23 @@ import java.util.stream.Collectors;
 
 public abstract class StatedPersistentBase extends PersistentBase {
 
-  private static final Map<Class<? extends PersistentBase>, List<State>> stateMetaCache =
+  private static final Map<Class<? extends PersistentBase>, Field[]> metaCache =
       Maps.newConcurrentMap();
+  private static final Object NULL_VALUE = new Object();
   private final Lock stateLock = new ReentrantLock();
-  private List<State> states = Lists.newArrayList();
+  private final Field[] consistentFields;
 
   protected StatedPersistentBase() {
-    initStateFields();
+    consistentFields = getOrCreateConsistentFields();
   }
 
   protected final void invokeConsisitency(Runnable runnable) {
     stateLock.lock();
+    Map<Field, Object> states = retainStates();
     try {
-      retainStates();
-      runnable.run();
+      doAsTransaction(runnable);
     } catch (Throwable throwable) {
-      restoreStates();
+      restoreStates(states);
       throw throwable;
     } finally {
       stateLock.unlock();
@@ -40,11 +43,11 @@ public abstract class StatedPersistentBase extends PersistentBase {
 
   protected final <T> T invokeConsisitency(Supplier<T> supplier) {
     stateLock.lock();
+    Map<Field, Object> states = retainStates();
     try {
-      retainStates();
       return supplier.get();
     } catch (Throwable throwable) {
-      restoreStates();
+      restoreStates(states);
       throw throwable;
     } finally {
       stateLock.unlock();
@@ -71,59 +74,46 @@ public abstract class StatedPersistentBase extends PersistentBase {
     }
   }
 
-  private void initStateFields() {
-    states =
-        stateMetaCache
+  Map<Field, Object> retainStates() {
+    return Arrays.stream(consistentFields)
+        .collect(Collectors.toMap(field -> field, this::getValue));
+  }
+
+  void restoreStates(Map<Field, Object> statesMap) {
+    statesMap.forEach(this::setValue);
+  }
+
+  private Field[] getOrCreateConsistentFields() {
+    return metaCache
             .computeIfAbsent(
                 getClass(),
                 clz -> {
-                  List<State> states = new ArrayList<>();
+                  List<Field> fields = new ArrayList<>();
                   while (clz != PersistentBase.class) {
-                    for (Field field : clz.getDeclaredFields()) {
-                      if (field.isAnnotationPresent(StateField.class)) {
-                        states.add(new State(field));
-                      }
-                    }
+                    Arrays.stream(clz.getDeclaredFields())
+                        .filter(field -> field.isAnnotationPresent(StateField.class))
+                        .forEach(fields::add);
                     clz = clz.getSuperclass().asSubclass(PersistentBase.class);
                   }
-                  return states;
-                })
-            .stream()
-            .map(state -> new State(state.field))
-            .collect(Collectors.toList());
+                  return fields.toArray(new Field[0]);
+                });
   }
 
-  private void retainStates() {
-    states.forEach(State::retain);
-  }
-
-  private void restoreStates() {
-    states.forEach(State::restore);
-  }
-
-  private class State {
-    private Object value;
-    private final Field field;
-
-    State(Field field) {
-      this.field = field;
+  private Object getValue(Field field) {
+    try {
+      field.setAccessible(true);
+      return Optional.ofNullable(field.get(StatedPersistentBase.this))
+          .orElse(NULL_VALUE);
+    } catch (IllegalAccessException e) {
+      throw new IllegalStateException(e);
     }
+  }
 
-    void retain() {
-      try {
-        field.setAccessible(true);
-        value = field.get(StatedPersistentBase.this);
-      } catch (IllegalAccessException e) {
-        throw new IllegalStateException(e);
-      }
-    }
-
-    void restore() {
-      try {
-        field.set(StatedPersistentBase.this, value);
-      } catch (IllegalAccessException e) {
-        throw new IllegalStateException(e);
-      }
+  void setValue(Field field, Object value) {
+    try {
+      field.set(StatedPersistentBase.this, NULL_VALUE.equals(value) ? null : value);
+    } catch (IllegalAccessException e) {
+      throw new IllegalStateException(e);
     }
   }
 

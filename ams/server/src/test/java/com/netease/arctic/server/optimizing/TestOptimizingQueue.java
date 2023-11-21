@@ -18,6 +18,7 @@ import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.AppendFiles;
@@ -132,25 +133,25 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
     Assert.assertNotNull(task);
 
-    queue.retryTask(task, false);
+    for (int i = 0; i < TableProperties.SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER_DEFAULT; i++) {
+      queue.retryTask(task);
+      TaskRuntime retryTask = queue.pollTask(MAX_POLLING_TIME);
+      Assert.assertEquals(retryTask.getTaskId(), task.getTaskId());
+      retryTask.schedule(optimizerThread);
+      retryTask.ack(optimizerThread);
+      retryTask.complete(optimizerThread, buildOptimizingTaskFailed(task.getTaskId(),
+          optimizerThread.getThreadId()));
+      Assert.assertEquals(TaskRuntime.Status.PLANNED, task.getStatus());
+    }
+
+    queue.retryTask(task);
     TaskRuntime retryTask = queue.pollTask(MAX_POLLING_TIME);
     Assert.assertEquals(retryTask.getTaskId(), task.getTaskId());
-
     retryTask.schedule(optimizerThread);
     retryTask.ack(optimizerThread);
-    Assert.assertEquals(TaskRuntime.Status.ACKED, task.getStatus());
-    queue.retryTask(task, true);
-    retryTask = queue.pollTask(MAX_POLLING_TIME);
-    Assert.assertEquals(retryTask.getTaskId(), task.getTaskId());
-
-    retryTask.schedule(optimizerThread);
-    retryTask.ack(optimizerThread);
-    retryTask.fail("error");
+    retryTask.complete(optimizerThread, buildOptimizingTaskFailed(task.getTaskId(),
+        optimizerThread.getThreadId()));
     Assert.assertEquals(TaskRuntime.Status.FAILED, task.getStatus());
-    queue.retryTask(task, true);
-    Assert.assertEquals(TaskRuntime.Status.PLANNED, task.getStatus());
-    retryTask = queue.pollTask(MAX_POLLING_TIME);
-    Assert.assertEquals(retryTask.getTaskId(), task.getTaskId());
   }
 
   @Test
@@ -247,6 +248,13 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     TableOptimizing.OptimizingOutput output = new RewriteFilesOutput(null, null, null);
     OptimizingTaskResult optimizingTaskResult = new OptimizingTaskResult(taskId, threadId);
     optimizingTaskResult.setTaskOutput(SerializationUtil.simpleSerialize(output));
+    return optimizingTaskResult;
+  }
+
+  private OptimizingTaskResult buildOptimizingTaskFailed(OptimizingTaskId taskId, int threadId) {
+    TableOptimizing.OptimizingOutput output = new RewriteFilesOutput(null, null, null);
+    OptimizingTaskResult optimizingTaskResult = new OptimizingTaskResult(taskId, threadId);
+    optimizingTaskResult.setErrorMessage("error");
     return optimizingTaskResult;
   }
 }

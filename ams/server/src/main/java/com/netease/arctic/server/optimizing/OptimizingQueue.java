@@ -204,8 +204,8 @@ public class OptimizingQueue extends PersistentBase {
         .collect(Collectors.toList());
   }
 
-  public void retryTask(TaskRuntime taskRuntime, boolean incRetryCount) {
-    taskRuntime.reset(incRetryCount);
+  public void retryTask(TaskRuntime taskRuntime) {
+    taskRuntime.reset();
     retryTaskQueue.offer(taskRuntime);
   }
 
@@ -432,14 +432,18 @@ public class OptimizingQueue extends PersistentBase {
             clearProcess(this);
           }
         } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
-          if (taskRuntime.getRetry() <= tableRuntime.getMaxExecuteRetryCount()) {
-            retryTask(taskRuntime, true);
+          if (taskRuntime.getRetry() < tableRuntime.getMaxExecuteRetryCount()) {
+            System.out.println("/n/n #### getMaxExecuteRetryCount {}" + tableRuntime.getMaxExecuteRetryCount());
+            System.out.println("/n/n #### retry task times {}" + (taskRuntime.getRunTimes() - 1));
+            retryTask(taskRuntime);
+            System.out.println("/n/n #### task status {}" + taskRuntime.getStatus());
           } else {
             clearProcess(this);
             this.failedReason = taskRuntime.getFailReason();
             this.status = OptimizingProcess.Status.FAILED;
             this.endTime = taskRuntime.getEndTime();
             persistProcessCompleted(false);
+            System.out.println("/n/n #### task status {}" + taskRuntime.getStatus());
           }
         }
       } catch (Exception e) {
@@ -648,7 +652,11 @@ public class OptimizingQueue extends PersistentBase {
             taskRuntime.claimOwnership(this);
             taskRuntime.setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
             taskMap.put(taskRuntime.getTaskId(), taskRuntime);
-            taskQueue.offer(taskRuntime);
+            if (taskRuntime.getStatus() == TaskRuntime.Status.PLANNED) {
+              taskQueue.offer(taskRuntime);
+            } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
+              retryTask(taskRuntime);
+            }
           });
     }
 

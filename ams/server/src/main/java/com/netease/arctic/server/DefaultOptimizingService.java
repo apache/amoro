@@ -94,7 +94,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
   private final Map<String, OptimizerInstance> authOptimizers = new ConcurrentHashMap<>();
-  private final SuspendingDetector suspendingDetector = new SuspendingDetector();
+  private final OptimizerKeeper optimizerKeeper = new OptimizerKeeper();
   private final TableService tableService;
   private final RuntimeHandlerChain tableHandlerChain;
   private final Executor planExecutor;
@@ -156,7 +156,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     authOptimizers.put(optimizer.getToken(), optimizer);
     optimizingQueueByToken.put(
         optimizer.getToken(), optimizingQueueByGroup.get(optimizer.getGroupName()));
-    suspendingDetector.detectTimeout(optimizer);
+    optimizerKeeper.keepInTouch(optimizer);
   }
 
   private void unregisterOptimizer(String token) {
@@ -210,7 +210,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
       return task.getOptimizingTask();
     } catch (Throwable throwable) {
       LOG.error("Schedule task {} failed, put it to retry queue", task.getTaskId(), throwable);
-      queue.retryTask(task, false);
+      queue.retryTask(task);
       return null;
     }
   }
@@ -443,36 +443,42 @@ public class DefaultOptimizingService extends StatedPersistentBase
     protected void initHandler(List<TableRuntimeMeta> tableRuntimeMetaList) {
       LOG.info("OptimizerManagementService begin initializing");
       loadOptimizingQueues(tableRuntimeMetaList);
-      suspendingDetector.start();
+      optimizerKeeper.start();
       LOG.info("SuspendingDetector for Optimizer has been started.");
       LOG.info("OptimizerManagementService initializing has completed");
     }
 
     @Override
     protected void doDispose() {
-      suspendingDetector.dispose();
+      optimizerKeeper.dispose();
     }
   }
 
-  private class SuspendingDetectTask implements Delayed {
+  private class OptimizerKeepingTask implements Delayed {
 
     private final OptimizerInstance optimizerInstance;
-    private final long checkDelayedTime;
+    private final long lastTouchTime;
 
-    public SuspendingDetectTask(OptimizerInstance optimizer) {
+    public OptimizerKeepingTask(OptimizerInstance optimizer) {
       this.optimizerInstance = optimizer;
-      this.checkDelayedTime = optimizer.getTouchTime() + optimizerTouchTimeout;
+      this.lastTouchTime = optimizer.getTouchTime();
+    }
+
+    public boolean tryKeeping() {
+      return Objects.equals(optimizerInstance, authOptimizers.get(optimizerInstance.getToken())) &&
+          lastTouchTime != optimizerInstance.getTouchTime();
     }
 
     @Override
     public long getDelay(@NotNull TimeUnit unit) {
-      return unit.convert(checkDelayedTime - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+      return unit.convert(lastTouchTime + optimizerTouchTimeout - System.currentTimeMillis(),
+          TimeUnit.MILLISECONDS);
     }
 
     @Override
     public int compareTo(@NotNull Delayed o) {
-      SuspendingDetectTask another = (SuspendingDetectTask) o;
-      return Long.compare(checkDelayedTime, another.checkDelayedTime);
+      OptimizerKeepingTask another = (OptimizerKeepingTask) o;
+      return Long.compare(lastTouchTime, another.lastTouchTime);
     }
 
     public String getToken() {
@@ -484,19 +490,19 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
   }
 
-  private class SuspendingDetector implements Runnable {
+  private class OptimizerKeeper implements Runnable {
 
     private volatile boolean stopped = false;
     private final Thread thread = new Thread(this, "SuspendingDetector");
-    private final DelayQueue<SuspendingDetectTask> suspendingQueue = new DelayQueue<>();
+    private final DelayQueue<OptimizerKeepingTask> suspendingQueue = new DelayQueue<>();
 
-    public SuspendingDetector() {
+    public OptimizerKeeper() {
       thread.setDaemon(true);
     }
 
-    public void detectTimeout(OptimizerInstance optimizerInstance) {
+    public void keepInTouch(OptimizerInstance optimizerInstance) {
       Preconditions.checkNotNull(optimizerInstance, "token can not be null");
-      suspendingQueue.add(new SuspendingDetectTask(optimizerInstance));
+      suspendingQueue.add(new OptimizerKeepingTask(optimizerInstance));
     }
 
     public void start() {
@@ -512,9 +518,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
     public void run() {
       while (!stopped) {
         try {
-          SuspendingDetectTask detectTask = suspendingQueue.take();
-          String token = detectTask.getToken();
-          boolean isExpired = checkOptimizerTimeout(detectTask.getOptimizer());
+          OptimizerKeepingTask keepingTask = suspendingQueue.take();
+          String token = keepingTask.getToken();
+          boolean isExpired = !keepingTask.tryKeeping();
           Optional.ofNullable(optimizingQueueByToken.get(token))
               .ifPresent(
                   queue ->
@@ -522,14 +528,17 @@ public class DefaultOptimizingService extends StatedPersistentBase
                           .collectTasks(buildSuspendingPredication(token, isExpired))
                           .forEach(task -> retryTask(task, queue)));
           if (isExpired) {
-            LOG.info("Optimizer {} has been expired, unregister it", token);
+            LOG.info("Optimizer {} has been expired, unregister it", keepingTask.getOptimizer());
             unregisterOptimizer(token);
           } else {
-            detectTimeout(detectTask.getOptimizer());
+            if (LOG.isDebugEnabled()) {
+              LOG.debug("Optimizer {} is being touched, keep it", keepingTask.getOptimizer());
+            }
+            keepInTouch(keepingTask.getOptimizer());
           }
         } catch (InterruptedException ignored) {
         } catch (Throwable t) {
-          LOG.error("SuspendingDetector has encountered a problem.", t);
+          LOG.error("OptimizerKeeper has encountered a problem.", t);
         }
       }
     }
@@ -540,12 +549,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
           task.getTaskId(),
           task.getResourceDesc());
       // optimizing task of suspending optimizer would not be counted for retrying
-      queue.retryTask(task, false);
-    }
-
-    private boolean checkOptimizerTimeout(OptimizerInstance optimizer) {
-      return Objects.equals(optimizer, authOptimizers.get(optimizer.getToken()))
-          && optimizer.getTouchTime() + optimizerTouchTimeout > System.currentTimeMillis();
+      queue.retryTask(task);
     }
 
     private Predicate<TaskRuntime> buildSuspendingPredication(

@@ -318,12 +318,6 @@ public class ArcticManagementConf {
   public static final String CONTAINER_IMPL = "container-impl";
   public static final String CONTAINER_PROPERTIES = "properties";
 
-  // optimizer config
-  public static final String OPTIMIZER_GROUP_LIST = "optimizer_groups";
-  public static final String OPTIMIZER_GROUP_NAME = "name";
-  public static final String OPTIMIZER_GROUP_CONTAINER = "container";
-  public static final String OPTIMIZER_GROUP_PROPERTIES = "properties";
-
   public static final String DB_TYPE_DERBY = "derby";
   public static final String DB_TYPE_MYSQL = "mysql";
   public static final String DB_TYPE_POSTGRES = "postgres";

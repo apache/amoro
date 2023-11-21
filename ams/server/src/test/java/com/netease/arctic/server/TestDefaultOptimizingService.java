@@ -37,6 +37,7 @@ import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.LockSupport;
 
 @RunWith(Parameterized.class)
 public class TestDefaultOptimizingService extends AMSTableTestBase {
@@ -59,7 +60,6 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
   @Before
   public void prepare() {
-    token = optimizingService().authenticate(buildRegisterInfo());
     toucher = new Toucher();
     createDatabase();
     createTable();
@@ -72,6 +72,10 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   @After
   public void clear() {
     try {
+      if (toucher != null) {
+        toucher.stop();
+        toucher = null;
+      }
       optimizingService()
           .listOptimizers()
           .forEach(
@@ -80,10 +84,6 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
                       .deleteOptimizer(optimizer.getGroupName(), optimizer.getResourceId()));
       dropTable();
       dropDatabase();
-      if (toucher != null) {
-        toucher.stop();
-        toucher = null;
-      }
     } catch (Exception e) {
       // ignore
     }
@@ -203,10 +203,10 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
   @Test
   public void testTouchTimeout() throws InterruptedException {
-    toucher.stop();
-    toucher = null;
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task);
+    toucher.stop();
+    toucher = null;
     Thread.sleep(1000);
     Assertions.assertThrows(PluginRetryAuthException.class, () -> optimizingService().touch(token));
     Assertions.assertThrows(
@@ -234,7 +234,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   @Test
-  public void testReloadScheduledTask() {
+  public void testReloadScheduledTask() throws InterruptedException {
     // 1.poll task
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task);
@@ -250,7 +250,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   @Test
-  public void testReloadAckTask() {
+  public void testReloadAckTask() throws InterruptedException {
     // 1.poll task
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task);
@@ -266,7 +266,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   @Test
-  public void testReloadCompletedTask() {
+  public void testReloadCompletedTask() throws InterruptedException {
     // THREAD_ID.poll task
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task);
@@ -279,7 +279,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   @Test
-  public void testReloadFailedTask() {
+  public void testReloadFailedTask() throws InterruptedException {
     // 1.poll task
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task);
@@ -356,9 +356,11 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         tableService().getRuntime(serverTableIdentifier()).getOptimizingStatus());
   }
 
-  protected static void reload() {
+  protected void reload() {
     disposeTableService();
+    toucher.suspend();
     initTableService();
+    toucher.goOn();
   }
 
   private class TableRuntimeRefresher extends TableRuntimeRefreshExecutor {
@@ -375,15 +377,28 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   private class Toucher implements Runnable {
 
     private volatile boolean stop = false;
+    private volatile boolean suspend = false;
     private final Thread thread = new Thread(this);
 
     public Toucher() {
+      token = optimizingService().authenticate(buildRegisterInfo());
       thread.setDaemon(true);
       thread.start();
     }
 
-    public void stop() {
+    public synchronized void stop() throws InterruptedException {
       stop = true;
+      thread.interrupt();
+      thread.join();
+    }
+
+    public synchronized void suspend() {
+      suspend = true;
+      thread.interrupt();
+    }
+
+    public synchronized void goOn() {
+      suspend = false;
       thread.interrupt();
     }
 
@@ -391,9 +406,16 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     public void run() {
       while (!stop) {
         try {
-          optimizingService().touch(token);
           Thread.sleep(300);
-        } catch (Throwable ignored) {
+          synchronized (this) {
+            if (!suspend) {
+              optimizingService().touch(token);
+            }
+          }
+        } catch (PluginRetryAuthException e) {
+          e.printStackTrace();
+        } catch (Exception ignore) {
+          // ignore
         }
       }
     }
