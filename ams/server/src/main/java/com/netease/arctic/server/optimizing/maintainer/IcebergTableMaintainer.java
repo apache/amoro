@@ -37,7 +37,6 @@ import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TableFileUtil;
-import java.io.IOException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
@@ -69,6 +68,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -548,7 +548,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     return true;
   }
 
-  CloseableIterable<IcebergTableMaintainer.FileEntry> fileScan(
+  CloseableIterable<FileEntry> fileScan(
       Table table, Expression dataFilter, DataExpirationConfig expirationConfig) {
     TableScan tableScan = table.newScan().filter(dataFilter).includeColumnStats();
 
@@ -599,9 +599,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
       long expireTimestamp,
       Map<StructLike, IcebergTableMaintainer.DataFileFreshness> partitionFreshness) {
     IcebergTableMaintainer.ExpireFiles expiredFiles = new IcebergTableMaintainer.ExpireFiles();
-    try (CloseableIterable<IcebergTableMaintainer.FileEntry> entries =
-        fileScan(table, dataFilter, expirationConfig)) {
-      Queue<IcebergTableMaintainer.FileEntry> fileEntries = new LinkedTransferQueue<>();
+    try (CloseableIterable<FileEntry> entries = fileScan(table, dataFilter, expirationConfig)) {
+      Queue<FileEntry> fileEntries = new LinkedTransferQueue<>();
       entries.forEach(
           e -> {
             if (mayExpired(e, partitionFreshness, expireTimestamp)) {
@@ -618,11 +617,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
     return Lists.newArrayList(expiredFiles);
   }
 
-  protected void doExpireFiles(List<IcebergTableMaintainer.ExpireFiles> expiredFiles, long expireTimestamp) {
-    expireFiles(
-        IcebergTableUtil.getSnapshotId(table, false),
-        expiredFiles.get(0),
-        expireTimestamp);
+  protected void doExpireFiles(
+      List<IcebergTableMaintainer.ExpireFiles> expiredFiles, long expireTimestamp) {
+    expireFiles(IcebergTableUtil.getSnapshotId(table, false), expiredFiles.get(0), expireTimestamp);
   }
 
   protected void purgeTableData(DataExpirationConfig expirationConfig, long expireTimestamp) {
@@ -630,8 +627,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     Map<StructLike, DataFileFreshness> partitionFreshness = Maps.newConcurrentMap();
 
     List<ExpireFiles> expiredFiles =
-        expiredFileScan(
-            expirationConfig, dataFilter, expireTimestamp, partitionFreshness);
+        expiredFileScan(expirationConfig, dataFilter, expireTimestamp, partitionFreshness);
     doExpireFiles(expiredFiles, expireTimestamp);
   }
 
