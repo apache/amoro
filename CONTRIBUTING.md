@@ -40,7 +40,7 @@ to track it.
 Pull requests are the preferred mechanism for contributing to Amoro
 
 ### Contributor License Agreement
-Before your contribution, To get your PR merged, you must submit [Amoro's Contributor License Agreement (CLA) first](https://cla-assistant.io/NetEase/amoro). You only need to submit it ONCE.
+Before your contribution, To get your PR merged, you must submit [Amoro's Contributor License Agreement (CLA) ](https://cla-assistant.io/NetEase/amoro)first. You only need to submit it ONCE.
 
 * Generally, create a PR only to the master branch.
 * PR should be linked to the corresponding issue.
