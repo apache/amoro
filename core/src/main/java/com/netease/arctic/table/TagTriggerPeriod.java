@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 
+/** The interval for periodically triggering creating tags */
 public enum TagTriggerPeriod {
   DAILY("daily") {
     @Override
@@ -42,5 +43,12 @@ public enum TagTriggerPeriod {
     return propertyName;
   }
 
+  /**
+   * Obtain the trigger time for creating a tag, which is the idea time of the last tag before the
+   * check time.
+   *
+   * <p>For example, when creating a daily tag, the check time is 2022-08-08 11:00:00 and the offset
+   * is set to be 5 min, the idea trigger time is 2022-08-08 00:05:00.
+   */
   public abstract long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes);
 }
