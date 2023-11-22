@@ -196,8 +196,7 @@ public class TableProperties {
   public static final boolean ENABLE_AUTO_CREATE_TAG_DEFAULT = false;
 
   public static final String AUTO_CREATE_TAG_TRIGGER_PERIOD = "tag.auto-create.trigger.period";
-  public static final String AUTO_CREATE_TAG_TRIGGER_PERIOD_DEFAULT =
-      TagTriggerPeriod.DAILY.propertyName();
+  public static final String AUTO_CREATE_TAG_TRIGGER_PERIOD_DEFAULT = "daily";
 
   public static final String AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES =
       "tag.auto-create.trigger.offset.minutes";

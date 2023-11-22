@@ -118,7 +118,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   @Override
   public void autoCreateTags(TableRuntime tableRuntime) {
-    new AutoCreateIcebergTagAction(table, LocalDateTime.now()).execute();
+    new AutoCreateIcebergTagAction(
+            table, tableRuntime.getTableConfiguration().getTagConfiguration(), LocalDateTime.now())
+        .execute();
   }
 
   void expireSnapshots(long mustOlderThan) {

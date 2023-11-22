@@ -18,9 +18,7 @@
 
 package com.netease.arctic.server.optimizing.maintainer;
 
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.TagTriggerPeriod;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
+import com.netease.arctic.server.table.TagConfiguration;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.slf4j.Logger;
@@ -28,7 +26,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
 import java.util.Map;
 
 /** Action to auto create tag for Iceberg Table. */
@@ -36,12 +33,12 @@ public class AutoCreateIcebergTagAction {
   private static final Logger LOG = LoggerFactory.getLogger(AutoCreateIcebergTagAction.class);
 
   private final Table table;
-  private final TagConfig tagConfig;
+  private final TagConfiguration tagConfig;
   private final LocalDateTime now;
 
-  public AutoCreateIcebergTagAction(Table table, LocalDateTime now) {
+  public AutoCreateIcebergTagAction(Table table, TagConfiguration tagConfig, LocalDateTime now) {
     this.table = table;
-    this.tagConfig = TagConfig.fromTableProperties(table.properties());
+    this.tagConfig = tagConfig;
     this.now = now;
   }
 
@@ -49,17 +46,21 @@ public class AutoCreateIcebergTagAction {
     if (!tagConfig.isAutoCreateTag()) {
       return;
     }
-    LOG.info("start check creating tag for {}", table.name());
+    LOG.info("Start checking the automatic creation of tags for {}", table.name());
     if (tagExist()) {
-      LOG.debug("{} find expect tag, skip", table.name());
+      LOG.debug("{} finds expect tag, skip", table.name());
       return;
     }
     boolean success = createTag();
-    LOG.info("{} tag creation {}", table.name(), success ? "succeed" : "skipped");
+    if (success) {
+      LOG.info("{} created tag successfully", table.name());
+    } else {
+      LOG.info("{} skipped tag creation", table.name());
+    }
   }
 
   private boolean tagExist() {
-    if (tagConfig.getTriggerPeriod() == TagTriggerPeriod.DAILY) {
+    if (tagConfig.getTriggerPeriod() == TagConfiguration.Period.DAILY) {
       return findTagOfToday() != null;
     } else {
       throw new IllegalArgumentException(
@@ -80,12 +81,12 @@ public class AutoCreateIcebergTagAction {
   private boolean createTag() {
     Snapshot snapshot = findSnapshot(table, getTagTriggerTime());
     if (snapshot == null) {
-      LOG.info("{} no snapshot found at {}", this.table.name(), getTagTriggerTime());
+      LOG.info("{} found no snapshot at {}", this.table.name(), getTagTriggerTime());
       return false;
     }
     if (exceedMaxDelay(snapshot)) {
       LOG.info(
-          "{} snapshot {} {} exceed max delay {}, trigger time {}",
+          "{}'s snapshot {} at {} exceeds max delay {}, and the expected trigger time is {}",
           this.table.name(),
           snapshot.snapshotId(),
           snapshot.timestampMillis(),
@@ -96,7 +97,7 @@ public class AutoCreateIcebergTagAction {
     String newTagName = generateTagName();
     table.manageSnapshots().createTag(newTagName, snapshot.snapshotId()).commit();
     LOG.info(
-        "{} create tag {} on snapshot {} {}",
+        "{} creates tag {} on snapshot {} at {}",
         this.table.name(),
         newTagName,
         snapshot.snapshotId(),
@@ -113,7 +114,7 @@ public class AutoCreateIcebergTagAction {
   }
 
   private String generateTagName() {
-    if (tagConfig.getTriggerPeriod() == TagTriggerPeriod.DAILY) {
+    if (tagConfig.getTriggerPeriod() == TagConfiguration.Period.DAILY) {
       String tagFormat = tagConfig.getTagFormat();
       return now.minusDays(1).format(DateTimeFormatter.ofPattern(tagFormat));
     } else {
@@ -140,85 +141,5 @@ public class AutoCreateIcebergTagAction {
   private static long getWaterMark(Table table, Snapshot snapshot) {
     // TODO get water mark from snapshot level
     return snapshot.timestampMillis();
-  }
-
-  static class TagConfig {
-    private boolean autoCreateTag;
-    private String tagFormat;
-    private TagTriggerPeriod triggerPeriod;
-    private int triggerOffsetMinutes;
-    private int maxDelayMinutes;
-
-    public boolean isAutoCreateTag() {
-      return autoCreateTag;
-    }
-
-    public void setAutoCreateTag(boolean autoCreateTag) {
-      this.autoCreateTag = autoCreateTag;
-    }
-
-    public String getTagFormat() {
-      return tagFormat;
-    }
-
-    public void setTagFormat(String tagFormat) {
-      this.tagFormat = tagFormat;
-    }
-
-    public TagTriggerPeriod getTriggerPeriod() {
-      return triggerPeriod;
-    }
-
-    public void setTriggerPeriod(TagTriggerPeriod triggerPeriod) {
-      this.triggerPeriod = triggerPeriod;
-    }
-
-    public int getTriggerOffsetMinutes() {
-      return triggerOffsetMinutes;
-    }
-
-    public void setTriggerOffsetMinutes(int triggerOffsetMinutes) {
-      this.triggerOffsetMinutes = triggerOffsetMinutes;
-    }
-
-    public int getMaxDelayMinutes() {
-      return maxDelayMinutes;
-    }
-
-    public void setMaxDelayMinutes(int maxDelayMinutes) {
-      this.maxDelayMinutes = maxDelayMinutes;
-    }
-
-    public static TagConfig fromTableProperties(Map<String, String> tableProperties) {
-      TagConfig tagConfig = new TagConfig();
-      tagConfig.setAutoCreateTag(
-          CompatiblePropertyUtil.propertyAsBoolean(
-              tableProperties,
-              TableProperties.ENABLE_AUTO_CREATE_TAG,
-              TableProperties.ENABLE_AUTO_CREATE_TAG_DEFAULT));
-      tagConfig.setTagFormat(
-          CompatiblePropertyUtil.propertyAsString(
-              tableProperties,
-              TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT,
-              TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT_DEFAULT));
-      tagConfig.setTriggerPeriod(
-          TagTriggerPeriod.valueOf(
-              CompatiblePropertyUtil.propertyAsString(
-                      tableProperties,
-                      TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD,
-                      TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD_DEFAULT)
-                  .toUpperCase(Locale.ROOT)));
-      tagConfig.setTriggerOffsetMinutes(
-          CompatiblePropertyUtil.propertyAsInt(
-              tableProperties,
-              TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES,
-              TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES_DEFAULT));
-      tagConfig.setMaxDelayMinutes(
-          CompatiblePropertyUtil.propertyAsInt(
-              tableProperties,
-              TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES,
-              TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES_DEFAULT));
-      return tagConfig;
-    }
   }
 }

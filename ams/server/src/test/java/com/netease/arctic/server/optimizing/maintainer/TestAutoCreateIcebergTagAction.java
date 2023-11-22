@@ -22,11 +22,13 @@ import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.server.table.TagConfiguration;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -47,8 +49,14 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
   public void testDefaultNotEnableCreateTag() {
     Table table = getArcticTable().asUnkeyedTable();
     checkNoTag(table);
-    new AutoCreateIcebergTagAction(table, LocalDateTime.now()).execute();
+    newAutoCreateIcebergTagAction(table, LocalDateTime.now()).execute();
     checkNoTag(table);
+  }
+
+  @NotNull
+  private AutoCreateIcebergTagAction newAutoCreateIcebergTagAction(Table table, LocalDateTime now) {
+    TagConfiguration tagConfig = TagConfiguration.parse(table.properties());
+    return new AutoCreateIcebergTagAction(table, tagConfig, now);
   }
 
   @Test
@@ -65,12 +73,12 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
     Snapshot snapshot = table.currentSnapshot();
     LocalDateTime now = fromEpochMillis(snapshot.timestampMillis());
-    new AutoCreateIcebergTagAction(table, now).execute();
+    newAutoCreateIcebergTagAction(table, now).execute();
     checkTagCount(table, 1);
     checkTag(table, "tag-" + formatDate(now.minusDays(1)), snapshot);
 
     // should not recreate tag
-    new AutoCreateIcebergTagAction(table, now).execute();
+    newAutoCreateIcebergTagAction(table, now).execute();
     checkTagCount(table, 1);
   }
 
@@ -95,7 +103,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
         .updateProperties()
         .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES, offsetMinutesOfToday + "")
         .commit();
-    new AutoCreateIcebergTagAction(table, now).execute();
+    newAutoCreateIcebergTagAction(table, now).execute();
     checkTagCount(table, 0);
 
     // Offset -1 minute to make the snapshot exceed the offset to create tag
@@ -104,12 +112,12 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
         .updateProperties()
         .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES, offsetMinutesOfToday + "")
         .commit();
-    new AutoCreateIcebergTagAction(table, now).execute();
+    newAutoCreateIcebergTagAction(table, now).execute();
     checkTagCount(table, 1);
     checkTag(table, "tag-" + formatDate(now.minusDays(1)), snapshot);
 
     // should not recreate tag
-    new AutoCreateIcebergTagAction(table, now).execute();
+    newAutoCreateIcebergTagAction(table, now).execute();
     checkTagCount(table, 1);
   }
 
@@ -130,11 +138,11 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
     LocalDateTime yesterday = now.minusDays(1);
 
     // should not create yesterday tag
-    new AutoCreateIcebergTagAction(table, yesterday).execute();
+    newAutoCreateIcebergTagAction(table, yesterday).execute();
     checkNoTag(table);
 
     // should create today tag
-    new AutoCreateIcebergTagAction(table, now).execute();
+    newAutoCreateIcebergTagAction(table, now).execute();
     checkTagCount(table, 1);
     checkTag(table, "tag-" + formatDate(now.minusDays(1)), snapshot);
   }
@@ -157,12 +165,12 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
     Snapshot snapshot = table.currentSnapshot();
     LocalDateTime now = fromEpochMillis(snapshot.timestampMillis());
-    new AutoCreateIcebergTagAction(table, now).execute();
+    newAutoCreateIcebergTagAction(table, now).execute();
     checkTagCount(table, 1);
     checkTag(table, "custom-tag-" + formatDate(now.minusDays(1)) + "-auto", snapshot);
 
     // should not recreate tag
-    new AutoCreateIcebergTagAction(table, now).execute();
+    newAutoCreateIcebergTagAction(table, now).execute();
     checkTagCount(table, 1);
   }
 
