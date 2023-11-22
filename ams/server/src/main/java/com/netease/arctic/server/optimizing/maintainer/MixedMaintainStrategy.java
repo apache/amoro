@@ -1,7 +1,24 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.server.optimizing.maintainer;
 
 import com.google.common.collect.Lists;
-import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.server.table.DataExpirationConfig;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.BaseTable;
@@ -37,28 +54,31 @@ public class MixedMaintainStrategy implements MaintainStrategy {
     ChangeTable changeTable = keyedTable.changeTable();
     BaseTable baseTable = keyedTable.baseTable();
 
-    CloseableIterable<IcebergFileEntry> changeEntries =
-        mixedTableMaintainer.getChangeMaintainer().fileScan(changeTable, dataFilter);
-    CloseableIterable<IcebergFileEntry> baseEntries =
-        mixedTableMaintainer.getBaseMaintainer().fileScan(baseTable, dataFilter);
+    CloseableIterable<MixedTableMaintainer.MixedFileEntry> changeEntries =
+        CloseableIterable.transform(
+            mixedTableMaintainer
+                .getChangeMaintainer()
+                .fileScan(changeTable, dataFilter, expirationConfig),
+            e -> new MixedTableMaintainer.MixedFileEntry(e.getFile(), e.getTsBound(), true));
+    CloseableIterable<MixedTableMaintainer.MixedFileEntry> baseEntries =
+        CloseableIterable.transform(
+            mixedTableMaintainer
+                .getBaseMaintainer()
+                .fileScan(baseTable, dataFilter, expirationConfig),
+            e -> new MixedTableMaintainer.MixedFileEntry(e.getFile(), e.getTsBound(), false));
     IcebergTableMaintainer.ExpireFiles changeExpiredFiles =
         new IcebergTableMaintainer.ExpireFiles();
     IcebergTableMaintainer.ExpireFiles baseExpiredFiles = new IcebergTableMaintainer.ExpireFiles();
 
-    CloseableIterable<FileEntry> changed =
-        CloseableIterable.transform(changeEntries, e -> new FileEntry(e, true));
-    CloseableIterable<FileEntry> based =
-        CloseableIterable.transform(baseEntries, e -> new FileEntry(e, false));
-
-    try (CloseableIterable<FileEntry> entries =
+    try (CloseableIterable<MixedTableMaintainer.MixedFileEntry> entries =
         CloseableIterable.withNoopClose(
-            com.google.common.collect.Iterables.concat(changed, based))) {
-      Queue<FileEntry> fileEntries = new LinkedTransferQueue<>();
+            com.google.common.collect.Iterables.concat(changeEntries, baseEntries))) {
+      Queue<MixedTableMaintainer.MixedFileEntry> fileEntries = new LinkedTransferQueue<>();
       entries.forEach(
           e -> {
             if (mixedTableMaintainer
                 .getChangeMaintainer()
-                .mayExpired(e, expirationConfig, partitionFreshness, expireTimestamp)) {
+                .mayExpired(e, partitionFreshness, expireTimestamp)) {
               fileEntries.add(e);
             }
           });
@@ -116,23 +136,5 @@ public class MixedMaintainStrategy implements MaintainStrategy {
                 mixedTableMaintainer.getBaseMaintainer().getTable(), false),
             expiredFiles.get(index.get()),
             expireTimestamp);
-  }
-
-  protected static class FileEntry extends IcebergFileEntry {
-
-    private final boolean isChange;
-
-    FileEntry(IcebergFileEntry fileEntry, boolean isChange) {
-      super(
-          fileEntry.getSnapshotId(),
-          fileEntry.getSequenceNumber(),
-          fileEntry.getStatus(),
-          fileEntry.getFile());
-      this.isChange = isChange;
-    }
-
-    public boolean isChange() {
-      return isChange;
-    }
   }
 }

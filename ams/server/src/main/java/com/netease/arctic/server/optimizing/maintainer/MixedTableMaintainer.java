@@ -38,10 +38,12 @@ import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.relocated.com.google.common.primitives.Longs;
@@ -402,6 +404,20 @@ public class MixedTableMaintainer implements TableMaintainer {
       } else {
         return super.createMaintainStrategy();
       }
+    }
+  }
+
+  public static class MixedFileEntry extends IcebergTableMaintainer.FileEntry {
+
+    private final boolean isChange;
+
+    MixedFileEntry(ContentFile<?> file, Literal<Long> tsBound, boolean isChange) {
+      super(file, tsBound);
+      this.isChange = isChange;
+    }
+
+    public boolean isChange() {
+      return isChange;
     }
   }
 }

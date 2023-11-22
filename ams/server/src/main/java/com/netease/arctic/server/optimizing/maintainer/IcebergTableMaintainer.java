@@ -24,7 +24,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
 import com.netease.arctic.io.SupportsFileSystemOperations;
@@ -36,7 +35,6 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
-import com.netease.arctic.utils.ManifestEntryFields;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
@@ -548,7 +546,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
     return true;
   }
 
-  CloseableIterable<IcebergFileEntry> fileScan(Table table, Expression dataFilter) {
+  CloseableIterable<IcebergTableMaintainer.FileEntry> fileScan(
+      Table table, Expression dataFilter, DataExpirationConfig expirationConfig) {
     TableScan tableScan = table.newScan().filter(dataFilter).includeColumnStats();
 
     CloseableIterable<FileScanTask> tasks;
@@ -576,15 +575,20 @@ public class IcebergTableMaintainer implements TableMaintainer {
             .flatMap(e -> e.deletes().stream())
             .collect(Collectors.toSet());
 
+    Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
     return CloseableIterable.transform(
         CloseableIterable.withNoopClose(
             com.google.common.collect.Iterables.concat(dataFiles, deleteFiles)),
-        contentFile ->
-            new IcebergFileEntry(
-                snapshotId,
-                contentFile.dataSequenceNumber(),
-                ManifestEntryFields.Status.EXISTING,
-                contentFile));
+        contentFile -> {
+          Literal<Long> literal =
+              getExpireTimestampLiteral(
+                  contentFile,
+                  field,
+                  DateTimeFormatter.ofPattern(
+                      expirationConfig.getDateTimePattern(), Locale.getDefault()),
+                  expirationConfig.getNumberDateFormat());
+          return new FileEntry(contentFile.copyWithoutStats(), literal);
+        });
   }
 
   public MaintainStrategy createMaintainStrategy() {
@@ -685,7 +689,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
       this.deleteFiles = new LinkedTransferQueue<>();
     }
 
-    void addFile(IcebergFileEntry entry) {
+    void addFile(FileEntry entry) {
       ContentFile<?> file = entry.getFile();
       switch (file.content()) {
         case DATA:
@@ -734,23 +738,15 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   boolean mayExpired(
-      IcebergFileEntry fileEntry,
-      DataExpirationConfig expirationConfig,
+      FileEntry fileEntry,
       Map<StructLike, DataFileFreshness> partitionFreshness,
       Long expireTimestamp) {
     ContentFile<?> contentFile = fileEntry.getFile();
     StructLike partition = contentFile.partition();
 
     boolean expired = true;
-    Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
     if (contentFile.content().equals(FileContent.DATA)) {
-      Literal<Long> literal =
-          getExpireTimestampLiteral(
-              contentFile,
-              field,
-              DateTimeFormatter.ofPattern(
-                  expirationConfig.getDateTimePattern(), Locale.getDefault()),
-              expirationConfig.getNumberDateFormat());
+      Literal<Long> literal = fileEntry.getTsBound();
       if (partitionFreshness.containsKey(partition)) {
         DataFileFreshness freshness = partitionFreshness.get(partition).incTotalCount();
         if (freshness.latestUpdateMillis <= literal.value()) {
@@ -759,13 +755,15 @@ public class IcebergTableMaintainer implements TableMaintainer {
       } else {
         partitionFreshness.putIfAbsent(
             partition,
-            new DataFileFreshness(fileEntry.getSequenceNumber(), literal.value()).incTotalCount());
+            new DataFileFreshness(fileEntry.getFile().dataSequenceNumber(), literal.value())
+                .incTotalCount());
       }
       expired = literal.comparator().compare(expireTimestamp, literal.value()) >= 0;
       if (expired) {
         partitionFreshness.computeIfPresent(
             partition,
-            (k, v) -> v.updateExpiredSeq(fileEntry.getSequenceNumber()).incExpiredCount());
+            (k, v) ->
+                v.updateExpiredSeq(fileEntry.getFile().dataSequenceNumber()).incExpiredCount());
       }
     }
 
@@ -773,7 +771,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   boolean willNotRetain(
-      IcebergFileEntry fileEntry,
+      FileEntry fileEntry,
       DataExpirationConfig expirationConfig,
       Map<StructLike, DataFileFreshness> partitionFreshness) {
     ContentFile<?> contentFile = fileEntry.getFile();
@@ -795,7 +793,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
           // only expire delete files with sequence-number less or equal to expired data file
           // there may be some dangling delete files, they will be cleaned by
           // OrphanFileCleaningExecutor
-          return fileEntry.getSequenceNumber() <= seqUpperBound;
+          return fileEntry.getFile().dataSequenceNumber() <= seqUpperBound;
         } else {
           return true;
         }
@@ -851,5 +849,23 @@ public class IcebergTableMaintainer implements TableMaintainer {
       return ZoneId.systemDefault();
     }
     return ZoneOffset.UTC;
+  }
+
+  public static class FileEntry {
+    private final ContentFile<?> file;
+    private final Literal<Long> tsBound;
+
+    FileEntry(ContentFile<?> file, Literal<Long> tsBound) {
+      this.file = file;
+      this.tsBound = tsBound;
+    }
+
+    public ContentFile<?> getFile() {
+      return file;
+    }
+
+    public Literal<Long> getTsBound() {
+      return tsBound;
+    }
   }
 }
