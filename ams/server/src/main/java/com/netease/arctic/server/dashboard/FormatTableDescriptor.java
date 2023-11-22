@@ -54,8 +54,8 @@ public interface FormatTableDescriptor {
   List<PartitionBaseInfo> getTablePartitions(AmoroTable<?> amoroTable);
 
   /** Get the file information of the {@link AmoroTable}. */
-  List<PartitionFileBaseInfo> getTableFiles(AmoroTable<?> amoroTable, String partition,
-      Integer specId);
+  List<PartitionFileBaseInfo> getTableFiles(
+      AmoroTable<?> amoroTable, String partition, Integer specId);
 
   /** Get the paged optimizing process information of the {@link AmoroTable} and total size. */
   Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(

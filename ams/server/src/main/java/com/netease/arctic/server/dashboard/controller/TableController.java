@@ -450,7 +450,6 @@ public class TableController {
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
-
     List<PartitionFileBaseInfo> partitionFileBaseInfos =
         tableDescriptor.getTableFile(
             TableIdentifier.of(catalog, db, table).buildTableIdentifier(), partition, specId);

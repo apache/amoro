@@ -273,8 +273,8 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public List<PartitionFileBaseInfo> getTableFiles(AmoroTable<?> amoroTable, String partition,
-      Integer specId) {
+  public List<PartitionFileBaseInfo> getTableFiles(
+      AmoroTable<?> amoroTable, String partition, Integer specId) {
     FileStoreTable table = getTable(amoroTable);
     AbstractFileStore<?> store = (AbstractFileStore<?>) table.store();
 

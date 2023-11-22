@@ -51,7 +51,6 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticDataFiles;
-import java.io.IOException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.IcebergFindFiles;
@@ -70,6 +69,7 @@ import org.apache.iceberg.util.SnapshotUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -381,27 +381,17 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   @Override
-  public List<PartitionFileBaseInfo> getTableFiles(AmoroTable<?> amoroTable, String partition,
-      Integer specId) {
+  public List<PartitionFileBaseInfo> getTableFiles(
+      AmoroTable<?> amoroTable, String partition, Integer specId) {
     ArcticTable arcticTable = getTable(amoroTable);
     List<PartitionFileBaseInfo> result = new ArrayList<>();
     if (arcticTable.isKeyedTable()) {
-      result.addAll(collectFileInfo(
-          arcticTable.asKeyedTable().changeTable(),
-          true,
-          partition,
-          specId));
-      result.addAll(collectFileInfo(
-          arcticTable.asKeyedTable().baseTable(),
-          false,
-          partition,
-          specId));
+      result.addAll(
+          collectFileInfo(arcticTable.asKeyedTable().changeTable(), true, partition, specId));
+      result.addAll(
+          collectFileInfo(arcticTable.asKeyedTable().baseTable(), false, partition, specId));
     } else {
-      result.addAll(collectFileInfo(
-          arcticTable.asUnkeyedTable(),
-          false,
-          partition,
-          specId));
+      result.addAll(collectFileInfo(arcticTable.asUnkeyedTable(), false, partition, specId));
     }
     return result;
   }
@@ -484,17 +474,14 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     Map<Integer, PartitionSpec> specs = table.specs();
 
     IcebergFindFiles manifestReader =
-        new IcebergFindFiles(table)
-            .ignoreDeleted()
-            .planWith(executorService);
+        new IcebergFindFiles(table).ignoreDeleted().planWith(executorService);
 
     if (partition != null && specId != null) {
       GenericRecord partitionData = ArcticDataFiles.data(specs.get(specId), partition);
       manifestReader.inPartitions(specs.get(specId), partitionData);
     }
 
-    CloseableIterable<IcebergFindFiles.IcebergManifestEntry> entries =
-        manifestReader.entries();
+    CloseableIterable<IcebergFindFiles.IcebergManifestEntry> entries = manifestReader.entries();
 
     try {
       for (IcebergFindFiles.IcebergManifestEntry entry : entries) {
@@ -523,15 +510,13 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                 fileSize));
       }
       return result;
-    }finally {
+    } finally {
       try {
         entries.close();
       } catch (IOException e) {
         LOG.warn(e.getMessage(), e);
       }
     }
-
-
   }
 
   private TableBasicInfo getTableBasicInfo(ArcticTable table) {

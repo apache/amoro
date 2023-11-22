@@ -20,14 +20,6 @@ package org.apache.iceberg;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.function.BiFunction;
-import java.util.function.Predicate;
 import org.apache.iceberg.expressions.Evaluator;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
@@ -44,6 +36,15 @@ import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.DateTimeUtil;
 import org.apache.iceberg.util.ParallelIterable;
 import org.apache.iceberg.util.PartitionSet;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 public class IcebergFindFiles {
   private static final Types.StructType EMPTY_STRUCT = Types.StructType.of();
@@ -228,18 +229,18 @@ public class IcebergFindFiles {
 
   public CloseableIterable<IcebergManifestEntry> entries() {
     BiFunction<
-        ManifestFile,
-        CloseableIterable<ManifestEntry<?>>,
-        CloseableIterable<IcebergManifestEntry>>
+            ManifestFile,
+            CloseableIterable<ManifestEntry<?>>,
+            CloseableIterable<IcebergManifestEntry>>
         entryFn =
-        (manifest, entries) ->
-            CloseableIterable.transform(
-                entries,
-                e ->
-                    new IcebergManifestEntry(
-                        e.file().copy(includeColumnStats),
-                        IcebergManifestEntry.Status.parse(e.status().id()),
-                        e.snapshotId()));
+            (manifest, entries) ->
+                CloseableIterable.transform(
+                    entries,
+                    e ->
+                        new IcebergManifestEntry(
+                            e.file().copy(includeColumnStats),
+                            IcebergManifestEntry.Status.parse(e.status().id()),
+                            e.snapshotId()));
     if (executorService != null) {
       return new ParallelIterable<>(entries(entryFn), executorService);
     } else {
@@ -271,17 +272,17 @@ public class IcebergFindFiles {
         specsById == null
             ? null
             : Caffeine.newBuilder()
-            .build(
-                specId -> {
-                  PartitionSpec spec = specsById.get(specId);
-                  Expression partitionFilter = partitionFilter(specId);
-                  return ManifestEvaluator.forPartitionFilter(
-                      Expressions.and(
-                          partitionFilter,
-                          Projections.inclusive(spec, caseSensitive).project(dataFilter)),
-                      spec,
-                      caseSensitive);
-                });
+                .build(
+                    specId -> {
+                      PartitionSpec spec = specsById.get(specId);
+                      Expression partitionFilter = partitionFilter(specId);
+                      return ManifestEvaluator.forPartitionFilter(
+                          Expressions.and(
+                              partitionFilter,
+                              Projections.inclusive(spec, caseSensitive).project(dataFilter)),
+                          spec,
+                          caseSensitive);
+                    });
 
     Evaluator evaluator;
     if (fileFilter != null && fileFilter != Expressions.alwaysTrue()) {
@@ -296,9 +297,9 @@ public class IcebergFindFiles {
         evalCache == null
             ? closeableDataManifests
             : CloseableIterable.filter(
-            scanMetrics.skippedDataManifests(),
-            closeableDataManifests,
-            manifest -> evalCache.get(manifest.partitionSpecId()).eval(manifest));
+                scanMetrics.skippedDataManifests(),
+                closeableDataManifests,
+                manifest -> evalCache.get(manifest.partitionSpecId()).eval(manifest));
 
     if (ignoreDeleted) {
       // only scan manifests that have entries other than deletes
