@@ -502,9 +502,6 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
         PartitionSpec partitionSpec = specs.get(contentFile.specId());
         String partitionPath = partitionSpec.partitionToPath(contentFile.partition());
-        // if (partition != null && partitionSpec.isPartitioned() && !partition.equals(partitionPath)) {
-        //   continue;
-        // }
         long fileSize = contentFile.fileSizeInBytes();
         DataFileType dataFileType =
             isChangeTable
