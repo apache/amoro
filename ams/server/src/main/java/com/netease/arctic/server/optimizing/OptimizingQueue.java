@@ -604,9 +604,6 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
                   selfOptimizingTotalCostMsContent
                       .tableOptimizingTotalCostMs()
                       .inc(taskRuntime.getCostTime()));
-
-      MetricsManager.instance().emit(selfOptimizingTotalCostMsContent);
-
       lock.lock();
       try {
         if (hasCommitted) {
@@ -618,6 +615,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         status = Status.SUCCESS;
         endTime = System.currentTimeMillis();
         persistProcessCompleted(true);
+        MetricsManager.instance().emit(selfOptimizingTotalCostMsContent);
       } catch (Exception e) {
         LOG.warn("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
         status = Status.FAILED;
