@@ -388,7 +388,6 @@ public class MixedTableMaintainer implements TableMaintainer {
         fileEntries
             .parallelStream()
             .filter(e -> willNotRetain(e, expirationConfig, partitionFreshness))
-            .collect(Collectors.toList())
             .forEach(
                 e -> {
                   if (e.isChange()) {
