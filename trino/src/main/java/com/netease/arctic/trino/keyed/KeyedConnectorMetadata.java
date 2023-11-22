@@ -63,9 +63,6 @@ import io.trino.spi.expression.ConnectorExpression;
 import io.trino.spi.expression.Variable;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
-import io.trino.spi.statistics.ColumnStatistics;
-import io.trino.spi.statistics.DoubleRange;
-import io.trino.spi.statistics.Estimate;
 import io.trino.spi.statistics.TableStatistics;
 import io.trino.spi.type.TypeManager;
 import org.apache.iceberg.PartitionSpecParser;
@@ -88,7 +85,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /** Metadata for Keyed Table */
 public class KeyedConnectorMetadata implements ConnectorMetadata {
@@ -455,15 +451,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
                       handle,
                       arcticTable.asKeyedTable().baseTable().currentSnapshot().snapshotId()),
                   arcticTable.asKeyedTable().baseTable());
-          TableStatistics changeTableStatistics =
-              TableStatisticsReader.getTableStatistics(
-                  typeManager,
-                  session,
-                  withSnapshotId(
-                      handle,
-                      arcticTable.asKeyedTable().changeTable().currentSnapshot().snapshotId()),
-                  arcticTable.asKeyedTable().changeTable());
-          return computeBothTablesStatistics(baseTableStatistics, changeTableStatistics);
+          return baseTableStatistics;
         });
   }
 
@@ -486,72 +474,6 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
         handle.getUpdatedColumns(),
         handle.isRecordScannedFiles(),
         handle.getMaxScannedFileSize());
-  }
-
-  private static TableStatistics computeBothTablesStatistics(
-      TableStatistics baseTableStatistics, TableStatistics changeTableStatistics) {
-    double baseRowCount = baseTableStatistics.getRowCount().getValue();
-    double changeRowCount = changeTableStatistics.getRowCount().getValue();
-    Estimate rowCount = Estimate.of(baseRowCount + changeRowCount);
-    Map<ColumnHandle, ColumnStatistics> baseColumnStatistics =
-        baseTableStatistics.getColumnStatistics();
-    Map<ColumnHandle, ColumnStatistics> changeColumnStatistics =
-        changeTableStatistics.getColumnStatistics();
-    Map<ColumnHandle, ColumnStatistics> newColumnStatistics = new HashMap<>();
-    changeColumnStatistics.forEach(
-        (columnHandle, statisticsOfChangeColumn) -> {
-          ColumnStatistics statisticsOfBaseColumn = baseColumnStatistics.get(columnHandle);
-          ColumnStatistics.Builder columnBuilder = new ColumnStatistics.Builder();
-
-          Estimate baseDataSize = statisticsOfBaseColumn.getDataSize();
-          Estimate changeDataSize = statisticsOfChangeColumn.getDataSize();
-          if (!baseDataSize.isUnknown() || !changeDataSize.isUnknown()) {
-            double value =
-                Stream.of(baseDataSize, changeDataSize)
-                    .mapToDouble(Estimate::getValue)
-                    .average()
-                    .getAsDouble();
-            columnBuilder.setDataSize(
-                Double.isNaN(value) ? Estimate.unknown() : Estimate.of(value));
-          }
-
-          Optional<DoubleRange> baseRange = statisticsOfBaseColumn.getRange();
-          Optional<DoubleRange> changeRange = statisticsOfChangeColumn.getRange();
-          if (baseRange.isPresent() && changeRange.isPresent()) {
-            columnBuilder.setRange(DoubleRange.union(baseRange.get(), changeRange.get()));
-          } else {
-            columnBuilder.setRange(baseRange.isPresent() ? baseRange : changeRange);
-          }
-
-          Estimate baseNullsFraction = statisticsOfBaseColumn.getNullsFraction();
-          Estimate changeNullsFraction = statisticsOfChangeColumn.getNullsFraction();
-          if (!baseNullsFraction.isUnknown() && !changeNullsFraction.isUnknown()) {
-            columnBuilder.setNullsFraction(
-                Estimate.of(
-                    ((baseNullsFraction.getValue() * baseRowCount)
-                            + (statisticsOfChangeColumn.getNullsFraction().getValue()
-                                * changeRowCount))
-                        / (baseRowCount + changeRowCount)));
-          } else {
-            columnBuilder.setNullsFraction(
-                baseNullsFraction.isUnknown() ? changeNullsFraction : baseNullsFraction);
-          }
-
-          Estimate baseDistinctValue = statisticsOfBaseColumn.getDistinctValuesCount();
-          Estimate changeDistinctValue = statisticsOfChangeColumn.getDistinctValuesCount();
-          if (!baseDistinctValue.isUnknown() || !changeDistinctValue.isUnknown()) {
-            double value =
-                Stream.of(baseDistinctValue, changeDistinctValue)
-                    .mapToDouble(Estimate::getValue)
-                    .map(dataSize -> Double.isNaN(dataSize) ? 0 : dataSize)
-                    .sum();
-            columnBuilder.setDistinctValuesCount(Estimate.of(value));
-          }
-
-          ColumnStatistics columnStatistics = columnBuilder.build();
-          newColumnStatistics.put(columnHandle, columnStatistics);
-        });
-    return new TableStatistics(rowCount, newColumnStatistics);
   }
 
   private static Set<Integer> identityPartitionColumnsInAllSpecs(ArcticTable table) {
