@@ -51,6 +51,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.Pair;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -198,15 +199,13 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
 
   @Test
   public void readAllDataWithPartitionEvolution() throws IOException {
-    if (!getArcticTable().spec().isUnpartitioned()) {
-      getArcticTable()
-          .asUnkeyedTable()
-          .updateSpec()
-          .removeField("op_time_day")
-          .addField(Expressions.month("op_time"))
-          .commit();
-    }
-
+    Assume.assumeTrue(getArcticTable().spec().isPartitioned());
+    getArcticTable()
+        .asUnkeyedTable()
+        .updateSpec()
+        .removeField("op_time_day")
+        .addField(Expressions.month("op_time"))
+        .commit();
     readAllData();
   }
 

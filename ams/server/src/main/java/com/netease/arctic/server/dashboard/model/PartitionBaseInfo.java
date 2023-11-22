@@ -33,9 +33,9 @@ public class PartitionBaseInfo {
   public PartitionBaseInfo() {}
 
   public PartitionBaseInfo(
-      String partition, int sepcId, long fileCount, long fileSize, long lastCommitTime) {
+      String partition, int specId, long fileCount, long fileSize, long lastCommitTime) {
     this.partition = partition;
-    this.specId = sepcId;
+    this.specId = specId;
     this.fileCount = fileCount;
     setFileSize(fileSize);
     this.lastCommitTime = lastCommitTime;

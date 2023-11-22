@@ -486,7 +486,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     try {
       for (IcebergFindFiles.IcebergManifestEntry entry : entries) {
         ContentFile<?> contentFile = entry.getFile();
-        Long snapshotId = entry.getSnapshotId();
+        long snapshotId = entry.getSnapshotId();
 
         PartitionSpec partitionSpec = specs.get(contentFile.specId());
         String partitionPath = partitionSpec.partitionToPath(contentFile.partition());
