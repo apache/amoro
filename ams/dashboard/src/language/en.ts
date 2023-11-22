@@ -110,7 +110,8 @@ export default {
   resourceAllocation: 'Resource Allocation',
   resourceGroup: 'Resource Group',
   releaseOptModalTitle: 'Release this optimizer？',
-  welecomeTip: 'Welcome to Arcitc!',
+  cancelOptimizingProcessOptModalTitle: 'Cancel the optimizing process of this table？',
+  welecomeTip: 'Welcome to Amoro!',
   signin: 'Sign in',
   username: 'Username',
   password: 'Password',
@@ -185,5 +186,10 @@ export default {
   totalPositionDeletes: 'pos-delete-records',
   totalFiles: 'total-files',
   totalDataFiles: 'data-files',
-  totalDeleteFiles: 'delete-files'
+  totalDeleteFiles: 'delete-files',
+  branches: 'branches',
+  tags: 'tags',
+  nothingToShow: 'Nothing to show',
+  filterBranchesOrTags: 'Filter branches/tags',
+  findATag: 'Find a tag'
 }

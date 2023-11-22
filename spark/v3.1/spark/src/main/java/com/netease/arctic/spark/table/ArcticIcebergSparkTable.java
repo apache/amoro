@@ -26,10 +26,22 @@ import java.util.Map;
 
 public class ArcticIcebergSparkTable extends SparkTable {
   private final UnkeyedTable unkeyedTable;
+  private final String sparkCatalogName;
 
-  public ArcticIcebergSparkTable(UnkeyedTable unkeyedTable, boolean refreshEagerly) {
+  public ArcticIcebergSparkTable(
+      UnkeyedTable unkeyedTable, boolean refreshEagerly, String sparkCatalogName) {
     super(unkeyedTable, refreshEagerly);
     this.unkeyedTable = unkeyedTable;
+    this.sparkCatalogName = sparkCatalogName;
+  }
+
+  @Override
+  public String name() {
+    return sparkCatalogName
+        + "."
+        + unkeyedTable.id().getDatabase()
+        + "."
+        + unkeyedTable.id().getTableName();
   }
 
   @Override

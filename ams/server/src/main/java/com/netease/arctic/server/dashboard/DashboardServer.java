@@ -26,7 +26,7 @@ import static io.javalin.apibuilder.ApiBuilder.put;
 
 import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.server.DefaultOptimizingService;
-import com.netease.arctic.server.IcebergRestCatalogService;
+import com.netease.arctic.server.RestCatalogService;
 import com.netease.arctic.server.dashboard.controller.CatalogController;
 import com.netease.arctic.server.dashboard.controller.HealthCheckController;
 import com.netease.arctic.server.dashboard.controller.LoginController;
@@ -214,7 +214,7 @@ public class DashboardServer {
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
                 tableController::getTableBranches);
             post(
-                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/cancel-process",
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/cancel-process/{processId}",
                 tableController::cancelOptimizingProcess);
 
             // catalog controller
@@ -303,6 +303,9 @@ public class DashboardServer {
             get(
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
                 tableController::getOptimizingProcesses);
+            post(
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/cancel-process/{processId}",
+                tableController::cancelOptimizingProcess);
             get(
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/tasks",
                 tableController::getOptimizingProcessTasks);
@@ -436,7 +439,7 @@ public class DashboardServer {
     "/js/*",
     "/img/*",
     "/css/*",
-    IcebergRestCatalogService.ICEBERG_REST_API_PREFIX + "/*"
+    RestCatalogService.ICEBERG_REST_API_PREFIX + "/*"
   };
 
   private static boolean needLoginCheck(String uri) {

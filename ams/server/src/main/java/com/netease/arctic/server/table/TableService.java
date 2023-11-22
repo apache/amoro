@@ -34,6 +34,7 @@ public interface TableService extends CatalogService, TableManager {
   /**
    * create table metadata
    *
+   * @param catalogName internal catalog to create the table
    * @param tableMeta table metadata info
    */
   void createTable(String catalogName, TableMetadata tableMeta);
@@ -84,7 +85,7 @@ public interface TableService extends CatalogService, TableManager {
    */
   List<TableIDWithFormat> listTables(String catalogName, String dbName);
 
-  TableRuntime getRuntime(TableIdentifier tableIdentifier);
+  ServerTableIdentifier getServerTableIdentifier(TableIdentifier id);
 
   /** create arctic database */
   void createDatabase(String catalogName, String dbName);

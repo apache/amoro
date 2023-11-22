@@ -237,6 +237,7 @@ public class SparkTableTestBase extends SparkTestBase {
       return org.apache.spark.sql.connector.catalog.Identifier.of(new String[] {database}, table);
     }
 
+    /** @return spark identifier as string. */
     @Override
     public String toString() {
       if (SOURCE_TYPE_VIEW.equalsIgnoreCase(sourceType)) {
@@ -281,5 +282,22 @@ public class SparkTableTestBase extends SparkTestBase {
     Assertions.assertArrayEquals(
         primaryKeys.stream().sorted().distinct().toArray(),
         descPrimaryKeys.stream().sorted().distinct().toArray());
+  }
+
+  public void assertShowCreateTable(List<Row> rows, Identifier id, ArcticTable table) {
+    StringBuilder showCreateSqlBuilder = new StringBuilder();
+    for (Row r : rows) {
+      showCreateSqlBuilder.append(r.getString(0));
+    }
+    String showCreateSql = showCreateSqlBuilder.toString();
+    String expectCreateHeader = "create table " + id.catalog + "." + id + " (";
+    String ignoreCaseShowCreate = showCreateSql.replace("CREATE", "create");
+    ignoreCaseShowCreate = ignoreCaseShowCreate.replace("TABLE", "table");
+    Assertions.assertTrue(
+        ignoreCaseShowCreate.startsWith(expectCreateHeader),
+        "expect ["
+            + expectCreateHeader
+            + "] in ShowCreateTable Result, but not found in :"
+            + showCreateSql);
   }
 }

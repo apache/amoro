@@ -225,7 +225,7 @@ public class SerializationUtil {
     }
   }
 
-  private static class StructLikeCopy implements StructLike {
+  public static class StructLikeCopy implements StructLike {
 
     public static StructLike copy(StructLike struct) {
       return struct != null ? new StructLikeCopy(struct) : null;

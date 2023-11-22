@@ -45,6 +45,7 @@ import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'
 import { IColumns } from '@/types/common.type'
 import { getOptimizes, cancelOptimizingProcess } from '@/services/table.service'
+import { Modal, message } from 'ant-design-vue'
 import { useRoute } from 'vue-router'
 import { QuestionCircleOutlined } from '@ant-design/icons-vue'
 import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
@@ -75,6 +76,7 @@ const dataSource = reactive<any[]>([])
 
 const loading = ref<boolean>(false)
 const buttonDisabled = ref(true)
+const processId = ref<string>('')
 const pagination = reactive(usePagination())
 const route = useRoute()
 const query = route.query
@@ -100,6 +102,7 @@ async function getTableInfo() {
       const { inputFiles = {}, outputFiles = {} } = item
       if (item.status === 'RUNNING') {
         buttonDisabled.value = false
+        processId.value = item.processId
       }
       return {
         ...item,
@@ -123,16 +126,25 @@ async function getTableInfo() {
 }
 
 async function cancel() {
-  try {
-    loading.value = true
-    const result = await cancelOptimizingProcess({
-      ...sourceData
-    })
-    console.log(result)
-    buttonDisabled.value = true
-    getTableInfo()
-  } catch (error) {
-  }
+  Modal.confirm({
+    title: t('cancelOptimizingProcessOptModalTitle'),
+    content: '',
+    okText: '',
+    cancelText: '',
+    onOk: async() => {
+      try {
+        loading.value = true
+        const result = await cancelOptimizingProcess({
+          ...sourceData,
+          processId: processId.value
+        })
+        console.log(result)
+        buttonDisabled.value = true
+        getTableInfo()
+      } catch (error) {
+      }
+    }
+  })
 }
 
 function change({ current = 1, pageSize = 25 } = pagination) {
