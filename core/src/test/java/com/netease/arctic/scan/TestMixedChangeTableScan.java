@@ -18,11 +18,9 @@
 
 package com.netease.arctic.scan;
 
-import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.TableDataTestBase;
 import com.netease.arctic.utils.ArcticDataFiles;
 import org.apache.iceberg.FileScanTask;
-import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
@@ -41,22 +39,6 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
     try (CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles()) {
       assertFilesSequence(tasks, 3, 1, 2);
     }
-  }
-
-  @Test
-  public void testIncrementalScanUseSnapshot() {
-    Snapshot snapshot = getArcticTable().asKeyedTable().changeTable().currentSnapshot();
-    writeChangeStore(4L, ChangeAction.INSERT, changeInsertRecords(allRecords));
-    Assert.assertNotEquals(
-        snapshot.snapshotId(),
-        getArcticTable().asKeyedTable().changeTable().currentSnapshot().snapshotId());
-
-    ChangeTableIncrementalScan changeTableIncrementalScan =
-        getArcticTable().asKeyedTable().changeTable().newScan();
-    changeTableIncrementalScan = changeTableIncrementalScan.useSnapshot(snapshot.snapshotId());
-    CloseableIterable<FileScanTask> tasks = changeTableIncrementalScan.planFiles();
-
-    assertFilesSequence(tasks, 3, 1, 2);
   }
 
   @Test

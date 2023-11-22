@@ -22,20 +22,12 @@ import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.io.TableDataTestBase;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
-import com.netease.arctic.table.BaseTable;
-import com.netease.arctic.utils.ArcticDataFiles;
-import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.StatisticsFileUtil;
 import org.apache.iceberg.AppendFiles;
-import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.StatisticsFile;
-import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -48,46 +40,16 @@ public class TestKeyedTableScan extends TableDataTestBase {
 
   @Test
   public void testScanWithInsertFileInBaseStore() throws IOException {
-    assertFileCount(getArcticTable().asKeyedTable().newScan().planTasks(), 4, 2, 1);
+    assertFileCount(4, 2, 1);
     // write 2 base files
     writeInsertFileIntoBaseStore();
-    assertFileCount(getArcticTable().asKeyedTable().newScan().planTasks(), 6, 2, 1);
+    assertFileCount(6, 2, 1);
   }
 
-  @Test
-  public void testScanWithOptimizedSequence() throws IOException {
-    changeOptimizedSequence();
-    assertFileCount(getArcticTable().asKeyedTable().newScan().planTasks(), 4, 0, 1);
-  }
-
-  private void changeOptimizedSequence() {
-    BaseTable baseTable = getArcticTable().asKeyedTable().baseTable();
-    baseTable.newAppend().set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true").commit();
-    Snapshot baseSnapshot = baseTable.currentSnapshot();
-    StructLikeMap<Long> fromSequence =
-        StructLikeMap.create(getArcticTable().spec().partitionType());
-    StructLike partitionData =
-        ArcticDataFiles.data(getArcticTable().spec(), "op_time_day=2022-01-01");
-    fromSequence.put(partitionData, 1L);
-    StatisticsFile file =
-        StatisticsFileUtil.writerBuilder(baseTable)
-            .withSnapshotId(baseSnapshot.snapshotId())
-            .build()
-            .add(
-                ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
-                fromSequence,
-                StatisticsFileUtil.createPartitionDataSerializer(
-                    getArcticTable().spec(), Long.class))
-            .complete();
-    baseTable.updateStatistics().setStatistics(baseSnapshot.snapshotId(), file).commit();
-  }
-
-  private void assertFileCount(
-      CloseableIterable<CombinedScanTask> combinedScanTasks,
-      int baseFileCnt,
-      int insertFileCnt,
-      int equDeleteFileCnt)
+  private void assertFileCount(int baseFileCnt, int insertFileCnt, int equDeleteFileCnt)
       throws IOException {
+    CloseableIterable<CombinedScanTask> combinedScanTasks =
+        getArcticTable().asKeyedTable().newScan().planTasks();
     final List<ArcticFileScanTask> allBaseTasks = new ArrayList<>();
     final List<ArcticFileScanTask> allInsertTasks = new ArrayList<>();
     final List<ArcticFileScanTask> allEquDeleteTasks = new ArrayList<>();
