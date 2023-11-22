@@ -32,15 +32,15 @@ import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TagConfiguration {
-  //tag.auto-create.enabled
+  // tag.auto-create.enabled
   private boolean autoCreateTag = false;
-  //tag.auto-create.daily.tag-format
+  // tag.auto-create.daily.tag-format
   private String tagFormat;
-  //tag.auto-create.trigger.period
+  // tag.auto-create.trigger.period
   private Period triggerPeriod;
-  //tag.auto-create.trigger.offset.minutes
+  // tag.auto-create.trigger.offset.minutes
   private int triggerOffsetMinutes;
-  //tag.auto-create.trigger.max-delay.minutes
+  // tag.auto-create.trigger.max-delay.minutes
   private int maxDelayMinutes;
 
   /** The interval for periodically triggering creating tags */
@@ -68,7 +68,7 @@ public class TagConfiguration {
      * Obtain the trigger time for creating a tag, which is the idea time of the last tag before the
      * check time.
      *
-     * <p>For example, when creating a daily tag, the check time is 2022-08-08 11:00:00 and the 
+     * <p>For example, when creating a daily tag, the check time is 2022-08-08 11:00:00 and the
      * offset is set to be 5 min, the idea trigger time is 2022-08-08 00:05:00.
      */
     public abstract long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes);
@@ -151,12 +151,17 @@ public class TagConfiguration {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     TagConfiguration that = (TagConfiguration) o;
-    return autoCreateTag == that.autoCreateTag && triggerOffsetMinutes == that.triggerOffsetMinutes && maxDelayMinutes == that.maxDelayMinutes && Objects.equal(tagFormat, that.tagFormat) && triggerPeriod == that.triggerPeriod;
+    return autoCreateTag == that.autoCreateTag
+        && triggerOffsetMinutes == that.triggerOffsetMinutes
+        && maxDelayMinutes == that.maxDelayMinutes
+        && Objects.equal(tagFormat, that.tagFormat)
+        && triggerPeriod == that.triggerPeriod;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(autoCreateTag, tagFormat, triggerPeriod, triggerOffsetMinutes, maxDelayMinutes);
+    return Objects.hashCode(
+        autoCreateTag, tagFormat, triggerPeriod, triggerOffsetMinutes, maxDelayMinutes);
   }
 
   @Override
