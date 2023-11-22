@@ -231,10 +231,11 @@ public class TableRuntime extends StatedPersistentBase {
     invokeConsisitency(
         () -> {
           pendingInput = null;
-          if (optimizingStatus == OptimizingStatus.PLANNING) {
+          if (optimizingStatus == OptimizingStatus.PLANNING
+              || optimizingStatus == OptimizingStatus.PENDING) {
             updateOptimizingStatus(OptimizingStatus.IDLE);
             persistUpdatingRuntime();
-            tableHandler.handleTableChanged(this, OptimizingStatus.PLANNING);
+            tableHandler.handleTableChanged(this, optimizingStatus);
           }
         });
   }
