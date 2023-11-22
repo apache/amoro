@@ -29,7 +29,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException;
@@ -55,13 +54,14 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 
-public class SparkCatalog implements TableCatalog, SupportsNamespaces, ProcedureCatalog {
+public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, ProcedureCatalog {
 
-  private static final Logger LOG = LoggerFactory.getLogger(SparkCatalog.class);
+  private static final Logger LOG = LoggerFactory.getLogger(SparkUnifiedCatalog.class);
   private static final Map<TableFormat, String> defaultTableCatalogImplMap = ImmutableMap.of(
-      TableFormat.ICEBERG, org.apache.iceberg.spark.SparkCatalog.class.getName(),
+      TableFormat.ICEBERG, "org.apache.iceberg.spark.SparkCatalog",
       TableFormat.MIXED_HIVE, "com.netease.arctic.spark.ArcticSparkCatalog",
-      TableFormat.MIXED_ICEBERG, "com.netease.arctic.spark.ArcticSparkCatalog"
+      TableFormat.MIXED_ICEBERG, "com.netease.arctic.spark.ArcticSparkCatalog",
+      TableFormat.PAIMON, "org.apache.paimon.spark.SparkCatalog"
   );
 
   private UnifiedCatalog unifiedCatalog;
@@ -71,9 +71,9 @@ public class SparkCatalog implements TableCatalog, SupportsNamespaces, Procedure
   @Override
   public void initialize(String name, CaseInsensitiveStringMap options) {
     Map<String, String> properties = Maps.newHashMap(options);
-    String uri = options.get(SparkCatalogProperties.URI);
-    properties.remove(SparkCatalogProperties.URI);
-    Preconditions.checkNotNull(uri, "lack required option: %s", SparkCatalogProperties.URI);
+    String uri = options.get(SparkUnifiedCatalogProperties.URI);
+    properties.remove(SparkUnifiedCatalogProperties.URI);
+    Preconditions.checkNotNull(uri, "lack required option: %s", SparkUnifiedCatalogProperties.URI);
 
     ArcticThriftUrl catalogUri = ArcticThriftUrl.parse(uri, Constants.THRIFT_TABLE_SERVICE_NAME);
     String registerCatalogName = catalogUri.catalogName();

@@ -21,12 +21,10 @@ package com.netease.arctic.spark.test;
 import com.netease.arctic.SingletonResourceUtil;
 import com.netease.arctic.TestAms;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
-import com.netease.arctic.spark.unified.SparkCatalog;
+import com.netease.arctic.spark.unified.SparkUnifiedCatalog;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
@@ -40,7 +38,6 @@ import org.apache.thrift.TException;
 import org.junit.rules.TemporaryFolder;
 
 import java.util.Map;
-import java.util.NoSuchElementException;
 
 public class SparkTestContext {
 
@@ -49,7 +46,7 @@ public class SparkTestContext {
   public static final String MIXED_CATALOG_IMPL = "com.netease.arctic.spark.ArcticSparkCatalog";
   public static final String SQL_EXTENSIONS_IMPL = "com.netease.arctic.spark.ArcticSparkExtensions";
 
-  public static final String UNIFIED_CATALOG_IMP = SparkCatalog.class.getName();
+  public static final String UNIFIED_CATALOG_IMP = SparkUnifiedCatalog.class.getName();
 
   final TemporaryFolder warehouse = new TemporaryFolder();
 
