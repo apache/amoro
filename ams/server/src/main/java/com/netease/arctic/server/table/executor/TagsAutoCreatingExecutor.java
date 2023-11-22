@@ -28,6 +28,7 @@ import com.netease.arctic.server.table.TableRuntime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** Service for automatically creating tags for table periodically. */
 public class TagsAutoCreatingExecutor extends BaseTableExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(TagsAutoCreatingExecutor.class);
 
