@@ -23,6 +23,7 @@ import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.mi
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
@@ -36,6 +37,7 @@ import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TableFileUtil;
+import java.io.IOException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
@@ -591,19 +593,46 @@ public class IcebergTableMaintainer implements TableMaintainer {
         });
   }
 
-  public MaintainStrategy createMaintainStrategy() {
-    return new IcebergMaintainStrategy(this);
+  protected List<IcebergTableMaintainer.ExpireFiles> expiredFileScan(
+      DataExpirationConfig expirationConfig,
+      Expression dataFilter,
+      long expireTimestamp,
+      Map<StructLike, IcebergTableMaintainer.DataFileFreshness> partitionFreshness) {
+    IcebergTableMaintainer.ExpireFiles expiredFiles = new IcebergTableMaintainer.ExpireFiles();
+    try (CloseableIterable<IcebergTableMaintainer.FileEntry> entries =
+        fileScan(table, dataFilter, expirationConfig)) {
+      Queue<IcebergTableMaintainer.FileEntry> fileEntries = new LinkedTransferQueue<>();
+      entries.forEach(
+          e -> {
+            if (mayExpired(e, partitionFreshness, expireTimestamp)) {
+              fileEntries.add(e);
+            }
+          });
+      fileEntries
+          .parallelStream()
+          .filter(e -> willNotRetain(e, expirationConfig, partitionFreshness))
+          .forEach(expiredFiles::addFile);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return Lists.newArrayList(expiredFiles);
+  }
+
+  protected void doExpireFiles(List<IcebergTableMaintainer.ExpireFiles> expiredFiles, long expireTimestamp) {
+    expireFiles(
+        IcebergTableUtil.getSnapshotId(table, false),
+        expiredFiles.get(0),
+        expireTimestamp);
   }
 
   protected void purgeTableData(DataExpirationConfig expirationConfig, long expireTimestamp) {
     Expression dataFilter = getDataExpression(expirationConfig, expireTimestamp);
     Map<StructLike, DataFileFreshness> partitionFreshness = Maps.newConcurrentMap();
 
-    MaintainStrategy maintainStrategy = createMaintainStrategy();
     List<ExpireFiles> expiredFiles =
-        maintainStrategy.expiredFileScan(
+        expiredFileScan(
             expirationConfig, dataFilter, expireTimestamp, partitionFreshness);
-    maintainStrategy.doExpireFiles(expiredFiles, expireTimestamp);
+    doExpireFiles(expiredFiles, expireTimestamp);
   }
 
   /**

@@ -42,8 +42,6 @@ public interface TableMaintainer {
 
   void expireData(TableRuntime tableRuntime);
 
-  MaintainStrategy createMaintainStrategy();
-
   static TableMaintainer ofTable(AmoroTable<?> amoroTable) {
     TableFormat format = amoroTable.format();
     if (format == TableFormat.MIXED_HIVE || format == TableFormat.MIXED_ICEBERG) {

@@ -19,6 +19,7 @@
 package com.netease.arctic.server.optimizing.maintainer;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.hive.utils.TableTypeUtil;
@@ -36,6 +37,10 @@ import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.iceberg.ContentFile;
@@ -43,6 +48,8 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
@@ -128,12 +135,8 @@ public class MixedTableMaintainer implements TableMaintainer {
   @Override
   public void expireData(TableRuntime tableRuntime) {
     if (changeMaintainer != null) {
-      if (baseMaintainer != null) {
-        changeMaintainer.setMaintainStrategy(createMaintainStrategy());
-      }
       changeMaintainer.expireData(tableRuntime);
     } else {
-      baseMaintainer.setMaintainStrategy(createMaintainStrategy());
       baseMaintainer.expireData(tableRuntime);
     }
   }
@@ -141,19 +144,10 @@ public class MixedTableMaintainer implements TableMaintainer {
   @VisibleForTesting
   public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
     if (changeMaintainer != null) {
-      if (baseMaintainer != null) {
-        changeMaintainer.setMaintainStrategy(createMaintainStrategy());
-      }
       changeMaintainer.expireDataFrom(expirationConfig, instant);
     } else {
-      baseMaintainer.setMaintainStrategy(createMaintainStrategy());
       baseMaintainer.expireDataFrom(expirationConfig, instant);
     }
-  }
-
-  @Override
-  public MaintainStrategy createMaintainStrategy() {
-    return new MixedMaintainStrategy(this);
   }
 
   protected void expireSnapshots(long mustOlderThan) {
@@ -201,8 +195,6 @@ public class MixedTableMaintainer implements TableMaintainer {
     private static final int DATA_FILE_LIST_SPLIT = 3000;
 
     private final UnkeyedTable unkeyedTable;
-
-    private MaintainStrategy maintainStrategy;
 
     public ChangeTableMaintainer(UnkeyedTable unkeyedTable) {
       super(unkeyedTable);
@@ -361,23 +353,89 @@ public class MixedTableMaintainer implements TableMaintainer {
       }
     }
 
-    public void setMaintainStrategy(MaintainStrategy maintainStrategy) {
-      this.maintainStrategy = maintainStrategy;
+    private List<IcebergTableMaintainer.ExpireFiles> keyedExpiredFileScan(
+        DataExpirationConfig expirationConfig,
+        Expression dataFilter,
+        long expireTimestamp,
+        Map<StructLike, IcebergTableMaintainer.DataFileFreshness> partitionFreshness) {
+      KeyedTable keyedTable = arcticTable.asKeyedTable();
+      ChangeTable changeTable = keyedTable.changeTable();
+      BaseTable baseTable = keyedTable.baseTable();
+
+      CloseableIterable<MixedTableMaintainer.MixedFileEntry> changeEntries =
+          CloseableIterable.transform(
+              fileScan(changeTable, dataFilter, expirationConfig),
+              e -> new MixedTableMaintainer.MixedFileEntry(e.getFile(), e.getTsBound(), true));
+      CloseableIterable<MixedTableMaintainer.MixedFileEntry> baseEntries =
+          CloseableIterable.transform(
+              fileScan(baseTable, dataFilter, expirationConfig),
+              e -> new MixedTableMaintainer.MixedFileEntry(e.getFile(), e.getTsBound(), false));
+      IcebergTableMaintainer.ExpireFiles changeExpiredFiles =
+          new IcebergTableMaintainer.ExpireFiles();
+      IcebergTableMaintainer.ExpireFiles baseExpiredFiles = new IcebergTableMaintainer.ExpireFiles();
+
+      try (CloseableIterable<MixedTableMaintainer.MixedFileEntry> entries =
+          CloseableIterable.withNoopClose(
+              com.google.common.collect.Iterables.concat(changeEntries, baseEntries))) {
+        Queue<MixedFileEntry> fileEntries = new LinkedTransferQueue<>();
+        entries.forEach(
+            e -> {
+              if (mayExpired(e, partitionFreshness, expireTimestamp)) {
+                fileEntries.add(e);
+              }
+            });
+        fileEntries
+            .parallelStream()
+            .filter(
+                e -> willNotRetain(e, expirationConfig, partitionFreshness))
+            .collect(Collectors.toList())
+            .forEach(
+                e -> {
+                  if (e.isChange()) {
+                    changeExpiredFiles.addFile(e);
+                  } else {
+                    baseExpiredFiles.addFile(e);
+                  }
+                });
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+
+      return Lists.newArrayList(changeExpiredFiles, baseExpiredFiles);
     }
 
     @Override
-    public MaintainStrategy createMaintainStrategy() {
-      if (maintainStrategy != null) {
-        return maintainStrategy;
-      } else {
-        return super.createMaintainStrategy();
-      }
+    public List<IcebergTableMaintainer.ExpireFiles> expiredFileScan(
+        DataExpirationConfig expirationConfig,
+        Expression dataFilter,
+        long expireTimestamp,
+        Map<StructLike, IcebergTableMaintainer.DataFileFreshness> partitionFreshness) {
+      return arcticTable.isKeyedTable()
+          ? keyedExpiredFileScan(expirationConfig, dataFilter, expireTimestamp, partitionFreshness)
+          : expiredFileScan(expirationConfig, dataFilter, expireTimestamp, partitionFreshness);
+    }
+
+    @Override
+    public void doExpireFiles(
+        List<IcebergTableMaintainer.ExpireFiles> expiredFiles, long expireTimestamp) {
+      AtomicInteger index = new AtomicInteger();
+      Optional.ofNullable(changeMaintainer)
+          .ifPresent(
+              c ->
+                  c.expireFiles(
+                      IcebergTableUtil.getSnapshotId(getTable(), false),
+                      expiredFiles.get(index.getAndIncrement()),
+                      expireTimestamp));
+      Optional.ofNullable(baseMaintainer)
+          .ifPresent(c ->
+          c.expireFiles(
+              IcebergTableUtil.getSnapshotId(getTable(), false),
+              expiredFiles.get(index.get()),
+              expireTimestamp));
     }
   }
 
   public class BaseTableMaintainer extends IcebergTableMaintainer {
-
-    private MaintainStrategy maintainStrategy;
 
     public BaseTableMaintainer(UnkeyedTable unkeyedTable) {
       super(unkeyedTable);
@@ -393,18 +451,6 @@ public class MixedTableMaintainer implements TableMaintainer {
       return Sets.union(changeFiles, hiveFiles);
     }
 
-    public void setMaintainStrategy(MaintainStrategy maintainStrategy) {
-      this.maintainStrategy = maintainStrategy;
-    }
-
-    @Override
-    public MaintainStrategy createMaintainStrategy() {
-      if (maintainStrategy != null) {
-        return maintainStrategy;
-      } else {
-        return super.createMaintainStrategy();
-      }
-    }
   }
 
   public static class MixedFileEntry extends IcebergTableMaintainer.FileEntry {
