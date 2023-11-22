@@ -185,5 +185,10 @@ export default {
   totalPositionDeletes: 'pos-delete-records',
   totalFiles: 'total-files',
   totalDataFiles: 'data-files',
-  totalDeleteFiles: 'delete-files'
+  totalDeleteFiles: 'delete-files',
+  branches: 'branches',
+  tags: 'tags',
+  nothingToShow: 'Nothing to show',
+  filterBranchesOrTags: 'Filter branches/tags',
+  findATag: 'Find a tag'
 }
