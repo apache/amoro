@@ -166,15 +166,9 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   @Override
   public TableMetadata loadTableMetadata(TableIdentifier tableIdentifier) {
     validateTableExists(tableIdentifier);
-    return Optional.ofNullable(
-            getAs(
-                TableMetaMapper.class,
-                mapper ->
-                    mapper.selectTableMetaByName(
-                        tableIdentifier.getCatalog(),
-                        tableIdentifier.getDatabase(),
-                        tableIdentifier.getTableName())))
-        .orElseThrow(() -> new ObjectNotExistsException(tableIdentifier));
+    InternalCatalog internalCatalog = getInternalCatalog(tableIdentifier.getCatalog());
+    return internalCatalog.loadTableMetadata(
+        tableIdentifier.getDatabase(), tableIdentifier.getTableName());
   }
 
   @Override
@@ -200,14 +194,9 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     validateTableNotExists(tableMetadata.getTableIdentifier().getIdentifier());
 
     InternalCatalog catalog = getInternalCatalog(catalogName);
-    ServerTableIdentifier tableIdentifier = catalog.createTable(tableMetadata);
-    AmoroTable<?> table =
-        catalog.loadTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName());
-    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
-    tableRuntimeMap.put(tableIdentifier, tableRuntime);
-    if (headHandler != null) {
-      headHandler.fireTableAdded(table, tableRuntime);
-    }
+    TableMetadata metadata = catalog.createTable(tableMetadata);
+
+    triggerTableAdded(catalog, metadata.getTableIdentifier());
   }
 
   @Override
@@ -378,7 +367,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     initialized.complete(true);
   }
 
-  public TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
+  private TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
     Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier cannot be null");
     TableRuntime tableRuntime = getRuntime(tableIdentifier);
     if (tableRuntime == null) {
@@ -607,7 +596,12 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
                   tableIdentity.getDatabase(),
                   tableIdentity.getTableName(),
                   tableIdentity.getFormat()),
-          () -> tableRuntimeAdded.set(handleTableRuntimeAdded(externalCatalog, tableIdentity)));
+          () -> {
+            ServerTableIdentifier tableIdentifier =
+                externalCatalog.getServerTableIdentifier(
+                    tableIdentity.getDatabase(), tableIdentity.getTableName());
+            tableRuntimeAdded.set(triggerTableAdded(externalCatalog, tableIdentifier));
+          });
     } catch (Throwable t) {
       if (tableRuntimeAdded.get()) {
         revertTableRuntimeAdded(externalCatalog, tableIdentity);
@@ -616,20 +610,18 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     }
   }
 
-  private boolean handleTableRuntimeAdded(
-      ExternalCatalog externalCatalog, TableIdentity tableIdentity) {
-    ServerTableIdentifier tableIdentifier =
-        externalCatalog.getServerTableIdentifier(
-            tableIdentity.getDatabase(), tableIdentity.getTableName());
+  private boolean triggerTableAdded(
+      ServerCatalog catalog, ServerTableIdentifier serverTableIdentifier) {
     AmoroTable<?> table =
-        externalCatalog.loadTable(tableIdentity.getDatabase(), tableIdentity.getTableName());
+        catalog.loadTable(
+            serverTableIdentifier.getDatabase(), serverTableIdentifier.getTableName());
     if (TableFormat.ICEBERG == table.format()) {
       if (TablePropertyUtil.isMixedTableStore(table.properties())) {
         return false;
       }
     }
-    TableRuntime tableRuntime = new TableRuntime(tableIdentifier, this, table.properties());
-    tableRuntimeMap.put(tableIdentifier, tableRuntime);
+    TableRuntime tableRuntime = new TableRuntime(serverTableIdentifier, this, table.properties());
+    tableRuntimeMap.put(serverTableIdentifier, tableRuntime);
     if (headHandler != null) {
       headHandler.fireTableAdded(table, tableRuntime);
     }

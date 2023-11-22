@@ -23,12 +23,15 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
 
@@ -148,5 +151,99 @@ public class TablePropertyUtil {
     boolean changeStore =
         TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE.equalsIgnoreCase(tableStore);
     return TableFormat.MIXED_ICEBERG.name().equalsIgnoreCase(format) && (baseStore || changeStore);
+  }
+
+  /**
+   * Check if the given table properties is the base store of mixed-format,
+   *
+   * @param properties properties of the table.
+   * @param format - {@link TableFormat#MIXED_ICEBERG} or {@link TableFormat#MIXED_HIVE}
+   * @return true if this is a base store of mixed-format.
+   */
+  public static boolean isBaseStore(Map<String, String> properties, TableFormat format) {
+    String tableFormat = properties.get(TableProperties.TABLE_FORMAT);
+    String tableStore = properties.get(TableProperties.MIXED_FORMAT_TABLE_STORE);
+    return format.name().equalsIgnoreCase(tableFormat)
+        && TableProperties.MIXED_FORMAT_TABLE_STORE_BASE.equalsIgnoreCase(tableStore);
+  }
+
+  /**
+   * parse change store table identifier for base store table properties
+   *
+   * @param properties - table properties of base store
+   * @return - table identifier of change store.
+   */
+  public static TableIdentifier parseChangeIdentifier(Map<String, String> properties) {
+    Preconditions.checkArgument(
+        properties.containsKey(TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER),
+        "can read change store identifier from base store properties");
+    String change = properties.get(TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER);
+    return TableIdentifier.parse(change);
+  }
+
+  public static PrimaryKeySpec parsePrimaryKeySpec(
+      Schema schema, Map<String, String> tableProperties) {
+    if (tableProperties.containsKey(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS)) {
+      return PrimaryKeySpec.fromDescription(
+          schema, tableProperties.get(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS));
+    }
+    return PrimaryKeySpec.noPrimaryKey();
+  }
+
+  /**
+   * common properties for mixed format.
+   *
+   * @param keySpec primary key spec
+   * @param format table format
+   * @return mixed-format table properties.
+   */
+  public static Map<String, String> commonMixedProperties(
+      PrimaryKeySpec keySpec, TableFormat format) {
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put(TableProperties.TABLE_FORMAT, format.name());
+    if (keySpec.primaryKeyExisted()) {
+      properties.put(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS, keySpec.description());
+    }
+
+    properties.put(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
+    properties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
+    properties.put(org.apache.iceberg.TableProperties.METADATA_DELETE_AFTER_COMMIT_ENABLED, "true");
+    properties.put("flink.max-continuous-empty-commits", String.valueOf(Integer.MAX_VALUE));
+    return properties;
+  }
+
+  /**
+   * generate properties for base store
+   *
+   * @param keySpec key spec,
+   * @param changeIdentifier change store identifier.
+   * @param format table format
+   * @return base store table properties.
+   */
+  public static Map<String, String> baseStoreProperties(
+      PrimaryKeySpec keySpec, TableIdentifier changeIdentifier, TableFormat format) {
+    Map<String, String> properties = commonMixedProperties(keySpec, format);
+    properties.put(
+        TableProperties.MIXED_FORMAT_TABLE_STORE, TableProperties.MIXED_FORMAT_TABLE_STORE_BASE);
+    if (keySpec.primaryKeyExisted()) {
+      properties.put(
+          TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER, changeIdentifier.toString());
+    }
+    return properties;
+  }
+
+  /**
+   * generate properties for change store
+   *
+   * @param keySpec key spec,
+   * @param format table format
+   * @return change store table properties.
+   */
+  public static Map<String, String> changeStoreProperties(
+      PrimaryKeySpec keySpec, TableFormat format) {
+    Map<String, String> properties = commonMixedProperties(keySpec, format);
+    properties.put(
+        TableProperties.MIXED_FORMAT_TABLE_STORE, TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE);
+    return properties;
   }
 }

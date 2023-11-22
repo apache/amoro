@@ -21,7 +21,7 @@ package com.netease.arctic.server.optimizing;
 import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.AmsEnvironment;
-import com.netease.arctic.server.IcebergRestCatalogService;
+import com.netease.arctic.server.RestCatalogService;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.table.TableMetaStore;
@@ -426,8 +426,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
       properties.put(CatalogMetaProperties.KEY_WAREHOUSE, warehouse);
     } else if (catalog.equalsIgnoreCase(AmsEnvironment.INTERNAL_ICEBERG_CATALOG)) {
       impl = RESTCatalog.class.getName();
-      properties.put(
-          "uri", amsEnv.getHttpUrl() + IcebergRestCatalogService.ICEBERG_REST_API_PREFIX);
+      properties.put("uri", amsEnv.getHttpUrl() + RestCatalogService.ICEBERG_REST_API_PREFIX);
       properties.put(CatalogMetaProperties.KEY_WAREHOUSE, AmsEnvironment.INTERNAL_ICEBERG_CATALOG);
     } else {
       throw new IllegalStateException("unknown catalog");

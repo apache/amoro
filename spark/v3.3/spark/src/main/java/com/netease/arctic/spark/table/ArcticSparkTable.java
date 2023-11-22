@@ -66,39 +66,25 @@ public class ArcticSparkTable
           TableCapability.OVERWRITE_DYNAMIC);
 
   private final ArcticTable arcticTable;
-  private final StructType requestedSchema;
-  private final boolean refreshEagerly;
+  private final String sparkCatalogName;
   private StructType lazyTableSchema = null;
   private SparkSession lazySpark = null;
   private final ArcticCatalog catalog;
 
-  public static Table ofArcticTable(ArcticTable table, ArcticCatalog catalog) {
+  public static Table ofArcticTable(
+      ArcticTable table, ArcticCatalog catalog, String sparkCatalogName) {
     if (table.isUnkeyedTable()) {
       if (!(table instanceof SupportHive)) {
-        return new ArcticIcebergSparkTable(table.asUnkeyedTable(), false);
+        return new ArcticIcebergSparkTable(table.asUnkeyedTable(), false, sparkCatalogName);
       }
     }
-    return new ArcticSparkTable(table, false, catalog);
+    return new ArcticSparkTable(table, catalog, sparkCatalogName);
   }
 
-  public ArcticSparkTable(ArcticTable arcticTable, boolean refreshEagerly, ArcticCatalog catalog) {
-    this(arcticTable, null, refreshEagerly, catalog);
-  }
-
-  public ArcticSparkTable(
-      ArcticTable arcticTable,
-      StructType requestedSchema,
-      boolean refreshEagerly,
-      ArcticCatalog catalog) {
+  public ArcticSparkTable(ArcticTable arcticTable, ArcticCatalog catalog, String sparkCatalogName) {
     this.arcticTable = arcticTable;
-    this.requestedSchema = requestedSchema;
-    this.refreshEagerly = refreshEagerly;
+    this.sparkCatalogName = sparkCatalogName;
     this.catalog = catalog;
-
-    if (requestedSchema != null) {
-      // convert the requested schema to throw an exception if any requested fields are unknown
-      SparkSchemaUtil.convert(arcticTable.schema(), requestedSchema);
-    }
   }
 
   private SparkSession sparkSession() {
@@ -115,19 +101,18 @@ public class ArcticSparkTable
 
   @Override
   public String name() {
-    return arcticTable.id().toString();
+    return sparkCatalogName
+        + "."
+        + arcticTable.id().getDatabase()
+        + "."
+        + arcticTable.id().getTableName();
   }
 
   @Override
   public StructType schema() {
     if (lazyTableSchema == null) {
       Schema tableSchema = arcticTable.schema();
-      if (requestedSchema != null) {
-        Schema prunedSchema = SparkSchemaUtil.prune(tableSchema, requestedSchema);
-        this.lazyTableSchema = SparkSchemaUtil.convert(prunedSchema);
-      } else {
-        this.lazyTableSchema = SparkSchemaUtil.convert(tableSchema);
-      }
+      this.lazyTableSchema = SparkSchemaUtil.convert(tableSchema);
     }
 
     return lazyTableSchema;
@@ -195,13 +180,7 @@ public class ArcticSparkTable
 
   @Override
   public ScanBuilder newScanBuilder(CaseInsensitiveStringMap options) {
-    SparkScanBuilder scanBuilder = new SparkScanBuilder(sparkSession(), arcticTable, options);
-
-    if (requestedSchema != null) {
-      scanBuilder.pruneColumns(requestedSchema);
-    }
-
-    return scanBuilder;
+    return new SparkScanBuilder(sparkSession(), arcticTable, options);
   }
 
   @Override

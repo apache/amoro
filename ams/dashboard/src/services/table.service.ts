@@ -112,10 +112,12 @@ export function getSnapshots(
     page: number
     pageSize: number
     token?: string
+    ref: string
+    operation: string
   }
 ) {
-  const { catalog, db, table, page, pageSize, token } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/snapshots`, { params: { page, pageSize, token } })
+  const { catalog, db, table, page, pageSize, token, ref, operation } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/snapshots`, { params: { page, pageSize, token, ref, operation } })
 }
 
 // get Snapshot detail
@@ -173,4 +175,14 @@ export function upgradeHiveTable(
 
 export function getUpgradeProperties() {
   return request.get('ams/v1/upgrade/properties')
+}
+
+export function getBranches(params: { db: string, table: string }) {
+  const { db, table } = params
+  return request.get(`/ams/v1/tables/catalogs/iceberg/dbs/${db}/tables/${table}/branches`)
+}
+
+export function getTags(params: { db: string, table: string }) {
+  const { db, table } = params
+  return request.get(`/ams/v1/tables/catalogs/iceberg/dbs/${db}/tables/${table}/tags`)
 }
