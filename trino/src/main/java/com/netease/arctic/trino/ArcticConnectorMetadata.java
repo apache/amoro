@@ -66,6 +66,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -80,6 +81,8 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   private final IcebergMetadata icebergMetadata;
 
   private final ArcticCatalog arcticCatalog;
+
+  private final Map<SchemaTableName, ArcticTable> tableCache = new ConcurrentHashMap<>();
 
   public ArcticConnectorMetadata(
       KeyedConnectorMetadata keyedConnectorMetadata,
@@ -99,8 +102,7 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
 
   @Override
   public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName) {
-    // 需要缓存
-    ArcticTable arcticTable = null;
+    ArcticTable arcticTable;
     try {
       arcticTable = getArcticTable(tableName);
     } catch (NoSuchTableException e) {
@@ -169,7 +171,7 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   public Iterator<TableColumnsMetadata> streamTableColumns(
       ConnectorSession session, SchemaTablePrefix prefix) {
     if (prefix.getTable().isPresent()) {
-      ArcticTable arcticTable = null;
+      ArcticTable arcticTable;
       try {
         arcticTable =
             getArcticTable(new SchemaTableName(prefix.getSchema().get(), prefix.getTable().get()));
@@ -452,7 +454,8 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
   }
 
   public ArcticTable getArcticTable(SchemaTableName schemaTableName) {
-    return arcticCatalog.loadTable(getTableIdentifier(schemaTableName));
+    return tableCache.computeIfAbsent(
+        schemaTableName, ignore -> arcticCatalog.loadTable(getTableIdentifier(schemaTableName)));
   }
 
   private TableIdentifier getTableIdentifier(SchemaTableName schemaTableName) {

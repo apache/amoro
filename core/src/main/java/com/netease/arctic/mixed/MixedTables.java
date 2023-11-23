@@ -29,21 +29,23 @@ import com.netease.arctic.table.BasicUnkeyedTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableMetaStore;
-import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
-import org.apache.iceberg.relocated.com.google.common.base.Joiner;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 public class MixedTables {
+  private static final Logger LOG = LoggerFactory.getLogger(MixedTables.class);
 
   protected TableMetaStore tableMetaStore;
   protected Catalog icebergCatalog;
@@ -57,38 +59,33 @@ public class MixedTables {
     this.catalogProperties = catalogProperties;
   }
 
+  /**
+   * check the given iceberg table is a base store for mixed-iceberg.
+   *
+   * @param table iceberg table
+   * @return base store of mixed-iceberg
+   */
   public boolean isBaseStore(Table table) {
-    String format = table.properties().get(TableProperties.TABLE_FORMAT);
-    String tableStore = table.properties().get(TableProperties.MIXED_FORMAT_TABLE_STORE);
-    return TableFormat.MIXED_ICEBERG.name().equalsIgnoreCase(format)
-        && TableProperties.MIXED_FORMAT_TABLE_STORE_BASE.equalsIgnoreCase(tableStore);
+    return TablePropertyUtil.isBaseStore(table.properties(), TableFormat.MIXED_ICEBERG);
   }
 
-  public PrimaryKeySpec getPrimaryKeySpec(Table table) {
-    Preconditions.checkArgument(isBaseStore(table), "table is not a mixed table");
-    PrimaryKeySpec keySpec = PrimaryKeySpec.noPrimaryKey();
-    if (table.properties().containsKey(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS)) {
-      PrimaryKeySpec.Builder keyBuilder = PrimaryKeySpec.builderFor(table.schema());
-      String fieldString = table.properties().get(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS);
-      String[] fields = fieldString.split(",");
-      for (String field : fields) {
-        keyBuilder = keyBuilder.addColumn(field);
-      }
-      keySpec = keyBuilder.build();
-    }
-    return keySpec;
+  /**
+   * parse change store identifier from base store
+   *
+   * @param base base store
+   * @return change store table identifier.
+   */
+  public TableIdentifier parseChangeIdentifier(Table base) {
+    return TablePropertyUtil.parseChangeIdentifier(base.properties());
   }
 
-  public TableIdentifier changeStoreIdentifier(Table base) {
-    if (!base.properties().containsKey(TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER)) {
-      throw new IllegalStateException(
-          "can read change store identifier from base store properties");
-    }
-    String change = base.properties().get(TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER);
-    return TableIdentifier.parse(change);
-  }
-
-  protected TableIdentifier changeStoreIdentifier(TableIdentifier baseIdentifier) {
+  /**
+   * create change store table identifier
+   *
+   * @param baseIdentifier base store table identifier.
+   * @return change store table identifier.
+   */
+  protected TableIdentifier generateChangeStoreIdentifier(TableIdentifier baseIdentifier) {
     String separator =
         catalogProperties.getOrDefault(
             CatalogMetaProperties.MIXED_FORMAT_TABLE_STORE_SEPARATOR,
@@ -97,10 +94,18 @@ public class MixedTables {
         baseIdentifier.namespace(), baseIdentifier.name() + separator + "change" + separator);
   }
 
+  /**
+   * load a mixed-format table.
+   *
+   * @param base - base store
+   * @param tableIdentifier mixed-format table identifier.
+   * @return mixed format table instance.
+   */
   public ArcticTable loadTable(
       Table base, com.netease.arctic.table.TableIdentifier tableIdentifier) {
     ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
-    PrimaryKeySpec keySpec = getPrimaryKeySpec(base);
+    PrimaryKeySpec keySpec =
+        TablePropertyUtil.parsePrimaryKeySpec(base.schema(), base.properties());
     if (!keySpec.primaryKeyExisted()) {
       return new BasicUnkeyedTable(
           tableIdentifier, useArcticTableOperation(base, io), io, catalogProperties);
@@ -118,49 +123,36 @@ public class MixedTables {
     return new BasicKeyedTable(keySpec, baseStore, changeStore);
   }
 
+  /**
+   * create a mixed iceberg table
+   *
+   * @param identifier mixed catalog table identifier.
+   * @param schema table schema
+   * @param partitionSpec partition spec
+   * @param keySpec key spec
+   * @param properties table properties
+   * @return mixed format table.
+   */
   public ArcticTable createTable(
       com.netease.arctic.table.TableIdentifier identifier,
       Schema schema,
       PartitionSpec partitionSpec,
       PrimaryKeySpec keySpec,
       Map<String, String> properties) {
-    Map<String, String> tableStoreProperties = tableStoreProperties(keySpec, properties);
     TableIdentifier baseIdentifier =
         TableIdentifier.of(identifier.getDatabase(), identifier.getTableName());
-    TableIdentifier changeIdentifier = changeStoreIdentifier(baseIdentifier);
-    if (keySpec.primaryKeyExisted() && tableStoreExists(changeIdentifier)) {
-      throw new AlreadyExistsException("change store already exists");
-    }
+    TableIdentifier changeIdentifier = generateChangeStoreIdentifier(baseIdentifier);
 
-    Catalog.TableBuilder baseBuilder =
-        icebergCatalog
-            .buildTable(baseIdentifier, schema)
-            .withPartitionSpec(partitionSpec)
-            .withProperty(
-                TableProperties.MIXED_FORMAT_TABLE_STORE,
-                TableProperties.MIXED_FORMAT_TABLE_STORE_BASE)
-            .withProperties(tableStoreProperties);
-    if (keySpec.primaryKeyExisted()) {
-      baseBuilder.withProperty(
-          TableProperties.MIXED_FORMAT_CHANGE_STORE_IDENTIFIER, changeIdentifier.toString());
-    }
-    Table base = tableMetaStore.doAs(baseBuilder::create);
+    Table base = createBaseStore(baseIdentifier, schema, partitionSpec, keySpec, properties);
     ArcticFileIO io = ArcticFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
-
     if (!keySpec.primaryKeyExisted()) {
       return new BasicUnkeyedTable(
           identifier, useArcticTableOperation(base, io), io, catalogProperties);
     }
 
-    Catalog.TableBuilder changeBuilder =
-        icebergCatalog
-            .buildTable(changeIdentifier, schema)
-            .withProperties(tableStoreProperties)
-            .withPartitionSpec(partitionSpec)
-            .withProperty(
-                TableProperties.MIXED_FORMAT_TABLE_STORE,
-                TableProperties.MIXED_FORMAT_TABLE_STORE_CHANGE);
-    Table change = tableMetaStore.doAs(changeBuilder::create);
+    Table change =
+        createChangeStore(
+            baseIdentifier, changeIdentifier, schema, partitionSpec, keySpec, properties);
     BaseTable baseStore =
         new BasicKeyedTable.BaseInternalTable(
             identifier, useArcticTableOperation(base, io), io, catalogProperties);
@@ -170,24 +162,110 @@ public class MixedTables {
     return new BasicKeyedTable(keySpec, baseStore, changeStore);
   }
 
-  protected Map<String, String> tableStoreProperties(
-      PrimaryKeySpec keySpec, Map<String, String> tableProperties) {
-    Map<String, String> properties = Maps.newHashMap(tableProperties);
-    properties.put(TableProperties.TABLE_FORMAT, TableFormat.MIXED_ICEBERG.name());
-    if (keySpec.primaryKeyExisted()) {
-      String fields = Joiner.on(",").join(keySpec.fieldNames());
-      properties.put(TableProperties.MIXED_FORMAT_PRIMARY_KEY_FIELDS, fields);
+  /**
+   * create base store for mixed-format
+   *
+   * @param baseIdentifier base store identifier
+   * @param schema table schema
+   * @param partitionSpec partition schema
+   * @param keySpec key spec
+   * @param properties table properties
+   * @return base store iceberg table.
+   */
+  protected Table createBaseStore(
+      TableIdentifier baseIdentifier,
+      Schema schema,
+      PartitionSpec partitionSpec,
+      PrimaryKeySpec keySpec,
+      Map<String, String> properties) {
+    TableIdentifier changeIdentifier = generateChangeStoreIdentifier(baseIdentifier);
+    if (keySpec.primaryKeyExisted() && tableStoreExists(changeIdentifier)) {
+      throw new AlreadyExistsException("change store already exists");
     }
 
-    properties.put(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
-    properties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
-    properties.put(org.apache.iceberg.TableProperties.METADATA_DELETE_AFTER_COMMIT_ENABLED, "true");
-    properties.put("flink.max-continuous-empty-commits", String.valueOf(Integer.MAX_VALUE));
-    return properties;
+    Map<String, String> baseProperties = Maps.newHashMap(properties);
+    baseProperties.putAll(
+        TablePropertyUtil.baseStoreProperties(
+            keySpec, changeIdentifier, TableFormat.MIXED_ICEBERG));
+    Catalog.TableBuilder baseBuilder =
+        icebergCatalog
+            .buildTable(baseIdentifier, schema)
+            .withPartitionSpec(partitionSpec)
+            .withProperties(baseProperties);
+    return baseBuilder.create();
   }
 
-  protected Table loadChangeStore(Table base) {
-    TableIdentifier changeIdentifier = changeStoreIdentifier(base);
+  /**
+   * create change store for mixed-format
+   *
+   * @param baseIdentifier base store identifier
+   * @param changeIdentifier change store identifier
+   * @param schema table schema
+   * @param partitionSpec partition spec
+   * @param keySpec key spec
+   * @param properties table properties
+   * @return change table store.
+   */
+  protected Table createChangeStore(
+      TableIdentifier baseIdentifier,
+      TableIdentifier changeIdentifier,
+      Schema schema,
+      PartitionSpec partitionSpec,
+      PrimaryKeySpec keySpec,
+      Map<String, String> properties) {
+    Map<String, String> changeProperties = Maps.newHashMap(properties);
+    changeProperties.putAll(
+        TablePropertyUtil.changeStoreProperties(keySpec, TableFormat.MIXED_ICEBERG));
+    Catalog.TableBuilder changeBuilder =
+        icebergCatalog
+            .buildTable(changeIdentifier, schema)
+            .withProperties(changeProperties)
+            .withPartitionSpec(partitionSpec);
+    Table change;
+    try {
+      change = tableMetaStore.doAs(changeBuilder::create);
+      return change;
+    } catch (RuntimeException e) {
+      LOG.warn("Create base store failed for reason: " + e.getMessage());
+      tableMetaStore.doAs(() -> icebergCatalog.dropTable(baseIdentifier, true));
+      throw e;
+    }
+  }
+
+  /**
+   * drop a mixed-format table
+   *
+   * @param table - mixed table
+   * @param purge - purge data when drop table
+   * @return - true if table was deleted successfully.
+   */
+  public boolean dropTable(ArcticTable table, boolean purge) {
+    UnkeyedTable base =
+        table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
+    boolean deleted =
+        dropBaseStore(TableIdentifier.of(base.id().getDatabase(), base.id().getTableName()), purge);
+    boolean changeDeleted = false;
+    if (table.isKeyedTable()) {
+      try {
+        changeDeleted = dropChangeStore(parseChangeIdentifier(base.asUnkeyedTable()), purge);
+        return deleted && changeDeleted;
+      } catch (Exception e) {
+        // pass
+      }
+    }
+    return deleted;
+  }
+
+  protected boolean dropBaseStore(TableIdentifier tableStoreIdentifier, boolean purge) {
+    return tableMetaStore.doAs(() -> icebergCatalog.dropTable(tableStoreIdentifier, purge));
+  }
+
+  protected boolean dropChangeStore(TableIdentifier changStoreIdentifier, boolean purge) {
+    return tableMetaStore.doAs(() -> icebergCatalog.dropTable(changStoreIdentifier, purge));
+  }
+
+  private Table loadChangeStore(Table base) {
+    TableIdentifier changeIdentifier = parseChangeIdentifier(base);
     return tableMetaStore.doAs(() -> icebergCatalog.loadTable(changeIdentifier));
   }
 

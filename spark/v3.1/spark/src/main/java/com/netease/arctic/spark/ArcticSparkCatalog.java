@@ -131,7 +131,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     } catch (org.apache.iceberg.exceptions.NoSuchTableException e) {
       throw new NoSuchTableException(ident);
     }
-    return ArcticSparkTable.ofArcticTable(table, catalog);
+    return ArcticSparkTable.ofArcticTable(table, catalog, catalogName);
   }
 
   private Table loadInnerTable(ArcticTable table, ArcticTableStoreType type) {
@@ -166,9 +166,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     try {
       if (properties.containsKey("primary.keys")) {
         PrimaryKeySpec primaryKeySpec =
-            PrimaryKeySpec.builderFor(finalSchema)
-                .addDescription(properties.get("primary.keys"))
-                .build();
+            PrimaryKeySpec.fromDescription(finalSchema, properties.get("primary.keys"));
         properties.remove("primary.keys");
         builder
             .withPartitionSpec(spec)
@@ -178,7 +176,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
         builder.withPartitionSpec(spec).withProperties(properties);
       }
       ArcticTable table = builder.create();
-      return ArcticSparkTable.ofArcticTable(table, catalog);
+      return ArcticSparkTable.ofArcticTable(table, catalog, catalogName);
     } catch (AlreadyExistsException e) {
       throw new TableAlreadyExistsException("Table " + ident + " already exists", Option.apply(e));
     }
@@ -219,9 +217,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     // schema add primary keys
     if (properties.containsKey("primary.keys")) {
       PrimaryKeySpec primaryKeySpec =
-          PrimaryKeySpec.builderFor(convertSchema)
-              .addDescription(properties.get("primary.keys"))
-              .build();
+          PrimaryKeySpec.fromDescription(convertSchema, properties.get("primary.keys"));
       List<String> primaryKeys = primaryKeySpec.fieldNames();
       Set<String> pkSet = new HashSet<>(primaryKeys);
       Set<Integer> identifierFieldIds = new HashSet<>();
@@ -262,10 +258,10 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     }
     if (table.isUnkeyedTable()) {
       alterUnKeyedTable(table.asUnkeyedTable(), changes);
-      return ArcticSparkTable.ofArcticTable(table, catalog);
+      return ArcticSparkTable.ofArcticTable(table, catalog, catalogName);
     } else if (table.isKeyedTable()) {
       alterKeyedTable(table.asKeyedTable(), changes);
-      return ArcticSparkTable.ofArcticTable(table, catalog);
+      return ArcticSparkTable.ofArcticTable(table, catalog, catalogName);
     }
     throw new UnsupportedOperationException("Unsupported alter table");
   }
