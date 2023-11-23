@@ -59,6 +59,7 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   private Map<String, String> catalogProperties;
   private String name;
   private Pattern databaseFilterPattern;
+  private Pattern tableFilterPattern;
   private AmsClient client;
   private MixedTables tables;
 
@@ -80,12 +81,18 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
           properties.get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
       databaseFilterPattern = Pattern.compile(databaseFilter);
     }
+    Pattern tableFilterPattern = null;
+    String tableFilter = properties.get(CatalogMetaProperties.KEY_TABLE_FILTER);
+    if (tableFilter != null) {
+      tableFilterPattern = Pattern.compile(tableFilter);
+    }
     MixedTables tables = new MixedTables(metaStore, properties, icebergCatalog);
     synchronized (this) {
       this.name = name;
       this.tableMetaStore = metaStore;
       this.icebergCatalog = icebergCatalog;
       this.databaseFilterPattern = databaseFilterPattern;
+      this.tableFilterPattern = tableFilterPattern;
       this.catalogProperties = properties;
       this.tables = tables;
       if (properties.containsKey(CatalogMetaProperties.AMS_URI)) {
@@ -124,7 +131,16 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   @Override
   public List<TableIdentifier> listTables(String database) {
     List<org.apache.iceberg.catalog.TableIdentifier> icebergTableList =
-        tableMetaStore.doAs(() -> icebergCatalog.listTables(Namespace.of(database)));
+        tableMetaStore.doAs(
+            () ->
+                icebergCatalog.listTables(Namespace.of(database)).stream()
+                    .filter(
+                        tableIdentifier ->
+                            tableFilterPattern == null
+                                || tableFilterPattern
+                                    .matcher(database + "." + tableIdentifier.name())
+                                    .matches())
+                    .collect(Collectors.toList()));
     List<TableIdentifier> mixedTables = Lists.newArrayList();
     Set<org.apache.iceberg.catalog.TableIdentifier> visited = Sets.newHashSet();
     for (org.apache.iceberg.catalog.TableIdentifier identifier : icebergTableList) {
