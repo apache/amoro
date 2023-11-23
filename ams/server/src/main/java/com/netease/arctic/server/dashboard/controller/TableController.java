@@ -424,7 +424,7 @@ public class TableController {
     String catalog = ctx.pathParam("catalog");
     String database = ctx.pathParam("db");
     String table = ctx.pathParam("table");
-    String keywords = ctx.queryParamAsClass("filter", String.class).getOrDefault("");
+    String filter = ctx.queryParamAsClass("filter", String.class).getOrDefault("");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
@@ -433,7 +433,7 @@ public class TableController {
             TableIdentifier.of(catalog, database, table).buildTableIdentifier());
     partitionBaseInfos =
         partitionBaseInfos.stream()
-            .filter(e -> e.getPartition().contains(keywords))
+            .filter(e -> e.getPartition().contains(filter))
             .sorted(Comparator.comparing(PartitionBaseInfo::getPartition).reversed())
             .collect(Collectors.toList());
     int offset = (page - 1) * pageSize;
