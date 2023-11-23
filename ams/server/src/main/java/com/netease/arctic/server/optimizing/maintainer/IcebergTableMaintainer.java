@@ -32,35 +32,32 @@ import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.GenericManifestFile;
-import org.apache.iceberg.GenericPartitionFieldSummary;
-import org.apache.iceberg.ManifestFile;
+import org.apache.iceberg.MetadataTableType;
+import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.RewriteFiles;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileInfo;
-import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -375,11 +372,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
     for (Snapshot snapshot : snapshots) {
       String manifestListLocation = snapshot.manifestListLocation();
       validFiles.add(TableFileUtil.getUriPath(manifestListLocation));
-      // valid data files
-      scanManifestFiles(
-          internalTable.io().newInputFile(manifestListLocation),
-          f -> validFiles.add(TableFileUtil.getUriPath(f.path())));
     }
+    // valid data files
+    validFiles.addAll(allManifestFiles(internalTable));
+
     Stream.of(
             ReachableFileUtil.metadataFileLocations(internalTable, false).stream(),
             ReachableFileUtil.statisticsFilesLocations(internalTable).stream(),
@@ -427,21 +423,35 @@ public class IcebergTableMaintainer implements TableMaintainer {
     return count;
   }
 
-
-  private static void scanManifestFiles(
-      InputFile manifestList, Consumer<ManifestFile> fileConsumer) {
-    try (CloseableIterable<ManifestFile> files =
-        Avro.read(manifestList)
-            .rename("manifest_file", GenericManifestFile.class.getName())
-            .rename("partitions", GenericPartitionFieldSummary.class.getName())
-            .rename("r508", GenericPartitionFieldSummary.class.getName())
-            .classLoader(GenericManifestFile.class.getClassLoader())
-            .project(ManifestFile.schema())
-            .reuseContainers(false)
-            .build()) {
-      files.forEach(fileConsumer);
-    } catch (IOException e) {
-      throw new RuntimeException("Cannot read manifest list file: " + manifestList.location(), e);
+  @VisibleForTesting
+  protected static Set<String> allManifestFiles(Table table) {
+    Table allManifest =
+        MetadataTableUtils.createMetadataTableInstance(table, MetadataTableType.ALL_MANIFESTS);
+    Schema allManifestSchema = allManifest.schema();
+    int pos = -1;
+    Types.NestedField[] fields = allManifestSchema.columns().toArray(new Types.NestedField[0]);
+    for (int i = 0; i < fields.length; i++) {
+      if (fields[i].name().equals("path")) {
+        pos = i;
+        break;
+      }
     }
+    Preconditions.checkArgument(pos > 0, "path field not found in ALL_MANIFESTS meta table.");
+
+    Set<String> allManifestFiles = Sets.newHashSet();
+
+    try (CloseableIterable<StructLike> rows =
+        CloseableIterable.concat(
+            CloseableIterable.transform(
+                allManifest.newScan().planFiles(), task -> task.asDataTask().rows()))) {
+      for (StructLike row : rows) {
+        String path = row.get(pos, String.class);
+        allManifestFiles.add(path);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    return allManifestFiles;
   }
 }

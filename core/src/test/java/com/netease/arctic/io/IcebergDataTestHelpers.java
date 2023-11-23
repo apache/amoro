@@ -25,6 +25,7 @@ import com.google.common.collect.Lists;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.RecordWithAction;
 import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
@@ -48,6 +49,7 @@ import org.apache.iceberg.util.PropertyUtil;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -61,6 +63,13 @@ public class IcebergDataTestHelpers {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public static void append(Table table, List<Record> records) throws IOException {
+    WriteResult result = insert(table, records);
+    AppendFiles files = table.newFastAppend();
+    Arrays.stream(result.dataFiles()).forEach(files::appendFile);
+    files.commit();
   }
 
   public static WriteResult delta(Table table, List<RecordWithAction> records) throws IOException {
