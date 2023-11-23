@@ -122,11 +122,11 @@ For more information, please refer to [Self-optimizing quota](../self-optimizing
 ### Adjust optimizing parameters
 
 You can manually set parameters such as execution interval, task size, and execution timeout for different types of Optimize. 
-For example, to set the execution interval for Self-optimize of the major type, you can do the following:
+For example, to set the execution interval for Self-optimize of the minor type, you can do the following:
 
 ```sql
 ALTER TABLE test_db.test_log_store set tblproperties (
-    'self-optimizing.major.trigger.interval' = '3600000');
+    'self-optimizing.minor.trigger.interval' = '3600000');
 ```
 
 More optimization parameter adjustment refer to [Self-optimizing configuration](../configurations/#self-optimizing-configurations)。
