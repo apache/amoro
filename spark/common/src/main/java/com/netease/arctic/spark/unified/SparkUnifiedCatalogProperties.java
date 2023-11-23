@@ -20,9 +20,6 @@ package com.netease.arctic.spark.unified;
 
 public class SparkUnifiedCatalogProperties {
 
-  /**
-   * AMS URI, to load unified catalog information.
-   */
+  /** AMS URI, to load unified catalog information. */
   public static final String URI = "uri";
-
 }

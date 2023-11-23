@@ -31,7 +31,8 @@ public class TestIdentifier {
   public final String sourceType;
   private final String amsCatalogName;
 
-  private TestIdentifier(String catalog, String amsCatalogName, String database, String table, String sourceType) {
+  private TestIdentifier(
+      String catalog, String amsCatalogName, String database, String table, String sourceType) {
     this.database = database;
     this.table = table;
     this.catalog = catalog;
@@ -44,12 +45,12 @@ public class TestIdentifier {
   }
 
   public static TestIdentifier ofViewSource(String table) {
-    return new TestIdentifier(null,  null,null, table, SOURCE_TYPE_VIEW);
+    return new TestIdentifier(null, null, null, table, SOURCE_TYPE_VIEW);
   }
 
   public static TestIdentifier ofDataLake(
       String sparkCatalog, String amsCatalog, String database, String table, boolean isSource) {
-    String source = isSource? SOURCE_TYPE_ARCTIC: null;
+    String source = isSource ? SOURCE_TYPE_ARCTIC : null;
     return new TestIdentifier(sparkCatalog, amsCatalog, database, table, source);
   }
 

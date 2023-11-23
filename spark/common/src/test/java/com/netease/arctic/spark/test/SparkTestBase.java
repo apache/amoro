@@ -78,7 +78,6 @@ public class SparkTestBase {
   protected final String sourceTable = "test_source_table";
   protected TestIdentifier source;
 
-
   protected Map<String, String> sparkSessionConfig() {
     return ImmutableMap.of(
         "spark.sql.catalog.spark_catalog",
@@ -91,7 +90,6 @@ public class SparkTestBase {
   public void tearDownTestSession() {
     spark = null;
   }
-
 
   @BeforeEach
   public void before() {
@@ -142,8 +140,7 @@ public class SparkTestBase {
   protected UnifiedCatalog unifiedCatalog() {
     String amsCatalogName = sparkCatalogToAMSCatalog(currentCatalog);
     return UnifiedCatalogLoader.loadUnifiedCatalog(
-        context.ams.getServerUrl(), amsCatalogName, Maps.newHashMap()
-    );
+        context.ams.getServerUrl(), amsCatalogName, Maps.newHashMap());
   }
 
   protected SparkSession spark() {
@@ -169,7 +166,6 @@ public class SparkTestBase {
     LOG.info("SQL Execution cost: " + (System.currentTimeMillis() - begin) + " ms");
     return ds;
   }
-
 
   protected String database() {
     return this.database;
@@ -217,12 +213,11 @@ public class SparkTestBase {
     source.setParameters(properties);
     try {
       context.getHiveClient().createTable(source);
-      this.source = TestIdentifier.ofHiveSource( database, sourceTable);
+      this.source = TestIdentifier.ofHiveSource(database, sourceTable);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
-
 
   protected void createViewSource(Schema schema, List<Record> data) {
     Dataset<Row> ds =
@@ -234,7 +229,6 @@ public class SparkTestBase {
     ds.createOrReplaceTempView(sourceTable);
     this.source = TestIdentifier.ofViewSource(sourceTable);
   }
-
 
   protected void createHiveSource(List<FieldSchema> cols, List<FieldSchema> partitions) {
     this.createHiveSource(cols, partitions, ImmutableMap.of());

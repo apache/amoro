@@ -413,12 +413,17 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces, Sup
     if (StringUtils.isNotBlank(catalogUrl)) {
       // initialize for unified catalog.
       String metastoreType = options.get("type");
-      Preconditions.checkArgument(StringUtils.isNotEmpty(metastoreType),
+      String registerName = options.get("register-name");
+      Preconditions.checkArgument(
+          StringUtils.isNotEmpty(metastoreType),
           "Lack required property: type when initialized by unified catalog.");
-      Preconditions.checkNotNull(tableMetaStore,
+      Preconditions.checkNotNull(
+          tableMetaStore,
           "Authentication context must be set when initialized by unified catalog.");
-      catalog = CatalogLoader.createCatalog(name,
-          metastoreType, options, tableMetaStore);
+      Preconditions.checkArgument(
+          StringUtils.isNotEmpty(registerName),
+          "Lack required property: register-name when initialized by unified catalog");
+      catalog = CatalogLoader.createCatalog(registerName, metastoreType, options, tableMetaStore);
     } else {
       catalogUrl = options.get("url");
       if (StringUtils.isBlank(catalogUrl)) {

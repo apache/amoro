@@ -38,11 +38,10 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-/**
- * Test base for all mixed-format tests.
- */
+/** Test base for all mixed-format tests. */
 public class MixedTableTestBase extends SparkTestBase {
-  public static final String MIXED_ICEBERG_CATALOG = SparkTestContext.SparkCatalogNames.MIXED_ICEBERG;
+  public static final String MIXED_ICEBERG_CATALOG =
+      SparkTestContext.SparkCatalogNames.MIXED_ICEBERG;
 
   protected static final TableFormat MIXED_HIVE = TableFormat.MIXED_HIVE;
   protected static final TableFormat MIXED_ICEBERG = TableFormat.MIXED_ICEBERG;
@@ -54,7 +53,8 @@ public class MixedTableTestBase extends SparkTestBase {
   private String currentSparkCatalog = null;
 
   protected ArcticCatalog catalog() {
-    boolean reInitMixedCatalog = mixedCatalog == null || (!currentCatalog.equals(currentSparkCatalog));
+    boolean reInitMixedCatalog =
+        mixedCatalog == null || (!currentCatalog.equals(currentSparkCatalog));
     if (reInitMixedCatalog) {
       String amsCatalogName = sparkCatalogToAMSCatalog(currentCatalog);
       mixedCatalog = CatalogLoader.load(context.ams.getServerUrl() + "/" + amsCatalogName);
@@ -68,14 +68,14 @@ public class MixedTableTestBase extends SparkTestBase {
   }
 
   public String provider(TableFormat format) {
-    Preconditions.checkArgument(format == TableFormat.MIXED_HIVE || format == TableFormat.MIXED_ICEBERG);
+    Preconditions.checkArgument(
+        format == TableFormat.MIXED_HIVE || format == TableFormat.MIXED_ICEBERG);
     return "arctic";
   }
 
-
   public ArcticTable createArcticSource(Schema schema, Consumer<TableBuilder> consumer) {
-    TestIdentifier identifier = TestIdentifier.ofDataLake(
-        currentCatalog, catalog().name(), database(), sourceTable, true);
+    TestIdentifier identifier =
+        TestIdentifier.ofDataLake(currentCatalog, catalog().name(), database(), sourceTable, true);
     TableBuilder builder = catalog().newTableBuilder(identifier.toArcticIdentifier(), schema);
     consumer.accept(builder);
     ArcticTable source = builder.create();

@@ -55,7 +55,10 @@ public class TableFiles {
   }
 
   public int totalFileCount() {
-    return baseDataFiles.size() + baseDeleteFiles.size() + changeInsertFiles.size() + changeEqDeleteFiles.size();
+    return baseDataFiles.size()
+        + baseDeleteFiles.size()
+        + changeInsertFiles.size()
+        + changeEqDeleteFiles.size();
   }
 
   public TableFiles filterByPartitions(StructLikeSet partitions) {

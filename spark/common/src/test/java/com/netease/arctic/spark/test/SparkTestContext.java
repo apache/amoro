@@ -50,9 +50,7 @@ public class SparkTestContext {
 
   final TemporaryFolder warehouse = new TemporaryFolder();
 
-  /**
-   * Define spark catalog names.
-   */
+  /** Define spark catalog names. */
   public static class SparkCatalogNames {
     public static final String MIXED_HIVE = "mixed_hive_catalog";
     public static final String MIXED_ICEBERG = "mixed_iceberg_catalog";
@@ -116,7 +114,7 @@ public class SparkTestContext {
       }
     }
     HiveConf hiveConf = hms.getHiveConf();
-    for (TableFormat format: TableFormat.values()) {
+    for (TableFormat format : TableFormat.values()) {
       // create catalog for all formats in AMS with hive metastore.
       CatalogMeta hiveCatalogMeta =
           HiveCatalogTestHelper.build(hiveConf, format)
@@ -130,7 +128,6 @@ public class SparkTestContext {
   public String amsCatalogUrl(TableFormat format) {
     return this.ams.getServerUrl() + "/" + format.name().toLowerCase();
   }
-
 
   private String hiveVersion() {
     try {
@@ -161,7 +158,8 @@ public class SparkTestContext {
     addUnifiedSparkCatalog(configs, SparkCatalogNames.UNIFIED_ICEBERG, TableFormat.ICEBERG);
     addUnifiedSparkCatalog(configs, SparkCatalogNames.UNIFIED_PAIMON, TableFormat.PAIMON);
     addUnifiedSparkCatalog(configs, SparkCatalogNames.UNIFIED_MIXED_HIVE, TableFormat.MIXED_HIVE);
-    addUnifiedSparkCatalog(configs, SparkCatalogNames.UNIFIED_MIXED_ICEBERG, TableFormat.MIXED_ICEBERG);
+    addUnifiedSparkCatalog(
+        configs, SparkCatalogNames.UNIFIED_MIXED_ICEBERG, TableFormat.MIXED_ICEBERG);
 
     configs.put("hive.metastore.uris", this.hiveMetastoreUri());
     configs.put("spark.sql.catalogImplementation", "hive");
@@ -186,16 +184,16 @@ public class SparkTestContext {
     return this.spark.cloneSession();
   }
 
-  private void addMixedSparkCatalog(Map<String, String> configs, String catalogName, TableFormat format) {
+  private void addMixedSparkCatalog(
+      Map<String, String> configs, String catalogName, TableFormat format) {
     configs.put("spark.sql.catalog." + catalogName, MIXED_CATALOG_IMPL);
-    configs.put(
-        "spark.sql.catalog." + catalogName + ".uri", amsCatalogUrl(format));
+    configs.put("spark.sql.catalog." + catalogName + ".uri", amsCatalogUrl(format));
   }
 
-  private void addUnifiedSparkCatalog(Map<String, String> configs, String catalogName, TableFormat format) {
+  private void addUnifiedSparkCatalog(
+      Map<String, String> configs, String catalogName, TableFormat format) {
     configs.put("spark.sql.catalog." + catalogName, UNIFIED_CATALOG_IMP);
-    configs.put(
-        "spark.sql.catalog." + catalogName + ".uri", amsCatalogUrl(format));
+    configs.put("spark.sql.catalog." + catalogName + ".uri", amsCatalogUrl(format));
   }
 
   private boolean isSameSparkConf(Map<String, String> sparkConf) {

@@ -12,7 +12,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
-
 @Disabled
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)

@@ -34,6 +34,7 @@ public interface UnifiedCatalog extends AmoroCatalog {
 
   /**
    * Get authentication context of this catalog.
+   *
    * @return table metastore.
    */
   TableMetaStore authenticationContext();
@@ -51,6 +52,7 @@ public interface UnifiedCatalog extends AmoroCatalog {
 
   /**
    * Get catalog properties
+   *
    * @return catalog properties
    */
   Map<String, String> properties();

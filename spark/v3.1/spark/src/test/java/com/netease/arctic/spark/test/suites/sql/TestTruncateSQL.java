@@ -79,5 +79,4 @@ public class TestTruncateSQL extends MixedTableTestBase {
     files = TestTableUtil.files(loadTable());
     Assertions.assertEquals(0, files.totalFileCount());
   }
-
 }

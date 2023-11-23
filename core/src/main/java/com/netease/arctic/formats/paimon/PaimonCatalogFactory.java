@@ -49,22 +49,12 @@ public class PaimonCatalogFactory implements FormatCatalogFactory {
         url ->
             catalogProperties.put(
                 HiveCatalogOptions.HIVE_CONF_DIR.key(), new File(url.getPath()).getParent()));
-    return new PaimonCatalog(
-        paimonCatalog(metastoreType, catalogProperties, metaStore.getConfiguration()), name);
+    Catalog catalog = paimonCatalog(catalogProperties, metaStore.getConfiguration());
+    return new PaimonCatalog(catalog, name);
   }
 
-  public static Catalog paimonCatalog(
-      String metastoreType, Map<String, String> properties, Configuration configuration) {
+  public static Catalog paimonCatalog(Map<String, String> properties, Configuration configuration) {
     Options options = Options.fromMap(properties);
-
-    String type;
-    if (CatalogMetaProperties.CATALOG_TYPE_HADOOP.equalsIgnoreCase(metastoreType)) {
-      type = FileSystemCatalogFactory.IDENTIFIER;
-    } else {
-      type = metastoreType;
-    }
-    options.set(CatalogOptions.METASTORE, type);
-
     CatalogContext catalogContext = CatalogContext.create(options, configuration);
     return CatalogFactory.createCatalog(catalogContext);
   }
@@ -72,5 +62,19 @@ public class PaimonCatalogFactory implements FormatCatalogFactory {
   @Override
   public TableFormat format() {
     return TableFormat.PAIMON;
+  }
+
+  @Override
+  public Map<String, String> convertCatalogProperties(
+      String catalogName, String metastoreType, Map<String, String> unifiedCatalogProperties) {
+    Options options = Options.fromMap(unifiedCatalogProperties);
+    String type;
+    if (CatalogMetaProperties.CATALOG_TYPE_HADOOP.equalsIgnoreCase(metastoreType)) {
+      type = FileSystemCatalogFactory.IDENTIFIER;
+    } else {
+      type = metastoreType;
+    }
+    options.set(CatalogOptions.METASTORE, type);
+    return options.toMap();
   }
 }

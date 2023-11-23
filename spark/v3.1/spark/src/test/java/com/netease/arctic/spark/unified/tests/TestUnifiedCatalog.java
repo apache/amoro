@@ -36,7 +36,6 @@ public class TestUnifiedCatalog extends SparkTestBase {
     return Arrays.stream(TableFormat.values()).map(Arguments::of);
   }
 
-
   @ParameterizedTest
   @MethodSource
   public void testTableFormats(TableFormat format) {
@@ -51,17 +50,20 @@ public class TestUnifiedCatalog extends SparkTestBase {
             + provider(format)
             + " PARTITIONED BY (pt) ";
     sql(sqlText);
-
-    sqlText =
-        "INSERT INTO "
-            + target()
-            + " VALUES "
-            + "(1, 'a', '2020-01-01'), (2, 'b', '2020-01-02'), (3, 'c', '2020-01-03')";
-    sql(sqlText);
+    int expect = 0;
+    if (TableFormat.PAIMON != format) {
+      // write is not supported in spark3-1
+      sqlText =
+          "INSERT INTO "
+              + target()
+              + " VALUES "
+              + "(1, 'a', '2020-01-01'), (2, 'b', '2020-01-02'), (3, 'c', '2020-01-03')";
+      sql(sqlText);
+      expect = 3;
+    }
 
     sqlText = "SELECT * FROM " + target();
     long count = sql(sqlText).count();
-    Assertions.assertEquals(3, count);
+    Assertions.assertEquals(expect, count);
   }
-
 }

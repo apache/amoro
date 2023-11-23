@@ -21,13 +21,12 @@ package com.netease.arctic.spark.unified;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 
-/**
- * Mixed-in interface to indicate that a spark catalog support Amoro authentication context.
- */
+/** Mixed-in interface to indicate that a spark catalog support Amoro authentication context. */
 public interface SupportAuthentication extends TableCatalog {
 
   /**
    * Set authentication context
+   *
    * @param tableMetaStore authentication context object.
    */
   void setAuthenticationContext(TableMetaStore tableMetaStore);

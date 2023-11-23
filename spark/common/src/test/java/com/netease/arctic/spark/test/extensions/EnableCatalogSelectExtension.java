@@ -90,7 +90,8 @@ public class EnableCatalogSelectExtension implements BeforeEachMethodAdapter {
 
   private String selectMixedCatalogByFormat(ExtensionContext context, ExtensionRegistry registry) {
     TableFormat format = formatFromMethodArgs(context, registry);
-    Preconditions.condition(format == TableFormat.MIXED_ICEBERG || format == TableFormat.MIXED_HIVE,
+    Preconditions.condition(
+        format == TableFormat.MIXED_ICEBERG || format == TableFormat.MIXED_HIVE,
         "must be a mixed-format");
     switch (format) {
       case MIXED_ICEBERG:
@@ -102,7 +103,8 @@ public class EnableCatalogSelectExtension implements BeforeEachMethodAdapter {
     }
   }
 
-  private String selectUnifiedCatalogByFormat(ExtensionContext context, ExtensionRegistry registry) {
+  private String selectUnifiedCatalogByFormat(
+      ExtensionContext context, ExtensionRegistry registry) {
     TableFormat format = formatFromMethodArgs(context, registry);
     switch (format) {
       case MIXED_ICEBERG:

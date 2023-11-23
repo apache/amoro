@@ -19,6 +19,7 @@
 package com.netease.arctic.spark.unified;
 
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.FormatCatalogFactory;
 import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.UnifiedCatalogLoader;
@@ -53,16 +54,17 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 
 public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, ProcedureCatalog {
 
   private static final Logger LOG = LoggerFactory.getLogger(SparkUnifiedCatalog.class);
-  private static final Map<TableFormat, String> defaultTableCatalogImplMap = ImmutableMap.of(
-      TableFormat.ICEBERG, "org.apache.iceberg.spark.SparkCatalog",
-      TableFormat.MIXED_HIVE, "com.netease.arctic.spark.ArcticSparkCatalog",
-      TableFormat.MIXED_ICEBERG, "com.netease.arctic.spark.ArcticSparkCatalog",
-      TableFormat.PAIMON, "org.apache.paimon.spark.SparkCatalog"
-  );
+  private static final Map<TableFormat, String> defaultTableCatalogImplMap =
+      ImmutableMap.of(
+          TableFormat.ICEBERG, "org.apache.iceberg.spark.SparkCatalog",
+          TableFormat.MIXED_HIVE, "com.netease.arctic.spark.ArcticSparkCatalog",
+          TableFormat.MIXED_ICEBERG, "com.netease.arctic.spark.ArcticSparkCatalog",
+          TableFormat.PAIMON, "org.apache.paimon.spark.SparkCatalog");
 
   private UnifiedCatalog unifiedCatalog;
   private String name;
@@ -81,13 +83,15 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
     if (StringUtils.isBlank(registerCatalogName)) {
       registerCatalogName = name;
       if (CatalogManager.SESSION_CATALOG_NAME().equalsIgnoreCase(registerCatalogName)) {
-        LOG.warn("catalog name is not exists in catalog uri, using spark catalog as register catalog name, but " +
-            "current name is spark session catalog name.");
+        LOG.warn(
+            "catalog name is not exists in catalog uri, using spark catalog as register catalog name, but "
+                + "current name is spark session catalog name.");
       }
     }
     this.name = name;
-    this.unifiedCatalog = UnifiedCatalogLoader.loadUnifiedCatalog(
-        catalogUri.serverUrl(), registerCatalogName, properties);
+    this.unifiedCatalog =
+        UnifiedCatalogLoader.loadUnifiedCatalog(
+            catalogUri.serverUrl(), registerCatalogName, properties);
   }
 
   @Override
@@ -96,15 +100,15 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
   }
 
   private String namespaceToDatabase(String[] namespace) {
-    Preconditions.checkArgument(
-        namespace.length == 1,
-        "only support namespace with 1 level.");
+    Preconditions.checkArgument(namespace.length == 1, "only support namespace with 1 level.");
     return namespace[0];
   }
 
   @Override
   public String[][] listNamespaces() throws NoSuchNamespaceException {
-    return unifiedCatalog.listDatabases().stream().map(d -> new String[] {d}).toArray(String[][]::new);
+    return unifiedCatalog.listDatabases().stream()
+        .map(d -> new String[] {d})
+        .toArray(String[][]::new);
   }
 
   @Override
@@ -118,7 +122,8 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
   }
 
   @Override
-  public Map<String, String> loadNamespaceMetadata(String[] namespace) throws NoSuchNamespaceException {
+  public Map<String, String> loadNamespaceMetadata(String[] namespace)
+      throws NoSuchNamespaceException {
     if (namespaceExists(namespace)) {
       return ImmutableMap.of();
     }
@@ -126,7 +131,8 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
   }
 
   @Override
-  public void createNamespace(String[] namespace, Map<String, String> metadata) throws NamespaceAlreadyExistsException {
+  public void createNamespace(String[] namespace, Map<String, String> metadata)
+      throws NamespaceAlreadyExistsException {
     String database = namespaceToDatabase(namespace);
     if (metadata != null && !metadata.isEmpty()) {
       LOG.warn("doesn't support properties for database, all properties will be discard.");
@@ -135,7 +141,8 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
   }
 
   @Override
-  public void alterNamespace(String[] namespace, NamespaceChange... changes) throws NoSuchNamespaceException {
+  public void alterNamespace(String[] namespace, NamespaceChange... changes)
+      throws NoSuchNamespaceException {
     throw new UnsupportedOperationException("Cannot apply namespace change");
   }
 
@@ -155,14 +162,16 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
     String database = namespaceToDatabase(namespace);
     List<TableIDWithFormat> tables = unifiedCatalog.listTables(database);
 
-    return tables.stream().map(id -> Identifier.of(new String[] {id.database()}, id.table()))
+    return tables.stream()
+        .map(id -> Identifier.of(new String[] {id.database()}, id.table()))
         .toArray(Identifier[]::new);
   }
 
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
     try {
-      AmoroTable<?> table = unifiedCatalog.loadTable(namespaceToDatabase(ident.namespace()), ident.name());
+      AmoroTable<?> table =
+          unifiedCatalog.loadTable(namespaceToDatabase(ident.namespace()), ident.name());
       return tableCatalog(table.format()).loadTable(ident);
     } catch (com.netease.arctic.NoSuchTableException e) {
       throw new NoSuchTableException(ident);
@@ -172,10 +181,11 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
   @Override
   public void invalidateTable(Identifier ident) {
     try {
-      AmoroTable<?> table = unifiedCatalog.loadTable(namespaceToDatabase(ident.namespace()), ident.name());
+      AmoroTable<?> table =
+          unifiedCatalog.loadTable(namespaceToDatabase(ident.namespace()), ident.name());
       tableCatalog(table.format()).invalidateTable(ident);
     } catch (com.netease.arctic.NoSuchTableException e) {
-      //pass
+      // pass
     }
   }
 
@@ -185,7 +195,8 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
   }
 
   @Override
-  public Table createTable(Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
+  public Table createTable(
+      Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
       throws TableAlreadyExistsException, NoSuchNamespaceException {
     String provider = properties.get(PROP_PROVIDER);
     if (StringUtils.isBlank(provider)) {
@@ -199,7 +210,8 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
   @Override
   public Table alterTable(Identifier ident, TableChange... changes) throws NoSuchTableException {
     try {
-      AmoroTable<?> table = unifiedCatalog.loadTable(namespaceToDatabase(ident.namespace()), ident.name());
+      AmoroTable<?> table =
+          unifiedCatalog.loadTable(namespaceToDatabase(ident.namespace()), ident.name());
       return tableCatalog(table.format()).alterTable(ident, changes);
     } catch (com.netease.arctic.NoSuchTableException e) {
       throw new NoSuchTableException(ident);
@@ -247,32 +259,54 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
       impl = defaultTableCatalogImplMap.get(format);
     }
     if (StringUtils.isBlank(impl)) {
-      throw new IllegalStateException("failed to initialize spark TableCatalog for format:" + format.name());
+      throw new IllegalStateException(
+          "failed to initialize spark TableCatalog for format:" + format.name());
     }
+    ServiceLoader<FormatCatalogFactory> loader = ServiceLoader.load(FormatCatalogFactory.class);
+    FormatCatalogFactory formatCatalogFactory = null;
+    for (FormatCatalogFactory factory : loader) {
+      if (factory.format() == format) {
+        formatCatalogFactory = factory;
+        break;
+      }
+    }
+    if (formatCatalogFactory == null) {
+      throw new IllegalStateException("can't find format factory for: " + format.name());
+    }
+
     try {
       Class<?> catalogClass = Utils.getContextOrSparkClassLoader().loadClass(impl);
       if (!TableCatalog.class.isAssignableFrom(catalogClass)) {
-        throw new IllegalStateException("Plugin class[" + catalogClass.getName() + "] for format: " +
-            format.name() + " does not  implement TableCatalog");
+        throw new IllegalStateException(
+            "Plugin class["
+                + catalogClass.getName()
+                + "] for format: "
+                + format.name()
+                + " does not  implement TableCatalog");
       }
-      TableCatalog tableCatalog = (TableCatalog) catalogClass.getDeclaredConstructor().newInstance();
-      Map<String, String> tableCatalogInitializeProperties = Maps.newHashMap();
-      tableCatalogInitializeProperties.putAll(unifiedCatalog.properties());
-      tableCatalogInitializeProperties.put("type", unifiedCatalog.metastoreType());
+      TableCatalog tableCatalog =
+          (TableCatalog) catalogClass.getDeclaredConstructor().newInstance();
+      Map<String, String> tableCatalogInitializeProperties =
+          formatCatalogFactory.convertCatalogProperties(
+              unifiedCatalog.name(), unifiedCatalog.metastoreType(), unifiedCatalog.properties());
+
       if (tableCatalog instanceof SupportAuthentication) {
-        ((SupportAuthentication) tableCatalog).setAuthenticationContext(unifiedCatalog.authenticationContext());
+        ((SupportAuthentication) tableCatalog)
+            .setAuthenticationContext(unifiedCatalog.authenticationContext());
+        tableCatalogInitializeProperties.put("register-name", unifiedCatalog.name());
       }
-      tableCatalog.initialize(
-          unifiedCatalog.name(), new CaseInsensitiveStringMap(tableCatalogInitializeProperties));
+      tableCatalog.initialize(name, new CaseInsensitiveStringMap(tableCatalogInitializeProperties));
       return tableCatalog;
     } catch (ClassNotFoundException e) {
       throw new IllegalStateException("Cannot find catalog plugin class for format: " + format, e);
     } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
       throw new IllegalStateException(
-          "Failed to invoke public no-arg constructor for format: " + format.name() + " : " + impl, e);
+          "Failed to invoke public no-arg constructor for format: " + format.name() + " : " + impl,
+          e);
     } catch (NoSuchMethodException e) {
       throw new IllegalStateException(
-          "Failed to find public no-arg constructor for format: " + format.name() + " : " + impl, e);
+          "Failed to find public no-arg constructor for format: " + format.name() + " : " + impl,
+          e);
     }
   }
 }
