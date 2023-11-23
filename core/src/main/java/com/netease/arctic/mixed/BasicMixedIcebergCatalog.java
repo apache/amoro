@@ -35,6 +35,8 @@ import com.netease.arctic.table.blocker.BasicTableBlockerManager;
 import com.netease.arctic.table.blocker.TableBlockerManager;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.iceberg.CachingCatalog;
+import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
@@ -47,6 +49,7 @@ import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.List;
 import java.util.Map;
@@ -63,6 +66,7 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   private Pattern databaseFilterPattern;
   private AmsClient client;
   private MixedTables tables;
+  private SupportsNamespaces asNamespaceCatalog;
 
   @Override
   public String name() {
@@ -71,18 +75,46 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
 
   @Override
   public void initialize(String name, Map<String, String> properties, TableMetaStore metaStore) {
+    boolean cacheEnabled =
+        PropertyUtil.propertyAsBoolean(
+            properties, CatalogProperties.CACHE_ENABLED, CatalogProperties.CACHE_ENABLED_DEFAULT);
+
+    boolean cacheCaseSensitive =
+        PropertyUtil.propertyAsBoolean(
+            properties,
+            CatalogProperties.CACHE_CASE_SENSITIVE,
+            CatalogProperties.CACHE_CASE_SENSITIVE_DEFAULT);
+
+    long cacheExpirationIntervalMs =
+        PropertyUtil.propertyAsLong(
+            properties,
+            CatalogProperties.CACHE_EXPIRATION_INTERVAL_MS,
+            CatalogProperties.CACHE_EXPIRATION_INTERVAL_MS_DEFAULT);
+
+    // An expiration interval of 0ms effectively disables caching.
+    // Do not wrap with CachingCatalog.
+    if (cacheExpirationIntervalMs == 0) {
+      cacheEnabled = false;
+    }
     Pattern databaseFilterPattern = null;
     if (properties.containsKey(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION)) {
       String databaseFilter =
           properties.get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
       databaseFilterPattern = Pattern.compile(databaseFilter);
     }
+    Catalog catalog = buildIcebergCatalog(name, properties, metaStore.getConfiguration());
     this.name = name;
     this.tableMetaStore = metaStore;
-    this.icebergCatalog = buildIcebergCatalog(name, properties, metaStore.getConfiguration());
+    this.icebergCatalog =
+        cacheEnabled
+            ? CachingCatalog.wrap(catalog, cacheCaseSensitive, cacheExpirationIntervalMs)
+            : catalog;
+    if (catalog instanceof SupportsNamespaces) {
+      this.asNamespaceCatalog = (SupportsNamespaces) catalog;
+    }
     this.databaseFilterPattern = databaseFilterPattern;
     this.catalogProperties = properties;
-    this.tables = newMixedTables(metaStore, properties, icebergCatalog);
+    this.tables = newMixedTables(metaStore, properties, icebergCatalog());
     if (properties.containsKey(CatalogMetaProperties.AMS_URI)) {
       this.client = new PooledAmsClient(properties.get(CatalogMetaProperties.AMS_URI));
     }
@@ -218,14 +250,13 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   }
 
   private SupportsNamespaces asNamespaceCatalog() {
-    Catalog icebergCatalog = icebergCatalog();
-    if (!(icebergCatalog instanceof SupportsNamespaces)) {
+    if (asNamespaceCatalog == null) {
       throw new UnsupportedOperationException(
           String.format(
               "Iceberg catalog: %s doesn't implement SupportsNamespaces",
-              icebergCatalog.getClass().getName()));
+              icebergCatalog().getClass().getName()));
     }
-    return (SupportsNamespaces) icebergCatalog;
+    return asNamespaceCatalog;
   }
 
   private class MixedIcebergTableBuilder implements TableBuilder {

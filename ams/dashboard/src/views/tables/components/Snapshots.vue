@@ -9,7 +9,7 @@
           <Chart :loading="loading" :options="fileChartOption" />
         </a-col>
       </a-row>
-      <selector :db="sourceData.db" :table="sourceData.table" :disabled="loading" @ref-change="onRefChange" />
+      <selector :catalog = "sourceData.catalog" :db="sourceData.db" :table="sourceData.table" :disabled="loading" @ref-change="onRefChange" />
       <a-table
         rowKey="snapshotId"
         :columns="columns"
