@@ -428,7 +428,8 @@ public class MixedTableMaintainer implements TableMaintainer {
         Expression dataFilter,
         long expireTimestamp,
         Map<StructLike, IcebergTableMaintainer.DataFileFreshness> partitionFreshness) {
-      return keyedExpiredFileScan(expirationConfig, dataFilter, expireTimestamp, partitionFreshness);
+      return keyedExpiredFileScan(
+          expirationConfig, dataFilter, expireTimestamp, partitionFreshness);
     }
 
     @Override
