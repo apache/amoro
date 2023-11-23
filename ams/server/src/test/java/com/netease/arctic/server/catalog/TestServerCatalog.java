@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server.catalog;
 
+import com.netease.arctic.AmoroCatalog;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.formats.AmoroCatalogTestHelper;
 import com.netease.arctic.formats.IcebergHadoopCatalogTestHelper;
@@ -26,6 +27,7 @@ import com.netease.arctic.formats.PaimonHadoopCatalogTestHelper;
 import com.netease.arctic.hive.formats.IcebergHiveCatalogTestHelper;
 import com.netease.arctic.hive.formats.MixedIcebergHiveCatalogTestHelper;
 import com.netease.arctic.hive.formats.PaimonHiveCatalogTestHelper;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -100,6 +102,14 @@ public class TestServerCatalog extends TableCatalogTestBase {
     getAmoroCatalog().createDatabase(testDatabaseName);
     getAmoroCatalogTestHelper().createTable(testDatabaseName, testTableName);
     getAmoroCatalogTestHelper().createTable(testDatabaseName, testTableNameFilter);
+  }
+
+  @After
+  public void cleanFilterTable() {
+    AmoroCatalog amoroCatalog = getAmoroCatalog();
+    if (amoroCatalog.exist(testDatabaseName, testTableNameFilter)) {
+      amoroCatalog.dropTable(testDatabaseName, testTableNameFilter, true);
+    }
   }
 
   @Test
