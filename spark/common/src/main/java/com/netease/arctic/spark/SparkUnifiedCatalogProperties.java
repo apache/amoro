@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.unified;
+package com.netease.arctic.spark;
 
 public class SparkUnifiedCatalogProperties {
 
