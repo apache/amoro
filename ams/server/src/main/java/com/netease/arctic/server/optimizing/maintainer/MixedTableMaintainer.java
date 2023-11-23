@@ -169,8 +169,7 @@ public class MixedTableMaintainer implements TableMaintainer {
             e -> new MixedFileEntry(e.getFile(), e.getTsBound(), false));
     IcebergTableMaintainer.ExpireFiles changeExpiredFiles =
         new IcebergTableMaintainer.ExpireFiles();
-    IcebergTableMaintainer.ExpireFiles baseExpiredFiles =
-        new IcebergTableMaintainer.ExpireFiles();
+    IcebergTableMaintainer.ExpireFiles baseExpiredFiles = new IcebergTableMaintainer.ExpireFiles();
 
     try (CloseableIterable<MixedFileEntry> entries =
         CloseableIterable.withNoopClose(
@@ -184,7 +183,8 @@ public class MixedTableMaintainer implements TableMaintainer {
           });
       fileEntries
           .parallelStream()
-          .filter(e -> IcebergTableMaintainer.willNotRetain(e, expirationConfig, partitionFreshness))
+          .filter(
+              e -> IcebergTableMaintainer.willNotRetain(e, expirationConfig, partitionFreshness))
           .forEach(
               e -> {
                 if (e.isChange()) {
@@ -430,7 +430,8 @@ public class MixedTableMaintainer implements TableMaintainer {
         Map<StructLike, IcebergTableMaintainer.DataFileFreshness> partitionFreshness) {
       return arcticTable.isKeyedTable()
           ? keyedExpiredFileScan(expirationConfig, dataFilter, expireTimestamp, partitionFreshness)
-          : super.expiredFileScan(expirationConfig, dataFilter, expireTimestamp, partitionFreshness);
+          : super.expiredFileScan(
+              expirationConfig, dataFilter, expireTimestamp, partitionFreshness);
     }
 
     @Override
@@ -464,7 +465,8 @@ public class MixedTableMaintainer implements TableMaintainer {
         Map<StructLike, IcebergTableMaintainer.DataFileFreshness> partitionFreshness) {
       return arcticTable.isKeyedTable()
           ? keyedExpiredFileScan(expirationConfig, dataFilter, expireTimestamp, partitionFreshness)
-          : super.expiredFileScan(expirationConfig, dataFilter, expireTimestamp, partitionFreshness);
+          : super.expiredFileScan(
+              expirationConfig, dataFilter, expireTimestamp, partitionFreshness);
     }
 
     @Override
