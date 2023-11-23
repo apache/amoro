@@ -428,10 +428,7 @@ public class MixedTableMaintainer implements TableMaintainer {
         Expression dataFilter,
         long expireTimestamp,
         Map<StructLike, IcebergTableMaintainer.DataFileFreshness> partitionFreshness) {
-      return arcticTable.isKeyedTable()
-          ? keyedExpiredFileScan(expirationConfig, dataFilter, expireTimestamp, partitionFreshness)
-          : super.expiredFileScan(
-              expirationConfig, dataFilter, expireTimestamp, partitionFreshness);
+      return keyedExpiredFileScan(expirationConfig, dataFilter, expireTimestamp, partitionFreshness);
     }
 
     @Override
