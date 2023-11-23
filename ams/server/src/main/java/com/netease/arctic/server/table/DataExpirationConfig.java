@@ -12,6 +12,8 @@ import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Locale;
 import java.util.Map;
@@ -49,6 +51,8 @@ public class DataExpirationConfig {
 
   public static final Set<Type.TypeID> FIELD_TYPES =
       Sets.newHashSet(Type.TypeID.TIMESTAMP, Type.TypeID.STRING, Type.TypeID.LONG);
+
+  private static final Logger LOG = LoggerFactory.getLogger(DataExpirationConfig.class);
 
   public DataExpirationConfig() {}
 
@@ -228,5 +232,36 @@ public class DataExpirationConfig {
         retentionTime,
         dateTimePattern,
         numberDateFormat);
+  }
+
+  public boolean isValid(Types.NestedField field, String name) {
+    return isEnabled()
+        && getRetentionTime() > 0
+        && validateExpirationField(field, name, getExpirationField());
+  }
+
+  private boolean validateExpirationField(
+      Types.NestedField field, String name, String expirationField) {
+    if (StringUtils.isBlank(expirationField) || null == field) {
+      LOG.warn(
+          String.format(
+              "Field(%s) used to determine data expiration is illegal for table(%s)",
+              expirationField, name));
+      return false;
+    }
+    Type.TypeID typeID = field.type().typeId();
+    if (!DataExpirationConfig.FIELD_TYPES.contains(typeID)) {
+      LOG.warn(
+          String.format(
+              "Table(%s) field(%s) type(%s) is not supported for data expiration, please use the "
+                  + "following types: %s",
+              name,
+              expirationField,
+              typeID.name(),
+              StringUtils.join(DataExpirationConfig.FIELD_TYPES, ", ")));
+      return false;
+    }
+
+    return true;
   }
 }

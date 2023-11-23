@@ -23,7 +23,6 @@ import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.mi
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
@@ -37,7 +36,6 @@ import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TableFileUtil;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.ContentScanTask;
@@ -49,6 +47,7 @@ import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.RewriteFiles;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
@@ -153,25 +152,15 @@ public class IcebergTableMaintainer implements TableMaintainer {
     try {
       DataExpirationConfig expirationConfig =
           tableRuntime.getTableConfiguration().getExpiringDataConfig();
-      if (!validateExpirationConfig(expirationConfig)) {
+      Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
+      if (!expirationConfig.isValid(field, table.name())) {
         return;
       }
 
-      expireDataFrom(
-          expirationConfig,
-          Instant.now()
-              .atZone(
-                  getDefaultZoneId(table.schema().findField(expirationConfig.getExpirationField())))
-              .toInstant());
+      expireDataFrom(expirationConfig, Instant.now().atZone(getDefaultZoneId(field)).toInstant());
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
     }
-  }
-
-  protected boolean validateExpirationConfig(DataExpirationConfig expirationConfig) {
-    return expirationConfig.isEnabled()
-        && expirationConfig.getRetentionTime() > 0
-        && validateExpirationField(expirationConfig.getExpirationField());
   }
 
   /**
@@ -192,7 +181,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
             .toLocalDateTime(),
         table.name());
 
-    purgeTableData(expirationConfig, expireTimestamp);
+    Expression dataFilter = getDataExpression(table.schema(), expirationConfig, expireTimestamp);
+
+    ExpireFiles expiredFiles = expiredFileScan(expirationConfig, dataFilter, expireTimestamp);
+    expireFiles(IcebergTableUtil.getSnapshotId(table, false), expiredFiles, expireTimestamp);
   }
 
   public void expireSnapshots(long mustOlderThan) {
@@ -522,32 +514,6 @@ public class IcebergTableMaintainer implements TableMaintainer {
         .toString();
   }
 
-  private boolean validateExpirationField(String expirationField) {
-    Types.NestedField field = table.schema().findField(expirationField);
-
-    if (StringUtils.isBlank(expirationField) || null == field) {
-      LOG.warn(
-          String.format(
-              "Field(%s) used to determine data expiration is illegal for table(%s)",
-              expirationField, table.name()));
-      return false;
-    }
-    Type.TypeID typeID = field.type().typeId();
-    if (!DataExpirationConfig.FIELD_TYPES.contains(typeID)) {
-      LOG.warn(
-          String.format(
-              "Table(%s) field(%s) type(%s) is not supported for data expiration, please use the "
-                  + "following types: %s",
-              table.name(),
-              expirationField,
-              typeID.name(),
-              StringUtils.join(DataExpirationConfig.FIELD_TYPES, ", ")));
-      return false;
-    }
-
-    return true;
-  }
-
   CloseableIterable<FileEntry> fileScan(
       Table table, Expression dataFilter, DataExpirationConfig expirationConfig) {
     TableScan tableScan = table.newScan().filter(dataFilter).includeColumnStats();
@@ -593,12 +559,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
         });
   }
 
-  protected List<IcebergTableMaintainer.ExpireFiles> expiredFileScan(
-      DataExpirationConfig expirationConfig,
-      Expression dataFilter,
-      long expireTimestamp,
-      Map<StructLike, IcebergTableMaintainer.DataFileFreshness> partitionFreshness) {
-    IcebergTableMaintainer.ExpireFiles expiredFiles = new IcebergTableMaintainer.ExpireFiles();
+  protected ExpireFiles expiredFileScan(
+      DataExpirationConfig expirationConfig, Expression dataFilter, long expireTimestamp) {
+    Map<StructLike, DataFileFreshness> partitionFreshness = Maps.newConcurrentMap();
+    ExpireFiles expiredFiles = new ExpireFiles();
     try (CloseableIterable<FileEntry> entries = fileScan(table, dataFilter, expirationConfig)) {
       Queue<FileEntry> fileEntries = new LinkedTransferQueue<>();
       entries.forEach(
@@ -614,21 +578,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    return Lists.newArrayList(expiredFiles);
-  }
-
-  protected void doExpireFiles(
-      List<IcebergTableMaintainer.ExpireFiles> expiredFiles, long expireTimestamp) {
-    expireFiles(IcebergTableUtil.getSnapshotId(table, false), expiredFiles.get(0), expireTimestamp);
-  }
-
-  protected void purgeTableData(DataExpirationConfig expirationConfig, long expireTimestamp) {
-    Expression dataFilter = getDataExpression(expirationConfig, expireTimestamp);
-    Map<StructLike, DataFileFreshness> partitionFreshness = Maps.newConcurrentMap();
-
-    List<ExpireFiles> expiredFiles =
-        expiredFileScan(expirationConfig, dataFilter, expireTimestamp, partitionFreshness);
-    doExpireFiles(expiredFiles, expireTimestamp);
+    return expiredFiles;
   }
 
   /**
@@ -639,13 +589,13 @@ public class IcebergTableMaintainer implements TableMaintainer {
    * @param expirationConfig expiration configuration
    * @param expireTimestamp expired timestamp
    */
-  protected Expression getDataExpression(
-      DataExpirationConfig expirationConfig, long expireTimestamp) {
+  protected static Expression getDataExpression(
+      Schema schema, DataExpirationConfig expirationConfig, long expireTimestamp) {
     if (expirationConfig.getExpirationLevel().equals(DataExpirationConfig.ExpireLevel.PARTITION)) {
       return Expressions.alwaysTrue();
     }
 
-    Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
+    Types.NestedField field = schema.findField(expirationConfig.getExpirationField());
     Type.TypeID typeID = field.type().typeId();
     switch (typeID) {
       case TIMESTAMP:
