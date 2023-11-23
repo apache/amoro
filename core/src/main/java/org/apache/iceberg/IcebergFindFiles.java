@@ -46,6 +46,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
+/**
+ * Find iceberg files like {@link org.apache.iceberg.FindFiles} but with more options. Supports scan
+ * delete files.Support partition filter. Support return SpecId.
+ *
+ * <p>Some code is copied from {@link org.apache.iceberg.FindFiles}, {@link
+ * org.apache.iceberg.ManifestReader}, {@link org.apache.iceberg.ManifestGroup}
+ */
 public class IcebergFindFiles {
   private static final Types.StructType EMPTY_STRUCT = Types.StructType.of();
 
