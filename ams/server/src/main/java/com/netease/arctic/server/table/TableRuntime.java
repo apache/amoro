@@ -125,7 +125,10 @@ public class TableRuntime extends StatedPersistentBase {
     this.optimizerGroup = tableRuntimeMeta.getOptimizerGroup();
     this.tableConfiguration = tableRuntimeMeta.getTableConfig();
     this.processId = tableRuntimeMeta.getOptimizingProcessId();
-    this.optimizingStatus = tableRuntimeMeta.getTableStatus();
+    this.optimizingStatus =
+        tableRuntimeMeta.getTableStatus() == OptimizingStatus.PLANNING
+            ? OptimizingStatus.PENDING
+            : tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
   }
 
@@ -146,6 +149,26 @@ public class TableRuntime extends StatedPersistentBase {
                   doAs(
                       TableMetaMapper.class,
                       mapper -> mapper.deleteOptimizingRuntime(tableIdentifier.getId())));
+        });
+  }
+
+  public void beginPlanning() {
+    invokeConsisitency(
+        () -> {
+          OptimizingStatus originalStatus = optimizingStatus;
+          updateOptimizingStatus(OptimizingStatus.PLANNING);
+          persistUpdatingRuntime();
+          tableHandler.handleTableChanged(this, originalStatus);
+        });
+  }
+
+  public void planFailed() {
+    invokeConsisitency(
+        () -> {
+          OptimizingStatus originalStatus = optimizingStatus;
+          updateOptimizingStatus(OptimizingStatus.PENDING);
+          persistUpdatingRuntime();
+          tableHandler.handleTableChanged(this, originalStatus);
         });
   }
 
@@ -208,10 +231,11 @@ public class TableRuntime extends StatedPersistentBase {
     invokeConsisitency(
         () -> {
           pendingInput = null;
-          if (optimizingStatus == OptimizingStatus.PENDING) {
+          if (optimizingStatus == OptimizingStatus.PLANNING
+              || optimizingStatus == OptimizingStatus.PENDING) {
             updateOptimizingStatus(OptimizingStatus.IDLE);
             persistUpdatingRuntime();
-            tableHandler.handleTableChanged(this, OptimizingStatus.PENDING);
+            tableHandler.handleTableChanged(this, optimizingStatus);
           }
         });
   }
