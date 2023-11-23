@@ -114,8 +114,7 @@ public class OptimizingQueue extends PersistentBase {
     if (tableRuntime.isOptimizingEnabled()) {
       tableRuntime.resetTaskQuotas(
           System.currentTimeMillis() - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME);
-      if (tableRuntime.getOptimizingStatus() == OptimizingStatus.IDLE
-          || tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING) {
+      if (!tableRuntime.getOptimizingStatus().isProcessing()) {
         schedulingPolicy.addTable(tableRuntime);
       } else if (tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
         tableQueue.offer(new TableOptimizingProcess(tableRuntimeMeta));
@@ -264,11 +263,7 @@ public class OptimizingQueue extends PersistentBase {
                       process.getTaskMap().size(),
                       currentTime - startTime,
                       skipTables);
-                } else {
-                  if (throwable != null) {
-                    LOG.error(
-                        "Planning table {} failed", tableRuntime.getTableIdentifier(), throwable);
-                  }
+                } else if (throwable == null){
                   LOG.info(
                       "{} skip planning table {} with a total cost of {} ms.",
                       optimizerGroup.getName(),
@@ -286,18 +281,26 @@ public class OptimizingQueue extends PersistentBase {
     CompletableFuture<TableOptimizingProcess> future = new CompletableFuture<>();
     planExecutor.execute(
         () -> {
-          AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
-          OptimizingPlanner planner =
-              new OptimizingPlanner(
-                  tableRuntime.refresh(table),
-                  (ArcticTable) table.originalTable(),
-                  getAvailableCore());
-          if (planner.isNecessary()) {
-            TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
-            future.complete(optimizingProcess);
-          } else {
-            tableRuntime.cleanPendingInput();
-            future.complete(null);
+          tableRuntime.beginPlanning();
+          try {
+            AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
+            OptimizingPlanner planner =
+                new OptimizingPlanner(
+                    tableRuntime.refresh(table),
+                    (ArcticTable) table.originalTable(),
+                    getAvailableCore());
+            if (planner.isNecessary()) {
+              TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
+              future.complete(optimizingProcess);
+            } else {
+              tableRuntime.cleanPendingInput();
+              future.complete(null);
+            }
+          } catch (Throwable throwable) {
+            tableRuntime.planFailed();
+            LOG.error(
+                "Planning table {} failed", tableRuntime.getTableIdentifier(), throwable);
+            future.completeExceptionally(throwable);
           }
         });
     return future;
@@ -432,11 +435,7 @@ public class OptimizingQueue extends PersistentBase {
           }
         } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
           if (taskRuntime.getRetry() < tableRuntime.getMaxExecuteRetryCount()) {
-            System.out.println(
-                "/n/n #### getMaxExecuteRetryCount {}" + tableRuntime.getMaxExecuteRetryCount());
-            System.out.println("/n/n #### retry task times {}" + (taskRuntime.getRunTimes() - 1));
             retryTask(taskRuntime);
-            System.out.println("/n/n #### task status {}" + taskRuntime.getStatus());
           } else {
             clearProcess(this);
             this.failedReason = taskRuntime.getFailReason();
