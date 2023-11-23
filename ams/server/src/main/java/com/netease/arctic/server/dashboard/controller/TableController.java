@@ -424,7 +424,7 @@ public class TableController {
     String catalog = ctx.pathParam("catalog");
     String database = ctx.pathParam("db");
     String table = ctx.pathParam("table");
-    String keywords = ctx.queryParamAsClass("keywords", String.class).getOrDefault("");
+    String keywords = ctx.queryParamAsClass("filter", String.class).getOrDefault("");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
