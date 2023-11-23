@@ -762,7 +762,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     }
   }
 
-  boolean mayExpired(
+  static boolean mayExpired(
       FileEntry fileEntry,
       Map<StructLike, DataFileFreshness> partitionFreshness,
       Long expireTimestamp) {
@@ -795,7 +795,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     return expired;
   }
 
-  boolean willNotRetain(
+  static boolean willNotRetain(
       FileEntry fileEntry,
       DataExpirationConfig expirationConfig,
       Map<StructLike, DataFileFreshness> partitionFreshness) {
