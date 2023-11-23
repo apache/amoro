@@ -59,6 +59,21 @@ public class PrimaryKeySpec implements Serializable {
     return new Builder(schema);
   }
 
+  /**
+   * parse primary key spec from table properties
+   *
+   * @param schema - base store table schema
+   * @param keyDescription - key description of {#{@link #description}}
+   * @return primary key spec.
+   */
+  public static PrimaryKeySpec fromDescription(Schema schema, String keyDescription) {
+    PrimaryKeySpec.Builder keyBuilder = PrimaryKeySpec.builderFor(schema);
+    Arrays.stream(keyDescription.split(PRIMARY_KEY_COLUMN_JOIN_DELIMITER))
+        .filter(StringUtils::isNotBlank)
+        .forEach(keyBuilder::addColumn);
+    return keyBuilder.build();
+  }
+
   public List<PrimaryKeyField> fields() {
     return pkFields;
   }
@@ -98,7 +113,7 @@ public class PrimaryKeySpec implements Serializable {
     for (PrimaryKeyField field : pkFields) {
       sb.append(field).append(",");
     }
-    if (pkFields.size() > 0) {
+    if (!pkFields.isEmpty()) {
       sb.deleteCharAt(sb.length() - 1);
     }
     sb.append(")");
@@ -123,13 +138,6 @@ public class PrimaryKeySpec implements Serializable {
       this.schema = schema;
     }
 
-    public Builder addDescription(String columnDescription) {
-      Arrays.stream(columnDescription.split(PRIMARY_KEY_COLUMN_JOIN_DELIMITER))
-          .filter(StringUtils::isNotBlank)
-          .forEach(this::addColumn);
-      return this;
-    }
-
     public Builder addColumn(String columnName) {
       Types.NestedField sourceColumn = schema.findField(columnName);
       Preconditions.checkArgument(
@@ -152,7 +160,7 @@ public class PrimaryKeySpec implements Serializable {
     }
 
     public PrimaryKeySpec build() {
-      if (pkFields.size() > 0) {
+      if (!pkFields.isEmpty()) {
         return new PrimaryKeySpec(schema, pkFields);
       } else {
         return PrimaryKeySpec.noPrimaryKey();

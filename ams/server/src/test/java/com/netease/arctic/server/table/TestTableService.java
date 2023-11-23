@@ -22,6 +22,7 @@ import static com.netease.arctic.TableTestHelper.TEST_DB_NAME;
 import static com.netease.arctic.catalog.CatalogTestHelper.TEST_CATALOG_NAME;
 
 import com.netease.arctic.BasicTableTestHelper;
+import com.netease.arctic.TableIDWithFormat;
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.TestedCatalogs;
 import com.netease.arctic.ams.api.BlockableOperation;
@@ -45,7 +46,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
 public class TestTableService extends AMSTableTestBase {
@@ -79,12 +79,12 @@ public class TestTableService extends AMSTableTestBase {
         tableService().loadTableMetadata(tableMeta().getTableIdentifier()).buildTableMeta());
 
     // test list tables
-    List<TableIdentifier> tableIdentifierList =
-        tableService().listTables(TEST_CATALOG_NAME, TEST_DB_NAME).stream()
-            .map(t -> t.getIdentifier().buildTableIdentifier())
-            .collect(Collectors.toList());
+    List<TableIDWithFormat> tableIdentifierList =
+        tableService().listTables(TEST_CATALOG_NAME, TEST_DB_NAME);
     Assert.assertEquals(1, tableIdentifierList.size());
-    Assert.assertEquals(tableMeta().getTableIdentifier(), tableIdentifierList.get(0));
+    Assert.assertEquals(
+        tableMeta().getTableIdentifier(),
+        tableIdentifierList.get(0).getIdentifier().buildTableIdentifier());
 
     // test list table metadata
     List<TableMetadata> tableMetadataList = tableService().listTableMetas();
