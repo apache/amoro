@@ -62,6 +62,13 @@ public interface ArcticFileIO extends FileIO, Configurable {
    */
   void rename(String oldPath, String newPath);
 
+  /**
+   * Copy file from old path to new path
+   * @param oldPath - source path
+   * @param newPath - target path
+   */
+  void copy(String oldPath, String newPath);
+
   /** Delete a directory recursively
    *
    * @param path the path to delete.

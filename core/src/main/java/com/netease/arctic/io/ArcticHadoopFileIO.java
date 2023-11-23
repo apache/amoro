@@ -21,6 +21,7 @@ package com.netease.arctic.io;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
@@ -172,6 +173,24 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
           throw new IOException("Fail to rename: from " + src + " to " + dts +
               " and file system return false, need to check the hdfs path");
         }
+      } catch (IOException e) {
+        throw new UncheckedIOException("Fail to rename: from " + src + " to " + dts, e);
+      }
+      return null;
+    });
+  }
+
+  @Override
+  public void copy(String src, String dts) {
+    tableMetaStore.doAs(() -> {
+      Path srcPath = new Path(src);
+      Path dtsPath = new Path(dts);
+      FileSystem fs = getFs(srcPath);
+      if (fs.isDirectory(srcPath)) {
+        throw new IllegalArgumentException("can't copy directory");
+      }
+      try {
+        FileUtil.copy(fs, srcPath, fs, dtsPath, false, true, conf());
       } catch (IOException e) {
         throw new UncheckedIOException("Fail to rename: from " + src + " to " + dts, e);
       }

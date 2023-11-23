@@ -56,6 +56,11 @@ public class RecoverableArcticFileIO implements ArcticFileIO {
   }
 
   @Override
+  public void copy(String oldPath, String newPath) {
+    fileIO.copy(oldPath, newPath);
+  }
+
+  @Override
   public void deleteDirectoryRecursively(String path) {
     //Do not move trash when deleting directory as it is used for dropping table only
     fileIO.deleteDirectoryRecursively(path);
