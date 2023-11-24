@@ -13,6 +13,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -59,6 +60,7 @@ public class OptimizingIntegrationTest {
   private static final TableIdentifier TB_12 = TableIdentifier.of(ICEBERG_CATALOG, DATABASE, "iceberg_table12");
   private static final TableIdentifier TB_13 = TableIdentifier.of(CATALOG, DATABASE, "test_table13");
   private static final TableIdentifier TB_14 = TableIdentifier.of(CATALOG, DATABASE, "test_table14");
+  private static final TableIdentifier TB_15 = TableIdentifier.of(HIVE_CATALOG, DATABASE, "hive_table15");
 
   private static final ConcurrentHashMap<String, ArcticCatalog> catalogsCache = new ConcurrentHashMap<>();
 
@@ -217,6 +219,16 @@ public class OptimizingIntegrationTest {
     MixedHiveOptimizingTest testCase =
         new MixedHiveOptimizingTest(table, TEST_HMS.getHiveClient(), getOptimizeHistoryStartId());
     testCase.testHiveKeyedTableMajorOptimizeAndMove();
+  }
+
+  @Test
+  public void testHiveUnKeyedTableFullOptimizeCopyingFiles() throws TException, IOException {
+    createHiveArcticTable(TB_15, PrimaryKeySpec.noPrimaryKey(), PartitionSpec.unpartitioned());
+    assertTableExist(TB_15);
+    UnkeyedTable table = catalog(HIVE_CATALOG).loadTable(TB_15).asUnkeyedTable();
+    MixedHiveOptimizingTest testCase =
+        new MixedHiveOptimizingTest(table, TEST_HMS.getHiveClient(), getOptimizeHistoryStartId());
+    testCase.testHiveUnKeyedTableFullOptimizeCopyingFiles();
   }
 
   private static long getOptimizeHistoryStartId() {

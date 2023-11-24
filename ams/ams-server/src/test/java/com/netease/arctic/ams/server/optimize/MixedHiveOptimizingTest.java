@@ -24,9 +24,11 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.AppendFiles;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -116,6 +118,30 @@ public class MixedHiveOptimizingTest extends AbstractOptimizingTest {
     assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 1, 1);
     assertIdRange(readRecords(table), 1, 102);
     assertIdRange(readHiveTableData(), 1, 102);
+
+    assertOptimizeHangUp(tb, startId + offset);
+  }
+
+  public void testHiveUnKeyedTableFullOptimizeCopyingFiles() throws TException, IOException {
+    int offset = 1;
+    UnkeyedTable table = arcticTable.asUnkeyedTable();
+    TableIdentifier tb = table.id();
+    // write 2 small files and 1 large file
+    updateProperties(arcticTable, TableProperties.ENABLE_SELF_OPTIMIZING, false + "");
+    updateProperties(arcticTable, TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, 1000 + "");
+    writeBase(table, rangeFromTo(1, 2, "aaa", quickDateWithZone(3)));
+    writeBase(table, rangeFromTo(3, 4, "aaa", quickDateWithZone(3)));
+    List<DataFile> largeFile = writeBase(table, rangeFromTo(5, 5000, "aaa", quickDateWithZone(3)));
+    long targetFileSize = (largeFile.get(0).fileSizeInBytes() - 10) * 10 / 9;
+    updateProperties(arcticTable, TableProperties.SELF_OPTIMIZING_TARGET_SIZE, targetFileSize + "");
+
+    // wait Full Optimize result
+    updateProperties(arcticTable, TableProperties.ENABLE_SELF_OPTIMIZING, true + "");
+    OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + offset++);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.FullMajor, 3, 2);
+    assertIdRange(readRecords(table), 1, 5000);
+    // assert file are in hive location
+    assertIdRange(readHiveTableData(), 1, 5000);
 
     assertOptimizeHangUp(tb, startId + offset);
   }
