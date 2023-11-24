@@ -5,6 +5,7 @@ public enum OptimizingStatus {
   MAJOR_OPTIMIZING("major", true),
   MINOR_OPTIMIZING("minor", true),
   COMMITTING("committing", true),
+  PLANNING("planning", false),
   PENDING("pending", false),
   IDLE("idle", false);
   private final String displayValue;

@@ -116,7 +116,6 @@ public class OptimizingPlanner extends OptimizingEvaluator {
       return this.tasks;
     }
     long startTime = System.nanoTime();
-
     if (!isInitialized) {
       initEvaluator();
     }
