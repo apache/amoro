@@ -21,9 +21,11 @@ package com.netease.arctic.server.optimizing.maintainer;
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
 import com.netease.arctic.io.SupportsFileSystemOperations;
@@ -156,8 +158,17 @@ public class IcebergTableMaintainer implements TableMaintainer {
       if (!expirationConfig.isValid(field, table.name())) {
         return;
       }
+      Instant startInstant;
+      if (expirationConfig.getSince() == DataExpirationConfig.Since.CURRENT_TIMESTAMP) {
+        startInstant = Instant.now().atZone(getDefaultZoneId(field)).toInstant();
+      } else {
+        startInstant =
+            Instant.ofEpochMilli(fetchLatestNonOptimizedSnapshotTime(table))
+                .atZone(getDefaultZoneId(field))
+                .toInstant();
+      }
 
-      expireDataFrom(expirationConfig, Instant.now().atZone(getDefaultZoneId(field)).toInstant());
+      expireDataFrom(expirationConfig, startInstant);
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
     }
@@ -265,8 +276,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
     // Latest checkpoint of flink need retain. If Flink does not continuously commit new snapshots,
     // it can lead to issues with table partitions not expiring.
     long latestFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(table);
+    // Retain the latest non-optimized snapshot for remember the real latest update
+    long latestNonOptimizedTime = fetchLatestNonOptimizedSnapshotTime(table);
     long olderThan = System.currentTimeMillis() - baseSnapshotsKeepTime;
-    return min(latestFlinkCommitTime, mustOlderThan, olderThan);
+    return min(latestFlinkCommitTime, latestNonOptimizedTime, mustOlderThan, olderThan);
   }
 
   protected Set<String> expireSnapshotNeedToExcludeFiles() {
@@ -386,6 +399,20 @@ public class IcebergTableMaintainer implements TableMaintainer {
       }
     }
     return Long.MAX_VALUE;
+  }
+
+  /**
+   * When expiring historic data and `data-expire.since` is `CURRENT_SNAPSHOT`, the latest snapshot
+   * should not be produced by Amoro.
+   *
+   * @param table iceberg table
+   * @return the latest non-optimized snapshot timestamp
+   */
+  public static long fetchLatestNonOptimizedSnapshotTime(Table table) {
+    Optional<Snapshot> snapshot =
+        IcebergTableUtil.findSnapshot(
+            table, s -> s.summary().containsValue(CommitMetaProducer.OPTIMIZE.name()));
+    return snapshot.isPresent() ? snapshot.get().timestampMillis() : Long.MAX_VALUE;
   }
 
   private static int deleteInvalidFilesInFs(

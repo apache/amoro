@@ -33,6 +33,8 @@ public class DataExpirationConfig {
   private String dateTimePattern;
   // data-expire.datetime-number-format
   private String numberDateFormat;
+  // data-expire.since
+  private Since since;
 
   @VisibleForTesting
   public enum ExpireLevel {
@@ -45,6 +47,22 @@ public class DataExpirationConfig {
         return ExpireLevel.valueOf(level.toUpperCase(Locale.ENGLISH));
       } catch (IllegalArgumentException e) {
         throw new IllegalArgumentException(String.format("Invalid level type: %s", level), e);
+      }
+    }
+  }
+
+  @VisibleForTesting
+  public enum Since {
+    LATEST_SNAPSHOT,
+    CURRENT_TIMESTAMP;
+
+    public static Since fromString(String since) {
+      Preconditions.checkArgument(null != since, "data-expire.since is invalid: null");
+      try {
+        return Since.valueOf(since.toUpperCase(Locale.ENGLISH));
+      } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException(
+            String.format("Unable to expire data since: %s", since), e);
       }
     }
   }
@@ -62,13 +80,15 @@ public class DataExpirationConfig {
       ExpireLevel expirationLevel,
       long retentionTime,
       String dateTimePattern,
-      String numberDateFormat) {
+      String numberDateFormat,
+      Since since) {
     this.enabled = enabled;
     this.expirationField = expirationField;
     this.expirationLevel = expirationLevel;
     this.retentionTime = retentionTime;
     this.dateTimePattern = dateTimePattern;
     this.numberDateFormat = numberDateFormat;
+    this.since = since;
   }
 
   public DataExpirationConfig(ArcticTable table) {
@@ -113,6 +133,12 @@ public class DataExpirationConfig {
             properties,
             TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT,
             TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT);
+    since =
+        Since.fromString(
+            CompatiblePropertyUtil.propertyAsString(
+                properties,
+                TableProperties.DATA_EXPIRATION_SINCE,
+                TableProperties.DATA_EXPIRATION_SINCE_DEFAULT));
   }
 
   public static DataExpirationConfig parse(Map<String, String> properties) {
@@ -141,7 +167,13 @@ public class DataExpirationConfig {
                 CompatiblePropertyUtil.propertyAsString(
                     properties,
                     TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT,
-                    TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT));
+                    TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT))
+            .setSince(
+                Since.fromString(
+                    CompatiblePropertyUtil.propertyAsString(
+                        properties,
+                        TableProperties.DATA_EXPIRATION_SINCE,
+                        TableProperties.DATA_EXPIRATION_SINCE_DEFAULT)));
     String retention =
         CompatiblePropertyUtil.propertyAsString(
             properties, TableProperties.DATA_EXPIRATION_RETENTION_TIME, null);
@@ -206,6 +238,15 @@ public class DataExpirationConfig {
     return this;
   }
 
+  public Since getSince() {
+    return since;
+  }
+
+  public DataExpirationConfig setSince(Since since) {
+    this.since = since;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -220,7 +261,8 @@ public class DataExpirationConfig {
         && Objects.equal(expirationField, config.expirationField)
         && expirationLevel == config.expirationLevel
         && Objects.equal(dateTimePattern, config.dateTimePattern)
-        && Objects.equal(numberDateFormat, config.numberDateFormat);
+        && Objects.equal(numberDateFormat, config.numberDateFormat)
+        && since == config.since;
   }
 
   @Override
@@ -231,7 +273,8 @@ public class DataExpirationConfig {
         expirationLevel,
         retentionTime,
         dateTimePattern,
-        numberDateFormat);
+        numberDateFormat,
+        since);
   }
 
   public boolean isValid(Types.NestedField field, String name) {

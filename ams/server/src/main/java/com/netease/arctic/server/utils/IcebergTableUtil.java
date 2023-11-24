@@ -18,6 +18,9 @@
 
 package com.netease.arctic.server.utils;
 
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.ArcticServiceConstants;
@@ -73,6 +76,11 @@ public class IcebergTableUtil {
       table.refresh();
     }
     return table.currentSnapshot();
+  }
+
+  public static Optional<Snapshot> findSnapshot(Table table, Predicate<Snapshot> predicate) {
+    Iterable<Snapshot> snapshots = table.snapshots();
+    return Iterables.tryFind(snapshots, predicate);
   }
 
   public static Set<String> getAllContentFilePath(Table internalTable) {

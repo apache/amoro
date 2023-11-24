@@ -145,8 +145,22 @@ public class MixedTableMaintainer implements TableMaintainer {
         return;
       }
       ZoneId defaultZone = IcebergTableMaintainer.getDefaultZoneId(field);
-      Instant instant = Instant.now().atZone(defaultZone).toInstant();
-      expireDataFrom(expirationConfig, instant);
+      Instant startInstant;
+      if (expirationConfig.getSince() == DataExpirationConfig.Since.CURRENT_TIMESTAMP) {
+        startInstant = Instant.now().atZone(defaultZone).toInstant();
+      } else {
+        long latestBaseTs =
+            IcebergTableMaintainer.fetchLatestNonOptimizedSnapshotTime(baseMaintainer.getTable());
+        long latestChangeTs =
+            changeMaintainer == null
+                ? Long.MAX_VALUE
+                : IcebergTableMaintainer.fetchLatestNonOptimizedSnapshotTime(
+                    changeMaintainer.getTable());
+        long latestNonOptimizedTs = Longs.min(latestChangeTs, latestBaseTs);
+
+        startInstant = Instant.ofEpochMilli(latestNonOptimizedTs).atZone(defaultZone).toInstant();
+      }
+      expireDataFrom(expirationConfig, startInstant);
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
     }
