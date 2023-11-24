@@ -31,9 +31,9 @@ public class MetricsSummary {
   private long posDeleteRecordCnt = 0;
 
   /** @deprecated since 0.7.0, will be removed in 0.8.0 */
-  @Deprecated long newFileSize = 0;
+  @Deprecated private long newFileSize = 0;
 
-  @Deprecated int newFileCnt = 0;
+  @Deprecated private int newFileCnt = 0;
   private long newDataSize = 0;
   private int newDataFileCnt = 0;
   private long newDataRecordCnt = 0;
@@ -42,6 +42,140 @@ public class MetricsSummary {
 
   private int newDeleteFileCnt = 0;
   private long newDeleteRecordCnt = 0;
+
+  public static class InputMetrics {
+    private long rewriteDataSize = 0;
+    private int rewriteDataFileCnt = 0;
+    private long rewriteDataRecordCnt = 0;
+    private long rewritePosDataSize = 0;
+    private int rewritePosDataFileCnt = 0;
+    private long rewritePosDataRecordCnt = 0;
+    private long equalityDeleteSize = 0;
+    private int eqDeleteFileCnt = 0;
+    private long eqDeleteRecordCnt = 0;
+    private long positionDeleteSize = 0;
+    private int posDeleteFileCnt = 0;
+    private long posDeleteRecordCnt = 0;
+
+    public InputMetrics(MetricsSummary metricsSummary) {
+      this.rewriteDataSize = metricsSummary.rewriteDataSize;
+      this.rewriteDataFileCnt = metricsSummary.rewriteDataFileCnt;
+      this.rewriteDataRecordCnt = metricsSummary.rewriteDataRecordCnt;
+      this.rewritePosDataSize = metricsSummary.rewritePosDataSize;
+      this.rewritePosDataFileCnt =
+          Math.max(metricsSummary.reRowDeletedDataFileCnt, metricsSummary.rewritePosDataFileCnt);
+      this.rewritePosDataRecordCnt = metricsSummary.rewritePosDataRecordCnt;
+      this.equalityDeleteSize = metricsSummary.equalityDeleteSize;
+      this.eqDeleteFileCnt = metricsSummary.eqDeleteFileCnt;
+      this.eqDeleteRecordCnt = metricsSummary.eqDeleteRecordCnt;
+      this.positionDeleteSize =
+          Math.max(metricsSummary.positionalDeleteSize, metricsSummary.positionDeleteSize);
+      this.posDeleteFileCnt = metricsSummary.posDeleteFileCnt;
+      this.posDeleteRecordCnt = metricsSummary.posDeleteRecordCnt;
+    }
+
+    public long getRewriteDataSize() {
+      return rewriteDataSize;
+    }
+
+    public int getRewriteDataFileCnt() {
+      return rewriteDataFileCnt;
+    }
+
+    public long getRewriteDataRecordCnt() {
+      return rewriteDataRecordCnt;
+    }
+
+    public long getRewritePosDataSize() {
+      return rewritePosDataSize;
+    }
+
+    public int getRewritePosDataFileCnt() {
+      return rewritePosDataFileCnt;
+    }
+
+    public long getRewritePosDataRecordCnt() {
+      return rewritePosDataRecordCnt;
+    }
+
+    public long getEqualityDeleteSize() {
+      return equalityDeleteSize;
+    }
+
+    public int getEqDeleteFileCnt() {
+      return eqDeleteFileCnt;
+    }
+
+    public long getEqDeleteRecordCnt() {
+      return eqDeleteRecordCnt;
+    }
+
+    public long getPositionDeleteSize() {
+      return positionDeleteSize;
+    }
+
+    public int getPosDeleteFileCnt() {
+      return posDeleteFileCnt;
+    }
+
+    public long getPosDeleteRecordCnt() {
+      return posDeleteRecordCnt;
+    }
+  }
+
+  public static class OutputMetrics {
+    private long newFileSize = 0;
+    private int newFileCnt = 0;
+    private long newDataSize = 0;
+    private int newDataFileCnt = 0;
+    private long newDataRecordCnt = 0;
+    private long newDeleteSize = 0;
+    private int newDeleteFileCnt = 0;
+    private long newDeleteRecordCnt = 0;
+
+    public OutputMetrics(MetricsSummary metricsSummary) {
+      this.newFileSize = metricsSummary.newFileSize;
+      this.newFileCnt = metricsSummary.newFileCnt;
+      this.newDataSize = metricsSummary.newDataSize;
+      this.newDataFileCnt = metricsSummary.newDataFileCnt;
+      this.newDataRecordCnt = metricsSummary.newDataRecordCnt;
+      this.newDeleteSize = metricsSummary.newDeleteSize;
+      this.newDeleteFileCnt = metricsSummary.newDeleteFileCnt;
+      this.newDeleteRecordCnt = metricsSummary.newDeleteRecordCnt;
+    }
+
+    public long getNewFileSize() {
+      return newFileSize;
+    }
+
+    public int getNewFileCnt() {
+      return newFileCnt;
+    }
+
+    public long getNewDataSize() {
+      return newDataSize;
+    }
+
+    public int getNewDataFileCnt() {
+      return newDataFileCnt;
+    }
+
+    public long getNewDataRecordCnt() {
+      return newDataRecordCnt;
+    }
+
+    public long getNewDeleteSize() {
+      return newDeleteSize;
+    }
+
+    public int getNewDeleteFileCnt() {
+      return newDeleteFileCnt;
+    }
+
+    public long getNewDeleteRecordCnt() {
+      return newDeleteRecordCnt;
+    }
+  }
 
   public MetricsSummary() {}
 

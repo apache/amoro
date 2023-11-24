@@ -46,7 +46,8 @@ public class OptimizingProcessInfo {
   private FilesStatistics inputFiles;
   private FilesStatistics outputFiles;
 
-  private MetricsSummary summary;
+  private MetricsSummary.InputMetrics inputMetrics;
+  private MetricsSummary.OutputMetrics outputMetrics;
 
   public Long getTableId() {
     return tableId;
@@ -176,12 +177,20 @@ public class OptimizingProcessInfo {
     this.outputFiles = outputFiles;
   }
 
-  public MetricsSummary getSummary() {
-    return summary;
+  public MetricsSummary.InputMetrics getInputMetrics() {
+    return inputMetrics;
   }
 
-  public void setSummary(MetricsSummary summary) {
-    this.summary = summary;
+  public void setInputMetrics(MetricsSummary.InputMetrics inputMetrics) {
+    this.inputMetrics = inputMetrics;
+  }
+
+  public MetricsSummary.OutputMetrics getOutputMetrics() {
+    return outputMetrics;
+  }
+
+  public void setOutputMetrics(MetricsSummary.OutputMetrics outputMetrics) {
+    this.outputMetrics = outputMetrics;
   }
 
   public static OptimizingProcessInfo build(
@@ -241,7 +250,8 @@ public class OptimizingProcessInfo {
             ? meta.getEndTime() - meta.getPlanTime()
             : System.currentTimeMillis() - meta.getPlanTime());
     result.setFinishTime(meta.getEndTime());
-    result.setSummary(meta.getSummary());
+    result.setInputMetrics(new MetricsSummary.InputMetrics(meta.getSummary()));
+    result.setOutputMetrics(new MetricsSummary.OutputMetrics(meta.getSummary()));
     return result;
   }
 }
