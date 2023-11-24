@@ -30,6 +30,7 @@ import java.time.ZoneId;
 import java.util.Locale;
 import java.util.Map;
 
+/** Configuration for auto creating tags. */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TagConfiguration {
   // tag.auto-create.enabled
