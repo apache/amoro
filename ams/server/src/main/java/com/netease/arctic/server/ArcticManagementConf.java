@@ -244,7 +244,7 @@ public class ArcticManagementConf {
 
   /** config key prefix of terminal */
   public static final ConfigOption<Integer> OPTIMIZER_MAX_PLANNING_PARALLELISM =
-      ConfigOptions.key("optimizer.task-ack-timeout")
+      ConfigOptions.key("optimizer.max-planning-parallelism")
           .intType()
           .defaultValue(1)
           .withDescription("Max planning parallelism in one optimizer group.");

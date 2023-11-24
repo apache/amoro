@@ -49,12 +49,10 @@ public class SchedulingPolicy {
   public TableRuntime scheduleTable(Set<TableRuntime> skipSet) {
     tableLock.lock();
     try {
-      TableRuntime t =
-          tableRuntimeMap.values().stream()
+      return tableRuntimeMap.values().stream()
               .filter(tableRuntime -> !shouldSkip(skipSet, tableRuntime))
               .min(tableSorter)
               .orElse(null);
-      return t;
     } finally {
       tableLock.unlock();
     }
