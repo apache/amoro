@@ -24,6 +24,9 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
+import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.BasicArcticFileScanTask;
@@ -33,8 +36,10 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.WriteOperationKind;
+import com.netease.arctic.utils.TableFileUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.TableProperties;
@@ -42,6 +47,7 @@ import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,6 +70,21 @@ public class MajorExecutor extends AbstractExecutor {
     Iterable<DataFile> targetFiles;
     LOG.info("Start processing arctic table major optimize task {} of {}: {}", task.getTaskId(),
         task.getTableIdentifier(), task);
+    if (TableTypeUtil.isHive(table) && task.isCopyFiles()) {
+      if (!task.posDeleteFiles().isEmpty() || !task.deleteFiles().isEmpty()) {
+        LOG.info("Task {} of {} enables copy files, but has delete files {} {}, should not copy", task.getTaskId(),
+            task.getTableIdentifier(), task.posDeleteFiles().size(), task.deleteFiles().size());
+      } else if (task.getCustomHiveSubdirectory() == null) {
+        LOG.info("Task {} of {} enables copy files, but custom hive directory is null, should not copy",
+            task.getTaskId(),
+            task.getTableIdentifier());
+      } else {
+        LOG.info("Task {} of {} enables copy files, copy {} data files", task.getTaskId(), task.getTableIdentifier(),
+            task.dataFiles().size());
+        targetFiles = table.io().doAs(() -> copyFiles(task.dataFiles(), task.getCustomHiveSubdirectory()));
+        return buildOptimizeResult(targetFiles);
+      }
+    }
 
     Map<DataTreeNode, List<DeleteFile>> deleteFileMap = groupDeleteFilesByNode(task.posDeleteFiles());
     List<PrimaryKeyedFile> dataFiles = task.dataFiles();
@@ -75,6 +96,22 @@ public class MajorExecutor extends AbstractExecutor {
     });
 
     return buildOptimizeResult(targetFiles);
+  }
+
+  private Iterable<DataFile> copyFiles(List<PrimaryKeyedFile> dataFiles, String customHiveSubdirectory) {
+    return Iterables.transform(dataFiles, dataFile -> {
+      String hiveLocation = HiveTableUtil.newHiveDataLocation(((SupportHive) table).hiveLocation(),
+          table.spec(), dataFile.partition(), customHiveSubdirectory);
+
+      String sourcePath = dataFile.path().toString();
+      String targetPath = TableFileUtils.getNewFilePath(hiveLocation, sourcePath);
+      LOG.info("Start copy file from {} to {}", sourcePath, targetPath);
+      long startTime = System.currentTimeMillis();
+      table.io().copy(sourcePath, targetPath);
+      LOG.info("Successfully copy file to {}, cost {} ms", targetPath,
+          System.currentTimeMillis() - startTime);
+      return DataFiles.builder(table.spec()).copy(dataFile).withPath(targetPath).build();
+    });
   }
 
   @Override

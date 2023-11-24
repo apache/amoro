@@ -23,11 +23,13 @@ import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.file.ContentFileWithSequence;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.util.ContentFileUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.TableFileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -114,6 +116,26 @@ public class TestSupportHiveMajorExecutor extends TestSupportHiveMajorOptimizeBa
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(1000, dataFile.recordCount());
       Assert.assertTrue(dataFile.path().toString().contains(testHiveTable.hiveLocation()));
+    });
+  }
+
+  @Test
+  public void testUnKeyedTableFullMajorExecutorCopyFiles() throws Exception {
+    insertTableBaseDataFiles(testHiveTable, null, baseDataFilesInfo);
+    NodeTask nodeTask = constructNodeTask(testHiveTable, OptimizeType.FullMajor);
+    nodeTask.setCopyFiles(true);
+    String hiveSubdirectory = HiveTableUtil.newHiveSubdirectory();
+    nodeTask.setCustomHiveSubdirectory(hiveSubdirectory);
+    String[] arg = new String[0];
+    OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
+    optimizerConfig.setOptimizerId("UnitTest");
+    MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testHiveTable, System.currentTimeMillis(), optimizerConfig);
+    OptimizeTaskResult result = majorExecutor.execute();
+    Assert.assertEquals(Iterables.size(result.getTargetFiles()), 10);
+    result.getTargetFiles().forEach(dataFile -> {
+      Assert.assertEquals(100, dataFile.recordCount());
+      Assert.assertEquals(testHiveTable.hiveLocation() + "/name=name/" + hiveSubdirectory,
+          TableFileUtils.getFileDir(dataFile.path().toString()));
     });
   }
 

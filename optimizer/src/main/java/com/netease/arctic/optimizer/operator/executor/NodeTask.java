@@ -58,6 +58,7 @@ public class NodeTask {
   private TableIdentifier tableIdentifier;
   private int attemptId;
   private String customHiveSubdirectory;
+  private boolean copyFiles;
   private Long maxExecuteTime;
 
   public NodeTask(List<ContentFileWithSequence<?>> baseFiles,
@@ -258,6 +259,14 @@ public class NodeTask {
     this.customHiveSubdirectory = customHiveSubdirectory;
   }
 
+  public boolean isCopyFiles() {
+    return copyFiles;
+  }
+
+  public void setCopyFiles(boolean copyFiles) {
+    this.copyFiles = copyFiles;
+  }
+
   public Long getMaxExecuteTime() {
     return maxExecuteTime;
   }
@@ -277,6 +286,7 @@ public class NodeTask {
         .add("taskId", taskId)
         .add("attemptId", attemptId)
         .add("tableIdentifier", tableIdentifier)
+        .add("copyFiles", copyFiles)
         .add("baseFiles", baseFiles.size())
         .add("insertFiles", insertFiles.size())
         .add("deleteFiles", deleteFiles.size())
