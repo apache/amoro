@@ -30,6 +30,18 @@
               {{record.processId}}
             </a-button>
           </template>
+          <template v-if="column.dataIndex === 'inputFiles'">
+            <a-tooltip>
+              <template #title>{{record.inputMetrics}}</template>
+              <span>{{record.inputFiles}}</span>
+            </a-tooltip>
+          </template>
+          <template v-if="column.dataIndex === 'outputFiles'">
+            <a-tooltip>
+              <template #title>{{record.outputMetrics}}</template>
+              <span>{{record.outputFiles}}</span>
+            </a-tooltip>
+          </template>
           <template v-if="column.dataIndex === 'status'">
             <div class="g-flex-ac">
               <span :style="{ 'background-color': (STATUS_CONFIG[record.status] || {}).color }" class="status-icon"></span>
@@ -185,7 +197,9 @@ async function getTableInfo() {
         duration: formatMS2Time(item.duration || '-'),
         inputFiles: `${bytesToSize(inputFiles.totalSize)} / ${inputFiles.fileCnt}`,
         outputFiles: `${bytesToSize(outputFiles.totalSize)} / ${outputFiles.fileCnt}`,
-        tasks: `${item.successTasks || '-'} / ${item.totalTasks || '-'}${item.runningTasks ? ` (${item.runningTasks} running)` : ''}`
+        tasks: `${item.successTasks || '-'} / ${item.totalTasks || '-'}${item.runningTasks ? ` (${item.runningTasks} running)` : ''}`,
+        inputMetrics: item.inputMetrics,
+        outputMetrics: item.outputMetrics
       }
     }))
   } catch (error) {

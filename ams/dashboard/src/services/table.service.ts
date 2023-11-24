@@ -148,7 +148,7 @@ export function getOperations(
   const { catalog, db, table, page, pageSize, token } = params
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/operations`, { params: { page, pageSize, token } })
 }
-// get optimizes
+// get optimizing processes
 export function getOptimizes(
   params: {
     catalog: string
