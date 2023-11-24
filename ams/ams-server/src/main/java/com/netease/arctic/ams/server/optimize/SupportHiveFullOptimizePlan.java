@@ -29,9 +29,11 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.util.BinPacking;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -112,5 +114,37 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
   @Override
   protected boolean nodeTaskNeedBuild(String partition, List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
     return true;
+  }
+
+  @Override
+  protected List<List<DataFile>> binPackFiles(long taskSize, List<DataFile> baseFiles, boolean deleteExist) {
+    if (deleteExist) {
+      return super.binPackFiles(taskSize, baseFiles, deleteExist);
+    } else {
+      // The large files are files whose size is greater than 9/10(default) of target size, others are the remain files.
+      // The reason why packed them separately is to avoid the small files and large files packed together, because a
+      // task with only large files can be executed by copying files, which is more efficient than reading and writing
+      // files. For example, if we have 3 files with size 120 MB, 8 MB, 8 MB, and the target size is 128 MB, if we pack
+      // them together, we will get 2 tasks, one is 120 MB + 8 MB, the other is 8 MB. If we pack them separately, we
+      // will get 2 tasks, one is 120 MB, the other is 8 MB + 8 MB, the first task can be executed very efficiently by
+      // copying files.
+      List<DataFile> largeFiles = new ArrayList<>();
+      List<DataFile> remainFiles = new ArrayList<>();
+      long largeFileSize = getLargeFileSize();
+      for (DataFile baseFile : baseFiles) {
+        if (baseFile.fileSizeInBytes() >= largeFileSize) {
+          largeFiles.add(baseFile);
+        } else {
+          remainFiles.add(baseFile);
+        }
+      }
+      List<List<DataFile>> packed = new ArrayList<>();
+      packed.addAll(new BinPacking.ListPacker<DataFile>(taskSize, Integer.MAX_VALUE, true)
+          .pack(largeFiles, DataFile::fileSizeInBytes));
+      packed.addAll(new BinPacking.ListPacker<DataFile>(taskSize, Integer.MAX_VALUE, true)
+          .pack(remainFiles, DataFile::fileSizeInBytes));
+
+      return packed;
+    }
   }
 }

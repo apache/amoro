@@ -35,6 +35,7 @@ import com.netease.arctic.data.file.FileNameGenerator;
 import com.netease.arctic.data.file.WrapFileWithSequenceNumberHelper;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.ChangeTable;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.SerializationUtils;
 import org.apache.iceberg.ContentFile;
@@ -43,6 +44,7 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.util.PropertyUtil;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -180,6 +182,10 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
     String customHiveSubdirectory = taskConfig.getCustomHiveSubdirectory();
     if (customHiveSubdirectory != null) {
       properties.put(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY, customHiveSubdirectory);
+      if (insertFiles.isEmpty() && deleteFiles.isEmpty() && posDeleteFiles.isEmpty() &&
+          allLargeFiles(baseFiles)) {
+        properties.put(OptimizeTaskProperties.ENABLE_COPY_FILES, true + "");
+      }
     }
     if (taskConfig.isMoveFilesToHiveLocation()) {
       properties.put(OptimizeTaskProperties.MOVE_FILES_TO_HIVE_LOCATION, true + "");
@@ -193,6 +199,21 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
     addChangeFilesIntoFileTree();
     addBaseFilesIntoFileTree();
     completeTree();
+  }
+
+  private boolean allLargeFiles(List<DataFile> files) {
+    long largeFileSize = getLargeFileSize();
+    return files.stream().allMatch(file -> file.fileSizeInBytes() >= largeFileSize);
+  }
+
+  /**
+   * The large files are files whose size is greater than 9/10(default) of target size.
+   */
+  protected long getLargeFileSize() {
+    long targetSize = PropertyUtil.propertyAsLong(arcticTable.properties(),
+        TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+        TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
+    return targetSize * 9 / 10;
   }
 
   private void completeTree() {

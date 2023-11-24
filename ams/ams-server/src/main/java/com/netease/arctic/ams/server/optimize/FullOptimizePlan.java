@@ -203,8 +203,7 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
           false, constructCustomHiveSubdirectory(baseFiles)
       );
 
-      List<List<DataFile>> packed = new BinPacking.ListPacker<DataFile>(taskSize, Integer.MAX_VALUE, true)
-          .pack(baseFiles, DataFile::fileSizeInBytes);
+      List<List<DataFile>> packed = binPackFiles(taskSize, baseFiles, !posDeleteFiles.isEmpty());
       for (List<DataFile> files : packed) {
         if (CollectionUtils.isNotEmpty(files)) {
           collector.add(buildOptimizeTask(null,
@@ -214,6 +213,11 @@ public class FullOptimizePlan extends AbstractArcticOptimizePlan {
     }
 
     return collector;
+  }
+
+  protected List<List<DataFile>> binPackFiles(long taskSize, List<DataFile> baseFiles, boolean deleteExist) {
+    return new BinPacking.ListPacker<DataFile>(taskSize, Integer.MAX_VALUE, true)
+        .pack(baseFiles, DataFile::fileSizeInBytes);
   }
 
   private long getOptimizingTargetSize() {
