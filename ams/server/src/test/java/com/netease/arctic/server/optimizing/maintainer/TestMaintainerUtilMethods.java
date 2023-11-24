@@ -20,44 +20,61 @@ package com.netease.arctic.server.optimizing.maintainer;
 
 import com.netease.arctic.io.IcebergDataTestHelpers;
 import com.netease.arctic.io.MixedDataTestHelpers;
+import com.netease.arctic.mixed.MixedTables;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.table.TableMetaStore;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.catalog.Catalog;
+import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.hadoop.HadoopTables;
+import org.apache.iceberg.hadoop.HadoopCatalog;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class TestMaintainerUtilMethods {
+  private static final Schema schema =
+      new Schema(
+          Types.NestedField.required(1, "id", Types.IntegerType.get()),
+          Types.NestedField.required(2, "data", Types.StringType.get()));
+  private static final PrimaryKeySpec keySpec =
+      PrimaryKeySpec.builderFor(schema).addColumn("id").build();
 
-  @Test
-  public void testFetchAllTableManifestFiles(@TempDir File tableLocation) throws IOException {
-    HadoopTables tables = new HadoopTables();
-    Schema schema =
-        new Schema(
-            Types.NestedField.required(1, "id", Types.IntegerType.get()),
-            Types.NestedField.required(2, "data", Types.StringType.get()));
-    Table icebergTable =
-        tables.create(
-            schema,
-            PartitionSpec.unpartitioned(),
-            SortOrder.unsorted(),
-            Maps.newHashMap(),
-            tableLocation.getAbsolutePath());
+  @TempDir File warehouse;
+
+  public static Stream<Function<Catalog, Table>> testFetchAllTableManifestFiles() {
+    return Stream.of(
+        (catalog) -> newIcebergTable(catalog),
+        catalog -> newMixedTable(catalog, false).asUnkeyedTable(),
+        catalog -> newMixedTable(catalog, true).asKeyedTable().baseTable(),
+        catalog -> newMixedTable(catalog, true).asKeyedTable().changeTable());
+  }
+
+  @ParameterizedTest
+  @MethodSource
+  public void testFetchAllTableManifestFiles(Function<Catalog, Table> tableProvider)
+      throws IOException {
+    HadoopCatalog catalog = new HadoopCatalog(new Configuration(), warehouse.getAbsolutePath());
+    Table table = tableProvider.apply(catalog);
 
     List<Record> records =
         IntStream.of(100)
@@ -65,16 +82,30 @@ public class TestMaintainerUtilMethods {
             .map(i -> MixedDataTestHelpers.createRecord(schema, i, UUID.randomUUID().toString()))
             .collect(Collectors.toList());
     for (Record r : records) {
-      IcebergDataTestHelpers.append(icebergTable, Lists.newArrayList(r));
+      IcebergDataTestHelpers.append(table, Lists.newArrayList(r));
     }
 
     Set<String> expectManifestFiles =
-        Lists.newArrayList(icebergTable.snapshots()).stream()
-            .flatMap(snapshot -> snapshot.allManifests(icebergTable.io()).stream())
+        Lists.newArrayList(table.snapshots()).stream()
+            .flatMap(snapshot -> snapshot.allManifests(table.io()).stream())
             .map(ManifestFile::path)
             .collect(Collectors.toSet());
 
-    Set<String> actualManifestFiles = IcebergTableMaintainer.allManifestFiles(icebergTable);
+    Set<String> actualManifestFiles = IcebergTableMaintainer.allManifestFiles(table);
     Assertions.assertEquals(expectManifestFiles, actualManifestFiles);
+  }
+
+  private static Table newIcebergTable(Catalog catalog) {
+    return catalog.createTable(TableIdentifier.of("db", "table"), schema);
+  }
+
+  private static ArcticTable newMixedTable(Catalog catalog, boolean withKey) {
+    MixedTables mixedTables = new MixedTables(TableMetaStore.EMPTY, Maps.newHashMap(), catalog);
+    return mixedTables.createTable(
+        com.netease.arctic.table.TableIdentifier.of("cata", "db", "table"),
+        schema,
+        PartitionSpec.unpartitioned(),
+        withKey ? keySpec : PrimaryKeySpec.noPrimaryKey(),
+        Maps.newHashMap());
   }
 }

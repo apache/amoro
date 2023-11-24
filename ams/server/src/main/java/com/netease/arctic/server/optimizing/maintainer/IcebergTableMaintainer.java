@@ -32,6 +32,7 @@ import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.ReachableFileUtil;
@@ -40,6 +41,7 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileInfo;
@@ -425,8 +427,16 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   @VisibleForTesting
   protected static Set<String> allManifestFiles(Table table) {
+    Preconditions.checkArgument(
+        table instanceof HasTableOperations, "the table must support table operation.");
+    TableOperations ops = ((HasTableOperations) table).operations();
+
     Table allManifest =
-        MetadataTableUtils.createMetadataTableInstance(table, MetadataTableType.ALL_MANIFESTS);
+        MetadataTableUtils.createMetadataTableInstance(
+            ops,
+            table.name(),
+            table.name() + "#" + MetadataTableType.ALL_MANIFESTS.name(),
+            MetadataTableType.ALL_MANIFESTS);
     Schema allManifestSchema = allManifest.schema();
     int pos = -1;
     Types.NestedField[] fields = allManifestSchema.columns().toArray(new Types.NestedField[0]);
