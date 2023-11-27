@@ -144,4 +144,21 @@ public class MixedTableTestBase extends SparkTestBase {
         primaryKeys.stream().sorted().distinct().toArray(),
         descPrimaryKeys.stream().sorted().distinct().toArray());
   }
+
+  public void assertShowCreateTable(List<Row> rows, TestIdentifier id, ArcticTable table) {
+    StringBuilder showCreateSqlBuilder = new StringBuilder();
+    for (Row r : rows) {
+      showCreateSqlBuilder.append(r.getString(0));
+    }
+    String showCreateSql = showCreateSqlBuilder.toString();
+    String expectCreateHeader = "create table " + id.catalog + "." + id + " (";
+    String ignoreCaseShowCreate = showCreateSql.replace("CREATE", "create");
+    ignoreCaseShowCreate = ignoreCaseShowCreate.replace("TABLE", "table");
+    Assertions.assertTrue(
+        ignoreCaseShowCreate.startsWith(expectCreateHeader),
+        "expect ["
+            + expectCreateHeader
+            + "] in ShowCreateTable Result, but not found in :"
+            + showCreateSql);
+  }
 }
