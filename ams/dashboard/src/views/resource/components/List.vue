@@ -60,6 +60,7 @@ const emit = defineEmits<{(e: 'editGroup', record: IIOptimizeGroupItem): void; (
 
 const STATUS_CONFIG = shallowReactive({
   pending: { title: 'pending', color: '#ffcc00' },
+  planning: { title: 'planning', color: '#076de3' },
   idle: { title: 'idle', color: '#c9cdd4' },
   minor: { title: 'minor', color: '#0ad787' },
   major: { title: 'major', color: '#0ad787' },
