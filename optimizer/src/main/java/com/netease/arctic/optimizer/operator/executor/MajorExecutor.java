@@ -47,10 +47,11 @@ import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.TaskWriter;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +85,7 @@ public class MajorExecutor extends AbstractExecutor {
       } else {
         LOG.info("Task {} of {} enables copy files, copy {} data files", task.getTaskId(), task.getTableIdentifier(),
             task.dataFiles().size());
-        targetFiles = table.io().doAs(() -> copyFiles(task.dataFiles(), task.getCustomHiveSubdirectory()));
+        targetFiles = copyFiles(task.dataFiles(), task.getCustomHiveSubdirectory());
         return buildOptimizeResult(targetFiles);
       }
     }
@@ -102,24 +103,29 @@ public class MajorExecutor extends AbstractExecutor {
   }
 
   private Iterable<DataFile> copyFiles(List<PrimaryKeyedFile> dataFiles, String customHiveSubdirectory) {
-    return Iterables.transform(dataFiles, dataFile -> {
+    int count = 0;
+    List<DataFile> targetFiles = new ArrayList<>(dataFiles.size());
+    for (PrimaryKeyedFile dataFile : dataFiles) {
       String hiveLocation = HiveTableUtil.newHiveDataLocation(((SupportHive) table).hiveLocation(),
           table.spec(), dataFile.partition(), customHiveSubdirectory);
 
       String sourcePath = dataFile.path().toString();
+      String sourceFileName = TableFileUtils.getFileName(sourcePath);
+
       String targetPath;
-      if (sourcePath.startsWith(".")) {
-        targetPath = TableFileUtils.getNewFilePath(hiveLocation, sourcePath);
+      if (sourceFileName.startsWith(".")) {
+        targetPath = hiveLocation + File.separator + sourceFileName;
       } else {
-        targetPath = TableFileUtils.getNewFilePath(hiveLocation, "." + sourcePath);
+        targetPath = hiveLocation + File.separator + "." + sourceFileName;
       }
-      LOG.info("Start copy file from {} to {}", sourcePath, targetPath);
+      LOG.info("[{}] Start copying file from {} to {}", count++, sourcePath, targetPath);
       long startTime = System.currentTimeMillis();
       table.io().copy(sourcePath, targetPath);
-      LOG.info("Successfully copy file to {}, cost {} ms", targetPath,
+      LOG.info("Successfully copied file {}, cost {} ms", sourceFileName,
           System.currentTimeMillis() - startTime);
-      return DataFiles.builder(table.spec()).copy(dataFile).withPath(targetPath).build();
-    });
+      targetFiles.add(DataFiles.builder(table.spec()).copy(dataFile).withPath(targetPath).build());
+    }
+    return targetFiles;
   }
 
   @Override
