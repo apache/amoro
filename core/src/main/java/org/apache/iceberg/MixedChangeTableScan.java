@@ -86,6 +86,11 @@ public class MixedChangeTableScan extends DataTableScan implements ChangeTableIn
   }
 
   @Override
+  public ChangeTableIncrementalScan useRef(String ref) {
+    return (ChangeTableIncrementalScan) super.useRef(ref);
+  }
+
+  @Override
   public CloseableIterable<FileScanTask> doPlanFiles() {
     CloseableIterable<FileScanTask> filteredTasks =
         CloseableIterable.filter(

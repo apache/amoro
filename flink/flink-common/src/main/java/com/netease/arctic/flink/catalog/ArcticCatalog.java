@@ -18,6 +18,8 @@
 
 package com.netease.arctic.flink.catalog;
 
+import static com.netease.arctic.flink.FlinkSchemaUtil.generateExtraOptionsFrom;
+import static com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema;
 import static com.netease.arctic.flink.FlinkSchemaUtil.toSchema;
 import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
 import static org.apache.flink.util.Preconditions.checkNotNull;
@@ -40,8 +42,9 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
+import org.apache.flink.table.api.TableColumn;
+import org.apache.flink.table.api.TableColumn.ComputedColumn;
 import org.apache.flink.table.api.TableSchema;
-import org.apache.flink.table.api.WatermarkSpec;
 import org.apache.flink.table.catalog.AbstractCatalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;
 import org.apache.flink.table.catalog.CatalogDatabase;
@@ -63,7 +66,6 @@ import org.apache.flink.table.catalog.stats.CatalogTableStatistics;
 import org.apache.flink.table.expressions.Expression;
 import org.apache.flink.table.factories.Factory;
 import org.apache.flink.table.factories.FactoryUtil;
-import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionField;
@@ -74,7 +76,6 @@ import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.flink.FlinkFilters;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
-import org.apache.iceberg.flink.util.FlinkCompatibilityUtil;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -189,14 +190,13 @@ public class ArcticCatalog extends AbstractCatalog {
     ArcticTable table = internalCatalog.loadTable(tableIdentifier);
     Schema arcticSchema = table.schema();
 
-    RowType rowType = FlinkSchemaUtil.convert(arcticSchema);
     Map<String, String> arcticProperties = Maps.newHashMap(table.properties());
     fillTableProperties(arcticProperties);
     fillTableMetaPropertiesIfLookupLike(arcticProperties, tableIdentifier);
 
     List<String> partitionKeys = toPartitionKeys(table.spec(), table.schema());
     return CatalogTable.of(
-        toSchema(rowType, ArcticUtils.getPrimaryKeys(table)).toSchema(),
+        toSchema(arcticSchema, ArcticUtils.getPrimaryKeys(table), arcticProperties).toSchema(),
         null,
         partitionKeys,
         arcticProperties);
@@ -288,30 +288,17 @@ public class ArcticCatalog extends AbstractCatalog {
   public void createTable(ObjectPath tablePath, CatalogBaseTable table, boolean ignoreIfExists)
       throws CatalogException, TableAlreadyExistException {
     validateFlinkTable(table);
+    validateColumnOrder(table);
+    createAmoroTable(tablePath, table, ignoreIfExists);
+  }
 
+  private void createAmoroTable(
+      ObjectPath tablePath, CatalogBaseTable table, boolean ignoreIfExists)
+      throws CatalogException, TableAlreadyExistException {
     TableSchema tableSchema = table.getSchema();
-    TableSchema.Builder flinkSchemaBuilder = TableSchema.builder();
-
-    tableSchema
-        .getTableColumns()
-        .forEach(
-            c -> {
-              List<WatermarkSpec> ws = tableSchema.getWatermarkSpecs();
-              for (WatermarkSpec w : ws) {
-                if (w.getRowtimeAttribute().equals(c.getName())) {
-                  return;
-                }
-              }
-              flinkSchemaBuilder.field(c.getName(), c.getType());
-            });
-    if (tableSchema.getPrimaryKey().isPresent()) {
-      flinkSchemaBuilder.primaryKey(
-          tableSchema.getPrimaryKey().get().getColumns().toArray(new String[0]));
-    }
-    TableSchema tableSchemaWithoutWatermark = flinkSchemaBuilder.build();
-
-    Schema icebergSchema = FlinkSchemaUtil.convert(tableSchemaWithoutWatermark);
-
+    // get PhysicalColumn for TableSchema
+    TableSchema physicalSchema = getPhysicalSchema(tableSchema);
+    Schema icebergSchema = FlinkSchemaUtil.convert(physicalSchema);
     TableBuilder tableBuilder =
         internalCatalog.newTableBuilder(getTableIdentifier(tablePath), icebergSchema);
 
@@ -327,7 +314,12 @@ public class ArcticCatalog extends AbstractCatalog {
     PartitionSpec spec = toPartitionSpec(((CatalogTable) table).getPartitionKeys(), icebergSchema);
     tableBuilder.withPartitionSpec(spec);
 
-    tableBuilder.withProperties(table.getOptions());
+    Map<String, String> properties = table.getOptions();
+    // update computed columns and watermark to properties
+    Map<String, String> extraOptions = generateExtraOptionsFrom(tableSchema);
+    properties.putAll(extraOptions);
+
+    tableBuilder.withProperties(properties);
 
     try {
       tableBuilder.create();
@@ -347,17 +339,6 @@ public class ArcticCatalog extends AbstractCatalog {
   private static void validateFlinkTable(CatalogBaseTable table) {
     Preconditions.checkArgument(
         table instanceof CatalogTable, "The Table should be a CatalogTable.");
-
-    TableSchema schema = table.getSchema();
-    schema
-        .getTableColumns()
-        .forEach(
-            column -> {
-              if (!FlinkCompatibilityUtil.isPhysicalColumn(column)) {
-                throw new UnsupportedOperationException(
-                    "Creating table with computed columns is not supported yet.");
-              }
-            });
   }
 
   @Override
@@ -625,6 +606,21 @@ public class ArcticCatalog extends AbstractCatalog {
     for (String key : partitionSpec.getPartitionSpec().keySet()) {
       if (!partitionKeys.contains(key)) {
         throw new PartitionSpecInvalidException(getName(), partitionKeys, tablePath, partitionSpec);
+      }
+    }
+  }
+
+  private void validateColumnOrder(CatalogBaseTable table) {
+    TableSchema schema = table.getSchema();
+    List<TableColumn> tableColumns = schema.getTableColumns();
+
+    boolean foundComputeColumn = false;
+    for (TableColumn tableColumn : tableColumns) {
+      if (tableColumn instanceof ComputedColumn) {
+        foundComputeColumn = true;
+      } else if (foundComputeColumn) {
+        throw new IllegalStateException(
+            "compute column must be listed after all physical columns. ");
       }
     }
   }
