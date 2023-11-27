@@ -280,7 +280,6 @@ public class MixedTableMaintainer implements TableMaintainer {
     throw new UnsupportedOperationException("Mixed table doesn't support auto create tags");
   }
 
-
   protected void cleanContentFiles(long lastTime) {
     if (changeMaintainer != null) {
       changeMaintainer.cleanContentFiles(lastTime);
