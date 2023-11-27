@@ -28,16 +28,17 @@ import com.netease.arctic.table.ArcticTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.functions.FunctionContext;
-import org.apache.flink.table.functions.TableFunction;
+import org.apache.flink.table.functions.LookupFunction;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.expressions.Expression;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
 
 /** A lookup function for {@link RowData} type. */
-public class ArcticRowDataLookupFunction extends TableFunction<RowData> {
+public class ArcticRowDataLookupFunction extends LookupFunction {
   private static final long serialVersionUID = -7694050999266540499L;
   private final BasicLookupFunction<RowData> basicLookupFunction;
 
@@ -71,9 +72,9 @@ public class ArcticRowDataLookupFunction extends TableFunction<RowData> {
     basicLookupFunction.open(context);
   }
 
-  public void eval(Object... rowKey) throws IOException {
-    List<RowData> results = basicLookupFunction.lookup(rowKey);
-    results.forEach(this::collect);
+  @Override
+  public Collection<RowData> lookup(RowData keyRow) throws IOException {
+    return basicLookupFunction.lookup(keyRow);
   }
 
   @Override
