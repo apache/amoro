@@ -18,24 +18,19 @@
 
 package com.netease.arctic.spark;
 
-import com.netease.arctic.spark.mixed.MixedSessionCatalogBase;
-import com.netease.arctic.spark.mixed.MixedSparkCatalogBase;
-import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
-import org.apache.spark.sql.connector.catalog.TableCatalog;
-import org.apache.spark.sql.util.CaseInsensitiveStringMap;
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
+import com.netease.arctic.spark.test.unified.UnifiedCatalogTestSuites;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
-/**
- * A Spark catalog that can also load non-Iceberg tables.
- *
- * @param <T> CatalogPlugin class to avoid casting to TableCatalog and SupportsNamespaces.
- */
-public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespaces>
-    extends MixedSessionCatalogBase<T> {
+@EnableCatalogSelect
+@EnableCatalogSelect.SelectCatalog(byTableFormat = true, unifiedCatalog = true)
+public class TestUnifiedCatalog extends UnifiedCatalogTestSuites {
 
-  protected MixedSparkCatalogBase buildMixedFormatSparkCatalog(
-      String name, CaseInsensitiveStringMap options) {
-    MixedSparkCatalogBase newCatalog = new ArcticSparkCatalog();
-    newCatalog.initialize(name, options);
-    return newCatalog;
+  @ParameterizedTest
+  @EnumSource(TableFormat.class)
+  public void testTableFormats(TableFormat format) {
+    super.testTableFormats(format);
   }
 }

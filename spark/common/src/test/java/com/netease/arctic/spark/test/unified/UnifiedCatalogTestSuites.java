@@ -16,28 +16,14 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.unified.tests;
+package com.netease.arctic.spark.test.unified;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.test.SparkTestBase;
-import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.Arrays;
-import java.util.stream.Stream;
+public class UnifiedCatalogTestSuites extends SparkTestBase {
 
-@EnableCatalogSelect
-@EnableCatalogSelect.SelectCatalog(byTableFormat = true, unifiedCatalog = true)
-public class TestUnifiedCatalog extends SparkTestBase {
-  public static Stream<Arguments> testTableFormats() {
-    return Arrays.stream(TableFormat.values()).map(Arguments::of);
-  }
-
-  @ParameterizedTest
-  @MethodSource
   public void testTableFormats(TableFormat format) {
     String sqlText =
         "CREATE TABLE "
@@ -51,7 +37,7 @@ public class TestUnifiedCatalog extends SparkTestBase {
             + " PARTITIONED BY (pt) ";
     sql(sqlText);
     int expect = 0;
-    if (TableFormat.PAIMON != format) {
+    if (TableFormat.PAIMON != format || !spark().version().startsWith("3.1")) {
       // write is not supported in spark3-1
       sqlText =
           "INSERT INTO "

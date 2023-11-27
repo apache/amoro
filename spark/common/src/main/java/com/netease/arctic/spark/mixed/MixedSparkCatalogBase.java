@@ -18,6 +18,9 @@
 
 package com.netease.arctic.spark.mixed;
 
+import static com.netease.arctic.spark.mixed.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE;
+import static com.netease.arctic.spark.mixed.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE_DEFAULT;
+
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.spark.SupportAuthentication;
@@ -43,19 +46,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.spark.mixed.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE;
-import static com.netease.arctic.spark.mixed.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE_DEFAULT;
-
-/**
- * Base class of mixed-format spark catalog.
- */
-public abstract class MixedSparkCatalogBase implements TableCatalog, SupportsNamespaces, SupportAuthentication {
+/** Base class of mixed-format spark catalog. */
+public abstract class MixedSparkCatalogBase
+    implements TableCatalog, SupportsNamespaces, SupportAuthentication {
   private String catalogName = null;
   private TableMetaStore tableMetaStore;
 
   protected ArcticCatalog catalog;
   private CaseInsensitiveStringMap options;
-
 
   @Override
   public void setAuthenticationContext(TableMetaStore tableMetaStore) {
@@ -97,7 +95,6 @@ public abstract class MixedSparkCatalogBase implements TableCatalog, SupportsNam
   public String name() {
     return catalogName;
   }
-
 
   @Override
   public String[][] listNamespaces() {
@@ -143,7 +140,6 @@ public abstract class MixedSparkCatalogBase implements TableCatalog, SupportsNam
     return true;
   }
 
-
   @Override
   public boolean dropTable(Identifier ident) {
     TableIdentifier identifier = buildIdentifier(ident);
@@ -175,7 +171,6 @@ public abstract class MixedSparkCatalogBase implements TableCatalog, SupportsNam
         .map(i -> Identifier.of(new String[] {i.getDatabase()}, i.getTableName()))
         .toArray(Identifier[]::new);
   }
-
 
   protected void checkAndRefreshCatalogMeta() {
     SparkSession sparkSession = SparkSession.active();
@@ -217,7 +212,6 @@ public abstract class MixedSparkCatalogBase implements TableCatalog, SupportsNam
     return TableIdentifier.of(catalog.name(), identifier.namespace()[0], identifier.namespace()[1]);
   }
 
-
   protected boolean isIdentifierLocation(String location, Identifier identifier) {
     List<String> nameParts = Lists.newArrayList();
     nameParts.add(name());
@@ -226,7 +220,6 @@ public abstract class MixedSparkCatalogBase implements TableCatalog, SupportsNam
     String ident = Joiner.on('.').join(nameParts);
     return ident.equalsIgnoreCase(location);
   }
-
 
   protected boolean isInnerTableIdentifier(Identifier identifier) {
     if (identifier.namespace().length != 2) {

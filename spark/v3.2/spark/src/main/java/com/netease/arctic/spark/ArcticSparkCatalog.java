@@ -18,6 +18,10 @@
 
 package com.netease.arctic.spark;
 
+import static com.netease.arctic.spark.mixed.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES;
+import static com.netease.arctic.spark.mixed.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT;
+import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
+
 import com.netease.arctic.hive.utils.CatalogUtil;
 import com.netease.arctic.spark.mixed.MixedSparkCatalogBase;
 import com.netease.arctic.spark.mixed.MixedTableStoreType;
@@ -58,10 +62,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static com.netease.arctic.spark.mixed.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES;
-import static com.netease.arctic.spark.mixed.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT;
-import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
 
 public class ArcticSparkCatalog extends MixedSparkCatalogBase {
 
@@ -245,8 +245,7 @@ public class ArcticSparkCatalog extends MixedSparkCatalogBase {
         } else if ("sort-order".equalsIgnoreCase(set.property())) {
           throw new UnsupportedOperationException(
               "Cannot specify the 'sort-order' because it's a reserved table "
-                  +
-                  "property. Please use the command 'ALTER TABLE ... WRITE ORDERED BY' to specify write sort-orders.");
+                  + "property. Please use the command 'ALTER TABLE ... WRITE ORDERED BY' to specify write sort-orders.");
         } else {
           propertyChanges.add(set);
         }
