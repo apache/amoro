@@ -183,6 +183,10 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     resourceFlinkConf.putToOptions(
         FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY, taskManagerMemory + "m");
 
+    // Set memory managed fraction
+    resourceFlinkConf.putToOptions(
+        FlinkConfKeys.MANAGED_MEMORY_FRACTION, FlinkConfKeys.MANAGED_MEMORY_FRACTION_DEFAULT);
+
     String flinkAction = target.isApplicationMode() ? "run-application" : "run";
     if (Target.KUBERNETES_APPLICATION == target) {
       addKubernetesProperties(resource, resourceFlinkConf);
@@ -229,7 +233,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
   }
 
   private void addYarnProperties(FlinkConf flinkConf) {
-    // load optimizer jar first
+    // Load optimizer jar first
     flinkConf.putToOptions(
         FlinkConfKeys.CLASSPATH_INCLUDE_USER_JAR, FlinkConfKeys.CLASSPATH_INCLUDE_USER_JAR_DEFAULT);
   }
@@ -424,10 +428,13 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     public static final String JOB_MANAGER_TOTAL_PROCESS_MEMORY = "jobmanager.memory.process.size";
     public static final String TASK_MANAGER_TOTAL_PROCESS_MEMORY =
         "taskmanager.memory.process.size";
+    public static final String MANAGED_MEMORY_FRACTION = "taskmanager.memory.managed.fraction";
+    public static final String MANAGED_MEMORY_FRACTION_DEFAULT = "0.01";
+
     public static final String CLASSPATH_INCLUDE_USER_JAR = "yarn.per-job-cluster.include-user-jar";
     public static final String CLASSPATH_INCLUDE_USER_JAR_DEFAULT = "FIRST";
-    public static final String KUBERNETES_IMAGE_REF = "kubernetes.container.image";
 
+    public static final String KUBERNETES_IMAGE_REF = "kubernetes.container.image";
     public static final String KUBERNETES_CLUSTER_ID = "kubernetes.cluster-id";
     public static final String KUBERNETES_TASKMANAGER_LABLES = "kubernetes.taskmanager.labels";
     public static final String KUBERNETES_JOBMANAGER_LABLES = "kubernetes.jobmanager.labels";
