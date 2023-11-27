@@ -97,8 +97,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   public static final String METADATA_FOLDER_NAME = "metadata";
   public static final String DATA_FOLDER_NAME = "data";
+  // same as org.apache.iceberg.flink.sink.IcebergFilesCommitter#FLINK_JOB_ID
   public static final String FLINK_JOB_ID = "flink.job-id";
-
+  // same as org.apache.iceberg.flink.sink.IcebergFilesCommitter#MAX_COMMITTED_CHECKPOINT_ID
   public static final String FLINK_MAX_COMMITTED_CHECKPOINT_ID =
       "flink.max-committed-checkpoint-id";
 
@@ -140,6 +141,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     cleanDanglingDeleteFiles();
   }
 
+  @Override
   public void expireSnapshots(TableRuntime tableRuntime) {
     TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
     if (!tableConfiguration.isExpireSnapshotEnabled()) {
@@ -147,6 +149,46 @@ public class IcebergTableMaintainer implements TableMaintainer {
     }
     expireSnapshots(
         olderThanSnapshotNeedToExpire(tableRuntime), expireSnapshotNeedToExcludeFiles());
+  }
+
+  public void expireSnapshots(long mustOlderThan) {
+    expireSnapshots(
+        olderThanSnapshotNeedToExpire(mustOlderThan), expireSnapshotNeedToExcludeFiles());
+  }
+
+  @VisibleForTesting
+  public void expireSnapshots(long olderThan, Set<String> exclude) {
+    LOG.debug("start expire snapshots older than {}, the exclude is {}", olderThan, exclude);
+    final AtomicInteger toDeleteFiles = new AtomicInteger(0);
+    final AtomicInteger deleteFiles = new AtomicInteger(0);
+    Set<String> parentDirectory = new HashSet<>();
+    table
+        .expireSnapshots()
+        .retainLast(1)
+        .expireOlderThan(olderThan)
+        .deleteWith(
+            file -> {
+              try {
+                String filePath = TableFileUtil.getUriPath(file);
+                if (!exclude.contains(filePath)
+                    && !exclude.contains(new Path(filePath).getParent().toString())) {
+                  arcticFileIO().deleteFile(file);
+                }
+                parentDirectory.add(new Path(file).getParent().toString());
+                deleteFiles.incrementAndGet();
+              } catch (Throwable t) {
+                LOG.warn("failed to delete file " + file, t);
+              } finally {
+                toDeleteFiles.incrementAndGet();
+              }
+            })
+        .cleanExpiredFiles(true)
+        .commit();
+    if (arcticFileIO().supportFileSystemOperations()) {
+      parentDirectory.forEach(
+          parent -> TableFileUtil.deleteEmptyDirectory(arcticFileIO(), parent, exclude));
+    }
+    LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
   }
 
   @Override
@@ -198,44 +240,11 @@ public class IcebergTableMaintainer implements TableMaintainer {
     expireFiles(IcebergTableUtil.getSnapshotId(table, false), expiredFiles, expireTimestamp);
   }
 
-  public void expireSnapshots(long mustOlderThan) {
-    expireSnapshots(
-        olderThanSnapshotNeedToExpire(mustOlderThan), expireSnapshotNeedToExcludeFiles());
-  }
-
-  @VisibleForTesting
-  public void expireSnapshots(long olderThan, Set<String> exclude) {
-    LOG.debug("start expire snapshots older than {}, the exclude is {}", olderThan, exclude);
-    final AtomicInteger toDeleteFiles = new AtomicInteger(0);
-    final AtomicInteger deleteFiles = new AtomicInteger(0);
-    Set<String> parentDirectory = new HashSet<>();
-    table
-        .expireSnapshots()
-        .retainLast(1)
-        .expireOlderThan(olderThan)
-        .deleteWith(
-            file -> {
-              try {
-                String filePath = TableFileUtil.getUriPath(file);
-                if (!exclude.contains(filePath)
-                    && !exclude.contains(new Path(filePath).getParent().toString())) {
-                  arcticFileIO().deleteFile(file);
-                }
-                parentDirectory.add(new Path(file).getParent().toString());
-                deleteFiles.incrementAndGet();
-              } catch (Throwable t) {
-                LOG.warn("failed to delete file " + file, t);
-              } finally {
-                toDeleteFiles.incrementAndGet();
-              }
-            })
-        .cleanExpiredFiles(true)
-        .commit();
-    if (arcticFileIO().supportFileSystemOperations()) {
-      parentDirectory.forEach(
-          parent -> TableFileUtil.deleteEmptyDirectory(arcticFileIO(), parent, exclude));
-    }
-    LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
+  @Override
+  public void autoCreateTags(TableRuntime tableRuntime) {
+    new AutoCreateIcebergTagAction(
+        table, tableRuntime.getTableConfiguration().getTagConfiguration(), LocalDateTime.now())
+        .execute();
   }
 
   protected void cleanContentFiles(long lastTime) {

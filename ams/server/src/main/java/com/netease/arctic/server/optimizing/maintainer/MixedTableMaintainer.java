@@ -134,6 +134,13 @@ public class MixedTableMaintainer implements TableMaintainer {
     baseMaintainer.expireSnapshots(tableRuntime);
   }
 
+  protected void expireSnapshots(long mustOlderThan) {
+    if (changeMaintainer != null) {
+      changeMaintainer.expireSnapshots(mustOlderThan);
+    }
+    baseMaintainer.expireSnapshots(mustOlderThan);
+  }
+
   @Override
   public void expireData(TableRuntime tableRuntime) {
     try {
@@ -268,12 +275,11 @@ public class MixedTableMaintainer implements TableMaintainer {
                     expireTimestamp));
   }
 
-  protected void expireSnapshots(long mustOlderThan) {
-    if (changeMaintainer != null) {
-      changeMaintainer.expireSnapshots(mustOlderThan);
-    }
-    baseMaintainer.expireSnapshots(mustOlderThan);
+  @Override
+  public void autoCreateTags(TableRuntime tableRuntime) {
+    throw new UnsupportedOperationException("Mixed table doesn't support auto create tags");
   }
+
 
   protected void cleanContentFiles(long lastTime) {
     if (changeMaintainer != null) {
@@ -302,10 +308,6 @@ public class MixedTableMaintainer implements TableMaintainer {
 
   public BaseTableMaintainer getBaseMaintainer() {
     return baseMaintainer;
-  }
-
-  public ArcticTable getArcticTable() {
-    return arcticTable;
   }
 
   public class ChangeTableMaintainer extends IcebergTableMaintainer {
