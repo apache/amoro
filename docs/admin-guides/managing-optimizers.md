@@ -171,7 +171,7 @@ You can submit optimizer in your own Flink task development platform or local Fl
  -Dtaskmanager.memory.network.max=32mb \
  -Dtaskmanager.memory.network.min=32mb \
  -c com.netease.arctic.optimizer.flink.FlinkOptimizer \
- ${ARCTIC_HOME}/plugin/optimizer/flink/optimizer-job.jar \
+ ${AMORO_HOME}/plugin/optimizer/flink/optimizer-job.jar \
  -a 127.0.0.1:1261 \
  -g flinkGroup \
  -p 1 \

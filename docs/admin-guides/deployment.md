@@ -243,13 +243,13 @@ bin/ams.sh restart/stop
 
 ### Upgrade system databases
 
-You can find all the upgrade SQL scripts under `{ARCTIC_HOME}/conf/mysql/` with name pattern `upgrade-a.b.c-to-x.y.z.sql`.
+You can find all the upgrade SQL scripts under `{AMORO_HOME}/conf/mysql/` with name pattern `upgrade-a.b.c-to-x.y.z.sql`.
 Execute the upgrade SQL scripts one by one to your system database based on your starting and target versions.
 
 ### Replace all libs and plugins
 
-Replace all contents in the original `{ARCTIC_HOME}/lib` directory with the contents in the lib directory of the new installation package.
-Replace all contents in the original `{ARCTIC_HOME}/plugin` directory with the contents in the plugin directory of the new installation package.
+Replace all contents in the original `{AMORO_HOME}/lib` directory with the contents in the lib directory of the new installation package.
+Replace all contents in the original `{AMORO_HOME}/plugin` directory with the contents in the plugin directory of the new installation package.
 
 {{< hint info >}}
 Backup the old content before replacing it, so that you can roll back the upgrade operation if necessary.
@@ -257,7 +257,7 @@ Backup the old content before replacing it, so that you can roll back the upgrad
 
 ### Configure new parameters
 
-The old configuration file `{ARCTIC_HOME}/conf/config.yaml` is usually compatible with the new version, but the new version may introduce new parameters. Try to compare the configuration files of the old and new versions, and reconfigure the parameters if necessary.
+The old configuration file `{AMORO_HOME}/conf/config.yaml` is usually compatible with the new version, but the new version may introduce new parameters. Try to compare the configuration files of the old and new versions, and reconfigure the parameters if necessary.
 
 ### Restart AMS
 
