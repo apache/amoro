@@ -46,9 +46,9 @@ public class AutoCreateIcebergTagAction {
     if (!tagConfig.isAutoCreateTag()) {
       return;
     }
-    LOG.info("Start checking the automatic creation of tags for {}", table.name());
+    LOG.debug("Start checking the automatic creation of tags for {}", table.name());
     if (tagExist()) {
-      LOG.debug("{} finds expect tag, skip", table.name());
+      LOG.debug("Found the expected tag on {}, skip", table.name());
       return;
     }
     boolean success = createTag();

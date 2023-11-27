@@ -16,7 +16,6 @@ public class TableConfiguration {
   private long changeDataTTLMinutes;
   private boolean cleanOrphanEnabled;
   private long orphanExistingMinutes;
-  private boolean autoCreateTagEnabled;
   private boolean deleteDanglingDeleteFilesEnabled;
   private OptimizingConfig optimizingConfig;
   private DataExpirationConfig expiringDataConfig;
@@ -46,10 +45,6 @@ public class TableConfiguration {
 
   public OptimizingConfig getOptimizingConfig() {
     return optimizingConfig;
-  }
-
-  public boolean isAutoCreateTagEnabled() {
-    return autoCreateTagEnabled;
   }
 
   public TableConfiguration setOptimizingConfig(OptimizingConfig optimizingConfig) {
@@ -101,11 +96,6 @@ public class TableConfiguration {
     return this;
   }
 
-  public TableConfiguration setAutoCreateTagEnabled(boolean autoCreateTagEnabled) {
-    this.autoCreateTagEnabled = autoCreateTagEnabled;
-    return this;
-  }
-
   public TagConfiguration getTagConfiguration() {
     return Optional.ofNullable(tagConfiguration).orElse(new TagConfiguration());
   }
@@ -125,7 +115,6 @@ public class TableConfiguration {
         && changeDataTTLMinutes == that.changeDataTTLMinutes
         && cleanOrphanEnabled == that.cleanOrphanEnabled
         && orphanExistingMinutes == that.orphanExistingMinutes
-        && autoCreateTagEnabled == that.autoCreateTagEnabled
         && deleteDanglingDeleteFilesEnabled == that.deleteDanglingDeleteFilesEnabled
         && Objects.equal(optimizingConfig, that.optimizingConfig)
         && Objects.equal(expiringDataConfig, that.expiringDataConfig)
@@ -140,7 +129,6 @@ public class TableConfiguration {
         changeDataTTLMinutes,
         cleanOrphanEnabled,
         orphanExistingMinutes,
-        autoCreateTagEnabled,
         deleteDanglingDeleteFilesEnabled,
         optimizingConfig,
         expiringDataConfig,
@@ -174,11 +162,6 @@ public class TableConfiguration {
                 properties,
                 TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME,
                 TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT))
-        .setAutoCreateTagEnabled(
-            CompatiblePropertyUtil.propertyAsBoolean(
-                properties,
-                TableProperties.ENABLE_AUTO_CREATE_TAG,
-                TableProperties.ENABLE_AUTO_CREATE_TAG_DEFAULT))
         .setDeleteDanglingDeleteFilesEnabled(
             CompatiblePropertyUtil.propertyAsBoolean(
                 properties,
