@@ -19,6 +19,7 @@
 package com.netease.arctic.flink.table;
 
 import static com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema;
+import static com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchemaForDimTable;
 import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.METASTORE_URL;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getKafkaProperties;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOOKUP_CACHE_MAX_ROWS;
@@ -123,7 +124,6 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     } else {
       objectPath = new ObjectPath(identifier.getDatabaseName(), identifier.getObjectName());
     }
-
     ArcticTableLoader tableLoader =
         createTableLoader(objectPath, actualCatalogName, actualBuilder, options.toMap());
     ArcticTable arcticTable = ArcticUtils.loadArcticTable(tableLoader);
@@ -143,7 +143,14 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
             arcticTable.properties(),
             ArcticValidator.DIM_TABLE_ENABLE.key(),
             ArcticValidator.DIM_TABLE_ENABLE.defaultValue());
-    TableSchema tableSchema = getPhysicalSchema(catalogTable.getSchema(), dimTable);
+
+    TableSchema tableSchema;
+    if (!dimTable) {
+      tableSchema = getPhysicalSchema(catalogTable.getSchema());
+    } else {
+      tableSchema = getPhysicalSchemaForDimTable(catalogTable.getSchema());
+    }
+
     switch (readMode) {
       case ArcticValidator.ARCTIC_READ_FILE:
         boolean batchMode = context.getConfiguration().get(RUNTIME_MODE).equals(BATCH);
