@@ -107,7 +107,12 @@ public class MajorExecutor extends AbstractExecutor {
           table.spec(), dataFile.partition(), customHiveSubdirectory);
 
       String sourcePath = dataFile.path().toString();
-      String targetPath = TableFileUtils.getNewFilePath(hiveLocation, sourcePath);
+      String targetPath;
+      if (sourcePath.startsWith(".")) {
+        targetPath = TableFileUtils.getNewFilePath(hiveLocation, sourcePath);
+      } else {
+        targetPath = TableFileUtils.getNewFilePath(hiveLocation, "." + sourcePath);
+      }
       LOG.info("Start copy file from {} to {}", sourcePath, targetPath);
       long startTime = System.currentTimeMillis();
       table.io().copy(sourcePath, targetPath);
