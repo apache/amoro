@@ -31,13 +31,7 @@ public class ExternalCatalog extends ServerCatalog {
     this.unifiedCatalog =
         this.tableMetaStore.doAs(
             () -> new CommonUnifiedCatalog(this::getMetadata, Maps.newHashMap()));
-    String tableFilter =
-        metadata.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
-    if (tableFilter != null) {
-      tableFilterPattern = Pattern.compile(tableFilter);
-    } else {
-      tableFilterPattern = null;
-    }
+    updateTableFilter(metadata);
   }
 
   public void syncTable(String database, String tableName, TableFormat format) {
@@ -64,6 +58,7 @@ public class ExternalCatalog extends ServerCatalog {
     super.updateMetadata(metadata);
     this.tableMetaStore = CatalogUtil.buildMetaStore(metadata);
     this.unifiedCatalog.refresh();
+    updateTableFilter(metadata);
   }
 
   @Override
@@ -112,6 +107,16 @@ public class ExternalCatalog extends ServerCatalog {
   @Override
   public AmoroTable<?> loadTable(String database, String tableName) {
     return doAs(() -> unifiedCatalog.loadTable(database, tableName));
+  }
+
+  private void updateTableFilter(CatalogMeta metadata) {
+    String tableFilter =
+        metadata.getCatalogProperties().get(CatalogMetaProperties.KEY_TABLE_FILTER);
+    if (tableFilter != null) {
+      tableFilterPattern = Pattern.compile(tableFilter);
+    } else {
+      tableFilterPattern = null;
+    }
   }
 
   private <T> T doAs(Callable<T> callable) {
