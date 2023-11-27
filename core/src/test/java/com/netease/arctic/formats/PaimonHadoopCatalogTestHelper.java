@@ -63,8 +63,11 @@ public class PaimonHadoopCatalogTestHelper extends AbstractFormatCatalogTestHelp
   public AmoroCatalog amoroCatalog() {
     PaimonCatalogFactory paimonCatalogFactory = new PaimonCatalogFactory();
     TableMetaStore metaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
+    Map<String, String> paimonCatalogProperties =
+        paimonCatalogFactory.convertCatalogProperties(
+            catalogName, getMetastoreType(), getCatalogMeta().getCatalogProperties());
     return paimonCatalogFactory.create(
-        catalogName, getMetastoreType(), catalogProperties, metaStore);
+        catalogName, getMetastoreType(), paimonCatalogProperties, metaStore);
   }
 
   @Override

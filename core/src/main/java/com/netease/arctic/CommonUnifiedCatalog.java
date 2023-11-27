@@ -193,8 +193,11 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     Map<TableFormat, FormatCatalog> formatCatalogs = Maps.newConcurrentMap();
     for (FormatCatalogFactory factory : loader) {
       if (formats.contains(factory.format())) {
+        Map<String, String> catalogProperties =
+            factory.convertCatalogProperties(
+                name(), meta.getCatalogType(), meta.getCatalogProperties());
         FormatCatalog catalog =
-            factory.create(name(), meta.getCatalogType(), meta.getCatalogProperties(), store);
+            factory.create(name(), meta.getCatalogType(), catalogProperties, store);
         formatCatalogs.put(factory.format(), catalog);
       }
     }
