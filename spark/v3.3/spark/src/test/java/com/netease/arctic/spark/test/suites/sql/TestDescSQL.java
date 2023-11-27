@@ -22,6 +22,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import org.apache.spark.sql.Row;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -75,5 +76,9 @@ public class TestDescSQL extends MixedTableTestBase {
     List<Row> rows2 =
         sql("desc extended " + target().database + "." + target().table).collectAsList();
     assertTableDesc(rows2, primaryKeys, partitions);
+
+    Assumptions.assumeFalse(spark().version().startsWith("3.1"));
+    rows = sql("show create table " + target()).collectAsList();
+    assertShowCreateTable(rows, target(), loadTable());
   }
 }

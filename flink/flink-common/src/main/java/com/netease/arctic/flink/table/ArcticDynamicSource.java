@@ -38,17 +38,17 @@ import org.apache.flink.table.connector.source.DataStreamScanProvider;
 import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.connector.source.LookupTableSource;
 import org.apache.flink.table.connector.source.ScanTableSource;
-import org.apache.flink.table.connector.source.TableFunctionProvider;
 import org.apache.flink.table.connector.source.abilities.SupportsFilterPushDown;
 import org.apache.flink.table.connector.source.abilities.SupportsLimitPushDown;
 import org.apache.flink.table.connector.source.abilities.SupportsProjectionPushDown;
 import org.apache.flink.table.connector.source.abilities.SupportsWatermarkPushDown;
+import org.apache.flink.table.connector.source.lookup.LookupFunctionProvider;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.expressions.CallExpression;
 import org.apache.flink.table.expressions.ResolvedExpression;
 import org.apache.flink.table.functions.BuiltInFunctionDefinitions;
 import org.apache.flink.table.functions.FunctionIdentifier;
-import org.apache.flink.table.functions.TableFunction;
+import org.apache.flink.table.functions.LookupFunction;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.utils.TypeConversions;
 import org.apache.iceberg.Schema;
@@ -201,7 +201,7 @@ public class ArcticDynamicSource
   }
 
   protected CallExpression and(ResolvedExpression left, ResolvedExpression right) {
-    return new CallExpression(
+    return CallExpression.permanent(
         FunctionIdentifier.of(BuiltInFunctionDefinitions.AND.getName()),
         BuiltInFunctionDefinitions.AND,
         Arrays.asList(left, right),
@@ -209,7 +209,7 @@ public class ArcticDynamicSource
   }
 
   @Override
-  public void applyProjection(int[][] projectedFields) {
+  public void applyProjection(int[][] projectedFields, DataType producedDataType) {
     projectFields = new int[projectedFields.length];
     for (int i = 0; i < projectedFields.length; i++) {
       Preconditions.checkArgument(
@@ -218,7 +218,8 @@ public class ArcticDynamicSource
     }
 
     if (arcticDynamicSource instanceof SupportsProjectionPushDown) {
-      ((SupportsProjectionPushDown) arcticDynamicSource).applyProjection(projectedFields);
+      ((SupportsProjectionPushDown) arcticDynamicSource)
+          .applyProjection(projectedFields, producedDataType);
     }
   }
 
@@ -246,10 +247,10 @@ public class ArcticDynamicSource
       joinKeys[i] = context.getKeys()[i][0];
     }
 
-    return TableFunctionProvider.of(getLookupFunction(joinKeys));
+    return LookupFunctionProvider.of(getLookupFunction(joinKeys));
   }
 
-  protected TableFunction<RowData> getLookupFunction(int[] joinKeys) {
+  protected LookupFunction getLookupFunction(int[] joinKeys) {
     Schema projectedSchema = getProjectedSchema();
 
     List<String> joinKeyNames = getJoinKeyNames(joinKeys, projectedSchema);

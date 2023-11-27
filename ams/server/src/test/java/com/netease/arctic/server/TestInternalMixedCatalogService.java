@@ -18,6 +18,7 @@
 
 package com.netease.arctic.server;
 
+import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
@@ -157,6 +158,16 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
       // assert load table
       ArcticTable mixedIcebergTable = catalog.loadTable(tableIdentifier);
       Assertions.assertEquals(withPrimary, mixedIcebergTable.isKeyedTable());
+
+      AmoroTable<?> serverTable = serverCatalog.loadTable(database, table);
+      Assertions.assertEquals(TableFormat.MIXED_ICEBERG, serverTable.format());
+      ArcticTable serverMixedIceberg = (ArcticTable) serverTable.originalTable();
+      Assertions.assertEquals(withPrimary, serverMixedIceberg.isKeyedTable());
+      if (withPrimary) {
+        Assertions.assertEquals(
+            keySpec.description(),
+            serverMixedIceberg.asKeyedTable().primaryKeySpec().description());
+      }
 
       // drop table
       catalog.dropTable(tableIdentifier, true);
