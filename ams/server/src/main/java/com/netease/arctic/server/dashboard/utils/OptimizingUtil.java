@@ -29,7 +29,8 @@ public class OptimizingUtil {
     FilesStatistics optimizeFileInfo;
     if (optimizingTableRuntime.getOptimizingStatus().isProcessing()) {
       optimizeFileInfo = collectOptimizingFileInfo(process == null ? null : process.getSummary());
-    } else if (optimizingTableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING) {
+    } else if (optimizingTableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING
+        || optimizingTableRuntime.getOptimizingStatus() == OptimizingStatus.PLANNING) {
       optimizeFileInfo = collectPendingFileInfo(optimizingTableRuntime.getPendingInput());
     } else {
       optimizeFileInfo = null;

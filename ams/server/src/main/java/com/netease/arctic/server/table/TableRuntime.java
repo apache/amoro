@@ -175,6 +175,15 @@ public class TableRuntime extends StatedPersistentBase {
   public void beginProcess(OptimizingProcess optimizingProcess) {
     invokeConsisitency(
         () -> {
+          this.optimizingProcess = optimizingProcess;
+          this.processId = optimizingProcess.getProcessId();
+          persistUpdatingRuntime();
+        });
+  }
+
+  public void updateProcess(OptimizingProcess optimizingProcess) {
+    invokeConsisitency(
+        () -> {
           OptimizingStatus originalStatus = optimizingStatus;
           this.optimizingProcess = optimizingProcess;
           this.processId = optimizingProcess.getProcessId();

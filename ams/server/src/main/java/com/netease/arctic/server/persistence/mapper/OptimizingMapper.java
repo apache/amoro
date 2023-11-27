@@ -34,23 +34,29 @@ public interface OptimizingMapper {
 
   @Insert(
       "INSERT INTO table_optimizing_process(table_id, catalog_name, db_name, table_name ,process_id,"
-          + " target_snapshot_id, target_change_snapshot_id, status, optimizing_type, plan_time, summary, from_sequence,"
-          + " to_sequence) VALUES (#{table.id}, #{table.catalog},"
+          + " target_snapshot_id, target_change_snapshot_id, status, plan_time) "
+          + " VALUES (#{table.id}, #{table.catalog},"
           + " #{table.database}, #{table.tableName}, #{processId}, #{targetSnapshotId}, #{targetChangeSnapshotId},"
-          + " #{status}, #{optimizingType},"
-          + " #{planTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
-          + " #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter},"
-          + " #{fromSequence, typeHandler=com.netease.arctic.server.persistence.converter.MapLong2StringConverter},"
-          + " #{toSequence, typeHandler=com.netease.arctic.server.persistence.converter.MapLong2StringConverter}"
-          + ")")
+          + " #{status},"
+          + " #{planTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter})")
   void insertOptimizingProcess(
       @Param("table") ServerTableIdentifier tableIdentifier,
       @Param("processId") long processId,
       @Param("targetSnapshotId") long targetSnapshotId,
       @Param("targetChangeSnapshotId") long targetChangeSnapshotId,
       @Param("status") OptimizingProcess.Status status,
+      @Param("planTime") long planTime);
+
+  @Update(
+      "Update table_optimizing_process SET optimizing_type = #{optimizingType},"
+          + " summary = #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter},"
+          + " from_sequence = #{fromSequence, typeHandler=com.netease.arctic.server.persistence.converter.MapLong2StringConverter},"
+          + " to_sequence = #{toSequence, typeHandler=com.netease.arctic.server.persistence.converter.MapLong2StringConverter}"
+          + " WHERE table_id = #{tableId} AND process_id = #{processId}")
+  void updateOptimizingProcessPlanned(
+      @Param("tableId") long tableId,
+      @Param("processId") long processId,
       @Param("optimizingType") OptimizingType optimizingType,
-      @Param("planTime") long planTime,
       @Param("summary") MetricsSummary summary,
       @Param("fromSequence") Map<String, Long> fromSequence,
       @Param("toSequence") Map<String, Long> toSequence);
@@ -61,7 +67,7 @@ public interface OptimizingMapper {
           + "summary = #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter}, "
           + "fail_reason = #{failedReason, jdbcType=VARCHAR}"
           + " WHERE table_id = #{tableId} AND process_id = #{processId}")
-  void updateOptimizingProcess(
+  void updateOptimizingProcessCompleted(
       @Param("tableId") long tableId,
       @Param("processId") long processId,
       @Param("optimizingStatus") OptimizingProcess.Status status,
