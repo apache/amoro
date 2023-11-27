@@ -183,6 +183,10 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     resourceFlinkConf.putToOptions(
         FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY, taskManagerMemory + "m");
 
+    //load optimizer jar first
+    resourceFlinkConf.putToOptions(
+        FlinkConfKeys.USER_LIB_FIRST, FlinkConfKeys.USER_LIB_FIRST_DEFAULT);
+
     String flinkAction = target.isApplicationMode() ? "run-application" : "run";
     if (Target.KUBERNETES_APPLICATION == target) {
       addKubernetesProperties(resource, resourceFlinkConf);
@@ -416,6 +420,8 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     public static final String JOB_MANAGER_TOTAL_PROCESS_MEMORY = "jobmanager.memory.process.size";
     public static final String TASK_MANAGER_TOTAL_PROCESS_MEMORY =
         "taskmanager.memory.process.size";
+    public static final String USER_LIB_FIRST = "yarn.per-job-cluster.include-user-jar";
+    public static final String USER_LIB_FIRST_DEFAULT = "FIRST";
     public static final String KUBERNETES_IMAGE_REF = "kubernetes.container.image";
 
     public static final String KUBERNETES_CLUSTER_ID = "kubernetes.cluster-id";
