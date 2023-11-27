@@ -41,7 +41,6 @@ import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.DataWriter;
 import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,6 +124,10 @@ public class IcebergExecutor extends AbstractExecutor {
     return icebergPosDeleteWriter.complete();
   }
 
+  protected long inputSize() {
+    return task.allIcebergDataFiles().stream().mapToLong(ContentFile::fileSizeInBytes).sum();
+  }
+
   private CombinedIcebergScanTask buildIcebergScanTask() {
     return new CombinedIcebergScanTask(task.allIcebergDataFiles().toArray(new DataFileWithSequence[0]),
         task.allIcebergDeleteFiles().toArray(new DeleteFileWithSequence[0]),
@@ -138,9 +141,7 @@ public class IcebergExecutor extends AbstractExecutor {
         false, IdentityPartitionConverters::convertConstant, false, structLikeCollections);
 
     String formatAsString = table.properties().getOrDefault(DEFAULT_FILE_FORMAT, DEFAULT_FILE_FORMAT_DEFAULT);
-    long targetSizeByBytes = PropertyUtil.propertyAsLong(table.properties(),
-        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
-        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
+    long targetSizeByBytes = targetFileSize(inputSize());
 
     OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(table.asUnkeyedTable(), table.spec().specId(),
         task.getAttemptId()).build();

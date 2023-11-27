@@ -33,6 +33,7 @@ import com.netease.arctic.utils.SerializationUtils;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,5 +129,38 @@ public abstract class AbstractExecutor implements Executor {
           "actual execute time is %sms, max execute time is %sms, factor is %s",
           actualExecuteTime, task.getMaxExecuteTime(), factor));
     }
+  }
+
+  /**
+   * Estimates a larger max target file size than the target size to avoid creating tiny remainder
+   * files.
+   *
+   * <p>While we create tasks that should all be smaller than our target size, there is a chance
+   * that the actual data will end up being larger than our target size due to various factors of
+   * compression, serialization, which are outside our control. If this occurs, instead of making a
+   * single file that is close in size to our target, we would end up producing one file of the
+   * target size, and then a small extra file with the remaining data.
+   *
+   * <p>For example, if our target is 128 MB, we may generate a rewrite task that should be 120 MB.
+   * When we write the data we may find we actually have to write out 138 MB. If we use the target
+   * size while writing, we would produce a 128 MB file and an 10 MB file. If instead we use a
+   * larger size estimated by this method, then we end up writing a single file.
+   */
+  protected long targetFileSize(long inputSize) {
+    long targetFileSize = PropertyUtil.propertyAsLong(table.properties(),
+        TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+        TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
+    long maxTargetFileSize = getMaxTargetFileSize(targetFileSize);
+    if (inputSize <= maxTargetFileSize) {
+      return maxTargetFileSize;
+    } else {
+      return targetFileSize;
+    }
+  }
+
+  private long getMaxTargetFileSize(long targetFileSize) {
+    int fragmentRatio = PropertyUtil.propertyAsInt(table.properties(), TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
+        TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT);
+    return targetFileSize + targetFileSize / fragmentRatio;
   }
 }

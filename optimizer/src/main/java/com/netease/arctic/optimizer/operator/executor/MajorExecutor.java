@@ -48,7 +48,6 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
-import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +62,10 @@ public class MajorExecutor extends AbstractExecutor {
 
   public MajorExecutor(NodeTask nodeTask, ArcticTable table, long startTime, OptimizerConfig config) {
     super(nodeTask, table, startTime, config);
+  }
+
+  protected long inputSize() {
+    return task.dataFiles().stream().mapToLong(DataFile::fileSizeInBytes).sum();
   }
 
   @Override
@@ -125,9 +128,7 @@ public class MajorExecutor extends AbstractExecutor {
     } else {
       transactionId = null;
     }
-    long targetFileSize = PropertyUtil.propertyAsLong(table.properties(),
-        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
-        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
+    long targetFileSize = targetFileSize(inputSize());
     TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(table)
         .withTransactionId(transactionId)
         .withTaskId(task.getAttemptId())
