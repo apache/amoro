@@ -85,7 +85,7 @@ public class ArcticSparkCatalog extends MixedSparkCatalogBase {
     } catch (org.apache.iceberg.exceptions.NoSuchTableException e) {
       throw new NoSuchTableException(ident);
     }
-    return ArcticSparkTable.ofArcticTable(table, catalog, catalogName);
+    return ArcticSparkTable.ofArcticTable(table, catalog, name());
   }
 
   private Table loadInnerTable(ArcticTable table, MixedTableStoreType type) {
@@ -129,7 +129,7 @@ public class ArcticSparkCatalog extends MixedSparkCatalogBase {
         builder.withPartitionSpec(spec).withProperties(properties);
       }
       ArcticTable table = builder.create();
-      return ArcticSparkTable.ofArcticTable(table, catalog, catalogName);
+      return ArcticSparkTable.ofArcticTable(table, catalog, name());
     } catch (AlreadyExistsException e) {
       throw new TableAlreadyExistsException("Table " + ident + " already exists", Option.apply(e));
     }
@@ -192,10 +192,10 @@ public class ArcticSparkCatalog extends MixedSparkCatalogBase {
     }
     if (table.isUnkeyedTable()) {
       alterUnKeyedTable(table.asUnkeyedTable(), changes);
-      return ArcticSparkTable.ofArcticTable(table, catalog, catalogName);
+      return ArcticSparkTable.ofArcticTable(table, catalog, name());
     } else if (table.isKeyedTable()) {
       alterKeyedTable(table.asKeyedTable(), changes);
-      return ArcticSparkTable.ofArcticTable(table, catalog, catalogName);
+      return ArcticSparkTable.ofArcticTable(table, catalog, name());
     }
     throw new UnsupportedOperationException("Unsupported alter table");
   }
