@@ -53,9 +53,9 @@ public class AutoCreateIcebergTagAction {
     }
     boolean success = createTag();
     if (success) {
-      LOG.info("{} created tag successfully", table.name());
+      LOG.info("Created a tag successfully on {}", table.name());
     } else {
-      LOG.info("{} skipped tag creation", table.name());
+      LOG.info("Skipped tag creation on {}", table.name());
     }
   }
 
@@ -81,13 +81,13 @@ public class AutoCreateIcebergTagAction {
   private boolean createTag() {
     Snapshot snapshot = findSnapshot(table, getTagTriggerTime());
     if (snapshot == null) {
-      LOG.info("{} found no snapshot at {}", this.table.name(), getTagTriggerTime());
+      LOG.info("Found no snapshot at {} for {}", getTagTriggerTime(), table.name());
       return false;
     }
     if (exceedMaxDelay(snapshot)) {
       LOG.info(
           "{}'s snapshot {} at {} exceeds max delay {}, and the expected trigger time is {}",
-          this.table.name(),
+          table.name(),
           snapshot.snapshotId(),
           snapshot.timestampMillis(),
           tagConfig.getMaxDelayMinutes(),
@@ -97,9 +97,9 @@ public class AutoCreateIcebergTagAction {
     String newTagName = generateTagName();
     table.manageSnapshots().createTag(newTagName, snapshot.snapshotId()).commit();
     LOG.info(
-        "{} creates tag {} on snapshot {} at {}",
-        this.table.name(),
+        "Created a tag {} for {} on snapshot {} at {}",
         newTagName,
+        table.name(),
         snapshot.snapshotId(),
         snapshot.timestampMillis());
     return true;

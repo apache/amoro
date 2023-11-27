@@ -57,7 +57,7 @@ public class TagsAutoCreatingExecutor extends BaseTableExecutor {
       TableMaintainer tableMaintainer = ofTable(amoroTable);
       tableMaintainer.autoCreateTags(tableRuntime);
     } catch (Throwable t) {
-      LOG.error("{} failed to create tags", tableRuntime.getTableIdentifier(), t);
+      LOG.error("Failed to create tags on {}", tableRuntime.getTableIdentifier(), t);
     }
   }
 }
