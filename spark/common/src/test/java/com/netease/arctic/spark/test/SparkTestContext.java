@@ -22,6 +22,7 @@ import com.netease.arctic.SingletonResourceUtil;
 import com.netease.arctic.TestAms;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.hive.TestHMS;
 import com.netease.arctic.hive.catalog.HiveCatalogTestHelper;
 import com.netease.arctic.spark.SparkUnifiedCatalog;
@@ -31,6 +32,7 @@ import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
@@ -51,6 +53,7 @@ public class SparkTestContext {
   public static final String UNIFIED_CATALOG_IMP = SparkUnifiedCatalog.class.getName();
 
   final TemporaryFolder warehouse = new TemporaryFolder();
+  public static final String AMS_ALL_FORMAT_CATALOG_NAME = "all_formats";
 
   /** Define spark catalog names. */
   public static class SparkCatalogNames {
@@ -124,12 +127,28 @@ public class SparkTestContext {
       hiveCatalogMeta.setCatalogName(format.name().toLowerCase());
       ams.getAmsHandler().createCatalog(hiveCatalogMeta);
     }
+
+    CatalogMeta allFormats = HiveCatalogTestHelper.build(hiveConf, TableFormat.values()[0])
+        .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
+    String formats = Joiner.on(',').join(TableFormat.values());
+    allFormats.putToCatalogProperties(CatalogMetaProperties.TABLE_FORMATS, formats);
+    allFormats.setCatalogName(AMS_ALL_FORMAT_CATALOG_NAME);
+    ams.getAmsHandler().createCatalog(allFormats);
+
     catalogSet = true;
   }
 
   public String amsCatalogUrl(TableFormat format) {
-    return this.ams.getServerUrl() + "/" + format.name().toLowerCase();
+    if (format != null) {
+      return this.ams.getServerUrl() + "/" + format.name().toLowerCase();
+    }
+    return this.ams.getServerUrl() + "/" + AMS_ALL_FORMAT_CATALOG_NAME;
   }
+
+  public String amsThriftUrl() {
+    return this.ams.getServerUrl();
+  }
+
 
   private String hiveVersion() {
     try {

@@ -20,6 +20,7 @@ package com.netease.arctic.spark.mixed;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.SparkTableFormat;
+import org.apache.spark.sql.connector.catalog.Table;
 
 /** Mixed Iceberg format implementation of spark table format */
 public class MixedIcebergSparkFormat implements SparkTableFormat {
@@ -31,5 +32,10 @@ public class MixedIcebergSparkFormat implements SparkTableFormat {
   @Override
   public boolean isSubTableName(String tableName) {
     return MixedTableStoreType.from(tableName) != null;
+  }
+
+  @Override
+  public boolean isSessionTable(Table table) {
+    return MixedFormatSparkUtil.isMixedIcebergTable(table);
   }
 }

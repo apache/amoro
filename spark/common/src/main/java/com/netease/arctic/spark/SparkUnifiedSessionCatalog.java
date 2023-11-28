@@ -16,34 +16,50 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.mixed;
+package com.netease.arctic.spark;
 
-import com.netease.arctic.spark.SessionCatalogBase;
+import com.netease.arctic.ams.api.TableFormat;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-public abstract class MixedSessionCatalogBase<T extends TableCatalog & SupportsNamespaces>
+import java.util.Map;
+import java.util.ServiceLoader;
+
+public class SparkUnifiedSessionCatalog<T extends TableCatalog & SupportsNamespaces>
     extends SessionCatalogBase<T> {
 
+  private final Map<TableFormat, SparkTableFormat> tableFormats = Maps.newConcurrentMap();
 
-  /**
-   * build mixed-format catalog instance.
-   *
-   * @param name spark catalog name
-   * @param options catalog initialize options
-   * @return mixed format spark catalog.
-   */
-  protected abstract MixedSparkCatalogBase buildTargetCatalog(String name, CaseInsensitiveStringMap options);
+  @Override
+  protected TableCatalog buildTargetCatalog(String name, CaseInsensitiveStringMap options) {
+    SparkUnifiedCatalog sparkUnifiedCatalog = new SparkUnifiedCatalog();
+    sparkUnifiedCatalog.initialize(name, options);
+    ServiceLoader<SparkTableFormat> sparkTableFormats = ServiceLoader.load(SparkTableFormat.class);
+    for (SparkTableFormat format : sparkTableFormats) {
+      tableFormats.put(format.format(), format);
+    }
+    return sparkUnifiedCatalog;
+  }
 
   @Override
   protected boolean isManagedTable(Table table) {
-    return MixedFormatSparkUtil.isMixedFormatTable(table);
+    return tableFormats.values().stream()
+        .anyMatch(f -> f.isSessionTable(table));
   }
 
   @Override
   protected boolean isManagedProvider(String provider) {
-    return "arctic".equalsIgnoreCase(provider);
+    if (provider == null) {
+      return false;
+    }
+    try {
+      TableFormat.valueOf(provider.toUpperCase());
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
   }
 }

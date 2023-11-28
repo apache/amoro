@@ -40,7 +40,7 @@ public class ArcticSparkSessionCatalog<
     extends MixedSessionCatalogBase<T> {
 
   @Override
-  protected MixedSparkCatalogBase buildMixedFormatSparkCatalog(
+  protected MixedSparkCatalogBase buildTargetCatalog(
       String name, CaseInsensitiveStringMap options) {
     ArcticSparkCatalog newCatalog = new ArcticSparkCatalog();
     newCatalog.initialize(name, options);

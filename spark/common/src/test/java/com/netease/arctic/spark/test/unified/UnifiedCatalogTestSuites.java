@@ -18,19 +18,50 @@
 
 package com.netease.arctic.spark.test.unified;
 
+import com.google.common.collect.Maps;
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.UnifiedCatalog;
+import com.netease.arctic.UnifiedCatalogLoader;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.spark.SparkUnifiedSessionCatalog;
 import com.netease.arctic.spark.test.SparkTestBase;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.provider.Arguments;
 
 import java.util.List;
+import java.util.Map;
 
 public class UnifiedCatalogTestSuites extends SparkTestBase {
 
-  public void testTableFormats(TableFormat format) {
+  @Override
+  protected Map<String, String> sparkSessionConfig() {
+    return ImmutableMap.of(
+        "spark.sql.catalog.spark_catalog",
+        SparkUnifiedSessionCatalog.class.getName(),
+        "spark.sql.catalog.spark_catalog.uri",
+        context.amsCatalogUrl(null));
+  }
+
+  public static List<Arguments> testTableFormats() {
+    return Lists.newArrayList(
+        Arguments.of(TableFormat.ICEBERG, false),
+        Arguments.of(TableFormat.MIXED_ICEBERG, false),
+        Arguments.of(TableFormat.MIXED_HIVE, false),
+        Arguments.of(TableFormat.PAIMON, false),
+
+        Arguments.of(TableFormat.ICEBERG, true),
+        Arguments.of(TableFormat.MIXED_ICEBERG, true),
+        Arguments.of(TableFormat.MIXED_HIVE, true),
+        Arguments.of(TableFormat.PAIMON, true)
+    );
+  }
+
+  public void testTableFormats(TableFormat format, boolean sessionCatalog) {
+    setCatalog(format, sessionCatalog);
     String sqlText =
         "CREATE TABLE "
             + target()
@@ -60,7 +91,7 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
     Assertions.assertEquals(expect, count);
 
     // visit sub tables.
-    testVisitSubTable(format);
+    testVisitSubTable(format, sessionCatalog);
 
     // call procedure
     testCallProcedure(format);
@@ -101,7 +132,12 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
     return Lists.newArrayList("change");
   }
 
-  private void testVisitSubTable(TableFormat format) {
+  private void testVisitSubTable(TableFormat format, boolean sessionCatalog) {
+    if ( sessionCatalog) {
+      // sub table identifier is not supported in spark 3.1
+      return;
+    }
+
     List<String> subTableNames = Lists.newArrayList();
     switch (format) {
       case ICEBERG:
@@ -127,5 +163,20 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
     String sqlText = "CALL " + currentCatalog + ".system.remove_orphan_files('" + target() + "')";
     Dataset<Row> rs = sql(sqlText);
     Assertions.assertTrue(rs.columns().length > 0);
+  }
+
+  private void setCatalog(TableFormat format, boolean sessionCatalog) {
+    if (sessionCatalog) {
+      setCurrentCatalog(SPARK_SESSION_CATALOG);
+    } else {
+      String unifiedSparkCatalogName = "unified_" + format.name().toLowerCase();
+      setCurrentCatalog(unifiedSparkCatalogName);
+    }
+    UnifiedCatalog unifiedCatalog = UnifiedCatalogLoader.loadUnifiedCatalog(
+        context.amsThriftUrl(), format.name().toLowerCase(), Maps.newHashMap()
+    );
+    if (!unifiedCatalog().exist(database())){
+      unifiedCatalog.createDatabase(database());
+    }
   }
 }

@@ -20,7 +20,11 @@ package com.netease.arctic.spark.iceberg;
 
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.SparkTableFormat;
+import com.netease.arctic.spark.mixed.MixedFormatSparkUtil;
+import com.netease.arctic.spark.mixed.MixedIcebergSparkFormat;
+import org.apache.iceberg.BaseMetastoreTableOperations;
 import org.apache.iceberg.MetadataTableType;
+import org.apache.spark.sql.connector.catalog.Table;
 
 import java.util.regex.Pattern;
 
@@ -39,5 +43,12 @@ public class IcebergSparkFormat implements SparkTableFormat {
     return MetadataTableType.from(tableName) != null
         || AT_TIMESTAMP.matcher(tableName).matches()
         || SNAPSHOT_ID.matcher(tableName).matches();
+  }
+
+  @Override
+  public boolean isSessionTable(Table table) {
+    String icebergTableType = table.properties().get(BaseMetastoreTableOperations.TABLE_TYPE_PROP);
+    return BaseMetastoreTableOperations.ICEBERG_TABLE_TYPE_VALUE.equalsIgnoreCase(icebergTableType)
+        && !MixedFormatSparkUtil.isMixedFormatTable(table);
   }
 }

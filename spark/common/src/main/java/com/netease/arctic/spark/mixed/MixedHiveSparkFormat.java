@@ -19,11 +19,17 @@
 package com.netease.arctic.spark.mixed;
 
 import com.netease.arctic.ams.api.TableFormat;
+import org.apache.spark.sql.connector.catalog.Table;
 
 /** Mixed Hive format implementation of spark table format */
 public class MixedHiveSparkFormat extends MixedIcebergSparkFormat {
   @Override
   public TableFormat format() {
     return TableFormat.MIXED_HIVE;
+  }
+
+  @Override
+  public boolean isSessionTable(Table table) {
+    return MixedFormatSparkUtil.isMixedHiveTable(table);
   }
 }

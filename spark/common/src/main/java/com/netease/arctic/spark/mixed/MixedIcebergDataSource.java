@@ -16,22 +16,17 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.paimon;
+package com.netease.arctic.spark.mixed;
 
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.spark.SparkTableFormat;
-import org.apache.spark.sql.connector.catalog.Table;
 
-public class PaimonSparkFormat implements SparkTableFormat {
-
-  @Override
-  public TableFormat format() {
-    return TableFormat.PAIMON;
-  }
+/**
+ * Mixed Iceberg DataSource register
+ */
+public class MixedIcebergDataSource extends MixedSourceBase {
 
   @Override
-  public boolean isSessionTable(Table table) {
-    //"org.apache.paimon.hive.mapred.PaimonInputFormat".equals(table.getSd().getInputFormat()) && "org.apache.paimon.hive.mapred.PaimonOutputFormat".equals(table.getSd().getOutputFormat());
-    return false;
+  public String shortName() {
+    return TableFormat.MIXED_ICEBERG.name();
   }
 }

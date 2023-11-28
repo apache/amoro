@@ -16,15 +16,17 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.source;
+package com.netease.arctic.spark.mixed;
 
-import com.netease.arctic.spark.util.ArcticSparkUtils;
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.spark.util.SparkUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.SupportsCatalogOptions;
 import org.apache.spark.sql.connector.catalog.Table;
+import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.sources.DataSourceRegister;
 import org.apache.spark.sql.types.StructType;
@@ -33,10 +35,14 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import java.util.List;
 import java.util.Map;
 
-public class ArcticSource implements DataSourceRegister, SupportsCatalogOptions {
+/**
+ * Spark DataSource register base for mixed format
+ */
+public abstract class MixedSourceBase implements DataSourceRegister, SupportsCatalogOptions {
+
   @Override
-  public String shortName() {
-    return "arctic";
+  public StructType inferSchema(CaseInsensitiveStringMap options) {
+    return null;
   }
 
   @Override
@@ -50,17 +56,12 @@ public class ArcticSource implements DataSourceRegister, SupportsCatalogOptions 
   }
 
   @Override
-  public StructType inferSchema(CaseInsensitiveStringMap options) {
-    return null;
-  }
-
-  @Override
   public Table getTable(
       StructType schema, Transform[] partitioning, Map<String, String> properties) {
     return null;
   }
 
-  private static ArcticSparkUtils.TableCatalogAndIdentifier catalogAndIdentifier(
+  private static SparkUtil.TableCatalogAndIdentifier catalogAndIdentifier(
       CaseInsensitiveStringMap options) {
     Preconditions.checkArgument(options.containsKey("path"), "Cannot open table: path is not set");
     String path = options.get("path");
@@ -68,7 +69,7 @@ public class ArcticSource implements DataSourceRegister, SupportsCatalogOptions 
         !path.contains("/"), "invalid table identifier %s, contain '/'", path);
     List<String> nameParts = Lists.newArrayList(path.split("\\."));
     SparkSession spark = SparkSession.active();
-
-    return ArcticSparkUtils.tableCatalogAndIdentifier(spark, nameParts);
+    TableCatalog current = (TableCatalog) spark.sessionState().catalogManager().currentCatalog();
+    return SparkUtil.catalogAndIdentifier(spark, nameParts, current);
   }
 }

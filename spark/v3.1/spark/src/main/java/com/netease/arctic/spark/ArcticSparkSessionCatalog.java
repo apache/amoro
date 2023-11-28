@@ -28,7 +28,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespaces>
     extends MixedSessionCatalogBase<T> {
 
-  protected MixedSparkCatalogBase buildMixedFormatSparkCatalog(
+  protected MixedSparkCatalogBase buildTargetCatalog(
       String name, CaseInsensitiveStringMap options) {
     MixedSparkCatalogBase newCatalog = new ArcticSparkCatalog();
     newCatalog.initialize(name, options);

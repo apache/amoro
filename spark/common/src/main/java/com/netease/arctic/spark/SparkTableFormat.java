@@ -19,6 +19,7 @@
 package com.netease.arctic.spark;
 
 import com.netease.arctic.ams.api.TableFormat;
+import org.apache.spark.sql.connector.catalog.Table;
 
 /** SPI interface for spark unified catalog to adapt different table formats */
 public interface SparkTableFormat {
@@ -30,4 +31,9 @@ public interface SparkTableFormat {
   default boolean isSubTableName(String tableName) {
     return false;
   }
+
+  /**
+   * Check the table loaded by spark session catalog is match the table format.
+   */
+  boolean isSessionTable(Table table);
 }

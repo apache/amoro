@@ -147,6 +147,12 @@ public abstract class MixedSparkCatalogBase
   }
 
   @Override
+  public boolean purgeTable(Identifier ident) throws UnsupportedOperationException {
+    TableIdentifier identifier = buildIdentifier(ident);
+    return catalog.dropTable(identifier, true);
+  }
+
+  @Override
   public void renameTable(Identifier from, Identifier to) {
     throw new UnsupportedOperationException("Unsupported renameTable.");
   }

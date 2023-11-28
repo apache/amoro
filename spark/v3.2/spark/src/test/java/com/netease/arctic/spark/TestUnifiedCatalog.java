@@ -23,14 +23,15 @@ import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import com.netease.arctic.spark.test.unified.UnifiedCatalogTestSuites;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true, unifiedCatalog = true)
 public class TestUnifiedCatalog extends UnifiedCatalogTestSuites {
 
   @ParameterizedTest
-  @EnumSource(TableFormat.class)
-  public void testTableFormats(TableFormat format) {
-    super.testTableFormats(format);
+  @MethodSource
+  public void testTableFormats(TableFormat format, boolean sessionCatalog) {
+    super.testTableFormats(format, sessionCatalog);
   }
 }
