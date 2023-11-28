@@ -133,8 +133,8 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
   }
 
   private void testVisitSubTable(TableFormat format, boolean sessionCatalog) {
-    if ( sessionCatalog) {
-      // sub table identifier is not supported in spark 3.1
+    if (spark().version().startsWith("3.1") && sessionCatalog) {
+      // sub table identifier is not supported in spark 3.1 session catalog
       return;
     }
 

@@ -20,16 +20,21 @@ package com.netease.arctic.spark;
 
 import com.netease.arctic.ams.api.TableFormat;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException;
+import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
+import org.apache.spark.sql.connector.iceberg.catalog.Procedure;
+import org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.ServiceLoader;
 
 public class SparkUnifiedSessionCatalog<T extends TableCatalog & SupportsNamespaces>
-    extends SessionCatalogBase<T> {
+    extends SessionCatalogBase<T> implements ProcedureCatalog {
 
   private final Map<TableFormat, SparkTableFormat> tableFormats = Maps.newConcurrentMap();
 
@@ -61,5 +66,23 @@ public class SparkUnifiedSessionCatalog<T extends TableCatalog & SupportsNamespa
     } catch (Exception e) {
       return false;
     }
+  }
+
+  @Override
+  protected boolean isManagedSubTable(Identifier ident) {
+    if (ident.namespace().length == 2) {
+      for (SparkTableFormat sparkTableFormat : tableFormats.values()) {
+        if (sparkTableFormat.isSubTableName(ident.name())) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public Procedure loadProcedure(Identifier ident) throws NoSuchProcedureException {
+    SparkUnifiedCatalog catalog = (SparkUnifiedCatalog) getTargetCatalog();
+    return catalog.loadProcedure(ident);
   }
 }

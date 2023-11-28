@@ -101,7 +101,7 @@ public abstract class SessionCatalogBase<T extends TableCatalog & SupportsNamesp
    */
   protected abstract TableCatalog buildTargetCatalog(String name, CaseInsensitiveStringMap options);
 
-  private TableCatalog getTargetCatalog() {
+  protected TableCatalog getTargetCatalog() {
     if (catalog == null) {
       this.catalog = buildTargetCatalog(this.catalogName, this.options);
     }
@@ -154,11 +154,20 @@ public abstract class SessionCatalogBase<T extends TableCatalog & SupportsNamesp
 
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
+    if (isManagedSubTable(ident)) {
+      // if it's a sub table identifier, must be a managed table
+      return getTargetCatalog().loadTable(ident);
+    }
+
     Table table = getSessionCatalog().loadTable(ident);
     if (isManagedTable(table)) {
       return getTargetCatalog().loadTable(ident);
     }
     return table;
+  }
+
+  protected boolean isManagedSubTable(Identifier ident) {
+    return false;
   }
 
   /**
