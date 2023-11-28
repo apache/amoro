@@ -178,6 +178,10 @@ public class HiveMetaSynchronizer {
    */
   public static void syncHiveDataToArctic(
       SupportHive table, HMSClientPool hiveClient, boolean force) {
+    if (!HiveTableUtil.checkExist(hiveClient, table.id())) {
+      LOG.warn("hive table {} not exist, try to skip sync schema to amoro", table.id());
+      return;
+    }
     UnkeyedTable baseStore;
     if (table.isKeyedTable()) {
       baseStore = table.asKeyedTable().baseTable();
