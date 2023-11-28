@@ -103,10 +103,10 @@ public class ServerTableDescriptor extends PersistentBase {
   }
 
   public List<PartitionFileBaseInfo> getTableFile(
-      TableIdentifier tableIdentifier, String partition) {
+      TableIdentifier tableIdentifier, String partition, Integer specId) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
-    return formatTableDescriptor.getTableFiles(amoroTable, partition);
+    return formatTableDescriptor.getTableFiles(amoroTable, partition, specId);
   }
 
   public List<TagOrBranchInfo> getTableTags(TableIdentifier tableIdentifier) {
