@@ -174,6 +174,51 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
     checkTagCount(table, 1);
   }
 
+  @Test
+  public void testTriggerTimePeriod() {
+    testTagTriggerTimePeriodHourly("2022-08-08T11:40:00", 30, "2022-08-08T11:30:00");
+    testTagTriggerTimePeriodHourly("2022-08-08T23:40:00", 15, "2022-08-08T23:15:00");
+    testTagTriggerTimePeriodHourly("2022-08-09T00:10:00", 30, "2022-08-08T23:30:00");
+
+    testTagTriggerTimePeriodDaily("2022-08-08T03:40:00", 30, "2022-08-08T00:30:00");
+    testTagTriggerTimePeriodDaily("2022-08-08T23:40:00", 15, "2022-08-08T00:15:00");
+    testTagTriggerTimePeriodDaily("2022-08-09T00:10:00", 30, "2022-08-08T00:30:00");
+  }
+
+  private void testTagTriggerTimePeriodHourly(
+      String checkTimeStr, int offsetMinutes, String expectedResultStr) {
+    LocalDateTime checkTime = LocalDateTime.parse(checkTimeStr);
+    Long expectedTriggerTime =
+        (expectedResultStr == null)
+            ? null
+            : LocalDateTime.parse(expectedResultStr)
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli();
+
+    Long actualTriggerTime =
+        TagConfiguration.Period.HOURLY.getTagTriggerTime(checkTime, offsetMinutes);
+
+    Assert.assertEquals(expectedTriggerTime, actualTriggerTime);
+  }
+
+  private void testTagTriggerTimePeriodDaily(
+      String checkTimeStr, int offsetMinutes, String expectedResultStr) {
+    LocalDateTime checkTime = LocalDateTime.parse(checkTimeStr);
+    Long expectedTriggerTime =
+        (expectedResultStr == null)
+            ? null
+            : LocalDateTime.parse(expectedResultStr)
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli();
+
+    Long actualTriggerTime =
+        TagConfiguration.Period.DAILY.getTagTriggerTime(checkTime, offsetMinutes);
+
+    Assert.assertEquals(expectedTriggerTime, actualTriggerTime);
+  }
+
   private long getOffsetMinutesOfToday(long millis) {
     LocalDateTime now = fromEpochMillis(millis);
     LocalDateTime today = LocalDateTime.of(now.toLocalDate(), LocalTime.ofSecondOfDay(0));

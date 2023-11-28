@@ -79,9 +79,10 @@ public class AutoCreateIcebergTagAction {
   }
 
   private boolean createTag() {
-    Snapshot snapshot = findSnapshot(table, getTagTriggerTime());
+    long tagTriggerTime = getTagTriggerTime();
+    Snapshot snapshot = findSnapshot(table, tagTriggerTime);
     if (snapshot == null) {
-      LOG.info("Found no snapshot at {} for {}", getTagTriggerTime(), table.name());
+      LOG.info("Found no snapshot at {} for {}", tagTriggerTime, table.name());
       return false;
     }
     if (exceedMaxDelay(snapshot)) {

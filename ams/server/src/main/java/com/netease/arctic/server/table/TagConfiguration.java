@@ -24,9 +24,10 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Locale;
 import java.util.Map;
 
@@ -49,9 +50,15 @@ public class TagConfiguration {
     DAILY("daily") {
       @Override
       public long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
-        LocalTime offsetTime = LocalTime.ofSecondOfDay(triggerOffsetMinutes * 60L);
-        LocalDateTime triggerTime = LocalDateTime.of(checkTime.toLocalDate(), offsetTime);
-        return triggerTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        long windowSize = 60 * 60 * 24 * 1000L;
+        return getWindowStartWithOffset(checkTime, triggerOffsetMinutes, windowSize);
+      }
+    },
+    HOURLY("hourly") {
+      @Override
+      public long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
+        long windowSize = 60 * 60 * 1000L;
+        return getWindowStartWithOffset(checkTime, triggerOffsetMinutes, windowSize);
       }
     };
 
@@ -73,6 +80,23 @@ public class TagConfiguration {
      * offset is set to be 5 min, the idea trigger time is 2022-08-08 00:05:00.
      */
     public abstract long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes);
+
+    protected Long getWindowStartWithOffset(
+        LocalDateTime checkTime, int triggerOffsetMinutes, long windowSize) {
+      long timestamp = checkTime.atZone(ZoneOffset.UTC).toInstant().toEpochMilli();
+      long offset = triggerOffsetMinutes * 60_000L;
+      final long remainder = (timestamp - offset) % windowSize;
+      // handle both positive and negative cases
+      long windowStartTimestamp;
+      if (remainder < 0) {
+        windowStartTimestamp = timestamp - (remainder + windowSize);
+      } else {
+        windowStartTimestamp = timestamp - remainder;
+      }
+      LocalDateTime windowStart =
+          LocalDateTime.ofInstant(Instant.ofEpochMilli(windowStartTimestamp), ZoneOffset.UTC);
+      return windowStart.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+    }
   }
 
   public static TagConfiguration parse(Map<String, String> tableProperties) {
