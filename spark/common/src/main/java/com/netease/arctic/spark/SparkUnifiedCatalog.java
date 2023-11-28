@@ -52,6 +52,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -68,6 +69,7 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
 
   private UnifiedCatalog unifiedCatalog;
   private String name;
+  private final Map<TableFormat, SparkTableFormat> tableFormats = Maps.newConcurrentMap();
   private final Map<TableFormat, TableCatalog> tableCatalogs = Maps.newConcurrentMap();
 
   @Override
@@ -92,6 +94,10 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
     this.unifiedCatalog =
         UnifiedCatalogLoader.loadUnifiedCatalog(
             catalogUri.serverUrl(), registerCatalogName, properties);
+    ServiceLoader<SparkTableFormat> sparkTableFormats = ServiceLoader.load(SparkTableFormat.class);
+    for (SparkTableFormat format : sparkTableFormats) {
+      tableFormats.put(format.format(), format);
+    }
   }
 
   @Override
@@ -170,12 +176,30 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
     try {
-      AmoroTable<?> table =
-          unifiedCatalog.loadTable(namespaceToDatabase(ident.namespace()), ident.name());
+      Identifier originIdent = originIdentifierOfSubTable(ident);
+      if (originIdent == null) {
+        originIdent = ident;
+      }
+      String database = namespaceToDatabase(originIdent.namespace());
+      AmoroTable<?> table = unifiedCatalog.loadTable(database, originIdent.name());
       return tableCatalog(table.format()).loadTable(ident);
     } catch (com.netease.arctic.NoSuchTableException e) {
       throw new NoSuchTableException(ident);
     }
+  }
+
+  private Identifier originIdentifierOfSubTable(Identifier identifier) {
+    String[] namespace = identifier.namespace();
+    if (identifier.namespace().length == 2) {
+      for (SparkTableFormat sparkTableFormat : tableFormats.values()) {
+        if (sparkTableFormat.isSubTableName(identifier.name())) {
+          String[] ns = Arrays.copyOf(namespace, namespace.length - 1);
+          String name = namespace[ns.length];
+          return Identifier.of(ns, name);
+        }
+      }
+    }
+    return null;
   }
 
   @Override
@@ -243,7 +267,7 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
 
   @Override
   public Procedure loadProcedure(Identifier ident) throws NoSuchProcedureException {
-    TableCatalog tableCatalog = tableCatalog(TableFormat.MIXED_ICEBERG);
+    TableCatalog tableCatalog = tableCatalog(TableFormat.ICEBERG);
     ProcedureCatalog procedureCatalog = (ProcedureCatalog) tableCatalog;
     return procedureCatalog.loadProcedure(ident);
   }

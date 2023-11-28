@@ -16,18 +16,18 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.mixed;
+package com.netease.arctic.spark;
 
-import java.util.Locale;
+import com.netease.arctic.ams.api.TableFormat;
 
-public enum MixedTableStoreType {
-  CHANGE;
+/** SPI interface for spark unified catalog to adapt different table formats */
+public interface SparkTableFormat {
 
-  public static MixedTableStoreType from(String name) {
-    try {
-      return MixedTableStoreType.valueOf(name.toUpperCase(Locale.ROOT));
-    } catch (IllegalArgumentException ignored) {
-      return null;
-    }
+  /** Table format */
+  TableFormat format();
+
+  /** Check if the give table name is a valid inspecting table name. */
+  default boolean isSubTableName(String tableName) {
+    return false;
   }
 }

@@ -44,7 +44,9 @@ public class SparkTestContext {
   public static final String SESSION_CATALOG_IMPL =
       "com.netease.arctic.spark.ArcticSparkSessionCatalog";
   public static final String MIXED_CATALOG_IMPL = "com.netease.arctic.spark.ArcticSparkCatalog";
-  public static final String SQL_EXTENSIONS_IMPL = "com.netease.arctic.spark.ArcticSparkExtensions";
+  public static final String SQL_EXTENSIONS_IMPL =
+      "com.netease.arctic.spark.ArcticSparkExtensions"
+          + ",org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions";
 
   public static final String UNIFIED_CATALOG_IMP = SparkUnifiedCatalog.class.getName();
 

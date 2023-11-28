@@ -16,18 +16,15 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.mixed;
+package com.netease.arctic.spark.paimon;
 
-import java.util.Locale;
+import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.spark.SparkTableFormat;
 
-public enum MixedTableStoreType {
-  CHANGE;
+public class PaimonSparkFormat implements SparkTableFormat {
 
-  public static MixedTableStoreType from(String name) {
-    try {
-      return MixedTableStoreType.valueOf(name.toUpperCase(Locale.ROOT));
-    } catch (IllegalArgumentException ignored) {
-      return null;
-    }
+  @Override
+  public TableFormat format() {
+    return TableFormat.PAIMON;
   }
 }

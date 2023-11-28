@@ -18,16 +18,12 @@
 
 package com.netease.arctic.spark.mixed;
 
-import java.util.Locale;
+import com.netease.arctic.ams.api.TableFormat;
 
-public enum MixedTableStoreType {
-  CHANGE;
-
-  public static MixedTableStoreType from(String name) {
-    try {
-      return MixedTableStoreType.valueOf(name.toUpperCase(Locale.ROOT));
-    } catch (IllegalArgumentException ignored) {
-      return null;
-    }
+/** Mixed Hive format implementation of spark table format */
+public class MixedHiveSparkFormat extends MixedIcebergSparkFormat {
+  @Override
+  public TableFormat format() {
+    return TableFormat.MIXED_HIVE;
   }
 }
