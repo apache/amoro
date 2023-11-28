@@ -73,7 +73,7 @@ import { getBranches, getTags } from '@/services/table.service'
 
 const { t } = useI18n()
 
-const props = defineProps({ db: String, table: String, disabled: Boolean })
+const props = defineProps({ catalog: String, db: String, table: String, disabled: Boolean })
 const disabled = computed(() => props.disabled)
 
 const emit = defineEmits(['refChange'])

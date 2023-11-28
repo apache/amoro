@@ -608,6 +608,9 @@ public class TableController {
   }
 
   private void putMainBranchFirst(List<TagOrBranchInfo> branchInfos) {
+    if (branchInfos.size() <= 1) {
+      return;
+    }
     branchInfos.stream()
         .filter(branch -> SnapshotRef.MAIN_BRANCH.equals(branch.getName()))
         .findFirst()

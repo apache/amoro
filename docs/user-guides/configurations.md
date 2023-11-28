@@ -62,6 +62,19 @@ Data-cleaning configurations are applicable to both Iceberg Format and Mixed str
 | data-expire.datetime-number-format          | TIMESTAMP_MS  | Timestamp unit for long field. Including TIMESTAMP_MS and TIMESTAMP_S |
 | data-expire.retention-time                  | NULL          | Retention period for data expiration. For example, 1d means retaining data for 1 day. Other supported units include h (hour), min (minute), s (second), ms (millisecond), etc. |
 
+## Tags configurations
+
+Tags configurations are applicable to Iceberg Format only now, and will be supported in Mixed Format
+soon.
+
+| Key                                         | Default       | Description                                                                                                 |
+|---------------------------------------------|---------------|-------------------------------------------------------------------------------------------------------------|
+| tag.auto-create.enabled                     | false         | Enables automatically creating tags                                                                         |
+| tag.auto-create.trigger.period              | daily         | Period of creating tags, support `daily` now                                                                |
+| tag.auto-create.trigger.offset.minutes      | 0             | The minutes by which the tag is created after midnight (00:00)                                              |
+| tag.auto-create.trigger.max-delay.minutes   | 60            | The maximum delay time for creating a tag                                                                   |
+| tag.auto-create.daily.tag-format            | 'tag-'yyyyMMdd | The format of the name for daily tag                                                                   |
+
 ## Mixed Format configurations
 
 If using Iceberg Format，please refer to [Iceberg configurations](https://iceberg.apache.org/docs/latest/configuration/)，the following configurations are only applicable to Mixed Format.
