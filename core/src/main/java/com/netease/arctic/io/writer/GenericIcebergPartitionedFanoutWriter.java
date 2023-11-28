@@ -30,10 +30,14 @@ import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.io.PartitionedFanoutWriter;
 
+/**
+ * A {@link PartitionedFanoutWriter} for generic records. This class can write multiple partition
+ * files.
+ */
 public class GenericIcebergPartitionedFanoutWriter extends PartitionedFanoutWriter<Record> {
 
-  final PartitionKey partitionKey;
-  final InternalRecordWrapper wrapper;
+  private final PartitionKey partitionKey;
+  private final InternalRecordWrapper wrapper;
 
   public GenericIcebergPartitionedFanoutWriter(
       Schema schema,

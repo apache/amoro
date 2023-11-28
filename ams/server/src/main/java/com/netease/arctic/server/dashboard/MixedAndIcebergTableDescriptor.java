@@ -62,6 +62,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.PropertyUtil;
@@ -358,24 +359,32 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
       return new ArrayList<>();
     }
     Map<String, PartitionBaseInfo> partitionBaseInfoHashMap = new HashMap<>();
-    getTableFiles(amoroTable, null, null)
-        .forEach(
-            fileInfo -> {
-              if (!partitionBaseInfoHashMap.containsKey(fileInfo.getPartition())) {
-                PartitionBaseInfo partitionBaseInfo = new PartitionBaseInfo();
-                partitionBaseInfo.setPartition(fileInfo.getPartition());
-                partitionBaseInfo.setSpecId(fileInfo.getSpecId());
-                partitionBaseInfoHashMap.put(fileInfo.getPartition(), partitionBaseInfo);
-              }
-              PartitionBaseInfo partitionInfo =
-                  partitionBaseInfoHashMap.get(fileInfo.getPartition());
-              partitionInfo.setFileCount(partitionInfo.getFileCount() + 1);
-              partitionInfo.setFileSize(partitionInfo.getFileSize() + fileInfo.getFileSize());
-              partitionInfo.setLastCommitTime(
-                  partitionInfo.getLastCommitTime() > fileInfo.getCommitTime()
-                      ? partitionInfo.getLastCommitTime()
-                      : fileInfo.getCommitTime());
-            });
+
+    CloseableIterable<PartitionFileBaseInfo> tableFiles =
+        getTableFilesInternal(amoroTable, null, null);
+    try {
+      for (PartitionFileBaseInfo fileInfo : tableFiles) {
+        if (!partitionBaseInfoHashMap.containsKey(fileInfo.getPartition())) {
+          PartitionBaseInfo partitionBaseInfo = new PartitionBaseInfo();
+          partitionBaseInfo.setPartition(fileInfo.getPartition());
+          partitionBaseInfo.setSpecId(fileInfo.getSpecId());
+          partitionBaseInfoHashMap.put(fileInfo.getPartition(), partitionBaseInfo);
+        }
+        PartitionBaseInfo partitionInfo = partitionBaseInfoHashMap.get(fileInfo.getPartition());
+        partitionInfo.setFileCount(partitionInfo.getFileCount() + 1);
+        partitionInfo.setFileSize(partitionInfo.getFileSize() + fileInfo.getFileSize());
+        partitionInfo.setLastCommitTime(
+            partitionInfo.getLastCommitTime() > fileInfo.getCommitTime()
+                ? partitionInfo.getLastCommitTime()
+                : fileInfo.getCommitTime());
+      }
+    } finally {
+      try {
+        tableFiles.close();
+      } catch (IOException e) {
+        LOG.warn("Failed to close the manifest reader.", e);
+      }
+    }
 
     return new ArrayList<>(partitionBaseInfoHashMap.values());
   }
@@ -383,17 +392,19 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   @Override
   public List<PartitionFileBaseInfo> getTableFiles(
       AmoroTable<?> amoroTable, String partition, Integer specId) {
-    ArcticTable arcticTable = getTable(amoroTable);
-    List<PartitionFileBaseInfo> result = new ArrayList<>();
-    if (arcticTable.isKeyedTable()) {
-      result.addAll(
-          collectFileInfo(arcticTable.asKeyedTable().changeTable(), true, partition, specId));
-      result.addAll(
-          collectFileInfo(arcticTable.asKeyedTable().baseTable(), false, partition, specId));
-    } else {
-      result.addAll(collectFileInfo(arcticTable.asUnkeyedTable(), false, partition, specId));
+    CloseableIterable<PartitionFileBaseInfo> tableFilesIterable =
+        getTableFilesInternal(amoroTable, partition, specId);
+    try {
+      List<PartitionFileBaseInfo> result = new ArrayList<>();
+      Iterables.addAll(result, tableFilesIterable);
+      return result;
+    } finally {
+      try {
+        tableFilesIterable.close();
+      } catch (IOException e) {
+        LOG.warn("Failed to close the manifest reader.", e);
+      }
     }
-    return result;
   }
 
   @Override
@@ -468,9 +479,21 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
         .collect(Collectors.toList());
   }
 
-  private List<PartitionFileBaseInfo> collectFileInfo(
+  private CloseableIterable<PartitionFileBaseInfo> getTableFilesInternal(
+      AmoroTable<?> amoroTable, String partition, Integer specId) {
+    ArcticTable arcticTable = getTable(amoroTable);
+    if (arcticTable.isKeyedTable()) {
+      return CloseableIterable.concat(
+          Arrays.asList(
+              collectFileInfo(arcticTable.asKeyedTable().changeTable(), true, partition, specId),
+              collectFileInfo(arcticTable.asKeyedTable().baseTable(), false, partition, specId)));
+    } else {
+      return collectFileInfo(arcticTable.asUnkeyedTable(), false, partition, specId);
+    }
+  }
+
+  private CloseableIterable<PartitionFileBaseInfo> collectFileInfo(
       Table table, boolean isChangeTable, String partition, Integer specId) {
-    List<PartitionFileBaseInfo> result = new ArrayList<>();
     Map<Integer, PartitionSpec> specs = table.specs();
 
     IcebergFindFiles manifestReader =
@@ -483,40 +506,32 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
     CloseableIterable<IcebergFindFiles.IcebergManifestEntry> entries = manifestReader.entries();
 
-    try {
-      for (IcebergFindFiles.IcebergManifestEntry entry : entries) {
-        ContentFile<?> contentFile = entry.getFile();
-        long snapshotId = entry.getSnapshotId();
+    return CloseableIterable.transform(
+        entries,
+        entry -> {
+          ContentFile<?> contentFile = entry.getFile();
+          long snapshotId = entry.getSnapshotId();
 
-        PartitionSpec partitionSpec = specs.get(contentFile.specId());
-        String partitionPath = partitionSpec.partitionToPath(contentFile.partition());
-        long fileSize = contentFile.fileSizeInBytes();
-        DataFileType dataFileType =
-            isChangeTable
-                ? FileNameRules.parseFileTypeForChange(contentFile.path().toString())
-                : DataFileType.ofContentId(contentFile.content().id());
-        long commitTime = -1;
-        if (table.snapshot(snapshotId) != null) {
-          commitTime = table.snapshot(snapshotId).timestampMillis();
-        }
-        result.add(
-            new PartitionFileBaseInfo(
-                String.valueOf(snapshotId),
-                dataFileType,
-                commitTime,
-                partitionPath,
-                contentFile.specId(),
-                contentFile.path().toString(),
-                fileSize));
-      }
-      return result;
-    } finally {
-      try {
-        entries.close();
-      } catch (IOException e) {
-        LOG.warn(e.getMessage(), e);
-      }
-    }
+          PartitionSpec partitionSpec = specs.get(contentFile.specId());
+          String partitionPath = partitionSpec.partitionToPath(contentFile.partition());
+          long fileSize = contentFile.fileSizeInBytes();
+          DataFileType dataFileType =
+              isChangeTable
+                  ? FileNameRules.parseFileTypeForChange(contentFile.path().toString())
+                  : DataFileType.ofContentId(contentFile.content().id());
+          long commitTime = -1;
+          if (table.snapshot(snapshotId) != null) {
+            commitTime = table.snapshot(snapshotId).timestampMillis();
+          }
+          return new PartitionFileBaseInfo(
+              String.valueOf(snapshotId),
+              dataFileType,
+              commitTime,
+              partitionPath,
+              contentFile.specId(),
+              contentFile.path().toString(),
+              fileSize);
+        });
   }
 
   private TableBasicInfo getTableBasicInfo(ArcticTable table) {
