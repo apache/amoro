@@ -36,7 +36,7 @@ r
 </p>
 
 Amoro(former name was Arctic) is a Lakehouse management system built on open data lake formats.
-Working with computing engines including Flink, Spark, and Trino, Amoro brings pluggable and self-managed features for Lakehouse to provide out-of-the-box data warehouse experience,
+Working with compute engines including Flink, Spark, and Trino, Amoro brings pluggable and self-managed features for Lakehouse to provide out-of-the-box data warehouse experience,
 and helps data platforms or products easily build infra-decoupled, stream-and-batch-fused and lake-native architecture.
 
 ## Architecture
@@ -48,7 +48,7 @@ Here is the architecture diagram of Amoro:
 </p>
 
 * AMS: Amoro Management Service provides Lakehouse management features, like self-optimizing, data expiration, etc.
-  It also provides a unified catalog service for all computing engines, which can also be combined with existing metadata services.
+  It also provides a unified catalog service for all compute engines, which can also be combined with existing metadata services.
 * Plugins: Amoro provides a wide selection of external plugins to meet different scenarios.
     * Optimizers: The self-optimizing execution engine plugin asynchronously performs merging, sorting, deduplication,
       layout optimization, and other operations on all type table format tables.
@@ -87,7 +87,7 @@ Amoro support multiple processing engines for Mixed format as below:
 
 - Self-optimizing - Continuously optimizing tables, including compacting small files, change files, regularly delete expired files to keep high query performance and reducing storage costs.
 - Multiple Formats - Support different table formats such as Iceberg, Mixed-Iceberg and Mixed-Hive to meet different scenario requirements and provide them with unified management capabilities.
-- Catalog Service - Provide a unified catalog service for all computing engines, which can also used with existing metadata store service such as Hive Metastore and AWS Glue.
+- Catalog Service - Provide a unified catalog service for all compute engines, which can also used with existing metadata store service such as Hive Metastore and AWS Glue.
 - Rich Plugins - Provide various plugins to integrate with other systems, like continuously optimizing with Flink and data analysis with Spark and Kyuubi.
 - Management Tools - Provide a variety of management tools, including WEB UI and standard SQL command line, to help you get started faster and integrate with other systems more easily.
 - Infrastructure Independent - Can be easily deployed and used in private environments, cloud environments, hybrid cloud environments, and multi-cloud environments.

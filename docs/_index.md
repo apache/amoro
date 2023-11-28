@@ -5,7 +5,7 @@ weight: 0
 ---
 # Introduction
 
-Amoro is a Lakehouse management system built on open data lake formats. Working with computing engines including Flink, Spark, and Trino, Amoro brings pluggable and self-managed features for Lakehouse to provide out-of-the-box data warehouse experience, and helps data platforms or products easily build infra-decoupled, stream-and-batch-fused and lake-native architecture.
+Amoro is a Lakehouse management system built on open data lake formats. Working with compute engines including Flink, Spark, and Trino, Amoro brings pluggable and self-managed features for Lakehouse to provide out-of-the-box data warehouse experience, and helps data platforms or products easily build infra-decoupled, stream-and-batch-fused and lake-native architecture.
 
 ## Architecture
 
@@ -17,7 +17,7 @@ The architecture of Amoro is as follows:
 The core components of Amoro include:
 
 * AMS: Amoro Management Service provides Lakehouse management features, like self-optimizing, data expiration, etc.
-  It also provides a unified catalog service for all computing engines, which can also be combined with existing metadata services.
+  It also provides a unified catalog service for all compute engines, which can also be combined with existing metadata services.
 * Plugins: Amoro provides a wide selection of external plugins to meet different scenarios.
     * Optimizers: The self-optimizing execution engine plugin asynchronously performs merging, sorting, deduplication,
       layout optimization, and other operations on all type table format tables.
