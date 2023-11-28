@@ -235,7 +235,7 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   public long getCostTime() {
-    if (endTime != ArcticServiceConstants.INVALID_TIME) {
+    if (endTime == ArcticServiceConstants.INVALID_TIME) {
       long elapse = System.currentTimeMillis() - startTime;
       return Math.max(0, elapse) + costTime;
     }

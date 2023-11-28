@@ -33,7 +33,6 @@ import com.netease.arctic.table.ArcticTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
-import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.functions.FunctionContext;
 import org.apache.flink.util.FlinkRuntimeException;
@@ -179,10 +178,9 @@ public class BasicLookupFunction<T> implements Serializable {
         TimeUnit.MILLISECONDS);
   }
 
-  public List<T> lookup(Object... values) {
+  public List<T> lookup(RowData lookupKey) {
     checkErrorAndRethrow();
     try {
-      RowData lookupKey = GenericRowData.of(values);
       return kvTable.get(lookupKey);
     } catch (Exception e) {
       throw new FlinkRuntimeException(e);

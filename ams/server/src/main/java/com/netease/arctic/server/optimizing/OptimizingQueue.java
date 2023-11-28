@@ -117,8 +117,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       // TODO: load task quotas
       tableRuntime.resetTaskQuotas(
           System.currentTimeMillis() - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME);
-      if (tableRuntime.getOptimizingStatus() == OptimizingStatus.IDLE
-          || tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING) {
+      if (!tableRuntime.getOptimizingStatus().isProcessing()) {
         schedulingPolicy.addTable(tableRuntime);
       } else if (tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
         TableOptimizingProcess process = new TableOptimizingProcess(tableRuntimeMeta);
@@ -358,17 +357,16 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     List<TableIdentifier> plannedTables = Lists.newArrayList();
     for (TableRuntime tableRuntime : scheduledTables) {
       LOG.debug("Planning table {}", tableRuntime.getTableIdentifier());
+      AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
+      OptimizingPlanner planner =
+          new OptimizingPlanner(
+              tableRuntime.refresh(table), (ArcticTable) table.originalTable(), getAvailableCore());
+      if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
+        LOG.info("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
+        continue;
+      }
+      tableRuntime.beginPlanning();
       try {
-        AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
-        OptimizingPlanner planner =
-            new OptimizingPlanner(
-                tableRuntime.refresh(table),
-                (ArcticTable) table.originalTable(),
-                getAvailableCore());
-        if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
-          LOG.info("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
-          continue;
-        }
         plannedTables.add(table.id());
         if (planner.isNecessary()) {
           TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
@@ -382,6 +380,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           tableRuntime.cleanPendingInput();
         }
       } catch (Throwable e) {
+        tableRuntime.planFailed();
         LOG.error(tableRuntime.getTableIdentifier() + " plan failed, continue", e);
       }
     }
