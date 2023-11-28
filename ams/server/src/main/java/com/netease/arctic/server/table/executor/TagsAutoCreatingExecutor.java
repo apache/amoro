@@ -21,46 +21,43 @@ package com.netease.arctic.server.table.executor;
 import static com.netease.arctic.server.optimizing.maintainer.TableMaintainer.ofTable;
 
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.optimizing.maintainer.TableMaintainer;
-import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
-  private static final Logger LOG = LoggerFactory.getLogger(OrphanFilesCleaningExecutor.class);
+/** Service for automatically creating tags for table periodically. */
+public class TagsAutoCreatingExecutor extends BaseTableExecutor {
+  private static final Logger LOG = LoggerFactory.getLogger(TagsAutoCreatingExecutor.class);
 
-  private static final long INTERVAL = 24 * 60 * 60 * 1000L;
+  private final long interval;
 
-  public OrphanFilesCleaningExecutor(TableManager tableRuntimes, int poolSize) {
-    super(tableRuntimes, poolSize);
+  protected TagsAutoCreatingExecutor(TableManager tableManager, int poolSize, long interval) {
+    super(tableManager, poolSize);
+    this.interval = interval;
   }
 
   @Override
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return INTERVAL;
+    return interval;
   }
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
-    return tableRuntime.getTableConfiguration().isCleanOrphanEnabled();
+    return tableRuntime.getTableConfiguration().getTagConfiguration().isAutoCreateTag()
+        && tableRuntime.getFormat() == TableFormat.ICEBERG;
   }
 
   @Override
-  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
-    scheduleIfNecessary(tableRuntime, getStartDelay());
-  }
-
-  @Override
-  public void execute(TableRuntime tableRuntime) {
+  protected void execute(TableRuntime tableRuntime) {
     try {
-      LOG.info("{} start cleaning orphan files", tableRuntime.getTableIdentifier());
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
       TableMaintainer tableMaintainer = ofTable(amoroTable);
-      tableMaintainer.cleanOrphanFiles(tableRuntime);
+      tableMaintainer.autoCreateTags(tableRuntime);
     } catch (Throwable t) {
-      LOG.error("{} failed to clean orphan file", tableRuntime.getTableIdentifier(), t);
+      LOG.error("Failed to create tags on {}", tableRuntime.getTableIdentifier(), t);
     }
   }
 }
