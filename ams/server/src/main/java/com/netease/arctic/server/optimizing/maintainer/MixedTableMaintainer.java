@@ -120,6 +120,11 @@ public class MixedTableMaintainer implements TableMaintainer {
     baseMaintainer.expireSnapshots(tableRuntime);
   }
 
+  @Override
+  public void autoCreateTags(TableRuntime tableRuntime) {
+    throw new UnsupportedOperationException("Mixed table doesn't support auto create tags");
+  }
+
   protected void expireSnapshots(long mustOlderThan) {
     if (changeMaintainer != null) {
       changeMaintainer.expireSnapshots(mustOlderThan);
