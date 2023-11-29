@@ -64,7 +64,6 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   private Map<String, String> catalogProperties;
   private String name;
   private Pattern databaseFilterPattern;
-  private Pattern tableFilterPattern;
   private AmsClient client;
   private MixedTables tables;
   private SupportsNamespaces asNamespaceCatalog;
@@ -104,12 +103,6 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
       databaseFilterPattern = Pattern.compile(databaseFilter);
     }
     Catalog catalog = buildIcebergCatalog(name, properties, metaStore.getConfiguration());
-    String tableFilter = properties.get(CatalogMetaProperties.KEY_TABLE_FILTER);
-    if (tableFilter != null) {
-      this.tableFilterPattern = Pattern.compile(tableFilter);
-    } else {
-      this.tableFilterPattern = null;
-    }
     this.name = name;
     this.tableMetaStore = metaStore;
     this.icebergCatalog =
@@ -157,16 +150,7 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
   @Override
   public List<TableIdentifier> listTables(String database) {
     List<org.apache.iceberg.catalog.TableIdentifier> icebergTableList =
-        tableMetaStore.doAs(
-            () ->
-                icebergCatalog().listTables(Namespace.of(database)).stream()
-                    .filter(
-                        tableIdentifier ->
-                            tableFilterPattern == null
-                                || tableFilterPattern
-                                    .matcher((database + "." + tableIdentifier.name()))
-                                    .matches())
-                    .collect(Collectors.toList()));
+        tableMetaStore.doAs(() -> icebergCatalog().listTables(Namespace.of(database)));
     List<TableIdentifier> mixedTables = Lists.newArrayList();
     Set<org.apache.iceberg.catalog.TableIdentifier> visited = Sets.newHashSet();
     for (org.apache.iceberg.catalog.TableIdentifier identifier : icebergTableList) {
