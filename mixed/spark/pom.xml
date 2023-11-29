@@ -20,22 +20,24 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>com.netease.amoro</groupId>
-        <artifactId>amoro-ams</artifactId>
+        <artifactId>amoro-mixed</artifactId>
         <version>0.7.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>amoro-optimizer</artifactId>
+    <artifactId>amoro-mixed-spark</artifactId>
     <packaging>pom</packaging>
-    <name>Amoro Project AMS Optimizer Parent</name>
+    <name>Amoro Project Mixed Format Spark Parent</name>
     <url>https://amoro.netease.com</url>
 
     <modules>
-        <module>flink-optimizer</module>
-        <module>standalone-optimizer</module>
         <module>common</module>
+        <module>v3.1/spark</module>
+        <module>v3.1/spark-runtime</module>
+        <module>v3.2/spark</module>
+        <module>v3.2/spark-runtime</module>
+        <module>v3.3/spark</module>
+        <module>v3.3/spark-runtime</module>
     </modules>
-
 </project>

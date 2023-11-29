@@ -34,9 +34,10 @@
 
     <modules>
         <module>api</module>
-        <module>optimizer</module>
         <module>server</module>
         <module>dashboard</module>
+        <module>optimizer</module>
+        <module>dist</module>
     </modules>
 
 </project>

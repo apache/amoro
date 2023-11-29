@@ -16,57 +16,40 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
     <parent>
-        <artifactId>amoro-optimizer</artifactId>
         <groupId>com.netease.amoro</groupId>
+        <artifactId>amoro-mixed</artifactId>
         <version>0.7.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>optimizer-common</artifactId>
-    <name>Amoro Project AMS Optimizer Common</name>
+    <artifactId>amoro-mixed-flink</artifactId>
+    <packaging>pom</packaging>
+    <name>Amoro Project Mixed Format Flink Parent</name>
     <url>https://amoro.netease.com</url>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
-        </dependency>
+    <modules>
+        <module>flink-common</module>
+        <module>flink-common-format</module>
+        <module>flink-common-iceberg-bridge</module>
+        <module>v1.15/flink</module>
+        <module>v1.15/flink-runtime</module>
+        <module>v1.16/flink</module>
+        <module>v1.16/flink-runtime</module>
+        <module>v1.17/flink</module>
+        <module>v1.17/flink-runtime</module>
+    </modules>
 
-        <dependency>
-            <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-mixed-hive</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>args4j</groupId>
-            <artifactId>args4j</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-core</artifactId>
-            <version>${project.version}</version>
-            <classifier>tests</classifier>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-ams-api</artifactId>
-            <version>${project.version}</version>
-            <classifier>tests</classifier>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+    <properties>
+        <!--    default flink version    -->
+        <flink.version>1.17.1</flink.version>
+        <kafka.version>2.4.1</kafka.version>
+        <gson.version>2.9.0</gson.version>
+        <jackson.vesion>2.10.2</jackson.vesion>
+    </properties>
 </project>
