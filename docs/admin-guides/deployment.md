@@ -2,11 +2,11 @@
 title: "Deployment"
 url: deployment
 aliases:
-- "admin-guides/deployment"
+    - "admin-guides/deployment"
 menu:
-main:
-parent: Admin Guides
-weight: 100
+    main:
+        parent: Admin Guides
+        weight: 100
 ---
 # Deployment
 
