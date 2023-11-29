@@ -144,7 +144,7 @@ public class HiveTableUtil {
    * @param tableIdentifier A table identifier
    * @return If table is existed in hive
    */
-  public boolean checkExist(HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
+  public static boolean checkExist(HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
     String database = tableIdentifier.getDatabase();
     String name = tableIdentifier.getTableName();
     try {

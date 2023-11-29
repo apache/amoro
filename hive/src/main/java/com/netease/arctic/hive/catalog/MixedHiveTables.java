@@ -140,7 +140,7 @@ public class MixedHiveTables extends MixedTables {
     fillTableProperties(tableMeta);
     String hiveLocation =
         tableMeta.getProperties().get(HiveTableProperties.BASE_HIVE_LOCATION_ROOT);
-    // default 1 day
+    // Default 1 day
     if (!tableMeta.properties.containsKey(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL)) {
       tableMeta.putToProperties(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000");
     }
@@ -264,7 +264,7 @@ public class MixedHiveTables extends MixedTables {
               try {
                 Table createTable =
                     tables.create(schema, partitionSpec, tableMeta.getProperties(), baseLocation);
-                // set name mapping using true schema
+                // Set name mapping using true schema
                 createTable
                     .updateProperties()
                     .set(
@@ -331,8 +331,13 @@ public class MixedHiveTables extends MixedTables {
   @Override
   public void dropTableByMeta(TableMeta tableMeta, boolean purge) {
     super.dropTableByMeta(tableMeta, purge);
-    // drop hive table operation will only delete hive table metadata
-    // delete data files operation will use BasicArcticCatalog
+    if (!HiveTableUtil.checkExist(
+        hiveClientPool, TableIdentifier.of(tableMeta.getTableIdentifier()))) {
+      // If hive table does not exist, we will not try to drop hive table
+      return;
+    }
+    // Drop hive table operation will only delete hive table metadata
+    // Delete data files operation will use BasicArcticCatalog
     if (purge) {
       try {
         hiveClientPool.run(
@@ -348,7 +353,7 @@ public class MixedHiveTables extends MixedTables {
         throw new RuntimeException("Failed to drop table:" + tableMeta.getTableIdentifier(), e);
       }
     } else {
-      // if purge is not true, we will not drop the hive table and need to remove the arctic table
+      // If purge is not true, we will not drop the hive table and need to remove the arctic table
       // flag
       try {
         hiveClientPool.run(
@@ -412,7 +417,7 @@ public class MixedHiveTables extends MixedTables {
 
     newTable
         .getParameters()
-        .put("EXTERNAL", "TRUE"); // using the external table type also requires this
+        .put("EXTERNAL", "TRUE"); // Using the external table type also requires this
     return newTable;
   }
 
