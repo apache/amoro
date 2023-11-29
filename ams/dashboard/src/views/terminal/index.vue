@@ -45,7 +45,7 @@
               />
             </div>
             <div v-if="runStatus" class="run-status" :style="{background: bgcMap[runStatus]}">
-              <template v-if="runStatus === 'Running'">
+              <template v-if="runStatus === 'Running' || runStatus === 'Canceling'">
                 <loading-outlined style="color: #1890ff" />
               </template>
               <template v-if="runStatus === 'Canceled' || runStatus === 'Failed'">
@@ -63,7 +63,7 @@
         </div>
         <div class="sql-shortcuts">
           <div class="shortcuts">{{$t('sqlShortcuts')}}</div>
-          <a-button v-for="code in shortcuts" :key="code" type="link" :disabled="runStatus === 'Running'" @click="generateCode(code)" class="code">{{ code }}</a-button>
+          <a-button v-for="code in shortcuts" :key="code" type="link" :disabled="runStatus === 'Running' || runStatus === 'Canceling'" @click="generateCode(code)" class="code">{{ code }}</a-button>
         </div>
       </div>
       <!-- sql result -->
@@ -105,7 +105,7 @@ import { getCatalogList } from '@/services/table.service'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 
 interface ISessionInfo {
-  sessionId: number
+  sessionId: string
   sqlNumber: number
 }
 
@@ -133,7 +133,7 @@ export default defineComponent({
     const sqlSource = ref<string>('')
     const showDebug = ref<boolean>(false)
     const runStatus = ref<string>('')
-    const sessionId = ref<number>()
+    const sessionId = ref<string>()
     const fullscreen = ref<boolean>(false) // sql fullscreen
     const resultFullscreen = ref<boolean>(false) // result fullscreen
     const operationActive = ref<string>('log')
@@ -218,7 +218,7 @@ export default defineComponent({
           catalog: curCatalog.value,
           sql: sqlSource.value
         })
-        sessionId.value = res.sessionId || 0
+        sessionId.value = res.sessionId || '0'
         getLogResult()
       } catch (error) {
         runStatus.value = 'Failed'
@@ -228,19 +228,26 @@ export default defineComponent({
 
     const stopDebug = async() => {
       if (sessionId.value) {
-        try {
+        operationActive.value = 'log'
+        logInterval.value && clearTimeout(logInterval.value)
+        showDebug.value = false
+        runStatus.value = 'Canceling'
+        resetResult()
+        readOnly.value = true
+        await stopSql(sessionId.value).then(() => {
           runStatus.value = 'Canceled'
-          await stopSql(sessionId.value)
-        } catch (error) {
+        }).catch(() => {
           runStatus.value = 'Failed'
-        }
+        }).finally (() => {
+          readOnly.value = false
+        })
       }
     }
 
     const getDebugResult = async() => {
       try {
         resultTabList.length = 0
-        const res: IDebugResult[] = await getJobDebugResult(sessionId.value || 0)
+        const res: IDebugResult[] = await getJobDebugResult(sessionId.value || '0')
         if (res && res.length) {
           resultTabList.push(...res)
         }
@@ -260,13 +267,18 @@ export default defineComponent({
         if (logs?.length) {
           sqlLogRef.value.initData(logs.join('\n'))
         }
-        runStatus.value = logStatus
+        if (runStatus.value as string !== 'Canceled') {
+          runStatus.value = logStatus
+        }
         await getDebugResult()
         if (logStatus === 'Finished' || logStatus === 'Canceled') {
           if (resultTabList.length) {
             operationActive.value = resultTabList[0].id
           }
         } else {
+          if (runStatus.value === 'Canceled') {
+            return
+          }
           logInterval.value = setTimeout(() => {
             getLogResult()
           }, 1500)
@@ -306,7 +318,7 @@ export default defineComponent({
         loading.value = true
         const res = await getLastDebugInfo()
         sessionId.value = res.sessionId
-        if (res.sessionId > 0) {
+        if (res.sessionId > '0') {
           if (sqlEditorRef.value && !sqlSource.value) {
             sqlSource.value = res.sql || ''
           }
