@@ -186,8 +186,8 @@ public class ArcticServiceContainer {
   }
 
   private void startThriftService() {
-    startThriftServer(tableManagementServer, "Thrift-table-management-server-thread");
-    startThriftServer(optimizingServiceServer, "Thrift-optimizing-server-thread");
+    startThriftServer(tableManagementServer, "thrift-table-management-server-thread");
+    startThriftServer(optimizingServiceServer, "thrift-optimizing-server-thread");
   }
 
   private void startThriftServer(TServer server, String threadName) {
@@ -357,7 +357,7 @@ public class ArcticServiceContainer {
   private ThreadFactory getThriftThreadFactory(String processorName) {
     return new ThreadFactoryBuilder()
         .setDaemon(false)
-        .setNameFormat("thrift-server-" + processorName + "-%d")
+        .setNameFormat("thrift-server-" + StringUtils.lowerCase(processorName) + "-%d")
         .build();
   }
 

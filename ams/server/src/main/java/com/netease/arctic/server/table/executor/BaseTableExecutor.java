@@ -25,6 +25,7 @@ import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +51,7 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
             poolSize,
             new ThreadFactoryBuilder()
                 .setDaemon(false)
-                .setNameFormat("ASYNC-" + getThreadName() + "-%d")
+                .setNameFormat("async-" + StringUtils.lowerCase(getThreadName()) + "-%d")
                 .build());
   }
 
