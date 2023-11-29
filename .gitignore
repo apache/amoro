@@ -28,8 +28,6 @@ venv/
 *.egg-info/
 test-reports
 build/
-dist/
-sdist/
 .coverage
 coverage.xml
 .pytest_cache/
@@ -62,8 +60,12 @@ target/
 # local config
 conf/
 
+
 # test resources
 *unit_test_base_tmp/
 
 */.gitignore
 *.tgz
+
+!ams/dist/src/main/arctic-bin/bin/
+!ams/dist/src/main/arctic-bin/conf/
