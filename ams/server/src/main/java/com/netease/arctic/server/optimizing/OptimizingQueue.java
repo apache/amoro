@@ -468,6 +468,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         toSequence = planner.getToSequence();
         loadTaskRuntimes(planner.planTasks());
         updateProcess();
+      } else {
+        LOG.info(
+            "TableOptimizingProcess: processId = {} has been closed, ignore this planner.",
+            processId);
       }
     }
 
