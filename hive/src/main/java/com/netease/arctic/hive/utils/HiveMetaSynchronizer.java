@@ -81,7 +81,7 @@ public class HiveMetaSynchronizer {
   public static void syncHiveSchemaToArctic(ArcticTable table, HMSClientPool hiveClient) {
     try {
       if (!HiveTableUtil.checkExist(hiveClient, table.id())) {
-        LOG.warn("hive table {} not exist, try to skip sync schema to amoro", table.id());
+        LOG.warn("Hive table {} does not exist, try to skip sync schema to amoro", table.id());
         return;
       }
       Table hiveTable =
@@ -179,7 +179,7 @@ public class HiveMetaSynchronizer {
   public static void syncHiveDataToArctic(
       SupportHive table, HMSClientPool hiveClient, boolean force) {
     if (!HiveTableUtil.checkExist(hiveClient, table.id())) {
-      LOG.warn("hive table {} not exist, try to skip sync schema to amoro", table.id());
+      LOG.warn("Hive table {} does not exist, try to skip sync data to amoro", table.id());
       return;
     }
     UnkeyedTable baseStore;
