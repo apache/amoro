@@ -200,7 +200,7 @@ public class MixedTableMaintainer implements TableMaintainer {
     return arcticTable.isKeyedTable()
         ? keyedExpiredFileScan(expirationConfig, dataFilter, expireTimestamp)
         : Pair.of(
-            null,
+            new IcebergTableMaintainer.ExpireFiles(),
             getBaseMaintainer().expiredFileScan(expirationConfig, dataFilter, expireTimestamp));
   }
 
@@ -260,19 +260,8 @@ public class MixedTableMaintainer implements TableMaintainer {
       IcebergTableMaintainer.ExpireFiles baseFiles,
       long expireTimestamp) {
     Optional.ofNullable(changeMaintainer)
-        .ifPresent(
-            c ->
-                c.expireFiles(
-                    IcebergTableUtil.getSnapshotId(changeMaintainer.getTable(), false),
-                    changeFiles,
-                    expireTimestamp));
-    Optional.ofNullable(baseMaintainer)
-        .ifPresent(
-            c ->
-                c.expireFiles(
-                    IcebergTableUtil.getSnapshotId(baseMaintainer.getTable(), false),
-                    baseFiles,
-                    expireTimestamp));
+        .ifPresent(c -> c.expireFiles(changeFiles, expireTimestamp));
+    Optional.ofNullable(baseMaintainer).ifPresent(c -> c.expireFiles(baseFiles, expireTimestamp));
   }
 
   @Override

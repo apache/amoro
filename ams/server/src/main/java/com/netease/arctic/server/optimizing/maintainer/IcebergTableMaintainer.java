@@ -237,7 +237,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     Expression dataFilter = getDataExpression(table.schema(), expirationConfig, expireTimestamp);
 
     ExpireFiles expiredFiles = expiredFileScan(expirationConfig, dataFilter, expireTimestamp);
-    expireFiles(IcebergTableUtil.getSnapshotId(table, false), expiredFiles, expireTimestamp);
+    expireFiles(expiredFiles, expireTimestamp);
   }
 
   @Override
@@ -656,7 +656,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
     }
   }
 
-  void expireFiles(long snapshotId, ExpireFiles expiredFiles, long expireTimestamp) {
+  void expireFiles(ExpireFiles expiredFiles, long expireTimestamp) {
+    long snapshotId = IcebergTableUtil.getSnapshotId(table, false);
     Queue<DataFile> dataFiles = expiredFiles.dataFiles;
     Queue<DeleteFile> deleteFiles = expiredFiles.deleteFiles;
     if (dataFiles.isEmpty() && deleteFiles.isEmpty()) {
