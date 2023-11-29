@@ -349,7 +349,7 @@ public interface TableMetaMapper {
           + ".current_change_snapshotId, a.last_optimized_snapshotId, a.last_optimized_change_snapshotId,"
           + " a.last_major_optimizing_time, a.last_minor_optimizing_time, a.last_full_optimizing_time, a.optimizing_status,"
           + " a.optimizing_status_start_time, a.optimizing_process_id,"
-          + " a.optimizer_group, a.table_config, a.pending_input, b.optimizing_type, b.target_snapshot_id,"
+          + " a.optimizer_group, a.table_config, a.pending_input, b.optimizing_type, b.status, b.target_snapshot_id,"
           + " b.target_change_snapshot_id, b.plan_time, b.from_sequence, b.to_sequence FROM table_runtime a"
           + " INNER JOIN table_identifier i ON a.table_id = i.table_id "
           + " LEFT JOIN table_optimizing_process b ON a.optimizing_process_id = b.process_id")
@@ -393,6 +393,7 @@ public interface TableMetaMapper {
         column = "pending_input",
         typeHandler = JsonObjectConverter.class),
     @Result(property = "optimizingType", column = "optimizing_type"),
+    @Result(property = "processStatus", column = "status"),
     @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
     @Result(property = "targetChangeSnapshotId", column = "target_change_napshot_id"),
     @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),

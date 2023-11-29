@@ -118,6 +118,11 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       tableRuntime.resetTaskQuotas(
           System.currentTimeMillis() - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME);
       if (!tableRuntime.getOptimizingStatus().isProcessing()) {
+        if (tableRuntimeMeta.getProcessStatus() == OptimizingProcess.Status.PLANNING) {
+          TableOptimizingProcess tableOptimizingProcess =
+              new TableOptimizingProcess(tableRuntimeMeta);
+          tableOptimizingProcess.close();
+        }
         schedulingPolicy.addTable(tableRuntime);
       } else if (tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
         TableOptimizingProcess process = new TableOptimizingProcess(tableRuntimeMeta);
@@ -418,7 +423,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     private final long targetChangeSnapshotId;
     private final Map<OptimizingTaskId, TaskRuntime> taskMap = Maps.newHashMap();
     private final Lock lock = new ReentrantLock();
-    private volatile Status status = OptimizingProcess.Status.RUNNING;
+    private volatile Status status = OptimizingProcess.Status.PLANNING;
     private volatile String failedReason;
     private long endTime = ArcticServiceConstants.INVALID_TIME;
 
@@ -439,7 +444,9 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     public TableOptimizingProcess(TableRuntimeMeta tableRuntimeMeta) {
       processId = tableRuntimeMeta.getOptimizingProcessId();
       tableRuntime = tableRuntimeMeta.getTableRuntime();
-      optimizingType = tableRuntimeMeta.getOptimizingType();
+      if (tableRuntimeMeta.getOptimizingType() != null) {
+        optimizingType = tableRuntimeMeta.getOptimizingType();
+      }
       targetSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
       targetChangeSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
       planTime = tableRuntimeMeta.getPlanTime();
@@ -449,16 +456,19 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       if (tableRuntimeMeta.getToSequence() != null) {
         toSequence = tableRuntimeMeta.getToSequence();
       }
-      loadTaskRuntimes();
-      tableRuntimeMeta.getTableRuntime().recover(this);
+      if (tableRuntimeMeta.getProcessStatus() == OptimizingProcess.Status.RUNNING) {
+        loadTaskRuntimes();
+      }
     }
 
     public void updateTableOptimizingProcess(OptimizingPlanner planner) {
-      optimizingType = planner.getOptimizingType();
-      fromSequence = planner.getFromSequence();
-      toSequence = planner.getToSequence();
-      loadTaskRuntimes(planner.planTasks());
-      updateProcess();
+      if (!isClosed()) {
+        optimizingType = planner.getOptimizingType();
+        fromSequence = planner.getFromSequence();
+        toSequence = planner.getToSequence();
+        loadTaskRuntimes(planner.planTasks());
+        updateProcess();
+      }
     }
 
     @Override
@@ -682,6 +692,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     }
 
     private void updateProcess() {
+      this.status = OptimizingProcess.Status.RUNNING;
       doAsTransaction(
           () ->
               doAs(
@@ -690,6 +701,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
                       mapper.updateOptimizingProcessPlanned(
                           tableRuntime.getTableIdentifier().getId(),
                           processId,
+                          status,
                           optimizingType,
                           getSummary(),
                           fromSequence,

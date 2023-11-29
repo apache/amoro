@@ -49,6 +49,7 @@ public interface OptimizingMapper {
 
   @Update(
       "Update table_optimizing_process SET optimizing_type = #{optimizingType},"
+          + " status = #{status},"
           + " summary = #{summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter},"
           + " from_sequence = #{fromSequence, typeHandler=com.netease.arctic.server.persistence.converter.MapLong2StringConverter},"
           + " to_sequence = #{toSequence, typeHandler=com.netease.arctic.server.persistence.converter.MapLong2StringConverter}"
@@ -56,6 +57,7 @@ public interface OptimizingMapper {
   void updateOptimizingProcessPlanned(
       @Param("tableId") long tableId,
       @Param("processId") long processId,
+      @Param("status") OptimizingProcess.Status status,
       @Param("optimizingType") OptimizingType optimizingType,
       @Param("summary") MetricsSummary summary,
       @Param("fromSequence") Map<String, Long> fromSequence,

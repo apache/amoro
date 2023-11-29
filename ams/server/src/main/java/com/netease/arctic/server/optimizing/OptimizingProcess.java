@@ -29,6 +29,7 @@ public interface OptimizingProcess {
   MetricsSummary getSummary();
 
   enum Status {
+    PLANNING,
     RUNNING,
     CLOSED,
     SUCCESS,

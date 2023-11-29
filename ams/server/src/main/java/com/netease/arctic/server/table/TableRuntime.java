@@ -184,9 +184,14 @@ public class TableRuntime extends StatedPersistentBase {
   public void updateProcess(OptimizingProcess optimizingProcess) {
     invokeConsisitency(
         () -> {
+          Preconditions.checkArgument(
+              this.processId == optimizingProcess.getProcessId(),
+              "Process id not matched when updating OptimizingProcess after planning,"
+                  + " current process id is %s, new process id is %s",
+              this.processId,
+              optimizingProcess.getProcessId());
           OptimizingStatus originalStatus = optimizingStatus;
           this.optimizingProcess = optimizingProcess;
-          this.processId = optimizingProcess.getProcessId();
           updateOptimizingStatus(optimizingProcess.getOptimizingType().getStatus());
           this.pendingInput = null;
           persistUpdatingRuntime();
