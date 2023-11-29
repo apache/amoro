@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink.write;
 
+import static com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_EMIT_FILE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_EMIT_MODE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_THROUGHPUT_METRIC_ENABLE;
@@ -186,9 +187,11 @@ public class FlinkSink {
       Configuration config = new Configuration();
       table.properties().forEach(config::setString);
 
-      RowType flinkSchemaRowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
+      RowType flinkSchemaRowType =
+          (RowType) getPhysicalSchema(flinkSchema).toRowDataType().getLogicalType();
       Schema writeSchema =
-          TypeUtil.reassignIds(FlinkSchemaUtil.convert(flinkSchema), table.schema());
+          TypeUtil.reassignIds(
+              FlinkSchemaUtil.convert(getPhysicalSchema(flinkSchema)), table.schema());
 
       int writeOperatorParallelism =
           PropertyUtil.propertyAsInt(

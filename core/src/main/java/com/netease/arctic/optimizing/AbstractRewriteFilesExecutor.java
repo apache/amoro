@@ -35,22 +35,24 @@ import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.MetricsModes;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.deletes.PositionDelete;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.CloseableIterator;
-import org.apache.iceberg.io.DataWriteResult;
 import org.apache.iceberg.io.DeleteWriteResult;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.FileWriter;
+import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -86,7 +88,7 @@ public abstract class AbstractRewriteFilesExecutor
 
   protected abstract FileWriter<PositionDelete<Record>, DeleteWriteResult> posWriter();
 
-  protected abstract FileWriter<Record, DataWriteResult> dataWriter();
+  protected abstract TaskWriter<Record> dataWriter();
 
   @Override
   public RewriteFilesOutput execute() {
@@ -141,7 +143,7 @@ public abstract class AbstractRewriteFilesExecutor
 
   private List<DataFile> rewriterDataFiles() throws Exception {
     List<DataFile> result = Lists.newArrayList();
-    FileWriter<Record, DataWriteResult> writer = dataWriter();
+    TaskWriter<Record> writer = dataWriter();
 
     try (CloseableIterator<Record> records = dataReader.readData().iterator()) {
       while (records.hasNext()) {
@@ -152,7 +154,7 @@ public abstract class AbstractRewriteFilesExecutor
       writer.close();
     }
 
-    result.addAll(writer.result().dataFiles());
+    result.addAll(Arrays.asList(writer.dataFiles()));
 
     return result;
   }
@@ -169,9 +171,8 @@ public abstract class AbstractRewriteFilesExecutor
     return FileFormat.valueOf(deleteFileFormatName.toUpperCase());
   }
 
-  protected FileAppenderFactory<Record> fullMetricAppenderFactory() {
-    GenericAppenderFactory appenderFactory =
-        new GenericAppenderFactory(table.schema(), table.spec());
+  protected FileAppenderFactory<Record> fullMetricAppenderFactory(PartitionSpec spec) {
+    GenericAppenderFactory appenderFactory = new GenericAppenderFactory(table.schema(), spec);
     appenderFactory.setAll(table.properties());
     appenderFactory.set(
         org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX

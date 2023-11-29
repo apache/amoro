@@ -60,6 +60,6 @@ AMS will focus on two goals to enhance the value of the metadata center in the f
 - Expand data sources: In addition to data lakes, message queues, databases, and data warehouses can all be managed as objects in the catalog.
 Through metadata center and SQL-based federated computing of the computing engine, AMS will provide infrastructure solutions for data platforms
 such as DataOps and DataFabric
-- Automatic catalog detection: In computing engines like Spark and Flink, it is possible to automatically detect the creation and changes of a
+- Automatic catalog detection: In compute engines like Spark and Flink, it is possible to automatically detect the creation and changes of a
 catalog, enabling a one-time configuration for permanent scalability.
   

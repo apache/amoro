@@ -24,7 +24,6 @@ import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingType;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -44,12 +43,10 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   protected final TableRuntime tableRuntime;
   private CommonPartitionEvaluator evaluator;
   private TaskSplitter taskSplitter;
-
   protected ArcticTable tableObject;
   private Long fromSequence = null;
   private Long toSequence = null;
   protected final long planTime;
-  protected final Map<String, String> partitionProperties;
 
   protected final Map<DataFile, List<ContentFile<?>>> rewriteDataFiles = Maps.newHashMap();
   protected final Map<DataFile, List<ContentFile<?>>> rewritePosDataFiles = Maps.newHashMap();
@@ -64,7 +61,6 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     this.config = tableRuntime.getOptimizingConfig();
     this.tableRuntime = tableRuntime;
     this.planTime = planTime;
-    this.partitionProperties = TablePropertyUtil.getPartitionProperties(table, partition);
   }
 
   @Override
@@ -80,7 +76,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   }
 
   protected CommonPartitionEvaluator buildEvaluator() {
-    return new CommonPartitionEvaluator(tableRuntime, partition, partitionProperties, planTime);
+    return new CommonPartitionEvaluator(tableRuntime, partition, planTime);
   }
 
   @Override

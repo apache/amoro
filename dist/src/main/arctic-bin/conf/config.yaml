@@ -25,7 +25,7 @@ ams:
   refresh-tables:
     thread-count: 10
     interval: 60000 # 1min
-    
+
   self-optimizing:
     commit-thread-count: 10
 
@@ -54,18 +54,23 @@ ams:
     thread-count: 10
     interval: 1d
 
+  auto-create-tags:
+    enabled: true
+    thread-count: 3
+    interval: 60000 # 1min
+
   database:
     type: derby
     jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
     url: jdbc:derby:/tmp/amoro/derby;create=true
 
-#    MySQL database configuration.
-#    database:
-#      type: mysql
-#      jdbc-driver-class: com.mysql.cj.jdbc.Driver
-#      url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
-#      username: root
-#      password: root
+  #    MySQL database configuration.
+  #    database:
+  #      type: mysql
+  #      jdbc-driver-class: com.mysql.cj.jdbc.Driver
+  #      url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
+  #      username: root
+  #      password: root
 
   #  Postgres database configuration.
   #  database:
