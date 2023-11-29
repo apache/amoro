@@ -26,6 +26,7 @@ import com.netease.arctic.optimizing.OptimizingInputProperties;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
@@ -42,9 +43,12 @@ import java.util.function.Predicate;
 
 public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
 
+  protected final Map<String, String> partitionProperties;
+
   public MixedIcebergPartitionPlan(
       TableRuntime tableRuntime, ArcticTable table, String partition, long planTime) {
     super(tableRuntime, table, partition, planTime);
+    this.partitionProperties = TablePropertyUtil.getPartitionProperties(table, partition);
   }
 
   @Override
@@ -105,7 +109,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
         Map<String, String> partitionProperties,
         long planTime,
         boolean keyedTable) {
-      super(tableRuntime, partition, partitionProperties, planTime);
+      super(tableRuntime, partition, planTime);
       this.keyedTable = keyedTable;
       String optimizedTime = partitionProperties.get(TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
       long lastBaseOptimizedTime = optimizedTime == null ? 0 : Long.parseLong(optimizedTime);

@@ -31,7 +31,7 @@ public class OptimizingInputProperties {
 
   public static final String MAX_IN_MEMORY_SIZE_IN_BYTES = "max_size_in_memory";
 
-  public static final String SPILL_MAP_PATH = "sill_map_path";
+  public static final String SPILL_MAP_PATH = "spill_map_path";
 
   public static final String OUTPUT_DIR = "output_location";
 
