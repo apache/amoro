@@ -21,30 +21,36 @@ public class SchedulingPolicy {
   private static final String QUOTA = "quota";
   private static final String BALANCED = "balanced";
 
+  private final String name;
+
   private final Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap = new HashMap<>();
   private Comparator<TableRuntime> tableSorter;
   private final Lock tableLock = new ReentrantLock();
 
   public SchedulingPolicy(ResourceGroup group) {
+    this.name =
+        Optional.ofNullable(group.getProperties())
+            .orElseGet(Maps::newHashMap)
+            .getOrDefault(SCHEDULING_POLICY_PROPERTY_NAME, QUOTA);
     setTableSorterIfNeeded(group);
   }
 
   public void setTableSorterIfNeeded(ResourceGroup optimizerGroup) {
-    String schedulingPolicy =
-        Optional.ofNullable(optimizerGroup.getProperties())
-            .orElseGet(Maps::newHashMap)
-            .getOrDefault(SCHEDULING_POLICY_PROPERTY_NAME, QUOTA);
-    if (schedulingPolicy.equalsIgnoreCase(QUOTA)) {
+    if (this.name.equalsIgnoreCase(QUOTA)) {
       if (tableSorter == null || !(tableSorter instanceof QuotaOccupySorter)) {
         tableSorter = new QuotaOccupySorter();
       }
-    } else if (schedulingPolicy.equalsIgnoreCase(BALANCED)) {
+    } else if (this.name.equalsIgnoreCase(BALANCED)) {
       if (tableSorter == null || !(tableSorter instanceof BalancedSorter)) {
         tableSorter = new BalancedSorter();
       }
     } else {
-      throw new IllegalArgumentException("Illegal scheduling policy: " + schedulingPolicy);
+      throw new IllegalArgumentException("Illegal scheduling policy: " + this.name);
     }
+  }
+
+  public String name() {
+    return name;
   }
 
   public List<TableRuntime> scheduleTables() {
