@@ -215,10 +215,10 @@ function build_amoro() {
   local IMAGE_TAG=$AMORO_TAG
   print_image $IMAGE_REF $IMAGE_TAG
 
-  local DIST_FILE=${PROJECT_HOME}/dist/target/amoro-${AMORO_VERSION}-bin.zip
+  local DIST_FILE=${PROJECT_HOME}/ams/dist/target/amoro-${AMORO_VERSION}-bin.zip
 
   if [ ! -f "${DIST_FILE}" ]; then
-    local BUILD_CMD="mvn clean package -am -e -pl dist -DskipTests "
+    local BUILD_CMD="mvn clean package -am -e -pl ams/dist -DskipTests "
     echo "Amoro dist package is not exists in ${DIST_FILE}"
     echo "please check file or run '$BUILD_CMD' first"
   fi
@@ -234,10 +234,10 @@ function build_quickdemo() {
     local IMAGE_REF=arctic163/quickdemo
     local IMAGE_TAG=$AMORO_TAG
 
-    local FLINK_CONNECTOR_BINARY=${PROJECT_HOME}/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
+    local FLINK_CONNECTOR_BINARY=${PROJECT_HOME}/mixed/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-mixed-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
 
     if [ ! -f "${FLINK_CONNECTOR_BINARY}" ]; then
-        echo "amoro-flink-connector not exists in ${FLINK_CONNECTOR_BINARY}, run 'mvn clean package -pl !trino' first. "
+        echo "amoro-mixed-flink-connector not exists in ${FLINK_CONNECTOR_BINARY}, run 'mvn clean package -pl !mixed/trino' first. "
         exit  1
     fi
 
@@ -245,7 +245,7 @@ function build_quickdemo() {
         echo "Build dependency Amoro image."
         build_amoro
         if [ "$?" -ne 0 ]; then
-          echo "Build required Amor image failed."
+          echo "Build required Amoro image failed."
           exit 1
         fi
     fi
