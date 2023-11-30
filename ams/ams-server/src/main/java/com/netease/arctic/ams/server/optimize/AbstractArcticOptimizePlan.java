@@ -184,7 +184,7 @@ public abstract class AbstractArcticOptimizePlan extends AbstractOptimizePlan {
       properties.put(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY, customHiveSubdirectory);
       if (insertFiles.isEmpty() && deleteFiles.isEmpty() && posDeleteFiles.isEmpty() &&
           allLargeFiles(baseFiles)) {
-        properties.put(OptimizeTaskProperties.ENABLE_COPY_FILES, true + "");
+        properties.put(OptimizeTaskProperties.COPY_FILES_TO_NEW_LOCATION, true + "");
       }
     }
     if (taskConfig.isMoveFilesToHiveLocation()) {

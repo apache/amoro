@@ -4,7 +4,7 @@ public class OptimizeTaskProperties {
   // optimize task properties
   public static final String ALL_FILE_COUNT = "all-file-cnt";
   public static final String CUSTOM_HIVE_SUB_DIRECTORY = "custom-hive-sub-directory";
-  public static final String ENABLE_COPY_FILES= "copy-files-enabled";
+  public static final String COPY_FILES_TO_NEW_LOCATION = "copy-files-to-new-location";
   public static final String MAX_EXECUTE_TIME = "max-execute-time";
   public static final String MOVE_FILES_TO_HIVE_LOCATION = "move-files-to-hive-location";
 }

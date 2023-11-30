@@ -234,7 +234,7 @@ public class BaseTaskExecutor implements Serializable {
       String customHiveSubdirectory = properties.get(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY);
       nodeTask.setCustomHiveSubdirectory(customHiveSubdirectory);
       nodeTask.setCopyFiles(
-          PropertyUtil.propertyAsBoolean(properties, OptimizeTaskProperties.ENABLE_COPY_FILES, false));
+          PropertyUtil.propertyAsBoolean(properties, OptimizeTaskProperties.COPY_FILES_TO_NEW_LOCATION, false));
 
       Long maxExecuteTime = PropertyUtil.propertyAsLong(properties,
           OptimizeTaskProperties.MAX_EXECUTE_TIME, TableProperties.SELF_OPTIMIZING_EXECUTE_TIMEOUT_DEFAULT);
