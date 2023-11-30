@@ -312,7 +312,7 @@ public class HMSMockServer {
             executorQueue,
             r -> {
               Thread thread = new Thread(r);
-              String threadName = "HMS-pool-" + threadCount.incrementAndGet();
+              String threadName = "hms-pool-" + threadCount.incrementAndGet();
               thread.setName(threadName);
               LOG.info("HMSMockServer create thread: {}", threadName);
               return thread;
