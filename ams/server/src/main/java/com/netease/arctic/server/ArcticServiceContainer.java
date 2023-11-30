@@ -48,6 +48,7 @@ import com.netease.arctic.server.utils.ThriftServiceProxy;
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.iceberg.SystemProperties;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.TProcessor;
@@ -373,6 +374,7 @@ public class ArcticServiceContainer {
     public void init() throws IOException {
       Map<String, Object> envConfig = initEnvConfig();
       initServiceConfig(envConfig);
+      setIcebergSystemProperties();
       initContainerConfig();
     }
 
@@ -471,6 +473,14 @@ public class ArcticServiceContainer {
                 "%s(%s) must > 0, actual value = %d",
                 config.key(), config.description(), threadCount));
       }
+    }
+
+    /** Override the value of {@link SystemProperties}. */
+    private void setIcebergSystemProperties() {
+      System.setProperty(
+          SystemProperties.WORKER_THREAD_POOL_SIZE_PROP,
+          String.valueOf(
+              serviceConfig.getInteger(ArcticManagementConf.ICEBERG_WORKER_NUM_THREADS)));
     }
 
     @SuppressWarnings("unchecked")

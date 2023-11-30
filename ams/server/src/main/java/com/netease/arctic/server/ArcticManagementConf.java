@@ -55,6 +55,14 @@ public class ArcticManagementConf {
           .defaultValue(10)
           .withDescription("The number of threads used to read metadata.");
 
+  public static final ConfigOption<Integer> ICEBERG_WORKER_NUM_THREADS =
+      ConfigOptions.key("iceberg.worker.num-threads")
+          .intType()
+          .defaultValue(20)
+          .withDescription(
+              "Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing "
+                  + "manifests in the base table implementation across all concurrent planning or commit operations.");
+
   public static final ConfigOption<Long> REFRESH_EXTERNAL_CATALOGS_INTERVAL =
       ConfigOptions.key("refresh-external-catalogs.interval")
           .longType()
