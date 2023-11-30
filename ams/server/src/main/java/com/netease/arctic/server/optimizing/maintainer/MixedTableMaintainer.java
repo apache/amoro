@@ -483,6 +483,7 @@ public class MixedTableMaintainer implements TableMaintainer {
           now - snapshotsKeepTime(tableRuntime),
           fetchOptimizingSnapshotTime(table, tableRuntime),
           fetchLatestFlinkCommittedSnapshotTime(table),
+          fetchLatestNonOptimizedSnapshotTime(table),
           fetchLatestOptimizedSequenceSnapshotTime(table));
     }
 
