@@ -180,8 +180,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   }
 
   private OptimizerInstance getAuthenticatedOptimizer(String authToken) {
-    Preconditions.checkArgument(
-        authToken != null, "authToken can not be null");
+    Preconditions.checkArgument(authToken != null, "authToken can not be null");
     return Optional.ofNullable(authOptimizers.get(authToken))
         .orElseThrow(() -> new PluginRetryAuthException("Optimizer has not been authenticated"));
   }
