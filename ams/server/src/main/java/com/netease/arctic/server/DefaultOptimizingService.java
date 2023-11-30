@@ -557,7 +557,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     private Predicate<TaskRuntime> buildSuspendingPredication(
         String token, boolean isOptimizerExpired) {
       return task -> {
-        if (isOptimzerExpired) {
+        if (isOptimizerExpired) {
           return token.equals(task.getToken());
         } else {
           return token.equals(task.getToken())
