@@ -183,13 +183,11 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     resourceFlinkConf.putToOptions(
         FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY, taskManagerMemory + "m");
 
-    // load optimizer jar first
-    resourceFlinkConf.putToOptions(
-        FlinkConfKeys.USER_LIB_FIRST, FlinkConfKeys.USER_LIB_FIRST_DEFAULT);
-
     String flinkAction = target.isApplicationMode() ? "run-application" : "run";
     if (Target.KUBERNETES_APPLICATION == target) {
       addKubernetesProperties(resource, resourceFlinkConf);
+    } else if (Target.YARN_PER_JOB == target || Target.YARN_APPLICATION == target) {
+      addYarnProperties(resourceFlinkConf);
     }
     String flinkOptions = resourceFlinkConf.toCliOptions();
 
@@ -228,6 +226,12 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     String resourceLabel = Joiner.on(',').join(labels);
     flinkConf.putToOptions(FlinkConfKeys.KUBERNETES_TASKMANAGER_LABLES, resourceLabel);
     flinkConf.putToOptions(FlinkConfKeys.KUBERNETES_JOBMANAGER_LABLES, resourceLabel);
+  }
+
+  private void addYarnProperties(FlinkConf flinkConf) {
+    // load optimizer jar first
+    flinkConf.putToOptions(
+        FlinkConfKeys.CLASSPATH_INCLUDE_USER_JAR, FlinkConfKeys.CLASSPATH_INCLUDE_USER_JAR_DEFAULT);
   }
 
   /**
@@ -420,8 +424,8 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     public static final String JOB_MANAGER_TOTAL_PROCESS_MEMORY = "jobmanager.memory.process.size";
     public static final String TASK_MANAGER_TOTAL_PROCESS_MEMORY =
         "taskmanager.memory.process.size";
-    public static final String USER_LIB_FIRST = "yarn.per-job-cluster.include-user-jar";
-    public static final String USER_LIB_FIRST_DEFAULT = "FIRST";
+    public static final String CLASSPATH_INCLUDE_USER_JAR = "yarn.per-job-cluster.include-user-jar";
+    public static final String CLASSPATH_INCLUDE_USER_JAR_DEFAULT = "FIRST";
     public static final String KUBERNETES_IMAGE_REF = "kubernetes.container.image";
 
     public static final String KUBERNETES_CLUSTER_ID = "kubernetes.cluster-id";
