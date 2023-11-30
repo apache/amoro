@@ -192,7 +192,7 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
       try {
         FileUtil.copy(fs, srcPath, fs, dtsPath, false, true, conf());
       } catch (IOException e) {
-        throw new UncheckedIOException("Fail to rename: from " + src + " to " + dts, e);
+        throw new UncheckedIOException("Fail to copy: from " + src + " to " + dts, e);
       }
       return null;
     });
