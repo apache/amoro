@@ -42,6 +42,7 @@ Self-optimizing configurations are applicable to both Iceberg Format and Mixed s
 | self-optimizing.major.trigger.duplicate-ratio       | 0.1              | The ratio of duplicate data of segment files to trigger major optimizing  |
 | self-optimizing.full.trigger.interval               | -1(closed)       | The time interval in milliseconds to trigger full optimizing
 | self-optimizing.full.rewrite-all-files              | true             | Whether full optimizing rewrites all files or skips files that do not need to be optimized |
+| self-optimizing.max-input-file-size-per-thread      | 536870912(512MB) | Max input file size per optimize thread     |
 
 ## Data-cleaning configurations
 

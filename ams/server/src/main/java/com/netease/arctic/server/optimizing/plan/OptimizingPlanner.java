@@ -42,8 +42,6 @@ import java.util.stream.Collectors;
 public class OptimizingPlanner extends OptimizingEvaluator {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizingPlanner.class);
 
-  private static final long MAX_INPUT_FILE_SIZE_PER_THREAD = 512 * 1024 * 1024; // 512MB
-
   private final TableFileScanHelper.PartitionFilter partitionFilter;
 
   protected long processId;
