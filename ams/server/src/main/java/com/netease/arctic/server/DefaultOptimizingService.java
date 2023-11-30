@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server;
 
-import com.google.common.base.Preconditions;
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
@@ -51,6 +50,7 @@ import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -182,7 +182,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   }
 
   private OptimizerInstance getAuthenticatedOptimizer(String authToken) {
-    org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkArgument(
+    Preconditions.checkArgument(
         authToken != null, "authToken can not be null");
     return Optional.ofNullable(authOptimizers.get(authToken))
         .orElseThrow(() -> new PluginRetryAuthException("Optimizer has not been authenticated"));
