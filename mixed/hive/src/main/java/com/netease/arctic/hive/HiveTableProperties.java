@@ -49,6 +49,7 @@ public class HiveTableProperties {
   public static final String AUTO_SYNC_HIVE_DATA_WRITE = "base.hive.auto-sync-data-write";
   public static final boolean AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT = false;
 
+  // Unit milliseconds
   public static final String REFRESH_HIVE_INTERVAL = "base.hive.refresh-interval";
   public static final long REFRESH_HIVE_INTERVAL_DEFAULT = 1800000L;
 
