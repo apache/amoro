@@ -52,12 +52,7 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
             poolSize,
             new ThreadFactoryBuilder()
                 .setDaemon(false)
-                .setNameFormat(
-                    "async-"
-                        + String.join(
-                                "-", StringUtils.splitByCharacterTypeCamelCase(getThreadName()))
-                            .toLowerCase(Locale.ROOT)
-                        + "-%d")
+                .setNameFormat("async-" + getThreadName() + "-%d")
                 .build());
   }
 
@@ -96,7 +91,8 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
   protected abstract void execute(TableRuntime tableRuntime);
 
   protected String getThreadName() {
-    return getClass().getSimpleName();
+    return String.join("-", StringUtils.splitByCharacterTypeCamelCase(getClass().getSimpleName()))
+        .toLowerCase(Locale.ROOT);
   }
 
   private boolean isExecutable(TableRuntime tableRuntime) {
