@@ -129,7 +129,7 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @VisibleForTesting
-  protected void expireSnapshots(long mustOlderThan) {
+  void expireSnapshots(long mustOlderThan) {
     if (changeMaintainer != null) {
       changeMaintainer.expireSnapshots(mustOlderThan);
     }
@@ -182,7 +182,8 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     @Override
-    public void expireSnapshots(long mustOlderThan) {
+    @VisibleForTesting
+    void expireSnapshots(long mustOlderThan) {
       expireFiles(mustOlderThan);
       super.expireSnapshots(mustOlderThan);
     }
