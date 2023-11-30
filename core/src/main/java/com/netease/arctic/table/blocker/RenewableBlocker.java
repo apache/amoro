@@ -86,7 +86,7 @@ public class RenewableBlocker implements Blocker {
           ThreadFactory threadFactory =
               new ThreadFactoryBuilder()
                   .setDaemon(true)
-                  .setNameFormat("Renew Blocker Thread %d")
+                  .setNameFormat("renew-blocker-thread-%d")
                   .build();
           EXECUTOR = Executors.newSingleThreadScheduledExecutor(threadFactory);
         }
