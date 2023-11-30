@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.table.executor;
+package com.netease.arctic.server.optimizing.maintainer;
 
 import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
