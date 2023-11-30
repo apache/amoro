@@ -183,7 +183,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
     resourceFlinkConf.putToOptions(
         FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY, taskManagerMemory + "m");
 
-    //load optimizer jar first
+    // load optimizer jar first
     resourceFlinkConf.putToOptions(
         FlinkConfKeys.USER_LIB_FIRST, FlinkConfKeys.USER_LIB_FIRST_DEFAULT);
 
