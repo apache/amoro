@@ -18,10 +18,14 @@
 
 package com.netease.arctic.server.optimizing.maintainer;
 
+import static com.netease.arctic.utils.ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST;
+import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
+
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.scan.TableEntriesScan;
+import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.HiveLocationUtil;
 import com.netease.arctic.server.utils.IcebergTableUtil;
@@ -29,10 +33,8 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -40,9 +42,10 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
-import org.apache.iceberg.relocated.com.google.common.primitives.Longs;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,6 +128,7 @@ public class MixedTableMaintainer implements TableMaintainer {
     throw new UnsupportedOperationException("Mixed table doesn't support auto create tags");
   }
 
+  @VisibleForTesting
   protected void expireSnapshots(long mustOlderThan) {
     if (changeMaintainer != null) {
       changeMaintainer.expireSnapshots(mustOlderThan);
@@ -178,21 +182,25 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     @Override
-    public void expireSnapshots(TableRuntime tableRuntime) {
-      expireSnapshots(Long.MAX_VALUE);
-    }
-
-    @Override
     public void expireSnapshots(long mustOlderThan) {
-      long changeTTLPoint = getChangeTTLPoint();
-      expireFiles(Longs.min(getChangeTTLPoint(), mustOlderThan));
-      super.expireSnapshots(Longs.min(changeTTLPoint, mustOlderThan));
+      expireFiles(mustOlderThan);
+      super.expireSnapshots(mustOlderThan);
     }
 
     @Override
-    protected long olderThanSnapshotNeedToExpire(long mustOlderThan) {
-      long latestChangeFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(unkeyedTable);
-      return Longs.min(latestChangeFlinkCommitTime, mustOlderThan);
+    public void expireSnapshots(TableRuntime tableRuntime) {
+      TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
+      if (!tableConfiguration.isExpireSnapshotEnabled()) {
+        return;
+      }
+      expireFiles(now - snapshotsKeepTime(tableRuntime));
+      super.expireSnapshots(tableRuntime);
+    }
+
+    @Override
+    protected long mustOlderThan(TableRuntime tableRuntime) {
+      return min(
+          now - snapshotsKeepTime(tableRuntime), fetchLatestFlinkCommittedSnapshotTime(table));
     }
 
     @Override
@@ -200,19 +208,14 @@ public class MixedTableMaintainer implements TableMaintainer {
       return Sets.union(baseFiles, hiveFiles);
     }
 
+    @Override
+    protected long snapshotsKeepTime(TableRuntime tableRuntime) {
+      return tableRuntime.getTableConfiguration().getChangeDataTTLMinutes() * 60 * 1000;
+    }
+
     public void expireFiles(long ttlPoint) {
       List<IcebergFileEntry> expiredDataFileEntries = getExpiredDataFileEntries(ttlPoint);
       deleteChangeFile(expiredDataFileEntries);
-    }
-
-    private long getChangeTTLPoint() {
-      return System.currentTimeMillis()
-          - CompatiblePropertyUtil.propertyAsLong(
-                  unkeyedTable.properties(),
-                  TableProperties.CHANGE_DATA_TTL,
-                  TableProperties.CHANGE_DATA_TTL_DEFAULT)
-              * 60
-              * 1000;
     }
 
     private List<IcebergFileEntry> getExpiredDataFileEntries(long ttlPoint) {
@@ -334,6 +337,33 @@ public class MixedTableMaintainer implements TableMaintainer {
     @Override
     public Set<String> orphanFileCleanNeedToExcludeFiles() {
       return Sets.union(changeFiles, Sets.union(baseFiles, hiveFiles));
+    }
+
+    @Override
+    protected long mustOlderThan(TableRuntime tableRuntime) {
+      return min(
+          now - snapshotsKeepTime(tableRuntime),
+          fetchOptimizingSnapshotTime(table, tableRuntime),
+          fetchLatestFlinkCommittedSnapshotTime(table),
+          fetchLatestOptimizedSequenceSnapshotTime(table));
+    }
+
+    /**
+     * When committing a snapshot to the base store of mixed format keyed table, it will store the
+     * optimized sequence to the snapshot, and the latest snapshot contains it should not be
+     * expired.
+     *
+     * @param table -
+     * @return commit time of snapshot with the latest optimized sequence in summary
+     */
+    private long fetchLatestOptimizedSequenceSnapshotTime(Table table) {
+      if (arcticTable.isKeyedTable()) {
+        Snapshot snapshot =
+            findLatestSnapshotContainsKey(table, BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST);
+        return snapshot == null ? Long.MAX_VALUE : snapshot.timestampMillis();
+      } else {
+        return Long.MAX_VALUE;
+      }
     }
 
     @Override

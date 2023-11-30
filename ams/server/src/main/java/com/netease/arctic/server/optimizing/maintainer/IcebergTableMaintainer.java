@@ -27,8 +27,6 @@ import com.netease.arctic.io.SupportsFileSystemOperations;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.IcebergTableUtil;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.DeleteFile;
@@ -73,8 +71,11 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   protected Table table;
 
+  protected final long now;
+
   public IcebergTableMaintainer(Table table) {
     this.table = table;
+    this.now = System.currentTimeMillis();
   }
 
   @Override
@@ -112,8 +113,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     if (!tableConfiguration.isExpireSnapshotEnabled()) {
       return;
     }
-    expireSnapshots(
-        olderThanSnapshotNeedToExpire(tableRuntime), expireSnapshotNeedToExcludeFiles());
+    expireSnapshots(mustOlderThan(tableRuntime), expireSnapshotNeedToExcludeFiles());
   }
 
   @Override
@@ -123,9 +123,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
         .execute();
   }
 
+  @VisibleForTesting
   void expireSnapshots(long mustOlderThan) {
-    expireSnapshots(
-        olderThanSnapshotNeedToExpire(mustOlderThan), expireSnapshotNeedToExcludeFiles());
+    expireSnapshots(mustOlderThan, expireSnapshotNeedToExcludeFiles());
   }
 
   @VisibleForTesting
@@ -185,24 +185,15 @@ public class IcebergTableMaintainer implements TableMaintainer {
     LOG.info("{} total delete {} dangling delete files", table.name(), danglingDeleteFilesCnt);
   }
 
-  protected long olderThanSnapshotNeedToExpire(TableRuntime tableRuntime) {
-    long optimizingSnapshotTime = fetchOptimizingSnapshotTime(table, tableRuntime);
-    return olderThanSnapshotNeedToExpire(optimizingSnapshotTime);
+  protected long mustOlderThan(TableRuntime tableRuntime) {
+    return min(
+        now - snapshotsKeepTime(tableRuntime),
+        fetchOptimizingSnapshotTime(table, tableRuntime),
+        fetchLatestFlinkCommittedSnapshotTime(table));
   }
 
-  protected long olderThanSnapshotNeedToExpire(long mustOlderThan) {
-    long baseSnapshotsKeepTime =
-        CompatiblePropertyUtil.propertyAsLong(
-                table.properties(),
-                TableProperties.BASE_SNAPSHOT_KEEP_MINUTES,
-                TableProperties.BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT)
-            * 60
-            * 1000;
-    // Latest checkpoint of flink need retain. If Flink does not continuously commit new snapshots,
-    // it can lead to issues with table partitions not expiring.
-    long latestFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(table);
-    long olderThan = System.currentTimeMillis() - baseSnapshotsKeepTime;
-    return min(latestFlinkCommitTime, mustOlderThan, olderThan);
+  protected long snapshotsKeepTime(TableRuntime tableRuntime) {
+    return tableRuntime.getTableConfiguration().getSnapshotTTLMinutes() * 60 * 1000;
   }
 
   protected Set<String> expireSnapshotNeedToExcludeFiles() {
@@ -295,13 +286,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
    * @return commit time of snapshot with the latest flink checkpointId in summary
    */
   public static long fetchLatestFlinkCommittedSnapshotTime(Table table) {
-    long latestCommitTime = Long.MAX_VALUE;
-    for (Snapshot snapshot : table.snapshots()) {
-      if (snapshot.summary().containsKey(FLINK_MAX_COMMITTED_CHECKPOINT_ID)) {
-        latestCommitTime = snapshot.timestampMillis();
-      }
-    }
-    return latestCommitTime;
+    Snapshot snapshot = findLatestSnapshotContainsKey(table, FLINK_MAX_COMMITTED_CHECKPOINT_ID);
+    return snapshot == null ? Long.MAX_VALUE : snapshot.timestampMillis();
   }
 
   /**
@@ -322,6 +308,16 @@ public class IcebergTableMaintainer implements TableMaintainer {
       }
     }
     return Long.MAX_VALUE;
+  }
+
+  public static Snapshot findLatestSnapshotContainsKey(Table table, String summaryKey) {
+    Snapshot latestSnapshot = null;
+    for (Snapshot snapshot : table.snapshots()) {
+      if (snapshot.summary().containsKey(summaryKey)) {
+        latestSnapshot = snapshot;
+      }
+    }
+    return latestSnapshot;
   }
 
   private static int deleteInvalidFilesInFs(
