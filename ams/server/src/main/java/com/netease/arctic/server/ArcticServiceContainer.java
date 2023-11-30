@@ -69,11 +69,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -357,7 +353,11 @@ public class ArcticServiceContainer {
   private ThreadFactory getThriftThreadFactory(String processorName) {
     return new ThreadFactoryBuilder()
         .setDaemon(false)
-        .setNameFormat("thrift-server-" + StringUtils.lowerCase(processorName) + "-%d")
+        .setNameFormat(
+            "thrift-server-"
+                + String.join("-", StringUtils.splitByCharacterTypeCamelCase(processorName))
+                    .toLowerCase(Locale.ROOT)
+                + "-%d")
         .build();
   }
 
