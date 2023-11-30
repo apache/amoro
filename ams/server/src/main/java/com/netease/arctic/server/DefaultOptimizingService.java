@@ -175,9 +175,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   @Override
   public void touch(String authToken) {
     OptimizerInstance optimizer = getAuthenticatedOptimizer(authToken).touch();
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Optimizer {} touch time: {}", optimizer.getToken(), optimizer.getTouchTime());
-    }
+    LOG.debug("Optimizer {} touch time: {}", optimizer.getToken(), optimizer.getTouchTime());
     doAs(OptimizerMapper.class, mapper -> mapper.updateTouchTime(optimizer.getToken()));
   }
 
@@ -190,9 +188,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
   @Override
   public OptimizingTask pollTask(String authToken, int threadId) {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Optimizer {} (threadId {}) try polling task", authToken, threadId);
-    }
+    LOG.debug("Optimizer {} (threadId {}) try polling task", authToken, threadId);
     OptimizingQueue queue = getQueueByToken(authToken);
     return Optional.ofNullable(queue.pollTask(pollingTimeout))
         .map(
@@ -533,9 +529,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
             LOG.info("Optimizer {} has been expired, unregister it", keepingTask.getOptimizer());
             unregisterOptimizer(token);
           } else {
-            if (LOG.isDebugEnabled()) {
-              LOG.debug("Optimizer {} is being touched, keep it", keepingTask.getOptimizer());
-            }
+            LOG.debug("Optimizer {} is being touched, keep it", keepingTask.getOptimizer());
             keepInTouch(keepingTask.getOptimizer());
           }
         } catch (InterruptedException ignored) {
