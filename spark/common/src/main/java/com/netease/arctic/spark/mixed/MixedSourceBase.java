@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark.mixed;
 
-import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.util.SparkUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -35,9 +34,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Spark DataSource register base for mixed format
- */
+/** Spark DataSource register base for mixed format */
 public abstract class MixedSourceBase implements DataSourceRegister, SupportsCatalogOptions {
 
   @Override

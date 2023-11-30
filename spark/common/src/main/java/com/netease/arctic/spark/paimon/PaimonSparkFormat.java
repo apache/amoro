@@ -31,7 +31,8 @@ public class PaimonSparkFormat implements SparkTableFormat {
 
   @Override
   public boolean isSessionTable(Table table) {
-    //"org.apache.paimon.hive.mapred.PaimonInputFormat".equals(table.getSd().getInputFormat()) && "org.apache.paimon.hive.mapred.PaimonOutputFormat".equals(table.getSd().getOutputFormat());
+    // "org.apache.paimon.hive.mapred.PaimonInputFormat".equals(table.getSd().getInputFormat()) &&
+    // "org.apache.paimon.hive.mapred.PaimonOutputFormat".equals(table.getSd().getOutputFormat());
     return false;
   }
 }

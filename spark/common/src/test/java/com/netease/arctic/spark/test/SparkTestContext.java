@@ -128,8 +128,9 @@ public class SparkTestContext {
       ams.getAmsHandler().createCatalog(hiveCatalogMeta);
     }
 
-    CatalogMeta allFormats = HiveCatalogTestHelper.build(hiveConf, TableFormat.values()[0])
-        .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
+    CatalogMeta allFormats =
+        HiveCatalogTestHelper.build(hiveConf, TableFormat.values()[0])
+            .buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
     String formats = Joiner.on(',').join(TableFormat.values());
     allFormats.putToCatalogProperties(CatalogMetaProperties.TABLE_FORMATS, formats);
     allFormats.setCatalogName(AMS_ALL_FORMAT_CATALOG_NAME);
@@ -148,7 +149,6 @@ public class SparkTestContext {
   public String amsThriftUrl() {
     return this.ams.getServerUrl();
   }
-
 
   private String hiveVersion() {
     try {

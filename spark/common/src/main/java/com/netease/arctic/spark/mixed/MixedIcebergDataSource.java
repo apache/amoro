@@ -20,9 +20,7 @@ package com.netease.arctic.spark.mixed;
 
 import com.netease.arctic.ams.api.TableFormat;
 
-/**
- * Mixed Iceberg DataSource register
- */
+/** Mixed Iceberg DataSource register */
 public class MixedIcebergDataSource extends MixedSourceBase {
 
   @Override

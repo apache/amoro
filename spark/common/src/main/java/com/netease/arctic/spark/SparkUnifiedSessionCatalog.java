@@ -29,7 +29,6 @@ import org.apache.spark.sql.connector.iceberg.catalog.Procedure;
 import org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.ServiceLoader;
 
@@ -51,8 +50,7 @@ public class SparkUnifiedSessionCatalog<T extends TableCatalog & SupportsNamespa
 
   @Override
   protected boolean isManagedTable(Table table) {
-    return tableFormats.values().stream()
-        .anyMatch(f -> f.isSessionTable(table));
+    return tableFormats.values().stream().anyMatch(f -> f.isSessionTable(table));
   }
 
   @Override

@@ -29,7 +29,6 @@ import java.util.List;
 
 public class SparkUtil {
 
-
   /**
    * A modified version of Spark's LookupCatalog.CatalogAndIdentifier.unapply Attempts to find the
    * catalog and identifier a multipart identifier represents
@@ -62,7 +61,7 @@ public class SparkUtil {
     try {
       catalogPlugin = catalogManager.catalog(nameParts.get(0));
     } catch (Exception e) {
-      //pass
+      // pass
     }
 
     if (catalogPlugin == null) {
@@ -71,7 +70,7 @@ public class SparkUtil {
       return new TableCatalogAndIdentifier(defaultCatalog, Identifier.of(namespace, name));
     } else {
       // Assume the first element is a valid catalog
-      TableCatalog tableCatalog = (TableCatalog)catalogPlugin;
+      TableCatalog tableCatalog = (TableCatalog) catalogPlugin;
       String[] namespace = nameParts.subList(1, lastElementIndex).toArray(new String[0]);
       return new TableCatalogAndIdentifier(tableCatalog, Identifier.of(namespace, name));
     }

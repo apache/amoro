@@ -21,7 +21,6 @@ package com.netease.arctic.spark.iceberg;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.SparkTableFormat;
 import com.netease.arctic.spark.mixed.MixedFormatSparkUtil;
-import com.netease.arctic.spark.mixed.MixedIcebergSparkFormat;
 import org.apache.iceberg.BaseMetastoreTableOperations;
 import org.apache.iceberg.MetadataTableType;
 import org.apache.spark.sql.connector.catalog.Table;

@@ -18,10 +18,7 @@
 
 package com.netease.arctic.spark.mixed;
 
-
-/**
- * Arctic DataSource register
- */
+/** Arctic DataSource register */
 public class ArcticDataSource extends MixedSourceBase {
 
   @Override

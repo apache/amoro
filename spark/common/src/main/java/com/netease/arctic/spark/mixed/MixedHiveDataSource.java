@@ -20,9 +20,7 @@ package com.netease.arctic.spark.mixed;
 
 import com.netease.arctic.ams.api.TableFormat;
 
-/**
- * Mixed Hive DataSource register
- */
+/** Mixed Hive DataSource register */
 public class MixedHiveDataSource extends MixedSourceBase {
 
   @Override

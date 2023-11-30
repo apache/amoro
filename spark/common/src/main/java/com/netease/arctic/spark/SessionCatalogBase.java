@@ -37,9 +37,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 import java.util.Map;
 
-/**
- * Base class of spark session catalog.
- */
+/** Base class of spark session catalog. */
 public abstract class SessionCatalogBase<T extends TableCatalog & SupportsNamespaces>
     implements SupportsNamespaces, CatalogExtension {
 
@@ -147,10 +145,8 @@ public abstract class SessionCatalogBase<T extends TableCatalog & SupportsNamesp
     return getSessionCatalog().listTables(namespace);
   }
 
-  /**
-   * Check if the table should be loaded via target catalog.
-   */
-  abstract protected boolean isManagedTable(Table table);
+  /** Check if the table should be loaded via target catalog. */
+  protected abstract boolean isManagedTable(Table table);
 
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
@@ -170,10 +166,8 @@ public abstract class SessionCatalogBase<T extends TableCatalog & SupportsNamesp
     return false;
   }
 
-  /**
-   * Check if the provider is managed by target catalog.
-   */
-  abstract protected boolean isManagedProvider(String provider);
+  /** Check if the provider is managed by target catalog. */
+  protected abstract boolean isManagedProvider(String provider);
 
   @Override
   public Table createTable(
@@ -206,8 +200,7 @@ public abstract class SessionCatalogBase<T extends TableCatalog & SupportsNamesp
     try {
       Table table = getSessionCatalog().loadTable(ident);
       if (isManagedTable(table)) {
-        return getTargetCatalog().dropTable(ident)
-            || getSessionCatalog().dropTable(ident);
+        return getTargetCatalog().dropTable(ident) || getSessionCatalog().dropTable(ident);
       } else {
         return getSessionCatalog().dropTable(ident);
       }
@@ -224,8 +217,7 @@ public abstract class SessionCatalogBase<T extends TableCatalog & SupportsNamesp
     try {
       Table table = getSessionCatalog().loadTable(ident);
       if (isManagedTable(table)) {
-        return getTargetCatalog().purgeTable(ident)
-            || getSessionCatalog().purgeTable(ident);
+        return getTargetCatalog().purgeTable(ident) || getSessionCatalog().purgeTable(ident);
       } else {
         return getSessionCatalog().purgeTable(ident);
       }
@@ -247,5 +239,4 @@ public abstract class SessionCatalogBase<T extends TableCatalog & SupportsNamesp
       getSessionCatalog().renameTable(from, to);
     }
   }
-
 }

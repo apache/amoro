@@ -52,12 +52,10 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
         Arguments.of(TableFormat.MIXED_ICEBERG, false),
         Arguments.of(TableFormat.MIXED_HIVE, false),
         Arguments.of(TableFormat.PAIMON, false),
-
         Arguments.of(TableFormat.ICEBERG, true),
         Arguments.of(TableFormat.MIXED_ICEBERG, true),
         Arguments.of(TableFormat.MIXED_HIVE, true),
-        Arguments.of(TableFormat.PAIMON, true)
-    );
+        Arguments.of(TableFormat.PAIMON, true));
   }
 
   public void testTableFormats(TableFormat format, boolean sessionCatalog) {
@@ -172,10 +170,10 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
       String unifiedSparkCatalogName = "unified_" + format.name().toLowerCase();
       setCurrentCatalog(unifiedSparkCatalogName);
     }
-    UnifiedCatalog unifiedCatalog = UnifiedCatalogLoader.loadUnifiedCatalog(
-        context.amsThriftUrl(), format.name().toLowerCase(), Maps.newHashMap()
-    );
-    if (!unifiedCatalog().exist(database())){
+    UnifiedCatalog unifiedCatalog =
+        UnifiedCatalogLoader.loadUnifiedCatalog(
+            context.amsThriftUrl(), format.name().toLowerCase(), Maps.newHashMap());
+    if (!unifiedCatalog().exist(database())) {
       unifiedCatalog.createDatabase(database());
     }
   }

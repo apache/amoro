@@ -22,7 +22,6 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import com.netease.arctic.spark.test.unified.UnifiedCatalogTestSuites;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @EnableCatalogSelect

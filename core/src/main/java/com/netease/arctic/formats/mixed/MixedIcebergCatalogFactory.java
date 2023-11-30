@@ -49,8 +49,9 @@ public class MixedIcebergCatalogFactory implements FormatCatalogFactory {
   @Override
   public Map<String, String> convertCatalogProperties(
       String catalogName, String metastoreType, Map<String, String> unifiedCatalogProperties) {
-    Map<String, String> properties = CatalogUtil.withIcebergCatalogInitializeProperties(
-        catalogName, metastoreType, unifiedCatalogProperties);
+    Map<String, String> properties =
+        CatalogUtil.withIcebergCatalogInitializeProperties(
+            catalogName, metastoreType, unifiedCatalogProperties);
     properties.put(CatalogMetaProperties.TABLE_FORMATS, format().name());
     return properties;
   }

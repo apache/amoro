@@ -27,7 +27,6 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 public abstract class MixedSessionCatalogBase<T extends TableCatalog & SupportsNamespaces>
     extends SessionCatalogBase<T> {
 
-
   /**
    * build mixed-format catalog instance.
    *
@@ -35,7 +34,8 @@ public abstract class MixedSessionCatalogBase<T extends TableCatalog & SupportsN
    * @param options catalog initialize options
    * @return mixed format spark catalog.
    */
-  protected abstract MixedSparkCatalogBase buildTargetCatalog(String name, CaseInsensitiveStringMap options);
+  protected abstract MixedSparkCatalogBase buildTargetCatalog(
+      String name, CaseInsensitiveStringMap options);
 
   @Override
   protected boolean isManagedTable(Table table) {

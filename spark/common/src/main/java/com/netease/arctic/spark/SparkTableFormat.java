@@ -32,8 +32,6 @@ public interface SparkTableFormat {
     return false;
   }
 
-  /**
-   * Check the table loaded by spark session catalog is match the table format.
-   */
+  /** Check the table loaded by spark session catalog is match the table format. */
   boolean isSessionTable(Table table);
 }

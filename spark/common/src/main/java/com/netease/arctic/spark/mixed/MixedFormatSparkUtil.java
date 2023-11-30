@@ -40,26 +40,27 @@ public class MixedFormatSparkUtil {
 
   /**
    * Check a Spark Table is a Mixed Iceberg table
+   *
    * @param table the spark table loaded from session catalog
    * @return Is it a mixed Iceberg table.
    */
   public static boolean isMixedIcebergTable(Table table) {
     return table.properties() != null
-            && table.properties().containsKey(TableProperties.TABLE_FORMAT)
-            && TableFormat.MIXED_ICEBERG
+        && table.properties().containsKey(TableProperties.TABLE_FORMAT)
+        && TableFormat.MIXED_ICEBERG
             .name()
             .equalsIgnoreCase(table.properties().get(TableProperties.TABLE_FORMAT));
   }
 
-
   /**
    * Check a Spark Table is a Mixed Hive table
+   *
    * @param table the spark table loaded from session catalog
    * @return Is it a mixed Hive table.
    */
   public static boolean isMixedHiveTable(Table table) {
     return table.properties() != null
         && CompatibleHivePropertyUtil.propertyAsBoolean(
-        table.properties(), HiveTableProperties.ARCTIC_TABLE_FLAG, false);
+            table.properties(), HiveTableProperties.ARCTIC_TABLE_FLAG, false);
   }
 }
