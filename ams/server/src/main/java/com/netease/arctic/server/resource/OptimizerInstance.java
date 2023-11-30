@@ -20,6 +20,7 @@ package com.netease.arctic.server.resource;
 
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.resource.Resource;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.UUID;
 
@@ -61,14 +62,10 @@ public class OptimizerInstance extends Resource {
 
   @Override
   public String toString() {
-    return "OptimizerInstance{"
-        + "token='"
-        + token
-        + '\''
-        + ", startTime="
-        + startTime
-        + ", touchTime="
-        + touchTime
-        + '}';
+    return MoreObjects.toStringHelper(this)
+        .add("token", token)
+        .add("startTime", startTime)
+        .add("touchTime", touchTime)
+        .toString();
   }
 }

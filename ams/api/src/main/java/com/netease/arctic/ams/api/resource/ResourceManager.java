@@ -24,5 +24,6 @@ public interface ResourceManager {
 
   Resource getResource(String resourceId);
 
+  /** close this resource manager */
   void dispose();
 }

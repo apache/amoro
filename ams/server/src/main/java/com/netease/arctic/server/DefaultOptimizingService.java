@@ -366,6 +366,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
   @Override
   public void dispose() {
+    optimizerKeeper.dispose();
     tableHandlerChain.dispose();
     optimizingQueueByGroup.clear();
     optimizingQueueByToken.clear();
@@ -450,7 +451,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
     @Override
     protected void doDispose() {
-      optimizerKeeper.dispose();
+      DefaultOptimizingService.this.dispose();
     }
   }
 
@@ -494,7 +495,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private class OptimizerKeeper implements Runnable {
 
     private volatile boolean stopped = false;
-    private final Thread thread = new Thread(this, "SuspendingDetector");
+    private final Thread thread = new Thread(this, "optimizer-keeper-thread");
     private final DelayQueue<OptimizerKeepingTask> suspendingQueue = new DelayQueue<>();
 
     public OptimizerKeeper() {

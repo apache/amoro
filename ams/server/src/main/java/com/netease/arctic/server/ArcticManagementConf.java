@@ -123,7 +123,7 @@ public class ArcticManagementConf {
           .withDescription("Interval for refreshing table metadata.");
 
   public static final ConfigOption<Long> GLOBAL_MIN_PLANNING_INTERVAL =
-      ConfigOptions.key("refresh-tables.interval")
+      ConfigOptions.key("planning.min-interval")
           .longType()
           .defaultValue(60000L)
           .withDescription("Minimum interval for planning on a single table.");

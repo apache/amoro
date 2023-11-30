@@ -21,5 +21,11 @@ package com.netease.arctic.server.resource;
 /** Quota information provider, used for optimizing plan */
 public interface QuotaProvider {
 
+  /**
+   * Get the total available quota of a specific resource group
+   *
+   * @param resourceGroup resource group name
+   * @return quota of the resource group
+   */
   int getTotalQuota(String resourceGroup);
 }

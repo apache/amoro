@@ -74,11 +74,11 @@ public class OptimizingQueue extends PersistentBase {
   private final QuotaProvider quotaProvider;
   private final Queue<TableOptimizingProcess> tableQueue = new LinkedTransferQueue<>();
   private final Queue<TaskRuntime> retryTaskQueue = new LinkedTransferQueue<>();
-  private final SchedulingPolicy schedulingPolicy;
+  private final SchedulingPolicy scheduler;
   private final TableManager tableManager;
   private final Executor planExecutor;
-  private final Map<TableRuntime, Long> plannedKeepingTables = new HashMap<>();
-  private final Set<TableRuntime> planningTables = new HashSet<>();
+  private final Map<ServerTableIdentifier, Long> plannedKeepingTables = new HashMap<>();
+  private final Set<ServerTableIdentifier> planningTables = new HashSet<>();
   private final Lock scheduleLock = new ReentrantLock();
   private final Condition planningCompleted = scheduleLock.newCondition();
   private final int maxPlanningParallelism;
@@ -97,7 +97,7 @@ public class OptimizingQueue extends PersistentBase {
     this.planExecutor = planExecutor;
     this.optimizerGroup = optimizerGroup;
     this.quotaProvider = quotaProvider;
-    this.schedulingPolicy = new SchedulingPolicy(optimizerGroup);
+    this.scheduler = new SchedulingPolicy(optimizerGroup);
     this.tableManager = tableManager;
     this.maxPlanningParallelism = maxPlanningParallelism;
     this.minPlanningInterval = minPlanningInterval;
@@ -115,7 +115,7 @@ public class OptimizingQueue extends PersistentBase {
       tableRuntime.resetTaskQuotas(
           System.currentTimeMillis() - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME);
       if (!tableRuntime.getOptimizingStatus().isProcessing()) {
-        schedulingPolicy.addTable(tableRuntime);
+        scheduler.addTable(tableRuntime);
       } else if (tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
         tableQueue.offer(new TableOptimizingProcess(tableRuntimeMeta));
       }
@@ -139,12 +139,12 @@ public class OptimizingQueue extends PersistentBase {
           tableRuntime.getTableIdentifier());
       tableRuntime.resetTaskQuotas(
           System.currentTimeMillis() - ArcticServiceConstants.QUOTA_LOOK_BACK_TIME);
-      schedulingPolicy.addTable(tableRuntime);
+      scheduler.addTable(tableRuntime);
     }
   }
 
   public void releaseTable(TableRuntime tableRuntime) {
-    schedulingPolicy.removeTable(tableRuntime);
+    scheduler.removeTable(tableRuntime);
     LOG.info(
         "Release queue {} with table {}",
         optimizerGroup.getName(),
@@ -152,7 +152,7 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   public boolean containsTable(ServerTableIdentifier identifier) {
-    return this.schedulingPolicy.containsTable(identifier);
+    return scheduler.getTableRuntime(identifier) != null;
   }
 
   private void clearProcess(TableOptimizingProcess optimizingProcess) {
@@ -212,7 +212,7 @@ public class OptimizingQueue extends PersistentBase {
         this.optimizerGroup.getName().equals(optimizerGroup.getName()),
         "optimizer group name mismatch");
     this.optimizerGroup = optimizerGroup;
-    schedulingPolicy.setTableSorterIfNeeded(optimizerGroup);
+    scheduler.setTableSorterIfNeeded(optimizerGroup);
   }
 
   private boolean waitTask(long waitDeadline) {
@@ -232,41 +232,43 @@ public class OptimizingQueue extends PersistentBase {
 
   private void scheduleTableIfNecessary(long startTime) {
     if (planningTables.size() < maxPlanningParallelism) {
-      Set<TableRuntime> skipTables = new HashSet<>(planningTables);
+      Set<ServerTableIdentifier> skipTables = new HashSet<>(planningTables);
       plannedKeepingTables.entrySet().stream()
-          .filter(entry -> startTime - entry.getValue() < minPlanningInterval)
-          .filter(entry -> isOptimizingBlocked(entry.getKey()))
+          .filter(
+              entry ->
+                  startTime - entry.getValue() < minPlanningInterval
+                      || isOptimizingBlocked(entry.getKey()))
           .map(Map.Entry::getKey)
           .forEach(skipTables::add);
-      Optional.ofNullable(schedulingPolicy.scheduleTable(skipTables))
+      Optional.ofNullable(scheduler.scheduleTable(skipTables))
           .ifPresent(tableRuntime -> triggerAsyncPlanning(tableRuntime, skipTables, startTime));
     }
   }
 
   private void triggerAsyncPlanning(
-      TableRuntime tableRuntime, Set<TableRuntime> skipTables, long startTime) {
+      TableRuntime tableRuntime, Set<ServerTableIdentifier> skipTables, long startTime) {
     LOG.info("Trigger planning table {}", tableRuntime.getTableIdentifier());
-    planningTables.add(tableRuntime);
+    planningTables.add(tableRuntime.getTableIdentifier());
     doPlanning(tableRuntime)
         .whenComplete(
             (process, throwable) -> {
               long currentTime = System.currentTimeMillis();
               scheduleLock.lock();
               try {
-                plannedKeepingTables.put(tableRuntime, System.currentTimeMillis());
-                planningTables.remove(tableRuntime);
+                plannedKeepingTables.put(
+                    tableRuntime.getTableIdentifier(), System.currentTimeMillis());
+                planningTables.remove(tableRuntime.getTableIdentifier());
                 if (process != null) {
                   tableQueue.offer(process);
                   LOG.info(
-                      "{} completes planning {} tasks with a total cost of {} ms, skipping tables, {}",
-                      optimizerGroup.getName(),
+                      "Completed planning on table {} with {} tasks with a total cost of {} ms, skipping tables {}",
+                      tableRuntime.getTableIdentifier(),
                       process.getTaskMap().size(),
                       currentTime - startTime,
                       skipTables);
                 } else if (throwable == null) {
                   LOG.info(
-                      "{} skip planning table {} with a total cost of {} ms.",
-                      optimizerGroup.getName(),
+                      "Skip planning table {} with a total cost of {} ms.",
                       tableRuntime.getTableIdentifier(),
                       currentTime - startTime);
                 }
@@ -301,13 +303,10 @@ public class OptimizingQueue extends PersistentBase {
     }
   }
 
-  private boolean isOptimizingBlocked(TableRuntime tableRuntime) {
-    if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
-      LOG.info("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
-      return false;
-    } else {
-      return true;
-    }
+  private boolean isOptimizingBlocked(ServerTableIdentifier tableIdentifier) {
+    return Optional.ofNullable(scheduler.getTableRuntime(tableIdentifier))
+        .map(tableRuntime -> tableRuntime.isBlocked(BlockableOperation.OPTIMIZE))
+        .orElse(false);
   }
 
   private double getAvailableCore() {
@@ -317,7 +316,7 @@ public class OptimizingQueue extends PersistentBase {
 
   @VisibleForTesting
   SchedulingPolicy getSchedulingPolicy() {
-    return schedulingPolicy;
+    return scheduler;
   }
 
   private class TableOptimizingProcess implements OptimizingProcess, TaskRuntime.TaskOwner {

@@ -1,13 +1,10 @@
 package com.netease.arctic.server.resource;
 
-import com.netease.arctic.server.optimizing.TaskRuntime;
-
 import java.util.Objects;
 
 public class OptimizerThread {
   private final int threadId;
   private final OptimizerInstance optimizer;
-  private volatile TaskRuntime taskRuntime;
 
   protected OptimizerThread(int threadId, OptimizerInstance optimizer) {
     this.threadId = threadId;

@@ -46,20 +46,29 @@ public class SchedulingPolicy {
     }
   }
 
-  public TableRuntime scheduleTable(Set<TableRuntime> skipSet) {
+  public TableRuntime scheduleTable(Set<ServerTableIdentifier> skipSet) {
     tableLock.lock();
     try {
       return tableRuntimeMap.values().stream()
-              .filter(tableRuntime -> !shouldSkip(skipSet, tableRuntime))
-              .min(tableSorter)
-              .orElse(null);
+          .filter(tableRuntime -> !shouldSkip(skipSet, tableRuntime))
+          .min(tableSorter)
+          .orElse(null);
     } finally {
       tableLock.unlock();
     }
   }
 
-  private boolean shouldSkip(Set<TableRuntime> skipSet, TableRuntime tableRuntime) {
-    return skipSet.contains(tableRuntime) || !isTablePending(tableRuntime);
+  public TableRuntime getTableRuntime(ServerTableIdentifier tableIdentifier) {
+    tableLock.lock();
+    try {
+      return tableRuntimeMap.get(tableIdentifier);
+    } finally {
+      tableLock.unlock();
+    }
+  }
+
+  private boolean shouldSkip(Set<ServerTableIdentifier> skipSet, TableRuntime tableRuntime) {
+    return skipSet.contains(tableRuntime.getTableIdentifier()) || !isTablePending(tableRuntime);
   }
 
   private boolean isTablePending(TableRuntime tableRuntime) {
@@ -85,10 +94,6 @@ public class SchedulingPolicy {
     } finally {
       tableLock.unlock();
     }
-  }
-
-  public boolean containsTable(ServerTableIdentifier tableIdentifier) {
-    return tableRuntimeMap.containsKey(tableIdentifier);
   }
 
   @VisibleForTesting
