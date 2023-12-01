@@ -420,6 +420,7 @@
                             <outputDirectory>
                                 ${project.build.directory}/amoro-ams-server-dependency/lib
                             </outputDirectory>
+                            <includeScope>runtime</includeScope>
                         </configuration>
                     </execution>
                 </executions>
