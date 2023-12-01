@@ -477,10 +477,12 @@ public class ArcticServiceContainer {
 
     /** Override the value of {@link SystemProperties}. */
     private void setIcebergSystemProperties() {
+      int workerThreadPoolSize =
+          Math.max(
+              Runtime.getRuntime().availableProcessors(),
+              serviceConfig.getInteger(ArcticManagementConf.ICEBERG_WORKER_NUM_THREADS));
       System.setProperty(
-          SystemProperties.WORKER_THREAD_POOL_SIZE_PROP,
-          String.valueOf(
-              serviceConfig.getInteger(ArcticManagementConf.ICEBERG_WORKER_NUM_THREADS)));
+          SystemProperties.WORKER_THREAD_POOL_SIZE_PROP, String.valueOf(workerThreadPoolSize));
     }
 
     @SuppressWarnings("unchecked")
