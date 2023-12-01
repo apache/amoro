@@ -430,6 +430,86 @@ public class TestCatalog extends CatalogTestBase {
     checkRows(rows);
   }
 
+  @Test
+  public void testAlterUnKeyTable() throws Exception {
+    sql(
+        "CREATE TABLE arcticCatalog."
+            + DB
+            + "."
+            + TABLE
+            + " ("
+            + " id INT,"
+            + " name STRING,"
+            + " t TIMESTAMP"
+            + ") PARTITIONED BY(t) "
+            + " WITH ("
+            + " 'connector' = 'arctic',"
+            + " 'self-optimizing.enabled' = 'false'"
+            + ")");
+
+    sql(
+        "ALTER TABLE arcticCatalog."
+            + DB
+            + "."
+            + TABLE
+            + " "
+            + "SET ( 'write.metadata.delete-after-commit.enabled' = 'false')");
+    Map<String, String> unKeyTableProperties =
+        getMixedFormatCatalog()
+            .loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE))
+            .properties();
+    Assert.assertEquals(
+        unKeyTableProperties.get("write.metadata.delete-after-commit.enabled"), "false");
+  }
+
+  @Test
+  public void testAlterKeyTable() throws Exception {
+    sql(
+        "CREATE TABLE arcticCatalog."
+            + DB
+            + "."
+            + TABLE
+            + " ("
+            + " id INT,"
+            + " name STRING,"
+            + " t TIMESTAMP,"
+            + " PRIMARY KEY (id) NOT ENFORCED "
+            + ") PARTITIONED BY(t) "
+            + " WITH ("
+            + " 'connector' = 'arctic'"
+            + ")");
+    sql(
+        "ALTER TABLE arcticCatalog."
+            + DB
+            + "."
+            + TABLE
+            + " "
+            + "SET ( 'self-optimizing.group' = 'flink')");
+    sql(
+        "ALTER TABLE arcticCatalog."
+            + DB
+            + "."
+            + TABLE
+            + " "
+            + "SET ( 'self-optimizing.enabled' = 'true')");
+
+    sql(
+        "ALTER TABLE arcticCatalog."
+            + DB
+            + "."
+            + TABLE
+            + " "
+            + "SET ( 'write.upsert.enabled' = 'true')");
+
+    Map<String, String> keyTableProperties =
+        getMixedFormatCatalog()
+            .loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE))
+            .properties();
+    Assert.assertEquals(keyTableProperties.get("self-optimizing.enabled"), "true");
+    Assert.assertEquals(keyTableProperties.get("self-optimizing.group"), "flink");
+    Assert.assertEquals(keyTableProperties.get("write.upsert.enabled"), "true");
+  }
+
   private void checkRows(List<Row> rows) {
     Assert.assertEquals(1, rows.size());
     int id = (int) rows.get(0).getField("id");
