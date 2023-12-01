@@ -18,9 +18,9 @@
 
 package com.netease.arctic.server.utils;
 
-import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.ArcticServiceConstants;
@@ -46,6 +46,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -78,9 +80,10 @@ public class IcebergTableUtil {
     return table.currentSnapshot();
   }
 
-  public static Optional<Snapshot> findSnapshot(Table table, Predicate<Snapshot> predicate) {
-    Iterable<Snapshot> snapshots = table.snapshots();
-    return Iterables.tryFind(snapshots, predicate);
+  public static Optional<Snapshot> findSnapshotDesc(Table table, Predicate<Snapshot> predicate) {
+    List<Snapshot> snapshots = Lists.newArrayList(table.snapshots());
+    Collections.reverse(snapshots);
+    return Iterables.tryFind(snapshots, predicate).toJavaUtil();
   }
 
   public static Set<String> getAllContentFilePath(Table internalTable) {

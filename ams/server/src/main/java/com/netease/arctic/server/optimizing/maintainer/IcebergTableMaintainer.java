@@ -21,7 +21,6 @@ package com.netease.arctic.server.optimizing.maintainer;
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
@@ -81,6 +80,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.LinkedTransferQueue;
@@ -204,8 +204,13 @@ public class IcebergTableMaintainer implements TableMaintainer {
       if (expirationConfig.getSince() == DataExpirationConfig.Since.CURRENT_TIMESTAMP) {
         startInstant = Instant.now().atZone(getDefaultZoneId(field)).toInstant();
       } else {
+        Snapshot snapshot = IcebergTableUtil.getSnapshot(table, false);
+        long currentSnapshotTs =
+            Optional.ofNullable(snapshot).isPresent()
+                ? snapshot.timestampMillis()
+                : System.currentTimeMillis();
         startInstant =
-            Instant.ofEpochMilli(fetchLatestNonOptimizedSnapshotTime(table))
+            Instant.ofEpochMilli(min(fetchLatestNonOptimizedSnapshotTime(table), currentSnapshotTs))
                 .atZone(getDefaultZoneId(field))
                 .toInstant();
       }
@@ -419,9 +424,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
    */
   public static long fetchLatestNonOptimizedSnapshotTime(Table table) {
     Optional<Snapshot> snapshot =
-        IcebergTableUtil.findSnapshot(
-            table, s -> s.summary().containsValue(CommitMetaProducer.OPTIMIZE.name()));
-    return snapshot.isPresent() ? snapshot.get().timestampMillis() : Long.MAX_VALUE;
+        IcebergTableUtil.findSnapshotDesc(
+            table, s -> !s.summary().containsValue(CommitMetaProducer.OPTIMIZE.name()));
+    return snapshot.map(Snapshot::timestampMillis).orElse(Long.MAX_VALUE);
   }
 
   private static int deleteInvalidFilesInFs(
@@ -581,8 +586,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
     Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
     return CloseableIterable.transform(
-        CloseableIterable.withNoopClose(
-            com.google.common.collect.Iterables.concat(dataFiles, deleteFiles)),
+        CloseableIterable.withNoopClose(Iterables.concat(dataFiles, deleteFiles)),
         contentFile -> {
           Literal<Long> literal =
               getExpireTimestampLiteral(

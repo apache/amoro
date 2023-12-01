@@ -163,7 +163,8 @@ public class MixedTableMaintainer implements TableMaintainer {
                 ? Long.MAX_VALUE
                 : IcebergTableMaintainer.fetchLatestNonOptimizedSnapshotTime(
                     changeMaintainer.getTable());
-        long latestNonOptimizedTs = Longs.min(latestChangeTs, latestBaseTs);
+        long latestNonOptimizedTs =
+            Longs.min(Longs.max(latestChangeTs, latestBaseTs), System.currentTimeMillis());
 
         startInstant = Instant.ofEpochMilli(latestNonOptimizedTs).atZone(defaultZone).toInstant();
       }
