@@ -18,7 +18,7 @@
 
 import request from '@/utils/request'
 
-export function getJobDebugResult(sessionId: number) {
+export function getJobDebugResult(sessionId: string) {
   return request.get(`ams/v1/terminal/${sessionId}/result`)
 }
 
@@ -38,11 +38,11 @@ export function executeSql(params: {
   return request.post(`ams/v1/terminal/catalogs/${catalog}/execute`, { sql })
 }
 
-export function stopSql(sessionId: number) {
+export function stopSql(sessionId: string) {
   return request.put(`ams/v1/terminal/${sessionId}/stop`)
 }
 
-export function getLogsResult(sessionId: number) {
+export function getLogsResult(sessionId: string) {
   return request.get(`ams/v1/terminal/${sessionId}/logs`)
 }
 

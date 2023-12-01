@@ -27,18 +27,31 @@ import org.apache.iceberg.Table;
 /**
  * API for maintaining table.
  *
- * <p>Includes: clean content files, clean metadata, clean dangling delete files, expire snapshots.
+ * <p>Includes: clean content files, clean metadata, clean dangling delete files, expire snapshots,
+ * auto create tags.
  */
+// TODO TableMaintainer should not be in this optimizing.xxx package.
 public interface TableMaintainer {
 
   /** Clean table orphan files. Includes: data files, metadata files, dangling delete files. */
   void cleanOrphanFiles(TableRuntime tableRuntime);
 
   /**
-   * Expire snapshots，The optimizing based on the snapshot that the current table relies on will not
-   * expire according to TableRuntime.
+   * Expire snapshots. The optimizing based on the snapshot that the current table relies on will
+   * not expire according to TableRuntime.
    */
   void expireSnapshots(TableRuntime tableRuntime);
+
+  /**
+   * Expire historical data based on the expiration field, and data that exceeds the retention
+   * period will be purged
+   *
+   * @param tableRuntime TableRuntime
+   */
+  void expireData(TableRuntime tableRuntime);
+
+  /** Auto create tags for table. */
+  void autoCreateTags(TableRuntime tableRuntime);
 
   static TableMaintainer ofTable(AmoroTable<?> amoroTable) {
     TableFormat format = amoroTable.format();

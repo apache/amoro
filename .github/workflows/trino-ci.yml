@@ -20,8 +20,8 @@ on:
     paths:
       - "ams/**"
       - "core/**"
-      - "hive/**"
-      - "trino/**"
+      - "mixed/hive/**"
+      - "mixed/trino/**"
       - "pom.xml"
 
 jobs:
@@ -40,10 +40,10 @@ jobs:
         run: mvn validate -P trino-spotless
 
       - name: Install dependency with Maven
-        run: mvn clean install -DskipTests -pl 'ams/api,core,hive' -Dhadoop=v2 -am -B -P trino-spotless
+        run: mvn clean install -DskipTests -pl 'ams/api,core,mixed/hive' -Dhadoop=v2 -am -B -P trino-spotless
 
       - name: Build with Maven
-        run: mvn clean test -pl 'trino' -B -ntp -Dhadoop=v2 -P trino-spotless
+        run: mvn clean test -pl 'mixed/trino' -B -ntp -Dhadoop=v2 -P trino-spotless
 
       - name: Code coverage
         uses: codecov/codecov-action@v3

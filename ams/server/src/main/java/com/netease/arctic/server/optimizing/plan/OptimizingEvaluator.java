@@ -103,12 +103,18 @@ public class OptimizingEvaluator {
   }
 
   private void initPartitionPlans(TableFileScanHelper tableFileScanHelper) {
-    PartitionSpec partitionSpec = arcticTable.spec();
     long startTime = System.currentTimeMillis();
     long count = 0;
     try (CloseableIterable<TableFileScanHelper.FileScanResult> results =
         tableFileScanHelper.scan()) {
       for (TableFileScanHelper.FileScanResult fileScanResult : results) {
+        PartitionSpec partitionSpec;
+        if (arcticTable.format() == TableFormat.ICEBERG) {
+          partitionSpec = arcticTable.asUnkeyedTable().specs().get(fileScanResult.file().specId());
+        } else {
+          partitionSpec = arcticTable.spec();
+        }
+
         StructLike partition = fileScanResult.file().partition();
         String partitionPath = partitionSpec.partitionToPath(partition);
         PartitionEvaluator evaluator =
@@ -132,11 +138,10 @@ public class OptimizingEvaluator {
   }
 
   protected PartitionEvaluator buildEvaluator(String partitionPath) {
-    Map<String, String> partitionProperties = partitionProperties(partitionPath);
     if (TableFormat.ICEBERG == arcticTable.format()) {
-      return new CommonPartitionEvaluator(
-          tableRuntime, partitionPath, partitionProperties, System.currentTimeMillis());
+      return new CommonPartitionEvaluator(tableRuntime, partitionPath, System.currentTimeMillis());
     } else {
+      Map<String, String> partitionProperties = partitionProperties(partitionPath);
       if (com.netease.arctic.hive.utils.TableTypeUtil.isHive(arcticTable)) {
         String hiveLocation = (((SupportHive) arcticTable).hiveLocation());
         return new MixedHivePartitionPlan.MixedHivePartitionEvaluator(
