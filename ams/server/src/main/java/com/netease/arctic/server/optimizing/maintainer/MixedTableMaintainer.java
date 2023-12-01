@@ -26,6 +26,8 @@ import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.table.DataExpirationConfig;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.BaseTable;
+import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
@@ -59,7 +61,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.stream.Collectors;
 
@@ -417,6 +418,7 @@ public class MixedTableMaintainer implements TableMaintainer {
       }
     }
   }
+
   public static class MixedFileEntry extends IcebergTableMaintainer.FileEntry {
 
     private final boolean isChange;

@@ -18,9 +18,6 @@
 
 package com.netease.arctic.server.utils;
 
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.ArcticServiceConstants;
@@ -34,11 +31,23 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.HasTableOperations;
+import org.apache.iceberg.MetadataTableType;
+import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.base.Optional;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.base.Predicate;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.iceberg.util.ParallelIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,11 +56,16 @@ import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class IcebergTableUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(IcebergTableUtil.class);
+  private static final ExecutorService manifestIoExecutor =
+      Executors.newCachedThreadPool(
+          new ThreadFactoryBuilder().setDaemon(true).setNameFormat("table-manifest-io-%d").build());
 
   public static long getSnapshotId(Table table, boolean refresh) {
     Snapshot currentSnapshot = getSnapshot(table, refresh);
@@ -142,5 +156,44 @@ public class IcebergTableUtil {
     }
 
     return danglingDeleteFiles;
+  }
+
+  /**
+   * Fetch all manifest files of an Iceberg Table
+   *
+   * @param table An iceberg table, or maybe base store or change store of mixed-iceberg format.
+   * @return Path set of all valid manifest files.
+   */
+  public static Set<String> getAllManifestFiles(Table table) {
+    Preconditions.checkArgument(
+        table instanceof HasTableOperations, "the table must support table operation.");
+    TableOperations ops = ((HasTableOperations) table).operations();
+
+    Table allManifest =
+        MetadataTableUtils.createMetadataTableInstance(
+            ops,
+            table.name(),
+            table.name() + "#" + MetadataTableType.ALL_MANIFESTS.name(),
+            MetadataTableType.ALL_MANIFESTS);
+
+    Set<String> allManifestFiles = Sets.newConcurrentHashSet();
+    TableScan scan = allManifest.newScan().select("path");
+
+    try (CloseableIterable<FileScanTask> tasks = scan.planFiles()) {
+      CloseableIterable<CloseableIterable<StructLike>> transform =
+          CloseableIterable.transform(tasks, task -> task.asDataTask().rows());
+
+      ParallelIterable<StructLike> parallelIterable =
+          new ParallelIterable<>(transform, manifestIoExecutor);
+      parallelIterable.forEach(
+          r -> {
+            String path = r.get(0, String.class);
+            allManifestFiles.add(path);
+          });
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    return allManifestFiles;
   }
 }

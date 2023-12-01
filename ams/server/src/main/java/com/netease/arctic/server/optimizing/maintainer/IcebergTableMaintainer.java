@@ -20,11 +20,6 @@ package com.netease.arctic.server.optimizing.maintainer;
 
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Optional;
-import com.google.common.base.Strings;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
@@ -46,29 +41,25 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
-import org.apache.iceberg.ManifestFile;
-import org.apache.iceberg.HasTableOperations;
-import org.apache.iceberg.MetadataTableType;
-import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.base.Optional;
+import org.apache.iceberg.relocated.com.google.common.base.Strings;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Type;
@@ -86,7 +77,6 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
@@ -488,7 +478,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
       validFiles.add(TableFileUtil.getUriPath(manifestListLocation));
     }
     // valid data files
-    validFiles.addAll(allManifestFiles(internalTable));
+    validFiles.addAll(IcebergTableUtil.getAllManifestFiles(internalTable));
 
     Stream.of(
             ReachableFileUtil.metadataFileLocations(internalTable, false).stream(),
@@ -535,46 +525,6 @@ public class IcebergTableMaintainer implements TableMaintainer {
       }
     }
     return count;
-  }
-
-  @VisibleForTesting
-  protected static Set<String> allManifestFiles(Table table) {
-    Preconditions.checkArgument(
-        table instanceof HasTableOperations, "the table must support table operation.");
-    TableOperations ops = ((HasTableOperations) table).operations();
-
-    Table allManifest =
-        MetadataTableUtils.createMetadataTableInstance(
-            ops,
-            table.name(),
-            table.name() + "#" + MetadataTableType.ALL_MANIFESTS.name(),
-            MetadataTableType.ALL_MANIFESTS);
-    Schema allManifestSchema = allManifest.schema();
-    int pos = -1;
-    Types.NestedField[] fields = allManifestSchema.columns().toArray(new Types.NestedField[0]);
-    for (int i = 0; i < fields.length; i++) {
-      if (fields[i].name().equals("path")) {
-        pos = i;
-        break;
-      }
-    }
-    Preconditions.checkArgument(pos > 0, "path field not found in ALL_MANIFESTS meta table.");
-
-    Set<String> allManifestFiles = Sets.newHashSet();
-
-    try (CloseableIterable<StructLike> rows =
-        CloseableIterable.concat(
-            CloseableIterable.transform(
-                allManifest.newScan().planFiles(), task -> task.asDataTask().rows()))) {
-      for (StructLike row : rows) {
-        String path = row.get(pos, String.class);
-        allManifestFiles.add(path);
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-
-    return allManifestFiles;
   }
 
   CloseableIterable<FileEntry> fileScan(

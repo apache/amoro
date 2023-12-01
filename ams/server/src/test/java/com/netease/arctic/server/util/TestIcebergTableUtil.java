@@ -16,11 +16,12 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.server.optimizing.maintainer;
+package com.netease.arctic.server.util;
 
 import com.netease.arctic.io.IcebergDataTestHelpers;
 import com.netease.arctic.io.MixedDataTestHelpers;
 import com.netease.arctic.mixed.MixedTables;
+import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableMetaStore;
@@ -51,7 +52,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class TestMaintainerUtilMethods {
+public class TestIcebergTableUtil {
   private static final Schema schema =
       new Schema(
           Types.NestedField.required(1, "id", Types.IntegerType.get()),
@@ -91,7 +92,7 @@ public class TestMaintainerUtilMethods {
             .map(ManifestFile::path)
             .collect(Collectors.toSet());
 
-    Set<String> actualManifestFiles = IcebergTableMaintainer.allManifestFiles(table);
+    Set<String> actualManifestFiles = IcebergTableUtil.getAllManifestFiles(table);
     Assertions.assertEquals(expectManifestFiles, actualManifestFiles);
   }
 
