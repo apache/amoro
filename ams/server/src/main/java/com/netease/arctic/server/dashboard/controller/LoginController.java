@@ -58,7 +58,6 @@ public class LoginController {
 
   /** handle logout post request. */
   public void logout(Context ctx) {
-    ctx.consumeSessionAttribute("user");
     ctx.removeCookie("JSESSIONID");
     ctx.json(OkResponse.ok());
   }
