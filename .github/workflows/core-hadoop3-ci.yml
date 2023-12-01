@@ -3,6 +3,10 @@
 
 name: Core/hadoop3 CI with Maven
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
@@ -16,10 +20,9 @@ on:
     paths:
       - "ams/**"
       - "core/**"
-      - "flink/**"
-      - "hive/**"
-      - "spark/**"
-      - "trino/**"
+      - "mixed/flink/**"
+      - "mixed/hive/**"
+      - "mixed/spark/**"
       - "pom.xml"
 
 jobs:
@@ -39,7 +42,7 @@ jobs:
         run: mvn validate
 
       - name: Build all module with Maven
-        run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp
+        run: mvn clean install -pl '!mixed/trino' -Djacoco.flink.skip=true -B -ntp
 
       - name: Code coverage
         uses: codecov/codecov-action@v3

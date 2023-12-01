@@ -23,8 +23,8 @@ public class ResourceContainers {
   public static void init(List<ContainerMetadata> containerList) {
     Preconditions.checkState(!isInitialized, "OptimizerContainers has been initialized");
     Preconditions.checkNotNull(containerList, "containerList is null");
-    containerList.forEach(metadata ->
-        globalContainers.put(metadata.getName(), new ContainerWrapper(metadata)));
+    containerList.forEach(
+        metadata -> globalContainers.put(metadata.getName(), new ContainerWrapper(metadata)));
     isInitialized = true;
   }
 
@@ -37,8 +37,7 @@ public class ResourceContainers {
 
   public static List<ContainerMetadata> getMetadataList() {
     Preconditions.checkState(isInitialized, "OptimizerContainers not been initialized");
-    return globalContainers.values()
-        .stream()
+    return globalContainers.values().stream()
         .map(ContainerWrapper::getMetadata)
         .collect(Collectors.toList());
   }

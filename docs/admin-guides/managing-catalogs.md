@@ -51,8 +51,8 @@ You can create a catalog in the AMS frontend:
 
 ### Configure properties
 Common properties include:
-- warehouse: Warehouse **must be configured**, as it determines where our database and table files should be placed
-- catalog-impl: when the metastore is **Custom**, an additional catalog-impl must be defined, and the user must put the jar package for the custom catalog implementation into the **{ARCTIC_HOME}/lib** directory, **and the service must be restarted to take effect**
+- warehouse: Warehouse **must be configured** for ams/hadoop/glue catalog, as it determines where our database and table files should be placed
+- catalog-impl: when the metastore is **Custom**, an additional catalog-impl must be defined, and the user must put the jar package for the custom catalog implementation into the **{AMORO_HOME}/lib** directory, **and the service must be restarted to take effect**
 - table-filter: Configure a regular expression to filter tables in the catalog. The matching will be done in the format of `database.table`. For example, if it is set to `(A\.a)|(B\.b)`, it will ignore all tables except for table `a` in database `A` and table `b` in database `B`
 
 ### Configure table properties

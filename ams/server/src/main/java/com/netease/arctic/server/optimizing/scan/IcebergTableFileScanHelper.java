@@ -26,6 +26,8 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
+import java.util.Map;
+
 public class IcebergTableFileScanHelper implements TableFileScanHelper {
   private final Table table;
   private PartitionFilter partitionFilter;
@@ -41,18 +43,20 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
     if (snapshotId == ArcticServiceConstants.INVALID_SNAPSHOT_ID) {
       return CloseableIterable.empty();
     }
-    PartitionSpec partitionSpec = table.spec();
+    Map<Integer, PartitionSpec> specs = table.specs();
     return CloseableIterable.transform(
         CloseableIterable.filter(
             table.newScan().useSnapshot(snapshotId).planFiles(),
             fileScanTask -> {
               if (partitionFilter != null) {
                 StructLike partition = fileScanTask.file().partition();
-                String partitionPath = partitionSpec.partitionToPath(partition);
+                String partitionPath =
+                    specs.get(fileScanTask.file().specId()).partitionToPath(partition);
                 return partitionFilter.test(partitionPath);
               }
               return true;
-            }), this::buildFileScanResult);
+            }),
+        this::buildFileScanResult);
   }
 
   protected FileScanResult buildFileScanResult(FileScanTask fileScanTask) {

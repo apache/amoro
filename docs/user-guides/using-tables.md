@@ -30,7 +30,7 @@ tblproperties(
   'log-store.type' = 'kafka',
   'log-store.address' = '127.0.0.1:9092',
   'log-store.topic' = 'local_catalog.test_db.test_log_store.log_store',
-  'table.event-time-field ' = 'op_time',
+  'table.event-time-field' = 'op_time',
   'table.watermark-allowed-lateness-second' = '60');
 ```
 
@@ -122,11 +122,11 @@ For more information, please refer to [Self-optimizing quota](../self-optimizing
 ### Adjust optimizing parameters
 
 You can manually set parameters such as execution interval, task size, and execution timeout for different types of Optimize. 
-For example, to set the execution interval for Self-optimize of the major type, you can do the following:
+For example, to set the execution interval for minor optimizing, you can do the following:
 
 ```sql
 ALTER TABLE test_db.test_log_store set tblproperties (
-    'self-optimizing.major.trigger.interval' = '3600000');
+    'self-optimizing.minor.trigger.interval' = '3600000');
 ```
 
 More optimization parameter adjustment refer to [Self-optimizing configuration](../configurations/#self-optimizing-configurations)。
@@ -155,7 +155,7 @@ ALTER TABLE test_db.test_log_store set tblproperties (
     'data-expire.enabled' = 'true');
 ```
 
-### Set the data retention period
+### Set retention period
 
 The configuration for data retention duration consists of a number and a unit. For example, '90d' represents retaining data for 90 days, and '12h' indicates 12 hours.
 
@@ -164,7 +164,7 @@ ALTER TABLE test_db.test_log_store set tblproperties (
     'data-expire.retention-time' = '90d');
 ```
 
-### Select the event-time field
+### Select expiration field
 
 Data expiration requires users to specify a field for determining expiration. 
 In addition to supporting timestampz/timestamp field types for this purpose, it also supports string and long field type. 
@@ -186,13 +186,22 @@ ALTER TABLE test_db.test_log_store set tblproperties (
     'data-expire.datetime-number-format' = 'TIMESTAMP_MS');
 ```
 
-### Adjust the data expiration level
+### Adjust expiration level
 
 Data expiration supports two levels, including `PARTITION` and `FILE`. The default level is `PARTITION`, which means that AMS deletes files only when all the files within a partition have expired.
 
 ```sql
 ALTER TABLE test_db.test_log_store set tblproperties (
     'data-expire.level' = 'partition');
+```
+
+### Specify start time
+
+Amoro expire data since `CURRENT_SNAPSHOT` or `CURRENT_TIMESTAMP`. `CURRENT_SNAPSHOT` will follow the timestamp of the table's most recent snapshot as the start time of the expiration, which ensures that the table has `data-expire.retention-time` data; while `CURRENT_TIMESTAMP` will follow the current time of the service.
+
+```sql
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'data-expire.since' = 'current_timestamp');
 ```
 
 ## Delete table

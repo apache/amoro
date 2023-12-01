@@ -26,7 +26,8 @@ import org.apache.iceberg.Transaction;
 
 import java.util.function.Supplier;
 
-public class ArcticReplacePartitions extends ArcticUpdate<ReplacePartitions> implements ReplacePartitions {
+public class ArcticReplacePartitions extends ArcticUpdate<ReplacePartitions>
+    implements ReplacePartitions {
 
   private final ReplacePartitions replacePartitions;
 
@@ -40,8 +41,10 @@ public class ArcticReplacePartitions extends ArcticUpdate<ReplacePartitions> imp
   }
 
   private ArcticReplacePartitions(
-      ArcticTable arcticTable, ReplacePartitions replacePartitions,
-      Transaction transaction, boolean autoCommitTransaction) {
+      ArcticTable arcticTable,
+      ReplacePartitions replacePartitions,
+      Transaction transaction,
+      boolean autoCommitTransaction) {
     super(arcticTable, replacePartitions, transaction, autoCommitTransaction);
     this.replacePartitions = replacePartitions;
   }
@@ -82,7 +85,8 @@ public class ArcticReplacePartitions extends ArcticUpdate<ReplacePartitions> imp
     return this;
   }
 
-  public static class Builder extends ArcticUpdate.Builder<ArcticReplacePartitions, ReplacePartitions> {
+  public static class Builder
+      extends ArcticUpdate.Builder<ArcticReplacePartitions, ReplacePartitions> {
 
     private Builder(ArcticTable table) {
       super(table);
@@ -90,8 +94,10 @@ public class ArcticReplacePartitions extends ArcticUpdate<ReplacePartitions> imp
     }
 
     @Override
-    protected ArcticReplacePartitions updateWithWatermark(Transaction transaction, boolean autoCommitTransaction) {
-      return new ArcticReplacePartitions(table, transaction.newReplacePartitions(), transaction, autoCommitTransaction);
+    protected ArcticReplacePartitions updateWithWatermark(
+        Transaction transaction, boolean autoCommitTransaction) {
+      return new ArcticReplacePartitions(
+          table, transaction.newReplacePartitions(), transaction, autoCommitTransaction);
     }
 
     @Override

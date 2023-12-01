@@ -12,7 +12,13 @@ menu:
 # Iceberg Format
 
 The Iceberg Format can be accessed using the Connector provided by Iceberg.
-Refer to the documentation at [Iceberg Spark Connector](https://iceberg.apache.org/docs/latest/getting-started/) 
+Refer to the documentation at [Iceberg Spark Connector](https://iceberg.apache.org/docs/latest/getting-started/)
+for more information.
+
+# Paimon Format
+
+The Paimon Format can be accessed using the Connector provided by Paimon.
+Refer to the documentation at [Paimon Spark Connector](https://paimon.apache.org/docs/master/engines/spark3/)
 for more information.
 
 # Mixed Format
@@ -21,10 +27,10 @@ for more information.
 To use Amoro in a Spark shell, use the --packages option:
 
 ```bash
-spark-shell --packages com.netease.amoro:amoro-spark-3.3-runtime:0.5.0
+spark-shell --packages com.netease.amoro:amoro-mixed-spark-3.3-runtime:0.5.0
 ```
 
-> If you want to include the connector in your Spark installation, add the `amoro-spark-3.3-runtime` Jar to
+> If you want to include the connector in your Spark installation, add the `amoro-mixed-spark-3.3-runtime` Jar to
 > Spark's `jars` folder.
 
 ## Adding catalogs
@@ -36,10 +42,10 @@ ${SPARK_HOME}/bin/spark-sql \
     --conf spark.sql.catalog.local_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}
 ```
 
-> Amoro manages the Catalog through AMS, and Spark catalog needs to be mapped to Amoro Catalog via URL, 
+> Amoro manages the Catalog through AMS, and Spark catalog needs to be mapped to Amoro Catalog via URL,
 > in the following format:
-> `thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}`, 
-> The arctic-spark-connector will automatically download the Hadoop site configuration file through 
+> `thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}`,
+> The arctic-spark-connector will automatically download the Hadoop site configuration file through
 > the thrift protocol for accessing the HDFS cluster
 
 >
@@ -120,7 +126,7 @@ from test2
 group by data;
 ```
 
-For table with primary keys defined, you can query on `ChangeStore` by `.change` 
+For table with primary keys defined, you can query on `ChangeStore` by `.change`
 
 ``` 
 select count(1) as count, data

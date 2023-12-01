@@ -28,7 +28,10 @@ public class OptimizingCommitExecutor extends BaseTableExecutor {
   @Override
   protected void execute(TableRuntime tableRuntime) {
     Optional.ofNullable(tableRuntime.getOptimizingProcess())
-        .orElseThrow(() -> new IllegalStateException("OptimizingProcess is null while committing:" + tableRuntime))
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "OptimizingProcess is null while committing:" + tableRuntime))
         .commit();
   }
 
@@ -38,8 +41,7 @@ public class OptimizingCommitExecutor extends BaseTableExecutor {
   }
 
   @Override
-  public void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
-  }
+  public void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {}
 
   protected long getStartDelay() {
     return 0;

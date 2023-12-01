@@ -18,37 +18,34 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-/**
- * sql shortcut
- */
+/** sql shortcut */
 public enum SqlExample {
-  CREATE_TABLE("CreateTable",
-      "create table db_name.table_name (\n" +
-          "    id int,\n" +
-          "    name string, \n" +
-          "    ts timestamp,\n" +
-          "    primary key (id)\n" +
-          ") using arctic \n" +
-          "partitioned by (days(ts)) \n" +
-          "tblproperties ('table.props' = 'val');"),
-  DELETE_TABLE("DeleteTable",
-      "drop table db_name.table_name;"),
-  EDIT_TABLE("EditTable",
-      "alter table db_name.table_name add column data int ;\n" +
-          "alter table db_name.table_name alter column data bigint ;\n" +
-          "alter table db_name.table_name drop column data;"),
-  ALTER_PROPERTIES("AlterProperties",
-      "alter table db_name.table_name set tblproperties (\n" +
-          "    'comment' = 'A table comment.');"),
-  SHOW_DATABASES("ShowDatabases",
-      "show databases;"),
-  SHOW_TABLES("ShowTables",
-          "show tables;"),
-  DESCRIBE("Describe",
-      "desc db_name.table_name;");
+  CREATE_TABLE(
+      "CreateTable",
+      "create table db_name.table_name (\n"
+          + "    id int,\n"
+          + "    name string, \n"
+          + "    ts timestamp,\n"
+          + "    primary key (id)\n"
+          + ") using arctic \n"
+          + "partitioned by (days(ts)) \n"
+          + "tblproperties ('table.props' = 'val');"),
+  DELETE_TABLE("DeleteTable", "drop table db_name.table_name;"),
+  EDIT_TABLE(
+      "EditTable",
+      "alter table db_name.table_name add column data int ;\n"
+          + "alter table db_name.table_name alter column data bigint ;\n"
+          + "alter table db_name.table_name drop column data;"),
+  ALTER_PROPERTIES(
+      "AlterProperties",
+      "alter table db_name.table_name set tblproperties (\n"
+          + "    'comment' = 'A table comment.');"),
+  SHOW_DATABASES("ShowDatabases", "show databases;"),
+  SHOW_TABLES("ShowTables", "show tables;"),
+  DESCRIBE("Describe", "desc db_name.table_name;");
 
-  private String name;
-  private String sql;
+  private final String name;
+  private final String sql;
 
   SqlExample(String name, String sql) {
     this.name = name;

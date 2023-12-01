@@ -35,7 +35,7 @@ RUN apt-get update \
     && apt-get install -y unzip
 
 RUN AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'` \
-    && cp dist/target/*.zip /usr/local \
+    && cp ams/dist/target/*.zip /usr/local \
     && unzip /usr/local/amoro-${AMORO_VERSION}-bin.zip -d /usr/local \
     && rm /usr/local/amoro-${AMORO_VERSION}/plugin/optimizer/flink -rf \
     && mv /usr/local/amoro-${AMORO_VERSION} /usr/local/amoro \
@@ -54,6 +54,9 @@ RUN chmod +x /entrypoint.sh
 COPY --from=builder "/usr/local/amoro" "/usr/local/amoro"
 
 WORKDIR ${AMORO_HOME}
+
+RUN cd ${AMORO_HOME}/lib \
+    && wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.30/mysql-connector-java-8.0.30.jar
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["help"]

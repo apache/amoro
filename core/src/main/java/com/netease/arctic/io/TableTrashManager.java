@@ -23,13 +23,10 @@ import com.netease.arctic.table.TableIdentifier;
 import java.io.Serializable;
 import java.time.LocalDate;
 
-/**
- * Trash Manager for a table.
- */
+/** Trash Manager for a table. */
 public interface TableTrashManager extends Serializable {
   /**
-   * Table identifier.
-   * A TableTrashManager only handle files in this table's location.
+   * Table identifier. A TableTrashManager only handle files in this table's location.
    *
    * @return table identifier
    */
@@ -40,7 +37,7 @@ public interface TableTrashManager extends Serializable {
    *
    * @param path the file path
    * @throws java.io.UncheckedIOException - if failed to move file to trash
-   * @throws IllegalArgumentException     - if path is a directory
+   * @throws IllegalArgumentException - if path is a directory
    */
   void moveFileToTrash(String path);
 

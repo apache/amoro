@@ -17,7 +17,7 @@ The architecture of Amoro is as follows:
 The core components of Amoro include:
 
 * AMS: Amoro Management Service provides Lakehouse management features, like self-optimizing, data expiration, etc.
-  It also provides a unified catalog service for all computing engines, which can also be combined with existing metadata services.
+  It also provides a unified catalog service for all compute engines, which can also be combined with existing metadata services.
 * Plugins: Amoro provides a wide selection of external plugins to meet different scenarios.
     * Optimizers: The self-optimizing execution engine plugin asynchronously performs merging, sorting, deduplication,
       layout optimization, and other operations on all type table format tables.
@@ -42,13 +42,18 @@ Amoro meets diverse user needs by using different table formats. Currently, Amor
 Iceberg format tables use the engine integration method provided by the Iceberg community.
 For details, please refer to: [Iceberg Docs](https://iceberg.apache.org/docs/latest/).
 
+### Paimon format
+
+Paimon format tables use the engine integration method provided by the Paimon community.
+For details, please refer to: [Paimon Docs](https://paimon.apache.org/docs/master/).
+
 ### Mixed format
 
 Amoro support multiple processing engines for Mixed format as below:
 
 | Processing Engine | Version                   | Batch Read  | Batch Write | Batch Overwrite | Streaming Read | Streaming Write | Create Table | Alter Table |
 |-------------------|---------------------------|-------------|-------------|-----------------|----------------|-----------------|--------------|-------------|
-| Flink             | 1.12.x, 1.14.x and 1.15.x |  &#x2714;   |   &#x2714;   |       &#x2716;   |      &#x2714;   |       &#x2714;   |    &#x2714;   |   &#x2716;   |
+| Flink             | 1.15.x, 1.16.x and 1.17.x |  &#x2714;   |   &#x2714;   |       &#x2716;   |      &#x2714;   |       &#x2714;   |    &#x2714;   |   &#x2716;   |
 | Spark             | 3.1, 3.2, 3.3             |  &#x2714;   |   &#x2714;   |       &#x2714;   |      &#x2716;   |       &#x2716;   |    &#x2714;   |   &#x2714;   |
 | Hive              | 2.x, 3.x                  |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
 | Trino             | 406                       |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |

@@ -21,7 +21,8 @@ package com.netease.arctic.server.dashboard;
 import com.netease.arctic.formats.AmoroCatalogTestHelper;
 import com.netease.arctic.server.catalog.TableCatalogTestBase;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
-import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.server.utils.Configurations;
+import com.netease.arctic.table.TableIdentifier;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,6 +42,7 @@ public abstract class TestServerTableDescriptor extends TableCatalogTestBase {
   @Before
   public void before() {
     getAmoroCatalog().createDatabase(TEST_DB);
+
     try {
       getAmoroCatalogTestHelper().createTable(TEST_DB, TEST_TABLE);
     } catch (Exception e) {
@@ -50,67 +52,80 @@ public abstract class TestServerTableDescriptor extends TableCatalogTestBase {
 
   @Test
   public void tableOperations() throws Exception {
-    ServerTableDescriptor serverTableDescriptor = new ServerTableDescriptor(tableService());
+    ServerTableDescriptor serverTableDescriptor =
+        new ServerTableDescriptor(tableService(), new Configurations());
 
-    //add properties
+    // add properties
     getAmoroCatalogTestHelper().setTableProperties(TEST_DB, TEST_TABLE, "k1", "v1");
 
-    //remove properties
+    // remove properties
     getAmoroCatalogTestHelper().removeTableProperties(TEST_DB, TEST_TABLE, "k1");
 
-    //add columns
+    // add columns
     tableOperationsAddColumns();
 
-    //rename columns
+    // rename columns
     tableOperationsRenameColumns();
 
-    //change columns type
+    // change columns type
     tableOperationsChangeColumnType();
 
-    //change columns comment
+    // change columns comment
     tableOperationsChangeColumnComment();
 
-    //change columns nullable
+    // change columns nullable
     tableOperationsChangeColumnRequired();
 
-    //change columns default value
+    // change columns default value
     tableOperationsDropColumn();
 
-    List<DDLInfo> tableOperations = serverTableDescriptor.getTableOperations(
-        ServerTableIdentifier.of(getAmoroCatalogTestHelper().catalogName(), TEST_DB, TEST_TABLE));
+    List<DDLInfo> tableOperations =
+        serverTableDescriptor.getTableOperations(
+            TableIdentifier.of(getAmoroCatalogTestHelper().catalogName(), TEST_DB, TEST_TABLE)
+                .buildTableIdentifier());
 
     Assert.assertEquals(
-        tableOperations.get(0).getDdl(),
-        "ALTER TABLE test_table SET TBLPROPERTIES ('k1' = 'v1')");
+        tableOperations.get(0).getDdl(), "ALTER TABLE test_table SET TBLPROPERTIES ('k1' = 'v1')");
 
     Assert.assertEquals(
-        tableOperations.get(1).getDdl(),
-        "ALTER TABLE test_table UNSET TBLPROPERTIES ('k1')");
+        tableOperations.get(1).getDdl(), "ALTER TABLE test_table UNSET TBLPROPERTIES ('k1')");
 
     Assert.assertTrue(
-        tableOperations.get(2).getDdl()
+        tableOperations
+            .get(2)
+            .getDdl()
             .equalsIgnoreCase("ALTER TABLE test_table ADD COLUMNS (new_col int)"));
 
     Assert.assertTrue(
-        tableOperations.get(3).getDdl()
+        tableOperations
+            .get(3)
+            .getDdl()
             .equalsIgnoreCase("ALTER TABLE test_table RENAME COLUMN new_col TO renamed_col"));
 
     Assert.assertTrue(
-        tableOperations.get(4).getDdl()
+        tableOperations
+            .get(4)
+            .getDdl()
             .equalsIgnoreCase("ALTER TABLE test_table ALTER COLUMN renamed_col TYPE BIGINT"));
 
     Assert.assertTrue(
-        tableOperations.get(5).getDdl()
-            .equalsIgnoreCase("ALTER TABLE test_table ALTER COLUMN renamed_col COMMENT 'new comment'"));
+        tableOperations
+            .get(5)
+            .getDdl()
+            .equalsIgnoreCase(
+                "ALTER TABLE test_table ALTER COLUMN renamed_col COMMENT 'new comment'"));
 
     Assert.assertTrue(
-        tableOperations.get(6).getDdl()
+        tableOperations
+            .get(6)
+            .getDdl()
             .equalsIgnoreCase("ALTER TABLE test_table ALTER COLUMN renamed_col DROP NOT NULL"));
 
     Assert.assertTrue(
-        tableOperations.get(7).getDdl()
-            .equalsIgnoreCase("ALTER TABLE test_table DROP COLUMN renamed_col")
-    );
+        tableOperations
+            .get(7)
+            .getDdl()
+            .equalsIgnoreCase("ALTER TABLE test_table DROP COLUMN renamed_col"));
   }
 
   protected abstract void tableOperationsAddColumns();

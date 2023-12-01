@@ -64,10 +64,10 @@ public class TestFlinkOptimizerContainer {
     groupProperties.put("flink-conf.key2", "value4");
     groupProperties.put("flink-conf.key5", "value5");
 
-    FlinkOptimizerContainer.FlinkConf
-        conf = FlinkOptimizerContainer.FlinkConf.buildFor(Maps.newHashMap(), containerProperties)
-        .withGroupProperties(groupProperties)
-        .build();
+    FlinkOptimizerContainer.FlinkConf conf =
+        FlinkOptimizerContainer.FlinkConf.buildFor(Maps.newHashMap(), containerProperties)
+            .withGroupProperties(groupProperties)
+            .build();
     String flinkOptions = conf.toCliOptions();
     Assert.assertEquals(3, flinkOptions.split(" ").length);
     Assert.assertTrue(flinkOptions.contains("-Dkey1=value1"));
@@ -84,24 +84,28 @@ public class TestFlinkOptimizerContainer {
     FlinkOptimizerContainer.FlinkConf conf =
         FlinkOptimizerContainer.FlinkConf.buildFor(prop, Maps.newHashMap()).build();
 
-    Assert.assertEquals(100L, container.getMemorySizeValue(prop, conf,
-        "taskmanager.memory",
-        "taskmanager.memory.process.size"));
-    Assert.assertEquals(100L, container.getMemorySizeValue(prop, conf,
-        "jobmanager.memory",
-        "jobmanager.memory.process.size"));
+    Assert.assertEquals(
+        100L,
+        container.getMemorySizeValue(
+            prop, conf, "taskmanager.memory", "taskmanager.memory.process.size"));
+    Assert.assertEquals(
+        100L,
+        container.getMemorySizeValue(
+            prop, conf, "jobmanager.memory", "jobmanager.memory.process.size"));
 
     Map<String, String> containerProperties = Maps.newHashMap();
     containerProperties.put("flink-conf.jobmanager.memory.process.size", "200 M");
     containerProperties.put("flink-conf.taskmanager.memory.process.size", "200");
     conf = FlinkOptimizerContainer.FlinkConf.buildFor(prop, containerProperties).build();
     prop.clear();
-    Assert.assertEquals(200L, container.getMemorySizeValue(prop, conf,
-        "taskmanager.memory",
-        "taskmanager.memory.process.size"));
-    Assert.assertEquals(200L, container.getMemorySizeValue(prop, conf,
-        "jobmanager.memory",
-        "jobmanager.memory.process.size"));
+    Assert.assertEquals(
+        200L,
+        container.getMemorySizeValue(
+            prop, conf, "taskmanager.memory", "taskmanager.memory.process.size"));
+    Assert.assertEquals(
+        200L,
+        container.getMemorySizeValue(
+            prop, conf, "jobmanager.memory", "jobmanager.memory.process.size"));
 
     prop.clear();
     containerProperties = Maps.newHashMap();
@@ -109,20 +113,24 @@ public class TestFlinkOptimizerContainer {
 
     prop.put("taskmanager.memory", "300 M");
     prop.put("jobmanager.memory", "300");
-    Assert.assertEquals(300L, container.getMemorySizeValue(prop, conf,
-        "taskmanager.memory",
-        "taskmanager.memory.process.size"));
-    Assert.assertEquals(300L, container.getMemorySizeValue(prop, conf,
-        "jobmanager.memory",
-        "jobmanager.memory.process.size"));
+    Assert.assertEquals(
+        300L,
+        container.getMemorySizeValue(
+            prop, conf, "taskmanager.memory", "taskmanager.memory.process.size"));
+    Assert.assertEquals(
+        300L,
+        container.getMemorySizeValue(
+            prop, conf, "jobmanager.memory", "jobmanager.memory.process.size"));
 
     conf = FlinkOptimizerContainer.FlinkConf.buildFor(Maps.newHashMap(), Maps.newHashMap()).build();
     prop.clear();
-    Assert.assertEquals(0L, container.getMemorySizeValue(prop, conf,
-        "taskmanager.memory",
-        "taskmanager.memory.process.size"));
-    Assert.assertEquals(0L, container.getMemorySizeValue(prop, conf,
-        "jobmanager.memory",
-        "jobmanager.memory.process.size"));
+    Assert.assertEquals(
+        0L,
+        container.getMemorySizeValue(
+            prop, conf, "taskmanager.memory", "taskmanager.memory.process.size"));
+    Assert.assertEquals(
+        0L,
+        container.getMemorySizeValue(
+            prop, conf, "jobmanager.memory", "jobmanager.memory.process.size"));
   }
 }

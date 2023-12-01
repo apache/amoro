@@ -43,10 +43,10 @@ public class ExternalCatalogTest extends TableCatalogTestBase {
   @Parameterized.Parameters(name = "{0}")
   public static Object[] parameters() {
     return new Object[] {
-        PaimonHadoopCatalogTestHelper.defaultHelper(),
-        PaimonHiveCatalogTestHelper.defaultHelper(),
-        IcebergHadoopCatalogTestHelper.defaultHelper(),
-        IcebergHiveCatalogTestHelper.defaultHelper()
+      PaimonHadoopCatalogTestHelper.defaultHelper(),
+      PaimonHiveCatalogTestHelper.defaultHelper(),
+      IcebergHadoopCatalogTestHelper.defaultHelper(),
+      IcebergHiveCatalogTestHelper.defaultHelper()
     };
   }
 
@@ -74,7 +74,9 @@ public class ExternalCatalogTest extends TableCatalogTestBase {
   @Test
   public void listTables() {
     Assert.assertEquals(1, getExternalCatalog().listTables(testDatabaseName).size());
-    Assert.assertEquals(testTableName, getExternalCatalog().listTables(testDatabaseName).get(0).getTableName());
+    Assert.assertEquals(
+        testTableName,
+        getExternalCatalog().listTables(testDatabaseName).get(0).getIdentifier().getTableName());
   }
 
   @Test

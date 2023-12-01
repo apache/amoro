@@ -47,5 +47,4 @@ public class ContentFiles {
     Preconditions.checkArgument(isDeleteFile(contentFile), "Not a delete file");
     return (DeleteFile) contentFile;
   }
-
 }

@@ -18,9 +18,9 @@
 
 package com.netease.arctic.server;
 
-
 import com.netease.arctic.server.utils.ConfigOption;
 import com.netease.arctic.server.utils.ConfigOptions;
+
 import java.time.Duration;
 
 public class ArcticManagementConf {
@@ -49,11 +49,30 @@ public class ArcticManagementConf {
           .defaultValue("admin")
           .withDescription("The administrator password");
 
+  public static final ConfigOption<Integer> TABLE_MANIFEST_IO_THREAD_COUNT =
+      ConfigOptions.key("table-manifest-io.thread-count")
+          .intType()
+          .defaultValue(10)
+          .withDescription("The number of threads used to read metadata.");
+
   public static final ConfigOption<Long> REFRESH_EXTERNAL_CATALOGS_INTERVAL =
       ConfigOptions.key("refresh-external-catalogs.interval")
           .longType()
           .defaultValue(3 * 60 * 1000L)
           .withDescription("Interval to refresh the external catalog.");
+
+  public static final ConfigOption<Integer> REFRESH_EXTERNAL_CATALOGS_THREAD_COUNT =
+      ConfigOptions.key("refresh-external-catalogs.thread-count")
+          .intType()
+          .defaultValue(10)
+          .withDescription(
+              "The number of threads used for discovering tables in external catalogs.");
+
+  public static final ConfigOption<Integer> REFRESH_EXTERNAL_CATALOGS_QUEUE_SIZE =
+      ConfigOptions.key("refresh-external-catalogs.queue-size")
+          .intType()
+          .defaultValue(1000000)
+          .withDescription("The queue size of the executors of the external catalog explorer.");
 
   public static final ConfigOption<Boolean> EXPIRE_SNAPSHOTS_ENABLED =
       ConfigOptions.key("expire-snapshots.enabled")
@@ -96,6 +115,24 @@ public class ArcticManagementConf {
           .intType()
           .defaultValue(10)
           .withDescription("The number of threads used for refreshing tables.");
+
+  public static final ConfigOption<Boolean> AUTO_CREATE_TAGS_ENABLED =
+      ConfigOptions.key("auto-create-tags.enabled")
+          .booleanType()
+          .defaultValue(true)
+          .withDescription("Enable creating tags.");
+
+  public static final ConfigOption<Integer> AUTO_CREATE_TAGS_THREAD_COUNT =
+      ConfigOptions.key("auto-create-tags.thread-count")
+          .intType()
+          .defaultValue(3)
+          .withDescription("The number of threads used for creating tags.");
+
+  public static final ConfigOption<Long> AUTO_CREATE_TAGS_INTERVAL =
+      ConfigOptions.key("auto-create-tags.interval")
+          .longType()
+          .defaultValue(60000L)
+          .withDescription("Interval for creating tags.");
 
   public static final ConfigOption<Long> REFRESH_TABLES_INTERVAL =
       ConfigOptions.key("refresh-tables.interval")
@@ -178,21 +215,19 @@ public class ArcticManagementConf {
   public static final ConfigOption<String> DB_TYPE =
       ConfigOptions.key("database.type")
           .stringType()
-          .defaultValue("mysql")
+          .defaultValue("derby")
           .withDescription("Database type.");
 
   public static final ConfigOption<String> DB_CONNECTION_URL =
       ConfigOptions.key("database.url")
           .stringType()
-          .defaultValue("jdbc:mysql://127.0.0.1:3306/metadata?" +
-              "serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=UTF8" +
-              "&autoReconnect=true&useAffectedRows=true")
+          .defaultValue("jdbc:derby:/tmp/amoro/derby;create=true")
           .withDescription("Database connection address");
 
   public static final ConfigOption<String> DB_DRIVER_CLASS_NAME =
       ConfigOptions.key("database.jdbc-driver-class")
           .stringType()
-          .defaultValue("com.mysql.jdbc.Driver")
+          .defaultValue("org.apache.derby.jdbc.EmbeddedDriver")
           .withDescription("The JDBC driver class name for connecting to the database.");
 
   public static final ConfigOption<String> DB_USER_NAME =
@@ -219,10 +254,9 @@ public class ArcticManagementConf {
           .defaultValue(30000L)
           .withDescription("Timeout duration for task acknowledgment.");
 
-  /**
-   * config key prefix of terminal
-   */
+  /** config key prefix of terminal */
   public static final String TERMINAL_PREFIX = "terminal.";
+
   public static final ConfigOption<String> TERMINAL_BACKEND =
       ConfigOptions.key("terminal.backend")
           .stringType()
@@ -253,14 +287,13 @@ public class ArcticManagementConf {
           .defaultValue(30)
           .withDescription("session timeout in minute");
 
-  /**
-   * configs of data expiration
-   */
+  /** configs of data expiration */
   public static final ConfigOption<Boolean> DATA_EXPIRATION_ENABLED =
       ConfigOptions.key("data-expiration.enabled")
           .booleanType()
           .defaultValue(false)
           .withDescription("Enable data expiration");
+
   public static final ConfigOption<Integer> DATA_EXPIRATION_THREAD_COUNT =
       ConfigOptions.key("data-expiration.thread-count")
           .intType()
@@ -278,13 +311,13 @@ public class ArcticManagementConf {
   public static final String CATALOG_HDFS_SITE = "hdfs-site";
   public static final String CATALOG_HIVE_SITE = "hive-site";
 
-  //container config
+  // container config
   public static final String CONTAINER_LIST = "containers";
   public static final String CONTAINER_NAME = "name";
   public static final String CONTAINER_IMPL = "container-impl";
   public static final String CONTAINER_PROPERTIES = "properties";
 
-  //optimizer config
+  // optimizer config
   public static final String OPTIMIZER_GROUP_LIST = "optimizer_groups";
   public static final String OPTIMIZER_GROUP_NAME = "name";
   public static final String OPTIMIZER_GROUP_CONTAINER = "container";

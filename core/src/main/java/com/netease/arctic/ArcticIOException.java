@@ -1,10 +1,6 @@
 package com.netease.arctic;
 
-/**
- * <p>
- * Exception thrown for table IO-related failures.
- * </p>
- */
+/** Exception thrown for table IO-related failures. */
 public class ArcticIOException extends RuntimeException {
 
   private Throwable ioException;

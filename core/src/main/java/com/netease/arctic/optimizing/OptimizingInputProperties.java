@@ -31,7 +31,7 @@ public class OptimizingInputProperties {
 
   public static final String MAX_IN_MEMORY_SIZE_IN_BYTES = "max_size_in_memory";
 
-  public static final String SPILL_MAP_PATH = "sill_map_path";
+  public static final String SPILL_MAP_PATH = "spill_map_path";
 
   public static final String OUTPUT_DIR = "output_location";
 
@@ -39,7 +39,7 @@ public class OptimizingInputProperties {
 
   public static final String TASK_EXECUTOR_FACTORY_IMPL = "task-executor-factory-impl";
 
-  private Map<String, String> properties;
+  private final Map<String, String> properties;
 
   private OptimizingInputProperties(Map<String, String> properties) {
     this.properties = Maps.newHashMap(properties);
@@ -85,7 +85,7 @@ public class OptimizingInputProperties {
 
   public StructLikeCollections getStructLikeCollections() {
     String enableSpillMapStr = properties.get(ENABLE_SPILL_MAP);
-    boolean enableSpillMap = enableSpillMapStr == null ? false : Boolean.parseBoolean(enableSpillMapStr);
+    boolean enableSpillMap = Boolean.parseBoolean(enableSpillMapStr);
 
     String maxInMemoryStr = properties.get(MAX_IN_MEMORY_SIZE_IN_BYTES);
     Long maxInMemory = maxInMemoryStr == null ? null : Long.parseLong(maxInMemoryStr);

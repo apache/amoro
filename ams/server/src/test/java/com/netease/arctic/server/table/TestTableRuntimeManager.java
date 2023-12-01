@@ -37,39 +37,55 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
-    return new Object[][] {{new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-                            new BasicTableTestHelper(true, true)},
-                           {new BasicCatalogTestHelper(TableFormat.ICEBERG),
-                            new BasicTableTestHelper(false, true)},
-                           {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-                            new HiveTableTestHelper(true, true)}};
+    return new Object[][] {
+      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, true)},
+      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, true)},
+      {
+        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+        new HiveTableTestHelper(true, true)
+      }
+    };
   }
 
-  public TestTableRuntimeManager(CatalogTestHelper catalogTestHelper,
-      TableTestHelper tableTestHelper) {
+  public TestTableRuntimeManager(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper, true);
   }
 
   @Test
   public void testLoadTable() {
-    ArcticTable arcticTable = (ArcticTable) tableService().loadTable(serverTableIdentifier()).originalTable();
+    ArcticTable arcticTable =
+        (ArcticTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     validateArcticTable(arcticTable);
 
     // test load not existed table
-    Assert.assertThrows(ObjectNotExistsException.class, () -> tableService().loadTable(
-        ServerTableIdentifier.of(null, "unknown", "unknown", "unknown")));
+    Assert.assertThrows(
+        ObjectNotExistsException.class,
+        () ->
+            tableService()
+                .loadTable(
+                    ServerTableIdentifier.of(
+                        "unknown", "unknown", "unknown", serverTableIdentifier().getFormat())));
   }
 
   @Test
   public void testTableContains() {
     Assert.assertTrue(tableService().contains(serverTableIdentifier()));
-    ServerTableIdentifier copyId = ServerTableIdentifier.of(null,
-        serverTableIdentifier().getCatalog(), serverTableIdentifier().getDatabase(),
-        serverTableIdentifier().getTableName());
+    ServerTableIdentifier copyId =
+        ServerTableIdentifier.of(
+            null,
+            serverTableIdentifier().getCatalog(),
+            serverTableIdentifier().getDatabase(),
+            serverTableIdentifier().getTableName(),
+            serverTableIdentifier().getFormat());
     Assert.assertFalse(tableService().contains(copyId));
-    copyId = ServerTableIdentifier.of(serverTableIdentifier().getId(),
-        serverTableIdentifier().getCatalog(), serverTableIdentifier().getDatabase(),
-        "unknown");
+    copyId =
+        ServerTableIdentifier.of(
+            serverTableIdentifier().getId(),
+            serverTableIdentifier().getCatalog(),
+            serverTableIdentifier().getDatabase(),
+            "unknown",
+            serverTableIdentifier().getFormat());
     Assert.assertFalse(tableService().contains(copyId));
   }
 

@@ -34,15 +34,17 @@ import java.util.List;
 public class TestDefaultKeyedFile extends TableTestBase {
 
   public TestDefaultKeyedFile() {
-    super(new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+    super(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(true, true));
   }
 
   @Test
   public void testDefaultKeyedFile() {
     Long txId = getArcticTable().asKeyedTable().beginTransaction("begin");
-    List<DataFile> writeFiles = MixedDataTestHelpers.writeChangeStore(getArcticTable().asKeyedTable(), txId,
-        ChangeAction.INSERT, writeRecords(), false);
+    List<DataFile> writeFiles =
+        MixedDataTestHelpers.writeChangeStore(
+            getArcticTable().asKeyedTable(), txId, ChangeAction.INSERT, writeRecords(), false);
 
     Assert.assertEquals(1, writeFiles.size());
     DefaultKeyedFile defaultKeyedFile = DefaultKeyedFile.parseChange(writeFiles.get(0));

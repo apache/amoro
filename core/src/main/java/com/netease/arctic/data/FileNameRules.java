@@ -30,33 +30,38 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * File name pattern:${tree_node_id}-${file_type}-${transaction_id}-${partition_id}-${task_id}-{operation_id}-{count}
+ * File name
+ * pattern:${tree_node_id}-${file_type}-${transaction_id}-${partition_id}-${task_id}-{operation_id}-{count}
+ *
  * <ul>
- *   <li>tree_node_id: id of {@link com.netease.arctic.data.DataTreeNode} the file belong</li>
- *   <li>file_type: short name of file's {@link com.netease.arctic.data.DataFileType} </li>
- *   <li>transaction_id: id of transaction the file added</li>
- *   <li>partition_id: id of partitioned data in parallel engine like spark & flink </li>
- *   <li>task_id: id of write task within partition</li>
- *   <li>operation_id: a random id to avoid duplicated file name</li>
- *   <li>count: auto increment count within writer </li>
+ *   <li>tree_node_id: id of {@link com.netease.arctic.data.DataTreeNode} the file belong
+ *   <li>file_type: short name of file's {@link com.netease.arctic.data.DataFileType}
+ *   <li>transaction_id: id of transaction the file added
+ *   <li>partition_id: id of partitioned data in parallel engine like spark & flink
+ *   <li>task_id: id of write task within partition
+ *   <li>operation_id: a random id to avoid duplicated file name
+ *   <li>count: auto increment count within writer
  * </ul>
+ *
  * like:
+ *
  * <ul>
- *   <li>1-B-100-0-0-4217271085623029157-0.parquet</li>
- *   <li>4-ED-101-0-0-9009257362994691056-1.parquet</li>
- *   <li>4-I-101-0-0-9009257362994691056-2.parquet</li>
+ *   <li>1-B-100-0-0-4217271085623029157-0.parquet
+ *   <li>4-ED-101-0-0-9009257362994691056-1.parquet
+ *   <li>4-I-101-0-0-9009257362994691056-2.parquet
  * </ul>
- * 
  */
 public class FileNameRules {
 
-  private static final String KEYED_FILE_NAME_PATTERN_STRING = "(\\d+)-(\\w+)-(\\d+)-(\\d+)-(\\d+)-.*";
-  private static final Pattern KEYED_FILE_NAME_PATTERN = Pattern.compile(KEYED_FILE_NAME_PATTERN_STRING);
+  private static final String KEYED_FILE_NAME_PATTERN_STRING =
+      "\\.?(\\d+)-(\\w+)-(\\d+)-(\\d+)-(\\d+)-.*";
+  private static final Pattern KEYED_FILE_NAME_PATTERN =
+      Pattern.compile(KEYED_FILE_NAME_PATTERN_STRING);
 
   private static final String FORMAT = "%d-%s-%d-%05d-%d-%s-%05d";
 
-  public static final DefaultKeyedFile.FileMeta
-      DEFAULT_BASE_FILE_META = new DefaultKeyedFile.FileMeta(0, DataFileType.BASE_FILE, DataTreeNode.ROOT);
+  public static final DefaultKeyedFile.FileMeta DEFAULT_BASE_FILE_META =
+      new DefaultKeyedFile.FileMeta(0, DataFileType.BASE_FILE, DataTreeNode.ROOT);
 
   private final FileFormat fileFormat;
   private final int partitionId;
@@ -67,11 +72,7 @@ public class FileNameRules {
   private final String operationId = IdGenerator.randomId() + "";
   private final AtomicLong fileCount = new AtomicLong(0);
 
-  public FileNameRules(
-      FileFormat fileFormat,
-      int partitionId,
-      Long taskId,
-      Long transactionId) {
+  public FileNameRules(FileFormat fileFormat, int partitionId, Long taskId, Long transactionId) {
     this.fileFormat = fileFormat;
     this.partitionId = partitionId;
     this.taskId = taskId;
@@ -80,16 +81,22 @@ public class FileNameRules {
 
   public String fileName(TaskWriterKey key) {
     return fileFormat.addExtension(
-        String.format(FORMAT, key.getTreeNode().getId(), key.getFileType().shortName(),
-            transactionId, partitionId, taskId, operationId, fileCount.incrementAndGet()));
+        String.format(
+            FORMAT,
+            key.getTreeNode().getId(),
+            key.getFileType().shortName(),
+            transactionId,
+            partitionId,
+            taskId,
+            operationId,
+            fileCount.incrementAndGet()));
   }
 
   /**
-   * Parse FileMeta for ChangeStore.
-   * Flink write transactionId as 0.
-   * If it is not arctic file format or transactionId from path is 0, we set transactionId as iceberg sequenceNumber.
+   * Parse FileMeta for ChangeStore. Flink write transactionId as 0. If it is not arctic file format
+   * or transactionId from path is 0, we set transactionId as iceberg sequenceNumber.
    *
-   * @param path           file path
+   * @param path file path
    * @param sequenceNumber iceberg sequenceNumber
    * @return fileMeta
    */
@@ -102,21 +109,21 @@ public class FileNameRules {
       long nodeId = Long.parseLong(matcher.group(1));
       type = DataFileType.ofShortName(matcher.group(2));
       transactionId = Long.parseLong(matcher.group(3));
-      Preconditions.checkArgument(transactionId > 0 || sequenceNumber != null,
-          "Data sequence number of File is null");
+      Preconditions.checkArgument(
+          transactionId > 0 || sequenceNumber != null, "Data sequence number of File is null");
       transactionId = transactionId == 0 ? sequenceNumber : transactionId;
       DataTreeNode node = DataTreeNode.ofId(nodeId);
       return new DefaultKeyedFile.FileMeta(transactionId, type, node);
     } else {
-      Preconditions.checkArgument(sequenceNumber != null,
-          "Data sequence number of File is null");
-      return new DefaultKeyedFile.FileMeta(sequenceNumber, DataFileType.INSERT_FILE, DataTreeNode.ROOT);
+      Preconditions.checkArgument(sequenceNumber != null, "Data sequence number of File is null");
+      return new DefaultKeyedFile.FileMeta(
+          sequenceNumber, DataFileType.INSERT_FILE, DataTreeNode.ROOT);
     }
   }
 
   /**
-   * Parse FileMeta for BaseStore.
-   * Path writen by hive can not be parsed by arctic file format, we set it to be DEFAULT_BASE_FILE_META.
+   * Parse FileMeta for BaseStore. Path writen by hive can not be parsed by arctic file format, we
+   * set it to be DEFAULT_BASE_FILE_META.
    *
    * @param path - path
    * @return fileMeta
@@ -178,7 +185,7 @@ public class FileNameRules {
   /**
    * Parse file type.
    *
-   * @param path      - path
+   * @param path - path
    * @param tableType - table type, base/change
    * @return file type
    */
@@ -247,7 +254,6 @@ public class FileNameRules {
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     return matchArcticFileFormat(matcher);
   }
-
 
   private static boolean matchArcticFileFormat(Matcher fileNameMatcher) {
     return fileNameMatcher.matches() && validFileType(fileNameMatcher.group(2));

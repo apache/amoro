@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-
 public class TestSpiPluginMananger {
 
   private SpiPluginManager<TestPlugin> pluginManager;
@@ -95,23 +94,26 @@ public class TestSpiPluginMananger {
   @Test
   public void testDuplcateInstall() {
     pluginManager.install(PLUGIN_NAME_1);
-    Assertions.assertThrows(AlreadyExistsException.class, () -> {
-      pluginManager.install(PLUGIN_NAME_1);
-    });
+    Assertions.assertThrows(
+        AlreadyExistsException.class,
+        () -> {
+          pluginManager.install(PLUGIN_NAME_1);
+        });
   }
 
   @Test
   public void testDuplcateUninstall() {
     pluginManager.install(PLUGIN_NAME_1);
     pluginManager.uninstall(PLUGIN_NAME_1);
-    Assertions.assertThrows(ObjectNotExistsException.class, () -> {
-      pluginManager.uninstall(PLUGIN_NAME_1);
-    });
+    Assertions.assertThrows(
+        ObjectNotExistsException.class,
+        () -> {
+          pluginManager.uninstall(PLUGIN_NAME_1);
+        });
   }
 
   public static class TestPluginImpl1 implements TestPlugin {
-    public TestPluginImpl1() {
-    }
+    public TestPluginImpl1() {}
 
     @Override
     public String name() {
@@ -121,8 +123,7 @@ public class TestSpiPluginMananger {
 
   public static class TestPluginImpl2 implements TestPlugin {
 
-    public TestPluginImpl2() {
-    }
+    public TestPluginImpl2() {}
 
     @Override
     public String name() {
@@ -130,6 +131,5 @@ public class TestSpiPluginMananger {
     }
   }
 
-  public interface TestPlugin extends AmoroPlugin {
-  }
+  public interface TestPlugin extends AmoroPlugin {}
 }

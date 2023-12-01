@@ -36,6 +36,7 @@ public class MetricsManager extends ActivePluginManager<MetricsEmitter> {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetricsManager.class);
   private static final String METRICS_CONFIG_DIRECTORY = "metrics";
+  private static volatile MetricsManager INSTANCE;
 
   private final String configPath;
 
@@ -47,35 +48,49 @@ public class MetricsManager extends ActivePluginManager<MetricsEmitter> {
     this.configPath = configPath;
   }
 
+  public static MetricsManager instance() {
+    if (INSTANCE == null) {
+      synchronized (MetricsManager.class) {
+        if (INSTANCE == null) {
+          INSTANCE = new MetricsManager();
+          INSTANCE.initialize();
+        }
+      }
+    }
+    return INSTANCE;
+  }
+
   public void initialize() {
     File dir = new File(configPath);
     File[] yamlFiles = dir.listFiles((dir1, name) -> name.endsWith(".yaml"));
     if (yamlFiles != null) {
-      Arrays.stream(yamlFiles).forEach(file -> {
-        this.install(file.getName().replace(".yaml", ""));
-      });
+      Arrays.stream(yamlFiles)
+          .forEach(
+              file -> {
+                this.install(file.getName().replace(".yaml", ""));
+              });
     }
   }
 
   @Override
   protected Map<String, String> loadProperties(String pluginName) {
     try {
-      return new Yaml().load(new FileInputStream(
-          new File(configPath, pluginName + ".yaml")));
+      return new Yaml().load(new FileInputStream(new File(configPath, pluginName + ".yaml")));
     } catch (FileNotFoundException e) {
       throw new LoadingPluginException("Cannot load plugin " + pluginName, e);
     }
   }
 
   public void emit(MetricsContent<?> metrics) {
-    forEach(emitter -> {
-      try (ClassLoaderContext ignored = new ClassLoaderContext(emitter)) {
-        if (emitter.accept(metrics)) {
-          emitter.emit(metrics);
-        }
-      } catch (Throwable throwable) {
-        LOG.error("Emit metrics {} failed", metrics, throwable);
-      }
-    });
+    forEach(
+        emitter -> {
+          try (ClassLoaderContext ignored = new ClassLoaderContext(emitter)) {
+            if (emitter.accept(metrics)) {
+              emitter.emit(metrics);
+            }
+          } catch (Throwable throwable) {
+            LOG.error("Emit metrics {} failed", metrics, throwable);
+          }
+        });
   }
 }

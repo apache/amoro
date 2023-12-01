@@ -76,7 +76,6 @@ export default {
   commitId: 'Commit ID',
   path: 'Path',
   snapshotId: 'Snapshot ID',
-  transactionId: 'Transaction ID',
   fileType: 'File Type',
   fileContent: 'File Content',
   startTime: 'Start Time',
@@ -104,6 +103,7 @@ export default {
   release: 'Release',
   optimizeStatus: 'Optimize Status',
   fileSize: 'File Size',
+  records: 'Records',
   occupation: 'Occupation',
   optimizerGroup: 'Optimizer Group',
   optimizerGroups: 'Optimizer Groups',
@@ -185,5 +185,10 @@ export default {
   totalPositionDeletes: 'pos-delete-records',
   totalFiles: 'total-files',
   totalDataFiles: 'data-files',
-  totalDeleteFiles: 'delete-files'
+  totalDeleteFiles: 'delete-files',
+  branches: 'branches',
+  tags: 'tags',
+  nothingToShow: 'Nothing to show',
+  filterBranchesOrTags: 'Filter branches/tags',
+  findATag: 'Find a tag'
 }

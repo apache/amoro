@@ -1,42 +1,39 @@
 package com.netease.arctic.server.persistence;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 public class TestStatedPersistentBase {
 
   private static class ExtendedPersistency extends StatedPersistentBase {
-    @StatedPersistentBase.StateField
-    private String stringState = "";
-    @StatedPersistentBase.StateField
-    private int intState = 0;
+    @StatedPersistentBase.StateField private String stringState = "";
+    @StatedPersistentBase.StateField private int intState = 0;
     private boolean booleanField = false;
     private long longField = 0L;
   }
 
   private static class NormalClass {
-    @StatedPersistentBase.StateField
-    private String stringState = "";
-    @StatedPersistentBase.StateField
-    private int intState = 0;
-    private boolean booleanField = false;
-    private long longField = 0L;
+    @StatedPersistentBase.StateField private String stringState = "";
+    @StatedPersistentBase.StateField private int intState = 0;
+    private final boolean booleanField = false;
+    private final long longField = 0L;
   }
 
   @Test
   public void testStateField() throws Throwable {
     ExtendedPersistency proxy = new ExtendedPersistency();
     try {
-      proxy.invokeConsisitency(() -> {
-        proxy.stringState = "test";
-        proxy.intState = 42;
-        // simulate an exception being thrown
-        throw new RuntimeException();
-      });
+      proxy.invokeConsisitency(
+          () -> {
+            proxy.stringState = "test";
+            proxy.intState = 42;
+            // simulate an exception being thrown
+            throw new RuntimeException();
+          });
     } catch (Throwable throwable) {
       // ignore
     }
@@ -48,12 +45,13 @@ public class TestStatedPersistentBase {
   public void testNormalField() throws Throwable {
     ExtendedPersistency proxy = new ExtendedPersistency();
     try {
-      proxy.invokeConsisitency(() -> {
-        proxy.booleanField = true;
-        proxy.longField = 123456789L;
-        // simulate an exception being thrown
-        throw new RuntimeException();
-      });
+      proxy.invokeConsisitency(
+          () -> {
+            proxy.booleanField = true;
+            proxy.longField = 123456789L;
+            // simulate an exception being thrown
+            throw new RuntimeException();
+          });
     } catch (Throwable throwable) {
       // ignore
     }

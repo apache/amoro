@@ -19,6 +19,7 @@
 package com.netease.arctic.server.table.executor;
 
 import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.persistence.PersistentBase;
 import com.netease.arctic.server.persistence.mapper.TableBlockerMapper;
 import com.netease.arctic.server.table.ServerTableIdentifier;
@@ -36,7 +37,9 @@ import java.util.List;
 
 public class TestBlockerExpiringExecutor extends TableServiceTestBase {
   private final ServerTableIdentifier tableIdentifier =
-      ServerTableIdentifier.of(0L, "test_catalog", "test_db", "test_table_blocker");
+      ServerTableIdentifier.of(
+          0L, "test_catalog", "test_db", "test_table_blocker", TableFormat.MIXED_ICEBERG);
+
   private final Persistency persistency = new Persistency();
   private TableRuntime tableRuntime;
   private TableManager tableManager;
@@ -80,24 +83,19 @@ public class TestBlockerExpiringExecutor extends TableServiceTestBase {
 
   private static class Persistency extends PersistentBase {
     public void insertTableBlocker(TableBlocker tableBlocker) {
-      doAs(TableBlockerMapper.class,
-          mapper -> mapper.insertBlocker(tableBlocker));
+      doAs(TableBlockerMapper.class, mapper -> mapper.insertBlocker(tableBlocker));
     }
 
     public List<TableBlocker> selectTableBlockers(ServerTableIdentifier tableIdentifier) {
-      return getAs(TableBlockerMapper.class,
-          mapper -> mapper.selectBlockers(tableIdentifier, 1));
+      return getAs(TableBlockerMapper.class, mapper -> mapper.selectBlockers(tableIdentifier, 1));
     }
 
     public void deleteBlockers(ServerTableIdentifier tableIdentifier) {
-      doAs(TableBlockerMapper.class,
-          mapper -> mapper.deleteBlockers(tableIdentifier));
+      doAs(TableBlockerMapper.class, mapper -> mapper.deleteBlockers(tableIdentifier));
     }
 
     public TableBlocker selectTableBlocker(long blockerId) {
-      return getAs(TableBlockerMapper.class,
-          mapper -> mapper.selectBlocker(blockerId, 1));
+      return getAs(TableBlockerMapper.class, mapper -> mapper.selectBlocker(blockerId, 1));
     }
   }
-
 }

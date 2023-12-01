@@ -17,7 +17,7 @@ The optimizer is the execution unit for performing self-optimizing tasks on a ta
 * Optimizer: The specific unit that performs optimizing tasks, usually with multiple concurrent units.
 
 ## Optimizer container
-Before using self-optimizing, you need to configure the container information in the configuration file. Optimizer container represents a specific set of runtime environment configuration, and the scheduling scheme of optimizer in that runtime environment. container includes three types: flink, local, and external.
+Before using self-optimizing, you need to configure the container information in the configuration file. Optimizer container represents a specific set of runtime environment configuration, and the scheduling scheme of optimizer in that runtime environment. The container includes three types: flink, local, and external.
 
 ### Local container
 Local container is a way to start Optimizer by local process and supports multi-threaded execution of Optimizer tasks. It is recommended to be used only in demo or local deployment scenarios. If the environment variable for jdk is not configured, the user can configure java_home to point to the jdk root directory. If already configured, this configuration item can be ignored.
@@ -80,13 +80,13 @@ containers:
   - name: flinkContainer
     container-impl: com.netease.arctic.server.manager.FlinkOptimizerContainer
     properties:
-      flink-home: /opt/flink/                                                        #flink install home
-      target: kubernetes-application                                                 #flink run as native kubernetes
-      job-uri: "local:///opt/flink/usrlib/OptimizeJob.jar"                           #optimizer job location in image
-      ams-optimizing-uri: thrift://ams.amoro.service.local:1261                      #AMS optimizing uri 
-      export.FLINK_CONF_DIR: /opt/flink/conf/                                        #flink config dir
-      flink-conf.kubernetes.container.image: "arctic163/optimizer-flink1.14:latest"  #image ref
-      flink-conf.kubernetes.service-account: flink                                   #kubernetes service account
+      flink-home: /opt/flink/                                                        # Flink install home
+      target: kubernetes-application                                                 # Flink run as native kubernetes
+      job-uri: "local:///opt/flink/usrlib/optimizer-job.jar"                         # Optimizer job main jar for kubernetes application
+      ams-optimizing-uri: thrift://ams.amoro.service.local:1261                      # AMS optimizing uri 
+      export.FLINK_CONF_DIR: /opt/flink/conf/                                        # Flink config dir
+      flink-conf.kubernetes.container.image: "arctic163/optimizer-flink:{version}"   # Optimizer image ref
+      flink-conf.kubernetes.service-account: flink                                   # Service account that is used within kubernetes cluster.
 ```
 
 
@@ -171,7 +171,7 @@ You can submit optimizer in your own Flink task development platform or local Fl
  -Dtaskmanager.memory.network.max=32mb \
  -Dtaskmanager.memory.network.min=32mb \
  -c com.netease.arctic.optimizer.flink.FlinkOptimizer \
- ${ARCTIC_HOME}/plugin/flink/optimizer-job.jar \
+ ${AMORO_HOME}/plugin/optimizer/flink/optimizer-job.jar \
  -a 127.0.0.1:1261 \
  -g flinkGroup \
  -p 1 \

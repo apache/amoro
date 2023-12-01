@@ -23,33 +23,24 @@ import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.scan.KeyedTableScan;
 
 /**
- * Represents an arctic table with keys supported, consist of one {@link ChangeTable} and one {@link BaseTable}.
+ * Represents an arctic table with keys supported, consist of one {@link ChangeTable} and one {@link
+ * BaseTable}.
  */
 public interface KeyedTable extends ArcticTable {
 
-  /**
-   * Returns the {@link PrimaryKeySpec} of this table
-   */
+  /** Returns the {@link PrimaryKeySpec} of this table */
   PrimaryKeySpec primaryKeySpec();
 
-  /**
-   * Returns the location of base table store, usually is {@link #location()}/base
-   */
+  /** Returns the location of base table store, usually is {@link #location()}/base */
   String baseLocation();
 
-  /**
-   * Returns the location of change table store,  usually is {@link #location()}/change
-   */
+  /** Returns the location of change table store, usually is {@link #location()}/change */
   String changeLocation();
 
-  /**
-   * Returns the base table store
-   */
+  /** Returns the base table store */
   BaseTable baseTable();
 
-  /**
-   * Returns the base table store
-   */
+  /** Returns the base table store */
   ChangeTable changeTable();
 
   default String name() {
@@ -84,5 +75,4 @@ public interface KeyedTable extends ArcticTable {
   RewritePartitions newRewritePartitions();
 
   OverwriteBaseFiles newOverwriteBaseFiles();
-
 }

@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.table.executor;
 
+import static com.netease.arctic.server.optimizing.maintainer.TableMaintainer.ofTable;
+
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.server.optimizing.maintainer.TableMaintainer;
 import com.netease.arctic.server.table.TableConfiguration;
@@ -26,11 +28,8 @@ import com.netease.arctic.server.table.TableRuntime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.netease.arctic.server.optimizing.maintainer.TableMaintainer.ofTable;
-
 public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(OrphanFilesCleaningExecutor.class);
-  // same as org.apache.iceberg.flink.sink.IcebergFilesCommitter#FLINK_JOB_ID
 
   private static final long INTERVAL = 24 * 60 * 60 * 1000L;
 
@@ -57,7 +56,6 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
   public void execute(TableRuntime tableRuntime) {
     try {
       LOG.info("{} start cleaning orphan files", tableRuntime.getTableIdentifier());
-      // clear data files
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
       TableMaintainer tableMaintainer = ofTable(amoroTable);
       tableMaintainer.cleanOrphanFiles(tableRuntime);
@@ -66,4 +64,3 @@ public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
     }
   }
 }
-

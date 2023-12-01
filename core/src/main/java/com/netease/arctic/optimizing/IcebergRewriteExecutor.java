@@ -19,6 +19,7 @@
 package com.netease.arctic.optimizing;
 
 import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
+import com.netease.arctic.io.writer.GenericIcebergPartitionedFanoutWriter;
 import com.netease.arctic.io.writer.IcebergFanoutPosDeleteWriter;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.map.StructLikeCollections;
@@ -28,30 +29,33 @@ import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.deletes.EqualityDeleteWriter;
 import org.apache.iceberg.deletes.PositionDelete;
-import org.apache.iceberg.deletes.PositionDeleteWriter;
-import org.apache.iceberg.encryption.EncryptedOutputFile;
-import org.apache.iceberg.io.DataWriteResult;
-import org.apache.iceberg.io.DataWriter;
 import org.apache.iceberg.io.DeleteWriteResult;
 import org.apache.iceberg.io.FileWriter;
-import org.apache.iceberg.io.FileWriterFactory;
 import org.apache.iceberg.io.OutputFileFactory;
-import org.apache.iceberg.io.RollingDataWriter;
+import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.io.UnpartitionedWriter;
 
 import java.util.UUID;
 
-/**
- * OptimizingExecutor for iceberg format.
- */
+/** OptimizingExecutor for iceberg format. */
 public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
 
   public IcebergRewriteExecutor(
-      RewriteFilesInput input,
-      ArcticTable table,
-      StructLikeCollections structLikeCollections) {
+      RewriteFilesInput input, ArcticTable table, StructLikeCollections structLikeCollections) {
     super(input, table, structLikeCollections);
+  }
+
+  // TODO We can remove this override method after upgrading Iceberg version to 1.5+.
+  @Override
+  protected StructLike partition() {
+    StructLike partitionData = super.partition();
+    if (partitionData != null && partitionData.size() == 0) {
+      // Cast empty partition data to NULL to avoid creating empty partition directory.
+      return null;
+    } else {
+      return partitionData;
+    }
   }
 
   @Override
@@ -65,53 +69,45 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
         IdentityPartitionConverters::convertConstant,
         false,
         structLikeCollections,
-        input
-    );
+        input);
   }
 
   @Override
   protected FileWriter<PositionDelete<Record>, DeleteWriteResult> posWriter() {
     return new IcebergFanoutPosDeleteWriter<>(
-        fullMetricAppenderFactory(), deleteFileFormat(), partition(), table.io(), table.asUnkeyedTable().encryption(),
+        fullMetricAppenderFactory(fileSpec()),
+        deleteFileFormat(),
+        partition(),
+        table.io(),
+        table.asUnkeyedTable().encryption(),
         UUID.randomUUID().toString());
   }
 
   @Override
-  protected FileWriter<Record, DataWriteResult> dataWriter() {
-    OutputFileFactory outputFileFactory = OutputFileFactory
-        .builderFor(table.asUnkeyedTable(), table.spec().specId(), 0).build();
+  protected TaskWriter<Record> dataWriter() {
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(table.asUnkeyedTable(), table.spec().specId(), 0).build();
 
-    GenericAppenderFactory appenderFactory = new GenericAppenderFactory(table.schema(), table.spec());
+    GenericAppenderFactory appenderFactory =
+        new GenericAppenderFactory(table.schema(), table.spec());
     appenderFactory.setAll(table.properties());
-    return new RollingDataWriter<>(
-        new FileWriterFactory<Record>() {
 
-          @Override
-          public DataWriter newDataWriter(EncryptedOutputFile file, PartitionSpec spec, StructLike partition) {
-            return appenderFactory.newDataWriter(file, dataFileFormat(), partition);
-          }
+    if (table.spec().isUnpartitioned()) {
+      return new UnpartitionedWriter<>(
+          table.spec(), dataFileFormat(), appenderFactory, outputFileFactory, io, targetSize());
+    } else {
+      return new GenericIcebergPartitionedFanoutWriter(
+          table.schema(),
+          table.spec(),
+          dataFileFormat(),
+          appenderFactory,
+          outputFileFactory,
+          io,
+          targetSize());
+    }
+  }
 
-          @Override
-          public EqualityDeleteWriter newEqualityDeleteWriter(
-              EncryptedOutputFile file,
-              PartitionSpec spec,
-              StructLike partition) {
-            return null;
-          }
-
-          @Override
-          public PositionDeleteWriter newPositionDeleteWriter(
-              EncryptedOutputFile file,
-              PartitionSpec spec,
-              StructLike partition) {
-            return null;
-          }
-        },
-        outputFileFactory,
-        io,
-        targetSize(),
-        table.spec(),
-        partition()
-    );
+  private PartitionSpec fileSpec() {
+    return table.asUnkeyedTable().specs().get(input.allFiles()[0].specId());
   }
 }

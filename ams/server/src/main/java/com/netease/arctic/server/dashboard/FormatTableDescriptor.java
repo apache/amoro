@@ -20,50 +20,53 @@ package com.netease.arctic.server.dashboard;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.server.dashboard.model.AmoroSnapshotsOfTable;
 import com.netease.arctic.server.dashboard.model.DDLInfo;
+import com.netease.arctic.server.dashboard.model.OptimizingProcessInfo;
+import com.netease.arctic.server.dashboard.model.OptimizingTaskInfo;
 import com.netease.arctic.server.dashboard.model.PartitionBaseInfo;
 import com.netease.arctic.server.dashboard.model.PartitionFileBaseInfo;
 import com.netease.arctic.server.dashboard.model.ServerTableMeta;
-import com.netease.arctic.server.dashboard.model.TransactionsOfTable;
+import com.netease.arctic.server.dashboard.model.TagOrBranchInfo;
+import org.apache.iceberg.util.Pair;
+
 import java.util.List;
 
-/**
- * API for obtaining metadata information of various formats.
- */
+/** API for obtaining metadata information of various formats. */
 public interface FormatTableDescriptor {
 
-  /**
-   *  Get the format supported by this descriptor.
-   */
+  /** Get the format supported by this descriptor. */
   List<TableFormat> supportFormat();
 
-  /**
-   * Get the table metadata information of the {@link AmoroTable}.
-   */
+  /** Get the table metadata information of the {@link AmoroTable}. */
   ServerTableMeta getTableDetail(AmoroTable<?> amoroTable);
 
-  /**
-   * Get the transaction information of the {@link AmoroTable}.
-   */
-  List<TransactionsOfTable> getTransactions(AmoroTable<?> amoroTable);
+  /** Get the snapshot information of the {@link AmoroTable}. */
+  List<AmoroSnapshotsOfTable> getSnapshots(AmoroTable<?> amoroTable, String ref);
 
-  /**
-   * Get the transaction detail information of the {@link AmoroTable}.
-   */
-  List<PartitionFileBaseInfo> getTransactionDetail(AmoroTable<?> amoroTable, long transactionId);
+  /** Get the snapshot detail information of the {@link AmoroTable}. */
+  List<PartitionFileBaseInfo> getSnapshotDetail(AmoroTable<?> amoroTable, long snapshotId);
 
-  /**
-   * Get the DDL information of the {@link AmoroTable}.
-   */
+  /** Get the DDL information of the {@link AmoroTable}. */
   List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable);
 
-  /**
-   * Get the partition information of the {@link AmoroTable}.
-   */
-  List<PartitionBaseInfo> getTablePartition(AmoroTable<?> amoroTable);
+  /** Get the partition information of the {@link AmoroTable}. */
+  List<PartitionBaseInfo> getTablePartitions(AmoroTable<?> amoroTable);
 
-  /**
-   * Get the file information of the {@link AmoroTable}.
-   */
-  List<PartitionFileBaseInfo> getTableFile(AmoroTable<?> amoroTable, String partition);
+  /** Get the file information of the {@link AmoroTable}. */
+  List<PartitionFileBaseInfo> getTableFiles(
+      AmoroTable<?> amoroTable, String partition, Integer specId);
+
+  /** Get the paged optimizing process information of the {@link AmoroTable} and total size. */
+  Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
+      AmoroTable<?> amoroTable, int limit, int offset);
+
+  /** Get the paged optimizing process tasks information of the {@link AmoroTable}. */
+  List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, long processId);
+
+  /** Get the tag information of the {@link AmoroTable}. */
+  List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable);
+
+  /** Get the branch information of the {@link AmoroTable}. */
+  List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable);
 }

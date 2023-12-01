@@ -22,5 +22,4 @@ public class MetaTableProperties {
   public static final String LOCATION_KEY_TABLE = "table";
   public static final String LOCATION_KEY_BASE = "base";
   public static final String LOCATION_KEY_CHANGE = "change";
-
 }

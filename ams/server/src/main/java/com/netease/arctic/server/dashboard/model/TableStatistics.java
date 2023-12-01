@@ -27,8 +27,7 @@ public class TableStatistics {
   FilesStatistics totalFilesStat;
   Map<String, String> summary;
 
-  public TableStatistics() {
-  }
+  public TableStatistics() {}
 
   public TableStatistics(TableStatistics tableStatistics) {
     this.setTableIdentifier(tableStatistics.getTableIdentifier());
@@ -36,7 +35,10 @@ public class TableStatistics {
     this.setSummary(tableStatistics.getSummary());
   }
 
-  public TableStatistics(TableIdentifier tableIdentifier, FilesStatistics totalFilesStat, Map<String, String> summary) {
+  public TableStatistics(
+      TableIdentifier tableIdentifier,
+      FilesStatistics totalFilesStat,
+      Map<String, String> summary) {
     this.tableIdentifier = tableIdentifier;
     this.totalFilesStat = totalFilesStat;
     this.summary = summary;
@@ -55,10 +57,6 @@ public class TableStatistics {
   }
 
   public void setTotalFilesStat(FilesStatistics totalFilesStat) {
-    this.totalFilesStat = totalFilesStat;
-  }
-
-  public void setTotalFilesStat(FilesStatistics changeFs, FilesStatistics baseFs) {
     this.totalFilesStat = totalFilesStat;
   }
 

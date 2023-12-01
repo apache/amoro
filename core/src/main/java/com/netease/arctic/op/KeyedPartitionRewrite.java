@@ -20,27 +20,29 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.ArcticTableUtil;
+import com.netease.arctic.utils.StatisticsFileUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.ReplacePartitions;
+import org.apache.iceberg.StatisticsFile;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
+import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
-/**
- * Replace {@link BaseTable} partition files and change max transaction id map
- */
-public class KeyedPartitionRewrite extends PartitionTransactionOperation implements RewritePartitions {
+/** Replace {@link BaseTable} partition files and change max transaction id map */
+public class KeyedPartitionRewrite extends PartitionTransactionOperation
+    implements RewritePartitions {
 
   protected List<DataFile> addFiles = Lists.newArrayList();
   private Long optimizedSequence;
-  
+
   public KeyedPartitionRewrite(KeyedTable keyedTable) {
     super(keyedTable);
   }
@@ -58,23 +60,39 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
   }
 
   @Override
-  protected StructLikeMap<Map<String, String>> apply(Transaction transaction) {
+  protected List<StatisticsFile> apply(Transaction transaction) {
     PartitionSpec spec = transaction.table().spec();
-    StructLikeMap<Map<String, String>> partitionProperties = StructLikeMap.create(spec.partitionType());
     if (this.addFiles.isEmpty()) {
-      return partitionProperties;
+      return Collections.emptyList();
     }
 
-    Preconditions.checkNotNull(optimizedSequence, "optimized sequence must be set.");
-    Preconditions.checkArgument(optimizedSequence > 0, "optimized sequence must > 0.");
+    Preconditions.checkNotNull(this.optimizedSequence, "optimized sequence must be set.");
+    Preconditions.checkArgument(this.optimizedSequence > 0, "optimized sequence must > 0.");
 
     ReplacePartitions replacePartitions = transaction.newReplacePartitions();
+    replacePartitions.set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
     addFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
+    CreateSnapshotEvent newSnapshot = (CreateSnapshotEvent) replacePartitions.updateEvent();
 
-    addFiles.forEach(f -> partitionProperties.computeIfAbsent(f.partition(), k -> Maps.newHashMap())
-        .put(TableProperties.PARTITION_OPTIMIZED_SEQUENCE, String.valueOf(optimizedSequence)));
-    return partitionProperties;
+    StructLikeMap<Long> oldOptimizedSequence = ArcticTableUtil.readOptimizedSequence(keyedTable);
+    StructLikeMap<Long> optimizedSequence = StructLikeMap.create(spec.partitionType());
+    if (oldOptimizedSequence != null) {
+      optimizedSequence.putAll(oldOptimizedSequence);
+    }
+    addFiles.forEach(f -> optimizedSequence.put(f.partition(), this.optimizedSequence));
+
+    Table table = transaction.table();
+    StatisticsFile statisticsFile =
+        StatisticsFileUtil.writerBuilder(table)
+            .withSnapshotId(newSnapshot.snapshotId())
+            .build()
+            .add(
+                ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE,
+                optimizedSequence,
+                StatisticsFileUtil.createPartitionDataSerializer(table.spec(), Long.class))
+            .complete();
+    return Collections.singletonList(statisticsFile);
   }
 
   @Override

@@ -18,6 +18,10 @@
 
 package com.netease.arctic.optimizing;
 
+import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
+import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
+import static org.apache.iceberg.TableProperties.DELETE_DEFAULT_FILE_FORMAT;
+
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.writer.SetTreeNode;
@@ -31,34 +35,33 @@ import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.MetricsModes;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.deletes.PositionDelete;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.CloseableIterator;
-import org.apache.iceberg.io.DataWriteResult;
 import org.apache.iceberg.io.DeleteWriteResult;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.FileWriter;
+import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
-import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
-import static org.apache.iceberg.TableProperties.DELETE_DEFAULT_FILE_FORMAT;
-
 /**
- * An abstract OptimizingExecutor implementation that rewrites the rewrittenDataFiles
- * in RewriteInput and generates new position delete for rePosDeletedDataFiles.
+ * An abstract OptimizingExecutor implementation that rewrites the rewrittenDataFiles in
+ * RewriteInput and generates new position delete for rePosDeletedDataFiles.
  */
-public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor<RewriteFilesOutput> {
+public abstract class AbstractRewriteFilesExecutor
+    implements OptimizingExecutor<RewriteFilesOutput> {
 
   private static final Logger LOG = LoggerFactory.getLogger(AbstractRewriteFilesExecutor.class);
 
@@ -73,8 +76,7 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
   protected StructLikeCollections structLikeCollections;
 
   public AbstractRewriteFilesExecutor(
-      RewriteFilesInput input, ArcticTable table,
-      StructLikeCollections structLikeCollections) {
+      RewriteFilesInput input, ArcticTable table, StructLikeCollections structLikeCollections) {
     this.input = input;
     this.table = table;
     this.io = table.io();
@@ -86,7 +88,7 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
 
   protected abstract FileWriter<PositionDelete<Record>, DeleteWriteResult> posWriter();
 
-  protected abstract FileWriter<Record, DataWriteResult> dataWriter();
+  protected abstract TaskWriter<Record> dataWriter();
 
   @Override
   public RewriteFilesOutput execute() {
@@ -111,16 +113,13 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
 
     Map<String, String> summary = resolverSummary(dataFiles, deleteFiles, duration);
     return new RewriteFilesOutput(
-        dataFiles.toArray(new DataFile[0]),
-        deleteFiles.toArray(new DeleteFile[0]),
-        summary);
+        dataFiles.toArray(new DataFile[0]), deleteFiles.toArray(new DeleteFile[0]), summary);
   }
 
   private List<DeleteFile> equalityToPosition() throws Exception {
     FileWriter<PositionDelete<Record>, DeleteWriteResult> posDeleteWriter = posWriter();
 
-    try (CloseableIterator<Record> iterator =
-        dataReader.readDeletedData().iterator()) {
+    try (CloseableIterator<Record> iterator = dataReader.readDeletedData().iterator()) {
       PositionDelete<Record> positionDelete = PositionDelete.create();
       while (iterator.hasNext()) {
         Record record = iterator.next();
@@ -129,7 +128,8 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
         positionDelete.set(filePath, rowPosition, null);
         if (posDeleteWriter instanceof SetTreeNode) {
           DataTreeNode dataTreeNode =
-              DataTreeNode.ofId((Long) record.getField(com.netease.arctic.table.MetadataColumns.TREE_NODE_NAME));
+              DataTreeNode.ofId(
+                  (Long) record.getField(com.netease.arctic.table.MetadataColumns.TREE_NODE_NAME));
           ((SetTreeNode) posDeleteWriter).setTreeNode(dataTreeNode);
         }
         posDeleteWriter.write(positionDelete);
@@ -143,7 +143,7 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
 
   private List<DataFile> rewriterDataFiles() throws Exception {
     List<DataFile> result = Lists.newArrayList();
-    FileWriter<Record, DataWriteResult> writer = dataWriter();
+    TaskWriter<Record> writer = dataWriter();
 
     try (CloseableIterator<Record> records = dataReader.readData().iterator()) {
       while (records.hasNext()) {
@@ -154,13 +154,14 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
       writer.close();
     }
 
-    result.addAll(writer.result().dataFiles());
+    result.addAll(Arrays.asList(writer.dataFiles()));
 
     return result;
   }
 
   protected FileFormat dataFileFormat() {
-    String formatAsString = table.properties().getOrDefault(DEFAULT_FILE_FORMAT, DEFAULT_FILE_FORMAT_DEFAULT);
+    String formatAsString =
+        table.properties().getOrDefault(DEFAULT_FILE_FORMAT, DEFAULT_FILE_FORMAT_DEFAULT);
     return FileFormat.valueOf(formatAsString.toUpperCase());
   }
 
@@ -170,15 +171,16 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
     return FileFormat.valueOf(deleteFileFormatName.toUpperCase());
   }
 
-  protected FileAppenderFactory<Record> fullMetricAppenderFactory() {
-    GenericAppenderFactory appenderFactory =
-        new GenericAppenderFactory(table.schema(), table.spec());
+  protected FileAppenderFactory<Record> fullMetricAppenderFactory(PartitionSpec spec) {
+    GenericAppenderFactory appenderFactory = new GenericAppenderFactory(table.schema(), spec);
     appenderFactory.setAll(table.properties());
     appenderFactory.set(
-        org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_PATH.name(),
+        org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX
+            + MetadataColumns.DELETE_FILE_PATH.name(),
         MetricsModes.Full.get().toString());
     appenderFactory.set(
-        org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_POS.name(),
+        org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX
+            + MetadataColumns.DELETE_FILE_POS.name(),
         MetricsModes.Full.get().toString());
     return appenderFactory;
   }
@@ -203,7 +205,8 @@ public abstract class AbstractRewriteFilesExecutor implements OptimizingExecutor
     }
   }
 
-  private Map<String, String> resolverSummary(List<DataFile> dataFiles, List<DeleteFile> deleteFiles, long duration) {
+  private Map<String, String> resolverSummary(
+      List<DataFile> dataFiles, List<DeleteFile> deleteFiles, long duration) {
     int dataFileCnt = 0;
     long dataFileTotalSize = 0;
     int eqDeleteFileCnt = 0;

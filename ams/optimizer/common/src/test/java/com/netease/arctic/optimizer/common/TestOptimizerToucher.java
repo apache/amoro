@@ -15,7 +15,8 @@ public class TestOptimizerToucher extends OptimizerTestBase {
 
   @Test
   public void testRegisterOptimizer() throws InterruptedException {
-    OptimizerConfig optimizerConfig = OptimizerTestHelpers.buildOptimizerConfig(TEST_AMS.getServerUrl());
+    OptimizerConfig optimizerConfig =
+        OptimizerTestHelpers.buildOptimizerConfig(TEST_AMS.getServerUrl());
     OptimizerToucher optimizerToucher = new OptimizerToucher(optimizerConfig);
 
     TestTokenChangeListener tokenChangeListener = new TestTokenChangeListener();
@@ -25,7 +26,9 @@ public class TestOptimizerToucher extends OptimizerTestBase {
     tokenChangeListener.waitForTokenChange();
     Assert.assertEquals(1, tokenChangeListener.tokenList().size());
     Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().size());
-    validateRegisteredOptimizer(tokenChangeListener.tokenList().get(0), optimizerConfig,
+    validateRegisteredOptimizer(
+        tokenChangeListener.tokenList().get(0),
+        optimizerConfig,
         Collections.singletonMap("test_k", "test_v"));
 
     // clear all optimizer, toucher will register again
@@ -33,14 +36,16 @@ public class TestOptimizerToucher extends OptimizerTestBase {
     tokenChangeListener.waitForTokenChange();
     Assert.assertEquals(2, tokenChangeListener.tokenList().size());
     Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().size());
-    validateRegisteredOptimizer(tokenChangeListener.tokenList().get(1), optimizerConfig,
+    validateRegisteredOptimizer(
+        tokenChangeListener.tokenList().get(1),
+        optimizerConfig,
         Collections.singletonMap("test_k", "test_v"));
 
     optimizerToucher.stop();
   }
 
-  private void validateRegisteredOptimizer(String token, OptimizerConfig registerConfig,
-      Map<String, String> optimizerProperties) {
+  private void validateRegisteredOptimizer(
+      String token, OptimizerConfig registerConfig, Map<String, String> optimizerProperties) {
     Map<String, OptimizerRegisterInfo> registeredOptimizerMap =
         TEST_AMS.getOptimizerHandler().getRegisteredOptimizers();
     Assert.assertTrue(registeredOptimizerMap.containsKey(token));

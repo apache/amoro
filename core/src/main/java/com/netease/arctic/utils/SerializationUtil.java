@@ -18,6 +18,8 @@
 
 package com.netease.arctic.utils;
 
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
@@ -37,13 +39,11 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 
-import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
-
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class SerializationUtil {
 
   private static final ThreadLocal<KryoSerializerInstance> KRYO_SERIALIZER =
-          ThreadLocal.withInitial(KryoSerializerInstance::new);
+      ThreadLocal.withInitial(KryoSerializerInstance::new);
 
   public static ByteBuffer simpleSerialize(Object obj) {
     try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -129,7 +129,8 @@ public class SerializationUtil {
 
       // This instance of Kryo should not require prior registration of classes
       kryo.setRegistrationRequired(false);
-      Kryo.DefaultInstantiatorStrategy instantiatorStrategy = new Kryo.DefaultInstantiatorStrategy();
+      Kryo.DefaultInstantiatorStrategy instantiatorStrategy =
+          new Kryo.DefaultInstantiatorStrategy();
       instantiatorStrategy.setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());
       kryo.setInstantiatorStrategy(instantiatorStrategy);
       // Handle cases where we may have an odd classloader setup like with lib jars
@@ -141,7 +142,6 @@ public class SerializationUtil {
 
       return kryo;
     }
-
   }
 
   private static class AvroUtf8Serializer extends Serializer<Utf8> {
@@ -161,7 +161,6 @@ public class SerializationUtil {
       return new Utf8(bytes);
     }
   }
-
 
   public interface SimpleSerializer<T> {
 
@@ -226,7 +225,7 @@ public class SerializationUtil {
     }
   }
 
-  private static class StructLikeCopy implements StructLike {
+  public static class StructLikeCopy implements StructLike {
 
     public static StructLike copy(StructLike struct) {
       return struct != null ? new StructLikeCopy(struct) : null;

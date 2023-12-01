@@ -24,10 +24,7 @@ import org.apache.iceberg.expressions.ExpressionVisitors;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.expressions.UnboundPredicate;
 
-/**
- * Copy form iceberg-api 0.13.2 to assume that there are no NOT nodes in the expression tree.
- */
-
+/** Copy form iceberg-api 0.13.2 to assume that there are no NOT nodes in the expression tree. */
 class RewriteNot extends ExpressionVisitors.ExpressionVisitor<Expression> {
   private static final RewriteNot INSTANCE = new RewriteNot();
 
@@ -35,8 +32,7 @@ class RewriteNot extends ExpressionVisitors.ExpressionVisitor<Expression> {
     return INSTANCE;
   }
 
-  private RewriteNot() {
-  }
+  private RewriteNot() {}
 
   @Override
   public Expression alwaysTrue() {
