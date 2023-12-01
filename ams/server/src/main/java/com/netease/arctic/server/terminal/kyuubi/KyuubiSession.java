@@ -57,12 +57,20 @@ public class KyuubiSession implements TerminalSession {
                     + "since it's a hive type catalog and can use spark session catalog, "
                     + "switch to spark_catalog before execution",
                 currentCatalog));
-        execute("use `spark_catalog`");
+        try {
+          connection.setCatalog("spark_catalog");
+        } catch (SQLException e) {
+          throw new RuntimeException("error when set catalog: spark_catalog", e);
+        }
       } else {
         logs.add(
             String.format(
                 "current catalog is %s, switch to %s before execution", currentCatalog, catalog));
-        execute("use `" + catalog + "`");
+        try {
+          connection.setCatalog(catalog);
+        } catch (SQLException e) {
+          throw new RuntimeException("error when set catalog:" + catalog, e);
+        }
       }
       this.currentCatalog = catalog;
     }
