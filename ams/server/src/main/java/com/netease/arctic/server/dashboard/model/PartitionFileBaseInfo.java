@@ -27,6 +27,7 @@ public class PartitionFileBaseInfo {
   private Long commitTime;
   private String size;
   private String partition;
+  private int specId;
   private String path;
   private String file;
   private long fileSize;
@@ -37,12 +38,14 @@ public class PartitionFileBaseInfo {
       DataFileType fileType,
       Long commitTime,
       String partition,
+      int specId,
       String path,
       long fileSize) {
     this.commitId = commitId;
     this.fileType = fileType;
     this.commitTime = commitTime;
     this.partition = partition;
+    this.specId = specId;
     setPath(path);
     setFileSize(fileSize);
   }
@@ -94,6 +97,10 @@ public class PartitionFileBaseInfo {
 
   public String getPartition() {
     return partition;
+  }
+
+  public int getSpecId() {
+    return specId;
   }
 
   public void setPartition(String partition) {

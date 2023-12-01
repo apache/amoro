@@ -19,6 +19,7 @@ public class TableConfiguration {
   private boolean deleteDanglingDeleteFilesEnabled;
   private OptimizingConfig optimizingConfig;
   private DataExpirationConfig expiringDataConfig;
+  private TagConfiguration tagConfiguration;
 
   public TableConfiguration() {}
 
@@ -95,14 +96,19 @@ public class TableConfiguration {
     return this;
   }
 
+  public TagConfiguration getTagConfiguration() {
+    return Optional.ofNullable(tagConfiguration).orElse(new TagConfiguration());
+  }
+
+  public TableConfiguration setTagConfiguration(TagConfiguration tagConfiguration) {
+    this.tagConfiguration = tagConfiguration;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
     TableConfiguration that = (TableConfiguration) o;
     return expireSnapshotEnabled == that.expireSnapshotEnabled
         && snapshotTTLMinutes == that.snapshotTTLMinutes
@@ -111,7 +117,8 @@ public class TableConfiguration {
         && orphanExistingMinutes == that.orphanExistingMinutes
         && deleteDanglingDeleteFilesEnabled == that.deleteDanglingDeleteFilesEnabled
         && Objects.equal(optimizingConfig, that.optimizingConfig)
-        && Objects.equal(expiringDataConfig, that.expiringDataConfig);
+        && Objects.equal(expiringDataConfig, that.expiringDataConfig)
+        && Objects.equal(tagConfiguration, that.tagConfiguration);
   }
 
   @Override
@@ -124,7 +131,8 @@ public class TableConfiguration {
         orphanExistingMinutes,
         deleteDanglingDeleteFilesEnabled,
         optimizingConfig,
-        expiringDataConfig);
+        expiringDataConfig,
+        tagConfiguration);
   }
 
   public static TableConfiguration parseConfig(Map<String, String> properties) {
@@ -160,6 +168,7 @@ public class TableConfiguration {
                 TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN,
                 TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT))
         .setOptimizingConfig(OptimizingConfig.parseOptimizingConfig(properties))
-        .setExpiringDataConfig(DataExpirationConfig.parse(properties));
+        .setExpiringDataConfig(DataExpirationConfig.parse(properties))
+        .setTagConfiguration(TagConfiguration.parse(properties));
   }
 }

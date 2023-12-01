@@ -23,6 +23,7 @@ import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BY
 
 import com.google.common.collect.Lists;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.io.writer.GenericIcebergPartitionedFanoutWriter;
 import com.netease.arctic.io.writer.RecordWithAction;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.FileFormat;
@@ -38,7 +39,6 @@ import org.apache.iceberg.io.BaseTaskWriter;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFileFactory;
-import org.apache.iceberg.io.PartitionedWriter;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.UnpartitionedWriter;
 import org.apache.iceberg.io.WriteResult;
@@ -214,7 +214,7 @@ public class IcebergDataTestHelpers {
             TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
             TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
     if (table.spec().isPartitioned()) {
-      return new GenericPartitionedWriter(
+      return new GenericIcebergPartitionedFanoutWriter(
           table.schema(),
           table.spec(),
           FileFormat.PARQUET,
@@ -230,32 +230,6 @@ public class IcebergDataTestHelpers {
           OutputFileFactory.builderFor(table, 0, 0).build(),
           table.io(),
           fileSizeBytes);
-    }
-  }
-
-  public static class GenericPartitionedWriter extends PartitionedWriter<Record> {
-
-    final PartitionKey partitionKey;
-    final InternalRecordWrapper wrapper;
-
-    protected GenericPartitionedWriter(
-        Schema schema,
-        PartitionSpec spec,
-        FileFormat format,
-        FileAppenderFactory<Record> appenderFactory,
-        OutputFileFactory fileFactory,
-        FileIO io,
-        long targetFileSize) {
-      super(spec, format, appenderFactory, fileFactory, io, targetFileSize);
-      this.partitionKey = new PartitionKey(spec, schema);
-      this.wrapper = new InternalRecordWrapper(schema.asStruct());
-    }
-
-    @Override
-    protected PartitionKey partition(Record row) {
-      StructLike structLike = wrapper.wrap(row);
-      partitionKey.partition(structLike);
-      return partitionKey.copy();
     }
   }
 }

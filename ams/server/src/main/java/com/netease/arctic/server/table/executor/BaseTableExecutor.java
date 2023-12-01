@@ -25,11 +25,13 @@ import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -50,7 +52,7 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
             poolSize,
             new ThreadFactoryBuilder()
                 .setDaemon(false)
-                .setNameFormat("ASYNC-" + getThreadName() + "-%d")
+                .setNameFormat("async-" + getThreadName() + "-%d")
                 .build());
   }
 
@@ -89,7 +91,8 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
   protected abstract void execute(TableRuntime tableRuntime);
 
   protected String getThreadName() {
-    return getClass().getSimpleName();
+    return String.join("-", StringUtils.splitByCharacterTypeCamelCase(getClass().getSimpleName()))
+        .toLowerCase(Locale.ROOT);
   }
 
   private boolean isExecutable(TableRuntime tableRuntime) {
