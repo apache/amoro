@@ -29,7 +29,7 @@
 
     <artifactId>amoro-optimizer</artifactId>
     <packaging>pom</packaging>
-    <name>Amoro Project Optimizer Parent</name>
+    <name>Amoro Project AMS Optimizer Parent</name>
     <url>https://amoro.netease.com</url>
 
     <modules>
