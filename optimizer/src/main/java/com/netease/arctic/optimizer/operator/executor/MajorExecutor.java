@@ -74,20 +74,11 @@ public class MajorExecutor extends AbstractExecutor {
     Iterable<DataFile> targetFiles;
     LOG.info("Start processing arctic table major optimize task {} of {}: {}", task.getTaskId(),
         task.getTableIdentifier(), task);
-    if (TableTypeUtil.isHive(table) && task.isCopyFiles()) {
-      if (!task.posDeleteFiles().isEmpty() || !task.deleteFiles().isEmpty()) {
-        LOG.info("Task {} of {} enables copy files, but has delete files {} {}, should not copy", task.getTaskId(),
-            task.getTableIdentifier(), task.posDeleteFiles().size(), task.deleteFiles().size());
-      } else if (task.getCustomHiveSubdirectory() == null) {
-        LOG.info("Task {} of {} enables copy files, but custom hive directory is null, should not copy",
-            task.getTaskId(),
-            task.getTableIdentifier());
-      } else {
-        LOG.info("Task {} of {} enables copy files, copy {} data files", task.getTaskId(), task.getTableIdentifier(),
-            task.dataFiles().size());
-        targetFiles = copyFiles(task.dataFiles(), task.getCustomHiveSubdirectory());
-        return buildOptimizeResult(targetFiles);
-      }
+    if (supportCopyFiles()) {
+      LOG.info("Task {} of {} enables copy files, copy {} data files", task.getTaskId(), task.getTableIdentifier(),
+          task.dataFiles().size());
+      targetFiles = copyFiles(task.dataFiles(), task.getCustomHiveSubdirectory());
+      return buildOptimizeResult(targetFiles);
     }
 
     Map<DataTreeNode, List<DeleteFile>> deleteFileMap = groupDeleteFilesByNode(task.posDeleteFiles());
@@ -102,8 +93,13 @@ public class MajorExecutor extends AbstractExecutor {
     return buildOptimizeResult(targetFiles);
   }
 
+  private boolean supportCopyFiles() {
+    return TableTypeUtil.isHive(table) && task.isCopyFiles() && task.getCustomHiveSubdirectory() != null &&
+        task.posDeleteFiles().isEmpty() && task.deleteFiles().isEmpty();
+  }
+
   private Iterable<DataFile> copyFiles(List<PrimaryKeyedFile> dataFiles, String customHiveSubdirectory) {
-    int count = 0;
+    // Only mixed hive tables support copying files
     List<DataFile> targetFiles = new ArrayList<>(dataFiles.size());
     for (PrimaryKeyedFile dataFile : dataFiles) {
       String hiveLocation = HiveTableUtil.newHiveDataLocation(((SupportHive) table).hiveLocation(),
@@ -112,16 +108,11 @@ public class MajorExecutor extends AbstractExecutor {
       String sourcePath = dataFile.path().toString();
       String sourceFileName = TableFileUtils.getFileName(sourcePath);
 
-      String targetPath;
-      if (sourceFileName.startsWith(".")) {
-        targetPath = hiveLocation + File.separator + sourceFileName;
-      } else {
-        targetPath = hiveLocation + File.separator + "." + sourceFileName;
-      }
-      LOG.info("[{}] Start copying file from {} to {}", count++, sourcePath, targetPath);
+      // The copied files must be hidden files, which are start with `.`
+      String targetPath = hiveLocation + File.separator + "." + sourceFileName;
       long startTime = System.currentTimeMillis();
       table.io().copy(sourcePath, targetPath);
-      LOG.info("Successfully copied file {}, cost {} ms", sourceFileName,
+      LOG.info("Successfully copied file {}, cost {} ms", sourcePath,
           System.currentTimeMillis() - startTime);
       targetFiles.add(DataFiles.builder(table.spec()).copy(dataFile).withPath(targetPath).build());
     }
