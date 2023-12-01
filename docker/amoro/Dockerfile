@@ -35,7 +35,7 @@ RUN apt-get update \
     && apt-get install -y unzip
 
 RUN AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'` \
-    && cp dist/target/*.zip /usr/local \
+    && cp ams/dist/target/*.zip /usr/local \
     && unzip /usr/local/amoro-${AMORO_VERSION}-bin.zip -d /usr/local \
     && rm /usr/local/amoro-${AMORO_VERSION}/plugin/optimizer/flink -rf \
     && mv /usr/local/amoro-${AMORO_VERSION} /usr/local/amoro \
