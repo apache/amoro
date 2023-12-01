@@ -83,7 +83,7 @@ public class IcebergTableUtil {
   public static Optional<Snapshot> findSnapshotDesc(Table table, Predicate<Snapshot> predicate) {
     List<Snapshot> snapshots = Lists.newArrayList(table.snapshots());
     Collections.reverse(snapshots);
-    return Iterables.tryFind(snapshots, predicate).toJavaUtil();
+    return Optional.ofNullable(Iterables.tryFind(snapshots, predicate).orNull());
   }
 
   public static Set<String> getAllContentFilePath(Table internalTable) {
