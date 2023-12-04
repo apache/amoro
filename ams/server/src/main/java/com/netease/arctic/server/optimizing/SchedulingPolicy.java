@@ -22,6 +22,7 @@ public class SchedulingPolicy {
   private static final String BALANCED = "balanced";
 
   private final Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap = new HashMap<>();
+  private volatile String policyName;
   private Comparator<TableRuntime> tableSorter;
   private final Lock tableLock = new ReentrantLock();
 
@@ -30,21 +31,29 @@ public class SchedulingPolicy {
   }
 
   public void setTableSorterIfNeeded(ResourceGroup optimizerGroup) {
-    String schedulingPolicy =
-        Optional.ofNullable(optimizerGroup.getProperties())
-            .orElseGet(Maps::newHashMap)
-            .getOrDefault(SCHEDULING_POLICY_PROPERTY_NAME, QUOTA);
-    if (schedulingPolicy.equalsIgnoreCase(QUOTA)) {
-      if (tableSorter == null || !(tableSorter instanceof QuotaOccupySorter)) {
-        tableSorter = new QuotaOccupySorter();
+    tableLock.lock();
+    try {
+      policyName = Optional.ofNullable(optimizerGroup.getProperties())
+          .orElseGet(Maps::newHashMap)
+          .getOrDefault(SCHEDULING_POLICY_PROPERTY_NAME, QUOTA);
+      if (policyName.equalsIgnoreCase(QUOTA)) {
+        if (tableSorter == null || !(tableSorter instanceof QuotaOccupySorter)) {
+          tableSorter = new QuotaOccupySorter();
+        }
+      } else if (policyName.equalsIgnoreCase(BALANCED)) {
+        if (tableSorter == null || !(tableSorter instanceof BalancedSorter)) {
+          tableSorter = new BalancedSorter();
+        }
+      } else {
+        throw new IllegalArgumentException("Illegal scheduling policy: " + policyName);
       }
-    } else if (schedulingPolicy.equalsIgnoreCase(BALANCED)) {
-      if (tableSorter == null || !(tableSorter instanceof BalancedSorter)) {
-        tableSorter = new BalancedSorter();
-      }
-    } else {
-      throw new IllegalArgumentException("Illegal scheduling policy: " + schedulingPolicy);
+    } finally {
+      tableLock.unlock();
     }
+  }
+
+  public String name() {
+    return policyName;
   }
 
   public TableRuntime scheduleTable(Set<ServerTableIdentifier> skipSet) {
