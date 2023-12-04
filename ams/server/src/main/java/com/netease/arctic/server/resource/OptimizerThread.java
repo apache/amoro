@@ -18,6 +18,9 @@
 
 package com.netease.arctic.server.resource;
 
+
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+
 import java.util.Objects;
 
 public class OptimizerThread {
@@ -52,6 +55,9 @@ public class OptimizerThread {
 
   @Override
   public String toString() {
-    return "OptimizerThread{" + "threadId=" + threadId + ", optimizer=" + optimizer + '}';
+    return MoreObjects.toStringHelper(this)
+        .add("threadId", threadId)
+        .add("optimizer", optimizer)
+        .toString();
   }
 }
