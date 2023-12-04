@@ -208,7 +208,10 @@ public class OptimizingQueue extends PersistentBase {
 
   private void triggerAsyncPlanning(
       TableRuntime tableRuntime, Set<ServerTableIdentifier> skipTables, long startTime) {
-    LOG.info("Trigger planning table {} by policy {}", tableRuntime.getTableIdentifier(), scheduler.name());
+    LOG.info(
+        "Trigger planning table {} by policy {}",
+        tableRuntime.getTableIdentifier(),
+        scheduler.name());
     planningTables.add(tableRuntime.getTableIdentifier());
     CompletableFuture.supplyAsync(() -> planInternal(tableRuntime), planExecutor)
         .whenComplete(

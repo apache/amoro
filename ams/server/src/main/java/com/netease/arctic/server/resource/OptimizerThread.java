@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.resource;
 
-
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.Objects;

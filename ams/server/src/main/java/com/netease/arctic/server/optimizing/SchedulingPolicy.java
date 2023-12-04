@@ -33,9 +33,10 @@ public class SchedulingPolicy {
   public void setTableSorterIfNeeded(ResourceGroup optimizerGroup) {
     tableLock.lock();
     try {
-      policyName = Optional.ofNullable(optimizerGroup.getProperties())
-          .orElseGet(Maps::newHashMap)
-          .getOrDefault(SCHEDULING_POLICY_PROPERTY_NAME, QUOTA);
+      policyName =
+          Optional.ofNullable(optimizerGroup.getProperties())
+              .orElseGet(Maps::newHashMap)
+              .getOrDefault(SCHEDULING_POLICY_PROPERTY_NAME, QUOTA);
       if (policyName.equalsIgnoreCase(QUOTA)) {
         if (tableSorter == null || !(tableSorter instanceof QuotaOccupySorter)) {
           tableSorter = new QuotaOccupySorter();
