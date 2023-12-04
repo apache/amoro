@@ -90,7 +90,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final long taskAckTimeout;
   private final int maxPlanningParallelism;
   private final long pollingTimeout;
-  private final long minPlanningInterval;
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
   private final Map<String, OptimizerInstance> authOptimizers = new ConcurrentHashMap<>();
@@ -105,8 +104,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
     this.maxPlanningParallelism =
         serviceConfig.getInteger(ArcticManagementConf.OPTIMIZER_MAX_PLANNING_PARALLELISM);
     this.pollingTimeout = serviceConfig.getLong(ArcticManagementConf.OPTIMIZER_POLLING_TIMEOUT);
-    this.minPlanningInterval =
-        serviceConfig.getLong(ArcticManagementConf.GLOBAL_MIN_PLANNING_INTERVAL);
     this.tableService = tableService;
     this.tableHandlerChain = new TableRuntimeHandlerImpl();
     this.planExecutor =
@@ -139,8 +136,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
                   this,
                   planExecutor,
                   Optional.ofNullable(tableRuntimeMetas).orElseGet(ArrayList::new),
-                  maxPlanningParallelism,
-                  minPlanningInterval);
+                  maxPlanningParallelism);
           optimizingQueueByGroup.put(groupName, optimizingQueue);
         });
     optimizers.forEach(optimizer -> registerOptimizer(optimizer, false));
@@ -295,8 +291,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
                   this,
                   planExecutor,
                   new ArrayList<>(),
-                  maxPlanningParallelism,
-                  minPlanningInterval);
+                  maxPlanningParallelism);
           optimizingQueueByGroup.put(resourceGroup.getName(), optimizingQueue);
         });
   }
@@ -482,6 +477,10 @@ public class DefaultOptimizingService extends StatedPersistentBase
       return optimizerInstance.getToken();
     }
 
+    public OptimizingQueue getQueue() {
+      return optimizingQueueByGroup.get(optimizerInstance.getGroupName());
+    }
+
     public OptimizerInstance getOptimizer() {
       return optimizerInstance;
     }
@@ -518,7 +517,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
           OptimizerKeepingTask keepingTask = suspendingQueue.take();
           String token = keepingTask.getToken();
           boolean isExpired = !keepingTask.tryKeeping();
-          Optional.ofNullable(optimizingQueueByToken.get(token))
+          Optional.ofNullable(keepingTask.getQueue())
               .ifPresent(
                   queue ->
                       queue

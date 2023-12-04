@@ -1,6 +1,7 @@
 package com.netease.arctic.server.optimizing;
 
 import com.google.common.collect.Maps;
+import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableRuntime;
@@ -49,8 +50,9 @@ public class SchedulingPolicy {
   public TableRuntime scheduleTable(Set<ServerTableIdentifier> skipSet) {
     tableLock.lock();
     try {
+      fillSkipSet(skipSet);
       return tableRuntimeMap.values().stream()
-          .filter(tableRuntime -> !shouldSkip(skipSet, tableRuntime))
+          .filter(tableRuntime -> !skipSet.contains(tableRuntime.getTableIdentifier()))
           .min(tableSorter)
           .orElse(null);
     } finally {
@@ -67,8 +69,16 @@ public class SchedulingPolicy {
     }
   }
 
-  private boolean shouldSkip(Set<ServerTableIdentifier> skipSet, TableRuntime tableRuntime) {
-    return skipSet.contains(tableRuntime.getTableIdentifier()) || !isTablePending(tableRuntime);
+  private void fillSkipSet(Set<ServerTableIdentifier> originalSet) {
+    long currentTime = System.currentTimeMillis();
+    tableRuntimeMap.values().stream()
+        .filter(
+            tableRuntime ->
+                !isTablePending(tableRuntime)
+                    || tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)
+                    || currentTime - tableRuntime.getLastPlanTime()
+                        < tableRuntime.getOptimizingConfig().getMinPlanInterval())
+        .forEach(tableRuntime -> originalSet.add(tableRuntime.getTableIdentifier()));
   }
 
   private boolean isTablePending(TableRuntime tableRuntime) {

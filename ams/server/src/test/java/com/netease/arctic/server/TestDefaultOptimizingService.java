@@ -235,6 +235,20 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   @Test
+  public void testRebootAndPoll() throws InterruptedException {
+    OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(task);
+    reboot();
+
+    // wait for last optimizer expiring
+    Thread.sleep(1000);
+    assertTaskStatus(TaskRuntime.Status.PLANNED);
+    OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(task2);
+    Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
+  }
+
+  @Test
   public void testAckAndCompleteTask() {
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task);
@@ -378,6 +392,14 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     toucher.suspend();
     initTableService();
     toucher.goOn();
+  }
+
+  protected void reboot() throws InterruptedException {
+    disposeTableService();
+    toucher.stop();
+    toucher = null;
+    initTableService();
+    toucher = new Toucher();
   }
 
   private class TableRuntimeRefresher extends TableRuntimeRefreshExecutor {
