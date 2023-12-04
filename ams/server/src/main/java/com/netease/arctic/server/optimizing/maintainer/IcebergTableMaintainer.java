@@ -129,6 +129,11 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
     // clear metadata files
     cleanMetadata(System.currentTimeMillis() - keepTime);
+  }
+
+  @Override
+  public void cleanDanglingDeleteFiles(TableRuntime tableRuntime) {
+    TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
 
     if (!tableConfiguration.isDeleteDanglingDeleteFilesEnabled()) {
       return;

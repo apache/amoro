@@ -137,6 +137,7 @@ public class ArcticServiceContainer {
     addHandlerChain(AsyncTableExecutors.getInstance().getDataExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getSnapshotsExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
+    addHandlerChain(AsyncTableExecutors.getInstance().getDanglingDeleteFilesCleaningExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingCommitExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getBlockerExpiringExecutor());

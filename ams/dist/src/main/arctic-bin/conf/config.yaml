@@ -45,6 +45,10 @@ ams:
     enabled: true
     thread-count: 10
 
+  clean-dangling-delete-files:
+    enabled: true
+    thread-count: 10
+
   sync-hive-tables:
     enabled: true
     thread-count: 10
