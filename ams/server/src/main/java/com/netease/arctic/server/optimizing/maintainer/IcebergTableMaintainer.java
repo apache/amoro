@@ -478,7 +478,12 @@ public class IcebergTableMaintainer implements TableMaintainer {
       validFiles.add(TableFileUtil.getUriPath(manifestListLocation));
     }
     // valid data files
-    validFiles.addAll(IcebergTableUtil.getAllManifestFiles(internalTable));
+    Set<String> allManifestFiles = IcebergTableUtil.getAllManifestFiles(internalTable);
+    allManifestFiles.forEach(
+        f -> {
+          String path = TableFileUtil.getUriPath(f);
+          validFiles.add(path);
+        });
 
     Stream.of(
             ReachableFileUtil.metadataFileLocations(internalTable, false).stream(),

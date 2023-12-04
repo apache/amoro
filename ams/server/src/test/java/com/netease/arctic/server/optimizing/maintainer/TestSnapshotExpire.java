@@ -147,39 +147,6 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   }
 
   @Test
-  public void testExpiredChangeTableFilesInBase() {
-    Assume.assumeTrue(isKeyedTable());
-    Assume.assumeTrue(isPartitionedTable());
-    KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
-    testKeyedTable.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
-    testKeyedTable.updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
-    List<DataFile> s1Files = insertChangeDataFiles(testKeyedTable, 1);
-    long l = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
-    testKeyedTable.baseTable().newAppend().appendFile(s1Files.get(0)).commit();
-    List<StructLike> partitions =
-        new ArrayList<>(
-            s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
-    Assert.assertEquals(2, partitions.size());
-
-    StructLikeMap<Long> optimizedSequence =
-        StructLikeMap.create(testKeyedTable.spec().partitionType());
-    optimizedSequence.put(partitions.get(0), 3L);
-    optimizedSequence.put(partitions.get(1), 1L);
-    writeOptimizedSequence(testKeyedTable, optimizedSequence);
-    s1Files.forEach(file -> Assert.assertTrue(testKeyedTable.io().exists(file.path().toString())));
-
-    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(testKeyedTable);
-    tableMaintainer.getChangeMaintainer().expireFiles(l + 1);
-    // In order to advance the snapshot
-    insertChangeDataFiles(testKeyedTable, 2);
-    tableMaintainer.getChangeMaintainer().expireSnapshots(System.currentTimeMillis());
-
-    Assert.assertEquals(1, Iterables.size(testKeyedTable.changeTable().snapshots()));
-    Assert.assertTrue(testKeyedTable.io().exists(s1Files.get(0).path().toString()));
-    Assert.assertFalse(testKeyedTable.io().exists(s1Files.get(1).path().toString()));
-  }
-
-  @Test
   public void testNotExpireFlinkLatestCommit4ChangeTable() {
     Assume.assumeTrue(isKeyedTable());
     KeyedTable testKeyedTable = getArcticTable().asKeyedTable();

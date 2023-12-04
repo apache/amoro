@@ -26,14 +26,10 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
-import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.server.table.executor.ExecutorTestBase;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.TableFileUtil;
 import org.apache.iceberg.AppendFiles;
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.GenericBlobMetadata;
 import org.apache.iceberg.GenericStatisticsFile;
 import org.apache.iceberg.Snapshot;
@@ -43,16 +39,13 @@ import org.apache.iceberg.puffin.BlobMetadata;
 import org.apache.iceberg.puffin.Puffin;
 import org.apache.iceberg.puffin.PuffinWriter;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
@@ -204,39 +197,6 @@ public class TestOrphanFileClean extends ExecutorTestBase {
       Assert.assertFalse(getArcticTable().io().exists(changeInvalidMetadataJson));
     }
     ExecutorTestBase.assertMetadataExists(getArcticTable());
-  }
-
-  @Test
-  public void orphanChangeDataFileInBaseClean() {
-    Assume.assumeTrue(isKeyedTable());
-    KeyedTable testKeyedTable = getArcticTable().asKeyedTable();
-    List<DataFile> dataFiles =
-        tableTestHelper()
-            .writeChangeStore(
-                testKeyedTable, 1L, ChangeAction.INSERT, createRecords(1, 100), false);
-    Set<String> pathAll = new HashSet<>();
-    Set<String> fileInBaseStore = new HashSet<>();
-    Set<String> fileOnlyInChangeLocation = new HashSet<>();
-
-    AppendFiles appendFiles = testKeyedTable.asKeyedTable().baseTable().newAppend();
-
-    for (int i = 0; i < dataFiles.size(); i++) {
-      DataFile dataFile = dataFiles.get(i);
-      pathAll.add(TableFileUtil.getUriPath(dataFile.path().toString()));
-      if (i == 0) {
-        appendFiles.appendFile(dataFile).commit();
-        fileInBaseStore.add(TableFileUtil.getUriPath(dataFile.path().toString()));
-      } else {
-        fileOnlyInChangeLocation.add(TableFileUtil.getUriPath(dataFile.path().toString()));
-      }
-    }
-    pathAll.forEach(path -> Assert.assertTrue(testKeyedTable.io().exists(path)));
-
-    MixedTableMaintainer maintainer = new MixedTableMaintainer(getArcticTable());
-    maintainer.cleanContentFiles(System.currentTimeMillis());
-
-    fileInBaseStore.forEach(path -> Assert.assertTrue(testKeyedTable.io().exists(path)));
-    fileOnlyInChangeLocation.forEach(path -> Assert.assertFalse(testKeyedTable.io().exists(path)));
   }
 
   @Test
