@@ -56,6 +56,12 @@ public class LoginController {
     }
   }
 
+  /** handle logout post request. */
+  public void logout(Context ctx) {
+    ctx.removeCookie("JSESSIONID");
+    ctx.json(OkResponse.ok());
+  }
+
   static class SessionInfo implements Serializable {
     String userName;
     String loginTime;

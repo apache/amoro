@@ -31,6 +31,8 @@ export default {
   backHome: 'Back to Home',
   version: 'Version',
   userGuide: 'User Guide',
+  logout: 'Logout',
+  logoutModalTitle: 'Log out of the ams?',
   order: 'Order',
   cluster: 'Cluster',
   database: 'Database | Databases',

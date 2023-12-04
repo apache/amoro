@@ -168,6 +168,7 @@ public class DashboardServer {
             // login controller
             get("/login/current", loginController::getCurrent);
             post("/login", loginController::login);
+            post("/logout", loginController::logout);
 
             // table controller
             get(
