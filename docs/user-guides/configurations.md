@@ -27,21 +27,22 @@ modified through [Alter Table](../using-tables/#modify-table) operations.
 
 Self-optimizing configurations are applicable to both Iceberg Format and Mixed streaming Format.
 
-| Key                                                 | Default          | Description                                              |
-|-----------------------------------------------------|------------------|---------------------------------------------------|
-| self-optimizing.enabled                             | true             | Enables Self-optimizing                                |
-| self-optimizing.group                               | default          | Optimizer group for Self-optimizing                                   |
-| self-optimizing.quota                               | 0.1              | Quota for Self-optimizing, indicating the CPU resource the table can take up                       |
-| self-optimizing.execute.num-retries                 | 5                | Number of retries after failure of Self-optimizing                       |
-| self-optimizing.target-size                         | 134217728(128MB) | Target size for Self-optimizing                           |
-| self-optimizing.max-file-count                      | 10000            | Maximum number of files processed by a Self-optimizing process              |               |
-| self-optimizing.max-task-size-bytes                 | 134217728(128MB) | Maximum file size bytes in a single task for splitting tasks                |               |
-| self-optimizing.fragment-ratio                      | 8                | The fragment file size threshold. We could divide self-optimizing.target-size by this ratio to get the actual fragment file size           |
-| self-optimizing.minor.trigger.file-count            | 12               | The minimum numbers of fragment files to trigger minor optimizing   |
-| self-optimizing.minor.trigger.interval              | 3600000(1 hour)  | The time interval in milliseconds to trigger minor optimizing                         |
-| self-optimizing.major.trigger.duplicate-ratio       | 0.1              | The ratio of duplicate data of segment files to trigger major optimizing  |
-| self-optimizing.full.trigger.interval               | -1(closed)       | The time interval in milliseconds to trigger full optimizing
-| self-optimizing.full.rewrite-all-files              | true             | Whether full optimizing rewrites all files or skips files that do not need to be optimized |
+| Key                                           | Default          | Description                                                                                                                      |
+|-----------------------------------------------|------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| self-optimizing.enabled                       | true             | Enables Self-optimizing                                                                                                          |
+| self-optimizing.group                         | default          | Optimizer group for Self-optimizing                                                                                              |
+| self-optimizing.quota                         | 0.1              | Quota for Self-optimizing, indicating the CPU resource the table can take up                                                     |
+| self-optimizing.execute.num-retries           | 5                | Number of retries after failure of Self-optimizing                                                                               |
+| self-optimizing.target-size                   | 134217728(128MB) | Target size for Self-optimizing                                                                                                  |
+| self-optimizing.max-file-count                | 10000            | Maximum number of files processed by a Self-optimizing process                                                                   |
+| self-optimizing.max-task-size-bytes           | 134217728(128MB) | Maximum file size bytes in a single task for splitting tasks                                                                     |
+| self-optimizing.fragment-ratio                | 8                | The fragment file size threshold. We could divide self-optimizing.target-size by this ratio to get the actual fragment file size |
+| self-optimizing.minor.trigger.file-count      | 12               | The minimum numbers of fragment files to trigger minor optimizing                                                                |
+| self-optimizing.minor.trigger.interval        | 3600000(1 hour)  | The time interval in milliseconds to trigger minor optimizing                                                                    |
+| self-optimizing.major.trigger.duplicate-ratio | 0.1              | The ratio of duplicate data of segment files to trigger major optimizing                                                         |
+| self-optimizing.full.trigger.interval         | -1(closed)       | The time interval in milliseconds to trigger full optimizing                                                                     |
+| self-optimizing.full.rewrite-all-files        | true             | Whether full optimizing rewrites all files or skips files that do not need to be optimized                                       |
+| self-optimizing.min-plan-interval             | 60000            | The minimum time interval between two self-optimizing planning action                                                            |
 
 ## Data-cleaning configurations
 
