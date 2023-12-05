@@ -254,7 +254,6 @@ public class ArcticManagementConf {
           .defaultValue(30000L)
           .withDescription("Timeout duration for task acknowledgment.");
 
-  /** config key prefix of terminal */
   public static final ConfigOption<Integer> OPTIMIZER_MAX_PLANNING_PARALLELISM =
       ConfigOptions.key("optimizer.max-planning-parallelism")
           .intType()
