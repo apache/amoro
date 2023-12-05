@@ -480,7 +480,7 @@ public class ArcticServiceContainer {
       int workerThreadPoolSize =
           Math.max(
               Runtime.getRuntime().availableProcessors(),
-              serviceConfig.getInteger(ArcticManagementConf.ICEBERG_WORKER_NUM_THREADS));
+              serviceConfig.getInteger(ArcticManagementConf.TABLE_MANIFEST_IO_THREAD_COUNT));
       System.setProperty(
           SystemProperties.WORKER_THREAD_POOL_SIZE_PROP, String.valueOf(workerThreadPoolSize));
     }

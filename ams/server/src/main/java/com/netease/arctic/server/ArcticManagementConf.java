@@ -52,12 +52,6 @@ public class ArcticManagementConf {
   public static final ConfigOption<Integer> TABLE_MANIFEST_IO_THREAD_COUNT =
       ConfigOptions.key("table-manifest-io.thread-count")
           .intType()
-          .defaultValue(10)
-          .withDescription("The number of threads used to read metadata.");
-
-  public static final ConfigOption<Integer> ICEBERG_WORKER_NUM_THREADS =
-      ConfigOptions.key("iceberg.worker.num-threads")
-          .intType()
           .defaultValue(20)
           .withDescription(
               "Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing "

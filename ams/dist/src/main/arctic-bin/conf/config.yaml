@@ -17,10 +17,6 @@ ams:
   http-server:
     bind-port: 1630
 
-  iceberg:
-    worker:
-      num-threads: 20
-
   refresh-external-catalogs:
     interval: 180000 # 3min
     thread-count: 10
