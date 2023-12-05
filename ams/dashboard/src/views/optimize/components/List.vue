@@ -24,7 +24,7 @@
           <span>{{ record.optimizeStatus }}</span>
         </template>
         <template v-if="column.dataIndex === 'operation'">
-          <span class="primary-link" :class="{'disabled': record.containerType === 'external'}" @click="releaseModal(record)">
+          <span class="primary-link" :class="{'disabled': record.container === 'external'}" @click="releaseModal(record)">
             {{ t('release') }}
           </span>
         </template>
@@ -52,6 +52,7 @@ const emit = defineEmits<{
 }>()
 const STATUS_CONFIG = shallowReactive({
   pending: { title: 'pending', color: '#ffcc00' },
+  planning: { title: 'planning', color: '#076de3' },
   idle: { title: 'idle', color: '#c9cdd4' },
   minor: { title: 'minor', color: '#0ad787' },
   major: { title: 'major', color: '#0ad787' },
@@ -158,7 +159,7 @@ async function getTableList () {
 }
 
 function releaseModal (record: IOptimizeResourceTableItem) {
-  if (record.containerType === 'external') {
+  if (record.container === 'external') {
     return
   }
   Modal.confirm({
