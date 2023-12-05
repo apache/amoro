@@ -21,18 +21,15 @@ package com.netease.arctic.server.utils;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.utils.TableFileUtil;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class HiveLocationUtil {
-  private static final Logger LOG = LoggerFactory.getLogger(HiveLocationUtil.class);
-
   /**
    * Get table hive table/partition location
    *
@@ -50,7 +47,7 @@ public class HiveLocationUtil {
                   .run(
                       client ->
                           client.getTable(table.id().getDatabase(), table.id().getTableName()));
-          hiveLocations.add(hiveTable.getSd().getLocation());
+          hiveLocations.add(TableFileUtil.getUriPath(hiveTable.getSd().getLocation()));
         } catch (Exception e) {
           throw new IllegalStateException("Failed to get hive table location", e);
         }
@@ -66,7 +63,7 @@ public class HiveLocationUtil {
                               table.id().getTableName(),
                               Short.MAX_VALUE));
           for (Partition partition : partitions) {
-            hiveLocations.add(partition.getSd().getLocation());
+            hiveLocations.add(TableFileUtil.getUriPath(partition.getSd().getLocation()));
           }
         } catch (Exception e) {
           throw new IllegalStateException("Failed to get hive partition locations", e);
