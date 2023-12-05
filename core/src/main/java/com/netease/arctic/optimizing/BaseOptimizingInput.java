@@ -25,7 +25,6 @@ import java.util.Map;
 
 public abstract class BaseOptimizingInput implements TableOptimizing.OptimizingInput {
 
-  private static final long serialVersionUID = -2176390709831230807L;
   private final Map<String, String> options = new HashMap<>();
 
   @Override
