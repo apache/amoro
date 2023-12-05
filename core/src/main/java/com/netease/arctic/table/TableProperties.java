@@ -31,6 +31,10 @@ public class TableProperties {
 
   private TableProperties() {}
 
+  public static final String SELF_OPTIMIZING_MIN_PLAN_INTERVAL =
+      "self-optimizing.min-plan-interval";
+  public static final long SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT = 60000;
+
   public static final String TABLE_PARTITION_PROPERTIES = "table.partition-properties";
 
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
@@ -158,6 +162,8 @@ public class TableProperties {
       "data-expire.datetime-number-format";
   public static final String DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT = "TIMESTAMP_MS";
   public static final String DATA_EXPIRATION_RETENTION_TIME = "data-expire.retention-time";
+  public static final String DATA_EXPIRATION_SINCE = "data-expire.since";
+  public static final String DATA_EXPIRATION_SINCE_DEFAULT = "LATEST_SNAPSHOT";
 
   public static final String ENABLE_DANGLING_DELETE_FILES_CLEAN =
       "clean-dangling-delete-files.enabled";
