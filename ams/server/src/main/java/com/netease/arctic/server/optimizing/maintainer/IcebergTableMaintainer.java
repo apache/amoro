@@ -179,8 +179,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
             file -> {
               try {
                 String filePath = TableFileUtil.getUriPath(file);
-                if (!exclude.contains(filePath)
-                    && !exclude.contains(new Path(filePath).getParent().toString())) {
+                if (exclude.isEmpty()
+                    || (!exclude.contains(filePath)
+                        && !exclude.contains(new Path(filePath).getParent().toString()))) {
                   arcticFileIO().deleteFile(file);
                 }
                 parentDirectory.add(new Path(file).getParent().toString());
