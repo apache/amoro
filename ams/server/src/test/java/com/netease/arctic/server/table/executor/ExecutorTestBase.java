@@ -22,8 +22,6 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.hive.io.HiveDataTestHelpers;
-import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
@@ -76,26 +74,6 @@ public class ExecutorTestBase extends TableTestBase {
     writeFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
     return writeFiles;
-  }
-
-  public List<DataFile> writeAndCommitBaseAndHive(ArcticTable table, long txId, boolean writeHive) {
-    String hiveSubDir = HiveTableUtil.newHiveSubdirectory(txId);
-    HiveDataTestHelpers.WriterHelper writerHelper =
-        HiveDataTestHelpers.writerOf(table).customHiveLocation(hiveSubDir).transactionId(txId);
-    List<Record> records = createRecords(1, 100);
-    List<DataFile> dataFiles;
-    if (writeHive) {
-      dataFiles = writerHelper.writeHive(records);
-    } else {
-      dataFiles = writerHelper.writeBase(records);
-    }
-
-    UnkeyedTable baseTable =
-        table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
-    AppendFiles baseAppend = baseTable.newAppend();
-    dataFiles.forEach(baseAppend::appendFile);
-    baseAppend.commit();
-    return dataFiles;
   }
 
   public void writeAndCommitBaseAndChange(ArcticTable table) {
