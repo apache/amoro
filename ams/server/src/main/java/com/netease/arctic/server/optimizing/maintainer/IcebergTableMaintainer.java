@@ -139,9 +139,6 @@ public class IcebergTableMaintainer implements TableMaintainer {
       return;
     }
 
-    // refresh
-    table.refresh();
-
     // clear dangling delete files
     cleanDanglingDeleteFiles();
   }
