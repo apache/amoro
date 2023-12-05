@@ -26,7 +26,6 @@ import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.table.DataExpirationConfig;
-import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.HiveLocationUtil;
 import com.netease.arctic.server.utils.IcebergTableUtil;
@@ -327,18 +326,21 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     @Override
     public void expireSnapshots(TableRuntime tableRuntime) {
-      TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
-      if (!tableConfiguration.isExpireSnapshotEnabled()) {
+      if (!expireSnapshotEnabled(tableRuntime)) {
         return;
       }
+      long now = System.currentTimeMillis();
       expireFiles(now - snapshotsKeepTime(tableRuntime));
-      super.expireSnapshots(tableRuntime);
+      expireSnapshots(mustOlderThan(tableRuntime, now));
     }
 
     @Override
-    protected long mustOlderThan(TableRuntime tableRuntime) {
+    protected long mustOlderThan(TableRuntime tableRuntime, long now) {
       return min(
-          now - snapshotsKeepTime(tableRuntime), fetchLatestFlinkCommittedSnapshotTime(table));
+          // The change data ttl time
+          now - snapshotsKeepTime(tableRuntime),
+          // The latest flink committed snapshot should not be expired for recovering flink job
+          fetchLatestFlinkCommittedSnapshotTime(table));
     }
 
     @Override
@@ -478,22 +480,28 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     @Override
-    protected long mustOlderThan(TableRuntime tableRuntime) {
+    protected long mustOlderThan(TableRuntime tableRuntime, long now) {
       return min(
+          // The snapshots keep time for base store
           now - snapshotsKeepTime(tableRuntime),
-          fetchOptimizingSnapshotTime(table, tableRuntime),
-          fetchLatestFlinkCommittedSnapshotTime(table),
+          // The snapshot optimizing plan based should not be expired for committing
+          fetchOptimizingPlanSnapshotTime(table, tableRuntime),
+          // The latest non-optimized snapshot should not be expired for data expiring
           fetchLatestNonOptimizedSnapshotTime(table),
+          // The latest flink committed snapshot should not be expired for recovering flink job
+          fetchLatestFlinkCommittedSnapshotTime(table),
+          // The latest snapshot contains the optimized sequence should not be expired for MOR
           fetchLatestOptimizedSequenceSnapshotTime(table));
     }
 
     /**
      * When committing a snapshot to the base store of mixed format keyed table, it will store the
-     * optimized sequence to the snapshot, and the latest snapshot contains it should not be
-     * expired.
+     * optimized sequence to the snapshot, and will set a flag to the summary of this snapshot.
      *
-     * @param table -
-     * @return commit time of snapshot with the latest optimized sequence in summary
+     * <p>The optimized sequence will affect the correctness of MOR.
+     *
+     * @param table table
+     * @return time of the latest snapshot with the optimized sequence flag in summary
      */
     private long fetchLatestOptimizedSequenceSnapshotTime(Table table) {
       if (arcticTable.isKeyedTable()) {

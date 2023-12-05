@@ -106,11 +106,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   protected Table table;
 
-  protected final long now;
-
   public IcebergTableMaintainer(Table table) {
     this.table = table;
-    this.now = System.currentTimeMillis();
   }
 
   @Override
@@ -144,11 +141,15 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   @Override
   public void expireSnapshots(TableRuntime tableRuntime) {
-    TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
-    if (!tableConfiguration.isExpireSnapshotEnabled()) {
+    if (!expireSnapshotEnabled(tableRuntime)) {
       return;
     }
-    expireSnapshots(mustOlderThan(tableRuntime), expireSnapshotNeedToExcludeFiles());
+    expireSnapshots(mustOlderThan(tableRuntime, System.currentTimeMillis()));
+  }
+
+  protected boolean expireSnapshotEnabled(TableRuntime tableRuntime) {
+    TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
+    return tableConfiguration.isExpireSnapshotEnabled();
   }
 
   @VisibleForTesting
@@ -156,8 +157,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     expireSnapshots(mustOlderThan, expireSnapshotNeedToExcludeFiles());
   }
 
-  @VisibleForTesting
-  public void expireSnapshots(long olderThan, Set<String> exclude) {
+  private void expireSnapshots(long olderThan, Set<String> exclude) {
     LOG.debug("start expire snapshots older than {}, the exclude is {}", olderThan, exclude);
     final AtomicInteger toDeleteFiles = new AtomicInteger(0);
     final AtomicInteger deleteFiles = new AtomicInteger(0);
@@ -269,11 +269,15 @@ public class IcebergTableMaintainer implements TableMaintainer {
     LOG.info("{} total delete {} dangling delete files", table.name(), danglingDeleteFilesCnt);
   }
 
-  protected long mustOlderThan(TableRuntime tableRuntime) {
+  protected long mustOlderThan(TableRuntime tableRuntime, long now) {
     return min(
+        // The snapshots keep time
         now - snapshotsKeepTime(tableRuntime),
-        fetchOptimizingSnapshotTime(table, tableRuntime),
+        // The snapshot optimizing plan based should not be expired for committing
+        fetchOptimizingPlanSnapshotTime(table, tableRuntime),
+        // The latest non-optimized snapshot should not be expired for data expiring
         fetchLatestNonOptimizedSnapshotTime(table),
+        // The latest flink committed snapshot should not be expired for recovering flink job
         fetchLatestFlinkCommittedSnapshotTime(table));
   }
 
@@ -363,12 +367,12 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   /**
-   * When committing a snapshot, Flink will write a checkpoint id into the snapshot summary. The
-   * latest snapshot with checkpoint id should not be expired or the flink job can't recover from
-   * state.
+   * When committing a snapshot, Flink will write a checkpoint id into the snapshot summary, which
+   * will be used when Flink job recovers from the checkpoint.
    *
-   * @param table -
-   * @return commit time of snapshot with the latest flink checkpointId in summary
+   * @param table table
+   * @return commit time of snapshot with the latest flink checkpointId in summary, return
+   *     Long.MAX_VALUE if not exist
    */
   public static long fetchLatestFlinkCommittedSnapshotTime(Table table) {
     Snapshot snapshot = findLatestSnapshotContainsKey(table, FLINK_MAX_COMMITTED_CHECKPOINT_ID);
@@ -376,13 +380,15 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   /**
-   * When optimizing tasks are not committed, the snapshot with which it planned should not be
-   * expired, since it will use the snapshot to check conflict when committing.
+   * When the current optimizing process not committed, get the time of snapshot for optimizing
+   * process planned based. This snapshot will be used when optimizing process committing.
    *
-   * @param table - table
-   * @return commit time of snapshot for optimizing
+   * @param table table
+   * @param tableRuntime table runtime
+   * @return time of snapshot for optimizing process planned based, return Long.MAX_VALUE if no
+   *     optimizing process exists
    */
-  public static long fetchOptimizingSnapshotTime(Table table, TableRuntime tableRuntime) {
+  public static long fetchOptimizingPlanSnapshotTime(Table table, TableRuntime tableRuntime) {
     if (tableRuntime.getOptimizingStatus().isProcessing()) {
       long fromSnapshotId = tableRuntime.getOptimizingProcess().getTargetSnapshotId();
 
