@@ -200,24 +200,27 @@ public class IcebergTableMaintainer implements TableMaintainer {
       if (!expirationConfig.isValid(field, table.name())) {
         return;
       }
-      Instant startInstant;
-      if (expirationConfig.getSince() == DataExpirationConfig.Since.CURRENT_TIMESTAMP) {
-        startInstant = Instant.now().atZone(getDefaultZoneId(field)).toInstant();
-      } else {
-        Snapshot snapshot = IcebergTableUtil.getSnapshot(table, false);
-        long currentSnapshotTs =
-            Optional.ofNullable(snapshot).isPresent()
-                ? snapshot.timestampMillis()
-                : System.currentTimeMillis();
-        startInstant =
-            Instant.ofEpochMilli(min(fetchLatestNonOptimizedSnapshotTime(table), currentSnapshotTs))
-                .atZone(getDefaultZoneId(field))
-                .toInstant();
-      }
 
-      expireDataFrom(expirationConfig, startInstant);
+      expireDataFrom(expirationConfig, expireBaseOnRule(expirationConfig, field));
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
+    }
+  }
+
+  protected Instant expireBaseOnRule(
+      DataExpirationConfig expirationConfig, Types.NestedField field) {
+    if (expirationConfig.getBaseOnRule() == DataExpirationConfig.BaseOnRule.CURRENT_TIME) {
+      return Instant.now().atZone(getDefaultZoneId(field)).toInstant();
+    } else {
+      Snapshot snapshot = IcebergTableUtil.getSnapshot(getTable(), false);
+      long currentSnapshotTs =
+          Optional.ofNullable(snapshot).isPresent()
+              ? snapshot.timestampMillis()
+              : System.currentTimeMillis();
+      return Instant.ofEpochMilli(
+              min(fetchLatestNonOptimizedSnapshotTime(getTable()), currentSnapshotTs))
+          .atZone(getDefaultZoneId(field))
+          .toInstant();
     }
   }
 
@@ -416,8 +419,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   /**
-   * When expiring historic data and `data-expire.since` is `CURRENT_SNAPSHOT`, the latest snapshot
-   * should not be produced by Amoro.
+   * When expiring historic data and `data-expire.base-on-rule` is `LAST_COMMIT_TIME`, the latest
+   * snapshot should not be produced by Amoro optimizing.
    *
    * @param table iceberg table
    * @return the latest non-optimized snapshot timestamp

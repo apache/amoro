@@ -59,7 +59,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -151,43 +150,24 @@ public class MixedTableMaintainer implements TableMaintainer {
       if (!expirationConfig.isValid(field, arcticTable.name())) {
         return;
       }
-      ZoneId defaultZone = IcebergTableMaintainer.getDefaultZoneId(field);
-      Instant startInstant;
-      if (expirationConfig.getSince() == DataExpirationConfig.Since.CURRENT_TIMESTAMP) {
-        startInstant = Instant.now().atZone(defaultZone).toInstant();
-      } else {
-        long latestBaseTs =
-            IcebergTableMaintainer.fetchLatestNonOptimizedSnapshotTime(baseMaintainer.getTable());
-        long latestChangeTs =
-            changeMaintainer == null
-                ? Long.MAX_VALUE
-                : IcebergTableMaintainer.fetchLatestNonOptimizedSnapshotTime(
-                    changeMaintainer.getTable());
-        Snapshot currentBaseSnapshot =
-            IcebergTableUtil.getSnapshot(baseMaintainer.getTable(), false);
-        Snapshot currentChangeSnapshot =
-            changeMaintainer == null
-                ? null
-                : IcebergTableUtil.getSnapshot(changeMaintainer.getTable(), false);
-        long currentBaseTs =
-            Optional.ofNullable(currentBaseSnapshot).isPresent()
-                ? currentBaseSnapshot.timestampMillis()
-                : System.currentTimeMillis();
-        long currentChangeTs =
-            Optional.ofNullable(currentChangeSnapshot).isPresent()
-                ? currentChangeSnapshot.timestampMillis()
-                : System.currentTimeMillis();
-        long latestNonOptimizedTs = Longs.max(latestChangeTs, latestBaseTs);
 
-        startInstant =
-            Instant.ofEpochMilli(
-                    Longs.min(latestNonOptimizedTs, Longs.max(currentChangeTs, currentBaseTs)))
-                .atZone(defaultZone)
-                .toInstant();
-      }
-      expireDataFrom(expirationConfig, startInstant);
+      expireDataFrom(expirationConfig, expireMixedBaseOnRule(expirationConfig, field));
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
+    }
+  }
+
+  protected Instant expireMixedBaseOnRule(
+      DataExpirationConfig expirationConfig, Types.NestedField field) {
+    Instant changeInstant =
+        Optional.ofNullable(changeMaintainer).isPresent()
+            ? changeMaintainer.expireBaseOnRule(expirationConfig, field)
+            : Instant.MIN;
+    Instant baseInstant = baseMaintainer.expireBaseOnRule(expirationConfig, field);
+    if (changeInstant.compareTo(baseInstant) >= 0) {
+      return changeInstant;
+    } else {
+      return baseInstant;
     }
   }
 
