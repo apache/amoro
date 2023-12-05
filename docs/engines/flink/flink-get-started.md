@@ -46,7 +46,7 @@ Version Description:
 
 The Amoro project can be self-compiled to obtain the runtime jar.
 
-`mvn clean package -pl ':amoro-flink-runtime-1.15' -am -DskipTests`
+`mvn clean package -pl ':amoro-mixed-flink-runtime-1.15' -am -DskipTests`
 
 The Flink Runtime Jar is located in the `flink/v1.15/flink-runtime/target` directory.
 
@@ -72,11 +72,11 @@ cd flink-${FLINK_VERSION}
 # Download Flink Hadoop dependency
 wget ${FLINK_CONNECTOR_URL}/flink-shaded-hadoop-2-uber/${FLINK_HADOOP_SHADE_VERSION}-10.0/flink-shaded-hadoop-2-uber-${FLINK_HADOOP_SHADE_VERSION}-10.0.jar
 # Download Flink Amoro Connector
-wget ${AMORO_CONNECTOR_URL}/amoro-flink-runtime-${FLINK_MAJOR_VERSION}/${AMORO_VERSION}/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
+wget ${AMORO_CONNECTOR_URL}/amoro-mixed-flink-runtime-${FLINK_MAJOR_VERSION}/${AMORO_VERSION}/amoro-mixed-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
 
 # Copy the necessary JAR files to the lib directory
 mv flink-shaded-hadoop-2-uber-${FLINK_HADOOP_SHADE_VERSION}-10.0.jar lib
-mv amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar lib
+mv amoro-mixed-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar lib
 ```
 
 Modify Flink related configuration files:
@@ -100,7 +100,7 @@ Move the dependencies to the lib directory of Flink:
 # Used to create a socket connector for inputting CDC data via sockets. Not necessary for non-quickstart examples.
 cp examples/table/ChangelogSocketExample.jar lib
 
-cp ../amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar lib
+cp ../amoro-mixed-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar lib
 cp ../flink-shaded-hadoop-2-uber-${FLINK_HADOOP_SHADE_VERSION}-10.0.jar lib
 ```
 

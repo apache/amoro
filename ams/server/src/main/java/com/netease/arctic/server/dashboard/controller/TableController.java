@@ -104,7 +104,7 @@ public class TableController {
             0,
             new ThreadFactoryBuilder()
                 .setDaemon(false)
-                .setNameFormat("ASYNC-HIVE-TABLE-UPGRADE-%d")
+                .setNameFormat("async-hive-table-upgrade-%d")
                 .build());
   }
 
