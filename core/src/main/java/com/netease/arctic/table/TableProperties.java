@@ -31,6 +31,10 @@ public class TableProperties {
 
   private TableProperties() {}
 
+  public static final String SELF_OPTIMIZING_MIN_PLAN_INTERVAL =
+      "self-optimizing.min-plan-interval";
+  public static final long SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT = 60000;
+
   public static final String TABLE_PARTITION_PROPERTIES = "table.partition-properties";
 
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
