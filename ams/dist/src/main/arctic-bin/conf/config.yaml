@@ -33,6 +33,7 @@ ams:
     heart-beat-timeout: 60000 # 1min
     task-ack-timeout: 30000 # 30s
     polling-timeout: 3000 # 3s
+    max-planning-parallelism: 1 # default 1
 
   blocker:
     timeout: 60000 # 1min
