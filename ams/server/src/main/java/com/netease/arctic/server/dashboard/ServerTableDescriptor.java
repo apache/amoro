@@ -50,6 +50,7 @@ public class ServerTableDescriptor extends PersistentBase {
   public ServerTableDescriptor(TableService tableService, Configurations serviceConfig) {
     this.tableService = tableService;
 
+    // All table formats will jointly reuse the work thread pool named iceberg-worker-pool-%d
     ExecutorService executorService = ThreadPools.getWorkerPool();
 
     FormatTableDescriptor[] formatTableDescriptors =
