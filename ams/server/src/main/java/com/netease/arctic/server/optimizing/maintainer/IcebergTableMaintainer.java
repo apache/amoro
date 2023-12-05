@@ -24,7 +24,6 @@ import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
 import com.netease.arctic.io.SupportsFileSystemOperations;
-import com.netease.arctic.op.SnapshotSummary;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.table.DataExpirationConfig;
 import com.netease.arctic.server.table.TableConfiguration;
@@ -44,6 +43,7 @@ import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableScan;
@@ -134,9 +134,18 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
     // refresh
     table.refresh();
-
-    // clear dangling delete files
-    cleanDanglingDeleteFiles();
+    Snapshot currentSnapshot = table.currentSnapshot();
+    java.util.Optional<String> totalDeleteFiles =
+        java.util.Optional.ofNullable(
+            currentSnapshot.summary().get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
+    if (totalDeleteFiles.isPresent() && Long.parseLong(totalDeleteFiles.get()) > 0) {
+      // clear dangling delete files
+      cleanDanglingDeleteFiles();
+    } else {
+      LOG.debug(
+          "Table {} does not have any delete files, so there is no need to clean dangling delete file",
+          table.name());
+    }
   }
 
   @Override
@@ -667,13 +676,13 @@ public class IcebergTableMaintainer implements TableMaintainer {
     // expire data files
     DeleteFiles delete = table.newDelete();
     dataFiles.forEach(delete::deleteFile);
-    delete.set(SnapshotSummary.SNAPSHOT_PRODUCER, "DATA_EXPIRATION");
+    delete.set(com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER, "DATA_EXPIRATION");
     delete.commit();
     // expire delete files
     if (!deleteFiles.isEmpty()) {
       RewriteFiles rewriteFiles = table.newRewrite().validateFromSnapshot(snapshotId);
       deleteFiles.forEach(rewriteFiles::deleteFile);
-      rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, "DATA_EXPIRATION");
+      rewriteFiles.set(com.netease.arctic.op.SnapshotSummary.SNAPSHOT_PRODUCER, "DATA_EXPIRATION");
       rewriteFiles.commit();
     }
 
