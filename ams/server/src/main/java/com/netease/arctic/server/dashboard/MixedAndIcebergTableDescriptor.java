@@ -499,7 +499,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     IcebergFindFiles manifestReader =
         new IcebergFindFiles(table).ignoreDeleted().planWith(executorService);
 
-    if (partition != null && specId != null) {
+    if (table.spec().isPartitioned() && partition != null && specId != null) {
       GenericRecord partitionData = ArcticDataFiles.data(specs.get(specId), partition);
       manifestReader.inPartitions(specs.get(specId), partitionData);
     }
