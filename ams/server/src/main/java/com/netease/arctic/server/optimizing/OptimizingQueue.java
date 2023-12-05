@@ -349,7 +349,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
   private void planTasks() {
     long startTime = System.currentTimeMillis();
     List<TableRuntime> scheduledTables = schedulingPolicy.scheduleTables();
-    LOG.debug("Calculating and sorting tables by quota : {}", scheduledTables);
+    LOG.debug("Calculating and sorting tables by {}: {}", schedulingPolicy.name(), scheduledTables);
 
     if (scheduledTables.size() <= 0) {
       return;
