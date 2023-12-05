@@ -452,6 +452,9 @@ public class TableController {
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
     String partition = ctx.pathParam("partition");
+    if (StringUtils.equals("null", partition)) {
+      partition = null;
+    }
 
     Integer specId = ctx.queryParamAsClass("specId", Integer.class).getOrDefault(0);
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
