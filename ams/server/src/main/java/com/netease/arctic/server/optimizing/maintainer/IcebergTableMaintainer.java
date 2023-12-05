@@ -140,7 +140,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     java.util.Optional<String> totalDeleteFiles =
         java.util.Optional.ofNullable(
             currentSnapshot.summary().get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
-    if (totalDeleteFiles.isPresent()) {
+    if (totalDeleteFiles.isPresent() && Long.parseLong(totalDeleteFiles.get()) > 0) {
       // clear dangling delete files
       cleanDanglingDeleteFiles();
     } else {
