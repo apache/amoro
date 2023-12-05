@@ -217,9 +217,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
           Optional.ofNullable(snapshot).isPresent()
               ? snapshot.timestampMillis()
               : System.currentTimeMillis();
+      // snapshot timestamp should be UTC
       return Instant.ofEpochMilli(
               min(fetchLatestNonOptimizedSnapshotTime(getTable()), currentSnapshotTs))
-          .atZone(getDefaultZoneId(field))
+          .atZone(ZoneOffset.UTC)
           .toInstant();
     }
   }
