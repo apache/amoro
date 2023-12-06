@@ -264,6 +264,8 @@ public class OptimizingQueue extends PersistentBase {
         return null;
       }
     } catch (Throwable throwable) {
+      tableRuntime.planFailed();
+      LOG.error("Planning table {} failed", tableRuntime.getTableIdentifier(), throwable);
       throw throwable;
     }
   }
@@ -384,9 +386,8 @@ public class OptimizingQueue extends PersistentBase {
         loadTaskRuntimes(taskDescriptors);
         updateProcessRunning();
       } catch (Throwable throwable) {
-        tableRuntime.planFailed();
         failed(ExceptionUtil.getErrorMessage(throwable, 4000), System.currentTimeMillis());
-        LOG.error("Planning table {} failed", tableRuntime.getTableIdentifier(), throwable);
+        throw throwable;
       } finally {
         lock.unlock();
       }
