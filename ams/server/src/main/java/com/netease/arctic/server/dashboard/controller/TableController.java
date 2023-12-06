@@ -518,7 +518,7 @@ public class TableController {
                     new TableMeta(
                         idWithFormat.getIdentifier().getTableName(),
                         formatToType.apply(idWithFormat.getTableFormat())))
-            // sort by format
+            // Sort by table format and table name
             .sorted(
                 (table1, table2) -> {
                   if (Objects.equals(table1.getType(), table2.getType())) {
@@ -529,7 +529,7 @@ public class TableController {
                 })
             .collect(Collectors.toList());
 
-    // hive tables has lower priority, append to the  end
+    // Hive tables have lower priority, append to the end
     if (serverCatalog instanceof MixedHiveCatalogImpl) {
       List<String> hiveTables =
           HiveTableUtil.getAllHiveTables(
