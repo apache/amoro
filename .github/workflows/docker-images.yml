@@ -40,7 +40,7 @@ jobs:
     if: ${{ startsWith(github.repository, 'NetEase/') }}
     strategy:
       matrix:
-        hadoop: ["v3"]
+        hadoop: [ "v3" ]
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 8
@@ -85,7 +85,7 @@ jobs:
           echo "MVN_HADOOP=-Dhadoop=${{ matrix.hadoop }}" >> $GITHUB_ENV
 
       - name: Build dist module with Maven
-        run: mvn clean install -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp
+        run: mvn clean install -pl 'ams/dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp
 
       - name: Build and Push Amoro Docker Image
         uses: docker/build-push-action@v4
@@ -218,7 +218,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build optimizer module with Maven
-        run: mvn clean package -pl 'flink/v1.17/flink-runtime' -am -e -DskipTests -B -ntp
+        run: mvn clean package -pl 'mixed/flink/v1.17/flink-runtime' -am -e -DskipTests -B -ntp
 
       - name: Build and Push Flink Optimizer Docker Image
         uses: docker/build-push-action@v4

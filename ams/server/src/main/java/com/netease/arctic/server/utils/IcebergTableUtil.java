@@ -36,6 +36,9 @@ import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.base.Optional;
+import org.apache.iceberg.relocated.com.google.common.base.Predicate;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,6 +76,11 @@ public class IcebergTableUtil {
       table.refresh();
     }
     return table.currentSnapshot();
+  }
+
+  public static Optional<Snapshot> findSnapshot(Table table, Predicate<Snapshot> predicate) {
+    Iterable<Snapshot> snapshots = table.snapshots();
+    return Iterables.tryFind(snapshots, predicate);
   }
 
   public static Set<String> getAllContentFilePath(Table internalTable) {

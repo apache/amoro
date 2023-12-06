@@ -52,8 +52,10 @@ public class ArcticManagementConf {
   public static final ConfigOption<Integer> TABLE_MANIFEST_IO_THREAD_COUNT =
       ConfigOptions.key("table-manifest-io.thread-count")
           .intType()
-          .defaultValue(10)
-          .withDescription("The number of threads used to read metadata.");
+          .defaultValue(20)
+          .withDescription(
+              "Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing "
+                  + "manifests in the base table implementation across all concurrent planning or commit operations.");
 
   public static final ConfigOption<Long> REFRESH_EXTERNAL_CATALOGS_INTERVAL =
       ConfigOptions.key("refresh-external-catalogs.interval")
@@ -254,6 +256,18 @@ public class ArcticManagementConf {
           .defaultValue(30000L)
           .withDescription("Timeout duration for task acknowledgment.");
 
+  public static final ConfigOption<Integer> OPTIMIZER_MAX_PLANNING_PARALLELISM =
+      ConfigOptions.key("optimizer.max-planning-parallelism")
+          .intType()
+          .defaultValue(1)
+          .withDescription("Max planning parallelism in one optimizer group.");
+
+  public static final ConfigOption<Long> OPTIMIZER_POLLING_TIMEOUT =
+      ConfigOptions.key("optimizer.polling-timeout")
+          .longType()
+          .defaultValue(3000L)
+          .withDescription("Optimizer polling task timeout.");
+
   /** config key prefix of terminal */
   public static final String TERMINAL_PREFIX = "terminal.";
 
@@ -316,12 +330,6 @@ public class ArcticManagementConf {
   public static final String CONTAINER_NAME = "name";
   public static final String CONTAINER_IMPL = "container-impl";
   public static final String CONTAINER_PROPERTIES = "properties";
-
-  // optimizer config
-  public static final String OPTIMIZER_GROUP_LIST = "optimizer_groups";
-  public static final String OPTIMIZER_GROUP_NAME = "name";
-  public static final String OPTIMIZER_GROUP_CONTAINER = "container";
-  public static final String OPTIMIZER_GROUP_PROPERTIES = "properties";
 
   public static final String DB_TYPE_DERBY = "derby";
   public static final String DB_TYPE_MYSQL = "mysql";

@@ -55,7 +55,7 @@ Here is the architecture diagram of Amoro:
     * Terminal: SQL command-line tools, provide various implementations like local Spark and Kyuubi.
     * LogStore: Provide millisecond to second level SLAs for real-time data processing based on message queues like Kafka and Pulsar.
 
-## Supported table formats 
+## Supported table formats
 
 Amoro can manage tables of different table formats, similar to how MySQL/ClickHouse can choose different storage engines.
 Amoro meets diverse user needs by using different table formats. Currently, Amoro supports four table formats:
@@ -102,15 +102,16 @@ Amoro contains modules as below:
     - `ams-dashboard` is the dashboard frontend for ams
     - `ams-server` is the backend server for ams
     - `ams-optimizer` provides default optimizer implementation
-- `amoro-hive` integrates with Apache Hive and implements Mixed Hive format
-- `amoro-flink` provides Flink connectors for Mixed format tables (use amoro-flink-runtime for a shaded version)
-- `amoro-spark` provides Spark connectors for Mixed format tables (use amoro-spark-runtime for a shaded version)
-- `amoro-trino` provides Trino connectors for Mixed format tables
+- `amoro-mixed` provides Mixed format implementation
+    - `amoro-hive` integrates with Apache Hive and implements Mixed Hive format
+    - `amoro-flink` provides Flink connectors for Mixed format tables (use amoro-flink-runtime for a shaded version)
+    - `amoro-spark` provides Spark connectors for Mixed format tables (use amoro-spark-runtime for a shaded version)
+    - `amoro-trino` provides Trino connectors for Mixed format tables
 
 
 ## Building
 
-Amoro is built using Maven with Java 1.8 and Java 17(only for `trino` module).
+Amoro is built using Maven with Java 1.8 and Java 17(only for `mixed/trino` module).
 
 * To build Trino module need config `toolchains.xml` in `${user.home}/.m2/` dir, the content is
 
@@ -132,15 +133,15 @@ Amoro is built using Maven with Java 1.8 and Java 17(only for `trino` module).
 
 * To invoke a build and run tests: `mvn package -P toolchain`
 * To skip tests: `mvn -DskipTests package -P toolchain`
-* To package without trino module and JAVA 17 dependency: `mvn clean package -DskipTests -pl '!trino'`
+* To package without trino module and JAVA 17 dependency: `mvn clean package -DskipTests -pl '!mixed/trino'`
 * To build with hadoop 2.x(the default is 3.x) `mvn clean package -DskipTests -Dhadoop=v2`
 * To indicate flink version for optimizer(the default is 1.14, 1.15 and 1.16 are available)
   `mvn clean package -DskipTests -Doptimizer.flink=1.15`
 
 >Spotless is skipped by default in `trino` module. So if you want to perform checkstyle when building `trino` module, you must be in a Java 17 environment.
 
-* To invoke a build include `trino` module in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless`
-* To only build `trino` and its dependent modules in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless -pl 'trino' -am`
+* To invoke a build include `mixed/trino` module in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless`
+* To only build `mixed/trino` and its dependent modules in Java 17 environment: `mvn clean package -DskipTests -P trino-spotless -pl 'trino' -am`
 ## Quickstart
 
 Visit [https://amoro.netease.com/quick-demo/](https://amoro.netease.com/quick-demo/) to quickly

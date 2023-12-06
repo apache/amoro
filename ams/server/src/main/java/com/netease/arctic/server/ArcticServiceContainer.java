@@ -48,6 +48,7 @@ import com.netease.arctic.server.utils.ThriftServiceProxy;
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.iceberg.SystemProperties;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.TProcessor;
@@ -73,6 +74,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -186,8 +188,8 @@ public class ArcticServiceContainer {
   }
 
   private void startThriftService() {
-    startThriftServer(tableManagementServer, "Thrift-table-management-server-thread");
-    startThriftServer(optimizingServiceServer, "Thrift-optimizing-server-thread");
+    startThriftServer(tableManagementServer, "thrift-table-management-server-thread");
+    startThriftServer(optimizingServiceServer, "thrift-optimizing-server-thread");
   }
 
   private void startThriftServer(TServer server, String threadName) {
@@ -357,7 +359,11 @@ public class ArcticServiceContainer {
   private ThreadFactory getThriftThreadFactory(String processorName) {
     return new ThreadFactoryBuilder()
         .setDaemon(false)
-        .setNameFormat("thrift-server-" + processorName + "-%d")
+        .setNameFormat(
+            "thrift-server-"
+                + String.join("-", StringUtils.splitByCharacterTypeCamelCase(processorName))
+                    .toLowerCase(Locale.ROOT)
+                + "-%d")
         .build();
   }
 
@@ -368,6 +374,7 @@ public class ArcticServiceContainer {
     public void init() throws IOException {
       Map<String, Object> envConfig = initEnvConfig();
       initServiceConfig(envConfig);
+      setIcebergSystemProperties();
       initContainerConfig();
     }
 
@@ -466,6 +473,16 @@ public class ArcticServiceContainer {
                 "%s(%s) must > 0, actual value = %d",
                 config.key(), config.description(), threadCount));
       }
+    }
+
+    /** Override the value of {@link SystemProperties}. */
+    private void setIcebergSystemProperties() {
+      int workerThreadPoolSize =
+          Math.max(
+              Runtime.getRuntime().availableProcessors(),
+              serviceConfig.getInteger(ArcticManagementConf.TABLE_MANIFEST_IO_THREAD_COUNT));
+      System.setProperty(
+          SystemProperties.WORKER_THREAD_POOL_SIZE_PROP, String.valueOf(workerThreadPoolSize));
     }
 
     @SuppressWarnings("unchecked")
