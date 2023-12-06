@@ -28,7 +28,7 @@ ams:
     
   self-optimizing:
     commit-thread-count: 10
-    runtime-data-keep-time-millis: 2592000000 # 30d
+    runtime-data-keep-days: 30
 
   optimizer:
     heart-beat-timeout: 60000 # 1min
@@ -81,9 +81,9 @@ ams:
   #    url: jdbc:postgresql://127.0.0.1:5432/db
   #    username: user
   #    password: passwd
-  #      connection-pool-max-total: 20
-  #      connection-pool-max-idle: 16
-  #      connect-max-wait-millis: 1000
+  #    connection-pool-max-total: 20
+  #    connection-pool-max-idle: 16
+  #    connect-max-wait-millis: 1000
 
   terminal:
     backend: local
