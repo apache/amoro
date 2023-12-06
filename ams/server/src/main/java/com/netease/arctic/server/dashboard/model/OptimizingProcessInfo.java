@@ -18,7 +18,6 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-import com.netease.arctic.server.dashboard.utils.FilesStatisticsBuilder;
 import com.netease.arctic.server.optimizing.MetricsSummary;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingProcessMeta;
