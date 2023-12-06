@@ -402,7 +402,6 @@ public class IcebergTableMaintainer implements TableMaintainer {
    * @return time of snapshot for optimizing process planned based, return Long.MAX_VALUE if no
    *     optimizing process exists
    */
-
   public static long fetchOptimizingPlanSnapshotTime(Table table, TableRuntime tableRuntime) {
     OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
     if (optimizingProcess != null) {

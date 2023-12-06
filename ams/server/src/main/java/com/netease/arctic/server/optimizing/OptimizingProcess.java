@@ -22,6 +22,8 @@ public interface OptimizingProcess {
 
   long getRunningQuotaTime(long calculatingStartTime, long calculatingEndTime);
 
+  void planTask();
+
   void commit();
 
   MetricsSummary getSummary();

@@ -255,8 +255,8 @@ public class OptimizingQueue extends PersistentBase {
           new OptimizingPlanner(
               tableRuntime.refresh(table), (ArcticTable) table.originalTable(), getAvailableCore());
       TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
+      optimizingProcess.planTask();
       if (planner.isNecessary()) {
-        optimizingProcess.finishOptimizingPlan(planner);
         return optimizingProcess;
       } else {
         optimizingProcess.close();
@@ -264,8 +264,6 @@ public class OptimizingQueue extends PersistentBase {
         return null;
       }
     } catch (Throwable throwable) {
-      tableRuntime.planFailed();
-      LOG.error("Planning table {} failed", tableRuntime.getTableIdentifier(), throwable);
       throw throwable;
     }
   }
@@ -329,6 +327,7 @@ public class OptimizingQueue extends PersistentBase {
     private long endTime = ArcticServiceConstants.INVALID_TIME;
     private Map<String, Long> fromSequence = Maps.newHashMap();
     private Map<String, Long> toSequence = Maps.newHashMap();
+    private final OptimizingPlanner planner;
     private boolean hasCommitted = false;
 
     public TaskRuntime poll() {
@@ -340,7 +339,8 @@ public class OptimizingQueue extends PersistentBase {
       }
     }
 
-    public TableOptimizingProcess(OptimizingPlanner planner) {
+    public TableOptimizingProcess(OptimizingPlanner optimizingPlanner) {
+      planner = optimizingPlanner;
       processId = planner.getProcessId();
       tableRuntime = planner.getTableRuntime();
       planTime = planner.getPlanTime();
@@ -350,6 +350,9 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     public TableOptimizingProcess(TableRuntimeMeta tableRuntimeMeta) {
+      // If the process is planning, we'll close it. If the process is processing, we'll recover it.
+      // After planed, the planner is useless.
+      planner = null;
       processId = tableRuntimeMeta.getOptimizingProcessId();
       tableRuntime = tableRuntimeMeta.getTableRuntime();
       status = tableRuntimeMeta.getProcessStatus();
@@ -370,17 +373,22 @@ public class OptimizingQueue extends PersistentBase {
       }
     }
 
-    public void finishOptimizingPlan(OptimizingPlanner planner) {
-      if (!isClosed()) {
+    @Override
+    public void planTask() {
+      lock.lock();
+      try {
+        List<TaskDescriptor> taskDescriptors = planner.planTasks();
         optimizingType = planner.getOptimizingType();
         fromSequence = planner.getFromSequence();
         toSequence = planner.getToSequence();
-        loadTaskRuntimes(planner.planTasks());
+        loadTaskRuntimes(taskDescriptors);
         updateProcessRunning();
-      } else {
-        LOG.info(
-            "TableOptimizingProcess: processId = {} has been closed, ignore this planner.",
-            processId);
+      } catch (Throwable throwable) {
+        tableRuntime.planFailed();
+        failed(ExceptionUtil.getErrorMessage(throwable, 4000), System.currentTimeMillis());
+        LOG.error("Planning table {} failed", tableRuntime.getTableIdentifier(), throwable);
+      } finally {
+        lock.unlock();
       }
     }
 
