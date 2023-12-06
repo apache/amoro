@@ -87,24 +87,46 @@ public class TestServerCatalog extends TableCatalogTestBase {
   }
 
   @Test
-  public void listTablesWithTableFilter() {
+  public void listTablesWithTableFilter() throws Exception {
     // Table filter only affects ExternalCatalog
     Assume.assumeTrue(getServerCatalog() instanceof ExternalCatalog);
     String dbWithFilter = "db_with_filter";
-    String tableWithFilter = "table_with_filter";
+    String tableWithFilter1 = "test_table1";
+    String tableWithFilter2 = "test_table2";
     getAmoroCatalog().createDatabase(dbWithFilter);
+    getAmoroCatalogTestHelper().createTable(dbWithFilter, tableWithFilter1);
+    getAmoroCatalogTestHelper().createTable(dbWithFilter, tableWithFilter2);
+    // without table filter
+    Assert.assertEquals(2, getServerCatalog().listTables(dbWithFilter).size());
 
-    getAmoroCatalogTestHelper().createTable(dbWithFilter, tableWithFilter);
-    // 1.create some databases and tables
-    // 2.check the tables without filter
-    // 3.set table filter
     CatalogMeta metadata = getServerCatalog().getMetadata();
     metadata
         .getCatalogProperties()
-        .put(CatalogMetaProperties.KEY_TABLE_FILTER, "test_database.test_table");
+        .put(CatalogMetaProperties.KEY_TABLE_FILTER, dbWithFilter + "." + tableWithFilter1);
     getServerCatalog().updateMetadata(metadata);
-    // 4.check the table list with filter
-    // 5.finally unset the table filter, remove the databases and tables in this test case
+    Assert.assertEquals(1, getServerCatalog().listTables(dbWithFilter).size());
+    Assert.assertEquals(
+        tableWithFilter1,
+        getServerCatalog().listTables(dbWithFilter).get(0).getIdentifier().getTableName());
+
+    CatalogMeta metadata2 = getServerCatalog().getMetadata();
+    metadata
+        .getCatalogProperties()
+        .put(CatalogMetaProperties.KEY_TABLE_FILTER, dbWithFilter + "\\." + ".+");
+    getServerCatalog().updateMetadata(metadata2);
+    Assert.assertEquals(2, getServerCatalog().listTables(dbWithFilter).size());
+
+    CatalogMeta metadata3 = getServerCatalog().getMetadata();
+    metadata
+        .getCatalogProperties()
+        .put(CatalogMetaProperties.KEY_TABLE_FILTER, testDatabaseName + "\\." + ".+");
+    getServerCatalog().updateMetadata(metadata3);
+    Assert.assertEquals(1, getServerCatalog().listTables(testDatabaseName).size());
+    Assert.assertTrue(getServerCatalog().listTables(dbWithFilter).isEmpty());
+
+    CatalogMeta metadata4 = getServerCatalog().getMetadata();
+    metadata.getCatalogProperties().remove(CatalogMetaProperties.KEY_TABLE_FILTER);
+    getServerCatalog().updateMetadata(metadata4);
   }
 
   @Test
