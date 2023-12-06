@@ -30,18 +30,6 @@
               {{record.processId}}
             </a-button>
           </template>
-          <template v-if="column.dataIndex === 'inputFiles'">
-            <a-tooltip>
-              <template #title>{{record.inputMetrics}}</template>
-              <span>{{record.inputFiles}}</span>
-            </a-tooltip>
-          </template>
-          <template v-if="column.dataIndex === 'outputFiles'">
-            <a-tooltip>
-              <template #title>{{record.outputMetrics}}</template>
-              <span>{{record.outputFiles}}</span>
-            </a-tooltip>
-          </template>
           <template v-if="column.dataIndex === 'status'">
             <div class="g-flex-ac">
               <span :style="{ 'background-color': (STATUS_CONFIG[record.status] || {}).color }" class="status-icon"></span>
@@ -52,6 +40,12 @@
               </a-tooltip>
             </div>
           </template>
+        </template>
+        <template #expandedRowRender="{ record }">
+          <a-row type="flex" :gutter="16" v-for="(value, key) in record.summary" :key="key">
+            <a-col flex="220px" style="text-align: right;">{{ key }} :</a-col>
+            <a-col flex="auto">{{ value }}</a-col>
+          </a-row>
         </template>
       </a-table>
     </template>
@@ -98,11 +92,11 @@
           </template>
         </template>
         <template #expandedRowRender="{ record }">
-            <a-row type="flex" :gutter="16" v-for="(value, key) in record.summary" :key="key">
-              <a-col flex="220px" style="text-align: right;">{{ key }} :</a-col>
-              <a-col flex="auto">{{ value }}</a-col>
-            </a-row>
-          </template>
+          <a-row type="flex" :gutter="16" v-for="(value, key) in record.summary" :key="key">
+            <a-col flex="220px" style="text-align: right;">{{ key }} :</a-col>
+            <a-col flex="auto">{{ value }}</a-col>
+          </a-row>
+        </template>
       </a-table>
     </template>
   </div>
@@ -140,12 +134,12 @@ const TASK_STATUS_CONFIG = shallowReactive({
 const { t } = useI18n()
 const columns: IColumns[] = shallowReactive([
   { title: t('processId'), dataIndex: 'processId' },
-  { title: t('startTime'), dataIndex: 'startTime' },
+  { title: t('startTime'), dataIndex: 'startTime', width: 172 },
   { title: t('type'), dataIndex: 'optimizingType' },
   { title: t('status'), dataIndex: 'status' },
-  { title: t('duration'), dataIndex: 'duration' },
+  { title: t('duration'), dataIndex: 'duration', width: 120 },
   { title: t('tasks'), dataIndex: 'tasks' },
-  { title: t('finishTime'), dataIndex: 'finishTime' },
+  { title: t('finishTime'), dataIndex: 'finishTime', width: 172 },
   { title: t('input'), dataIndex: 'inputFiles' },
   { title: t('output'), dataIndex: 'outputFiles' }
 ])
@@ -153,10 +147,10 @@ const columns: IColumns[] = shallowReactive([
 const breadcrumbColumns = shallowReactive([
   { title: t('taskId'), dataIndex: 'taskId', width: 82 },
   { title: t('partition'), dataIndex: 'partitionData', ellipsis: true },
-  { title: t('startTime'), dataIndex: 'startTime', width: 175 },
+  { title: t('startTime'), dataIndex: 'startTime', width: 172 },
   { title: t('status'), dataIndex: 'status', width: 124 },
-  { title: t('costTime'), dataIndex: 'formatCostTime', width: 154 },
-  { title: t('finishTime'), dataIndex: 'endTime', width: 175 },
+  { title: t('costTime'), dataIndex: 'formatCostTime', width: 120 },
+  { title: t('finishTime'), dataIndex: 'endTime', width: 172 },
   { title: t('input'), dataIndex: 'inputFilesDesc' },
   { title: t('output'), dataIndex: 'outputFilesDesc' }
 ])
@@ -201,9 +195,7 @@ async function getTableInfo() {
         duration: formatMS2Time(item.duration || '-'),
         inputFiles: `${bytesToSize(inputFiles.totalSize)} / ${inputFiles.fileCnt}`,
         outputFiles: `${bytesToSize(outputFiles.totalSize)} / ${outputFiles.fileCnt}`,
-        tasks: `${item.successTasks || '-'} / ${item.totalTasks || '-'}${item.runningTasks ? ` (${item.runningTasks} running)` : ''}`,
-        inputMetrics: item.inputMetrics,
-        outputMetrics: item.outputMetrics
+        tasks: `${item.successTasks || '-'} / ${item.totalTasks || '-'}${item.runningTasks ? ` (${item.runningTasks} running)` : ''}`
       }
     }))
   } catch (error) {
