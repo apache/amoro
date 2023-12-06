@@ -54,7 +54,7 @@ public interface OptimizingMapper {
           + " from_sequence = #{fromSequence, typeHandler=com.netease.arctic.server.persistence.converter.MapLong2StringConverter},"
           + " to_sequence = #{toSequence, typeHandler=com.netease.arctic.server.persistence.converter.MapLong2StringConverter}"
           + " WHERE table_id = #{tableId} AND process_id = #{processId}")
-  void updateOptimizingProcessPlanned(
+  void updateOptimizingProcessRunning(
       @Param("tableId") long tableId,
       @Param("processId") long processId,
       @Param("status") OptimizingProcess.Status status,

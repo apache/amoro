@@ -128,7 +128,7 @@ CREATE TABLE `table_optimizing_process`
     `target_snapshot_id`            bigint(20) NOT NULL,
     `target_change_snapshot_id`     bigint(20) NOT NULL,
     `status`                        varchar(10) NOT NULL COMMENT 'Direct to TableOptimizingStatus',
-    `optimizing_type`               varchar(10) DEFAULT NULL COMMENT 'Optimize type: Major, Minor',
+    `optimizing_type`               varchar(10) DEFAULT NULL COMMENT 'Optimize type: Minor, Major, Full',
     `plan_time`                     timestamp DEFAULT CURRENT_TIMESTAMP COMMENT 'First plan time',
     `end_time`                      timestamp NULL DEFAULT NULL COMMENT 'finish time or failed time',
     `fail_reason`                   varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',

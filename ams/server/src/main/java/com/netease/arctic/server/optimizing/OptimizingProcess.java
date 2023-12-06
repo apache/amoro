@@ -6,8 +6,6 @@ public interface OptimizingProcess {
 
   void close();
 
-  void failed(String failedReason, long endTime);
-
   boolean isClosed();
 
   long getTargetSnapshotId();

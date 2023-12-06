@@ -207,7 +207,7 @@ CREATE TABLE table_optimizing_process
     target_snapshot_id BIGINT NOT NULL,
     target_change_snapshot_id BIGINT NOT NULL,
     status VARCHAR(10) NOT NULL,
-    optimizing_type VARCHAR(10) NOT NULL,
+    optimizing_type VARCHAR(10),
     plan_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     end_time TIMESTAMP,
     fail_reason VARCHAR(4096),

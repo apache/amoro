@@ -166,6 +166,9 @@ public class TableRuntime extends StatedPersistentBase {
   public void planFailed() {
     invokeConsisitency(
         () -> {
+          if (this.optimizingProcess != null) {
+            this.optimizingProcess.close();
+          }
           OptimizingStatus originalStatus = optimizingStatus;
           updateOptimizingStatus(OptimizingStatus.PENDING);
           persistUpdatingRuntime();
