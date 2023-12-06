@@ -47,36 +47,37 @@ class TestFlinkCatalogs {
 
   @ParameterizedTest
   @MethodSource("com.netease.arctic.flink.catalog.FlinkCatalogContext#getFlinkCatalogAndTable")
-  void testListDatabases(FlinkCatalog flinkCatalog) throws TException {
+  void testListDatabases(FlinkUnifiedCatalog flinkUnifiedCatalog) throws TException {
     List<String> expects = flinkCatalogContext.getHMSClient().getAllDatabases();
-    assertEquals(expects, flinkCatalog.listDatabases());
+    assertEquals(expects, flinkUnifiedCatalog.listDatabases());
   }
 
   @ParameterizedTest
   @MethodSource("com.netease.arctic.flink.catalog.FlinkCatalogContext#getFlinkCatalogAndTable")
-  void testDatabaseExists(FlinkCatalog flinkCatalog) {
-    assertTrue(flinkCatalog.databaseExists("default"));
-    assertFalse(flinkCatalog.databaseExists("not_exists_db"));
+  void testDatabaseExists(FlinkUnifiedCatalog flinkUnifiedCatalog) {
+    assertTrue(flinkUnifiedCatalog.databaseExists("default"));
+    assertFalse(flinkUnifiedCatalog.databaseExists("not_exists_db"));
   }
 
   @ParameterizedTest
   @MethodSource("com.netease.arctic.flink.catalog.FlinkCatalogContext#getFlinkCatalogAndTable")
-  void testCreateAndDropDatabase(FlinkCatalog flinkCatalog)
+  void testCreateAndDropDatabase(FlinkUnifiedCatalog flinkUnifiedCatalog)
       throws DatabaseAlreadyExistException, DatabaseNotEmptyException, DatabaseNotExistException {
-    flinkCatalog.createDatabase(
+    flinkUnifiedCatalog.createDatabase(
         "test", new CatalogDatabaseImpl(Collections.emptyMap(), "test"), false);
-    assertTrue(flinkCatalog.databaseExists("test"));
+    assertTrue(flinkUnifiedCatalog.databaseExists("test"));
 
-    flinkCatalog.dropDatabase("test", false);
-    assertFalse(flinkCatalog.databaseExists("test"));
+    flinkUnifiedCatalog.dropDatabase("test", false);
+    assertFalse(flinkUnifiedCatalog.databaseExists("test"));
   }
 
   @ParameterizedTest
   @MethodSource("com.netease.arctic.flink.catalog.FlinkCatalogContext#getFlinkCatalogAndTable")
-  void testAlterDatabase(FlinkCatalog flinkCatalog, CatalogTable table, TableFormat tableFormat)
+  void testAlterDatabase(
+      FlinkUnifiedCatalog flinkUnifiedCatalog, CatalogTable table, TableFormat tableFormat)
       throws DatabaseNotExistException {
     try {
-      flinkCatalog.alterDatabase(
+      flinkUnifiedCatalog.alterDatabase(
           "default", new CatalogDatabaseImpl(Collections.emptyMap(), "default"), false);
     } catch (UnsupportedOperationException e) {
       // Mixed-format catalog does not support altering database.
@@ -89,27 +90,28 @@ class TestFlinkCatalogs {
   @ParameterizedTest
   @MethodSource("com.netease.arctic.flink.catalog.FlinkCatalogContext#getFlinkCatalogAndTable")
   void testCreateGetAndDropTable(
-      FlinkCatalog flinkCatalog, CatalogTable table, TableFormat tableFormat)
+      FlinkUnifiedCatalog flinkUnifiedCatalog, CatalogTable table, TableFormat tableFormat)
       throws TableAlreadyExistException, DatabaseNotExistException, TableNotExistException {
     ObjectPath objectPath = flinkCatalogContext.objectPath;
 
-    flinkCatalog.createTable(flinkCatalogContext.objectPath, table, false);
-    assertTrue(flinkCatalog.tableExists(objectPath));
+    flinkUnifiedCatalog.createTable(flinkCatalogContext.objectPath, table, false);
+    assertTrue(flinkUnifiedCatalog.tableExists(objectPath));
 
-    CatalogBaseTable actualTable = flinkCatalog.getTable(objectPath);
+    CatalogBaseTable actualTable = flinkUnifiedCatalog.getTable(objectPath);
     assertEquals(table.getUnresolvedSchema(), actualTable.getUnresolvedSchema());
     assertEquals(tableFormat.toString(), actualTable.getOptions().get(TABLE_FORMAT.key()));
 
-    flinkCatalog.dropTable(objectPath, false);
-    assertFalse(flinkCatalog.tableExists(objectPath));
+    flinkUnifiedCatalog.dropTable(objectPath, false);
+    assertFalse(flinkUnifiedCatalog.tableExists(objectPath));
   }
 
   @ParameterizedTest
   @MethodSource("com.netease.arctic.flink.catalog.FlinkCatalogContext#getFlinkCatalogAndTable")
-  void testAlterTable(FlinkCatalog flinkCatalog, CatalogTable table, TableFormat tableFormat)
+  void testAlterTable(
+      FlinkUnifiedCatalog flinkUnifiedCatalog, CatalogTable table, TableFormat tableFormat)
       throws TableNotExistException, TableAlreadyExistException, DatabaseNotExistException {
     try {
-      flinkCatalog.createTable(flinkCatalogContext.objectPath, table, true);
+      flinkUnifiedCatalog.createTable(flinkCatalogContext.objectPath, table, true);
 
       ResolvedSchema newResolvedSchema =
           ResolvedSchema.of(
@@ -129,7 +131,7 @@ class TestFlinkCatalogs {
                   newProperties),
               newResolvedSchema);
       try {
-        flinkCatalog.alterTable(flinkCatalogContext.objectPath, newTable, false);
+        flinkUnifiedCatalog.alterTable(flinkCatalogContext.objectPath, newTable, false);
       } catch (UnsupportedOperationException e) {
         // https://github.com/NetEase/amoro/issues/2 altering Mixed format table is not supported.
         if (tableFormat != TableFormat.MIXED_HIVE && tableFormat != TableFormat.MIXED_ICEBERG) {
@@ -137,7 +139,7 @@ class TestFlinkCatalogs {
         }
       }
     } finally {
-      flinkCatalog.dropTable(flinkCatalogContext.objectPath, true);
+      flinkUnifiedCatalog.dropTable(flinkCatalogContext.objectPath, true);
     }
   }
 }

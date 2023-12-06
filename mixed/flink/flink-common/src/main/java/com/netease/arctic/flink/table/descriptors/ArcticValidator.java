@@ -279,7 +279,7 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
   public static final ConfigOption<TableFormat> TABLE_FORMAT =
       ConfigOptions.key("table.format")
           .enumType(TableFormat.class)
-          .defaultValue(TableFormat.MIXED_HIVE)
+          .defaultValue(TableFormat.MIXED_ICEBERG)
           .withDescription(
               String.format(
                   "The format of the table, valid values are %s, %s, %s or %s, and Flink choose '%s' as default format.",
@@ -287,7 +287,7 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
                   TableFormat.MIXED_ICEBERG,
                   TableFormat.MIXED_HIVE,
                   TableFormat.PAIMON,
-                  TableFormat.MIXED_HIVE));
+                  TableFormat.MIXED_ICEBERG));
 
   @Override
   public void validate(DescriptorProperties properties) {

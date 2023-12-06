@@ -90,8 +90,8 @@ public class FlinkCatalogContext {
     TEST_HMS.after();
   }
 
-  static FlinkCatalog initFlinkCatalog(TableFormat tableFormat) {
-    FlinkCatalog flinkCatalog;
+  static FlinkUnifiedCatalog initFlinkCatalog(TableFormat tableFormat) {
+    FlinkUnifiedCatalog flinkUnifiedCatalog;
     Map<String, String> factoryOptions = Maps.newHashMap();
     CatalogMeta meta =
         HiveCatalogTestHelper.build(TEST_HMS.getHiveConf(), tableFormat)
@@ -108,9 +108,9 @@ public class FlinkCatalogContext {
             factoryOptions,
             new Configuration(),
             FlinkCatalogContext.class.getClassLoader());
-    flinkCatalog = (FlinkCatalog) flinkCatalogFactory.createCatalog(context);
-    flinkCatalog.open();
-    return flinkCatalog;
+    flinkUnifiedCatalog = (FlinkUnifiedCatalog) flinkCatalogFactory.createCatalog(context);
+    flinkUnifiedCatalog.open();
+    return flinkUnifiedCatalog;
   }
 
   HiveMetaStoreClient getHMSClient() {

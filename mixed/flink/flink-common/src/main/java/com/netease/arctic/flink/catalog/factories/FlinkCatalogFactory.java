@@ -22,7 +22,7 @@ import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOpt
 import static org.apache.flink.table.factories.FactoryUtil.PROPERTY_VERSION;
 
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.flink.catalog.FlinkCatalog;
+import com.netease.arctic.flink.catalog.FlinkUnifiedCatalog;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.catalog.AbstractCatalog;
 import org.apache.flink.table.catalog.Catalog;
@@ -35,7 +35,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/** Factory for {@link FlinkCatalog}. */
+/** Factory for {@link FlinkUnifiedCatalog}. */
 public class FlinkCatalogFactory implements CatalogFactory {
 
   private static final Set<TableFormat> SUPPORTED_FORMATS =
@@ -78,7 +78,8 @@ public class FlinkCatalogFactory implements CatalogFactory {
           }
         });
 
-    return new FlinkCatalog(metastoreUrl, context.getName(), defaultDatabase, availableCatalogs);
+    return new FlinkUnifiedCatalog(
+        metastoreUrl, context.getName(), defaultDatabase, availableCatalogs);
   }
 
   private AbstractCatalog createCatalog(Context context, TableFormat tableFormat) {

@@ -63,7 +63,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /** This is a Flink catalog wrap a unified catalog. */
-public class FlinkCatalog extends AbstractCatalog {
+public class FlinkUnifiedCatalog extends AbstractCatalog {
   private UnifiedCatalog unifiedCatalog;
   private final String amsUri;
   private final String amoroCatalogName;
@@ -74,7 +74,7 @@ public class FlinkCatalog extends AbstractCatalog {
    */
   private final Map<TableFormat, AbstractCatalog> availableCatalogs;
 
-  public FlinkCatalog(
+  public FlinkUnifiedCatalog(
       String amsUri,
       String name,
       String defaultDatabase,
@@ -112,7 +112,7 @@ public class FlinkCatalog extends AbstractCatalog {
 
   @Override
   public boolean databaseExists(String databaseName) throws CatalogException {
-    return listDatabases().stream().anyMatch(db -> db.equalsIgnoreCase(databaseName));
+    return unifiedCatalog.exist(databaseName);
   }
 
   @Override
@@ -179,8 +179,7 @@ public class FlinkCatalog extends AbstractCatalog {
   @Override
   public boolean tableExists(ObjectPath tablePath) throws CatalogException {
     try {
-      unifiedCatalog.loadTable(tablePath.getDatabaseName(), tablePath.getObjectName());
-      return true;
+      return unifiedCatalog.exist(tablePath.getDatabaseName(), tablePath.getObjectName());
     } catch (NoSuchDatabaseException | NoSuchTableException e) {
       return false;
     }
@@ -493,7 +492,7 @@ public class FlinkCatalog extends AbstractCatalog {
 
   @Override
   public String toString() {
-    return "FlinkCatalog{"
+    return "FlinkUnifiedCatalog{"
         + "name='"
         + getName()
         + '\''

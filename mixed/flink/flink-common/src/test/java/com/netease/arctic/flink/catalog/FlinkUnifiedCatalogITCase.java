@@ -24,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.flink.table.CatalogITCaseBase;
 import com.netease.arctic.hive.TestHMS;
@@ -48,12 +47,12 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(value = Parameterized.class)
-public class FlinkCatalogITCase extends CatalogITCaseBase {
+public class FlinkUnifiedCatalogITCase extends CatalogITCaseBase {
   static final TestHMS TEST_HMS = new TestHMS();
   AbstractCatalog flinkCatalog;
   TableIdentifier identifier;
 
-  public FlinkCatalogITCase(CatalogTestHelper catalogTestHelper) {
+  public FlinkUnifiedCatalogITCase(CatalogTestHelper catalogTestHelper) {
     super(catalogTestHelper, new BasicTableTestHelper(true, false));
   }
 
@@ -61,7 +60,7 @@ public class FlinkCatalogITCase extends CatalogITCaseBase {
   public static Object[][] parameters() {
     return new Object[][] {
       {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf())},
-      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG)}
+      {new HiveCatalogTestHelper(TableFormat.MIXED_ICEBERG, TEST_HMS.getHiveConf())}
     };
   }
 
