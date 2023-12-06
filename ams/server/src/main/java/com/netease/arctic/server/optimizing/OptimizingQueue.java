@@ -20,6 +20,7 @@ package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.OptimizerProperties;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.OptimizingTask;
@@ -46,6 +47,7 @@ import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.utils.ArcticDataFiles;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.ExceptionUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
@@ -360,7 +362,10 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
       AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
       OptimizingPlanner planner =
           new OptimizingPlanner(
-              tableRuntime.refresh(table), (ArcticTable) table.originalTable(), getAvailableCore());
+              tableRuntime.refresh(table),
+              (ArcticTable) table.originalTable(),
+              getAvailableCore(),
+              maxInputSizePerThread());
       if (tableRuntime.isBlocked(BlockableOperation.OPTIMIZE)) {
         LOG.info("{} optimize is blocked, continue", tableRuntime.getTableIdentifier());
         continue;
@@ -398,6 +403,13 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
     int totalCore = authOptimizers.values().stream().mapToInt(Resource::getThreadCount).sum();
     // the available core should be at least 1
     return Math.max(totalCore, 1);
+  }
+
+  private long maxInputSizePerThread() {
+    return CompatiblePropertyUtil.propertyAsLong(
+        optimizerGroup.getProperties(),
+        OptimizerProperties.MAX_INPUT_FILE_SIZE_PER_THREAD,
+        OptimizerProperties.MAX_INPUT_FILE_SIZE_PER_THREAD_DEFAULT);
   }
 
   @VisibleForTesting

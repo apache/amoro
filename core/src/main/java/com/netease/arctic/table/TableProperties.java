@@ -111,11 +111,6 @@ public class TableProperties {
       "self-optimizing.full.rewrite-all-files";
   public static final boolean SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT = true;
 
-  public static final String SELF_OPTIMIZING_MAX_INPUT_FILE_SIZE_PER_THREAD =
-      "self-optimizing.max-input-file-size-per-thread";
-  public static final long SELF_OPTIMIZING_MAX_INPUT_FILE_SIZE_PER_THREAD_DEFAULT =
-      512 * 1024 * 1024; // 512MB
-
   /** deprecated table optimize related properties */
   @Deprecated public static final String ENABLE_OPTIMIZE = "optimize.enable";
 
