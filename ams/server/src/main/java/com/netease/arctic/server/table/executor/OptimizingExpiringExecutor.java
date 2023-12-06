@@ -28,9 +28,6 @@ import org.slf4j.LoggerFactory;
 public class OptimizingExpiringExecutor extends BaseTableExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizingExpiringExecutor.class);
 
-  // 1 days
-  private static final long INTERVAL = 24 * 60 * 60 * 1000L;
-
   private final Persistency persistency = new Persistency();
   private final long keepTime;
   private final long interval;
