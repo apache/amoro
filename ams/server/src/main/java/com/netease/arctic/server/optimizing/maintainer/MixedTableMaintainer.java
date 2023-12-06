@@ -18,8 +18,9 @@
 
 package com.netease.arctic.server.optimizing.maintainer;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Maps;
+import static com.netease.arctic.utils.ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST;
+import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
+
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.hive.utils.TableTypeUtil;
@@ -32,10 +33,8 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ArcticTableUtil;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -46,9 +45,12 @@ import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.relocated.com.google.common.primitives.Longs;
 import org.apache.iceberg.types.Types;
@@ -133,6 +135,7 @@ public class MixedTableMaintainer implements TableMaintainer {
     baseMaintainer.expireSnapshots(tableRuntime);
   }
 
+  @VisibleForTesting
   protected void expireSnapshots(long mustOlderThan) {
     if (changeMaintainer != null) {
       changeMaintainer.expireSnapshots(mustOlderThan);
@@ -313,21 +316,29 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     @Override
+    @VisibleForTesting
+    void expireSnapshots(long mustOlderThan) {
+      expireFiles(mustOlderThan);
+      super.expireSnapshots(mustOlderThan);
+    }
+
+    @Override
     public void expireSnapshots(TableRuntime tableRuntime) {
-      expireSnapshots(Long.MAX_VALUE);
+      if (!expireSnapshotEnabled(tableRuntime)) {
+        return;
+      }
+      long now = System.currentTimeMillis();
+      expireFiles(now - snapshotsKeepTime(tableRuntime));
+      expireSnapshots(mustOlderThan(tableRuntime, now));
     }
 
     @Override
-    public void expireSnapshots(long mustOlderThan) {
-      long changeTTLPoint = getChangeTTLPoint();
-      expireFiles(Longs.min(getChangeTTLPoint(), mustOlderThan));
-      super.expireSnapshots(Longs.min(changeTTLPoint, mustOlderThan));
-    }
-
-    @Override
-    protected long olderThanSnapshotNeedToExpire(long mustOlderThan) {
-      long latestChangeFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(unkeyedTable);
-      return Longs.min(latestChangeFlinkCommitTime, mustOlderThan);
+    protected long mustOlderThan(TableRuntime tableRuntime, long now) {
+      return min(
+          // The change data ttl time
+          now - snapshotsKeepTime(tableRuntime),
+          // The latest flink committed snapshot should not be expired for recovering flink job
+          fetchLatestFlinkCommittedSnapshotTime(table));
     }
 
     @Override
@@ -335,19 +346,14 @@ public class MixedTableMaintainer implements TableMaintainer {
       return Sets.union(baseFiles, hiveFiles);
     }
 
+    @Override
+    protected long snapshotsKeepTime(TableRuntime tableRuntime) {
+      return tableRuntime.getTableConfiguration().getChangeDataTTLMinutes() * 60 * 1000;
+    }
+
     public void expireFiles(long ttlPoint) {
       List<IcebergFileEntry> expiredDataFileEntries = getExpiredDataFileEntries(ttlPoint);
       deleteChangeFile(expiredDataFileEntries);
-    }
-
-    private long getChangeTTLPoint() {
-      return System.currentTimeMillis()
-          - CompatiblePropertyUtil.propertyAsLong(
-                  unkeyedTable.properties(),
-                  TableProperties.CHANGE_DATA_TTL,
-                  TableProperties.CHANGE_DATA_TTL_DEFAULT)
-              * 60
-              * 1000;
     }
 
     private List<IcebergFileEntry> getExpiredDataFileEntries(long ttlPoint) {
@@ -469,6 +475,40 @@ public class MixedTableMaintainer implements TableMaintainer {
     @Override
     public Set<String> orphanFileCleanNeedToExcludeFiles() {
       return Sets.union(changeFiles, Sets.union(baseFiles, hiveFiles));
+    }
+
+    @Override
+    protected long mustOlderThan(TableRuntime tableRuntime, long now) {
+      return min(
+          // The snapshots keep time for base store
+          now - snapshotsKeepTime(tableRuntime),
+          // The snapshot optimizing plan based should not be expired for committing
+          fetchOptimizingPlanSnapshotTime(table, tableRuntime),
+          // The latest non-optimized snapshot should not be expired for data expiring
+          fetchLatestNonOptimizedSnapshotTime(table),
+          // The latest flink committed snapshot should not be expired for recovering flink job
+          fetchLatestFlinkCommittedSnapshotTime(table),
+          // The latest snapshot contains the optimized sequence should not be expired for MOR
+          fetchLatestOptimizedSequenceSnapshotTime(table));
+    }
+
+    /**
+     * When committing a snapshot to the base store of mixed format keyed table, it will store the
+     * optimized sequence to the snapshot, and will set a flag to the summary of this snapshot.
+     *
+     * <p>The optimized sequence will affect the correctness of MOR.
+     *
+     * @param table table
+     * @return time of the latest snapshot with the optimized sequence flag in summary
+     */
+    private long fetchLatestOptimizedSequenceSnapshotTime(Table table) {
+      if (arcticTable.isKeyedTable()) {
+        Snapshot snapshot =
+            findLatestSnapshotContainsKey(table, BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST);
+        return snapshot == null ? Long.MAX_VALUE : snapshot.timestampMillis();
+      } else {
+        return Long.MAX_VALUE;
+      }
     }
 
     @Override
