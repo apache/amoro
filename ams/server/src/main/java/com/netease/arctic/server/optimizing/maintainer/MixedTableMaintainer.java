@@ -47,7 +47,7 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.primitives.Longs;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
@@ -63,7 +63,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.stream.Collectors;
 
@@ -76,15 +75,15 @@ public class MixedTableMaintainer implements TableMaintainer {
 
   private ChangeTableMaintainer changeMaintainer;
 
-  private final IcebergTableMaintainer baseMaintainer;
+  private final BaseTableMaintainer baseMaintainer;
 
   public MixedTableMaintainer(ArcticTable arcticTable) {
     this.arcticTable = arcticTable;
     if (arcticTable.isKeyedTable()) {
       changeMaintainer = new ChangeTableMaintainer(arcticTable.asKeyedTable().changeTable());
-      baseMaintainer = new IcebergTableMaintainer(arcticTable.asKeyedTable().baseTable());
+      baseMaintainer = new BaseTableMaintainer(arcticTable.asKeyedTable().baseTable());
     } else {
-      baseMaintainer = new IcebergTableMaintainer(arcticTable.asUnkeyedTable());
+      baseMaintainer = new BaseTableMaintainer(arcticTable.asUnkeyedTable());
     }
   }
 
@@ -265,7 +264,7 @@ public class MixedTableMaintainer implements TableMaintainer {
     return changeMaintainer;
   }
 
-  public IcebergTableMaintainer getBaseMaintainer() {
+  public BaseTableMaintainer getBaseMaintainer() {
     return baseMaintainer;
   }
 
@@ -431,7 +430,6 @@ public class MixedTableMaintainer implements TableMaintainer {
     public BaseTableMaintainer(UnkeyedTable unkeyedTable) {
       super(unkeyedTable);
     }
-
 
     @Override
     protected long mustOlderThan(TableRuntime tableRuntime, long now) {
