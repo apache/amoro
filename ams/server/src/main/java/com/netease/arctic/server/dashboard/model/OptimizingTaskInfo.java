@@ -18,12 +18,14 @@
 
 package com.netease.arctic.server.dashboard.model;
 
-import com.netease.arctic.server.optimizing.MetricsSummary;
 import com.netease.arctic.server.optimizing.TaskRuntime;
 
 import java.util.Map;
 
 public class OptimizingTaskInfo {
+  public static String RETRY_COUNT_PROP = "retry.count";
+  public static String OPTIMIZER_TOKEN_PROP = "optimizer.token";
+  public static String OPTIMIZER_THREAD_ID_PROP = "optimizer.thread-id";
   private Long tableId;
   private Long processId;
   private int taskId;
@@ -36,7 +38,7 @@ public class OptimizingTaskInfo {
   private long endTime;
   private long costTime;
   private String failReason;
-  private MetricsSummary summary;
+  private Map<String, String> summary;
   private Map<String, String> properties;
 
   public OptimizingTaskInfo(
@@ -52,7 +54,7 @@ public class OptimizingTaskInfo {
       long endTime,
       long costTime,
       String failReason,
-      MetricsSummary summary,
+      Map<String, String> summary,
       Map<String, String> properties) {
     this.tableId = tableId;
     this.processId = processId;
@@ -68,6 +70,11 @@ public class OptimizingTaskInfo {
     this.failReason = failReason;
     this.summary = summary;
     this.properties = properties;
+    this.summary.put(RETRY_COUNT_PROP, String.valueOf(retryNum));
+    if (this.optimizerToken != null) {
+      this.summary.put(OPTIMIZER_TOKEN_PROP, optimizerToken);
+      this.summary.put(OPTIMIZER_THREAD_ID_PROP, String.valueOf(threadId));
+    }
   }
 
   public Long getTableId() {
@@ -166,11 +173,11 @@ public class OptimizingTaskInfo {
     this.failReason = failReason;
   }
 
-  public MetricsSummary getSummary() {
+  public Map<String, String> getSummary() {
     return summary;
   }
 
-  public void setSummary(MetricsSummary summary) {
+  public void setSummary(Map<String, String> summary) {
     this.summary = summary;
   }
 

@@ -26,6 +26,7 @@ import com.netease.arctic.server.optimizing.OptimizingTaskMeta;
 import com.netease.arctic.server.optimizing.OptimizingType;
 
 import java.util.List;
+import java.util.Map;
 
 public class OptimizingProcessInfo {
   private Long tableId;
@@ -45,9 +46,7 @@ public class OptimizingProcessInfo {
   private long finishTime;
   private FilesStatistics inputFiles;
   private FilesStatistics outputFiles;
-
-  private MetricsSummary.InputMetrics inputMetrics;
-  private MetricsSummary.OutputMetrics outputMetrics;
+  private Map<String, String> summary;
 
   public Long getTableId() {
     return tableId;
@@ -177,20 +176,12 @@ public class OptimizingProcessInfo {
     this.outputFiles = outputFiles;
   }
 
-  public MetricsSummary.InputMetrics getInputMetrics() {
-    return inputMetrics;
+  public Map<String, String> getSummary() {
+    return summary;
   }
 
-  public void setInputMetrics(MetricsSummary.InputMetrics inputMetrics) {
-    this.inputMetrics = inputMetrics;
-  }
-
-  public MetricsSummary.OutputMetrics getOutputMetrics() {
-    return outputMetrics;
-  }
-
-  public void setOutputMetrics(MetricsSummary.OutputMetrics outputMetrics) {
-    this.outputMetrics = outputMetrics;
+  public void setSummary(Map<String, String> summary) {
+    this.summary = summary;
   }
 
   public static OptimizingProcessInfo build(
@@ -250,8 +241,7 @@ public class OptimizingProcessInfo {
             ? meta.getEndTime() - meta.getPlanTime()
             : System.currentTimeMillis() - meta.getPlanTime());
     result.setFinishTime(meta.getEndTime());
-    result.setInputMetrics(new MetricsSummary.InputMetrics(meta.getSummary()));
-    result.setOutputMetrics(new MetricsSummary.OutputMetrics(meta.getSummary()));
+    result.setSummary(meta.getSummary().summaryAsMap(true));
     return result;
   }
 }

@@ -1,5 +1,7 @@
 package com.netease.arctic.server.optimizing;
 
+import static com.netease.arctic.server.dashboard.utils.AmsUtil.byteToXB;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import org.apache.iceberg.ContentFile;
@@ -8,9 +10,29 @@ import org.apache.iceberg.FileContent;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MetricsSummary {
+  public static final String INPUT_DATA_FILES = "input-data-files";
+  public static final String INPUT_DATA_SIZE = "input-data-size";
+  public static final String INPUT_DATA_RECORDS = "input-data-records";
+  public static final String INPUT_READ_ONLY_DATA_FILES = "input-data-files(read-only)";
+  public static final String INPUT_READ_ONLY_DATA_SIZE = "input-data-size(read-only)";
+  public static final String INPUT_READ_ONLY_DATA_RECORDS = "input-data-records(read-only)";
+  public static final String INPUT_EQ_DELETE_FILES = "input-equality-delete-files";
+  public static final String INPUT_EQ_DELETE_SIZE = "input-equality-delete-size";
+  public static final String INPUT_EQ_DELETE_RECORDS = "input-equality-delete-records";
+  public static final String INPUT_POS_DELETE_FILES = "input-position-delete-files";
+  public static final String INPUT_POS_DELETE_SIZE = "input-position-delete-size";
+  public static final String INPUT_POS_DELETE_RECORDS = "input-position-delete-records";
+  public static final String OUTPUT_DATA_FILES = "output-data-files";
+  public static final String OUTPUT_DATA_SIZE = "output-data-size";
+  public static final String OUTPUT_DATA_RECORDS = "output-data-records";
+  public static final String OUTPUT_DELETE_FILES = "output-delete-files";
+  public static final String OUTPUT_DELETE_SIZE = "output-delete-size";
+  public static final String OUTPUT_DELETE_RECORDS = "output-delete-records";
   private long rewriteDataSize = 0;
   private int rewriteDataFileCnt = 0;
   private long rewriteDataRecordCnt = 0;
@@ -42,140 +64,6 @@ public class MetricsSummary {
 
   private int newDeleteFileCnt = 0;
   private long newDeleteRecordCnt = 0;
-
-  public static class InputMetrics {
-    private long rewriteDataSize = 0;
-    private int rewriteDataFileCnt = 0;
-    private long rewriteDataRecordCnt = 0;
-    private long rewritePosDataSize = 0;
-    private int rewritePosDataFileCnt = 0;
-    private long rewritePosDataRecordCnt = 0;
-    private long equalityDeleteSize = 0;
-    private int eqDeleteFileCnt = 0;
-    private long eqDeleteRecordCnt = 0;
-    private long positionDeleteSize = 0;
-    private int posDeleteFileCnt = 0;
-    private long posDeleteRecordCnt = 0;
-
-    public InputMetrics(MetricsSummary metricsSummary) {
-      this.rewriteDataSize = metricsSummary.rewriteDataSize;
-      this.rewriteDataFileCnt = metricsSummary.rewriteDataFileCnt;
-      this.rewriteDataRecordCnt = metricsSummary.rewriteDataRecordCnt;
-      this.rewritePosDataSize = metricsSummary.rewritePosDataSize;
-      this.rewritePosDataFileCnt =
-          Math.max(metricsSummary.reRowDeletedDataFileCnt, metricsSummary.rewritePosDataFileCnt);
-      this.rewritePosDataRecordCnt = metricsSummary.rewritePosDataRecordCnt;
-      this.equalityDeleteSize = metricsSummary.equalityDeleteSize;
-      this.eqDeleteFileCnt = metricsSummary.eqDeleteFileCnt;
-      this.eqDeleteRecordCnt = metricsSummary.eqDeleteRecordCnt;
-      this.positionDeleteSize =
-          Math.max(metricsSummary.positionalDeleteSize, metricsSummary.positionDeleteSize);
-      this.posDeleteFileCnt = metricsSummary.posDeleteFileCnt;
-      this.posDeleteRecordCnt = metricsSummary.posDeleteRecordCnt;
-    }
-
-    public long getRewriteDataSize() {
-      return rewriteDataSize;
-    }
-
-    public int getRewriteDataFileCnt() {
-      return rewriteDataFileCnt;
-    }
-
-    public long getRewriteDataRecordCnt() {
-      return rewriteDataRecordCnt;
-    }
-
-    public long getRewritePosDataSize() {
-      return rewritePosDataSize;
-    }
-
-    public int getRewritePosDataFileCnt() {
-      return rewritePosDataFileCnt;
-    }
-
-    public long getRewritePosDataRecordCnt() {
-      return rewritePosDataRecordCnt;
-    }
-
-    public long getEqualityDeleteSize() {
-      return equalityDeleteSize;
-    }
-
-    public int getEqDeleteFileCnt() {
-      return eqDeleteFileCnt;
-    }
-
-    public long getEqDeleteRecordCnt() {
-      return eqDeleteRecordCnt;
-    }
-
-    public long getPositionDeleteSize() {
-      return positionDeleteSize;
-    }
-
-    public int getPosDeleteFileCnt() {
-      return posDeleteFileCnt;
-    }
-
-    public long getPosDeleteRecordCnt() {
-      return posDeleteRecordCnt;
-    }
-  }
-
-  public static class OutputMetrics {
-    private long newFileSize = 0;
-    private int newFileCnt = 0;
-    private long newDataSize = 0;
-    private int newDataFileCnt = 0;
-    private long newDataRecordCnt = 0;
-    private long newDeleteSize = 0;
-    private int newDeleteFileCnt = 0;
-    private long newDeleteRecordCnt = 0;
-
-    public OutputMetrics(MetricsSummary metricsSummary) {
-      this.newFileSize = metricsSummary.newFileSize;
-      this.newFileCnt = metricsSummary.newFileCnt;
-      this.newDataSize = metricsSummary.newDataSize;
-      this.newDataFileCnt = metricsSummary.newDataFileCnt;
-      this.newDataRecordCnt = metricsSummary.newDataRecordCnt;
-      this.newDeleteSize = metricsSummary.newDeleteSize;
-      this.newDeleteFileCnt = metricsSummary.newDeleteFileCnt;
-      this.newDeleteRecordCnt = metricsSummary.newDeleteRecordCnt;
-    }
-
-    public long getNewFileSize() {
-      return newFileSize;
-    }
-
-    public int getNewFileCnt() {
-      return newFileCnt;
-    }
-
-    public long getNewDataSize() {
-      return newDataSize;
-    }
-
-    public int getNewDataFileCnt() {
-      return newDataFileCnt;
-    }
-
-    public long getNewDataRecordCnt() {
-      return newDataRecordCnt;
-    }
-
-    public long getNewDeleteSize() {
-      return newDeleteSize;
-    }
-
-    public int getNewDeleteFileCnt() {
-      return newDeleteFileCnt;
-    }
-
-    public long getNewDeleteRecordCnt() {
-      return newDeleteRecordCnt;
-    }
-  }
 
   public MetricsSummary() {}
 
@@ -240,6 +128,47 @@ public class MetricsSummary {
               newFileCnt += metrics.getNewFileCnt();
               newFileSize += metrics.getNewFileSize();
             });
+  }
+
+  public Map<String, String> summaryAsMap(boolean humanReadable) {
+    Map<String, String> summary = new LinkedHashMap<>();
+    putIfPositive(summary, INPUT_DATA_FILES, rewriteDataFileCnt);
+    putIfPositive(summary, INPUT_DATA_SIZE, rewriteDataSize, humanReadable);
+    putIfPositive(summary, INPUT_DATA_RECORDS, rewriteDataRecordCnt);
+    putIfPositive(
+        summary,
+        INPUT_READ_ONLY_DATA_FILES,
+        Math.max(reRowDeletedDataFileCnt, rewritePosDataFileCnt));
+    putIfPositive(summary, INPUT_READ_ONLY_DATA_SIZE, rewritePosDataSize, humanReadable);
+    putIfPositive(summary, INPUT_READ_ONLY_DATA_RECORDS, rewritePosDataRecordCnt);
+    putIfPositive(summary, INPUT_EQ_DELETE_FILES, eqDeleteFileCnt);
+    putIfPositive(summary, INPUT_EQ_DELETE_SIZE, equalityDeleteSize, humanReadable);
+    putIfPositive(summary, INPUT_EQ_DELETE_RECORDS, eqDeleteRecordCnt);
+    putIfPositive(summary, INPUT_POS_DELETE_FILES, posDeleteFileCnt);
+    putIfPositive(
+        summary,
+        INPUT_POS_DELETE_SIZE,
+        Math.max(positionalDeleteSize, positionDeleteSize),
+        humanReadable);
+    putIfPositive(summary, INPUT_POS_DELETE_RECORDS, posDeleteRecordCnt);
+    putIfPositive(summary, OUTPUT_DATA_FILES, newDataFileCnt);
+    putIfPositive(summary, OUTPUT_DATA_SIZE, newDataSize, humanReadable);
+    putIfPositive(summary, OUTPUT_DATA_RECORDS, newDataRecordCnt);
+    putIfPositive(summary, OUTPUT_DELETE_FILES, newDeleteFileCnt);
+    putIfPositive(summary, OUTPUT_DELETE_SIZE, newDeleteSize, humanReadable);
+    putIfPositive(summary, OUTPUT_DELETE_RECORDS, newDeleteRecordCnt);
+    return summary;
+  }
+
+  private void putIfPositive(Map<String, String> summary, String key, long value) {
+    putIfPositive(summary, key, value, false);
+  }
+
+  private void putIfPositive(
+      Map<String, String> summary, String key, long value, boolean humanReadable) {
+    if (value > 0) {
+      summary.put(key, humanReadable ? byteToXB(value) : String.valueOf(value));
+    }
   }
 
   public long getNewFileSize() {
