@@ -66,7 +66,8 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
     if (originalConfig.getOptimizingConfig().isEnabled()
         && !tableRuntime.getTableConfiguration().getOptimizingConfig().isEnabled()) {
       OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
-      if (optimizingProcess.getStatus() == OptimizingProcess.Status.RUNNING) {
+      if (optimizingProcess != null
+          && optimizingProcess.getStatus() == OptimizingProcess.Status.RUNNING) {
         optimizingProcess.close();
       }
     }

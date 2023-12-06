@@ -42,6 +42,14 @@ public interface TableMaintainer {
    */
   void expireSnapshots(TableRuntime tableRuntime);
 
+  /**
+   * Expire historical data based on the expiration field, and data that exceeds the retention
+   * period will be purged
+   *
+   * @param tableRuntime TableRuntime
+   */
+  void expireData(TableRuntime tableRuntime);
+
   /** Auto create tags for table. */
   void autoCreateTags(TableRuntime tableRuntime);
 
