@@ -255,8 +255,7 @@ public class OptimizingQueue extends PersistentBase {
           new OptimizingPlanner(
               tableRuntime.refresh(table), (ArcticTable) table.originalTable(), getAvailableCore());
       TableOptimizingProcess optimizingProcess = new TableOptimizingProcess(planner);
-      optimizingProcess.planTasks();
-      if (planner.isNecessary()) {
+      if (optimizingProcess.planTasks()) {
         return optimizingProcess;
       } else {
         optimizingProcess.close();
@@ -376,7 +375,7 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     @Override
-    public void planTasks() {
+    public boolean planTasks() {
       lock.lock();
       try {
         if (planner.isNecessary()) {
@@ -386,6 +385,9 @@ public class OptimizingQueue extends PersistentBase {
           toSequence = planner.getToSequence();
           loadTaskRuntimes(taskDescriptors);
           updateProcessRunning();
+          return true;
+        } else {
+          return false;
         }
       } catch (Throwable throwable) {
         failed(ExceptionUtil.getErrorMessage(throwable, 4000), System.currentTimeMillis());

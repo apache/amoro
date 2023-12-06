@@ -22,7 +22,7 @@ public interface OptimizingProcess {
 
   long getRunningQuotaTime(long calculatingStartTime, long calculatingEndTime);
 
-  void planTasks();
+  boolean planTasks();
 
   void commit();
 
