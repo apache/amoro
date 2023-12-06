@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,7 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -81,7 +83,12 @@ public class RenewableBlocker implements Blocker {
     if (EXECUTOR == null) {
       synchronized (RenewableBlocker.class) {
         if (EXECUTOR == null) {
-          EXECUTOR = Executors.newSingleThreadScheduledExecutor();
+          ThreadFactory threadFactory =
+              new ThreadFactoryBuilder()
+                  .setDaemon(true)
+                  .setNameFormat("renew-blocker-thread-%d")
+                  .build();
+          EXECUTOR = Executors.newSingleThreadScheduledExecutor(threadFactory);
         }
       }
     }

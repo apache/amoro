@@ -40,12 +40,8 @@
 
     <modules>
         <module>core</module>
-        <module>hive</module>
-        <module>flink</module>
-        <module>spark</module>
-        <module>trino</module>
         <module>ams</module>
-        <module>dist</module>
+        <module>mixed</module>
     </modules>
 
     <scm>
@@ -148,7 +144,7 @@
 
             <dependency>
                 <groupId>com.netease.amoro</groupId>
-                <artifactId>amoro-hive</artifactId>
+                <artifactId>amoro-mixed-hive</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

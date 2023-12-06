@@ -89,6 +89,7 @@ public class TableRuntime extends StatedPersistentBase {
   @StateField private volatile TableConfiguration tableConfiguration;
   @StateField private volatile long processId;
   @StateField private volatile OptimizingEvaluator.PendingInput pendingInput;
+  private volatile long lastPlanTime;
 
   private final ReentrantLock blockerLock = new ReentrantLock();
 
@@ -125,7 +126,10 @@ public class TableRuntime extends StatedPersistentBase {
     this.optimizerGroup = tableRuntimeMeta.getOptimizerGroup();
     this.tableConfiguration = tableRuntimeMeta.getTableConfig();
     this.processId = tableRuntimeMeta.getOptimizingProcessId();
-    this.optimizingStatus = tableRuntimeMeta.getTableStatus();
+    this.optimizingStatus =
+        tableRuntimeMeta.getTableStatus() == OptimizingStatus.PLANNING
+            ? OptimizingStatus.PENDING
+            : tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
   }
 
@@ -146,6 +150,26 @@ public class TableRuntime extends StatedPersistentBase {
                   doAs(
                       TableMetaMapper.class,
                       mapper -> mapper.deleteOptimizingRuntime(tableIdentifier.getId())));
+        });
+  }
+
+  public void beginPlanning() {
+    invokeConsisitency(
+        () -> {
+          OptimizingStatus originalStatus = optimizingStatus;
+          updateOptimizingStatus(OptimizingStatus.PLANNING);
+          persistUpdatingRuntime();
+          tableHandler.handleTableChanged(this, originalStatus);
+        });
+  }
+
+  public void planFailed() {
+    invokeConsisitency(
+        () -> {
+          OptimizingStatus originalStatus = optimizingStatus;
+          updateOptimizingStatus(OptimizingStatus.PENDING);
+          persistUpdatingRuntime();
+          tableHandler.handleTableChanged(this, originalStatus);
         });
   }
 
@@ -177,7 +201,6 @@ public class TableRuntime extends StatedPersistentBase {
         () -> {
           this.pendingInput = pendingInput;
           if (optimizingStatus == OptimizingStatus.IDLE) {
-            this.currentChangeSnapshotId = System.currentTimeMillis();
             updateOptimizingStatus(OptimizingStatus.PENDING);
             persistUpdatingRuntime();
             LOG.info(
@@ -208,10 +231,11 @@ public class TableRuntime extends StatedPersistentBase {
     invokeConsisitency(
         () -> {
           pendingInput = null;
-          if (optimizingStatus == OptimizingStatus.PENDING) {
+          if (optimizingStatus == OptimizingStatus.PLANNING
+              || optimizingStatus == OptimizingStatus.PENDING) {
             updateOptimizingStatus(OptimizingStatus.IDLE);
             persistUpdatingRuntime();
-            tableHandler.handleTableChanged(this, OptimizingStatus.PENDING);
+            tableHandler.handleTableChanged(this, optimizingStatus);
           }
         });
   }
@@ -406,6 +430,14 @@ public class TableRuntime extends StatedPersistentBase {
 
   public long getNewestProcessId() {
     return processId;
+  }
+
+  public long getLastPlanTime() {
+    return lastPlanTime;
+  }
+
+  public void setLastPlanTime(long lastPlanTime) {
+    this.lastPlanTime = lastPlanTime;
   }
 
   @Override

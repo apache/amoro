@@ -52,7 +52,7 @@ export default defineComponent({
       },
       {
         title: 'Catalog Service',
-        desc: 'Provide an unified catalog service for all computing engines, which can also used with existing metadata store service such as Hive Metastore and AWS Glue.',
+        desc: 'Provide an unified catalog service for all compute engines, which can also used with existing metadata store service such as Hive Metastore and AWS Glue.',
         icon: CatalogService
       },
       {

@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class CommonPartitionEvaluator implements PartitionEvaluator {
@@ -43,7 +42,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   protected final OptimizingConfig config;
   protected final long fragmentSize;
   protected final long planTime;
-  protected final Map<String, String> partitionProperties;
+
   private final boolean reachFullInterval;
 
   // fragment files
@@ -69,11 +68,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   private OptimizingType optimizingType = null;
   private String name;
 
-  public CommonPartitionEvaluator(
-      TableRuntime tableRuntime,
-      String partition,
-      Map<String, String> partitionProperties,
-      long planTime) {
+  public CommonPartitionEvaluator(TableRuntime tableRuntime, String partition, long planTime) {
     this.partition = partition;
     this.tableRuntime = tableRuntime;
     this.config = tableRuntime.getOptimizingConfig();
@@ -83,7 +78,6 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
         config.getFullTriggerInterval() >= 0
             && planTime - tableRuntime.getLastFullOptimizingTime()
                 > config.getFullTriggerInterval();
-    this.partitionProperties = partitionProperties;
   }
 
   @Override

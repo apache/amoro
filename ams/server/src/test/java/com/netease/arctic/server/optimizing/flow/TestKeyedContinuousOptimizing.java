@@ -89,7 +89,6 @@ public class TestKeyedContinuousOptimizing extends TableTestBase {
 
     int cycle = 5;
     int recordCountOnceWrite = 2500;
-    CombinedDeleteFilter.FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = 2499L;
 
     // close full optimize
     table.updateProperties().set(SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1").commit();
@@ -152,6 +151,9 @@ public class TestKeyedContinuousOptimizing extends TableTestBase {
 
       view.upsert(recordCountOnceWrite);
       if (cycle % 2 == 0) {
+        // Trigger BloomFilter
+        CombinedDeleteFilter.FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = 2499L;
+
         mustFullCycle(table, optimizingFlow::optimize);
       } else {
         optimizingFlow.optimize();

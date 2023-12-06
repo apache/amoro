@@ -31,6 +31,8 @@ export default {
   backHome: 'Back to Home',
   version: 'Version',
   userGuide: 'User Guide',
+  logout: 'Logout',
+  logoutModalTitle: 'Log out of the ams?',
   order: 'Order',
   cluster: 'Cluster',
   database: 'Database | Databases',
@@ -185,5 +187,10 @@ export default {
   totalPositionDeletes: 'pos-delete-records',
   totalFiles: 'total-files',
   totalDataFiles: 'data-files',
-  totalDeleteFiles: 'delete-files'
+  totalDeleteFiles: 'delete-files',
+  branches: 'branches',
+  tags: 'tags',
+  nothingToShow: 'Nothing to show',
+  filterBranchesOrTags: 'Filter branches/tags',
+  findATag: 'Find a tag'
 }

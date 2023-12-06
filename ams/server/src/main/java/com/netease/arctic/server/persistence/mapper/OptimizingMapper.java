@@ -112,12 +112,12 @@ public interface OptimizingMapper {
         + "end_time, status, fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary, properties) "
         + "VALUES ",
     "<foreach collection='taskRuntimes' item='taskRuntime' index='index' separator=','>",
-    "(#{taskRuntime.taskId.processId}, #{taskRuntime.taskId.taskId}, #{taskRuntime.retry},"
+    "(#{taskRuntime.taskId.processId}, #{taskRuntime.taskId.taskId}, #{taskRuntime.runTimes},"
         + " #{taskRuntime.tableId}, #{taskRuntime.partition}, "
         + "#{taskRuntime.startTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
         + " #{taskRuntime.endTime, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}, "
         + "#{taskRuntime.status}, #{taskRuntime.failReason, jdbcType=VARCHAR},"
-        + " #{taskRuntime.optimizingThread.token, jdbcType=VARCHAR}, #{taskRuntime.optimizingThread.threadId, "
+        + " #{taskRuntime.token, jdbcType=VARCHAR}, #{taskRuntime.threadId, "
         + "jdbcType=INTEGER}, #{taskRuntime.output, jdbcType=BLOB, "
         + " typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert},"
         + " #{taskRuntime.summary, typeHandler=com.netease.arctic.server.persistence.converter.JsonObjectConverter},"
@@ -134,15 +134,15 @@ public interface OptimizingMapper {
   @Results({
     @Result(property = "taskId.processId", column = "process_id"),
     @Result(property = "taskId.taskId", column = "task_id"),
-    @Result(property = "retry", column = "retry_num"),
+    @Result(property = "runTimes", column = "retry_num"),
     @Result(property = "tableId", column = "table_id"),
     @Result(property = "partition", column = "partition_data"),
     @Result(property = "startTime", column = "start_time", typeHandler = Long2TsConverter.class),
     @Result(property = "endTime", column = "end_time", typeHandler = Long2TsConverter.class),
     @Result(property = "status", column = "status"),
     @Result(property = "failReason", column = "fail_reason"),
-    @Result(property = "optimizingThread.token", column = "optimizer_token"),
-    @Result(property = "optimizingThread.threadId", column = "thread_id"),
+    @Result(property = "token", column = "optimizer_token"),
+    @Result(property = "threadId", column = "thread_id"),
     @Result(
         property = "output",
         column = "rewrite_output",
@@ -188,15 +188,15 @@ public interface OptimizingMapper {
   List<OptimizingTaskMeta> selectOptimizeTaskMetas(@Param("processIds") List<Long> processIds);
 
   @Update(
-      "UPDATE task_runtime SET retry_num = #{taskRuntime.retry}, "
+      "UPDATE task_runtime SET retry_num = #{taskRuntime.runTimes}, "
           + "start_time = #{taskRuntime.startTime,"
           + " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
           + " end_time = #{taskRuntime.endTime,"
           + " typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
           + " cost_time = #{taskRuntime.costTime}, status = #{taskRuntime.status},"
           + " fail_reason = #{taskRuntime.failReason, jdbcType=VARCHAR},"
-          + " optimizer_token = #{taskRuntime.optimizingThread.token, jdbcType=VARCHAR},"
-          + " thread_id = #{taskRuntime.optimizingThread.threadId, jdbcType=INTEGER},"
+          + " optimizer_token = #{taskRuntime.token, jdbcType=VARCHAR},"
+          + " thread_id = #{taskRuntime.threadId, jdbcType=INTEGER},"
           + " rewrite_output = #{taskRuntime.output, jdbcType=BLOB,"
           + " typeHandler=com.netease.arctic.server.persistence.converter.Object2ByteArrayConvert},"
           + " metrics_summary = #{taskRuntime.summary,"

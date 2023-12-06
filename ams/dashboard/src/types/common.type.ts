@@ -114,6 +114,7 @@ export interface PartitionItem {
   fileCount: number
   size: string
   lastCommitTime: number | string
+  specId: number
 }
 
 export interface BreadcrumbPartitionItem {
@@ -320,3 +321,29 @@ export enum tableTypeIconMap {
 }
 
 export type ILineChartOriginalData = Record<string, Record<string, number>>
+
+export enum branchTypeMap {
+  BRANCH = 'branch',
+  TAG = 'tag'
+}
+
+export type IBranchItem = {
+  value: string
+  label: string
+  type: branchTypeMap
+}
+
+export type IServiceBranchItem = {
+  name: string
+  snapshotId: number
+  minSnapshotsToKeep: number | null
+  maxSnapshotAgeMs: number | null
+  maxRefAgeMs: number | null
+  type: branchTypeMap
+}
+
+export enum operationMap {
+  ALL = 'all',
+  OPTIMIZING = 'optimizing',
+  NONOPTIMIZING = 'non-optimizing'
+}

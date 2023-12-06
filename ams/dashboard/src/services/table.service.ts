@@ -94,13 +94,14 @@ export function getPartitionFiles(
     db: string,
     table: string,
     partition: string | null,
+    specId: number,
     page: number
     pageSize: number
     token: string
   }
 ) {
-  const { catalog, db, table, partition, page, pageSize, token } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions/${partition}/files`, { params: { page, pageSize, token } })
+  const { catalog, db, table, partition, specId, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions/${partition}/files`, { params: { specId, page, pageSize, token } })
 }
 // get snapshots
 export function getSnapshots(
@@ -111,10 +112,12 @@ export function getSnapshots(
     page: number
     pageSize: number
     token?: string
+    ref: string
+    operation: string
   }
 ) {
-  const { catalog, db, table, page, pageSize, token } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/snapshots`, { params: { page, pageSize, token } })
+  const { catalog, db, table, page, pageSize, token, ref, operation } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/snapshots`, { params: { page, pageSize, token, ref, operation } })
 }
 
 // get Snapshot detail
@@ -172,4 +175,14 @@ export function upgradeHiveTable(
 
 export function getUpgradeProperties() {
   return request.get('ams/v1/upgrade/properties')
+}
+
+export function getBranches(params: { catalog: string, db: string, table: string }) {
+  const { catalog, db, table } = params
+  return request.get(`/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/branches`)
+}
+
+export function getTags(params: { catalog: string, db: string, table: string }) {
+  const { catalog, db, table } = params
+  return request.get(`/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/tags`)
 }
