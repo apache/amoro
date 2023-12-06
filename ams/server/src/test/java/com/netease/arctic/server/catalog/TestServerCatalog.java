@@ -18,7 +18,7 @@
 
 package com.netease.arctic.server.catalog;
 
-import com.netease.arctic.AmoroCatalog;
+import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.formats.AmoroCatalogTestHelper;
 import com.netease.arctic.formats.IcebergHadoopCatalogTestHelper;
@@ -27,14 +27,12 @@ import com.netease.arctic.formats.PaimonHadoopCatalogTestHelper;
 import com.netease.arctic.hive.formats.IcebergHiveCatalogTestHelper;
 import com.netease.arctic.hive.formats.MixedIcebergHiveCatalogTestHelper;
 import com.netease.arctic.hive.formats.PaimonHiveCatalogTestHelper;
-import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import java.util.HashMap;
 
 @RunWith(Parameterized.class)
 public class TestServerCatalog extends TableCatalogTestBase {
@@ -43,8 +41,6 @@ public class TestServerCatalog extends TableCatalogTestBase {
 
   private final String testTableName = "test_table";
 
-  private final String testTableNameFilter = "test_table_filter";
-
   public TestServerCatalog(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
     super(amoroCatalogTestHelper);
   }
@@ -52,48 +48,12 @@ public class TestServerCatalog extends TableCatalogTestBase {
   @Parameterized.Parameters(name = "{0}")
   public static Object[] parameters() {
     return new Object[] {
-      new PaimonHadoopCatalogTestHelper(
-          "test_paimon_catalog",
-          new HashMap<String, String>() {
-            {
-              put(CatalogMetaProperties.KEY_TABLE_FILTER, "test_database.test_table");
-            }
-          }),
-      new PaimonHiveCatalogTestHelper(
-          "test_paimon_catalog",
-          new HashMap<String, String>() {
-            {
-              put(CatalogMetaProperties.KEY_TABLE_FILTER, "test_database.test_table");
-            }
-          }),
-      new IcebergHadoopCatalogTestHelper(
-          "test_iceberg_catalog",
-          new HashMap<String, String>() {
-            {
-              put(CatalogMetaProperties.KEY_TABLE_FILTER, "test_database.test_table");
-            }
-          }),
-      new IcebergHiveCatalogTestHelper(
-          "test_iceberg_catalog",
-          new HashMap<String, String>() {
-            {
-              put(CatalogMetaProperties.KEY_TABLE_FILTER, "test_database.test_table");
-            }
-          }),
-      new MixedIcebergHadoopCatalogTestHelper(
-          "test_mixed_catalog",
-          new HashMap<String, String>() {
-            {
-              put(CatalogMetaProperties.KEY_TABLE_FILTER, "test_database.test_table");
-            }
-          }),
-      new MixedIcebergHiveCatalogTestHelper(
-          "test_mixed_catalog",
-          new HashMap<String, String>() {
-            {
-              put(CatalogMetaProperties.KEY_TABLE_FILTER, "test_database.test_table");
-            }
-          })
+      PaimonHadoopCatalogTestHelper.defaultHelper(),
+      PaimonHiveCatalogTestHelper.defaultHelper(),
+      IcebergHadoopCatalogTestHelper.defaultHelper(),
+      IcebergHiveCatalogTestHelper.defaultHelper(),
+      MixedIcebergHadoopCatalogTestHelper.defaultHelper(),
+      MixedIcebergHiveCatalogTestHelper.defaultHelper()
     };
   }
 
@@ -101,15 +61,6 @@ public class TestServerCatalog extends TableCatalogTestBase {
   public void setUp() throws Exception {
     getAmoroCatalog().createDatabase(testDatabaseName);
     getAmoroCatalogTestHelper().createTable(testDatabaseName, testTableName);
-    getAmoroCatalogTestHelper().createTable(testDatabaseName, testTableNameFilter);
-  }
-
-  @After
-  public void cleanFilterTable() {
-    AmoroCatalog amoroCatalog = getAmoroCatalog();
-    if (amoroCatalog.exist(testDatabaseName, testTableNameFilter)) {
-      amoroCatalog.dropTable(testDatabaseName, testTableNameFilter, true);
-    }
   }
 
   @Test
@@ -129,15 +80,31 @@ public class TestServerCatalog extends TableCatalogTestBase {
 
   @Test
   public void listTables() {
-    ServerCatalog serverCatalog = getServerCatalog();
-    if (serverCatalog instanceof ExternalCatalog) {
-      Assert.assertEquals(1, serverCatalog.listTables(testDatabaseName).size());
-      Assert.assertEquals(
-          testTableName,
-          serverCatalog.listTables(testDatabaseName).get(0).getIdentifier().getTableName());
-    } else {
-      Assert.assertEquals(2, serverCatalog.listTables(testDatabaseName).size());
-    }
+    Assert.assertEquals(1, getServerCatalog().listTables(testDatabaseName).size());
+    Assert.assertEquals(
+        testTableName,
+        getServerCatalog().listTables(testDatabaseName).get(0).getIdentifier().getTableName());
+  }
+
+  @Test
+  public void listTablesWithTableFilter() {
+    // Table filter only affects ExternalCatalog
+    Assume.assumeTrue(getServerCatalog() instanceof ExternalCatalog);
+    String dbWithFilter = "db_with_filter";
+    String tableWithFilter = "table_with_filter";
+    getAmoroCatalog().createDatabase(dbWithFilter);
+
+    getAmoroCatalogTestHelper().createTable(dbWithFilter, tableWithFilter);
+    // 1.create some databases and tables
+    // 2.check the tables without filter
+    // 3.set table filter
+    CatalogMeta metadata = getServerCatalog().getMetadata();
+    metadata
+        .getCatalogProperties()
+        .put(CatalogMetaProperties.KEY_TABLE_FILTER, "test_database.test_table");
+    getServerCatalog().updateMetadata(metadata);
+    // 4.check the table list with filter
+    // 5.finally unset the table filter, remove the databases and tables in this test case
   }
 
   @Test
