@@ -209,22 +209,11 @@ public class OptimizingProcessInfo {
       result.setSuccessTasks(successTasks);
       result.setRunningTasks(runningTasks);
     }
-    FilesStatisticsBuilder inputBuilder = new FilesStatisticsBuilder();
-    FilesStatisticsBuilder outputBuilder = new FilesStatisticsBuilder();
     MetricsSummary summary = meta.getSummary();
     if (summary != null) {
-      inputBuilder.addFiles(summary.getEqualityDeleteSize(), summary.getEqDeleteFileCnt());
-      inputBuilder.addFiles(
-          Math.max(summary.getPositionDeleteSize(), summary.getPositionalDeleteSize()),
-          summary.getPosDeleteFileCnt());
-      inputBuilder.addFiles(summary.getRewriteDataSize(), summary.getRewriteDataFileCnt());
-      inputBuilder.addFiles(
-          summary.getRewritePosDataSize(),
-          Math.max(summary.getReRowDeletedDataFileCnt(), summary.getRewritePosDataFileCnt()));
-      outputBuilder.addFiles(summary.getNewFileSize(), summary.getNewFileCnt());
+      result.setInputFiles(summary.getInputFilesStatistics());
+      result.setOutputFiles(summary.getOutputFilesStatistics());
     }
-    result.setInputFiles(inputBuilder.build());
-    result.setOutputFiles(outputBuilder.build());
 
     result.setTableId(meta.getTableId());
     result.setCatalogName(meta.getCatalogName());

@@ -38,6 +38,8 @@ public class OptimizingTaskInfo {
   private long endTime;
   private long costTime;
   private String failReason;
+  private FilesStatistics inputFiles;
+  private FilesStatistics outputFiles;
   private Map<String, String> summary;
   private Map<String, String> properties;
 
@@ -54,6 +56,8 @@ public class OptimizingTaskInfo {
       long endTime,
       long costTime,
       String failReason,
+      FilesStatistics inputFiles,
+      FilesStatistics outputFiles,
       Map<String, String> summary,
       Map<String, String> properties) {
     this.tableId = tableId;
@@ -68,6 +72,8 @@ public class OptimizingTaskInfo {
     this.endTime = endTime;
     this.costTime = costTime;
     this.failReason = failReason;
+    this.inputFiles = inputFiles;
+    this.outputFiles = outputFiles;
     this.summary = summary;
     this.properties = properties;
     this.summary.put(RETRY_COUNT_PROP, String.valueOf(retryNum));
@@ -187,5 +193,21 @@ public class OptimizingTaskInfo {
 
   public void setProperties(Map<String, String> properties) {
     this.properties = properties;
+  }
+
+  public FilesStatistics getInputFiles() {
+    return inputFiles;
+  }
+
+  public void setInputFiles(FilesStatistics inputFiles) {
+    this.inputFiles = inputFiles;
+  }
+
+  public FilesStatistics getOutputFiles() {
+    return outputFiles;
+  }
+
+  public void setOutputFiles(FilesStatistics outputFiles) {
+    this.outputFiles = outputFiles;
   }
 }

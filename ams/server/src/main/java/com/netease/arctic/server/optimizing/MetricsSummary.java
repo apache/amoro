@@ -4,6 +4,8 @@ import static com.netease.arctic.server.dashboard.utils.AmsUtil.byteToXB;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.netease.arctic.optimizing.RewriteFilesInput;
+import com.netease.arctic.server.dashboard.model.FilesStatistics;
+import com.netease.arctic.server.dashboard.utils.FilesStatisticsBuilder;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileContent;
@@ -169,6 +171,22 @@ public class MetricsSummary {
     if (value > 0) {
       summary.put(key, humanReadable ? byteToXB(value) : String.valueOf(value));
     }
+  }
+
+  public FilesStatistics getInputFilesStatistics() {
+    FilesStatisticsBuilder inputBuilder = new FilesStatisticsBuilder();
+    inputBuilder.addFiles(equalityDeleteSize, eqDeleteFileCnt);
+    inputBuilder.addFiles(Math.max(positionDeleteSize, positionalDeleteSize), posDeleteFileCnt);
+    inputBuilder.addFiles(rewriteDataSize, rewriteDataFileCnt);
+    inputBuilder.addFiles(
+        rewritePosDataSize, Math.max(reRowDeletedDataFileCnt, rewritePosDataFileCnt));
+    return inputBuilder.build();
+  }
+
+  public FilesStatistics getOutputFilesStatistics() {
+    FilesStatisticsBuilder outputBuilder = new FilesStatisticsBuilder();
+    outputBuilder.addFiles(newFileSize, newFileCnt);
+    return outputBuilder.build();
   }
 
   public long getNewFileSize() {

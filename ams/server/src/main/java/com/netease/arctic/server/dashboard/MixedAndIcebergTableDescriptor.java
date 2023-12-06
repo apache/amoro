@@ -475,6 +475,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                     taskMeta.getEndTime(),
                     taskMeta.getCostTime(),
                     taskMeta.getFailReason(),
+                    taskMeta.getMetricsSummary().getInputFilesStatistics(),
+                    taskMeta.getMetricsSummary().getOutputFilesStatistics(),
                     taskMeta.getMetricsSummary().summaryAsMap(true),
                     taskMeta.getProperties()))
         .collect(Collectors.toList());
