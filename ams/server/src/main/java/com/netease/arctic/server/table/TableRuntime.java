@@ -185,7 +185,7 @@ public class TableRuntime extends StatedPersistentBase {
         });
   }
 
-  public void updateProcess(OptimizingProcess optimizingProcess) {
+  public void updateProcessRunning(OptimizingProcess optimizingProcess) {
     invokeConsisitency(
         () -> {
           Preconditions.checkArgument(

@@ -352,6 +352,7 @@ public class OptimizingQueue extends PersistentBase {
     public TableOptimizingProcess(TableRuntimeMeta tableRuntimeMeta) {
       processId = tableRuntimeMeta.getOptimizingProcessId();
       tableRuntime = tableRuntimeMeta.getTableRuntime();
+      status = tableRuntimeMeta.getProcessStatus();
       if (tableRuntimeMeta.getOptimizingType() != null) {
         optimizingType = tableRuntimeMeta.getOptimizingType();
       }
@@ -625,7 +626,7 @@ public class OptimizingQueue extends PersistentBase {
                   OptimizingMapper.class,
                   mapper -> mapper.insertTaskRuntimes(Lists.newArrayList(taskMap.values()))),
           () -> TaskFilesPersistence.persistTaskInputs(processId, taskMap.values()),
-          () -> tableRuntime.updateProcess(this));
+          () -> tableRuntime.updateProcessRunning(this));
     }
 
     private void persistProcessCompleted(boolean success) {
