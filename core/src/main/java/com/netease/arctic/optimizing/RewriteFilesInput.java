@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class RewriteFilesInput extends BaseOptimizingInput {
+  private static final long serialVersionUID = -696610318564333923L;
   private final DataFile[] rewrittenDataFiles;
   private final DataFile[] rePosDeletedDataFiles;
   private final ContentFile<?>[] readOnlyDeleteFiles;
