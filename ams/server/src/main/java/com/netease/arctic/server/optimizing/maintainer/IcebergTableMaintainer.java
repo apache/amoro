@@ -21,14 +21,13 @@ package com.netease.arctic.server.optimizing.maintainer;
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
 import com.google.common.base.Strings;
+import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.PathInfo;
 import com.netease.arctic.io.SupportsFileSystemOperations;
 import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.IcebergTableUtil;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TableFileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.DeleteFile;
@@ -42,6 +41,11 @@ import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
+import org.apache.iceberg.relocated.com.google.common.base.Optional;
+import org.apache.iceberg.relocated.com.google.common.base.Strings;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,21 +110,23 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   public void expireSnapshots(TableRuntime tableRuntime) {
-    TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
-    if (!tableConfiguration.isExpireSnapshotEnabled()) {
+    if (!expireSnapshotEnabled(tableRuntime)) {
       return;
     }
-    expireSnapshots(
-        olderThanSnapshotNeedToExpire(tableRuntime), expireSnapshotNeedToExcludeFiles());
+    expireSnapshots(mustOlderThan(tableRuntime, System.currentTimeMillis()));
   }
 
-  public void expireSnapshots(long mustOlderThan) {
-    expireSnapshots(
-        olderThanSnapshotNeedToExpire(mustOlderThan), expireSnapshotNeedToExcludeFiles());
+  protected boolean expireSnapshotEnabled(TableRuntime tableRuntime) {
+    TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
+    return tableConfiguration.isExpireSnapshotEnabled();
   }
 
   @VisibleForTesting
-  public void expireSnapshots(long olderThan, Set<String> exclude) {
+  void expireSnapshots(long mustOlderThan) {
+    expireSnapshots(mustOlderThan, expireSnapshotNeedToExcludeFiles());
+  }
+
+  private void expireSnapshots(long olderThan, Set<String> exclude) {
     LOG.debug("start expire snapshots older than {}, the exclude is {}", olderThan, exclude);
     final AtomicInteger toDeleteFiles = new AtomicInteger(0);
     final AtomicInteger deleteFiles = new AtomicInteger(0);
@@ -132,10 +138,14 @@ public class IcebergTableMaintainer implements TableMaintainer {
         .deleteWith(
             file -> {
               try {
-                String filePath = TableFileUtil.getUriPath(file);
-                if (!exclude.contains(filePath)
-                    && !exclude.contains(new Path(filePath).getParent().toString())) {
+                if (exclude.isEmpty()) {
                   arcticFileIO().deleteFile(file);
+                } else {
+                  String fileUriPath = TableFileUtil.getUriPath(file);
+                  if (!exclude.contains(fileUriPath)
+                      && !exclude.contains(new Path(fileUriPath).getParent().toString())) {
+                    arcticFileIO().deleteFile(file);
+                  }
                 }
                 parentDirectory.add(new Path(file).getParent().toString());
                 deleteFiles.incrementAndGet();
@@ -176,24 +186,20 @@ public class IcebergTableMaintainer implements TableMaintainer {
     LOG.info("{} total delete {} dangling delete files", table.name(), danglingDeleteFilesCnt);
   }
 
-  protected long olderThanSnapshotNeedToExpire(TableRuntime tableRuntime) {
-    long optimizingSnapshotTime = fetchOptimizingSnapshotTime(table, tableRuntime);
-    return olderThanSnapshotNeedToExpire(optimizingSnapshotTime);
+  protected long mustOlderThan(TableRuntime tableRuntime, long now) {
+    return min(
+        // The snapshots keep time
+        now - snapshotsKeepTime(tableRuntime),
+        // The snapshot optimizing plan based should not be expired for committing
+        fetchOptimizingPlanSnapshotTime(table, tableRuntime),
+        // The latest non-optimized snapshot should not be expired for data expiring
+        fetchLatestNonOptimizedSnapshotTime(table),
+        // The latest flink committed snapshot should not be expired for recovering flink job
+        fetchLatestFlinkCommittedSnapshotTime(table));
   }
 
-  protected long olderThanSnapshotNeedToExpire(long mustOlderThan) {
-    long baseSnapshotsKeepTime =
-        CompatiblePropertyUtil.propertyAsLong(
-                table.properties(),
-                TableProperties.BASE_SNAPSHOT_KEEP_MINUTES,
-                TableProperties.BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT)
-            * 60
-            * 1000;
-    // Latest checkpoint of flink need retain. If Flink does not continuously commit new snapshots,
-    // it can lead to issues with table partitions not expiring.
-    long latestFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(table);
-    long olderThan = System.currentTimeMillis() - baseSnapshotsKeepTime;
-    return min(latestFlinkCommitTime, mustOlderThan, olderThan);
+  protected long snapshotsKeepTime(TableRuntime tableRuntime) {
+    return tableRuntime.getTableConfiguration().getSnapshotTTLMinutes() * 60 * 1000;
   }
 
   protected Set<String> expireSnapshotNeedToExcludeFiles() {
@@ -278,31 +284,28 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   /**
-   * When committing a snapshot, Flink will write a checkpoint id into the snapshot summary. The
-   * latest snapshot with checkpoint id should not be expired or the flink job can't recover from
-   * state.
+   * When committing a snapshot, Flink will write a checkpoint id into the snapshot summary, which
+   * will be used when Flink job recovers from the checkpoint.
    *
-   * @param table -
-   * @return commit time of snapshot with the latest flink checkpointId in summary
+   * @param table table
+   * @return commit time of snapshot with the latest flink checkpointId in summary, return
+   *     Long.MAX_VALUE if not exist
    */
   public static long fetchLatestFlinkCommittedSnapshotTime(Table table) {
-    long latestCommitTime = Long.MAX_VALUE;
-    for (Snapshot snapshot : table.snapshots()) {
-      if (snapshot.summary().containsKey(FLINK_MAX_COMMITTED_CHECKPOINT_ID)) {
-        latestCommitTime = snapshot.timestampMillis();
-      }
-    }
-    return latestCommitTime;
+    Snapshot snapshot = findLatestSnapshotContainsKey(table, FLINK_MAX_COMMITTED_CHECKPOINT_ID);
+    return snapshot == null ? Long.MAX_VALUE : snapshot.timestampMillis();
   }
 
   /**
-   * When optimizing tasks are not committed, the snapshot with which it planned should not be
-   * expired, since it will use the snapshot to check conflict when committing.
+   * When the current optimizing process not committed, get the time of snapshot for optimizing
+   * process planned based. This snapshot will be used when optimizing process committing.
    *
-   * @param table - table
-   * @return commit time of snapshot for optimizing
+   * @param table table
+   * @param tableRuntime table runtime
+   * @return time of snapshot for optimizing process planned based, return Long.MAX_VALUE if no
+   *     optimizing process exists
    */
-  public static long fetchOptimizingSnapshotTime(Table table, TableRuntime tableRuntime) {
+  public static long fetchOptimizingPlanSnapshotTime(Table table, TableRuntime tableRuntime) {
     if (tableRuntime.getOptimizingStatus().isProcessing()) {
       long fromSnapshotId = tableRuntime.getOptimizingProcess().getTargetSnapshotId();
 
@@ -313,6 +316,30 @@ public class IcebergTableMaintainer implements TableMaintainer {
       }
     }
     return Long.MAX_VALUE;
+  }
+
+  public static Snapshot findLatestSnapshotContainsKey(Table table, String summaryKey) {
+    Snapshot latestSnapshot = null;
+    for (Snapshot snapshot : table.snapshots()) {
+      if (snapshot.summary().containsKey(summaryKey)) {
+        latestSnapshot = snapshot;
+      }
+    }
+    return latestSnapshot;
+  }
+
+  /**
+   * When expiring historic data and `data-expire.since` is `CURRENT_SNAPSHOT`, the latest snapshot
+   * should not be produced by Amoro.
+   *
+   * @param table iceberg table
+   * @return the latest non-optimized snapshot timestamp
+   */
+  public static long fetchLatestNonOptimizedSnapshotTime(Table table) {
+    Optional<Snapshot> snapshot =
+        IcebergTableUtil.findSnapshot(
+            table, s -> s.summary().containsValue(CommitMetaProducer.OPTIMIZE.name()));
+    return snapshot.isPresent() ? snapshot.get().timestampMillis() : Long.MAX_VALUE;
   }
 
   private static int deleteInvalidFilesInFs(
