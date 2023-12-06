@@ -36,6 +36,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
 import javax.annotation.Nonnull;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -151,6 +152,19 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
 
     @Override
+    protected boolean isRewriteSegmentFile(DataFile dataFile) {
+      PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile;
+      if (file.type() == DataFileType.BASE_FILE) {
+        return dataFile.fileSizeInBytes() <= minFileSize;
+      } else if (file.type() == DataFileType.INSERT_FILE) {
+        // for keyed table, we treat all insert files as fragment files
+        return true;
+      } else {
+        throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
+      }
+    }
+
+    @Override
     public boolean isMinorNecessary() {
       if (keyedTable) {
         int smallFileCount = fragmentFileCount + equalityDeleteFileCount;
@@ -168,7 +182,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
 
     @Override
-    public boolean segmentFileShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
+    public boolean segmentShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
       if (deletes.stream()
           .anyMatch(
               delete ->
@@ -201,7 +215,10 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       if (!reachFullInterval()) {
         return false;
       }
-      return anyDeleteExist() || fragmentFileCount > getBaseSplitCount() || hasChangeFiles;
+      return anyDeleteExist()
+          || fragmentFileCount > getBaseSplitCount()
+          || segmentFileCount + rewriteSegmentFileCount > getBaseSplitCount()
+          || hasChangeFiles;
     }
 
     @Override
@@ -238,6 +255,15 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       FileTree rootTree = FileTree.newTreeRoot();
       rewritePosDataFiles.forEach(rootTree::addRewritePosDataFile);
       rewriteDataFiles.forEach(rootTree::addRewriteDataFile);
+      result.addAll(genSplitTasks(rootTree));
+      rootTree = FileTree.newTreeRoot();
+      rewriteSegmentDataFiles.forEach(rootTree::addRewriteDataFile);
+      result.addAll(genSplitTasks(rootTree));
+      return result;
+    }
+
+    private Collection<? extends SplitTask> genSplitTasks(FileTree rootTree) {
+      List<SplitTask> result = Lists.newArrayList();
       rootTree.completeTree();
       List<FileTree> subTrees = Lists.newArrayList();
       rootTree.splitFileTree(subTrees, new SplitIfNoFileExists());
@@ -247,6 +273,9 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
         Set<ContentFile<?>> deleteFiles = Sets.newHashSet();
         subTree.collectRewriteDataFiles(rewriteDataFiles);
         subTree.collectRewritePosDataFiles(rewritePosDataFiles);
+        if (rewriteDataFiles.size() == 0 && rewritePosDataFiles.size() == 0) {
+          continue;
+        }
         rewriteDataFiles.forEach((f, deletes) -> deleteFiles.addAll(deletes));
         rewritePosDataFiles.forEach((f, deletes) -> deleteFiles.addAll(deletes));
         result.add(

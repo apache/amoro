@@ -49,6 +49,9 @@ public interface PartitionEvaluator {
    */
   boolean addFile(DataFile dataFile, List<ContentFile<?>> deletes);
 
+  /** After table file scan, confirm whether the segment files really needs to be rewritten. */
+  void globalEvaluate();
+
   /**
    * Whether this partition is necessary to optimize.
    *

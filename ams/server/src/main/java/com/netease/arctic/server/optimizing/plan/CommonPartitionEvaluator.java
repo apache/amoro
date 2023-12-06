@@ -41,6 +41,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   private final String partition;
   protected final OptimizingConfig config;
   protected final long fragmentSize;
+  protected final long minFileSize;
   protected final long planTime;
 
   private final boolean reachFullInterval;
@@ -56,6 +57,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   protected long rewriteSegmentFileSize = 0L;
   protected int rewritePosSegmentFileCount = 0;
   protected long rewritePosSegmentFileSize = 0L;
+  protected long min1SegmentFileSize = Integer.MAX_VALUE;
+  protected long min2SegmentFileSize = Integer.MAX_VALUE;
 
   // delete files
   protected int equalityDeleteFileCount = 0;
@@ -73,11 +76,25 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     this.tableRuntime = tableRuntime;
     this.config = tableRuntime.getOptimizingConfig();
     this.fragmentSize = config.getTargetSize() / config.getFragmentRatio();
+    this.minFileSize = (long) (config.getTargetSize() * config.getMinFileSizeRatio());
+    if (minFileSize > config.getTargetSize() - fragmentSize) {
+      LOG.warn(
+          "The min-file-size-ratio is set too large, some segment files will not be able to find the merge file.");
+    }
     this.planTime = planTime;
     this.reachFullInterval =
         config.getFullTriggerInterval() >= 0
             && planTime - tableRuntime.getLastFullOptimizingTime()
                 > config.getFullTriggerInterval();
+  }
+
+  @Override
+  public void globalEvaluate() {
+    if (isFullNecessary() || (enoughContent() && hasMergeTask())) {
+      return;
+    }
+    segmentFileSize = 0;
+    segmentFileCount = 0;
   }
 
   @Override
@@ -89,6 +106,10 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     return dataFile.fileSizeInBytes() <= fragmentSize;
   }
 
+  protected boolean isRewriteSegmentFile(DataFile dataFile) {
+    return dataFile.fileSizeInBytes() > fragmentSize && dataFile.fileSizeInBytes() <= minFileSize;
+  }
+
   @Override
   public boolean addFile(DataFile dataFile, List<ContentFile<?>> deletes) {
     if (!config.isEnabled()) {
@@ -96,8 +117,10 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     }
     if (isFragmentFile(dataFile)) {
       return addFragmentFile(dataFile, deletes);
-    } else {
+    } else if (isRewriteSegmentFile(dataFile)) {
       return addSegmentFile(dataFile, deletes);
+    } else {
+      return addCompleteSegmentFile(dataFile, deletes);
     }
   }
 
@@ -110,11 +133,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   private boolean addFragmentFile(DataFile dataFile, List<ContentFile<?>> deletes) {
-    if (!fileShouldRewrite(dataFile, deletes)) {
-      return false;
-    }
     fragmentFileSize += dataFile.fileSizeInBytes();
-    fragmentFileCount += 1;
+    fragmentFileCount++;
 
     for (ContentFile<?> delete : deletes) {
       addDelete(delete);
@@ -122,23 +142,55 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     return true;
   }
 
+  /**
+   * Add segment file
+   *
+   * <p>No need to merge segment files add deletes in {@link
+   * com.netease.arctic.server.optimizing.plan.PartitionEvaluator#globalEvaluate}
+   */
   private boolean addSegmentFile(DataFile dataFile, List<ContentFile<?>> deletes) {
-    if (fileShouldRewrite(dataFile, deletes)) {
+    if (segmentShouldRewrite(dataFile, deletes)) {
       rewriteSegmentFileSize += dataFile.fileSizeInBytes();
-      rewriteSegmentFileCount += 1;
-    } else if (segmentFileShouldRewritePos(dataFile, deletes)) {
-      rewritePosSegmentFileSize += dataFile.fileSizeInBytes();
-      rewritePosSegmentFileCount += 1;
-    } else {
-      return false;
+      rewriteSegmentFileCount++;
+      for (ContentFile<?> delete : deletes) {
+        addDelete(delete);
+      }
+      return true;
+    }
+
+    // Cache the size of the smallest two files
+    if (dataFile.fileSizeInBytes() < min1SegmentFileSize) {
+      min2SegmentFileSize = min1SegmentFileSize;
+      min1SegmentFileSize = dataFile.fileSizeInBytes();
+    } else if (dataFile.fileSizeInBytes() < min2SegmentFileSize) {
+      min2SegmentFileSize = dataFile.fileSizeInBytes();
     }
 
     segmentFileSize += dataFile.fileSizeInBytes();
-    segmentFileCount += 1;
-    for (ContentFile<?> delete : deletes) {
-      addDelete(delete);
-    }
+    segmentFileCount++;
     return true;
+  }
+
+  private boolean addCompleteSegmentFile(DataFile dataFile, List<ContentFile<?>> deletes) {
+    if (segmentShouldRewrite(dataFile, deletes)) {
+      rewriteSegmentFileSize += dataFile.fileSizeInBytes();
+      rewriteSegmentFileCount++;
+      for (ContentFile<?> delete : deletes) {
+        addDelete(delete);
+      }
+      return true;
+    }
+
+    if (segmentShouldRewritePos(dataFile, deletes)) {
+      rewritePosSegmentFileSize += dataFile.fileSizeInBytes();
+      rewritePosSegmentFileCount++;
+      for (ContentFile<?> delete : deletes) {
+        addDelete(delete);
+      }
+      return true;
+    }
+
+    return false;
   }
 
   protected boolean fileShouldFullOptimizing(DataFile dataFile, List<ContentFile<?>> deleteFiles) {
@@ -152,12 +204,9 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     return !deleteFiles.isEmpty() || dataFile.fileSizeInBytes() < config.getTargetSize() * 0.9;
   }
 
-  public boolean fileShouldRewrite(DataFile dataFile, List<ContentFile<?>> deletes) {
+  public boolean segmentShouldRewrite(DataFile dataFile, List<ContentFile<?>> deletes) {
     if (isFullOptimizing()) {
       return fileShouldFullOptimizing(dataFile, deletes);
-    }
-    if (isFragmentFile(dataFile)) {
-      return true;
     }
     // When Upsert writing is enabled in the Flink engine, both INSERT and UPDATE_AFTER will
     // generate deletes files (Most are eq-delete), and eq-delete file will be associated
@@ -170,7 +219,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
         > dataFile.recordCount() * config.getMajorDuplicateRatio();
   }
 
-  public boolean segmentFileShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
+  public boolean segmentShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
     if (isFullOptimizing()) {
       return false;
     }
@@ -198,15 +247,15 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
         .sum();
   }
 
-  private void addDelete(ContentFile<?> delete) {
+  void addDelete(ContentFile<?> delete) {
     if (isDuplicateDelete(delete)) {
       return;
     }
     if (delete.content() == FileContent.POSITION_DELETES) {
-      posDeleteFileCount += 1;
+      posDeleteFileCount++;
       posDeleteFileSize += delete.fileSizeInBytes();
     } else {
-      equalityDeleteFileCount += 1;
+      equalityDeleteFileCount++;
       equalityDeleteFileSize += delete.fileSizeInBytes();
     }
   }
@@ -231,14 +280,15 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
       // When rewriting the Position delete file, only the primary key field of the segment file
       // will be read, so only one-tenth of the size is calculated based on the size.
       cost =
-          (rewriteSegmentFileSize + fragmentFileSize) * 4
+          (fragmentFileSize + segmentFileSize + rewriteSegmentFileSize) * 4
               + rewritePosSegmentFileSize / 10
               + posDeleteFileSize
               + equalityDeleteFileSize;
       int fileCnt =
-          rewriteSegmentFileCount
+          fragmentFileCount
+              + segmentFileCount
+              + rewriteSegmentFileCount
               + rewritePosSegmentFileCount
-              + fragmentFileCount
               + posDeleteFileCount
               + equalityDeleteFileCount;
       cost += fileCnt * config.getOpenFileCost();
@@ -263,14 +313,29 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     return optimizingType;
   }
 
+  /** Segment files has enough content */
+  public boolean enoughContent() {
+    return segmentFileSize > config.getTargetSize();
+  }
+
+  /**
+   * There is at least one merge task
+   *
+   * <p>Compare the total size of the two smallest segment files and the target size
+   */
+  public boolean hasMergeTask() {
+    return min1SegmentFileSize + min2SegmentFileSize < config.getTargetSize();
+  }
+
   public boolean isMajorNecessary() {
-    return rewriteSegmentFileSize > 0;
+    return enoughContent() || rewriteSegmentFileCount > 0;
   }
 
   public boolean isMinorNecessary() {
     int smallFileCount = fragmentFileCount + equalityDeleteFileCount;
     return smallFileCount >= config.getMinorLeastFileCount()
-        || (smallFileCount > 1 && reachMinorInterval());
+        || (smallFileCount > 1 && reachMinorInterval())
+        || rewritePosSegmentFileCount > 0;
   }
 
   protected boolean reachMinorInterval() {
@@ -286,7 +351,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     if (!reachFullInterval()) {
       return false;
     }
-    return anyDeleteExist() || fragmentFileCount >= 2;
+    return anyDeleteExist()
+        || fragmentFileCount >= 2
+        || segmentFileCount >= 2
+        || rewriteSegmentFileCount > 0
+        || rewritePosSegmentFileCount > 0;
   }
 
   protected String name() {
@@ -378,6 +447,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
         .add("partition", partition)
         .add("config", config)
         .add("fragmentSize", fragmentSize)
+        .add("minFileSize", minFileSize)
         .add("planTime", planTime)
         .add("lastMinorOptimizeTime", tableRuntime.getLastMinorOptimizingTime())
         .add("lastFullOptimizeTime", tableRuntime.getLastFullOptimizingTime())
@@ -390,6 +460,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
         .add("rewriteSegmentFileSize", rewriteSegmentFileSize)
         .add("rewritePosSegmentFileCount", rewritePosSegmentFileCount)
         .add("rewritePosSegmentFileSize", rewritePosSegmentFileSize)
+        .add("min1SegmentFileSize", min1SegmentFileSize)
+        .add("min2SegmentFileSize", min2SegmentFileSize)
         .add("equalityDeleteFileCount", equalityDeleteFileCount)
         .add("equalityDeleteFileSize", equalityDeleteFileSize)
         .add("posDeleteFileCount", posDeleteFileCount)

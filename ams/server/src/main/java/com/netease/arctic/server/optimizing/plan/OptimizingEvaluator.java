@@ -130,6 +130,7 @@ public class OptimizingEvaluator {
         arcticTable.id(),
         count,
         System.currentTimeMillis() - startTime);
+    partitionPlanMap.values().forEach(PartitionEvaluator::globalEvaluate);
     partitionPlanMap.values().removeIf(plan -> !plan.isNecessary());
   }
 

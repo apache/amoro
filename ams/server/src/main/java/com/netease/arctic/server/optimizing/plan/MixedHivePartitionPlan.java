@@ -167,7 +167,9 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
       if (!reachFullInterval() && !reachHiveRefreshInterval()) {
         return false;
       }
-      return fragmentFileCount > getBaseSplitCount() || hasNewHiveData();
+      return fragmentFileCount > getBaseSplitCount()
+          || segmentFileCount + rewriteSegmentFileCount > getBaseSplitCount()
+          || hasNewHiveData();
     }
 
     @Override
@@ -184,12 +186,12 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
     }
 
     @Override
-    public boolean fileShouldRewrite(DataFile dataFile, List<ContentFile<?>> deletes) {
+    public boolean segmentShouldRewrite(DataFile dataFile, List<ContentFile<?>> deletes) {
       if (isFullOptimizing()) {
         return fileShouldFullOptimizing(dataFile, deletes);
       } else {
         // if it is not full optimizing, we only rewrite files not in hive location
-        return !inHiveLocation(dataFile) && super.fileShouldRewrite(dataFile, deletes);
+        return !inHiveLocation(dataFile) && super.segmentShouldRewrite(dataFile, deletes);
       }
     }
 
