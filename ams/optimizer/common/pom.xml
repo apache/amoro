@@ -29,7 +29,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>optimizer-common</artifactId>
-    <name>Amoro Project Optimizer Common</name>
+    <name>Amoro Project AMS Optimizer Common</name>
     <url>https://amoro.netease.com</url>
 
     <dependencies>
@@ -40,7 +40,7 @@
 
         <dependency>
             <groupId>com.netease.amoro</groupId>
-            <artifactId>amoro-hive</artifactId>
+            <artifactId>amoro-mixed-hive</artifactId>
         </dependency>
 
         <dependency>

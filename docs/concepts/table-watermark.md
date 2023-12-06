@@ -58,4 +58,4 @@ greater flexibility:
 SHOW TBLPROPERTIES test_db.test_log_store ('watermark.base');
 ```
 
-You can learn about how to use Watermark in detail by referring to [Managing tables](../using-tables/).
+You can learn about how to use Watermark in detail by referring to [Using tables](../using-tables/).

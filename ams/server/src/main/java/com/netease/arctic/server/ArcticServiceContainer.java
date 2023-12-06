@@ -73,6 +73,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -141,6 +142,7 @@ public class ArcticServiceContainer {
     addHandlerChain(AsyncTableExecutors.getInstance().getBlockerExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getHiveCommitSyncExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getTableRefreshingExecutor());
+    addHandlerChain(AsyncTableExecutors.getInstance().getTagsAutoCreatingExecutor());
     tableService.initialize();
     LOG.info("AMS table service have been initialized");
     terminalManager = new TerminalManager(serviceConfig, tableService);
@@ -185,8 +187,8 @@ public class ArcticServiceContainer {
   }
 
   private void startThriftService() {
-    startThriftServer(tableManagementServer, "Thrift-table-management-server-thread");
-    startThriftServer(optimizingServiceServer, "Thrift-optimizing-server-thread");
+    startThriftServer(tableManagementServer, "thrift-table-management-server-thread");
+    startThriftServer(optimizingServiceServer, "thrift-optimizing-server-thread");
   }
 
   private void startThriftServer(TServer server, String threadName) {
@@ -356,7 +358,11 @@ public class ArcticServiceContainer {
   private ThreadFactory getThriftThreadFactory(String processorName) {
     return new ThreadFactoryBuilder()
         .setDaemon(false)
-        .setNameFormat("thrift-server-" + processorName + "-%d")
+        .setNameFormat(
+            "thrift-server-"
+                + String.join("-", StringUtils.splitByCharacterTypeCamelCase(processorName))
+                    .toLowerCase(Locale.ROOT)
+                + "-%d")
         .build();
   }
 

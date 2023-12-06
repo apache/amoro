@@ -31,6 +31,10 @@ public class TableProperties {
 
   private TableProperties() {}
 
+  public static final String SELF_OPTIMIZING_MIN_PLAN_INTERVAL =
+      "self-optimizing.min-plan-interval";
+  public static final long SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT = 60000;
+
   public static final String TABLE_PARTITION_PROPERTIES = "table.partition-properties";
 
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
@@ -158,6 +162,8 @@ public class TableProperties {
       "data-expire.datetime-number-format";
   public static final String DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT = "TIMESTAMP_MS";
   public static final String DATA_EXPIRATION_RETENTION_TIME = "data-expire.retention-time";
+  public static final String DATA_EXPIRATION_SINCE = "data-expire.since";
+  public static final String DATA_EXPIRATION_SINCE_DEFAULT = "LATEST_SNAPSHOT";
 
   public static final String ENABLE_DANGLING_DELETE_FILES_CLEAN =
       "clean-dangling-delete-files.enabled";
@@ -189,6 +195,25 @@ public class TableProperties {
           "|.*v[0-9]+\\.metadata\\.json"
           + // v123.metadata.json
           "|.*[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}-m[0-9]+\\.avro"; // UUID-m0.avro
+
+  /** table tag management related properties */
+  public static final String ENABLE_AUTO_CREATE_TAG = "tag.auto-create.enabled";
+
+  public static final boolean ENABLE_AUTO_CREATE_TAG_DEFAULT = false;
+
+  public static final String AUTO_CREATE_TAG_TRIGGER_PERIOD = "tag.auto-create.trigger.period";
+  public static final String AUTO_CREATE_TAG_TRIGGER_PERIOD_DEFAULT = "daily";
+
+  public static final String AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES =
+      "tag.auto-create.trigger.offset.minutes";
+  public static final int AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES_DEFAULT = 0;
+
+  public static final String AUTO_CREATE_TAG_MAX_DELAY_MINUTES =
+      "tag.auto-create.trigger.max-delay.minutes";
+  public static final int AUTO_CREATE_TAG_MAX_DELAY_MINUTES_DEFAULT = 60;
+
+  public static final String AUTO_CREATE_TAG_DAILY_FORMAT = "tag.auto-create.daily.tag-format";
+  public static final String AUTO_CREATE_TAG_DAILY_FORMAT_DEFAULT = "'tag-'yyyyMMdd";
 
   /** table write related properties */
   public static final String FILE_FORMAT_PARQUET = "parquet";

@@ -162,7 +162,7 @@ public class MockArcticMetastoreServer implements Runnable {
               executorQueue,
               r -> {
                 Thread thread = new Thread(r);
-                String threadName = "AMS-pool-" + threadCount.incrementAndGet();
+                String threadName = "ams-pool-" + threadCount.incrementAndGet();
                 thread.setName(threadName);
                 LOG.info("Mock AMS create thread: " + threadName);
                 return thread;

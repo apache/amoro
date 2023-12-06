@@ -8,14 +8,24 @@
       <template #title>{{$t('userGuide')}}</template>
       <question-circle-outlined class="question-icon" @click="goDocs" />
     </a-tooltip>
+    <a-tooltip>
+      <template #title>{{$t('logout')}}</template>
+      <a-button class='logout-button' @click="handleLogout">
+        <LogoutOutlined style="font-size: 1.2em"></LogoutOutlined>
+      </a-button>
+    </a-tooltip>
   </div>
 </template>
 
 <script lang="ts">
 
 import { defineComponent, onMounted, reactive } from 'vue'
-import { QuestionCircleOutlined } from '@ant-design/icons-vue'
+import { QuestionCircleOutlined, LogoutOutlined } from '@ant-design/icons-vue'
+import { Modal } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
+import useStore from '@/store'
 import { getVersionInfo } from '@/services/global.service'
+import loginService from '@/services/login.service'
 
 interface IVersion {
   version: string
@@ -25,13 +35,17 @@ interface IVersion {
 export default defineComponent ({
   name: 'Topbar',
   components: {
-    QuestionCircleOutlined
+    QuestionCircleOutlined,
+    LogoutOutlined
   },
   setup() {
     const verInfo = reactive<IVersion>({
       version: '',
       commitTime: ''
     })
+
+    const { t } = useI18n()
+
     const getVersion = async() => {
       const res = await getVersionInfo()
       if (res) {
@@ -40,16 +54,40 @@ export default defineComponent ({
       }
     }
 
+    const handleLogout = async () => {
+      Modal.confirm({
+        title: t('logoutModalTitle'),
+        content: '',
+        okText: '',
+        cancelText: '',
+        onOk: async () => {
+          try {
+            const res = await loginService.logout()
+            console.log(res.code)
+          } catch (error) {
+          } finally {
+            const store = useStore()
+            store.updateUserInfo({
+              userName: ''
+            })
+            window.location.href = '/login'
+          }
+        }
+      })
+    }
+
     const goDocs = () => {
       window.open('https://amoro.netease.com/docs/latest/')
     }
+
     onMounted(() => {
       getVersion()
     })
 
     return {
       verInfo,
-      goDocs
+      goDocs,
+      handleLogout
     }
   }
 })
@@ -74,5 +112,11 @@ export default defineComponent ({
   }
   .topbar-tooltip .ant-tooltip-inner {
     font-size: 12px;
+  }
+  .logout-button {
+    border-color: transparent;
+  }
+  .logout-button:hover {
+    border-color: unset;
   }
 </style>
