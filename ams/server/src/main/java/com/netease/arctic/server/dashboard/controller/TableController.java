@@ -66,10 +66,8 @@ import org.apache.iceberg.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -520,9 +518,18 @@ public class TableController {
                     new TableMeta(
                         idWithFormat.getIdentifier().getTableName(),
                         formatToType.apply(idWithFormat.getTableFormat())))
+            // sort by format
+            .sorted(
+                (table1, table2) -> {
+                  if (Objects.equals(table1.getType(), table2.getType())) {
+                    return table1.getName().compareTo(table2.getName());
+                  } else {
+                    return table1.getType().compareTo(table2.getType());
+                  }
+                })
             .collect(Collectors.toList());
 
-    List<TableMeta> lackHiveTables = new ArrayList<>();
+    // hive tables has lower priority, append to the  end
     if (serverCatalog instanceof MixedHiveCatalogImpl) {
       List<String> hiveTables =
           HiveTableUtil.getAllHiveTables(
@@ -531,20 +538,10 @@ public class TableController {
           tables.stream().map(TableMeta::getName).collect(Collectors.toSet());
       hiveTables.stream()
           .filter(e -> !arcticTables.contains(e))
-          .forEach(e -> lackHiveTables.add(new TableMeta(e, TableMeta.TableType.HIVE.toString())));
+          .sorted(String::compareTo)
+          .forEach(e -> tables.add(new TableMeta(e, TableMeta.TableType.HIVE.toString())));
     }
-    // sort by format
-    tables.sort(
-        (table1, table2) -> {
-          if (Objects.equals(table1.getType(), table2.getType())) {
-            return table1.getName().compareTo(table2.getName());
-          } else {
-            return table1.getType().compareTo(table2.getType());
-          }
-        });
-    // hive tables has lower priority, append to the  end
-    lackHiveTables.sort(Comparator.comparing(TableMeta::getName));
-    tables.addAll(lackHiveTables);
+
     ctx.json(
         OkResponse.of(
             tables.stream()
