@@ -52,8 +52,10 @@ public class ArcticManagementConf {
   public static final ConfigOption<Integer> TABLE_MANIFEST_IO_THREAD_COUNT =
       ConfigOptions.key("table-manifest-io.thread-count")
           .intType()
-          .defaultValue(10)
-          .withDescription("The number of threads used to read metadata.");
+          .defaultValue(20)
+          .withDescription(
+              "Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing "
+                  + "manifests in the base table implementation across all concurrent planning or commit operations.");
 
   public static final ConfigOption<Long> REFRESH_EXTERNAL_CATALOGS_INTERVAL =
       ConfigOptions.key("refresh-external-catalogs.interval")
