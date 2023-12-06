@@ -24,6 +24,7 @@ import com.netease.arctic.server.exception.PersistenceException;
 import org.apache.ibatis.session.TransactionIsolationLevel;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
+import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -57,9 +58,7 @@ public abstract class PersistentBase {
   protected final void doAsTransaction(Runnable... operations) {
     try (NestedSqlSession session = beginSession()) {
       try {
-        for (Runnable runnable : operations) {
-          runnable.run();
-        }
+        Arrays.stream(operations).forEach(Runnable::run);
         session.commit();
       } catch (Throwable t) {
         session.rollback();
@@ -72,8 +71,7 @@ public abstract class PersistentBase {
     try (NestedSqlSession session = beginSession()) {
       try {
         T mapper = getMapper(session, mapperClz);
-        R result = func.apply(mapper);
-        return result;
+        return func.apply(mapper);
       } catch (Throwable t) {
         throw ArcticRuntimeException.wrap(t, PersistenceException::new);
       }
