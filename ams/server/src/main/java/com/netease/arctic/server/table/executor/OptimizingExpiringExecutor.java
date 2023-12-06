@@ -33,15 +33,17 @@ public class OptimizingExpiringExecutor extends BaseTableExecutor {
 
   private final Persistency persistency = new Persistency();
   private final long keepTime;
+  private final long interval;
 
-  public OptimizingExpiringExecutor(TableManager tableRuntimes, long keepTime) {
+  public OptimizingExpiringExecutor(TableManager tableRuntimes, int keepDays, int intervalHours) {
     super(tableRuntimes, 1);
-    this.keepTime = keepTime;
+    this.keepTime = keepDays * 24 * 60 * 60 * 1000L;
+    this.interval = intervalHours * 60 * 60 * 1000L;
   }
 
   @Override
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return INTERVAL;
+    return interval;
   }
 
   @Override

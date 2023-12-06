@@ -219,7 +219,14 @@ public class ArcticManagementConf {
           .intType()
           .defaultValue(30)
           .withDescription(
-              "The number of milliseconds that self-optimizing runtime data keeps the runtime.");
+              "The number of days that self-optimizing runtime data keeps the runtime.");
+
+  public static final ConfigOption<Integer> OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL_HOURS =
+      ConfigOptions.key("self-optimizing.runtime-data-expire-interval-hours")
+          .intType()
+          .defaultValue(1)
+          .withDescription(
+              "The number of hours that self-optimizing runtime data expire interval.");
 
   public static final ConfigOption<String> DB_TYPE =
       ConfigOptions.key("database.type")
