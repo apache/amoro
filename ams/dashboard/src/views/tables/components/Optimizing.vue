@@ -69,6 +69,16 @@
         @change="change"
         class="g-mt-8"
       >
+        <template #headerCell="{ column }">
+          <template v-if="column.dataIndex === 'inputFilesDesc'">
+            <div class="">{{ column.title }}</div>
+            <div class="">size / count</div>
+          </template>
+          <template v-if="column.dataIndex === 'outputFilesDesc'">
+            <div class="">{{ column.title }}</div>
+            <div class="">size / count</div>
+          </template>
+        </template>
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'partitionData'">
             <a-tooltip>
@@ -85,12 +95,6 @@
                 <question-circle-outlined />
               </a-tooltip>
             </div>
-          </template>
-          <template v-if="column.dataIndex === 'thread'">
-            <a-tooltip>
-              <template #title>{{record.thread}}</template>
-              <span>{{record.thread}}</span>
-            </a-tooltip>
           </template>
         </template>
         <template #expandedRowRender="{ record }">
@@ -109,7 +113,7 @@ import { onMounted, reactive, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'
 import { IColumns, BreadcrumbOptimizingItem } from '@/types/common.type'
-import { getOptimizes, getTasksByOptimizingProcessId } from '@/services/table.service'
+import { getOptimizingProcesses, getTasksByOptimizingProcessId } from '@/services/table.service'
 import { useRoute } from 'vue-router'
 import { QuestionCircleOutlined } from '@ant-design/icons-vue'
 import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
@@ -149,12 +153,12 @@ const columns: IColumns[] = shallowReactive([
 const breadcrumbColumns = shallowReactive([
   { title: t('taskId'), dataIndex: 'taskId', width: 82 },
   { title: t('partition'), dataIndex: 'partitionData', ellipsis: true },
-  { title: t('startTime'), dataIndex: 'startTime' },
+  { title: t('startTime'), dataIndex: 'startTime', width: 175 },
   { title: t('status'), dataIndex: 'status', width: 124 },
   { title: t('costTime'), dataIndex: 'formatCostTime', width: 154 },
-  { title: t('finishTime'), dataIndex: 'endTime' },
-  { title: t('retry'), dataIndex: 'retryNum', width: 68 },
-  { title: t('thread'), dataIndex: 'thread', ellipsis: true }
+  { title: t('finishTime'), dataIndex: 'endTime', width: 175 },
+  { title: t('input'), dataIndex: 'inputFilesDesc' },
+  { title: t('output'), dataIndex: 'outputFilesDesc' }
 ])
 
 const dataSource = reactive<any[]>([])
@@ -177,7 +181,7 @@ async function getTableInfo() {
   try {
     loading.value = true
     dataSource.length = 0
-    const result = await getOptimizes({
+    const result = await getOptimizingProcesses({
       ...sourceData,
       page: pagination.current,
       pageSize: pagination.pageSize
@@ -252,6 +256,8 @@ async function getBreadcrumbTable() {
       p.formatCostTime = formatMS2Time(p.costTime)
       p.thread = p.optimizerToken ? '(' + p.threadId + ')' + p.optimizerToken : '-'
       p.partitionData = p.partitionData ? p.partitionData : '-'
+      p.inputFilesDesc = `${bytesToSize(p.inputFiles.totalSize)} / ${p.inputFiles.fileCnt}`
+      p.outputFilesDesc = `${bytesToSize(p.outputFiles.totalSize)} / ${p.outputFiles.fileCnt}`
       breadcrumbDataSource.push(p)
     })
   } catch (error) {

@@ -150,7 +150,7 @@ export function getOperations(
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/operations`, { params: { page, pageSize, token } })
 }
 // get optimizing processes
-export function getOptimizes(
+export function getOptimizingProcesses(
   params: {
     catalog: string
     db: string,

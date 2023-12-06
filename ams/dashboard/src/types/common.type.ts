@@ -136,6 +136,12 @@ export interface BreadcrumbSnapshotItem {
   commitTime: number | string
 }
 
+export interface FilesStatistics {
+  fileCnt: number
+  totalSize: number
+  averageSize: number
+}
+
 export interface BreadcrumbOptimizingItem {
   tableId: number
   processId: number
@@ -152,6 +158,10 @@ export interface BreadcrumbOptimizingItem {
   formatCostTime: string
   failReason: string
   summary: Record<string, string>
+  inputFiles: FilesStatistics
+  outputFiles: FilesStatistics
+  inputFilesDesc: string
+  outputFilesDesc: string
   properties: Record<string, string>
 }
 
