@@ -72,6 +72,9 @@ CREATE TABLE `arctic_catalog`.`arctic_db`.`test_table` (
     id BIGINT,
     name STRING,
     op_time TIMESTAMP,
+    ts3 AS CAST(op_time as TIMESTAMP(3)),
+    watermark FOR ts3 AS ts3 - INTERVAL '5' SECOND,
+    proc AS PROCTIME(),
     PRIMARY KEY (id) NOT ENFORCED
 ) WITH (
     'key' = 'value'
@@ -83,8 +86,8 @@ Currently, most of the syntax supported by [Flink SQL create table](https://nigh
 - PARTITION BY (column1, column2, …): configure Flink partition fields, but Flink does not yet support hidden partitions.
 - PRIMARY KEY (column1, column2, …): configure primary keys.
 - WITH ('key'='value', …): configure Amoro Table properties.
-
-Currently, configuration of computed columns and watermark fields is not supported.
+- computed_column_definition: column_name AS computed_column_expression. Currently, compute column must be listed after all physical columns. 
+- watermark_definition: WATERMARK FOR rowtime_column_name AS watermark_strategy_expression, rowtime_column_name must be of type TIMESTAMP(3).  
 
 #### PARTITIONED BY
 Create a partitioned table using PARTITIONED BY.
@@ -105,6 +108,7 @@ CREATE TABLE `test_table` (
     id BIGINT,
     name STRING,
     op_time TIMESTAMP,
+    proc as PROCTIME(),
     PRIMARY KEY (id) NOT ENFORCED
 ) WITH (
     'connector' = 'arctic',

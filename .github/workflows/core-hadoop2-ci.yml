@@ -20,9 +20,9 @@ on:
     paths:
       - "ams/**"
       - "core/**"
-      - "flink/**"
-      - "hive/**"
-      - "spark/**"
+      - "mixed/flink/**"
+      - "mixed/hive/**"
+      - "mixed/spark/**"
       - "pom.xml"
 
 jobs:
@@ -42,7 +42,7 @@ jobs:
         run: mvn validate
 
       - name: Build all module with Maven
-        run: mvn clean install -pl '!trino' -Djacoco.flink.skip=true -B -ntp -Dhadoop=v2
+        run: mvn clean install -pl '!mixed/trino' -Djacoco.flink.skip=true -B -ntp -Dhadoop=v2
 
       - name: Code coverage
         uses: codecov/codecov-action@v3

@@ -81,6 +81,7 @@ const props = defineProps<{ hasPartition: boolean}>()
 const dataSource = reactive<PartitionItem[]>([])
 const breadcrumbDataSource = reactive<BreadcrumbPartitionItem[]>([])
 const partitionId = ref<string>('')
+const specId = ref<number>(0)
 const loading = ref<boolean>(false)
 const pagination = reactive(usePagination())
 const breadcrumbPagination = reactive(usePagination())
@@ -149,6 +150,7 @@ async function getFiles() {
     const params = {
       ...sourceData,
       partition: props.hasPartition ? encodeURIComponent(partitionId.value) : null,
+      specId: specId.value,
       page: breadcrumbPagination.current,
       pageSize: breadcrumbPagination.pageSize
     }
@@ -167,6 +169,7 @@ async function getFiles() {
 
 function toggleBreadcrumb(record: PartitionItem) {
   partitionId.value = record.partition
+  specId.value = record.specId
   hasBreadcrumb.value = !hasBreadcrumb.value
   if (hasBreadcrumb.value) {
     breadcrumbPagination.current = 1

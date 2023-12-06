@@ -23,4 +23,7 @@ public interface ResourceManager {
   List<Resource> listResourcesByGroup(String groupName);
 
   Resource getResource(String resourceId);
+
+  /** close this resource manager */
+  void dispose();
 }

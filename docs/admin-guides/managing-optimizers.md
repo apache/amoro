@@ -17,7 +17,7 @@ The optimizer is the execution unit for performing self-optimizing tasks on a ta
 * Optimizer: The specific unit that performs optimizing tasks, usually with multiple concurrent units.
 
 ## Optimizer container
-Before using self-optimizing, you need to configure the container information in the configuration file. Optimizer container represents a specific set of runtime environment configuration, and the scheduling scheme of optimizer in that runtime environment. container includes three types: flink, local, and external.
+Before using self-optimizing, you need to configure the container information in the configuration file. Optimizer container represents a specific set of runtime environment configuration, and the scheduling scheme of optimizer in that runtime environment. The container includes three types: flink, local, and external.
 
 ### Local container
 Local container is a way to start Optimizer by local process and supports multi-threaded execution of Optimizer tasks. It is recommended to be used only in demo or local deployment scenarios. If the environment variable for jdk is not configured, the user can configure java_home to point to the jdk root directory. If already configured, this configuration item can be ignored.
@@ -171,7 +171,7 @@ You can submit optimizer in your own Flink task development platform or local Fl
  -Dtaskmanager.memory.network.max=32mb \
  -Dtaskmanager.memory.network.min=32mb \
  -c com.netease.arctic.optimizer.flink.FlinkOptimizer \
- ${ARCTIC_HOME}/plugin/optimizer/flink/optimizer-job.jar \
+ ${AMORO_HOME}/plugin/optimizer/flink/optimizer-job.jar \
  -a 127.0.0.1:1261 \
  -g flinkGroup \
  -p 1 \
