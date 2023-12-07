@@ -22,6 +22,9 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.spark.SparkTableFormat;
 import org.apache.spark.sql.connector.catalog.Table;
 
+/**
+ * The spark table format implements of paimon
+ */
 public class PaimonSparkFormat implements SparkTableFormat {
   static final String KEY_STORAGE_HANDLER = "storage_handler";
   static final String PAIMON_STORAGE_HANDLER = "org.apache.paimon.hive.PaimonStorageHandler";
