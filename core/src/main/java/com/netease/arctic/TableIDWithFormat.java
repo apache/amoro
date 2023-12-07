@@ -43,6 +43,10 @@ public class TableIDWithFormat {
     return tableFormat;
   }
 
+  public String catalog() {
+    return this.identifier.getCatalog();
+  }
+
   public String database() {
     return this.identifier.getDatabase();
   }
