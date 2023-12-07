@@ -104,7 +104,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
         .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES, offsetMinutesOfToday + "")
         .commit();
     newAutoCreateIcebergTagAction(table, now).execute();
-    checkTagCount(table, 0);
+    checkTag(table, "tag-" + formatDate(now.minusDays(2)), snapshot);
 
     // Offset -1 minute to make the snapshot exceed the offset to create tag
     offsetMinutesOfToday--;
@@ -113,12 +113,12 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
         .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES, offsetMinutesOfToday + "")
         .commit();
     newAutoCreateIcebergTagAction(table, now).execute();
-    checkTagCount(table, 1);
+    checkTagCount(table, 2);
     checkTag(table, "tag-" + formatDate(now.minusDays(1)), snapshot);
 
     // should not recreate tag
     newAutoCreateIcebergTagAction(table, now).execute();
-    checkTagCount(table, 1);
+    checkTagCount(table, 2);
   }
 
   @Test

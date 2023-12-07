@@ -22,14 +22,14 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Objects;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
-
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Map;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 /** Configuration for auto creating tags. */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -51,14 +51,30 @@ public class TagConfiguration {
       @Override
       public long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
         long windowSize = 60 * 60 * 24 * 1000L;
-        return getWindowStartWithOffset(checkTime, triggerOffsetMinutes, windowSize);
+        return getPeriodEndWithOffset(checkTime, triggerOffsetMinutes, windowSize);
+      }
+
+      @Override
+      public LocalDateTime normalizeToTagTime(long triggerTime, int triggerOffsetMinutes) {
+        LocalDateTime localDateTime =
+            LocalDateTime.ofInstant(Instant.ofEpochMilli(triggerTime), ZoneId.systemDefault())
+                .minus(triggerOffsetMinutes, ChronoUnit.MINUTES)
+                .minus(1, ChronoUnit.DAYS);
+        return localDateTime;
       }
     },
     HOURLY("hourly") {
       @Override
       public long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
         long windowSize = 60 * 60 * 1000L;
-        return getWindowStartWithOffset(checkTime, triggerOffsetMinutes, windowSize);
+        return getPeriodEndWithOffset(checkTime, triggerOffsetMinutes, windowSize);
+      }
+
+      @Override
+      public LocalDateTime normalizeToTagTime(long triggerTime, int triggerOffsetMinutes) {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(triggerTime), ZoneId.systemDefault())
+            .minus(triggerOffsetMinutes, ChronoUnit.MINUTES)
+            .minus(1, ChronoUnit.HOURS);
       }
     };
 
@@ -81,7 +97,9 @@ public class TagConfiguration {
      */
     public abstract long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes);
 
-    protected Long getWindowStartWithOffset(
+    public abstract LocalDateTime normalizeToTagTime(long triggerTime, int triggerOffsetMinutes);
+
+    protected Long getPeriodEndWithOffset(
         LocalDateTime checkTime, int triggerOffsetMinutes, long windowSize) {
       long timestamp = checkTime.atZone(ZoneOffset.UTC).toInstant().toEpochMilli();
       long offset = triggerOffsetMinutes * 60_000L;

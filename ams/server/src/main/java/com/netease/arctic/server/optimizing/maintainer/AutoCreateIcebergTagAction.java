@@ -60,22 +60,14 @@ public class AutoCreateIcebergTagAction {
   }
 
   private boolean tagExist() {
-    if (tagConfig.getTriggerPeriod() == TagConfiguration.Period.DAILY) {
-      return findTagOfToday() != null;
-    } else {
-      throw new IllegalArgumentException(
-          "unsupported trigger period " + tagConfig.getTriggerPeriod());
-    }
-  }
-
-  private String findTagOfToday() {
     String name = generateTagName();
-    return table.refs().entrySet().stream()
+    String tag = table.refs().entrySet().stream()
         .filter(entry -> entry.getValue().isTag())
         .map(Map.Entry::getKey)
         .filter(name::equals)
         .findFirst()
         .orElse(null);
+    return tag != null;
   }
 
   private boolean createTag() {
@@ -115,13 +107,10 @@ public class AutoCreateIcebergTagAction {
   }
 
   private String generateTagName() {
-    if (tagConfig.getTriggerPeriod() == TagConfiguration.Period.DAILY) {
-      String tagFormat = tagConfig.getTagFormat();
-      return now.minusDays(1).format(DateTimeFormatter.ofPattern(tagFormat));
-    } else {
-      throw new IllegalArgumentException(
-          "unsupported trigger period " + tagConfig.getTriggerPeriod());
-    }
+    LocalDateTime tagTime =
+        tagConfig.getTriggerPeriod().normalizeToTagTime(getTagTriggerTime(), tagConfig.getTriggerOffsetMinutes());
+    String tagFormat = tagConfig.getTagFormat();
+    return tagTime.format(DateTimeFormatter.ofPattern(tagFormat));
   }
 
   private long getTagTriggerTime() {
