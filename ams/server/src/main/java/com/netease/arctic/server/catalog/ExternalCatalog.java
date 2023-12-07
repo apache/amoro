@@ -73,7 +73,14 @@ public class ExternalCatalog extends ServerCatalog {
 
   @Override
   public List<String> listDatabases() {
-    return doAs(() -> unifiedCatalog.listDatabases());
+    return doAs(
+        () ->
+            unifiedCatalog.listDatabases().stream()
+                .filter(
+                    database ->
+                        tableFilterPattern == null
+                            || tableFilterPattern.matcher(database + ".table_name").matches())
+                .collect(Collectors.toList()));
   }
 
   @Override
