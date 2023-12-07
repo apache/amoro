@@ -50,7 +50,7 @@ public class SparkUnifiedSessionCatalog<T extends TableCatalog & SupportsNamespa
 
   @Override
   protected boolean isManagedTable(Table table) {
-    return tableFormats.values().stream().anyMatch(f -> f.isSessionTable(table));
+    return tableFormats.values().stream().anyMatch(f -> f.isFormatOf(table));
   }
 
   @Override

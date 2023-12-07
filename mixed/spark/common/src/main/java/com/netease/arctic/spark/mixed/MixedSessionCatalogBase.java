@@ -19,6 +19,7 @@
 package com.netease.arctic.spark.mixed;
 
 import com.netease.arctic.spark.SessionCatalogBase;
+import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
@@ -26,6 +27,8 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 public abstract class MixedSessionCatalogBase<T extends TableCatalog & SupportsNamespaces>
     extends SessionCatalogBase<T> {
+
+  public static final String LEGACY_MIXED_FORMAT_PROVIDER = "arctic";
 
   /**
    * build mixed-format catalog instance.
@@ -43,7 +46,15 @@ public abstract class MixedSessionCatalogBase<T extends TableCatalog & SupportsN
   }
 
   @Override
+  protected boolean isManagedSubTable(Identifier ident) {
+    if (ident.namespace().length != 2) {
+      return false;
+    }
+    return MixedTableStoreType.from(ident.name()) != null;
+  }
+
+  @Override
   protected boolean isManagedProvider(String provider) {
-    return "arctic".equalsIgnoreCase(provider);
+    return LEGACY_MIXED_FORMAT_PROVIDER.equalsIgnoreCase(provider);
   }
 }

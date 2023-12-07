@@ -29,7 +29,7 @@ public class MixedHiveSparkFormat extends MixedIcebergSparkFormat {
   }
 
   @Override
-  public boolean isSessionTable(Table table) {
+  public boolean isFormatOf(Table table) {
     return MixedFormatSparkUtil.isMixedHiveTable(table);
   }
 }

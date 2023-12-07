@@ -86,8 +86,10 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
       registerCatalogName = name;
       if (CatalogManager.SESSION_CATALOG_NAME().equalsIgnoreCase(registerCatalogName)) {
         LOG.warn(
-            "catalog name is not exists in catalog uri, using spark catalog as register catalog name, but "
-                + "current name is spark session catalog name.");
+            "Catalog name is not exists in catalog uri, using spark catalog as register catalog name, but "
+                + "current name "
+                + registerCatalogName
+                + " is spark session catalog name.");
       }
     }
     this.name = name;
@@ -284,7 +286,7 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
     }
     if (StringUtils.isBlank(impl)) {
       throw new IllegalStateException(
-          "failed to initialize spark TableCatalog for format:" + format.name());
+          "Failed to initialize spark TableCatalog for format:" + format.name());
     }
     ServiceLoader<FormatCatalogFactory> loader = ServiceLoader.load(FormatCatalogFactory.class);
     FormatCatalogFactory formatCatalogFactory = null;
@@ -295,7 +297,7 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
       }
     }
     if (formatCatalogFactory == null) {
-      throw new IllegalStateException("can't find format factory for: " + format.name());
+      throw new IllegalStateException("Can't find format factory for: " + format.name());
     }
 
     try {

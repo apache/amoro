@@ -45,7 +45,7 @@ public class IcebergSparkFormat implements SparkTableFormat {
   }
 
   @Override
-  public boolean isSessionTable(Table table) {
+  public boolean isFormatOf(Table table) {
     String icebergTableType = table.properties().get(BaseMetastoreTableOperations.TABLE_TYPE_PROP);
     return BaseMetastoreTableOperations.ICEBERG_TABLE_TYPE_VALUE.equalsIgnoreCase(icebergTableType)
         && !MixedFormatSparkUtil.isMixedFormatTable(table);

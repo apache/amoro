@@ -44,7 +44,6 @@ public class HiveCatalogTestHelper implements CatalogTestHelper {
   private final Configuration hiveConf;
 
   public static CatalogTestHelper build(Configuration hiveConf, TableFormat... formats) {
-    // Preconditions.checkArgument(formats.length == 1, "Cannot support multiple table formats");
     return new HiveCatalogTestHelper(formats[0], hiveConf);
   }
 

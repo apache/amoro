@@ -33,5 +33,5 @@ public interface SparkTableFormat {
   }
 
   /** Check the table loaded by spark session catalog is match the table format. */
-  boolean isSessionTable(Table table);
+  boolean isFormatOf(Table table);
 }

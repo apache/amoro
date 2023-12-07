@@ -27,6 +27,7 @@ import org.apache.spark.sql.connector.catalog.TableCatalog;
 
 import java.util.List;
 
+/** Common util class of spark engines. */
 public class SparkUtil {
 
   /**

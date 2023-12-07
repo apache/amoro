@@ -23,8 +23,8 @@ import com.netease.arctic.spark.SparkTableFormat;
 import org.apache.spark.sql.connector.catalog.Table;
 
 public class PaimonSparkFormat implements SparkTableFormat {
-  final String KEY_STORAGE_HANDLER = "storage_handler";
-  final String PAIMON_STORAGE_HANDLER = "org.apache.paimon.hive.PaimonStorageHandler";
+  static final String KEY_STORAGE_HANDLER = "storage_handler";
+  static final String PAIMON_STORAGE_HANDLER = "org.apache.paimon.hive.PaimonStorageHandler";
 
   @Override
   public TableFormat format() {
@@ -32,7 +32,7 @@ public class PaimonSparkFormat implements SparkTableFormat {
   }
 
   @Override
-  public boolean isSessionTable(Table table) {
+  public boolean isFormatOf(Table table) {
     return table.properties().containsKey(KEY_STORAGE_HANDLER)
         && PAIMON_STORAGE_HANDLER.equalsIgnoreCase(table.properties().get(KEY_STORAGE_HANDLER));
   }

@@ -24,22 +24,21 @@ import com.netease.arctic.hive.utils.CompatibleHivePropertyUtil;
 import com.netease.arctic.table.TableProperties;
 import org.apache.spark.sql.connector.catalog.Table;
 
+/** Util class for mixed format in spark engines. */
 public class MixedFormatSparkUtil {
 
   /**
-   * Check a Spark Table is a mixed-format table.
+   * Check if a Spark Table is a mixed-format table.
    *
    * @param table the spark table loaded from session catalog
    * @return is it a mixed format table.
    */
   public static boolean isMixedFormatTable(Table table) {
-    boolean isMixedHive = isMixedHiveTable(table);
-    boolean isMixedIceberg = isMixedIcebergTable(table);
-    return isMixedHive || isMixedIceberg;
+    return isMixedHiveTable(table) || isMixedIcebergTable(table);
   }
 
   /**
-   * Check a Spark Table is a Mixed Iceberg table
+   * Check if a Spark Table is a Mixed Iceberg table
    *
    * @param table the spark table loaded from session catalog
    * @return Is it a mixed Iceberg table.
@@ -53,7 +52,7 @@ public class MixedFormatSparkUtil {
   }
 
   /**
-   * Check a Spark Table is a Mixed Hive table
+   * Check if a Spark Table is a Mixed Hive table
    *
    * @param table the spark table loaded from session catalog
    * @return Is it a mixed Hive table.

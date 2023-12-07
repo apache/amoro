@@ -91,11 +91,11 @@ public abstract class SessionCatalogBase<T extends TableCatalog & SupportsNamesp
   }
 
   /**
-   * build mixed-format catalog instance.
+   * Build the target data-source table catalog instance.
    *
    * @param name spark catalog name
    * @param options catalog initialize options
-   * @return mixed format spark catalog.
+   * @return data-source table catalog instance.
    */
   protected abstract TableCatalog buildTargetCatalog(String name, CaseInsensitiveStringMap options);
 

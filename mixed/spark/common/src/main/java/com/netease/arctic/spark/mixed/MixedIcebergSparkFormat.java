@@ -35,7 +35,7 @@ public class MixedIcebergSparkFormat implements SparkTableFormat {
   }
 
   @Override
-  public boolean isSessionTable(Table table) {
+  public boolean isFormatOf(Table table) {
     return MixedFormatSparkUtil.isMixedIcebergTable(table);
   }
 }
