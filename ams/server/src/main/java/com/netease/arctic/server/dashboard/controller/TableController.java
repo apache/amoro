@@ -72,6 +72,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -525,8 +526,18 @@ public class TableController {
                     new TableMeta(
                         idWithFormat.getIdentifier().getTableName(),
                         formatToType.apply(idWithFormat.getTableFormat())))
+            // Sort by table format and table name
+            .sorted(
+                (table1, table2) -> {
+                  if (Objects.equals(table1.getType(), table2.getType())) {
+                    return table1.getName().compareTo(table2.getName());
+                  } else {
+                    return table1.getType().compareTo(table2.getType());
+                  }
+                })
             .collect(Collectors.toList());
 
+    // Hive tables have lower priority, append to the end
     if (serverCatalog instanceof MixedHiveCatalogImpl) {
       List<String> hiveTables =
           HiveTableUtil.getAllHiveTables(
@@ -535,6 +546,7 @@ public class TableController {
           tables.stream().map(TableMeta::getName).collect(Collectors.toSet());
       hiveTables.stream()
           .filter(e -> !arcticTables.contains(e))
+          .sorted(String::compareTo)
           .forEach(e -> tables.add(new TableMeta(e, TableMeta.TableType.HIVE.toString())));
     }
 
