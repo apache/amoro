@@ -23,7 +23,7 @@ import com.netease.arctic.server.optimizing.TaskRuntime;
 import java.util.Map;
 
 public class OptimizingTaskInfo {
-  public static String RETRY_COUNT_PROP = "retry.count";
+  public static String RETRY_COUNT_PROP = "retry-count";
   public static String OPTIMIZER_TOKEN_PROP = "optimizer.token";
   public static String OPTIMIZER_THREAD_ID_PROP = "optimizer.thread-id";
   private Long tableId;
