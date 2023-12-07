@@ -18,12 +18,17 @@
 
 package com.netease.arctic.server.catalog;
 
+import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.formats.AmoroCatalogTestHelper;
 import com.netease.arctic.formats.IcebergHadoopCatalogTestHelper;
+import com.netease.arctic.formats.MixedIcebergHadoopCatalogTestHelper;
 import com.netease.arctic.formats.PaimonHadoopCatalogTestHelper;
 import com.netease.arctic.hive.formats.IcebergHiveCatalogTestHelper;
+import com.netease.arctic.hive.formats.MixedIcebergHiveCatalogTestHelper;
 import com.netease.arctic.hive.formats.PaimonHiveCatalogTestHelper;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,7 +51,9 @@ public class TestServerCatalog extends TableCatalogTestBase {
       PaimonHadoopCatalogTestHelper.defaultHelper(),
       PaimonHiveCatalogTestHelper.defaultHelper(),
       IcebergHadoopCatalogTestHelper.defaultHelper(),
-      IcebergHiveCatalogTestHelper.defaultHelper()
+      IcebergHiveCatalogTestHelper.defaultHelper(),
+      MixedIcebergHadoopCatalogTestHelper.defaultHelper(),
+      MixedIcebergHiveCatalogTestHelper.defaultHelper()
     };
   }
 
@@ -58,33 +65,76 @@ public class TestServerCatalog extends TableCatalogTestBase {
 
   @Test
   public void listDatabases() {
-    Assert.assertTrue(getExternalCatalog().listDatabases().contains(testDatabaseName));
+    Assert.assertTrue(getServerCatalog().listDatabases().contains(testDatabaseName));
   }
 
   @Test
   public void dataBaseExists() {
-    Assert.assertTrue(getExternalCatalog().exist(testDatabaseName));
+    Assert.assertTrue(getServerCatalog().exist(testDatabaseName));
   }
 
   @Test
   public void tableExists() {
-    Assert.assertTrue(getExternalCatalog().exist(testDatabaseName, testTableName));
+    Assert.assertTrue(getServerCatalog().exist(testDatabaseName, testTableName));
   }
 
   @Test
   public void listTables() {
-    Assert.assertEquals(1, getExternalCatalog().listTables(testDatabaseName).size());
+    Assert.assertEquals(1, getServerCatalog().listTables(testDatabaseName).size());
     Assert.assertEquals(
         testTableName,
-        getExternalCatalog().listTables(testDatabaseName).get(0).getIdentifier().getTableName());
+        getServerCatalog().listTables(testDatabaseName).get(0).getIdentifier().getTableName());
+  }
+
+  @Test
+  public void listTablesWithTableFilter() throws Exception {
+    // Table filter only affects ExternalCatalog
+    Assume.assumeTrue(getServerCatalog() instanceof ExternalCatalog);
+    String dbWithFilter = "db_with_filter";
+    String tableWithFilter1 = "test_table1";
+    String tableWithFilter2 = "test_table2";
+    getAmoroCatalog().createDatabase(dbWithFilter);
+    getAmoroCatalogTestHelper().createTable(dbWithFilter, tableWithFilter1);
+    getAmoroCatalogTestHelper().createTable(dbWithFilter, tableWithFilter2);
+    // without table filter
+    Assert.assertEquals(2, getServerCatalog().listTables(dbWithFilter).size());
+
+    CatalogMeta metadata = getServerCatalog().getMetadata();
+    metadata
+        .getCatalogProperties()
+        .put(CatalogMetaProperties.KEY_TABLE_FILTER, dbWithFilter + "." + tableWithFilter1);
+    getServerCatalog().updateMetadata(metadata);
+    Assert.assertEquals(1, getServerCatalog().listTables(dbWithFilter).size());
+    Assert.assertEquals(
+        tableWithFilter1,
+        getServerCatalog().listTables(dbWithFilter).get(0).getIdentifier().getTableName());
+
+    CatalogMeta metadata2 = getServerCatalog().getMetadata();
+    metadata
+        .getCatalogProperties()
+        .put(CatalogMetaProperties.KEY_TABLE_FILTER, dbWithFilter + "\\." + ".+");
+    getServerCatalog().updateMetadata(metadata2);
+    Assert.assertEquals(2, getServerCatalog().listTables(dbWithFilter).size());
+
+    CatalogMeta metadata3 = getServerCatalog().getMetadata();
+    metadata
+        .getCatalogProperties()
+        .put(CatalogMetaProperties.KEY_TABLE_FILTER, testDatabaseName + "\\." + ".+");
+    getServerCatalog().updateMetadata(metadata3);
+    Assert.assertEquals(1, getServerCatalog().listTables(testDatabaseName).size());
+    Assert.assertTrue(getServerCatalog().listTables(dbWithFilter).isEmpty());
+
+    CatalogMeta metadata4 = getServerCatalog().getMetadata();
+    metadata.getCatalogProperties().remove(CatalogMetaProperties.KEY_TABLE_FILTER);
+    getServerCatalog().updateMetadata(metadata4);
   }
 
   @Test
   public void loadTable() {
-    Assert.assertNotNull(getExternalCatalog().loadTable(testDatabaseName, testTableName));
+    Assert.assertNotNull(getServerCatalog().loadTable(testDatabaseName, testTableName));
   }
 
-  private ServerCatalog getExternalCatalog() {
+  private ServerCatalog getServerCatalog() {
     return tableService().getServerCatalog(getAmoroCatalogTestHelper().catalogName());
   }
 }
