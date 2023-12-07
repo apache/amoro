@@ -22,10 +22,12 @@ import static com.netease.arctic.utils.ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUE
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
 import com.netease.arctic.IcebergFileEntry;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.FileNameRules;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.table.DataExpirationConfig;
 import com.netease.arctic.server.table.TableRuntime;
+import com.netease.arctic.server.utils.HiveLocationUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.ChangeTable;
@@ -48,6 +50,7 @@ import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.relocated.com.google.common.primitives.Longs;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
@@ -63,6 +66,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.stream.Collectors;
 
@@ -426,9 +430,24 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   public class BaseTableMaintainer extends IcebergTableMaintainer {
+    private final Set<String> hiveFiles = Sets.newHashSet();
 
     public BaseTableMaintainer(UnkeyedTable unkeyedTable) {
       super(unkeyedTable);
+      if (unkeyedTable.format() == TableFormat.MIXED_HIVE) {
+        hiveFiles.addAll(HiveLocationUtil.getHiveLocation(arcticTable));
+      }
+    }
+
+    @Override
+    public Set<String> orphanFileCleanNeedToExcludeFiles() {
+      Set<String> baseFiles = super.orphanFileCleanNeedToExcludeFiles();
+      return Sets.union(baseFiles, hiveFiles);
+    }
+
+    @Override
+    protected Set<String> expireSnapshotNeedToExcludeFiles() {
+      return hiveFiles;
     }
 
     @Override

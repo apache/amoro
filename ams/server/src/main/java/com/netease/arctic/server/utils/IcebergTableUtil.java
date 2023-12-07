@@ -179,12 +179,12 @@ public class IcebergTableUtil {
     Set<String> allManifestFiles = Sets.newConcurrentHashSet();
     TableScan scan = allManifest.newScan().select("path");
 
-    try (CloseableIterable<FileScanTask> tasks = scan.planFiles()) {
-      CloseableIterable<CloseableIterable<StructLike>> transform =
-          CloseableIterable.transform(tasks, task -> task.asDataTask().rows());
+    CloseableIterable<FileScanTask> tasks = scan.planFiles();
+    CloseableIterable<CloseableIterable<StructLike>> transform =
+        CloseableIterable.transform(tasks, task -> task.asDataTask().rows());
 
-      ParallelIterable<StructLike> parallelIterable =
-          new ParallelIterable<>(transform, manifestIoExecutor);
+    try (ParallelIterable<StructLike> parallelIterable =
+        new ParallelIterable<>(transform, manifestIoExecutor)) {
       parallelIterable.forEach(
           r -> {
             String path = r.get(0, String.class);
