@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink.table;
 
-import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.AMORO_IDENTIFIER;
+import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.UNIFIED_IDENTIFIER;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.TABLE_FORMAT;
 
 import com.netease.arctic.ams.api.TableFormat;
@@ -97,7 +97,7 @@ public class AmoroDynamicTableFactory
 
   @Override
   public String factoryIdentifier() {
-    return AMORO_IDENTIFIER;
+    return UNIFIED_IDENTIFIER;
   }
 
   @Override

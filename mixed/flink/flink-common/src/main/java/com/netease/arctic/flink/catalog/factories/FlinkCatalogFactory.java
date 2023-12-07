@@ -43,7 +43,7 @@ public class FlinkCatalogFactory implements CatalogFactory {
 
   @Override
   public String factoryIdentifier() {
-    return ArcticCatalogFactoryOptions.AMORO_IDENTIFIER;
+    return ArcticCatalogFactoryOptions.UNIFIED_IDENTIFIER;
   }
 
   @Override
