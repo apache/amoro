@@ -61,12 +61,13 @@ public class AutoCreateIcebergTagAction {
 
   private boolean tagExist() {
     String name = generateTagName();
-    String tag = table.refs().entrySet().stream()
-        .filter(entry -> entry.getValue().isTag())
-        .map(Map.Entry::getKey)
-        .filter(name::equals)
-        .findFirst()
-        .orElse(null);
+    String tag =
+        table.refs().entrySet().stream()
+            .filter(entry -> entry.getValue().isTag())
+            .map(Map.Entry::getKey)
+            .filter(name::equals)
+            .findFirst()
+            .orElse(null);
     return tag != null;
   }
 
@@ -108,7 +109,9 @@ public class AutoCreateIcebergTagAction {
 
   private String generateTagName() {
     LocalDateTime tagTime =
-        tagConfig.getTriggerPeriod().normalizeToTagTime(getTagTriggerTime(), tagConfig.getTriggerOffsetMinutes());
+        tagConfig
+            .getTriggerPeriod()
+            .normalizeToTagTime(getTagTriggerTime(), tagConfig.getTriggerOffsetMinutes());
     String tagFormat = tagConfig.getTagFormat();
     return tagTime.format(DateTimeFormatter.ofPattern(tagFormat));
   }

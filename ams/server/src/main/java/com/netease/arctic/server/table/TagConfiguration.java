@@ -22,6 +22,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Objects;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
+
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -29,7 +31,6 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Map;
-import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 /** Configuration for auto creating tags. */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -56,11 +57,9 @@ public class TagConfiguration {
 
       @Override
       public LocalDateTime normalizeToTagTime(long triggerTime, int triggerOffsetMinutes) {
-        LocalDateTime localDateTime =
-            LocalDateTime.ofInstant(Instant.ofEpochMilli(triggerTime), ZoneId.systemDefault())
-                .minus(triggerOffsetMinutes, ChronoUnit.MINUTES)
-                .minus(1, ChronoUnit.DAYS);
-        return localDateTime;
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(triggerTime), ZoneId.systemDefault())
+            .minus(triggerOffsetMinutes, ChronoUnit.MINUTES)
+            .minus(1, ChronoUnit.DAYS);
       }
     },
     HOURLY("hourly") {
