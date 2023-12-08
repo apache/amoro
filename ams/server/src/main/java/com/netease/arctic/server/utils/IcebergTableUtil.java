@@ -46,8 +46,6 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.Predicate;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
-import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.apache.iceberg.util.ParallelIterable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,16 +54,11 @@ import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class IcebergTableUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(IcebergTableUtil.class);
-  private static final ExecutorService manifestIoExecutor =
-      Executors.newCachedThreadPool(
-          new ThreadFactoryBuilder().setDaemon(true).setNameFormat("table-manifest-io-%d").build());
 
   public static long getSnapshotId(Table table, boolean refresh) {
     Snapshot currentSnapshot = getSnapshot(table, refresh);
@@ -183,9 +176,8 @@ public class IcebergTableUtil {
     CloseableIterable<CloseableIterable<StructLike>> transform =
         CloseableIterable.transform(tasks, task -> task.asDataTask().rows());
 
-    try (ParallelIterable<StructLike> parallelIterable =
-        new ParallelIterable<>(transform, manifestIoExecutor)) {
-      parallelIterable.forEach(
+    try (CloseableIterable<StructLike> rows = CloseableIterable.concat(transform)) {
+      rows.forEach(
           r -> {
             String path = r.get(0, String.class);
             allManifestFiles.add(path);

@@ -29,6 +29,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -44,6 +45,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -77,23 +79,43 @@ public class TestIcebergTableUtil {
     HadoopCatalog catalog = new HadoopCatalog(new Configuration(), warehouse.getAbsolutePath());
     Table table = tableProvider.apply(catalog);
 
+    // prepare snapshots
     List<Record> records =
-        IntStream.of(100)
+        IntStream.of(1, 100)
             .boxed()
             .map(i -> MixedDataTestHelpers.createRecord(schema, i, UUID.randomUUID().toString()))
             .collect(Collectors.toList());
     for (Record r : records) {
       IcebergDataTestHelpers.append(table, Lists.newArrayList(r));
     }
-
+    // expected manifest files
     Set<String> expectManifestFiles =
         Lists.newArrayList(table.snapshots()).stream()
             .flatMap(snapshot -> snapshot.allManifests(table.io()).stream())
             .map(ManifestFile::path)
             .collect(Collectors.toSet());
 
-    Set<String> actualManifestFiles = IcebergTableUtil.getAllManifestFiles(table);
+    // reload table
+    TableIdentifier identifier = TableIdentifier.parse(table.name());
+    identifier = TableIdentifier.of("db", identifier.name());
+    Table reloadTable = catalog.loadTable(identifier);
+
+    // get all manifest path by util method. assert result is right.
+    Set<String> actualManifestFiles = IcebergTableUtil.getAllManifestFiles(reloadTable);
     Assertions.assertEquals(expectManifestFiles, actualManifestFiles);
+
+    // Verify that the tested method does not trigger the snapshot's cache logic.
+    List<Snapshot> snapshots = Lists.newArrayList(reloadTable.snapshots());
+    for (Snapshot snapshot : snapshots) {
+      try {
+        Field allManifests = snapshot.getClass().getDeclaredField("allManifests");
+        allManifests.setAccessible(true);
+        Object value = allManifests.get(snapshot);
+        Assertions.assertNull(value);
+      } catch (NoSuchFieldException | IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 
   private static Table newIcebergTable(Catalog catalog) {
