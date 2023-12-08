@@ -67,6 +67,9 @@ public class OptimizingConfig {
   // base.hive.refresh-interval
   private long hiveRefreshInterval;
 
+  // self-optimizing.min-plan-interval
+  private long minPlanInterval;
+
   public OptimizingConfig() {}
 
   public boolean isEnabled() {
@@ -85,6 +88,15 @@ public class OptimizingConfig {
   public OptimizingConfig setTargetQuota(double targetQuota) {
     this.targetQuota = targetQuota;
     return this;
+  }
+
+  public OptimizingConfig setMinPlanInterval(long minPlanInterval) {
+    this.minPlanInterval = minPlanInterval;
+    return this;
+  }
+
+  public long getMinPlanInterval() {
+    return minPlanInterval;
   }
 
   public String getOptimizerGroup() {
@@ -388,6 +400,11 @@ public class OptimizingConfig {
             PropertyUtil.propertyAsLong(
                 properties,
                 HiveTableProperties.REFRESH_HIVE_INTERVAL,
-                HiveTableProperties.REFRESH_HIVE_INTERVAL_DEFAULT));
+                HiveTableProperties.REFRESH_HIVE_INTERVAL_DEFAULT))
+        .setMinPlanInterval(
+            PropertyUtil.propertyAsLong(
+                properties,
+                TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL,
+                TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT));
   }
 }

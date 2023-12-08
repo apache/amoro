@@ -19,6 +19,7 @@
 package com.netease.arctic.server.optimizing.maintainer;
 
 import static com.netease.arctic.server.optimizing.maintainer.IcebergTableMaintainer.FLINK_MAX_COMMITTED_CHECKPOINT_ID;
+import static com.netease.arctic.utils.ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST;
 
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.TableTestHelper;
@@ -132,7 +133,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   private void writeOptimizedSequence(
       KeyedTable testKeyedTable, StructLikeMap<Long> optimizedSequence) {
     BaseTable baseTable = testKeyedTable.baseTable();
-    baseTable.newAppend().set(ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true").commit();
+    baseTable.newAppend().set(BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true").commit();
     Snapshot snapshot = baseTable.currentSnapshot();
     StatisticsFile statisticsFile =
         StatisticsFileUtil.writerBuilder(baseTable)
@@ -253,7 +254,47 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     Assert.assertEquals(4, Iterables.size(table.snapshots()));
 
-    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(table);
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(getArcticTable());
+    tableMaintainer.expireSnapshots(tableRuntime);
+
+    Assert.assertEquals(2, Iterables.size(table.snapshots()));
+    List<Snapshot> expectedSnapshots = new ArrayList<>();
+    expectedSnapshots.add(checkpointTime2Snapshot);
+    expectedSnapshots.add(lastSnapshot);
+    Assert.assertTrue(
+        Iterators.elementsEqual(expectedSnapshots.iterator(), table.snapshots().iterator()));
+  }
+
+  @Test
+  public void testNotExpireOptimizedSequenceCommit4All() {
+    Assume.assumeTrue(isKeyedTable());
+    BaseTable table = getArcticTable().asKeyedTable().baseTable();
+    writeAndCommitBaseStore(table);
+
+    AppendFiles appendFiles = table.newAppend();
+    appendFiles.set(BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
+    appendFiles.commit();
+
+    AppendFiles appendFiles2 = table.newAppend();
+    appendFiles2.set(BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST, "true");
+    appendFiles2.commit();
+    Snapshot checkpointTime2Snapshot = table.currentSnapshot();
+
+    writeAndCommitBaseStore(table);
+    Snapshot lastSnapshot = table.currentSnapshot();
+
+    table.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
+    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
+    Mockito.when(tableRuntime.getTableIdentifier())
+        .thenReturn(
+            ServerTableIdentifier.of(AmsUtil.toTableIdentifier(table.id()), getTestFormat()));
+    Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.IDLE);
+    Mockito.when(tableRuntime.getTableConfiguration())
+        .thenReturn(TableConfiguration.parseConfig(table.properties()));
+
+    Assert.assertEquals(4, Iterables.size(table.snapshots()));
+
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(getArcticTable());
     tableMaintainer.expireSnapshots(tableRuntime);
 
     Assert.assertEquals(2, Iterables.size(table.snapshots()));
