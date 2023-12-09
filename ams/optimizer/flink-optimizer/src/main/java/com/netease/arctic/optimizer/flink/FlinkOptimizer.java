@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 public class FlinkOptimizer {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkOptimizer.class);
 
-  private static final String JOB_NAME = "arctic-flink-optimizer";
+  private static final String JOB_NAME = "amoro-flink-optimizer";
 
   public static void main(String[] args) throws CmdLineException {
     StreamExecutionEnvironment env =

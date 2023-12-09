@@ -29,7 +29,7 @@ public class AbstractOptimizerOperator implements Serializable {
     this.config = config;
   }
 
-  protected <T> T callAms(AmsCallOperation<T> operation) throws TException {
+  public <T> T callAms(AmsCallOperation<T> operation) throws TException {
     while (isStarted()) {
       try {
         return operation.call(OptimizingClientPools.getClient(config.getAmsUrl()));
@@ -68,8 +68,7 @@ public class AbstractOptimizerOperator implements Serializable {
     return false;
   }
 
-  protected <T> T callAuthenticatedAms(AmsAuthenticatedCallOperation<T> operation)
-      throws TException {
+  public <T> T callAuthenticatedAms(AmsAuthenticatedCallOperation<T> operation) throws TException {
     while (isStarted()) {
       if (tokenIsReady()) {
         String token = getToken();
@@ -145,11 +144,11 @@ public class AbstractOptimizerOperator implements Serializable {
     }
   }
 
-  interface AmsCallOperation<T> {
+  public interface AmsCallOperation<T> {
     T call(OptimizingService.Iface client) throws TException;
   }
 
-  interface AmsAuthenticatedCallOperation<T> {
+  public interface AmsAuthenticatedCallOperation<T> {
     T call(OptimizingService.Iface client, String token) throws TException;
   }
 }
