@@ -1,22 +1,38 @@
 <template>
   <div class="table-partitons">
-    <a-table
-      rowKey="partiton"
-      :columns="columns"
-      :data-source="dataSource"
-      :pagination="pagination"
-      v-if="!hasBreadcrumb && hasPartition"
-      @change="change"
-      :loading="loading"
-    >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.dataIndex === 'partition'">
-          <a-button type="link" @click="toggleBreadcrumb(record)">
-            {{ record.partition }}
-          </a-button>
+    <template v-if="!hasBreadcrumb && hasPartition">
+      <div class="filter-wrap">
+        <a-input-search
+          v-model:value="searchKey"
+          :placeholder="$t('fileSearchPlaceholder')"
+          @search="(val) => handleSearch(val)"
+          style="width: 350px"
+        >
+          <template #prefix>
+            <SearchOutlined />
+          </template>
+          <template #suffix v-if="searchKey">
+            <CloseCircleOutlined @click="handleSearch('')" class="input-clear-icon" />
+          </template>
+        </a-input-search>
+      </div>
+      <a-table
+        rowKey="partiton"
+        :columns="columns"
+        :data-source="dataSource"
+        :pagination="pagination"
+        @change="change"
+        :loading="loading"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'partition'">
+            <a-button type="link" @click="toggleBreadcrumb(record)">
+              {{ record.partition }}
+            </a-button>
+          </template>
         </template>
-      </template>
-    </a-table>
+      </a-table>
+    </template>
     <template v-else>
       <a-breadcrumb separator=">" v-if="hasPartition">
         <a-breadcrumb-item @click="toggleBreadcrumb" class="text-active">All</a-breadcrumb-item>
@@ -52,6 +68,7 @@ import { BreadcrumbPartitionItem, IColumns, PartitionItem } from '@/types/common
 import { getPartitionFiles, getPartitionTable } from '@/services/table.service'
 import { useRoute } from 'vue-router'
 import { dateFormat } from '@/utils'
+import { SearchOutlined, CloseCircleOutlined } from '@ant-design/icons-vue'
 
 const hasBreadcrumb = ref<boolean>(false)
 const { t } = useI18n()
@@ -87,6 +104,12 @@ const sourceData = reactive({
   table: '',
   ...query
 })
+const searchKey = ref<string>('')
+
+async function handleSearch(val: string) {
+  searchKey.value = val
+  await getTableInfo()
+}
 
 async function getTableInfo() {
   try {
@@ -94,6 +117,7 @@ async function getTableInfo() {
     dataSource.length = 0
     const result = await getPartitionTable({
       ...sourceData,
+      filter: searchKey.value,
       page: pagination.current,
       pageSize: pagination.pageSize
     })
@@ -189,6 +213,16 @@ onMounted(() => {
   .text-active {
     color: #1890ff;
     cursor: pointer;
+  }
+
+  .filter-wrap {
+    margin-bottom: 12px;
+    .input-clear-icon {
+      font-size: 12px;
+    }
+  }
+  :deep(.ant-input-group-addon) {
+    display: none;
   }
 }
 </style>
