@@ -214,7 +214,7 @@ public class DashboardServer {
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
                 tableController::getTableBranches);
             post(
-                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/cancel-process/{processId}",
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/cancel",
                 tableController::cancelOptimizingProcess);
 
             // catalog controller
@@ -304,7 +304,7 @@ public class DashboardServer {
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes",
                 tableController::getOptimizingProcesses);
             post(
-                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/cancel-process/{processId}",
+                "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/cancel",
                 tableController::cancelOptimizingProcess);
             get(
                 "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/tasks",

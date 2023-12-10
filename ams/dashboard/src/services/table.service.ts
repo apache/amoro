@@ -179,7 +179,7 @@ export function getUpgradeProperties() {
 export function cancelOptimizingProcess(
   { catalog = '' as string, db = '' as string, table = '' as string, processId = '' as string }
 ) {
-  return request.post(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/cancel-process/${processId}`)
+  return request.post(`ams/v1/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/cancel`)
 }
 
 export function getBranches(params: { db: string, table: string }) {
