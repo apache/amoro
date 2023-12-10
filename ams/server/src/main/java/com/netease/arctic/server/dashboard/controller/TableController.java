@@ -68,7 +68,15 @@ import org.apache.iceberg.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -99,7 +107,7 @@ public class TableController {
             0,
             new ThreadFactoryBuilder()
                 .setDaemon(false)
-                .setNameFormat("ASYNC-HIVE-TABLE-UPGRADE-%d")
+                .setNameFormat("async-hive-table-upgrade-%d")
                 .build());
   }
 
@@ -419,12 +427,18 @@ public class TableController {
     String catalog = ctx.pathParam("catalog");
     String database = ctx.pathParam("db");
     String table = ctx.pathParam("table");
+    String filter = ctx.queryParamAsClass("filter", String.class).getOrDefault("");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
     List<PartitionBaseInfo> partitionBaseInfos =
         tableDescriptor.getTablePartition(
             TableIdentifier.of(catalog, database, table).buildTableIdentifier());
+    partitionBaseInfos =
+        partitionBaseInfos.stream()
+            .filter(e -> e.getPartition().contains(filter))
+            .sorted(Comparator.comparing(PartitionBaseInfo::getPartition).reversed())
+            .collect(Collectors.toList());
     int offset = (page - 1) * pageSize;
     PageResult<PartitionBaseInfo> amsPageResult =
         PageResult.of(partitionBaseInfos, offset, pageSize);
@@ -442,12 +456,13 @@ public class TableController {
     String table = ctx.pathParam("table");
     String partition = ctx.pathParam("partition");
 
+    Integer specId = ctx.queryParamAsClass("specId", Integer.class).getOrDefault(0);
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
     List<PartitionFileBaseInfo> partitionFileBaseInfos =
         tableDescriptor.getTableFile(
-            TableIdentifier.of(catalog, db, table).buildTableIdentifier(), partition);
+            TableIdentifier.of(catalog, db, table).buildTableIdentifier(), partition, specId);
     int offset = (page - 1) * pageSize;
     PageResult<PartitionFileBaseInfo> amsPageResult =
         PageResult.of(partitionFileBaseInfos, offset, pageSize);
@@ -513,8 +528,18 @@ public class TableController {
                     new TableMeta(
                         idWithFormat.getIdentifier().getTableName(),
                         formatToType.apply(idWithFormat.getTableFormat())))
+            // Sort by table format and table name
+            .sorted(
+                (table1, table2) -> {
+                  if (Objects.equals(table1.getType(), table2.getType())) {
+                    return table1.getName().compareTo(table2.getName());
+                  } else {
+                    return table1.getType().compareTo(table2.getType());
+                  }
+                })
             .collect(Collectors.toList());
 
+    // Hive tables have lower priority, append to the end
     if (serverCatalog instanceof MixedHiveCatalogImpl) {
       List<String> hiveTables =
           HiveTableUtil.getAllHiveTables(
@@ -523,6 +548,7 @@ public class TableController {
           tables.stream().map(TableMeta::getName).collect(Collectors.toSet());
       hiveTables.stream()
           .filter(e -> !arcticTables.contains(e))
+          .sorted(String::compareTo)
           .forEach(e -> tables.add(new TableMeta(e, TableMeta.TableType.HIVE.toString())));
     }
 
@@ -634,6 +660,9 @@ public class TableController {
   }
 
   private void putMainBranchFirst(List<TagOrBranchInfo> branchInfos) {
+    if (branchInfos.size() <= 1) {
+      return;
+    }
     branchInfos.stream()
         .filter(branch -> SnapshotRef.MAIN_BRANCH.equals(branch.getName()))
         .findFirst()

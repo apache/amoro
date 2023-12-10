@@ -94,13 +94,14 @@ export function getPartitionFiles(
     db: string,
     table: string,
     partition: string | null,
+    specId: number,
     page: number
     pageSize: number
     token: string
   }
 ) {
-  const { catalog, db, table, partition, page, pageSize, token } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions/${partition}/files`, { params: { page, pageSize, token } })
+  const { catalog, db, table, partition, specId, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions/${partition}/files`, { params: { specId, page, pageSize, token } })
 }
 // get snapshots
 export function getSnapshots(
@@ -179,15 +180,15 @@ export function getUpgradeProperties() {
 export function cancelOptimizingProcess(
   { catalog = '' as string, db = '' as string, table = '' as string, processId = '' as string }
 ) {
-  return request.post(`ams/v1/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/cancel`)
+  return request.post(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes/${processId}/cancel`)
 }
 
-export function getBranches(params: { db: string, table: string }) {
-  const { db, table } = params
-  return request.get(`/ams/v1/tables/catalogs/iceberg/dbs/${db}/tables/${table}/branches`)
+export function getBranches(params: { catalog: string, db: string, table: string }) {
+  const { catalog, db, table } = params
+  return request.get(`/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/branches`)
 }
 
-export function getTags(params: { db: string, table: string }) {
-  const { db, table } = params
-  return request.get(`/ams/v1/tables/catalogs/iceberg/dbs/${db}/tables/${table}/tags`)
+export function getTags(params: { catalog: string, db: string, table: string }) {
+  const { catalog, db, table } = params
+  return request.get(`/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/tags`)
 }

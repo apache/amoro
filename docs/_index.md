@@ -17,7 +17,7 @@ The architecture of Amoro is as follows:
 The core components of Amoro include:
 
 * AMS: Amoro Management Service provides Lakehouse management features, like self-optimizing, data expiration, etc.
-  It also provides a unified catalog service for all computing engines, which can also be combined with existing metadata services.
+  It also provides a unified catalog service for all compute engines, which can also be combined with existing metadata services.
 * Plugins: Amoro provides a wide selection of external plugins to meet different scenarios.
     * Optimizers: The self-optimizing execution engine plugin asynchronously performs merging, sorting, deduplication,
       layout optimization, and other operations on all type table format tables.
