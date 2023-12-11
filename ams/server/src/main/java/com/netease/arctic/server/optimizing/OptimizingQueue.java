@@ -381,10 +381,10 @@ public class OptimizingQueue extends PersistentBase {
     public void close() {
       lock.lock();
       try {
-        persistProcessCompleted(false);
-        clearProcess(this);
         this.status = OptimizingProcess.Status.CLOSED;
         this.endTime = System.currentTimeMillis();
+        persistProcessCompleted(false);
+        clearProcess(this);
       } finally {
         lock.unlock();
       }
