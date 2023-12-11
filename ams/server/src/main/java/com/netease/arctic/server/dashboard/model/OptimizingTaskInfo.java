@@ -18,6 +18,8 @@
 
 package com.netease.arctic.server.dashboard.model;
 
+import static com.netease.arctic.server.ArcticServiceConstants.INVALID_TIME;
+
 import com.netease.arctic.server.optimizing.TaskRuntime;
 
 import java.util.Map;
@@ -70,7 +72,11 @@ public class OptimizingTaskInfo {
     this.threadId = threadId;
     this.startTime = startTime;
     this.endTime = endTime;
-    this.costTime = costTime;
+    if (costTime == 0 && startTime != INVALID_TIME && endTime == INVALID_TIME) {
+      this.costTime = System.currentTimeMillis() - startTime;
+    } else {
+      this.costTime = costTime;
+    }
     this.failReason = failReason;
     this.inputFiles = inputFiles;
     this.outputFiles = outputFiles;
