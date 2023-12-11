@@ -29,6 +29,10 @@ export class LoginService {
     return request.post('ams/v1/login', params, { returnCode: true })
   }
 
+  public logout() {
+    return request.post('ams/v1/logout', { handleError: false, returnCode: true })
+  }
+
   /**
    * Check the login interface
    */

@@ -24,7 +24,7 @@ source ${CURRENT_DIR}/load-config.sh
 
 
 
-JAVA_OPTS="-server -Xloggc:$AMORO_LOG_DIR/gc.log -XX:+IgnoreUnrecognizedVMOptions -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=10M \
+JAVA_OPTS="-server -Xloggc:$AMORO_LOG_DIR/gc.log -XX:+PrintGCDateStamps -XX:+IgnoreUnrecognizedVMOptions -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=10M \
 -Xms${JVM_XMS_CONFIG}m -Xmx${JVM_XMX_CONFIG}m \
 -verbose:gc -XX:+PrintGCDetails \
 -Dcom.sun.management.jmxremote \
