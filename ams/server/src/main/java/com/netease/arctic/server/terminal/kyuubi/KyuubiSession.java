@@ -49,7 +49,6 @@ public class KyuubiSession implements TerminalSession {
 
   @Override
   public ResultSet executeStatement(String catalog, String statement) {
-    String useCatalog;
     if (currentCatalog == null || !currentCatalog.equalsIgnoreCase(catalog)) {
       if (TerminalSession.canUseSparkSessionCatalog(sessionConf, catalog)) {
         logs.add(
