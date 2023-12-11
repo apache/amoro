@@ -229,6 +229,8 @@ async function cancel() {
         cancelDisabled.value = true
         refresh()
       } catch (error) {
+      } finally {
+        loading.value = false
       }
     }
   })
