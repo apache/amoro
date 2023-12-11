@@ -222,19 +222,22 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   protected Instant expireBaseOnRule(
       DataExpirationConfig expirationConfig, Types.NestedField field) {
-    if (expirationConfig.getBaseOnRule() == DataExpirationConfig.BaseOnRule.CURRENT_TIME) {
-      return Instant.now().atZone(getDefaultZoneId(field)).toInstant();
-    } else {
-      Snapshot snapshot = IcebergTableUtil.getSnapshot(getTable(), false);
-      long currentSnapshotTs =
-          Optional.ofNullable(snapshot).isPresent()
-              ? snapshot.timestampMillis()
-              : System.currentTimeMillis();
-      // snapshot timestamp should be UTC
-      return Instant.ofEpochMilli(
-              min(fetchLatestNonOptimizedSnapshotTime(getTable()), currentSnapshotTs))
-          .atZone(ZoneOffset.UTC)
-          .toInstant();
+    switch (expirationConfig.getBaseOnRule()) {
+      case CURRENT_TIME:
+        return Instant.now().atZone(getDefaultZoneId(field)).toInstant();
+      case LAST_COMMIT_TIME:
+        Snapshot snapshot = IcebergTableUtil.getSnapshot(getTable(), false);
+        long lastCommitTimestamp = fetchLatestNonOptimizedSnapshotTime(getTable());
+        // if the table does not exist any non-optimized snapshots, should skip the expiration
+        if (lastCommitTimestamp != Long.MAX_VALUE) {
+          // snapshot timestamp should be UTC
+          return Instant.ofEpochMilli(lastCommitTimestamp)
+              .atZone(ZoneOffset.UTC)
+              .toInstant();
+        } else {
+          return Instant.MIN;
+        }
+      default: return Instant.MIN;
     }
   }
 
@@ -247,6 +250,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
    */
   @VisibleForTesting
   public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
+    if (instant.equals(Instant.MIN)) {
+      return;
+    }
+
     long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
     LOG.info(
         "Expiring data older than {} in table {} ",

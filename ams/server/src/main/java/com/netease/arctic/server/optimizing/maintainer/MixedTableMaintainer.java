@@ -175,6 +175,10 @@ public class MixedTableMaintainer implements TableMaintainer {
 
   @VisibleForTesting
   public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
+    if (instant.equals(Instant.MIN)) {
+      return;
+    }
+
     long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
     Types.NestedField field = arcticTable.schema().findField(expirationConfig.getExpirationField());
     LOG.info(
