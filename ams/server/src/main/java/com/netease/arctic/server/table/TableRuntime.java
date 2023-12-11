@@ -89,6 +89,7 @@ public class TableRuntime extends StatedPersistentBase {
   @StateField private volatile TableConfiguration tableConfiguration;
   @StateField private volatile long processId;
   @StateField private volatile OptimizingEvaluator.PendingInput pendingInput;
+  private volatile long lastPlanTime;
 
   private final ReentrantLock blockerLock = new ReentrantLock();
 
@@ -429,6 +430,14 @@ public class TableRuntime extends StatedPersistentBase {
 
   public long getNewestProcessId() {
     return processId;
+  }
+
+  public long getLastPlanTime() {
+    return lastPlanTime;
+  }
+
+  public void setLastPlanTime(long lastPlanTime) {
+    this.lastPlanTime = lastPlanTime;
   }
 
   @Override

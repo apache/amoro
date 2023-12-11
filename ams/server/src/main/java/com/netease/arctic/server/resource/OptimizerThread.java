@@ -18,54 +18,45 @@
 
 package com.netease.arctic.server.resource;
 
-import com.netease.arctic.ams.api.OptimizerRegisterInfo;
-import com.netease.arctic.ams.api.resource.Resource;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
-import java.util.UUID;
+import java.util.Objects;
 
-public class OptimizerInstance extends Resource {
+public class OptimizerThread {
+  private final int threadId;
+  private final OptimizerInstance optimizer;
 
-  private String token;
-  private long startTime;
-  private long touchTime;
-
-  public OptimizerInstance() {}
-
-  public OptimizerInstance(OptimizerRegisterInfo registerInfo, String containerName) {
-    super(registerInfo, containerName);
-    this.token = UUID.randomUUID().toString();
-    this.touchTime = System.currentTimeMillis();
-    this.startTime = registerInfo.getStartTime();
-  }
-
-  public OptimizerInstance touch() {
-    touchTime = System.currentTimeMillis();
-    return this;
+  protected OptimizerThread(int threadId, OptimizerInstance optimizer) {
+    this.threadId = threadId;
+    this.optimizer = optimizer;
   }
 
   public String getToken() {
-    return token;
+    return optimizer.getToken();
   }
 
-  public long getTouchTime() {
-    return touchTime;
+  public int getThreadId() {
+    return threadId;
   }
 
-  public long getStartTime() {
-    return startTime;
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    OptimizerThread that = (OptimizerThread) o;
+    return threadId == that.threadId && Objects.equals(optimizer, that.optimizer);
   }
 
-  public OptimizerThread getThread(int threadId) {
-    return new OptimizerThread(threadId, this);
+  @Override
+  public int hashCode() {
+    return Objects.hash(threadId, optimizer);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("token", token)
-        .add("startTime", startTime)
-        .add("touchTime", touchTime)
+        .add("threadId", threadId)
+        .add("optimizer", optimizer)
         .toString();
   }
 }
