@@ -64,6 +64,7 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
         io,
         table.schema(),
         table.spec(),
+        table.asUnkeyedTable().encryption(),
         table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
         false,
         IdentityPartitionConverters::convertConstant,

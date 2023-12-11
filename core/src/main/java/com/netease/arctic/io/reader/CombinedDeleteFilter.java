@@ -172,7 +172,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     return filterEqDelete;
   }
 
-  protected abstract InputFile getInputFile(String location);
+  protected abstract InputFile getInputFile(ContentFile<?> contentFile);
 
   protected abstract ArcticFileIO getArcticFileIo();
 
@@ -387,7 +387,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
   }
 
   private CloseableIterable<Record> openFile(ContentFile<?> contentFile, Schema deleteSchema) {
-    InputFile input = getInputFile(contentFile.path().toString());
+    InputFile input = getInputFile(contentFile);
     switch (contentFile.format()) {
       case AVRO:
         return Avro.read(input)

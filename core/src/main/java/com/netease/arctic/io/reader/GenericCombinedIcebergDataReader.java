@@ -23,6 +23,7 @@ import com.netease.arctic.optimizing.OptimizingDataReader;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
 import com.netease.arctic.utils.map.StructLikeCollections;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.PartitionSpec;
@@ -32,6 +33,9 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.avro.DataReader;
 import org.apache.iceberg.data.orc.GenericOrcReader;
 import org.apache.iceberg.data.parquet.GenericParquetReaders;
+import org.apache.iceberg.encryption.EncryptedFiles;
+import org.apache.iceberg.encryption.EncryptedInputFile;
+import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.parquet.Parquet;
@@ -61,6 +65,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected final String nameMapping;
   protected final boolean caseSensitive;
   protected final ArcticFileIO fileIO;
+  protected final EncryptionManager encryptionManager;
   protected final BiFunction<Type, Object, Object> convertConstant;
   protected final boolean reuseContainer;
   protected CombinedDeleteFilter<Record> deleteFilter;
@@ -73,6 +78,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
       ArcticFileIO fileIO,
       Schema tableSchema,
       PartitionSpec spec,
+      EncryptionManager encryptionManager,
       String nameMapping,
       boolean caseSensitive,
       BiFunction<Type, Object, Object> convertConstant,
@@ -81,6 +87,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
       RewriteFilesInput rewriteFilesInput) {
     this.tableSchema = tableSchema;
     this.spec = spec;
+    this.encryptionManager = encryptionManager;
     this.nameMapping = nameMapping;
     this.caseSensitive = caseSensitive;
     this.fileIO = fileIO;
@@ -164,7 +171,10 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
 
   private CloseableIterable<Record> openFile(
       DataFile dataFile, Schema fileProjection, Map<Integer, ?> idToConstant) {
-    InputFile input = fileIO.newInputFile(dataFile.path().toString());
+    EncryptedInputFile encryptedInput =
+        EncryptedFiles.encryptedInput(
+            fileIO.newInputFile(dataFile.path().toString()), dataFile.keyMetadata());
+    InputFile input = encryptionManager.decrypt(encryptedInput);
 
     switch (dataFile.format()) {
       case AVRO:
@@ -296,8 +306,11 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     }
 
     @Override
-    protected InputFile getInputFile(String location) {
-      return fileIO.newInputFile(location);
+    protected InputFile getInputFile(ContentFile<?> contentFile) {
+      EncryptedInputFile encryptedInput =
+          EncryptedFiles.encryptedInput(
+              fileIO.newInputFile(contentFile.path().toString()), contentFile.keyMetadata());
+      return encryptionManager.decrypt(encryptedInput);
     }
 
     @Override
