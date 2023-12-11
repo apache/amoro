@@ -376,7 +376,8 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
     return tableRuntime;
   }
 
-  private ServerTableIdentifier getServerTableIdentifier(TableIdentifier id) {
+  @Override
+  public ServerTableIdentifier getServerTableIdentifier(TableIdentifier id) {
     return getAs(
         TableMetaMapper.class,
         mapper ->
