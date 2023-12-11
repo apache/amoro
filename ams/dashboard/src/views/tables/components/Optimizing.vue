@@ -226,9 +226,8 @@ async function cancel() {
           ...sourceData,
           processId: processId.value
         })
-        console.log(result)
         cancelDisabled.value = true
-        getTableInfo()
+        refresh()
       } catch (error) {
       }
     }
@@ -254,13 +253,13 @@ function change({ current = 1, pageSize = 25 } = pagination) {
 
 function refresh() {
   if (hasBreadcrumb.value) {
-    getBreadcrumbTable()
+    getOptimizingTasks()
   } else {
     getTableInfo()
   }
 }
 
-async function getBreadcrumbTable() {
+async function getOptimizingTasks() {
   try {
     breadcrumbDataSource.length = 0
     loading.value = true
@@ -295,7 +294,7 @@ function toggleBreadcrumb(rowProcessId: number, status: string) {
   hasBreadcrumb.value = !hasBreadcrumb.value
   if (hasBreadcrumb.value) {
     breadcrumbPagination.current = 1
-    getBreadcrumbTable()
+    getOptimizingTasks()
   }
 }
 
