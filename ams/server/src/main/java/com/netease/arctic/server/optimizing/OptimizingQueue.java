@@ -423,7 +423,6 @@ public class OptimizingQueue extends PersistentBase {
             this.status = OptimizingProcess.Status.FAILED;
             this.endTime = taskRuntime.getEndTime();
             persistProcessCompleted(false);
-            System.out.println("/n/n #### task status {}" + taskRuntime.getStatus());
           }
         }
       } catch (Exception e) {
