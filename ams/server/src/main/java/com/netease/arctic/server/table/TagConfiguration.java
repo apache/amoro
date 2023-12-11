@@ -51,8 +51,8 @@ public class TagConfiguration {
     DAILY("daily") {
       @Override
       public long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
-        long windowSize = 60 * 60 * 24 * 1000L;
-        return getPeriodEndWithOffset(checkTime, triggerOffsetMinutes, windowSize);
+        long periodSize = 60 * 60 * 24 * 1000L;
+        return getPeriodEndWithOffset(checkTime, triggerOffsetMinutes, periodSize);
       }
 
       @Override
@@ -65,8 +65,8 @@ public class TagConfiguration {
     HOURLY("hourly") {
       @Override
       public long getTagTriggerTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
-        long windowSize = 60 * 60 * 1000L;
-        return getPeriodEndWithOffset(checkTime, triggerOffsetMinutes, windowSize);
+        long periodSize = 60 * 60 * 1000L;
+        return getPeriodEndWithOffset(checkTime, triggerOffsetMinutes, periodSize);
       }
 
       @Override
@@ -98,15 +98,22 @@ public class TagConfiguration {
 
     public abstract LocalDateTime normalizeToTagTime(long triggerTime, int triggerOffsetMinutes);
 
+    /**
+     * calculate the end of the period adjusted with a specified offset.
+     *
+     * <p>The calculation takes into account the provided period size and offset. It first
+     * calculates an offset timestamp, which is essentially `checkTime` minus offset minutes. Then
+     * it calculates the delta of the division of that timestamp by the period size, then applies
+     * the delta to the original timestamp to get the period start timestamp.
+     */
     protected Long getPeriodEndWithOffset(
-        LocalDateTime checkTime, int triggerOffsetMinutes, long windowSize) {
+        LocalDateTime checkTime, int triggerOffsetMinutes, long periodSize) {
       long timestamp = checkTime.atZone(ZoneOffset.UTC).toInstant().toEpochMilli();
       long offset = triggerOffsetMinutes * 60_000L;
-      final long remainder = (timestamp - offset) % windowSize;
-      // handle both positive and negative cases
+      final long remainder = (timestamp - offset) % periodSize;
       long windowStartTimestamp;
       if (remainder < 0) {
-        windowStartTimestamp = timestamp - (remainder + windowSize);
+        windowStartTimestamp = timestamp - (remainder + periodSize);
       } else {
         windowStartTimestamp = timestamp - remainder;
       }
@@ -123,11 +130,6 @@ public class TagConfiguration {
             tableProperties,
             TableProperties.ENABLE_AUTO_CREATE_TAG,
             TableProperties.ENABLE_AUTO_CREATE_TAG_DEFAULT));
-    tagConfig.setTagFormat(
-        CompatiblePropertyUtil.propertyAsString(
-            tableProperties,
-            TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT,
-            TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT_DEFAULT));
     tagConfig.setTriggerPeriod(
         Period.valueOf(
             CompatiblePropertyUtil.propertyAsString(
@@ -135,6 +137,22 @@ public class TagConfiguration {
                     TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD,
                     TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD_DEFAULT)
                 .toUpperCase(Locale.ROOT)));
+
+    String defaultFormat;
+    switch (tagConfig.getTriggerPeriod()) {
+      case DAILY:
+        defaultFormat = TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT_DAILY_DEFAULT;
+        break;
+      case HOURLY:
+        defaultFormat = TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT_HOURLY_DEFAULT;
+        break;
+      default:
+        throw new IllegalArgumentException(
+            "Unsupported trigger period: " + tagConfig.getTriggerPeriod());
+    }
+    tagConfig.setTagFormat(
+        CompatiblePropertyUtil.propertyAsString(
+            tableProperties, TableProperties.AUTO_CREATE_TAG_DAILY_FORMAT, defaultFormat));
     tagConfig.setTriggerOffsetMinutes(
         CompatiblePropertyUtil.propertyAsInt(
             tableProperties,

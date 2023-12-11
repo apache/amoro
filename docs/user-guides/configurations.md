@@ -69,13 +69,13 @@ Data-cleaning configurations are applicable to both Iceberg Format and Mixed str
 Tags configurations are applicable to Iceberg Format only now, and will be supported in Mixed Format
 soon.
 
-| Key                                         | Default       | Description                                                   |
-|---------------------------------------------|---------------|---------------------------------------------------------------|
-| tag.auto-create.enabled                     | false         | Enables automatically creating tags                           |
-| tag.auto-create.trigger.period              | daily         | Period of creating tags, support `daily`,`hourly` now        |
-| tag.auto-create.trigger.offset.minutes      | 0             | The minutes by which the tag is created after midnight (00:00) |
-| tag.auto-create.trigger.max-delay.minutes   | 60            | The maximum delay time for creating a tag                     |
-| tag.auto-create.daily.tag-format            | 'tag-'yyyyMMdd | The format of the name for daily tag                          |
+| Key                                         | Default                                          | Description                                                 |
+|---------------------------------------------|--------------------------------------------------|-------------------------------------------------------------|
+| tag.auto-create.enabled                     | false                                            | Enables automatically creating tags                         |
+| tag.auto-create.trigger.period              | daily                                            | Period of creating tags, support `daily`,`hourly` now       |
+| tag.auto-create.trigger.offset.minutes      | 0                                                | The minutes by which the tag is created after midnight (00:00) |
+| tag.auto-create.trigger.max-delay.minutes   | 60                                               | The maximum delay time for creating a tag                   |
+| tag.auto-create.daily.tag-format            | 'tag-'yyyyMMdd for daily and 'tag-'yyyyMMddHH for hourly periods | The format of the <br/>name for daily tag  <br>             |
 
 ## Mixed Format configurations
 

@@ -83,6 +83,30 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
   }
 
   @Test
+  public void testCreateHourlyTag() {
+    Table table = getArcticTable().asUnkeyedTable();
+    table
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .set(TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES, "0")
+        .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD, "hourly")
+        .commit();
+    table.newAppend().commit();
+    checkSnapshots(table, 1);
+    checkNoTag(table);
+
+    Snapshot snapshot = table.currentSnapshot();
+    LocalDateTime now = fromEpochMillis(snapshot.timestampMillis());
+    newAutoCreateIcebergTagAction(table, now).execute();
+    checkTagCount(table, 1);
+    checkTag(table, "tag-" + formatDateTime(now.minusHours(1)), snapshot);
+
+    // should not recreate tag
+    newAutoCreateIcebergTagAction(table, now).execute();
+    checkTagCount(table, 1);
+  }
+
+  @Test
   public void testCreateDailyOffsetTag() {
     Table table = getArcticTable().asUnkeyedTable();
     table
@@ -122,6 +146,42 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
   }
 
   @Test
+  public void testCreateHourlyOffsetTag() {
+    Table table = getArcticTable().asUnkeyedTable();
+    table
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .set(TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES, "0")
+        .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD, "hourly")
+        .commit();
+    table.newAppend().commit();
+    checkSnapshots(table, 1);
+    checkNoTag(table);
+
+    Snapshot snapshot = table.currentSnapshot();
+    LocalDateTime testDateTime = fromEpochMillis(snapshot.timestampMillis());
+    long offsetMinutesOfHour = getOffsetMinutesOfHour(snapshot.timestampMillis()) + 1;
+    table
+        .updateProperties()
+        .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES, offsetMinutesOfHour + "")
+        .commit();
+    newAutoCreateIcebergTagAction(table, testDateTime).execute();
+    checkTag(table, "tag-" + formatDateTime(testDateTime.minusHours(2)), snapshot);
+
+    offsetMinutesOfHour--;
+    table
+        .updateProperties()
+        .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES, offsetMinutesOfHour + "")
+        .commit();
+    newAutoCreateIcebergTagAction(table, testDateTime).execute();
+    checkTagCount(table, 2);
+    checkTag(table, "tag-" + formatDateTime(testDateTime.minusHours(1)), snapshot);
+
+    newAutoCreateIcebergTagAction(table, testDateTime).execute();
+    checkTagCount(table, 2);
+  }
+
+  @Test
   public void testNotCreateDelayDailyTag() {
     Table table = getArcticTable().asUnkeyedTable();
     table
@@ -145,6 +205,33 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
     newAutoCreateIcebergTagAction(table, now).execute();
     checkTagCount(table, 1);
     checkTag(table, "tag-" + formatDate(now.minusDays(1)), snapshot);
+  }
+
+  @Test
+  public void testNotCreateDelayHourlyTag() {
+    Table table = getArcticTable().asUnkeyedTable();
+    table
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD, "hourly")
+        .set(TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES, "60")
+        .commit();
+    table.newAppend().commit();
+    checkSnapshots(table, 1);
+    checkNoTag(table);
+
+    Snapshot snapshot = table.currentSnapshot();
+    LocalDateTime now = fromEpochMillis(snapshot.timestampMillis());
+    LocalDateTime lastHour = now.minusHours(1);
+
+    // should not create last hour tag
+    newAutoCreateIcebergTagAction(table, lastHour).execute();
+    checkNoTag(table);
+
+    // should create this hour tag
+    newAutoCreateIcebergTagAction(table, now).execute();
+    checkTagCount(table, 1);
+    checkTag(table, "tag-" + formatDateTime(now.minusHours(1)), snapshot);
   }
 
   @Test
@@ -226,12 +313,21 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
     return between.toMinutes();
   }
 
+  private long getOffsetMinutesOfHour(long millis) {
+    LocalDateTime now = fromEpochMillis(millis);
+    return now.getMinute();
+  }
+
   private LocalDateTime fromEpochMillis(long millis) {
     return LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault());
   }
 
   private String formatDate(LocalDateTime localDateTime) {
     return localDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+  }
+
+  private String formatDateTime(LocalDateTime localDateTime) {
+    return localDateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHH"));
   }
 
   private void checkNoTag(Table table) {

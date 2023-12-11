@@ -213,7 +213,8 @@ public class TableProperties {
   public static final int AUTO_CREATE_TAG_MAX_DELAY_MINUTES_DEFAULT = 60;
 
   public static final String AUTO_CREATE_TAG_DAILY_FORMAT = "tag.auto-create.daily.tag-format";
-  public static final String AUTO_CREATE_TAG_DAILY_FORMAT_DEFAULT = "'tag-'yyyyMMdd";
+  public static final String AUTO_CREATE_TAG_DAILY_FORMAT_DAILY_DEFAULT = "'tag-'yyyyMMdd";
+  public static final String AUTO_CREATE_TAG_DAILY_FORMAT_HOURLY_DEFAULT = "'tag-'yyyyMMddHH";
 
   /** table write related properties */
   public static final String FILE_FORMAT_PARQUET = "parquet";
