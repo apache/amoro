@@ -655,6 +655,8 @@ public class TableController {
         && Objects.equals(
             tableRuntime.getOptimizingProcess().getProcessId(), Long.parseLong(processId))) {
       tableRuntime.getOptimizingProcess().close();
+    } else {
+      throw new IllegalArgumentException("Can't cancel optimizing process " + processId);
     }
     ctx.json(OkResponse.ok());
   }
