@@ -136,6 +136,19 @@ public class IcebergTableMaintainer implements TableMaintainer {
     if (!tableConfiguration.isDeleteDanglingDeleteFilesEnabled()) {
       return;
     }
+
+    Snapshot currentSnapshot = table.currentSnapshot();
+    java.util.Optional<String> totalDeleteFiles =
+        java.util.Optional.ofNullable(
+            currentSnapshot.summary().get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
+    if (totalDeleteFiles.isPresent() && Long.parseLong(totalDeleteFiles.get()) > 0) {
+      // clear dangling delete files
+      cleanDanglingDeleteFiles();
+    } else {
+      LOG.debug(
+          "Table {} does not have any delete files, so there is no need to clean dangling delete file",
+          table.name());
+    }
   }
 
   @Override
