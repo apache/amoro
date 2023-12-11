@@ -17,9 +17,9 @@ import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MetricsSummary {
-  public static final String INPUT_DATA_FILES = "input-data-files";
-  public static final String INPUT_DATA_SIZE = "input-data-size";
-  public static final String INPUT_DATA_RECORDS = "input-data-records";
+  public static final String INPUT_DATA_FILES = "input-data-files(rewrite)";
+  public static final String INPUT_DATA_SIZE = "input-data-size(rewrite)";
+  public static final String INPUT_DATA_RECORDS = "input-data-records(rewrite)";
   public static final String INPUT_READ_ONLY_DATA_FILES = "input-data-files(read-only)";
   public static final String INPUT_READ_ONLY_DATA_SIZE = "input-data-size(read-only)";
   public static final String INPUT_READ_ONLY_DATA_RECORDS = "input-data-records(read-only)";
@@ -134,9 +134,9 @@ public class MetricsSummary {
 
   public Map<String, String> summaryAsMap(boolean humanReadable) {
     Map<String, String> summary = new LinkedHashMap<>();
-    putIfPositive(summary, INPUT_DATA_FILES, rewriteDataFileCnt);
-    putIfPositive(summary, INPUT_DATA_SIZE, rewriteDataSize, humanReadable);
-    putIfPositive(summary, INPUT_DATA_RECORDS, rewriteDataRecordCnt);
+    put(summary, INPUT_DATA_FILES, rewriteDataFileCnt);
+    put(summary, INPUT_DATA_SIZE, rewriteDataSize, humanReadable);
+    put(summary, INPUT_DATA_RECORDS, rewriteDataRecordCnt);
     putIfPositive(
         summary,
         INPUT_READ_ONLY_DATA_FILES,
@@ -153,9 +153,9 @@ public class MetricsSummary {
         Math.max(positionalDeleteSize, positionDeleteSize),
         humanReadable);
     putIfPositive(summary, INPUT_POS_DELETE_RECORDS, posDeleteRecordCnt);
-    putIfPositive(summary, OUTPUT_DATA_FILES, newDataFileCnt);
-    putIfPositive(summary, OUTPUT_DATA_SIZE, newDataSize, humanReadable);
-    putIfPositive(summary, OUTPUT_DATA_RECORDS, newDataRecordCnt);
+    put(summary, OUTPUT_DATA_FILES, newDataFileCnt);
+    put(summary, OUTPUT_DATA_SIZE, newDataSize, humanReadable);
+    put(summary, OUTPUT_DATA_RECORDS, newDataRecordCnt);
     putIfPositive(summary, OUTPUT_DELETE_FILES, newDeleteFileCnt);
     putIfPositive(summary, OUTPUT_DELETE_SIZE, newDeleteSize, humanReadable);
     putIfPositive(summary, OUTPUT_DELETE_RECORDS, newDeleteRecordCnt);
@@ -169,8 +169,16 @@ public class MetricsSummary {
   private void putIfPositive(
       Map<String, String> summary, String key, long value, boolean humanReadable) {
     if (value > 0) {
-      summary.put(key, humanReadable ? byteToXB(value) : String.valueOf(value));
+      put(summary, key, value, humanReadable);
     }
+  }
+
+  private void put(Map<String, String> summary, String key, long value) {
+    put(summary, key, value, false);
+  }
+
+  private void put(Map<String, String> summary, String key, long value, boolean humanReadable) {
+    summary.put(key, humanReadable ? byteToXB(value) : String.valueOf(value));
   }
 
   public FilesStatistics getInputFilesStatistics() {
