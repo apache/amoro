@@ -231,13 +231,12 @@ public class IcebergTableMaintainer implements TableMaintainer {
         // if the table does not exist any non-optimized snapshots, should skip the expiration
         if (lastCommitTimestamp != Long.MAX_VALUE) {
           // snapshot timestamp should be UTC
-          return Instant.ofEpochMilli(lastCommitTimestamp)
-              .atZone(ZoneOffset.UTC)
-              .toInstant();
+          return Instant.ofEpochMilli(lastCommitTimestamp).atZone(ZoneOffset.UTC).toInstant();
         } else {
           return Instant.MIN;
         }
-      default: return Instant.MIN;
+      default:
+        return Instant.MIN;
     }
   }
 
