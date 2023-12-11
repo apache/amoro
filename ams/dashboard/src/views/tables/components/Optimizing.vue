@@ -26,7 +26,7 @@
         </template>
         <template #bodyCell="{ record, column }">
           <template v-if="column.dataIndex === 'processId'">
-            <a-button type="link" @click="toggleBreadcrumb(record.processId)">
+            <a-button type="link" @click="toggleBreadcrumb(record.processId, record.status)">
               {{record.processId}}
             </a-button>
           </template>
@@ -50,10 +50,17 @@
       </a-table>
     </template>
     <template v-else>
-      <a-breadcrumb separator=">">
-        <a-breadcrumb-item @click="toggleBreadcrumb" class="text-active">All</a-breadcrumb-item>
-        <a-breadcrumb-item>{{ `${$t('processId')} ${processId}`}}</a-breadcrumb-item>
-      </a-breadcrumb>
+    <a-row>
+      <a-col :span="18">
+        <a-breadcrumb separator=">">
+          <a-breadcrumb-item @click="toggleBreadcrumb" class="text-active">All</a-breadcrumb-item>
+          <a-breadcrumb-item>{{ `${$t('processId')} ${processId}`}}</a-breadcrumb-item>
+        </a-breadcrumb>
+      </a-col>
+      <a-col :span="6">
+        <a-button type="primary" v-model:disabled="cancelDisabled" class="g-mb-16" @click="cancel" style="float: right">{{ t("cancelProcess") }}</a-button>
+      </a-col>
+    </a-row>
       <a-table
         rowKey="taskId"
         :columns="breadcrumbColumns"
@@ -107,7 +114,8 @@ import { onMounted, reactive, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'
 import { IColumns, BreadcrumbOptimizingItem } from '@/types/common.type'
-import { getOptimizingProcesses, getTasksByOptimizingProcessId } from '@/services/table.service'
+import { getOptimizingProcesses, getTasksByOptimizingProcessId, cancelOptimizingProcess } from '@/services/table.service'
+import { Modal, message } from 'ant-design-vue'
 import { useRoute } from 'vue-router'
 import { QuestionCircleOutlined } from '@ant-design/icons-vue'
 import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
@@ -160,6 +168,7 @@ const processId = ref<number>(0)
 const breadcrumbDataSource = reactive<BreadcrumbOptimizingItem[]>([])
 
 const loading = ref<boolean>(false)
+const cancelDisabled = ref(true)
 const pagination = reactive(usePagination())
 const breadcrumbPagination = reactive(usePagination())
 const route = useRoute()
@@ -195,13 +204,35 @@ async function getTableInfo() {
         duration: formatMS2Time(item.duration || '-'),
         inputFiles: `${bytesToSize(inputFiles.totalSize)} / ${inputFiles.fileCnt}`,
         outputFiles: `${bytesToSize(outputFiles.totalSize)} / ${outputFiles.fileCnt}`,
-        tasks: `${item.successTasks || '-'} / ${item.totalTasks || '-'}${item.runningTasks ? ` (${item.runningTasks} running)` : ''}`
+        tasks: `${item.successTasks || '0'} / ${item.totalTasks || '0'}${item.runningTasks ? ` (${item.runningTasks} running)` : ''}`
       }
     }))
   } catch (error) {
   } finally {
     loading.value = false
   }
+}
+
+async function cancel() {
+  Modal.confirm({
+    title: t('cancelOptimizingProcessOptModalTitle'),
+    content: '',
+    okText: '',
+    cancelText: '',
+    onOk: async() => {
+      try {
+        loading.value = true
+        const result = await cancelOptimizingProcess({
+          ...sourceData,
+          processId: processId.value
+        })
+        console.log(result)
+        cancelDisabled.value = true
+        getTableInfo()
+      } catch (error) {
+      }
+    }
+  })
 }
 
 function change({ current = 1, pageSize = 25 } = pagination) {
@@ -258,8 +289,9 @@ async function getBreadcrumbTable() {
   }
 }
 
-function toggleBreadcrumb(rowProcessId: number) {
+function toggleBreadcrumb(rowProcessId: number, status: string) {
   processId.value = rowProcessId
+  cancelDisabled.value = status !== 'RUNNING'
   hasBreadcrumb.value = !hasBreadcrumb.value
   if (hasBreadcrumb.value) {
     breadcrumbPagination.current = 1
