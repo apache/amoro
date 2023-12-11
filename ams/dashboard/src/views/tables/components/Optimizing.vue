@@ -6,9 +6,8 @@
         :columns="columns"
         :data-source="dataSource"
         :pagination="pagination"
-        @change="change"
         :loading="loading"
-
+        @change="change"
       >
         <template #headerCell="{ column }">
           <template v-if="column.dataIndex === 'tasks'">
@@ -180,7 +179,7 @@ const sourceData = reactive({
   ...query
 })
 
-async function getTableInfo() {
+async function refreshOptimizingProcesses() {
   try {
     loading.value = true
     dataSource.length = 0
@@ -236,7 +235,7 @@ async function cancel() {
   })
 }
 
-function change({ current = 1, pageSize = 25 } = pagination) {
+function change({ current = 1, pageSize = 25 }) {
   if (hasBreadcrumb.value) {
     breadcrumbPagination.current = current
     if (pageSize !== breadcrumbPagination.pageSize) {
@@ -255,13 +254,13 @@ function change({ current = 1, pageSize = 25 } = pagination) {
 
 function refresh() {
   if (hasBreadcrumb.value) {
-    getOptimizingTasks()
+    refreshOptimizingTasks()
   } else {
-    getTableInfo()
+    refreshOptimizingProcesses()
   }
 }
 
-async function getOptimizingTasks() {
+async function refreshOptimizingTasks() {
   try {
     breadcrumbDataSource.length = 0
     loading.value = true
@@ -296,13 +295,13 @@ function toggleBreadcrumb(rowProcessId: number, status: string) {
   hasBreadcrumb.value = !hasBreadcrumb.value
   if (hasBreadcrumb.value) {
     breadcrumbPagination.current = 1
-    getOptimizingTasks()
   }
+  refresh()
 }
 
 onMounted(() => {
   hasBreadcrumb.value = false
-  getTableInfo()
+  refresh()
 })
 
 </script>
