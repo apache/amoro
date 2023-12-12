@@ -117,6 +117,7 @@ public class TaskRuntime extends StatedPersistentBase {
           failReason = null;
           output = null;
           summary = new MetricsSummary(input);
+          // The cost time should not be reset since it is the total cost time of all runs.
           persistTaskRuntime(this);
         });
   }
