@@ -40,9 +40,7 @@ import org.apache.flink.table.catalog.CatalogPartitionSpec;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.table.catalog.exceptions.DatabaseAlreadyExistException;
-import org.apache.flink.table.catalog.exceptions.DatabaseNotEmptyException;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
-import org.apache.flink.table.catalog.exceptions.FunctionAlreadyExistException;
 import org.apache.flink.table.catalog.exceptions.FunctionNotExistException;
 import org.apache.flink.table.catalog.exceptions.PartitionAlreadyExistsException;
 import org.apache.flink.table.catalog.exceptions.PartitionNotExistException;
@@ -100,24 +98,23 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   }
 
   @Override
-  public List<String> listDatabases() throws CatalogException {
+  public List<String> listDatabases() {
     return unifiedCatalog.listDatabases();
   }
 
   @Override
-  public CatalogDatabase getDatabase(String databaseName)
-      throws DatabaseNotExistException, CatalogException {
+  public CatalogDatabase getDatabase(String databaseName) {
     throw new UnsupportedOperationException("Unsupported operation: get database.");
   }
 
   @Override
-  public boolean databaseExists(String databaseName) throws CatalogException {
+  public boolean databaseExists(String databaseName) {
     return unifiedCatalog.exist(databaseName);
   }
 
   @Override
   public void createDatabase(String name, CatalogDatabase database, boolean ignoreIfExists)
-      throws DatabaseAlreadyExistException, CatalogException {
+      throws DatabaseAlreadyExistException {
     try {
       unifiedCatalog.createDatabase(name);
     } catch (AlreadyExistsException e) {
@@ -129,7 +126,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
 
   @Override
   public void dropDatabase(String name, boolean ignoreIfNotExists, boolean cascade)
-      throws DatabaseNotExistException, DatabaseNotEmptyException, CatalogException {
+      throws DatabaseNotExistException {
     try {
       unifiedCatalog.dropDatabase(name);
     } catch (NoSuchDatabaseException e) {
@@ -140,22 +137,19 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   }
 
   @Override
-  public void alterDatabase(String name, CatalogDatabase newDatabase, boolean ignoreIfNotExists)
-      throws DatabaseNotExistException, CatalogException {
+  public void alterDatabase(String name, CatalogDatabase newDatabase, boolean ignoreIfNotExists) {
     throw new UnsupportedOperationException("Unsupported operation: alter database.");
   }
 
   @Override
-  public List<String> listTables(String databaseName)
-      throws DatabaseNotExistException, CatalogException {
+  public List<String> listTables(String databaseName) {
     return unifiedCatalog.listTables(databaseName).stream()
         .map(table -> table.getIdentifier().getTableName())
         .collect(java.util.stream.Collectors.toList());
   }
 
   @Override
-  public List<String> listViews(String databaseName)
-      throws DatabaseNotExistException, CatalogException {
+  public List<String> listViews(String databaseName) {
     return Collections.emptyList();
   }
 
@@ -177,7 +171,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   }
 
   @Override
-  public boolean tableExists(ObjectPath tablePath) throws CatalogException {
+  public boolean tableExists(ObjectPath tablePath) {
     try {
       return unifiedCatalog.exist(tablePath.getDatabaseName(), tablePath.getObjectName());
     } catch (NoSuchDatabaseException | NoSuchTableException e) {
@@ -187,7 +181,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
 
   @Override
   public void dropTable(ObjectPath tablePath, boolean ignoreIfNotExists)
-      throws TableNotExistException, CatalogException {
+      throws TableNotExistException {
     try {
       unifiedCatalog.dropTable(tablePath.getDatabaseName(), tablePath.getObjectName(), true);
     } catch (NoSuchTableException e) {
@@ -333,39 +327,34 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   }
 
   @Override
-  public List<String> listFunctions(String dbName)
-      throws DatabaseNotExistException, CatalogException {
+  public List<String> listFunctions(String dbName) {
     return Collections.emptyList();
   }
 
   @Override
-  public CatalogFunction getFunction(ObjectPath functionPath)
-      throws FunctionNotExistException, CatalogException {
+  public CatalogFunction getFunction(ObjectPath functionPath) throws FunctionNotExistException {
     throw new FunctionNotExistException(getName(), functionPath);
   }
 
   @Override
-  public boolean functionExists(ObjectPath functionPath) throws CatalogException {
+  public boolean functionExists(ObjectPath functionPath) {
     return false;
   }
 
   @Override
   public void createFunction(
-      ObjectPath functionPath, CatalogFunction function, boolean ignoreIfExists)
-      throws FunctionAlreadyExistException, DatabaseNotExistException, CatalogException {
+      ObjectPath functionPath, CatalogFunction function, boolean ignoreIfExists) {
     throw new UnsupportedOperationException("Unsupported operation: create function.");
   }
 
   @Override
   public void alterFunction(
-      ObjectPath functionPath, CatalogFunction newFunction, boolean ignoreIfNotExists)
-      throws FunctionNotExistException, CatalogException {
+      ObjectPath functionPath, CatalogFunction newFunction, boolean ignoreIfNotExists) {
     throw new UnsupportedOperationException("Unsupported operation: alter function.");
   }
 
   @Override
-  public void dropFunction(ObjectPath functionPath, boolean ignoreIfNotExists)
-      throws FunctionNotExistException, CatalogException {
+  public void dropFunction(ObjectPath functionPath, boolean ignoreIfNotExists) {
     throw new UnsupportedOperationException("Unsupported operation: drop function.");
   }
 
@@ -484,7 +473,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
     return Optional.of(availableCatalogs.get(format));
   }
 
-  private TableFormat getTableFormat(ObjectPath tablePath) throws CatalogException {
+  private TableFormat getTableFormat(ObjectPath tablePath) {
     AmoroTable<?> amoroTable =
         unifiedCatalog.loadTable(tablePath.getDatabaseName(), tablePath.getObjectName());
     return amoroTable.format();
