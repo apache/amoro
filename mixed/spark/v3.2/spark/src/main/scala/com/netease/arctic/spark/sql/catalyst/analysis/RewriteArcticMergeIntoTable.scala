@@ -20,7 +20,7 @@ package com.netease.arctic.spark.sql.catalyst.analysis
 
 import scala.collection.{mutable, Seq}
 
-import com.netease.arctic.spark.SparkSQLProperties
+import com.netease.arctic.spark.mixed.SparkSQLProperties
 import com.netease.arctic.spark.sql.ArcticExtensionUtils
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.isArcticRelation
 import com.netease.arctic.spark.sql.catalyst.plans
