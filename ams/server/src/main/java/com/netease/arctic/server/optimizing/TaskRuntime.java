@@ -110,7 +110,9 @@ public class TaskRuntime extends StatedPersistentBase {
     invokeConsisitency(
         () -> {
           statusMachine.accept(Status.PLANNED);
-          doAs(OptimizingMapper.class, mapper -> mapper.updateTaskStatus(this, Status.PLANNED));
+          startTime = ArcticServiceConstants.INVALID_TIME;
+          endTime = ArcticServiceConstants.INVALID_TIME;
+          persistTaskRuntime(this);
         });
   }
 
@@ -130,8 +132,6 @@ public class TaskRuntime extends StatedPersistentBase {
         () -> {
           validThread(thread);
           statusMachine.accept(Status.ACKED);
-          startTime = System.currentTimeMillis();
-          endTime = ArcticServiceConstants.INVALID_TIME;
           persistTaskRuntime(this);
         });
   }
@@ -140,7 +140,10 @@ public class TaskRuntime extends StatedPersistentBase {
     invokeConsisitency(
         () -> {
           if (statusMachine.tryAccepting(Status.CANCELED)) {
-            costTime = System.currentTimeMillis() - startTime;
+            endTime = System.currentTimeMillis();
+            if (startTime != ArcticServiceConstants.INVALID_TIME) {
+              costTime += endTime - startTime;
+            }
             persistTaskRuntime(this);
           }
         });
@@ -236,7 +239,8 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   public long getCostTime() {
-    if (endTime == ArcticServiceConstants.INVALID_TIME) {
+    if (startTime != ArcticServiceConstants.INVALID_TIME
+        && endTime == ArcticServiceConstants.INVALID_TIME) {
       long elapse = System.currentTimeMillis() - startTime;
       return Math.max(0, elapse) + costTime;
     }

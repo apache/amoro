@@ -207,12 +207,6 @@ public interface OptimizingMapper {
           + "task_id = #{taskRuntime.taskId.taskId}")
   void updateTaskRuntime(@Param("taskRuntime") TaskRuntime taskRuntime);
 
-  @Update(
-      "UPDATE task_runtime SET status = #{status} WHERE process_id = #{taskRuntime.taskId.processId} AND "
-          + "task_id = #{taskRuntime.taskId.taskId}")
-  void updateTaskStatus(
-      @Param("taskRuntime") TaskRuntime taskRuntime, @Param("status") TaskRuntime.Status status);
-
   @Delete("DELETE FROM task_runtime WHERE table_id = #{tableId} AND process_id < #{time}")
   void deleteTaskRuntimesBefore(@Param("tableId") long tableId, @Param("time") long time);
 
