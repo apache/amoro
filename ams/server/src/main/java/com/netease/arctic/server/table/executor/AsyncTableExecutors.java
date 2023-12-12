@@ -10,6 +10,7 @@ public class AsyncTableExecutors {
   private SnapshotsExpiringExecutor snapshotsExpiringExecutor;
   private TableRuntimeRefreshExecutor tableRefreshingExecutor;
   private OrphanFilesCleaningExecutor orphanFilesCleaningExecutor;
+  private DanglingDeleteFilesCleaningExecutor danglingDeleteFilesCleaningExecutor;
   private BlockerExpiringExecutor blockerExpiringExecutor;
   private OptimizingCommitExecutor optimizingCommitExecutor;
   private OptimizingExpiringExecutor optimizingExpiringExecutor;
@@ -31,6 +32,12 @@ public class AsyncTableExecutors {
       this.orphanFilesCleaningExecutor =
           new OrphanFilesCleaningExecutor(
               tableManager, conf.getInteger(ArcticManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT));
+    }
+    if (conf.getBoolean(ArcticManagementConf.CLEAN_DANGLING_DELETE_FILES_ENABLED)) {
+      this.danglingDeleteFilesCleaningExecutor =
+          new DanglingDeleteFilesCleaningExecutor(
+              tableManager,
+              conf.getInteger(ArcticManagementConf.CLEAN_DANGLING_DELETE_FILES_THREAD_COUNT));
     }
     this.optimizingCommitExecutor =
         new OptimizingCommitExecutor(
@@ -73,6 +80,10 @@ public class AsyncTableExecutors {
 
   public OrphanFilesCleaningExecutor getOrphanFilesCleaningExecutor() {
     return orphanFilesCleaningExecutor;
+  }
+
+  public DanglingDeleteFilesCleaningExecutor getDanglingDeleteFilesCleaningExecutor() {
+    return danglingDeleteFilesCleaningExecutor;
   }
 
   public BlockerExpiringExecutor getBlockerExpiringExecutor() {
