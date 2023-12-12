@@ -112,6 +112,11 @@ public class TaskRuntime extends StatedPersistentBase {
           statusMachine.accept(Status.PLANNED);
           startTime = ArcticServiceConstants.INVALID_TIME;
           endTime = ArcticServiceConstants.INVALID_TIME;
+          token = null;
+          threadId = -1;
+          failReason = null;
+          output = null;
+          summary = new MetricsSummary(input);
           persistTaskRuntime(this);
         });
   }
