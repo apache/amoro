@@ -50,7 +50,7 @@ public class TaskRuntime extends StatedPersistentBase {
   @StateField private int runTimes = 0;
   @StateField private long startTime = ArcticServiceConstants.INVALID_TIME;
   @StateField private long endTime = ArcticServiceConstants.INVALID_TIME;
-  @StateField private long costTime = 0;
+  @StateField private long costTime = ArcticServiceConstants.INVALID_TIME;
   @StateField private String token;
   @StateField private int threadId = -1;
   @StateField private String failReason;
@@ -239,11 +239,6 @@ public class TaskRuntime extends StatedPersistentBase {
   }
 
   public long getCostTime() {
-    if (startTime != ArcticServiceConstants.INVALID_TIME
-        && endTime == ArcticServiceConstants.INVALID_TIME) {
-      long elapse = System.currentTimeMillis() - startTime;
-      return Math.max(0, elapse) + costTime;
-    }
     return costTime;
   }
 
