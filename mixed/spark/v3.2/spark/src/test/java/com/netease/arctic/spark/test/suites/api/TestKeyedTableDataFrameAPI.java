@@ -19,7 +19,7 @@
 package com.netease.arctic.spark.test.suites.api;
 
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.spark.test.SparkTableTestBase;
+import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -42,7 +42,7 @@ import java.util.stream.Stream;
 
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
-public class TestKeyedTableDataFrameAPI extends SparkTableTestBase {
+public class TestKeyedTableDataFrameAPI extends MixedTableTestBase {
   final Schema schema =
       new Schema(
           Types.NestedField.of(1, false, "id", Types.IntegerType.get()),
