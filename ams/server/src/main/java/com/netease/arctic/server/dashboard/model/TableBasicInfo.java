@@ -26,11 +26,13 @@ public class TableBasicInfo {
   TableStatistics changeStatistics;
   TableStatistics baseStatistics;
 
-  public TableBasicInfo() {
-  }
+  public TableBasicInfo() {}
 
-  public TableBasicInfo(TableIdentifier tableIdentifier, TableStatistics tableStatistics,
-                        TableStatistics changeStatistics, TableStatistics baseStatistics) {
+  public TableBasicInfo(
+      TableIdentifier tableIdentifier,
+      TableStatistics tableStatistics,
+      TableStatistics changeStatistics,
+      TableStatistics baseStatistics) {
     this.tableIdentifier = tableIdentifier;
     this.tableStatistics = tableStatistics;
     this.changeStatistics = changeStatistics;
@@ -69,4 +71,3 @@ public class TableBasicInfo {
     this.baseStatistics = baseStatistics;
   }
 }
-

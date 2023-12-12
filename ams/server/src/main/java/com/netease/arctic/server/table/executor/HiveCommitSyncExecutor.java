@@ -45,7 +45,9 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
     } catch (Exception e) {
       LOG.error("{} hive sync failed", tableIdentifier, e);
     } finally {
-      LOG.info("{} hive sync finished, cost {}ms", tableIdentifier,
+      LOG.info(
+          "{} hive sync finished, cost {}ms",
+          tableIdentifier,
           System.currentTimeMillis() - startTime);
     }
   }

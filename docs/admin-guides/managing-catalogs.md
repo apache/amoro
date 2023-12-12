@@ -28,28 +28,35 @@ You can create a catalog in the AMS frontend:
 
 - name: catalog name, only numbers, letters, _, - , starting with letters are supported (lower case letters are recommended)
 - type: Internal Catalog or External Catalog
-- metastore: storage type for table metadata. Hive Metastore (for using HMS to store metadata), Hadoop (corresponding to iceberg's Hadoop catalog), Custom (other iceberg catalog implementations).
+- metastore: storage type for table metadata. Hive Metastore (for using HMS to store metadata), Hadoop (corresponding to iceberg's Hadoop catalog), Glue (for using AWS Glue to store metadata), Custom (other iceberg catalog implementations).
 - table format: Iceberg 、Mixed-Hive、Mixed  Iceberg. Currently, only Hive Metastore supports both Mixed-Hive and Iceberg format table, only internal catalog support both Mixed-Iceberg and Iceberg format table. All other metastore types only support Iceberg, currently a Metastore only supports one kind of TableFormat, in the future will support multiple
 - optimizer group: tables under the catalog will automatically perform self-optimizing within this group.
 
 ### Configure storage
+- Type: Hadoop or S3
 - core-site: the core-site.xml of the hadoop cluster
 - hdfs-site: the hdfs-site.xml of the hadoop cluster
 - hive-site: the hive-site.xml for Hive
+- Region: region of the S3 bucket
+- Endpoint: endpoint of the S3 bucket
 
 ### Configure authentication
-- auth - SIMPLE or KERBEROS
+- Type: SIMPLE, KERBEROS, AK/SK or CUSTOM
 - hadoop username: username of the hadoop cluster
 - keytab: keytab file
 - principal: principal of keytab
 - krb5: Kerberos krb5.conf configuration file
+- Access Key: Access Key for S3
+- Secret Key: Secret Access Key for S3
 
 ### Configure properties
 Common properties include:
-- warehouse: Warehouse **must be configured**, as it determines where our database and table files should be placed
-- catalog-impl: when the metastore is **Custom**, an additional catalog-impl must be defined, and the user must put the jar package for the custom catalog implementation into the **{ARCTIC_HOME}/lib** directory, **and the service must be restarted to take effect**
+- warehouse: Warehouse **must be configured** for ams/hadoop/glue catalog, as it determines where our database and table files should be placed
+- catalog-impl: when the metastore is **Custom**, an additional catalog-impl must be defined, and the user must put the jar package for the custom catalog implementation into the **{AMORO_HOME}/lib** directory, **and the service must be restarted to take effect**
 - table-filter: Configure a regular expression to filter tables in the catalog. The matching will be done in the format of `database.table`. For example, if it is set to `(A\.a)|(B\.b)`, it will ignore all tables except for table `a` in database `A` and table `b` in database `B`
-- table.*: If you want to add the same table configuration to all tables under a catalog, you can add `table.` before the configuration key to indicate that it is a table-level configuration. For example, `table.self-optimizing.group`
+
+### Configure table properties
+If you want to add the same table properties to all tables under a catalog, you can add these table properties here on the catalog level. If you also configure this property on the table level, the property on the table will take effect.
 
 We recommend users to create a Catalog following the guidelines below：
 

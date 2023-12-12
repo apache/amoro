@@ -29,10 +29,9 @@ public class CatalogRegisterInfo {
   Map<String, String> storageConfig;
   Map<String, String> authConfig;
   Map<String, String> properties;
+  Map<String, String> tableProperties;
 
-  public CatalogRegisterInfo() {
-
-  }
+  public CatalogRegisterInfo() {}
 
   public String getName() {
     return name;
@@ -88,5 +87,13 @@ public class CatalogRegisterInfo {
 
   public void setTableFormatList(List<String> tableFormatList) {
     this.tableFormatList = tableFormatList;
+  }
+
+  public Map<String, String> getTableProperties() {
+    return tableProperties;
+  }
+
+  public void setTableProperties(Map<String, String> tableProperties) {
+    this.tableProperties = tableProperties;
   }
 }

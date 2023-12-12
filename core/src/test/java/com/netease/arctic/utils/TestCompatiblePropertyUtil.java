@@ -32,19 +32,23 @@ public class TestCompatiblePropertyUtil {
     Map<String, String> properties = Maps.newHashMap();
     Assert.assertEquals(
         TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT,
-        CompatiblePropertyUtil.propertyAsBoolean(properties, TableProperties.ENABLE_SELF_OPTIMIZING,
+        CompatiblePropertyUtil.propertyAsBoolean(
+            properties,
+            TableProperties.ENABLE_SELF_OPTIMIZING,
             TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
 
     properties.put(TableProperties.ENABLE_SELF_OPTIMIZING, "false");
-    Assert.assertEquals(
-        false,
-        CompatiblePropertyUtil.propertyAsBoolean(properties, TableProperties.ENABLE_SELF_OPTIMIZING,
+    Assert.assertFalse(
+        CompatiblePropertyUtil.propertyAsBoolean(
+            properties,
+            TableProperties.ENABLE_SELF_OPTIMIZING,
             TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
 
     properties.put(TableProperties.ENABLE_OPTIMIZE, "true");
-    Assert.assertEquals(
-        false,
-        CompatiblePropertyUtil.propertyAsBoolean(properties, TableProperties.ENABLE_SELF_OPTIMIZING,
+    Assert.assertFalse(
+        CompatiblePropertyUtil.propertyAsBoolean(
+            properties,
+            TableProperties.ENABLE_SELF_OPTIMIZING,
             TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
   }
 
@@ -52,9 +56,10 @@ public class TestCompatiblePropertyUtil {
   public void testGetLegacyProperty() {
     Map<String, String> properties = Maps.newHashMap();
     properties.put(TableProperties.ENABLE_OPTIMIZE, "false");
-    Assert.assertEquals(
-        false,
-        CompatiblePropertyUtil.propertyAsBoolean(properties, TableProperties.ENABLE_SELF_OPTIMIZING,
+    Assert.assertFalse(
+        CompatiblePropertyUtil.propertyAsBoolean(
+            properties,
+            TableProperties.ENABLE_SELF_OPTIMIZING,
             TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
   }
 }

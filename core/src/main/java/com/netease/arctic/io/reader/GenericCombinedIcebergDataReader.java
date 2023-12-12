@@ -18,14 +18,11 @@
 
 package com.netease.arctic.io.reader;
 
-import com.netease.arctic.iceberg.CombinedDeleteFilter;
-import com.netease.arctic.iceberg.StructForDelete;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.optimizing.OptimizingDataReader;
 import com.netease.arctic.optimizing.RewriteFilesInput;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
 import com.netease.arctic.utils.map.StructLikeCollections;
-import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.PartitionSpec;
@@ -38,6 +35,7 @@ import org.apache.iceberg.data.parquet.GenericParquetReaders;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.parquet.Parquet;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
@@ -53,8 +51,9 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
- * Read data by {@link CombinedIcebergScanTask} for optimizer of native iceberg.
- * During the execution of readData and readDeleteData, delete data is read only once, thereby improving performance.
+ * Read data by {@link CombinedIcebergScanTask} for optimizer of native iceberg. During the
+ * execution of readData and readDeleteData, delete data is read only once, thereby improving
+ * performance.
  */
 public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
 
@@ -64,8 +63,6 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected final ArcticFileIO fileIO;
   protected final BiFunction<Type, Object, Object> convertConstant;
   protected final boolean reuseContainer;
-
-  protected final ContentFile[] deleteFiles;
   protected CombinedDeleteFilter<Record> deleteFilter;
 
   protected PartitionSpec spec;
@@ -73,9 +70,14 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected RewriteFilesInput input;
 
   public GenericCombinedIcebergDataReader(
-      ArcticFileIO fileIO, Schema tableSchema, PartitionSpec spec, String nameMapping,
-      boolean caseSensitive, BiFunction<Type, Object, Object> convertConstant,
-      boolean reuseContainer, StructLikeCollections structLikeCollections,
+      ArcticFileIO fileIO,
+      Schema tableSchema,
+      PartitionSpec spec,
+      String nameMapping,
+      boolean caseSensitive,
+      BiFunction<Type, Object, Object> convertConstant,
+      boolean reuseContainer,
+      StructLikeCollections structLikeCollections,
       RewriteFilesInput rewriteFilesInput) {
     this.tableSchema = tableSchema;
     this.spec = spec;
@@ -85,55 +87,66 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     this.convertConstant = convertConstant;
     this.reuseContainer = reuseContainer;
     this.input = rewriteFilesInput;
-    this.deleteFiles = rewriteFilesInput.deleteFiles();
-    Set<String> positionPathSet = Arrays.stream(rewriteFilesInput.dataFiles())
-        .map(s -> s.path().toString()).collect(Collectors.toSet());
-    this.deleteFilter = new GenericDeleteFilter(deleteFiles, positionPathSet, tableSchema, structLikeCollections);
+    this.deleteFilter =
+        new GenericDeleteFilter(rewriteFilesInput, tableSchema, structLikeCollections);
   }
 
+  @Override
   public CloseableIterable<Record> readData() {
     if (input.rewrittenDataFiles() == null) {
       return CloseableIterable.empty();
     }
-    Schema requireSchema = fileProjection(tableSchema, tableSchema,
-        deleteFilter.hasPosition(), deleteFilter.deleteIds());
+    Schema requireSchema =
+        fileProjection(
+            tableSchema, tableSchema, deleteFilter.hasPosition(), deleteFilter.deleteIds());
 
-    CloseableIterable<Record> concat = CloseableIterable.concat(CloseableIterable.transform(
-        CloseableIterable.withNoopClose(Arrays.stream(input.rewrittenDataFiles()).collect(Collectors.toList())),
-        s -> openFile(s, spec, requireSchema)));
+    CloseableIterable<Record> concat =
+        CloseableIterable.concat(
+            CloseableIterable.transform(
+                CloseableIterable.withNoopClose(
+                    Arrays.stream(input.rewrittenDataFiles()).collect(Collectors.toList())),
+                s -> openFile(s, spec, requireSchema)));
 
-    StructForDelete<Record> structForDelete = new StructForDelete<>(requireSchema, deleteFilter.deleteIds());
+    StructForDelete<Record> structForDelete =
+        new StructForDelete<>(requireSchema, deleteFilter.deleteIds());
     CloseableIterable<StructForDelete<Record>> structForDeleteCloseableIterable =
-        CloseableIterable.transform(concat, record -> structForDelete.wrap(record));
+        CloseableIterable.transform(concat, structForDelete::wrap);
 
-    CloseableIterable<Record> iterable = CloseableIterable.transform(
-        deleteFilter.filter(structForDeleteCloseableIterable), StructForDelete::recover);
+    CloseableIterable<Record> iterable =
+        CloseableIterable.transform(
+            deleteFilter.filter(structForDeleteCloseableIterable), StructForDelete::recover);
     return iterable;
   }
 
+  @Override
   public CloseableIterable<Record> readDeletedData() {
     if (input.rePosDeletedDataFiles() == null) {
       return CloseableIterable.empty();
     }
 
-    Schema schema = new Schema(
-        MetadataColumns.FILE_PATH,
-        MetadataColumns.ROW_POSITION,
-        com.netease.arctic.table.MetadataColumns.TREE_NODE_FIELD
-    );
-    Schema requireSchema = fileProjection(tableSchema, schema,
-        deleteFilter.hasPosition(), deleteFilter.deleteIds());
+    Schema schema =
+        new Schema(
+            MetadataColumns.FILE_PATH,
+            MetadataColumns.ROW_POSITION,
+            com.netease.arctic.table.MetadataColumns.TREE_NODE_FIELD);
+    Schema requireSchema =
+        fileProjection(tableSchema, schema, deleteFilter.hasPosition(), deleteFilter.deleteIds());
 
-    CloseableIterable<Record> concat = CloseableIterable.concat(CloseableIterable.transform(
-        CloseableIterable.withNoopClose(Arrays.stream(input.rePosDeletedDataFiles()).collect(Collectors.toList())),
-        s -> openFile(s, spec, requireSchema)));
+    CloseableIterable<Record> concat =
+        CloseableIterable.concat(
+            CloseableIterable.transform(
+                CloseableIterable.withNoopClose(
+                    Arrays.stream(input.rePosDeletedDataFiles()).collect(Collectors.toList())),
+                s -> openFile(s, spec, requireSchema)));
 
-    StructForDelete<Record> structForDelete = new StructForDelete<>(requireSchema, deleteFilter.deleteIds());
+    StructForDelete<Record> structForDelete =
+        new StructForDelete<>(requireSchema, deleteFilter.deleteIds());
     CloseableIterable<StructForDelete<Record>> structForDeleteCloseableIterable =
-        CloseableIterable.transform(concat, record -> structForDelete.wrap(record));
+        CloseableIterable.transform(concat, structForDelete::wrap);
 
-    CloseableIterable<Record> iterable = CloseableIterable.transform(
-        deleteFilter.filterNegate(structForDeleteCloseableIterable), StructForDelete::recover);
+    CloseableIterable<Record> iterable =
+        CloseableIterable.transform(
+            deleteFilter.filterNegate(structForDeleteCloseableIterable), StructForDelete::recover);
     return iterable;
   }
 
@@ -142,23 +155,24 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   }
 
   private CloseableIterable<Record> openFile(
-      DataFile dataFile,
-      PartitionSpec spec, Schema require) {
-    Map<Integer, ?> idToConstant = DataReaderCommon.getIdToConstant(dataFile, require, spec,
-        convertConstant);
+      DataFile dataFile, PartitionSpec spec, Schema require) {
+    Map<Integer, ?> idToConstant =
+        DataReaderCommon.getIdToConstant(dataFile, require, spec, convertConstant);
 
     return openFile(dataFile, require, idToConstant);
   }
 
-  private CloseableIterable<Record> openFile(DataFile dataFile, Schema fileProjection, Map<Integer, ?> idToConstant) {
+  private CloseableIterable<Record> openFile(
+      DataFile dataFile, Schema fileProjection, Map<Integer, ?> idToConstant) {
     InputFile input = fileIO.newInputFile(dataFile.path().toString());
 
     switch (dataFile.format()) {
       case AVRO:
-        Avro.ReadBuilder avro = Avro.read(input)
-            .project(fileProjection)
-            .createReaderFunc(
-                avroSchema -> DataReader.create(fileProjection, avroSchema, idToConstant));
+        Avro.ReadBuilder avro =
+            Avro.read(input)
+                .project(fileProjection)
+                .createReaderFunc(
+                    avroSchema -> DataReader.create(fileProjection, avroSchema, idToConstant));
 
         if (reuseContainer) {
           avro.reuseContainers();
@@ -167,10 +181,13 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
         return avro.build();
 
       case PARQUET:
-        Parquet.ReadBuilder parquet = Parquet.read(input)
-            .project(fileProjection)
-            .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(fileProjection, fileSchema,
-                idToConstant));
+        Parquet.ReadBuilder parquet =
+            Parquet.read(input)
+                .project(fileProjection)
+                .createReaderFunc(
+                    fileSchema ->
+                        GenericParquetReaders.buildReader(
+                            fileProjection, fileSchema, idToConstant));
 
         if (reuseContainer) {
           parquet.reuseContainers();
@@ -179,54 +196,62 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
         return parquet.build();
 
       case ORC:
-        Schema projectionWithoutConstantAndMetadataFields = TypeUtil.selectNot(
-            fileProjection,
-            Sets.union(idToConstant.keySet(), MetadataColumns.metadataFieldIds()));
-        org.apache.iceberg.orc.ORC.ReadBuilder orc = org.apache.iceberg.orc.ORC.read(input)
-            .project(projectionWithoutConstantAndMetadataFields)
-            .createReaderFunc(fileSchema -> GenericOrcReader.buildReader(fileProjection, fileSchema, idToConstant));
+        Schema projectionWithoutConstantAndMetadataFields =
+            TypeUtil.selectNot(
+                fileProjection,
+                Sets.union(idToConstant.keySet(), MetadataColumns.metadataFieldIds()));
+        org.apache.iceberg.orc.ORC.ReadBuilder orc =
+            org.apache
+                .iceberg
+                .orc
+                .ORC
+                .read(input)
+                .project(projectionWithoutConstantAndMetadataFields)
+                .createReaderFunc(
+                    fileSchema ->
+                        GenericOrcReader.buildReader(fileProjection, fileSchema, idToConstant));
         return orc.build();
 
       default:
-        throw new UnsupportedOperationException(String.format("Cannot read %s file: %s",
-            dataFile.format().name(), dataFile.path()));
+        throw new UnsupportedOperationException(
+            String.format("Cannot read %s file: %s", dataFile.format().name(), dataFile.path()));
     }
   }
 
   private static Schema fileProjection(
-      Schema tableSchema, Schema requestedSchema,
-      boolean hasPosDelete, Set<Integer> eqDeleteIds) {
+      Schema tableSchema, Schema requestedSchema, boolean hasPosDelete, Set<Integer> eqDeleteIds) {
     if (!hasPosDelete && eqDeleteIds == null) {
       return requestedSchema;
     }
-    List<Integer> requiredEqDeleteIds = TypeUtil.select(tableSchema, eqDeleteIds).columns()
-        .stream().map(Types.NestedField::fieldId).collect(Collectors.toList());
+    List<Integer> requiredEqDeleteIds =
+        TypeUtil.select(tableSchema, eqDeleteIds).columns().stream()
+            .map(Types.NestedField::fieldId)
+            .collect(Collectors.toList());
     Set<Integer> requiredIds = Sets.newLinkedHashSet();
     if (hasPosDelete) {
       requiredIds.add(MetadataColumns.FILE_PATH.fieldId());
       requiredIds.add(MetadataColumns.ROW_POSITION.fieldId());
     }
 
-    if (eqDeleteIds != null) {
-      requiredIds.addAll(requiredEqDeleteIds);
-      requiredIds.add(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED.fieldId());
-    }
+    requiredIds.addAll(requiredEqDeleteIds);
+    requiredIds.add(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED.fieldId());
 
     requiredIds.add(MetadataColumns.IS_DELETED.fieldId());
 
-    Set<Integer> missingIds = Sets.newLinkedHashSet(
-        Sets.difference(requiredIds, TypeUtil.getProjectedIds(requestedSchema)));
+    Set<Integer> missingIds =
+        Sets.newLinkedHashSet(
+            Sets.difference(requiredIds, TypeUtil.getProjectedIds(requestedSchema)));
 
     if (missingIds.isEmpty()) {
       return requestedSchema;
     }
-    
+
     List<Types.NestedField> columns = Lists.newArrayList(requestedSchema.columns());
     for (int fieldId : missingIds) {
-      if (fieldId == MetadataColumns.ROW_POSITION.fieldId() ||
-          fieldId == MetadataColumns.IS_DELETED.fieldId() ||
-          fieldId == com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED.fieldId() ||
-          fieldId == MetadataColumns.FILE_PATH.fieldId()) {
+      if (fieldId == MetadataColumns.ROW_POSITION.fieldId()
+          || fieldId == MetadataColumns.IS_DELETED.fieldId()
+          || fieldId == com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED.fieldId()
+          || fieldId == MetadataColumns.FILE_PATH.fieldId()) {
         continue; // add _pos and _deleted at the end
       }
 
@@ -244,7 +269,8 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
       columns.add(MetadataColumns.ROW_POSITION);
     }
 
-    if (missingIds.contains(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED.fieldId())) {
+    if (missingIds.contains(
+        com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED.fieldId())) {
       columns.add(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED);
     }
 
@@ -255,14 +281,18 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     return new Schema(columns);
   }
 
+  @VisibleForTesting
+  public CombinedDeleteFilter<Record> getDeleteFilter() {
+    return deleteFilter;
+  }
+
   protected class GenericDeleteFilter extends CombinedDeleteFilter<Record> {
 
     public GenericDeleteFilter(
-        ContentFile[] deleteFiles,
-        Set<String> positionPathSets,
+        RewriteFilesInput rewriteFilesInput,
         Schema tableSchema,
         StructLikeCollections structLikeCollections) {
-      super(deleteFiles, positionPathSets, tableSchema, structLikeCollections);
+      super(rewriteFilesInput, tableSchema, structLikeCollections);
     }
 
     @Override

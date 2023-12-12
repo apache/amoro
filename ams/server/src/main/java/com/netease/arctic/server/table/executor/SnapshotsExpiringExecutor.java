@@ -26,14 +26,11 @@ import com.netease.arctic.server.table.TableRuntime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Service for expiring tables periodically.
- */
+/** Service for expiring tables periodically. */
 public class SnapshotsExpiringExecutor extends BaseTableExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(SnapshotsExpiringExecutor.class);
 
-  // 1 days
-  private static final long INTERVAL = 60 * 60 * 1000L;
+  private static final long INTERVAL = 60 * 60 * 1000L; // 1 hour
 
   public SnapshotsExpiringExecutor(TableManager tableRuntimes, int poolSize) {
     super(tableRuntimes, poolSize);

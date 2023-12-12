@@ -23,9 +23,11 @@ import java.util.Map;
 
 /**
  * A factory to create {@link OptimizingCommitter}.
+ *
  * @param <O>
  */
-public interface OptimizingCommitterFactory<O extends TableOptimizing.OptimizingOutput> extends Serializable {
+public interface OptimizingCommitterFactory<O extends TableOptimizing.OptimizingOutput>
+    extends Serializable {
 
   /** Create an {@link OptimizingCommitter} by OptimizingOutputs of all tasks. */
   OptimizingCommitter createCommitter(O[] outputs, Map<String, String> properties);

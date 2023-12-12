@@ -18,14 +18,14 @@
 
 package com.netease.arctic.utils;
 
-import com.netease.arctic.iceberg.InternalRecordWrapper;
-import com.netease.arctic.iceberg.StructLikeWrapper;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.StructLikeWrapper;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -33,9 +33,8 @@ import java.time.LocalDateTime;
 
 public class TestArcticDataFiles {
 
-  private static final Schema SCHEMA = new Schema(
-      Types.NestedField.required(1, "dt", Types.TimestampType.withoutZone())
-  );
+  private static final Schema SCHEMA =
+      new Schema(Types.NestedField.required(1, "dt", Types.TimestampType.withoutZone()));
 
   @Test
   public void testMonthPartition() {
@@ -43,9 +42,8 @@ public class TestArcticDataFiles {
     PartitionKey partitionKey = new PartitionKey(spec, SCHEMA);
     GenericRecord record = GenericRecord.create(SCHEMA);
     InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(SCHEMA.asStruct());
-    partitionKey.partition(internalRecordWrapper.wrap(record.copy(
-        "dt",
-        LocalDateTime.parse("2022-11-11T11:00:00"))));
+    partitionKey.partition(
+        internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-11T11:00:00"))));
     String partitionPath = spec.partitionToPath(partitionKey);
     StructLike partitionData = ArcticDataFiles.data(spec, partitionPath);
     StructLikeWrapper p1 = StructLikeWrapper.forType(spec.partitionType());
@@ -61,9 +59,8 @@ public class TestArcticDataFiles {
     PartitionKey partitionKey = new PartitionKey(spec, SCHEMA);
     GenericRecord record = GenericRecord.create(SCHEMA);
     InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(SCHEMA.asStruct());
-    partitionKey.partition(internalRecordWrapper.wrap(record.copy(
-        "dt",
-        LocalDateTime.parse("2022-11-11T11:00:00"))));
+    partitionKey.partition(
+        internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-11T11:00:00"))));
     String partitionPath = spec.partitionToPath(partitionKey);
     StructLike partitionData = ArcticDataFiles.data(spec, partitionPath);
     StructLikeWrapper p1 = StructLikeWrapper.forType(spec.partitionType());
@@ -78,10 +75,11 @@ public class TestArcticDataFiles {
     PartitionSpec spec = PartitionSpec.builderFor(SCHEMA).hour("dt").build();
     PartitionKey partitionKey = new PartitionKey(spec, SCHEMA);
     GenericRecord record = GenericRecord.create(SCHEMA);
+
     InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(SCHEMA.asStruct());
-    partitionKey.partition(internalRecordWrapper.wrap(record.copy(
-        "dt",
-        LocalDateTime.parse("2022-11-11T11:00:00"))));
+
+    partitionKey.partition(
+        internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-11T09:30:00"))));
     String partitionPath = spec.partitionToPath(partitionKey);
     StructLike partitionData = ArcticDataFiles.data(spec, partitionPath);
     StructLikeWrapper p1 = StructLikeWrapper.forType(spec.partitionType());
@@ -89,13 +87,35 @@ public class TestArcticDataFiles {
     StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
     p2.set(partitionData);
     Assert.assertEquals(p1, p2);
+
+    partitionKey.partition(
+        internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-11T12:00:00"))));
+    partitionPath = spec.partitionToPath(partitionKey);
+    partitionData = ArcticDataFiles.data(spec, partitionPath);
+    p1.set(partitionKey);
+    p2.set(partitionData);
+    Assert.assertEquals(p1, p2);
+
+    partitionKey.partition(
+        internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-11T15:30:00"))));
+    partitionPath = spec.partitionToPath(partitionKey);
+    partitionData = ArcticDataFiles.data(spec, partitionPath);
+    p1.set(partitionKey);
+    p2.set(partitionData);
+    Assert.assertEquals(p1, p2);
+
+    partitionKey.partition(
+        internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-12T00:00:00"))));
+    partitionPath = spec.partitionToPath(partitionKey);
+    partitionData = ArcticDataFiles.data(spec, partitionPath);
+    p1.set(partitionKey);
+    p2.set(partitionData);
+    Assert.assertEquals(p1, p2);
   }
 
   @Test
   public void testBucketPartition() {
-    Schema schema = new Schema(
-        Types.NestedField.required(1, "dt", Types.IntegerType.get())
-    );
+    Schema schema = new Schema(Types.NestedField.required(1, "dt", Types.IntegerType.get()));
     PartitionSpec spec = PartitionSpec.builderFor(schema).bucket("dt", 2).build();
     PartitionKey partitionKey = new PartitionKey(spec, schema);
     GenericRecord record = GenericRecord.create(schema);
@@ -112,9 +132,7 @@ public class TestArcticDataFiles {
 
   @Test
   public void testTruncatePartition() {
-    Schema schema = new Schema(
-        Types.NestedField.required(1, "dt", Types.IntegerType.get())
-    );
+    Schema schema = new Schema(Types.NestedField.required(1, "dt", Types.IntegerType.get()));
     PartitionSpec spec = PartitionSpec.builderFor(schema).truncate("dt", 2).build();
     PartitionKey partitionKey = new PartitionKey(spec, schema);
     GenericRecord record = GenericRecord.create(schema);
@@ -131,9 +149,7 @@ public class TestArcticDataFiles {
 
   @Test
   public void testNullPartition() {
-    Schema schema = new Schema(
-        Types.NestedField.required(1, "name", Types.StringType.get())
-    );
+    Schema schema = new Schema(Types.NestedField.required(1, "name", Types.StringType.get()));
     PartitionSpec spec = PartitionSpec.builderFor(schema).identity("name").build();
     PartitionKey partitionKey = new PartitionKey(spec, schema);
     String partitionPath = "name=null";
@@ -143,16 +159,17 @@ public class TestArcticDataFiles {
 
   @Test
   public void testSpecialCharactersPartition() {
-    Schema schema = new Schema(
-        Types.NestedField.required(1, "day", Types.StringType.get()),
-        Types.NestedField.required(2, "name", Types.StringType.get())
-    );
+    Schema schema =
+        new Schema(
+            Types.NestedField.required(1, "day", Types.StringType.get()),
+            Types.NestedField.required(2, "name", Types.StringType.get()));
     PartitionSpec spec = PartitionSpec.builderFor(schema).identity("day").identity("name").build();
     PartitionKey partitionKey = new PartitionKey(spec, schema);
     GenericRecord record = GenericRecord.create(schema);
     InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(schema.asStruct());
-    partitionKey.partition(internalRecordWrapper.wrap(record.copy("day", "2023-01-01")
-        .copy("name", "AAA BBB/CCC=_*-\\%")));
+    partitionKey.partition(
+        internalRecordWrapper.wrap(
+            record.copy("day", "2023-01-01").copy("name", "AAA BBB/CCC=_*-\\%")));
 
     String partitionToPath = spec.partitionToPath(partitionKey);
     Assert.assertEquals("day=2023-01-01/name=AAA+BBB%2FCCC%3D_*-%5C%25", partitionToPath);

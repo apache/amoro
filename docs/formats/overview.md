@@ -23,8 +23,9 @@ In addition, new table formats such as [Iceberg](https://Iceberg.apache.org/) al
 For users, the design goal of Amoro is to provide an out-of-the-box data lake system. Internally, Amoro's design philosophy is to use different table formats as storage engines for data lakes. 
 This design pattern is more common in open-source systems such as MySQL and ClickHouse.
 
-Currently, Amoro mainly provides the following three table formats:
+Currently, Amoro mainly provides the following four table formats:
 
 - **Iceberg format:** Users can directly entrust their Iceberg tables to Amoro for maintenance, so that users can not only use all the functions of Iceberg tables, but also enjoy the performance and stability improvements brought by Amoro.
 - **Mixed-Iceberg format:** Amoro provides a set of more optimized formats for streaming update scenarios on top of the Iceberg format. If users have high performance requirements for streaming updates or have demands for CDC incremental data reading functions, they can choose to use the Mixed-Iceberg format.
 - **Mixed-Hive format:** Many users do not want to affect the business originally built on Hive while using data lakes. Therefore, Amoro provides the Mixed-Hive format, which can upgrade Hive tables to Mixed-Hive format only through metadata migration, and the original Hive tables can still be used normally. This ensures business stability and benefits from the advantages of data lake computing.
+- **Paimon format:** Amoro supports displaying metadata information in the Paimon format, including Schema, Options, Files, Snapshots, DDLs, and Compaction information.

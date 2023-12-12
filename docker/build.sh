@@ -28,10 +28,12 @@ FLINK_VERSION=1.15.3
 HADOOP_VERSION=2.10.2
 DEBIAN_MIRROR=http://deb.debian.org
 APACHE_ARCHIVE=https://archive.apache.org/dist
-OPTIMIZER_TARGET=${PROJECT_HOME}/ams/optimizer/flink-optimizer/target
-OPTIMIZER_JOB=${OPTIMIZER_TARGET}/flink-optimizer-${AMORO_VERSION}-jar-with-dependencies.jar
+OPTIMIZER_JOB_PATH=ams/optimizer/flink-optimizer/target/flink-optimizer-${AMORO_VERSION}-jar-with-dependencies.jar
+OPTIMIZER_JOB=${PROJECT_HOME}/${OPTIMIZER_JOB_PATH}
 AMORO_TAG=$AMORO_VERSION
 ALSO_MAKE=true
+MAVEN_MIRROR=https://repo.maven.apache.org/maven2
+
 
 function usage() {
     cat <<EOF
@@ -50,6 +52,7 @@ Options:
     --hadoop-version        Hadoop binary release version, default is 2.10.2, format must be x.y.z
     --apache-archive        Apache Archive url, default is https://archive.apache.org/dist
     --debian-mirror         Mirror url of debian, default is http://deb.debian.org
+    --maven-mirror          Mirror url of maven, default is https://repo.maven.apache.org/maven2
     --optimizer-job         Location of optimizer job
     --tag                   Tag for amoro/optimizer-flink/quickdemo image.
     --also-make             Also make amoro when build quickdemo, if set to false, it will pull from hub or use exists dependency.
@@ -58,7 +61,7 @@ EOF
 }
 
 
-ACTION=amoro
+ACTION=help
 
 i=1;
 j=$#;
@@ -113,6 +116,12 @@ while [ $i -le $j ]; do
     "--also-make")
     shift 1
     ALSO_MAKE=$1
+    i=$((i+2))
+    ;;
+
+    "--maven-mirror")
+    shift 1
+    MAVEN_MIRROR=$1
     i=$((i+2))
     ;;
 
@@ -179,12 +188,9 @@ function build_datanode() {
 }
 
 function build_optimizer_flink() {
-    local IMAGE_REF=arctic163/optimizer-flink${FLINK_MAJOR_VERSION}
-    local IMAGE_TAG=$AMORO_TAG
-    echo "=============================================="
-    echo "           arctic163/optimizer-flink     "
-    echo "=============================================="
-    echo "Start Build ${IMAGE_REF}:${IMAGE_TAG} Image"
+    local IMAGE_REF=arctic163/optimizer-flink
+    local IMAGE_TAG=$AMORO_TAG-flink${FLINK_MAJOR_VERSION}
+    print_image $IMAGE_REF $IMAGE_TAG
 
     FLINK_OPTIMIZER_JOB=${OPTIMIZER_JOB}
 
@@ -195,10 +201,13 @@ function build_optimizer_flink() {
       exit  1
     fi
 
-    cp $FLINK_OPTIMIZER_JOB $CURRENT_DIR/optimizer-flink/optimizer-job.jar
+    set -x
+    cd "$PROJECT_HOME" || exit
     docker build -t ${IMAGE_REF}:${IMAGE_TAG} \
       --build-arg FLINK_VERSION=$FLINK_VERSION \
-      optimizer-flink/.
+      --build-arg OPTIMIZER_JOB=$OPTIMIZER_JOB_PATH \
+      --build-arg MAVEN_MIRROR=$MAVEN_MIRROR \
+      -f ./docker/optimizer-flink/Dockerfile .
 }
 
 function build_amoro() {
@@ -206,10 +215,10 @@ function build_amoro() {
   local IMAGE_TAG=$AMORO_TAG
   print_image $IMAGE_REF $IMAGE_TAG
 
-  local DIST_FILE=${PROJECT_HOME}/dist/target/amoro-${AMORO_VERSION}-bin.zip
+  local DIST_FILE=${PROJECT_HOME}/ams/dist/target/amoro-${AMORO_VERSION}-bin.zip
 
   if [ ! -f "${DIST_FILE}" ]; then
-    local BUILD_CMD="mvn clean package -am -e -pl dist -DskipTests "
+    local BUILD_CMD="mvn clean package -am -e -pl ams/dist -DskipTests "
     echo "Amoro dist package is not exists in ${DIST_FILE}"
     echo "please check file or run '$BUILD_CMD' first"
   fi
@@ -225,10 +234,10 @@ function build_quickdemo() {
     local IMAGE_REF=arctic163/quickdemo
     local IMAGE_TAG=$AMORO_TAG
 
-    local FLINK_CONNECTOR_BINARY=${PROJECT_HOME}/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
+    local FLINK_CONNECTOR_BINARY=${PROJECT_HOME}/mixed/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/amoro-mixed-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
 
     if [ ! -f "${FLINK_CONNECTOR_BINARY}" ]; then
-        echo "amoro-flink-connector not exists in ${FLINK_CONNECTOR_BINARY}, run 'mvn clean package -pl !trino' first. "
+        echo "amoro-mixed-flink-connector not exists in ${FLINK_CONNECTOR_BINARY}, run 'mvn clean package -pl !mixed/trino' first. "
         exit  1
     fi
 
@@ -236,7 +245,7 @@ function build_quickdemo() {
         echo "Build dependency Amoro image."
         build_amoro
         if [ "$?" -ne 0 ]; then
-          echo "Build required Amor image failed."
+          echo "Build required Amoro image failed."
           exit 1
         fi
     fi

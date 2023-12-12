@@ -43,7 +43,8 @@ public class TerminalSessionContext {
   private final String sessionId;
   private final TableMetaStore metaStore;
 
-  private final AtomicReference<ExecutionStatus> status = new AtomicReference<>(ExecutionStatus.Created);
+  private final AtomicReference<ExecutionStatus> status =
+      new AtomicReference<>(ExecutionStatus.Created);
   private volatile ExecutionTask task = null;
   private final TerminalSessionFactory factory;
   private final Configurations sessionConfiguration;
@@ -82,10 +83,12 @@ public class TerminalSessionContext {
     return ExecutionStatus.Running != status;
   }
 
-  public synchronized void submit(String catalog, String script, int fetchLimit, boolean stopOnError) {
+  public synchronized void submit(
+      String catalog, String script, int fetchLimit, boolean stopOnError) {
     ExecutionTask task = new ExecutionTask(catalog, script, fetchLimit, stopOnError);
     if (!isReadyToExecute()) {
-      throw new IllegalStateException("current session is not ready to execute. status: " + status.get().name());
+      throw new IllegalStateException(
+          "current session is not ready to execute. status: " + status.get().name());
     }
     status.set(ExecutionStatus.Running);
 
@@ -94,8 +97,12 @@ public class TerminalSessionContext {
         .thenApply(s -> lastExecutionTime = System.currentTimeMillis());
     this.task = task;
 
-    String poolInfo = "new sql script submit, current thread pool state. [Active: " +
-        threadPool.getActiveCount() + ", PoolSize: " + threadPool.getPoolSize() + "]";
+    String poolInfo =
+        "new sql script submit, current thread pool state. [Active: "
+            + threadPool.getActiveCount()
+            + ", PoolSize: "
+            + threadPool.getPoolSize()
+            + "]";
     LOG.info(poolInfo);
     task.executionResult.appendLog(poolInfo);
   }
@@ -172,11 +179,7 @@ public class TerminalSessionContext {
     private final boolean stopOnError;
     private final String catalog;
 
-    public ExecutionTask(
-        String catalog,
-        String script,
-        int fetchLimits,
-        boolean stopOnError) {
+    public ExecutionTask(String catalog, String script, int fetchLimits, boolean stopOnError) {
       this.catalog = catalog;
       if (script.trim().endsWith(";")) {
         this.script = script;
@@ -190,16 +193,18 @@ public class TerminalSessionContext {
     @Override
     public ExecutionStatus get() {
       try {
-        return metaStore.doAs(() -> {
-          TerminalSession session = lazyLoadSession(this);
-          executionResult.appendLog("fetch terminal session: " + sessionId);
-          executionResult.appendLogs(session.logs());
-          for (String key : session.configs().keySet()) {
-            executionResult.appendLog("session configuration: " + key + " => " + session.configs().get(key));
-          }
+        return metaStore.doAs(
+            () -> {
+              TerminalSession session = lazyLoadSession(this);
+              executionResult.appendLog("fetch terminal session: " + sessionId);
+              executionResult.appendLogs(session.logs());
+              for (String key : session.configs().keySet()) {
+                executionResult.appendLog(
+                    "session configuration: " + key + " => " + session.configs().get(key));
+              }
 
-          return execute(session);
-        });
+              return execute(session);
+            });
       } catch (Throwable t) {
         LOG.error("something error when execute script. ", t);
         executionResult.appendLog("something error when execute script.");
@@ -227,11 +232,11 @@ public class TerminalSessionContext {
           statementBuilder = new StringBuilder();
         }
         line = line.trim();
-        if (line.length() < 1 || line.startsWith("--")) {
+        if (line.length() < 1 || line.startsWith("--") || line.startsWith("#")) {
           // ignore blank lines and comments.
           continue;
         } else if (line.endsWith(";")) {
-          //TODO: sql split need do more to handle multi sql statement in one line.
+          // TODO: sql split need do more to handle multi sql statement in one line.
           statementBuilder.append(line);
           no = lineNumber(reader, no);
 
@@ -240,7 +245,8 @@ public class TerminalSessionContext {
           boolean success = executeStatement(session, statement, no);
           if (!success) {
             if (stopOnError) {
-              executionResult.appendLog("execution stopped for error happened and stop-when-error config.");
+              executionResult.appendLog(
+                  "execution stopped for error happened and stop-when-error config.");
               return ExecutionStatus.Failed;
             }
           }
@@ -263,9 +269,7 @@ public class TerminalSessionContext {
       return no;
     }
 
-    /**
-     * @return - false if any exception happened.
-     */
+    /** @return - false if any exception happened. */
     boolean executeStatement(TerminalSession session, String statement, int lineNo) {
       executionResult.appendLog(" ");
       executionResult.appendLog("prepare execute statement, line:" + lineNo);
@@ -285,14 +289,19 @@ public class TerminalSessionContext {
 
       if (rs.empty()) {
         long cost = System.currentTimeMillis() - begin;
-        executionResult.appendLog("statement execute down, result is empty, execution cost: " + cost + "ms");
+        executionResult.appendLog(
+            "statement execute down, result is empty, execution cost: " + cost + "ms");
         return true;
       } else {
         StatementResult sr = fetchResults(rs, statement, lineNo);
         long cost = System.currentTimeMillis() - begin;
         executionResult.appendResult(sr);
         executionResult.appendLog(
-            "statement execute down, fetch rows:" + sr.getDatas().size() + ", execution cost: " + cost + "ms");
+            "statement execute down, fetch rows:"
+                + sr.getDatas().size()
+                + ", execution cost: "
+                + cost
+                + "ms");
         return sr.isSuccess();
       }
     }

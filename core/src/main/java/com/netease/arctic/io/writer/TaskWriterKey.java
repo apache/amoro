@@ -24,9 +24,7 @@ import org.apache.iceberg.StructLike;
 
 import java.util.Objects;
 
-/**
- * Key of task writers, record with the same key can be written in the same file.
- */
+/** Key of task writers, record with the same key can be written in the same file. */
 public class TaskWriterKey {
   private final StructLike partitionKey;
   private final DataTreeNode treeNode;
@@ -55,14 +53,13 @@ public class TaskWriterKey {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     TaskWriterKey writerKey = (TaskWriterKey) o;
-    return Objects.equals(partitionKey, writerKey.partitionKey) &&
-        Objects.equals(treeNode, writerKey.treeNode) &&
-        fileType == writerKey.fileType;
+    return Objects.equals(partitionKey, writerKey.partitionKey)
+        && Objects.equals(treeNode, writerKey.treeNode)
+        && fileType == writerKey.fileType;
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(partitionKey, treeNode, fileType);
   }
-
 }

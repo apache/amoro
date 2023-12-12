@@ -64,14 +64,19 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
 
   private boolean ackTask(OptimizingTask task) {
     try {
-      callAuthenticatedAms((client, token) -> {
-        client.ackTask(token, threadId, task.getTaskId());
-        return null;
-      });
+      callAuthenticatedAms(
+          (client, token) -> {
+            client.ackTask(token, threadId, task.getTaskId());
+            return null;
+          });
       LOG.info("Optimizer executor[{}] acknowledged task[{}] to ams", threadId, task.getTaskId());
       return true;
     } catch (TException exception) {
-      LOG.error("Optimizer executor[{}] acknowledged task[{}] failed", threadId, task.getTaskId(), exception);
+      LOG.error(
+          "Optimizer executor[{}] acknowledged task[{}] failed",
+          threadId,
+          task.getTaskId(),
+          exception);
       return false;
     }
   }
@@ -81,9 +86,12 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
     try {
       OptimizingInputProperties properties = OptimizingInputProperties.parse(task.getProperties());
       String executorFactoryImpl = properties.getExecutorFactoryImpl();
-      TableOptimizing.OptimizingInput input = SerializationUtil.simpleDeserialize(task.getTaskInput());
-      DynConstructors.Ctor<OptimizingExecutorFactory> ctor = DynConstructors.builder(OptimizingExecutorFactory.class)
-          .impl(executorFactoryImpl).buildChecked();
+      TableOptimizing.OptimizingInput input =
+          SerializationUtil.simpleDeserialize(task.getTaskInput());
+      DynConstructors.Ctor<OptimizingExecutorFactory> ctor =
+          DynConstructors.builder(OptimizingExecutorFactory.class)
+              .impl(executorFactoryImpl)
+              .buildChecked();
       OptimizingExecutorFactory factory = ctor.newInstance();
 
       if (getConfig().isExtendDiskStorage()) {
@@ -111,14 +119,21 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
 
   private void completeTask(OptimizingTaskResult optimizingTaskResult) {
     try {
-      callAuthenticatedAms((client, token) -> {
-        client.completeTask(token, optimizingTaskResult);
-        return null;
-      });
-      LOG.info("Optimizer executor[{}] completed task[{}] to ams", threadId, optimizingTaskResult.getTaskId());
+      callAuthenticatedAms(
+          (client, token) -> {
+            client.completeTask(token, optimizingTaskResult);
+            return null;
+          });
+      LOG.info(
+          "Optimizer executor[{}] completed task[{}] to ams",
+          threadId,
+          optimizingTaskResult.getTaskId());
     } catch (TException exception) {
-      LOG.error("Optimizer executor[{}] completed task[{}] failed", threadId,
-          optimizingTaskResult.getTaskId(), exception);
+      LOG.error(
+          "Optimizer executor[{}] completed task[{}] failed",
+          threadId,
+          optimizingTaskResult.getTaskId(),
+          exception);
     }
   }
 }

@@ -22,9 +22,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
 
-/**
- * AMS server column info.
- */
+/** AMS server column info. */
 public class AMSColumnInfo {
   String field;
   String type;
@@ -63,8 +61,7 @@ public class AMSColumnInfo {
     this.comment = comment;
   }
 
-  public AMSColumnInfo() {
-  }
+  public AMSColumnInfo() {}
 
   public AMSColumnInfo(String field, String type, boolean required, String comment) {
     this.field = field;
@@ -78,21 +75,18 @@ public class AMSColumnInfo {
       return null;
     }
     return new Builder()
-            .field(field.name())
-            .type(field.type().toString())
-            .required(field.isRequired())
-            .comment(field.doc())
-            .build();
+        .field(field.name())
+        .type(field.type().toString())
+        .required(field.isRequired())
+        .comment(field.doc())
+        .build();
   }
 
-  /**
-   * Construct ColumnInfo based on schema and primary key field.
-   */
-  public static AMSColumnInfo buildFromPartitionSpec(Schema schema, PrimaryKeySpec.PrimaryKeyField pkf) {
+  /** Construct ColumnInfo based on schema and primary key field. */
+  public static AMSColumnInfo buildFromPartitionSpec(
+      Schema schema, PrimaryKeySpec.PrimaryKeyField pkf) {
     return buildFromNestedField(schema.findField(pkf.fieldName()));
-
   }
-
 
   public static class Builder {
     String field;
@@ -110,7 +104,7 @@ public class AMSColumnInfo {
       return this;
     }
 
-    public  Builder  required(Boolean isRequired) {
+    public Builder required(Boolean isRequired) {
       this.required = isRequired;
       return this;
     }

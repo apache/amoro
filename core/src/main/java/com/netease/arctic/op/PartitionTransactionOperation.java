@@ -21,17 +21,16 @@ package com.netease.arctic.op;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.iceberg.PendingUpdate;
+import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.Transaction;
-import org.apache.iceberg.util.StructLikeMap;
+import org.apache.iceberg.UpdateStatistics;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-/**
- * Abstract transaction operation on {@link BaseTable} which will change
- * max transaction id map
- */
-public abstract class PartitionTransactionOperation implements PendingUpdate<StructLikeMap<Map<String, String>>> {
+/** Abstract transaction operation on {@link BaseTable} which will change max transaction id map */
+public abstract class PartitionTransactionOperation implements PendingUpdate<List<StatisticsFile>> {
 
   KeyedTable keyedTable;
   private Transaction tx;
@@ -39,8 +38,8 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Str
 
   protected final Map<String, String> properties;
 
-  public PartitionTransactionOperation(KeyedTable baseTable) {
-    this.keyedTable = baseTable;
+  public PartitionTransactionOperation(KeyedTable keyedTable) {
+    this.keyedTable = keyedTable;
     this.properties = new HashMap<>();
   }
 
@@ -62,10 +61,10 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Str
    * @param transaction table transaction
    * @return changed partition properties
    */
-  protected abstract StructLikeMap<Map<String, String>> apply(Transaction transaction);
+  protected abstract List<StatisticsFile> apply(Transaction transaction);
 
   @Override
-  public StructLikeMap<Map<String, String>> apply() {
+  public List<StatisticsFile> apply() {
     return apply(tx);
   }
 
@@ -79,18 +78,18 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Str
     return this;
   }
 
-
   public void commit() {
     if (this.skipEmptyCommit && isEmptyCommit()) {
       return;
     }
     this.tx = keyedTable.baseTable().newTransaction();
 
-    StructLikeMap<Map<String, String>> changedPartitionProperties = apply();
-    UpdatePartitionProperties updatePartitionProperties = keyedTable.baseTable().updatePartitionProperties(tx);
-    changedPartitionProperties.forEach((partition, properties) ->
-        properties.forEach((key, value) -> updatePartitionProperties.set(partition, key, value)));
-    updatePartitionProperties.commit();
+    List<StatisticsFile> statisticsFiles = apply();
+    if (statisticsFiles != null && !statisticsFiles.isEmpty()) {
+      UpdateStatistics updateStatistics = this.tx.updateStatistics();
+      statisticsFiles.forEach(s -> updateStatistics.setStatistics(s.snapshotId(), s));
+      updateStatistics.commit();
+    }
 
     tx.commitTransaction();
   }

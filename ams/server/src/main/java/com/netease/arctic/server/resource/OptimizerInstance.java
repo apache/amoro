@@ -20,8 +20,7 @@ package com.netease.arctic.server.resource;
 
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.resource.Resource;
-import com.netease.arctic.server.optimizing.OptimizingQueue;
-import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
+import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 
 import java.util.UUID;
 
@@ -31,8 +30,7 @@ public class OptimizerInstance extends Resource {
   private long startTime;
   private long touchTime;
 
-  public OptimizerInstance() {
-  }
+  public OptimizerInstance() {}
 
   public OptimizerInstance(OptimizerRegisterInfo registerInfo, String containerName) {
     super(registerInfo, containerName);
@@ -50,22 +48,24 @@ public class OptimizerInstance extends Resource {
     return token;
   }
 
-
   public long getTouchTime() {
     return touchTime;
-  }
-
-  @VisibleForTesting
-  public void setTouchTime(long touchTime) {
-    this.touchTime = touchTime;
   }
 
   public long getStartTime() {
     return startTime;
   }
 
+  public OptimizerThread getThread(int threadId) {
+    return new OptimizerThread(threadId, this);
+  }
 
-  public OptimizingQueue.OptimizingThread getThread(int threadId) {
-    return new OptimizingQueue.OptimizingThread(token, threadId);
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("token", token)
+        .add("startTime", startTime)
+        .add("touchTime", touchTime)
+        .toString();
   }
 }

@@ -18,9 +18,10 @@
 
 package com.netease.arctic.server.optimizing.flow.view;
 
+import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;
+
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.iceberg.InternalRecordWrapper;
 import com.netease.arctic.io.writer.RecordWithAction;
 import com.netease.arctic.server.optimizing.flow.RandomRecordGenerator;
 import com.netease.arctic.table.ArcticTable;
@@ -30,6 +31,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.util.StructLikeMap;
@@ -38,13 +40,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
-
-import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;
 
 public class UnKeyedTableDataView extends AbstractTableDataView {
-
-  private final Random random;
 
   private final StructLikeMap<Integer> view;
 
@@ -53,10 +50,7 @@ public class UnKeyedTableDataView extends AbstractTableDataView {
   private final InternalRecordWrapper wrapper;
 
   public UnKeyedTableDataView(
-      ArcticTable arcticTable,
-      int partitionCount,
-      long targetFileSize,
-      Long seed) throws Exception {
+      ArcticTable arcticTable, int partitionCount, long targetFileSize, Long seed) {
     super(arcticTable, null, targetFileSize);
 
     this.wrapper = new InternalRecordWrapper(schema.asStruct());
@@ -65,9 +59,9 @@ public class UnKeyedTableDataView extends AbstractTableDataView {
       arcticTable.updateProperties().set(WRITE_TARGET_FILE_SIZE_BYTES, targetFileSize + "");
     }
 
-    this.generator = new RandomRecordGenerator(arcticTable.schema(), arcticTable.spec(),
-        null, partitionCount, null, seed);
-    random = seed == null ? new Random() : new Random(seed);
+    this.generator =
+        new RandomRecordGenerator(
+            arcticTable.schema(), arcticTable.spec(), null, partitionCount, null, seed);
 
     this.view = StructLikeMap.create(schema.asStruct());
     // addRecords2Map(view, new DataReader(arcticTable).allData());

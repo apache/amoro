@@ -18,8 +18,12 @@
 
 package com.netease.arctic.io;
 
+import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;
+import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT;
+
 import com.google.common.collect.Lists;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.io.writer.GenericIcebergPartitionedFanoutWriter;
 import com.netease.arctic.io.writer.RecordWithAction;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.FileFormat;
@@ -35,7 +39,6 @@ import org.apache.iceberg.io.BaseTaskWriter;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.OutputFileFactory;
-import org.apache.iceberg.io.PartitionedWriter;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.UnpartitionedWriter;
 import org.apache.iceberg.io.WriteResult;
@@ -48,13 +51,9 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;
-import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT;
-
 public class IcebergDataTestHelpers {
 
-  private IcebergDataTestHelpers() {
-  }
+  private IcebergDataTestHelpers() {}
 
   public static WriteResult insert(Table table, List<Record> records) throws IOException {
     try (TaskWriter<Record> writer = createInsertWrite(table)) {
@@ -65,30 +64,28 @@ public class IcebergDataTestHelpers {
   }
 
   public static WriteResult delta(Table table, List<RecordWithAction> records) throws IOException {
-    long targetFileSize = PropertyUtil.propertyAsLong(
-        table.properties(),
-        WRITE_TARGET_FILE_SIZE_BYTES,
-        WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+    long targetFileSize =
+        PropertyUtil.propertyAsLong(
+            table.properties(), WRITE_TARGET_FILE_SIZE_BYTES, WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
     return delta(table, records, targetFileSize);
   }
 
-  public static WriteResult delta(Table table, List<RecordWithAction> records, long targetFileSize) throws IOException {
+  public static WriteResult delta(Table table, List<RecordWithAction> records, long targetFileSize)
+      throws IOException {
     Schema eqDeleteSchema = table.schema().select(table.schema().identifierFieldNames());
-    try (GenericTaskDeltaWriter deltaWriter = createDeltaWriter(
-        eqDeleteSchema
-            .columns()
-            .stream()
-            .map(Types.NestedField::fieldId).collect(Collectors.toList()),
-        table.schema(),
-        table,
-        FileFormat.PARQUET,
-        OutputFileFactory.builderFor(
+    try (GenericTaskDeltaWriter deltaWriter =
+        createDeltaWriter(
+            eqDeleteSchema.columns().stream()
+                .map(Types.NestedField::fieldId)
+                .collect(Collectors.toList()),
+            table.schema(),
             table,
-            1,
-            1).format(FileFormat.PARQUET).build(),
-        targetFileSize)) {
+            FileFormat.PARQUET,
+            OutputFileFactory.builderFor(table, 1, 1).format(FileFormat.PARQUET).build(),
+            targetFileSize)) {
       for (RecordWithAction record : records) {
-        if (record.getAction() == ChangeAction.DELETE || record.getAction() == ChangeAction.UPDATE_BEFORE) {
+        if (record.getAction() == ChangeAction.DELETE
+            || record.getAction() == ChangeAction.UPDATE_BEFORE) {
           deltaWriter.delete(record);
         } else {
           deltaWriter.write(record);
@@ -98,16 +95,16 @@ public class IcebergDataTestHelpers {
     }
   }
 
-  public static WriteResult writeRecords(
-      TaskWriter<Record> taskWriter, List<Record> records) {
+  public static WriteResult writeRecords(TaskWriter<Record> taskWriter, List<Record> records) {
     try {
-      records.forEach(d -> {
-        try {
-          taskWriter.write(d);
-        } catch (IOException e) {
-          throw new UncheckedIOException(e);
-        }
-      });
+      records.forEach(
+          d -> {
+            try {
+              taskWriter.write(d);
+            } catch (IOException e) {
+              throw new UncheckedIOException(e);
+            }
+          });
 
       return taskWriter.complete();
     } catch (IOException e) {
@@ -211,47 +208,28 @@ public class IcebergDataTestHelpers {
   }
 
   public static TaskWriter<Record> createInsertWrite(Table table) {
-    long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
-        TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+    long fileSizeBytes =
+        PropertyUtil.propertyAsLong(
+            table.properties(),
+            TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
+            TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
     if (table.spec().isPartitioned()) {
-      return new GenericPartitionedWriter(
-          table.schema(), table.spec(), FileFormat.PARQUET,
+      return new GenericIcebergPartitionedFanoutWriter(
+          table.schema(),
+          table.spec(),
+          FileFormat.PARQUET,
           new GenericAppenderFactory(table.schema(), table.spec()),
-          OutputFileFactory.builderFor(table, 0, 0)
-              .build(),
-          table.io(), fileSizeBytes
-      );
+          OutputFileFactory.builderFor(table, 0, 0).build(),
+          table.io(),
+          fileSizeBytes);
     } else {
       return new UnpartitionedWriter<>(
-          table.spec(), FileFormat.PARQUET,
+          table.spec(),
+          FileFormat.PARQUET,
           new GenericAppenderFactory(table.schema(), table.spec()),
-          OutputFileFactory.builderFor(table, 0, 0)
-              .build(),
-          table.io(), fileSizeBytes
-      );
-    }
-  }
-
-  public static class GenericPartitionedWriter extends PartitionedWriter<Record> {
-
-    final PartitionKey partitionKey;
-    final InternalRecordWrapper wrapper;
-
-    protected GenericPartitionedWriter(
-        Schema schema, PartitionSpec spec, FileFormat format,
-        FileAppenderFactory<Record> appenderFactory,
-        OutputFileFactory fileFactory,
-        FileIO io, long targetFileSize) {
-      super(spec, format, appenderFactory, fileFactory, io, targetFileSize);
-      this.partitionKey = new PartitionKey(spec, schema);
-      this.wrapper = new InternalRecordWrapper(schema.asStruct());
-    }
-
-    @Override
-    protected PartitionKey partition(Record row) {
-      StructLike structLike = wrapper.wrap(row);
-      partitionKey.partition(structLike);
-      return partitionKey.copy();
+          OutputFileFactory.builderFor(table, 0, 0).build(),
+          table.io(),
+          fileSizeBytes);
     }
   }
 }

@@ -18,6 +18,11 @@
 
 package com.netease.arctic.server.manager;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.netease.arctic.ams.api.ActivePlugin;
 import com.netease.arctic.ams.api.PluginManager;
 import com.netease.arctic.server.exception.AlreadyExistsException;
@@ -31,11 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 public class TestActivePluginManager {
 
   private static final String PLUGIN_NAME_1 = "plugin1";
@@ -45,27 +45,29 @@ public class TestActivePluginManager {
   private static final String PLUGIN_CLASS_2 =
       "com.netease.arctic.server.manager.TestActivePluginManager$TestPluginImpl2";
 
-  private static final Map<String, String> PLUGIN_CLASS_MAP = new HashMap<String, String>() {
-    {
-      put(PLUGIN_NAME_1, PLUGIN_CLASS_1);
-      put(PLUGIN_NAME_2, PLUGIN_CLASS_2);
-    }
-  };
+  private static final Map<String, String> PLUGIN_CLASS_MAP =
+      new HashMap<String, String>() {
+        {
+          put(PLUGIN_NAME_1, PLUGIN_CLASS_1);
+          put(PLUGIN_NAME_2, PLUGIN_CLASS_2);
+        }
+      };
 
   private PluginManager<TestPlugin> pluginManager;
 
   @BeforeEach
   void setUp() {
-    pluginManager = new ActivePluginManager<TestPlugin>() {
-      @Override
-      protected Map<String, String> loadProperties(String pluginName) {
-        return new HashMap<String, String>() {
-          {
-            put(PLUGIN_IMPLEMENTATION_CLASS, PLUGIN_CLASS_MAP.get(pluginName));
+    pluginManager =
+        new ActivePluginManager<TestPlugin>() {
+          @Override
+          protected Map<String, String> loadProperties(String pluginName) {
+            return new HashMap<String, String>() {
+              {
+                put(PLUGIN_IMPLEMENTATION_CLASS, PLUGIN_CLASS_MAP.get(pluginName));
+              }
+            };
           }
         };
-      }
-    };
   }
 
   @AfterEach
@@ -94,7 +96,7 @@ public class TestActivePluginManager {
   }
 
   @Test
-  void testUninstall()  {
+  void testUninstall() {
     assertEquals(0, pluginManager.list().size());
 
     pluginManager.install(PLUGIN_NAME_1);
@@ -147,16 +149,16 @@ public class TestActivePluginManager {
   @Test
   public void testDuplcateInstall() {
     pluginManager.install(PLUGIN_NAME_1);
-    Assertions.assertThrows(AlreadyExistsException.class, () ->
-        pluginManager.install(PLUGIN_NAME_1));
+    Assertions.assertThrows(
+        AlreadyExistsException.class, () -> pluginManager.install(PLUGIN_NAME_1));
   }
 
   @Test
   public void testDuplcateUninstall() {
     pluginManager.install(PLUGIN_NAME_1);
     pluginManager.uninstall(PLUGIN_NAME_1);
-    Assertions.assertThrows(ObjectNotExistsException.class, () ->
-        pluginManager.uninstall(PLUGIN_NAME_1));
+    Assertions.assertThrows(
+        ObjectNotExistsException.class, () -> pluginManager.uninstall(PLUGIN_NAME_1));
   }
 
   private abstract static class TestPlugin implements ActivePlugin {
@@ -179,8 +181,7 @@ public class TestActivePluginManager {
   }
 
   private static class TestPluginImpl1 extends TestPlugin {
-    public TestPluginImpl1() {
-    }
+    public TestPluginImpl1() {}
 
     @Override
     public String name() {
@@ -190,8 +191,7 @@ public class TestActivePluginManager {
 
   private static class TestPluginImpl2 extends TestPlugin {
 
-    public TestPluginImpl2() {
-    }
+    public TestPluginImpl2() {}
 
     @Override
     public String name() {

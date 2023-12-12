@@ -77,8 +77,7 @@ public class ArcticDeleteFiles extends ArcticUpdate<DeleteFiles> implements Dele
 
     @Override
     protected ArcticDeleteFiles updateWithWatermark(
-        Transaction transaction,
-        boolean autoCommitTransaction) {
+        Transaction transaction, boolean autoCommitTransaction) {
       return new ArcticDeleteFiles(table, transaction.newDelete());
     }
 

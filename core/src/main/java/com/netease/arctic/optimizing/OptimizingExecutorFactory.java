@@ -21,20 +21,16 @@ package com.netease.arctic.optimizing;
 import java.io.Serializable;
 import java.util.Map;
 
-/**
- * A factory to create {@link OptimizingExecutor}
- */
-public interface OptimizingExecutorFactory<I extends TableOptimizing.OptimizingInput> extends Serializable {
+/** A factory to create {@link OptimizingExecutor} */
+public interface OptimizingExecutorFactory<I extends TableOptimizing.OptimizingInput>
+    extends Serializable {
 
   /**
-   *
-   * After constructing the factory through a parameterless constructor,
-   * it is necessary to call the initialize method to initialize the factory.
+   * After constructing the factory through a parameterless constructor, it is necessary to call the
+   * initialize method to initialize the factory.
    */
   void initialize(Map<String, String> properties);
 
-  /**
-   * Create factory by input
-   */
+  /** Create factory by input */
   OptimizingExecutor createExecutor(I input);
 }

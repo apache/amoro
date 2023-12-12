@@ -18,15 +18,18 @@
 
 package com.netease.arctic.utils.map;
 
+import com.google.common.collect.Maps;
 import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.data.ChangedLsn;
-import com.netease.arctic.iceberg.StructLikeWrapper;
-import com.netease.arctic.iceberg.StructLikeWrapperFactory;
 import com.netease.arctic.io.MixedDataTestHelpers;
-import com.netease.arctic.utils.ObjectSizeCalculator;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.util.StructLikeWrapper;
+import org.apache.lucene.util.RamUsageEstimator;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.Map;
 
 public class TestStructLikeWrapperSizeEstimator {
 
@@ -34,22 +37,20 @@ public class TestStructLikeWrapperSizeEstimator {
   public void testSizeEstimator() {
     Record record1 = MixedDataTestHelpers.createRecord(1, "name1", 0, "2022-08-30T12:00:00");
     Record record2 = MixedDataTestHelpers.createRecord(2, "test2", 1, "2023-06-29T13:00:00");
-    StructLikeCollections structLikeCollections =
-        new StructLikeCollections(true, Long.MAX_VALUE);
 
-    StructLikeBaseMap<ChangedLsn> map =
-        structLikeCollections.createStructLikeMap(BasicTableTestHelper.TABLE_SCHEMA.asStruct());
+    Map<StructLike, ChangedLsn> map = Maps.newHashMap();
     ChangedLsn changedLsn = ChangedLsn.of(1, 2);
     map.put(record1, changedLsn);
-    long oldSize = ObjectSizeCalculator.getObjectSize(((map.getInternalMap())));
+    long oldSize = RamUsageEstimator.sizeOfObject(map, 0);
     map.put(record2, changedLsn);
-    long newSize = ObjectSizeCalculator.getObjectSize(((map.getInternalMap())));
+    long newSize = RamUsageEstimator.sizeOfObject(map, 0);
     long record2Size = newSize - oldSize;
-    StructLikeWrapperFactory wrapperFactory = new StructLikeWrapperFactory(
-        BasicTableTestHelper.TABLE_SCHEMA.asStruct());
-    StructLikeWrapper wrapper = wrapperFactory.create().set(record2);
+    StructLikeWrapper wrapper =
+        StructLikeWrapper.forType(BasicTableTestHelper.TABLE_SCHEMA.asStruct()).set(record2);
 
-    // Because the size of map also will increase, so the record2Size should a little bigger than the size of the record
-    Assert.assertEquals(1, record2Size / new StructLikeWrapperSizeEstimator().sizeEstimate(wrapper));
+    // Because the size of map also will increase, so the record2Size should a little bigger than
+    // the size of the record
+    long estimateSize = new StructLikeWrapperSizeEstimator().sizeEstimate(wrapper);
+    Assert.assertEquals(1, record2Size / estimateSize);
   }
 }

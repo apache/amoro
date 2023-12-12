@@ -32,11 +32,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class RewriteFilesInput extends BaseOptimizingInput {
+  private static final long serialVersionUID = -696610318564333923L;
   private final DataFile[] rewrittenDataFiles;
   private final DataFile[] rePosDeletedDataFiles;
   private final ContentFile<?>[] readOnlyDeleteFiles;
   private final ContentFile<?>[] rewrittenDeleteFiles;
-  private ArcticTable table;
+  private final ArcticTable table;
 
   public RewriteFilesInput(
       DataFile[] rewrittenDataFiles,
@@ -138,10 +139,10 @@ public class RewriteFilesInput extends BaseOptimizingInput {
       list.addAll(Arrays.asList(rePosDeletedDataFiles));
     }
     if (readOnlyDeleteFiles != null) {
-      Arrays.stream(readOnlyDeleteFiles).forEach(list::add);
+      list.addAll(Arrays.asList(readOnlyDeleteFiles));
     }
     if (rewrittenDeleteFiles != null) {
-      Arrays.stream(rewrittenDeleteFiles).forEach(list::add);
+      list.addAll(Arrays.asList(rewrittenDeleteFiles));
     }
     return list.toArray(new ContentFile<?>[0]);
   }
@@ -152,11 +153,16 @@ public class RewriteFilesInput extends BaseOptimizingInput {
 
   @Override
   public String toString() {
-    return "RewriteFilesInput{" +
-        "rewrittenDataFilesSize=" + (rewrittenDataFiles == null ? 0 : rewrittenDataFiles.length) +
-        ", rePosDeletedDataFilesSize=" + (rePosDeletedDataFiles == null ? 0 : rePosDeletedDataFiles.length) +
-        ", readOnlyDeleteFilesSize=" + (readOnlyDeleteFiles == null ? 0 : readOnlyDeleteFiles.length) +
-        ", rewrittenDeleteFilesSize=" + (rewrittenDeleteFiles == null ? 0 : rewrittenDeleteFiles.length) +
-        "} " + super.toString();
+    return "RewriteFilesInput{"
+        + "rewrittenDataFilesSize="
+        + (rewrittenDataFiles == null ? 0 : rewrittenDataFiles.length)
+        + ", rePosDeletedDataFilesSize="
+        + (rePosDeletedDataFiles == null ? 0 : rePosDeletedDataFiles.length)
+        + ", readOnlyDeleteFilesSize="
+        + (readOnlyDeleteFiles == null ? 0 : readOnlyDeleteFiles.length)
+        + ", rewrittenDeleteFilesSize="
+        + (rewrittenDeleteFiles == null ? 0 : rewrittenDeleteFiles.length)
+        + "} "
+        + super.toString();
   }
 }

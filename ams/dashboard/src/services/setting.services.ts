@@ -37,6 +37,7 @@ export function saveCatalogsSetting(params: {
   storageConfig: IMap<string>
   authConfig: IMap<string>
   properties: IMap<string>
+  tableProperties: IMap<string>
   isCreate?: boolean
 }) {
   const { isCreate, name } = params

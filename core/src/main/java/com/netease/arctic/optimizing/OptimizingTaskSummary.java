@@ -37,7 +37,7 @@ public class OptimizingTaskSummary {
 
   public static final String EXECUTE_DURATION = "executor_duration";
 
-  private Map<String, String> summary = new HashMap<>();
+  private final Map<String, String> summary = new HashMap<>();
 
   public void setDataFileCnt(int dataFileCnt) {
     summary.put(DATA_FILE_CNT, String.valueOf(dataFileCnt));

@@ -18,9 +18,7 @@
 
 package com.netease.arctic.utils;
 
-/**
- * This is a flip converter util.
- */
+/** This is a flip converter util. */
 public class FlipUtil {
   public static byte convertToByte(boolean flip) {
     return flip ? (byte) 1 : (byte) 0;

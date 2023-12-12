@@ -21,21 +21,36 @@ package com.netease.arctic.formats.paimon;
 import com.netease.arctic.FormatCatalogFactory;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.table.TableMetaStore;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.CatalogContext;
 import org.apache.paimon.catalog.CatalogFactory;
 import org.apache.paimon.catalog.FileSystemCatalogFactory;
+import org.apache.paimon.hive.HiveCatalogOptions;
 import org.apache.paimon.options.CatalogOptions;
 import org.apache.paimon.options.Options;
 
+import java.io.File;
+import java.net.URL;
 import java.util.Map;
+import java.util.Optional;
 
 public class PaimonCatalogFactory implements FormatCatalogFactory {
   @Override
   public PaimonCatalog create(
-      String name, String metastoreType, Map<String, String> properties, Configuration configuration) {
-    return new PaimonCatalog(paimonCatalog(metastoreType, properties, configuration), name);
+      String name, String metastoreType, Map<String, String> properties, TableMetaStore metaStore) {
+    Optional<URL> hiveSiteLocation = metaStore.getHiveSiteLocation();
+    Map<String, String> catalogProperties = Maps.newHashMap();
+    catalogProperties.putAll(properties);
+
+    hiveSiteLocation.ifPresent(
+        url ->
+            catalogProperties.put(
+                HiveCatalogOptions.HIVE_CONF_DIR.key(), new File(url.getPath()).getParent()));
+    return new PaimonCatalog(
+        paimonCatalog(metastoreType, catalogProperties, metaStore.getConfiguration()), name);
   }
 
   public static Catalog paimonCatalog(

@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.catalog.BasicCatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.io.reader.CombinedDeleteFilter;
 import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
 import com.netease.arctic.io.writer.RecordWithAction;
 import com.netease.arctic.optimizing.RewriteFilesInput;
@@ -64,8 +65,11 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
   public TestIcebergCombinedReaderVariousTypes(Schema schema) {
     super(
         new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(schema, PrimaryKeySpec.noPrimaryKey(),
-            PartitionSpec.unpartitioned(), buildTableProperties()));
+        new BasicTableTestHelper(
+            schema,
+            PrimaryKeySpec.noPrimaryKey(),
+            PartitionSpec.unpartitioned(),
+            buildTableProperties()));
   }
 
   @Parameterized.Parameters(name = "schema = {0}")
@@ -81,11 +85,8 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
     Schema decimalSchema = getSchema(Types.DecimalType.of(5, 2));
 
     return new Object[] {
-        dateSchema,
-        timeSchema,
-        timestampWithoutZoneSchema,
-        timestampWithZoneSchema,
-        decimalSchema};
+      dateSchema, timeSchema, timestampWithoutZoneSchema, timestampWithZoneSchema, decimalSchema
+    };
   }
 
   @NotNull
@@ -94,8 +95,8 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
         com.google.common.collect.Lists.newArrayList(
             Types.NestedField.of(1, false, "pk1", type),
             Types.NestedField.of(2, false, "pk2", Types.StringType.get()),
-            Types.NestedField.of(3, true, "v1", Types.StringType.get())
-        ), Sets.newHashSet(1, 2));
+            Types.NestedField.of(3, true, "v1", Types.StringType.get())),
+        Sets.newHashSet(1, 2));
   }
 
   private static Map<String, String> buildTableProperties() {
@@ -129,30 +130,78 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
     DataFile[] dataFiles = dataFileList.toArray(new DataFile[0]);
     DeleteFile[] deleteFiles = deleteFileList.toArray(new DeleteFile[0]);
 
-    RewriteFilesInput input = new RewriteFilesInput(
-        dataFiles,
-        new DataFile[] {},
-        new DeleteFile[] {},
-        deleteFiles,
-        table);
+    RewriteFilesInput input =
+        new RewriteFilesInput(
+            dataFiles, new DataFile[] {}, new DeleteFile[] {}, deleteFiles, table);
 
-    CloseableIterable<Record> readData = new GenericCombinedIcebergDataReader(
-        table.io(),
-        table.schema(),
-        table.spec(),
-        null,
-        false,
-        IdentityPartitionConverters::convertConstant,
-        false,
-        null,
-        input
-    ).readData();
+    CloseableIterable<Record> readData =
+        new GenericCombinedIcebergDataReader(
+                table.io(),
+                table.schema(),
+                table.spec(),
+                null,
+                false,
+                IdentityPartitionConverters::convertConstant,
+                false,
+                null,
+                input)
+            .readData();
 
     Assert.assertEquals(Iterables.size(readData), 1);
   }
 
-  private static void write(UnkeyedTable table, List<RecordWithAction> list)
-      throws IOException {
+  @Test
+  public void readDataEnableFilterEqDelete() throws IOException {
+    UnkeyedTable table = getArcticTable().asUnkeyedTable();
+    List<Record> records = RandomGenericData.generate(table.schema(), 50, 1);
+    List<Record> deleteRecords = RandomGenericData.generate(table.schema(), 200, 1);
+
+    List<RecordWithAction> list = new ArrayList<>();
+    records.forEach(r -> list.add(new RecordWithAction(r, ChangeAction.INSERT)));
+    write(table, list);
+
+    List<RecordWithAction> deletes = new ArrayList<>();
+    deleteRecords.forEach(r -> deletes.add(new RecordWithAction(r, ChangeAction.DELETE)));
+    write(table, deletes);
+
+    List<DataFile> dataFileList = new ArrayList<>();
+    List<DeleteFile> deleteFileList = new ArrayList<>();
+    try (CloseableIterable<FileScanTask> tasks = table.newScan().planFiles()) {
+      for (FileScanTask task : tasks) {
+        dataFileList.add(task.file());
+        deleteFileList.addAll(task.deletes());
+      }
+    }
+
+    DataFile[] dataFiles = dataFileList.toArray(new DataFile[0]);
+    DeleteFile[] deleteFiles = deleteFileList.toArray(new DeleteFile[0]);
+
+    Assert.assertNotEquals(dataFiles.length, 0);
+    Assert.assertNotEquals(deleteFiles.length, 0);
+
+    RewriteFilesInput input =
+        new RewriteFilesInput(
+            dataFiles, new DataFile[] {}, new DeleteFile[] {}, deleteFiles, table);
+
+    CombinedDeleteFilter.FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = 100L;
+    GenericCombinedIcebergDataReader reader =
+        new GenericCombinedIcebergDataReader(
+            table.io(),
+            table.schema(),
+            table.spec(),
+            null,
+            false,
+            IdentityPartitionConverters::convertConstant,
+            false,
+            null,
+            input);
+    Assert.assertTrue(reader.getDeleteFilter().isFilterEqDelete());
+
+    CloseableIterable<Record> readData = reader.readData();
+    Assert.assertEquals(Iterables.size(readData), 0);
+  }
+
+  private static void write(UnkeyedTable table, List<RecordWithAction> list) throws IOException {
     WriteResult result = IcebergDataTestHelpers.delta(table, list);
 
     RowDelta rowDelta = table.newRowDelta();

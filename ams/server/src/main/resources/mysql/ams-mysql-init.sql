@@ -64,6 +64,7 @@ CREATE TABLE `table_identifier`
     `catalog_name`    varchar(64) NOT NULL COMMENT 'Catalog name',
     `db_name`         varchar(128) NOT NULL COMMENT 'Database name',
     `table_name`      varchar(128) NOT NULL COMMENT 'Table name',
+    `format`          VARCHAR(32)  NOT NULL COMMENT 'Table Format',
     PRIMARY KEY (`table_id`),
     UNIQUE KEY `table_name_index` (`catalog_name`,`db_name`,`table_name`)
 );
@@ -74,7 +75,6 @@ CREATE TABLE `table_metadata`
     `catalog_name`    varchar(64) NOT NULL COMMENT 'Catalog name',
     `db_name`         varchar(128) NOT NULL COMMENT 'Database name',
     `table_name`      varchar(128) NOT NULL COMMENT 'Table name',
-    `format`          varchar(32)  NOT NULL COMMENT "format",
     `primary_key`     varchar(256) DEFAULT NULL COMMENT 'Primary key',
     `sort_key`        varchar(256) DEFAULT NULL COMMENT 'Sort key',
     `table_location`  varchar(256) DEFAULT NULL COMMENT 'Table location',
@@ -100,7 +100,6 @@ CREATE TABLE `table_runtime`
     `catalog_name`                  varchar(64) NOT NULL COMMENT 'Catalog name',
     `db_name`                       varchar(128) NOT NULL COMMENT 'Database name',
     `table_name`                    varchar(128) NOT NULL COMMENT 'Table name',
-    `format`                        varchar(32)  NOT NULL COMMENT "format",
     `current_snapshot_id`           bigint(20) NOT NULL DEFAULT '-1' COMMENT 'Base table current snapshot id',
     `current_change_snapshotId`     bigint(20) DEFAULT NULL COMMENT 'Change table current snapshot id',
     `last_optimized_snapshotId`     bigint(20) NOT NULL DEFAULT '-1' COMMENT 'last optimized snapshot id',

@@ -40,11 +40,13 @@ import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 
 /**
- * Basic implementation of {@link KeyedTable}, wrapping a {@link BaseTable} and a {@link ChangeTable}.
+ * Basic implementation of {@link KeyedTable}, wrapping a {@link BaseTable} and a {@link
+ * ChangeTable}.
  */
 public class BasicKeyedTable implements KeyedTable {
   private final String tableLocation;
@@ -53,7 +55,8 @@ public class BasicKeyedTable implements KeyedTable {
   protected final BaseTable baseTable;
   protected final ChangeTable changeTable;
 
-  public BasicKeyedTable(String tableLocation, PrimaryKeySpec keySpec, BaseTable baseTable, ChangeTable changeTable) {
+  public BasicKeyedTable(
+      String tableLocation, PrimaryKeySpec keySpec, BaseTable baseTable, ChangeTable changeTable) {
     this.tableLocation = tableLocation;
     this.primaryKeySpec = keySpec;
     this.baseTable = baseTable;
@@ -117,19 +120,22 @@ public class BasicKeyedTable implements KeyedTable {
     long changeWatermark = TablePropertyUtil.getTableWatermark(changeTable.properties());
     long baseWatermark = TablePropertyUtil.getTableWatermark(baseTable.properties());
 
-    ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+    Map<String, String> properties = Maps.newHashMap();
     if (changeWatermark > baseWatermark) {
-      baseTable.properties().forEach((k, v) -> {
-        if (!TableProperties.WATERMARK_TABLE.equals(k)) {
-          builder.put(k, v);
-        }
-      });
-      builder.put(TableProperties.WATERMARK_TABLE, String.valueOf(changeWatermark));
+      baseTable
+          .properties()
+          .forEach(
+              (k, v) -> {
+                if (!TableProperties.WATERMARK_TABLE.equals(k)) {
+                  properties.put(k, v);
+                }
+              });
+      properties.put(TableProperties.WATERMARK_TABLE, String.valueOf(changeWatermark));
     } else {
-      builder.putAll(baseTable.properties());
+      properties.putAll(baseTable.properties());
     }
-    builder.put(TableProperties.WATERMARK_BASE_STORE, String.valueOf(baseWatermark));
-    return builder.build();
+    properties.put(TableProperties.WATERMARK_BASE_STORE, String.valueOf(baseWatermark));
+    return ImmutableMap.copyOf(properties);
   }
 
   @Override
@@ -175,9 +181,11 @@ public class BasicKeyedTable implements KeyedTable {
 
   @Override
   public long beginTransaction(String signature) {
-    // commit an empty snapshot to ChangeStore, and use the sequence of this empty snapshot as TransactionId
+    // commit an empty snapshot to ChangeStore, and use the sequence of this empty snapshot as
+    // TransactionId
     AppendFiles appendFiles = changeTable.newAppend();
-    appendFiles.set(SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE, signature == null ? "" : signature);
+    appendFiles.set(
+        SnapshotSummary.TRANSACTION_BEGIN_SIGNATURE, signature == null ? "" : signature);
     appendFiles.commit();
     CreateSnapshotEvent createSnapshotEvent = (CreateSnapshotEvent) appendFiles.updateEvent();
     return createSnapshotEvent.sequenceNumber();
@@ -201,7 +209,9 @@ public class BasicKeyedTable implements KeyedTable {
   public static class BaseInternalTable extends BasicUnkeyedTable implements BaseTable {
 
     public BaseInternalTable(
-        TableIdentifier tableIdentifier, Table baseIcebergTable, ArcticFileIO arcticFileIO,
+        TableIdentifier tableIdentifier,
+        Table baseIcebergTable,
+        ArcticFileIO arcticFileIO,
         Map<String, String> catalogProperties) {
       super(tableIdentifier, baseIcebergTable, arcticFileIO, catalogProperties);
     }
@@ -210,7 +220,9 @@ public class BasicKeyedTable implements KeyedTable {
   public static class ChangeInternalTable extends BasicUnkeyedTable implements ChangeTable {
 
     public ChangeInternalTable(
-        TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,
+        TableIdentifier tableIdentifier,
+        Table changeIcebergTable,
+        ArcticFileIO arcticFileIO,
         Map<String, String> catalogProperties) {
       super(tableIdentifier, changeIcebergTable, arcticFileIO, catalogProperties);
     }

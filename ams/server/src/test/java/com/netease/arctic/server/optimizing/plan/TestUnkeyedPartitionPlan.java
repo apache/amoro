@@ -34,18 +34,22 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class TestUnkeyedPartitionPlan extends MixedTablePlanTestBase {
 
-  public TestUnkeyedPartitionPlan(CatalogTestHelper catalogTestHelper,
-                                  TableTestHelper tableTestHelper) {
+  public TestUnkeyedPartitionPlan(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[][] parameters() {
     return new Object[][] {
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, true)},
-        {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(false, false)}};
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(false, true)
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(false, false)
+      }
+    };
   }
 
   @Test
@@ -70,8 +74,8 @@ public class TestUnkeyedPartitionPlan extends MixedTablePlanTestBase {
 
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
-    return new MixedIcebergPartitionPlan(getTableRuntime(), getArcticTable(), getPartition(),
-        System.currentTimeMillis());
+    return new MixedIcebergPartitionPlan(
+        getTableRuntime(), getArcticTable(), getPartition(), System.currentTimeMillis());
   }
 
   @Override

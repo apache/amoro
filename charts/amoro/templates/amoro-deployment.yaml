@@ -4,8 +4,7 @@ metadata:
   name:  {{ include "common.names.fullname" . }}
   labels:
     {{- include "amoro.labels" . | nindent 4 }}
-spec:
-  {{/* TODO If Support Replica can be use more than 1 */}}
+spec: {{/* TODO If Support Replica can be use more than 1 */}}
   replicas: 1
   selector:
     matchLabels:
@@ -24,24 +23,26 @@ spec:
       {{- if or .Values.serviceAccount.name .Values.serviceAccount.create }}
       serviceAccountName: {{ .Values.serviceAccount.name | default  (include "common.names.fullname" .) }}
       {{- end }}
+      initContainers:
+        {{- include "amoro.pod.initContainers" . | nindent 8 }}
       containers:
         - name: amoro-ams
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: {{include "amoro.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- with .Values.command }}
-          command: {{- tpl (toYaml .) $ | nindent 12 }}
-            {{- end }}
-            {{- with .Values.args }}
-          args: {{- tpl (toYaml .) $ | nindent 12 }}
-            {{- end }}
+          command: ["/entrypoint.sh", "ams"]
           env:
-            {{- if eq .Values.amoroConf.database.type "mysql" }}
+            {{ - if eq .Values.amoroConf.database.type "mysql" }}
+            - name: "AMS_DATABASE_USERNAME"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "common.names.fullname" . }}
+                  key: username
             - name: "AMS_DATABASE_PASSWORD"
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Release.Name }}
+                  name: {{ include "common.names.fullname" . }}
                   key: password
             {{- end }}
            {{- with .Values.env }}
@@ -67,8 +68,8 @@ spec:
             timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
             failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
             successThreshold: {{ .Values.livenessProbe.successThreshold }}
-              {{- end }}
-              {{- if .Values.readinessProbe.enabled }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
           readinessProbe:
             httpGet:
               path: /versionInfo
@@ -82,40 +83,12 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-            - name: conf
-              mountPath: {{ .Values.amoroDir }}/amoro-{{ .Chart.AppVersion }}/conf/config.yaml
-              readOnly: true
-              subPath: "config.yaml"
-              {{- with .Values.volumeMounts }}
-                {{- tpl (toYaml .) $ | nindent 12 }}
-              {{- end }}
-            {{- if or .Values.amoroConf.log4j2 }}
-            - name: conf
-              mountPath: {{ .Values.amoroDir }}/amoro-{{ .Chart.AppVersion }}/conf/log4j2.xml
-              readOnly: true
-              subPath: "log4j2.xml"
-              {{- with .Values.volumeMounts }}
-                {{- tpl (toYaml .) $ | nindent 12 }}
-              {{- end }}
-            {{- end }}
-            {{- if or .Values.amoroConf.amoroEnv }}
-              mountPath: {{ .Values.amoroDir }}/amoro-{{ .Chart.AppVersion }}/bin/config.sh
-              readOnly: true
-              subPath: "config.sh"
-              {{- with .Values.volumeMounts }}
-                {{- tpl (toYaml .) $ | nindent 12 }}
-              {{- end }}
-            {{- end }}
+            {{- include "amoro.pod.container.mounts" . | nindent 12}}
           {{- with .Values.containers }}
             {{- tpl (toYaml .) $ | nindent 8 }}
           {{- end }}
       volumes:
-        - name: conf
-          configMap:
-            name: {{ include "common.names.fullname" . }}
-        {{- with .Values.volumes }}
-          {{- tpl (toYaml .) $ | nindent 8 }}
-        {{- end }}
+        {{- include "amoro.pod.volumes" . | nindent 8}}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

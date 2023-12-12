@@ -22,10 +22,10 @@ import com.netease.arctic.BasicTableTestHelper;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.io.reader.AbstractArcticDataReader;
-import com.netease.arctic.io.reader.AbstractIcebergDataReader;
-import com.netease.arctic.io.reader.GenericArcticDataReader;
-import com.netease.arctic.io.reader.GenericIcebergDataReader;
+import com.netease.arctic.io.reader.AbstractKeyedDataReader;
+import com.netease.arctic.io.reader.AbstractUnkeyedDataReader;
+import com.netease.arctic.io.reader.GenericKeyedDataReader;
+import com.netease.arctic.io.reader.GenericUnkeyedDataReader;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
@@ -116,11 +116,13 @@ public class MixedDataTestHelpers {
   }
 
   public static List<DataFile> writeChangeStore(
-      KeyedTable keyedTable, Long txId, ChangeAction action,
-      List<Record> records, boolean orderedWrite) {
-    GenericTaskWriters.Builder builder = GenericTaskWriters.builderFor(keyedTable)
-        .withChangeAction(action)
-        .withTransactionId(txId);
+      KeyedTable keyedTable,
+      Long txId,
+      ChangeAction action,
+      List<Record> records,
+      boolean orderedWrite) {
+    GenericTaskWriters.Builder builder =
+        GenericTaskWriters.builderFor(keyedTable).withChangeAction(action).withTransactionId(txId);
     if (orderedWrite) {
       builder.withOrdered();
     }
@@ -131,16 +133,16 @@ public class MixedDataTestHelpers {
     }
   }
 
-  public static List<DataFile> writeRecords(
-      TaskWriter<Record> taskWriter, List<Record> records) {
+  public static List<DataFile> writeRecords(TaskWriter<Record> taskWriter, List<Record> records) {
     try {
-      records.forEach(d -> {
-        try {
-          taskWriter.write(d);
-        } catch (IOException e) {
-          throw new UncheckedIOException(e);
-        }
-      });
+      records.forEach(
+          d -> {
+            try {
+              taskWriter.write(d);
+            } catch (IOException e) {
+              throw new UncheckedIOException(e);
+            }
+          });
 
       WriteResult result = taskWriter.complete();
       return Arrays.asList(result.dataFiles());
@@ -150,8 +152,7 @@ public class MixedDataTestHelpers {
   }
 
   public static List<DataFile> writeBaseStore(
-      ArcticTable table, long txId, List<Record> records,
-      boolean orderedWrite) {
+      ArcticTable table, long txId, List<Record> records, boolean orderedWrite) {
     GenericTaskWriters.Builder builder = GenericTaskWriters.builderFor(table);
     if (table.isKeyedTable()) {
       builder.withTransactionId(txId);
@@ -173,8 +174,8 @@ public class MixedDataTestHelpers {
     if (table.isKeyedTable()) {
       builder.withTransactionId(txId);
     }
-    try (SortedPosDeleteWriter<Record> writer = builder.buildBasePosDeleteWriter(node.mask(), node.index(),
-        dataFile.partition())) {
+    try (SortedPosDeleteWriter<Record> writer =
+        builder.buildBasePosDeleteWriter(node.mask(), node.index(), dataFile.partition())) {
       for (Long p : pos) {
         writer.delete(dataFile.path().toString(), p);
       }
@@ -185,8 +186,7 @@ public class MixedDataTestHelpers {
   }
 
   public static List<DataFile> writeAndCommitBaseStore(
-      ArcticTable table, long txId, List<Record> records,
-      boolean orderedWrite) {
+      ArcticTable table, long txId, List<Record> records, boolean orderedWrite) {
     List<DataFile> dataFiles = writeBaseStore(table, txId, records, orderedWrite);
     AppendFiles appendFiles;
     if (table.isKeyedTable()) {
@@ -200,8 +200,7 @@ public class MixedDataTestHelpers {
   }
 
   public static List<DataFile> writeAndCommitChangeStore(
-      KeyedTable keyedTable, Long txId, ChangeAction action,
-      List<Record> records) {
+      KeyedTable keyedTable, Long txId, ChangeAction action, List<Record> records) {
     List<DataFile> writeFiles = writeChangeStore(keyedTable, txId, action, records, false);
     AppendFiles appendFiles = keyedTable.changeTable().newAppend();
     writeFiles.forEach(appendFiles::appendFile);
@@ -209,38 +208,52 @@ public class MixedDataTestHelpers {
     return writeFiles;
   }
 
+  public static List<Record> readTable(ArcticTable table, Expression expression) {
+    table.refresh();
+    if (table.isKeyedTable()) {
+      return readKeyedTable(table.asKeyedTable(), expression);
+    } else {
+      return readBaseStore(table, expression);
+    }
+  }
+
   public static List<Record> readKeyedTable(KeyedTable keyedTable, Expression expression) {
     return readKeyedTable(keyedTable, expression, null, false, false);
   }
 
   public static List<Record> readKeyedTable(
-      KeyedTable keyedTable, Expression expression,
-      Schema projectSchema, boolean useDiskMap, boolean readDeletedData) {
-    GenericArcticDataReader reader;
+      KeyedTable keyedTable,
+      Expression expression,
+      Schema projectSchema,
+      boolean useDiskMap,
+      boolean readDeletedData) {
+    GenericKeyedDataReader reader;
     if (projectSchema == null) {
       projectSchema = keyedTable.schema();
     }
     if (useDiskMap) {
-      reader = new GenericArcticDataReader(
-          keyedTable.io(),
-          keyedTable.schema(),
-          projectSchema,
-          keyedTable.primaryKeySpec(),
-          null,
-          true,
-          IdentityPartitionConverters::convertConstant,
-          null, false, new StructLikeCollections(true, 0L)
-      );
+      reader =
+          new GenericKeyedDataReader(
+              keyedTable.io(),
+              keyedTable.schema(),
+              projectSchema,
+              keyedTable.primaryKeySpec(),
+              null,
+              true,
+              IdentityPartitionConverters::convertConstant,
+              null,
+              false,
+              new StructLikeCollections(true, 0L));
     } else {
-      reader = new GenericArcticDataReader(
-          keyedTable.io(),
-          keyedTable.schema(),
-          projectSchema,
-          keyedTable.primaryKeySpec(),
-          null,
-          true,
-          IdentityPartitionConverters::convertConstant
-      );
+      reader =
+          new GenericKeyedDataReader(
+              keyedTable.io(),
+              keyedTable.schema(),
+              projectSchema,
+              keyedTable.primaryKeySpec(),
+              null,
+              true,
+              IdentityPartitionConverters::convertConstant);
     }
 
     return readKeyedTable(keyedTable, reader, expression, projectSchema, readDeletedData);
@@ -248,34 +261,42 @@ public class MixedDataTestHelpers {
 
   public static List<Record> readKeyedTable(
       KeyedTable keyedTable,
-      AbstractArcticDataReader<Record> reader, Expression expression,
-      Schema projectSchema, boolean readDeletedData) {
+      AbstractKeyedDataReader<Record> reader,
+      Expression expression,
+      Schema projectSchema,
+      boolean readDeletedData) {
 
     List<Record> result = Lists.newArrayList();
     final Schema expectSchema = projectSchema;
-    try (CloseableIterable<CombinedScanTask> combinedScanTasks = keyedTable.newScan().filter(expression).planTasks()) {
-      combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
-        CloseableIterator<Record> records;
-        if (readDeletedData) {
-          records = reader.readDeletedData(scTask);
-        } else {
-          records = reader.readData(scTask);
-        }
-        try {
-          while (records.hasNext()) {
-            Record record = projectMetadataRecord(records.next(), expectSchema);
-            result.add(record);
-          }
-        } finally {
-          if (records != null) {
-            try {
-              records.close();
-            } catch (IOException e) {
-              // ignore
-            }
-          }
-        }
-      }));
+    try (CloseableIterable<CombinedScanTask> combinedScanTasks =
+        keyedTable.newScan().filter(expression).planTasks()) {
+      combinedScanTasks.forEach(
+          combinedTask ->
+              combinedTask
+                  .tasks()
+                  .forEach(
+                      scTask -> {
+                        CloseableIterator<Record> records;
+                        if (readDeletedData) {
+                          records = reader.readDeletedData(scTask);
+                        } else {
+                          records = reader.readData(scTask);
+                        }
+                        try {
+                          while (records.hasNext()) {
+                            Record record = projectMetadataRecord(records.next(), expectSchema);
+                            result.add(record);
+                          }
+                        } finally {
+                          if (records != null) {
+                            try {
+                              records.close();
+                            } catch (IOException e) {
+                              // ignore
+                            }
+                          }
+                        }
+                      }));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
@@ -283,46 +304,47 @@ public class MixedDataTestHelpers {
   }
 
   public static List<Record> readChangeStore(
-      KeyedTable keyedTable, Expression expression, Schema projectSchema,
-      boolean useDiskMap) {
+      KeyedTable keyedTable, Expression expression, Schema projectSchema, boolean useDiskMap) {
     if (projectSchema == null) {
       projectSchema = keyedTable.schema();
     }
-    Schema expectTableSchema = MetadataColumns.appendChangeStoreMetadataColumns(keyedTable.schema());
+    Schema expectTableSchema =
+        MetadataColumns.appendChangeStoreMetadataColumns(keyedTable.schema());
     Schema expectProjectSchema = MetadataColumns.appendChangeStoreMetadataColumns(projectSchema);
 
-    GenericIcebergDataReader reader;
+    GenericUnkeyedDataReader reader;
     if (useDiskMap) {
-      reader = new GenericIcebergDataReader(
-          keyedTable.asKeyedTable().io(),
-          expectTableSchema,
-          expectProjectSchema,
-          null,
-          false,
-          IdentityPartitionConverters::convertConstant,
-          false,
-          new StructLikeCollections(true, 0L));
+      reader =
+          new GenericUnkeyedDataReader(
+              keyedTable.asKeyedTable().io(),
+              expectTableSchema,
+              expectProjectSchema,
+              null,
+              false,
+              IdentityPartitionConverters::convertConstant,
+              false,
+              new StructLikeCollections(true, 0L));
     } else {
-      reader = new GenericIcebergDataReader(
-          keyedTable.asKeyedTable().io(),
-          expectTableSchema,
-          expectProjectSchema,
-          null,
-          false,
-          IdentityPartitionConverters::convertConstant,
-          false
-      );
+      reader =
+          new GenericUnkeyedDataReader(
+              keyedTable.asKeyedTable().io(),
+              expectTableSchema,
+              expectProjectSchema,
+              null,
+              false,
+              IdentityPartitionConverters::convertConstant,
+              false);
     }
 
     return readChangeStore(keyedTable, reader, expression);
   }
 
   public static List<Record> readChangeStore(
-      KeyedTable keyedTable, AbstractIcebergDataReader<Record> reader,
-      Expression expression) {
+      KeyedTable keyedTable, AbstractUnkeyedDataReader<Record> reader, Expression expression) {
 
     ChangeTable changeTable = keyedTable.asKeyedTable().changeTable();
-    CloseableIterable<FileScanTask> fileScanTasks = changeTable.newScan().filter(expression).planFiles();
+    CloseableIterable<FileScanTask> fileScanTasks =
+        changeTable.newScan().filter(expression).planFiles();
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     for (FileScanTask fileScanTask : fileScanTasks) {
       builder.addAll(reader.readData(fileScanTask));
@@ -330,45 +352,49 @@ public class MixedDataTestHelpers {
     return builder.build();
   }
 
+  public static List<Record> readBaseStore(ArcticTable table, Expression expression) {
+    return readBaseStore(table, expression, null, false);
+  }
+
   public static List<Record> readBaseStore(
-      ArcticTable table, Expression expression, Schema projectSchema,
-      boolean useDiskMap) {
+      ArcticTable table, Expression expression, Schema projectSchema, boolean useDiskMap) {
     if (projectSchema == null) {
       projectSchema = table.schema();
     }
 
-    GenericIcebergDataReader reader;
+    GenericUnkeyedDataReader reader;
     if (useDiskMap) {
-      reader = new GenericIcebergDataReader(
-          table.io(),
-          table.schema(),
-          projectSchema,
-          null,
-          false,
-          IdentityPartitionConverters::convertConstant,
-          false,
-          new StructLikeCollections(true, 0L));
+      reader =
+          new GenericUnkeyedDataReader(
+              table.io(),
+              table.schema(),
+              projectSchema,
+              null,
+              false,
+              IdentityPartitionConverters::convertConstant,
+              false,
+              new StructLikeCollections(true, 0L));
     } else {
-      reader = new GenericIcebergDataReader(
-          table.io(),
-          table.schema(),
-          projectSchema,
-          null,
-          false,
-          IdentityPartitionConverters::convertConstant,
-          false
-      );
+      reader =
+          new GenericUnkeyedDataReader(
+              table.io(),
+              table.schema(),
+              projectSchema,
+              null,
+              false,
+              IdentityPartitionConverters::convertConstant,
+              false);
     }
 
     return readBaseStore(table, reader, expression);
   }
 
   public static List<Record> readBaseStore(
-      ArcticTable table, AbstractIcebergDataReader<Record> reader,
-      Expression expression) {
+      ArcticTable table, AbstractUnkeyedDataReader<Record> reader, Expression expression) {
 
     UnkeyedTable baseStore = ArcticTableUtil.baseStore(table);
-    CloseableIterable<FileScanTask> fileScanTasks = baseStore.newScan().filter(expression).planFiles();
+    CloseableIterable<FileScanTask> fileScanTasks =
+        baseStore.newScan().filter(expression).planFiles();
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     for (FileScanTask fileScanTask : fileScanTasks) {
       builder.addAll(reader.readData(fileScanTask));
@@ -378,12 +404,16 @@ public class MixedDataTestHelpers {
 
   private static Record projectMetadataRecord(Record record, Schema projectSchema) {
     GenericRecord projectRecord = GenericRecord.create(projectSchema);
-    projectSchema.columns().forEach(nestedField ->
-        projectRecord.setField(nestedField.name(), record.getField(nestedField.name())));
+    projectSchema
+        .columns()
+        .forEach(
+            nestedField ->
+                projectRecord.setField(nestedField.name(), record.getField(nestedField.name())));
     return projectRecord;
   }
 
-  public static List<Record> readDataFile(FileFormat format, Schema schema, CharSequence path) throws IOException {
+  public static List<Record> readDataFile(FileFormat format, Schema schema, CharSequence path)
+      throws IOException {
     CloseableIterable<Record> iterable;
 
     InputFile inputFile = Files.localInput(path.toString());
@@ -420,46 +450,52 @@ public class MixedDataTestHelpers {
   }
 
   public static Record appendMetaColumnValues(
-      Record sourceRecord, long transactionId, long offset,
-      ChangeAction action) {
+      Record sourceRecord, long transactionId, long offset, ChangeAction action) {
     Schema sourceSchema = new Schema(sourceRecord.struct().fields());
-    Record expectRecord = GenericRecord.create(com.netease.arctic.table.MetadataColumns
-        .appendChangeStoreMetadataColumns(sourceSchema));
-    sourceRecord.struct().fields().forEach(nestedField ->
-        expectRecord.setField(nestedField.name(), sourceRecord.getField(nestedField.name())));
-    expectRecord.setField(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED_NAME, transactionId);
+    Record expectRecord =
+        GenericRecord.create(
+            com.netease.arctic.table.MetadataColumns.appendChangeStoreMetadataColumns(
+                sourceSchema));
+    sourceRecord
+        .struct()
+        .fields()
+        .forEach(
+            nestedField ->
+                expectRecord.setField(
+                    nestedField.name(), sourceRecord.getField(nestedField.name())));
+    expectRecord.setField(
+        com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED_NAME, transactionId);
     expectRecord.setField(com.netease.arctic.table.MetadataColumns.FILE_OFFSET_FILED_NAME, offset);
-    expectRecord.setField(com.netease.arctic.table.MetadataColumns.CHANGE_ACTION_NAME, action.toString());
+    expectRecord.setField(
+        com.netease.arctic.table.MetadataColumns.CHANGE_ACTION_NAME, action.toString());
     return expectRecord;
   }
 
   public static DataFile wrapIcebergDataFile(DataFile dataFile, Long dataSequenceNumber) {
-    InvocationHandler handler = (proxy, method, args) -> {
-      if (method.getName().equals("dataSequenceNumber") && (args == null || args.length == 0)) {
-        return dataSequenceNumber;
-      } else {
-        return method.invoke(dataFile, args);
-      }
-    };
-    return (DataFile) Proxy.newProxyInstance(
-        DataFile.class.getClassLoader(),
-        new Class[]{DataFile.class},
-        handler
-    );
+    InvocationHandler handler =
+        (proxy, method, args) -> {
+          if (method.getName().equals("dataSequenceNumber") && (args == null || args.length == 0)) {
+            return dataSequenceNumber;
+          } else {
+            return method.invoke(dataFile, args);
+          }
+        };
+    return (DataFile)
+        Proxy.newProxyInstance(
+            DataFile.class.getClassLoader(), new Class[] {DataFile.class}, handler);
   }
 
   public static DeleteFile wrapIcebergDeleteFile(DeleteFile deleteFile, Long dataSequenceNumber) {
-    InvocationHandler handler = (proxy, method, args) -> {
-      if (method.getName().equals("dataSequenceNumber") && (args == null || args.length == 0)) {
-        return dataSequenceNumber;
-      } else {
-        return method.invoke(deleteFile, args);
-      }
-    };
-    return (DeleteFile) Proxy.newProxyInstance(
-        DeleteFile.class.getClassLoader(),
-        new Class[]{DeleteFile.class},
-        handler
-    );
+    InvocationHandler handler =
+        (proxy, method, args) -> {
+          if (method.getName().equals("dataSequenceNumber") && (args == null || args.length == 0)) {
+            return dataSequenceNumber;
+          } else {
+            return method.invoke(deleteFile, args);
+          }
+        };
+    return (DeleteFile)
+        Proxy.newProxyInstance(
+            DeleteFile.class.getClassLoader(), new Class[] {DeleteFile.class}, handler);
   }
 }

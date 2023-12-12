@@ -29,8 +29,8 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Default implementation of {@link PrimaryKeyedFile}, wrapping a {@link DataFile} and parsing extra information from
- * file name.
+ * Default implementation of {@link PrimaryKeyedFile}, wrapping a {@link DataFile} and parsing extra
+ * information from file name.
  */
 public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
 
@@ -44,7 +44,8 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
   }
 
   public static DefaultKeyedFile parseChange(DataFile dataFile) {
-    FileMeta fileMeta = FileNameRules.parseChange(dataFile.path().toString(), dataFile.dataSequenceNumber());
+    FileMeta fileMeta =
+        FileNameRules.parseChange(dataFile.path().toString(), dataFile.dataSequenceNumber());
     return new DefaultKeyedFile(dataFile, fileMeta);
   }
 

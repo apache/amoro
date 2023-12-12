@@ -18,13 +18,11 @@
 
 package com.netease.arctic.utils.map;
 
-import com.netease.arctic.iceberg.StructLikeWrapper;
-import com.netease.arctic.utils.ObjectSizeCalculator;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.util.StructLikeWrapper;
+import org.apache.lucene.util.RamUsageEstimator;
 
-/**
- * Size Estimator for StructLikeWrapper record payload.
- */
+/** Size Estimator for StructLikeWrapper record payload. */
 public class StructLikeWrapperSizeEstimator implements SizeEstimator<StructLikeWrapper> {
   @Override
   public long sizeEstimate(StructLikeWrapper structLikeWrapper) {
@@ -32,7 +30,19 @@ public class StructLikeWrapperSizeEstimator implements SizeEstimator<StructLikeW
       return 0;
     }
     StructLike structLike = structLikeWrapper.get();
-    return ObjectSizeCalculator.getObjectSize(structLikeObjects(structLike));
+    return sizeOf(structLikeObjects(structLike));
+  }
+
+  private long sizeOf(Object[] objects) {
+    long size = 0;
+    for (Object object : objects) {
+      if (object.getClass().isArray()) {
+        size += sizeOf((Object[]) object);
+      } else {
+        size += RamUsageEstimator.sizeOfObject(object, 0);
+      }
+    }
+    return size;
   }
 
   private Object[] structLikeObjects(StructLike structLike) {

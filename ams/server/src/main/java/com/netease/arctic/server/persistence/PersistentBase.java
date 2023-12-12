@@ -24,21 +24,22 @@ import com.netease.arctic.server.exception.PersistenceException;
 import org.apache.ibatis.session.TransactionIsolationLevel;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
+import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public abstract class PersistentBase {
 
-  protected PersistentBase() {
-  }
+  protected PersistentBase() {}
 
   @VisibleForTesting
   protected NestedSqlSession beginSession() {
     return NestedSqlSession.openSession(
-        () -> SqlSessionFactoryProvider
-            .getInstance().get()
-            .openSession(TransactionIsolationLevel.READ_COMMITTED));
+        () ->
+            SqlSessionFactoryProvider.getInstance()
+                .get()
+                .openSession(TransactionIsolationLevel.READ_COMMITTED));
   }
 
   protected final <T> void doAs(Class<T> mapperClz, Consumer<T> consumer) {
@@ -57,9 +58,7 @@ public abstract class PersistentBase {
   protected final void doAsTransaction(Runnable... operations) {
     try (NestedSqlSession session = beginSession()) {
       try {
-        for (Runnable runnable : operations) {
-          runnable.run();
-        }
+        Arrays.stream(operations).forEach(Runnable::run);
         session.commit();
       } catch (Throwable t) {
         session.rollback();
@@ -72,21 +71,22 @@ public abstract class PersistentBase {
     try (NestedSqlSession session = beginSession()) {
       try {
         T mapper = getMapper(session, mapperClz);
-        R result = func.apply(mapper);
-        return result;
+        return func.apply(mapper);
       } catch (Throwable t) {
         throw ArcticRuntimeException.wrap(t, PersistenceException::new);
       }
     }
   }
 
-  protected final <T> void doAsExisted(Class<T> mapperClz, Function<T, Integer> func,
+  protected final <T> void doAsExisted(
+      Class<T> mapperClz,
+      Function<T, Integer> func,
       Supplier<? extends ArcticRuntimeException> errorSupplier) {
     try (NestedSqlSession session = beginSession()) {
       try {
         int result = func.apply(getMapper(session, mapperClz));
         if (result == 0) {
-          throw  errorSupplier.get();
+          throw errorSupplier.get();
         }
         session.commit();
       } catch (Throwable t) {

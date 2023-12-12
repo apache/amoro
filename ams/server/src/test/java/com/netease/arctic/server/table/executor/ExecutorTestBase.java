@@ -22,8 +22,6 @@ import com.netease.arctic.TableTestHelper;
 import com.netease.arctic.catalog.CatalogTestHelper;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.hive.io.HiveDataTestHelpers;
-import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
@@ -48,15 +46,17 @@ public class ExecutorTestBase extends TableTestBase {
   public List<Record> createRecords(int start, int length) {
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     for (int i = start; i < start + length; i++) {
-      builder.add(tableTestHelper().generateTestRecord(
-          i, "name" + i, 0L,
-          LocalDateTime.of(2022, 1, i % 2 + 1, 12, 0, 0).toString()));
+      builder.add(
+          tableTestHelper()
+              .generateTestRecord(
+                  i, "name" + i, 0L, LocalDateTime.of(2022, 1, i % 2 + 1, 12, 0, 0).toString()));
     }
     return builder.build();
   }
 
   public List<DataFile> writeAndCommitBaseStore(ArcticTable table) {
-    UnkeyedTable baseTable = table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
+    UnkeyedTable baseTable =
+        table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
     // write 4 file,100 records to 2 partitions(2022-1-1\2022-1-2)
     List<DataFile> dataFiles =
         tableTestHelper().writeBaseStore(baseTable, 0, createRecords(1, 100), false);
@@ -68,25 +68,12 @@ public class ExecutorTestBase extends TableTestBase {
 
   public List<DataFile> writeAndCommitChangeStore(
       KeyedTable table, long txId, ChangeAction action, List<Record> records) {
-    List<DataFile> writeFiles = tableTestHelper().writeChangeStore(table, txId, action, records, false);
+    List<DataFile> writeFiles =
+        tableTestHelper().writeChangeStore(table, txId, action, records, false);
     AppendFiles appendFiles = table.changeTable().newAppend();
     writeFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
     return writeFiles;
-  }
-
-
-  public List<DataFile> writeAndCommitBaseAndHive(
-      ArcticTable table, long txId, boolean writeHive) {
-    String hiveSubDir = HiveTableUtil.newHiveSubdirectory(txId);
-    List<DataFile> dataFiles = HiveDataTestHelpers.writeBaseStore(
-        table, txId, createRecords(1, 100), false, writeHive, hiveSubDir);
-    UnkeyedTable baseTable = table.isKeyedTable() ?
-        table.asKeyedTable().baseTable() : table.asUnkeyedTable();
-    AppendFiles baseAppend = baseTable.newAppend();
-    dataFiles.forEach(baseAppend::appendFile);
-    baseAppend.commit();
-    return dataFiles;
   }
 
   public void writeAndCommitBaseAndChange(ArcticTable table) {
@@ -99,7 +86,8 @@ public class ExecutorTestBase extends TableTestBase {
     if (table.isKeyedTable()) {
       checkMetadataExistence(table.asKeyedTable().changeTable());
     }
-    UnkeyedTable baseTable = table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
+    UnkeyedTable baseTable =
+        table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
     checkMetadataExistence(baseTable);
   }
 
@@ -115,5 +103,4 @@ public class ExecutorTestBase extends TableTestBase {
     }
     Assert.assertTrue(table.io().exists(ReachableFileUtil.versionHintLocation(table)));
   }
-
 }

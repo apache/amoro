@@ -16,13 +16,14 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.netease.amoro</groupId>
     <artifactId>amoro-parent</artifactId>
-    <version>0.6.0-SNAPSHOT</version>
+    <version>0.7.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Amoro Project Parent</name>
@@ -39,12 +40,8 @@
 
     <modules>
         <module>core</module>
-        <module>hive</module>
-        <module>flink</module>
-        <module>spark</module>
-        <module>trino</module>
         <module>ams</module>
-        <module>dist</module>
+        <module>mixed</module>
     </modules>
 
     <scm>
@@ -69,7 +66,6 @@
         <jacoco.flink.skip>false</jacoco.flink.skip>
 
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
-        <maven-checkstyle-plugin.version>3.2.1</maven-checkstyle-plugin.version>
         <maven-jar-plugin-version>3.0.2</maven-jar-plugin-version>
         <maven-source-plugin-version>2.2.1</maven-source-plugin-version>
         <maven-javadoc-plugin.version>3.3.0</maven-javadoc-plugin.version>
@@ -90,10 +86,10 @@
         <iceberg.version>1.3.0</iceberg.version>
         <paimon.version>0.5.0-incubating</paimon.version>
         <hive.version>3.1.1</hive.version>
-        <hadoop.version>3.2.2</hadoop.version>
+        <hadoop.version>3.2.4</hadoop.version>
+        <kerby.version>2.0.3</kerby.version>
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>
-        <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
         <slf4j.version>1.7.30</slf4j.version>
         <log4j.version>2.20.0</log4j.version>
         <junit4.version>4.13</junit4.version>
@@ -107,7 +103,7 @@
         <parquet-hadoop.version>1.12.0</parquet-hadoop.version>
         <curator.version>5.2.1</curator.version>
         <zookeeper.version>3.7.1</zookeeper.version>
-        <fastjson.version>1.2.75</fastjson.version>
+        <fastjson.version>1.2.83</fastjson.version>
         <parquet-avro.version>1.12.2</parquet-avro.version>
         <orc-core.version>1.7.2</orc-core.version>
         <awssdk.version>2.20.5</awssdk.version>
@@ -116,19 +112,20 @@
         <dropwizard.metrics.version>4.2.19</dropwizard.metrics.version>
         <thrift.version>0.13.0</thrift.version>
         <caffeine.version>2.8.4</caffeine.version>
-        <snakeyaml.version>1.30</snakeyaml.version>
+        <snakeyaml.version>2.2</snakeyaml.version>
         <mybatis.version>3.5.6</mybatis.version>
         <postgres-jdbc.version>42.5.1</postgres-jdbc.version>
         <derby-jdbc.version>10.13.1.1</derby-jdbc.version>
         <commons-dbcp2.version>2.9.0</commons-dbcp2.version>
-        <netty.version>4.1.56.Final</netty.version>
+        <netty.version>4.1.86.Final</netty.version>
         <javalin.version>4.6.1</javalin.version>
         <kyuubi-hive-jdbc-shaded.version>1.6.0-incubating</kyuubi-hive-jdbc-shaded.version>
         <powermock.version>2.0.2</powermock.version>
         <rocksdb.version>7.10.2</rocksdb.version>
         <kryo.version>2.24.0</kryo.version>
-        <jol.version>0.16</jol.version>
         <trino.version>406</trino.version>
+        <lucene.version>8.11.2</lucene.version>
+        <bitmap.version>0.9.44</bitmap.version>
     </properties>
 
     <dependencyManagement>
@@ -147,7 +144,7 @@
 
             <dependency>
                 <groupId>com.netease.amoro</groupId>
-                <artifactId>amoro-hive</artifactId>
+                <artifactId>amoro-mixed-hive</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -244,6 +241,18 @@
                         <groupId>org.slf4j</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.kerby</groupId>
+                        <artifactId>kerb-simplekdc</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -284,7 +293,27 @@
                         <groupId>com.sun.jersey</groupId>
                         <artifactId>jersey-servlet</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.kerby</groupId>
+                        <artifactId>kerb-simplekdc</artifactId>
+                    </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.kerby</groupId>
+                <artifactId>kerb-simplekdc</artifactId>
+                <version>${kerby.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-aws</artifactId>
+                <version>${hadoop.version}</version>
             </dependency>
 
             <dependency>
@@ -322,12 +351,6 @@
                 <groupId>args4j</groupId>
                 <artifactId>args4j</artifactId>
                 <version>${args4j.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${mysql-jdbc.version}</version>
             </dependency>
 
             <dependency>
@@ -389,6 +412,12 @@
                 <groupId>org.apache.paimon</groupId>
                 <artifactId>paimon-bundle</artifactId>
                 <version>${paimon.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.roaringbitmap</groupId>
+                <artifactId>RoaringBitmap</artifactId>
+                <version>${bitmap.version}</version>
             </dependency>
 
             <dependency>
@@ -482,6 +511,12 @@
             </dependency>
 
             <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.apache.kyuubi</groupId>
                 <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
                 <version>${kyuubi-hive-jdbc-shaded.version}</version>
@@ -497,12 +532,6 @@
                 <groupId>com.esotericsoftware.kryo</groupId>
                 <artifactId>kryo</artifactId>
                 <version>${kryo.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.openjdk.jol</groupId>
-                <artifactId>jol-core</artifactId>
-                <version>${jol.version}</version>
             </dependency>
 
             <dependency>
@@ -557,6 +586,42 @@
                     <exclusion>
                         <groupId>org.apache.parquet</groupId>
                         <artifactId>parquet-hadoop-bundle</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.orc</groupId>
+                        <artifactId>orc-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hive</groupId>
+                        <artifactId>hive-orc</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-yarn-server-resourcemanager</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-yarn-server-applicationhistoryservice</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-yarn-registry</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-common</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hbase</groupId>
+                        <artifactId>hbase-hadoop2-compat</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -621,6 +686,12 @@
                 <groupId>io.trino</groupId>
                 <artifactId>trino-spi</artifactId>
                 <version>${trino.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-core</artifactId>
+                <version>${lucene.version}</version>
             </dependency>
 
             <dependency>
@@ -792,31 +863,6 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>${maven-checkstyle-plugin.version}</version>
-                    <configuration>
-                        <configLocation>style/arctic-checkstyle.xml</configLocation>
-                        <suppressionsLocation>style/suppressions.xml</suppressionsLocation>
-                        <consoleOutput>true</consoleOutput>
-                        <failsOnError>true</failsOnError>
-                        <violationSeverity>warning</violationSeverity>
-                        <sourceDirectories>
-                            <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
-                        </sourceDirectories>
-                        <excludes>**\/gen-antlr\/</excludes>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>validate</id>
-                            <goals>
-                                <goal>check</goal>
-                            </goals>
-                            <phase>validate</phase>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>${maven-dependency-plugin.version}</version>
                 </plugin>
@@ -842,7 +888,8 @@
                             </goals>
                             <phase>test</phase>
                             <configuration>
-                                <outputDirectory>${project.build.directory}/codecov</outputDirectory>
+                                <outputDirectory>${project.build.directory}/codecov
+                                </outputDirectory>
                             </configuration>
                         </execution>
                     </executions>
@@ -877,7 +924,7 @@
                             <googleJavaFormat>
                                 <version>1.7</version>
                             </googleJavaFormat>
-                            <removeUnusedImports />
+                            <removeUnusedImports/>
                             <importOrder>
                                 <order>,javax,java,\\#</order>
                             </importOrder>
@@ -896,15 +943,15 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
@@ -921,7 +968,7 @@
             <properties>
                 <guava.version>14.0.1</guava.version>
                 <hive.version>2.1.1</hive.version>
-                <hadoop.version>2.9.2</hadoop.version>
+                <hadoop.version>2.10.2</hadoop.version>
                 <terminal.spark.version>3.1.2</terminal.spark.version>
                 <terminal.spark.major.version>3.1</terminal.spark.major.version>
             </properties>
@@ -936,7 +983,7 @@
             <properties>
                 <guava.version>32.1.1-jre</guava.version>
                 <hive.version>3.1.1</hive.version>
-                <hadoop.version>3.2.2</hadoop.version>
+                <hadoop.version>3.2.4</hadoop.version>
                 <terminal.spark.version>3.3.2</terminal.spark.version>
                 <terminal.spark.major.version>3.3</terminal.spark.major.version>
             </properties>

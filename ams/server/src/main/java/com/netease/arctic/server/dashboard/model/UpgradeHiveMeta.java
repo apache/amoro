@@ -30,8 +30,7 @@ public class UpgradeHiveMeta {
     this.pkList = pkList;
   }
 
-  public UpgradeHiveMeta() {
-  }
+  public UpgradeHiveMeta() {}
 
   public Map<String, String> getProperties() {
     return properties;
@@ -56,8 +55,7 @@ public class UpgradeHiveMeta {
       this.fieldName = fieldName;
     }
 
-    public PrimaryKeyField() {
-    }
+    public PrimaryKeyField() {}
 
     public String getFieldName() {
       return fieldName;

@@ -45,6 +45,7 @@ import org.apache.iceberg.UpdateLocation;
 import org.apache.iceberg.UpdatePartitionSpec;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
+import org.apache.iceberg.UpdateStatistics;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.LocationProvider;
@@ -139,6 +140,11 @@ public class ArcticTransaction implements Transaction {
   @Override
   public ExpireSnapshots expireSnapshots() {
     return transaction.expireSnapshots();
+  }
+
+  @Override
+  public UpdateStatistics updateStatistics() {
+    return transaction.updateStatistics();
   }
 
   @Override
@@ -343,12 +349,13 @@ public class ArcticTransaction implements Transaction {
     }
 
     @Override
+    public UpdateStatistics updateStatistics() {
+      return transactionTable.updateStatistics();
+    }
+
+    @Override
     public String toString() {
       return transactionTable.toString();
     }
   }
 }
-
-
-
-

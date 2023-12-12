@@ -26,16 +26,13 @@ import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TMultiplexedProtocol;
 
-/**
- * Client pool cache for different ams optimize server, sharing in jvm.
- */
+/** Client pool cache for different ams optimize server, sharing in jvm. */
 public class OptimizingClientPools {
   private static final int CLIENT_POOL_MIN_IDLE = 1;
   private static final int CLIENT_POOL_MAX_IDLE = 5;
 
-  private static final LoadingCache<String, ThriftClientPool<OptimizingService.Client>> CLIENT_POOLS
-      = Caffeine.newBuilder()
-      .build(OptimizingClientPools::buildClient);
+  private static final LoadingCache<String, ThriftClientPool<OptimizingService.Client>>
+      CLIENT_POOLS = Caffeine.newBuilder().build(OptimizingClientPools::buildClient);
 
   public static OptimizingService.Iface getClient(String metastoreUrl) {
     return CLIENT_POOLS.get(metastoreUrl).iface();
@@ -47,15 +44,21 @@ public class OptimizingClientPools {
     poolConfig.setMinIdle(CLIENT_POOL_MIN_IDLE);
     poolConfig.setMaxIdle(CLIENT_POOL_MAX_IDLE);
     poolConfig.setMaxTotal(-1);
-    return new ThriftClientPool<>(url,
-        s -> new OptimizingService.Client(
-            new TMultiplexedProtocol(new TBinaryProtocol(s), Constants.THRIFT_OPTIMIZING_SERVICE_NAME)), c -> {
-      try {
-        ((OptimizingService.Client) c).ping();
-      } catch (TException e) {
-        return false;
-      }
-      return true;
-    }, poolConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME);
+    return new ThriftClientPool<>(
+        url,
+        s ->
+            new OptimizingService.Client(
+                new TMultiplexedProtocol(
+                    new TBinaryProtocol(s), Constants.THRIFT_OPTIMIZING_SERVICE_NAME)),
+        c -> {
+          try {
+            ((OptimizingService.Client) c).ping();
+          } catch (TException e) {
+            return false;
+          }
+          return true;
+        },
+        poolConfig,
+        Constants.THRIFT_OPTIMIZING_SERVICE_NAME);
   }
 }

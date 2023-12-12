@@ -30,7 +30,7 @@ tblproperties(
   'log-store.type' = 'kafka',
   'log-store.address' = '127.0.0.1:9092',
   'log-store.topic' = 'local_catalog.test_db.test_log_store.log_store',
-  'table.event-time-field ' = 'op_time',
+  'table.event-time-field' = 'op_time',
   'table.watermark-allowed-lateness-second' = '60');
 ```
 
@@ -122,11 +122,11 @@ For more information, please refer to [Self-optimizing quota](../self-optimizing
 ### Adjust optimizing parameters
 
 You can manually set parameters such as execution interval, task size, and execution timeout for different types of Optimize. 
-For example, to set the execution interval for Self-optimize of the major type, you can do the following:
+For example, to set the execution interval for minor optimizing, you can do the following:
 
 ```sql
 ALTER TABLE test_db.test_log_store set tblproperties (
-    'self-optimizing.major.trigger.interval' = '3600000');
+    'self-optimizing.minor.trigger.interval' = '3600000');
 ```
 
 More optimization parameter adjustment refer to [Self-optimizing configuration](../configurations/#self-optimizing-configurations)。
@@ -139,6 +139,69 @@ Conversely, you can re-enable it:
 ```sql
 ALTER TABLE test_db.test_log_store set tblproperties (
     'self-optimizing.enabled' = 'false');
+```
+
+## Configure data expiration
+
+Amoro can periodically clean data based on the table's expiration policy, which includes properties such as whether to enable expiration, retention duration, expiration level, and the selection of the field for expiration. 
+it's also necessary for AMS to have the data expiration thread enabled. You can enable the 'data-expiration' property in the configuration file
+
+### Enable or disable data expiration
+
+By default, Amoro has data expiration disabled. If you want to enable data expiration, please execute the following command.
+
+```sql
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'data-expire.enabled' = 'true');
+```
+
+### Set retention period
+
+The configuration for data retention duration consists of a number and a unit. For example, '90d' represents retaining data for 90 days, and '12h' indicates 12 hours.
+
+```sql
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'data-expire.retention-time' = '90d');
+```
+
+### Select expiration field
+
+Data expiration requires users to specify a field for determining expiration. 
+In addition to supporting timestampz/timestamp field types for this purpose, it also supports string and long field type. 
+String field require a date pattern for proper parsing, with the default format being 'yyyy-MM-dd'. Additionally, long fields can be chosen as the expiration event time, but you need to specify the timestamp's unit, which can be in `TIMESTAMP_MS` or `TIMESTAMP_S`.
+Note that timestamp, timestampz, and long field types use UTC, while others use the local time zone.
+
+```sql
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'data-expire.field' = 'op_time');
+
+-- select string field
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'data-expire.field' = 'op_time',
+    'data-expire.datetime-string-pattern' = 'yyyy-MM-dd');
+
+-- select long field
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'data-expire.field' = 'op_time',
+    'data-expire.datetime-number-format' = 'TIMESTAMP_MS');
+```
+
+### Adjust expiration level
+
+Data expiration supports two levels, including `PARTITION` and `FILE`. The default level is `PARTITION`, which means that AMS deletes files only when all the files within a partition have expired.
+
+```sql
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'data-expire.level' = 'partition');
+```
+
+### Specify start time
+
+Amoro expire data since `CURRENT_SNAPSHOT` or `CURRENT_TIMESTAMP`. `CURRENT_SNAPSHOT` will follow the timestamp of the table's most recent snapshot as the start time of the expiration, which ensures that the table has `data-expire.retention-time` data; while `CURRENT_TIMESTAMP` will follow the current time of the service.
+
+```sql
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'data-expire.since' = 'current_timestamp');
 ```
 
 ## Delete table

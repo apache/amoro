@@ -14,6 +14,8 @@ public class AsyncTableExecutors {
   private OptimizingCommitExecutor optimizingCommitExecutor;
   private OptimizingExpiringExecutor optimizingExpiringExecutor;
   private HiveCommitSyncExecutor hiveCommitSyncExecutor;
+  private TagsAutoCreatingExecutor tagsAutoCreatingExecutor;
+  private DataExpiringExecutor dataExpiringExecutor;
 
   public static AsyncTableExecutors getInstance() {
     return instance;
@@ -21,24 +23,44 @@ public class AsyncTableExecutors {
 
   public void setup(TableManager tableManager, Configurations conf) {
     if (conf.getBoolean(ArcticManagementConf.EXPIRE_SNAPSHOTS_ENABLED)) {
-      this.snapshotsExpiringExecutor = new SnapshotsExpiringExecutor(tableManager,
-          conf.getInteger(ArcticManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT));
+      this.snapshotsExpiringExecutor =
+          new SnapshotsExpiringExecutor(
+              tableManager, conf.getInteger(ArcticManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT));
     }
     if (conf.getBoolean(ArcticManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
-      this.orphanFilesCleaningExecutor = new OrphanFilesCleaningExecutor(tableManager,
-          conf.getInteger(ArcticManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT));
+      this.orphanFilesCleaningExecutor =
+          new OrphanFilesCleaningExecutor(
+              tableManager, conf.getInteger(ArcticManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT));
     }
-    this.optimizingCommitExecutor = new OptimizingCommitExecutor(tableManager,
-        conf.getInteger(ArcticManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT));
+    this.optimizingCommitExecutor =
+        new OptimizingCommitExecutor(
+            tableManager, conf.getInteger(ArcticManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT));
     this.optimizingExpiringExecutor = new OptimizingExpiringExecutor(tableManager);
     this.blockerExpiringExecutor = new BlockerExpiringExecutor(tableManager);
     if (conf.getBoolean(ArcticManagementConf.SYNC_HIVE_TABLES_ENABLED)) {
-      this.hiveCommitSyncExecutor = new HiveCommitSyncExecutor(tableManager,
-          conf.getInteger(ArcticManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT));
+      this.hiveCommitSyncExecutor =
+          new HiveCommitSyncExecutor(
+              tableManager, conf.getInteger(ArcticManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT));
     }
-    this.tableRefreshingExecutor = new TableRuntimeRefreshExecutor(tableManager,
-        conf.getInteger(ArcticManagementConf.REFRESH_TABLES_THREAD_COUNT),
-        conf.getLong(ArcticManagementConf.REFRESH_TABLES_INTERVAL));
+    this.tableRefreshingExecutor =
+        new TableRuntimeRefreshExecutor(
+            tableManager,
+            conf.getInteger(ArcticManagementConf.REFRESH_TABLES_THREAD_COUNT),
+            conf.getLong(ArcticManagementConf.REFRESH_TABLES_INTERVAL));
+    if (conf.getBoolean(ArcticManagementConf.AUTO_CREATE_TAGS_ENABLED)) {
+      this.tagsAutoCreatingExecutor =
+          new TagsAutoCreatingExecutor(
+              tableManager,
+              conf.getInteger(ArcticManagementConf.AUTO_CREATE_TAGS_THREAD_COUNT),
+              conf.getLong(ArcticManagementConf.AUTO_CREATE_TAGS_INTERVAL));
+    }
+    if (conf.getBoolean(ArcticManagementConf.DATA_EXPIRATION_ENABLED)) {
+      this.dataExpiringExecutor =
+          new DataExpiringExecutor(
+              tableManager,
+              conf.getInteger(ArcticManagementConf.DATA_EXPIRATION_THREAD_COUNT),
+              conf.get(ArcticManagementConf.DATA_EXPIRATION_INTERVAL));
+    }
   }
 
   public SnapshotsExpiringExecutor getSnapshotsExpiringExecutor() {
@@ -67,5 +89,13 @@ public class AsyncTableExecutors {
 
   public HiveCommitSyncExecutor getHiveCommitSyncExecutor() {
     return hiveCommitSyncExecutor;
+  }
+
+  public TagsAutoCreatingExecutor getTagsAutoCreatingExecutor() {
+    return tagsAutoCreatingExecutor;
+  }
+
+  public DataExpiringExecutor getDataExpiringExecutor() {
+    return dataExpiringExecutor;
   }
 }

@@ -37,79 +37,102 @@ import java.util.List;
 public interface TableBlockerMapper {
   String TABLE_NAME = "table_blocker";
 
-  @Select("SELECT blocker_id,catalog_name,db_name,table_name,operations,create_time," +
-      "expiration_time,properties FROM " + TABLE_NAME + " " +
-      "WHERE catalog_name = #{tableIdentifier.catalog} AND db_name = #{tableIdentifier.database} " +
-      "AND table_name = #{tableIdentifier.tableName} " +
-      "AND expiration_time > #{now, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}")
+  @Select(
+      "SELECT blocker_id,catalog_name,db_name,table_name,operations,create_time,"
+          + "expiration_time,properties FROM "
+          + TABLE_NAME
+          + " "
+          + "WHERE catalog_name = #{tableIdentifier.catalog} AND db_name = #{tableIdentifier.database} "
+          + "AND table_name = #{tableIdentifier.tableName} "
+          + "AND expiration_time > #{now, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}")
   @Results({
-      @Result(property = "blockerId", column = "blocker_id"),
-      @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
-      @Result(property = "tableIdentifier.database", column = "db_name"),
-      @Result(property = "tableIdentifier.tableName", column = "table_name"),
-      @Result(property = "operations", column = "operations",
-          typeHandler = List2StringConverter.class),
-      @Result(property = "createTime", column = "create_time",
-          typeHandler = Long2TsConverter.class),
-      @Result(property = "expirationTime", column = "expiration_time",
-          typeHandler = Long2TsConverter.class),
-      @Result(property = "properties", column = "properties",
-          typeHandler = Map2StringConverter.class)
+    @Result(property = "blockerId", column = "blocker_id"),
+    @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
+    @Result(property = "tableIdentifier.database", column = "db_name"),
+    @Result(property = "tableIdentifier.tableName", column = "table_name"),
+    @Result(
+        property = "operations",
+        column = "operations",
+        typeHandler = List2StringConverter.class),
+    @Result(property = "createTime", column = "create_time", typeHandler = Long2TsConverter.class),
+    @Result(
+        property = "expirationTime",
+        column = "expiration_time",
+        typeHandler = Long2TsConverter.class),
+    @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
   })
-  List<TableBlocker> selectBlockers(@Param("tableIdentifier") ServerTableIdentifier tableIdentifier,
-                                    @Param("now") long now);
+  List<TableBlocker> selectBlockers(
+      @Param("tableIdentifier") ServerTableIdentifier tableIdentifier, @Param("now") long now);
 
-  @Select("SELECT blocker_id,catalog_name,db_name,table_name,operations,create_time," +
-      "expiration_time,properties FROM " + TABLE_NAME + " " +
-      "WHERE blocker_id = #{blockerId} " +
-      "AND expiration_time > #{now, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}")
+  @Select(
+      "SELECT blocker_id,catalog_name,db_name,table_name,operations,create_time,"
+          + "expiration_time,properties FROM "
+          + TABLE_NAME
+          + " "
+          + "WHERE blocker_id = #{blockerId} "
+          + "AND expiration_time > #{now, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}")
   @Results({
-      @Result(property = "blockerId", column = "blocker_id"),
-      @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
-      @Result(property = "tableIdentifier.database", column = "db_name"),
-      @Result(property = "tableIdentifier.tableName", column = "table_name"),
-      @Result(property = "operations", column = "operations",
-          typeHandler = List2StringConverter.class),
-      @Result(property = "createTime", column = "create_time",
-          typeHandler = Long2TsConverter.class),
-      @Result(property = "expirationTime", column = "expiration_time",
-          typeHandler = Long2TsConverter.class),
-      @Result(property = "properties", column = "properties",
-          typeHandler = Map2StringConverter.class)
+    @Result(property = "blockerId", column = "blocker_id"),
+    @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
+    @Result(property = "tableIdentifier.database", column = "db_name"),
+    @Result(property = "tableIdentifier.tableName", column = "table_name"),
+    @Result(
+        property = "operations",
+        column = "operations",
+        typeHandler = List2StringConverter.class),
+    @Result(property = "createTime", column = "create_time", typeHandler = Long2TsConverter.class),
+    @Result(
+        property = "expirationTime",
+        column = "expiration_time",
+        typeHandler = Long2TsConverter.class),
+    @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
   })
   TableBlocker selectBlocker(@Param("blockerId") long blockerId, @Param("now") long now);
 
-  @Insert("INSERT INTO " + TABLE_NAME + " (catalog_name,db_name,table_name,operations,create_time," +
-      "expiration_time,properties) VALUES (" +
-      "#{blocker.tableIdentifier.catalog}," +
-      "#{blocker.tableIdentifier.database}," +
-      "#{blocker.tableIdentifier.tableName}," +
-      "#{blocker.operations,typeHandler=com.netease.arctic.server.persistence.converter.List2StringConverter}," +
-      "#{blocker.createTime,typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
-      "#{blocker.expirationTime,typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}," +
-      "#{blocker.properties,typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}" +
-      ")")
+  @Insert(
+      "INSERT INTO "
+          + TABLE_NAME
+          + " (catalog_name,db_name,table_name,operations,create_time,"
+          + "expiration_time,properties) VALUES ("
+          + "#{blocker.tableIdentifier.catalog},"
+          + "#{blocker.tableIdentifier.database},"
+          + "#{blocker.tableIdentifier.tableName},"
+          + "#{blocker.operations,typeHandler=com.netease.arctic.server.persistence.converter.List2StringConverter},"
+          + "#{blocker.createTime,typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
+          + "#{blocker.expirationTime,typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter},"
+          + "#{blocker.properties,typeHandler=com.netease.arctic.server.persistence.converter.Map2StringConverter}"
+          + ")")
   @Options(useGeneratedKeys = true, keyProperty = "blocker.blockerId")
   void insertBlocker(@Param("blocker") TableBlocker blocker);
 
-  @Update("UPDATE " + TABLE_NAME + " SET " +
-      "expiration_time = #{expirationTime, " +
-      "typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter} " +
-      "WHERE blocker_id = #{blockerId}")
-  void updateBlockerExpirationTime(@Param("blockerId") long blockerId, @Param("expirationTime") long expirationTime);
+  @Update(
+      "UPDATE "
+          + TABLE_NAME
+          + " SET "
+          + "expiration_time = #{expirationTime, "
+          + "typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter} "
+          + "WHERE blocker_id = #{blockerId}")
+  void updateBlockerExpirationTime(
+      @Param("blockerId") long blockerId, @Param("expirationTime") long expirationTime);
 
-  @Delete("DELETE FROM " + TABLE_NAME + " " +
-      "WHERE blocker_id = #{blockerId}")
+  @Delete("DELETE FROM " + TABLE_NAME + " " + "WHERE blocker_id = #{blockerId}")
   void deleteBlocker(@Param("blockerId") long blockerId);
 
-  @Delete("DELETE FROM " + TABLE_NAME + " " +
-      "WHERE catalog_name = #{tableIdentifier.catalog} AND db_name = #{tableIdentifier.database} " +
-      "AND table_name = #{tableIdentifier.tableName} " +
-      "AND expiration_time <= #{now, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}")
-  int deleteExpiredBlockers(@Param("tableIdentifier") ServerTableIdentifier tableIdentifier, @Param("now") long now);
+  @Delete(
+      "DELETE FROM "
+          + TABLE_NAME
+          + " "
+          + "WHERE catalog_name = #{tableIdentifier.catalog} AND db_name = #{tableIdentifier.database} "
+          + "AND table_name = #{tableIdentifier.tableName} "
+          + "AND expiration_time <= #{now, typeHandler=com.netease.arctic.server.persistence.converter.Long2TsConverter}")
+  int deleteExpiredBlockers(
+      @Param("tableIdentifier") ServerTableIdentifier tableIdentifier, @Param("now") long now);
 
-  @Delete("DELETE FROM " + TABLE_NAME + " " +
-      "WHERE catalog_name = #{tableIdentifier.catalog} AND db_name = #{tableIdentifier.database} " +
-      "AND table_name = #{tableIdentifier.tableName}")
+  @Delete(
+      "DELETE FROM "
+          + TABLE_NAME
+          + " "
+          + "WHERE catalog_name = #{tableIdentifier.catalog} AND db_name = #{tableIdentifier.database} "
+          + "AND table_name = #{tableIdentifier.tableName}")
   int deleteBlockers(@Param("tableIdentifier") ServerTableIdentifier tableIdentifier);
 }

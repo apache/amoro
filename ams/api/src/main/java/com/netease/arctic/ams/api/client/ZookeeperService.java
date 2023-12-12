@@ -27,14 +27,12 @@ import org.apache.zookeeper.data.Stat;
 
 import java.nio.charset.StandardCharsets;
 
-/**
- * Provides ZooKeeper clients and operations.
- */
+/** Provides ZooKeeper clients and operations. */
 public class ZookeeperService {
 
   private static volatile ZookeeperService instance;
-  private CuratorFramework zkClient;
-  private String zkServerAddress;
+  private final CuratorFramework zkClient;
+  private final String zkServerAddress;
 
   private ZookeeperService(String zkServerAddress) {
     this.zkServerAddress = zkServerAddress;
@@ -56,13 +54,14 @@ public class ZookeeperService {
     ZKClientConfig zkClientConfig = new ZKClientConfig();
     zkClientConfig.setProperty(ZKClientConfig.ENABLE_CLIENT_SASL_KEY, "false");
     ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3, 5000);
-    CuratorFramework client = CuratorFrameworkFactory.builder()
-        .connectString(zkServerAddress)
-        .sessionTimeoutMs(5000)
-        .connectionTimeoutMs(5000)
-        .retryPolicy(retryPolicy)
-        .zookeeperFactory(new ArcticZookeeperFactory(zkClientConfig))
-        .build();
+    CuratorFramework client =
+        CuratorFrameworkFactory.builder()
+            .connectString(zkServerAddress)
+            .sessionTimeoutMs(5000)
+            .connectionTimeoutMs(5000)
+            .retryPolicy(retryPolicy)
+            .zookeeperFactory(new ArcticZookeeperFactory(zkClientConfig))
+            .build();
     client.start();
     return client;
   }

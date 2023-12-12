@@ -1,5 +1,6 @@
 <template>
   <div class="table-optinize">
+    <a-button type="primary" v-model:disabled="buttonDisabled" class="g-mb-16" @click="cancel">{{ t("cancel") }}</a-button>
     <a-table
       rowKey="processId"
       :columns="columns"
@@ -7,7 +8,6 @@
       :pagination="pagination"
       @change="change"
       :loading="loading"
-
     >
       <template #headerCell="{ column }">
         <template v-if="column.dataIndex === 'tasks'">
@@ -44,7 +44,8 @@ import { onMounted, reactive, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'
 import { IColumns } from '@/types/common.type'
-import { getOptimizes } from '@/services/table.service'
+import { getOptimizes, cancelOptimizingProcess } from '@/services/table.service'
+import { Modal, message } from 'ant-design-vue'
 import { useRoute } from 'vue-router'
 import { QuestionCircleOutlined } from '@ant-design/icons-vue'
 import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
@@ -74,6 +75,8 @@ const columns: IColumns[] = shallowReactive([
 const dataSource = reactive<any[]>([])
 
 const loading = ref<boolean>(false)
+const buttonDisabled = ref(true)
+const processId = ref<string>('')
 const pagination = reactive(usePagination())
 const route = useRoute()
 const query = route.query
@@ -97,6 +100,10 @@ async function getTableInfo() {
     pagination.total = total
     dataSource.push(...[...list || []].map(item => {
       const { inputFiles = {}, outputFiles = {} } = item
+      if (item.status === 'RUNNING') {
+        buttonDisabled.value = false
+        processId.value = item.processId
+      }
       return {
         ...item,
         // recordId,
@@ -104,10 +111,11 @@ async function getTableInfo() {
         // commitTime: item.commitTime ? dateFormat(item.commitTime) : '',
         startTime: item.startTime ? dateFormat(item.startTime) : '-',
         finishTime: item.finishTime ? dateFormat(item.finishTime) : '-',
-        duration: formatMS2Time(item.duration || 0),
+        optimizingType: item.optimizingType ? item.optimizingType : '-',
+        duration: formatMS2Time(item.duration || '-'),
         inputFiles: `${bytesToSize(inputFiles.totalSize)} / ${inputFiles.fileCnt}`,
         outputFiles: `${bytesToSize(outputFiles.totalSize)} / ${outputFiles.fileCnt}`,
-        tasks: `${item.successTasks} / ${item.totalTasks}（${item.runningTasks} running）`
+        tasks: `${item.successTasks || '-'} / ${item.totalTasks || '-'}${item.runningTasks ? ` (${item.runningTasks} running)` : ''}`
       }
     }))
     console.log(dataSource)
@@ -115,6 +123,28 @@ async function getTableInfo() {
   } finally {
     loading.value = false
   }
+}
+
+async function cancel() {
+  Modal.confirm({
+    title: t('cancelOptimizingProcessOptModalTitle'),
+    content: '',
+    okText: '',
+    cancelText: '',
+    onOk: async() => {
+      try {
+        loading.value = true
+        const result = await cancelOptimizingProcess({
+          ...sourceData,
+          processId: processId.value
+        })
+        console.log(result)
+        buttonDisabled.value = true
+        getTableInfo()
+      } catch (error) {
+      }
+    }
+  })
 }
 
 function change({ current = 1, pageSize = 25 } = pagination) {

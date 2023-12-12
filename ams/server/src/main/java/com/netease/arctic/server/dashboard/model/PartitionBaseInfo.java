@@ -22,6 +22,7 @@ import com.netease.arctic.server.dashboard.utils.AmsUtil;
 
 public class PartitionBaseInfo {
   String partition;
+  int specId;
   long fileCount = 0;
   long fileSize = 0;
   long lastCommitTime = 0;
@@ -29,12 +30,12 @@ public class PartitionBaseInfo {
   // parameters needed for front-end only
   String size;
 
-  public PartitionBaseInfo() {
+  public PartitionBaseInfo() {}
 
-  }
-
-  public PartitionBaseInfo(String partition, long fileCount, long fileSize, long lastCommitTime) {
+  public PartitionBaseInfo(
+      String partition, int specId, long fileCount, long fileSize, long lastCommitTime) {
     this.partition = partition;
+    this.specId = specId;
     this.fileCount = fileCount;
     setFileSize(fileSize);
     this.lastCommitTime = lastCommitTime;
@@ -46,6 +47,14 @@ public class PartitionBaseInfo {
 
   public void setPartition(String partition) {
     this.partition = partition;
+  }
+
+  public int getSpecId() {
+    return specId;
+  }
+
+  public void setSpecId(int specId) {
+    this.specId = specId;
   }
 
   public long getFileCount() {
@@ -63,7 +72,6 @@ public class PartitionBaseInfo {
   public void setFileSize(long fileSize) {
     this.fileSize = fileSize;
     this.size = AmsUtil.byteToXB(fileSize);
-
   }
 
   public long getLastCommitTime() {
