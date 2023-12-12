@@ -338,7 +338,7 @@ public class TaskRuntime extends StatedPersistentBase {
   private class TaskStatusMachine {
 
     public void accept(Status targetStatus) {
-      if (owner.isClosed() && targetStatus != Status.CANCELED) {
+      if (owner.isClosed()) {
         throw new OptimizingClosedException(taskId.getProcessId());
       }
       if (!getNext().contains(targetStatus)) {
@@ -352,10 +352,7 @@ public class TaskRuntime extends StatedPersistentBase {
     }
 
     public synchronized boolean tryAccepting(Status targetStatus) {
-      if (owner.isClosed() && targetStatus != Status.CANCELED) {
-        return false;
-      }
-      if (!getNext().contains(targetStatus)) {
+      if (owner.isClosed() || !getNext().contains(targetStatus)) {
         return false;
       }
       status = targetStatus;
