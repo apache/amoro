@@ -99,9 +99,17 @@ public class TerminalManager {
    * @param terminalId - id to mark different terminal windows
    * @param catalog - current catalog to execute script
    * @param script - sql script to be executed
+   * @param proxyUser - proxy user to execute script
    * @return - sessionId, session refer to a sql execution context
    */
-  public String executeScript(String terminalId, String catalog, String script) {
+  public String executeScript(String terminalId, String catalog, String script, String proxyUser) {
+    LOG.debug(
+        "current active sessions: {}, queue size {}",
+        sessionMap.size(),
+        executionPool.getQueue().size());
+    LOG.debug(
+        "execute script, terminalId: {}, catalog: {}, script: {}", terminalId, catalog, script);
+
     CatalogMeta catalogMeta = tableService.getCatalogMeta(catalog);
     TableMetaStore metaStore = getCatalogTableMetaStore(catalogMeta);
     String sessionId = getSessionId(terminalId, metaStore, catalog);
@@ -134,7 +142,7 @@ public class TerminalManager {
       throw new IllegalStateException(
           "current session is not ready to execute script. status:" + context.getStatus());
     }
-    context.submit(catalog, script, resultLimits, stopOnError);
+    context.submit(catalog, metaStore, proxyUser, script, resultLimits, stopOnError);
     return sessionId;
   }
 

@@ -22,9 +22,11 @@ import com.netease.arctic.server.dashboard.model.LatestSessionInfo;
 import com.netease.arctic.server.dashboard.model.SessionInfo;
 import com.netease.arctic.server.dashboard.model.SqlExample;
 import com.netease.arctic.server.dashboard.model.SqlResult;
+import com.netease.arctic.server.dashboard.response.ErrorResponse;
 import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.terminal.TerminalManager;
 import io.javalin.http.Context;
+import io.javalin.http.HttpCode;
 
 import java.util.Arrays;
 import java.util.List;
@@ -65,8 +67,15 @@ public class TerminalController {
     String catalog = ctx.pathParam("catalog");
     Map<String, String> bodyParams = ctx.bodyAsClass(Map.class);
     String sql = bodyParams.get("sql");
+    String proxyUser = bodyParams.get("proxyUser");
     String terminalId = ctx.cookie("JSESSIONID");
-    String sessionId = terminalManager.executeScript(terminalId, catalog, sql);
+    String sessionId;
+    try {
+      sessionId = terminalManager.executeScript(terminalId, catalog, sql, proxyUser);
+    } catch (IllegalStateException e) {
+      ctx.json(ErrorResponse.of(HttpCode.CONFLICT, e.getMessage()));
+      return;
+    }
 
     ctx.json(OkResponse.of(new SessionInfo(sessionId)));
   }

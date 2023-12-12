@@ -21,6 +21,7 @@ package com.netease.arctic.server.terminal;
 import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.commons.io.Charsets;
+import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,8 +85,14 @@ public class TerminalSessionContext {
   }
 
   public synchronized void submit(
-      String catalog, String script, int fetchLimit, boolean stopOnError) {
-    ExecutionTask task = new ExecutionTask(catalog, script, fetchLimit, stopOnError);
+      String catalog,
+      TableMetaStore metaStore,
+      String proxyUser,
+      String script,
+      int fetchLimit,
+      boolean stopOnError) {
+    ExecutionTask task =
+        new ExecutionTask(catalog, metaStore, proxyUser, script, fetchLimit, stopOnError);
     if (!isReadyToExecute()) {
       throw new IllegalStateException(
           "current session is not ready to execute. status: " + status.get().name());
@@ -178,9 +185,20 @@ public class TerminalSessionContext {
     private final int fetchLimits;
     private final boolean stopOnError;
     private final String catalog;
+    private final TableMetaStore tableMetaStore;
 
-    public ExecutionTask(String catalog, String script, int fetchLimits, boolean stopOnError) {
+    private final String proxyUser;
+
+    public ExecutionTask(
+        String catalog,
+        TableMetaStore tableMetaStore,
+        String proxyUser,
+        String script,
+        int fetchLimits,
+        boolean stopOnError) {
       this.catalog = catalog;
+      this.tableMetaStore = tableMetaStore;
+      this.proxyUser = proxyUser;
       if (script.trim().endsWith(";")) {
         this.script = script;
       } else {
@@ -278,7 +296,13 @@ public class TerminalSessionContext {
       TerminalSession.ResultSet rs = null;
       long begin = System.currentTimeMillis();
       try {
-        rs = session.executeStatement(catalog, statement);
+        if (StringUtils.isBlank(proxyUser)) {
+          rs = session.executeStatement(catalog, statement);
+        } else {
+          rs =
+              tableMetaStore.doAsImpersonating(
+                  proxyUser, () -> session.executeStatement(catalog, statement));
+        }
         executionResult.appendLogs(session.logs());
       } catch (Throwable t) {
         executionResult.appendLogs(session.logs());

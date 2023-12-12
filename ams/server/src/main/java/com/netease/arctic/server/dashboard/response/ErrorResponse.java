@@ -35,12 +35,15 @@ public class ErrorResponse extends Response {
   }
 
   public ErrorResponse(String message) {
-    super(HttpCode.BAD_REQUEST.getStatus(), message);
-    this.requestId = null;
+    this(HttpCode.BAD_REQUEST.getStatus(), message, null);
   }
 
   public static ErrorResponse of(String message) {
     return new ErrorResponse(message);
+  }
+
+  public static ErrorResponse of(HttpCode httpStatus, String message) {
+    return new ErrorResponse(httpStatus, message, null);
   }
 
   public String getRequestId() {
