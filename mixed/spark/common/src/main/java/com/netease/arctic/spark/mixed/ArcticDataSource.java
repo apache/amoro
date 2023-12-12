@@ -18,7 +18,12 @@
 
 package com.netease.arctic.spark.mixed;
 
-/** Arctic DataSource register */
+/**
+ * Arctic DataSource register
+ *
+ * @deprecated using {@link MixedHiveDataSource} or {@link MixedIcebergDataSource} instead.
+ */
+@Deprecated
 public class ArcticDataSource extends MixedSourceBase {
 
   @Override

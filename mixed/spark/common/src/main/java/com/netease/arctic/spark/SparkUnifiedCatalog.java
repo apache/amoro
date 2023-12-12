@@ -30,7 +30,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
@@ -113,14 +112,14 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
   }
 
   @Override
-  public String[][] listNamespaces() throws NoSuchNamespaceException {
+  public String[][] listNamespaces() {
     return unifiedCatalog.listDatabases().stream()
         .map(d -> new String[] {d})
         .toArray(String[][]::new);
   }
 
   @Override
-  public String[][] listNamespaces(String[] namespace) throws NoSuchNamespaceException {
+  public String[][] listNamespaces(String[] namespace) {
     return new String[0][];
   }
 
@@ -139,8 +138,7 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
   }
 
   @Override
-  public void createNamespace(String[] namespace, Map<String, String> metadata)
-      throws NamespaceAlreadyExistsException {
+  public void createNamespace(String[] namespace, Map<String, String> metadata) {
     String database = namespaceToDatabase(namespace);
     if (metadata != null && !metadata.isEmpty()) {
       LOG.warn("doesn't support properties for database, all properties will be discard.");
@@ -149,13 +147,12 @@ public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, Pr
   }
 
   @Override
-  public void alterNamespace(String[] namespace, NamespaceChange... changes)
-      throws NoSuchNamespaceException {
+  public void alterNamespace(String[] namespace, NamespaceChange... changes) {
     throw new UnsupportedOperationException("Cannot apply namespace change");
   }
 
   @Override
-  public boolean dropNamespace(String[] namespace) throws NoSuchNamespaceException {
+  public boolean dropNamespace(String[] namespace) {
     String database = namespaceToDatabase(namespace);
     List<TableIDWithFormat> tables = unifiedCatalog.listTables(database);
     for (TableIDWithFormat id : tables) {

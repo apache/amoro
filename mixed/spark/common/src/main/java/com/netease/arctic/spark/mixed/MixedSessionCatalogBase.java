@@ -19,16 +19,31 @@
 package com.netease.arctic.spark.mixed;
 
 import com.netease.arctic.spark.SessionCatalogBase;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
+import java.util.Set;
+
 public abstract class MixedSessionCatalogBase<T extends TableCatalog & SupportsNamespaces>
     extends SessionCatalogBase<T> {
 
-  public static final String LEGACY_MIXED_FORMAT_PROVIDER = "arctic";
+  /** Using {@link #MIXED_ICEBERG_PROVIDER} or {@link #MIXED_HIVE_PROVIDER} instead. */
+  @Deprecated public static final String LEGACY_MIXED_FORMAT_PROVIDER = "arctic";
+
+  /** Provider when creating a mixed-iceberg table in session catalog */
+  public static final String MIXED_ICEBERG_PROVIDER = "mixed_iceberg";
+
+  /** Provider when creating a mixed-hive table in session catalog. */
+  public static final String MIXED_HIVE_PROVIDER = "mixed_hive";
+
+  /** Supported providers */
+  public static final Set<String> supportedProviders =
+      ImmutableSet.of(LEGACY_MIXED_FORMAT_PROVIDER, MIXED_ICEBERG_PROVIDER, MIXED_HIVE_PROVIDER);
 
   /**
    * build mixed-format catalog instance.
@@ -55,6 +70,6 @@ public abstract class MixedSessionCatalogBase<T extends TableCatalog & SupportsN
 
   @Override
   protected boolean isManagedProvider(String provider) {
-    return LEGACY_MIXED_FORMAT_PROVIDER.equalsIgnoreCase(provider);
+    return StringUtils.isNotBlank(provider) && supportedProviders.contains(provider);
   }
 }
