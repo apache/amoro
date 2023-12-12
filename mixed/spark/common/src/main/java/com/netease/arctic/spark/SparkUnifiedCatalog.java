@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 
+/** Unified catalog implement for spark engine. */
 public class SparkUnifiedCatalog implements TableCatalog, SupportsNamespaces, ProcedureCatalog {
 
   private static final Logger LOG = LoggerFactory.getLogger(SparkUnifiedCatalog.class);

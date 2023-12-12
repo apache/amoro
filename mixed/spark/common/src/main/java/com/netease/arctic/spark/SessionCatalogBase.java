@@ -194,9 +194,8 @@ public abstract class SessionCatalogBase<T extends TableCatalog & SupportsNamesp
 
   @Override
   public boolean dropTable(Identifier ident) {
-    // no need to check table existence to determine which catalog to use. if a table doesn't exist
-    // then both are
-    // required to return false.
+    // No need to check table existence to determine which catalog to use.
+    // if a table doesn't exist then both are required to return false.
     try {
       Table table = getSessionCatalog().loadTable(ident);
       if (isManagedTable(table)) {
@@ -211,9 +210,8 @@ public abstract class SessionCatalogBase<T extends TableCatalog & SupportsNamesp
 
   @Override
   public boolean purgeTable(Identifier ident) throws UnsupportedOperationException {
-    // no need to check table existence to determine which catalog to use. if a table doesn't exist
-    // then both are
-    // required to return false.
+    // No need to check table existence to determine which catalog to use.
+    // if a table doesn't exist then both are required to return false.
     try {
       Table table = getSessionCatalog().loadTable(ident);
       if (isManagedTable(table)) {
@@ -229,9 +227,6 @@ public abstract class SessionCatalogBase<T extends TableCatalog & SupportsNamesp
   @Override
   public void renameTable(Identifier from, Identifier to)
       throws NoSuchTableException, TableAlreadyExistsException {
-    // rename is not supported by HadoopCatalog. to avoid UnsupportedOperationException for session
-    // catalog tables,
-    // check table existence first to ensure that the table belongs to the Iceberg catalog.
     Table table = getSessionCatalog().loadTable(from);
     if (isManagedTable(table)) {
       getTargetCatalog().renameTable(from, to);
