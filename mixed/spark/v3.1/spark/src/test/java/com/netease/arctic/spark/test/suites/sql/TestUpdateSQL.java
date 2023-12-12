@@ -19,7 +19,7 @@
 package com.netease.arctic.spark.test.suites.sql;
 
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.spark.test.SparkTableTestBase;
+import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -35,7 +35,7 @@ import java.util.stream.Stream;
 // TODO: @jinsilei
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
-public class TestUpdateSQL extends SparkTableTestBase {
+public class TestUpdateSQL extends MixedTableTestBase {
 
   public static Stream<Arguments> testUpdate() {
     return Stream.of(

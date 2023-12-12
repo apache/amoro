@@ -18,7 +18,8 @@
 
 package com.netease.arctic.spark.sql.catalyst.optimize
 
-import com.netease.arctic.spark.{SparkSQLProperties, SupportSparkAdapter}
+import com.netease.arctic.spark.SupportSparkAdapter
+import com.netease.arctic.spark.mixed.SparkSQLProperties
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.{isArcticIcebergRelation, isArcticRelation}
 import com.netease.arctic.spark.sql.catalyst.plans.ArcticRowLevelWrite
 import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}

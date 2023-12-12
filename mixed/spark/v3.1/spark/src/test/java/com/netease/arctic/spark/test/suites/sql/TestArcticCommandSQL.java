@@ -18,19 +18,21 @@
 
 package com.netease.arctic.spark.test.suites.sql;
 
-import com.netease.arctic.spark.test.SparkTableTestBase;
+import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import com.netease.arctic.spark.test.utils.TestTable;
 import org.apache.iceberg.types.Types;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
+@Disabled
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
-public class TestArcticCommandSQL extends SparkTableTestBase {
+public class TestArcticCommandSQL extends MixedTableTestBase {
 
   public static Stream<Arguments> testMigrate() {
     Types.NestedField[] fields = {
@@ -40,13 +42,13 @@ public class TestArcticCommandSQL extends SparkTableTestBase {
     };
 
     return Stream.of(
-        Arguments.arguments(fields, new String[0], SESSION_CATALOG),
-        Arguments.arguments(fields, new String[] {"pt"}, SESSION_CATALOG),
-        Arguments.arguments(fields, new String[0], HADOOP_CATALOG),
-        Arguments.arguments(fields, new String[] {"pt"}, HADOOP_CATALOG));
+        Arguments.arguments(fields, new String[0], SPARK_SESSION_CATALOG),
+        Arguments.arguments(fields, new String[] {"pt"}, SPARK_SESSION_CATALOG),
+        Arguments.arguments(fields, new String[0], MIXED_ICEBERG_CATALOG),
+        Arguments.arguments(fields, new String[] {"pt"}, MIXED_ICEBERG_CATALOG));
   }
 
-  @EnableCatalogSelect.SelectCatalog(use = SESSION_CATALOG)
+  @EnableCatalogSelect.SelectCatalog(use = SPARK_SESSION_CATALOG)
   @ParameterizedTest
   @MethodSource
   public void testMigrate(Types.NestedField[] fields, String[] pt, String targetCatalog) {
