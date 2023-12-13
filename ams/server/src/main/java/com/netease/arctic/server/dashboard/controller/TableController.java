@@ -50,6 +50,8 @@ import com.netease.arctic.server.dashboard.response.OkResponse;
 import com.netease.arctic.server.dashboard.response.PageResult;
 import com.netease.arctic.server.dashboard.utils.AmsUtil;
 import com.netease.arctic.server.dashboard.utils.CommonUtil;
+import com.netease.arctic.server.table.ServerTableIdentifier;
+import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.utils.Configurations;
 import com.netease.arctic.table.TableIdentifier;
@@ -72,6 +74,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -525,8 +528,18 @@ public class TableController {
                     new TableMeta(
                         idWithFormat.getIdentifier().getTableName(),
                         formatToType.apply(idWithFormat.getTableFormat())))
+            // Sort by table format and table name
+            .sorted(
+                (table1, table2) -> {
+                  if (Objects.equals(table1.getType(), table2.getType())) {
+                    return table1.getName().compareTo(table2.getName());
+                  } else {
+                    return table1.getType().compareTo(table2.getType());
+                  }
+                })
             .collect(Collectors.toList());
 
+    // Hive tables have lower priority, append to the end
     if (serverCatalog instanceof MixedHiveCatalogImpl) {
       List<String> hiveTables =
           HiveTableUtil.getAllHiveTables(
@@ -535,6 +548,7 @@ public class TableController {
           tables.stream().map(TableMeta::getName).collect(Collectors.toSet());
       hiveTables.stream()
           .filter(e -> !arcticTables.contains(e))
+          .sorted(String::compareTo)
           .forEach(e -> tables.add(new TableMeta(e, TableMeta.TableType.HIVE.toString())));
     }
 
@@ -612,6 +626,37 @@ public class TableController {
     int offset = (page - 1) * pageSize;
     PageResult<TagOrBranchInfo> amsPageResult = PageResult.of(partitionBaseInfos, offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
+  }
+
+  /**
+   * cancel the running optimizing process of one certain table.
+   *
+   * @param ctx - context for handling the request and response
+   */
+  public void cancelOptimizingProcess(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    String processId = ctx.pathParam("processId");
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(catalog)
+            && StringUtils.isNotBlank(db)
+            && StringUtils.isNotBlank(table),
+        "catalog.database.tableName can not be empty in any element");
+    Preconditions.checkState(tableService.catalogExist(catalog), "invalid catalog!");
+
+    ServerTableIdentifier serverTableIdentifier =
+        tableService.getServerTableIdentifier(
+            TableIdentifier.of(catalog, db, table).buildTableIdentifier());
+    TableRuntime tableRuntime =
+        serverTableIdentifier != null ? tableService.getRuntime(serverTableIdentifier) : null;
+    if (tableRuntime != null
+        && tableRuntime.getOptimizingProcess() != null
+        && Objects.equals(
+            tableRuntime.getOptimizingProcess().getProcessId(), Long.parseLong(processId))) {
+      tableRuntime.getOptimizingProcess().close();
+    }
+    ctx.json(OkResponse.ok());
   }
 
   private void putMainBranchFirst(List<TagOrBranchInfo> branchInfos) {

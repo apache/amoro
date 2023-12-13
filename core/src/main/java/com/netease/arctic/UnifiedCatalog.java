@@ -18,16 +18,29 @@
 
 package com.netease.arctic;
 
+import com.netease.arctic.table.TableMetaStore;
+
 import java.util.List;
+import java.util.Map;
 
 /** UnifiedCatalog is a catalog that can visit tables with all types of formats. */
 public interface UnifiedCatalog extends AmoroCatalog {
 
-  /** name of this catalog */
+  /** Name of this catalog */
   String name();
 
+  /** Metastore type */
+  String metastoreType();
+
   /**
-   * list tables with format
+   * Get authentication context of this catalog.
+   *
+   * @return table metastore.
+   */
+  TableMetaStore authenticationContext();
+
+  /**
+   * List tables with format
    *
    * @param database given database
    * @return identifier and format list
@@ -36,4 +49,11 @@ public interface UnifiedCatalog extends AmoroCatalog {
 
   /** Refresh catalog meta */
   void refresh();
+
+  /**
+   * Get catalog properties
+   *
+   * @return catalog properties
+   */
+  Map<String, String> properties();
 }
