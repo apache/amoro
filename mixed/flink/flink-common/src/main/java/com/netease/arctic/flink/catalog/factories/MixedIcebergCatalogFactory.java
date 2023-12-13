@@ -19,10 +19,6 @@
 package com.netease.arctic.flink.catalog.factories;
 
 import com.netease.arctic.flink.catalog.ArcticCatalog;
-import org.apache.flink.configuration.ConfigOption;
-import org.apache.flink.table.catalog.Catalog;
-
-import java.util.Set;
 
 /**
  * The factory to create {@link ArcticCatalog} with {@link
@@ -33,20 +29,5 @@ public class MixedIcebergCatalogFactory extends ArcticCatalogFactory {
   @Override
   public String factoryIdentifier() {
     return ArcticCatalogFactoryOptions.MIXED_ICEBERG_IDENTIFIER;
-  }
-
-  @Override
-  public Catalog createCatalog(Context context) {
-    return super.createCatalog(context);
-  }
-
-  @Override
-  public Set<ConfigOption<?>> requiredOptions() {
-    return super.requiredOptions();
-  }
-
-  @Override
-  public Set<ConfigOption<?>> optionalOptions() {
-    return super.optionalOptions();
   }
 }
