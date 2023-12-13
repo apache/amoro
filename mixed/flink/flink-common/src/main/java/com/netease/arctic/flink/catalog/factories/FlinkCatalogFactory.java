@@ -24,15 +24,13 @@ import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOpt
 import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.FLINK_TABLE_FORMATS;
 import static org.apache.flink.table.factories.FactoryUtil.PROPERTY_VERSION;
 
-import com.netease.arctic.AmsClient;
-import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.UnifiedCatalog;
 import com.netease.arctic.UnifiedCatalogLoader;
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import com.netease.arctic.flink.catalog.FlinkUnifiedCatalog;
 import com.netease.arctic.flink.catalog.factories.iceberg.IcebergFlinkCatalogFactory;
+import com.netease.arctic.flink.catalog.factories.mixed.ArcticCatalogFactory;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.catalog.AbstractCatalog;
 import org.apache.flink.table.catalog.Catalog;
@@ -88,15 +86,8 @@ public class FlinkCatalogFactory implements CatalogFactory {
         UnifiedCatalogLoader.loadUnifiedCatalog(metastoreUrl, amoroCatalogName, Maps.newHashMap());
     Configuration hadoopConf = unifiedCatalog.authenticationContext().getConfiguration();
 
-    AmsClient client = new PooledAmsClient(metastoreUrl);
-    TableFormat catalogTableFormat;
-    try {
-      CatalogMeta catalogMeta = client.getCatalog(amoroCatalogName);
-      catalogTableFormat =
-          TableFormat.valueOf(catalogMeta.getCatalogProperties().get(TABLE_FORMATS));
-    } catch (Exception e) {
-      throw new IllegalStateException("failed when load catalog " + amoroCatalogName, e);
-    }
+    TableFormat catalogTableFormat =
+        TableFormat.valueOf(unifiedCatalog.properties().get(TABLE_FORMATS));
 
     Map<TableFormat, AbstractCatalog> availableCatalogs = Maps.newHashMap();
     SUPPORTED_FORMATS.forEach(
@@ -104,9 +95,9 @@ public class FlinkCatalogFactory implements CatalogFactory {
           if (!availableCatalogs.containsKey(tableFormat)) {
             if (catalogTableFormat == TableFormat.ICEBERG
                 && (tableFormat.in(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG))) {
-              context
-                  .getOptions()
-                  .put(FLINK_TABLE_FORMATS.key(), TableFormat.MIXED_HIVE.toString());
+              // Mixed catalog couldn't load the iceberg table, so specify the table formats to the
+              // mixed catalog
+              context.getOptions().put(FLINK_TABLE_FORMATS.key(), tableFormat.toString());
             }
             availableCatalogs.put(tableFormat, createCatalog(context, tableFormat, hadoopConf));
           }

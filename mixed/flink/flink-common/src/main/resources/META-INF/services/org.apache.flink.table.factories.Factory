@@ -18,6 +18,6 @@
 
 com.netease.arctic.flink.catalog.factories.MixedIcebergCatalogFactory
 com.netease.arctic.flink.catalog.factories.MixedHiveCatalogFactory
-com.netease.arctic.flink.catalog.factories.ArcticCatalogFactory
+com.netease.arctic.flink.catalog.factories.mixed.ArcticCatalogFactory
 com.netease.arctic.flink.catalog.factories.FlinkCatalogFactory
 com.netease.arctic.flink.table.DynamicTableFactory

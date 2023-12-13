@@ -19,6 +19,7 @@
 package com.netease.arctic.flink.catalog.factories;
 
 import com.netease.arctic.flink.catalog.ArcticCatalog;
+import com.netease.arctic.flink.catalog.factories.mixed.ArcticCatalogFactory;
 
 /**
  * The factory to create {@link ArcticCatalog} with {@link
@@ -26,8 +27,8 @@ import com.netease.arctic.flink.catalog.ArcticCatalog;
  */
 public class MixedHiveCatalogFactory extends ArcticCatalogFactory {
 
-  @Override
-  public String factoryIdentifier() {
-    return ArcticCatalogFactoryOptions.MIXED_HIVE_IDENTIFIER;
-  }
+    @Override
+    public String factoryIdentifier() {
+        return ArcticCatalogFactoryOptions.MIXED_HIVE_IDENTIFIER;
+    }
 }

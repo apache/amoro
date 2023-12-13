@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.catalog.factories;
+package com.netease.arctic.flink.catalog.factories.mixed;
 
 import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.DEFAULT_DATABASE;
 import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.FLINK_TABLE_FORMATS;
@@ -26,6 +26,7 @@ import static org.apache.flink.table.factories.FactoryUtil.PROPERTY_VERSION;
 
 import com.netease.arctic.flink.InternalCatalogBuilder;
 import com.netease.arctic.flink.catalog.ArcticCatalog;
+import com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.factories.CatalogFactory;
