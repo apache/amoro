@@ -43,8 +43,8 @@ public class OptimizingConfig {
   // self-optimizing.fragment-ratio
   private int fragmentRatio;
 
-  // self-optimizing.min-file-size-ratio
-  private double minFileSizeRatio;
+  // self-optimizing.min-target-size-ratio
+  private double minTargetSizeRatio;
 
   // self-optimizing.minor.trigger.file-count
   private int minorLeastFileCount;
@@ -160,8 +160,8 @@ public class OptimizingConfig {
     return fragmentRatio;
   }
 
-  public double getMinFileSizeRatio() {
-    return minFileSizeRatio;
+  public double getMinTargetSizeRatio() {
+    return minTargetSizeRatio;
   }
 
   public long maxFragmentSize() {
@@ -177,8 +177,8 @@ public class OptimizingConfig {
     return this;
   }
 
-  public OptimizingConfig setMinFileSizeRatio(double minFileSizeRatio) {
-    this.minFileSizeRatio = minFileSizeRatio;
+  public OptimizingConfig setMinTargetSizeRatio(double minTargetSizeRatio) {
+    this.minTargetSizeRatio = minTargetSizeRatio;
     return this;
   }
 
@@ -268,7 +268,7 @@ public class OptimizingConfig {
         && maxFileCount == that.maxFileCount
         && openFileCost == that.openFileCost
         && fragmentRatio == that.fragmentRatio
-        && Double.compare(minFileSizeRatio, that.minFileSizeRatio) == 0
+        && Double.compare(minTargetSizeRatio, that.minTargetSizeRatio) == 0
         && minorLeastFileCount == that.minorLeastFileCount
         && minorLeastInterval == that.minorLeastInterval
         && Double.compare(that.majorDuplicateRatio, majorDuplicateRatio) == 0
@@ -293,7 +293,7 @@ public class OptimizingConfig {
         maxFileCount,
         openFileCost,
         fragmentRatio,
-        minFileSizeRatio,
+        minTargetSizeRatio,
         minorLeastFileCount,
         minorLeastInterval,
         majorDuplicateRatio,
@@ -350,10 +350,10 @@ public class OptimizingConfig {
                 properties,
                 TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
                 TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT))
-        .setMinFileSizeRatio(
+        .setMinTargetSizeRatio(
             CompatiblePropertyUtil.propertyAsDouble(
                 properties,
-                TableProperties.SELF_OPTIMIZING_MIN_FILE_SIZE_RATIO,
+                TableProperties.SELF_OPTIMIZING_MIN_TARGET_SIZE_RATIO,
                 TableProperties.SELF_OPTIMIZING_MIN_FILE_SIZE_RATIO_DEFAULT))
         .setMaxFileCount(
             CompatiblePropertyUtil.propertyAsInt(

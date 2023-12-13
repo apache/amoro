@@ -49,9 +49,6 @@ public interface PartitionEvaluator {
    */
   boolean addFile(DataFile dataFile, List<ContentFile<?>> deletes);
 
-  /** After table file scan, confirm whether the segment files really needs to be rewritten. */
-  void globalEvaluate();
-
   /**
    * Whether this partition is necessary to optimize.
    *
@@ -86,11 +83,11 @@ public interface PartitionEvaluator {
   /** Get the total size of fragment files involved in optimizing. */
   long getFragmentFileSize();
 
-  /** Get the count of segment files involved in optimizing. */
-  int getSegmentFileCount();
+  /** Get the count of undersized segment files involved in optimizing. */
+  int getUndersizedSegmentFileCount();
 
-  /** Get the total size of segment files involved in optimizing. */
-  long getSegmentFileSize();
+  /** Get the total size of undersized segment files involved in optimizing. */
+  long getUndersizedSegmentFileSize();
 
   /** Get the count of equality delete files involved in optimizing. */
   int getEqualityDeleteFileCount();

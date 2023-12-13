@@ -168,7 +168,7 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
         return false;
       }
       return fragmentFileCount > getBaseSplitCount()
-          || segmentFileCount + rewriteSegmentFileCount > getBaseSplitCount()
+          || undersizedSegmentFileCount + rewriteSegmentFileCount > getBaseSplitCount()
           || hasNewHiveData();
     }
 

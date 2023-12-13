@@ -50,10 +50,20 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   protected final long planTime;
 
   protected final Map<DataFile, List<ContentFile<?>>> rewriteDataFiles = Maps.newHashMap();
-  protected final Map<DataFile, List<ContentFile<?>>> rewriteSegmentDataFiles = Maps.newHashMap();
+
+  /**
+   * Segment file size in the range (fragmentSize, minTargetSize].
+   *
+   * <p>For example, self-optimizing.target-size is 128m, undersized segment file is (16m, 96m].
+   */
+  protected final Map<DataFile, List<ContentFile<?>>> undersizedSegmentFiles = Maps.newHashMap();
+
   protected final Map<DataFile, List<ContentFile<?>>> rewritePosDataFiles = Maps.newHashMap();
-  // reserved Delete files are Delete files which are related to Data files not optimized in this
-  // plan
+
+  /**
+   * Reserved Delete files are Delete files which are related to Data files not optimized in this
+   * plan.
+   */
   protected final Set<String> reservedDeleteFiles = Sets.newHashSet();
 
   public AbstractPartitionPlan(
@@ -83,6 +93,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
 
   @Override
   public boolean isNecessary() {
+    globalEvaluate();
     return evaluator().isNecessary();
   }
 
@@ -106,8 +117,8 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
         // Segment files whose pos delete rate is greater than the value of
         // `self-optimizing.major.trigger.duplicate-ratio`
         rewriteDataFiles.put(dataFile, deletes);
-      } else if (evaluator().isRewriteSegmentFile(dataFile)) {
-        rewriteSegmentDataFiles.put(dataFile, deletes);
+      } else if (evaluator().isUndersizedSegmentFile(dataFile)) {
+        undersizedSegmentFiles.put(dataFile, deletes);
       } else if (evaluator().segmentShouldRewritePos(dataFile, deletes)) {
         rewritePosDataFiles.put(dataFile, deletes);
       } else {
@@ -121,14 +132,16 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     return added;
   }
 
-  @Override
+  /**
+   * After table file scan, confirm whether the undersized segment files really needs to be
+   * rewritten.
+   */
   public void globalEvaluate() {
-    if (evaluator().isFullNecessary()
-        || (evaluator().enoughContent() && evaluator().hasMergeTask())) {
+    if (evaluator().isFullNecessary() || evaluator().enoughContent()) {
       return;
     }
     for (Map.Entry<DataFile, List<ContentFile<?>>> dataDeletes :
-        rewriteSegmentDataFiles.entrySet()) {
+        undersizedSegmentFiles.entrySet()) {
       if (evaluator().segmentShouldRewritePos(dataDeletes.getKey(), dataDeletes.getValue())) {
         for (ContentFile<?> delete : dataDeletes.getValue()) {
           evaluator().addDelete(delete);
@@ -141,6 +154,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
             .forEach(reservedDeleteFiles::add);
       }
     }
+    undersizedSegmentFiles.clear();
     evaluator().globalEvaluate();
   }
 
@@ -196,13 +210,13 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   }
 
   @Override
-  public int getSegmentFileCount() {
-    return evaluator().getSegmentFileCount();
+  public int getUndersizedSegmentFileCount() {
+    return evaluator().getUndersizedSegmentFileCount();
   }
 
   @Override
-  public long getSegmentFileSize() {
-    return evaluator().getSegmentFileSize();
+  public long getUndersizedSegmentFileSize() {
+    return evaluator().getUndersizedSegmentFileSize();
   }
 
   @Override
@@ -321,7 +335,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       results.addAll(genSplitTasks(fileTasks));
 
       fileTasks.clear();
-      rewriteSegmentDataFiles.forEach(
+      undersizedSegmentFiles.forEach(
           (dataFile, deleteFiles) -> fileTasks.add(new FileTask(dataFile, deleteFiles, true)));
       results.addAll(genSplitTasks(fileTasks));
 

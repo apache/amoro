@@ -130,7 +130,6 @@ public class OptimizingEvaluator {
         arcticTable.id(),
         count,
         System.currentTimeMillis() - startTime);
-    partitionPlanMap.values().forEach(PartitionEvaluator::globalEvaluate);
     partitionPlanMap.values().removeIf(plan -> !plan.isNecessary());
   }
 
@@ -193,8 +192,9 @@ public class OptimizingEvaluator {
     public PendingInput(Collection<PartitionEvaluator> evaluators) {
       for (PartitionEvaluator evaluator : evaluators) {
         partitions.add(evaluator.getPartition());
-        dataFileCount += evaluator.getFragmentFileCount() + evaluator.getSegmentFileCount();
-        dataFileSize += evaluator.getFragmentFileSize() + evaluator.getSegmentFileSize();
+        dataFileCount +=
+            evaluator.getFragmentFileCount() + evaluator.getUndersizedSegmentFileCount();
+        dataFileSize += evaluator.getFragmentFileSize() + evaluator.getUndersizedSegmentFileSize();
         positionalDeleteBytes += evaluator.getPosDeleteFileSize();
         positionalDeleteFileCount += evaluator.getPosDeleteFileCount();
         equalityDeleteBytes += evaluator.getEqualityDeleteFileSize();

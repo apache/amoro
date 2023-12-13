@@ -152,13 +152,10 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     }
 
     @Override
-    protected boolean isRewriteSegmentFile(DataFile dataFile) {
+    protected boolean isUndersizedSegmentFile(DataFile dataFile) {
       PrimaryKeyedFile file = (PrimaryKeyedFile) dataFile;
       if (file.type() == DataFileType.BASE_FILE) {
-        return dataFile.fileSizeInBytes() <= minFileSize;
-      } else if (file.type() == DataFileType.INSERT_FILE) {
-        // for keyed table, we treat all insert files as fragment files
-        return true;
+        return dataFile.fileSizeInBytes() <= minTargetSize;
       } else {
         throw new IllegalStateException("unexpected file type " + file.type() + " of " + file);
       }
@@ -217,7 +214,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       }
       return anyDeleteExist()
           || fragmentFileCount > getBaseSplitCount()
-          || segmentFileCount + rewriteSegmentFileCount > getBaseSplitCount()
+          || undersizedSegmentFileCount + rewriteSegmentFileCount > getBaseSplitCount()
           || hasChangeFiles;
     }
 
@@ -257,7 +254,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       rewriteDataFiles.forEach(rootTree::addRewriteDataFile);
       result.addAll(genSplitTasks(rootTree));
       rootTree = FileTree.newTreeRoot();
-      rewriteSegmentDataFiles.forEach(rootTree::addRewriteDataFile);
+      undersizedSegmentFiles.forEach(rootTree::addRewriteDataFile);
       result.addAll(genSplitTasks(rootTree));
       return result;
     }
