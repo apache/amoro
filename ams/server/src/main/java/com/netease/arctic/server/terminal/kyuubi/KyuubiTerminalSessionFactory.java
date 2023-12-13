@@ -18,6 +18,9 @@
 
 package com.netease.arctic.server.terminal.kyuubi;
 
+import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_KERBEROS_AUTH_TYPE;
+import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT;
+import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_PRINCIPAL;
 import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_USER;
 
 import com.netease.arctic.server.terminal.SparkContextUtil;
@@ -110,6 +113,9 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
   public TerminalSession create(TableMetaStore metaStore, Configurations configuration) {
     List<String> logs = Lists.newArrayList();
     JdbcConnectionParams connectionParams = new JdbcConnectionParams(this.params);
+    if (metaStore.isKerberosAuthMethod() && useCatalogTgtAuth(connectionParams)) {
+      fillKerberosInfo(connectionParams, metaStore);
+    }
 
     Map<String, String> sparkConf = SparkContextUtil.getSparkConf(configuration);
     sparkConf.forEach((k, v) -> connectionParams.getHiveVars().put(k, v));
@@ -159,5 +165,14 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
   private void logMessage(List<String> logs, String message) {
     logs.add(message);
     LOG.info(message);
+  }
+
+  private boolean useCatalogTgtAuth(JdbcConnectionParams connectionParams) {
+    return AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT.equalsIgnoreCase(
+        connectionParams.getSessionVars().get(AUTH_KERBEROS_AUTH_TYPE));
+  }
+
+  private void fillKerberosInfo(JdbcConnectionParams connectionParams, TableMetaStore metaStore) {
+    connectionParams.getSessionVars().put(AUTH_PRINCIPAL, metaStore.getKrbPrincipal());
   }
 }

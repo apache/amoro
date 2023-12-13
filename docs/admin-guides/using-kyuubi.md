@@ -21,6 +21,13 @@ ams:
       kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:10009/ # kyuubi Connection Address
 ```
 
+## Kerberos Authentication
+If you need to authenticate the connection to Kyuubi using Kerberos information from the catalog, you need to add the 
+configuration `kerberosAuthType=fromSubject` to the Kyuubi JDBC URL, for example:
+```
+jdbc:kyuubi://host:port/schema;kyuubiServerPrincipal=<serverPrincipal>;kerberosAuthType=fromSubject
+```
+Other Kerberos authentication configurations can be found in the official Kyuubi documentation (https://kyuubi.readthedocs.io/en/master/client/jdbc/kyuubi_jdbc.html?highlight=Kerberos#kerberos-authentication).
 
 Without configuring Kyuubi, Terminal executes in memory in AMS.
 
