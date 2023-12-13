@@ -229,17 +229,17 @@ public class IcebergTableMaintainer implements TableMaintainer {
       case CURRENT_TIME:
         return Instant.now().atZone(getDefaultZoneId(field)).toInstant();
       case LAST_COMMIT_TIME:
-        Snapshot snapshot = IcebergTableUtil.getSnapshot(getTable(), false);
         long lastCommitTimestamp = fetchLatestNonOptimizedSnapshotTime(getTable());
         // if the table does not exist any non-optimized snapshots, should skip the expiration
         if (lastCommitTimestamp != Long.MAX_VALUE) {
           // snapshot timestamp should be UTC
-          return Instant.ofEpochMilli(lastCommitTimestamp).atZone(ZoneOffset.UTC).toInstant();
+          return Instant.ofEpochMilli(lastCommitTimestamp);
         } else {
           return Instant.MIN;
         }
       default:
-        return Instant.MIN;
+        throw new IllegalArgumentException(
+            "Cannot expire data base on " + expirationConfig.getBaseOnRule().name());
     }
   }
 
