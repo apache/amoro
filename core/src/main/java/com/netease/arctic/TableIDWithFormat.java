@@ -42,4 +42,16 @@ public class TableIDWithFormat {
   public TableFormat getTableFormat() {
     return tableFormat;
   }
+
+  public String catalog() {
+    return this.identifier.getCatalog();
+  }
+
+  public String database() {
+    return this.identifier.getDatabase();
+  }
+
+  public String table() {
+    return this.identifier.getTableName();
+  }
 }
