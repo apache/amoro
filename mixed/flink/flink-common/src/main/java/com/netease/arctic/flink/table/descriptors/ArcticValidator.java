@@ -20,6 +20,7 @@ package com.netease.arctic.flink.table.descriptors;
 
 import static org.apache.flink.configuration.description.TextElement.text;
 
+import com.netease.arctic.ams.api.TableFormat;
 import org.apache.commons.lang.StringUtils;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
@@ -274,6 +275,19 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
               "Use the LRUCache strategy for blocks. The cache is sharded to 2^numShardBits shards, by hash "
                   + " of the key. Default is -1, means it is automatically determined: every shard will be at least 512KB and"
                   + " number of shard bits will not exceed 6.");
+
+  public static final ConfigOption<TableFormat> TABLE_FORMAT =
+      ConfigOptions.key("table.format")
+          .enumType(TableFormat.class)
+          .defaultValue(TableFormat.MIXED_ICEBERG)
+          .withDescription(
+              String.format(
+                  "The format of the table, valid values are %s, %s, %s or %s, and Flink choose '%s' as default format.",
+                  TableFormat.ICEBERG,
+                  TableFormat.MIXED_ICEBERG,
+                  TableFormat.MIXED_HIVE,
+                  TableFormat.PAIMON,
+                  TableFormat.MIXED_ICEBERG));
 
   @Override
   public void validate(DescriptorProperties properties) {

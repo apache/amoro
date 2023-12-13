@@ -52,8 +52,10 @@ public class ArcticManagementConf {
   public static final ConfigOption<Integer> TABLE_MANIFEST_IO_THREAD_COUNT =
       ConfigOptions.key("table-manifest-io.thread-count")
           .intType()
-          .defaultValue(10)
-          .withDescription("The number of threads used to read metadata.");
+          .defaultValue(20)
+          .withDescription(
+              "Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing "
+                  + "manifests in the base table implementation across all concurrent planning or commit operations.");
 
   public static final ConfigOption<Long> REFRESH_EXTERNAL_CATALOGS_INTERVAL =
       ConfigOptions.key("refresh-external-catalogs.interval")
@@ -97,6 +99,18 @@ public class ArcticManagementConf {
           .intType()
           .defaultValue(10)
           .withDescription("The number of threads used for orphan files cleaning.");
+
+  public static final ConfigOption<Boolean> CLEAN_DANGLING_DELETE_FILES_ENABLED =
+      ConfigOptions.key("clean-dangling-delete-files.enabled")
+          .booleanType()
+          .defaultValue(true)
+          .withDescription("Enable dangling delete files cleaning.");
+
+  public static final ConfigOption<Integer> CLEAN_DANGLING_DELETE_FILES_THREAD_COUNT =
+      ConfigOptions.key("clean-dangling-delete-files.thread-count")
+          .intType()
+          .defaultValue(10)
+          .withDescription("The number of threads used for dangling delete files cleaning.");
 
   public static final ConfigOption<Boolean> SYNC_HIVE_TABLES_ENABLED =
       ConfigOptions.key("sync-hive-tables.enabled")
