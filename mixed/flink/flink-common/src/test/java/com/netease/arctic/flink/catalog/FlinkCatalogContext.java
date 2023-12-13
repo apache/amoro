@@ -67,7 +67,11 @@ public class FlinkCatalogContext {
         Arguments.of(
             initFlinkCatalog(TableFormat.MIXED_ICEBERG),
             generateFlinkTable(TableFormat.MIXED_ICEBERG.toString()),
-            TableFormat.MIXED_ICEBERG));
+            TableFormat.MIXED_ICEBERG),
+        Arguments.of(
+            initFlinkCatalog(TableFormat.ICEBERG),
+            generateFlinkTable(TableFormat.ICEBERG.toString()),
+            TableFormat.ICEBERG));
   }
 
   static ResolvedCatalogTable generateFlinkTable(String tableFormat) {
@@ -104,7 +108,7 @@ public class FlinkCatalogContext {
     factoryOptions.put(METASTORE_URL.key(), TEST_AMS.getServerUrl() + "/" + meta.getCatalogName());
     final FactoryUtil.DefaultCatalogContext context =
         new FactoryUtil.DefaultCatalogContext(
-            "flink_catalog_name",
+            "FLINK_" + tableFormat,
             factoryOptions,
             new Configuration(),
             FlinkCatalogContext.class.getClassLoader());

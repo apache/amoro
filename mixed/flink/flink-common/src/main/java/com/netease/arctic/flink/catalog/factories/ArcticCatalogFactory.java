@@ -19,6 +19,7 @@
 package com.netease.arctic.flink.catalog.factories;
 
 import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.DEFAULT_DATABASE;
+import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.FLINK_TABLE_FORMATS;
 import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.METASTORE_URL;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getKafkaParams;
 import static org.apache.flink.table.factories.FactoryUtil.PROPERTY_VERSION;
@@ -29,12 +30,14 @@ import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.factories.CatalogFactory;
 import org.apache.flink.table.factories.FactoryUtil;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /** Factory for {@link ArcticCatalog} */
@@ -57,13 +60,16 @@ public class ArcticCatalogFactory implements CatalogFactory {
     final String defaultDatabase = helper.getOptions().get(DEFAULT_DATABASE);
     String metastoreUrl = helper.getOptions().get(METASTORE_URL);
     final Map<String, String> arcticCatalogProperties = getKafkaParams(context.getOptions());
+    final Map<String, String> catalogProperties = Maps.newHashMap(arcticCatalogProperties);
+
+    Optional<String> tableFormatsOptional = helper.getOptions().getOptional(FLINK_TABLE_FORMATS);
+    tableFormatsOptional.ifPresent(
+        tableFormats -> catalogProperties.put(FLINK_TABLE_FORMATS.key(), tableFormats));
 
     return new ArcticCatalog(
         context.getName(),
         defaultDatabase,
-        InternalCatalogBuilder.builder()
-            .metastoreUrl(metastoreUrl)
-            .properties(arcticCatalogProperties));
+        InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl).properties(catalogProperties));
   }
 
   @Override
@@ -87,6 +93,8 @@ public class ArcticCatalogFactory implements CatalogFactory {
     options.add(ArcticCatalogFactoryOptions.KRB5_CONF_ENCODE);
     options.add(ArcticCatalogFactoryOptions.KEYTAB_PATH);
     options.add(ArcticCatalogFactoryOptions.KEYTAB_ENCODE);
+
+    options.add(ArcticCatalogFactoryOptions.FLINK_TABLE_FORMATS);
     return options;
   }
 }

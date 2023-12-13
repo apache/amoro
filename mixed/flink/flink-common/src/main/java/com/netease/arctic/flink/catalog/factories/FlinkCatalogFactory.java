@@ -18,16 +18,28 @@
 
 package com.netease.arctic.flink.catalog.factories;
 
+import static com.netease.arctic.ams.api.Constants.THRIFT_TABLE_SERVICE_NAME;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.TABLE_FORMATS;
 import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.DEFAULT_DATABASE;
+import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.FLINK_TABLE_FORMATS;
 import static org.apache.flink.table.factories.FactoryUtil.PROPERTY_VERSION;
 
+import com.netease.arctic.AmsClient;
+import com.netease.arctic.PooledAmsClient;
+import com.netease.arctic.UnifiedCatalog;
+import com.netease.arctic.UnifiedCatalogLoader;
+import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import com.netease.arctic.flink.catalog.FlinkUnifiedCatalog;
+import com.netease.arctic.flink.catalog.factories.iceberg.IcebergFlinkCatalogFactory;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.table.catalog.AbstractCatalog;
 import org.apache.flink.table.catalog.Catalog;
+import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.table.factories.CatalogFactory;
 import org.apache.flink.table.factories.FactoryUtil;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 
@@ -39,7 +51,7 @@ import java.util.Set;
 public class FlinkCatalogFactory implements CatalogFactory {
 
   private static final Set<TableFormat> SUPPORTED_FORMATS =
-      Sets.newHashSet(TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE);
+      Sets.newHashSet(TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE, TableFormat.ICEBERG);
 
   @Override
   public String factoryIdentifier() {
@@ -70,19 +82,42 @@ public class FlinkCatalogFactory implements CatalogFactory {
     final String defaultDatabase = helper.getOptions().get(DEFAULT_DATABASE);
     String metastoreUrl = helper.getOptions().get(ArcticCatalogFactoryOptions.METASTORE_URL);
 
+    String amoroCatalogName =
+        ArcticThriftUrl.parse(metastoreUrl, THRIFT_TABLE_SERVICE_NAME).catalogName();
+    UnifiedCatalog unifiedCatalog =
+        UnifiedCatalogLoader.loadUnifiedCatalog(metastoreUrl, amoroCatalogName, Maps.newHashMap());
+    Configuration hadoopConf = unifiedCatalog.authenticationContext().getConfiguration();
+
+    AmsClient client = new PooledAmsClient(metastoreUrl);
+    TableFormat catalogTableFormat;
+    try {
+      CatalogMeta catalogMeta = client.getCatalog(amoroCatalogName);
+      catalogTableFormat =
+          TableFormat.valueOf(catalogMeta.getCatalogProperties().get(TABLE_FORMATS));
+    } catch (Exception e) {
+      throw new IllegalStateException("failed when load catalog " + amoroCatalogName, e);
+    }
+
     Map<TableFormat, AbstractCatalog> availableCatalogs = Maps.newHashMap();
     SUPPORTED_FORMATS.forEach(
         tableFormat -> {
           if (!availableCatalogs.containsKey(tableFormat)) {
-            availableCatalogs.put(tableFormat, createCatalog(context, tableFormat));
+            if (catalogTableFormat == TableFormat.ICEBERG
+                && (tableFormat.in(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG))) {
+              context
+                  .getOptions()
+                  .put(FLINK_TABLE_FORMATS.key(), TableFormat.MIXED_HIVE.toString());
+            }
+            availableCatalogs.put(tableFormat, createCatalog(context, tableFormat, hadoopConf));
           }
         });
 
     return new FlinkUnifiedCatalog(
-        metastoreUrl, context.getName(), defaultDatabase, availableCatalogs);
+        metastoreUrl, context.getName(), defaultDatabase, unifiedCatalog, availableCatalogs);
   }
 
-  private AbstractCatalog createCatalog(Context context, TableFormat tableFormat) {
+  private AbstractCatalog createCatalog(
+      Context context, TableFormat tableFormat, Configuration hadoopConf) {
     CatalogFactory catalogFactory;
 
     switch (tableFormat) {
@@ -90,11 +125,22 @@ public class FlinkCatalogFactory implements CatalogFactory {
       case MIXED_HIVE:
         catalogFactory = new ArcticCatalogFactory();
         break;
+      case ICEBERG:
+        catalogFactory = new IcebergFlinkCatalogFactory(hadoopConf);
+        break;
       default:
         throw new UnsupportedOperationException(
             String.format("Unsupported table format: [%s] in the amoro catalog." + tableFormat));
     }
 
-    return (AbstractCatalog) catalogFactory.createCatalog(context);
+    try {
+      return (AbstractCatalog) catalogFactory.createCatalog(context);
+    } catch (CatalogException e) {
+      if (e.getMessage().contains("must implement createCatalog(Context)")) {
+        return (AbstractCatalog)
+            catalogFactory.createCatalog(context.getName(), context.getOptions());
+      }
+      throw e;
+    }
   }
 }

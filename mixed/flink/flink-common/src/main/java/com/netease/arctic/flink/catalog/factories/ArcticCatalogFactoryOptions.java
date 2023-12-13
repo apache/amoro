@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink.catalog.factories;
 
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.TABLE_FORMATS;
 import static com.netease.arctic.flink.catalog.ArcticCatalog.DEFAULT_DB;
 
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
@@ -81,4 +82,10 @@ public class ArcticCatalogFactoryOptions {
               PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB_ENCODE)
           .stringType()
           .noDefaultValue();
+
+  public static final ConfigOption<String> FLINK_TABLE_FORMATS =
+      ConfigOptions.key(TABLE_FORMATS)
+          .stringType()
+          .noDefaultValue()
+          .withDescription("This illustrates the table format contained in the catalog.");
 }

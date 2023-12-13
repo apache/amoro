@@ -26,7 +26,6 @@ import com.netease.arctic.AmoroTable;
 import com.netease.arctic.NoSuchDatabaseException;
 import com.netease.arctic.NoSuchTableException;
 import com.netease.arctic.UnifiedCatalog;
-import com.netease.arctic.UnifiedCatalogLoader;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import com.netease.arctic.flink.table.AmoroDynamicTableFactory;
@@ -37,6 +36,7 @@ import org.apache.flink.table.catalog.CatalogDatabase;
 import org.apache.flink.table.catalog.CatalogFunction;
 import org.apache.flink.table.catalog.CatalogPartition;
 import org.apache.flink.table.catalog.CatalogPartitionSpec;
+import org.apache.flink.table.catalog.CatalogTable;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.table.catalog.exceptions.DatabaseAlreadyExistException;
@@ -76,17 +76,17 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
       String amsUri,
       String name,
       String defaultDatabase,
+      UnifiedCatalog unifiedCatalog,
       Map<TableFormat, AbstractCatalog> availableCatalogs) {
     super(name, defaultDatabase);
     this.amsUri = amsUri;
     this.amoroCatalogName = ArcticThriftUrl.parse(amsUri, THRIFT_TABLE_SERVICE_NAME).catalogName();
+    this.unifiedCatalog = unifiedCatalog;
     this.availableCatalogs = availableCatalogs;
   }
 
   @Override
   public void open() throws CatalogException {
-    unifiedCatalog =
-        UnifiedCatalogLoader.loadUnifiedCatalog(amsUri, amoroCatalogName, Maps.newHashMap());
     availableCatalogs.forEach((tableFormat, catalog) -> catalog.open());
   }
 
@@ -165,9 +165,15 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
               "Unsupported operation: get table [%s], %s: %s.",
               tablePath, TABLE_FORMAT.key(), amoroTable.format()));
     }
-    CatalogBaseTable catalogBaseTable = catalog.getTable(tablePath);
-    catalogBaseTable.getOptions().put(TABLE_FORMAT.key(), amoroTable.format().toString());
-    return catalogBaseTable;
+    CatalogTable catalogTable = (CatalogTable) catalog.getTable(tablePath);
+    final Map<String, String> flinkProperties = Maps.newHashMap(catalogTable.getOptions());
+    flinkProperties.put(TABLE_FORMAT.key(), amoroTable.format().toString());
+
+    return CatalogTable.of(
+        catalogTable.getUnresolvedSchema(),
+        catalogTable.getComment(),
+        catalogTable.getPartitionKeys(),
+        flinkProperties);
   }
 
   @Override
