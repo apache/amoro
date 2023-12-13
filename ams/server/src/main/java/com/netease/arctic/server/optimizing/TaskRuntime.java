@@ -352,7 +352,7 @@ public class TaskRuntime extends StatedPersistentBase {
     }
 
     public synchronized boolean tryAccepting(Status targetStatus) {
-      if (owner.isClosed() || !getNext().contains(targetStatus)) {
+      if (!getNext().contains(targetStatus)) {
         return false;
       }
       status = targetStatus;
