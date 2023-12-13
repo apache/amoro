@@ -74,8 +74,10 @@ public class IcebergHadoopCatalogTestHelper extends AbstractFormatCatalogTestHel
   public AmoroCatalog amoroCatalog() {
     IcebergCatalogFactory icebergCatalogFactory = new IcebergCatalogFactory();
     TableMetaStore metaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
-    return icebergCatalogFactory.create(
-        catalogName, getMetastoreType(), catalogProperties, metaStore);
+    Map<String, String> properties =
+        icebergCatalogFactory.convertCatalogProperties(
+            catalogName, getMetastoreType(), catalogProperties);
+    return icebergCatalogFactory.create(catalogName, getMetastoreType(), properties, metaStore);
   }
 
   @Override

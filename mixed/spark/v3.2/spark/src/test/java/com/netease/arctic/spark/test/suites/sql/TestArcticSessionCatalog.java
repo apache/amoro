@@ -20,8 +20,8 @@ package com.netease.arctic.spark.test.suites.sql;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.hive.HiveTableProperties;
-import com.netease.arctic.spark.SparkSQLProperties;
-import com.netease.arctic.spark.test.SparkTableTestBase;
+import com.netease.arctic.spark.mixed.SparkSQLProperties;
+import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.utils.RecordGenerator;
 import com.netease.arctic.spark.test.utils.TestTableUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -45,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public class TestArcticSessionCatalog extends SparkTableTestBase {
+public class TestArcticSessionCatalog extends MixedTableTestBase {
 
   Dataset<Row> rs;
 
