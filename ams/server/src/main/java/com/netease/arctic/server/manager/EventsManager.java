@@ -19,8 +19,8 @@
 package com.netease.arctic.server.manager;
 
 import com.netease.arctic.ams.api.Environments;
-import com.netease.arctic.ams.api.metrics.MetricsContent;
-import com.netease.arctic.ams.api.metrics.MetricsEmitter;
+import com.netease.arctic.ams.api.events.Event;
+import com.netease.arctic.ams.api.events.EventEmitter;
 import com.netease.arctic.server.exception.LoadingPluginException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,27 +32,28 @@ import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.Map;
 
-public class MetricsManager extends ActivePluginManager<MetricsEmitter> {
+/** This class is used to trigger various events in the process and notify event emitter plugins. */
+public class EventsManager extends ActivePluginManager<EventEmitter> {
 
-  private static final Logger LOG = LoggerFactory.getLogger(MetricsManager.class);
-  private static final String METRICS_CONFIG_DIRECTORY = "metrics";
-  private static volatile MetricsManager INSTANCE;
+  private static final Logger LOG = LoggerFactory.getLogger(EventsManager.class);
+  private static final String EVENTS_CONFIG_DIR = "events";
+  private static volatile EventsManager INSTANCE;
 
   private final String configPath;
 
-  public MetricsManager() {
-    this(new File(Environments.getHomePath(), METRICS_CONFIG_DIRECTORY).getPath());
+  public EventsManager() {
+    this(new File(Environments.getConfigPath(), EVENTS_CONFIG_DIR).getPath());
   }
 
-  public MetricsManager(String configPath) {
+  public EventsManager(String configPath) {
     this.configPath = configPath;
   }
 
-  public static MetricsManager instance() {
+  public static EventsManager instance() {
     if (INSTANCE == null) {
-      synchronized (MetricsManager.class) {
+      synchronized (EventsManager.class) {
         if (INSTANCE == null) {
-          INSTANCE = new MetricsManager();
+          INSTANCE = new EventsManager();
           INSTANCE.initialize();
         }
       }
@@ -81,15 +82,15 @@ public class MetricsManager extends ActivePluginManager<MetricsEmitter> {
     }
   }
 
-  public void emit(MetricsContent<?> metrics) {
+  public void emit(Event<?> event) {
     forEach(
         emitter -> {
           try (ClassLoaderContext ignored = new ClassLoaderContext(emitter)) {
-            if (emitter.accept(metrics)) {
-              emitter.emit(metrics);
+            if (emitter.accepts().contains(event.type())) {
+              emitter.emit(event);
             }
           } catch (Throwable throwable) {
-            LOG.error("Emit metrics {} failed", metrics, throwable);
+            LOG.error("Emit metrics {} failed", event, throwable);
           }
         });
   }

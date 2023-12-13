@@ -23,10 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.netease.arctic.ams.api.metrics.MetricType;
-import com.netease.arctic.ams.api.metrics.MetricsContent;
-import com.netease.arctic.ams.api.metrics.MetricsEmitter;
-import com.netease.arctic.server.metrics.LoggingMetricsEmitter;
+import com.netease.arctic.ams.api.events.Event;
+import com.netease.arctic.ams.api.events.EventEmitter;
+import com.netease.arctic.ams.api.events.EventType;
+import com.netease.arctic.server.events.LoggingEventEmitter;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,30 +36,31 @@ import org.mockito.Mock;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
-public class TestMetricsManager {
+public class TestEventsManager {
 
-  @Mock private MetricsEmitterTest emitter1;
-  @Mock private MetricsEmitterTest emitter2;
+  @Mock private EventEmitterTest emitter1;
+  @Mock private EventEmitterTest emitter2;
 
-  private MetricsManager manager;
+  private EventsManager manager;
 
   @BeforeEach
   public void build() {
     Map<String, String> expectedProperties =
         Collections.singletonMap(
-            "impl", "com.netease.arctic.server.manager.TestMetricsManager$MetricsEmitterTest");
+            "impl", "com.netease.arctic.server.manager.TestEventsManager$EventEmitterTest");
     manager =
-        new MetricsManager("config/path") {
+        new EventsManager("config/path") {
           protected Map<String, String> loadProperties(String pluginName) {
             return expectedProperties;
           }
         };
     manager.install("emitter1");
     manager.install("emitter2");
-    emitter1 = (MetricsEmitterTest) manager.get("emitter1");
-    emitter2 = (MetricsEmitterTest) manager.get("emitter2");
-    emitter1.setAccept(true);
+    emitter1 = (EventEmitterTest) manager.get("emitter1");
+    emitter2 = (EventEmitterTest) manager.get("emitter2");
+    emitter1.setAccept(EventType.allTypes());
   }
 
   @AfterEach
@@ -71,42 +73,25 @@ public class TestMetricsManager {
     System.setProperty(
         AMORO_HOME,
         Objects.requireNonNull(this.getClass().getClassLoader().getResource("")).getPath());
-    MetricsManager testManager = new MetricsManager();
+    EventsManager testManager = new EventsManager();
     testManager.initialize();
 
-    assertNotNull(testManager.get(LoggingMetricsEmitter.NAME));
+    assertNotNull(testManager.get(LoggingEventEmitter.NAME));
   }
 
   @Test
   public void testEmit() {
-    MetricsContent<?> metrics =
-        new MetricsContent<String>() {
+    Event<?> event = null;
 
-          @Override
-          public String name() {
-            return null;
-          }
-
-          @Override
-          public MetricType type() {
-            return null;
-          }
-
-          @Override
-          public String data() {
-            return null;
-          }
-        };
-
-    manager.emit(metrics);
+    manager.emit(event);
     assertTrue(emitter1.isEmitted());
     assertFalse(emitter2.isEmitted());
   }
 
-  public static class MetricsEmitterTest implements MetricsEmitter {
+  public static class EventEmitterTest implements EventEmitter {
 
     private boolean emitted = false;
-    private boolean accept = false;
+    private Set<EventType<?>> accepts = ImmutableSet.of();
 
     @Override
     public String name() {
@@ -117,21 +102,21 @@ public class TestMetricsManager {
     public void open(Map<String, String> properties) {}
 
     @Override
-    public void emit(MetricsContent<?> metrics) {
+    public void emit(Event<?> metrics) {
       emitted = true;
     }
 
-    public void setAccept(boolean accept) {
-      this.accept = accept;
+    @Override
+    public Set<EventType<?>> accepts() {
+      return accepts;
+    }
+
+    public void setAccept(Set<EventType<?>> accepts) {
+      this.accepts = accepts;
     }
 
     public boolean isEmitted() {
       return emitted;
-    }
-
-    @Override
-    public boolean accept(MetricsContent<?> metrics) {
-      return accept;
     }
 
     @Override

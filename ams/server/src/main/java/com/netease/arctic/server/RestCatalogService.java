@@ -32,13 +32,16 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.netease.arctic.ams.api.TableFormat;
+import com.netease.arctic.ams.api.events.Event;
+import com.netease.arctic.ams.api.events.EventType;
+import com.netease.arctic.ams.api.events.IcebergReportEventContent;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.server.catalog.InternalCatalog;
 import com.netease.arctic.server.catalog.ServerCatalog;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
-import com.netease.arctic.server.manager.MetricsManager;
-import com.netease.arctic.server.metrics.IcebergMetricsContent;
+import com.netease.arctic.server.manager.EventsManager;
 import com.netease.arctic.server.persistence.PersistentBase;
+import com.netease.arctic.server.table.ServerTableIdentifier;
 import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.table.internal.InternalTableCreator;
 import com.netease.arctic.server.table.internal.InternalTableHandler;
@@ -106,13 +109,13 @@ public class RestCatalogService extends PersistentBase {
   private final JavalinJackson jsonMapper;
 
   private final TableService tableService;
-  private final MetricsManager metricsManager;
+  private final EventsManager eventsManager;
 
   public RestCatalogService(TableService tableService) {
     this.tableService = tableService;
     ObjectMapper objectMapper = jsonMapper();
     this.jsonMapper = new JavalinJackson(objectMapper);
-    this.metricsManager = MetricsManager.instance();
+    this.eventsManager = EventsManager.instance();
   }
 
   public EndpointGroup endpoints() {
@@ -368,7 +371,13 @@ public class RestCatalogService extends PersistentBase {
         handler -> {
           String bodyJson = ctx.body();
           ReportMetricsRequest metricsRequest = ReportMetricsRequestParser.fromJson(bodyJson);
-          metricsManager.emit(IcebergMetricsContent.wrap(metricsRequest.report()));
+          ServerTableIdentifier identifier = handler.tableMetadata().getTableIdentifier();
+          Event<IcebergReportEventContent> event =
+              Event.newEvent(
+                  EventType.IcebergReport,
+                  new IcebergReportEventContent(
+                      identifier.getIdentifier(), metricsRequest.report()));
+          eventsManager.emit(event);
           return null;
         });
   }

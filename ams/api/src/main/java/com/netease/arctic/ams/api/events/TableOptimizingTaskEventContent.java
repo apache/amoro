@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,29 +16,36 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.metrics;
+package com.netease.arctic.ams.api.events;
 
-import com.netease.arctic.ams.api.ActivePlugin;
+import com.netease.arctic.ams.api.TableIdentifier;
 
-/**
- * This is an interface defining a reporter, which users can implement to notify metrics to a
- * monitoring system.
- */
-public interface MetricsEmitter extends ActivePlugin {
+/** Event content for {@link EventType#TableOptimizingTaskAcked} */
+public class TableOptimizingTaskEventContent {
 
-  /**
-   * emit metrics to the monitoring system
-   *
-   * @param metrics {@link MetricsContent} to emit.
-   */
-  void emit(MetricsContent<?> metrics);
+  private final TableIdentifier identifier;
 
-  /**
-   * determine whether the emitter accepts the metrics according to {@link MetricsContent#type()}
-   * and {@link MetricsContent#name()}
-   *
-   * @param metrics metrics data
-   * @return true if the type and name is accepted by the emitter
-   */
-  boolean accept(MetricsContent<?> metrics);
+  private final long processId;
+
+  private final long taskId;
+
+
+  public TableOptimizingTaskEventContent(
+      TableIdentifier identifier, long processId, long taskId) {
+    this.identifier = identifier;
+    this.processId = processId;
+    this.taskId = taskId;
+  }
+
+  public TableIdentifier getIdentifier() {
+    return identifier;
+  }
+
+  public long getProcessId() {
+    return processId;
+  }
+
+  public long getTaskId() {
+    return taskId;
+  }
 }

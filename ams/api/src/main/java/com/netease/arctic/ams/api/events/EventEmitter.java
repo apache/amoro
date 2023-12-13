@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *  *
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,33 +16,29 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.metrics;
+package com.netease.arctic.ams.api.events;
+
+import com.netease.arctic.ams.api.ActivePlugin;
+
+import java.util.Set;
 
 /**
- * Standard metrics interface in Amoro domain this is a parallel concept with specific metrics data
- * of formats like MetricReport in Apache Iceberg Implementations could include all kinds of process
- * metrics and resource metrics.
+ * This is an interface defining a reporter, which users can implement to notify metrics to a
+ * monitoring system.
  */
-public interface MetricsContent<T> {
+public interface EventEmitter extends ActivePlugin {
 
   /**
-   * Get the name of the metrics type
+   * Emit metrics to the monitoring system
    *
-   * @return metrics type name
+   * @param event {@link Event} to emit.
    */
-  String name();
+  void emit(Event<?> event);
 
   /**
-   * Get the type of the metrics. See types {@link MetricType}
+   * Return the eventType set this event emitter accepts.
    *
-   * @return metrics type
+   * @return the event type set this emitter accepts.
    */
-  MetricType type();
-
-  /**
-   * Get the data of the metrics including {@link AmoroMetrics} and Iceberg/Paimon metric Objects
-   *
-   * @return metrics data
-   */
-  T data();
+  Set<EventType<?>> accepts();
 }
