@@ -315,8 +315,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
    * <p>2. There are two undersized segment file that can be merged into one
    */
   public boolean enoughContent() {
-    return undersizedSegmentFileSize > config.getTargetSize()
-        && min1SegmentFileSize + min2SegmentFileSize < config.getTargetSize();
+    return undersizedSegmentFileSize >= config.getTargetSize()
+        && min1SegmentFileSize + min2SegmentFileSize <= config.getTargetSize();
   }
 
   public boolean isMajorNecessary() {
