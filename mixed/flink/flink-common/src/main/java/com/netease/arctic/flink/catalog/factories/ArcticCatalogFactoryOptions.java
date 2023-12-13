@@ -31,6 +31,7 @@ import org.apache.flink.table.catalog.CommonCatalogOptions;
 @Internal
 public class ArcticCatalogFactoryOptions {
   public static final String IDENTIFIER = "arctic";
+  public static final String UNIFIED_IDENTIFIER = "unified";
 
   public static final ConfigOption<String> DEFAULT_DATABASE =
       ConfigOptions.key(CommonCatalogOptions.DEFAULT_DATABASE_KEY)
