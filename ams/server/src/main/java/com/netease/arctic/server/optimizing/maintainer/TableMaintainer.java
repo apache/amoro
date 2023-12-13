@@ -33,9 +33,13 @@ import org.apache.iceberg.Table;
 // TODO TableMaintainer should not be in this optimizing.xxx package.
 public interface TableMaintainer {
 
-  /** Clean table orphan files. Includes: data files, metadata files, dangling delete files. */
+  /** Clean table orphan files. Includes: data files, metadata files. */
   void cleanOrphanFiles(TableRuntime tableRuntime);
 
+  /** Clean table dangling delete files. */
+  default void cleanDanglingDeleteFiles(TableRuntime tableRuntime) {
+    // DO nothing by default
+  }
   /**
    * Expire snapshots. The optimizing based on the snapshot that the current table relies on will
    * not expire according to TableRuntime.
