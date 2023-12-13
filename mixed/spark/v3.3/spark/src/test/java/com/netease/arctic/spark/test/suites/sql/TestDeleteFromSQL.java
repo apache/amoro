@@ -19,7 +19,7 @@
 package com.netease.arctic.spark.test.suites.sql;
 
 import com.netease.arctic.ams.api.TableFormat;
-import com.netease.arctic.spark.test.SparkTableTestBase;
+import com.netease.arctic.spark.test.MixedTableTestBase;
 import com.netease.arctic.spark.test.extensions.EnableCatalogSelect;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 
 @EnableCatalogSelect
 @EnableCatalogSelect.SelectCatalog(byTableFormat = true)
-public class TestDeleteFromSQL extends SparkTableTestBase {
+public class TestDeleteFromSQL extends MixedTableTestBase {
   public static Stream<Arguments> testDelete() {
     return Stream.of(
         Arguments.of(TableFormat.MIXED_HIVE, ", PRIMARY KEY(id)", " where id = 3"),
