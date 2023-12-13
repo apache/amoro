@@ -350,7 +350,7 @@ public class OptimizingQueue extends PersistentBase {
       tableRuntime = tableRuntimeMeta.getTableRuntime();
       optimizingType = tableRuntimeMeta.getOptimizingType();
       targetSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
-      targetChangeSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
+      targetChangeSnapshotId = tableRuntimeMeta.getTargetChangeSnapshotId();
       planTime = tableRuntimeMeta.getPlanTime();
       if (tableRuntimeMeta.getFromSequence() != null) {
         fromSequence = tableRuntimeMeta.getFromSequence();
