@@ -121,9 +121,7 @@ public class ExternalCatalog extends ServerCatalog {
 
   private void updateDatabaseFilter(CatalogMeta metadata) {
     String databaseFilter =
-        metadata
-            .getCatalogProperties()
-            .get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
+        metadata.getCatalogProperties().get(CatalogMetaProperties.KEY_DATABASE_FILTER);
     if (databaseFilter != null) {
       databaseFilterPattern = Pattern.compile(databaseFilter);
     } else {
