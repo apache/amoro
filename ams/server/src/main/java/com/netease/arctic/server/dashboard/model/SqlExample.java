@@ -36,12 +36,12 @@ public enum SqlExample {
       "alter table db_name.table_name add column data int ;\n"
           + "alter table db_name.table_name alter column data bigint ;\n"
           + "alter table db_name.table_name drop column data;"),
-  ADD_PROPERTIES(
-      "AddProperties",
+  SET_PROPERTIES(
+      "SetProperties",
       "alter table db_name.table_name set tblproperties (\n"
           + "    'comment' = 'A table comment.');"),
-  DROP_PROPERTIES(
-      "DropProperties",
+  UNSET_PROPERTIES(
+      "UnsetProperties",
       "alter table db_name.table_name unset tblproperties (\n" + "    'comment');"),
   SHOW_DATABASES("ShowDatabases", "show databases;"),
   SHOW_TABLES("ShowTables", "show tables;"),
