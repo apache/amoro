@@ -64,13 +64,14 @@ export function getPartitionTable(
     catalog: string
     db: string,
     table: string,
-    page: number
-    pageSize: number
+    filter: string,
+    page: number,
+    pageSize: number,
     token: string
   }
 ) {
-  const { catalog, db, table, page, pageSize, token } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions`, { params: { page, pageSize, token } })
+  const { catalog, db, table, filter, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions`, { params: { filter, page, pageSize, token } })
 }
 
 // get partions
@@ -149,8 +150,8 @@ export function getOperations(
   const { catalog, db, table, page, pageSize, token } = params
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/operations`, { params: { page, pageSize, token } })
 }
-// get optimizes
-export function getOptimizes(
+// get optimizing processes
+export function getOptimizingProcesses(
   params: {
     catalog: string
     db: string,
@@ -162,6 +163,22 @@ export function getOptimizes(
 ) {
   const { catalog, db, table, page, pageSize, token } = params
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes`, { params: { page, pageSize, token } })
+}
+
+// get optimizing taskes
+export function getTasksByOptimizingProcessId(
+  params: {
+    catalog: string
+    db: string,
+    table: string,
+    processId: number,
+    page: number
+    pageSize: number
+    token?: string
+  }
+) {
+  const { catalog, db, table, processId, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes/${processId}/tasks`, { params: { page, pageSize, token } })
 }
 
 export function upgradeHiveTable(

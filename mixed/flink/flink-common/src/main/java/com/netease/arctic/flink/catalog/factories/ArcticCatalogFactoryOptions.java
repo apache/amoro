@@ -30,7 +30,10 @@ import org.apache.flink.table.catalog.CommonCatalogOptions;
 /** {@link ConfigOption}s for {@link ArcticCatalog}. */
 @Internal
 public class ArcticCatalogFactoryOptions {
-  public static final String IDENTIFIER = "arctic";
+  public static final String MIXED_ICEBERG_IDENTIFIER = "mixed_iceberg";
+  public static final String MIXED_HIVE_IDENTIFIER = "mixed_hive";
+  @Deprecated public static final String IDENTIFIER = "arctic";
+  public static final String UNIFIED_IDENTIFIER = "unified";
 
   public static final ConfigOption<String> DEFAULT_DATABASE =
       ConfigOptions.key(CommonCatalogOptions.DEFAULT_DATABASE_KEY)

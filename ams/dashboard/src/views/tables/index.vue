@@ -48,7 +48,7 @@ import UDetails from './components/Details.vue'
 import UFiles from './components/Files.vue'
 import UOperations from './components/Operations.vue'
 import USnapshots from './components/Snapshots.vue'
-import UOptimized from './components/Optimized.vue'
+import UOptimizing from './components/Optimizing.vue'
 import { useRoute, useRouter } from 'vue-router'
 import useStore from '@/store/index'
 import { IBaseDetailInfo, IMap } from '@/types/common.type'
@@ -62,7 +62,7 @@ export default defineComponent({
     UFiles,
     UOperations,
     USnapshots,
-    UOptimized
+    UOptimizing
   },
   setup() {
     const router = useRouter()
@@ -75,7 +75,7 @@ export default defineComponent({
       // { key: 'Details' },
       // { key: 'Files' },
       { key: 'Snapshots', label: 'Snapshots' },
-      { key: 'Optimized', label: 'Optimizing' },
+      { key: 'Optimizing', label: 'Optimizing' },
       { key: 'Operations', label: 'Operations' }
     ])
 

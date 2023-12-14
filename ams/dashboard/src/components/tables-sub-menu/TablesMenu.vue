@@ -240,7 +240,8 @@ export default defineComponent({
         }))
         if (state.databaseList.length && !isSearch) {
           const index = state.databaseList.findIndex(ele => ele.id === storageCataDBTable.database)
-          state.database = index > -1 ? storageCataDBTable.database : (route.query?.db)?.toString() || state.databaseList[0].id || ''
+          // ISSUE 2413: If the current catalog is not the one in the query, the first db is selected by default.
+          state.database = index > -1 ? storageCataDBTable.database : state.curCatalog === (route.query?.catalog)?.toString() ? ((route.query?.db)?.toString() || state.databaseList[0].id || '') : state.databaseList[0].id || ''
           getAllTableList()
         }
       }).finally(() => {
