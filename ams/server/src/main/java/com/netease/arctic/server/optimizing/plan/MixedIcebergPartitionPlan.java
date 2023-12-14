@@ -214,7 +214,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       }
       return anyDeleteExist()
           || fragmentFileCount > getBaseSplitCount()
-          || undersizedSegmentFileCount + rewriteSegmentFileCount > getBaseSplitCount()
+          || rewriteSegmentFileCount + undersizedSegmentFileCount > getBaseSplitCount()
           || hasChangeFiles;
     }
 

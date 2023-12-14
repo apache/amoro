@@ -229,7 +229,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
         .sum();
   }
 
-  void addDelete(ContentFile<?> delete) {
+  private void addDelete(ContentFile<?> delete) {
     if (isDuplicateDelete(delete)) {
       return;
     }
@@ -262,14 +262,14 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
       // When rewriting the Position delete file, only the primary key field of the segment file
       // will be read, so only one-tenth of the size is calculated based on the size.
       cost =
-          (fragmentFileSize + undersizedSegmentFileSize + rewriteSegmentFileSize) * 4
+          (fragmentFileSize + rewriteSegmentFileSize + undersizedSegmentFileSize) * 4
               + rewritePosSegmentFileSize / 10
               + posDeleteFileSize
               + equalityDeleteFileSize;
       int fileCnt =
           fragmentFileCount
-              + undersizedSegmentFileCount
               + rewriteSegmentFileCount
+              + undersizedSegmentFileCount
               + rewritePosSegmentFileCount
               + posDeleteFileCount
               + equalityDeleteFileCount;
@@ -418,10 +418,10 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
         .add("lastFullOptimizeTime", tableRuntime.getLastFullOptimizingTime())
         .add("fragmentFileCount", fragmentFileCount)
         .add("fragmentFileSize", fragmentFileSize)
-        .add("undersizedSegmentFileCount", undersizedSegmentFileCount)
-        .add("undersizedSegmentFileSize", undersizedSegmentFileSize)
         .add("rewriteSegmentFileCount", rewriteSegmentFileCount)
         .add("rewriteSegmentFileSize", rewriteSegmentFileSize)
+        .add("undersizedSegmentFileCount", undersizedSegmentFileCount)
+        .add("undersizedSegmentFileSize", undersizedSegmentFileSize)
         .add("rewritePosSegmentFileCount", rewritePosSegmentFileCount)
         .add("rewritePosSegmentFileSize", rewritePosSegmentFileSize)
         .add("min1SegmentFileSize", min1SegmentFileSize)
