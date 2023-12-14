@@ -16,29 +16,15 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.events;
+package com.netease.arctic.ams.api.metrics;
 
 import com.netease.arctic.ams.api.ActivePlugin;
 
-import java.util.Set;
-
 /**
- * This is an interface defining a reporter, which users can implement to notify event to a
- * monitoring system.
+ * This interface define a collector, which users can fetch metrics and report to
+ * metrics monitor system.
  */
-public interface EventEmitter extends ActivePlugin {
+public interface MetricReporter extends ActivePlugin {
 
-  /**
-   * Emit metrics to the monitoring system
-   *
-   * @param event {@link Event} to emit.
-   */
-  void emit(Event<?> event);
-
-  /**
-   * Return the eventType set this event emitter accepts.
-   *
-   * @return the event type set this emitter accepts.
-   */
-  Set<EventType<?>> accepts();
+  void setRegistry(MetricRegister registry);
 }

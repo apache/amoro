@@ -16,29 +16,13 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.events;
+package com.netease.arctic.ams.api.metrics;
 
-import com.netease.arctic.ams.api.ActivePlugin;
+import com.codahale.metrics.Metric;
 
-import java.util.Set;
+import java.util.Map;
 
-/**
- * This is an interface defining a reporter, which users can implement to notify event to a
- * monitoring system.
- */
-public interface EventEmitter extends ActivePlugin {
+public interface MetricRegister {
 
-  /**
-   * Emit metrics to the monitoring system
-   *
-   * @param event {@link Event} to emit.
-   */
-  void emit(Event<?> event);
-
-  /**
-   * Return the eventType set this event emitter accepts.
-   *
-   * @return the event type set this emitter accepts.
-   */
-  Set<EventType<?>> accepts();
+  Map<MetricName, Metric> allMetrics();
 }
