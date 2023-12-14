@@ -97,9 +97,8 @@ public class BasicMixedIcebergCatalog implements ArcticCatalog {
       cacheEnabled = false;
     }
     Pattern databaseFilterPattern = null;
-    if (properties.containsKey(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION)) {
-      String databaseFilter =
-          properties.get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
+    if (properties.containsKey(CatalogMetaProperties.KEY_DATABASE_FILTER)) {
+      String databaseFilter = properties.get(CatalogMetaProperties.KEY_DATABASE_FILTER);
       databaseFilterPattern = Pattern.compile(databaseFilter);
     }
     Catalog catalog = buildIcebergCatalog(name, properties, metaStore.getConfiguration());
