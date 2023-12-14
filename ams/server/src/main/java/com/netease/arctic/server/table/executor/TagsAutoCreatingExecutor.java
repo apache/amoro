@@ -23,6 +23,7 @@ import static com.netease.arctic.server.optimizing.maintainer.TableMaintainer.of
 import com.netease.arctic.AmoroTable;
 import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.optimizing.maintainer.TableMaintainer;
+import com.netease.arctic.server.table.TableConfiguration;
 import com.netease.arctic.server.table.TableManager;
 import com.netease.arctic.server.table.TableRuntime;
 import org.slf4j.Logger;
@@ -59,5 +60,10 @@ public class TagsAutoCreatingExecutor extends BaseTableExecutor {
     } catch (Throwable t) {
       LOG.error("Failed to create tags on {}", tableRuntime.getTableIdentifier(), t);
     }
+  }
+
+  @Override
+  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
+    scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 }
