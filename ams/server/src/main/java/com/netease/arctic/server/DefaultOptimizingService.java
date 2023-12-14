@@ -231,22 +231,18 @@ public class DefaultOptimizingService extends StatedPersistentBase
   @Override
   public String authenticate(OptimizerRegisterInfo registerInfo) {
     LOG.info("Register optimizer {}.", registerInfo);
-    String heartbeatIntervalStr =
-        Optional.ofNullable(
-                registerInfo.getProperties().get(PropertyNames.OPTIMIZER_HEART_BEAT_INTERVAL))
-            .orElseThrow(
-                () ->
-                    new ForbiddenException(
-                        String.format(
-                            "Cannot find %s from optimizer registerInfo",
-                            PropertyNames.OPTIMIZER_HEART_BEAT_INTERVAL)));
-    if (Long.parseLong(heartbeatIntervalStr) >= optimizerTouchTimeout) {
-      throw new ForbiddenException(
-          String.format(
-              "The %s configuration should be less than AMS's %s",
-              PropertyNames.OPTIMIZER_HEART_BEAT_INTERVAL,
-              ArcticManagementConf.OPTIMIZER_HB_TIMEOUT.key()));
-    }
+    Optional.ofNullable(
+            registerInfo.getProperties().get(PropertyNames.OPTIMIZER_HEART_BEAT_INTERVAL))
+        .ifPresent(
+            interval -> {
+              if (Long.parseLong(interval) >= optimizerTouchTimeout) {
+                throw new ForbiddenException(
+                    String.format(
+                        "The %s configuration should be less than AMS's %s",
+                        PropertyNames.OPTIMIZER_HEART_BEAT_INTERVAL,
+                        ArcticManagementConf.OPTIMIZER_HB_TIMEOUT.key()));
+              }
+            });
 
     OptimizingQueue queue = getQueueByGroup(registerInfo.getGroupName());
     OptimizerInstance optimizer = new OptimizerInstance(registerInfo, queue.getContainerName());

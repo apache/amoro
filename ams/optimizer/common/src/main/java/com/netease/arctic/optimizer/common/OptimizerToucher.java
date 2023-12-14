@@ -4,12 +4,11 @@ import com.netease.arctic.ams.api.ArcticException;
 import com.netease.arctic.ams.api.ErrorCodes;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.PropertyNames;
+import java.util.Map;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 public class OptimizerToucher extends AbstractOptimizerOperator {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerToucher.class);
@@ -74,12 +73,11 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
         LOG.info("Registered optimizer to ams with token:{}", token);
         return true;
       } catch (TException e) {
+        LOG.error("Register optimizer to ams failed", e);
         if (e instanceof ArcticException
             && ErrorCodes.FORBIDDEN_ERROR_CODE == ((ArcticException) e).getErrorCode()) {
-          stop(); // Don't need to getToken again
+          System.exit(1); // Don't need to try again
         }
-
-        LOG.error("Register optimizer to ams failed", e);
         return false;
       }
     }
