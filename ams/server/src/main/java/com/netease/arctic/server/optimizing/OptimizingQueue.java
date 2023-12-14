@@ -19,6 +19,7 @@
 package com.netease.arctic.server.optimizing;
 
 import com.netease.arctic.AmoroTable;
+import com.netease.arctic.ams.api.OptimizerProperties;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
 import com.netease.arctic.optimizing.RewriteFilesInput;
@@ -36,6 +37,7 @@ import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.table.TableRuntimeMeta;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.ArcticDataFiles;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.ExceptionUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
@@ -248,7 +250,10 @@ public class OptimizingQueue extends PersistentBase {
       AmoroTable<?> table = tableManager.loadTable(tableRuntime.getTableIdentifier());
       OptimizingPlanner planner =
           new OptimizingPlanner(
-              tableRuntime.refresh(table), (ArcticTable) table.originalTable(), getAvailableCore());
+              tableRuntime.refresh(table),
+              (ArcticTable) table.originalTable(),
+              getAvailableCore(),
+              maxInputSizePerThread());
       if (planner.isNecessary()) {
         return new TableOptimizingProcess(planner);
       } else {
@@ -299,6 +304,13 @@ public class OptimizingQueue extends PersistentBase {
   private double getAvailableCore() {
     // the available core should be at least 1
     return Math.max(quotaProvider.getTotalQuota(optimizerGroup.getName()), 1);
+  }
+
+  private long maxInputSizePerThread() {
+    return CompatiblePropertyUtil.propertyAsLong(
+        optimizerGroup.getProperties(),
+        OptimizerProperties.MAX_INPUT_FILE_SIZE_PER_THREAD,
+        OptimizerProperties.MAX_INPUT_FILE_SIZE_PER_THREAD_DEFAULT);
   }
 
   @VisibleForTesting
