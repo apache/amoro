@@ -1,8 +1,6 @@
 package com.netease.arctic.optimizer.common;
 
-import com.netease.arctic.ams.api.ArcticException;
-import com.netease.arctic.ams.api.ErrorCodes;
-import com.netease.arctic.ams.api.OptimizerRegisterInfo;
+import com.netease.arctic.ams.api.*;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -54,6 +52,9 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
         String token =
             callAms(
                 client -> {
+                  this.withRegisterProperty(
+                      PropertyNames.OPTIMIZER_HEART_BEAT_INTERVAL,
+                      String.valueOf(getConfig().getHeartBeat()));
                   OptimizerRegisterInfo registerInfo = new OptimizerRegisterInfo();
                   registerInfo.setThreadCount(getConfig().getExecutionParallel());
                   registerInfo.setMemoryMb(getConfig().getMemorySize());
@@ -70,6 +71,11 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
         LOG.info("Registered optimizer to ams with token:{}", token);
         return true;
       } catch (TException e) {
+        if (e instanceof ArcticException
+            && ErrorCodes.FORBIDDEN_ERROR_CODE == ((ArcticException) e).getErrorCode()) {
+          stop(); // Don't need to getToken again
+        }
+
         LOG.error("Register optimizer to ams failed", e);
         return false;
       }

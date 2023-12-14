@@ -8,6 +8,7 @@ public final class ErrorCodes {
   public static final int OBJECT_NOT_EXISTS_ERROR_CODE = 1001;
   public static final int ALREADY_EXISTS_ERROR_CODE = 1002;
   public static final int ILLEGAL_METADATA_ERROR_CODE = 1003;
+  public static final int FORBIDDEN_ERROR_CODE = 1004;
 
   public static final int TASK_NOT_FOUND_ERROR_CODE = 2001;
   public static final int DUPLICATED_TASK_ERROR_CODE = 2002;

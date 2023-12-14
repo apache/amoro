@@ -25,12 +25,11 @@ import com.netease.arctic.ams.api.OptimizingService;
 import com.netease.arctic.ams.api.OptimizingTask;
 import com.netease.arctic.ams.api.OptimizingTaskId;
 import com.netease.arctic.ams.api.OptimizingTaskResult;
+import com.netease.arctic.ams.api.PropertyNames;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.resource.Resource;
 import com.netease.arctic.ams.api.resource.ResourceGroup;
-import com.netease.arctic.server.exception.ObjectNotExistsException;
-import com.netease.arctic.server.exception.PluginRetryAuthException;
-import com.netease.arctic.server.exception.TaskNotFoundException;
+import com.netease.arctic.server.exception.*;
 import com.netease.arctic.server.optimizing.OptimizingQueue;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
 import com.netease.arctic.server.optimizing.TaskRuntime;
@@ -229,6 +228,23 @@ public class DefaultOptimizingService extends StatedPersistentBase
   @Override
   public String authenticate(OptimizerRegisterInfo registerInfo) {
     LOG.info("Register optimizer {}.", registerInfo);
+    String heartbeatIntervalStr =
+        Optional.ofNullable(
+                registerInfo.getProperties().get(PropertyNames.OPTIMIZER_HEART_BEAT_INTERVAL))
+            .orElseThrow(
+                () ->
+                    new ForbiddenException(
+                        String.format(
+                            "Cannot find %s from optimizer registerInfo",
+                            PropertyNames.OPTIMIZER_HEART_BEAT_INTERVAL)));
+    if (Long.parseLong(heartbeatIntervalStr) >= optimizerTouchTimeout) {
+      throw new ForbiddenException(
+          String.format(
+              "The %s configuration should be less than AMS's %s",
+              PropertyNames.OPTIMIZER_HEART_BEAT_INTERVAL,
+              ArcticManagementConf.OPTIMIZER_HB_TIMEOUT.key()));
+    }
+
     OptimizingQueue queue = getQueueByGroup(registerInfo.getGroupName());
     OptimizerInstance optimizer = new OptimizerInstance(registerInfo, queue.getContainerName());
     registerOptimizer(optimizer, true);
